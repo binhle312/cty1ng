@@ -190,7 +190,8 @@ run_steps
   run_id        TEXT NOT NULL REFERENCES runs(id)
   seq_in_run    INTEGER NOT NULL
   kind          TEXT NOT NULL   -- load_skill | list_files | read_file | view_file | write_file | propose_handoff
-  target        TEXT NOT NULL   -- skill slug@version, workspace path, or handoff id
+                                --  | remember | update_memory | forget | restore_memory (D38)
+  target        TEXT NOT NULL   -- skill slug@version, workspace path, handoff id, or memory item id
   status        TEXT NOT NULL   -- ok | error
   detail        JSON NULL       -- e.g. {bytes: 4120} or {error: "outside write scope"}
   started_at, finished_at
@@ -477,6 +478,8 @@ memory_items
   row_version        INTEGER NOT NULL DEFAULT 1
   created_by_bot_id  TEXT NULL                         -- NULL = the owner
   source_message_id  TEXT NULL REFERENCES messages(id) -- where it was learned
+  last_changed_by_bot_id   TEXT NULL                 -- NULL = the owner (Memory page edit)
+  last_change_message_id   TEXT NULL REFERENCES messages(id)  -- NULL for owner edits
   created_at, updated_at
   deleted_at         TIMESTAMP NULL
   CHECK ((scope = 'bot' AND bot_id IS NOT NULL AND project_id IS NULL AND conversation_id IS NULL)

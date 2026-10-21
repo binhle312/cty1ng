@@ -120,6 +120,7 @@ Confirmed by the owner (2026-10-21).
 | Scheduled and proactive bots | Needs a scheduler and delivery rules (Researcher, Reminder) | New milestone after phase 1 |
 | Web access for bots | Needs fetch and search tools with their own security rules (Researcher, Trip planner) | With the scheduled-bots milestone or later |
 | Reading external apps (calendars, task managers, mail) | Inside the app only for now | Much later |
+| A permanent activity log (who changed what, before and after, for every change) | One owner: chat lines, memory item fields, run steps and git history cover tracing (D38) | M9, with multiple users |
 | Payments and bookings | The trip planner proposes; a human pays. Never automatic, never stores card details | Later, if ever |
 | A "lead" bot that routes un-mentioned messages | Hides who decided what; extra cost (D2) | Maybe never |
 | Conversation search, archive, folders | Rail works for a few dozen conversations | Later |

@@ -30,6 +30,11 @@ Every bot also reads its own bot memory in project and conversation-memory chats
     nor save memory, of any scope. Like an incognito chat, except the conversation itself is
     still saved.
   - When memory is off, the prompt has no memory section and the memory tools are not offered.
+- **Tracing changes** (owner, 2026-10-21). Each memory item records who created it and who
+  last changed it (a bot or the owner) and the message that caused it. Every memory tool call is
+  a run step (`domain-model.md` §3.8), so it shows on the Flow timeline. A full, permanent
+  activity log of every change is deferred to M9, when several people share the app (product
+  brief, non-goals).
 - **Tidy memory on request** (owner, 2026-10-21). There is no automatic summary of past chats
   (see Rejected). Instead the owner can ask a bot, or press "Tidy" on the Memory page, to
   optimise one scope:
