@@ -93,3 +93,16 @@ ESLint (typescript-eslint, type-aware):
 | `no-console` | error |
 
 A new rule exception needs a comment saying why, and shows up in review.
+
+## 4. Loading and performance
+
+What the owner sees while things load is in `requirements/README.md` (skeletons). This section
+says how the code keeps first load small and long lists fast.
+
+| Rule | In this project |
+| --- | --- |
+| **Lazy routes** | Heavy views are split into their own chunk with TanStack Router's lazy route files and load on first visit: Statistics (charts), the Flow pane and its Board map (React Flow, the layout worker), and the skill editor. The rest of the shell (rail, header, conversation) is in the first chunk. While a chunk loads, the route shows its skeleton. |
+| **Prefetch on intent** | Links to a lazy route preload its chunk on hover or focus (TanStack Router `preload="intent"`), so the skeleton is rarely seen. |
+| **Virtualised long lists** | The message list is virtualised: only the messages near the viewport are in the DOM. It loads older messages on scroll (UI-3.10), keeps the scroll position when they arrive, and still supports "New messages", the "New" divider and jumping to a message. The same applies to the Flow timeline (`flow-view.md` §5) and to any other list that can pass about 200 rows. Library: TanStack Virtual (new dependency, approved with M0's list). |
+| **Bundle budget** | CI fails when the first-load JavaScript of the app shell grows past its budget: **250 KB gzipped** to start, measured on the production build. Raising it needs a line in the PR saying why. Lazy chunks get a warning above 300 KB each. |
+

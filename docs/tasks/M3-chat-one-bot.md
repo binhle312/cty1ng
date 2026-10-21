@@ -33,7 +33,7 @@ event log keeps the UI exact across reloads.
   and cancelling one queued run (UI-3.21), typing/working states with elapsed time (UI-3.4,
   3.5), the stall timeout (`architecture.md` §6), clearing live indicators on disconnect
   (`realtime-events.md` §3), and `last_read_seq` with the "New" divider (UI-3.10).
-- `domain.decide_runs` for the one-bot rows; `visible_history` with full history.
+- `decideRuns` for the one-bot rows; `visibleHistory` with full history.
 - Rail (UI-1.1–1.6 except presets), conversation page (UI-3.1–3.7, 3.10, 3.14–3.15 without
   discussion controls, 3.17), "Add bot" button that adds with full history directly (the
   history card arrives in M4).
@@ -44,6 +44,10 @@ event log keeps the UI exact across reloads.
   shared time range picker arrives in M7), `GET /usage`.
 - Bot detail UI-6.7, 6.8 now filled.
 - Sensitive-data guard for message text (D39): UI-3.22 and the server check.
+- Virtualised message list (`frontend-conventions.md` §4).
+- First open and reopening: the Get started checklist with `GET /setup` and
+  `POST /setup/examples` (UI-1.7 to UI-1.9), last conversation, scroll to the "New" divider and
+  drafts (UI-1.10 to UI-1.12).
 
 ## Out of scope
 

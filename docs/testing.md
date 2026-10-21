@@ -43,7 +43,7 @@ Tests never call real providers (`AGENTS.md` §8).
 
 ## 3. What must be tested
 
-### Domain (`decide_runs`)
+### Domain (`decideRuns`)
 
 One table row per case in `conversation-rules.md` §1 and §2, plus:
 
@@ -56,7 +56,7 @@ One table row per case in `conversation-rules.md` §1 and §2, plus:
 - limit lowered below `used` mid-discussion;
 - discussion off with bot mentions present.
 
-`visible_history`: `history_from_seq` cut, branch path selection, `(you)` labelling, size
+`visibleHistory`: `history_from_seq` cut, branch path selection, `(you)` labelling, size
 trimming with the omission marker, and a later bot from the same message seeing the earlier
 bots' replies (D31); the shared history budget (D32) with a small and a large
 `context_window`, the per-bot `history_share_pct` (10, 40, 80), newest-first filling across transcript and runs, and
@@ -93,6 +93,12 @@ mid-stream and keeps partial text; retry after a crash reuses the same message.
 7. edit the skill → v2 → BA still shows v1 on the next reply → upgrade → v2 chip;
 8. delete BA → its messages are grey;
 9. reload the page → identical state.
+
+`e2e/first-open.spec.ts`: a fresh database with no key shows the Get started checklist with
+the key step open; with the fake model's key it ticks; "Load the examples" ticks two steps and
+is safe to press twice. `e2e/reopen.spec.ts`: open a conversation, type a draft, reload at `/`
+→ the same conversation with the draft; a link to another conversation wins; unread messages
+open at the "New" divider.
 
 Each slice's brief lists which of these steps must pass by its end.
 

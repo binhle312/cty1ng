@@ -7,7 +7,7 @@ bots, they run in mention order (D11) and each sees the replies of the bots befo
 Why: The owner asked for it. Without it, mention order has no meaning and the second bot often
 repeats the first one's answer.
 Rejected: History up to the trigger only (bots answer in isolation, like parallel calls).
-Consequences: `visible_history` takes the active leaf at run start; every new message's parent
+Consequences: `visibleHistory` takes the active leaf at run start; every new message's parent
 is the active leaf at insert time. A later bot's reply depends on the earlier one, so a failed
 or stopped earlier run is visible to the later bot as that message with its status.
 Implemented in: `../conversation-rules.md` §1, §4.

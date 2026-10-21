@@ -56,6 +56,8 @@ renders. Later slices only add features; they should never need to set up toolin
   **Command** theme in light and dark (Material comes in slice T2), the `data-theme`/`data-mode` attributes with the no-flash
   script, and the lint rule against raw colours (`design/themes.md` §2). The Appearance
   settings UI comes later with the Settings page.
+- Lazy route setup and the first-load bundle budget check in CI (`frontend-conventions.md` §4);
+  the empty pages that later hold Statistics, Flow and the skill editor are lazy routes already.
 - `tsconfig` and ESLint settings from `frontend-conventions.md` §3 for all three packages, the
   SQL rules from `security.md` §2.8, Prettier.
 - API client generation (`pnpm gen:api`) from `/api/openapi.json` (produced by
@@ -91,8 +93,10 @@ queue and workspace adapters (their slices add them); pg-boss (VPS phase).
    suite includes the concurrency cases from `architecture.md` §11 that M0's tables allow: two
    transactions racing a compare-and-set on the same row (exactly one wins), a rolled-back
    transaction leaving no event, and `seq` strictly increasing under parallel appends.
-9. All CI gates run and pass on the PR.
-10. `docs/` is unchanged except where this slice had to correct something (listed in the PR).
+9. The bundle budget check runs in CI and fails a build that exceeds it (shown with a test
+   fixture).
+10. All CI gates run and pass on the PR.
+11. `docs/` is unchanged except where this slice had to correct something (listed in the PR).
 
 ## Tests
 

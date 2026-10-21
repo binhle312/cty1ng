@@ -16,12 +16,12 @@ editing with branches, and conversation settings with preset icons.
 
 ## In scope
 
-- `decide_runs` complete for human triggers (all rows of `conversation-rules.md` §1), mention
+- `decideRuns` complete for human triggers (all rows of `conversation-rules.md` §1), mention
   validation (`mention_not_member`, `bot_unavailable`), mention tokens in the composer.
 - Several bots in one message: sequential runs where each later bot sees earlier replies (D31),
   one status reaction per bot (UI-3.18).
 - Member lifecycle with the history card (`pending_history` → `active` → `removed`), re-add asks
-  again; `visible_history` honours `history_from_seq`.
+  again; `visibleHistory` honours `history_from_seq`.
 - Drag-to-add with dnd-kit (UI-2.4, 2.5) and the drop rules.
 - Editing and branches: edit endpoint, sibling navigation, active path for listing and for
   bots, edit blocked while runs are active.
