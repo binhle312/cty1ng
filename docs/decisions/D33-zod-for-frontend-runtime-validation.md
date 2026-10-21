@@ -1,6 +1,6 @@
 # D33. Zod for runtime validation in the frontend
 
-Status: proposed (2026-10-21). Needs the owner's approval as a new dependency (`AGENTS.md` §7).
+Status: accepted (2026-10-21, owner).
 Decision: The frontend validates every value that does not come through the generated REST
 client (SSE payloads, `localStorage`, URL params, forms) with Zod, and infers TypeScript types
 from the schemas. The OpenAPI client generator chosen in M0 must also emit Zod schemas for

@@ -18,4 +18,8 @@ Why: The owner wants to know what each bot costs; the data is free (providers re
 with every response) and D20 needs it.
 Rejected: Asking bots to report usage (they cannot know it); fetching invoices from provider
 billing APIs (provider-specific, delayed; possible later for reconciliation).
+Condition (owner, 2026-10-21): the owner can always override `genai-prices`, so a model the
+library stops covering (or prices late or wrongly) still gets a correct cost. A per-model
+override in `config/models.yaml` wins over the library; Settings shows each model's price
+source ("genai-prices", "override" or "unknown") and flags models with no known price.
 Implemented in: `../domain-model.md` §4 and §7, `../requirements/conversation.md`, `../requirements/bots.md` (UI-6), `../requirements/settings.md` (UI-8).

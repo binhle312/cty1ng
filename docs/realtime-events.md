@@ -20,6 +20,23 @@ action (POST)  ──▶  service transaction: change rows + INSERT events(seq=8
 Subscribers always read from the `events` table, never from an in-memory copy, so the stream
 and the replay path are the same code.
 
+## 1a. Transport boundary (D9)
+
+SSE is one adapter, not part of the event model, so WebSocket or another transport can be added
+later without touching services, the log or the reducer.
+
+- **Envelope.** Every event is `{seq, type, data}` as plain JSON. Nothing in it depends on SSE
+  (the SSE `id:` and `event:` lines are just how the SSE adapter writes `seq` and `type`).
+- **Backend.** Services only append events. `events/hub.py` exposes
+  `subscribe(after_seq) -> AsyncIterator[Event]`; `api/stream_sse.py` turns that iterator into
+  SSE frames (ids, heartbeat, `reset`). A WebSocket adapter would be a second file over the
+  same iterator, with the same Host/Origin checks (`security.md` §2.1).
+- **Frontend.** `stream/transport.ts` defines
+  `connect({ afterSeq, onEvent, onStatus }) -> close()`. `stream/sse.ts` implements it with
+  `EventSource`; the reducer and the rest of the app only see `onEvent(envelope)`.
+- **Contract tests** run against the interface, not against SSE, so a new adapter must pass
+  the same replay, gap and ordering tests.
+
 ## 2. The stream
 
 `GET /api/stream` — one stream for the whole app (the rail needs unread dots for every

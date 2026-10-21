@@ -221,7 +221,8 @@ stored here, only what was touched.
   per provider. Values above are placeholders; the agent implementing M2 must check current model
   ids and parameters in the provider docs.
 - Removing a model from the catalog makes its bots *unavailable* (J5 in the overview).
-- Prices come from `genai-prices`; an override in the catalog wins. A model with no known price still works; its runs show tokens and
+- Prices come from `genai-prices`; an override in the catalog wins (D21), so the owner can price a
+  model the library does not know, or correct one it prices wrongly, without waiting for a release. A model with no known price still works; its runs show tokens and
   "cost unknown", and they do not count towards the daily cap (Settings shows a warning).
 
 ## 5. Conversations and members

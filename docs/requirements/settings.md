@@ -22,7 +22,9 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
 - UI-8.1: Global defaults: bot discussion on/off, turn limit (1–20, default 5), runs per
   conversation per hour.
 - UI-8.2: Model catalog (read-only): label, id, efforts, available or the missing key's
-  **name** (never its value).
+  **name** (never its value), and the price per million tokens with its source
+  ("genai-prices", "override" or "unknown", D21). Unknown prices are flagged with how to add an
+  override in `config/models.yaml`.
 - UI-8.3: Daily spending cap in USD (empty = off), today's estimated spend with a progress bar,
   and a breakdown by provider and by bot (D20, D21). A banner across the app appears at 80% and
   at 100%. Note under the field: "Estimate only. Also set limits in your providers' consoles."

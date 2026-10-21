@@ -73,7 +73,7 @@ type StatsView =
 ```
 
 This also gives every list and detail view its four required states
-(`requirements/README.md`).
+(`requirements/README.md`); `loading` renders the shared `Skeleton`, never an inline spinner.
 
 ## 3. Enforcement (set up in M0)
 

@@ -34,6 +34,11 @@ lives in the technical documents one level up.
 These hold on every screen, so stories do not repeat them:
 
 - Every list or detail view has **empty, loading, error and success** states.
+- **Loading uses skeletons**: grey placeholder shapes in the layout of the real content (rows,
+  avatars, chart boxes), not a centred spinner, so the page does not jump when data arrives.
+  They appear only if loading takes longer than 200 ms (no flash on fast loads), are marked
+  `aria-busy`, and do not shimmer when the OS asks for reduced motion. Streaming bot replies are
+  not "loading" and keep their typing/working states (UI-3.4).
 - Every hover tooltip also appears on keyboard focus.
 - Every drag-and-drop action has a keyboard or button alternative.
 - Every screen works in every theme and in both light and dark mode; mode follows the OS by

@@ -31,6 +31,9 @@ renders. Later slices only add features; they should never need to set up toolin
 - Frontend: Vite + React + TS strict, Tailwind, shadcn/ui on Base UI (D28), TanStack Query, TanStack Router with
   empty pages (Conversation, Bots, Bot detail, Create bot, Skills, Skill editor, Settings),
   app shell with header and rail placeholders, the SSE connection module and reducer skeleton.
+  A shared `Skeleton` component (theme tokens, 200 ms delay, reduced-motion aware) used by the
+  empty pages' loading state (`requirements/README.md`).
+- The transport interface and the SSE adapter, backend and frontend (`realtime-events.md` §1a).
 - Theme layer (D30, if accepted): semantic tokens as CSS variables, `frontend/src/theme/` with
   one theme in light and dark, the `data-theme`/`data-mode` attributes with the no-flash
   script, and the lint rule against raw colours (`design/themes.md` §2). The Appearance

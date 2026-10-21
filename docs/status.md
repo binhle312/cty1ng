@@ -12,25 +12,25 @@ Last updated: 2026-10-21
 
 ## Now
 
-Specification complete. Waiting for the owner to review the foundational decisions, then M0.
+Specification in the repository. Owner reviewing the foundational decisions; D10 (language) and
+D22 (ids) are being re-examined.
 
 ## Next
 
-1. Owner reviews the decisions that are hard to undo: D6, D9, D10, D11, D13, D21, D22
-   ([index](decisions/README.md)).
+1. Owner decides D10 and D22 (comparisons posted in the project chat).
 2. Owner confirms the Problem and Success measures in
    [product-brief.md](requirements/product-brief.md) (marked draft).
-3. Create the GitHub repository and commit this specification.
+3. Owner answers D30 (themes): accept, Board in the Flow pane, which theme first.
 4. Start M0 with the builder prompt in `workflow.md` §3.
 
 ## Waiting on the owner
 
 | Item | Needed by |
 | --- | --- |
-| Foundational decision review (above) | M0 |
+| D10: backend language (Python, TypeScript or Go) | M0 |
+| D22: id format | M0 |
 | Product brief: Problem and Success measures | M0 |
 | Accept or change D30 (themes); answer its two open questions (`design/themes.md`) | M0 plan |
-| Approve or change D33 (Zod as the frontend schema library) | M0 |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
 
 ## Slices
@@ -56,3 +56,5 @@ A slice can also be `blocked` (say on what in Notes).
 | Date | What |
 | --- | --- |
 | 2026-10-21 | Specification: requirements, design sketches, decisions D1–D29, briefs M0–M8 |
+| 2026-10-21 | Repository created; spec merged (PRs #1–#5): send states and research notes, security checklist, frontend conventions, `ui-ux-pro-max` skill; D31, D32 accepted |
+| 2026-10-21 | Owner review: D6, D11, D13, D33 accepted; D9 accepted with a replaceable transport; D21 accepted with price overrides |
