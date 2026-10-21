@@ -22,7 +22,8 @@ renders. Later slices only add features; they should never need to set up toolin
   §4; Node 24 LTS pinned (`.nvmrc` and `engines`); root scripts for every command in
   `AGENTS.md` §4; `Makefile` with `dev`, `test`, `lint`, `seed` (seed can be a stub).
 - Backend: Hono on `@hono/node-server`, `app/main.ts` (composition root), `app/config.ts` (env
-  parsed with Zod), Pino logging, Drizzle on `better-sqlite3` (WAL, `foreign_keys=ON`),
+  parsed with Zod), Pino logging, Drizzle on `better-sqlite3` (WAL, `foreign_keys=ON`, `busy_timeout`, write transactions
+  with `BEGIN IMMEDIATE`, `architecture.md` §11),
   drizzle-kit with an initial migration containing **only** `events` and `settings`, and
   `db:generate`, `db:migrate`, `db:check` scripts.
 - Ports and adapters (D35): `core/ports/` with the transport, repositories + unit of work,
@@ -64,7 +65,7 @@ renders. Later slices only add features; they should never need to set up toolin
   the automated security review workflow, request body limit and the error handler
   (`security.md` §2.7–2.11).
 - `reference/discord-role-bots/` copied in with its README (`porting-guide.md` §1).
-- `README.md` quickstart; `.env.example` with every variable in `architecture.md` §6.
+- `README.md` quickstart; `.env.example` with every variable in `architecture.md` §8.
 - PR template from `workflow.md` §6 as `.github/pull_request_template.md`.
 
 ## Out of scope
@@ -86,7 +87,10 @@ queue and workspace adapters (their slices add them); pg-boss (VPS phase).
 6. An import from `core/` into an adapter, or between two adapters, fails `pnpm lint`.
 7. Adding a file to an indexed folder without listing it in that folder's `README.md` fails
    `pnpm check:index`; so does listing a file that does not exist.
-8. The SSE adapter and the Drizzle unit of work pass their contract suites.
+8. The SSE adapter and the Drizzle unit of work pass their contract suites. The unit-of-work
+   suite includes the concurrency cases from `architecture.md` §11 that M0's tables allow: two
+   transactions racing a compare-and-set on the same row (exactly one wins), a rolled-back
+   transaction leaving no event, and `seq` strictly increasing under parallel appends.
 9. All CI gates run and pass on the PR.
 10. `docs/` is unchanged except where this slice had to correct something (listed in the PR).
 

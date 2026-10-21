@@ -49,7 +49,8 @@ Conversations, drag-to-add (M4).
 
 ## Tests
 
-Service and API tests for the above; catalog tests per provider effort mapping; Vitest for the
+Service and API tests for the above, including the races in `architecture.md` §11 (two bot
+PATCHes with the same `row_version`, two creates with the same name); catalog tests per provider effort mapping; Vitest for the
 create form (effort selector appears only when supported); Playwright: create skill → create
 bot with it → clone with a different model → upgrade flow from J4.
 

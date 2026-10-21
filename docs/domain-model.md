@@ -17,7 +17,11 @@ match it; a PR that changes a table changes this document too (and needs the own
   constant `"owner"`; the column exists so multi-user is an addition (D1).
 - JSON columns are validated by Zod schemas in the services before writing and parsed again
   when read.
-- SQLite runs in WAL mode with `foreign_keys=ON`.
+- SQLite runs in WAL mode with `foreign_keys=ON` and `busy_timeout = 5000`; writes use
+  `BEGIN IMMEDIATE` (`architecture.md` §11).
+- Rows edited from forms (`bots`, `skills`, `conversations`) carry `row_version INTEGER NOT NULL
+  DEFAULT 1` for optimistic locking; a stale write returns 409 `stale_write`
+  (`architecture.md` §11).
 
 ## 2. Bots
 
@@ -306,6 +310,7 @@ runs
   error               TEXT NULL
   created_at, started_at, finished_at
 INDEX runs_claim ON runs(status, created_at)
+UNIQUE INDEX runs_one_running ON runs(conversation_id) WHERE status = 'running'   -- D11 in the database
 
 model_requests                           -- one row per call to the provider (D21)
   id                  TEXT PK
@@ -392,7 +397,7 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
 5. Only the author can create versions or deprecate a skill.
 6. A deprecated skill cannot be newly assigned.
 7. `events.seq` is strictly increasing; every state change has its event in the same transaction.
-8. At most one `running` run per conversation.
+8. At most one `running` run per conversation (enforced by `runs_one_running`).
 9. A message's content changes only while `status = streaming`.
 10. Every message's `parent_message_id` belongs to the same conversation.
 11. `run_skills` contains exactly the always-loaded pins plus the distinct `load_skill` calls.
@@ -400,6 +405,8 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
 13. A request's `estimated_cost_usd` never changes after it finishes, even if prices do; a run's
     totals equal the sum of its requests.
 14. Every tool call of a run has exactly one `run_steps` row, in call order.
+15. A worker's writes for a run apply only while its `attempts` value is current (fencing,
+    `architecture.md` §11).
 
 ## 13. Usage and cost (D20, D21)
 

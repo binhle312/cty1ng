@@ -209,11 +209,13 @@ queued ──claim (lease)──▶ running ──▶ done
 - Runs are rows in `runs`. The worker is a loop in the Node process (`core/runs/`, through the
   queue port): claim the oldest `queued` run whose conversation has no `running` run, set
   `locked_until = now + lease`, execute, finish.
-- **One running run per conversation** (D11) is enforced in the claim query, not by locks in
-  memory, so it survives restarts and a later multi-process worker.
+- **One running run per conversation** (D11) is enforced by the database (a partial unique
+  index and a compare-and-set claim, §11), not by locks in memory, so it survives restarts and
+  a later multi-process worker.
 - Different conversations run concurrently, up to `MAX_CONCURRENT_RUNS` (default 3).
 - A crash leaves a `running` row with an expired lease; the next claim picks it up again
-  (`attempts + 1`). After `MAX_ATTEMPTS` (default 3) it becomes `failed`.
+  (`attempts + 1`). After `MAX_ATTEMPTS` (default 3) it becomes `failed`. `attempts` is also
+  the fencing token that stops the old worker's late writes (§11).
 - **Idempotency:** a run produces exactly one bot message; the message row is created when the
   run starts (status `streaming`) and reused on retry, so retries never duplicate messages.
 - **Stall timeout:** the lease covers a crashed worker, not a provider that hangs. Each model
@@ -307,3 +309,55 @@ Database guardrails, enforced in review from M0 (D29):
    PostgreSQL's `date_trunc(..., time zone)` can replace it.
 5. From M9: CI runs the tests on PostgreSQL too, and the event stream tolerates commits that
    land out of `seq` order (`realtime-events.md`).
+
+## 11. Concurrency rules
+
+**Principle: the database decides who wins.** Two requests, two browser tabs or two workers can
+act on the same row at the same moment. Code never reads a row, checks it in TypeScript, and
+then writes, because another writer can change the row in between. Each rule below makes the
+write itself carry the check, so the loser finds out from the result (0 rows, a constraint
+error) and handles it.
+
+| Race | Rule | The loser gets |
+| --- | --- | --- |
+| Two workers claim the same queued run | Compare-and-set: `UPDATE runs SET status = 'running', locked_until = ?, attempts = attempts + 1 WHERE id = ? AND status = 'queued'` | 0 rows: picks another run |
+| Two runs start in one conversation (D11) | Partial unique index `runs_one_running ON runs(conversation_id) WHERE status = 'running'`, so the claim above fails even if the "no running run" check raced | Constraint error: treated as 0 rows |
+| A worker whose lease expired keeps writing after another worker reclaimed the run | `attempts` is a **fencing token**: every write a worker makes for a run (partial text, steps, finish) adds `AND attempts = <its attempt>` | 0 rows: the worker stops and discards its result |
+| Stop and finish at the same moment | Both are compare-and-set on `status = 'running'` (with the fencing token) | Whichever commits second changes 0 rows; the run ends either `stopped` or `done`, never both |
+| The same message sent twice (retry, double click) | Unique index `(conversation_id, client_id)` | The insert fails; the API returns the existing message with 200 (`api.md` §5) |
+| Two sends in one conversation pick the same parent | The insert transaction locks the conversation first (below), reads `active_leaf_message_id`, inserts, moves the leaf | Waits, then sees the new leaf: messages chain instead of forking by accident |
+| Bot turn counter at the limit (D4) | `UPDATE conversations SET bot_turns_used = bot_turns_used + 1 WHERE id = ? AND bot_turns_used < ?` | 0 rows: no run is queued; the "limit reached" notice is posted |
+| Two tabs edit the same bot, skill metadata or conversation settings | **Optimistic locking**: the row has `row_version`; the PATCH sends the version it read; `UPDATE … SET …, row_version = row_version + 1 WHERE id = ? AND row_version = ?` | 0 rows: 409 `stale_write`; the UI reloads the row and shows what changed |
+| Two saves create skill version N+1 | `UNIQUE (skill_id, version)` plus `base_version` in the request (`api.md` §2) | 409 `stale_write` |
+| Two bots created with the same name or slug | Unique indexes on slug and on live name | 409 `slug_taken` / `name_taken` |
+
+**State change and event together.** Every rule above runs inside the unit of work (§2), and
+the event for the change is inserted in the same transaction (rule 3 in `AGENTS.md`), so a
+loser's rolled-back transaction leaves no event. Event order uses the global `events.seq`
+(`realtime-events.md` §5); there is no per-conversation counter, because the one stream and its
+`Last-Event-ID` cursor cover all conversations.
+
+**Transactions per database.**
+
+- **SQLite (phase 1):** WAL mode, `busy_timeout = 5000`, and every write transaction starts
+  with `BEGIN IMMEDIATE`, so it takes the write lock up front. That serialises writers, which
+  is what "lock the conversation" means here. Reads never block.
+- **Postgres (D29):** the same statements work unchanged. Where a transaction must read and
+  then write the same row (the send above), it uses `SELECT … FOR UPDATE` on the conversation.
+  The queue adapter on pg-boss claims jobs with `SKIP LOCKED`.
+- Retry on a busy or serialisation error happens once, inside the unit of work. Business-level
+  losers (0 rows, constraint errors) are never retried blindly; they map to the outcome in the
+  table.
+
+**Tests.** Each race in the table has a test that fires the competing operations at the same
+time and asserts exactly one winner and a correct outcome for the loser:
+
+- duplicate `client_id` sends → one message, both responses carry it;
+- two workers claiming one run, and two runs in one conversation → one `running`;
+- a stale worker writing after a reclaim → its writes change nothing;
+- Stop racing finish → one final status, one event;
+- two concurrent PATCHes with the same `row_version` → one 200, one 409.
+
+The tests for the unit of work and the queue live in the contract suites
+(`backend/test/contracts/`), so they run against SQLite now and Postgres from M9. Tests at the
+service and API level run against SQLite.
