@@ -236,6 +236,7 @@ conversations
   bot_turn_limit           INTEGER NULL     -- NULL = use global; 1..20
   bot_turns_used           INTEGER NOT NULL DEFAULT 0
   last_activity_at         TIMESTAMP NOT NULL
+  last_read_seq            INTEGER NOT NULL DEFAULT 0   -- owner's read position: unread dot and "New" divider
   created_by, created_at
   deleted_at               TIMESTAMP NULL
 
@@ -269,9 +270,11 @@ messages
   attachments        JSON NOT NULL DEFAULT '[]'      -- [{path, kind, size}]
   status             TEXT NOT NULL        -- streaming | complete | failed | stopped
   run_id             TEXT NULL REFERENCES runs(id)
+  client_id          TEXT NULL            -- browser-generated id of a human message; makes a resend idempotent
   edited_from_id     TEXT NULL REFERENCES messages(id)   -- the sibling this edit replaces
   created_at, updated_at
 INDEX messages_by_parent ON messages(conversation_id, parent_message_id)
+UNIQUE INDEX messages_client_id ON messages(conversation_id, client_id) WHERE client_id IS NOT NULL
 ```
 
 - Content is updated in place **only** while `status = streaming` (partial saves). After that a

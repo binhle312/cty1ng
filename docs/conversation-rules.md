@@ -219,7 +219,8 @@ m1 (human) ── m2 (BA) ── m3 (human) ── m4 (BA)
   in the conversation (the owner presses Stop first).
 - Saving an edit inserts a new message with the same `parent_message_id` as the original and
   `edited_from_id` = the original, sets it as `active_leaf_message_id`, and routes it as a new
-  human message (§1), which resets the budget.
+  human message (§1), which resets the budget. Only the mentions in the edited text are
+  routed: a bot mentioned in the original but not in the edit is not run.
 - A message with siblings shows ‹ i/n ›. Switching selects that sibling and moves
   `active_leaf_message_id` to the most recent leaf below it.
 - Bots see only the active path (§4).

@@ -46,6 +46,7 @@ Tests never call real providers (`AGENTS.md` §8).
 One table row per case in `conversation-rules.md` §1 and §2, plus:
 
 - budget reset on human message and on edit;
+- an edit that drops a mention does not run that bot;
 - mention order and duplicates;
 - three bots mentioned with one turn left;
 - pending, removed, deleted and unavailable bots;
@@ -101,9 +102,11 @@ theme-switch leak test.
 
 ## 4. CI gates
 
-All must be green to merge: ruff (lint + format), pyright, pytest, `alembic check` (models
-match migrations), tsc, eslint, Vitest, Playwright, generated-client freshness, event-type
-list match.
+All must be green to merge: ruff (lint + format, including the `S` security rules), pyright,
+pytest, `alembic check` (models match migrations), tsc, eslint, Vitest, Playwright,
+generated-client freshness, event-type list match, `pip-audit`, `pnpm audit --audit-level
+high`. PRs touching security-sensitive paths also run the automated security review
+(`security.md` §2.11).
 
 ## 5. Evidence in PRs
 

@@ -36,7 +36,9 @@ renders. Later slices only add features; they should never need to set up toolin
   script, and the lint rule against raw colours (`design/themes.md` §2). The Appearance
   settings UI comes later with the Settings page.
 - API client generation (`pnpm gen:api`) from `/api/openapi.json`, with a CI freshness check.
-- CI workflow (GitHub Actions) running all gates in `testing.md` §4.
+- CI workflow (GitHub Actions) running all gates in `testing.md` §4, Dependabot config,
+  the automated security review workflow, request body limit and the error handler
+  (`security.md` §2.7–2.11).
 - `reference/discord-role-bots/` copied in with its README (`porting-guide.md` §1).
 - `README.md` quickstart; `.env.example` with every variable in `architecture.md` §6.
 - PR template from `workflow.md` §6 as `.github/pull_request_template.md`.

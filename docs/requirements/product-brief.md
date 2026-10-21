@@ -63,7 +63,9 @@ Proposed; the owner confirms or changes them.
 | Local models (Ollama) | Hosted APIs only; the model catalog makes it a config change later | Later |
 | A "lead" bot that routes un-mentioned messages | Hides who decided what; extra cost (D2) | Maybe never |
 | Conversation search, archive, folders | Rail works for a few dozen conversations | Later |
-| History summarisation | Old messages are trimmed instead (`../conversation-rules.md`) | Later |
+| History summarisation | Old messages are trimmed instead (`../conversation-rules.md`). When it comes: show it as a state and a system line, and let the owner start it by hand (`../research/chat-client-patterns.md` P10) | Later |
+| Structured question cards from bots (choices instead of free text) | Handoff cards cover the formal step for now (research P11) | Later |
+| Reply to a specific message | Mentions plus D31 cover it; needs a migration and API change (research P4) | After M5 |
 | Bots working on another project folder on the machine (following its AGENTS.md and skills) | Needs a secrets deny-list, review branches and approval rules (D23) | Later milestone |
 | Executable skills (scripts) | Would need a real sandbox | Later, if ever |
 | Custom conversation icon upload | 10 presets cover it for now | Later |

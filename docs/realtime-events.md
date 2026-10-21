@@ -69,6 +69,9 @@ The client appends `text` only if `offset` equals its current length.
 - Events are idempotent to apply: applying `message.created` for a message already in the
   cache replaces it rather than duplicating it. (Optimistic messages are matched by a
   `client_id` the browser sends with the POST.)
+- **Live indicators never outlive the stream.** When the connection drops, the client clears
+  every "typing" and "working" indicator. They come back only from events received after
+  reconnecting (replayed or new), so nothing spins for ever on a dead connection.
 
 ## 4. Event types
 
