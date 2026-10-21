@@ -29,7 +29,7 @@ One shape for every error:
 | 400 | `invalid_skill_file`, `invalid_import`, `bad_request` |
 | 403 | `not_author`, `origin_rejected` |
 | 404 | `not_found` |
-| 409 | `name_taken`, `slug_taken`, `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending` |
+| 409 | `name_taken`, `slug_taken`, `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending`, `run_not_queued` |
 | 413 | `too_large` |
 | 422 | `validation_error`, `mention_not_member`, `bot_unavailable`, `bot_deleted`, `skill_deprecated`, `version_mismatch`, `effort_not_supported`, `model_not_available` |
 | 429 | `rate_limited` (runs per hour), `daily_cap_reached` |
@@ -87,9 +87,9 @@ The CLI (`app skills import <folder>` / `export <folder>`) calls the same servic
 | GET | `/conversations/{id}` | | settings (with effective values), members, active leaf |
 | PATCH | `/conversations/{id}` | `{title?, icon_preset?, bot_chat_enabled?, bot_turn_limit?}` | `null` = inherit global |
 | DELETE | `/conversations/{id}` | | soft delete, workspace to trash |
-| POST | `/conversations/{id}/read` | `{seq}` | marks read up to seq (unread dots) |
+| POST | `/conversations/{id}/read` | `{seq}` | sets `last_read_seq` (never moves backwards); drives unread dots and the "New" divider |
 | GET | `/conversations/{id}/messages?before_seq=&limit=` | | the **active path**, newest page first; each message has `siblings: {index, count, ids}` |
-| POST | `/conversations/{id}/messages` | `{client_id, content_md, mentions: [bot_id], attachment_ids: []}` | 201; routing happens server side |
+| POST | `/conversations/{id}/messages` | `{client_id, content_md, mentions: [bot_id], attachment_ids: []}` | 201; routing happens server side. A repeated `client_id` in the same conversation returns 200 with the original message and routes nothing (safe retry) |
 | POST | `/conversations/{id}/messages/{message_id}/edit` | `{client_id, content_md, mentions, attachment_ids}` | creates a sibling branch; 409 `run_in_progress` |
 | PUT | `/conversations/{id}/active-branch` | `{message_id}` | switch to a sibling; leaf = newest below it |
 | POST | `/conversations/{id}/attachments` | multipart files | returns `attachment_ids`; saved under `inbox/` |
@@ -97,6 +97,7 @@ The CLI (`app skills import <folder>` / `export <folder>`) calls the same servic
 | POST | `/conversations/{id}/members/{bot_id}/history` | `{mode: "full" \| "from_join"}` | activates the member |
 | DELETE | `/conversations/{id}/members/{bot_id}` | | removes |
 | POST | `/conversations/{id}/stop` | | cancels queued and running runs |
+| POST | `/runs/{id}/cancel` | | cancels one **queued** run (status `stopped`, no message); 409 `run_not_queued` once it has started (use Stop) |
 | GET | `/conversations/{id}/files?path=` | | workspace listing (read-only) |
 | GET | `/conversations/{id}/files/content?path=` | | file bytes with safe headers (security.md) |
 

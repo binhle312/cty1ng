@@ -28,6 +28,7 @@ New to the project (human or agent), read in this order:
 | [conversation-rules.md](conversation-rules.md) | Who replies, bot-to-bot budget, joining, what a bot sees, handoffs, branches |
 | [realtime-events.md](realtime-events.md) | Event log, SSE stream, event types and payloads, reconnect |
 | [api.md](api.md) | HTTP endpoints, request and response shapes, errors |
+| [research/](research/) | Notes from studying other products (behaviour only, no copied code). Inputs, not spec |
 | [design/](design/README.md) | Screen sketches and mockups. **Not final**: the UI is agreed with the owner in each slice plan |
 | [flow-view.md](flow-view.md) | Flow pane: scene and cue model, swappable renderer, animation, performance and memory budgets |
 | [security.md](security.md) | Threat model and the controls that must exist |

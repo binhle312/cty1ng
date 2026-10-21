@@ -29,6 +29,10 @@ event log keeps the UI exact across reloads.
 - Streaming via `message.delta`, partial saves, retry reuses the message.
 - Run status reactions on the trigger message (UI-3.18, 3.19), placeholder emojis until the
   design review picks them.
+- Send states for human messages with idempotent `client_id` (UI-3.20), message disposition
+  and cancelling one queued run (UI-3.21), typing/working states with elapsed time (UI-3.4,
+  3.5), the stall timeout (`architecture.md` §4), clearing live indicators on disconnect
+  (`realtime-events.md` §3), and `last_read_seq` with the "New" divider (UI-3.10).
 - `domain.decide_runs` for the one-bot rows; `visible_history` with full history.
 - Rail (UI-1.1–1.6 except presets), conversation page (UI-3.1–3.7, 3.10, 3.14–3.15 without
   discussion controls, 3.17), "Add bot" button that adds with full history directly (the
