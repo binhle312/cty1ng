@@ -29,7 +29,7 @@ stack until they are chosen, then switch in one pass. D22 (ids) is being re-exam
 
 | Item | Needed by |
 | --- | --- |
-| D34: backend frameworks (Hono or Fastify, Drizzle or Prisma) and keep D28 | M0 |
+| D34: confirm Drizzle, Vercel AI SDK, pg-boss, and keeping D28 (Hono chosen) | M0 |
 | D22: id format | M0 |
 | Product brief: Problem and Success measures | M0 |
 | Accept or change D30 (themes); answer its two open questions (`design/themes.md`) | M0 plan |
