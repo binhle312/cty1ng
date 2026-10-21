@@ -64,3 +64,4 @@ Implemented in: links.
 | D32 | [History budget is a per-bot share of the model's context window](D32-history-budget-from-model-context.md) | accepted |
 | D33 | [Zod for runtime validation in the frontend](D33-zod-for-frontend-runtime-validation.md) | accepted |
 | D34 | [TypeScript on the backend and the frontend](D34-typescript-full-stack.md) | accepted (frameworks pending) |
+| D35 | [Ports and adapters at the edges, not "switch anything"](D35-ports-and-adapters-at-the-edges.md) | proposed |

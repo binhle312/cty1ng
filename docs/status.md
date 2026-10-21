@@ -31,6 +31,7 @@ stack until they are chosen, then switch in one pass. D22 (ids) is being re-exam
 | --- | --- |
 | D34: confirm Drizzle, Vercel AI SDK, pg-boss, and keeping D28 (Hono chosen) | M0 |
 | D22: id format | M0 |
+| D35: accept ports and adapters (which parts are swappable) | M0 |
 | Product brief: Problem and Success measures | M0 |
 | Accept or change D30 (themes); answer its two open questions (`design/themes.md`) | M0 plan |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
