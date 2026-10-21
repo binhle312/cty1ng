@@ -46,6 +46,7 @@ Tests never call real providers (`AGENTS.md` §8).
 One table row per case in `conversation-rules.md` §1 and §2, plus:
 
 - budget reset on human message and on edit;
+- an edit that drops a mention does not run that bot;
 - mention order and duplicates;
 - three bots mentioned with one turn left;
 - pending, removed, deleted and unavailable bots;

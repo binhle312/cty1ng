@@ -20,6 +20,8 @@ Chatting with one or more bots: messages, streaming, mentions, edits and branche
   Acceptance criteria: UI-3.17.
 - **CV-8.** As the owner, I want each bot to acknowledge my message with a status reaction that changes as it works, so that I know it received the message, when it started, and when it finished.  
   Acceptance criteria: UI-3.18, UI-3.19.
+- **CV-9.** As the owner, I want to see what happened to each message I send, including when it failed or is waiting for a bot, so that nothing I write gets lost or stuck silently.  
+  Acceptance criteria: UI-3.20, UI-3.21.
 
 ## Acceptance criteria
 
@@ -36,10 +38,14 @@ Messages
 - UI-3.2: Deleted bots' avatar and name render grey (D12), with tooltip "Deleted bot".
 - UI-3.3: System messages are visually distinct (centred, muted). Cards (history choice,
   handoff) show their current state and disable their buttons once decided.
-- UI-3.4: Bot replies stream in; the author row shows "typing…" while streaming; queued bots
-  are listed under the composer ("Queued: Designer, QA").
+- UI-3.4: Bot replies stream in. The running bot shows one of two live states, both derived
+  from existing events: **typing** while `message.delta` events arrive (it expires 10 s after
+  the last delta), and **working: <latest step>** between deltas (for example during a long
+  tool call). Queued bots are listed under the composer ("Queued: Designer, QA"). The live
+  text sits in a polite live region.
 - UI-3.5: The latest `run.step` shows as a subtle line under the streaming message
-  ("Loading skill write-user-stories…").
+  ("Loading skill write-user-stories…") with the elapsed time since the run started and since
+  the last progress ("1:42 · last step 0:12 ago").
 - UI-3.6: Under each completed bot message, chips list `skills_used` as `<slug> v<version>`,
   always-loaded ones marked "always" (D15). Clicking a chip opens a side sheet with that exact
   version's content. No chips when none.
@@ -55,16 +61,26 @@ Messages
   an approved handoff) shows one reaction per triggered bot: the bot's small avatar plus a
   status emoji. The emoji follows the run (`realtime-events.md` `run.*` events):
   **received** (`run.queued`) → **working** (`run.started`) → **done** (`run.finished`,
-  complete). The emoji is replaced in place, never stacked. A failed run shows a **failed**
-  state and a stopped run a **stopped** state. A run refused by a limit shows no reaction (the
+  complete). The emoji is replaced in place, never stacked. A failed run (including one that timed
+  out) shows a **failed** state and a stopped run a **stopped** state. A run refused by a limit shows no reaction (the
   notice explains why). The five emojis are chosen in the frontend design phase; until then
   the spec names the states only.
 - UI-3.19: Hovering or focusing a status reaction shows "<Bot>: received 17:04:02 · started
-  17:04:05 · done 17:04:41". Reactions survive reload (they are derived from run state, not
+  17:04:05 · done 17:04:41"; while working it adds the time since the last progress (P2 stall
+  timeout, `../architecture.md` §4). Reactions survive reload (they are derived from run state, not
   stored separately) and are announced to screen readers when they change.
+- UI-3.20: A human message whose POST fails shows "Not sent" with Retry and Delete (Delete is
+  local only). Any later unsent message in the same conversation is marked "Not sent" too, so
+  messages never arrive out of order. Retry reuses the same `client_id`, so a send that did
+  reach the server is not duplicated.
+- UI-3.21: Under each human message, a small line says what happened to it: "Queued for
+  Designer" (with Cancel while the run has not started), "Nobody mentioned", or nothing once
+  the bots have started (the status reactions take over, UI-3.18). Messages sent while a bot
+  works are never merged into the running turn (D11).
 - UI-3.10: Scrolling up loads older messages (pagination by `before_seq`); new messages
   auto-scroll only when the view is already at the bottom; otherwise a "New messages" pill
-  appears.
+  appears. A "New" divider sits above the first message after the owner's read position
+  (`last_read_seq`); it stays until the conversation is left.
 
 Composer
 

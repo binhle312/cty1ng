@@ -99,6 +99,11 @@ queued ──claim (lease)──▶ running ──▶ done
   (`attempts + 1`). After `MAX_ATTEMPTS` (default 3) it becomes `failed`.
 - **Idempotency:** a run produces exactly one bot message; the message row is created when the
   run starts (status `streaming`) and reused on retry, so retries never duplicate messages.
+- **Stall timeout:** the lease covers a crashed worker, not a provider that hangs. Each model
+  request has a read timeout (`MODEL_REQUEST_TIMEOUT_SECONDS`), and as a backstop the worker
+  fails a run that has had no `message.delta` and no `run.step` for `RUN_STALL_SECONDS`. Such a
+  run ends `failed` with `error = "timed_out"`; the message shows Retry (UI-3.7). Timed-out runs
+  are not retried automatically.
 - **Stop:** marks queued runs `stopped`; for the running one, sets a cancel flag the agent
   loop checks between model requests and between streamed chunks; the message keeps its
   partial text with status `stopped`.
@@ -141,6 +146,8 @@ All configuration comes from environment variables (`.env` in development) read 
 | `MAX_CONCURRENT_RUNS` | `3` | Across conversations |
 | `RUN_LEASE_SECONDS` | `900` | |
 | `RUN_MAX_ATTEMPTS` | `3` | |
+| `RUN_STALL_SECONDS` | `600` | No delta and no step for this long → run fails as `timed_out` |
+| `MODEL_REQUEST_TIMEOUT_SECONDS` | `300` | Read timeout per model request |
 | `RUNS_PER_CONVERSATION_PER_HOUR` | `50` | Safety cap independent of the turn budget |
 | `<PROVIDER>_API_KEY` | none | Names referenced by `config/models.yaml` |
 
