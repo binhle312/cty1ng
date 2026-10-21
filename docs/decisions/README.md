@@ -62,3 +62,4 @@ Implemented in: links.
 | D30 | [Switchable themes (Command, Material) and conversation views](D30-themes-and-conversation-views.md) | proposed |
 | D31 | [Bots answering the same message see each other's replies](D31-later-bots-see-earlier-replies.md) | accepted |
 | D32 | [History budget is a per-bot share of the model's context window](D32-history-budget-from-model-context.md) | accepted |
+| D33 | [Zod for runtime validation in the frontend](D33-zod-for-frontend-runtime-validation.md) | proposed |

@@ -35,7 +35,10 @@ renders. Later slices only add features; they should never need to set up toolin
   one theme in light and dark, the `data-theme`/`data-mode` attributes with the no-flash
   script, and the lint rule against raw colours (`design/themes.md` §2). The Appearance
   settings UI comes later with the Settings page.
+- `tsconfig` and ESLint settings from `frontend-conventions.md` §3; Zod (D33, if approved) and
+  the stream event schemas for the test event.
 - API client generation (`pnpm gen:api`) from `/api/openapi.json`, with a CI freshness check.
+  Pick a generator that emits TanStack Query hooks and Zod schemas; record the choice in the PR.
 - CI workflow (GitHub Actions) running all gates in `testing.md` §4, Dependabot config,
   the automated security review workflow, request body limit and the error handler
   (`security.md` §2.7–2.11).
