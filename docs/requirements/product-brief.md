@@ -15,13 +15,29 @@ and hand work to each other only through the human's approval.
 
 ## Problem
 
-Draft; the owner confirms or corrects it.
+Confirmed by the owner (2026-10-21).
 
 The prototype (`discord-role-bots`) proved that role bots with skills and a shared workspace
-are useful, but it lives inside Discord, so the platform decides the UI and limits what the
-app can show. The owner wants their own chat app where they control routing, skill versions,
-bot-to-bot discussion, cost visibility and the views (statistics, Flow) that Discord cannot
-offer.
+are useful, but it lives inside a third-party chat platform. Four problems follow, and phase 1
+solves each:
+
+1. **It depends on someone else's application.** The chat platform hosts the UI, the
+   conversations and the files, and its rules decide what the app can do. Phase 1 runs entirely
+   on the owner's machine: the UI, the data (`data/`) and the workspaces. The only outside
+   services are the model providers it calls with the owner's API keys; changing provider is a
+   configuration change (D35), not a migration.
+2. **The work is invisible.** A chat log shows messages, not who is working, who is waiting,
+   which skill a bot used or how work moved between bots. The app adds an interactive view of
+   the flow beside the chat (Flow pane with Team, Timeline and Board maps; D26, D27, D30), plus
+   provenance and cost on every reply.
+3. **It cannot be shaped to the owner's needs.** The platform fixes the layout, the commands and
+   the look. Here the owner defines the bots, personas and versioned skills, sets the
+   conversation rules (who replies, discussion budget), and picks the theme, mode and density.
+4. **Choosing and assigning bots is scattered.** In the prototype, bots are folders in a repo and
+   joining a conversation means platform commands. Here one place manages every bot and skill
+   (Bots, Skill hub, Bot detail), and adding a bot to a conversation is a drag from the header.
+
+Anything beyond these four is a later phase and goes through a new brief, not into this list.
 
 ## Who it is for
 
@@ -53,6 +69,14 @@ Proposed; the owner confirms or changes them.
 - Every bot reply shows which skill versions it used and what it cost, from server records.
 - No bot-to-bot exchange exceeds the turn budget; no handoff happens without the owner's approval.
 - The owner can answer "where did the money go this week" from the statistics page alone.
+- *(Proposed, 2026-10-21.)* The owner uses the app for real work, instead of the prototype,
+  for two consecutive weeks without falling back to the prototype.
+- *(Proposed, matches Problem 1.)* With the network limited to the configured model providers,
+  every journey in this brief still works: no other outside service is needed.
+- *(Proposed, matches Problem 2.)* During a discussion between three bots, the owner can say
+  from the Flow pane alone who is working, who is waiting, and what was handed to whom.
+- *(Proposed, matches Problem 4.)* Creating a bot, assigning two skills and adding it to a
+  conversation takes under two minutes without reading documentation.
 
 ## Non-goals (phase 1)
 

@@ -20,7 +20,7 @@ Board is the Flow pane's third map (M8b).
 
 ## Next
 
-1. Owner confirms the Problem and Success measures in
+1. Owner confirms the Success measures in
    [product-brief.md](requirements/product-brief.md) (marked draft).
 2. Start M0 with the builder prompt in `workflow.md` §3.
 
@@ -28,7 +28,7 @@ Board is the Flow pane's third map (M8b).
 
 | Item | Needed by |
 | --- | --- |
-| Product brief: Problem and Success measures | M0 |
+| Product brief: confirm the Success measures (four new ones proposed) | M0 |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
 
 ## Slices
