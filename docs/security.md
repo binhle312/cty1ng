@@ -134,6 +134,11 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
   security review (the `anthropics/claude-code-security-review` GitHub Action, run only on
   the owner's branches, since it reads untrusted PR content and needs an API key secret).
   It assists the human review; it does not replace it.
+- **Vendored agent skills** (`.agents/skills/`) are third-party code that agents run with the
+  owner's permissions. Each one keeps its licence and a `SOURCE.md` with the upstream commit
+  and the review date. Before adding or updating one, review its scripts: no network calls,
+  no subprocesses, no reading of `.env` or API keys, no package installs. Skills that fail
+  this stay out of the repository.
 
 ### 2.12 Checklist
 

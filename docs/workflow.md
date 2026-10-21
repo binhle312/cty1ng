@@ -38,6 +38,13 @@ brief ready ──▶ plan ──(owner approves, if checkpointed)──▶ buil
    section: proposed layout, components and states, based on (not copied from) the sketches in
    `docs/design/`. The owner discusses and approves it before any UI code, in every slice,
    checkpointed or not. The approved design then replaces the sketch (`docs/design/README.md`).
+   **Design skills.** The builder may use the vendored `ui-ux-pro-max` skill
+   (`.agents/skills/`, linked into `.claude/skills/`) to generate options and check
+   accessibility for that section. Its output is input to the proposal, never a decision:
+   `docs/design/themes.md`, the D-decisions and the approved plan win where they disagree, and
+   recommendations that conflict with them (another component library, other fonts or
+   palettes) are listed as alternatives for the owner, not applied. Results are written into the
+   plan or `docs/design/`, never with `--persist`.
 3. **Build.** Small commits. Tests alongside code, not at the end.
 4. **Self-check.** Every command in `AGENTS.md` §4 passes. The builder fills the PR template
    (§6).
