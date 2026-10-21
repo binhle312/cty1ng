@@ -102,9 +102,11 @@ theme-switch leak test.
 
 ## 4. CI gates
 
-All must be green to merge: ruff (lint + format), pyright, pytest, `alembic check` (models
-match migrations), tsc, eslint, Vitest, Playwright, generated-client freshness, event-type
-list match.
+All must be green to merge: ruff (lint + format, including the `S` security rules), pyright,
+pytest, `alembic check` (models match migrations), tsc, eslint, Vitest, Playwright,
+generated-client freshness, event-type list match, `pip-audit`, `pnpm audit --audit-level
+high`. PRs touching security-sensitive paths also run the automated security review
+(`security.md` §2.11).
 
 ## 5. Evidence in PRs
 

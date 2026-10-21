@@ -111,6 +111,9 @@ Mark these in the PR description under a heading `Needs human review` with one l
 - Never commit `.env`, API keys, the `data/` folder, or real conversation data.
 - Never call a real model provider in tests. Use the fake model (`docs/testing.md`).
 - Never bind the server to `0.0.0.0`.
+- Never build SQL from strings (f-strings, `%`, `+`); use bound parameters and allowlists
+  (`docs/security.md` §2.8).
+- Never return stack traces or internal errors to the client.
 
 ## 9. Definition of done (every PR)
 
