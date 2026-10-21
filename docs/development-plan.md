@@ -18,6 +18,8 @@ the builder agent with the prompt in `workflow.md` §3.
 | M6 | [M6-workspace-parity.md](tasks/M6-workspace-parity.md) | Workspace sandbox, file tools, file panel, attachments, handoffs; delete `reference/` | **plan** (security) | M3 (can run after M4/M5) |
 | M7 | [M7-statistics.md](tasks/M7-statistics.md) | Statistics page: models, bots, skills | merge (new chart dependency) | M5 (needs usage, provenance, discussion data) |
 | M8 | [M8-flow-view.md](tasks/M8-flow-view.md) | Flow pane: animated Team and Timeline maps, swappable renderer | **plan** (renderer contract, performance) | M7 (needs run steps from M3, discussion and handoffs from M5–M6) |
+| M8b | not written | Board: third map in the Flow pane (D30, `design/themes.md` §4) | **plan** (UI design) | M8 |
+| T2 | not written | Material theme: one token file plus the documented structural differences (D30) | merge (UI design, visual snapshots) | M0; any time, owner decides |
 | M9 | not written | VPS: auth, Docker, TLS, backups | separate milestone | M8 |
 | later | not written | External project folders (D23: documents first, write-capable design) | separate milestone | M9 or earlier, owner decides |
 
@@ -25,7 +27,7 @@ the builder agent with the prompt in `workflow.md` §3.
 approval (`workflow.md` §2). Every slice also needs the owner's review of migrations and
 `Needs human review` items before merge.
 
-Every slice with a screen (M0–M5, M6 file panel, M7, M8) also has a **UI design checkpoint**:
+Every slice with a screen (M0–M5, M6 file panel, M7, M8, M8b, T2) also has a **UI design checkpoint**:
 the plan proposes the actual UI and the owner approves it before UI code is written. Sketches
 and mockups in `docs/design/` are starting points for that discussion, never specs.
 

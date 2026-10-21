@@ -42,7 +42,7 @@ look with each other or with round 1. Canvas page "Round 2 (10 styles)".
 ## Owner's pick
 
 Concepts 2 (Command), 11 (Material 3) and 13 (Spatial canvas), as switchable themes plus a
-Board view. Worked out in `themes.md` (D30, proposed).
+Board map in the Flow pane. Worked out in `themes.md` (D30). Command ships first.
 
 ## How to choose
 

@@ -38,7 +38,7 @@ Start with `docs/README.md` for the reading order.
 | The Flow pane, animations, renderers | `docs/flow-view.md` |
 | Frontend TypeScript rules | `docs/frontend-conventions.md` |
 | Design work with the `ui-ux-pro-max` skill | `docs/workflow.md` §2 (design skills) |
-| Styling, themes, design tokens | `docs/design/themes.md` (D30, proposed) |
+| Styling, themes, design tokens | `docs/design/themes.md` (D30) |
 | Uploads, file tools, rendering bot output, request checks | `docs/security.md` |
 | Tests | `docs/testing.md` |
 | Moving code from the old Discord project | `docs/porting-guide.md` |

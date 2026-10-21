@@ -1,6 +1,7 @@
 # Themes and views
 
-> **Status: proposed (D30), from the owner's picks in round 2 (concepts 2, 11, 13).** Canvas page
+> **Status: accepted (D30), from the owner's picks in round 2 (concepts 2, 11, 13).** Command
+> ships first (M0); Material follows as its own small slice (T2). Canvas page
 > "Deep dive: 2 · 11 · 13" shows bot detail, skill hub, statistics, the Board view and the
 > Appearance settings in both themes. Visual details remain open until the M0 UI design review.
 
@@ -13,10 +14,10 @@ The three picks are not the same kind of thing, so they become separate settings
 | **Theme** | Command, Material | Colours, type, shape, spacing, elevation, motion feel | Concepts 2 and 11 |
 | **Mode** | Follow system, light, dark | The colour set within a theme | Requirement "themes follow the OS" |
 | **Density** | Theme default, compact | Control heights and row padding | Command is compact by default |
-| **Conversation view** | Chat, Chat + Board, Board | Layout of the conversation page | Concept 13 |
+| **Flow pane default** | Closed, or open on Team, Timeline or Board | Whether the conversation opens with the Flow pane, and on which map | Concept 13 |
 
 Every theme ships both a light and a dark mode. Features never depend on the theme: ⌘K, keyboard
-shortcuts, Board view, charts and approvals work the same everywhere.
+shortcuts, the Flow pane and its Board map, charts and approvals work the same everywhere.
 
 ## 2. How theming works
 
@@ -72,11 +73,11 @@ both. Chart colours come from these tokens, so charts switch with the theme.
 The Board shows the conversation spatially: threads as frames, runs with their steps, files,
 and handoffs as edges. It is built on the Flow view's scene and renderer (`../flow-view.md`,
 D26, D27): the same scene data, laid out as a board instead of the Team or Timeline map. So it
-adds a layout, not a new architecture. Keyboard: arrows pan, `F` fits, `G B` toggles the view.
+adds a layout, not a new architecture. Keyboard: arrows pan, `F` fits, `G B` switches the Flow pane to the Board map.
 
-Open question for the owner: should "Chat + Board" replace the Flow pane (one split screen
-with Team, Timeline and Board tabs), or exist alongside it? The recommendation is to merge
-them: one split pane, three maps.
+Decided (D30): the Board is the third tab of the Flow pane (Team, Timeline, Board). There is
+one split screen with three maps; no separate Chat + Board layout. Built in slice M8b, after the
+pane and its first two maps exist (M8).
 
 ## 5. Verification
 

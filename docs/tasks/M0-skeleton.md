@@ -14,7 +14,7 @@ renders. Later slices only add features; they should never need to set up toolin
 `AGENTS.md`; `docs/architecture.md` (all); `docs/realtime-events.md` §1–3, §5;
 `docs/security.md` §2.1, §2.6, §2.8–2.11; `docs/testing.md` §1, §2, §4; `docs/porting-guide.md` §1; decisions D34, D35;
 `docs/requirements/app-shell.md` (layout only); `docs/design/screens.md` §1 (sketch, not final);
-`docs/design/themes.md` §2, §3, §5 (D30, proposed).
+`docs/design/themes.md` §2, §3, §5 (D30).
 
 ## In scope
 
@@ -51,8 +51,8 @@ renders. Later slices only add features; they should never need to set up toolin
   A shared `Skeleton` component (theme tokens, 200 ms delay, reduced-motion aware) used by the
   empty pages' loading state (`requirements/README.md`).
 - The transport interface and the SSE adapter, backend and frontend (`realtime-events.md` §1a).
-- Theme layer (D30, if accepted): semantic tokens as CSS variables, `frontend/src/themes/` with
-  one theme in light and dark, the `data-theme`/`data-mode` attributes with the no-flash
+- Theme layer (D30): semantic tokens as CSS variables, `frontend/src/themes/` with the
+  **Command** theme in light and dark (Material comes in slice T2), the `data-theme`/`data-mode` attributes with the no-flash
   script, and the lint rule against raw colours (`design/themes.md` §2). The Appearance
   settings UI comes later with the Settings page.
 - `tsconfig` and ESLint settings from `frontend-conventions.md` §3 for all three packages, the
@@ -106,4 +106,4 @@ Initial migration; security middleware; dependency list (all new); the port inte
 
 ## Open questions
 
-- D30: accepted or changed, and which theme ships first (owner).
+- None from D30: accepted, Command first.

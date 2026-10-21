@@ -15,21 +15,20 @@ Last updated: 2026-10-21
 Specification in the repository, now for a TypeScript stack: Hono, Drizzle, Vercel AI SDK,
 React + Vite (D34, replaces D10), with libraries behind ports (D35) and a `README.md` index per
 code folder for agents (`architecture.md` §4.2). Ids are UUIDv7 stored, TypeIDs outside the
-database (D22, D36).
+database (D22, D36). Themes accepted (D30): Command ships in M0, Material later (T2), and the
+Board is the Flow pane's third map (M8b).
 
 ## Next
 
 1. Owner confirms the Problem and Success measures in
    [product-brief.md](requirements/product-brief.md) (marked draft).
-2. Owner answers D30 (themes): accept, Board in the Flow pane, which theme first.
-3. Start M0 with the builder prompt in `workflow.md` §3.
+2. Start M0 with the builder prompt in `workflow.md` §3.
 
 ## Waiting on the owner
 
 | Item | Needed by |
 | --- | --- |
 | Product brief: Problem and Success measures | M0 |
-| Accept or change D30 (themes); answer its two open questions (`design/themes.md`) | M0 plan |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
 
 ## Slices
@@ -45,6 +44,8 @@ database (D22, D36).
 | M6 | not started | | |
 | M7 | not started | | |
 | M8 | not started | | |
+| M8b | not written | | Board map in the Flow pane (D30) |
+| T2 | not written | | Material theme (D30) |
 | M9 | not written | | VPS milestone |
 
 States: `not started` → `planning` → `UI design review` → `building` → `in review` → `merged`.

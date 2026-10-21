@@ -10,7 +10,7 @@ Global settings and per-conversation settings.
   Acceptance criteria: UI-8.2, UI-8.3.
 - **ST-3.** As the owner, I want per-conversation title, icon, discussion settings and members, so that each conversation fits its purpose.  
   Acceptance criteria: UI-9.1 to UI-9.5.
-- **ST-4.** As the owner, I want to choose the theme, light or dark mode, density and the default conversation view, so that the app looks and reads the way I like to work. *(Proposed, D30.)*  
+- **ST-4.** As the owner, I want to choose the theme, light or dark mode, density and whether the Flow pane opens by default, so that the app looks and reads the way I like to work. *(D30.)*  
   Acceptance criteria: UI-8.5.
 
 ## Acceptance criteria
@@ -30,9 +30,9 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
   at 100%. Note under the field: "Estimate only. Also set limits in your providers' consoles."
 - UI-8.4: Time settings: timezone (Local / UTC / any IANA zone) used by every time range
   picker and by server-side bucketing (`time-range-picker.md`, contract with the backend).
-- UI-8.5 *(proposed, D30)*: Appearance: theme (Command / Material), mode (Follow system /
-  Light / Dark), density (Theme default / Compact), default conversation view (Chat /
-  Chat + Board / Board), and "Always reduce motion". Changes apply instantly without reload,
+- UI-8.5 *(D30)*: Appearance: theme (Command; Material appears when slice T2 ships), mode
+  (Follow system / Light / Dark), density (Theme default / Compact), Flow pane default (Closed /
+  Team / Timeline / Board; Board appears with M8b), and "Always reduce motion". Changes apply instantly without reload,
   are saved in this browser, and the page never flashes the wrong theme on load
   (`../design/themes.md` §1, §2).
 

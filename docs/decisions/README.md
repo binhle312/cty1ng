@@ -59,7 +59,7 @@ Implemented in: links.
 | D27 | [Flow rendering is swappable; animations have hard budgets](D27-swappable-flow-renderer-with-animation-budgets.md) | accepted |
 | D28 | [TanStack Router and shadcn/ui on Base UI](D28-router-and-component-primitives.md) | accepted |
 | D29 | [SQLite now; switch to PostgreSQL on defined triggers](D29-sqlite-now-postgres-on-triggers.md) | accepted |
-| D30 | [Switchable themes (Command, Material) and conversation views](D30-themes-and-conversation-views.md) | proposed |
+| D30 | [Switchable themes (Command, Material) and conversation views](D30-themes-and-conversation-views.md) | accepted |
 | D31 | [Bots answering the same message see each other's replies](D31-later-bots-see-earlier-replies.md) | accepted |
 | D32 | [History budget is a per-bot share of the model's context window](D32-history-budget-from-model-context.md) | accepted |
 | D33 | [Zod for runtime validation in the frontend](D33-zod-for-frontend-runtime-validation.md) | accepted |

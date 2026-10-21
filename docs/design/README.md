@@ -10,7 +10,7 @@
 | --- | --- |
 | [screens.md](screens.md) | Text layout sketches for the shell, conversation page, statistics page and time range picker |
 | [concepts.md](concepts.md) | UI concept proposals (7 layouts, then 10 visual styles), compared; the owner picks one before M0 |
-| [themes.md](themes.md) | Theme system: Command and Material themes, modes, density, Board view, tokens (D30, proposed) |
+| [themes.md](themes.md) | Theme system: Command and Material themes, modes, density, Board map, tokens (D30) |
 | [mockups.md](mockups.md) | Links to visual mockups (Flow view Team, Timeline, Files) and what they illustrate |
 | `assets/` | Exported images (PNG or SVG) referenced from the files above |
 

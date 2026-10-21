@@ -96,7 +96,7 @@ mid-stream and keeps partial text; retry after a crash reuses the same message.
 
 Each slice's brief lists which of these steps must pass by its end.
 
-### Themes (D30, proposed)
+### Themes (D30)
 
 From M0, per `design/themes.md` §5: a token contrast test (WCAG AA), axe checks in every theme
 and mode, Playwright visual snapshots of the key screens per theme and mode, and a

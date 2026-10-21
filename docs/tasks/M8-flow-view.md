@@ -59,5 +59,5 @@ graph dependencies (React Flow, elkjs or dagre, react-resizable-panels).
 
 ## Open questions
 
-- D30 (proposed): whether the Board view joins this pane as a third map (Team, Timeline,
-  Board) or is a separate Chat + Board view. Recommendation: one pane, three maps.
+- None from D30: the Board is the pane's third map (D30, accepted) and is built in M8b. Keep
+  the tab strip and the renderer registry ready for a third map.

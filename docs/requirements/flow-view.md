@@ -2,8 +2,8 @@
 
 A pane beside the chat showing how bots communicate and work. Technical design: `../flow-view.md`.
 
-Open (D30, proposed): the Board view (`../design/themes.md` §4) may become a third map in this
-pane alongside Team and Timeline.
+The Board (`../design/themes.md` §4) is the third map in this pane, after Team and Timeline
+(D30). It is built in slice M8b; its stories are written with that brief.
 
 ## Stories
 

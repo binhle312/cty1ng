@@ -42,7 +42,7 @@ These hold on every screen, so stories do not repeat them:
 - Every hover tooltip also appears on keyboard focus.
 - Every drag-and-drop action has a keyboard or button alternative.
 - Every screen works in every theme and in both light and dark mode; mode follows the OS by
-  default (theme system: `../design/themes.md`, D30 proposed).
+  default (theme system: `../design/themes.md`, D30).
 - Components use semantic design tokens only, never raw colours, sizes or font names.
 - Components come from shadcn/ui (Base UI underneath, D28) for tooltips, dialogs, menus and toasts.
 
