@@ -63,19 +63,21 @@ documents and designs. There is no login; whoever opens `http://127.0.0.1:<port>
 
 ## Success measures (phase 1)
 
-Proposed; the owner confirms or changes them.
+Confirmed by the owner (2026-10-21).
 
 - Journey J1 below works end to end on a fresh machine in under 10 minutes from clone.
 - Every bot reply shows which skill versions it used and what it cost, from server records.
 - No bot-to-bot exchange exceeds the turn budget; no handoff happens without the owner's approval.
 - The owner can answer "where did the money go this week" from the statistics page alone.
-- *(Proposed, 2026-10-21.)* The owner uses the app for real work, instead of the prototype,
+- The owner uses the app for real work, instead of the prototype,
   for two consecutive weeks without falling back to the prototype.
-- *(Proposed, matches Problem 1.)* With the network limited to the configured model providers,
+- (Problem 1) With the network limited to the configured model providers,
   every journey in this brief still works: no other outside service is needed.
-- *(Proposed, matches Problem 2.)* During a discussion between three bots, the owner can say
+- (Problem 2) During a discussion between three bots, the owner can say
   from the Flow pane alone who is working, who is waiting, and what was handed to whom.
-- *(Proposed, matches Problem 4.)* Creating a bot, assigning two skills and adding it to a
+- (Problem 3) The owner changes a bot's behaviour by editing its persona or skills, or creates
+  a variant by cloning it (for example with another model or effort, D7), without touching code.
+- (Problem 4) Creating a bot, assigning two skills and adding it to a
   conversation takes under two minutes without reading documentation.
 
 ## Non-goals (phase 1)

@@ -16,19 +16,19 @@ Specification in the repository, now for a TypeScript stack: Hono, Drizzle, Verc
 React + Vite (D34, replaces D10), with libraries behind ports (D35) and a `README.md` index per
 code folder for agents (`architecture.md` §4.2). Ids are UUIDv7 stored, TypeIDs outside the
 database (D22, D36). Themes accepted (D30): Command ships in M0, Material later (T2), and the
-Board is the Flow pane's third map (M8b).
+Board is the Flow pane's third map (M8b). Product brief confirmed. All decisions needed for M0
+are made.
 
 ## Next
 
-1. Owner confirms the Success measures in
-   [product-brief.md](requirements/product-brief.md) (marked draft).
-2. Start M0 with the builder prompt in `workflow.md` §3.
+1. Owner merges PR #6 (decision review, TypeScript switch, confirmed product brief).
+2. Start M0 locally in Claude Code with the builder prompt in `workflow.md` §3.
 
 ## Waiting on the owner
 
 | Item | Needed by |
 | --- | --- |
-| Product brief: confirm the Success measures (four new ones proposed) | M0 |
+| Merge PR #6 | M0 |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
 
 ## Slices
