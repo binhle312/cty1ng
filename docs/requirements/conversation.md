@@ -22,6 +22,8 @@ Chatting with one or more bots: messages, streaming, mentions, edits and branche
   Acceptance criteria: UI-3.18, UI-3.19.
 - **CV-9.** As the owner, I want to see what happened to each message I send, including when it failed or is waiting for a bot, so that nothing I write gets lost or stuck silently.  
   Acceptance criteria: UI-3.20, UI-3.21.
+- **CV-10.** *(Proposed, D39.)* As the owner, I want to be warned before a password, API key or card number in my message or file is sent to a model, so that I don't leak secrets by accident.  
+  Acceptance criteria: UI-3.22, UI-3.23.
 
 ## Acceptance criteria
 
@@ -77,6 +79,12 @@ Messages
   Designer" (with Cancel while the run has not started), "Nobody mentioned", or nothing once
   the bots have started (the status reactions take over, UI-3.18). Messages sent while a bot
   works are never merged into the running turn (D11).
+- UI-3.22 *(proposed, D39)*: Before sending, the composer checks the text for likely secrets.
+  If any are found it lists them masked ("API key ending …9f2a", "card number ending 4242") with
+  Remove and "Send anyway". Without "Send anyway" the server refuses the message with 422
+  `sensitive_data`. Matched text is never logged.
+- UI-3.23 *(proposed, D39)*: Text attachments get the same check at upload. When an image or
+  PDF is attached, the composer notes "Images and PDFs are not checked for secrets".
 - UI-3.10: Scrolling up loads older messages (pagination by `before_seq`); new messages
   auto-scroll only when the view is already at the bottom; otherwise a "New messages" pill
   appears. A "New" divider sits above the first message after the owner's read position

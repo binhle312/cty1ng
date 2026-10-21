@@ -43,6 +43,7 @@ event log keeps the UI exact across reloads.
   message usage tooltip (UI-3.6b), bot usage panel (UI-6.8, fixed to "Last 7 days" until the
   shared time range picker arrives in M7), `GET /usage`.
 - Bot detail UI-6.7, 6.8 now filled.
+- Sensitive-data guard for message text (D39, if accepted): UI-3.22 and the server check.
 
 ## Out of scope
 

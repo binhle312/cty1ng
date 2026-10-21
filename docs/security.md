@@ -53,7 +53,8 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
 
 - Every path goes through `Workspace.resolve()`: refuses absolute paths, drive letters, `..`
   escapes, symlinks resolving outside the root, and anything under `.git`.
-- Writes only to the bot's `write_paths` plus `memory/<slug>.md`; `inbox/` is read-only.
+- Writes only to the bot's `write_paths`; `inbox/` is read-only. (Bot memory is not a
+  workspace file: it lives in the database behind the memory tools, D38, proposed.)
 - Read size limit (1 MB text); list limit (2,000 entries).
 - **No shell tool, no network tool, no code execution** in this milestone.
 - Each conversation's workspace is a separate folder; bots in one conversation cannot see
@@ -169,6 +170,18 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (ย
 | Server-side permissions | Single owner now; all writes go through services. M9: authorisation checked in services, never in the UI only. | ยง4 |
 | Block XSS | Specified: Markdown without raw HTML, CSP, sandboxed file viewer. | 2.2 |
 | Update dependencies | Specified: Dependabot, audits in CI. | 2.11 |
+
+### 2.13 Sensitive-data guard (D39, proposed)
+
+- Messages and text attachments are checked for likely secrets before they reach a model
+  provider. Matches are shown masked, and sending needs an explicit "Send anyway", which the
+  server checks (`confirm_sensitive`, 422 `sensitive_data`).
+- Memory writes with a match are refused, with no override.
+- Pattern-based and incomplete by nature: a warning, not a guarantee. Images and PDFs are not
+  scanned.
+- Matched text is never logged; only the kinds found are logged.
+- Memory items are data, not instructions, and project memory never reaches a bot outside its
+  project (D38).
 
 ## 3. Security tests (must exist)
 

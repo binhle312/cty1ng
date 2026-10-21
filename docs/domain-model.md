@@ -382,7 +382,6 @@ data/
   workspaces/<conversation_id>/             git repo per conversation
       inbox/<message_id>/<file>             attachments (bots: read-only)
       out/<bot-slug>/...                    default bot write path
-      memory/<bot-slug>.md                  bot's durable notes (always writable by that bot)
   trash/<conversation_id>/                  workspaces of deleted conversations
 ```
 
@@ -420,8 +419,9 @@ Usage is derived from `model_requests` (detail) and `runs` (totals). All figures
 | Today (for the cap) | sum of `estimated_cost_usd` for runs finished since local midnight, plus running runs' partial usage |
 
 Daily cap check (D20) happens when a run is claimed: if today's spend ≥ cap, the run is marked
-`failed` with error `daily_cap_reached` and a system notice is posted. The 80% warning is an
-event (`settings.updated` carries `today_spend_usd`), shown as a banner.
+`failed` with error `daily_cap_reached` and a system notice is posted. Crossing 75% and 90%
+(D40) emits a `spend.threshold_crossed` event once per threshold per day (the day it fired is
+stored in `settings`), shown as a banner, a toast and a system line.
 
 ### 13.1 Metric definitions (statistics page, D24)
 
@@ -442,3 +442,65 @@ event (`settings.updated` carries `today_spend_usd`), shown as a banner.
 Indexes for the statistics queries: `model_requests(finished_at)`, `runs(finished_at, bot_id)`,
 `run_skills(skill_version_id)`. Aggregation runs on demand in SQL; a pre-aggregated daily table
 is added only if UI-10.9 cannot be met.
+
+## 14. Projects and memory (proposed, D37, D38)
+
+Not built until the owner accepts D37 and D38; listed here so the schema is reviewed with the
+rest.
+
+```
+projects
+  id                        TEXT PK                    -- TypeID prefix `proj`
+  name                      TEXT NOT NULL              -- unique among non-deleted projects
+  description               TEXT NOT NULL DEFAULT ''   -- one line
+  memory_history_versions   INTEGER NULL               -- NULL = history off; 1..20 when on (default 5)
+  row_version               INTEGER NOT NULL DEFAULT 1
+  created_by, created_at
+  deleted_at                TIMESTAMP NULL             -- memory recoverable for 30 days
+
+conversations
+  + project_id              TEXT NULL REFERENCES projects(id)   -- NULL = outside any project
+
+bots
+  + memory_history_versions INTEGER NULL               -- NULL = history off (default at creation); 1..20
+
+memory_items
+  id                 TEXT PK                           -- TypeID prefix `mem`
+  scope              TEXT NOT NULL                     -- bot | project
+  bot_id             TEXT NULL REFERENCES bots(id)     -- set when scope = bot
+  project_id         TEXT NULL REFERENCES projects(id) -- set when scope = project
+  text               TEXT NOT NULL                     -- ≤ 500 chars; passed the sensitive-data guard (D39)
+  current_version    INTEGER NOT NULL DEFAULT 1
+  row_version        INTEGER NOT NULL DEFAULT 1
+  created_by_bot_id  TEXT NULL                         -- NULL = the owner
+  source_message_id  TEXT NULL REFERENCES messages(id) -- where it was learned
+  created_at, updated_at
+  deleted_at         TIMESTAMP NULL
+  CHECK ((scope = 'bot' AND bot_id IS NOT NULL AND project_id IS NULL)
+      OR (scope = 'project' AND project_id IS NOT NULL AND bot_id IS NULL))
+INDEX memory_items_bot ON memory_items(bot_id) WHERE deleted_at IS NULL
+INDEX memory_items_project ON memory_items(project_id) WHERE deleted_at IS NULL
+
+memory_item_versions                                    -- earlier texts; trimmed to the setting
+  memory_item_id     TEXT NOT NULL REFERENCES memory_items(id)
+  version            INTEGER NOT NULL
+  text               TEXT NOT NULL
+  changed_by_bot_id  TEXT NULL
+  changed_at         TIMESTAMP NOT NULL
+  PRIMARY KEY (memory_item_id, version)
+```
+
+- **Which scope a save goes to** is decided by the service, not the bot. In a 1:1 conversation
+  outside any project, the bot memory of that bot. In a project conversation, that project's
+  memory. In a multi-bot conversation outside a project, saves are refused (D38, owner to
+  confirm).
+- **Versions.** With history off, an update overwrites `text`, and only the previous text needed
+  for Undo is kept until the next change. With history on, the old text goes to
+  `memory_item_versions`, and rows beyond the setting are deleted in the same transaction.
+- **Limits:** 100 live items per bot and per project, enforced in the service with a
+  compare-and-set count (`architecture.md` §11).
+- New TypeID prefixes for D36: `proj`, `mem`.
+
+Invariants (to join §12 when accepted): a project memory item is never in the prompt of a run
+whose conversation is outside that project; a memory item's text never matches the
+sensitive-data guard.

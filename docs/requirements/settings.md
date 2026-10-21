@@ -26,8 +26,9 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
   ("genai-prices", "override" or "unknown", D21). Unknown prices are flagged with how to add an
   override in `config/models.yaml`.
 - UI-8.3: Daily spending cap in USD (empty = off), today's estimated spend with a progress bar,
-  and a breakdown by provider and by bot (D20, D21). A banner across the app appears at 80% and
-  at 100%. Note under the field: "Estimate only. Also set limits in your providers' consoles."
+  and a breakdown by provider and by bot (D20, D21). At 75% and again at 90% of the cap (D40)
+  the owner gets a banner across the app, a toast, and a system line in each conversation with
+  a queued or running run; each fires once per day. At 100% a banner says bots have stopped. Note under the field: "Estimate only. Also set limits in your providers' consoles."
 - UI-8.4: Time settings: timezone (Local / UTC / any IANA zone) used by every time range
   picker and by server-side bucketing (`time-range-picker.md`, contract with the backend).
 - UI-8.5 *(D30)*: Appearance: theme (Command; Material appears when slice T2 ships), mode

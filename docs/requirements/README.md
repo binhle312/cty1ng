@@ -9,7 +9,7 @@ lives in the technical documents one level up.
 
 | File | Stories | Acceptance criteria |
 | --- | --- | --- |
-| [product-brief.md](product-brief.md) | Problem, users, goals, success measures, non-goals, journeys J1–J6, glossary | (none; journeys are tested end to end) |
+| [product-brief.md](product-brief.md) | Problem, users, use cases and phases, goals, success measures, non-goals, trust failures, journeys J1–J6, glossary | (none; journeys are tested end to end) |
 | [app-shell.md](app-shell.md) | SH-1 to SH-3 | UI-1, UI-2 |
 | [conversation.md](conversation.md) | CV-1 to CV-7 | UI-3 |
 | [bots.md](bots.md) | BT-1 to BT-5 | UI-4, UI-5, UI-6 |
@@ -18,6 +18,7 @@ lives in the technical documents one level up.
 | [statistics.md](statistics.md) | SA-1 to SA-4 | UI-10 |
 | [time-range-picker.md](time-range-picker.md) | TR-1 to TR-2 | UI-11 |
 | [flow-view.md](flow-view.md) | FL-1 to FL-4 | UI-12 |
+| [projects-and-memory.md](projects-and-memory.md) *(proposed, D37, D38)* | PM-1 to PM-4 | UI-13 |
 
 ## Ids
 

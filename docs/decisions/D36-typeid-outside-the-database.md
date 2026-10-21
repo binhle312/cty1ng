@@ -16,7 +16,8 @@ Decision: Every id keeps the UUIDv7 value from D22. In the database it is stored
 | `conversations` | `conv` | | `handoffs` | `handoff` |
 | `messages` | `msg` | | | |
 
-A new table picks its prefix in the same PR that adds it, and this table is updated with it.
+A new table picks its prefix in the same PR that adds it, and this table is updated with it. Proposed with
+D37 and D38: `proj` (projects), `mem` (memory items).
 
 - **One conversion point.** A Drizzle custom column type in `adapters/db/` turns a TypeID into
   a UUID on write and back on read. No other code converts.

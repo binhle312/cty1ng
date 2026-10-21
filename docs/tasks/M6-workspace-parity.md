@@ -17,10 +17,11 @@ files), §6; `docs/requirements/conversation.md` (UI-3.3 cards, 3.13, 3.16).
 
 ## In scope
 
-- Full workspace port (git repo per conversation, `write_file`, `view_file`, commit, memory
-  file), with the prototype's workspace tests passing.
+- Full workspace port (git repo per conversation, or per project if D37 says so; `write_file`, `view_file`,
+  commit; memory is no longer a workspace file, D38), with the prototype's workspace tests passing.
 - Attachments: upload endpoint, `inbox/`, multimodal prompt building, binary stripping in
   history.
+- Sensitive-data guard for text attachments (D39, if accepted): UI-3.23.
 - Files panel and viewer with safe headers.
 - Handoffs: table, `propose_handoff` tool (D18 if accepted; otherwise ask), cards, decisions,
   stale detection, "Add <bot> and start", 24-hour limit.

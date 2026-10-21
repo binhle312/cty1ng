@@ -66,3 +66,7 @@ Implemented in: links.
 | D34 | [TypeScript on the backend and the frontend](D34-typescript-full-stack.md) | accepted |
 | D35 | [Ports and adapters at the edges, not "switch anything"](D35-ports-and-adapters-at-the-edges.md) | accepted |
 | D36 | [Ids are TypeIDs everywhere outside the database](D36-typeid-outside-the-database.md) | accepted |
+| D37 | [Projects group conversations](D37-projects-group-conversations.md) | proposed |
+| D38 | [Bot memory and project memory](D38-bot-memory-and-project-memory.md) | proposed |
+| D39 | [Sensitive-data guard before anything reaches a model or memory](D39-sensitive-data-guard.md) | proposed |
+| D40 | [Cost alerts at 75% and 90% of the daily cap](D40-cost-alerts-at-75-and-90.md) | accepted |

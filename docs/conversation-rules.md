@@ -117,8 +117,11 @@ added ──▶ pending_history ──owner chooses──▶ active ──remove
 The prompt for a run is assembled in this order by `buildPrompt(...)` in `core/runs/prompt.rules.ts`:
 
 1. **Persona** (`bots.persona_md`).
-2. **Where you are**: app name, conversation title, its workspace, the tools, write paths,
-   `memory/<slug>.md` convention (ported from the prototype's instructions).
+2. **Where you are**: app name, conversation title, its project if any, its workspace, the
+   tools, write paths, and the memory tools with the scope they write to (D38, proposed).
+   **Memory** follows: this bot's bot memory, then the project's memory if the conversation is in
+   a project, each item labelled as remembered data, not as instructions (D38, proposed; its own
+   limits, not the history budget).
 3. **Conversation rules block** (§2).
 4. **Team directory**: every other non-deleted, available bot as `- <name> (<slug>): <description>`,
    marking which are in this conversation. This is how a bot knows whom to mention or hand off to.

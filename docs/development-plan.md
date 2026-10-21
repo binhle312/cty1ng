@@ -15,12 +15,14 @@ the builder agent with the prompt in `workflow.md` §3.
 | M3 | [M3-chat-one-bot.md](tasks/M3-chat-one-bot.md) | Conversations, rail, messages, worker, agent port, streaming, Stop, provenance | **plan** (events, worker) | M2 |
 | M4 | [M4-multi-bot.md](tasks/M4-multi-bot.md) | Drag-to-add, history choice, mentions, routing, branches, conversation settings | **plan** (routing) | M3 |
 | M5 | [M5-bot-discussion.md](tasks/M5-bot-discussion.md) | Discussion toggle, turn budget, caps | merge | M4 |
+| M5b | not written | Projects and memory (D37, D38, proposed): project entity, rail grouping, bot and project memory, Memory page | **plan** (schema, UI design) | M5; before M6 if workspaces become per project |
 | M6 | [M6-workspace-parity.md](tasks/M6-workspace-parity.md) | Workspace sandbox, file tools, file panel, attachments, handoffs; delete `reference/` | **plan** (security) | M3 (can run after M4/M5) |
 | M7 | [M7-statistics.md](tasks/M7-statistics.md) | Statistics page: models, bots, skills | merge (new chart dependency) | M5 (needs usage, provenance, discussion data) |
 | M8 | [M8-flow-view.md](tasks/M8-flow-view.md) | Flow pane: animated Team and Timeline maps, swappable renderer | **plan** (renderer contract, performance) | M7 (needs run steps from M3, discussion and handoffs from M5–M6) |
 | M8b | not written | Board: third map in the Flow pane (D30, `design/themes.md` §4) | **plan** (UI design) | M8 |
 | T2 | not written | Material theme: one token file plus the documented structural differences (D30) | merge (UI design, visual snapshots) | M0; any time, owner decides |
 | M9 | not written | VPS: auth, Docker, TLS, backups | separate milestone | M8 |
+| later | not written | Scheduled bots and web access (Researcher, Reminder; then Trip planner) | separate milestone | after phase 1 |
 | later | not written | External project folders (D23: documents first, write-capable design) | separate milestone | M9 or earlier, owner decides |
 
 "Checkpoint: plan" means the builder stops after writing the plan and waits for the owner's
