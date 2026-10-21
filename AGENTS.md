@@ -35,6 +35,7 @@ Start with `docs/README.md` for the reading order.
 | HTTP endpoints | `docs/api.md` |
 | Pages and components | `docs/requirements/<area>.md` (behaviour); `docs/design/` (sketches, not final) |
 | The Flow pane, animations, renderers | `docs/flow-view.md` |
+| Design work with the `ui-ux-pro-max` skill | `docs/workflow.md` §2 (design skills) |
 | Styling, themes, design tokens | `docs/design/themes.md` (D30, proposed) |
 | Uploads, file tools, rendering bot output, request checks | `docs/security.md` |
 | Tests | `docs/testing.md` |
@@ -114,6 +115,10 @@ Mark these in the PR description under a heading `Needs human review` with one l
 - Never build SQL from strings (f-strings, `%`, `+`); use bound parameters and allowlists
   (`docs/security.md` §2.8).
 - Never return stack traces or internal errors to the client.
+- Never let a design skill's output override `docs/design/` or an approved plan, and never run
+  `ui-ux-pro-max` with `--persist` (it would create a second design source of truth).
+- Never edit vendored skills in `.agents/skills/` in place; update them from upstream
+  (`SOURCE.md`).
 
 ## 9. Definition of done (every PR)
 
