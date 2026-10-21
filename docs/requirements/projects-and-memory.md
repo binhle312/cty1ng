@@ -16,6 +16,9 @@ conversations. Technical design: `../domain-model.md` §11, §14.
   Acceptance criteria: UI-13.4, UI-13.6.
 - **PM-4.** As the owner, I want to see, edit, delete and recover what bots remember, so that
   nothing becomes permanent without my knowing. Acceptance criteria: UI-13.7 to UI-13.10.
+- **PM-5.** As the owner, I want bots in a multi-bot chat outside any project to remember facts
+  about that chat's topic, so that a quick team chat keeps its context without needing a
+  project. Acceptance criteria: UI-13.4, UI-13.11, UI-13.12.
 
 ## Acceptance criteria (UI-13)
 
@@ -34,14 +37,22 @@ conversations. Technical design: `../domain-model.md` §11, §14.
 - UI-13.6: Project memory is saved only in conversations inside the project, and is read only by
   bots in that project's conversations. A test proves a bot outside the project never receives
   it.
-- UI-13.7: A Memory page lists memory by scope (each bot; each project), with search. Each item
+- UI-13.7: A Memory page lists memory by scope (each bot; each project; each multi-bot
+  conversation outside a project), with search. Each item
   shows its text, who saved it, where, and when.
 - UI-13.8: The owner can edit or delete any item. When memory history is on, an item shows its
   earlier versions and the owner can restore one (UI-13.9).
-- UI-13.9: "Keep memory history" is a setting on bot detail (per bot) and on the project
-  (per project). It is off when a bot is created and on (5 versions) when a project is created,
-  because several bots write to project memory. Turning it on sets 5 versions per item,
+- UI-13.9: "Keep memory history" is a setting on bot detail (per bot), on the project (per
+  project), and in the settings of a multi-bot conversation outside a project. It is off when a
+  bot is created and on (5 versions) for projects and those conversations, because several bots
+  write to them. Turning it on sets 5 versions per item,
   adjustable from 1 to 20. Lowering the number asks for confirmation before deleting the
   older versions.
 - UI-13.10: A memory write that contains likely secrets is refused (D39). The bot is told why,
   and nothing is saved.
+- UI-13.11: In a conversation with several bots outside any project, bot saves go to that
+  conversation's memory ("Remembered · Conversation memory"), read only by the bots in that
+  conversation. Each bot still reads its own bot memory there.
+- UI-13.12: Moving such a conversation into a project lists its conversation memory with
+  checkboxes (all ticked) to merge into the project memory. Unticked items stay recoverable on
+  the Memory page for 30 days.

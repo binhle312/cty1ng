@@ -18,7 +18,7 @@ lives in the technical documents one level up.
 | [statistics.md](statistics.md) | SA-1 to SA-4 | UI-10 |
 | [time-range-picker.md](time-range-picker.md) | TR-1 to TR-2 | UI-11 |
 | [flow-view.md](flow-view.md) | FL-1 to FL-4 | UI-12 |
-| [projects-and-memory.md](projects-and-memory.md) | PM-1 to PM-4 | UI-13 |
+| [projects-and-memory.md](projects-and-memory.md) | PM-1 to PM-5 | UI-13 |
 
 ## Ids
 

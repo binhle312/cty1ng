@@ -460,15 +460,17 @@ projects
 
 conversations
   + project_id              TEXT NULL REFERENCES projects(id)   -- NULL = outside any project
+  + memory_history_versions INTEGER NULL DEFAULT 5     -- used only for conversation memory (multi-bot, no project)
 
 bots
   + memory_history_versions INTEGER NULL               -- NULL = history off (default at creation); 1..20
 
 memory_items
   id                 TEXT PK                           -- TypeID prefix `mem`
-  scope              TEXT NOT NULL                     -- bot | project
+  scope              TEXT NOT NULL                     -- bot | project | conversation
   bot_id             TEXT NULL REFERENCES bots(id)     -- set when scope = bot
   project_id         TEXT NULL REFERENCES projects(id) -- set when scope = project
+  conversation_id    TEXT NULL REFERENCES conversations(id) -- set when scope = conversation
   text               TEXT NOT NULL                     -- ≤ 500 chars; passed the sensitive-data guard (D39)
   current_version    INTEGER NOT NULL DEFAULT 1
   row_version        INTEGER NOT NULL DEFAULT 1
@@ -476,10 +478,12 @@ memory_items
   source_message_id  TEXT NULL REFERENCES messages(id) -- where it was learned
   created_at, updated_at
   deleted_at         TIMESTAMP NULL
-  CHECK ((scope = 'bot' AND bot_id IS NOT NULL AND project_id IS NULL)
-      OR (scope = 'project' AND project_id IS NOT NULL AND bot_id IS NULL))
+  CHECK ((scope = 'bot' AND bot_id IS NOT NULL AND project_id IS NULL AND conversation_id IS NULL)
+      OR (scope = 'project' AND project_id IS NOT NULL AND bot_id IS NULL AND conversation_id IS NULL)
+      OR (scope = 'conversation' AND conversation_id IS NOT NULL AND bot_id IS NULL AND project_id IS NULL))
 INDEX memory_items_bot ON memory_items(bot_id) WHERE deleted_at IS NULL
 INDEX memory_items_project ON memory_items(project_id) WHERE deleted_at IS NULL
+INDEX memory_items_conversation ON memory_items(conversation_id) WHERE deleted_at IS NULL
 
 memory_item_versions                                    -- earlier texts; trimmed to the setting
   memory_item_id     TEXT NOT NULL REFERENCES memory_items(id)
@@ -492,14 +496,15 @@ memory_item_versions                                    -- earlier texts; trimme
 
 - **Which scope a save goes to** is decided by the service, not the bot. In a 1:1 conversation
   outside any project, the bot memory of that bot. In a project conversation, that project's
-  memory. In a multi-bot conversation outside a project, saves are refused (D38).
+  memory. In a multi-bot conversation outside a project, that conversation's memory (D38).
 - **Versions.** With history off, an update overwrites `text`, and only the previous text needed
   for Undo is kept until the next change. With history on, the old text goes to
   `memory_item_versions`, and rows beyond the setting are deleted in the same transaction.
-- **Limits:** 100 live items per bot and per project, enforced in the service with a
+- **Limits:** 100 live items per bot, per project and per conversation, enforced in the service with a
   compare-and-set count (`architecture.md` §11).
 - New TypeID prefixes for D36: `proj`, `mem`.
 
 Invariants (part of §12): a project memory item is never in the prompt of a run
-whose conversation is outside that project; a memory item's text never matches the
+whose conversation is outside that project, and a conversation memory item never outside its
+conversation; a memory item's text never matches the
 sensitive-data guard.

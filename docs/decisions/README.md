@@ -67,6 +67,6 @@ Implemented in: links.
 | D35 | [Ports and adapters at the edges, not "switch anything"](D35-ports-and-adapters-at-the-edges.md) | accepted |
 | D36 | [Ids are TypeIDs everywhere outside the database](D36-typeid-outside-the-database.md) | accepted |
 | D37 | [Projects group conversations](D37-projects-group-conversations.md) | accepted |
-| D38 | [Bot memory and project memory](D38-bot-memory-and-project-memory.md) | accepted |
+| D38 | [Bot, project and conversation memory](D38-bot-memory-and-project-memory.md) | accepted |
 | D39 | [Sensitive-data guard before anything reaches a model or memory](D39-sensitive-data-guard.md) | accepted |
 | D40 | [Cost alerts at 75% and 90% of the daily cap](D40-cost-alerts-at-75-and-90.md) | accepted |

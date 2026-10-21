@@ -83,7 +83,8 @@ given the order. Nothing runs while the laptop sleeps or the app is closed; that
 10. **Flow view**: an animated Team and Timeline map beside the chat (D26, D27).
 11. **Projects and memory** (D37, D38): conversations grouped into projects; bots
     remember how the owner likes them to work (bot memory) and facts about each project
-    (project memory), visible and editable on a Memory page.
+    (project memory), or about a multi-bot chat outside a project (conversation memory), visible
+    and editable on a Memory page.
 12. **Sensitive-data guard** (D39): likely secrets (passwords, API keys, card or
     passport numbers) are caught before they are sent to a model provider or saved to memory.
 13. **Cost alerts** (D40): the owner is told at 75% and 90% of the daily cap; at the cap, bots
@@ -210,5 +211,6 @@ Use these words, with these meanings, in code, database, API, UI and docs.
 | **Project** | A named group of conversations with a shared project memory (and, later, an attached folder, D23). A conversation may sit outside any project (D37). |
 | **Bot memory** | What a bot has learned about how the owner likes it to work, from 1:1 chats outside projects. Used by that bot everywhere (D38). |
 | **Project memory** | Facts about the work, learned in a project's conversations and shared by every bot in that project, never outside it (D38). |
-| **Memory item** | One remembered statement. Earlier versions are kept when memory history is on: off by default for a bot, on for a project, 5 versions when on (D38). |
+| **Conversation memory** | Facts learned in a multi-bot conversation outside any project, shared by the bots in that conversation only; offered for merging into a project when the conversation moves into one (D38). |
+| **Memory item** | One remembered statement. Earlier versions are kept when memory history is on: off by default for a bot, on for a project or conversation, 5 versions when on (D38). |
 | **Provenance** | The skills (and versions) a run loaded, shown as chips on the bot message. |
