@@ -1,6 +1,6 @@
 # D35. Ports and adapters at the edges, not "switch anything"
 
-Status: proposed (2026-10-21). Asked for by the owner: the code must not be glued to one stack,
+Status: accepted (2026-10-21, owner). Asked for by the owner: the code must not be glued to one stack,
 so parts can be swapped.
 Decision: The core (domain rules and services) is plain TypeScript. It owns an interface (a
 "port") for each external dependency, and each library sits behind an adapter that implements
@@ -23,10 +23,10 @@ that port. Only the edges are swappable; the language, UI library and shared sch
 - **The unit of work is part of the persistence port.** A state change and its event commit in
   one transaction (architecture rule 3), so a service runs both inside one
   `uow.run(tx => …)`. Without it, swapping the database would break that guarantee silently.
-- **Adapters live in their own folders** (`backend/src/adapters/<port>/<impl>/`). Hono
+- **Adapters live in their own folders** (`backend/src/adapters/<system>/`, `architecture.md` §4). Hono
   handlers stay thin: parse with Zod, call a service, map the result to a response.
 - **Enforced in CI**, not by review:
-  - Import-boundary rules (dependency-cruiser, chosen in M0) fail the build when the core
+  - Import-boundary rules (dependency-cruiser, `architecture.md` §4.1) fail the build when the core
     imports an adapter or a vendor package.
   - Each port has one contract test suite, and every adapter must pass it. The SSE transport
     and the fake model already work this way.
@@ -55,8 +55,8 @@ Rejected:
   does not need. Plain constructor arguments are enough.
 Consequences:
 - M0 sets up the folder layout, the dependency-cruiser config and the first contract suites.
-- `../architecture.md` and AGENTS.md §5 change when the docs switch to TypeScript (D34), and
-  the owner approves that change.
+- `../architecture.md` §2 and §4.1 describe the ports and import rules; AGENTS.md §5 rule 10
+  points agents to them.
 - Hono's built-in middleware (CORS, `secureHeaders`, `bodyLimit`) stays in the HTTP adapter.
   Moving off Hono means re-wiring that middleware, which is accepted.
-Implemented in: pending (`../architecture.md` with the D34 docs switch).
+Implemented in: `../architecture.md` §2, §4.1; `../tasks/M0-skeleton.md`.

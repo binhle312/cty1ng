@@ -12,14 +12,13 @@ Last updated: 2026-10-21
 
 ## Now
 
-Specification in the repository. Owner accepted TypeScript for the backend (D34, replaces D10).
-Backend and frontend framework picks are with the owner; the docs still describe the Python
-stack until they are chosen, then switch in one pass. D22 (ids) is being re-examined.
+Specification in the repository, now for a TypeScript stack: Hono, Drizzle, Vercel AI SDK,
+React + Vite (D34, replaces D10), with libraries behind ports (D35) and a `README.md` index per
+code folder for agents (`architecture.md` §4.2). D22 (ids) is being re-examined.
 
 ## Next
 
-1. Owner picks the TypeScript frameworks (D34) and decides D22 (comparisons posted in the
-   project chat). Then the docs switch from Python to TypeScript in one pass.
+1. Owner decides D22 (comparison posted in the project chat).
 2. Owner confirms the Problem and Success measures in
    [product-brief.md](requirements/product-brief.md) (marked draft).
 3. Owner answers D30 (themes): accept, Board in the Flow pane, which theme first.
@@ -29,9 +28,7 @@ stack until they are chosen, then switch in one pass. D22 (ids) is being re-exam
 
 | Item | Needed by |
 | --- | --- |
-| D34: confirm Drizzle, Vercel AI SDK, pg-boss, and keeping D28 (Hono chosen) | M0 |
 | D22: id format | M0 |
-| D35: accept ports and adapters (which parts are swappable) | M0 |
 | Product brief: Problem and Success measures | M0 |
 | Accept or change D30 (themes); answer its two open questions (`design/themes.md`) | M0 plan |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |

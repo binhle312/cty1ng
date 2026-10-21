@@ -1,7 +1,7 @@
 # HTTP API
 
-This document owns the endpoint list, shapes and error codes. FastAPI's OpenAPI schema
-(`/api/openapi.json`) is generated from the code and is the machine-readable contract; the
+This document owns the endpoint list, shapes and error codes. The OpenAPI schema
+(`/api/openapi.json`) is generated from the Hono routes' Zod schemas (`@hono/zod-openapi`) and is the machine-readable contract; the
 frontend client is generated from it (`pnpm gen:api`). CI fails if the generated client is out
 of date. When this document and the OpenAPI schema disagree, raise it.
 
@@ -9,7 +9,7 @@ of date. When this document and the OpenAPI schema disagree, raise it.
 
 - Base path `/api`. JSON in and out (`multipart/form-data` for uploads).
 - Ids are UUIDv7 strings (D22). Timestamps are ISO-8601 UTC.
-- Request schemas forbid unknown fields (`extra="forbid"`) so typos and forbidden fields
+- Request schemas forbid unknown fields (Zod `.strict()`) so typos and forbidden fields
   (like `model_id` on bot update) fail loudly with 422.
 - Lists are cursor-paginated where they can grow: `?before_seq=` / `?limit=` (max 100).
 - Create returns `201` with the created object. Delete/deprecate returns `204` or the updated

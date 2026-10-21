@@ -16,7 +16,8 @@ D7, D12, D16, D19; `docs/api.md` §3, §4; `docs/requirements/app-shell.md` (UI-
 
 ## In scope
 
-- `config/models.yaml` and `catalog/` (loader, availability, effort mapping per provider).
+- `config/models.yaml`, `core/catalog/` (loader, availability) and the effort mapping per
+  provider in `adapters/model/ai-sdk/`.
   Check current model ids and effort parameters in the providers' documentation and record
   what you checked in the PR.
 - Tables `bots`, `bot_skills`; slug generation (D19); one-line `description` (D18).

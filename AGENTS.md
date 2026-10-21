@@ -10,7 +10,8 @@ lives in `docs/`, and this file tells you which document to open for which task.
 
 A local-first web chat app where one human talks with AI role bots (BA, Designer, …). Bots have
 personas, versioned skills, a per-conversation file workspace, and can hand work to each other
-through human approvals. Backend: Python (FastAPI). Frontend: React + TypeScript.
+through human approvals. TypeScript everywhere (D34): backend on Node with Hono, Drizzle and the
+Vercel AI SDK; frontend React + Vite. Libraries sit behind ports (D35).
 
 Start with `docs/README.md` for the reading order.
 
@@ -42,27 +43,26 @@ Start with `docs/README.md` for the reading order.
 | Tests | `docs/testing.md` |
 | Moving code from the old Discord project | `docs/porting-guide.md` |
 | How to work, branch, review | `docs/workflow.md` |
+| Finding a file in the code | The folder's `README.md` index (`docs/architecture.md` §4.2) |
+| Ports, adapters, import rules | `docs/architecture.md` §2, §4.1 (D35) |
 
 ## 4. Commands
 
 Run these from the repository root. All must pass before you open or update a PR.
 
 ```bash
-# backend
-cd backend
-uv sync                         # install
-uv run ruff check . && uv run ruff format --check .
-uv run pyright
-uv run pytest
-uv run alembic upgrade head     # apply migrations to the local DB
-
-# frontend
-cd frontend
-pnpm install
+pnpm install                    # whole workspace: shared, backend, frontend
+pnpm lint                       # ESLint, Prettier check, import rules (dependency-cruiser)
+pnpm typecheck                  # tsc across all packages
+pnpm test                       # Vitest: unit, service, API and contract tests
+pnpm check:index                # every indexed folder's README.md lists its files (§5 rule 9)
 pnpm gen:api                    # regenerate the typed API client from the backend's OpenAPI
-pnpm lint && pnpm typecheck
-pnpm test                       # Vitest
 pnpm e2e                        # Playwright, uses the fake model
+
+# database (backend)
+pnpm --filter backend db:generate   # write a migration after changing the Drizzle schema
+pnpm --filter backend db:migrate    # apply migrations to the local DB
+pnpm --filter backend db:check      # schema and migrations agree (also in CI)
 
 # whole app (development)
 make dev                        # backend on 127.0.0.1:8000, frontend on 127.0.0.1:5173
@@ -72,19 +72,27 @@ If a command in this list does not exist yet (early slices), creating it is part
 
 ## 5. Architecture rules (do not break these)
 
-1. `backend/app/domain/` contains pure functions and types only: no database, no HTTP, no
-   model calls, no clock (time is passed in). Routing and budget rules live here.
-2. Routers in `backend/app/api/` do validation and call services; they hold no business rules.
+1. `*.rules.ts` files in `backend/src/core/` are pure functions and types only: no database,
+   no HTTP, no model calls, no clock (time is passed in). Routing and budget rules live here.
+2. Hono handlers in `backend/src/adapters/http/` parse input, call one service and map the
+   result; they hold no business rules.
 3. Every state change visible in the UI is written as an **event** in the same transaction as
    the change (`docs/realtime-events.md`).
 4. The frontend calls the backend only through the generated client in
-   `frontend/src/api/generated/`. Never hand-write fetch calls for API endpoints. Never edit
+   `frontend/src/lib/api/generated/`. Never hand-write fetch calls for API endpoints. Never edit
    generated files by hand.
 5. Bot `model_id` and `effort` are never updated after insert. Skill versions are never updated
    or deleted. Messages are never edited in place (edits create branches).
 6. API keys come only from environment variables. Never store, log, return or render them.
-7. Bot file tools go through `Workspace.resolve()`; never open a workspace path any other way.
+7. Bot file tools go through the workspace port, whose `resolve()` is the only way a workspace
+   path becomes a disk path; never open a workspace path any other way.
 8. Bot output is untrusted: render Markdown with raw HTML disabled.
+9. **Folder indexes** (`docs/architecture.md` §4.2): before opening files in an indexed folder,
+   read its `README.md` to find the right one. When you add, remove, rename a file or change
+   what it is for, update that table in the same commit.
+10. **Ports and adapters** (D35, `docs/architecture.md` §2, §4.1): `core/` never imports an
+    adapter or the library an adapter wraps; adapters never import each other; only
+    `backend/src/app/` wires them. A new adapter must pass its port's contract suite.
 
 ## 6. What you may do without asking
 
@@ -96,7 +104,7 @@ If a command in this list does not exist yet (early slices), creating it is part
 ## 7. What needs the human's approval (stop and ask, or flag it clearly in the PR)
 
 - New or changed **database migrations**.
-- Changes to **security-sensitive code**: `workspace/`, upload handling, origin/host checks,
+- Changes to **security-sensitive code**: `adapters/workspace/`, upload handling, origin/host checks,
   Markdown rendering, anything touching secrets.
 - **New dependencies** (backend or frontend), including major version bumps.
 - Changes to `docs/decisions/`, to this file, or to the public API shape.
@@ -134,10 +142,11 @@ Mark these in the PR description under a heading `Needs human review` with one l
 
 ## 10. Conventions
 
-- Python: type hints everywhere, Pydantic models for API schemas, `async` for I/O,
-  UUIDv7 ids (`app.ids.new_id()`, D22), UTC timestamps.
-- TypeScript: the rules in `docs/frontend-conventions.md` (lint-enforced), function components, TanStack Query for server state, no global
-  state library unless a task says so.
+- TypeScript, backend and frontend: the rules in `docs/frontend-conventions.md`
+  (lint-enforced), Zod schemas for every API body and boundary value, `async`/`await` for I/O,
+  UUIDv7 ids from the ids port (D22), UTC timestamps, kebab-case file names.
+- Frontend: function components, TanStack Query for server state, no global state library
+  unless a task says so.
 - Names: the same concept has the same name in docs, database, API and UI (see the glossary in
   `docs/requirements/product-brief.md`).
 - Commits: small, imperative subject line (`Add skill version pinning`), body explains why.

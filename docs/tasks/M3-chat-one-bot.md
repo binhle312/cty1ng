@@ -12,7 +12,7 @@ event log keeps the UI exact across reloads.
 
 ## Read first
 
-`docs/architecture.md` §4–5; `docs/domain-model.md` §3.6–3.7, §5–8; `docs/conversation-rules.md`
+`docs/architecture.md` §6–5; `docs/domain-model.md` §3.6–3.7, §5–8; `docs/conversation-rules.md`
 §1 (one-bot rows), §3 (simplified: see below), §4; `docs/realtime-events.md` (all); `docs/domain-model.md` §3.8;
 `docs/api.md` §5; `docs/requirements/app-shell.md` (UI-1), `docs/requirements/conversation.md`; `docs/porting-guide.md` §2–3 (agent, db, service rows);
 `docs/testing.md` §2–3.
@@ -31,7 +31,7 @@ event log keeps the UI exact across reloads.
   design review picks them.
 - Send states for human messages with idempotent `client_id` (UI-3.20), message disposition
   and cancelling one queued run (UI-3.21), typing/working states with elapsed time (UI-3.4,
-  3.5), the stall timeout (`architecture.md` §4), clearing live indicators on disconnect
+  3.5), the stall timeout (`architecture.md` §6), clearing live indicators on disconnect
   (`realtime-events.md` §3), and `last_read_seq` with the "New" divider (UI-3.10).
 - `domain.decide_runs` for the one-bot rows; `visible_history` with full history.
 - Rail (UI-1.1–1.6 except presets), conversation page (UI-3.1–3.7, 3.10, 3.14–3.15 without

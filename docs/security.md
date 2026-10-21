@@ -16,7 +16,7 @@ trusted:
 | **Uploaded files** (avatars, attachments, skill zips) | Crafted files | SVG with script; zip with `../` paths (zip slip); huge zip (zip bomb) |
 | **Skill text** | Becomes prompt text; future multi-user authors | A skill telling bots to exfiltrate files |
 
-Out of scope for phase 1: other OS users on the same machine, a compromised Python
+Out of scope for phase 1: other OS users on the same machine, a compromised Node
 environment, provider-side data handling.
 
 ## 2. Controls
@@ -64,9 +64,9 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
 
 | Upload | Accepted | Checks |
 | --- | --- | --- |
-| Avatar | PNG, JPEG, WebP ≤ 2 MB | Detect type from content (Pillow), reject others incl. SVG; strip metadata; re-encode to 256×256 WebP; store by SHA-256 |
+| Avatar | PNG, JPEG, WebP ≤ 2 MB | Detect type from content (`sharp`), reject others incl. SVG; strip metadata; re-encode to 256×256 WebP; store by SHA-256 |
 | Attachment | Text (`.md .txt .csv .json .yaml .html .css .js .ts .py .sql .xml .svg`), images, PDF; 10 files × 10 MB | Sanitised file name; saved under `inbox/<message_id>/`; SVG and HTML are only ever shown as text |
-| Skill zip | `.zip` ≤ 5 MB, ≤ 200 entries, ≤ 20 MB uncompressed | Reject entries with absolute paths or `..` (zip slip); only `<slug>/SKILL.md` read; UTF-8 only; YAML via `yaml.safe_load`; frontmatter validated by a Pydantic model |
+| Skill zip | `.zip` ≤ 5 MB, ≤ 200 entries, ≤ 20 MB uncompressed | Reject entries with absolute paths or `..` (zip slip); only `<slug>/SKILL.md` read; UTF-8 only; YAML parsed with the `yaml` package's default core schema (no custom tags); frontmatter validated by a Zod schema |
 
 ### 2.5 Skills, personas and prompt injection
 
@@ -96,26 +96,29 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
 
 ### 2.8 Database queries (SQL injection)
 
-- All queries go through SQLAlchemy with bound parameters. Raw SQL is allowed only as
-  `text()` with named bind parameters, never built with f-strings, `%` or `+` on user input.
-  Ruff rule `S608` (and the rest of the `S` bandit set) is on in CI.
+- All queries go through Drizzle's query builder, which binds parameters. Raw SQL is allowed
+  only through Drizzle's `sql` tagged template, which binds every `${value}`; never built with
+  template strings or `+` on user input. ESLint bans `sql.raw()` and `db.run`/`db.execute` with
+  a string argument outside reviewed, commented exceptions, and `eslint-plugin-drizzle`
+  requires a `where` on every `update` and `delete`.
 - Identifiers cannot be bound, so anything that picks a column, sort order or table from a
   request (for example `metric=` and `sort=` on the statistics API) is mapped through an
-  allowlist `dict` in the service; unknown values return 422.
+  allowlist object (`Record<…>` with `satisfies`) in the service; unknown values return 422.
 - `LIKE` searches escape `%` and `_`.
 - A test sends classic injection strings (`' OR 1=1 --`, `"; DROP TABLE`) to every text and
   query parameter and checks they are stored or rejected literally.
 
 ### 2.9 Input validation
 
-- Every request body and query string is a Pydantic model with `extra="forbid"`, length
+- Every request body and query string is a Zod schema with `.strict()` (unknown keys rejected), length
   limits and enums; the server validates even what the form already checked. Form validation
   in the browser is for usability only.
 - IDs are parsed as UUIDs before they reach a query.
 
 ### 2.10 Errors, debugging and logs
 
-- Production builds run with FastAPI `debug=False`, no `--reload`, no Vite source maps, and
+- Production builds run with `NODE_ENV=production`, no watch mode, no Vite source maps, Hono's
+  error handler returning the generic error shape, and
   the OpenAPI docs page only when `APP_ENV=dev`.
 - Error responses carry a code and a short message, never a stack trace, SQL or file path.
   The full error is logged server side with a request id that the response also returns.
@@ -124,9 +127,10 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
 
 ### 2.11 Supply chain and review
 
-- Lockfiles committed (`uv.lock`, `pnpm-lock.yaml`); CI installs with `--frozen` /
-  `--frozen-lockfile`.
-- CI runs `pip-audit` and `pnpm audit --audit-level high`; Dependabot opens weekly update
+- Lockfile committed (`pnpm-lock.yaml`); CI installs with `--frozen-lockfile`. pnpm runs
+  dependency install scripts only for packages listed in `onlyBuiltDependencies` (native ones
+  such as `better-sqlite3` and `sharp`).
+- CI runs `pnpm audit --audit-level high`; Dependabot opens weekly update
   PRs. New dependencies need the owner's approval (`AGENTS.md` §7).
 - The repository is public: GitHub secret scanning and push protection are on, and
   `.gitignore` excludes `.env*` (except `.env.example`), `data/`, and local databases.

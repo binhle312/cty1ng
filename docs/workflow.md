@@ -97,8 +97,8 @@ Allowed in parallel, in separate git worktrees and branches:
   agreed in the plan (the generated client is the contract).
 - Documentation-only changes.
 
-Not in parallel: two slices that touch the same tables or migrations (Alembic revisions would
-conflict), or anything in `domain/` at the same time.
+Not in parallel: two slices that touch the same tables or migrations (drizzle-kit migrations
+would conflict), or anything in the same `*.rules.ts` file at the same time.
 
 ## 6. PR description template
 
@@ -113,7 +113,7 @@ Link to the brief and decisions.
 | AC | Evidence |
 | --- | --- |
 | UI-2.4 | `e2e/header-drag.spec.ts` "drop adds bot" + screenshot |
-| conversation-rules §1 table | `tests/domain/test_routing.py::test_human_message[...]` |
+| conversation-rules §1 table | `decide-runs.rules.test.ts` "human message: …" rows |
 
 ## Needs human review
 - Migration `0003_skill_versions` (new tables, no data change)
@@ -121,6 +121,10 @@ Link to the brief and decisions.
 
 ## Docs updated
 - docs/domain-model.md §3 (added changelog column)
+
+## Folder indexes
+- README.md tables updated for every added, removed, renamed or repurposed file, and the
+  descriptions still match what the files do (or "no file changes")
 
 ## Follow-ups (not done here)
 - ...

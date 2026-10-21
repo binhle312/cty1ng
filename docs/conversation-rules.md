@@ -1,19 +1,22 @@
 # Conversation rules
 
 This document owns the behaviour of conversations: who runs, when, and what each bot sees.
-Everything here is implemented in `backend/app/domain/` as pure functions and tested with
+Everything here is implemented in `*.rules.ts` files in `backend/src/core/` as pure functions and tested with
 tables (see `testing.md`). Services gather state, call these functions, and act on the result.
 
-```python
-# domain/routing.py — the central function
-def decide_runs(trigger: TriggerMessage, state: ConversationState, settings: EffectiveSettings,
-                ) -> RoutingDecision: ...
+```ts
+// core/conversations/decide-runs.rules.ts — the central function
+export function decideRuns(input: {
+  trigger: TriggerMessage;
+  state: ConversationState;
+  settings: EffectiveSettings;
+}): RoutingDecision;
 
-@dataclass(frozen=True)
-class RoutingDecision:
-    runs: list[RunRequest]          # in execution order
-    notices: list[Notice]           # system messages to post (e.g. "limit reached", hints)
-    bot_turns_used: int             # new counter value
+export type RoutingDecision = Readonly<{
+  runs: readonly RunRequest[];   // in execution order
+  notices: readonly Notice[];    // system messages to post (e.g. "limit reached", hints)
+  botTurnsUsed: number;          // new counter value
+}>;
 ```
 
 ## 1. Who replies to a human message (D3)
@@ -69,11 +72,11 @@ When a run finishes, `decide_runs` is called with the bot's message as trigger:
 - **Safety cap:** independent of the budget, at most `RUNS_PER_CONVERSATION_PER_HOUR` (default
   50) runs per conversation per rolling hour; beyond it runs are refused with a notice.
 - **Stop:** cancels all queued runs and the running one in the conversation (`architecture.md`
-  §4) and posts "Stopped by owner".
+  §6) and posts "Stopped by owner".
 
 ### The rules block in every prompt
 
-Built by `domain/prompt.py::conversation_rules_block(...)`:
+Built by `conversationRulesBlock(...)` in `core/runs/prompt.rules.ts`:
 
 ```
 ## Conversation rules
@@ -111,7 +114,7 @@ added ──▶ pending_history ──owner chooses──▶ active ──remove
 
 ## 4. What a bot sees
 
-The prompt for a run is assembled in this order by `agent/prompt.py`:
+The prompt for a run is assembled in this order by `buildPrompt(...)` in `core/runs/prompt.rules.ts`:
 
 1. **Persona** (`bots.persona_md`).
 2. **Where you are**: app name, conversation title, its workspace, the tools, write paths,
@@ -132,7 +135,8 @@ transcript (below).
 
 ### Visible history
 
-`domain/history.py::visible_history(path, member, context_window_tokens) -> list[TranscriptLine]`
+`visibleHistory({ path, member, contextWindowTokens }): TranscriptLine[]` in
+`core/conversations/visible-history.rules.ts`
 
 - Take the **active path** (§6) from the root to the **active leaf at the moment the run
   starts** (not only up to the trigger). So when one message mentions several bots, each bot

@@ -67,7 +67,7 @@ Messages
   the spec names the states only.
 - UI-3.19: Hovering or focusing a status reaction shows "<Bot>: received 17:04:02 · started
   17:04:05 · done 17:04:41"; while working it adds the time since the last progress (P2 stall
-  timeout, `../architecture.md` §4). Reactions survive reload (they are derived from run state, not
+  timeout, `../architecture.md` §6). Reactions survive reload (they are derived from run state, not
   stored separately) and are announced to screen readers when they change.
 - UI-3.20: A human message whose POST fails shows "Not sent" with Retry and Delete (Delete is
   local only). Any later unsent message in the same conversation is marked "Not sent" too, so

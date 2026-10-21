@@ -27,18 +27,19 @@ Tailwind utilities ─┘                                        ▲
                                                              │
           <html data-theme="material" data-mode="dark" data-density="default">
                                                              │
-          frontend/src/theme/command.css    material.css     (token values per theme × mode)
+          frontend/src/themes/command.css    material.css     (token values per theme × mode)
 ```
 
 Rules:
 
 1. **One component set.** Components use semantic tokens only (`bg-surface`,
    `text-on-surface`, `rounded-control`), never raw colours, sizes or font names. A lint rule
-   rejects hex colours and arbitrary Tailwind values in `frontend/src/components/`.
+   rejects hex colours and arbitrary Tailwind values in `frontend/src/components/` and
+   `frontend/src/features/`.
 2. **A theme is a token file**, nothing else. Adding a theme means adding one CSS file and one
    entry in the theme list.
 3. **Allowed exceptions** (structure that differs by theme) live in one place,
-   `frontend/src/theme/variants.ts`, and are listed here: Material shows labels under rail
+   `frontend/src/themes/variants.ts`, and are listed here: Material shows labels under rail
    icons; Command shows keyboard hints in buttons. Anything else needs this document updated.
 4. **No second component library.** Material is reproduced with tokens on Base UI, not with MUI.
    We get the Material look, not Google's components (no ripple, no exact M3 motion specs). Two
@@ -82,6 +83,6 @@ them: one split pane, three maps.
 - **Contrast test:** a unit test reads every token file and checks text and icon pairs against
   WCAG AA (4.5:1 text, 3:1 large text and UI).
 - **Visual snapshots:** Playwright screenshots of 8 key screens × 2 themes × 2 modes, reviewed
-  in PRs that touch `frontend/src/theme/` or shared components.
+  in PRs that touch `frontend/src/themes/` or shared components.
 - **Accessibility:** axe checks run in every theme and mode.
 - **Leak check:** switching theme 50 times leaves no extra listeners or style elements.
