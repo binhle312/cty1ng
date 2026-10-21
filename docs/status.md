@@ -12,12 +12,14 @@ Last updated: 2026-10-21
 
 ## Now
 
-Specification in the repository. Owner reviewing the foundational decisions; D10 (language) and
-D22 (ids) are being re-examined.
+Specification in the repository. Owner accepted TypeScript for the backend (D34, replaces D10).
+Backend and frontend framework picks are with the owner; the docs still describe the Python
+stack until they are chosen, then switch in one pass. D22 (ids) is being re-examined.
 
 ## Next
 
-1. Owner decides D10 and D22 (comparisons posted in the project chat).
+1. Owner picks the TypeScript frameworks (D34) and decides D22 (comparisons posted in the
+   project chat). Then the docs switch from Python to TypeScript in one pass.
 2. Owner confirms the Problem and Success measures in
    [product-brief.md](requirements/product-brief.md) (marked draft).
 3. Owner answers D30 (themes): accept, Board in the Flow pane, which theme first.
@@ -27,7 +29,7 @@ D22 (ids) are being re-examined.
 
 | Item | Needed by |
 | --- | --- |
-| D10: backend language (Python, TypeScript or Go) | M0 |
+| D34: backend frameworks (Hono or Fastify, Drizzle or Prisma) and keep D28 | M0 |
 | D22: id format | M0 |
 | Product brief: Problem and Success measures | M0 |
 | Accept or change D30 (themes); answer its two open questions (`design/themes.md`) | M0 plan |

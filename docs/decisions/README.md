@@ -39,7 +39,7 @@ Implemented in: links.
 | D7 | [Model and effort are fixed at bot creation](D07-model-and-effort-are-fixed-at-bot-creation.md) | accepted |
 | D8 | [History choice when a bot joins](D08-history-choice-when-a-bot-joins.md) | accepted |
 | D9 | [SSE + POST transport with an ordered event log](D09-sse-post-transport-with-an-ordered-event-log.md) | accepted |
-| D10 | [Python backend, React frontend, generated API client](D10-python-backend-react-frontend-generated-api-client.md) | under review (owner, 2026-10-21) |
+| D10 | [Python backend, React frontend, generated API client](D10-python-backend-react-frontend-generated-api-client.md) | superseded by D34 |
 | D11 | [One run at a time per conversation](D11-one-run-at-a-time-per-conversation.md) | accepted |
 | D12 | [Bots are soft-deleted](D12-bots-are-soft-deleted.md) | accepted |
 | D13 | [Editing a message creates a branch](D13-editing-a-message-creates-a-branch.md) | accepted |
@@ -63,3 +63,4 @@ Implemented in: links.
 | D31 | [Bots answering the same message see each other's replies](D31-later-bots-see-earlier-replies.md) | accepted |
 | D32 | [History budget is a per-bot share of the model's context window](D32-history-budget-from-model-context.md) | accepted |
 | D33 | [Zod for runtime validation in the frontend](D33-zod-for-frontend-runtime-validation.md) | accepted |
+| D34 | [TypeScript on the backend and the frontend](D34-typescript-full-stack.md) | accepted (frameworks pending) |
