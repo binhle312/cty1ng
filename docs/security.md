@@ -91,6 +91,75 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
 
 - `request_limit` per run, turn budget per conversation, runs per conversation per hour,
   `MAX_CONCURRENT_RUNS`, and (if D20 is accepted) a daily spending cap.
+- Request body limit: 1 MB for JSON, upload limits as in 2.4; larger bodies get 413 before
+  parsing.
+
+### 2.8 Database queries (SQL injection)
+
+- All queries go through SQLAlchemy with bound parameters. Raw SQL is allowed only as
+  `text()` with named bind parameters, never built with f-strings, `%` or `+` on user input.
+  Ruff rule `S608` (and the rest of the `S` bandit set) is on in CI.
+- Identifiers cannot be bound, so anything that picks a column, sort order or table from a
+  request (for example `metric=` and `sort=` on the statistics API) is mapped through an
+  allowlist `dict` in the service; unknown values return 422.
+- `LIKE` searches escape `%` and `_`.
+- A test sends classic injection strings (`' OR 1=1 --`, `"; DROP TABLE`) to every text and
+  query parameter and checks they are stored or rejected literally.
+
+### 2.9 Input validation
+
+- Every request body and query string is a Pydantic model with `extra="forbid"`, length
+  limits and enums; the server validates even what the form already checked. Form validation
+  in the browser is for usability only.
+- IDs are parsed as UUIDs before they reach a query.
+
+### 2.10 Errors, debugging and logs
+
+- Production builds run with FastAPI `debug=False`, no `--reload`, no Vite source maps, and
+  the OpenAPI docs page only when `APP_ENV=dev`.
+- Error responses carry a code and a short message, never a stack trace, SQL or file path.
+  The full error is logged server side with a request id that the response also returns.
+- Logs never contain API keys (2.6), message or file contents, or attachment names beyond
+  ids. Log lines escape newlines so model output cannot forge log entries.
+
+### 2.11 Supply chain and review
+
+- Lockfiles committed (`uv.lock`, `pnpm-lock.yaml`); CI installs with `--frozen` /
+  `--frozen-lockfile`.
+- CI runs `pip-audit` and `pnpm audit --audit-level high`; Dependabot opens weekly update
+  PRs. New dependencies need the owner's approval (`AGENTS.md` §7).
+- The repository is public: GitHub secret scanning and push protection are on, and
+  `.gitignore` excludes `.env*` (except `.env.example`), `data/`, and local databases.
+- PRs that touch the paths in `AGENTS.md` §7 (security-sensitive code) also get an automated
+  security review (the `anthropics/claude-code-security-review` GitHub Action, run only on
+  the owner's branches, since it reads untrusted PR content and needs an API key secret).
+  It assists the human review; it does not replace it.
+
+### 2.12 Checklist
+
+Where each common web-app control stands. "Specified" means the control is designed here and
+built with the slice that needs it (most in M0); "M9" means the VPS milestone (§4).
+
+| Control | Phase 1 (local) | Where |
+| --- | --- | --- |
+| Row-level security | Not applicable: SQLite has none and there is one user. M9: every query is scoped by owner in the service layer, with a test per route; Postgres RLS optional as a second layer. | §4 |
+| Tight CORS | Specified: no wildcard, own origin plus `ALLOWED_ORIGINS`, Host and Origin checks. | 2.1 |
+| Parameterised SQL | Specified. | 2.8 |
+| Tokens not stored in the browser | No auth tokens in phase 1. M9: session in an `HttpOnly`, `Secure`, `SameSite=Strict` cookie, never in localStorage. | §4 |
+| `.env` out of git | Specified. | 2.6, 2.11 |
+| Validate inputs | Done, server side. | 2.9 |
+| Protect admin routes | None in phase 1. M9: role check in the service layer. | §4 |
+| No production debugging | Specified. | 2.10 |
+| API secrets server side only | Specified: keys only in backend env; the browser never calls a provider. | 2.6 |
+| Automated security review | Specified. | 2.11 |
+| Rate limiting | Run caps and spending cap now. M9: per-user and per-IP limits, strict on login. | 2.7, §4 |
+| Validate file uploads | Specified. | 2.4 |
+| No secrets or content in logs | Specified. | 2.6, 2.10 |
+| Password hashing | No passwords in phase 1. M9: OIDC, or argon2id if local accounts. | §4 |
+| Webhook signatures | No webhooks. Any future inbound webhook verifies an HMAC signature and a timestamp before parsing. | — |
+| Server-side permissions | Single owner now; all writes go through services. M9: authorisation checked in services, never in the UI only. | §4 |
+| Block XSS | Specified: Markdown without raw HTML, CSP, sandboxed file viewer. | 2.2 |
+| Update dependencies | Specified: Dependabot, audits in CI. | 2.11 |
 
 ## 3. Security tests (must exist)
 
@@ -106,9 +175,25 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
 - Zip: entry `../../x` rejected; absolute path rejected; zip bomb (ratio) rejected.
 - API responses never contain the value of any `*_API_KEY` (a test sets a sentinel key and
   scans every endpoint's output).
+- SQL injection strings are stored or rejected literally; unknown `metric`/`sort` → 422.
+- Unknown JSON fields → 422; a body over 1 MB → 413.
+- An unhandled error returns a code and request id, with no stack trace in the body.
 
 ## 4. Added by the VPS milestone (not now)
 
-Authentication (sessions or OIDC), per-user authorization on every route, CSRF tokens, TLS via
-a reverse proxy, rate limiting per user, deciding whether bots and skills are shared or
-per-user, backups and encryption at rest, audit log of admin actions.
+To decide when M9 is planned, not before:
+
+- **Login:** OIDC (no passwords to store) or local accounts with argon2id; login rate limits
+  and lockout.
+- **Sessions:** `HttpOnly`, `Secure`, `SameSite=Strict` cookie; the existing Origin check
+  stays as CSRF protection, plus a CSRF token if any cross-site flow is added.
+- **Authorisation:** every route scoped to the user in the service layer, with a test per
+  route that another user's id returns 404; Postgres RLS as an optional second layer.
+- **Tenancy:** whether bots and skills are shared or per user. Shared skills written by another
+  user are a prompt-injection channel into your bots.
+- **Secrets:** per-user provider keys or one shared key; where they are stored (encrypted,
+  never in the database in plain text).
+- **Transport:** TLS via a reverse proxy, HSTS, `Secure` cookies; the loopback-only startup
+  check is replaced by an explicit "auth enabled" check.
+- **Operations:** per-user rate limits, backups and encryption at rest, audit log of admin
+  actions, admin routes behind a role check.
