@@ -7,22 +7,24 @@ without a human clicking around, and that a human reviewer can trust the proof.
 
 | Layer | Tool | Location | What it proves | Speed |
 | --- | --- | --- | --- | --- |
-| Domain | pytest, table-driven | `backend/tests/domain/` | Routing, budget, history window, mention parsing | ms |
-| Service + DB | pytest, temp SQLite per test | `backend/tests/services/` | Invariants (`domain-model.md` §12), transactions, events written | fast |
-| API | pytest + httpx `AsyncClient` | `backend/tests/api/` | Status codes, error codes, schemas, origin checks | fast |
-| Agent | pytest + Pydantic AI `FunctionModel` / `TestModel` | `backend/tests/agent/` | Prompt assembly, tools, provenance, streaming, cancellation | fast |
-| Security | pytest + Vitest | `backend/tests/security/`, `frontend/tests/security/` | `security.md` §3 | fast |
-| Frontend unit | Vitest + Testing Library | `frontend/tests/` | Components, reducer, mention autocomplete, icon composition | fast |
-| End to end | Playwright, fake model | `frontend/tests/e2e/` | User journeys across the real backend | slower |
-| Contract | CI script | — | Generated client up to date; event type lists match | fast |
+| Rules | Vitest, table-driven (`it.each`) | next to `*.rules.ts` | Routing, budget, history window, mention parsing | ms |
+| Service + DB | Vitest, temp SQLite file per test | next to `*.service.ts` | Invariants (`domain-model.md` §12), transactions, events written | fast |
+| API | Vitest + Hono's `app.request()` (no network) | `backend/test/api/` | Status codes, error codes, schemas, origin checks | fast |
+| Agent | Vitest + the fake model adapter (AI SDK mock model) | `backend/src/core/runs/` | Prompt assembly, tools, provenance, streaming, cancellation | fast |
+| Port contracts | Vitest, one suite per port run against every adapter (D35) | `backend/test/contracts/` | Each adapter honours its port: replay and ordering (transport), transactions (unit of work), lease and retry (queue), streaming and usage (model) | fast |
+| Security | Vitest | `backend/test/security/`, `frontend/test/security/` | `security.md` §3 | fast |
+| Frontend unit | Vitest + Testing Library | next to the code in `frontend/src/` | Components, reducer, mention autocomplete, icon composition | fast |
+| End to end | Playwright, fake model | `frontend/test/e2e/` | User journeys across the real backend | slower |
+| Repository checks | CI scripts | — | Generated client up to date; event type lists match; import rules; folder indexes complete | fast |
 
 ## 2. The fake model
 
 Tests never call real providers (`AGENTS.md` §8).
 
 - The backend accepts `FAKE_MODEL=1`; the catalog then exposes `fake:scripted` (available, no
-  key) and `catalog/` returns a Pydantic AI `FunctionModel`.
-- The function reads a **script** keyed by bot slug from `tests/fixtures/fake_scripts/*.yaml`:
+  key) and `app/main.ts` wires `adapters/model/fake/` instead of the AI SDK adapter. It builds
+  on the AI SDK's mock language model, so streaming and usage have the real shapes.
+- The fake reads a **script** keyed by bot slug from `backend/test/fixtures/fake-scripts/*.yaml`:
 
   ```yaml
   ba:
@@ -36,7 +38,7 @@ Tests never call real providers (`AGENTS.md` §8).
   ```
 
 - Streaming is simulated by splitting the reply into chunks, so delta handling is tested.
-- A fixture `fake_model(scripts)` is available to backend tests; Playwright starts the backend
+- A helper `fakeModel(scripts)` is available to backend tests; Playwright starts the backend
   with `FAKE_MODEL=1` and a chosen script set.
 
 ## 3. What must be tested
@@ -65,7 +67,7 @@ Run status reactions (UI-3.18): a Vitest reducer test that `run.queued` → `run
 
 ### Services and API
 
-Each invariant in `domain-model.md` §12 has a named test (`test_invariant_01_model_immutable`
+Each invariant in `domain-model.md` §12 has a named test (`invariant 01: model is immutable`
 …). Plus: skill import preview/apply (including "changed since preview" → 409), clone
 templates, upgrade dialog only moving checked pins, deprecation rules, edit while running →
 409, branch switching picks the newest leaf, event `seq` strictly increasing, replay after
@@ -94,7 +96,7 @@ mid-stream and keeps partial text; retry after a crash reuses the same message.
 
 Each slice's brief lists which of these steps must pass by its end.
 
-### Themes (D30, proposed)
+### Themes (D30)
 
 From M0, per `design/themes.md` §5: a token contrast test (WCAG AA), axe checks in every theme
 and mode, Playwright visual snapshots of the key screens per theme and mode, and a
@@ -102,9 +104,10 @@ theme-switch leak test.
 
 ## 4. CI gates
 
-All must be green to merge: ruff (lint + format, including the `S` security rules), pyright,
-pytest, `alembic check` (models match migrations), tsc, eslint, Vitest, Playwright,
-generated-client freshness, event-type list match, `pip-audit`, `pnpm audit --audit-level
+All must be green to merge: ESLint (including the security rules in `security.md` §2.8),
+Prettier, `tsc`, dependency-cruiser import rules (D35), Vitest, `db:check` (Drizzle schema
+matches the migrations), Playwright, generated-client freshness, event-type list match,
+`check:index` (folder indexes complete, `architecture.md` §4.2), `pnpm audit --audit-level
 high`. PRs touching security-sensitive paths also run the automated security review
 (`security.md` §2.11).
 
@@ -112,4 +115,4 @@ high`. PRs touching security-sensitive paths also run the automated security rev
 
 A PR description maps each acceptance criterion of its task to the test that proves it, or to a
 screenshot for purely visual criteria (Playwright can save screenshots:
-`frontend/tests/e2e/__screenshots__/`). "Tested manually" alone is not evidence.
+`frontend/test/e2e/__screenshots__/`). "Tested manually" alone is not evidence.

@@ -20,6 +20,26 @@ action (POST)  ──▶  service transaction: change rows + INSERT events(seq=8
 Subscribers always read from the `events` table, never from an in-memory copy, so the stream
 and the replay path are the same code.
 
+## 1a. Transport boundary (D9)
+
+SSE is one adapter, not part of the event model, so WebSocket or another transport can be added
+later without touching services, the log or the reducer.
+
+- **Envelope.** Every event is `{seq, type, data}` as plain JSON. Nothing in it depends on SSE
+  (the SSE `id:` and `event:` lines are just how the SSE adapter writes `seq` and `type`). The
+  envelope and every event type are Zod schemas in `shared/src/events/`, imported by both sides.
+- **Backend.** Services only append events. `core/events/hub.ts` exposes
+  `subscribe(afterSeq): AsyncIterable<Event>` (the transport port, D35); `adapters/sse/` turns
+  that iterator into SSE frames (ids, heartbeat, `reset`). A WebSocket adapter would be a second
+  adapter (`adapters/websocket/`) over the same iterator, with the same Host/Origin checks
+  (`security.md` §2.1).
+- **Frontend.** `lib/realtime/transport.ts` defines
+  `connect({ afterSeq, onEvent, onStatus }) => close`. `lib/realtime/sse.ts` implements it with
+  `EventSource`; the reducer and the rest of the app only see `onEvent(envelope)`.
+- **Contract tests** (`backend/test/contracts/transport.contract.ts`) run against the
+  interface, not against SSE, so a new adapter must pass the same replay, gap and ordering
+  tests.
+
 ## 2. The stream
 
 `GET /api/stream` — one stream for the whole app (the rail needs unread dots for every
@@ -60,7 +80,7 @@ The client appends `text` only if `offset` equals its current length.
 
 ## 3. Client handling
 
-`frontend/src/stream/`:
+`frontend/src/lib/realtime/`:
 
 - One `EventSource` for the app, opened at startup.
 - A reducer applies each event to the TanStack Query cache (`queryClient.setQueryData`) so
@@ -102,6 +122,9 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `bot.created` / `bot.updated` / `bot.deleted` | yes | `{bot}` | bot CRUD, avatar, pins |
 | `skill.created` / `skill.updated` / `skill.deprecated` | yes | `{skill}` | skill CRUD, new version |
 | `settings.updated` | yes | `{settings}` | global settings changed |
+| `spend.threshold_crossed` | yes | `{threshold_pct, today_spend_usd, cap_usd}` | today's spend crossed 75%, 90% or 100% of the daily cap (D40); once per threshold per day |
+| `project.created` / `project.updated` / `project.deleted` | yes | `{project}` | project CRUD, conversation moved (D37) |
+| `memory.saved` / `memory.updated` / `memory.deleted` | yes | `{memory_item, conversation_id?}` | a bot or the owner changed memory (D38); drives the "Remembered: …" line |
 
 Adding an event type: add it here first, then to the backend `EventType` enum and the frontend
 reducer. A test asserts the three lists match.
@@ -118,5 +141,5 @@ reducer. A test asserts the three lists match.
 
 ## 6. Switching to WebSocket later
 
-Only two places change: `backend/app/events/stream.py` (the transport) and
-`frontend/src/stream/connection.ts`. Event types, payloads, cursor and replay stay the same.
+Only two places change: a new backend transport adapter next to `adapters/sse/` and a new
+`frontend/src/lib/realtime/` implementation of `transport.ts`. Event types, payloads, cursor and replay stay the same.

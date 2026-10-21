@@ -44,7 +44,9 @@ Bots, pins, upgrade dialog behaviour (M2).
 
 ## Tests
 
-Service tests for versioning, authorship, deprecation, import; API tests for error codes;
+Service tests for versioning, authorship, deprecation, import; race tests from
+`architecture.md` §11 (two saves of version N+1 with the same `base_version`, two metadata
+PATCHes with the same `row_version`: one wins, one 409 `stale_write`); API tests for error codes;
 Vitest for the editor's frontmatter form; Playwright: create skill → edit (v2) → diff → restore
 (v3) → export contains v3.
 

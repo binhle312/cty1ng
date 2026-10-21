@@ -14,8 +14,8 @@ Rejected: PostgreSQL now (Docker for every local run and test, no phase 1 benefi
 PostgreSQL via pgserver (0.1.x, fork chain); Turso (MVCC experimental); TimescaleDB (built for
 millions of rows a day; ours is thousands a month, and its best features are under the Timescale
 License, unavailable on some managed PostgreSQL services).
-Consequences: Five guardrails from M0, listed in `../architecture.md` §8: no SQLite-only SQL;
+Consequences: Five guardrails from M0, listed in `../architecture.md` §10: no SQLite-only SQL;
 portable UUID and UTC timestamp types; Alembic with `render_as_batch=True`; time bucketing behind
 one function in the statistics service; from M9, tests also run on PostgreSQL and the event log
 handles out-of-order commits.
-Implemented in: `../architecture.md` §7, §8; `../domain-model.md` §13.1.
+Implemented in: `../architecture.md` §9, §10; `../domain-model.md` §13.1.

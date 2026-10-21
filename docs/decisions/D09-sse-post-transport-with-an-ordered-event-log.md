@@ -9,4 +9,8 @@ replays missed events. Discord and Slack also send messages with REST calls and 
 socket only to receive.
 Rejected: WebSocket now (more code: heartbeats, reconnect, framing; no benefit for one human).
 Revisit when many humans need presence and typing indicators.
+Condition (owner, 2026-10-21): the transport must be replaceable. Events are produced and
+consumed through a transport-neutral interface, so WebSocket (or another transport) can replace
+or sit beside SSE without touching services, the event log or the frontend reducer
+(`../realtime-events.md` §1a).
 Implemented in: `../realtime-events.md`.

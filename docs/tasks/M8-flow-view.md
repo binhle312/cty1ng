@@ -17,7 +17,7 @@ replaced later (for example by pixel-art characters) without touching the logic.
 ## In scope
 
 - Split pane with `react-resizable-panels` (UI-12.1 to 12.3).
-- `frontend/src/flow/`: `model.ts` (scene and cue types), `store.ts` (bounded), `selectors.ts`,
+- `frontend/src/features/flow/`: `model.ts` (scene and cue types), `store.ts` (bounded), `selectors.ts`,
   `cues.ts` (cue builder with coalescing; replayed events produce no cues), `motion.ts`
   (durations and easings), `renderer.ts` (contract and registry), `diagram/` (the React Flow
   renderer), `layout.worker.ts` (elkjs or dagre in a Web Worker), `a11y/` (accessible list).
@@ -59,5 +59,5 @@ graph dependencies (React Flow, elkjs or dagre, react-resizable-panels).
 
 ## Open questions
 
-- D30 (proposed): whether the Board view joins this pane as a third map (Team, Timeline,
-  Board) or is a separate Chat + Board view. Recommendation: one pane, three maps.
+- None from D30: the Board is the pane's third map (D30, accepted) and is built in M8b. Keep
+  the tab strip and the renderer registry ready for a third map.

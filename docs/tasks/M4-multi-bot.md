@@ -47,7 +47,9 @@ Bot-to-bot discussion (M5).
 
 ## Tests
 
-Table tests for routing; service tests for member lifecycle and branches; Vitest for icon
+Table tests for routing; service tests for member lifecycle and branches; race tests from `architecture.md` §11 (two
+sends in parallel chain instead of forking, the bot turn counter at its limit, two settings
+PATCHes with the same `row_version`); Vitest for icon
 composition (0, 1, 2, 4, 7 bots, deleted, preset) and the mention autocomplete; Playwright as
 above (dnd-kit drag works with Playwright's mouse API; also test the keyboard alternative).
 

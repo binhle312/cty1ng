@@ -14,4 +14,4 @@ search params are untyped strings); Radix (still supported, but no longer the de
 examples and blocks target Base UI first).
 Consequences: Agents must use Base UI's `render` prop, not Radix's `asChild`; examples copied
 from older shadcn posts need adapting. Route definitions live in `frontend/src/routes/`.
-Implemented in: `../architecture.md` §3, `../tasks/M0-skeleton.md`, `../requirements/README.md`.
+Implemented in: `../architecture.md` §4, `../tasks/M0-skeleton.md`, `../requirements/README.md`.

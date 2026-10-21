@@ -61,7 +61,7 @@ Renderer ──▶ onSelect(target) ──▶ chat pane (filter / scroll)
 ### 3.1 The scene (state)
 
 ```ts
-// frontend/src/flow/model.ts — renderer-neutral, serialisable, no React types
+// frontend/src/features/flow/model.ts — renderer-neutral, serialisable, no React types
 type ActorId = string;               // owner id or bot id
 
 interface FlowScene {
@@ -125,7 +125,7 @@ document. Both need the same meaning, not the same drawing.
 ### 3.3 The renderer contract
 
 ```ts
-// frontend/src/flow/renderer.ts
+// frontend/src/features/flow/renderer.ts
 interface FlowRendererProps {
   scene: FlowScene;
   cues: CueSource;                         // subscribe(fn) → unsubscribe; renderer pulls at its own pace
@@ -153,7 +153,7 @@ renderer exists.
 
 ## 4. Animations (diagram renderer)
 
-All durations and easings live in one file, `frontend/src/flow/motion.ts`, so the feel can be
+All durations and easings live in one file, `frontend/src/features/flow/motion.ts`, so the feel can be
 tuned in one place.
 
 | Cue | Team map | Timeline map | Duration |
@@ -222,8 +222,8 @@ the browser at the same time.
 
 - **Selectors and cue builder:** unit tests with fixtures (Vitest). Replayed events produce no
   cues; coalescing works; windowing is correct on branches (only the active path).
-- **Renderer conformance test** (`frontend/tests/flow/conformance.spec.ts`), run against every
-  registered renderer:
+- **Renderer conformance test** (`frontend/src/features/flow/conformance.test.ts`), run
+  against every registered renderer:
   1. mount with a fixture scene; the accessible list contains every actor and item;
   2. feed 1,000 scene updates and 5,000 cues;
   3. unmount;

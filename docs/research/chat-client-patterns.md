@@ -57,7 +57,7 @@ Seen in an AI-agent chat client. Described as generic patterns.
 | # | Proposal | Decision | Where |
 | --- | --- | --- | --- |
 | P1 | Human message whose POST fails: "Not sent" with Retry/Delete; later unsent messages fail too (O2). | Accepted, plus server-side dedupe: a repeated `client_id` returns the original message. | UI-3.20, `../api.md`, `../domain-model.md` |
-| P2 | Stall timeout for a run that makes no progress (O3). | Accepted, plus a read timeout per model request. | `../architecture.md` §4, §6 |
+| P2 | Stall timeout for a run that makes no progress (O3). | Accepted, plus a read timeout per model request. | `../architecture.md` §6, §6 |
 | P3 | Two live states: typing (deltas) and working: <step> (between deltas) (O4). | Accepted. | UI-3.4 |
 | P4 | Reply to a specific message, separate from mentions (O5). | Deferred to after M5. | `../requirements/product-brief.md` |
 | P5 | An edit routes only the mentions in the edited text (O6). | Accepted. | `../conversation-rules.md` §6 |

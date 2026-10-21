@@ -12,25 +12,23 @@ Last updated: 2026-10-21
 
 ## Now
 
-Specification complete. Waiting for the owner to review the foundational decisions, then M0.
+Specification in the repository, now for a TypeScript stack: Hono, Drizzle, Vercel AI SDK,
+React + Vite (D34, replaces D10), with libraries behind ports (D35) and a `README.md` index per
+code folder for agents (`architecture.md` §4.2). Ids are UUIDv7 stored, TypeIDs outside the
+database (D22, D36). Themes accepted (D30): Command ships in M0, Material later (T2), and the
+Board is the Flow pane's third map (M8b). Product brief expanded after the owner's interview (use cases, phases, non-goals, trust
+failures); D37–D40 accepted (projects, memory, sensitive-data guard, cost alerts).
 
 ## Next
 
-1. Owner reviews the decisions that are hard to undo: D6, D9, D10, D11, D13, D21, D22
-   ([index](decisions/README.md)).
-2. Owner confirms the Problem and Success measures in
-   [product-brief.md](requirements/product-brief.md) (marked draft).
-3. Create the GitHub repository and commit this specification.
-4. Start M0 with the builder prompt in `workflow.md` §3.
+1. Owner merges PR #6.
+2. Start M0 locally in Claude Code with the builder prompt in `workflow.md` §3.
 
 ## Waiting on the owner
 
 | Item | Needed by |
 | --- | --- |
-| Foundational decision review (above) | M0 |
-| Product brief: Problem and Success measures | M0 |
-| Accept or change D30 (themes); answer its two open questions (`design/themes.md`) | M0 plan |
-| Approve or change D33 (Zod as the frontend schema library) | M0 |
+| Merge PR #6 | M0 |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
 
 ## Slices
@@ -45,7 +43,10 @@ Specification complete. Waiting for the owner to review the foundational decisio
 | M5 | not started | | |
 | M6 | not started | | |
 | M7 | not started | | |
+| M5b | not written | | Projects and memory (D37, D38) |
 | M8 | not started | | |
+| M8b | not written | | Board map in the Flow pane (D30) |
+| T2 | not written | | Material theme (D30) |
 | M9 | not written | | VPS milestone |
 
 States: `not started` → `planning` → `UI design review` → `building` → `in review` → `merged`.
@@ -56,3 +57,5 @@ A slice can also be `blocked` (say on what in Notes).
 | Date | What |
 | --- | --- |
 | 2026-10-21 | Specification: requirements, design sketches, decisions D1–D29, briefs M0–M8 |
+| 2026-10-21 | Repository created; spec merged (PRs #1–#5): send states and research notes, security checklist, frontend conventions, `ui-ux-pro-max` skill; D31, D32 accepted |
+| 2026-10-21 | Owner review: D6, D11, D13, D33 accepted; D9 accepted with a replaceable transport; D21 accepted with price overrides |

@@ -16,7 +16,8 @@ D7, D12, D16, D19; `docs/api.md` §3, §4; `docs/requirements/app-shell.md` (UI-
 
 ## In scope
 
-- `config/models.yaml` and `catalog/` (loader, availability, effort mapping per provider).
+- `config/models.yaml`, `core/catalog/` (loader, availability) and the effort mapping per
+  provider in `adapters/model/ai-sdk/`.
   Check current model ids and effort parameters in the providers' documentation and record
   what you checked in the PR.
 - Tables `bots`, `bot_skills`; slug generation (D19); one-line `description` (D18).
@@ -48,7 +49,8 @@ Conversations, drag-to-add (M4).
 
 ## Tests
 
-Service and API tests for the above; catalog tests per provider effort mapping; Vitest for the
+Service and API tests for the above, including the races in `architecture.md` §11 (two bot
+PATCHes with the same `row_version`, two creates with the same name); catalog tests per provider effort mapping; Vitest for the
 create form (effort selector appears only when supported); Playwright: create skill → create
 bot with it → clone with a different model → upgrade flow from J4.
 

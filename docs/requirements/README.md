@@ -9,7 +9,7 @@ lives in the technical documents one level up.
 
 | File | Stories | Acceptance criteria |
 | --- | --- | --- |
-| [product-brief.md](product-brief.md) | Problem, users, goals, success measures, non-goals, journeys J1–J6, glossary | (none; journeys are tested end to end) |
+| [product-brief.md](product-brief.md) | Problem, users, use cases and phases, goals, success measures, non-goals, trust failures, journeys J1–J6, glossary | (none; journeys are tested end to end) |
 | [app-shell.md](app-shell.md) | SH-1 to SH-3 | UI-1, UI-2 |
 | [conversation.md](conversation.md) | CV-1 to CV-7 | UI-3 |
 | [bots.md](bots.md) | BT-1 to BT-5 | UI-4, UI-5, UI-6 |
@@ -18,6 +18,7 @@ lives in the technical documents one level up.
 | [statistics.md](statistics.md) | SA-1 to SA-4 | UI-10 |
 | [time-range-picker.md](time-range-picker.md) | TR-1 to TR-2 | UI-11 |
 | [flow-view.md](flow-view.md) | FL-1 to FL-4 | UI-12 |
+| [projects-and-memory.md](projects-and-memory.md) | PM-1 to PM-5 | UI-13 |
 
 ## Ids
 
@@ -34,10 +35,15 @@ lives in the technical documents one level up.
 These hold on every screen, so stories do not repeat them:
 
 - Every list or detail view has **empty, loading, error and success** states.
+- **Loading uses skeletons**: grey placeholder shapes in the layout of the real content (rows,
+  avatars, chart boxes), not a centred spinner, so the page does not jump when data arrives.
+  They appear only if loading takes longer than 200 ms (no flash on fast loads), are marked
+  `aria-busy`, and do not shimmer when the OS asks for reduced motion. Streaming bot replies are
+  not "loading" and keep their typing/working states (UI-3.4).
 - Every hover tooltip also appears on keyboard focus.
 - Every drag-and-drop action has a keyboard or button alternative.
 - Every screen works in every theme and in both light and dark mode; mode follows the OS by
-  default (theme system: `../design/themes.md`, D30 proposed).
+  default (theme system: `../design/themes.md`, D30).
 - Components use semantic design tokens only, never raw colours, sizes or font names.
 - Components come from shadcn/ui (Base UI underneath, D28) for tooltips, dialogs, menus and toasts.
 

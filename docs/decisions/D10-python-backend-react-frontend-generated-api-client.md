@@ -1,6 +1,6 @@
 # D10. Python backend, React frontend, generated API client
 
-Status: accepted (2026-10-20)
+Status: superseded by D34 (2026-10-21)
 Decision: Backend: Python, FastAPI, Pydantic, Pydantic AI, SQLAlchemy 2 + Alembic, SQLite (WAL).
 Frontend: React, TypeScript, Vite, Tailwind, shadcn/ui, dnd-kit, TanStack Query. The frontend's
 API client is generated from FastAPI's OpenAPI schema.

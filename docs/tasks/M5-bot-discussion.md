@@ -20,7 +20,7 @@ conversation. The server enforces the budget; bots are told how many turns remai
 - Global settings page (UI-8.1, 8.2) and conversation discussion settings (UI-9.3), header
   status (UI-3.15).
 - Runs-per-hour cap.
-- Daily spending cap (D20): settings, check at claim time, 80% / 100% banners, UI-8.3.
+- Daily spending cap (D20): settings, check at claim time, 75% / 90% / 100% alerts (D40), UI-8.3.
 
 ## Acceptance criteria
 

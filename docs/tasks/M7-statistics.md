@@ -17,8 +17,8 @@ definitions); `docs/api.md` §7; `docs/requirements/statistics.md`, `docs/requir
 
 - Indexes from `domain-model.md` §13.1 (migration).
 - Endpoints `/stats/summary`, `/stats/models`, `/stats/bots`, `/stats/skills`, CSV export.
-  Queries implemented in `services/stats.py`; metric formulas as small pure functions in
-  `domain/metrics.py` so they are unit tested.
+  Queries implemented in `core/stats/stats.service.ts` through the stats repository; metric
+  formulas as small pure functions in `core/stats/metrics.rules.ts` so they are unit tested.
 - Charting library (propose one in the plan; Recharts is the default candidate).
 - The shared `TimeRangePicker` (UI-11.1 to UI-11.10, date-math parser §11.3, URL contract §11.4,
   refresh control §11.5);

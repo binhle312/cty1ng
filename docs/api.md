@@ -1,15 +1,16 @@
 # HTTP API
 
-This document owns the endpoint list, shapes and error codes. FastAPI's OpenAPI schema
-(`/api/openapi.json`) is generated from the code and is the machine-readable contract; the
+This document owns the endpoint list, shapes and error codes. The OpenAPI schema
+(`/api/openapi.json`) is generated from the Hono routes' Zod schemas (`@hono/zod-openapi`) and is the machine-readable contract; the
 frontend client is generated from it (`pnpm gen:api`). CI fails if the generated client is out
 of date. When this document and the OpenAPI schema disagree, raise it.
 
 ## 1. Conventions
 
 - Base path `/api`. JSON in and out (`multipart/form-data` for uploads).
-- Ids are UUIDv7 strings (D22). Timestamps are ISO-8601 UTC.
-- Request schemas forbid unknown fields (`extra="forbid"`) so typos and forbidden fields
+- Ids are TypeIDs (D36): `<prefix>_<26 base32 chars>`, for example `bot_01jb8x6p0afqz8r2m3k5t7v9wx`.
+  A malformed id or a wrong prefix returns 422 `invalid_id`. Timestamps are ISO-8601 UTC.
+- Request schemas forbid unknown fields (Zod `.strict()`) so typos and forbidden fields
   (like `model_id` on bot update) fail loudly with 422.
 - Lists are cursor-paginated where they can grow: `?before_seq=` / `?limit=` (max 100).
 - Create returns `201` with the created object. Delete/deprecate returns `204` or the updated
@@ -29,9 +30,9 @@ One shape for every error:
 | 400 | `invalid_skill_file`, `invalid_import`, `bad_request` |
 | 403 | `not_author`, `origin_rejected` |
 | 404 | `not_found` |
-| 409 | `name_taken`, `slug_taken`, `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending`, `run_not_queued` |
+| 409 | `name_taken`, `slug_taken`, `stale_write` (the row changed since it was read; reload), `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending`, `run_not_queued` |
 | 413 | `too_large` |
-| 422 | `validation_error`, `mention_not_member`, `bot_unavailable`, `bot_deleted`, `skill_deprecated`, `version_mismatch`, `effort_not_supported`, `model_not_available` |
+| 422 | `validation_error`, `invalid_id`, `mention_not_member`, `bot_unavailable`, `bot_deleted`, `skill_deprecated`, `version_mismatch`, `effort_not_supported`, `model_not_available` |
 | 429 | `rate_limited` (runs per hour), `daily_cap_reached` |
 
 ## 2. Skills
@@ -41,8 +42,8 @@ One shape for every error:
 | GET | `/skills?include_deprecated=false` | | list with `latest_version`, `bots_using`, `bots_outdated` |
 | POST | `/skills` | `{slug, name, description, body_md}` | creates v1, author = owner |
 | GET | `/skills/{id}` | | includes latest version body |
-| PATCH | `/skills/{id}` | `{name}` | metadata only; author only |
-| POST | `/skills/{id}/versions` | `{description, body_md, changelog?, upgrade_bot_ids: []}` | author only; creates N+1; moves listed pins |
+| PATCH | `/skills/{id}` | `{name, row_version}` | metadata only; author only |
+| POST | `/skills/{id}/versions` | `{base_version, description, body_md, changelog?, upgrade_bot_ids: []}` | author only; creates N+1; moves listed pins |
 | GET | `/skills/{id}/versions` | | list, newest first |
 | GET | `/skills/{id}/versions/{version}` | | one version (used by provenance chips) |
 | GET | `/skills/{id}/diff?from=2&to=5` | | unified diff of bodies and descriptions |
@@ -69,7 +70,7 @@ The CLI (`app skills import <folder>` / `export <folder>`) calls the same servic
 | GET | `/bots?include_deleted=false` | | each with `available`, `skills` (pins) |
 | POST | `/bots` | `{name, persona_md, model_id, effort?, write_paths?, request_limit?, max_reply_chars?, pins: [{skill_id, skill_version_id?, always_load}], avatar_id?, cloned_from_bot_id?}` | `skill_version_id` omitted = latest |
 | GET | `/bots/{id}` | | includes conversations it is in |
-| PATCH | `/bots/{id}` | `{name?, persona_md?, write_paths?, request_limit?, max_reply_chars?}` | `model_id`/`effort` → 422 |
+| PATCH | `/bots/{id}` | `{row_version, name?, persona_md?, write_paths?, request_limit?, max_reply_chars?}` | `model_id`/`effort` → 422 |
 | DELETE | `/bots/{id}` | | soft delete |
 | GET | `/bots/{id}/clone-template` | | prefilled POST body for the create form |
 | PUT | `/bots/{id}/skills/{skill_id}` | `{skill_version_id, always_load}` | assign, upgrade, downgrade, toggle |
@@ -85,7 +86,7 @@ The CLI (`app skills import <folder>` / `export <folder>`) calls the same servic
 | GET | `/conversations` | | sorted by `last_activity_at`; includes member avatars for the rail icon and `unread` |
 | POST | `/conversations` | `{title?}` | |
 | GET | `/conversations/{id}` | | settings (with effective values), members, active leaf |
-| PATCH | `/conversations/{id}` | `{title?, icon_preset?, bot_chat_enabled?, bot_turn_limit?}` | `null` = inherit global |
+| PATCH | `/conversations/{id}` | `{row_version, title?, icon_preset?, bot_chat_enabled?, bot_turn_limit?}` | `null` = inherit global |
 | DELETE | `/conversations/{id}` | | soft delete, workspace to trash |
 | POST | `/conversations/{id}/read` | `{seq}` | sets `last_read_seq` (never moves backwards); drives unread dots and the "New" divider |
 | GET | `/conversations/{id}/messages?before_seq=&limit=` | | the **active path**, newest page first; each message has `siblings: {index, count, ids}` |
