@@ -31,6 +31,7 @@ New to the project (human or agent), read in this order:
 | [research/](research/) | Notes from studying other products (behaviour only, no copied code). Inputs, not spec |
 | [design/](design/README.md) | Screen sketches and mockups. **Not final**: the UI is agreed with the owner in each slice plan |
 | [flow-view.md](flow-view.md) | Flow pane: scene and cue model, swappable renderer, animation, performance and memory budgets |
+| [frontend-conventions.md](frontend-conventions.md) | TypeScript rules for the frontend and the lint settings that enforce them |
 | [security.md](security.md) | Threat model and the controls that must exist |
 | [testing.md](testing.md) | Test layers, fake model, what each slice must prove |
 | [porting-guide.md](porting-guide.md) | What to reuse from the old Discord project and how |

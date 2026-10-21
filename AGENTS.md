@@ -35,6 +35,7 @@ Start with `docs/README.md` for the reading order.
 | HTTP endpoints | `docs/api.md` |
 | Pages and components | `docs/requirements/<area>.md` (behaviour); `docs/design/` (sketches, not final) |
 | The Flow pane, animations, renderers | `docs/flow-view.md` |
+| Frontend TypeScript rules | `docs/frontend-conventions.md` |
 | Design work with the `ui-ux-pro-max` skill | `docs/workflow.md` §2 (design skills) |
 | Styling, themes, design tokens | `docs/design/themes.md` (D30, proposed) |
 | Uploads, file tools, rendering bot output, request checks | `docs/security.md` |
@@ -135,7 +136,7 @@ Mark these in the PR description under a heading `Needs human review` with one l
 
 - Python: type hints everywhere, Pydantic models for API schemas, `async` for I/O,
   UUIDv7 ids (`app.ids.new_id()`, D22), UTC timestamps.
-- TypeScript: `strict` mode, function components, TanStack Query for server state, no global
+- TypeScript: the rules in `docs/frontend-conventions.md` (lint-enforced), function components, TanStack Query for server state, no global
   state library unless a task says so.
 - Names: the same concept has the same name in docs, database, API and UI (see the glossary in
   `docs/requirements/product-brief.md`).

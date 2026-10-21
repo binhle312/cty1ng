@@ -30,6 +30,7 @@ Specification complete. Waiting for the owner to review the foundational decisio
 | Foundational decision review (above) | M0 |
 | Product brief: Problem and Success measures | M0 |
 | Accept or change D30 (themes); answer its two open questions (`design/themes.md`) | M0 plan |
+| Approve or change D33 (Zod as the frontend schema library) | M0 |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
 
 ## Slices
