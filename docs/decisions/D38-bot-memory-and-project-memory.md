@@ -1,6 +1,6 @@
 # D38. Bot memory and project memory
 
-Status: proposed (2026-10-21), from the owner's product-brief interview. It replaces the
+Status: accepted (2026-10-21, owner), from the owner's product-brief interview. It replaces the
 per-conversation `memory/<bot-slug>.md` file. D19 still decides slugs; only that file path is
 dropped.
 Decision: Bots remember things across conversations in two scopes. The scope is set by where
@@ -26,8 +26,9 @@ the conversation is, not chosen by the bot.
   - **Lowering the number** deletes the oldest versions beyond it, after a confirmation.
   - **Multi-user:** it is a per-user, per-bot setting. In phase 1 there is one user, so it
     lives on the bot. With users (M9), each user's bots carry their own value.
-  - **Project memory:** the same setting exists per project, also off when the project is
-    created and 5 when turned on. Owner to confirm.
+  - **Project memory:** the same setting exists per project, but it is **on** when a project
+    is created (5 versions, adjustable), because several bots write to the same items. Applied
+    as recommended; the owner can override.
   - **Using history:** the owner restores a version from the Memory page. A bot can review,
     restore or roll back its memories when the owner asks it to (`restore_memory`).
 - **In the prompt.** Bot memory comes after the persona, then project memory, before skills
@@ -38,7 +39,7 @@ the conversation is, not chosen by the bot.
   never saved to memory. Memory is data, not instructions from the owner. A project's memory is
   never shown to a bot outside that project.
 - **Outside both scopes.** In a conversation with several bots that is not in a project, bots
-  read their bot memory but cannot save. Owner to confirm.
+  read their bot memory but cannot save. Applied as recommended; the owner can override.
 
 Why: The owner wants a bot to keep their preferences across chats, and project facts to be
 shared by the team on that project without leaking elsewhere. Saving directly, with a visible
@@ -64,5 +65,5 @@ Consequences: New tables `projects`, `memory_items`, `memory_item_versions`, and
 (`domain-model.md` §14). New events `memory.saved`, `memory.updated`, `memory.deleted`. The
 workspace no longer has a `memory/` folder (`domain-model.md` §11, `security.md` §2.3,
 `conversation-rules.md` §4).
-Implemented in: `../requirements/projects-and-memory.md`, `../domain-model.md` §14 (proposed),
+Implemented in: `../requirements/projects-and-memory.md`, `../domain-model.md` §14,
 `../conversation-rules.md` §4.

@@ -54,11 +54,11 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
 - Every path goes through `Workspace.resolve()`: refuses absolute paths, drive letters, `..`
   escapes, symlinks resolving outside the root, and anything under `.git`.
 - Writes only to the bot's `write_paths`; `inbox/` is read-only. (Bot memory is not a
-  workspace file: it lives in the database behind the memory tools, D38, proposed.)
+  workspace file: it lives in the database behind the memory tools, D38.)
 - Read size limit (1 MB text); list limit (2,000 entries).
 - **No shell tool, no network tool, no code execution** in this milestone.
-- Each conversation's workspace is a separate folder; bots in one conversation cannot see
-  another's.
+- Each project has one workspace shared by its conversations; a conversation outside any project
+  has its own (D37). Bots never see another project's or conversation's workspace.
 - `request_limit` per run caps tool loops.
 
 ### 2.4 Uploads
@@ -171,7 +171,7 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
 | Block XSS | Specified: Markdown without raw HTML, CSP, sandboxed file viewer. | 2.2 |
 | Update dependencies | Specified: Dependabot, audits in CI. | 2.11 |
 
-### 2.13 Sensitive-data guard (D39, proposed)
+### 2.13 Sensitive-data guard (D39)
 
 - Messages and text attachments are checked for likely secrets before they reach a model
   provider. Matches are shown masked, and sending needs an explicit "Send anyway", which the

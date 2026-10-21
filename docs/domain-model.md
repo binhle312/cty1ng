@@ -379,7 +379,8 @@ Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`.
 data/
   app.db                                    SQLite database (+ -wal, -shm)
   avatars/<sha256>.webp                     re-encoded uploads, content-addressed
-  workspaces/<conversation_id>/             git repo per conversation
+  workspaces/<project_id>/                  git repo shared by a project's conversations (D37)
+  workspaces/<conversation_id>/             git repo of a conversation outside any project
       inbox/<message_id>/<file>             attachments (bots: read-only)
       out/<bot-slug>/...                    default bot write path
   trash/<conversation_id>/                  workspaces of deleted conversations
@@ -443,17 +444,16 @@ Indexes for the statistics queries: `model_requests(finished_at)`, `runs(finishe
 `run_skills(skill_version_id)`. Aggregation runs on demand in SQL; a pre-aggregated daily table
 is added only if UI-10.9 cannot be met.
 
-## 14. Projects and memory (proposed, D37, D38)
+## 14. Projects and memory (D37, D38)
 
-Not built until the owner accepts D37 and D38; listed here so the schema is reviewed with the
-rest.
+Built in slice M5b.
 
 ```
 projects
   id                        TEXT PK                    -- TypeID prefix `proj`
   name                      TEXT NOT NULL              -- unique among non-deleted projects
   description               TEXT NOT NULL DEFAULT ''   -- one line
-  memory_history_versions   INTEGER NULL               -- NULL = history off; 1..20 when on (default 5)
+  memory_history_versions   INTEGER NULL DEFAULT 5     -- on (5) at creation; NULL = history off; 1..20
   row_version               INTEGER NOT NULL DEFAULT 1
   created_by, created_at
   deleted_at                TIMESTAMP NULL             -- memory recoverable for 30 days
@@ -492,8 +492,7 @@ memory_item_versions                                    -- earlier texts; trimme
 
 - **Which scope a save goes to** is decided by the service, not the bot. In a 1:1 conversation
   outside any project, the bot memory of that bot. In a project conversation, that project's
-  memory. In a multi-bot conversation outside a project, saves are refused (D38, owner to
-  confirm).
+  memory. In a multi-bot conversation outside a project, saves are refused (D38).
 - **Versions.** With history off, an update overwrites `text`, and only the previous text needed
   for Undo is kept until the next change. With history on, the old text goes to
   `memory_item_versions`, and rows beyond the setting are deleted in the same transaction.
@@ -501,6 +500,6 @@ memory_item_versions                                    -- earlier texts; trimme
   compare-and-set count (`architecture.md` §11).
 - New TypeID prefixes for D36: `proj`, `mem`.
 
-Invariants (to join §12 when accepted): a project memory item is never in the prompt of a run
+Invariants (part of §12): a project memory item is never in the prompt of a run
 whose conversation is outside that project; a memory item's text never matches the
 sensitive-data guard.

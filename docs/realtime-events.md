@@ -123,8 +123,8 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `skill.created` / `skill.updated` / `skill.deprecated` | yes | `{skill}` | skill CRUD, new version |
 | `settings.updated` | yes | `{settings}` | global settings changed |
 | `spend.threshold_crossed` | yes | `{threshold_pct, today_spend_usd, cap_usd}` | today's spend crossed 75%, 90% or 100% of the daily cap (D40); once per threshold per day |
-| `project.created` / `project.updated` / `project.deleted` | yes | `{project}` | project CRUD, conversation moved (D37, proposed) |
-| `memory.saved` / `memory.updated` / `memory.deleted` | yes | `{memory_item, conversation_id?}` | a bot or the owner changed memory (D38, proposed); drives the "Remembered: …" line |
+| `project.created` / `project.updated` / `project.deleted` | yes | `{project}` | project CRUD, conversation moved (D37) |
+| `memory.saved` / `memory.updated` / `memory.deleted` | yes | `{memory_item, conversation_id?}` | a bot or the owner changed memory (D38); drives the "Remembered: …" line |
 
 Adding an event type: add it here first, then to the backend `EventType` enum and the frontend
 reducer. A test asserts the three lists match.

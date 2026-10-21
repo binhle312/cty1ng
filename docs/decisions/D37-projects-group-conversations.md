@@ -1,6 +1,6 @@
 # D37. Projects group conversations
 
-Status: proposed (2026-10-21), from the owner's product-brief interview.
+Status: accepted (2026-10-21, owner), from the owner's product-brief interview.
 Decision: A new **Project** entity groups conversations about one piece of work. A project has a
 name, a short description, its conversations and its project memory (D38). Later it is also
 what an external folder attaches to (D23 attaches the folder to the project, not to each
@@ -23,11 +23,13 @@ Rejected:
   side question) without one endless chat.
 - **Tags instead of projects:** a conversation could carry several tags, so it would be unclear
   which memory applies.
-Open for the owner:
-- **Workspace scope.** Today each conversation has its own workspace folder. Should
-  conversations in one project share one workspace, so the Designer in one conversation sees
-  the BA's files from another? Recommended: yes. One workspace per project, with 1:1 chats
-  outside projects keeping their own. That changes `domain-model.md` §11 and M6.
-- **When to build it.** Recommended: a slice after M5 (M5b), before the workspace work in M6,
-  so M6 builds the workspace at the right scope.
-Implemented in: `../requirements/projects-and-memory.md`, `../domain-model.md` §14 (proposed).
+Resolved with the recommended answers (2026-10-21; the owner can still override):
+- **Workspace scope.** Conversations in one project share **one workspace** (one folder and
+  git repo), so the Designer in one conversation sees the BA's files from another. A
+  conversation outside any project keeps its own workspace. Moving a conversation into a project
+  does not move files; earlier files stay in the conversation's own workspace, which stays
+  readable from it. The per-repo lock serialises git commits from runs in different
+  conversations of the project. See `domain-model.md` §11.
+- **When to build it.** Slice M5b, after M5 and before M6, so M6 builds the workspace at the
+  right scope.
+Implemented in: `../requirements/projects-and-memory.md`, `../domain-model.md` §11, §14.

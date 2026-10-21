@@ -17,20 +17,17 @@ React + Vite (D34, replaces D10), with libraries behind ports (D35) and a `READM
 code folder for agents (`architecture.md` §4.2). Ids are UUIDv7 stored, TypeIDs outside the
 database (D22, D36). Themes accepted (D30): Command ships in M0, Material later (T2), and the
 Board is the Flow pane's third map (M8b). Product brief expanded after the owner's interview (use cases, phases, non-goals, trust
-failures); D37–D39 proposed from it, D40 accepted.
+failures); D37–D40 accepted (projects, memory, sensitive-data guard, cost alerts).
 
 ## Next
 
-1. Owner decides D37 (projects; workspace per project?), D38 (memory; scope rules outside
-   projects, history setting for project memory), D39 (sensitive-data guard) and the D40
-   question (stop a running run at the cap?). Then merge PR #6.
+1. Owner merges PR #6.
 2. Start M0 locally in Claude Code with the builder prompt in `workflow.md` §3.
 
 ## Waiting on the owner
 
 | Item | Needed by |
 | --- | --- |
-| D37, D38, D39 (proposed) and the D40 question | M0 (they change the schema plan) |
 | Merge PR #6 | M0 |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
 
@@ -46,7 +43,7 @@ failures); D37–D39 proposed from it, D40 accepted.
 | M5 | not started | | |
 | M6 | not started | | |
 | M7 | not started | | |
-| M5b | not written | | Projects and memory (D37, D38, proposed) |
+| M5b | not written | | Projects and memory (D37, D38) |
 | M8 | not started | | |
 | M8b | not written | | Board map in the Flow pane (D30) |
 | T2 | not written | | Material theme (D30) |

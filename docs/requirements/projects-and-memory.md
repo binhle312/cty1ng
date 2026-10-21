@@ -1,7 +1,7 @@
 # Projects and memory
 
-Proposed (D37, D38). How conversations group into projects, and how bots remember things across
-conversations. Technical design: `../domain-model.md` §14 (proposed).
+D37, D38. How conversations group into projects, and how bots remember things across
+conversations. Technical design: `../domain-model.md` §11, §14.
 
 ## Stories
 
@@ -39,8 +39,9 @@ conversations. Technical design: `../domain-model.md` §14 (proposed).
 - UI-13.8: The owner can edit or delete any item. When memory history is on, an item shows its
   earlier versions and the owner can restore one (UI-13.9).
 - UI-13.9: "Keep memory history" is a setting on bot detail (per bot) and on the project
-  (per project). It is off when the bot or project is created. Turning it on sets 5 versions per
-  item, adjustable from 1 to 20. Lowering the number asks for confirmation before deleting the
+  (per project). It is off when a bot is created and on (5 versions) when a project is created,
+  because several bots write to project memory. Turning it on sets 5 versions per item,
+  adjustable from 1 to 20. Lowering the number asks for confirmation before deleting the
   older versions.
 - UI-13.10: A memory write that contains likely secrets is refused (D39). The bot is told why,
   and nothing is saved.

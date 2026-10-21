@@ -15,7 +15,7 @@ the builder agent with the prompt in `workflow.md` §3.
 | M3 | [M3-chat-one-bot.md](tasks/M3-chat-one-bot.md) | Conversations, rail, messages, worker, agent port, streaming, Stop, provenance | **plan** (events, worker) | M2 |
 | M4 | [M4-multi-bot.md](tasks/M4-multi-bot.md) | Drag-to-add, history choice, mentions, routing, branches, conversation settings | **plan** (routing) | M3 |
 | M5 | [M5-bot-discussion.md](tasks/M5-bot-discussion.md) | Discussion toggle, turn budget, caps | merge | M4 |
-| M5b | not written | Projects and memory (D37, D38, proposed): project entity, rail grouping, bot and project memory, Memory page | **plan** (schema, UI design) | M5; before M6 if workspaces become per project |
+| M5b | not written | Projects and memory (D37, D38): project entity, rail grouping, bot and project memory, Memory page | **plan** (schema, UI design) | M5; before M6 (workspaces are per project) |
 | M6 | [M6-workspace-parity.md](tasks/M6-workspace-parity.md) | Workspace sandbox, file tools, file panel, attachments, handoffs; delete `reference/` | **plan** (security) | M3 (can run after M4/M5) |
 | M7 | [M7-statistics.md](tasks/M7-statistics.md) | Statistics page: models, bots, skills | merge (new chart dependency) | M5 (needs usage, provenance, discussion data) |
 | M8 | [M8-flow-view.md](tasks/M8-flow-view.md) | Flow pane: animated Team and Timeline maps, swappable renderer | **plan** (renderer contract, performance) | M7 (needs run steps from M3, discussion and handoffs from M5–M6) |

@@ -1,6 +1,6 @@
 # D39. Sensitive-data guard before anything reaches a model or memory
 
-Status: proposed (2026-10-21). The owner asked that bots never read sensitive data.
+Status: accepted (2026-10-21, owner). The owner asked that bots never read sensitive data.
 Decision: A pattern-based check runs on everything the owner sends toward a model and on every
 memory write. It looks for:
 

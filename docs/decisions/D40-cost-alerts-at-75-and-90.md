@@ -11,9 +11,8 @@ owner is notified:
 Each threshold fires once per day. At **100%** bots stop: no new run is claimed, as in D20.
 Notifications are in-app only in phase 1. Desktop notifications can follow if the owner wants
 them.
-Open for the owner: D20 lets a run that is already running finish, so spend can pass the cap by
-one run. "Bots stop working when hit the cost cap" could also mean stopping that run at once,
-like the Stop button. Recommended: keep D20 (finish the running run), because cutting it off
-wastes the tokens already spent and leaves half-written files.
+Resolved with the recommended answer (2026-10-21; the owner can still override): as in D20, a
+run that is already running finishes, so spend can pass the cap by one run. Stopping it at once
+would waste the tokens already spent and leave half-written files.
 Why: Two warnings give time to react before work stops.
 Implemented in: `../requirements/settings.md` UI-8.3, `../domain-model.md` §13, task M5.

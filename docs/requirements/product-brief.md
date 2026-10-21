@@ -77,14 +77,14 @@ given the order. Nothing runs while the laptop sleeps or the app is closed; that
 6. **Chat**: one or more bots per conversation, `@mention` limited to members, streaming
    replies, skill provenance chips, message editing with branches.
 7. **Bot discussion**: optional, bounded by a turn budget the bots are told about.
-8. **Parity with the Discord prototype**: per-conversation workspace with files, attachments,
+8. **Parity with the Discord prototype**: a workspace with files (one per project, D37), attachments,
    approval handoffs.
 9. **Statistics**: charts of usage by model, bot and skill (D24).
 10. **Flow view**: an animated Team and Timeline map beside the chat (D26, D27).
-11. **Projects and memory** *(proposed, D37, D38)*: conversations grouped into projects; bots
+11. **Projects and memory** (D37, D38): conversations grouped into projects; bots
     remember how the owner likes them to work (bot memory) and facts about each project
     (project memory), visible and editable on a Memory page.
-12. **Sensitive-data guard** *(proposed, D39)*: likely secrets (passwords, API keys, card or
+12. **Sensitive-data guard** (D39): likely secrets (passwords, API keys, card or
     passport numbers) are caught before they are sent to a model provider or saved to memory.
 13. **Cost alerts** (D40): the owner is told at 75% and 90% of the daily cap; at the cap, bots
     stop.
@@ -201,14 +201,14 @@ Use these words, with these meanings, in code, database, API, UI and docs.
 | **Bot turn** | A run triggered by another bot's message (not by the human). |
 | **Turn budget** | The maximum bot turns between two human messages in a conversation. |
 | **Event** | A persisted, sequence-numbered record of something visible changing. The UI is built from events. |
-| **Workspace** | The conversation's folder and git repo where bots read and write files. |
+| **Workspace** | The folder and git repo where bots read and write files: one per project, shared by its conversations, or one for a conversation outside any project (D37). |
 | **Write paths** | The workspace paths a bot may write to. |
 | **Handoff** | A bot's request that the owner approve files and pass them to another bot or to the owner. |
 | **Team directory** | The list of other bots (name, slug, one-line description) in every prompt, so a bot knows whom to mention or hand off to. |
 | **Estimated cost** | Tokens × catalog prices at the time of the run. An estimate, not an invoice. |
 | **Daily cap** | Owner-level limit on today's estimated spend; alerts at 75% and 90%, and new runs are refused once reached (D40). |
-| **Project** | A named group of conversations with a shared project memory (and, later, an attached folder, D23). A conversation may sit outside any project (D37, proposed). |
-| **Bot memory** | What a bot has learned about how the owner likes it to work, from 1:1 chats outside projects. Used by that bot everywhere (D38, proposed). |
-| **Project memory** | Facts about the work, learned in a project's conversations and shared by every bot in that project, never outside it (D38, proposed). |
-| **Memory item** | One remembered statement. Its earlier versions are kept only if memory history is on for that bot or project (off by default, 5 versions when on; D38, proposed). |
+| **Project** | A named group of conversations with a shared project memory (and, later, an attached folder, D23). A conversation may sit outside any project (D37). |
+| **Bot memory** | What a bot has learned about how the owner likes it to work, from 1:1 chats outside projects. Used by that bot everywhere (D38). |
+| **Project memory** | Facts about the work, learned in a project's conversations and shared by every bot in that project, never outside it (D38). |
+| **Memory item** | One remembered statement. Earlier versions are kept when memory history is on: off by default for a bot, on for a project, 5 versions when on (D38). |
 | **Provenance** | The skills (and versions) a run loaded, shown as chips on the bot message. |
