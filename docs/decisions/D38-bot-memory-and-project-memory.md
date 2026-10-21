@@ -20,6 +20,27 @@ Every bot also reads its own bot memory in project and conversation-memory chats
   `forget`); there is no approval queue. Each save shows in the chat as a system line
   "Remembered: …" with Undo, so nothing is saved silently. The owner can edit or delete any item
   on the Memory page.
+- **Explicit requests always count** (owner, 2026-10-21). When the owner says "remember …" or
+  "forget …", the bot must save or remove it in the current scope; it does not judge whether
+  the fact is worth keeping. The prompt says so, and a test checks it with the fake model.
+- **Memory can be turned off** (owner, 2026-10-21):
+  - **Globally**, in Settings: bots neither read nor save any memory. Existing items are kept
+    and come back when it is turned on again.
+  - **Per conversation**, a "Don't use memory" toggle: bots in that conversation neither read
+    nor save memory, of any scope. Like an incognito chat, except the conversation itself is
+    still saved.
+  - When memory is off, the prompt has no memory section and the memory tools are not offered.
+- **Tidy memory on request** (owner, 2026-10-21). There is no automatic summary of past chats
+  (see Rejected). Instead the owner can ask a bot, or press "Tidy" on the Memory page, to
+  optimise one scope:
+  - the bot merges duplicates, shortens long items, and flags contradictions and items that look
+    out of date;
+  - the result is a proposal card listing each change (merge, rewrite, delete) with a checkbox,
+    so nothing changes until the owner applies it;
+  - applied changes are ordinary memory updates: they show "Remembered" lines, go into version
+    history when it is on, and can be undone;
+  - it is one run with normal cost tracking, and it works on one scope at a time.
+  This is also the manual first step towards the curator below.
 - **Version history is a setting.**
   - **Per bot:** "Keep memory history" is off when a bot is created. When the owner turns it on,
     each of that bot's memory items keeps its last **5** versions by default, adjustable from 1
@@ -56,6 +77,10 @@ becomes permanent silently.
 Rejected:
 - **Approve every memory before it is saved:** too slow in practice. Visible saves with Undo
   and a full Memory page give the same control.
+- **An automatic summary of all past chats**, refreshed in the background (as some assistants
+  do): hidden, costs tokens on every refresh, and turns AI-written text into context without
+  the owner seeing it. "Tidy memory on request" covers the need to keep memory short. It could
+  return later as an opt-in.
 - **A librarian bot as the only writer of project memory** (considered and deferred,
   2026-10-21): a single gatekeeper adds a hop to every save, becomes a bottleneck and a single
   point of error, and the owner already sees every save. If duplicates or contradictions show up

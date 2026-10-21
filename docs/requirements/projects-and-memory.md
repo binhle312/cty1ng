@@ -15,7 +15,8 @@ conversations. Technical design: `../domain-model.md` §11, §14.
   every bot in the project, so that a new conversation in the project starts with context.
   Acceptance criteria: UI-13.4, UI-13.6.
 - **PM-4.** As the owner, I want to see, edit, delete and recover what bots remember, so that
-  nothing becomes permanent without my knowing. Acceptance criteria: UI-13.7 to UI-13.10.
+  nothing becomes permanent without my knowing. Acceptance criteria: UI-13.7 to UI-13.10,
+  UI-13.13 to UI-13.15.
 - **PM-5.** As the owner, I want bots in a multi-bot chat outside any project to remember facts
   about that chat's topic, so that a quick team chat keeps its context without needing a
   project. Acceptance criteria: UI-13.4, UI-13.11, UI-13.12.
@@ -56,3 +57,12 @@ conversations. Technical design: `../domain-model.md` §11, §14.
 - UI-13.12: Moving such a conversation into a project lists its conversation memory with
   checkboxes (all ticked) to merge into the project memory. Unticked items stay recoverable on
   the Memory page for 30 days.
+- UI-13.13: When the owner says "remember …" or "forget …", the bot saves or removes it in the
+  current scope, and the "Remembered" or "Forgot" line appears. A fake-model test checks this.
+- UI-13.14: With memory off, globally (UI-8.6) or for the conversation (UI-9.6), the bot's prompt
+  has no memory and it is not offered the memory tools. A test checks both.
+- UI-13.15: "Tidy" on a scope of the Memory page, or asking a bot to tidy its memory, produces a
+  proposal card: each merge, rewrite or delete with a checkbox and before/after text. Nothing
+  changes until the owner presses Apply. Applied changes can be undone like any other memory
+  change.
+

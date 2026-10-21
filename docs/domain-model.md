@@ -461,6 +461,7 @@ projects
 conversations
   + project_id              TEXT NULL REFERENCES projects(id)   -- NULL = outside any project
   + memory_history_versions INTEGER NULL DEFAULT 5     -- used only for conversation memory (multi-bot, no project)
+  + memory_disabled         BOOLEAN NOT NULL DEFAULT FALSE  -- "Don't use memory" (UI-9.6)
 
 bots
   + memory_history_versions INTEGER NULL               -- NULL = history off (default at creation); 1..20
@@ -502,6 +503,7 @@ memory_item_versions                                    -- earlier texts; trimme
   `memory_item_versions`, and rows beyond the setting are deleted in the same transaction.
 - **Limits:** 100 live items per bot, per project and per conversation, enforced in the service with a
   compare-and-set count (`architecture.md` §11).
+- Global switch: `settings.memory_enabled` (default true, UI-8.6).
 - New TypeID prefixes for D36: `proj`, `mem`.
 
 Invariants (part of §12): a project memory item is never in the prompt of a run

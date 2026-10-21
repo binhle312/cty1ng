@@ -36,6 +36,8 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
   Team / Timeline / Board; Board appears with M8b), and "Always reduce motion". Changes apply instantly without reload,
   are saved in this browser, and the page never flashes the wrong theme on load
   (`../design/themes.md` §1, §2).
+- UI-8.6 *(D38)*: Memory: a global switch. When off, no bot reads or saves memory anywhere;
+  saved items are kept and return when it is turned back on. A link opens the Memory page.
 
 ## Conversation settings (UI-9)
 
@@ -49,3 +51,5 @@ Opened from the conversation header or the rail menu.
 - UI-9.3: Bot discussion: "Use global (off)" / On / Off, and the turn limit (inherit or 1–20).
 - UI-9.4: Members with Remove.
 - UI-9.5: Danger zone: Delete conversation.
+- UI-9.6 *(D38)*: "Don't use memory" toggle. When on, bots in this conversation neither read nor
+  save memory of any scope, and the header shows a small "Memory off" badge.
