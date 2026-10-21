@@ -47,6 +47,12 @@ becomes permanent silently.
 Rejected:
 - **Approve every memory before it is saved:** too slow in practice. Visible saves with Undo
   and a full Memory page give the same control.
+- **A librarian bot as the only writer of project memory** (considered and deferred,
+  2026-10-21): a single gatekeeper adds a hop to every save, becomes a bottleneck and a single
+  point of error, and the owner already sees every save. If duplicates or contradictions show up
+  in the trust-failures log (`../requirements/product-brief.md`), add a periodic **curator** that
+  merges duplicates and flags contradictions for the owner, rather than a single-writer
+  gatekeeper.
 - **Per-conversation memory file** (the old design): it did not follow the bot or the project.
 - **One global memory for all bots:** a Designer's preferences would leak into the BA.
 - **Versions of the whole memory as one snapshot:** restoring one wrong item would also undo
