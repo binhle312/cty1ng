@@ -38,7 +38,7 @@ changes one adapter and nothing else.
 | `model.ts` | Stream a reply with tools; report usage per request | `adapters/model/ai-sdk/`, `adapters/model/fake/` | Direct vendor SDKs |
 | `prices.ts` | Price one request; say where the price came from | `adapters/prices/genai-prices/` + `config/models.yaml` override (D21) | Another price feed |
 | `workspace.ts` | Resolve, read, write, commit, changed-since | `adapters/workspace/local-git/` | Object storage on a VPS |
-| `clock.ts`, `ids.ts` | Now; new UUIDv7 (D22) | System clock, `uuidv7` | Fixed values in tests |
+| `clock.ts`, `ids.ts` | Now; new id of a given type: UUIDv7 (D22) written as a TypeID (D36) | System clock, `uuidv7` + `typeid-js` | Fixed values in tests |
 
 **Unit of work.** A state change and the event describing it commit together (§5, rule 3 in
 `AGENTS.md`). Services do both inside one `uow.run(tx => …)`; the repositories they get from
@@ -90,7 +90,7 @@ A pnpm workspace with three packages. Each folder marked † has a `README.md` i
 ├─ shared/ †                 code both sides import
 │  └─ src/
 │     ├─ events/             Zod schemas of the event envelope and every event type
-│     ├─ ids.ts              branded id schemas (BotId, MessageId, …)
+│     ├─ ids.ts              TypeID schemas per prefix (BotId, MessageId, …; D36)
 │     └─ errors.ts           API error codes
 ├─ backend/ †
 │  ├─ package.json

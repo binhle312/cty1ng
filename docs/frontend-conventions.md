@@ -16,7 +16,7 @@ skill (Lauren Tan), changed where it conflicts with this project.
 | **Schemas, not hand-written guards** | Validation uses Zod (D33). The TypeScript type is inferred from the schema (`z.infer`), never declared twice. |
 | **Types from the API, not copies** | REST types come from `frontend/src/lib/api/generated/`. Use `Pick`, `Omit`, `ReturnType`, `Awaited` on them; never redeclare a shape the backend owns. |
 | **No `as`** | No type assertions, except `as const`. Use `satisfies` to check a literal without widening it. A cast is allowed only right after a schema parse, with a comment. |
-| **Branded ids** | `BotId`, `MessageId`, `ConversationId`, `RunId`, `SkillId` are branded strings (`z.string().uuid().brand<"BotId">()`), so one cannot be passed where another is expected. Brands come from a schema parse, never from `as`. |
+| **Branded ids** | `BotId`, `MessageId`, `ConversationId`, `RunId`, `SkillId` are branded TypeID strings from `shared/src/ids.ts` (D36: `bot_…`, `msg_…`; the schema checks the prefix), so one cannot be passed where another is expected. Brands come from a schema parse, never from `as`. |
 | **Simplest total type** | Keep `T[]` while every use is total. Strengthen (for example to a non-empty tuple) only where the loose type forces `!`, a cast or a "should never happen" throw. |
 | **Object arguments** | Functions with more than two parameters, or two of the same type, take one object. Not on hot paths (render loops, the Flow renderer's per-frame code). |
 | **Real tests** | Test with the real store, router and reducer; mock only the network and the clock. Matches `testing.md`. |

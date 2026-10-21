@@ -8,7 +8,8 @@ of date. When this document and the OpenAPI schema disagree, raise it.
 ## 1. Conventions
 
 - Base path `/api`. JSON in and out (`multipart/form-data` for uploads).
-- Ids are UUIDv7 strings (D22). Timestamps are ISO-8601 UTC.
+- Ids are TypeIDs (D36): `<prefix>_<26 base32 chars>`, for example `bot_01jb8x6p0afqz8r2m3k5t7v9wx`.
+  A malformed id or a wrong prefix returns 422 `invalid_id`. Timestamps are ISO-8601 UTC.
 - Request schemas forbid unknown fields (Zod `.strict()`) so typos and forbidden fields
   (like `model_id` on bot update) fail loudly with 422.
 - Lists are cursor-paginated where they can grow: `?before_seq=` / `?limit=` (max 100).
@@ -31,7 +32,7 @@ One shape for every error:
 | 404 | `not_found` |
 | 409 | `name_taken`, `slug_taken`, `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending`, `run_not_queued` |
 | 413 | `too_large` |
-| 422 | `validation_error`, `mention_not_member`, `bot_unavailable`, `bot_deleted`, `skill_deprecated`, `version_mismatch`, `effort_not_supported`, `model_not_available` |
+| 422 | `validation_error`, `invalid_id`, `mention_not_member`, `bot_unavailable`, `bot_deleted`, `skill_deprecated`, `version_mismatch`, `effort_not_supported`, `model_not_available` |
 | 429 | `rate_limited` (runs per hour), `daily_cap_reached` |
 
 ## 2. Skills

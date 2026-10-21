@@ -51,7 +51,7 @@ Implemented in: links.
 | D19 | [Bot slug fixed at creation](D19-bot-slug-fixed-at-creation.md) | accepted |
 | D20 | [Daily spending cap](D20-daily-spending-cap.md) | accepted |
 | D21 | [Token and cost tracking](D21-token-and-cost-tracking.md) | accepted |
-| D22 | [Use UUIDv7 instead of ULID for ids](D22-use-uuidv7-instead-of-ulid-for-ids.md) | under review (owner, 2026-10-21) |
+| D22 | [Use UUIDv7 instead of ULID for ids](D22-use-uuidv7-instead-of-ulid-for-ids.md) | accepted (shown as TypeIDs, D36) |
 | D23 | [Bots working on an external project folder](D23-bots-working-on-an-external-project-folder.md) | accepted in principle |
 | D24 | [Statistics page](D24-statistics-page.md) | accepted |
 | D25 | [One Grafana-style time range picker](D25-one-grafana-style-time-range-picker.md) | accepted |
@@ -65,3 +65,4 @@ Implemented in: links.
 | D33 | [Zod for runtime validation in the frontend](D33-zod-for-frontend-runtime-validation.md) | accepted |
 | D34 | [TypeScript on the backend and the frontend](D34-typescript-full-stack.md) | accepted |
 | D35 | [Ports and adapters at the edges, not "switch anything"](D35-ports-and-adapters-at-the-edges.md) | accepted |
+| D36 | [Ids are TypeIDs everywhere outside the database](D36-typeid-outside-the-database.md) | accepted |

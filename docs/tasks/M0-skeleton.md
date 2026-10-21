@@ -27,7 +27,8 @@ renders. Later slices only add features; they should never need to set up toolin
   `db:generate`, `db:migrate`, `db:check` scripts.
 - Ports and adapters (D35): `core/ports/` with the transport, repositories + unit of work,
   queue, model, prices, workspace, clock and ids interfaces (types only where the adapter comes
-  in a later slice); adapters for transport (SSE), db, clock and ids (`uuidv7`, D22); the
+  in a later slice); adapters for transport (SSE), db, clock and ids (`uuidv7` + `typeid-js`, D22, D36), the Drizzle
+  TypeID column type and the `ids decode` CLI command; the
   contract-suite runner in `backend/test/contracts/` with the transport and unit-of-work suites.
 - Import rules: `.dependency-cruiser.cjs` with the rules in `architecture.md` §4.1, run by
   `pnpm lint`, plus one deliberately bad import in a test fixture proving the rule fires.

@@ -14,21 +14,20 @@ Last updated: 2026-10-21
 
 Specification in the repository, now for a TypeScript stack: Hono, Drizzle, Vercel AI SDK,
 React + Vite (D34, replaces D10), with libraries behind ports (D35) and a `README.md` index per
-code folder for agents (`architecture.md` §4.2). D22 (ids) is being re-examined.
+code folder for agents (`architecture.md` §4.2). Ids are UUIDv7 stored, TypeIDs outside the
+database (D22, D36).
 
 ## Next
 
-1. Owner decides D22 (comparison posted in the project chat).
-2. Owner confirms the Problem and Success measures in
+1. Owner confirms the Problem and Success measures in
    [product-brief.md](requirements/product-brief.md) (marked draft).
-3. Owner answers D30 (themes): accept, Board in the Flow pane, which theme first.
-4. Start M0 with the builder prompt in `workflow.md` §3.
+2. Owner answers D30 (themes): accept, Board in the Flow pane, which theme first.
+3. Start M0 with the builder prompt in `workflow.md` §3.
 
 ## Waiting on the owner
 
 | Item | Needed by |
 | --- | --- |
-| D22: id format | M0 |
 | Product brief: Problem and Success measures | M0 |
 | Accept or change D30 (themes); answer its two open questions (`design/themes.md`) | M0 plan |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
