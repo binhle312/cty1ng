@@ -21,7 +21,9 @@ expanded after the owner's interview (use cases, phases, non-goals, trust
 failures); D37–D40 accepted (projects, memory, sensitive-data guard, cost alerts); D42 adds optional per-provider caps under the total cap. D41
 accepted: bots draft skills when asked, the owner approves and is the author (slice M5c).
 UI design review in progress: header bot order (Recent activity / Custom, deferred
-reordering) specified for M2.
+reordering) specified for M2. Agreed so far and saved in `design/components/` with previews: bot
+avatar (Flat, Jelly, Pixel; Flat only until the final product), top header, bot card, user
+panel. Left bar still in review (project first).
 
 ## Next
 

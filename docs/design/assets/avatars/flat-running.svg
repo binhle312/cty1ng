@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="90" height="90">
+                <defs>
+                  <linearGradient id="sv2g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#6FA8FF"></stop></linearGradient>
+                  <clipPath id="sv2c3"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#6FA8FF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#sv2c3)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M0 0" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M15.600000000000001 30.4Q18.8 24.8 22 30.4M26 30.4Q29.2 24.8 32.4 30.4" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M21 34.2Q24 34 27 34.2Q26.6 38.6 24 38.6Q21.4 38.6 21 34.2Z" fill="#0E0F11"></path>
+                  <path d="M22.4 37.2Q24 35.8 25.6 37.2Q25 38.3 24 38.3Q23 38.3 22.4 37.2Z" fill="#FF8FB0"></path>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
