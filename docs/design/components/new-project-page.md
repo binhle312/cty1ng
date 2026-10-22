@@ -25,8 +25,10 @@ title and the page's accessible name stay **"New project"**.
 
 - **Left:** the form, at most 620 px wide: header, Name, Goal, Instructions, Colour, then the
   buttons. The page starts with the focus in Name.
-- **Right:** a 260 px preview column. It stays in place while the owner types. It shows the bar 2
-  header (tile, name, stats line, goal) with the Memory and Library rows, the rail tile, and the
+- **Right:** a 260 px preview column, "Preview of bar 2". It stays in place while the owner
+  types. It shows bar 2 as it looks after Create, with the approved parts (`left-bar.md` §2): the
+  header (tile, name, "1 chat · 0 bots · 0 files", goal), the Board row ("Later", no counts),
+  Memory 0, Library 0, and Chats with + and the empty first chat. Under it: the rail tile, and the
   line "Bar 2 does not show the instructions. Every bot in this project reads them."
 - **Buttons**, aligned right under a divider: **Cancel**, **Create project** (`primary`). The app
   turns off Create project until Name has text and no field has an error.
