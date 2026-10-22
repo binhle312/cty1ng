@@ -56,14 +56,21 @@ Layout sketch: see `../design/screens.md` §1 (not final).
   nothing and show why ("Already here").
 - UI-2.5: Dropping adds the bot (`../conversation-rules.md` §3); the history card appears within
   1 s.
-- UI-2.6: Clicking an avatar opens the bot detail page.
-- UI-2.7: When there are more bots than fit, the bar scrolls horizontally with fade edges.
-- UI-2.8: Right side: links to Bots, Skills, Statistics, Settings.
+- UI-2.6: Clicking an avatar opens the bot card (`../design/components/bot-card.md`). Only one
+  card is open at a time. The card links to the bot's settings.
+- UI-2.7: The roster uses the middle 6 of 12 page columns. When there are more bots than fit, the
+  zone scrolls horizontally with fade edges, and ‹ › buttons show on hover
+  (`../design/components/top-header.md`).
+- UI-2.8: The header holds the bot roster only, with no navigation links. Bots, Skills, Memory,
+  Statistics and Settings open from the user panel menu (`../design/components/user-panel.md`).
+  With no bots, the header shows a dashed "+" with "Hey, add your bot here 👋".
 - UI-2.9: Deferred reordering (Recent activity only). The order freezes when the pointer enters
   the header or focus moves into it, and stays frozen while the owner scrolls, drags, clicks or
   uses a bot's card; leaving with the pointer keeps it frozen. Activity that arrives meanwhile
-  is recorded but no avatar moves. The next click or key press **outside** the header applies
-  the pending order in one step (no avatar-by-avatar movement), does nothing when the order is
+  is recorded but no avatar moves. The pending order applies in one step at the next of these events:
+  a click or key press **outside** the header; focus moves out of the header (for example to
+  another window or tab); or the page or route changes. A pointer, keyboard or drag interaction
+  in the header always keeps it frozen. The update moves no avatar one by one, does nothing when the order is
   unchanged, and keeps the scroll position where it can. Rule: avatars never move while the
   owner is engaging with the header.
 - UI-2.10: Keyboard: Tab reaches each avatar in display order, and the focused avatar scrolls

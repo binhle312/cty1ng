@@ -474,7 +474,7 @@ Usage is derived from `model_requests` (detail) and `runs` (totals). All figures
 | Per message | the message's run |
 | Per bot | sum over its runs, by day, last 7 / 30 days |
 | Per conversation | sum over runs in the conversation |
-| Today (for the cap) | sum of `estimated_cost_usd` for runs finished since local midnight, plus running runs' partial usage; per provider, the same sum filtered on `model_requests.provider` |
+| Today (for the cap) | sum of `model_requests.estimated_cost_usd` for requests that finished since local midnight. Each request counts once, so the partial usage of a running run is included. Per provider: the same sum for the requests with that `provider`. A request in a run is charged to its own provider, so a run with requests to two providers splits its cost. A request with NULL cost (unknown price) counts toward no cap (D21, D42) |
 
 Daily cap check (D20, D42) happens when a run is claimed: first the bot's provider cap, if set
 (today's spend on that provider ≥ its cap → `failed` with `provider_cap_reached`), then the total

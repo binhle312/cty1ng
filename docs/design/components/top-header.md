@@ -34,8 +34,5 @@ sticky on every page (UI-2.11), background `surface`, bottom line `outline`.
 
 ## Requirement changes
 
-These were agreed in the review and will be written into `app-shell.md` in the requirements PR:
-- UI-2.6: clicking an avatar opens the bot card, not the bot page.
-- UI-2.7: the roster sits in the middle 6 of 12 columns; overflow buttons as in state 3.
-- UI-2.8: removed (no links in the header; navigation moves to the left bar and user panel).
-- New: the empty-state text of state 11.
+Written into `app-shell.md` UI-2.6, UI-2.7 and UI-2.8 (PR #11), including the empty-state text
+of state 11.

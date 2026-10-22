@@ -25,8 +25,21 @@ Decision:
     until the owner applies the card.
   - So a run normally does not find a disagreement between instructions and memory. If a run does
     find one, the instructions win, and the bot continues the work. When the work is complete, the
-bot reports the conflict to the owner at the end of its reply. The report names the memory item
-and the instruction, and has an **Update project memory** button.
+    bot reports the conflict to the owner at the end of its reply. The report names the memory
+    item and the instruction, and has an **Update project memory** button.
+  - **The check run after an instruction save.** The save completes first, and the new
+    instructions apply at once. The app then queues the check run as a normal run, with cost
+    tracking (D21) and the daily caps (D20, D42). If the run fails or a cap stops it, the
+    instructions stay saved. The project shows "Memory check failed" with a **Check again**
+    button. A new save of the instructions replaces a check run that has not started.
+- **The check is best effort, not a guarantee.** The model can miss a conflict, or it can act
+  when it should ask. The guarantees come from the app, not from the prompt:
+  - Bots have no tool that changes the project instructions. Only the owner changes them.
+  - An answer to a conflict question never changes project memory or the instructions. Only the
+    **Update project memory** button, which the owner presses, or the owner's own edit does that.
+  - Each project memory save shows "Remembered" with Undo (D38), so the owner sees each change.
+  - File writes and handoffs keep their own rules and approvals. A missed conflict does not skip
+    them.
 - The owner can move a 1:1 chat into a project. The API gets an endpoint for this move.
 Example: The project memory says "Stories use the Given/When/Then format". The owner writes
 "just give me bullets". The BA replies: "Project memory says stories use Given/When/Then. Do you
@@ -42,8 +55,13 @@ Not chosen:
 Consequences: The Memory pane shows project memory first. It shows a bot memory item that project
 memory overrides with a line through it (`../design/components/memory-pane.md`). The prompt
 builder adds the check rule. A test with the fake model checks that a conflict gives a question
-and no file changes. The memory tools check new project items against the instructions. A save of
-the instructions starts a check run, with normal cost tracking (D21). The API gets an endpoint that moves a conversation into a project.
+and no file changes. That test proves one scripted case, not that the model always asks. The
+prompt for the memory tools tells the bot to compare a new project item with the instructions.
+A save of the instructions queues a check run. The API gets an endpoint that moves a conversation
+into a project.
+Contract status: the API contracts are **not written yet**. The M5b brief and `../api.md` must
+define them before M5b starts: move a conversation into a project, read and save the instructions,
+the check run and its status, and the **Update project memory** action.
 Why: D38 says that memory is data, not instructions from the owner. So the owner's answer must
 win. A question before the work costs less than work that the owner must undo. All bots and chats
 in a project share project memory, so the owner must see each change to it.

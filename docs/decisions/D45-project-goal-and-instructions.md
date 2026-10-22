@@ -21,4 +21,7 @@ project page and the project settings show the two fields
 (`../design/components/new-project-page.md`).
 Why: The owner needs one place for the rules that all bots in a project follow. Memory is not
 that place, because bots learn and change memory.
+Contract status: the API contracts are **not written yet**. The M5b brief and `../api.md` must
+define the `description` and `instructions_md` fields of `POST /projects` and
+`PATCH /projects/{id}` before M5b starts.
 Implemented in: `../domain-model.md` §14, `../api.md`, the rules of the prompt builder, task M5b.

@@ -40,7 +40,9 @@ slice (M8c).
 | Merge the skill drafts PR (D41) | M0 |
 | Review and merge the header bot order PR (docs only) | M2 plan |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
-| Approve the migrations they imply: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars | M5b plan |
+| Approve the M2 migration: `bots.header_position`. Claude Code stops for this approval before it writes the migration | M2 plan |
+| Approve the M5b migrations: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars. Claude Code stops for this approval before it writes them | M5b plan |
+| Write the M5b brief: projects, memory (D37, D38, D43), goal and instructions (D45), pinning, the API contracts that D43 and D45 list as not written yet | M5b start |
 
 ## Slices
 
@@ -54,7 +56,7 @@ slice (M8c).
 | M5 | not started | | |
 | M6 | not started | | |
 | M7 | not started | | |
-| M5b | not written | | Projects and memory (D37, D38) |
+| M5b | not written | | Projects and memory (D37, D38, D43, D45); left bar pinning; side pane shared with Memory (D44) |
 | M5c | not written | | Skills drafted by bots (D41) |
 | M8 | not started | | |
 | M8b | not written | | Board map in the Flow pane (D30) |
