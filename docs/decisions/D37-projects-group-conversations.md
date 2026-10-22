@@ -1,6 +1,6 @@
 # D37. Projects group conversations
 
-Status: accepted (2026-10-21, owner), from the owner's product-brief interview.
+Status: accepted (2026-10-21, owner), from the owner's product-brief interview. Amended by D45 (goal and instructions) and D47 (delete sends the whole project to Trash).
 Decision: A new **Project** entity groups conversations about one piece of work. A project has a
 name, a short description, its conversations and its project memory (D38). Later it is also
 what an external folder attaches to (D23 attaches the folder to the project, not to each

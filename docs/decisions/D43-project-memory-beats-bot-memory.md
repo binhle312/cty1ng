@@ -1,6 +1,6 @@
 # D43. Project memory beats bot memory; the bot asks about a conflict before it acts
 
-Status: accepted (2026-10-22, owner). The owner agreed to it in the UI design review. It amends D38 (memory scopes). The other rules of D38 do not change.
+Status: accepted (2026-10-22, owner). The owner agreed to it in the UI design review. It amends D38 (memory scopes). The other rules of D38 do not change. Amended by D47 and D48: the check card choices, and conflicts asked in a plan.
 Decision:
 - **Order of the rules in a project.** The project instructions (D45) win over project memory.
   Project memory wins over the bot's own memory (D38). The bot continues to use its own memory

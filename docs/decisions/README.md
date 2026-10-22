@@ -76,3 +76,5 @@ Implemented in: links.
 | D44 | [The side pane holds Flow or Memory, one at a time](D44-right-pane-holds-flow-or-memory.md) | accepted |
 | D45 | [Every run reads the project's goal and instructions](D45-project-goal-and-instructions.md) | accepted |
 | D46 | [The app writes a short title from the first message, one time only](D46-auto-title-from-the-first-message.md) | proposed |
+| D47 | [Delete sends the whole project to Trash; the owner picks what wins in a memory check](D47-delete-project-to-trash-and-memory-check-choices.md) | accepted |
+| D48 | [Bots plan first and wait for approval before they change anything](D48-bots-plan-before-they-change-anything.md) | accepted |

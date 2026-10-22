@@ -8,7 +8,7 @@ the lists above it scroll (UI-1.13). The rail has no tools, so the menu below ke
 
 ## 1. Expanded
 
-Left to right: 32 px round owner avatar (a letter), owner name, chevron, **budget battery**,
+Left to right: 32 px round owner avatar (a letter), owner name, **budget battery**,
 Settings gear (36 px). Hover and keyboard focus: the row lightens and gets a 2 px `primary` ring.
 
 Until the owner sets a display name, the name is **"Sir"** and the avatar letter **"S"**.
