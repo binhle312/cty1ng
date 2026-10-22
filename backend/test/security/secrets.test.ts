@@ -58,3 +58,55 @@ describe("redaction edge cases (security.md §2.6)", () => {
     expect(output).toContain("[redacted]");
   });
 });
+
+describe("redaction keeps every log record valid JSON with intact metadata", () => {
+  /** Parses each emitted line; fails the test if any line is not a JSON object. */
+  function records(target: TestApp): Record<string, unknown>[] {
+    return target.logs
+      .join("")
+      .split("\n")
+      .filter((line) => line !== "")
+      .map((line) => {
+        const parsed: unknown = JSON.parse(line);
+        if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+          throw new Error(`log line is not a JSON object: ${line}`);
+        }
+        return Object.fromEntries(Object.entries(parsed));
+      });
+  }
+
+  it.each([
+    ["a one-character key", "3"],
+    ["a key equal to pino's msg field", "msg"],
+    ["a key equal to the level field", "level"],
+    ["a key equal to a level name", "info"],
+    ["a key equal to the time field", "time"],
+    ["a key with JSON escape characters", 'sk"q\\x\n'],
+  ])("%s", (_label, secret) => {
+    app = makeTestApp({ PROBE_API_KEY: secret });
+    const child = app.logger.child({ request_id: "req-1" });
+    child.info(
+      { event: "probe", detail: `value ${secret} here`, status: 300 },
+      `message ${secret}`,
+    );
+    child.error({ event: "probe.error", err: new Error(`failed with ${secret}`) }, "plain message");
+    child.warn(new Error(`bare error ${secret}`));
+
+    const all = records(app);
+    const probe = all.find((record) => record.event === "probe");
+    const failure = all.find((record) => record.event === "probe.error");
+
+    // Metadata is untouched, and the secret is replaced only inside the values we logged.
+    expect(probe).toMatchObject({ level: 30, request_id: "req-1", status: 300 });
+    expect(typeof probe?.time).toBe("string");
+    expect(probe?.msg).toBe("message [redacted]");
+    expect(probe?.detail).toBe("value [redacted] here");
+    expect(failure).toMatchObject({ level: 50, request_id: "req-1", msg: "plain message" });
+    expect(failure?.err).toMatchObject({ type: "Error", message: "failed with [redacted]" });
+    const bare = all.find((record) => record.level === 40 && record.err !== undefined);
+    expect(bare).toMatchObject({
+      msg: "bare error [redacted]",
+      err: { message: "bare error [redacted]" },
+    });
+  });
+});
