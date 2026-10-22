@@ -80,7 +80,7 @@ queue and workspace adapters (their slices add them); pg-boss (VPS phase).
 ## Acceptance criteria
 
 1. `make dev` starts both servers; the browser shows the shell with the "+" button in the rail
-   and an empty header.
+   and an empty header. The header stays at the top while a long page scrolls (UI-2.11).
 2. Starting the backend with `HOST=0.0.0.0` exits with a clear error.
 3. A POST with `Origin: https://evil.com` gets 403 `origin_rejected`; with a wrong `Host`
    header gets 403.

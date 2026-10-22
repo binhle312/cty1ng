@@ -68,6 +68,9 @@ Layout sketch: see `../design/screens.md` §1 (not final).
   owner is engaging with the header.
 - UI-2.10: Keyboard: Tab reaches each avatar in display order, and the focused avatar scrolls
   into view. Arrow-key navigation between avatars is not provided (a later option).
+- UI-2.11: The header is sticky: it stays at the top of the window on every page while the
+  content below it scrolls (the conversation, the bot and skill pages, Settings, Statistics).
+  Only the content area scrolls; the header and the conversation rail never scroll away.
 
 ## First open and reopening (UI-1, continued)
 
