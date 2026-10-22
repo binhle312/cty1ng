@@ -18,8 +18,9 @@ is reviewed separately, before M0b.
 ## In scope
 
 - pnpm workspace with `shared/` and `backend/` (the `frontend/` package comes in M0b), the layout
-  from `architecture.md` §4; Node 24 LTS pinned (`.nvmrc`, `engines`, `engine-strict=true`,
-  `packageManager` pinned to an exact pnpm); root scripts for every command in `AGENTS.md` §4
+  from `architecture.md` §4; Node 24 LTS pinned (`.nvmrc`, `engines`, `engineStrict: true` in
+  `pnpm-workspace.yaml`, which pnpm 12 reads instead of `.npmrc`; `packageManager` pinned to an
+  exact pnpm); root scripts for every command in `AGENTS.md` §4
   except `gen:api` and `e2e` (M0b); `Makefile` with `dev` (backend only until M0b), `test`,
   `lint`, `seed` (a stub).
 - Backend: Hono on `@hono/node-server`, `app/main.ts` (composition root), `app/config.ts` (env

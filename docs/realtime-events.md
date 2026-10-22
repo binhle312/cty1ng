@@ -59,8 +59,13 @@ conversation).
   sends all events with `seq > 812`, then live ones. First connection without the header: the
   server sends nothing old; the client loads current state with normal GETs, then uses the
   stream's first `ready` event (which carries the current max seq) as its cursor.
+- Every connection starts with `ready {max_seq}`, before any replayed events, so a client can
+  always take its cursor from it.
 - **Gap rule:** if the client's cursor is older than the retention window (events are kept 30
-  days), the server sends `event: reset` and the client reloads state with GETs.
+  days), the server sends `event: reset` and the client reloads state with GETs. A cursor
+  ahead of the newest event (a different database) or one the server cannot read is treated the
+  same way. After `reset` the stream goes on: `ready` with the current max seq, then live
+  events.
 - Heartbeat: a comment line `: ping` every 15 s keeps proxies from closing the connection.
 - `retry: 2000` tells the browser to reconnect after 2 s.
 
