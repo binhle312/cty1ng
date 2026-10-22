@@ -135,6 +135,11 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
   PRs. New dependencies need the owner's approval (`AGENTS.md` §7).
 - The repository is public: GitHub secret scanning and push protection are on, and
   `.gitignore` excludes `.env*` (except `.env.example`), `data/`, and local databases.
+- **CodeQL** code scanning (`.github/workflows/codeql.yml`, advanced setup, `security-extended`
+  queries) runs on every PR, on `main` and weekly. It scans the workflows now and the TypeScript
+  code from M0 on. Vendored skills (`.agents/skills/`), `reference/` and `docs/` are excluded
+  (`.github/codeql/codeql-config.yml`). GitHub's default CodeQL setup stays off, because it
+  conflicts with the advanced one.
 - PRs that touch the paths in `AGENTS.md` §7 (security-sensitive code) also get an automated
   security review (the `anthropics/claude-code-security-review` GitHub Action, run only on
   the owner's branches, since it reads untrusted PR content and needs an API key secret).
