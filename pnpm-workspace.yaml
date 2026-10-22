@@ -1,0 +1,11 @@
+packages:
+  - shared
+  - backend
+
+# Only these packages (pnpm 12 `allowBuilds`, formerly `onlyBuiltDependencies`) may run install scripts (security.md §2.11). Anything else that asks for
+# a build script needs the owner's approval.
+allowBuilds:
+  better-sqlite3: true
+  esbuild: true
+
+engineStrict: true
