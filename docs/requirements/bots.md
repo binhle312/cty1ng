@@ -14,6 +14,8 @@ Creating, cloning, deleting and configuring bots, including skill pins and avata
   Acceptance criteria: UI-6.3 to UI-6.6.
 - **BT-5.** As the owner, I want to change a bot's avatar, name and persona and see its usage, so that I can shape and monitor it.  
   Acceptance criteria: UI-6.1, UI-6.7, UI-6.8.
+- **BT-6.** As the owner, I want to choose how bots are ordered in the header, and set my own order, so that the bots I care about are where I expect them.  
+  Acceptance criteria: UI-4.5 (header behaviour: `app-shell.md` UI-2.1, UI-2.9).
 
 ## Acceptance criteria
 
@@ -29,6 +31,14 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
 - UI-4.4: Clone opens the create page prefilled from `clone-template`: name "<name> (copy)",
   persona, avatar, model, effort, pins (with versions and always-load), write paths. All
   editable before saving. Cancel creates nothing.
+- UI-4.5: **Header order**: a choice of *Recent activity* (default) or *Custom*, saved in the
+  `bot_order` setting. With Custom, the page lists the bots in their header order; the owner
+  reorders them by dragging or with Move up / Move down buttons (the keyboard and touch
+  alternative to dragging), then **Save order** writes the whole order at once
+  (`PUT /bots/order`). If a bot was created or deleted meanwhile, saving fails with "The bot
+  list changed. Review the order and save again" and the list reloads. Switching back to
+  Recent activity keeps the saved custom order for next time. The layout is decided at the M2
+  UI checkpoint.
 
 ## Create bot page (UI-5)
 

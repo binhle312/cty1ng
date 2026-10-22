@@ -20,6 +20,8 @@ Board is the Flow pane's third map (M8b). Loading rules, first open and reopenin
 expanded after the owner's interview (use cases, phases, non-goals, trust
 failures); D37–D40 accepted (projects, memory, sensitive-data guard, cost alerts). D41
 accepted: bots draft skills when asked, the owner approves and is the author (slice M5c).
+UI design review in progress: header bot order (Recent activity / Custom, deferred
+reordering) specified for M2.
 
 ## Next
 
@@ -31,6 +33,7 @@ accepted: bots draft skills when asked, the owner approves and is the author (sl
 | Item | Needed by |
 | --- | --- |
 | Merge the skill drafts PR (D41) | M0 |
+| Review and merge the header bot order PR (docs only) | M2 plan |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
 
 ## Slices

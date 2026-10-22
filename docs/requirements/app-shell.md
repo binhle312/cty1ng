@@ -10,6 +10,8 @@ The frame around every page: the rail of conversations on the left and the bar o
   Acceptance criteria: UI-2.1 to UI-2.3, UI-2.6 to UI-2.8.
 - **SH-3.** As the owner, I want to drag a bot from the header into the chat, so that adding a bot feels direct.  
   Acceptance criteria: UI-2.4, UI-2.5.
+- **SH-6.** As the owner, I want the header to show my most active bots first, or an order I choose, and never to shuffle while I am using it, so that I can find a bot without chasing it.  
+  Acceptance criteria: UI-2.1, UI-2.9, UI-2.10, UI-4.5.
 - **SH-4.** As the owner opening the app for the first time, I want a short checklist of what to set up, so that I reach my first bot reply without reading documentation.  
   Acceptance criteria: UI-1.7 to UI-1.9.
 - **SH-5.** As the owner, I want the app to reopen where I left off, so that closing it costs me nothing.  
@@ -38,7 +40,13 @@ Layout sketch: see `../design/screens.md` §1 (not final).
 
 ## Header (bot bar) (UI-2)
 
-- UI-2.1: Shows every non-deleted bot as a 36 px round avatar, sorted by name.
+- UI-2.1: Shows every non-deleted bot as a 36 px round avatar. The order follows the
+  `bot_order` setting:
+  - **Recent activity** (default): the bot with the latest message or run, in any
+    conversation, comes first (`last_activity_at`, `../api.md` §4). Bots with no activity
+    follow, by name. Clicking, hovering or opening a bot never changes the order.
+  - **Custom**: the order the owner saved on the Bots page (UI-4.5). Activity never changes it.
+    A bot created later goes to the end.
 - UI-2.2: Tooltip with the bot name on hover or focus within 300 ms.
 - UI-2.3: Unavailable bots show a small warning badge; tooltip adds the reason ("Model removed
   from catalog" / "API key not set").
@@ -51,6 +59,15 @@ Layout sketch: see `../design/screens.md` §1 (not final).
 - UI-2.6: Clicking an avatar opens the bot detail page.
 - UI-2.7: When there are more bots than fit, the bar scrolls horizontally with fade edges.
 - UI-2.8: Right side: links to Bots, Skills, Statistics, Settings.
+- UI-2.9: Deferred reordering (Recent activity only). The order freezes when the pointer enters
+  the header or focus moves into it, and stays frozen while the owner scrolls, drags, clicks or
+  uses a bot's card; leaving with the pointer keeps it frozen. Activity that arrives meanwhile
+  is recorded but no avatar moves. The next click or key press **outside** the header applies
+  the pending order in one step (no avatar-by-avatar movement), does nothing when the order is
+  unchanged, and keeps the scroll position where it can. Rule: avatars never move while the
+  owner is engaging with the header.
+- UI-2.10: Keyboard: Tab reaches each avatar in display order, and the focused avatar scrolls
+  into view. Arrow-key navigation between avatars is not provided (a later option).
 
 ## First open and reopening (UI-1, continued)
 

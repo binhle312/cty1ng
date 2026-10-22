@@ -77,7 +77,8 @@ endpoint to create one.
 
 | Method | Path | Body | Notes |
 | --- | --- | --- | --- |
-| GET | `/bots?include_deleted=false` | | each with `available`, `skills` (pins) |
+| GET | `/bots?include_deleted=false` | | each with `available`, `skills` (pins), `last_activity_at` (latest message or run, NULL if none) and `header_position`; returned in header order (`domain-model.md` §2) |
+| PUT | `/bots/order` | `{bot_ids: [...]}` | saves a custom header order; must list every non-deleted bot exactly once, else 409 `bot_list_changed`; emits `bots.reordered` |
 | POST | `/bots` | `{name, persona_md, model_id, effort?, write_paths?, request_limit?, max_reply_chars?, pins: [{skill_id, skill_version_id?, always_load}], avatar_id?, cloned_from_bot_id?}` | `skill_version_id` omitted = latest |
 | GET | `/bots/{id}` | | includes conversations it is in |
 | PATCH | `/bots/{id}` | `{row_version, name?, persona_md?, write_paths?, request_limit?, max_reply_chars?}` | `model_id`/`effort` → 422 |
@@ -126,7 +127,7 @@ expressions first (`requirements/time-range-picker.md` §Contract with the backe
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET / PATCH | `/settings` | `{bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd, timezone}`; GET adds `today_spend_usd` |
+| GET / PATCH | `/settings` | `{bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd, timezone, bot_order}`; GET adds `today_spend_usd` |
 | GET | `/usage?group_by=bot\|conversation\|provider\|day&from=&to=` | tokens and estimated cost (D21) |
 | GET | `/stats/summary?from=&to=&tz=&conversation_id=` | tiles with previous-period comparison (D24) |
 | GET | `/stats/models?from=&to=&tz=&bucket=&conversation_id=&metric=cost\|tokens\|requests` | series per model per bucket + table |

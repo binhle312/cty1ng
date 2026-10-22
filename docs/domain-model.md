@@ -40,6 +40,7 @@ bots
   max_reply_chars      INTEGER NOT NULL DEFAULT 6000
   history_share_pct    INTEGER NOT NULL DEFAULT 40   -- % of the model's context window for history per run, 10–80, step 5 (D32)
   cloned_from_bot_id   TEXT NULL REFERENCES bots(id)
+  header_position      INTEGER NULL                  -- custom header order, 1 = first; NULL until a custom order is saved (bots.md UI-4.5)
   created_by           TEXT NOT NULL
   created_at, updated_at
   deleted_at           TIMESTAMP NULL                -- soft delete (D12)
@@ -54,6 +55,12 @@ UNIQUE INDEX bots_name_live ON bots(lower(name)) WHERE deleted_at IS NULL
   prefilled create payload (`name: "<name> (copy)"`, persona, avatar, model, effort, write
   paths, pins with their versions and `always_load`). The owner edits it in the create form and
   submits a normal create with `cloned_from_bot_id`. Cancelling creates nothing.
+- **Header order** (`app-shell.md` UI-2.1): with `settings.bot_order = 'recent'` the order
+  comes from `last_activity_at`, computed on read as the latest `created_at` of the bot's
+  messages and runs; nothing is stored for it. With `'custom'` it is `header_position`
+  ascending; bots with NULL (created after the last save) follow, oldest first. Saving a custom
+  order rewrites `header_position` for every non-deleted bot in one transaction. Gaps left by
+  deleted bots are harmless.
 - **Availability** is computed, not stored: a bot is *available* if its `model_id` is in the
   catalog and the model's API key variable is set.
 
@@ -415,11 +422,11 @@ handoffs
 
 ```
 settings
-  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd (NULL = off), timezone (NULL = browser local) …
+  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd (NULL = off), timezone (NULL = browser local), bot_order …
   value  JSON NOT NULL
 ```
 
-Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`.
+Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"custom"`).
 
 ## 11. Files on disk
 
