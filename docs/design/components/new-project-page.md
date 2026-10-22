@@ -27,13 +27,16 @@ title and the page's accessible name stay **"New project"**.
   buttons. The page starts with the focus in Name.
 - **Right:** a 322 px column with the title "Preview". It stays in place while the owner types.
   It shows the rail and bar 2 side by side, exactly as they look after Create (`left-bar.md`):
-  - **Rail:** Home, the dashed +, the pinned projects, then the new project as the newest
-    unpinned project, selected, then the other projects.
+  - **Rail:** the real rail with its states (`left-bar.md` §1): Home, the dashed +, the pinned
+    projects with their pin marks, then the new project as the newest unpinned project,
+    selected, then the other projects. Other projects keep their waiting counts and unread
+    marks.
   - **Bar 2:** the header (tile, name, "0 chats · 0 bots · 0 files", goal), the Board row
     ("Later", no counts), Memory 0, Library 0, and the Chats label with its + button. It shows
     no chat rows.
-  - Under it: "The new project goes on the rail below your pinned projects, as the newest one.
-    Bar 2 does not show the instructions. Every bot in this project reads them."
+  - Under it: "The new project goes below your pinned projects, as the newest one. The other projects
+    keep their pin marks, waiting counts and unread marks. Bar 2 does not show the instructions.
+    Every bot in this project reads them."
 - **Buttons**, aligned right under a divider: **Cancel**, **Create project** (`primary`). The app
   turns off Create project until Name has text and no field has an error.
 
