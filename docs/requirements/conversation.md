@@ -118,7 +118,9 @@ Header and side panel
 Title (D46, rules in `../conversation-rules.md` §8)
 
 - UI-3.24: After the server stores the first human message of a conversation, the app asks a
-  model for a short title (2 to 6 words, 60 characters or less). The title shows in the
+  model for a short title (the model is asked for 2 to 6 words; the app keeps 60 characters or
+  less). The app needs an available active bot for this, because it uses that bot's model. A
+  first message stored with no such bot gets no title (`../conversation-rules.md` §8 rule 3). The title shows in the
   header, the rail tooltip and the chat lists when `conversation.updated` arrives. The send
   and the bot reply do not wait for it. The app makes this request one time per conversation.
   Later messages and edits do not change the title.

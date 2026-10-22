@@ -41,7 +41,8 @@ Tests never call real providers (`AGENTS.md` §8).
 - Title requests (D46) read the reserved key `_titles`. Bot slugs come from names as kebab case (D19)
   and never contain `_`, so the key never collides with a bot. Each entry gives a `title`, or a `fail` (`error`, `timeout`
   or `empty`), and an optional `delay_ms`. With no matching entry the fake answers "Test
-  title". The helper counts title calls, so a test can assert that no call happened.
+  title". The helper counts title calls and the calls in flight, so a test can assert
+  that no call happened, or that only one was in flight at a time.
 
   ```yaml
   _titles:

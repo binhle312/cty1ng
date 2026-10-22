@@ -100,6 +100,16 @@ panel, handoffs (M6); editing and branches (M4).
   - With the total cap reached, and again with only the title model's provider cap reached
     (D42), the app makes no title call, the status is `skipped`, and the chat gets no extra
     notice. A model with no known price still gets a title.
+  - Near the cap: five conversations send their first message at the same moment, with fake
+    prices and a cap that leaves room for two title requests. At most one title request is in
+    flight at any time (the fake counts in-flight calls). The requests after the cap is reached
+    are `skipped` by the check before dispatch. Spend passes the cap by at most one title
+    request.
+  - Model choice: a message that mentions an unavailable Designer and then BA uses BA's model. A
+    first message with only a `pending_history` member, or with only bots with no key, makes no
+    call, and the status is `skipped`.
+  - A `model_requests` insert with `purpose = 'other'`, or with `purpose = 'title'` and a
+    `run_id`, fails on the CHECK constraints.
   - The title request is one `model_requests` row with `purpose = 'title'`, `run_id` NULL and
     its cost. Today's spend and the conversation total include it. The bot usage panel (UI-6.8)
     does not. `GET /usage?group_by=bot` shows it as "Conversation titles".
@@ -115,7 +125,8 @@ the fake model (prompt contents, provenance, cancel); race tests from `architect
 writing after a reclaim, Stop racing finish, duplicate `client_id` sends in parallel), with the
 claim cases in the queue contract suite; API tests for messages and stream replay;
 auto title (D46): table tests for `decideAutoTitle` (every skip reason, mention order, the
-earliest active member, unavailable bots, lowest effort) and `cleanTitle` (quotes, Markdown
+earliest available active member, an unavailable first mention, a `pending_history` member,
+lowest effort) and `cleanTitle` (quotes, Markdown
 marks, two lines, control characters, 60-character cut at a word, empty), service and API tests
 with the fake `_titles` script for each criterion above, and parallel tests for the claim and
 for rename against the auto write;

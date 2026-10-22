@@ -319,7 +319,15 @@ Deleting a conversation is soft in the database; its workspace folder is moved t
 `data/trash/` so the owner can recover it by hand.
 
 The auto title (D46) has its rules in `conversation-rules.md` §8. `title_source` tells who wrote
-the title. A non-NULL `auto_title_status` means the one attempt is used.
+the title. A non-NULL `auto_title_status` means the one attempt is used. Both columns get a
+`CHECK … IN (…)` with the listed values.
+
+Migration note (D46): M3 creates `conversations` and `model_requests`, so D46 needs no backfill
+when it ships in M3. If it ships after these tables have rows, the migration sets
+`title_source = 'manual'` for every existing conversation whose title is not 'New conversation',
+`'default'` for the others, and `auto_title_status = 'skipped'` for every conversation that
+already has a human message, so old chats do not get a title later. Each existing
+`model_requests` row gets `purpose = 'run'` and the `conversation_id` of its run.
 
 ## 6. Messages and branches
 
@@ -389,6 +397,7 @@ model_requests                           -- one row per call to the provider (D2
   estimated_cost_usd  NUMERIC NULL       -- priced at completion
   price_source        TEXT NULL          -- "genai-prices <version>" or "catalog override"
   UNIQUE (run_id, seq_in_run)
+  CHECK (purpose IN ('run', 'title'))
   CHECK ((purpose = 'run') = (run_id IS NOT NULL))
 UNIQUE INDEX model_requests_one_title ON model_requests(conversation_id) WHERE purpose = 'title'   -- D46
 
@@ -491,8 +500,10 @@ Usage is derived from `model_requests` (detail) and `runs` (totals). All figures
 | Today (for the cap) | sum of `model_requests.estimated_cost_usd` for requests that finished since local midnight. Each request counts once, so the partial usage of a running run is included. Per provider: the same sum for the requests with that `provider`. A request in a run is charged to its own provider, so a run with requests to two providers splits its cost. A request with NULL cost (unknown price) counts toward no cap (D21, D42) |
 
 Title requests (D46) are in `model_requests`, so the today sums include them with no extra
-query. The send transaction checks the same caps before a title call (`conversation-rules.md`
-§8 rule 5). A reached cap skips the call and posts no notice.
+query. The app checks the same caps two times before a title call: in the send transaction and
+just before dispatch. Only one title request is in flight at a time, so the spend that a check
+cannot see is at most one title request plus the running runs (`conversation-rules.md` §8 rules
+5 and 6). A reached cap skips the call and adds no notice.
 
 Daily cap check (D20, D42) happens when a run is claimed: first the bot's provider cap, if set
 (today's spend on that provider ≥ its cap → `failed` with `provider_cap_reached`), then the total

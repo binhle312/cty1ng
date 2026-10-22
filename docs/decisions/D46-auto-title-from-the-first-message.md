@@ -18,27 +18,36 @@ short title, one time only. The title call is not a run.
   flags leaves "New conversation". The app does not try again.
 - **Sensitive data (D39).** If the guard found matches in the first message (the owner chose
   "Send anyway"), the app does not make the title call. It also checks the answer with the guard.
-- **Caps (D20, D40, D42).** The app checks the same caps as a run, before the call. If the total
-  cap or the provider cap is reached, the app does not make the call.
-- **Model.** The model of the bot that the message mentions first. With no mention, the model of
-  the active member that joined first. The call uses the lowest effort of the model, at most 30
-  output tokens and a 20 s timeout.
+- **Caps (D20, D40, D42).** The app checks the same caps as a run, two times: in the send
+  transaction and just before it sends the request. If the total cap or the provider cap is
+  reached, the app does not make the call.
+- **One at a time.** The app sends at most one title request at a time, for all conversations.
+  Others wait in a queue in memory. So the spend that a cap check cannot see is at most one
+  title request (approximately 600 input and 30 output tokens). As with a run (D20), a request
+  that has started finishes.
+- **Model.** The first available active member in this order: the mentioned bots in mention
+  order, then the other members by join time. With no such bot, there is no title. The call uses
+  the lowest effort of the model, at most 30 output tokens and a 20 s timeout.
 - **Cost (D21).** The call is one `model_requests` row with `purpose = 'title'` and no run. It
   counts toward today's spend and the caps, and toward the conversation. It does not count
   toward any bot.
 
 Example: The owner sends "@BA write user stories for the login page". The BA starts its run. At
 the same time, the app asks the BA's model for a title and gets "Login page user stories". The
-rail and the header change. The request costs $0.0004, and Settings shows it under "Conversation
+rail and the header change. The request costs approximately $0.002, and Settings shows it under "Conversation
 titles".
 
 Why: A list of chats with the name "New conversation" is hard to use. The owner wants names
 without extra work. One cheap call per conversation is enough. Rules in the database make the
 "one time" and "manual wins" promises true across tabs, retries and restarts.
 Why the bot's model: The message goes to that provider for the reply anyway, so no new provider
-sees the text. The provider has a key, so the call does not need new settings. A title call
-is approximately 300 input tokens and 20 output tokens, so even a large model costs less than
-one cent.
+sees the text. The provider has a key, so the call does not need new settings. A title call is
+at most approximately 600 input tokens and 30 output tokens. The cost depends on the model: at
+$3 / $15 per million input / output tokens it is approximately $0.002, at $15 / $75 approximately
+$0.011.
+Known limit: a first message stored with no available active bot (for example, only a member
+that waits for the history choice) gets no title. The owner can rename the chat. A fallback model
+setting would remove this limit, but it adds a setting for a rare case.
 Not chosen:
 - **The title call as a normal run.** A run holds the one running slot of the conversation
   (D11), so the title would delay the reply. It would also show status reactions and count
@@ -52,7 +61,9 @@ Not chosen:
   is often poor ("@BA can you please…").
 Consequences:
 - Migration: `conversations` gets `title_source` and `auto_title_status`. In `model_requests`,
-  `run_id` can be NULL, and the table gets `conversation_id` and `purpose`.
+  `run_id` can be NULL, and the table gets `conversation_id` and `purpose`, with
+  `CHECK (purpose IN ('run', 'title'))`. In M3 the tables are new, so there is no backfill. A
+  later migration backfills as `../domain-model.md` §5 says.
 - The conversation object in the API gets `title_source`.
 - The today-spend query reads `model_requests`, so it includes title requests with no change.
   Per-bot views must filter on `purpose = 'run'`.

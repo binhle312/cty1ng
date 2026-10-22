@@ -309,17 +309,34 @@ rail and the header show it.
      (`confirm_sensitive: true`). The owner agreed to send the text to the bot, not to a title
      call.
    - The message text is empty after the app removes the mention tokens.
-   - No model is available (rule 4).
+   - No model is available (rule 4). This is the case when no member is active and available
+     when the message is stored, for example a chat with only a `pending_history` member, or
+     with bots whose model has no key. The composer blocks a send with 0 bots (UI-3.12), but
+     the API does not. The title stays "New conversation" and the owner can rename the chat.
    - A cap is reached (rule 5).
-4. **Model.** The model of the first mentioned bot that is an active member. With no such
-   mention, the model of the active member with the earliest `added_at`. The bot must be
-   available (D12, J5). The call uses the first value of the model's `efforts`, or no effort
-   when the list is empty.
-5. **Caps.** Before the call, the app checks the caps with the same rule as a run claim
-   (`domain-model.md` §13): the provider cap of the title model (D42), then the total cap (D20).
-   If a cap is reached, the status is `skipped`. The app posts no notice, because the run of the
-   same message posts it. A model with no known price is allowed and counts toward no cap.
-6. **The call.** It runs after the send transaction commits, in the background, through the
+4. **Model.** The app takes the first bot in this list, and uses its model:
+   1. the bots that the message mentions, in mention order;
+   2. then the other members, by earliest `added_at`.
+
+   A bot is a candidate only when it is an **active** member and **available** (not deleted,
+   its model is in the catalog and has a key; D12, J5). Example: the message mentions Designer
+   (no key) and then BA (available). The title uses BA's model. With no mention, the earliest
+   available active member wins. With no candidate, the status is `skipped` (rule 3). The call
+   uses the first value of the model's `efforts`, or no effort when the list is empty.
+5. **Caps.** The app checks the caps with the same rule as a run claim (`domain-model.md` §13):
+   the provider cap of the title model (D42), then the total cap (D20). It checks two times:
+   in the send transaction, and again just before it sends the request (rule 6). If a cap is
+   reached at either check, the status is `skipped`. The title adds no notice to the chat. A run
+   that the cap stops posts its own notice (D20). A message that starts no run gets no notice.
+   A model with no known price is allowed and counts toward no cap.
+6. **One title request at a time.** The app sends at most one title request at a time, for all
+   conversations together. Other claimed titles wait in a queue in memory, oldest first. The
+   second cap check happens when a title leaves the queue. So the spend that the cap check does
+   not see is never more than one title request. A title request is small and bounded: 2000
+   characters of input at most (approximately 600 tokens with the instruction) and 30 output
+   tokens. As with a run (D20), a request that has started finishes, so it can pass a cap. A
+   restart empties the queue: rule 10 applies.
+7. **The call.** It runs after the send transaction commits, in the background, through the
    model port. It does not wait for the bot run, and the bot run does not wait for it. Input:
    a fixed instruction and the message text as quoted data, with mentions as bot names, cut to
    2000 characters. No persona, skills, memory, history or attachments. Limits: 30 output tokens,
@@ -332,26 +349,40 @@ rail and the header show it.
    <message>…</message>
    ```
 
-7. **Clean the answer.** `cleanTitle(raw)` keeps the first line, removes quotes, backticks,
+8. **Clean the answer.** `cleanTitle(raw)` keeps the first line, removes quotes, backticks,
    Markdown marks, control characters and a final full stop, and joins spaces. It cuts the text
    to 60 characters at a word boundary. An empty result is a failure. The guard (D39) then
-   checks the result. A match is a failure, and the app logs only the kinds found.
-8. **Write the title.** In one transaction:
+   checks the result. A match is a failure, and the app logs only the kinds found. "2 to 6
+   words" is a request to the model, not a check: the app enforces only "not empty" and "60
+   characters or less". A one-word or an eight-word title within 60 characters is kept.
+9. **Write the title.** In one transaction:
    `UPDATE conversations SET title = ?, title_source = 'auto', auto_title_status = 'done'
-   WHERE id = ? AND title_source = 'default'`, plus a `conversation.updated` event. The write
-   does not change `row_version`, so an open settings form does not get a 409 because of it.
-   If the update changes 0 rows, the owner renamed the chat during the call: the app sets the
-   status to `skipped` and emits no event.
-9. **Failure.** A timeout, a provider error, an empty answer or a guard match sets the status
-   to `failed`. The title stays "New conversation". There is no retry and no notice in the chat.
-10. **Restart.** At startup the app sets every `pending` status to `failed`. The call is not
+   WHERE id = ? AND title_source = 'default'`, plus a `conversation.updated` event.
+   - The write does not use optimistic locking (`row_version`, `architecture.md` §11) and does
+     not change `row_version`. Optimistic locking stops one form from losing another form's
+     change. Here the `title_source` condition already guards the only column in conflict,
+     and a manual title must always win. A bump would only give an open settings form a 409
+     for a change that the owner did not make.
+   - This is safe only because a `PATCH` writes only the fields in its body (`api.md` §5). A
+     PATCH that changes the icon does not send `title`, so it does not overwrite an auto title.
+   - If the update changes 0 rows, the owner renamed the chat during the call. The app then runs
+     `UPDATE conversations SET auto_title_status = 'skipped' WHERE id = ? AND
+     auto_title_status = 'pending'`. This update never writes `title` or `title_source`, and
+     the app emits no event.
+10. **Failure.** A timeout, a provider error, an empty answer or a guard match sets the status
+    to `failed` with the same kind of update (only `auto_title_status`, only from `pending`).
+    The title stays "New conversation". There is no retry and no notice in the chat.
+11. **Restart.** At startup the app sets every `pending` status to `failed`. The call is not
     sent again.
-11. **Manual titles.** A `PATCH /conversations/{id}` with `title`, and a `POST /conversations`
+12. **Manual titles.** A `PATCH /conversations/{id}` with `title`, and a `POST /conversations`
     with `title`, set `title_source = 'manual'`. This includes a rename back to the text "New
-    conversation".
-12. **Cost.** The call writes one `model_requests` row with `purpose = 'title'`,
+    conversation". No later write of the auto title flow changes `title` or `title_source` of a
+    manual title (invariant 17).
+13. **Cost.** The call writes one `model_requests` row with `purpose = 'title'`,
     `conversation_id` set and `run_id` NULL (`domain-model.md` §7). It also writes the row when
-    the call fails after the provider returned usage.
+    the call fails after the provider returned usage. The cost depends on the model:
+    approximately 600 input and 30 output tokens at most, priced as in D21. Example: at $3 and
+    $15 per million tokens, that is approximately $0.0023. At $15 and $75, approximately $0.011.
 
 The pure parts live in `core/conversations/auto-title.rules.ts`:
 
@@ -359,7 +390,7 @@ The pure parts live in `core/conversations/auto-title.rules.ts`:
 export function decideAutoTitle(input: {
   conversation: { titleSource: TitleSource; autoTitleStatus: AutoTitleStatus | null };
   message: { text: string; mentions: readonly BotId[]; sensitiveMatches: number };
-  members: readonly ActiveMember[];   // with addedAt and model availability
+  members: readonly Member[];         // all members, with status, addedAt and availability
   spend: SpendState;                  // today's spend and the caps, same type as the run claim
 }): { status: 'pending'; modelId: ModelId; effort: Effort | null }
   | { status: 'skipped'; reason: 'manual' | 'sensitive' | 'empty' | 'no_model' | 'cap' }
