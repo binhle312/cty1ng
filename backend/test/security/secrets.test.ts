@@ -42,3 +42,19 @@ describe("API keys never leave the server (security.md §2.6, §3)", () => {
     expect(output).not.toContain(SENTINEL);
   });
 });
+
+describe("redaction edge cases (security.md §2.6)", () => {
+  it("redacts short keys and keys with characters JSON escapes", () => {
+    const short = "k3y";
+    const escaped = 'sk"quote\\back\nline';
+    app = makeTestApp({ SHORT_API_KEY: short, ODD_API_KEY: escaped });
+    app.logger.info({ detail: `short ${short} odd ${escaped}` }, `msg ${escaped}`);
+    app.logger.error({ err: new Error(escaped) }, "error with odd key");
+    const output = app.logs.join("");
+    expect(output).not.toContain(short);
+    expect(output).not.toContain(escaped);
+    // Pino writes JSON, so the key also appears in its escaped form.
+    expect(output).not.toContain(JSON.stringify(escaped).slice(1, -1));
+    expect(output).toContain("[redacted]");
+  });
+});
