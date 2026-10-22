@@ -23,7 +23,10 @@ accepted: bots draft skills when asked, the owner approves and is the author (sl
 UI design review in progress: header bot order (Recent activity / Custom, deferred
 reordering) specified for M2. Agreed so far and saved in `design/components/` with previews: bot
 avatar (Flat, Jelly, Pixel; Flat only until the final product), top header, bot card, user
-panel. Left bar still in review (project first).
+panel, left bar (rail and bar 2), Memory pane, New project page fields. D43–D45 proposed
+(memory precedence, right pane holds Flow or Memory, project goal and instructions). Still in
+review: Library page content, New project page layout, Flow pane. Project Board is a later
+slice (M8c).
 
 ## Next
 
@@ -37,6 +40,8 @@ panel. Left bar still in review (project first).
 | Merge the skill drafts PR (D41) | M0 |
 | Review and merge the header bot order PR (docs only) | M2 plan |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
+| Accept or change D43, D44, D45 (proposed in PR #11) | M5b plan |
+| Approve the migrations they imply: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars | M5b plan |
 
 ## Slices
 
@@ -54,6 +59,7 @@ panel. Left bar still in review (project first).
 | M5c | not written | | Skills drafted by bots (D41) |
 | M8 | not started | | |
 | M8b | not written | | Board map in the Flow pane (D30) |
+| M8c | proposed | | Project-wide Board, read-only, after M8b (`design/components/left-bar.md` §5) |
 | T2 | not written | | Material theme (D30) |
 | M9 | not written | | VPS milestone |
 

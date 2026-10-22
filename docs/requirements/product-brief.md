@@ -212,6 +212,7 @@ Use these words, with these meanings, in code, database, API, UI and docs.
 | **Daily cap** | Owner-level limit on today's estimated spend; alerts at 75% and 90%, and new runs are refused once reached (D40). |
 | **Project** | A named group of conversations with a shared project memory (and, later, an attached folder, D23). A conversation may sit outside any project (D37). |
 | **Bot memory** | What a bot has learned about how the owner likes it to work, from 1:1 chats outside projects. Used by that bot everywhere (D38). |
+| **Library** | The project's workspace files as the UI names them: a row in the left bar that opens the files page (`../design/components/left-bar.md`). |
 | **Project memory** | Facts about the work, learned in a project's conversations and shared by every bot in that project, never outside it (D38). |
 | **Conversation memory** | Facts learned in a multi-bot conversation outside any project, shared by the bots in that conversation only; offered for merging into a project when the conversation moves into one (D38). |
 | **Memory item** | One remembered statement. Earlier versions are kept when memory history is on: off by default for a bot, on for a project or conversation, 5 versions when on (D38). |

@@ -12,10 +12,10 @@
 | [concepts.md](concepts.md) | UI concept proposals (7 layouts, then 10 visual styles), compared; the owner picks one before M0 |
 | [themes.md](themes.md) | Theme system: Command and Material themes, modes, density, Board map, tokens (D30) |
 | [mockups.md](mockups.md) | Links to visual mockups (Flow view Team, Timeline, Files) and what they illustrate |
-| [components/](components/README.md) | **Agreed** component specs (bot avatar, top header, bot card, user panel), theme-neutral; index and the core-vs-theme rule in its README |
+| [components/](components/README.md) | **Agreed** component specs (bot avatar, top header, bot card, user panel, left bar, memory pane, new project page), theme-neutral; index and the core-vs-theme rule in its README |
 | `assets/` | Exported images (PNG or SVG) referenced from the files above |
 | `assets/avatars/` | Bot avatar art, SVG, one file per style and state (`flat-idle.svg` … `pixel-waiting.svg`); theme-neutral (`components/bot-avatar.md`) |
-| `previews/command-dark/` | Agreed components rendered in the Command dark theme: `avatars`, `top-header`, `user-panel`, each as `.png` and a self-contained `.html` (animated). Illustrations; the spec in `components/` wins |
+| `previews/command-dark/` | Agreed components rendered in the Command dark theme: `avatars`, `top-header`, `user-panel`, `left-bar-rail`, `left-bar`, each as `.png` and a self-contained `.html` (animated). Illustrations; the spec in `components/` wins |
 
 ## How a design becomes final
 

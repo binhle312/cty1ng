@@ -31,7 +31,10 @@ against, not code to copy.
 | [bot-avatar.md](bot-avatar.md) | Bot avatar: styles, sizes, state faces, badges, animation setting | `../previews/command-dark/avatars.*`, `../assets/avatars/` |
 | [top-header.md](top-header.md) | Top header: bot roster, overflow, hover, focus, drag, ordering, empty state | `../previews/command-dark/top-header.*` |
 | [bot-card.md](bot-card.md) | Bot card opened from a header avatar, with its status row | `../previews/command-dark/top-header.*` (card 7 and 7a–7h) |
-| [user-panel.md](user-panel.md) | Bottom-left user panel, its menu and the budget battery | `../previews/command-dark/user-panel.*` |
+| [user-panel.md](user-panel.md) | Bottom-left user panel, its menu, the budget battery and the floating placement | `../previews/command-dark/user-panel.*` |
+| [left-bar.md](left-bar.md) | Left bar: rail (Home, New project, pinned projects, scroll) and bar 2 (project header, Memory, Library, Chats, Home, first run) | `../previews/command-dark/left-bar-rail.*`, `../previews/command-dark/left-bar.*` |
+| [memory-pane.md](memory-pane.md) | Memory pane in the right pane: order, conflicts, outside projects | `../previews/command-dark/left-bar.*` (cards M1–M6) |
+| [new-project-page.md](new-project-page.md) | New project page: greetings, fields and limits (layout to confirm) | `../previews/command-dark/left-bar.*` |
 
-Still in review (not here yet): the left bar (canvas round 6, project first), the Create bot page
-(M2 checkpoint), Command light values.
+Still in review (not here yet): the Library page content, the New project page layout, the Flow
+pane (canvas round 7), the Create bot page (M2 checkpoint), Command light values.
