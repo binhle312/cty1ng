@@ -1,0 +1,9 @@
+# Scripts for the fake model (testing.md §2), keyed by bot slug.
+ba:
+  - when_contains: "login"
+    tool_calls:
+      - load_skill: { name: write-user-stories }
+      - write_file: { path: out/ba/stories.md, content: "# Login stories\n..." }
+    reply: "I wrote out/ba/stories.md. @Designer can you sketch the screens?"
+designer:
+  - reply: "Two screens: sign-in and reset. @BA agreed?"
