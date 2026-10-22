@@ -16,6 +16,16 @@ Decision:
   from project memory, the bot adds one line with an **Update project memory** button. The line
   does not stop the work.
 - **No conflict found: the bot works.** It does not ask questions when nothing disagrees.
+- **Memory and instructions: the check happens when they change, not during work.**
+  - Before a bot saves a project memory item, it compares the item with the project instructions.
+    If they disagree, the bot does not save the item. It asks the owner in the chat. If the owner
+    agrees, the bot saves the item, and the bot also suggests a change to the instructions.
+  - When the owner saves new project instructions, the app starts one check run. The run compares
+    the instructions with all project memory items. It shows a proposal card, as "Tidy memory"
+    does (D38). Each item that disagrees has a checkbox to update or delete it. Nothing changes
+    until the owner applies the card.
+  - So a run normally does not find a disagreement between instructions and memory. If a run does
+    find one, the instructions win, and the bot shows the item in its reply.
 - The owner can move a 1:1 chat into a project. The API gets an endpoint for this move.
 Example: The project memory says "Stories use the Given/When/Then format". The owner writes
 "just give me bullets". The BA replies: "Project memory says stories use Given/When/Then. Do you
@@ -31,7 +41,8 @@ Not chosen:
 Consequences: The Memory pane shows project memory first. It shows a bot memory item that project
 memory overrides with a line through it (`../design/components/memory-pane.md`). The prompt
 builder adds the check rule. A test with the fake model checks that a conflict gives a question
-and no file changes. The API gets an endpoint that moves a conversation into a project.
+and no file changes. The memory tools check new project items against the instructions. A save of
+the instructions starts a check run, with normal cost tracking (D21). The API gets an endpoint that moves a conversation into a project.
 Why: D38 says that memory is data, not instructions from the owner. So the owner's answer must
 win. A question before the work costs less than work that the owner must undo. All bots and chats
 in a project share project memory, so the owner must see each change to it.
