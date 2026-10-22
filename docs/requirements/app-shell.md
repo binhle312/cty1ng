@@ -71,6 +71,10 @@ Layout sketch: see `../design/screens.md` §1 (not final).
 - UI-2.11: The header is sticky: it stays at the top of the window on every page while the
   content below it scrolls (the conversation, the bot and skill pages, Settings, Statistics).
   Only the content area scrolls; the header and the conversation rail never scroll away.
+- UI-1.13: The left navigation bar is sticky too: it fills the window height on every page and
+  never scrolls with the content. When its list of projects and conversations is longer than
+  the window, only that list scrolls inside the bar; the "+" button at the top and the user
+  panel at the bottom stay in place. (A sticky bottom bar may come later; not specified.)
 
 ## First open and reopening (UI-1, continued)
 
