@@ -33,8 +33,10 @@ against, not code to copy.
 | [bot-card.md](bot-card.md) | Bot card opened from a header avatar, with its status row | `../previews/command-dark/top-header.*` (card 7 and 7a–7h) |
 | [user-panel.md](user-panel.md) | Bottom-left user panel, its menu, the budget battery and the floating placement | `../previews/command-dark/user-panel.*` |
 | [left-bar.md](left-bar.md) | Left bar: rail (Home, New project, pinned projects, scroll) and bar 2 (project header, Memory, Library, Chats, Home, first run) | `../previews/command-dark/left-bar-rail.*`, `../previews/command-dark/left-bar.*` |
-| [memory-pane.md](memory-pane.md) | Memory pane in the right pane: order, conflicts, outside projects | `../previews/command-dark/left-bar.*` (cards M1–M6) |
-| [new-project-page.md](new-project-page.md) | New project page: greetings, fields and limits (layout to confirm) | `../previews/command-dark/left-bar.*` |
+| [memory-pane.md](memory-pane.md) | Memory pane in the right pane: order, conflicts, outside projects, memory check card, open conflicts | `../previews/command-dark/left-bar.*` (cards M1–M6), `../previews/command-dark/memory-check-plan.*` (cards S4, S4b) |
+| [new-project-page.md](new-project-page.md) | New project page: layout A, greetings, fields, errors, leave dialog | `../previews/command-dark/new-project.*` |
+| [project-settings-page.md](project-settings-page.md) | Project settings page: fields, save bar, memory check line, Memory history, leave dialog, Delete project and after delete | `../previews/command-dark/project-settings.*`, `../previews/command-dark/delete-project.*` |
+| [plan-card.md](plan-card.md) | Plan card before a task that changes something: steps, conflict questions, Request changes, Reject | `../previews/command-dark/memory-check-plan.*` (cards S4b–S4e) |
 
-Still in review (not here yet): the Library page content, the New project page layout, the Flow
+Still in review (not here yet): the Trash page, the Library page content, the Flow
 pane (canvas round 7), the Create bot page (M2 checkpoint), Command light values.

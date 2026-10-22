@@ -23,9 +23,11 @@ accepted: bots draft skills when asked, the owner approves and is the author (sl
 UI design review in progress: header bot order (Recent activity / Custom, deferred
 reordering) specified for M2. Agreed so far and saved in `design/components/` with previews: bot
 avatar (Flat, Jelly, Pixel; Flat only until the final product), top header, bot card, user
-panel, left bar (rail and bar 2), Memory pane, New project page fields. D43–D45 accepted
-(memory precedence, right pane holds Flow or Memory, project goal and instructions). Still in
-review: Library page content, New project page layout, Flow pane. Project Board is a later
+panel, left bar (rail and bar 2), Memory pane, New project page (layout A), Project settings page
+with the memory check card and Delete project, plan card. D43–D45 accepted
+(memory precedence, right pane holds Flow or Memory, project goal and instructions). D47 (delete
+sends the whole project to Trash; memory check choices) and D48 (bots plan first) accepted. Still
+in review: Trash page (with the Remember button and the "changed in another tab" cards), Library page content, Flow pane. Project Board is a later
 slice (M8c).
 
 ## Next

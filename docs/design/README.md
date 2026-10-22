@@ -15,7 +15,7 @@
 | [components/](components/README.md) | **Agreed** component specs (bot avatar, top header, bot card, user panel, left bar, memory pane, new project page), theme-neutral; index and the core-vs-theme rule in its README |
 | `assets/` | Exported images (PNG or SVG) referenced from the files above |
 | `assets/avatars/` | Bot avatar art, SVG, one file per style and state (`flat-idle.svg` … `pixel-waiting.svg`); theme-neutral (`components/bot-avatar.md`) |
-| `previews/command-dark/` | Agreed components rendered in the Command dark theme: `avatars`, `top-header`, `user-panel`, `left-bar-rail`, `left-bar`, each as `.png` and a self-contained `.html` (animated). Illustrations; the spec in `components/` wins |
+| `previews/command-dark/` | Agreed components rendered in the Command dark theme: `avatars`, `top-header`, `user-panel`, `left-bar-rail`, `left-bar`, `new-project`, `project-settings`, `memory-check-plan`, `delete-project`, each as `.png` and a self-contained `.html` (animated). Illustrations; the spec in `components/` wins |
 
 ## How a design becomes final
 
