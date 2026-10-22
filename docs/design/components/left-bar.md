@@ -60,7 +60,8 @@ Top to bottom:
    last looked. Opens the Memory pane (`memory-pane.md`).
 4. **Library** row with its file count. Opens the Library page in the main area (the project's
    workspace files).
-5. **Chats** section label with a "+" icon button aligned right (tooltip "New chat"). Then the
+5. **Chats** section label with a "+" icon button aligned right (tooltip "New chat"). The label
+   has no fold arrow, and its icon lines up with the Memory and Library icons. Then the
    chats, newest activity first. No folding, no separate 1:1 and group sections, no Bots section
    (bots show in the top header).
 
