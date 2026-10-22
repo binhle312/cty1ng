@@ -24,7 +24,9 @@ async function start(env: Record<string, string>): Promise<{ code: number; stder
     return { code: 0, stderr: "" };
   } catch (error) {
     if (error !== null && typeof error === "object" && "killed" in error && error.killed === true) {
-      throw new Error("the backend did not exit; it was killed after the timeout");
+      throw new Error("the backend did not exit; it was killed after the timeout", {
+        cause: error,
+      });
     }
     if (error !== null && typeof error === "object" && "code" in error && "stderr" in error) {
       return { code: Number(error.code), stderr: String(error.stderr) };
