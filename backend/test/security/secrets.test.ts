@@ -110,3 +110,73 @@ describe("redaction keeps every log record valid JSON with intact metadata", () 
     });
   });
 });
+
+describe("redaction through the real logger (second review)", () => {
+  const SECRET = "sk-fake-0123";
+
+  function lines(target: TestApp): Record<string, unknown>[] {
+    return target.logs
+      .join("")
+      .split("\n")
+      .filter((line) => line !== "")
+      .map((line): Record<string, unknown> => {
+        const parsed: unknown = JSON.parse(line);
+        if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+          throw new Error(`not a JSON object: ${line}`);
+        }
+        return Object.fromEntries(Object.entries(parsed));
+      });
+  }
+
+  // Pino's types need a literal format string, so one call per token.
+  const interpolations = {
+    "%j": (logger: TestApp["logger"]) => logger.info("payload %j", { detail: SECRET }),
+    "%o": (logger: TestApp["logger"]) => logger.info("payload %o", { detail: SECRET }),
+    "%O": (logger: TestApp["logger"]) => logger.info("payload %O", { detail: SECRET }),
+    "%s": (logger: TestApp["logger"]) => logger.info("payload %s", { detail: SECRET }),
+  };
+
+  it.each(Object.entries(interpolations))("scrubs objects interpolated with %s", (_token, log) => {
+    app = makeTestApp({ PROBE_API_KEY: SECRET });
+    log(app.logger);
+    const output = app.logs.join("");
+    expect(output).not.toContain(SECRET);
+    expect(lines(app).some((record) => String(record.msg).startsWith("payload"))).toBe(true);
+  });
+
+  it("deep values, toJSON output, key names and error names never reach the log", () => {
+    app = makeTestApp({ PROBE_API_KEY: SECRET });
+    let deep: Record<string, unknown> = { leaf: SECRET };
+    for (let i = 0; i < 30; i += 1) deep = { next: deep };
+    const named = new Error("x");
+    named.name = SECRET;
+    app.logger.info(
+      { deep, generated: { toJSON: () => SECRET }, [SECRET]: 1, err: named },
+      "structured",
+    );
+    expect(app.logs.join("")).not.toContain(SECRET);
+    expect(lines(app).find((record) => record.msg === "structured")).toBeDefined();
+  });
+
+  it("errors keep code, status and cause in the log, with no secrets configured", () => {
+    app = makeTestApp();
+    const error = Object.assign(new Error("write failed", { cause: new Error("disk full") }), {
+      code: "SQLITE_BUSY",
+      status: 503,
+    });
+    app.logger.error({ event: "probe.error", err: error }, "failed");
+    app.logger.warn(error);
+    const records = lines(app);
+    const withField = records.find((record) => record.event === "probe.error");
+    const bare = records.find((record) => record.msg === "write failed");
+    for (const record of [withField, bare]) {
+      expect(record?.err).toMatchObject({
+        type: "Error",
+        message: "write failed",
+        code: "SQLITE_BUSY",
+        status: 503,
+        cause: { message: "disk full" },
+      });
+    }
+  });
+});
