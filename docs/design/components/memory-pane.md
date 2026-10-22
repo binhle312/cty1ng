@@ -29,11 +29,12 @@ then each bot's own.
 ## 3. Conflicts
 
 - A bot memory item overridden by project memory is shown struck through, with the reason.
-- When project memory conflicts with the owner's last message (D43), the item is marked and shows
-  the `primary` link **"Conflicts with your last message"**, underlined only on hover, like a
-  normal link. Clicking it opens the chat (from any page) and scrolls to the bot's waiting message,
-  which flashes `primary` once. The buttons there are "Follow my instruction this time" and
-  "Update project memory".
+- When the owner's message disagrees with project memory (D43), the bot asks a question before it
+  acts. The memory item gets a mark and the `primary` link **"Conflicts with your last message"**.
+  The link shows an underline only on hover. A click opens the chat from any page. The chat
+  scrolls to the question of the bot, and the question flashes `primary` one time.
+- After the owner answers, a different answer adds the line "This differs from project memory"
+  with an **Update project memory** button. The line does not stop the work.
 
 ## Requirement changes (requirements PR)
 
