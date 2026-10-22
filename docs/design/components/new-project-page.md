@@ -45,7 +45,7 @@ title and the page's accessible name stay **"New project"**.
 | Field | Limit | Label hint | Placeholder |
 | --- | --- | --- | --- |
 | Name | unique among projects | none | Project name |
-| Goal | ≤ 500 chars, live counter | Bar 2 shows it. Every bot reads it. | What is the goal of this project? Example: Plan the pricing page for the March launch. |
+| Goal | ≤ 500 chars, live counter | It shows under the project name. Every bot reads it. | What is the goal of this project? Example: Plan the pricing page for the March launch. |
 | Instructions | ≤ 3000 chars, live counter; optional | Optional · Markdown, as in an AGENTS.md file | `# Rules for every bot in this project` / `- How must bots write?` / `- Where do bots put files?` / `- What must bots ask you before they act?` |
 | Colour | the project colour set | none | The first colour is selected |
 
