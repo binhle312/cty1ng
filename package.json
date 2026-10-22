@@ -1,0 +1,33 @@
+{
+  "name": "cty1ng",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.14.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "lint": "eslint . && prettier --check . && pnpm run lint:imports",
+    "lint:imports": "depcruise backend/src shared/src --config .dependency-cruiser.cjs",
+    "format": "prettier --write .",
+    "typecheck": "pnpm -r typecheck && tsc -p scripts --noEmit",
+    "test": "vitest run",
+    "check:index": "tsx scripts/check-index.ts",
+    "check:events": "tsx scripts/check-events.ts",
+    "audit:deps": "tsx scripts/audit.ts"
+  },
+  "devDependencies": {
+    "@cty1ng/shared": "workspace:*",
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.2",
+    "dependency-cruiser": "18.7.0",
+    "eslint": "10.13.0",
+    "eslint-plugin-drizzle": "0.2.3",
+    "globals": "17.13.0",
+    "prettier": "3.9.10",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.0",
+    "vitest": "5.0.5"
+  }
+}

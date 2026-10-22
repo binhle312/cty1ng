@@ -1,0 +1,58 @@
+# Automated security review (security.md §2.11) for PRs that touch security-sensitive paths
+# (AGENTS.md §7). It assists the owner's review; it does not replace it.
+#
+# Conditions set by the owner (PR #10):
+# - `pull_request` only, never `pull_request_target`, so PRs from forks get no secrets.
+# - Runs only for branches of this repository (job guard below).
+# - The action is pinned to a full commit SHA.
+# - Minimal permissions; no secret except ANTHROPIC_API_KEY reaches the action.
+# - Skips cleanly when the secret is absent (for example on Dependabot PRs).
+name: Security review
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/src/adapters/http/**"
+      - "backend/src/adapters/workspace/**"
+      - "backend/src/core/attachments/**"
+      - "backend/src/app/config.ts"
+      - "backend/src/app/logger.ts"
+      - "frontend/src/lib/markdown/**"
+      - "frontend/src/lib/markdown*"
+      - "frontend/public/theme-init.js"
+      - ".github/workflows/**"
+      - "pnpm-workspace.yaml"
+      - "docs/security.md"
+
+permissions: {}
+
+jobs:
+  review:
+    name: Claude security review
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+    steps:
+      - name: Skip without the API key
+        if: env.HAS_KEY != 'true'
+        run: echo "ANTHROPIC_API_KEY is not available to this run; skipping the security review."
+
+      - uses: actions/checkout@v7
+        if: env.HAS_KEY == 'true'
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+
+      - name: Review
+        if: env.HAS_KEY == 'true'
+        # anthropics/claude-code-security-review main @ 2026-02-11 (no release tags upstream)
+        uses: anthropics/claude-code-security-review@0c6a49f1fa56a1d472575da86a94dbc1edb78eda
+        with:
+          claude-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          comment-pr: "true"
+          exclude-directories: "reference,.agents,docs"

@@ -9,15 +9,26 @@ you set and hand work to each other only with your approval.
 
 > Status: see [docs/status.md](docs/status.md) for the current step, what is done and what is left.
 
-## Quickstart (after M0)
+## Quickstart
+
+Needs Node 24 (`.nvmrc`) and pnpm through corepack.
 
 ```bash
-cp .env.example .env          # add at least one provider API key
-make dev                      # http://127.0.0.1:5173
-make seed                     # optional: BA and Designer bots with their skills
+nvm use                       # Node 24; pnpm refuses other versions (engineStrict)
+corepack enable               # pnpm at the version pinned in package.json
+pnpm install
+cp .env.example .env          # provider keys are only needed from M3 on
+make dev                      # backend on http://127.0.0.1:8000 (the frontend comes with M0b)
+curl -H "Host: 127.0.0.1:8000" http://127.0.0.1:8000/api/health
 ```
 
+Every check that CI runs is listed in [AGENTS.md](AGENTS.md) §4. `make seed` is a stub until
+M1/M2.
+
 Runs on `127.0.0.1` only. There is no login in phase 1; do not expose the port.
+
+Code indexes: [shared/](shared/README.md), [backend/](backend/README.md); each code folder has
+its own `README.md` table (`docs/architecture.md` §4.2).
 
 ## Documentation
 

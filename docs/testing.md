@@ -114,7 +114,8 @@ All must be green to merge: ESLint (including the security rules in `security.md
 Prettier, `tsc`, dependency-cruiser import rules (D35), Vitest, `db:check` (Drizzle schema
 matches the migrations), Playwright, generated-client freshness, event-type list match,
 `check:index` (folder indexes complete, `architecture.md` §4.2), `pnpm audit --audit-level
-high`, CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also run the automated security review
+high` (run as `pnpm audit:deps`, which retries only when npm's advisory endpoint does not
+answer), CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also run the automated security review
 (`security.md` §2.11).
 
 ## 5. Evidence in PRs

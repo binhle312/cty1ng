@@ -133,8 +133,9 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
 ### 2.11 Supply chain and review
 
 - Lockfile committed (`pnpm-lock.yaml`); CI installs with `--frozen-lockfile`. pnpm runs
-  dependency install scripts only for packages listed in `onlyBuiltDependencies` (native ones
-  such as `better-sqlite3` and `sharp`).
+  dependency install scripts only for packages allowed in `allowBuilds` in
+  `pnpm-workspace.yaml` (pnpm 12's name for `onlyBuiltDependencies`): native ones such as
+  `better-sqlite3` and `sharp`, plus `esbuild`.
 - CI runs `pnpm audit --audit-level high`; Dependabot opens weekly update
   PRs. New dependencies need the owner's approval (`AGENTS.md` §7).
 - The repository is public: GitHub secret scanning and push protection are on, and

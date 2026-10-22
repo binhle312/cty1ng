@@ -1,0 +1,15 @@
+role: ba
+display_name: BA
+platforms:             # chat credentials, as names of environment variables
+  discord:
+    token_env: DISCORD_TOKEN_BA
+# "<provider>:<model name>". Any Pydantic AI provider works: anthropic, openai, deepseek, google, ...
+model: anthropic:claude-sonnet-5-5
+write_paths:
+  - docs/
+handoff_to:
+  - designer
+  - human
+request_limit: 30      # model requests per run; stops a runaway tool loop
+max_reply_chars: 6000
+multimodal: true       # can this model see images and PDFs? false for text-only models such as deepseek-chat

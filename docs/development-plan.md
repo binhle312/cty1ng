@@ -9,7 +9,8 @@ the builder agent with the prompt in `workflow.md` §3.
 
 | Slice | Brief | Delivers | Checkpoint | Depends on |
 | --- | --- | --- | --- | --- |
-| M0 | [M0-skeleton.md](tasks/M0-skeleton.md) | Repo, tooling, CI, app shell, security middleware, event log + SSE skeleton | **plan** + merge | — |
+| M0a | [M0a-backend-skeleton.md](tasks/M0a-backend-skeleton.md) (part of [M0](tasks/M0-skeleton.md)) | Repo, tooling, CI, security middleware, event log + SSE skeleton | **plan** + merge | — |
+| M0b | [M0b-frontend-shell.md](tasks/M0b-frontend-shell.md) (part of [M0](tasks/M0-skeleton.md)) | App shell, Command theme, generated client, bundle budget, e2e | **UI design** + merge | M0a |
 | M1 | [M1-skill-hub.md](tasks/M1-skill-hub.md) | Skills: versions, authorship, clone, deprecate, import/export | **plan** (schema) | M0 |
 | M2 | [M2-bots.md](tasks/M2-bots.md) | Model catalog, bots CRUD, clone, avatars, pins, header bar | **plan** (schema, uploads) | M1 |
 | M3 | [M3-chat-one-bot.md](tasks/M3-chat-one-bot.md) | Conversations, rail, messages, worker, agent port, streaming, Stop, provenance | **plan** (events, worker) | M2 |

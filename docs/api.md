@@ -22,18 +22,22 @@ of date. When this document and the OpenAPI schema disagree, raise it.
 One shape for every error:
 
 ```json
-{"error": {"code": "mention_not_member", "message": "Designer is not in this conversation.", "field": "mentions[0]"}}
+{"error": {"code": "mention_not_member", "message": "Designer is not in this conversation.", "field": "mentions[0]", "request_id": "0b6e…"}}
 ```
+
+`field` is present when one input caused the error. `request_id` is on every error and matches
+the `X-Request-Id` header and the server log line (`security.md` §2.10).
 
 | HTTP | Codes |
 | --- | --- |
 | 400 | `invalid_skill_file`, `invalid_import`, `bad_request` |
-| 403 | `not_author`, `origin_rejected` |
+| 403 | `not_author`, `origin_rejected`, `host_rejected` (Host header not this server on loopback, `security.md` §2.1) |
 | 404 | `not_found` |
 | 409 | `name_taken`, `slug_taken`, `stale_write` (the row changed since it was read; reload), `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending`, `run_not_queued`, `draft_not_pending`, `draft_stale` |
 | 413 | `too_large` |
 | 422 | `validation_error`, `invalid_id`, `mention_not_member`, `bot_unavailable`, `bot_deleted`, `skill_deprecated`, `version_mismatch`, `effort_not_supported`, `model_not_available`, `sensitive_data` |
 | 429 | `rate_limited` (runs per hour), `daily_cap_reached` |
+| 500 | `internal_error` (details only in the server log) |
 
 ## 2. Skills
 
@@ -133,7 +137,7 @@ expressions first (`requirements/time-range-picker.md` §Contract with the backe
 | GET | `/stats/bots?from=&to=&conversation_id=&metric=runs\|cost\|tokens\|active_time` | ranking + table |
 | GET | `/stats/skills?from=&to=&conversation_id=` | ranking, table, never-loaded pins |
 | GET | `/stats/{section}.csv?…` | CSV export of a section's table |
-| GET | `/health` | `{db: ok, worker: ok, catalog: {models, available}}` |
+| GET | `/health` | `{db: "ok"\|"error", worker: "ok"\|"not_started", catalog: {models, available}}`; `worker` is `not_started` until the worker exists (M3) |
 | GET | `/setup` | Get started status (UI-1.7): `{has_available_model, has_skill, has_bot, has_conversation}` |
 | POST | `/setup/examples` | imports the example skills and creates BA and Designer; idempotent, returns what was created and what already existed (UI-1.9) |
 | GET | `/stream` | SSE (`realtime-events.md`) |

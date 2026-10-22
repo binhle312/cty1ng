@@ -59,9 +59,18 @@ conversation).
   sends all events with `seq > 812`, then live ones. First connection without the header: the
   server sends nothing old; the client loads current state with normal GETs, then uses the
   stream's first `ready` event (which carries the current max seq) as its cursor.
+- Every connection starts with `ready {max_seq}`, before any replayed events, so a client can
+  always take its cursor from it.
 - **Gap rule:** if the client's cursor is older than the retention window (events are kept 30
-  days), the server sends `event: reset` and the client reloads state with GETs.
+  days), the server sends `event: reset` and the client reloads state with GETs. A cursor
+  ahead of the newest event (a different database) or one the server cannot read is treated the
+  same way. After `reset` the stream goes on: `ready` with the current max seq, then live
+  events.
 - Heartbeat: a comment line `: ping` every 15 s keeps proxies from closing the connection.
+- Backpressure: the server reads the next event from the log only when the client has taken
+  the previous frames, so a large replay or a slow client holds only a few frames in memory.
+  Heartbeats are skipped while the client is not reading.
+- Shutdown ends every open stream; browsers then reconnect with `Last-Event-ID` as usual.
 - `retry: 2000` tells the browser to reconnect after 2 s.
 
 ### Ephemeral events
@@ -127,9 +136,13 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `spend.threshold_crossed` | yes | `{threshold_pct, today_spend_usd, cap_usd}` | today's spend crossed 75%, 90% or 100% of the daily cap (D40); once per threshold per day |
 | `project.created` / `project.updated` / `project.deleted` | yes | `{project}` | project CRUD, conversation moved (D37) |
 | `memory.saved` / `memory.updated` / `memory.deleted` | yes | `{memory_item, conversation_id?}` | a bot or the owner changed memory (D38); drives the "Remembered: …" line |
+| `test.ping` | yes | `{note}` | **test only**: `POST /api/_test/events`, mounted only when `APP_ENV=test` and not in the OpenAPI schema |
 
 Adding an event type: add it here first, then to the backend `EventType` enum and the frontend
-reducer. A test asserts the three lists match.
+reducer. A test asserts the three lists match. Until every type is built,
+`scripts/check-events.ts` keeps an explicit `PENDING` list of the types in this table that are
+not yet in `shared/`: the table must equal the `shared/` types plus `PENDING`, the two must not
+overlap, and each slice moves its types out of `PENDING` when it adds them.
 
 ## 5. Ordering and transactions
 
