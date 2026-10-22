@@ -133,7 +133,7 @@ expressions first (`requirements/time-range-picker.md` §Contract with the backe
 | GET | `/stats/bots?from=&to=&conversation_id=&metric=runs\|cost\|tokens\|active_time` | ranking + table |
 | GET | `/stats/skills?from=&to=&conversation_id=` | ranking, table, never-loaded pins |
 | GET | `/stats/{section}.csv?…` | CSV export of a section's table |
-| GET | `/health` | `{db: ok, worker: ok, catalog: {models, available}}` |
+| GET | `/health` | `{db: "ok"\|"error", worker: "ok"\|"not_started", catalog: {models, available}}`; `worker` is `not_started` until the worker exists (M3) |
 | GET | `/setup` | Get started status (UI-1.7): `{has_available_model, has_skill, has_bot, has_conversation}` |
 | POST | `/setup/examples` | imports the example skills and creates BA and Designer; idempotent, returns what was created and what already existed (UI-1.9) |
 | GET | `/stream` | SSE (`realtime-events.md`) |

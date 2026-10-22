@@ -45,10 +45,13 @@ Rules:
 4. **No second component library.** Material is reproduced with tokens on Base UI, not with MUI.
    We get the Material look, not Google's components (no ripple, no exact M3 motion specs). Two
    libraries would double the bundle, the accessibility behaviour to verify and the tests.
-5. **No flash on load.** A small inline script in `index.html` reads the saved theme and mode
-   and sets the `data-` attributes before the first paint.
-6. **Saved per browser** (localStorage, read with try/catch, falling back to Material + follow
-   system). In the VPS phase it moves to the user's settings row.
+5. **No flash on load.** A small blocking (external) script, `/theme-init.js`, loaded in the
+   `<head>` of `index.html`, reads the saved theme and mode and sets the `data-` attributes
+   before the first paint. It is external, not inline, because the CSP (`../security.md` §2.1)
+   blocks inline scripts. It has no imports and wraps everything in try/catch, so broken
+   storage never blocks the first paint.
+6. **Saved per browser** (localStorage, read with try/catch, falling back to Command + follow
+   system until T2; the T2 brief sets the default). In the VPS phase it moves to the user's settings row.
 
 ## 3. Token set
 

@@ -127,9 +127,13 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `spend.threshold_crossed` | yes | `{threshold_pct, today_spend_usd, cap_usd}` | today's spend crossed 75%, 90% or 100% of the daily cap (D40); once per threshold per day |
 | `project.created` / `project.updated` / `project.deleted` | yes | `{project}` | project CRUD, conversation moved (D37) |
 | `memory.saved` / `memory.updated` / `memory.deleted` | yes | `{memory_item, conversation_id?}` | a bot or the owner changed memory (D38); drives the "Remembered: …" line |
+| `test.ping` | yes | `{note}` | **test only**: `POST /api/_test/events`, mounted only when `APP_ENV=test` and not in the OpenAPI schema |
 
 Adding an event type: add it here first, then to the backend `EventType` enum and the frontend
-reducer. A test asserts the three lists match.
+reducer. A test asserts the three lists match. Until every type is built,
+`scripts/check-events.ts` keeps an explicit `PENDING` list of the types in this table that are
+not yet in `shared/`: the table must equal the `shared/` types plus `PENDING`, the two must not
+overlap, and each slice moves its types out of `PENDING` when it adds them.
 
 ## 5. Ordering and transactions
 
