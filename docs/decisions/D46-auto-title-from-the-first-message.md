@@ -21,10 +21,9 @@ short title, one time only. The title call is not a run.
 - **Caps (D20, D40, D42).** The app checks the same caps as a run, two times: in the send
   transaction and just before it sends the request. If the total cap or the provider cap is
   reached, the app does not make the call.
-- **One at a time.** The app sends at most one title request at a time, for all conversations.
-  Others wait in a queue in memory. So the spend that a cap check cannot see is at most one
-  title request (approximately 600 input and 30 output tokens). As with a run (D20), a request
-  that has started finishes.
+- **Parallel requests.** Title requests for different conversations run without a global queue
+  or concurrency limit. Cap checks use recorded spend and exclude unfinished requests.
+  Concurrent requests can therefore exceed a cap by more than one title request.
 - **Model.** The first available active member in this order: the mentioned bots in mention
   order, then the other members by join time. With no such bot, there is no title. The call uses
   the lowest effort of the model, at most 30 output tokens and a 20 s timeout.

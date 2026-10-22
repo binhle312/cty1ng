@@ -83,7 +83,7 @@ panel, handoffs (M6); editing and branches (M4).
     for it (fake title with `delay_ms`).
   - A second message, an edit of the first message, and a resend with the same `client_id` make
     no new title call (invariant 18).
-  - Two first messages sent in parallel make exactly one title call.
+  - Two first messages sent in parallel in the same conversation make exactly one title call.
   - A message refused with 422 `sensitive_data` does not use the attempt. The next clean
     message gets the title.
   - A first message sent with "Send anyway" (`confirm_sensitive: true`, guard matches) makes no
@@ -101,10 +101,13 @@ panel, handoffs (M6); editing and branches (M4).
     (D42), the app makes no title call, the status is `skipped`, and the chat gets no extra
     notice. A model with no known price still gets a title.
   - Near the cap: five conversations send their first message at the same moment, with fake
-    prices and a cap that leaves room for two title requests. At most one title request is in
-    flight at any time (the fake counts in-flight calls). The requests after the cap is reached
-    are `skipped` by the check before dispatch. Spend passes the cap by at most one title
-    request.
+    prices and a cap that leaves room for two title requests. Delay all five title calls until
+    all are in flight (the fake counts in-flight calls). All five can pass the cap checks before
+    any finishes. After they finish, recorded spend includes all five and exceeds the cap by
+    more than one title request.
+  - For both the total cap and the provider cap, a title passes the send-transaction check.
+    Another request then finishes and brings recorded spend to the cap before that title's
+    dispatch check. The title is `skipped`, with no call or extra notice.
   - Model choice: a message that mentions an unavailable Designer and then BA uses BA's model. A
     first message with only a `pending_history` member, or with only bots with no key, makes no
     call, and the status is `skipped`.

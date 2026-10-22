@@ -98,9 +98,10 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
 
 - `request_limit` per run, turn budget per conversation, runs per conversation per hour,
   `MAX_CONCURRENT_RUNS`, and the daily spending caps (D20, D42).
-- The auto title (D46) makes at most one request per conversation (a database rule) and one
-  request at a time for the whole app, with 30 output tokens, one attempt, and the same caps as
-  a run, checked again just before dispatch.
+- The auto title (D46) makes at most one request per conversation (a database rule), with
+  30 output tokens, a 20-second timeout, one attempt, and the same caps as a run. The app checks
+  caps in the send transaction and again just before dispatch. Requests for different
+  conversations run in parallel; caps are best effort (`conversation-rules.md` §8 rules 5–7).
 - Request body limit: 1 MB for JSON, upload limits as in 2.4; larger bodies get 413 before
   parsing.
 

@@ -501,9 +501,10 @@ Usage is derived from `model_requests` (detail) and `runs` (totals). All figures
 
 Title requests (D46) are in `model_requests`, so the today sums include them with no extra
 query. The app checks the same caps two times before a title call: in the send transaction and
-just before dispatch. Only one title request is in flight at a time, so the spend that a check
-cannot see is at most one title request plus the running runs (`conversation-rules.md` §8 rules
-5 and 6). A reached cap skips the call and adds no notice.
+just before dispatch. Multiple title requests can be in flight. Cap checks exclude their
+unfinished costs and those of running runs. There is no fixed overspend bound based on one
+title request (`conversation-rules.md` §8 rules 5 and 6). A reached cap skips the call and adds
+no notice.
 
 Daily cap check (D20, D42) happens when a run is claimed: first the bot's provider cap, if set
 (today's spend on that provider ≥ its cap → `failed` with `provider_cap_reached`), then the total

@@ -329,13 +329,10 @@ rail and the header show it.
    reached at either check, the status is `skipped`. The title adds no notice to the chat. A run
    that the cap stops posts its own notice (D20). A message that starts no run gets no notice.
    A model with no known price is allowed and counts toward no cap.
-6. **One title request at a time.** The app sends at most one title request at a time, for all
-   conversations together. Other claimed titles wait in a queue in memory, oldest first. The
-   second cap check happens when a title leaves the queue. So the spend that the cap check does
-   not see is never more than one title request. A title request is small and bounded: 2000
-   characters of input at most (approximately 600 tokens with the instruction) and 30 output
-   tokens. As with a run (D20), a request that has started finishes, so it can pass a cap. A
-   restart empties the queue: rule 10 applies.
+6. **Parallel title requests.** Title requests for different conversations run in parallel,
+   with no global queue or concurrency limit. Spending caps are best effort: checks exclude
+   unfinished requests, so concurrent requests can together exceed a cap. Requests already in
+   flight may finish. Each request keeps the limits in rule 7.
 7. **The call.** It runs after the send transaction commits, in the background, through the
    model port. It does not wait for the bot run, and the bot run does not wait for it. Input:
    a fixed instruction and the message text as quoted data, with mentions as bot names, cut to
