@@ -6,10 +6,11 @@
 
 ## 1. Where it lives
 
-- The right pane holds **Flow or Memory, one at a time** (D44, proposed).
+- The side pane holds **Flow or Memory, one at a time** (D44, proposed). It is on the right by
+  default. The ⇄ button (UI-12.1) swaps it to the left, and Flow and Memory share that side.
 - It opens from the Memory row in bar 2 (`left-bar.md` §2). The chat header keeps only its Flow
   button; there is no Memory button there.
-- Opening: the pane slides in over 200 ms ease-out, animating only `transform` and `opacity`. The
+- Opening: the pane slides in from its side over 200 ms ease-out, animating only `transform` and `opacity`. The
   chat narrows once, at the end, so text does not reflow during the slide. Reduced motion: no
   slide.
 
