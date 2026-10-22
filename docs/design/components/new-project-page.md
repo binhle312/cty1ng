@@ -1,10 +1,10 @@
 # New project page
 
-> **Status: fields, limits and copy agreed in the M0 UI design review (2026-10-22); the layout is
-> still to confirm.** Preview: `../previews/command-dark/left-bar.png` (the New project card).
-> Follows D45.
+> **Status: agreed in the M0 UI design review (2026-10-22)**, canvas round 6.2, layout A. Preview:
+> `../previews/command-dark/new-project.png` (and `.html`). Follows D45. The labels and error
+> messages use Simplified Technical English.
 
-The rail's "+" opens a full page in the main area. Bar 2 is hidden while it is open.
+The rail's "+" opens a full page in the main area. Bar 2 is hidden while the page is open.
 
 ## 1. Header
 
@@ -21,22 +21,62 @@ title and the page's accessible name stay **"New project"**.
 | 6 | Clean slate ✨ | What are we making this time? |
 | 7 | Where should we start? 🗺️ | Set the goal, and your bots will help find the way. |
 
-## 2. Fields
+## 2. Layout (A: two columns)
 
-| Field | Limit | Notes |
+- **Left:** the form, at most 620 px wide: header, Name, Goal, Instructions, Colour, then the
+  buttons. The page starts with the focus in Name.
+- **Right:** a 260 px preview column. It stays in place while the owner types. It shows the bar 2
+  header (tile, name, stats line, goal) with the Memory and Library rows, the rail tile, and the
+  line "Bar 2 does not show the instructions. Every bot in this project reads them."
+- **Buttons**, aligned right under a divider: **Cancel**, **Create project** (`primary`). The app
+  turns off Create project until Name has text and no field has an error.
+
+## 3. Fields
+
+| Field | Limit | Label hint | Placeholder |
+| --- | --- | --- | --- |
+| Name | unique among projects | none | Project name |
+| Goal | ≤ 500 chars, live counter | Bar 2 shows it. Every bot reads it. | What is the goal of this project? Example: Plan the pricing page for the March launch. |
+| Instructions | ≤ 3000 chars, live counter; optional | Optional · Markdown, as in an AGENTS.md file | `# Rules for every bot in this project` / `- How must bots write?` / `- Where do bots put files?` / `- What must bots ask you before they act?` |
+| Colour | the project colour set | none | The first colour is selected |
+
+- The goal is `projects.description`. The instructions are `projects.instructions_md`. Only the
+  owner edits them. Bots cannot edit them (D45).
+- Instructions is a monospace box with **Write** and **Preview** tabs. Preview renders the
+  Markdown with raw HTML off (`../../security.md`).
+- Empty page: placeholders in `on-surface-muted`; the preview shows a grey "New project" tile and
+  "Your goal shows here."
+
+## 4. Errors
+
+An error shows under its field, in `danger`, when the owner leaves the field and again on Create.
+The field border turns `danger`. Each message says what is wrong, then what to do.
+
+| Case | When | Message |
 | --- | --- | --- |
-| Name | as today (unique among projects) | Required |
-| Goal | ≤ 500 chars, live counter | Stored in `projects.description`. Shown in bar 2's header; every bot reads it |
-| Instructions | ≤ 3000 chars, live counter | Monospace Markdown box, like an `AGENTS.md`. Written by the owner; bots cannot edit it; every run reads it |
-| Colour | the project colour set | Used for the rail tile |
+| Name is empty | on Create | Type a name for the project. |
+| Name exists | on leave and on Create | A project with the name "{name}" exists. Type a different name. |
+| Goal is too long | live; the counter turns `danger` | The goal has {n} characters. The limit is 500. Make the goal shorter. |
+| Instructions are too long | live; the counter turns `danger` | The instructions have {n} characters. The limit is 3000. Make them shorter. |
+| Sensitive data (D39) in Goal or Instructions | on Create | Line {n} looks like an API key. The app does not save secrets. Remove the key, and put it in an environment variable. |
 
-Beside the form: a live preview of the bar 2 header (with the goal) and of the rail tile.
+- The sensitive-data message names the kind of data and the line. It never shows the secret.
+- If the save fails for another reason, the page keeps all text and shows a toast: "The app could
+  not create the project. Try again." The page never shows internal error text.
 
-Buttons aligned right: **Cancel**, **Create project** (`primary`).
+## 5. Leave with unsaved text
 
-## 3. After Create
+Cancel, Esc, or a click on the rail or Home asks first, but only if a field has text. On an empty
+page, Cancel goes back at once. The dialog has a joyful tone (owner, 2026-10-22):
 
-The project opens with an empty first chat. Bots are added in the chat, not on this page.
+- Title: **Leave before you create it? 👀**
+- Text: "The app has not saved your name, goal and instructions yet. Stay and finish, or let them
+  go."
+- Buttons: **Stay and finish** (`primary`, default, Enter) and **Let it go** (`danger` text).
+
+## 6. After Create
+
+The project opens with an empty first chat. The owner adds bots in the chat, not on this page.
 
 ## Requirement changes (requirements PR)
 

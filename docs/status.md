@@ -23,9 +23,9 @@ accepted: bots draft skills when asked, the owner approves and is the author (sl
 UI design review in progress: header bot order (Recent activity / Custom, deferred
 reordering) specified for M2. Agreed so far and saved in `design/components/` with previews: bot
 avatar (Flat, Jelly, Pixel; Flat only until the final product), top header, bot card, user
-panel, left bar (rail and bar 2), Memory pane, New project page fields. D43–D45 accepted
+panel, left bar (rail and bar 2), Memory pane, New project page (layout A). D43–D45 accepted
 (memory precedence, right pane holds Flow or Memory, project goal and instructions). Still in
-review: Library page content, New project page layout, Flow pane. Project Board is a later
+review: Library page content, Flow pane. Project Board is a later
 slice (M8c).
 
 ## Next
