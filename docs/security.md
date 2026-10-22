@@ -78,6 +78,10 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
   2.3 (sandbox), by the turn budget and caps, and by the owner approving handoffs. Never
   give bots a capability whose misuse would be worse than "bad text in the workspace" without
   revisiting this document.
+- Bots may draft skills but never save them (D41). A skill reaches every run that loads it, so
+  injected text in a skill would persist; only an owner-approved, owner-authored version is
+  ever written. Drafts are text only (no files, no tool permissions), pass the sensitive-data
+  guard with no override, and the tool is offered only in runs the owner's message started.
 
 ### 2.6 Secrets
 
@@ -176,7 +180,7 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
 - Messages and text attachments are checked for likely secrets before they reach a model
   provider. Matches are shown masked, and sending needs an explicit "Send anyway", which the
   server checks (`confirm_sensitive`, 422 `sensitive_data`).
-- Memory writes with a match are refused, with no override.
+- Memory writes and skill drafts (D41) with a match are refused, with no override.
 - Pattern-based and incomplete by nature: a warning, not a guarantee. Images and PDFs are not
   scanned.
 - Matched text is never logged; only the kinds found are logged.

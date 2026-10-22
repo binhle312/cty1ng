@@ -190,6 +190,7 @@ Use these words, with these meanings, in code, database, API, UI and docs.
 | **Always load** | Per pin flag: the skill body is in the bot's prompt on every run instead of loaded on demand. |
 | **Author** | The user who created a skill. Only the author can create new versions or deprecate it. |
 | **Deprecated** | A skill hidden from new assignment; pinned bots keep working. Replaces delete. |
+| **Skill draft** | A skill or skill version a bot proposed when the owner asked. Nothing changes until the owner approves it; the owner is then its author (D41). |
 | **Model catalog** | `config/models.yaml`: the models a bot can be created with. |
 | **Effort** | A model's reasoning-effort setting, if the model has one. |
 | **Unavailable bot** | A bot whose model is not in the catalog or has no API key. Cannot run. |

@@ -70,3 +70,4 @@ Implemented in: links.
 | D38 | [Bot, project and conversation memory](D38-bot-memory-and-project-memory.md) | accepted |
 | D39 | [Sensitive-data guard before anything reaches a model or memory](D39-sensitive-data-guard.md) | accepted |
 | D40 | [Cost alerts at 75% and 90% of the daily cap](D40-cost-alerts-at-75-and-90.md) | accepted |
+| D41 | [Bots draft skills; the owner approves and is the author](D41-bots-draft-skills-the-owner-approves.md) | accepted |

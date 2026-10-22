@@ -8,7 +8,7 @@ status.
 definition of done in `AGENTS.md` §9). The owner updates it for owner-only steps (reviews,
 approvals). Keep it short: link to PRs and briefs instead of describing work.
 
-Last updated: 2026-10-21
+Last updated: 2026-10-22
 
 ## Now
 
@@ -18,18 +18,19 @@ code folder for agents (`architecture.md` §4.2). Ids are UUIDv7 stored, TypeIDs
 database (D22, D36). Themes accepted (D30): Command ships in M0, Material later (T2), and the
 Board is the Flow pane's third map (M8b). Loading rules, first open and reopening specified (app-shell.md SH-4, SH-5). Product brief
 expanded after the owner's interview (use cases, phases, non-goals, trust
-failures); D37–D40 accepted (projects, memory, sensitive-data guard, cost alerts).
+failures); D37–D40 accepted (projects, memory, sensitive-data guard, cost alerts). D41
+accepted: bots draft skills when asked, the owner approves and is the author (slice M5c).
 
 ## Next
 
-1. Owner merges the loading, first-open and reopen PR (docs only).
+1. Owner merges the skill drafts PR (docs only).
 2. Start M0 locally in Claude Code with the builder prompt in `workflow.md` §3.
 
 ## Waiting on the owner
 
 | Item | Needed by |
 | --- | --- |
-| Merge the loading, first-open and reopen PR | M0 |
+| Merge the skill drafts PR (D41) | M0 |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
 
 ## Slices
@@ -45,6 +46,7 @@ failures); D37–D40 accepted (projects, memory, sensitive-data guard, cost aler
 | M6 | not started | | |
 | M7 | not started | | |
 | M5b | not written | | Projects and memory (D37, D38) |
+| M5c | not written | | Skills drafted by bots (D41) |
 | M8 | not started | | |
 | M8b | not written | | Board map in the Flow pane (D30) |
 | T2 | not written | | Material theme (D30) |

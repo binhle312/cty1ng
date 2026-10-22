@@ -129,6 +129,7 @@ The prompt for a run is assembled in this order by `buildPrompt(...)` in `core/r
 5. **Always-loaded skills**: full body of each pinned version with `always_load`.
 6. **On-demand skills**: `- <slug>: <description>` for the other pins, and "call
    `load_skill(slug)` before doing that kind of work".
+   In runs triggered by the owner's message, the `propose_skill` tool is listed too (§7).
 7. **Transcript**: the visible history (below) as one user-role block.
 8. **The trigger**: the message the bot is answering, quoted and labelled.
 
@@ -237,3 +238,42 @@ m1 (human) ── m2 (BA) ── m3 (human) ── m4 (BA)
 - **Not rolled back:** workspace files and handoff decisions. The edit dialog warns: "Files
   bots created after this message stay in the workspace."
 - Membership and the budget counter belong to the conversation, not to a branch.
+
+## 7. Skills drafted by bots (D41)
+
+When the owner asks, a bot turns a piece of work into a skill, for itself or for another bot
+in the conversation. The owner approves every draft and is its author.
+
+Example:
+
+1. The owner, after BA wrote good stories: "@BA make the way you just wrote these a skill for
+   yourself."
+2. BA calls `propose_skill(target="ba", name="Write login stories", slug="write-login-stories",
+   description="…", body_md="…")`.
+3. A card appears: "BA drafted a skill for BA: Write login stories", with the text, "Pin to BA"
+   ticked, always-load off, and [Edit] [Approve] [Reject].
+4. Approve creates `write-login-stories` v1 (author: the owner) and pins it to BA. BA's next
+   reply shows it in its provenance chips.
+
+Rules:
+
+- `propose_skill(target, name, description, body_md, slug?, skill?, changelog?)`. `target` is
+  a bot name or slug of an **active member**, the caller included. For an edit, `skill` is the
+  slug of an existing, non-deprecated skill, and the draft is based on its latest version; for
+  a new skill, `slug` is proposed (`^[a-z0-9-]{1,64}$`) and must not be taken yet.
+- **Only when asked.** The tool is offered only in runs with `triggered_by = human`, never in
+  bot turns or handoff runs. The prompt says to use it only when the owner asks. A bot may
+  offer in one line ("Want me to save this as a skill?") and waits for a yes.
+- **Text only.** Name, description (≤ 300 characters), body (≤ 50 KB) and changelog. No files,
+  no frontmatter beyond what the app writes, no tool permissions or write paths.
+- **Guard.** The text passes the sensitive-data guard (D39) or the tool returns an error
+  naming the kinds found; there is no "Send anyway" for drafts.
+- **Limits.** 3 drafts per run and 10 pending drafts per conversation; beyond that the tool
+  returns an error asking the bot to tell the owner.
+- **Card actions (owner only):** Edit (the draft opens in the skill editor, UI-7.3), Approve
+  (with "Pin to <bot>" and always-load), Reject. A decision applies only while `pending`.
+- **After Approve:** for an edit, the "Also upgrade these bots" dialog (D6) follows, listing
+  other bots on older versions, unchecked. A run already going keeps the pins it started with.
+- **Memory or skill?** Facts and preferences go to memory (D38); procedures go to a skill.
+  The rules block says so, so "always write stories as Given / When / Then" becomes a memory
+  and "how to write a login story" becomes a skill.
