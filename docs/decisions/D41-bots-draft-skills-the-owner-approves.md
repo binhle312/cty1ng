@@ -22,6 +22,12 @@ The owner's answers (2026-10-22):
 5. **Text only.** A draft is name, description, body and changelog, within the usual skill
    limits (body 50 KB, description 300 characters). No files, no scripts, no tool
    permissions: a skill can never widen what a bot may do.
+6. **Out of date.** If the skill gains a version while a draft waits, the draft is marked "Out
+   of date" and the card offers "Ask <bot> to redraft". There is no merge view: approving the
+   old draft would silently drop the newer change.
+7. **Edit, then save.** Edit opens the normal skill editor filled with the draft; saving there
+   approves it, with the card's pin and always-load choices, and the card notes "edited by you
+   before approving".
 
 The flow:
 
