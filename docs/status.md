@@ -23,21 +23,22 @@ accepted: bots draft skills when asked, the owner approves and is the author (sl
 
 ## Next
 
-1. Owner merges the skill drafts PR (docs only).
-2. Start M0 locally in Claude Code with the builder prompt in `workflow.md` §3.
+1. Owner reviews the M0 plan in the draft PR: answers the questions, approves the UI design and
+   the dependency list.
+2. Builder builds M0 on `m0-skeleton`.
 
 ## Waiting on the owner
 
 | Item | Needed by |
 | --- | --- |
-| Merge the skill drafts PR (D41) | M0 |
+| Approve the M0 plan, UI design and dependency list; answer the plan's questions | M0 build |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
 
 ## Slices
 
 | Slice | State | PR | Notes |
 | --- | --- | --- | --- |
-| M0 | not started | | |
+| M0 | planning | draft PR (m0-skeleton) | Plan and UI design wait for the owner's approval |
 | M1 | not started | | |
 | M2 | not started | | |
 | M3 | not started | | |
