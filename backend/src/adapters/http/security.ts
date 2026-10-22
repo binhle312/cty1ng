@@ -26,9 +26,19 @@ export function securityHeaders(): MiddlewareHandler<HttpEnv> {
   });
 }
 
+const LOOPBACK_NAMES = ["127.0.0.1", "localhost"];
+const DEFAULT_HTTP_PORT = 80;
+
+/** `127.0.0.1:<port>` and `localhost:<port>`; browsers leave out `:80`, so allow that too. */
+function ownHosts(port: number): string[] {
+  return LOOPBACK_NAMES.flatMap((name) =>
+    port === DEFAULT_HTTP_PORT ? [name, `${name}:${port}`] : [`${name}:${port}`],
+  );
+}
+
 /** Blocks DNS rebinding: the Host header must name this server on loopback. */
 export function hostCheck(input: { port: number }): MiddlewareHandler<HttpEnv> {
-  const allowed = new Set([`127.0.0.1:${input.port}`, `localhost:${input.port}`]);
+  const allowed = new Set(ownHosts(input.port));
   return async (c, next) => {
     const host = c.req.header("host");
     if (host === undefined || !allowed.has(host.toLowerCase())) {
@@ -50,8 +60,7 @@ export function originCheck(input: {
   allowedOrigins: readonly string[];
 }): MiddlewareHandler<HttpEnv> {
   const allowed = new Set([
-    `http://127.0.0.1:${input.port}`,
-    `http://localhost:${input.port}`,
+    ...ownHosts(input.port).map((host) => `http://${host}`),
     ...input.allowedOrigins,
   ]);
   return async (c, next) => {

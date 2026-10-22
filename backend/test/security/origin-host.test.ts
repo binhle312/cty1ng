@@ -95,3 +95,29 @@ describe("AC3: Host and Origin checks (security.md §2.1, §3)", () => {
     expect(preflight.headers.get("access-control-allow-origin")).toBeNull();
   });
 });
+
+describe("PORT=80: browsers omit the default port", () => {
+  it("accepts Host and Origin without :80, and with it", async () => {
+    app = makeTestApp({ PORT: "80" });
+    for (const host of ["127.0.0.1", "localhost", "127.0.0.1:80"]) {
+      const response = await app.http.request("http://127.0.0.1/api/health", { headers: { host } });
+      expect(response.status).toBe(200);
+    }
+    for (const origin of ["http://127.0.0.1", "http://localhost", "http://127.0.0.1:80"]) {
+      const response = await app.http.request("http://127.0.0.1/api/_test/events", {
+        method: "POST",
+        headers: { host: "127.0.0.1", origin, "content-type": "application/json" },
+        body: JSON.stringify({ note: "x" }),
+      });
+      expect(response.status).toBe(201);
+    }
+  });
+
+  it("still rejects a bare host on any other port", async () => {
+    app = makeTestApp();
+    const response = await app.http.request(`${BASE}/api/health`, {
+      headers: { host: "127.0.0.1" },
+    });
+    expect(response.status).toBe(403);
+  });
+});
