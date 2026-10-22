@@ -37,10 +37,10 @@ waiting signals on a project tile stay as in the earlier rounds. Every badge sit
 - Drag a pinned project: its slot becomes a dashed gap and a `primary` drop line shows where it
   lands. Only inside the pinned group. Esc cancels.
 - A drag that starts on a pinned project reorders; a drag that starts anywhere else scrolls.
-- **Keyboard alternative (required, ships with pinning):** on a focused pinned tile, Alt+↑ and
-  Alt+↓ move it one place. A screen reader announces the new place ("Moved to 2 of 4"). Drag is
-  not the only way to reorder (WCAG 2.5.7).
-- Right-click or Shift+F10 menu (nice to have): Move up, Move down, Unpin, Project settings.
+- Keyboard alternative (nice to have, owner decision 2026-10-22): on a focused pinned tile,
+  Alt+↑ and Alt+↓ move it one place, and a screen reader announces the new place. A right-click or
+  Shift+F10 menu has Move up, Move down, Unpin, Project settings. Until one of them ships, drag is
+  the only way to reorder (a known gap against WCAG 2.5.7).
 
 ### 1.3 Scroll
 
