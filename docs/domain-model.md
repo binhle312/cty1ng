@@ -40,6 +40,7 @@ bots
   max_reply_chars      INTEGER NOT NULL DEFAULT 6000
   history_share_pct    INTEGER NOT NULL DEFAULT 40   -- % of the model's context window for history per run, 10–80, step 5 (D32)
   cloned_from_bot_id   TEXT NULL REFERENCES bots(id)
+  header_position      INTEGER NULL                  -- custom header order, 1 = first; NULL until a custom order is saved (bots.md UI-4.5)
   created_by           TEXT NOT NULL
   created_at, updated_at
   deleted_at           TIMESTAMP NULL                -- soft delete (D12)
@@ -54,6 +55,12 @@ UNIQUE INDEX bots_name_live ON bots(lower(name)) WHERE deleted_at IS NULL
   prefilled create payload (`name: "<name> (copy)"`, persona, avatar, model, effort, write
   paths, pins with their versions and `always_load`). The owner edits it in the create form and
   submits a normal create with `cloned_from_bot_id`. Cancelling creates nothing.
+- **Header order** (`app-shell.md` UI-2.1): with `settings.bot_order = 'recent'` the order
+  comes from `last_activity_at`, computed on read as the latest `created_at` of the bot's
+  messages and runs; nothing is stored for it. With `'custom'` it is `header_position`
+  ascending; bots with NULL (created after the last save) follow, oldest first. Saving a custom
+  order rewrites `header_position` for every non-deleted bot in one transaction. Gaps left by
+  deleted bots are harmless.
 - **Availability** is computed, not stored: a bot is *available* if its `model_id` is in the
   catalog and the model's API key variable is set.
 
@@ -415,11 +422,11 @@ handoffs
 
 ```
 settings
-  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd (NULL = off), timezone (NULL = browser local) …
+  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order …
   value  JSON NOT NULL
 ```
 
-Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`.
+Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"custom"`).
 
 ## 11. Files on disk
 
@@ -467,12 +474,14 @@ Usage is derived from `model_requests` (detail) and `runs` (totals). All figures
 | Per message | the message's run |
 | Per bot | sum over its runs, by day, last 7 / 30 days |
 | Per conversation | sum over runs in the conversation |
-| Today (for the cap) | sum of `estimated_cost_usd` for runs finished since local midnight, plus running runs' partial usage |
+| Today (for the cap) | sum of `model_requests.estimated_cost_usd` for requests that finished since local midnight. Each request counts once, so the partial usage of a running run is included. Per provider: the same sum for the requests with that `provider`. A request in a run is charged to its own provider, so a run with requests to two providers splits its cost. A request with NULL cost (unknown price) counts toward no cap (D21, D42) |
 
-Daily cap check (D20) happens when a run is claimed: if today's spend ≥ cap, the run is marked
-`failed` with error `daily_cap_reached` and a system notice is posted. Crossing 75% and 90%
-(D40) emits a `spend.threshold_crossed` event once per threshold per day (the day it fired is
-stored in `settings`), shown as a banner, a toast and a system line.
+Daily cap check (D20, D42) happens when a run is claimed: first the bot's provider cap, if set
+(today's spend on that provider ≥ its cap → `failed` with `provider_cap_reached`), then the total
+(today's spend ≥ cap → `failed` with `daily_cap_reached`); either way a system notice names the
+cap that was hit. Crossing 75% and 90% of any cap (D40) emits a `spend.threshold_crossed` event
+once per threshold per cap per day (the day it fired is stored in `settings`), shown as a banner,
+a toast and a system line.
 
 ### 13.1 Metric definitions (statistics page, D24)
 

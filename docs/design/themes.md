@@ -57,6 +57,7 @@ Rules:
 | Surface | `surface`, `surface-container`, `surface-raised` | #0E0F11, #16181B, #1E2125 | #F8FAF0, #ECEFE4, #FFFFFF |
 | Text | `on-surface`, `on-surface-muted` | #E7E8EA, #9BA1AB | #191D17, #43483F |
 | Primary | `primary`, `on-primary`, `primary-container` | #F5B544, #0E0F11, #1B170D | #3B6939, #FFFFFF, #BCF0B4 |
+| Primary tint | `primary-tint` (selected tile fill, left bar) | #3A2E12 | set in T2 |
 | Lines | `outline`, `outline-strong` | #23262B, #3A3F46 | #C3C8BB, #73796E |
 | Status | `running`, `waiting`, `danger`, `success` | #7DB8E3, #F5B544, #F2777A, #7FCB8B | #235023, #7A3E14, #B3261E, #2F6B3A |
 | Bots | `bot-1` … `bot-10` (avatar fills, white text ≥ 4.5:1) | shared palette | shared palette |

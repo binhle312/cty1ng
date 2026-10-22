@@ -10,6 +10,8 @@ The frame around every page: the rail of conversations on the left and the bar o
   Acceptance criteria: UI-2.1 to UI-2.3, UI-2.6 to UI-2.8.
 - **SH-3.** As the owner, I want to drag a bot from the header into the chat, so that adding a bot feels direct.  
   Acceptance criteria: UI-2.4, UI-2.5.
+- **SH-6.** As the owner, I want the header to show my most active bots first, or an order I choose, and never to shuffle while I am using it, so that I can find a bot without chasing it.  
+  Acceptance criteria: UI-2.1, UI-2.9, UI-2.10, UI-4.5.
 - **SH-4.** As the owner opening the app for the first time, I want a short checklist of what to set up, so that I reach my first bot reply without reading documentation.  
   Acceptance criteria: UI-1.7 to UI-1.9.
 - **SH-5.** As the owner, I want the app to reopen where I left off, so that closing it costs me nothing.  
@@ -38,7 +40,13 @@ Layout sketch: see `../design/screens.md` §1 (not final).
 
 ## Header (bot bar) (UI-2)
 
-- UI-2.1: Shows every non-deleted bot as a 36 px round avatar, sorted by name.
+- UI-2.1: Shows every non-deleted bot as a 36 px round avatar. The order follows the
+  `bot_order` setting:
+  - **Recent activity** (default): the bot with the latest message or run, in any
+    conversation, comes first (`last_activity_at`, `../api.md` §4). Bots with no activity
+    follow, by name. Clicking, hovering or opening a bot never changes the order.
+  - **Custom**: the order the owner saved on the Bots page (UI-4.5). Activity never changes it.
+    A bot created later goes to the end.
 - UI-2.2: Tooltip with the bot name on hover or focus within 300 ms.
 - UI-2.3: Unavailable bots show a small warning badge; tooltip adds the reason ("Model removed
   from catalog" / "API key not set").
@@ -48,9 +56,32 @@ Layout sketch: see `../design/screens.md` §1 (not final).
   nothing and show why ("Already here").
 - UI-2.5: Dropping adds the bot (`../conversation-rules.md` §3); the history card appears within
   1 s.
-- UI-2.6: Clicking an avatar opens the bot detail page.
-- UI-2.7: When there are more bots than fit, the bar scrolls horizontally with fade edges.
-- UI-2.8: Right side: links to Bots, Skills, Statistics, Settings.
+- UI-2.6: Clicking an avatar opens the bot card (`../design/components/bot-card.md`). Only one
+  card is open at a time. The card links to the bot's settings.
+- UI-2.7: The roster uses the middle 6 of 12 page columns. When there are more bots than fit, the
+  zone scrolls horizontally with fade edges, and ‹ › buttons show on hover
+  (`../design/components/top-header.md`).
+- UI-2.8: The header holds the bot roster only, with no navigation links. Bots, Skills, Memory,
+  Statistics and Settings open from the user panel menu (`../design/components/user-panel.md`).
+  With no bots, the header shows a dashed "+" with "Hey, add your bot here 👋".
+- UI-2.9: Deferred reordering (Recent activity only). The order freezes when the pointer enters
+  the header or focus moves into it, and stays frozen while the owner scrolls, drags, clicks or
+  uses a bot's card; leaving with the pointer keeps it frozen. Activity that arrives meanwhile
+  is recorded but no avatar moves. The pending order applies in one step at the next of these events:
+  a click or key press **outside** the header; focus moves out of the header (for example to
+  another window or tab); or the page or route changes. A pointer, keyboard or drag interaction
+  in the header always keeps it frozen. The update moves no avatar one by one, does nothing when the order is
+  unchanged, and keeps the scroll position where it can. Rule: avatars never move while the
+  owner is engaging with the header.
+- UI-2.10: Keyboard: Tab reaches each avatar in display order, and the focused avatar scrolls
+  into view. Arrow-key navigation between avatars is not provided (a later option).
+- UI-2.11: The header is sticky: it stays at the top of the window on every page while the
+  content below it scrolls (the conversation, the bot and skill pages, Settings, Statistics).
+  Only the content area scrolls; the header and the conversation rail never scroll away.
+- UI-1.13: The left navigation bar is sticky too: it fills the window height on every page and
+  never scrolls with the content. When its list of projects and conversations is longer than
+  the window, only that list scrolls inside the bar; the "+" button at the top and the user
+  panel at the bottom stay in place. (A sticky bottom bar may come later; not specified.)
 
 ## First open and reopening (UI-1, continued)
 

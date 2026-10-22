@@ -18,8 +18,15 @@ code folder for agents (`architecture.md` §4.2). Ids are UUIDv7 stored, TypeIDs
 database (D22, D36). Themes accepted (D30): Command ships in M0, Material later (T2), and the
 Board is the Flow pane's third map (M8b). Loading rules, first open and reopening specified (app-shell.md SH-4, SH-5). Product brief
 expanded after the owner's interview (use cases, phases, non-goals, trust
-failures); D37–D40 accepted (projects, memory, sensitive-data guard, cost alerts). D41
+failures); D37–D40 accepted (projects, memory, sensitive-data guard, cost alerts); D42 adds optional per-provider caps under the total cap. D41
 accepted: bots draft skills when asked, the owner approves and is the author (slice M5c).
+UI design review in progress: header bot order (Recent activity / Custom, deferred
+reordering) specified for M2. Agreed so far and saved in `design/components/` with previews: bot
+avatar (Flat, Jelly, Pixel; Flat only until the final product), top header, bot card, user
+panel, left bar (rail and bar 2), Memory pane, New project page fields. D43–D45 accepted
+(memory precedence, right pane holds Flow or Memory, project goal and instructions). Still in
+review: Library page content, New project page layout, Flow pane. Project Board is a later
+slice (M8c).
 
 ## Next
 
@@ -31,7 +38,11 @@ accepted: bots draft skills when asked, the owner approves and is the author (sl
 | Item | Needed by |
 | --- | --- |
 | Merge the skill drafts PR (D41) | M0 |
+| Review and merge the header bot order PR (docs only) | M2 plan |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
+| Approve the M2 migration: `bots.header_position`. Claude Code stops for this approval before it writes the migration | M2 plan |
+| Approve the M5b migrations: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars. Claude Code stops for this approval before it writes them | M5b plan |
+| Write the M5b brief: projects, memory (D37, D38, D43), goal and instructions (D45), pinning, the API contracts that D43 and D45 list as not written yet | M5b start |
 
 ## Slices
 
@@ -45,10 +56,11 @@ accepted: bots draft skills when asked, the owner approves and is the author (sl
 | M5 | not started | | |
 | M6 | not started | | |
 | M7 | not started | | |
-| M5b | not written | | Projects and memory (D37, D38) |
+| M5b | not written | | Projects and memory (D37, D38, D43, D45); left bar pinning; side pane shared with Memory (D44) |
 | M5c | not written | | Skills drafted by bots (D41) |
 | M8 | not started | | |
 | M8b | not written | | Board map in the Flow pane (D30) |
+| M8c | proposed | | Project-wide Board, read-only, after M8b (`design/components/left-bar.md` §5) |
 | T2 | not written | | Material theme (D30) |
 | M9 | not written | | VPS milestone |
 
