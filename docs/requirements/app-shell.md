@@ -10,6 +10,10 @@ The frame around every page: the rail of conversations on the left and the bar o
   Acceptance criteria: UI-2.1 to UI-2.3, UI-2.6 to UI-2.8.
 - **SH-3.** As the owner, I want to drag a bot from the header into the chat, so that adding a bot feels direct.  
   Acceptance criteria: UI-2.4, UI-2.5.
+- **SH-4.** As the owner opening the app for the first time, I want a short checklist of what to set up, so that I reach my first bot reply without reading documentation.  
+  Acceptance criteria: UI-1.7 to UI-1.9.
+- **SH-5.** As the owner, I want the app to reopen where I left off, so that closing it costs me nothing.  
+  Acceptance criteria: UI-1.10 to UI-1.12.
 
 ## Acceptance criteria
 
@@ -47,3 +51,47 @@ Layout sketch: see `../design/screens.md` §1 (not final).
 - UI-2.6: Clicking an avatar opens the bot detail page.
 - UI-2.7: When there are more bots than fit, the bar scrolls horizontally with fade edges.
 - UI-2.8: Right side: links to Bots, Skills, Statistics, Settings.
+
+## First open and reopening (UI-1, continued)
+
+- UI-1.7: When no conversation is open and setup is not finished, the main area shows a
+  **Get started** checklist:
+  1. *Model key*: "Anthropic key found ✓" for each provider with a key, or, when none is found,
+     "Add a key: set `ANTHROPIC_API_KEY` (or another provider's) in `.env` and restart". Keys
+     come only from the environment (`../security.md` §2.6), so there is no input box. The
+     status comes from `GET /api/models`.
+  2. *Skills*: "Create a skill", or "Load the examples", which imports the example skills and
+     creates the BA and Designer bots (the same content as `make seed`).
+  3. *Bot*: "Create a bot".
+  4. *Conversation*: "Start a conversation" (the same as "+").
+- UI-1.8: Each step ticks itself off from server state (a key is available, a skill exists, a
+  bot exists, a conversation exists), not from clicks, so it is right after a reload or when
+  the work was done elsewhere. When all four are done, the checklist is replaced by the
+  normal empty state ("Pick a conversation or press +"). "Hide" dismisses it early, and Settings
+  can show it again.
+- UI-1.9: "Load the examples" is safe to press twice: existing example skills or bots are left
+  as they are and reported ("BA already exists").
+- UI-1.10: Opening the app at `/` opens the last conversation the owner had open in this
+  browser. A link to a specific page (for example `/c/conv_…` or `/stats?…`) always wins. If
+  the last conversation was deleted or never existed, the newest conversation opens; with none,
+  the Get started checklist or the empty state shows.
+- UI-1.11: An opened conversation scrolls to the "New" divider when there are unread messages
+  (from the server's `last_read_seq`, UI-3.10), otherwise to the bottom.
+- UI-1.12: Each conversation keeps the owner's unsent draft text in this browser until it is
+  sent or cleared, so switching conversations or closing the app does not lose it. Attachments
+  in a draft are not kept. Drafts never leave the browser and are never logged.
+
+Where the reopen state lives in phase 1:
+
+| State | Behaviour | Stored in |
+| --- | --- | --- |
+| Last open conversation | Opened at `/`; a link URL wins | Browser (`localStorage`) |
+| Scroll position | "New" divider if unread, else bottom | Server (`last_read_seq`) |
+| Draft text | Kept per conversation until sent | Browser (`localStorage`) |
+| Flow pane (open, side, width, tab) | As left | Browser (`../flow-view.md` §2) |
+| Theme, mode, density | As set | Browser (UI-8.5) |
+
+Browser storage is wrapped in try/catch, parsed with Zod on read (`../frontend-conventions.md`),
+and the app works without it. At M9, with several users, the first two browser rows move to the
+server per user so they follow the user across devices.
+

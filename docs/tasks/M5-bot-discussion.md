@@ -14,7 +14,7 @@ conversation. The server enforces the budget; bots are told how many turns remai
 
 ## In scope
 
-- `decide_runs` for bot triggers (every row of `conversation-rules.md` §2), counter updates,
+- `decideRuns` for bot triggers (every row of `conversation-rules.md` §2), counter updates,
   notices.
 - Rules block in the prompt with live numbers.
 - Global settings page (UI-8.1, 8.2) and conversation discussion settings (UI-9.3), header

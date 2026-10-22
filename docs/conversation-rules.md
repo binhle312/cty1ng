@@ -52,7 +52,7 @@ Effective settings: conversation value if not NULL, else the global setting.
 | `bot_chat_enabled` | false | on/off |
 | `bot_turn_limit` | 5 | 1–20 |
 
-When a run finishes, `decide_runs` is called with the bot's message as trigger:
+When a run finishes, `decideRuns` is called with the bot's message as trigger:
 
 | Discussion | Bot message mentions | Budget | Result |
 | --- | --- | --- | --- |

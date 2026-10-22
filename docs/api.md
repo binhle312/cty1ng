@@ -124,6 +124,8 @@ expressions first (`requirements/time-range-picker.md` §Contract with the backe
 | GET | `/stats/skills?from=&to=&conversation_id=` | ranking, table, never-loaded pins |
 | GET | `/stats/{section}.csv?…` | CSV export of a section's table |
 | GET | `/health` | `{db: ok, worker: ok, catalog: {models, available}}` |
+| GET | `/setup` | Get started status (UI-1.7): `{has_available_model, has_skill, has_bot, has_conversation}` |
+| POST | `/setup/examples` | imports the example skills and creates BA and Designer; idempotent, returns what was created and what already existed (UI-1.9) |
 | GET | `/stream` | SSE (`realtime-events.md`) |
 
 ## 8. Key schemas (abridged)
