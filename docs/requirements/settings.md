@@ -26,7 +26,8 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
   ("genai-prices", "override" or "unknown", D21). Unknown prices are flagged with how to add an
   override in `config/models.yaml`.
 - UI-8.3: Daily spending cap in USD (empty = off), today's estimated spend with a progress bar,
-  and a breakdown by provider and by bot (D20, D21). Each provider with a key also has an
+  and a breakdown by provider and by bot (D20, D21). Title requests show as one "Conversation
+  titles" row in the by-bot breakdown (D46). Each provider with a key also has an
   optional cap of its own (empty = only the total applies), with its spend and progress bar
   (D42). A run is refused when its provider's cap or the total is reached. At 75% and again at 90% of each cap (D40)
   the owner gets a banner across the app, a toast, and a system line in each conversation with

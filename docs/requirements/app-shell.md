@@ -26,7 +26,8 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
 Layout sketch: see `../design/screens.md` §1 (not final).
 
 - UI-1.1: The rail is always visible. The top item is a round "+" button; clicking it creates a
-  conversation titled "New conversation" and opens it.
+  conversation titled "New conversation" and opens it. After the first message, the app can
+  give it a short title one time (UI-3.24, D46).
 - UI-1.2: Each conversation is a 48 px round icon with a tooltip showing its title.
 - UI-1.3: Icon content when `icon_preset` is NULL, from **active** members' avatars:
   0 bots → title initials on a neutral background; 1 → that avatar; 2 → two halves side by

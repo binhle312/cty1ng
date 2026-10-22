@@ -103,7 +103,7 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `ready` | no | `{max_seq}` | stream opened |
 | `reset` | no | `{}` | client cursor too old |
 | `conversation.created` | yes | `{conversation}` | "+" pressed |
-| `conversation.updated` | yes | `{conversation}` | title, icon, settings, active branch, budget counter changed |
+| `conversation.updated` | yes | `{conversation}` | title (by the owner, or the one auto title, D46), icon, settings, active branch, budget counter changed |
 | `conversation.deleted` | yes | `{conversation_id}` | deleted |
 | `message.created` | yes | `{message}` | any message inserted (human, bot at run start, system) |
 | `message.delta` | no | `{message_id, offset, text}` | streaming tokens |

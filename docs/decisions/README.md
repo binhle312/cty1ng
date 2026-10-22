@@ -75,3 +75,4 @@ Implemented in: links.
 | D43 | [Project memory beats bot memory; the bot asks about a conflict before it acts](D43-project-memory-beats-bot-memory.md) | accepted |
 | D44 | [The side pane holds Flow or Memory, one at a time](D44-right-pane-holds-flow-or-memory.md) | accepted |
 | D45 | [Every run reads the project's goal and instructions](D45-project-goal-and-instructions.md) | accepted |
+| D46 | [The app writes a short title from the first message, one time only](D46-auto-title-from-the-first-message.md) | proposed |

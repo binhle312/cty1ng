@@ -37,6 +37,8 @@ Layout sketch: see `../design/screens.md` §10 (not final).
 - UI-10.4: **Bots**: ranked horizontal bars, switchable between runs, cost, tokens and active
   time (sum of run durations); table adds bot turns, handoffs proposed, average run duration,
   failure rate. Deleted bots appear greyed. Clicking a bot opens its detail page.
+  Title requests (D46) are not a bot's work, so this ranking leaves them out. The summary
+  tiles and the Models section include them.
 - UI-10.5: **Skills**: ranked bars of runs that loaded each skill, split by always-loaded vs
   on-demand; table with runs, number of bots pinning it, version mix (how many pins per
   version), last used. Clicking a skill opens it in the hub.

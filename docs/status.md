@@ -25,20 +25,20 @@ reordering) specified for M2. Agreed so far and saved in `design/components/` wi
 avatar (Flat, Jelly, Pixel; Flat only until the final product), top header, bot card, user
 panel, left bar (rail and bar 2), Memory pane, New project page fields. D43–D45 accepted
 (memory precedence, right pane holds Flow or Memory, project goal and instructions). Still in
-review: Library page content, New project page layout, Flow pane. Project Board is a later
+review: Library page content, New project page layout, Flow pane. D46 proposed: a one-time auto
+title from the first message (M3), with a schema change that waits for the owner. Project Board is a later
 slice (M8c).
 
 ## Next
 
-1. Owner merges the skill drafts PR (docs only).
+1. Owner reviews D46 (auto title) and its schema change.
 2. Start M0 locally in Claude Code with the builder prompt in `workflow.md` §3.
 
 ## Waiting on the owner
 
 | Item | Needed by |
 | --- | --- |
-| Merge the skill drafts PR (D41) | M0 |
-| Review and merge the header bot order PR (docs only) | M2 plan |
+| Accept or change D46 (auto title) and its schema change | M3 plan |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
 | Approve the M2 migration: `bots.header_position`. Claude Code stops for this approval before it writes the migration | M2 plan |
 | Approve the M5b migrations: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars. Claude Code stops for this approval before it writes them | M5b plan |

@@ -24,6 +24,8 @@ Chatting with one or more bots: messages, streaming, mentions, edits and branche
   Acceptance criteria: UI-3.20, UI-3.21.
 - **CV-10.** *(D39.)* As the owner, I want to be warned before a password, API key or card number in my message or file is sent to a model, so that I don't leak secrets by accident.  
   Acceptance criteria: UI-3.22, UI-3.23.
+- **CV-11.** *(D46.)* As the owner, I want each new chat to get a short title from my first message, so that I can find it again without the work of a rename.  
+  Acceptance criteria: UI-3.24 to UI-3.26.
 
 ## Acceptance criteria
 
@@ -112,3 +114,18 @@ Header and side panel
   read-only viewer for text (with Markdown preview), images and PDF.
 - UI-3.17: Reload or network drop restores the exact state with no duplicate or missing
   messages (event replay).
+
+Title (D46, rules in `../conversation-rules.md` §8)
+
+- UI-3.24: After the server stores the first human message of a conversation, the app asks a
+  model for a short title (2 to 6 words, 60 characters or less). The title shows in the
+  header, the rail tooltip and the chat lists when `conversation.updated` arrives. The send
+  and the bot reply do not wait for it. The app makes this request one time per conversation.
+  Later messages and edits do not change the title.
+- UI-3.25: A title that the owner sets (rename in the header, the rail menu or conversation
+  settings) always wins. The app never replaces it, also when the rename happens during the
+  title request.
+- UI-3.26: If the request fails, times out, or gives an empty or flagged answer, the title
+  stays "New conversation", with no error in the chat. The app does not make the request when
+  the first message needed "Send anyway" (D39), when a daily cap is reached (D20, D42), or when
+  the owner named the chat first. Titles are plain text, never Markdown.

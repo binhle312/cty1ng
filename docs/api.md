@@ -95,9 +95,9 @@ endpoint to create one.
 | Method | Path | Body | Notes |
 | --- | --- | --- | --- |
 | GET | `/conversations` | | sorted by `last_activity_at`; includes member avatars for the rail icon and `unread` |
-| POST | `/conversations` | `{title?}` | |
+| POST | `/conversations` | `{title?}` | a given `title` sets `title_source: "manual"` (D46) |
 | GET | `/conversations/{id}` | | settings (with effective values), members, active leaf |
-| PATCH | `/conversations/{id}` | `{row_version, title?, icon_preset?, bot_chat_enabled?, bot_turn_limit?}` | `null` = inherit global |
+| PATCH | `/conversations/{id}` | `{row_version, title?, icon_preset?, bot_chat_enabled?, bot_turn_limit?}` | `null` = inherit global. Send `title` only when the owner changed it: any `title` sets `title_source: "manual"`, and the app never writes an auto title after that (D46) |
 | DELETE | `/conversations/{id}` | | soft delete, workspace to trash |
 | POST | `/conversations/{id}/read` | `{seq}` | sets `last_read_seq` (never moves backwards); drives unread dots and the "New" divider |
 | GET | `/conversations/{id}/messages?before_seq=&limit=` | | the **active path**, newest page first; each message has `siblings: {index, count, ids}` |
@@ -128,7 +128,7 @@ expressions first (`requirements/time-range-picker.md` §Contract with the backe
 | Method | Path | Notes |
 | --- | --- | --- |
 | GET / PATCH | `/settings` | `{bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd, provider_caps_usd, timezone, bot_order}`; GET adds `today_spend_usd` and `today_spend_by_provider_usd` |
-| GET | `/usage?group_by=bot\|conversation\|provider\|day&from=&to=` | tokens and estimated cost (D21) |
+| GET | `/usage?group_by=bot\|conversation\|provider\|day&from=&to=` | tokens and estimated cost (D21). With `group_by=bot`, title requests are one group with `bot_id: null` and the label "Conversation titles" (D46) |
 | GET | `/stats/summary?from=&to=&tz=&conversation_id=` | tiles with previous-period comparison (D24) |
 | GET | `/stats/models?from=&to=&tz=&bucket=&conversation_id=&metric=cost\|tokens\|requests` | series per model per bucket + table |
 | GET | `/stats/bots?from=&to=&conversation_id=&metric=runs\|cost\|tokens\|active_time` | ranking + table |
@@ -153,6 +153,12 @@ Message {
   siblings: { index, count, ids } | null,
   card: HistoryChoiceCard | HandoffCard | SkillDraftCard | null,
   created_at
+}
+
+Conversation {
+  id, title,
+  title_source: "default"|"auto"|"manual",   // D46; auto_title_status is internal and not returned
+  icon_preset, members, unread, row_version, …   // other fields as in §5
 }
 
 Bot {

@@ -38,6 +38,19 @@ Tests never call real providers (`AGENTS.md` §8).
   ```
 
 - Streaming is simulated by splitting the reply into chunks, so delta handling is tested.
+- Title requests (D46) read the reserved key `_titles`. Bot slugs come from names as kebab case (D19)
+  and never contain `_`, so the key never collides with a bot. Each entry gives a `title`, or a `fail` (`error`, `timeout`
+  or `empty`), and an optional `delay_ms`. With no matching entry the fake answers "Test
+  title". The helper counts title calls, so a test can assert that no call happened.
+
+  ```yaml
+  _titles:
+    - when_contains: "login"
+      title: "Login page user stories"
+      delay_ms: 500          # lets a test rename the chat during the call
+    - when_contains: "fail"
+      fail: timeout
+  ```
 - A helper `fakeModel(scripts)` is available to backend tests; Playwright starts the backend
   with `FAKE_MODEL=1` and a chosen script set.
 
@@ -85,7 +98,8 @@ mid-stream and keeps partial text; retry after a crash reuses the same message.
 
 1. create skill → create bot BA with it → create conversation;
 2. drag BA from the header into the chat → choose "Full history";
-3. `@` shows only BA → send → reply streams → chip `write-user-stories v1` visible;
+3. `@` shows only BA → send → reply streams → chip `write-user-stories v1` visible → the rail
+   tooltip shows the fake auto title (D46);
 4. add Designer via "Add bot" → enable discussion with limit 2 → bots stop after 2 turns with
    the notice;
 5. Stop button during a run → message shows "Stopped";
