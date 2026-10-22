@@ -16,7 +16,11 @@ async function appendPing(uow: UnitOfWork, note: string): Promise<number> {
   );
 }
 
-/** architecture.md §2 (unit of work) and the §11 cases that M0's tables allow. */
+/**
+ * architecture.md §2 (unit of work) and the §11 cases that M0's tables allow. The races fire
+ * from one process; an adapter that serialises in process (SQLite) passes them without lock
+ * contention, so they do not prove cross-process behaviour (README.md, "Limits").
+ */
 export const unitOfWorkContract = defineContract<UnitOfWorkSubject>("unit of work", {
   "commit writes the change and its event together": async ({ uow, committed }) => {
     const seq = await uow.run(async (tx) => {
