@@ -30,9 +30,9 @@ One shape for every error:
 | 400 | `invalid_skill_file`, `invalid_import`, `bad_request` |
 | 403 | `not_author`, `origin_rejected` |
 | 404 | `not_found` |
-| 409 | `name_taken`, `slug_taken`, `stale_write` (the row changed since it was read; reload), `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending`, `run_not_queued` |
+| 409 | `name_taken`, `slug_taken`, `stale_write` (the row changed since it was read; reload), `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending`, `run_not_queued`, `draft_not_pending`, `draft_stale` |
 | 413 | `too_large` |
-| 422 | `validation_error`, `invalid_id`, `mention_not_member`, `bot_unavailable`, `bot_deleted`, `skill_deprecated`, `version_mismatch`, `effort_not_supported`, `model_not_available` |
+| 422 | `validation_error`, `invalid_id`, `mention_not_member`, `bot_unavailable`, `bot_deleted`, `skill_deprecated`, `version_mismatch`, `effort_not_supported`, `model_not_available`, `sensitive_data` |
 | 429 | `rate_limited` (runs per hour), `daily_cap_reached` |
 
 ## 2. Skills
@@ -56,6 +56,16 @@ One shape for every error:
 | GET | `/skills/export` | | zip of latest versions |
 
 The CLI (`app skills import <folder>` / `export <folder>`) calls the same services directly.
+
+## 2a. Skill drafts (D41)
+
+Bots create drafts with the `propose_skill` tool (`conversation-rules.md` §7); there is no
+endpoint to create one.
+
+| Method | Path | Body | Notes |
+| --- | --- | --- | --- |
+| GET | `/skill-drafts/{id}` | | draft with `diff` against `base_version` for an edit |
+| POST | `/skill-drafts/{id}/decision` | `{action: "approve" \| "reject", row_version, slug?, name?, description?, body_md?, changelog?, pin: bool, always_load: bool}` | text fields only when the owner edited; edited text is checked by the guard again (422 `sensitive_data`, no override); 409 `draft_not_pending`, `draft_stale`, `slug_taken` |
 
 ## 3. Models
 
@@ -134,13 +144,13 @@ expressions first (`requirements/time-range-picker.md` §Contract with the backe
 Message {
   id, conversation_id, seq, parent_message_id, author_type: "human"|"bot"|"system",
   author: { id, name, avatar_url, deleted: boolean } | null,
-  kind: "text"|"history_choice"|"handoff"|"notice",
+  kind: "text"|"history_choice"|"handoff"|"skill_draft"|"notice",
   content_md, mentions: BotRef[], attachments: Attachment[],
   status: "streaming"|"complete"|"failed"|"stopped",
   skills_used: { skill_id, slug, version, mode: "always"|"loaded" }[],   // D15
   usage: { input_tokens, output_tokens, cache_read_tokens, cache_write_tokens, estimated_cost_usd | null } | null,  // D21
   siblings: { index, count, ids } | null,
-  card: HistoryChoiceCard | HandoffCard | null,
+  card: HistoryChoiceCard | HandoffCard | SkillDraftCard | null,
   created_at
 }
 

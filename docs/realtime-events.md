@@ -119,6 +119,8 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `member.left` | yes | `{conversation_id, bot_id}` | bot removed |
 | `handoff.created` | yes | `{handoff}` | bot proposed a handoff |
 | `handoff.decided` | yes | `{handoff}` | approve / changes / reject / stale |
+| `skill_draft.created` | yes | `{skill_draft}` | a bot proposed a skill (D41) |
+| `skill_draft.decided` | yes | `{skill_draft}` | approved / rejected / stale; an approval also emits `skill.created` or `skill.updated`, and `bot.updated` when pinned |
 | `bot.created` / `bot.updated` / `bot.deleted` | yes | `{bot}` | bot CRUD, avatar, pins |
 | `skill.created` / `skill.updated` / `skill.deprecated` | yes | `{skill}` | skill CRUD, new version |
 | `settings.updated` | yes | `{settings}` | global settings changed |

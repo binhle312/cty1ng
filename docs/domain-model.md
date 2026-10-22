@@ -80,6 +80,7 @@ skill_versions                                            -- immutable: no UPDAT
   body_md       TEXT NOT NULL                             -- ≤ 50 KB
   changelog     TEXT NULL                                 -- one line, optional
   created_by    TEXT NOT NULL
+  skill_draft_id TEXT NULL REFERENCES skill_drafts(id)    -- set when approved from a bot's draft (D41)
   created_at
   UNIQUE (skill_id, version)
 
@@ -191,7 +192,8 @@ run_steps
   seq_in_run    INTEGER NOT NULL
   kind          TEXT NOT NULL   -- load_skill | list_files | read_file | view_file | write_file | propose_handoff
                                 --  | remember | update_memory | forget | restore_memory (D38)
-  target        TEXT NOT NULL   -- skill slug@version, workspace path, handoff id, or memory item id
+                                --  | propose_skill (D41)
+  target        TEXT NOT NULL   -- skill slug@version, workspace path, handoff id, memory item id, or skill draft id
   status        TEXT NOT NULL   -- ok | error
   detail        JSON NULL       -- e.g. {bytes: 4120} or {error: "outside write scope"}
   started_at, finished_at
@@ -201,6 +203,51 @@ run_steps
 Written by the agent's tool wrappers as each tool call finishes, in the same transaction as its
 `run.step` event. Feeds the Timeline map (`flow-view.md`) and debugging. No message content is
 stored here, only what was touched.
+
+### 3.9 Skills drafted by bots (D41)
+
+A bot never writes a skill. It writes a draft; the owner approves it, and the owner is the
+author of the version that results (D14).
+
+```
+skill_drafts                                              -- TypeID prefix `skilld`
+  id                 TEXT PK
+  conversation_id    TEXT NOT NULL REFERENCES conversations(id)
+  message_id         TEXT NOT NULL REFERENCES messages(id)   -- the card (kind = skill_draft)
+  source_message_id  TEXT NOT NULL REFERENCES messages(id)   -- the owner's message that asked
+  created_by_run_id  TEXT NOT NULL REFERENCES runs(id)
+  drafted_by_bot_id  TEXT NOT NULL REFERENCES bots(id)
+  target_bot_id      TEXT NOT NULL REFERENCES bots(id)       -- an active member; may be the drafter
+  kind               TEXT NOT NULL                -- new | edit
+  skill_id           TEXT NULL REFERENCES skills(id)         -- set when kind = edit
+  base_version       INTEGER NULL                 -- latest version when drafted; set when kind = edit
+  slug               TEXT NOT NULL                -- proposed slug (new) or the skill's slug (edit)
+  name               TEXT NOT NULL
+  description        TEXT NOT NULL                -- ≤ 300 chars
+  body_md            TEXT NOT NULL                -- ≤ 50 KB; passed the guard (D39)
+  changelog          TEXT NULL
+  status             TEXT NOT NULL DEFAULT 'pending'  -- pending | approved | rejected | stale
+  result_skill_version_id TEXT NULL REFERENCES skill_versions(id)  -- set when approved
+  edited_by_owner    BOOLEAN NOT NULL DEFAULT FALSE   -- the owner changed the text before approving
+  row_version        INTEGER NOT NULL DEFAULT 1
+  created_at, decided_at
+  CHECK ((kind = 'new' AND skill_id IS NULL AND base_version IS NULL)
+      OR (kind = 'edit' AND skill_id IS NOT NULL AND base_version IS NOT NULL))
+```
+
+- The draft keeps the bot's text. If the owner edits before approving, the approved version
+  holds the owner's text and `edited_by_owner` is set, so the bot's original stays visible.
+- **Approve**, in one transaction: create the skill (v1, author = owner) or version
+  `base_version + 1`, with `created_by` = owner and `skill_draft_id` set; if "Pin to <bot>" is
+  ticked, upsert the target bot's `bot_skills` row to that version (`always_load` as chosen,
+  off by default); set the draft `approved`. The draft must still be `pending`
+  (compare-and-set, `architecture.md` §11).
+- **Stale:** an edit draft whose skill gained a version after `base_version`, or was
+  deprecated, cannot be approved. Approve sets it `stale` and returns 409 `draft_stale`.
+- **Slug taken:** a new-skill draft whose slug was taken since returns 409 `slug_taken`; the
+  owner changes the slug on the card and approves again.
+- Deleting the target bot leaves the draft pending; approving it then creates the skill
+  without a pin.
 
 ## 4. Model catalog
 
@@ -272,7 +319,7 @@ messages
   parent_message_id  TEXT NULL REFERENCES messages(id)   -- tree for branches (D13)
   author_type        TEXT NOT NULL        -- human | bot | system
   author_id          TEXT NULL            -- owner id or bot id; NULL for system
-  kind               TEXT NOT NULL DEFAULT 'text'   -- text | history_choice | handoff | notice
+  kind               TEXT NOT NULL DEFAULT 'text'   -- text | history_choice | handoff | skill_draft | notice
   content_md         TEXT NOT NULL
   card               JSON NULL            -- structured data for card kinds, e.g. {member_bot_id} or {handoff_id}
   mentions           JSON NOT NULL DEFAULT '[]'      -- bot ids, in order
@@ -288,9 +335,9 @@ UNIQUE INDEX messages_client_id ON messages(conversation_id, client_id) WHERE cl
 
 - Content is updated in place **only** while `status = streaming` (partial saves). After that a
   message is immutable.
-- Messages with `kind = history_choice` or `handoff` render as cards. `card` holds the ids
-  the card needs; the state (pending, chosen, approved…) is read from `conversation_bots` or
-  `handoffs`, so a card always shows the current state.
+- Messages with `kind = history_choice`, `handoff` or `skill_draft` render as cards. `card`
+  holds the ids the card needs; the state (pending, chosen, approved…) is read from
+  `conversation_bots`, `handoffs` or `skill_drafts`, so a card always shows the current state.
 
 ## 7. Runs
 
@@ -408,6 +455,8 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
 14. Every tool call of a run has exactly one `run_steps` row, in call order.
 15. A worker's writes for a run apply only while its `attempts` value is current (fencing,
     `architecture.md` §11).
+16. A `propose_skill` call changes no `skills`, `skill_versions` or `bot_skills` row; only an
+    owner's Approve does (D41). A version with `skill_draft_id` has an `approved` draft.
 
 ## 13. Usage and cost (D20, D21)
 
