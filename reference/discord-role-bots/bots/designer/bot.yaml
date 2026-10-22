@@ -1,0 +1,14 @@
+role: designer
+display_name: Designer
+platforms:             # chat credentials, as names of environment variables
+  discord:
+    token_env: DISCORD_TOKEN_DESIGNER
+# "<provider>:<model name>". Any Pydantic AI provider works: anthropic, openai, deepseek, google, ...
+model: anthropic:claude-sonnet-5-5
+write_paths:
+  - design/
+handoff_to:
+  - human   # add frontend here once that bot exists
+request_limit: 40
+max_reply_chars: 6000
+multimodal: true       # can this model see images and PDFs? false for text-only models such as deepseek-chat
