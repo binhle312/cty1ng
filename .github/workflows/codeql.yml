@@ -1,8 +1,7 @@
 # CodeQL code scanning (security.md §2.11).
 #
-# Languages: `actions` scans the workflows themselves. The app is TypeScript (D34); M0 adds
-# `javascript-typescript` to the matrix in the PR that adds the first TypeScript code, since
-# CodeQL fails a language that has no source files.
+# Languages: `actions` scans the workflows themselves; `javascript-typescript` scans the app
+# (D34), added in M0a with the first TypeScript code.
 #
 # This is the "advanced" setup. GitHub's default CodeQL setup must stay off for this
 # repository, or the SARIF upload is rejected.
@@ -30,6 +29,8 @@ jobs:
       matrix:
         include:
           - language: actions
+            build-mode: none
+          - language: javascript-typescript
             build-mode: none
     steps:
       - name: Checkout repository
