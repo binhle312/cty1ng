@@ -55,5 +55,6 @@ jobs:
       - name: Schema and migrations agree
         run: pnpm --filter @cty1ng/backend db:check
 
+      # `pnpm audit --audit-level high`, retried only when npm's advisory endpoint does not answer.
       - name: Audit dependencies
-        run: pnpm audit --audit-level high
+        run: pnpm audit:deps

@@ -13,7 +13,8 @@
     "typecheck": "pnpm -r typecheck && tsc -p scripts --noEmit",
     "test": "vitest run",
     "check:index": "tsx scripts/check-index.ts",
-    "check:events": "tsx scripts/check-events.ts"
+    "check:events": "tsx scripts/check-events.ts",
+    "audit:deps": "tsx scripts/audit.ts"
   },
   "devDependencies": {
     "@cty1ng/shared": "workspace:*",
