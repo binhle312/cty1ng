@@ -25,7 +25,9 @@ Decision:
     does (D38). Each item that disagrees has a checkbox to update or delete it. Nothing changes
     until the owner applies the card.
   - So a run normally does not find a disagreement between instructions and memory. If a run does
-    find one, the instructions win, and the bot shows the item in its reply.
+    find one, the instructions win, and the bot continues the work. When the work is complete, the
+bot reports the conflict to the owner at the end of its reply. The report names the memory item
+and the instruction, and has an **Update project memory** button.
 - The owner can move a 1:1 chat into a project. The API gets an endpoint for this move.
 Example: The project memory says "Stories use the Given/When/Then format". The owner writes
 "just give me bullets". The BA replies: "Project memory says stories use Given/When/Then. Do you
