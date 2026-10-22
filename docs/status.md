@@ -18,7 +18,7 @@ code folder for agents (`architecture.md` §4.2). Ids are UUIDv7 stored, TypeIDs
 database (D22, D36). Themes accepted (D30): Command ships in M0, Material later (T2), and the
 Board is the Flow pane's third map (M8b). Loading rules, first open and reopening specified (app-shell.md SH-4, SH-5). Product brief
 expanded after the owner's interview (use cases, phases, non-goals, trust
-failures); D37–D40 accepted (projects, memory, sensitive-data guard, cost alerts). D41
+failures); D37–D40 accepted (projects, memory, sensitive-data guard, cost alerts); D42 adds optional per-provider caps under the total cap. D41
 accepted: bots draft skills when asked, the owner approves and is the author (slice M5c).
 UI design review in progress: header bot order (Recent activity / Custom, deferred
 reordering) specified for M2.

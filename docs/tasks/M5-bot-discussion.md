@@ -20,7 +20,8 @@ conversation. The server enforces the budget; bots are told how many turns remai
 - Global settings page (UI-8.1, 8.2) and conversation discussion settings (UI-9.3), header
   status (UI-3.15).
 - Runs-per-hour cap.
-- Daily spending cap (D20): settings, check at claim time, 75% / 90% / 100% alerts (D40), UI-8.3.
+- Daily spending cap (D20) and optional per-provider caps (D42): settings, check at claim time,
+  75% / 90% / 100% alerts per cap (D40), UI-8.3.
 
 ## Acceptance criteria
 
@@ -33,6 +34,9 @@ conversation. The server enforces the budget; bots are told how many turns remai
 - Runs-per-hour cap refuses with 429 / notice.
 - With a cap of $0.10 and fake prices, the run that crosses the cap finishes and the next one is
   refused with `daily_cap_reached`; raising the cap lets runs continue.
+- With a total cap of $1 and an OpenAI cap of $0.10 (fake prices), the run that crosses the
+  OpenAI cap finishes, the next OpenAI bot run is refused with `provider_cap_reached`, and a bot
+  on another provider still runs. Alerts fire once per threshold per cap.
 
 ## Tests
 

@@ -1,6 +1,6 @@
 # D20. Daily spending cap
 
-Status: accepted (2026-10-21)
+Status: accepted (2026-10-21). Amended by D42 (optional caps per provider under this total cap).
 Decision: One global (owner-level) daily cap in USD on estimated spend across all providers,
 computed from recorded tokens (D21). Warning banner at 80%. At 100% new runs are refused with a
 system message ("Daily cap reached ($10.02 / $10). Raise it in Settings or wait until

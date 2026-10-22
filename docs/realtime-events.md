@@ -125,7 +125,7 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `bots.reordered` | yes | `{bot_ids}` | custom header order saved (`PUT /bots/order`) |
 | `skill.created` / `skill.updated` / `skill.deprecated` | yes | `{skill}` | skill CRUD, new version |
 | `settings.updated` | yes | `{settings}` | global settings changed |
-| `spend.threshold_crossed` | yes | `{threshold_pct, today_spend_usd, cap_usd}` | today's spend crossed 75%, 90% or 100% of the daily cap (D40); once per threshold per day |
+| `spend.threshold_crossed` | yes | `{threshold_pct, today_spend_usd, cap_usd, provider}` | today's spend crossed 75%, 90% or 100% of the total cap (`provider` null) or of one provider's cap (D40, D42); once per threshold per cap per day |
 | `project.created` / `project.updated` / `project.deleted` | yes | `{project}` | project CRUD, conversation moved (D37) |
 | `memory.saved` / `memory.updated` / `memory.deleted` | yes | `{memory_item, conversation_id?}` | a bot or the owner changed memory (D38); drives the "Remembered: …" line |
 

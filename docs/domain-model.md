@@ -422,7 +422,7 @@ handoffs
 
 ```
 settings
-  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd (NULL = off), timezone (NULL = browser local), bot_order …
+  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order …
   value  JSON NOT NULL
 ```
 
@@ -474,12 +474,14 @@ Usage is derived from `model_requests` (detail) and `runs` (totals). All figures
 | Per message | the message's run |
 | Per bot | sum over its runs, by day, last 7 / 30 days |
 | Per conversation | sum over runs in the conversation |
-| Today (for the cap) | sum of `estimated_cost_usd` for runs finished since local midnight, plus running runs' partial usage |
+| Today (for the cap) | sum of `estimated_cost_usd` for runs finished since local midnight, plus running runs' partial usage; per provider, the same sum filtered on `model_requests.provider` |
 
-Daily cap check (D20) happens when a run is claimed: if today's spend ≥ cap, the run is marked
-`failed` with error `daily_cap_reached` and a system notice is posted. Crossing 75% and 90%
-(D40) emits a `spend.threshold_crossed` event once per threshold per day (the day it fired is
-stored in `settings`), shown as a banner, a toast and a system line.
+Daily cap check (D20, D42) happens when a run is claimed: first the bot's provider cap, if set
+(today's spend on that provider ≥ its cap → `failed` with `provider_cap_reached`), then the total
+(today's spend ≥ cap → `failed` with `daily_cap_reached`); either way a system notice names the
+cap that was hit. Crossing 75% and 90% of any cap (D40) emits a `spend.threshold_crossed` event
+once per threshold per cap per day (the day it fired is stored in `settings`), shown as a banner,
+a toast and a system line.
 
 ### 13.1 Metric definitions (statistics page, D24)
 
