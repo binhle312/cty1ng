@@ -26,8 +26,8 @@ avatar (Flat, Jelly, Pixel; Flat only until the final product), top header, bot 
 panel, left bar (rail and bar 2), Memory pane, New project page (layout A), Project settings page
 with the memory check card and Delete project, plan card. D43–D45 accepted
 (memory precedence, right pane holds Flow or Memory, project goal and instructions). D47 (delete
-sends the whole project to Trash; memory check choices) and D48 (bots plan first) proposed. Still
-in review: Trash page, Library page content, Flow pane. Project Board is a later
+sends the whole project to Trash; memory check choices) and D48 (bots plan first) accepted. Still
+in review: Trash page (with the Remember button and the "changed in another tab" cards), Library page content, Flow pane. Project Board is a later
 slice (M8c).
 
 ## Next
@@ -41,7 +41,6 @@ slice (M8c).
 | --- | --- |
 | Merge the skill drafts PR (D41) | M0 |
 | Review and merge the header bot order PR (docs only) | M2 plan |
-| Accept or change D47 and D48 (proposed) | M5b plan |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
 | Approve the M2 migration: `bots.header_position`. Claude Code stops for this approval before it writes the migration | M2 plan |
 | Approve the M5b migrations: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars. Claude Code stops for this approval before it writes them | M5b plan |

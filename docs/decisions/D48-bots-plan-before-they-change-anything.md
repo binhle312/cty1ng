@@ -1,6 +1,6 @@
 # D48. Bots plan first and wait for approval before they change anything
 
-Status: proposed (2026-10-22). The owner gave this rule in the UI design review, round 6.3, and chose its scope on a decision card. It amends D43 (check before action) and D38 (memory saves).
+Status: accepted (2026-10-22, owner). The owner gave this rule in the UI design review, round 6.3, and chose its scope on a decision card. It amends D43 (check before action) and D38 (memory saves).
 Decision:
 - **Scope.** A task that changes something starts with a plan. "Changes something" means: write
   or change a file, save or change memory, propose a handoff, or draft a skill. A plain answer or

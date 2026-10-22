@@ -4,7 +4,7 @@
 > Previews: `../previews/command-dark/project-settings.png` (cards S1–S3, S5, S6) and
 > `../previews/command-dark/delete-project.png` (cards S7, S8), each with a `.html`. The memory
 > check card and the plan card are in `memory-pane.md` §4 and `plan-card.md`. Follows D37, D43,
-> D45 and D47 (proposed). The labels and messages use Simplified Technical English.
+> D45 and D47. The labels and messages use Simplified Technical English.
 
 ## 1. Where it opens
 

@@ -3,7 +3,7 @@
 > **Status: agreed in the M0 UI design review (2026-10-22)**, canvas round 6.1 cards M1–M6 (left
 > bar and right pane only), and round 6.3 board V2 cards S4 and S4b (§4). Previews:
 > `../previews/command-dark/left-bar.png` and `memory-check-plan.png` (each with a `.html`).
-> Follows D43, D44, D47 and D48 (both proposed).
+> Follows D43, D44, D47 and D48.
 
 ## 1. Where it lives
 

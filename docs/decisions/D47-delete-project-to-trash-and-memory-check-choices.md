@@ -1,6 +1,6 @@
 # D47. Delete sends the whole project to Trash; the owner picks what wins in a memory check
 
-Status: proposed (2026-10-22). The owner gave these rules in the UI design review, round 6.3. It amends D37 (projects) and D43 (memory check).
+Status: accepted (2026-10-22, owner). The owner gave these rules in the UI design review, round 6.3. It amends D37 (projects) and D43 (memory check).
 Decision:
 - **Delete project.** A delete sends the project to Trash as one item, with all its chats,
   memory items and Library files. Runs in the project stop first.

@@ -2,7 +2,7 @@
 
 > **Status: agreed in the M0 UI design review (2026-10-22)**, canvas round 6.3, board V2 cards
 > S4b–S4e. Preview: `../previews/command-dark/memory-check-plan.png` (and `.html`). Follows D48
-> (proposed) and D43. The labels and messages use Simplified Technical English.
+> and D43. The labels and messages use Simplified Technical English.
 
 A bot shows a plan card before each task that changes something (D48): it writes files, saves
 memory, hands off or drafts a skill. A plain answer or question has no plan card.
