@@ -2,7 +2,7 @@
 
 > **Status: fields, limits and copy agreed in the M0 UI design review (2026-10-22); the layout is
 > still to confirm.** Preview: `../previews/command-dark/left-bar.png` (the New project card).
-> Depends on the proposed decision D45.
+> Follows D45.
 
 The rail's "+" opens a full page in the main area. Bar 2 is hidden while it is open.
 
@@ -42,5 +42,5 @@ The project opens with an empty first chat. Bots are added in the chat, not on t
 
 - New column `projects.instructions_md TEXT NOT NULL DEFAULT ''`, ≤ 3000 chars. **Migration,
   needs approval.**
-- Prompt order and budget for goal and instructions (D45, proposed).
+- Prompt order and budget for goal and instructions (D45).
 - `POST /projects` and `PATCH /projects/{id}` take `description` (goal) and `instructions_md`.

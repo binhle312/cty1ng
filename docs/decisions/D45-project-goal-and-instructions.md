@@ -1,7 +1,6 @@
 # D45. Every run reads the project's goal and instructions
 
-Status: proposed (2026-10-22). The owner agreed to it in the UI design review. It waits for the
-owner's acceptance. It amends D37 (projects).
+Status: accepted (2026-10-22, owner). The owner agreed to it in the UI design review. It amends D37 (projects).
 Decision: A project has a **goal** and **instructions**.
 - The goal is `projects.description`, 500 characters or less. The left bar shows it.
 - The instructions are `projects.instructions_md`, a new column, 3000 characters or less. They are
@@ -22,5 +21,4 @@ project page and the project settings show the two fields
 (`../design/components/new-project-page.md`).
 Why: The owner needs one place for the rules that all bots in a project follow. Memory is not
 that place, because bots learn and change memory.
-Implemented in: `../domain-model.md` §14, `../api.md`, the rules of the prompt builder, task M5b
-(after the owner accepts it).
+Implemented in: `../domain-model.md` §14, `../api.md`, the rules of the prompt builder, task M5b.

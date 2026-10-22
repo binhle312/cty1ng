@@ -2,11 +2,11 @@
 
 > **Status: agreed in the M0 UI design review (2026-10-22)**, canvas round 6.1 cards M1–M6 (left
 > bar and right pane only). Preview: `../previews/command-dark/left-bar.png` (and `.html`).
-> Depends on the proposed decisions D43 and D44.
+> Follows D43 and D44.
 
 ## 1. Where it lives
 
-- The side pane holds **Flow or Memory, one at a time** (D44, proposed). It is on the right by
+- The side pane holds **Flow or Memory, one at a time** (D44). It is on the right by
   default. The ⇄ button (UI-12.1) swaps it to the left, and Flow and Memory share that side.
 - It opens from the Memory row in bar 2 (`left-bar.md` §2). The chat header keeps only its Flow
   button; there is no Memory button there.
@@ -39,5 +39,5 @@ then each bot's own.
 
 ## Requirement changes (requirements PR)
 
-- D43 (memory precedence and the conflict stop), proposed in this PR.
+- D43 (memory precedence and the conflict question) in `conversation-rules.md`.
 - `flow-view.md` and UI-12: the right pane is shared with Memory (D44).

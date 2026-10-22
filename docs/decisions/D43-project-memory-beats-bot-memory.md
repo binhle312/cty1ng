@@ -1,7 +1,6 @@
 # D43. Project memory beats bot memory; the bot asks about a conflict before it acts
 
-Status: proposed (2026-10-22). The owner agreed to it in the UI design review. It waits for the
-owner's acceptance. It amends D38 (memory scopes). The other rules of D38 do not change.
+Status: accepted (2026-10-22, owner). The owner agreed to it in the UI design review. It amends D38 (memory scopes). The other rules of D38 do not change.
 Decision:
 - **Order of the rules in a project.** The project instructions (D45) win over project memory.
   Project memory wins over the bot's own memory (D38). The bot continues to use its own memory
@@ -48,5 +47,4 @@ the instructions starts a check run, with normal cost tracking (D21). The API ge
 Why: D38 says that memory is data, not instructions from the owner. So the owner's answer must
 win. A question before the work costs less than work that the owner must undo. All bots and chats
 in a project share project memory, so the owner must see each change to it.
-Implemented in: `../conversation-rules.md`, `../domain-model.md` §14, `../api.md`, task M5b
-(after the owner accepts it).
+Implemented in: `../conversation-rules.md`, `../domain-model.md` §14, `../api.md`, task M5b.
