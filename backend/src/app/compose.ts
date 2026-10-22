@@ -21,6 +21,8 @@ export const FAKE_SCRIPTS_DIR = join(BACKEND_ROOT, "test/fixtures/fake-scripts")
 
 export interface App {
   http: ReturnType<typeof createHttpApp>;
+  /** Ends every open stream (shutdown); SSE responses never end on their own. */
+  stopStreams(): void;
   hub: EventHub;
   uow: UnitOfWork;
   connections: Connections;
@@ -55,6 +57,8 @@ export function composeApp(input: {
   const catalog: ModelCatalogEntry[] = [];
   if (config.fakeModel) catalog.push(...createFakeModel({ scriptsDir: FAKE_SCRIPTS_DIR }).catalog);
 
+  const streams = new AbortController();
+
   const testEvents = config.appEnv === "test" ? createTestEventsService({ uow, clock }) : undefined;
   if (testEvents !== undefined)
     logger.warn({ event: "app.test_endpoints" }, "test endpoints enabled");
@@ -68,12 +72,23 @@ export function composeApp(input: {
       createSseStream({
         feed: hub,
         cursor: cursorFromLastEventId(lastEventId),
-        signal,
+        signal: AbortSignal.any([signal, streams.signal]),
         ...(input.sseHeartbeatMs === undefined ? {} : { heartbeatMs: input.sseHeartbeatMs }),
         onError: (error) => logger.error({ event: "sse.error", err: error }, "stream failed"),
       }),
     ...(testEvents === undefined ? {} : { testEvents }),
   });
 
-  return { http, hub, uow, connections, close: () => connections.close() };
+  return {
+    http,
+    stopStreams: () => {
+      streams.abort();
+    },
+    hub,
+    uow,
+    connections,
+    close: () => {
+      connections.close();
+    },
+  };
 }

@@ -4,15 +4,23 @@ import type { EventFeed, StreamCursor } from "../../core/ports/transport";
 export const HEARTBEAT_MS = 15_000;
 export const RETRY_MS = 2_000;
 
+/** Frames the stream may hold for a client that is not reading (backpressure). */
+export const BUFFERED_FRAMES = 2;
+
 /**
  * The SSE transport adapter (realtime-events.md §1a, §2): turns the core's event feed into
  * Server-Sent Events frames. Persisted events carry `id: <seq>`, so the browser's EventSource
  * sends it back as `Last-Event-ID` on reconnect; `ready` and `reset` carry no id.
+ *
+ * Backpressure: the stream takes the next event from the feed only when its small queue has
+ * room (`pull`), and the Node server reads it only as fast as the socket drains. A large replay
+ * or a slow client therefore holds at most `BUFFERED_FRAMES` frames here. Heartbeats are skipped
+ * while the queue is full.
  */
 export function createSseStream(input: {
   feed: EventFeed;
   cursor: StreamCursor;
-  /** Aborts when the client goes away. */
+  /** Aborts when the client goes away or the server shuts down. */
   signal: AbortSignal;
   heartbeatMs?: number;
   onError?: (error: unknown) => void;
@@ -20,37 +28,60 @@ export function createSseStream(input: {
   const encoder = new TextEncoder();
   const stop = new AbortController();
   const signal = AbortSignal.any([stop.signal, input.signal]);
+  const events = input.feed.subscribe({ cursor: input.cursor, signal })[Symbol.asyncIterator]();
   let heartbeat: ReturnType<typeof setInterval> | undefined;
+  let closed = false;
 
-  return new ReadableStream<Uint8Array>({
-    start(controller) {
-      const send = (text: string): void => {
-        if (!signal.aborted) controller.enqueue(encoder.encode(text));
-      };
-      send(`retry: ${RETRY_MS}\n\n`);
-      heartbeat = setInterval(() => send(": ping\n\n"), input.heartbeatMs ?? HEARTBEAT_MS);
+  const finish = (): void => {
+    clearInterval(heartbeat);
+    stop.abort();
+  };
 
-      void (async () => {
-        try {
-          for await (const event of input.feed.subscribe({ cursor: input.cursor, signal })) {
-            send(toFrame(event));
+  return new ReadableStream<Uint8Array>(
+    {
+      start(controller) {
+        const close = (): void => {
+          if (closed) return;
+          closed = true;
+          finish();
+          controller.close();
+        };
+        controller.enqueue(encoder.encode(`retry: ${RETRY_MS}\n\n`));
+        heartbeat = setInterval(() => {
+          if (!closed && (controller.desiredSize ?? 0) > 0) {
+            controller.enqueue(encoder.encode(": ping\n\n"));
           }
+        }, input.heartbeatMs ?? HEARTBEAT_MS);
+        // Shutdown or a gone client: end the response even if no pull is waiting.
+        signal.addEventListener("abort", close, { once: true });
+      },
+      async pull(controller) {
+        try {
+          const next = await events.next();
+          if (closed) return;
+          if (next.done === true) {
+            closed = true;
+            finish();
+            controller.close();
+            return;
+          }
+          controller.enqueue(encoder.encode(toFrame(next.value)));
         } catch (error) {
           input.onError?.(error);
-        } finally {
-          clearInterval(heartbeat);
-          if (!stop.signal.aborted) {
-            stop.abort();
+          if (!closed) {
+            closed = true;
+            finish();
             controller.close();
           }
         }
-      })();
+      },
+      cancel() {
+        closed = true;
+        finish();
+      },
     },
-    cancel() {
-      clearInterval(heartbeat);
-      stop.abort();
-    },
-  });
+    new CountQueuingStrategy({ highWaterMark: BUFFERED_FRAMES }),
+  );
 }
 
 /** Parses the `Last-Event-ID` header into a cursor. */

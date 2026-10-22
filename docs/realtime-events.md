@@ -67,6 +67,10 @@ conversation).
   same way. After `reset` the stream goes on: `ready` with the current max seq, then live
   events.
 - Heartbeat: a comment line `: ping` every 15 s keeps proxies from closing the connection.
+- Backpressure: the server reads the next event from the log only when the client has taken
+  the previous frames, so a large replay or a slow client holds only a few frames in memory.
+  Heartbeats are skipped while the client is not reading.
+- Shutdown ends every open stream; browsers then reconnect with `Last-Event-ID` as usual.
 - `retry: 2000` tells the browser to reconnect after 2 s.
 
 ### Ephemeral events
