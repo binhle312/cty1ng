@@ -25,11 +25,15 @@ title and the page's accessible name stay **"New project"**.
 
 - **Left:** the form, at most 620 px wide: header, Name, Goal, Instructions, Colour, then the
   buttons. The page starts with the focus in Name.
-- **Right:** a 260 px preview column, "Preview of bar 2". It stays in place while the owner
-  types. It shows bar 2 exactly, with the approved parts (`left-bar.md` §2): the header (tile,
-  name, "0 chats · 0 bots · 0 files", goal), the Board row ("Later", no counts), Memory 0,
-  Library 0, and the Chats label with its + button. It shows no chat rows. Under it: the rail tile, and the
-  line "Bar 2 does not show the instructions. Every bot in this project reads them."
+- **Right:** a 322 px column with the title "Preview". It stays in place while the owner types.
+  It shows the rail and bar 2 side by side, exactly as they look after Create (`left-bar.md`):
+  - **Rail:** Home, the dashed +, the pinned projects, then the new project as the newest
+    unpinned project, selected, then the other projects.
+  - **Bar 2:** the header (tile, name, "0 chats · 0 bots · 0 files", goal), the Board row
+    ("Later", no counts), Memory 0, Library 0, and the Chats label with its + button. It shows
+    no chat rows.
+  - Under it: "The new project goes on the rail below your pinned projects, as the newest one.
+    Bar 2 does not show the instructions. Every bot in this project reads them."
 - **Buttons**, aligned right under a divider: **Cancel**, **Create project** (`primary`). The app
   turns off Create project until Name has text and no field has an error.
 

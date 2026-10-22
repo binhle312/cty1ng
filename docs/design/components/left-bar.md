@@ -62,7 +62,10 @@ Top to bottom:
    workspace files).
 5. **Chats** section label with a "+" icon button aligned right (tooltip "New chat"). The label
    has no fold arrow, and its icon lines up with the Memory and Library icons. Then the
-   chats, newest activity first. No folding, no separate 1:1 and group sections, no Bots section
+   chats, newest activity first. Only the chat list scrolls: the header, Board, Memory, Library
+   and the Chats label stay in place. It scrolls as the rail does (§1.3): the mouse wheel or a
+   drag, a fade at the cut edge, and ˄/˅ buttons on hover. The list ends 24 px above the
+   floating user panel. No folding, no separate 1:1 and group sections, no Bots section
    (bots show in the top header).
 
 Chat row menu: Rename, Move to project, Move out of project, Delete.
