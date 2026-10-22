@@ -28,9 +28,11 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      # pnpm comes from the exact version pinned in package.json `packageManager`.
-      - name: Enable pnpm
-        run: corepack enable
+      # pnpm at the exact version pinned in package.json `packageManager`. Installed with npm
+      # rather than corepack: pnpm 12 fetches its native binary on first run with a 30 s limit,
+      # which times out on the runners; npm fetches the same binary as a normal package.
+      - name: Install pnpm
+        run: npm install --global "@pnpm/exe@$(node -p "require('./package.json').packageManager.split('@')[1]")"
 
       - name: Install (lockfile must be current)
         run: pnpm install --frozen-lockfile
