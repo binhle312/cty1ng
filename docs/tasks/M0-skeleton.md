@@ -63,7 +63,9 @@ renders. Later slices only add features; they should never need to set up toolin
 - API client generation (`pnpm gen:api`) from `/api/openapi.json` (produced by
   `@hono/zod-openapi`) into `frontend/src/lib/api/generated/`, with a CI freshness check. Pick a
   generator that emits TanStack Query hooks and Zod schemas; record the choice in the PR.
-- CI workflow (GitHub Actions) running all gates in `testing.md` §4, Dependabot config,
+- CI workflow (GitHub Actions) running all gates in `testing.md` §4, Dependabot config
+  (npm and `github-actions` ecosystems), `javascript-typescript` added to the CodeQL matrix
+  in `.github/workflows/codeql.yml`,
   the automated security review workflow, request body limit and the error handler
   (`security.md` §2.7–2.11).
 - `reference/discord-role-bots/` copied in with its README (`porting-guide.md` §1).
