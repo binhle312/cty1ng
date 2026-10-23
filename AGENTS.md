@@ -81,8 +81,8 @@ If a command in this list does not exist yet (early slices), creating it is part
 4. The frontend calls the backend only through the generated client in
    `frontend/src/lib/api/generated/`. Never hand-write fetch calls for API endpoints. Never edit
    generated files by hand.
-5. Bot `model_id` and `effort` are never updated after insert. Skill versions are never updated
-   or deleted. Messages are never edited in place (edits create branches).
+5. Bot `model_id` and `effort` are never updated after insert. Skill versions are never updated;
+   only the Trash purge deletes them (D49). Messages are never edited in place (edits create branches).
 6. API keys come only from environment variables. Never store, log, return or render them.
 7. Bot file tools go through the workspace port, whose `resolve()` is the only way a workspace
    path becomes a disk path; never open a workspace path any other way.

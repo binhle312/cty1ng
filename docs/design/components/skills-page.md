@@ -1,0 +1,267 @@
+# Skills page
+
+> **Status: agreed in the UI design review (2026-10-23)**, canvas round 8, boards W1–W4.
+> Previews: `../previews/command-dark/skills-layout.*` (cards B–B3),
+> `skills-editor.*` (C0–C6), `skills-lifecycle.*` (D1–D6) and `skills-delete.*` (D2a, D7–D8),
+> each a `.png` and a `.html`. Buttons and check boxes follow `buttons.md`. Follows D5, D6, D14,
+> D16, D39 and D49 (proposed). The labels and messages use Simplified Technical English.
+
+## 1. Where it opens
+
+- From **Manage skills** in the user panel menu (`user-panel.md`).
+- The page belongs to the whole app, not to a project. Bar 2 is hidden, and the rail stays.
+
+## 2. Layout B: list and editor side by side
+
+- **List column**, 300 px, `surface-container`:
+  - Title **Skills** and **+ New** (`primary`, small).
+  - Search box "Search skills" (name or slug).
+  - The **Show deprecated** check box, then **Import** and **Export** as text buttons.
+  - One row for each skill: the name, a version pill, the slug (`font-mono`), and "n bots",
+    with "· m older" in `waiting` when bots use an older version. "Not used" when no bot uses
+    it.
+  - The order is the time of the last change, newest first. A new version, an import or a clone
+    puts the skill at the top.
+  - The selected row has `primary-tint` and a 3 px `primary` mark at its left edge. A skill
+    with unsaved changes has a `primary` dot after its name.
+  - The list has no row menu and no Clone. All actions are in the skill header.
+- **Skill header:** the name with its version pill, then the slug · "by {author}" · "used by
+  n bots, m on an older version". On the right: **History** and **⋯** (§9).
+- **Editor**, below the header, one column, 14 px between fields:
+  1. **Name**, counter "n / 64".
+  2. **Description**, hint "Say when a bot must use this skill. Bots read it in every prompt,
+     so keep it short.", counter "n / 1,024".
+  3. **Body**, hint "The steps a bot follows for this task. Bots read it only when they load
+     the skill.", counter "n / 20,000". The tabs **Write** and **Preview** sit on top of the
+     body box, with "Markdown" at the right of the tab bar. The open tab has a 2 px `primary`
+     underline. The tab bar has the same border colour as the box.
+- **Save bar**, fixed at the bottom of the editor (§5).
+- Only the field in focus gets a `primary` border. Changed fields get no other mark.
+
+The Body opens in **Preview** when it has text. It opens in **Write** when it is empty (new
+skill) or when it has an error (§6). Preview renders Markdown with raw HTML off (`security.md`).
+
+The description and the body must not say the same thing. The description says *when* to use
+the skill. The body says *how* to do the task.
+
+## 3. Empty state
+
+Before the first skill: 📚 **No skills yet**, then "A skill tells a bot how to do one task, for
+example "Write user stories". Write one here, or import SKILL.md folders." and the buttons
+**Import** and **+ New skill**.
+
+## 4. New skill (C1)
+
+- **+ New** adds an item "New skill" with the pill "not saved" at the top of the list, and opens
+  an empty editor with the header "New skill" and "A skill tells a bot how to do one task. You
+  can assign it to bots after you save it."
+- Only a new skill has the **Slug** field, under Name. Hint: "Made from the name. Fixed after
+  you create it." Counter "n / 64". The slug matches `^[a-z0-9-]{1,64}$` and is fixed after
+  Create (D19).
+- **Slug from the name:** while the owner has not edited the slug, the app makes it from the
+  name: lowercase, accents removed, spaces and other characters become "-", no "-" at the start
+  or end, no "--". Example: "Viết câu chuyện" → `viet-cau-chuyen`. A name with no Latin letters
+  (for example Japanese) gives an empty slug, and the owner types one. After the owner edits
+  the slug, the app stops.
+- Placeholders are examples, in `on-surface-muted`:
+  - Description: "Example: Use this skill when the owner asks for user stories. It writes each
+    story in Given / When / Then."
+  - Body: a short skill with `## Steps` (three numbered steps) and `## Format`.
+- Every field is required. A field left empty shows "Type a name.", "Type a description." or
+  "Type the steps."
+- The save bar has **Cancel** and **Create**. Create stays disabled until every field has text
+  and no field has an error. Create makes v1, then shows the assign card (§7.2).
+
+## 5. Save bar
+
+- No changes: "All changes are saved." and **Save as v{n+1}** (disabled).
+- With changes: a `primary` dot, "{n} changes not saved", a one-line box "What changed? One
+  line, optional" (the changelog, shown in History), **Discard** and **Save as v{n+1}**.
+- Discard puts back the saved text.
+
+## 6. Errors and warnings (C3)
+
+Errors stop the save. Each error line starts with "!" in `danger`, and the counter of a field
+over its limit turns `danger`.
+
+| Case | Text |
+| --- | --- |
+| Slug exists | "This slug exists. Type a different one." |
+| Description over the limit | "The description has 1,047 characters. The limit is 1,024. Make it shorter." |
+| Name or body over the limit | The same pattern, with the limit 64 or 20,000 |
+| Text looks like a secret (D39) | "Line 5 looks like an API key. The app does not save secrets in skills. Remove the key." |
+
+A body over 500 lines gets a warning only, in `waiting`: "The body has 612 lines. Bots read the
+full body each time they load it. Try to keep it under 500 lines." The Agent Skills standard
+recommends this length but does not require it.
+
+## 7. Bot cards after a save
+
+Both cards use the same bot list: one row for each bot with a check box, the bot avatar, the
+name and, in C4, the version pill. A ticked row has a `primary` border. **Skip**, Esc or a click
+outside the card closes it with no change. The line "A click outside this card is the same as
+Skip." is at the bottom. In M1 no bots exist, so only the toast shows.
+
+### 7.1 Upgrade the bots (C4, UI-7.4)
+
+- Title: "Saved v5 ✨ Also upgrade these bots to v5?"
+- Text: "These bots use an older version. They keep it until you upgrade them. Tick the bots to
+  move to v5."
+- Every box starts ticked, so one click upgrades all bots (owner, 2026-10-23). Untick a bot to
+  keep its version.
+- Buttons: **Skip** and **Upgrade** (`primary`, default). Upgrade is disabled when no box is
+  ticked. It moves the ticked bots in one transaction.
+
+### 7.2 Assign a new skill (C4b)
+
+- Title: "Created ✨ Add {skill} to bots?"
+- Text: "Tick the bots that must use this skill. They get v1."
+- No box starts ticked. **Skip** is the default. **Assign** (`primary`) is disabled until a box
+  is ticked.
+
+## 8. A skill by another author (C5)
+
+Phase 1 has one owner, so only tests see this state; the API rule (403) exists from M1 (D14).
+
+- Every field is disabled (40% opacity, `cursor: not-allowed`), and the tabs still work.
+- The save bar says "You cannot edit this skill. Only its author can change it." and has
+  **Clone to edit** (`primary`), which works as Clone (§12).
+- The ⋯ menu has only Clone and Export.
+
+## 9. The ⋯ menu (D8)
+
+| Skill | Items |
+| --- | --- |
+| Active | **Clone**, **Export** (a zip with this skill only), divider, **Deprecate** (`danger` text) |
+| Deprecated | **Clone**, divider, **Delete skill** (`danger` text) |
+
+Make active again and Remove from bots are only in the deprecated banner (§10.2), so no action
+shows in two places. No label ends in "…" (`buttons.md`).
+
+## 10. Deprecate
+
+### 10.1 The dialog (D1, UI-7.6)
+
+- Title: "Time for {skill} to rest? 🌙"
+- Text: "The ticked bots stop using it. Untick a bot to let it keep the skill, and it works for
+  that bot as before 💪", then the bot list (§7) with the version each bot uses.
+- Every box starts ticked (owner, 2026-10-23).
+- "😴 New bots cannot add it. The list hides it, and Export leaves it out." and "↩️ Changed your
+  mind? Make it active again at any time."
+- Buttons: **Cancel** (default) and **Deprecate and remove from {n} bots** (`danger`). With no
+  box ticked, the label is **Deprecate**.
+- No Undo toast: Deprecate is not permanent.
+
+### 10.2 A deprecated skill (D2)
+
+- Hidden from the list until **Show deprecated** is ticked (D2a). Then it is in the same order
+  as the other skills, with the name in `on-surface-muted` and a **Deprecated** pill. The tick
+  is kept for this browser only.
+- The header shows the Deprecated pill after the version pill.
+- A banner under the header (`waiting` tint and border), with three rows on the left and the
+  buttons on the right:
+  1. **Deprecated {time}** — under one day: "5 min ago", "3 h ago"; from one day: the exact
+     local time in ISO format, "2026-10-21 14:05". A hover shows the full ISO time with the
+     UTC offset.
+  2. "{n} bots still use it." or "No bot uses it."
+  3. "New bots cannot add it."
+  - Buttons: **Remove from bots** and **Make active again** (`primary`).
+- The editor is read-only. The save bar says "Deprecated skills are read-only. Make it active
+  again to edit it."
+- Bots that still use it show the Deprecated pill on their pages (M2).
+
+### 10.3 Remove from bots (D2b)
+
+The same bot list. Title "Remove {skill} from bots? 🧹", text "Tick the bots that must stop
+using it. They stop on their next run. A run that works now keeps it to the end." Every box
+starts ticked. Buttons: **Skip** and **Remove from {n} bots** (`danger`), disabled with no tick.
+
+## 11. Delete (D7, D49 proposed)
+
+- **Delete skill** is only in the ⋯ menu of a deprecated skill. An active skill must be
+  deprecated first. Delete works also while bots use the skill.
+- The dialog (D7b): title "Delete {skill}? 🧹", text "The skill goes to Trash. After 30 days,
+  the app deletes it permanently. These bots stop using it now:", then the bots as a list with
+  no check boxes. Removing the skill from every bot is a required step. Buttons: **Cancel**
+  (default) and **Delete skill** (`danger` fill). "30" is the Trash setting (D49).
+- After Delete (D7c): the app removes the skill from the bots, and the skill leaves the list.
+  The toast says "{skill} is in Trash." The word **Trash** is a link to the Trash page. No
+  Undo: moving to Trash is not permanent (D49).
+- Trash keeps the list of bots that used the skill. A restore suggests to assign it again to
+  those bots that are still active, never to bots in Trash. The Trash page round (M5b) draws
+  this card.
+
+## 12. Clone (D5, D14)
+
+- **Clone** in the ⋯ menu saves nothing yet. It opens the New skill editor with the header "New
+  skill · copy of {skill} v{n}" and "You are the author of the copy. Later changes to the
+  original do not change it."
+- The fields hold the text of the version on screen. The name gets " (copy)" and the slug gets
+  "-copy". The owner can change every field.
+- **Create** makes the copy at v1, with the owner as author, and then shows the assign card
+  (§7.2). Cancel or leave, and nothing is saved, so no unwanted copies stay in the list.
+
+## 13. History (B2, UI-7.5)
+
+- **History** opens a floating panel at the right of the editor (290 px, `surface-raised`,
+  shadow). Versions are newest first, each with the version pill, the changelog line, who and
+  when, "latest" on the newest, and "used by {n} bots".
+- A click on a version shows the diff from that version to the latest in the editor area,
+  read-only: added lines in `success`, removed lines in `danger` with a strike, the description
+  diff above the body. Buttons: **Back to editor** and **Restore v{k}** (`primary`), which makes
+  a new version with the old text.
+- **Compare** at the bottom of the panel picks any two versions.
+- Esc or ✕ closes the panel.
+
+## 14. Leave with unsaved changes (C6)
+
+A click on another skill, the rail or + New asks first, but only if something changed.
+Title **Leave without saving? 👀**, text "You changed the description and the body of {skill}.
+The app has not saved them yet. Stay and save, or let them go." The text names the changed
+fields. Buttons: **Let them go** (`danger`) and **Stay on this skill** (`primary`, default).
+
+## 15. Import (D3, D4, UI-7.7)
+
+- **Import** asks for a zip and opens the import page in the editor area: "Import skills",
+  "{file} · {n} folders. The app changes nothing until you apply." and **Choose another file**.
+- The app matches each folder to a skill by its slug. One zip can hold new skills and new
+  versions of skills that the owner has. The table has four groups, each with a count:
+  1. **New skills** — pill New, "{name} · becomes v1".
+  2. **New versions of your skills** — pill Changed, "v4 → v5 · body changed", with **Show
+     changes** / **Hide changes** for the diff.
+  3. **No change** — pill Unchanged, "Same as v3".
+  4. **Skipped** — pill Invalid with the reason (for example "The folder name has "_". Use
+     lowercase letters, digits and hyphens."), or Conflict ("{author} made this skill. Only the
+     author can add a version.").
+- Each row of groups 1 and 2 has a check box, and every box starts ticked. Rows of groups 3 and 4
+  have a disabled box. The save bar says "{k} of {n} picked. Rows with a problem are skipped."
+  and has **Cancel** and **Apply {k} changes**.
+- A folder can hold other files, such as `scripts/extract.py`. The app imports only `SKILL.md`
+  and names the skipped files in the row, in `waiting`: "Only SKILL.md is imported. 2 files are
+  skipped: … Bots cannot run scripts." (`security.md` §2.4).
+- "Import never changes the version that a bot uses. Skills that are not in the file stay as
+  they are."
+- After Apply: toast "Imported 4 changes ✨ 2 new skills, 2 new versions." The new and changed
+  skills move to the top of the list. If a skill changed after the preview, the app applies
+  nothing and shows "A skill changed after the preview. The app applied nothing. Preview again."
+  with **Preview again** (409).
+
+## 16. Export (D6, UI-7.8)
+
+- **Export** opens a card "Export skills 📦": "Tick the skills to put in the zip. Each one goes
+  in with its latest version.", a **Select all** check box with "{k} of {n}", and one row for
+  each active skill (name, slug, version). Every box starts ticked. Deprecated skills are not
+  in the list.
+- Buttons: **Cancel** and **Export {k} skills** (`primary`, default). A click outside is the
+  same as Cancel.
+- The download is one zip named `<n>-skills-<UTC timestamp>.zip`, with the timestamp in ISO 8601
+  basic format and no ":", for example `6-skills-20261023T035956Z.zip`. It holds
+  `<slug>/SKILL.md` for each ticked skill. The toast says "Exported 6 skills to {file}."
+
+## Requirement changes (this PR)
+
+- `skill-hub.md` UI-7.1 to UI-7.8 and SK-3 follow this file.
+- Limits (`security.md` §2.5, `domain-model.md` §3.1): name 64, description 1,024, body
+  20,000 characters, as in the Agent Skills standard.
+- API (`api.md` §2): import apply takes the picked folders, export takes the picked skills,
+  `POST /skills/{id}/trash`, and the restore endpoint (D49).

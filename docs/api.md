@@ -39,8 +39,8 @@ One shape for every error:
 
 | Method | Path | Body | Notes |
 | --- | --- | --- | --- |
-| GET | `/skills?include_deprecated=false` | | list with `latest_version`, `bots_using`, `bots_outdated` |
-| POST | `/skills` | `{slug, name, description, body_md}` | creates v1, author = owner |
+| GET | `/skills?include_deprecated=false` | | list with `latest_version`, `bots_using`, `bots_outdated`; newest `updated_at` first; skills in Trash are never listed |
+| POST | `/skills` | `{slug, name, description, body_md, cloned_from_skill_version_id?}` | creates v1, author = owner; also the Create of a clone (§3.3 of `domain-model.md`) |
 | GET | `/skills/{id}` | | includes latest version body |
 | PATCH | `/skills/{id}` | `{name, row_version}` | metadata only; author only |
 | POST | `/skills/{id}/versions` | `{base_version, description, body_md, changelog?, upgrade_bot_ids: []}` | author only; creates N+1; moves listed pins |
@@ -49,11 +49,14 @@ One shape for every error:
 | GET | `/skills/{id}/diff?from=2&to=5` | | unified diff of bodies and descriptions |
 | POST | `/skills/{id}/versions/{version}/restore` | `{changelog?}` | creates N+1 with that content |
 | GET | `/skills/{id}/upgrade-candidates` | | author's bots pinned to older versions (for the save dialog) |
-| POST | `/skills/{id}/clone` | `{slug?, version?}` | new skill owned by caller |
-| POST | `/skills/{id}/deprecate` · `/undeprecate` | | author only |
+| POST | `/skills/{id}/deprecate` | `{remove_bot_ids: []}` | author only; removes the listed pins in the same transaction |
+| POST | `/skills/{id}/undeprecate` | | author only |
+| POST | `/skills/{id}/trash` | `{row_version}` | author only; deprecated skills only (409 `not_deprecated`); removes every pin, returns the bots it removed (D49) |
+| POST | `/skills/{id}/restore` | | author only; out of Trash, still deprecated; returns `suggested_bot_ids` (bots not deleted) |
+| DELETE | `/skills/{id}` | | permanent delete of a skill in Trash ("Delete now"; M5b Trash page) |
 | POST | `/skills/import/preview` | zip upload | returns per-skill `new / changed (diff) / unchanged / invalid / conflict` and a `preview_id` |
-| POST | `/skills/import/apply` | `{preview_id}` | applies exactly the previewed changes; 409 if anything changed since |
-| GET | `/skills/export` | | zip of latest versions |
+| POST | `/skills/import/apply` | `{preview_id, slugs: []}` | applies the previewed changes of the ticked slugs only; 409 if anything changed since |
+| GET | `/skills/export?ids=` | | zip of the latest versions of the picked skills, named `<n>-skills-<UTC timestamp, ISO basic>.zip` |
 
 The CLI (`app skills import <folder>` / `export <folder>`) calls the same services directly.
 

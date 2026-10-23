@@ -36,6 +36,8 @@ against, not code to copy.
 | [memory-pane.md](memory-pane.md) | Memory pane in the right pane: order, conflicts, outside projects, memory check card, open conflicts | `../previews/command-dark/left-bar.*` (cards M1–M6), `../previews/command-dark/memory-check-plan.*` (cards S4, S4b) |
 | [new-project-page.md](new-project-page.md) | New project page: layout A, greetings, fields, errors, leave dialog | `../previews/command-dark/new-project.*` |
 | [project-settings-page.md](project-settings-page.md) | Project settings page: fields, save bar, memory check line, Memory history, leave dialog, Delete project and after delete | `../previews/command-dark/project-settings.*`, `../previews/command-dark/delete-project.*` |
+| [buttons.md](buttons.md) | Button kinds, sizes, default button, order, labels, check boxes, Undo rule. Every page uses it | `../previews/command-dark/skills-editor.*` (card C0) |
+| [skills-page.md](skills-page.md) | Skills page (layout B): list, editor, History, new skill, errors, bot cards after a save, deprecate, delete to Trash, clone, import, export | `../previews/command-dark/skills-layout.*`, `skills-editor.*`, `skills-lifecycle.*`, `skills-delete.*` |
 | [plan-card.md](plan-card.md) | Plan card before a task that changes something: steps, conflict questions, Request changes, Reject | `../previews/command-dark/memory-check-plan.*` (cards S4b–S4e) |
 
 Still in review (not here yet): the Trash page, the Library page content, the Flow
