@@ -38,7 +38,8 @@ Decision:
   Pricing chat"). When the first run saves (or is discarded), its claims end, and the waiting run
   starts from the new main. Runs with different files run at the same time.
 - **Overlap rule (the fallback): git merge first, then last write wins, with a notice (owner,
-  2026-10-23).** A bot can still write a file that is not in its plan. An **overlap** is a file
+  2026-10-23).** A bot can write a file that is not in its plan (owner, 2026-10-23); the save
+  marks such a file "not in plan" in the chat and in the history. An **overlap** is a file
   that the run changed and that main also changed after the run started. Nothing waits:
 
   | Case | What the save does | Notice in the chat |
@@ -150,6 +151,8 @@ Not chosen:
   Safest, but work stops while the owner is away, for a case that file claims make rare. It
   stays the next step if the recorded overlaps show a need.
 - **Last write wins with no notice.** The owner might never know that a change was replaced.
+- **Refuse writes outside the plan.** No overlaps at all, but each extra file (an index line, a
+  link) would need a new plan and one more approval.
 - **Whole-file compare only** (the later version always wins). It would throw away one chat's
   change even when the two chats changed different parts of the file.
 - **Keep unsaved changes until the owner chooses.** The list would grow with no end. Trash
