@@ -118,7 +118,7 @@ Confirmed by the owner (2026-10-21).
 | Local models (Ollama, llama.cpp) | Hosted APIs only; the model catalog makes it a config change later. An option to consider for privacy, not decided. Rough cost: about 0.6 GB of RAM or VRAM per billion parameters at 4-bit, and about 30B parameters (≈ 18–20 GB) as a realistic minimum for role-bot work | Later, owner decides |
 | A coding IDE | Bots create and edit documents and prototypes (Markdown, mockups, plans). They never write production code and never run tests, builds or commands; implementation goes to a coding agent (Claude Code, Codex) | Never |
 | Scheduled and proactive bots | Needs a scheduler and delivery rules (Researcher, Reminder) | New milestone after phase 1 |
-| Web access for bots | Needs fetch and search tools with their own security rules (Researcher, Trip planner) | With the scheduled-bots milestone or later |
+| Web access for bots | Provider web tools with their own security rules (D53; Researcher, Trip planner) | With the scheduled-bots milestone or later |
 | Reading external apps (calendars, task managers, mail) | Inside the app only for now | Much later |
 | A permanent activity log (who changed what, before and after, for every change) | One owner: chat lines, memory item fields, run steps and git history cover tracing (D38) | M9, with multiple users |
 | Payments and bookings | The trip planner proposes; a human pays. Never automatic, never stores card details | Later, if ever |

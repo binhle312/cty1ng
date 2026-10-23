@@ -58,7 +58,8 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
 - Writes only to the bot's `write_paths`; `inbox/` is read-only. (Bot memory is not a
   workspace file: it lives in the database behind the memory tools, D38.)
 - Read size limit (1 MB text); list limit (2,000 entries).
-- **No shell tool, no network tool, no code execution** in this milestone.
+- **No shell tool, no network tool, no code execution** in this milestone. Web access comes
+  later, only through the provider's web tools (D53, §2.14).
 - Each project has one workspace shared by its conversations; a conversation outside any project
   has its own (D37). Bots never see another project's or conversation's workspace.
 - `request_limit` per run caps tool loops.
@@ -202,6 +203,19 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (�
 - Matched text is never logged; only the kinds found are logged.
 - Memory items are data, not instructions, and project memory never reaches a bot outside its
   project (D38).
+
+### 2.14 Web access (D53, later milestone)
+
+- Bots read the web only through the model provider's web tools. The app never downloads or
+  parses a web page.
+- Web access is a bot setting, off by default. The app adds the web tool only for those bots.
+- In a run that read the web: fetch only URLs from search results or the owner's messages;
+  memory saves only from the approved plan or the owner's Remember click; writes keep their
+  approvals; web text is fenced and marked untrusted; source links follow §2.2.
+- Limits are settings with defaults in D53 (`web_searches_per_run`, `web_fetches_per_run`,
+  `web_fetch_max_tokens`, `web_allowed_domains`, `web_blocked_domains`).
+- Tests (with the fake model): a bot with web access off never sends a web tool; a run that
+  read the web cannot save memory without approval; a model-written fetch URL is refused.
 
 ## 3. Security tests (must exist)
 
