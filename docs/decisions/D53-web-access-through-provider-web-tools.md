@@ -13,6 +13,10 @@ Decision:
   search, Gemini Google Search grounding), through the model provider port (D35). The provider
   fetches and parses each page; the app gets text and source URLs only. The app never downloads
   or parses a web page itself.
+  Raw content that a provider returns (for example a fetched PDF as base64, or encrypted search
+  content) is an opaque block: the app passes it back to the provider as the API requires, and
+  never decodes, parses, renders or saves it as a file. The app keeps the reply text and the
+  citation links.
 - **Off by default, per bot.** Web access is a bot setting, off by default. The owner turns it
   on for bots that need it (Researcher, Trip planner). The model catalog (`config/models.yaml`)
   marks which models have a web tool; a bot whose model has none cannot turn web access on. The

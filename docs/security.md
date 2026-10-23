@@ -207,7 +207,8 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
 ### 2.14 Web access (D53, later milestone)
 
 - Bots read the web only through the model provider's web tools. The app never downloads or
-  parses a web page.
+  parses a web page. Raw content in a provider's tool result (a PDF as base64, encrypted search
+  content) is opaque: never decoded, rendered or saved as a file.
 - Web access is a bot setting, off by default. The app adds the web tool only for those bots.
 - In a run that read the web: fetch only URLs from search results or the owner's messages;
   memory saves only from the approved plan or the owner's Remember click; writes keep their
