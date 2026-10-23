@@ -23,7 +23,9 @@ short title, one time only. The title call is not a run.
   reached, the app does not make the call.
 - **Parallel requests.** Title requests for different conversations run without a global queue
   or concurrency limit. Cap checks use recorded spend and exclude unfinished requests.
-  Concurrent requests can therefore exceed a cap by more than one title request.
+  Concurrent requests can therefore exceed a cap by more than one title request. This is
+  acceptable: one title costs approximately $0.002 to $0.011, and a large overshoot needs many
+  first messages at the same moment from one owner.
 - **Model.** The first available active member in this order: the mentioned bots in mention
   order, then the other members by join time. With no such bot, there is no title. The call uses
   the lowest effort of the model, at most 30 output tokens and a 20 s timeout.

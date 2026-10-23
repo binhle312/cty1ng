@@ -368,7 +368,9 @@ rail and the header show it.
      the app emits no event.
 10. **Failure.** A timeout, a provider error, an empty answer or a guard match sets the status
     to `failed` with the same kind of update (only `auto_title_status`, only from `pending`).
-    The title stays "New conversation". There is no retry and no notice in the chat.
+    The title stays "New conversation". There is no retry and no notice in the chat. A provider
+    rate limit (429), for example during a burst of parallel titles (rule 6), is a provider
+    error too: it uses the one attempt.
 11. **Restart.** At startup the app sets every `pending` status to `failed`. The call is not
     sent again.
 12. **Manual titles.** A `PATCH /conversations/{id}` with `title`, and a `POST /conversations`

@@ -103,8 +103,9 @@ panel, handoffs (M6); editing and branches (M4).
   - Near the cap: five conversations send their first message at the same moment, with fake
     prices and a cap that leaves room for two title requests. Delay all five title calls until
     all are in flight (the fake counts in-flight calls). All five can pass the cap checks before
-    any finishes. After they finish, recorded spend includes all five and exceeds the cap by
-    more than one title request.
+    any finishes. After they finish, recorded spend includes all five requests with their cost.
+    The test allows spend above the cap. It does not require it, so a later spend reservation
+    does not fail it.
   - For both the total cap and the provider cap, a title passes the send-transaction check.
     Another request then finishes and brings recorded spend to the cap before that title's
     dispatch check. The title is `skipped`, with no call or extra notice.
