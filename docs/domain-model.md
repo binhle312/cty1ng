@@ -463,11 +463,11 @@ handoffs
 
 ```
 settings
-  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, trash_days …
+  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, trash_days, improve_* (D51) …
   value  JSON NOT NULL
 ```
 
-Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"custom"`), `trash_days = 30` (projects and skills, D49).
+Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"custom"`), `trash_days = 30` (projects and skills, D49), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3` (D51; read by M5d, never hard-coded).
 
 ## 11. Files on disk
 
@@ -656,7 +656,9 @@ reply_feedback                                    -- TypeID prefix `fb`; built i
 - To find the skills a signal is about, join `reply_feedback.run_id` to `run_skills`.
 - **Plan outcomes (D48).** The slice that builds the plan card stores, for each plan version:
   the planning run's id, the outcome (`approved`, `changes_requested`, `rejected`, or
-  `superseded` when a normal message replaced it), and the owner's note.
+  `superseded` when a normal message replaced it), and the owner's note. Counting (D51): an
+  approval of version 1 is good; each `changes_requested` is bad; an approval of a later
+  version is neutral; `superseded` is context only.
 - **Skill drafts (D41).** `skill_drafts.status = 'rejected'` is a signal. Its
   `created_by_run_id` gives the run.
 - M5d adds the tables for Improve runs, probes, and "signal used by draft X", so a signal

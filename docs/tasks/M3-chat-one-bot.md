@@ -156,7 +156,7 @@ The UI design in the plan (layout, components, states), approved before UI code 
 
 Migrations; event emission points; worker concurrency; Markdown renderer configuration.
 
-Reply feedback (D51, proposed): the `reply_feedback` table and its migration, the two
+Reply feedback (D51): the `reply_feedback` table and its migration, the two
 endpoints, the event, and the UI design of the buttons.
 
 Auto title (D46, proposed): the new columns on `conversations` and the `model_requests` change
