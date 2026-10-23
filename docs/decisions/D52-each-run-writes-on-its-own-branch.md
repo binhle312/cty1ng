@@ -37,13 +37,18 @@ Decision:
   that needs a file that another running action run claimed waits in the queue ("Waiting for
   Pricing chat"). When the first run saves (or is discarded), its claims end, and the waiting run
   starts from the new main. Runs with different files run at the same time.
-- **Overlap rule (the fallback): last write wins, with a notice (owner, 2026-10-23).** A bot
-  can still write a file that is not in its plan. An **overlap** is a file that the run changed
-  and that main also changed after the run started. The app compares whole files, not lines.
-  On an overlap, the later save wins and nothing waits. The chat shows a notice line:
-  "`glossary.md` also changed in Onboarding. This version was saved." with **Restore other
-  version**. Restore saves the other version as a new commit "Owner restore", through the save
-  queue. Git keeps both versions, so nothing is lost.
+- **Overlap rule (the fallback): git merge first, then last write wins, with a notice (owner,
+  2026-10-23).** A bot can still write a file that is not in its plan. An **overlap** is a file
+  that the run changed and that main also changed after the run started. Nothing waits:
+
+  | Case | What the save does | Notice in the chat |
+  | --- | --- | --- |
+  | The changes are on different lines | Git's normal merge keeps both changes | "`glossary.md` also changed in Onboarding. Both changes were merged." with **View file** |
+  | The changes are on the same lines | The run's version wins (last write wins) | "`glossary.md` also changed in Onboarding. This version was saved." with **Restore other version** |
+
+  Restore saves the other version as a new commit "Owner restore", through the save queue. Git
+  keeps every version, so nothing is lost. Binary files (images, PDFs) cannot merge by line, so
+  they always use the second row.
 - **Detection is built in full from the start.** Each overlap is recorded with the file, both
   runs and both commits. The rule that decides what an overlap does is one pure function in
   `core/` (`library-save.rules.ts`). A conflict card (nothing saved until the owner picks; the
@@ -143,9 +148,8 @@ Not chosen:
   Safest, but work stops while the owner is away, for a case that file claims make rare. It
   stays the next step if the recorded overlaps show a need.
 - **Last write wins with no notice.** The owner might never know that a change was replaced.
-- **Line-level merge** (git's normal merge). Two bots that change different lines of one
-  document can give a merged text that reads wrong, and the owner does not see it. Whole-file
-  compare is easier to explain and to test.
+- **Whole-file compare only** (the later version always wins). It would throw away one chat's
+  change even when the two chats changed different parts of the file.
 - **Delete unsaved changes after `trash_days`.** It would delete work that the owner did not
   see. Disk use is small, and one owner can clear the list.
 
