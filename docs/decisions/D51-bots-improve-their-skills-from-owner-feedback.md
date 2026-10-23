@@ -2,7 +2,8 @@
 
 Status: accepted (2026-10-23, owner). The owner asked for this feature and made it required,
 not optional. The owner accepted it with one rule: nothing is hard-coded, so every number below
-is a setting. It uses D6 (pinned versions), D41 (skill drafts), D48 (plan card) and D39 (guard).
+is a setting. Amended the same day by the owner: a change note is neutral, not bad, because
+iterative work such as design review needs many rounds. It uses D6 (pinned versions), D41 (skill drafts), D48 (plan card) and D39 (guard).
 The idea comes from google-research/harness2 (propose, probe, compose), adapted to one owner
 and few tasks.
 
@@ -18,7 +19,7 @@ Decision:
   | --- | --- | --- |
   | Rating and note on a bot reply | New: up or down, optional note (UI-3.27) | Good or bad answer, and why |
   | Plan approved as its first version | D48 | Good plan |
-  | Each Request changes note | D48 | Bad: what was wrong. Each note is one signal |
+  | Each Request changes note | D48 | Neutral, with a note: Improve reads it to find patterns. Each note is one signal, but never a bad one |
   | Plan approved after one or more change requests | D48 | Neutral: not a signal |
   | Plan rejected | D48 | Bad: wrong task or wrong approach |
   | Skill draft rejected | D41 | Bad: wrong procedure |
@@ -29,13 +30,17 @@ Decision:
   - A normal message that the owner sends while a plan waits. D48 treats it as a change
     request, but Improve uses it only as context, because it can be a new idea and not a
     complaint.
+- **Only the owner marks a mistake.** Bad answer, Reject and a rejected skill draft are the only
+  bad signals. A change request can mean "you got it wrong" or "let's refine", and the app
+  cannot tell them apart. Example: four rounds of "try a warmer colour" on a Designer plan are
+  normal design work, so they never make Designer look bad.
 - **Which skill a signal is about.** The app links each signal to its run, and the run to the
   skill versions it used (`run_skills`, D15). A signal on a run that used no skill counts for
   the bot, and can lead to a new skill.
 - **When the app offers it.** The app shows "Improve <bot>" on the bot page and on the skill
   row when one skill version has enough new signals. The default is **3 or more** new signals,
   from **2 or more** conversations, with **1 or more** bad. One odd note never starts a
-  change. The three numbers are settings (`improve_min_signals`,
+  change, and neutral notes alone never start one. The three numbers are settings (`improve_min_signals`,
   `improve_min_conversations`, `improve_min_bad_signals`), not constants. The app never starts
   an Improve run by itself, because it costs money.
 - **Propose.** The owner presses Improve. The app starts an Improve run for that bot. The run

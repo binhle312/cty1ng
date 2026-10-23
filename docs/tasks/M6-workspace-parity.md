@@ -52,3 +52,8 @@ The sandbox port, file-serving headers, upload handling.
 ## Open questions
 
 Is D18 (implicit workflow, handoff to any bot, team directory) accepted? Decide before starting.
+
+D52 is accepted (each run writes on its own branch and saves to the Library when it ends).
+Before the plan starts, this brief gets the run worktrees, the save queue and file claims, the
+overlap notice, the unsaved changes card, the delete and move approval card, the Library card
+and page, and the `run_branches` migration.

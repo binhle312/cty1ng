@@ -80,3 +80,4 @@ Implemented in: links.
 | D48 | [Bots plan first and wait for approval before they change anything](D48-bots-plan-before-they-change-anything.md) | accepted |
 | D49 | [Deleted skills go to Trash, Trash keeps items for a set number of days, and only a permanent delete has Undo](D49-skills-go-to-trash-and-trash-days-setting.md) | accepted |
 | D51 | [Bots improve their skills from the owner's feedback, and the owner approves each change](D51-bots-improve-their-skills-from-owner-feedback.md) | accepted |
+| D52 | [Each run writes on its own branch and saves to the Library when it ends](D52-each-run-writes-on-its-own-branch.md) | accepted |

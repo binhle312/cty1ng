@@ -1,6 +1,6 @@
 # D23. Bots working on an external project folder
 
-Status: accepted in principle (2026-10-21); built in a later milestone after phase 1
+Status: accepted in principle (2026-10-21); built in a later milestone after phase 1. Amended by D52: each run writes on its own branch, which saves into `bots/<conversation-slug>`
 Decision: A conversation can **attach a project folder** elsewhere on the machine. Bots in that
 conversation then work *in that project*, following its rules:
 - the project's `AGENTS.md` (or `CLAUDE.md` if there is no `AGENTS.md`) is added to every bot's

@@ -149,5 +149,11 @@ Mark these in the PR description under a heading `Needs human review` with one l
   unless a task says so.
 - Names: the same concept has the same name in docs, database, API and UI (see the glossary in
   `docs/requirements/product-brief.md`).
+- **No hardcoded values** (owner, 2026-10-23). A number, threshold, limit, time or default that
+  the owner may want to change (caps, Improve thresholds, Trash days, size limits, timeouts) has
+  one home: the `settings` table if the owner changes it in the app, otherwise an environment
+  variable or config file. Each has a default, written in the docs next to the rule that uses
+  it. Code reads the value from there, and tests set it. Only invariants and security checks
+  stay fixed in code: they are rules, not settings.
 - Commits: small, imperative subject line (`Add skill version pinning`), body explains why.
 - One task slice per branch: `m1-skill-hub`, `m3-chat-one-bot`, …
