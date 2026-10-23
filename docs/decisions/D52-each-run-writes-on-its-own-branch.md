@@ -3,7 +3,7 @@
 Status: proposed (2026-10-23). The owner gave the model ("like a git worktree: the project is
 main, the conversation is a branch"). The owner agreed to three changes in the Bots pages
 review: no middle level, a conflict card, and unsaved changes for a failed or stopped run.
-Where a bot may write is not part of this decision (see "Write permission"). When accepted, it amends D37 (workspace scope) and D23 (branch
+The owner then set the write rule: a bot writes only to the Library of its chat. When accepted, it amends D37 (workspace scope) and D23 (branch
 for an external folder), and it is built in M6.
 
 Decision:
@@ -47,13 +47,12 @@ Decision:
   rule. The branch stays until the owner chooses. Nothing deletes it automatically.
 - **Attachments.** An upload goes straight to main, in `inbox/<message_id>/`, before the run
   starts. It has no branch. Bots cannot write to `inbox/`.
-- **Write permission is a separate rule.** This decision says *when* a run's files reach main,
-  not *where* a bot may write. The Bots pages review decides that: a bot's write folders
-  (`write_paths`, default `out/<slug>/`) apply in its 1:1 and other chats outside a project, and
-  inside a project the owner sets it in Project settings (open). Either way, the app checks the
-  permission at each write in the run's branch, through `resolve()`. Folders that keep each bot
-  to its own place make conflicts rare; shared folders make them more common, and the conflict
-  card handles them.
+- **Write rule (owner, 2026-10-23).** A bot writes only to the Library that its run saves to:
+  the chat's Library outside a project, the project Library in a project. It can write any path
+  in that Library except `inbox/`. Bots have no per-bot write folders (`write_paths` is
+  removed). `resolve()` keeps every path inside the run's worktree. The plan card (D48) lists
+  the files before the owner approves, so the owner still sees each write in advance. The
+  default place for new files stays `out/<slug>/`, as a prompt hint, not a permission.
 - **The word "branch" is not in the UI.** D13 uses "branch" for edited messages. The UI says
   "Saved to Library", "unsaved changes" and "conflict".
 
@@ -82,8 +81,9 @@ Why:
   is a write-write conflict at commit time.
 - **One merge commit per run** gives a clear history in the Library ("BA in Pricing: 2 files"),
   and a later "Undo this run" is one revert.
-- **Conflicts are rare in practice.** They need two chats of one project to change the same file
-  while both run. Separate write places per bot make them rarer.
+- **The write rule needs this.** Without per-bot write folders, any bot in a project can change
+  any project file. Two bots in two chats can change one file at the same time. The branch
+  per run and the conflict card make this safe: nothing is lost, and the owner picks.
 
 Not chosen:
 
@@ -129,7 +129,7 @@ Consequences:
   each run writes on its own branch". **D23** keeps its review branch; each run's branch saves
   into it, and the owner merges it in their own tools.
 - **Documents to change when accepted:** `domain-model.md` §11 (folders, new table, invariants),
-  `architecture.md` (workspace port, lock), `security.md` §2.3, `realtime-events.md`, `api.md`
+  `architecture.md` (workspace port, lock), `security.md` §2.3 (no `write_paths`), `domain-model.md` §2 and `api.md` (remove `write_paths` from bots), `realtime-events.md`, `api.md`
   (resolve and discard endpoints), `conversation-rules.md` (run end), `tasks/M6-workspace-parity.md`.
 
 Implemented in: `../tasks/M6-workspace-parity.md` (when accepted).
