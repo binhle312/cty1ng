@@ -21,11 +21,12 @@ short title, one time only. The title call is not a run.
 - **Caps (D20, D40, D42).** The app checks the same caps as a run, two times: in the send
   transaction and just before it sends the request. If the total cap or the provider cap is
   reached, the app does not make the call.
-- **Parallel requests.** Title requests for different conversations run without a global queue
-  or concurrency limit. Cap checks use recorded spend and exclude unfinished requests.
-  Concurrent requests can therefore exceed a cap by more than one title request. This is
-  acceptable: one title costs approximately $0.002 to $0.011, and a large overshoot needs many
-  first messages at the same moment from one owner.
+- **Parallel requests, hard cap.** Title requests for different conversations run in parallel,
+  with no global queue. A title request never makes today's estimated spend pass a cap (owner,
+  2026-10-23). Before dispatch, the app reserves the worst-case cost of the request (2500 input
+  and 30 output tokens) and checks spend plus reservations against the caps in one write
+  transaction. At the end, the real cost replaces the reservation. Runs keep D20 and D40: a
+  running run can still pass a cap by one run.
 - **Model.** The first available active member in this order: the mentioned bots in mention
   order, then the other members by join time. With no such bot, there is no title. The call uses
   the lowest effort of the model, at most 30 output tokens and a 20 s timeout.
@@ -62,7 +63,8 @@ Not chosen:
   is often poor ("@BA can you please…").
 Consequences:
 - Migration: `conversations` gets `title_source` and `auto_title_status`. In `model_requests`,
-  `run_id` can be NULL, and the table gets `conversation_id` and `purpose`, with
+  `run_id` can be NULL, and the table gets `conversation_id`, `purpose` and
+  `reserved_cost_usd`, with
   `CHECK (purpose IN ('run', 'title'))`. In M3 the tables are new, so there is no backfill. A
   later migration backfills as `../domain-model.md` §5 says.
 - The conversation object in the API gets `title_source`.

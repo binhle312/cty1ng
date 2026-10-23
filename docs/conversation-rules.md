@@ -328,11 +328,29 @@ rail and the header show it.
    in the send transaction, and again just before it sends the request (rule 6). If a cap is
    reached at either check, the status is `skipped`. The title adds no notice to the chat. A run
    that the cap stops posts its own notice (D20). A message that starts no run gets no notice.
-   A model with no known price is allowed and counts toward no cap.
-6. **Parallel title requests.** Title requests for different conversations run in parallel,
-   with no global queue or concurrency limit. Spending caps are best effort: checks exclude
-   unfinished requests, so concurrent requests can together exceed a cap. Requests already in
-   flight may finish. Each request keeps the limits in rule 7.
+   A model with no known price is allowed and counts toward no cap (D21, D42).
+6. **Parallel title requests, hard cap.** Title requests for different conversations run in
+   parallel, with no global queue. A title request never makes today's estimated spend pass a
+   cap. The second check (rule 5) is a **reservation**, in one write transaction (`BEGIN
+   IMMEDIATE`, `architecture.md` §11):
+   1. Compute the worst-case cost of this request: `(TITLE_MAX_INPUT_TOKENS × input price) +
+      (30 × output price)`. `TITLE_MAX_INPUT_TOKENS` is a constant in `auto-title.rules.ts`, 2500: the instruction plus 2000
+      characters at one token per character. This is above the real count for normal text.
+   2. Read today's spend (`domain-model.md` §13). It includes the reservations of the title
+      requests that are in flight.
+   3. If spend + worst case is more than the provider cap or the total cap, the status is
+      `skipped` and the app sends nothing.
+   4. Otherwise insert the `model_requests` row with `reserved_cost_usd` = worst case and
+      `finished_at` NULL, then commit and send the request.
+
+   The write lock makes the checks one after another, so two titles cannot both use the last
+   room under the cap. At the end, one update sets `estimated_cost_usd` to the real cost, sets
+   `finished_at`, and sets `reserved_cost_usd` to NULL. The real cost is never more than the
+   reservation for normal text. If the provider reports more input tokens, the app records the
+   real cost: it is an estimate (D21), as with every request.
+   This rule covers title requests only. A running run can still pass a cap by one run (D20,
+   D40). Title reservations count in the check at run claim too, so a run does not use room
+   that a title has reserved.
 7. **The call.** It runs after the send transaction commits, in the background, through the
    model port. It does not wait for the bot run, and the bot run does not wait for it. Input:
    a fixed instruction and the message text as quoted data, with mentions as bot names, cut to
@@ -372,16 +390,20 @@ rail and the header show it.
     rate limit (429), for example during a burst of parallel titles (rule 6), is a provider
     error too: it uses the one attempt.
 11. **Restart.** At startup the app sets every `pending` status to `failed`. The call is not
-    sent again.
+    sent again. A title row with a reservation and no `finished_at` keeps its reservation as its
+    cost (`estimated_cost_usd` = `reserved_cost_usd`), because the provider can have charged for
+    it, and gets `finished_at` = the startup time.
 12. **Manual titles.** A `PATCH /conversations/{id}` with `title`, and a `POST /conversations`
     with `title`, set `title_source = 'manual'`. This includes a rename back to the text "New
     conversation". No later write of the auto title flow changes `title` or `title_source` of a
     manual title (invariant 17).
 13. **Cost.** The call writes one `model_requests` row with `purpose = 'title'`,
     `conversation_id` set and `run_id` NULL (`domain-model.md` §7). It also writes the row when
-    the call fails after the provider returned usage. The cost depends on the model:
-    approximately 600 input and 30 output tokens at most, priced as in D21. Example: at $3 and
-    $15 per million tokens, that is approximately $0.0023. At $15 and $75, approximately $0.011.
+    the call fails. The real cost depends on the model: approximately 600 input and 30 output
+    tokens for normal text, priced as in D21. Example: at $3 and $15 per million tokens, that is
+    approximately $0.0023. At $15 and $75, approximately $0.011. The reservation (rule 6) is
+    larger: at $15 and $75, approximately $0.040. A failed call that returned no usage costs 0
+    and frees its reservation.
 
 The pure parts live in `core/conversations/auto-title.rules.ts`:
 

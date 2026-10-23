@@ -395,6 +395,7 @@ model_requests                           -- one row per call to the provider (D2
   usage_details       JSON NOT NULL      -- provider-specific usage as returned (reasoning tokens, cache TTL split, …)
   started_at, finished_at, latency_ms
   estimated_cost_usd  NUMERIC NULL       -- priced at completion
+  reserved_cost_usd   NUMERIC NULL       -- worst case held while a title request is in flight; NULL after (D46)
   price_source        TEXT NULL          -- "genai-prices <version>" or "catalog override"
   UNIQUE (run_id, seq_in_run)
   CHECK (purpose IN ('run', 'title'))
@@ -497,14 +498,13 @@ Usage is derived from `model_requests` (detail) and `runs` (totals). All figures
 | Per bot | sum over its runs, by day, last 7 / 30 days. Title requests are not included |
 | Per conversation | sum of `model_requests` with this `conversation_id`: its runs plus its title request (D46) |
 | Conversation titles | sum of `model_requests` with `purpose = 'title'`; shown as one "Conversation titles" row where usage is split by bot (UI-8.3, statistics) |
-| Today (for the cap) | sum of `model_requests.estimated_cost_usd` for requests that finished since local midnight. Each request counts once, so the partial usage of a running run is included. Per provider: the same sum for the requests with that `provider`. A request in a run is charged to its own provider, so a run with requests to two providers splits its cost. A request with NULL cost (unknown price) counts toward no cap (D21, D42) |
+| Today (for the cap) | sum of `model_requests.estimated_cost_usd` for requests that finished since local midnight, plus `reserved_cost_usd` of the title requests in flight (D46). Each request counts once, so the partial usage of a running run is included. Per provider: the same sum for the requests with that `provider`. A request in a run is charged to its own provider, so a run with requests to two providers splits its cost. A request with NULL cost (unknown price) counts toward no cap (D21, D42) |
 
 Title requests (D46) are in `model_requests`, so the today sums include them with no extra
 query. The app checks the same caps two times before a title call: in the send transaction and
-just before dispatch. Multiple title requests can be in flight. Cap checks exclude their
-unfinished costs and those of running runs. There is no fixed overspend bound based on one
-title request (`conversation-rules.md` §8 rules 5 and 6). A reached cap skips the call and adds
-no notice.
+just before dispatch. The second check reserves the worst-case cost in the same transaction,
+so a title request never makes estimated spend pass a cap (`conversation-rules.md` §8 rule 6).
+Many title requests can be in flight. A reached cap skips the call and adds no notice.
 
 Daily cap check (D20, D42) happens when a run is claimed: first the bot's provider cap, if set
 (today's spend on that provider ≥ its cap → `failed` with `provider_cap_reached`), then the total

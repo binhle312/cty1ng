@@ -101,11 +101,12 @@ panel, handoffs (M6); editing and branches (M4).
     (D42), the app makes no title call, the status is `skipped`, and the chat gets no extra
     notice. A model with no known price still gets a title.
   - Near the cap: five conversations send their first message at the same moment, with fake
-    prices and a cap that leaves room for two title requests. Delay all five title calls until
-    all are in flight (the fake counts in-flight calls). All five can pass the cap checks before
-    any finishes. After they finish, recorded spend includes all five requests with their cost.
-    The test allows spend above the cap. It does not require it, so a later spend reservation
-    does not fail it.
+    prices and a cap that leaves room for exactly two worst-case reservations. Delay the title
+    calls (the fake counts in-flight calls). Exactly two are in flight and three are `skipped`
+    with no call. After they finish, today's spend is at or below the cap, and no
+    `reserved_cost_usd` is left.
+  - A run claimed while a title reservation is in flight sees the reservation in today's spend.
+  - A restart with a title row in flight keeps the reservation as its cost.
   - For both the total cap and the provider cap, a title passes the send-transaction check.
     Another request then finishes and brings recorded spend to the cap before that title's
     dispatch check. The title is `skipped`, with no call or extra notice.
