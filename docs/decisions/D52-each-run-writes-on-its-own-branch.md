@@ -62,6 +62,19 @@ Decision:
   removed by the Bots pages spec PR). `resolve()` keeps every path inside the run's worktree. The plan card (D48) lists
   the files before the owner approves, so the owner still sees each write in advance. The
   default place for new files stays `out/<slug>/`, as a prompt hint, not a permission.
+- **The Library is a real folder (owner, 2026-10-23, from Cowork).** Main is a normal folder of
+  plain files on disk. The Library page has "Open folder", so the owner can open it in Finder or
+  any editor. The owner can change files there. Before an action run starts and before each
+  save, the app checks main with `git status`. If the owner changed files, the app saves them
+  first as one commit "Owner edit", through the save queue. So bots always see the owner's
+  newest files, and nothing the owner wrote is lost. An owner edit to a file that a running run
+  also changes gives the normal conflict card at that run's save. Files that match the D23
+  deny-list (`.env*`, `*.pem`, `*.key`, `id_*`) stay hidden from bots.
+- **A delete or a move always needs approval (owner, 2026-10-23, from Cowork).** This is true
+  even inside an approved plan. A bot's delete or move does not change files at once. The run
+  records it. At the save, a card lists each delete and move with Approve and Reject. Approve
+  saves them with the rest of the run. Reject saves the rest of the run without them. D23
+  already has this rule for an external folder; now every Library has it.
 - **The word "branch" is not in the UI.** D13 uses "branch" for edited messages. The UI says
   "Saved to Library", "unsaved changes" and "conflict".
 
@@ -124,6 +137,9 @@ Consequences:
   The save queue (one per Library) replaces the per-repo lock for the whole run; file claims
   are rows in the database, taken in the same transaction that starts the action run. The port's contract
   suite gets tests for each result.
+- **Disk layout** (`domain-model.md` §11): `data/libraries/<library-id>/` (main, checked out),
+  `data/run-worktrees/<run-id>/` (deleted after the save). The app does not watch the folder;
+  it checks `git status` only at run start and at save.
 - **Crash safety.** Git and the database cannot share a transaction. The app records the save
   in a new table (for example `run_branches`: run, Library, base commit, head commit, state,
   merge commit, conflict files). The merge is idempotent: if main already holds the run's head
