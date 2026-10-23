@@ -46,7 +46,7 @@ Decision:
   | --- | --- |
   | Use this chat's version | The run's files replace the Library files |
   | Keep Library version | The run's changes to the conflict files are dropped; its other files are saved |
-  | Keep both (primary) | The run's version is saved as a copy next to the file, for example `stories (Pricing).md` |
+  | Keep both (primary) | The run's version is saved as a copy next to the file, for example `stories-from-pricing.md` |
 
   Until the owner chooses, the chat shows "Waiting for you", and the next queued runs of that
   chat wait. Other chats continue.
@@ -105,7 +105,7 @@ Example: The project "Clinic app" has two chats. Both plans list `requirements/g
 Fallback: if the Onboarding plan did not list `glossary.md` but BA wrote it anyway, both runs
 start at 10:00 and 10:01. At 10:04 the second save finds that `glossary.md` changed on main.
 The chat shows the conflict card and "Waiting for you". The owner presses Keep both, and main
-gets `requirements/glossary (Onboarding).md`.
+gets `requirements/glossary-from-onboarding.md`.
 
 In a chat outside a project, runs are one at a time (D11) and nobody else writes to its
 Library, so a conflict cannot happen there. The branch still gives the all-or-nothing save and
