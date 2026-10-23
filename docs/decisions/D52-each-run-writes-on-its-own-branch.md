@@ -2,7 +2,8 @@
 
 Status: proposed (2026-10-23). The owner gave the model ("like a git worktree: the project is
 main, the conversation is a branch"). The owner agreed to three changes in the Bots pages
-review: no middle level, a conflict card, and unsaved changes for a failed or stopped run.
+review: no middle level and unsaved changes for a failed or stopped run. On a decision card
+(2026-10-23) the owner chose last write wins with a notice instead of a conflict card.
 The owner then set the write rule: a bot writes only to the Library of its chat. When accepted, it amends D37 (workspace scope) and D23 (branch
 for an external folder), and it is built in M6.
 
@@ -31,28 +32,26 @@ Decision:
 - **Save queue (owner, 2026-10-23).** Each Library has one save queue. Saves to main happen one
   at a time, in the order the runs end. A queue only sets the order of saves. It cannot stop two
   runs from changing the same file, so the app also uses file claims.
-- **File claims stop most conflicts.** The approved plan (D48) lists the files that the action run
+- **File claims stop most overlaps.** The approved plan (D48) lists the files that the action run
   will write. When the action run starts, it claims those files in its Library. An action run
   that needs a file that another running action run claimed waits in the queue ("Waiting for
   Pricing chat"). When the first run saves (or is discarded), its claims end, and the waiting run
   starts from the new main. Runs with different files run at the same time.
-- **Conflict rule (the fallback).** A bot can still write a file that is not in its plan, so a
-  conflict stays possible. A conflict is a file that the run changed and that main also changed after
-  the run started. The app compares whole files, not lines. On a conflict, the app saves
-  nothing from that run (all files or none), keeps the branch, and shows a conflict card in the
-  chat:
-
-  | Button | What happens |
-  | --- | --- |
-  | Use this chat's version | The run's files replace the Library files |
-  | Keep Library version | The run's changes to the conflict files are dropped; its other files are saved |
-  | Keep both (primary) | The run's version is saved as a copy next to the file, for example `stories-from-pricing.md` |
-
-  Until the owner chooses, the chat shows "Waiting for you", and the next queued runs of that
-  chat wait. Other chats continue.
+- **Overlap rule (the fallback): last write wins, with a notice (owner, 2026-10-23).** A bot
+  can still write a file that is not in its plan. An **overlap** is a file that the run changed
+  and that main also changed after the run started. The app compares whole files, not lines.
+  On an overlap, the later save wins and nothing waits. The chat shows a notice line:
+  "`glossary.md` also changed in Onboarding. This version was saved." with **Restore other
+  version**. Restore saves the other version as a new commit "Owner restore", through the save
+  queue. Git keeps both versions, so nothing is lost.
+- **Detection is built in full from the start.** Each overlap is recorded with the file, both
+  runs and both commits. The rule that decides what an overlap does is one pure function in
+  `core/` (`library-save.rules.ts`). A conflict card (nothing saved until the owner picks; the
+  chat waits) can replace the notice later if the recorded overlaps show a need. That change
+  adds a card and a waiting state, and it keeps the data model.
 - **Failed or stopped run.** If the run wrote files, the app keeps its branch as **unsaved
   changes**. A card at the failed or stopped message says "BA stopped. 2 files are not saved."
-  with Discard and Save to Library. Save to Library uses the same merge and the same conflict
+  with Discard and Save to Library. Save to Library uses the same merge and the same overlap
   rule. The branch stays until the owner chooses. Nothing deletes it automatically.
 - **Attachments.** An upload goes straight to main, in `attachments/<yyyy-mm-dd>-<chat-slug>/`,
   before the run starts, as one commit "Owner upload". It has no branch. Bots cannot write to
@@ -83,7 +82,7 @@ Decision:
   save, the app checks main with `git status`. If the owner changed files, the app saves them
   first as one commit "Owner edit", through the save queue. So bots always see the owner's
   newest files, and nothing the owner wrote is lost. An owner edit to a file that a running run
-  also changes gives the normal conflict card at that run's save. Files that match the D23
+  also changes is an overlap at that run's save: the run's version wins, with the notice. Files that match the D23
   deny-list (`.env*`, `*.pem`, `*.key`, `id_*`) stay hidden from bots.
 - **A delete or a move always needs approval (owner, 2026-10-23, from Cowork).** This is true
   even inside an approved plan. A bot's delete or move does not change files at once. The run
@@ -91,7 +90,7 @@ Decision:
   saves them with the rest of the run. Reject saves the rest of the run without them. D23
   already has this rule for an external folder; now every Library has it.
 - **The word "branch" is not in the UI.** D13 uses "branch" for edited messages. The UI says
-  "Saved to Library", "unsaved changes" and "conflict".
+  "Saved to Library", "unsaved changes" and "also changed in".
 
 Example: The project "Clinic app" has two chats. Both plans list `requirements/glossary.md`.
 
@@ -100,15 +99,16 @@ Example: The project "Clinic app" has two chats. Both plans list `requirements/g
 | 10:00 | In "Pricing", the owner approves BA's plan. The action run starts and claims `glossary.md` |
 | 10:01 | In "Onboarding", the owner approves BA's plan. The run waits: "Waiting for Pricing chat" |
 | 10:03 | The Pricing run ends. The save queue saves it. Main is `b2`. The claim ends |
-| 10:03 | The Onboarding run starts from `b2`, so it sees the Pricing change. No conflict |
+| 10:03 | The Onboarding run starts from `b2`, so it sees the Pricing change. No overlap |
 
 Fallback: if the Onboarding plan did not list `glossary.md` but BA wrote it anyway, both runs
-start at 10:00 and 10:01. At 10:04 the second save finds that `glossary.md` changed on main.
-The chat shows the conflict card and "Waiting for you". The owner presses Keep both, and main
-gets `requirements/glossary-from-onboarding.md`.
+start at 10:00 and 10:01. At 10:04 the Onboarding save finds that `glossary.md` changed on main
+at 10:03. Its version is saved. The Onboarding chat shows the notice, and Designer's next run
+starts at once. The owner reads both versions and presses Restore other version if the Pricing
+text was better.
 
 In a chat outside a project, runs are one at a time (D11) and nobody else writes to its
-Library, so a conflict cannot happen there. The branch still gives the all-or-nothing save and
+Library, so an overlap cannot happen there. The branch still gives the all-or-nothing save and
 the unsaved changes after a failure.
 
 Why:
@@ -117,18 +117,19 @@ Why:
   project can run at the same time, so a bot can read a file that another bot changes in the
   middle of its run. A failed or stopped run leaves half its files in the Library.
 - **A branch per run makes each run all-or-nothing**, and it isolates runs like a database
-  transaction with snapshot isolation: the run sees main as it was at its start, and a conflict
+  transaction with snapshot isolation: the run sees main as it was at its start, and an overlap
   is a write-write conflict at commit time.
 - **One merge commit per run** gives a clear history in the Library ("BA in Pricing: 2 files"),
   and a later "Undo this run" is one revert.
 - **The write rule needs this.** Without per-bot write folders, any bot in a project can change
   any project file. Two bots in two chats can change one file at the same time. The branch
-  per run and the conflict card make this safe: nothing is lost, and the owner picks.
+  per run, file claims and git history make this safe: nothing is lost, and the owner sees
+  each overlap.
 
 Not chosen:
 
 - **One run at a time per project** (D11 for the whole project). It is simpler and has no
-  conflicts. But a long run in one chat would block every other chat in the project for
+  overlaps. But a long run in one chat would block every other chat in the project for
   minutes, and a failed run still needs a rollback of main. The owner works in several chats of
   one project at the same time. File claims block only the runs that need the same files.
 - **A branch per chat, saved to the project only when the owner says so** (the middle level).
@@ -137,7 +138,11 @@ Not chosen:
 - **The owner approves each save.** D48 already asks for approval before the action run. A
   second approval after it doubles the work for no new safety: the owner can still revert.
 - **A save queue with no file claims.** The queue sets the order of saves but still lets two
-  runs start from the same main, so the second save conflicts.
+  runs start from the same main, so the second save overlaps.
+- **A conflict card on each overlap** (nothing saved until the owner picks, the chat waits).
+  Safest, but work stops while the owner is away, for a case that file claims make rare. It
+  stays the next step if the recorded overlaps show a need.
+- **Last write wins with no notice.** The owner might never know that a change was replaced.
 - **Line-level merge** (git's normal merge). Two bots that change different lines of one
   document can give a merged text that reads wrong, and the owner does not see it. Whole-file
   compare is easier to explain and to test.
@@ -147,8 +152,8 @@ Not chosen:
 Consequences:
 
 - **Workspace port (M6).** New operations: start a run branch, save a run (result: saved,
-  conflict with a file list, or nothing to save), resolve a conflict with one of the three
-  choices, and discard. `resolve()` (security rule 7) maps paths inside the run's worktree.
+  saved with overlaps and their file list, or nothing to save), restore the other version of a
+  file, and discard. `resolve()` (security rule 7) maps paths inside the run's worktree.
   The save queue (one per Library) replaces the per-repo lock for the whole run; file claims
   are rows in the database, taken in the same transaction that starts the action run. The port's contract
   suite gets tests for each result.
@@ -157,18 +162,18 @@ Consequences:
   it checks `git status` only at run start and at save.
 - **Crash safety.** Git and the database cannot share a transaction. The app records the save
   in a new table (for example `run_branches`: run, Library, base commit, head commit, state,
-  merge commit, conflict files). The merge is idempotent: if main already holds the run's head
+  merge commit, overlap files). The merge is idempotent: if main already holds the run's head
   commit, the app only finishes the database step. A check at start-up finishes any half-done
   save. This needs a migration, so the owner approves it in the M6 plan.
-- **Events** (`realtime-events.md`): `library.saved`, `library.conflict`, `library.unsaved`,
-  `library.resolved`. Each is written in the same transaction as the run's final state or the
+- **Events** (`realtime-events.md`): `library.saved` (with any overlaps), `library.unsaved`,
+  `library.restored`, `library.discarded`. Each is written in the same transaction as the run's final state or the
   owner's choice. A Library page in another chat of the project refreshes from these events.
 - **Run order (D11).** The next run in a chat starts only after the save of the run before it
-  (or after the conflict card). A handoff target therefore sees the files of the bot that handed
+  A handoff target therefore sees the files of the bot that handed
   off.
-- **Flow view (M8).** The run's last step shows "Saved to Library", "Conflict" or "Unsaved
-  changes".
-- **UI design (M6 Library round).** The conflict card, the unsaved changes card, a Library
+- **Flow view (M8).** The run's last step shows "Saved to Library" (with an overlap mark when
+  there is one) or "Unsaved changes".
+- **UI design (M6 Library round).** The overlap notice, the unsaved changes card, the delete and move approval card, a Library
   entry for chats outside a project (the left bar has no Library row there today), and an
   "Unsaved changes" list on the Library page.
 - **D37** changes from "conversations share one workspace" to "conversations share one main;
