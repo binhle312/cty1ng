@@ -57,7 +57,9 @@ Decision:
 - **Failed or stopped run.** If the run wrote files, the app keeps its branch as **unsaved
   changes**. A card at the failed or stopped message says "BA stopped. 2 files are not saved."
   with Discard and Save to Library. Save to Library uses the same merge and the same overlap
-  rule. The branch stays until the owner chooses. Nothing deletes it automatically.
+  rule. If the owner does not choose, the app discards the branch after `trash_days` (D49,
+  default 30), as Trash does (owner, 2026-10-23). The card shows the date: "Discarded on
+  2026-11-22 if you do nothing".
 - **Attachments.** An upload goes straight to main, in `attachments/<yyyy-mm-dd>-<chat-slug>/`,
   before the run starts, as one commit "Owner upload". It has no branch. Bots cannot write to
   `attachments/`. (The current spec calls this folder `inbox/<message_id>/`; the message keeps
@@ -150,8 +152,9 @@ Not chosen:
 - **Last write wins with no notice.** The owner might never know that a change was replaced.
 - **Whole-file compare only** (the later version always wins). It would throw away one chat's
   change even when the two chats changed different parts of the file.
-- **Delete unsaved changes after `trash_days`.** It would delete work that the owner did not
-  see. Disk use is small, and one owner can clear the list.
+- **Keep unsaved changes until the owner chooses.** The list would grow with no end. Trash
+  already sets how long the owner has to decide, so the same setting applies.
+- **Save unsaved changes automatically.** Half-done files would mix with good ones.
 
 Consequences:
 
