@@ -110,6 +110,7 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `message.completed` | yes | `{message}` | final text, provenance, token counts |
 | `message.failed` | yes | `{message, error}` | run failed after retries |
 | `message.stopped` | yes | `{message}` | Stop pressed |
+| `message.feedback` | yes | `{message_id, feedback}` (`feedback` null when removed) | the owner rated a bot message, or changed or removed the rating (D51) |
 | `run.queued` | yes | `{run}` | run inserted |
 | `run.started` | yes | `{run}` | worker claimed it |
 | `run.step` | yes | `{run_id, conversation_id, actor_id, step}` | each bot tool call finishes (D26), e.g. `read_file out/ba/stories.md` |
