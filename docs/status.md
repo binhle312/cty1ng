@@ -24,12 +24,15 @@ UI design review in progress: header bot order (Recent activity / Custom, deferr
 reordering) specified for M2. Agreed so far and saved in `design/components/` with previews: bot
 avatar (Flat, Jelly, Pixel; Flat only until the final product), top header, bot card, user
 panel, left bar (rail and bar 2), Memory pane, New project page (layout A), Project settings page
-with the memory check card and Delete project, plan card. D43–D45 accepted
+with the memory check card and Delete project, plan card, Skills page (round 8) and the button
+and check box standard (`buttons.md`). D43–D45 accepted
 (memory precedence, right pane holds Flow or Memory, project goal and instructions). D47 (delete
 sends the whole project to Trash; memory check choices) and D48 (bots plan first) accepted. Still
 in review: Trash page (with the Remember button and the "changed in another tab" cards), Library
 page content, Flow pane. D46 accepted: a one-time auto title from the first message (M3).
 The M3 migration waits for the owner's approval. Project Board is a later slice (M8c).
+D49 accepted: deleted skills go to Trash, a `trash_days` setting (default 30), Undo only for a
+permanent delete. Next design round: M2 Bots pages and Create bot.
 
 ## Next
 
@@ -50,7 +53,7 @@ The M3 migration waits for the owner's approval. Project Board is a later slice 
 | Slice | State | PR | Notes |
 | --- | --- | --- | --- |
 | M0 | not started | | |
-| M1 | not started | | |
+| M1 | not started | | Design approved: `design/components/skills-page.md` (round 8); D49 accepted |
 | M2 | not started | | |
 | M3 | not started | | |
 | M4 | not started | | |

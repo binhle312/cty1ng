@@ -264,7 +264,7 @@ Rules:
 - **Only when asked.** The tool is offered only in runs with `triggered_by = human`, never in
   bot turns or handoff runs. The prompt says to use it only when the owner asks. A bot may
   offer in one line ("Want me to save this as a skill?") and waits for a yes.
-- **Text only.** Name, description (≤ 300 characters), body (≤ 50 KB) and changelog. No files,
+- **Text only.** Name, description (≤ 1,024 characters), body (≤ 20,000 characters) and changelog. No files,
   no frontmatter beyond what the app writes, no tool permissions or write paths.
 - **Guard.** The text passes the sensitive-data guard (D39) or the tool returns an error
   naming the kinds found; there is no "Send anyway" for drafts.

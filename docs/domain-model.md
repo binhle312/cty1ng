@@ -12,7 +12,8 @@ match it; a PR that changes a table changes this document too (and needs the own
 - Timestamps are UTC, stored as ISO-8601 `TEXT` (with `Z`) through one Drizzle column helper, so
   Postgres can map it to `timestamptz` later.
 - Soft deletion uses `deleted_at` (bots) or `deprecated_at` (skills). Nothing that a message or
-  run refers to is ever hard-deleted.
+  run refers to is ever hard-deleted, with one exception: the Trash purge of a skill (D49, §3.4).
+  Runs keep a copy of the skill's slug and version for this case (§3.7).
 - Actor columns (`author_id`, `created_by`) hold the owner's user id. In phase 1 this is the
   constant `"owner"`; the column exists so multi-user is an addition (D1).
 - JSON columns are validated by Zod schemas in the services before writing and parsed again
@@ -72,19 +73,22 @@ UNIQUE INDEX bots_name_live ON bots(lower(name)) WHERE deleted_at IS NULL
 skills
   id                             TEXT PK
   slug                           TEXT UNIQUE NOT NULL     -- ^[a-z0-9-]{1,64}$
-  name                           TEXT NOT NULL
+  name                           TEXT NOT NULL            -- ≤ 64 chars
   author_id                      TEXT NOT NULL            -- D14
   latest_version_id              TEXT NOT NULL REFERENCES skill_versions(id)
   cloned_from_skill_version_id   TEXT NULL REFERENCES skill_versions(id)
   created_at
+  updated_at                                              -- last change (new version, deprecate, restore); list order
   deprecated_at                  TIMESTAMP NULL
+  trashed_at                     TIMESTAMP NULL           -- in Trash (D49); set only when deprecated_at is set
+  trashed_bot_ids                JSON NULL                -- bots that used it at delete time, for the restore suggestion
 
-skill_versions                                            -- immutable: no UPDATE, no DELETE
+skill_versions                                            -- no UPDATE; DELETE only by the Trash purge (D49)
   id            TEXT PK
   skill_id      TEXT NOT NULL REFERENCES skills(id)
   version       INTEGER NOT NULL                          -- 1, 2, 3 … per skill
-  description   TEXT NOT NULL                             -- ≤ 300 chars, shown to the bot
-  body_md       TEXT NOT NULL                             -- ≤ 50 KB
+  description   TEXT NOT NULL                             -- ≤ 1,024 chars, required, shown to the bot
+  body_md       TEXT NOT NULL                             -- ≤ 20,000 chars, required
   changelog     TEXT NULL                                 -- one line, optional
   created_by    TEXT NOT NULL
   skill_draft_id TEXT NULL REFERENCES skill_drafts(id)    -- set when approved from a bot's draft (D41)
@@ -122,7 +126,7 @@ is its `go.mod` line.
 | Action | Effect |
 | --- | --- |
 | Author saves an edit | New `skill_versions` row `N+1`; `latest_version_id` moves. **No pin moves.** |
-| Save dialog "Also upgrade these bots" | Lists the author's bots pinned to older versions, all unchecked. Checked ones move to `N+1` in the same transaction. |
+| Save dialog "Also upgrade these bots" | Lists the author's bots pinned to older versions, all ticked. Ticked ones move to `N+1` in the same transaction. |
 | Assign a skill to a bot | Pins `latest_version_id` at that moment. |
 | Upgrade / downgrade on bot detail | Moves that one pin to the chosen version. |
 | Restore old version vK | Creates `N+1` with vK's content (history is append-only). |
@@ -136,16 +140,29 @@ Why integers and not semver: compatibility of prose cannot be checked by a machi
 ### 3.3 Authorship and cloning (D14)
 
 - Only `author_id` may create versions, edit metadata, deprecate or un-deprecate. Others get 403.
-- Anyone may clone: creates a new skill (author = cloner), slug `<slug>-copy` (editable, unique),
-  v1 = content of the version being viewed, `cloned_from_skill_version_id` set. No sync later.
+- Anyone may clone. Clone saves nothing: it opens the New skill editor filled from the version
+  being viewed (name + " (copy)", slug `<slug>-copy`, both editable). Create makes a new skill
+  (author = cloner, v1, `cloned_from_skill_version_id` set). No sync later.
 - In phase 1 the owner authors everything, so the 403 path is exercised only by tests. It is
   built now because adding ownership later means rewriting every skill endpoint.
 
-### 3.4 Deprecation instead of deletion
+### 3.4 Deprecate, then delete through Trash (D49)
 
-- `deprecated_at` set: hidden from the hub's default list and from "Add skills" pickers.
-- Bots pinned to it keep working and show a "deprecated" badge.
-- Reversible by the author. Versions are never deleted because pins and past runs refer to them.
+- **Deprecate** sets `deprecated_at`: hidden from the hub's default list and from "Add skills"
+  pickers. In the same transaction it removes the pins of the bots the author ticked. Bots
+  that keep it keep working and show a "deprecated" badge. Reversible by the author.
+- **Delete** is only for a deprecated skill, also while bots use it. In one transaction it
+  writes the bot ids of all its pins to `trashed_bot_ids`, deletes those `bot_skills` rows and
+  sets `trashed_at`. The skill and all its versions are one Trash item.
+- **In Trash:** the skill is in no list or picker, and its slug stays taken, so a restore
+  always works. **Restore** clears `trashed_at`; the skill stays deprecated. The app then
+  suggests to assign it again to the bots in `trashed_bot_ids` that are not deleted.
+- **Purge:** after `trash_days` (§10), or "Delete now" on the Trash page, the app deletes the
+  `skill_versions` rows and the `skills` row. Before that, in the same transaction, it sets
+  `run_skills.skill_version_id`, `skills.cloned_from_skill_version_id`,
+  `skill_drafts.skill_id` and `skill_drafts.result_skill_version_id` to NULL where they point
+  to it. The slug is then free for a new skill. Old runs show the copy in `run_skills`
+  ("write-user-stories v4 (deleted)") and never link to a new skill with the same slug.
 
 ### 3.5 Import and export (D5)
 
@@ -162,11 +179,14 @@ Import (UI: upload a zip or choose a folder; CLI: `app skills import <folder>`):
 1. **Preview** (no writes): for each `<slug>/SKILL.md` → `new`, `changed` (with a diff against
    the latest version), `unchanged`, or `invalid` (with the reason: bad frontmatter, slug
    mismatch, too large, not UTF-8). Skills authored by someone else are `conflict: not author`.
-2. **Apply** (after confirmation): `new` → create skill v1; `changed` → new version; others
-   skipped. All in one transaction. Skills absent from the folder are untouched (one-way,
+   A slug of a skill in Trash is `conflict: in Trash`. Files other than `SKILL.md` are listed
+   as skipped and never read (bots cannot run code).
+2. **Apply** (after confirmation): for the rows the owner ticked (all by default), `new` →
+   create skill v1; `changed` → new version; others skipped. All in one transaction. Skills absent from the folder are untouched (one-way,
    additive).
 
-Export writes the latest version of every non-deprecated skill in the same layout.
+Export writes the latest version of the skills the owner picked (every non-deprecated skill is
+ticked by default) in the same layout, as `<n>-skills-<UTC timestamp, ISO basic>.zip`.
 
 ### 3.6 How a run uses skills (D16)
 
@@ -180,10 +200,12 @@ Export writes the latest version of every non-deprecated skill in the same layou
 ```
 run_skills
   run_id            TEXT REFERENCES runs(id)
-  skill_version_id  TEXT REFERENCES skill_versions(id)
+  skill_version_id  TEXT NULL REFERENCES skill_versions(id)   -- NULL after the skill's purge (D49)
+  skill_slug        TEXT NOT NULL      -- copy at run time, kept after the purge
+  version           INTEGER NOT NULL   -- copy at run time
   mode              TEXT NOT NULL      -- always | loaded
   first_loaded_at   TIMESTAMP
-  PRIMARY KEY (run_id, skill_version_id)
+  PRIMARY KEY (run_id, skill_slug)     -- a run has one bot, and a bot has one version of a skill
 ```
 
 Written by the server: one row per always-loaded pin when the run starts, one row per distinct
@@ -230,8 +252,8 @@ skill_drafts                                              -- TypeID prefix `skil
   base_version       INTEGER NULL                 -- latest version when drafted; set when kind = edit
   slug               TEXT NOT NULL                -- proposed slug (new) or the skill's slug (edit)
   name               TEXT NOT NULL
-  description        TEXT NOT NULL                -- ≤ 300 chars
-  body_md            TEXT NOT NULL                -- ≤ 50 KB; passed the guard (D39)
+  description        TEXT NOT NULL                -- ≤ 1,024 chars
+  body_md            TEXT NOT NULL                -- ≤ 20,000 chars; passed the guard (D39)
   changelog          TEXT NULL
   status             TEXT NOT NULL DEFAULT 'pending'  -- pending | approved | rejected | stale
   result_skill_version_id TEXT NULL REFERENCES skill_versions(id)  -- set when approved
@@ -441,11 +463,11 @@ handoffs
 
 ```
 settings
-  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order …
+  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, trash_days …
   value  JSON NOT NULL
 ```
 
-Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"custom"`).
+Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"custom"`), `trash_days = 30` (projects and skills, D49).
 
 ## 11. Files on disk
 
@@ -465,10 +487,10 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
 ## 12. Invariants (each needs a test)
 
 1. `bots.model_id` and `bots.effort` never change after insert.
-2. `skill_versions` rows are never updated or deleted.
+2. `skill_versions` rows are never updated; only the Trash purge deletes them, with their skill (D49).
 3. `bot_skills.skill_version_id` belongs to `bot_skills.skill_id`.
 4. Editing a skill does not change any `bot_skills` row unless the author checked that bot.
-5. Only the author can create versions or deprecate a skill.
+5. Only the author can create versions, deprecate, delete or restore a skill.
 6. A deprecated skill cannot be newly assigned.
 7. `events.seq` is strictly increasing; every state change has its event in the same transaction.
 8. At most one `running` run per conversation (enforced by `runs_one_running`).
@@ -487,6 +509,11 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
     changes back (D46).
 18. A conversation has at most one auto title attempt and at most one `model_requests` row with
     `purpose = 'title'` (D46).
+19. A skill delete removes every `bot_skills` row of that skill in the same transaction, and
+    only a deprecated skill can be deleted (D49).
+20. A purge keeps every `run_skills` row with its `skill_slug` and `version`; a new skill with
+    the same slug never shows as the skill of an old run (D49).
+21. A restore never assigns a skill to a deleted bot; it only suggests bots (D49).
 
 ## 13. Usage and cost (D20, D21)
 

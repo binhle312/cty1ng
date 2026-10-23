@@ -8,8 +8,8 @@ Writing, versioning, cloning, deprecating, importing and exporting skills.
   Acceptance criteria: UI-7.1 to UI-7.3.
 - **SK-2.** As the author, I want every save to create a version and to choose which bots upgrade, so that bots change only when I decide.  
   Acceptance criteria: UI-7.4, UI-7.5.
-- **SK-3.** As the owner, I want to deprecate instead of delete, so that bots using a skill keep working.  
-  Acceptance criteria: UI-7.6.
+- **SK-3.** As the owner, I want to deprecate a skill, and later delete it through Trash, so that bots change only when I decide and a mistake is easy to undo (D49).  
+  Acceptance criteria: UI-7.6, UI-7.6a.
 - **SK-4.** As the owner, I want to import and export SKILL.md folders, so that I can write skills in my editor or with an AI agent.  
   Acceptance criteria: UI-7.7, UI-7.8.
 - **SK-5.** As the owner, I want to ask a bot to turn its work into a skill for itself or another bot, and approve it before it is used, so that good ways of working are kept without the bots changing on their own (D41).  
@@ -21,21 +21,34 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
 
 ## Skill hub and editor (UI-7)
 
-- UI-7.1: List: name, slug, description, author, latest version, "used by n bots (m on older
-  versions)", last edited. Search by name/slug. "Show deprecated" filter.
-- UI-7.2: Actions: New skill, Import, Export; per skill: Open, Clone, Deprecate (author only).
-- UI-7.3: Editor: slug (only when creating), name, description (with 300-char counter), body
-  (Markdown editor with live preview), changelog line. Non-authors see read-only content and a
-  "Clone" button instead of Save.
-- UI-7.4: Saving creates a new version, then shows the "Also upgrade these bots to vN?" dialog
-  listing the author's bots on older versions, all unchecked, with "Done" (D6).
-- UI-7.5: History tab: versions newest first with changelog; diff between any two; "Restore"
+- UI-7.1: List: name, slug, latest version, "n bots" with "m older" when bots use an older
+  version, or "Not used". Order: last change first. Search by name or slug. "Show deprecated"
+  check box. Layout, states and copy: `../design/components/skills-page.md`.
+- UI-7.2: Actions: New, Import, Export in the list; History and the ⋯ menu in the skill header.
+  ⋯ for an active skill: Clone, Export, Deprecate; for a deprecated skill: Clone, Delete skill.
+  Deprecate and Delete are author only.
+- UI-7.3: Editor: name (≤ 64 characters), slug (only when creating, made from the name until the
+  owner edits it, accents removed), description (≤ 1,024), body (≤ 20,000, Markdown, Write and
+  Preview tabs, opens in Preview when it has text), changelog line in the save bar. Every field
+  except the changelog is required. A body over 500 lines gets a warning only. Non-authors see
+  disabled fields and "Clone to edit" instead of Save.
+- UI-7.4: Saving creates a new version, then shows "Also upgrade these bots to vN?" with the
+  author's bots on older versions, all ticked, and Skip / Upgrade (D6). After Create, the card
+  "Add {skill} to bots?" lists the bots, none ticked, with Skip / Assign.
+- UI-7.5: History panel: versions newest first with changelog; diff between any two; "Restore"
   (creates a new version).
-- UI-7.6: Deprecate shows which bots pin the skill and explains they keep working.
-- UI-7.7: Import: upload a zip (or, via the CLI, a folder) → preview table (new, changed with
-  diff, unchanged, invalid with reason, conflict) → "Apply n changes". Nothing is written before
-  Apply.
-- UI-7.8: Export downloads a zip of `<slug>/SKILL.md` folders.
+- UI-7.6: Deprecate lists the bots that use the skill, all ticked: ticked bots stop using it,
+  unticked bots keep it and it works as before. A deprecated skill is read-only and has "Remove
+  from bots" and "Make active again".
+- UI-7.6a: Delete (deprecated skills only) sends the skill to Trash and removes it from every bot
+  that uses it; the dialog lists those bots. Trash keeps it for `trash_days` (D49). Restore
+  suggests assigning it again to those bots that are still active.
+- UI-7.7: Import: upload a zip (or, via the CLI, a folder) → preview grouped as New skills, New
+  versions of your skills (with diff), No change, Skipped (invalid or conflict, with the
+  reason); each good row has a check box, all ticked → "Apply n changes". Files other than
+  `SKILL.md` are listed as skipped. Nothing is written before Apply.
+- UI-7.8: Export opens a card with every active skill ticked and "Select all", then downloads
+  `<n>-skills-<UTC timestamp>.zip` with `<slug>/SKILL.md` folders.
 
 ## Skills drafted by bots (D41)
 

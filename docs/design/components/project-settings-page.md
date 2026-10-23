@@ -31,7 +31,7 @@ One column, at most 620 px wide, with 20 px between fields. Top to bottom:
 5. **Delete project** section, 32 px below Memory history, with 28 px of padding inside, a
    `danger` border at low opacity and a `danger` tint. Title **"Done with this project? 📦"**,
    text "The project goes to Trash with its chats, memory and Library. You can restore it for 30
-   days." Button **Delete project…** (`danger` outline).
+   days." Button **Delete project** (`danger` outline).
 6. **Save bar**, fixed at the bottom of the main area (§3).
 
 ## 3. Saving
@@ -77,7 +77,7 @@ changed.
 
 ## 6. Delete project (D47)
 
-**Delete project…** opens a dialog:
+**Delete project** opens a dialog:
 
 - Title: **Delete {project}? 🧹**
 - "Everything in the project goes to Trash:", then the real counts: 💬 "{n} chats, with all their
@@ -94,8 +94,9 @@ After Delete:
 - Runs in the project stop first. Then the project, its chats, memory and Library go to Trash
   as one item.
 - Home opens. The project tile and its chats are gone from the rail and bar 2.
-- A toast says "{project} and its {n} chats are in Trash." with **Undo** for 10 seconds.
-- After that, the owner restores the project from Trash. A restore brings back the project with
+- A toast says "{project} and its {n} chats are in Trash." The word **Trash** is a link to the
+  Trash page. The toast has no Undo, because Trash is not permanent (D49, `buttons.md` §6).
+- The owner restores the project from Trash. A restore brings back the project with
   all its chats, memory and Library, as they were. The Trash page is **not designed yet**.
 
 ## Requirement changes (requirements PR)

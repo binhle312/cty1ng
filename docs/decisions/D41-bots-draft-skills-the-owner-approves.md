@@ -1,6 +1,6 @@
 # D41. Bots draft skills; the owner approves and is the author
 
-Status: accepted (2026-10-22, owner)
+Status: accepted (2026-10-22, owner). Amended 2026-10-23 (owner): the size limits are now those in `../security.md` §2.5 (description 1,024 characters, body 20,000 characters).
 
 Decision: When the owner asks, a bot may draft a new skill, or a new version of an existing
 skill, for itself or for another bot in the conversation. The draft is a proposal, never a

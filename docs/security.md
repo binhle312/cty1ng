@@ -69,13 +69,15 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
 | --- | --- | --- |
 | Avatar | PNG, JPEG, WebP ≤ 2 MB | Detect type from content (`sharp`), reject others incl. SVG; strip metadata; re-encode to 256×256 WebP; store by SHA-256 |
 | Attachment | Text (`.md .txt .csv .json .yaml .html .css .js .ts .py .sql .xml .svg`), images, PDF; 10 files × 10 MB | Sanitised file name; saved under `inbox/<message_id>/`; SVG and HTML are only ever shown as text |
-| Skill zip | `.zip` ≤ 5 MB, ≤ 200 entries, ≤ 20 MB uncompressed | Reject entries with absolute paths or `..` (zip slip); only `<slug>/SKILL.md` read; UTF-8 only; YAML parsed with the `yaml` package's default core schema (no custom tags); frontmatter validated by a Zod schema |
+| Skill zip | `.zip` ≤ 5 MB, ≤ 200 entries, ≤ 20 MB uncompressed | Reject entries with absolute paths or `..` (zip slip); only `<slug>/SKILL.md` read, every other file is listed as skipped and never opened; UTF-8 only; YAML parsed with the `yaml` package's default core schema (no custom tags); frontmatter validated by a Zod schema |
 
 ### 2.5 Skills, personas and prompt injection
 
 - Skills and personas are text in the database; they are never written to code paths and never
   executed.
-- Size limits: skill body 50 KB, description 300 chars, persona 20 KB.
+- Size limits: skill name 64 characters, description 1,024 characters, body 20,000 characters
+  (all required; a body over 500 lines gets a warning only), persona 20 KB. The server checks the
+  same limits as the editor, also on import and on bot drafts (D41).
 - Prompt injection from any source is an **accepted risk** whose blast radius is limited by
   2.3 (sandbox), by the turn budget and caps, and by the owner approving handoffs. Never
   give bots a capability whose misuse would be worse than "bad text in the workspace" without
