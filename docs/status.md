@@ -42,7 +42,7 @@ permanent delete. Next design round: M2 Bots pages and Create bot.
 
 | Item | Needed by |
 | --- | --- |
-| Accept or change D52 (each run writes on its own branch and saves to the Library) | M6 plan |
+| D52 accepted (each run writes on its own branch and saves to the Library): update the M6 brief and the documents D52 lists; approve the `run_branches` migration | M6 plan |
 | Approve the M3 migration for D46 (auto title) before it is written | M3 plan |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
 | Approve the M2 migration: `bots.header_position`. Claude Code stops for this approval before it writes the migration | M2 plan |

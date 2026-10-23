@@ -1,11 +1,9 @@
 # D52. Each run writes on its own branch and saves to the Library when it ends
 
-Status: proposed (2026-10-23). The owner gave the model ("like a git worktree: the project is
-main, the conversation is a branch"). The owner agreed to three changes in the Bots pages
-review: no middle level and unsaved changes for a failed or stopped run. On a decision card
-(2026-10-23) the owner chose last write wins with a notice instead of a conflict card.
-The owner then set the write rule: a bot writes only to the Library of its chat. When accepted, it amends D37 (workspace scope) and D23 (branch
-for an external folder), and it is built in M6.
+Status: accepted (2026-10-23, owner). The owner gave the model ("like a git worktree: the
+project is main, the conversation is a branch") and closed every open point in the review
+thread. It amends D37 (workspace scope, moving a chat) and D23 (branch for an external folder).
+It is built in M6.
 
 Decision:
 
@@ -207,4 +205,5 @@ Consequences:
   `architecture.md` (workspace port, lock), `security.md` §2.3 (run worktree), `realtime-events.md`, `api.md`
   (resolve and discard endpoints), `conversation-rules.md` (run end), `tasks/M6-workspace-parity.md`.
 
-Implemented in: `../tasks/M6-workspace-parity.md` (when accepted).
+Implemented in: `../tasks/M6-workspace-parity.md` (the brief and the documents listed above
+change before the M6 plan starts).
