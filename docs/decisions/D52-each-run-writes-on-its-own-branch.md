@@ -49,8 +49,8 @@ Decision:
   starts. It has no branch. Bots cannot write to `inbox/`.
 - **Write rule (owner, 2026-10-23).** A bot writes only to the Library that its run saves to:
   the chat's Library outside a project, the project Library in a project. It can write any path
-  in that Library except `inbox/`. Bots have no per-bot write folders (`write_paths` is
-  removed). `resolve()` keeps every path inside the run's worktree. The plan card (D48) lists
+  in that Library except `inbox/` (read-only) and `.git`. Bots have no per-bot write folders (`write_paths` is
+  removed by the Bots pages spec PR). `resolve()` keeps every path inside the run's worktree. The plan card (D48) lists
   the files before the owner approves, so the owner still sees each write in advance. The
   default place for new files stays `out/<slug>/`, as a prompt hint, not a permission.
 - **The word "branch" is not in the UI.** D13 uses "branch" for edited messages. The UI says
@@ -129,7 +129,7 @@ Consequences:
   each run writes on its own branch". **D23** keeps its review branch; each run's branch saves
   into it, and the owner merges it in their own tools.
 - **Documents to change when accepted:** `domain-model.md` §11 (folders, new table, invariants),
-  `architecture.md` (workspace port, lock), `security.md` §2.3 (no `write_paths`), `domain-model.md` §2 and `api.md` (remove `write_paths` from bots), `realtime-events.md`, `api.md`
+  `architecture.md` (workspace port, lock), `security.md` §2.3 (run worktree), `realtime-events.md`, `api.md`
   (resolve and discard endpoints), `conversation-rules.md` (run end), `tasks/M6-workspace-parity.md`.
 
 Implemented in: `../tasks/M6-workspace-parity.md` (when accepted).
