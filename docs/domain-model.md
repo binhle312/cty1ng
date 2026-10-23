@@ -657,7 +657,8 @@ reply_feedback                                    -- TypeID prefix `fb`; built i
 - **Plan outcomes (D48).** The slice that builds the plan card stores, for each plan version:
   the planning run's id, the outcome (`approved`, `changes_requested`, `rejected`, or
   `superseded` when a normal message replaced it), and the owner's note. Counting (D51): an
-  approval of version 1 is good; each `changes_requested` is bad; an approval of a later
+  approval of version 1 is good; each `changes_requested` is neutral with a note (it counts
+  toward `improve_min_signals`, never toward `improve_min_bad_signals`); an approval of a later
   version is neutral; `superseded` is context only.
 - **Skill drafts (D41).** `skill_drafts.status = 'rejected'` is a signal. Its
   `created_by_run_id` gives the run.
