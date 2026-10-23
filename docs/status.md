@@ -8,7 +8,7 @@ status.
 definition of done in `AGENTS.md` §9). The owner updates it for owner-only steps (reviews,
 approvals). Keep it short: link to PRs and briefs instead of describing work.
 
-Last updated: 2026-10-22
+Last updated: 2026-10-23
 
 ## Now
 
@@ -28,19 +28,18 @@ with the memory check card and Delete project, plan card. D43–D45 accepted
 (memory precedence, right pane holds Flow or Memory, project goal and instructions). D47 (delete
 sends the whole project to Trash; memory check choices) and D48 (bots plan first) accepted. Still
 in review: Trash page (with the Remember button and the "changed in another tab" cards), Library
-page content, Flow pane. D46 proposed: a one-time auto title from the first message (M3), with a
-schema change that waits for the owner. Project Board is a later slice (M8c).
+page content, Flow pane. D46 accepted: a one-time auto title from the first message (M3).
+The M3 migration waits for the owner's approval. Project Board is a later slice (M8c).
 
 ## Next
 
-1. Owner reviews D46 (auto title) and its schema change.
-2. Start M0 locally in Claude Code with the builder prompt in `workflow.md` §3.
+1. Start M0 locally in Claude Code with the builder prompt in `workflow.md` §3.
 
 ## Waiting on the owner
 
 | Item | Needed by |
 | --- | --- |
-| Accept or change D46 (auto title) and its schema change | M3 plan |
+| Approve the M3 migration for D46 (auto title) before it is written | M3 plan |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
 | Approve the M2 migration: `bots.header_position`. Claude Code stops for this approval before it writes the migration | M2 plan |
 | Approve the M5b migrations: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars. Claude Code stops for this approval before it writes them | M5b plan |

@@ -1,7 +1,6 @@
 # D46. The app writes a short title from the first message, one time only
 
-Status: proposed (2026-10-22). The owner asked for the feature. The owner must approve the schema
-change below.
+Status: accepted (2026-10-23, owner). The owner must approve the M3 migration before it is written.
 Decision: When the first human message of a conversation is sent, the app asks a model for a
 short title, one time only. The title call is not a run.
 
