@@ -54,14 +54,29 @@ Decision:
   changes**. A card at the failed or stopped message says "BA stopped. 2 files are not saved."
   with Discard and Save to Library. Save to Library uses the same merge and the same conflict
   rule. The branch stays until the owner chooses. Nothing deletes it automatically.
-- **Attachments.** An upload goes straight to main, in `inbox/<message_id>/`, before the run
-  starts. It has no branch. Bots cannot write to `inbox/`.
+- **Attachments.** An upload goes straight to main, in `attachments/<yyyy-mm-dd>-<chat-slug>/`,
+  before the run starts, as one commit "Owner upload". It has no branch. Bots cannot write to
+  `attachments/`. (The current spec calls this folder `inbox/<message_id>/`; the message keeps
+  the link to its files in the database.)
 - **Write rule (owner, 2026-10-23).** A bot writes only to the Library that its run saves to:
   the chat's Library outside a project, the project Library in a project. It can write any path
-  in that Library except `inbox/` (read-only) and `.git`. Bots have no per-bot write folders (`write_paths` is
+  in that Library except `attachments/` (read-only) and `.git`. Bots have no per-bot write folders (`write_paths` is
   removed by the Bots pages spec PR). `resolve()` keeps every path inside the run's worktree. The plan card (D48) lists
-  the files before the owner approves, so the owner still sees each write in advance. The
-  default place for new files stays `out/<slug>/`, as a prompt hint, not a permission.
+  the files before the owner approves, so the owner still sees each write in advance.
+- **File structure follows git practice (owner, 2026-10-23).** Folders are by topic, not by
+  author: git history already records which bot, chat and run wrote each line, so `out/<slug>/`
+  is dropped. A new Library starts with three files, made by the app in its first commit:
+
+  | File | Purpose |
+  | --- | --- |
+  | `README.md` | The Library index: one line per folder, what it holds. Bots read it first and update it in the same save when they add or rename a folder (as in this repository, `architecture.md` §4.2) |
+  | `.gitignore` | Temporary and system files (`.DS_Store`, `~$*`, `*.tmp`) never get saved |
+  | `.gitattributes` | Text files use LF line ends; images and PDFs are marked binary, so a diff never shows their bytes |
+
+  Names are lower-case kebab-case (`user-stories.md`), with no spaces and no dates in the name;
+  the history keeps the dates. Bots make folders only when needed. The project instructions
+  (D45) can set the folders; then bots follow them. No Git LFS: one owner and small files do not
+  need it, and the upload size limit (`security.md` §2.4) stays the guard.
 - **The Library is a real folder (owner, 2026-10-23, from Cowork).** Main is a normal folder of
   plain files on disk. The Library page has "Open folder", so the owner can open it in Finder or
   any editor. The owner can change files there. Before an action run starts and before each
@@ -78,7 +93,7 @@ Decision:
 - **The word "branch" is not in the UI.** D13 uses "branch" for edited messages. The UI says
   "Saved to Library", "unsaved changes" and "conflict".
 
-Example: The project "Clinic app" has two chats. Both plans list `out/ba/glossary.md`.
+Example: The project "Clinic app" has two chats. Both plans list `requirements/glossary.md`.
 
 | Time | What happens |
 | --- | --- |
@@ -90,7 +105,7 @@ Example: The project "Clinic app" has two chats. Both plans list `out/ba/glossar
 Fallback: if the Onboarding plan did not list `glossary.md` but BA wrote it anyway, both runs
 start at 10:00 and 10:01. At 10:04 the second save finds that `glossary.md` changed on main.
 The chat shows the conflict card and "Waiting for you". The owner presses Keep both, and main
-gets `out/ba/glossary (Onboarding).md`.
+gets `requirements/glossary (Onboarding).md`.
 
 In a chat outside a project, runs are one at a time (D11) and nobody else writes to its
 Library, so a conflict cannot happen there. The branch still gives the all-or-nothing save and
