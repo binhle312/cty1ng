@@ -103,6 +103,12 @@ Decision:
   same name gets the `-from-<chat-slug>` suffix. Unchecked, nothing is copied. Either way, the
   chat's own Library stays as a read-only archive, readable from that chat. A chat cannot move
   while one of its runs is running or has unsaved changes.
+- **A Library belongs to its owner and goes to Trash with it (owner, 2026-10-23).** A project
+  Library goes to Trash with its project and comes back with it (D47). A chat outside a project
+  takes its own Library to Trash and back. Deleting a chat inside a project leaves its files in
+  the project Library, because they belong to the project; git history still shows which chat
+  wrote them. Unsaved changes and the run worktrees go to Trash with their chat. The purge after
+  `trash_days` (D49) deletes the Library folder.
 - **The word "branch" is not in the UI.** D13 uses "branch" for edited messages. The UI says
   "Saved to Library", "unsaved changes" and "also changed in".
 
