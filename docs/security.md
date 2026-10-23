@@ -46,6 +46,8 @@ environment, provider-side data handling.
 - Workspace file viewer: text shown as text; HTML files shown as source, never rendered;
   images and PDFs served with `Content-Disposition: inline`, correct type, `nosniff`, and a
   sandboxing CSP (`sandbox`) on the file response.
+- Conversation titles are plain text everywhere (header, rail, lists). The auto
+  title (D46) is model output, so the app never renders it as Markdown or HTML.
 
 ### 2.3 Bot tools and the workspace sandbox
 
@@ -95,7 +97,12 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
 ### 2.7 Cost and abuse limits
 
 - `request_limit` per run, turn budget per conversation, runs per conversation per hour,
-  `MAX_CONCURRENT_RUNS`, and (if D20 is accepted) a daily spending cap.
+  `MAX_CONCURRENT_RUNS`, and the daily spending caps (D20, D42).
+- The auto title (D46) makes at most one request per conversation (a database rule), with
+  30 output tokens, a 20-second timeout, one attempt, and the same caps as a run. The app checks
+  caps in the send transaction and again just before dispatch, where it reserves the worst-case
+  cost, so a title never makes estimated spend pass a cap (`conversation-rules.md` §8 rules
+  5–7).
 - Request body limit: 1 MB for JSON, upload limits as in 2.4; larger bodies get 413 before
   parsing.
 
@@ -186,6 +193,8 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (�
   provider. Matches are shown masked, and sending needs an explicit "Send anyway", which the
   server checks (`confirm_sensitive`, 422 `sensitive_data`).
 - Memory writes and skill drafts (D41) with a match are refused, with no override.
+- Auto titles (D46): a first message with matches ("Send anyway") gets no title request. The
+  guard also checks the model's title; a match keeps "New conversation".
 - Pattern-based and incomplete by nature: a warning, not a guarantee. Images and PDFs are not
   scanned.
 - Matched text is never logged; only the kinds found are logged.

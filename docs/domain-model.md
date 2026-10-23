@@ -293,6 +293,8 @@ skill_drafts                                              -- TypeID prefix `skil
 conversations
   id                       TEXT PK
   title                    TEXT NOT NULL DEFAULT 'New conversation'
+  title_source             TEXT NOT NULL DEFAULT 'default'   -- default | auto | manual (D46)
+  auto_title_status        TEXT NULL        -- NULL = not tried | pending | done | failed | skipped (D46)
   icon_preset              TEXT NULL        -- one of 10 preset ids; NULL = derived from bot avatars
   active_leaf_message_id   TEXT NULL REFERENCES messages(id)
   bot_chat_enabled         BOOLEAN NULL     -- NULL = use global setting
@@ -315,6 +317,17 @@ conversation_bots
 
 Deleting a conversation is soft in the database; its workspace folder is moved to
 `data/trash/` so the owner can recover it by hand.
+
+The auto title (D46) has its rules in `conversation-rules.md` §8. `title_source` tells who wrote
+the title. A non-NULL `auto_title_status` means the one attempt is used. Both columns get a
+`CHECK … IN (…)` with the listed values.
+
+Migration note (D46): M3 creates `conversations` and `model_requests`, so D46 needs no backfill
+when it ships in M3. If it ships after these tables have rows, the migration sets
+`title_source = 'manual'` for every existing conversation whose title is not 'New conversation',
+`'default'` for the others, and `auto_title_status = 'skipped'` for every conversation that
+already has a human message, so old chats do not get a title later. Each existing
+`model_requests` row gets `purpose = 'run'` and the `conversation_id` of its run.
 
 ## 6. Messages and branches
 
@@ -369,8 +382,10 @@ UNIQUE INDEX runs_one_running ON runs(conversation_id) WHERE status = 'running' 
 
 model_requests                           -- one row per call to the provider (D21)
   id                  TEXT PK
-  run_id              TEXT NOT NULL REFERENCES runs(id)
-  seq_in_run          INTEGER NOT NULL
+  purpose             TEXT NOT NULL DEFAULT 'run'   -- run | title (D46)
+  conversation_id     TEXT NOT NULL REFERENCES conversations(id)
+  run_id              TEXT NULL REFERENCES runs(id)  -- NULL only when purpose = 'title'
+  seq_in_run          INTEGER NOT NULL               -- 1 for a title request
   provider            TEXT NOT NULL      -- anthropic, openai, …
   model_requested     TEXT NOT NULL      -- catalog model id
   model_resolved      TEXT NULL          -- model name the provider reports (may be a dated snapshot)
@@ -380,8 +395,12 @@ model_requests                           -- one row per call to the provider (D2
   usage_details       JSON NOT NULL      -- provider-specific usage as returned (reasoning tokens, cache TTL split, …)
   started_at, finished_at, latency_ms
   estimated_cost_usd  NUMERIC NULL       -- priced at completion
+  reserved_cost_usd   NUMERIC NULL       -- worst case held while a title request is in flight; NULL after (D46)
   price_source        TEXT NULL          -- "genai-prices <version>" or "catalog override"
   UNIQUE (run_id, seq_in_run)
+  CHECK (purpose IN ('run', 'title'))
+  CHECK ((purpose = 'run') = (run_id IS NOT NULL))
+UNIQUE INDEX model_requests_one_title ON model_requests(conversation_id) WHERE purpose = 'title'   -- D46
 
 run_history
   run_id         TEXT PK REFERENCES runs(id)
@@ -464,6 +483,10 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
     `architecture.md` §11).
 16. A `propose_skill` call changes no `skills`, `skill_versions` or `bot_skills` row; only an
     owner's Approve does (D41). A version with `skill_draft_id` has an `approved` draft.
+17. An auto title never replaces a title with `title_source = 'manual'`, and `manual` never
+    changes back (D46).
+18. A conversation has at most one auto title attempt and at most one `model_requests` row with
+    `purpose = 'title'` (D46).
 
 ## 13. Usage and cost (D20, D21)
 
@@ -472,9 +495,16 @@ Usage is derived from `model_requests` (detail) and `runs` (totals). All figures
 | View | Query |
 | --- | --- |
 | Per message | the message's run |
-| Per bot | sum over its runs, by day, last 7 / 30 days |
-| Per conversation | sum over runs in the conversation |
-| Today (for the cap) | sum of `model_requests.estimated_cost_usd` for requests that finished since local midnight. Each request counts once, so the partial usage of a running run is included. Per provider: the same sum for the requests with that `provider`. A request in a run is charged to its own provider, so a run with requests to two providers splits its cost. A request with NULL cost (unknown price) counts toward no cap (D21, D42) |
+| Per bot | sum over its runs, by day, last 7 / 30 days. Title requests are not included |
+| Per conversation | sum of `model_requests` with this `conversation_id`: its runs plus its title request (D46) |
+| Conversation titles | sum of `model_requests` with `purpose = 'title'`; shown as one "Conversation titles" row where usage is split by bot (UI-8.3, statistics) |
+| Today (for the cap) | sum of `model_requests.estimated_cost_usd` for requests that finished since local midnight, plus `reserved_cost_usd` of the title requests in flight (D46). Each request counts once, so the partial usage of a running run is included. Per provider: the same sum for the requests with that `provider`. A request in a run is charged to its own provider, so a run with requests to two providers splits its cost. A request with NULL cost (unknown price) counts toward no cap (D21, D42) |
+
+Title requests (D46) are in `model_requests`, so the today sums include them with no extra
+query. The app checks the same caps two times before a title call: in the send transaction and
+just before dispatch. The second check reserves the worst-case cost in the same transaction,
+so a title request never makes estimated spend pass a cap (`conversation-rules.md` §8 rule 6).
+Many title requests can be in flight. A reached cap skips the call and adds no notice.
 
 Daily cap check (D20, D42) happens when a run is claimed: first the bot's provider cap, if set
 (today's spend on that provider ≥ its cap → `failed` with `provider_cap_reached`), then the total
@@ -487,7 +517,7 @@ a toast and a system line.
 
 | Metric | Definition |
 | --- | --- |
-| Cost | Sum of `model_requests.estimated_cost_usd`; requests with NULL cost counted separately |
+| Cost | Sum of `model_requests.estimated_cost_usd`, title requests included (D46); requests with NULL cost counted separately |
 | Tokens | input + output (cache-read and cache-write shown separately, not added twice) |
 | Requests | Rows in `model_requests` |
 | Runs | Rows in `runs` with status `done`, `failed` or `stopped` |
