@@ -28,7 +28,16 @@ Decision:
   worktree. The reply and the Library change appear together, in one event transaction.
 - **No middle level.** A project chat has no branch of its own. Each run saves straight to the
   project Library. (A chat branch that every run merges into at once would always equal main.)
-- **Conflict rule.** A conflict is a file that the run changed and that main also changed after
+- **Save queue (owner, 2026-10-23).** Each Library has one save queue. Saves to main happen one
+  at a time, in the order the runs end. A queue only sets the order of saves. It cannot stop two
+  runs from changing the same file, so the app also uses file claims.
+- **File claims stop most conflicts.** The approved plan (D48) lists the files that the action run
+  will write. When the action run starts, it claims those files in its Library. An action run
+  that needs a file that another running action run claimed waits in the queue ("Waiting for
+  Pricing chat"). When the first run saves (or is discarded), its claims end, and the waiting run
+  starts from the new main. Runs with different files run at the same time.
+- **Conflict rule (the fallback).** A bot can still write a file that is not in its plan, so a
+  conflict stays possible. A conflict is a file that the run changed and that main also changed after
   the run started. The app compares whole files, not lines. On a conflict, the app saves
   nothing from that run (all files or none), keeps the branch, and shows a conflict card in the
   chat:
@@ -56,16 +65,19 @@ Decision:
 - **The word "branch" is not in the UI.** D13 uses "branch" for edited messages. The UI says
   "Saved to Library", "unsaved changes" and "conflict".
 
-Example: The project "Clinic app" has two chats. In "Pricing", BA starts a run at 10:00 to
-update `out/ba/glossary.md`. In "Onboarding", BA starts a run at 10:01 to add a term to the same
-file. Both runs start from main commit `a1`.
+Example: The project "Clinic app" has two chats. Both plans list `out/ba/glossary.md`.
 
 | Time | What happens |
 | --- | --- |
-| 10:03 | The Onboarding run ends. Main did not change since `a1`, so the app saves it. Main is `b2` |
-| 10:04 | The Pricing run ends. `glossary.md` changed on main after the run started. Conflict |
-| 10:04 | The Pricing chat shows the conflict card and "Waiting for you". Designer's queued run in Pricing waits |
-| 10:10 | The owner presses Keep both. Main gets `out/ba/glossary (Pricing).md`. Designer's run starts from that main |
+| 10:00 | In "Pricing", the owner approves BA's plan. The action run starts and claims `glossary.md` |
+| 10:01 | In "Onboarding", the owner approves BA's plan. The run waits: "Waiting for Pricing chat" |
+| 10:03 | The Pricing run ends. The save queue saves it. Main is `b2`. The claim ends |
+| 10:03 | The Onboarding run starts from `b2`, so it sees the Pricing change. No conflict |
+
+Fallback: if the Onboarding plan did not list `glossary.md` but BA wrote it anyway, both runs
+start at 10:00 and 10:01. At 10:04 the second save finds that `glossary.md` changed on main.
+The chat shows the conflict card and "Waiting for you". The owner presses Keep both, and main
+gets `out/ba/glossary (Onboarding).md`.
 
 In a chat outside a project, runs are one at a time (D11) and nobody else writes to its
 Library, so a conflict cannot happen there. The branch still gives the all-or-nothing save and
@@ -90,12 +102,14 @@ Not chosen:
 - **One run at a time per project** (D11 for the whole project). It is simpler and has no
   conflicts. But a long run in one chat would block every other chat in the project for
   minutes, and a failed run still needs a rollback of main. The owner works in several chats of
-  one project at the same time.
+  one project at the same time. File claims block only the runs that need the same files.
 - **A branch per chat, saved to the project only when the owner says so** (the middle level).
   Project files would be out of date in the other chats until the owner merges, and the owner
   would merge twice.
 - **The owner approves each save.** D48 already asks for approval before the action run. A
   second approval after it doubles the work for no new safety: the owner can still revert.
+- **A save queue with no file claims.** The queue sets the order of saves but still lets two
+  runs start from the same main, so the second save conflicts.
 - **Line-level merge** (git's normal merge). Two bots that change different lines of one
   document can give a merged text that reads wrong, and the owner does not see it. Whole-file
   compare is easier to explain and to test.
@@ -107,7 +121,8 @@ Consequences:
 - **Workspace port (M6).** New operations: start a run branch, save a run (result: saved,
   conflict with a file list, or nothing to save), resolve a conflict with one of the three
   choices, and discard. `resolve()` (security rule 7) maps paths inside the run's worktree.
-  The per-repo lock is held only for the merge, not for the whole run. The port's contract
+  The save queue (one per Library) replaces the per-repo lock for the whole run; file claims
+  are rows in the database, taken in the same transaction that starts the action run. The port's contract
   suite gets tests for each result.
 - **Crash safety.** Git and the database cannot share a transaction. The app records the save
   in a new table (for example `run_branches`: run, Library, base commit, head commit, state,
