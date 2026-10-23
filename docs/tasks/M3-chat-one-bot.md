@@ -54,6 +54,10 @@ event log keeps the UI exact across reloads.
 - The cap check as one pure rule for runs and titles (`domain-model.md` §13). M3 uses it only for
   the title call. M5 adds the Settings UI, the alerts and the check at run claim, and reuses the
   rule. Until M5, tests write `daily_cap_usd` and `provider_caps_usd` into `settings` directly.
+- Reply feedback (D51): the `reply_feedback` table (`domain-model.md` §15), `PUT` and
+  `DELETE /messages/{id}/feedback`, the `message.feedback` event, and the Good answer and Bad
+  answer buttons with the note box (UI-3.27, UI-3.28). Nothing reads the ratings until M5d;
+  M3 only stores them. If M3 is too big, this item can move to M4.
 - First open and reopening: the Get started checklist with `GET /setup` and
   `POST /setup/examples` (UI-1.7 to UI-1.9), last conversation, scroll to the "New" divider and
   drafts (UI-1.10 to UI-1.12).
@@ -67,7 +71,7 @@ panel, handoffs (M6); editing and branches (M4).
 
 - Journey J1 steps 1–3 pass in Playwright with the fake model (adding by button).
 - UI-1.1–1.6 (icons from avatars), UI-3.1–3.7, 3.10, 3.14, 3.15 (partial), 3.17.
-- Invariants 7, 8, 9, 11, 14, 15, 17, 18.
+- Invariants 7, 8, 9, 11, 14, 15, 17, 18, 22.
 - Killing the backend mid-stream and restarting: the run is retried after the lease, no
   duplicate message, the UI recovers on reconnect.
 - Stop during streaming → message `stopped` with partial text, run `stopped`.
@@ -122,6 +126,13 @@ panel, handoffs (M6); editing and branches (M4).
     header and the rail tooltip (Vitest).
   - Journey J1 step 3 in Playwright: after the send, the rail tooltip shows the fake title.
 
+- Reply feedback (D51), each with a named test: a rating on a complete bot message is stored
+  with the message's `run_id` and `bot_id` and emits `message.feedback`; a second PUT replaces
+  it; DELETE removes it; a rating on a human, streaming, failed or stopped message returns 409
+  `feedback_not_allowed`; a note with a secret returns 422 `sensitive_data`; the message text
+  and its `message.completed` payload do not change (invariant 22); a note with
+  `<img src=x onerror=alert(1)>` renders as text (Vitest).
+
 ## Tests
 
 Worker tests (claim exclusivity per conversation, lease expiry, max attempts); agent tests with
@@ -144,6 +155,9 @@ The UI design in the plan (layout, components, states), approved before UI code 
 (`docs/workflow.md` §2; sketches in `docs/design/` are not specs).
 
 Migrations; event emission points; worker concurrency; Markdown renderer configuration.
+
+Reply feedback (D51): the `reply_feedback` table and its migration, the two
+endpoints, the event, and the UI design of the buttons.
 
 Auto title (D46, proposed): the new columns on `conversations` and the `model_requests` change
 (`run_id` nullable, `purpose`, `conversation_id`); `title_source` in the conversation API; the

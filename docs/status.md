@@ -32,7 +32,8 @@ in review: Trash page (with the Remember button and the "changed in another tab"
 page content, Flow pane. D46 accepted: a one-time auto title from the first message (M3).
 The M3 migration waits for the owner's approval. Project Board is a later slice (M8c).
 D49 accepted: deleted skills go to Trash, a `trash_days` setting (default 30), Undo only for a
-permanent delete. Next design round: M2 Bots pages and Create bot.
+permanent delete. D51 accepted: bots improve their skills from the owner's feedback (slice
+M5d, after M5c); M3 starts to store reply ratings. Next design round: M2 Bots pages and Create bot.
 
 ## Next
 
@@ -63,6 +64,7 @@ permanent delete. Next design round: M2 Bots pages and Create bot.
 | M7 | not started | | |
 | M5b | not written | | Projects and memory (D37, D38, D43, D45); left bar pinning; side pane shared with Memory (D44) |
 | M5c | not written | | Skills drafted by bots (D41) |
+| M5d | not written | | Bots improve their skills from the owner's feedback (D51) |
 | M8 | not started | | |
 | M8b | not written | | Board map in the Flow pane (D30) |
 | M8c | proposed | | Project-wide Board, read-only, after M8b (`design/components/left-bar.md` §5) |

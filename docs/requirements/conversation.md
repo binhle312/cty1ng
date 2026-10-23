@@ -131,3 +131,14 @@ Title (D46, rules in `../conversation-rules.md` §8)
   stays "New conversation", with no error in the chat. The app does not make the request when
   the first message needed "Send anyway" (D39), when a daily cap is reached (D20, D42), or when
   the owner named the chat first. Titles are plain text, never Markdown.
+
+Feedback (D51, used by Improve in slice M5d)
+
+- UI-3.27: Under each complete bot message, on hover or focus, the owner sees two buttons:
+  Good answer and Bad answer. A click saves the rating at once. Bad answer also opens a short
+  note box ("What was wrong?", optional, Markdown, 2,000 characters or less, same keys as the
+  composer). The selected button stays visible. A second click on it removes the rating. The
+  note passes the sensitive-data check (UI-3.22). Icons and layout are chosen in the M3 UI
+  design review.
+- UI-3.28: A tooltip on the buttons says "Your ratings help <bot> improve its skills".
+  Ratings never change the message and never start a run.

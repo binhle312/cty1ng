@@ -463,11 +463,11 @@ handoffs
 
 ```
 settings
-  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, trash_days …
+  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, trash_days, improve_* (D51) …
   value  JSON NOT NULL
 ```
 
-Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"custom"`), `trash_days = 30` (projects and skills, D49).
+Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"custom"`), `trash_days = 30` (projects and skills, D49), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3` (D51; read by M5d, never hard-coded).
 
 ## 11. Files on disk
 
@@ -514,6 +514,8 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
 20. A purge keeps every `run_skills` row with its `skill_slug` and `version`; a new skill with
     the same slug never shows as the skill of an old run (D49).
 21. A restore never assigns a skill to a deleted bot; it only suggests bots (D49).
+22. A `reply_feedback` row belongs to a complete bot message, and its `run_id` and `bot_id`
+    are the message's run and bot (D51). Feedback never changes the message.
 
 ## 13. Usage and cost (D20, D21)
 
@@ -628,3 +630,37 @@ Invariants (part of §12): a project memory item is never in the prompt of a run
 whose conversation is outside that project, and a conversation memory item never outside its
 conversation; a memory item's text never matches the
 sensitive-data guard.
+
+## 15. Feedback for bot improvement (D51)
+
+The owner's feedback is the score that Improve (slice M5d) reads. The signals are recorded
+from the slice that creates them, so that M5d has history to read.
+
+```
+reply_feedback                                    -- TypeID prefix `fb`; built in M3
+  id                 TEXT PK
+  message_id         TEXT NOT NULL UNIQUE REFERENCES messages(id)  -- a bot message, status complete
+  run_id             TEXT NOT NULL REFERENCES runs(id)             -- the message's run
+  bot_id             TEXT NOT NULL REFERENCES bots(id)
+  rating             TEXT NOT NULL                -- up | down
+  note_md            TEXT NULL                    -- ≤ 2,000 chars; passed the guard (D39)
+  created_at, updated_at
+  CHECK (rating IN ('up', 'down'))
+```
+
+- One row per bot message. The owner can change the rating or the note (a PUT replaces the
+  row; the last write wins, because only the owner writes it), or remove it (the row is deleted). The message itself does not change
+  (invariant 9).
+- Only a bot message with `status = complete` and a `run_id` can get feedback. Other messages
+  return 409 `feedback_not_allowed`.
+- To find the skills a signal is about, join `reply_feedback.run_id` to `run_skills`.
+- **Plan outcomes (D48).** The slice that builds the plan card stores, for each plan version:
+  the planning run's id, the outcome (`approved`, `changes_requested`, `rejected`, or
+  `superseded` when a normal message replaced it), and the owner's note. Counting (D51): an
+  approval of version 1 is good; each `changes_requested` is bad; an approval of a later
+  version is neutral; `superseded` is context only.
+- **Skill drafts (D41).** `skill_drafts.status = 'rejected'` is a signal. Its
+  `created_by_run_id` gives the run.
+- M5d adds the tables for Improve runs, probes, and "signal used by draft X", so a signal
+  counts only once.
+

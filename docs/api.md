@@ -111,6 +111,8 @@ endpoint to create one.
 | POST | `/conversations/{id}/members` | `{bot_id}` | 409 `already_member`; posts the history card |
 | POST | `/conversations/{id}/members/{bot_id}/history` | `{mode: "full" \| "from_join"}` | activates the member |
 | DELETE | `/conversations/{id}/members/{bot_id}` | | removes |
+| PUT | `/messages/{id}/feedback` | `{rating: "up" \| "down", note_md?}` | creates or replaces the rating of a bot message (D51); 409 `feedback_not_allowed` when it is not a complete bot message; 422 `sensitive_data` for the note |
+| DELETE | `/messages/{id}/feedback` | | removes the rating (D51) |
 | POST | `/conversations/{id}/stop` | | cancels queued and running runs |
 | POST | `/runs/{id}/cancel` | | cancels one **queued** run (status `stopped`, no message); 409 `run_not_queued` once it has started (use Stop) |
 | GET | `/conversations/{id}/files?path=` | | workspace listing (read-only) |
