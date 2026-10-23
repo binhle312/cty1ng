@@ -97,6 +97,12 @@ Decision:
   records it. At the save, a card lists each delete and move with Approve and Reject. Approve
   saves them with the rest of the run. Reject saves the rest of the run without them. D23
   already has this rule for an external folder; now every Library has it.
+- **Moving a chat into a project (owner, 2026-10-23).** The move dialog has "Copy files to the
+  project Library", checked by default. Copy saves the chat's files (not `attachments/`) to the
+  project Library as one commit "Moved from <chat>", through the save queue. A file with the
+  same name gets the `-from-<chat-slug>` suffix. Unchecked, nothing is copied. Either way, the
+  chat's own Library stays as a read-only archive, readable from that chat. A chat cannot move
+  while one of its runs is running or has unsaved changes.
 - **The word "branch" is not in the UI.** D13 uses "branch" for edited messages. The UI says
   "Saved to Library", "unsaved changes" and "also changed in".
 
@@ -187,7 +193,7 @@ Consequences:
   entry for chats outside a project (the left bar has no Library row there today), and an
   "Unsaved changes" list on the Library page.
 - **D37** changes from "conversations share one workspace" to "conversations share one main;
-  each run writes on its own branch". **D23** keeps its review branch; each run's branch saves
+  each run writes on its own branch", and a move into a project can copy the chat's files. **D23** keeps its review branch; each run's branch saves
   into it, and the owner merges it in their own tools.
 - **Documents to change when accepted:** `domain-model.md` §11 (folders, new table, invariants),
   `architecture.md` (workspace port, lock), `security.md` §2.3 (run worktree), `realtime-events.md`, `api.md`
