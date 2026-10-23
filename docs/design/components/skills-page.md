@@ -4,7 +4,7 @@
 > Previews: `../previews/command-dark/skills-layout.*` (cards B–B3),
 > `skills-editor.*` (C0–C6), `skills-lifecycle.*` (D1–D6) and `skills-delete.*` (D2a, D7–D8),
 > each a `.png` and a `.html`. Buttons and check boxes follow `buttons.md`. Follows D5, D6, D14,
-> D16, D39 and D49 (proposed). The labels and messages use Simplified Technical English.
+> D16, D39 and D49. The labels and messages use Simplified Technical English.
 
 ## 1. Where it opens
 
@@ -176,7 +176,7 @@ The same bot list. Title "Remove {skill} from bots? 🧹", text "Tick the bots t
 using it. They stop on their next run. A run that works now keeps it to the end." Every box
 starts ticked. Buttons: **Skip** and **Remove from {n} bots** (`danger`), disabled with no tick.
 
-## 11. Delete (D7, D49 proposed)
+## 11. Delete (D7, D49)
 
 - **Delete skill** is only in the ⋯ menu of a deprecated skill. An active skill must be
   deprecated first. Delete works also while bots use the skill.

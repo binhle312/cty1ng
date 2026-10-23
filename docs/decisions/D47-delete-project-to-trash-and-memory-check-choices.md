@@ -1,6 +1,6 @@
 # D47. Delete sends the whole project to Trash; the owner picks what wins in a memory check
 
-Status: accepted (2026-10-22, owner). The owner gave these rules in the UI design review, round 6.3. It amends D37 (projects) and D43 (memory check). D49 (proposed) changes two parts: the 30 days become the `trash_days` setting, and the Undo toast goes away.
+Status: accepted (2026-10-22, owner). The owner gave these rules in the UI design review, round 6.3. It amends D37 (projects) and D43 (memory check). D49 (accepted 2026-10-23) changes two parts: the 30 days become the `trash_days` setting, and the Undo toast goes away.
 Decision:
 - **Delete project.** A delete sends the project to Trash as one item, with all its chats,
   memory items and Library files. Runs in the project stop first.

@@ -1,6 +1,6 @@
 # D49. Deleted skills go to Trash, Trash keeps items for a set number of days, and only a permanent delete has Undo
 
-Status: proposed (2026-10-23). The owner gave these rules in the UI design review, round 8. It amends D47 (project delete), the skill rules in `../domain-model.md` §3.4, and rule 5 of `../../AGENTS.md`. The owner accepts it in the skills spec PR.
+Status: accepted (2026-10-23, owner). The owner gave these rules in the UI design review, round 8. It amends D47 (project delete), the skill rules in `../domain-model.md` §3.4, and rule 5 of `../../AGENTS.md`.
 Decision:
 - **Delete a skill.** Only a deprecated skill has **Delete skill**. The delete works also while
   bots use the skill: the app removes it from every bot in the same transaction, and the dialog
@@ -33,8 +33,8 @@ Not chosen:
 - **Delete only when no bot uses the skill.** The owner must first visit every bot. The dialog
   shows the bots instead.
 - **The slug stays taken forever.** Old chats do not need it, because they keep their own copy.
-Consequences: AGENTS.md rule 5 changes to "Skill versions are never updated; only the Trash
-purge deletes them (D49)." `domain-model.md`: `skills.trashed_at`, a Trash record with the bot
+Consequences: AGENTS.md rule 5 changes to "Skill versions are never updated or deleted,
+except by the Trash purge (D49)." `domain-model.md`: `skills.trashed_at`, a Trash record with the bot
 list, `run_skills` keeps `skill_slug` and `version`, the slug is unique only among skills that
 are not purged, invariant 2 changes, and the setting `trash_days`. `api.md`: trash and restore
 endpoints for skills. D47's Undo toast goes away. A migration is needed (M1 for skills; M5b

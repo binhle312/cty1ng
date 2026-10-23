@@ -31,7 +31,7 @@ sends the whole project to Trash; memory check choices) and D48 (bots plan first
 in review: Trash page (with the Remember button and the "changed in another tab" cards), Library
 page content, Flow pane. D46 accepted: a one-time auto title from the first message (M3).
 The M3 migration waits for the owner's approval. Project Board is a later slice (M8c).
-D49 proposed: deleted skills go to Trash, a `trash_days` setting (default 30), Undo only for a
+D49 accepted: deleted skills go to Trash, a `trash_days` setting (default 30), Undo only for a
 permanent delete. Next design round: M2 Bots pages and Create bot.
 
 ## Next
@@ -42,9 +42,6 @@ permanent delete. Next design round: M2 Bots pages and Create bot.
 
 | Item | Needed by |
 | --- | --- |
-| Accept D49 (skills to Trash, `trash_days`, Undo only for a permanent delete) and the AGENTS.md rule 5 change | M1 plan |
-| Approve the new skill size limits (`security.md` §2.5): name 64, description 1,024, body 20,000 characters | M1 plan |
-| Approve the M1 migration: skill tables with `trashed_at`, `trashed_bot_ids`, `updated_at` (D49) | M1 plan |
 | Approve the M3 migration for D46 (auto title) before it is written | M3 plan |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
 | Approve the M2 migration: `bots.header_position`. Claude Code stops for this approval before it writes the migration | M2 plan |
@@ -56,7 +53,7 @@ permanent delete. Next design round: M2 Bots pages and Create bot.
 | Slice | State | PR | Notes |
 | --- | --- | --- | --- |
 | M0 | not started | | |
-| M1 | not started | | Design approved: `design/components/skills-page.md` (round 8); D49 proposed |
+| M1 | not started | | Design approved: `design/components/skills-page.md` (round 8); D49 accepted |
 | M2 | not started | | |
 | M3 | not started | | |
 | M4 | not started | | |
