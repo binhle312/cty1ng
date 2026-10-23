@@ -189,8 +189,10 @@ Consequences:
   off.
 - **Flow view (M8).** The run's last step shows "Saved to Library" (with an overlap mark when
   there is one) or "Unsaved changes".
-- **UI design (M6 Library round).** The overlap notice, the unsaved changes card, the delete and move approval card, a Library
-  entry for chats outside a project (the left bar has no Library row there today), and an
+- **UI design (M6 Library round).** The overlap notice, the unsaved changes card, the delete and move approval card, the
+  Library entry for chats outside a project (owner, 2026-10-23: the chat row's ⋯ menu gets
+  "Library", which opens a floating card with the file tree on the left and the file content
+  on the right, like a git UI; the project Library page reuses the same tree and viewer), and an
   "Unsaved changes" list on the Library page.
 - **D37** changes from "conversations share one workspace" to "conversations share one main;
   each run writes on its own branch", and a move into a project can copy the chat's files. **D23** keeps its review branch; each run's branch saves
