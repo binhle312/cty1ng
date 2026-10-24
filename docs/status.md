@@ -8,7 +8,7 @@ status.
 definition of done in `AGENTS.md` §9). The owner updates it for owner-only steps (reviews,
 approvals). Keep it short: link to PRs and briefs instead of describing work.
 
-Last updated: 2026-10-23
+Last updated: 2026-10-24
 
 ## Now
 
@@ -33,7 +33,14 @@ page content, Flow pane. D46 accepted: a one-time auto title from the first mess
 The M3 migration waits for the owner's approval. Project Board is a later slice (M8c).
 D49 accepted: deleted skills go to Trash, a `trash_days` setting (default 30), Undo only for a
 permanent delete. D51 accepted: bots improve their skills from the owner's feedback (slice
-M5d, after M5c); M3 starts to store reply ratings. Next design round: M2 Bots pages and Create bot.
+M5d, after M5c); M3 starts to store reply ratings. M2 Bots design round 9: the Bots page grid,
+the Create bot page and the standards for pin, bot status, dashed slot, time format and sort are
+agreed and saved in `design/components/`. The bot page (`bot-page.md`: edit layout, Profile,
+Skills and Activity tabs, colour band), Clone and the avatar colour rules (any colour, Custom,
+Random, upload with crop) are agreed too. The Usage tab design is agreed; its data (task verdict, setup change
+record, targets) is not specified yet. The Memory tab comes with M5b. D50 (bots to Trash) and D55 (provider tools first, tool switches; code execution only for small
+analysis scripts in the provider's sandbox; MCP locked) are accepted, and the owner approved the M2
+migration and API changes in PR #20 (2026-10-24).
 
 ## Next
 
@@ -47,7 +54,7 @@ M5d, after M5c); M3 starts to store reply ratings. Next design round: M2 Bots pa
 | D53 accepted (web through provider web tools): check the default limits and approve the migration for the bot setting and the run flag | Web access milestone plan |
 | Approve the M3 migration for D46 (auto title) before it is written | M3 plan |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
-| Approve the M2 migration: `bots.header_position`. Claude Code stops for this approval before it writes the migration | M2 plan |
+| Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a migration approval | M3 and M7 plans |
 | Approve the M5b migrations: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars. Claude Code stops for this approval before it writes them | M5b plan |
 | Write the M5b brief: projects, memory (D37, D38, D43), goal and instructions (D45), pinning, the API contracts that D43 and D45 list as not written yet | M5b start |
 
@@ -57,7 +64,7 @@ M5d, after M5c); M3 starts to store reply ratings. Next design round: M2 Bots pa
 | --- | --- | --- | --- |
 | M0 | not started | | |
 | M1 | not started | | Design approved: `design/components/skills-page.md` (round 8); D49 accepted |
-| M2 | not started | | |
+| M2 | UI design review | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec) | Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open |
 | M3 | not started | | |
 | M4 | not started | | |
 | M5 | not started | | |

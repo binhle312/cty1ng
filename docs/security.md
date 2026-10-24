@@ -55,7 +55,8 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
 
 - Every path goes through `Workspace.resolve()`: refuses absolute paths, drive letters, `..`
   escapes, symlinks resolving outside the root, and anything under `.git`.
-- Writes only to the bot's `write_paths`; `inbox/` is read-only. (Bot memory is not a
+- Writes only inside the Library that the run saves to, anywhere except `attachments/`
+  (read-only) and `.git` (D52). Bots have no per-bot write folders. (Bot memory is not a
   workspace file: it lives in the database behind the memory tools, D38.)
 - Read size limit (1 MB text); list limit (2,000 entries).
 - **No shell tool, no network tool, no code execution** in this milestone. Web access comes
@@ -69,7 +70,7 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
 | Upload | Accepted | Checks |
 | --- | --- | --- |
 | Avatar | PNG, JPEG, WebP ≤ 2 MB | Detect type from content (`sharp`), reject others incl. SVG; strip metadata; re-encode to 256×256 WebP; store by SHA-256 |
-| Attachment | Text (`.md .txt .csv .json .yaml .html .css .js .ts .py .sql .xml .svg`), images, PDF; 10 files × 10 MB | Sanitised file name; saved under `inbox/<message_id>/`; SVG and HTML are only ever shown as text |
+| Attachment | Text (`.md .txt .csv .json .yaml .html .css .js .ts .py .sql .xml .svg`), images, PDF; 10 files × 10 MB | Sanitised file name; saved under `attachments/<yyyy-mm-dd>-<conversation-slug>/` (D52); SVG and HTML are only ever shown as text |
 | Skill zip | `.zip` ≤ 5 MB, ≤ 200 entries, ≤ 20 MB uncompressed | Reject entries with absolute paths or `..` (zip slip); only `<slug>/SKILL.md` read, every other file is listed as skipped and never opened; UTF-8 only; YAML parsed with the `yaml` package's default core schema (no custom tags); frontmatter validated by a Zod schema |
 
 ### 2.5 Skills, personas and prompt injection
@@ -77,7 +78,7 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
 - Skills and personas are text in the database; they are never written to code paths and never
   executed.
 - Size limits: skill name 64 characters, description 1,024 characters, body 20,000 characters
-  (all required; a body over 500 lines gets a warning only), persona 20 KB. The server checks the
+  (all required; a body over 500 lines gets a warning only), persona 8,000 characters (`bot_persona_max`). The server checks the
   same limits as the editor, also on import and on bot drafts (D41).
 - Prompt injection from any source is an **accepted risk** whose blast radius is limited by
   2.3 (sandbox), by the turn budget and caps, and by the owner approving handoffs. Never

@@ -31,8 +31,8 @@ Tests never call real providers (`AGENTS.md` §8).
     - when_contains: "login"
       tool_calls:
         - load_skill: {name: write-user-stories}
-        - write_file: {path: out/ba/stories.md, content: "# Login stories\n..."}
-      reply: "I wrote out/ba/stories.md. @Designer can you sketch the screens?"
+        - write_file: {path: user-stories/login.md, content: "# Login stories\n..."}
+      reply: "I wrote user-stories/login.md. @Designer can you sketch the screens?"
   designer:
     - reply: "Two screens: sign-in and reset. @BA agreed?"
   ```

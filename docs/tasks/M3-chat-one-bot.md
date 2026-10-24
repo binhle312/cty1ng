@@ -43,7 +43,7 @@ event log keeps the UI exact across reloads.
 - Unread dots and `POST /read`.
 - Usage recording per model request (`model_requests`, raw `usage_details`, cost via
   genai-prices with catalog override, D21) and run totals;
-  message usage tooltip (UI-3.6b), bot usage panel (UI-6.8, fixed to "Last 7 days" until the
+  message usage tooltip (UI-3.6b), bot usage panel (UI-6.8; the agreed design is `design/components/bot-page.md` §9, its data is open in §9.6; fixed to "Last 7 days" until the
   shared time range picker arrives in M7), `GET /usage`.
 - Bot detail UI-6.7, 6.8 now filled.
 - Sensitive-data guard for message text (D39): UI-3.22 and the server check.

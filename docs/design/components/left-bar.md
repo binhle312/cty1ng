@@ -53,30 +53,30 @@ projects scroll with the list (they are not sticky).
 Top to bottom:
 
 1. **Project header**: 32 px project tile, name, ⋯ menu. Under it a stats line
-   "4 chats · 3 bots · 12 files" in `on-surface-muted`, then the **goal** (`projects.description`) in
+   "4 conversations · 3 bots · 12 files" in `on-surface-muted`, then the **goal** (`projects.description`) in
    `on-surface-muted`, clamped to 3 lines; hover shows the full text.
 2. **Board** row, shown as "Later" until slice M8c (§5).
 3. **Memory** row with its item count; a `primary` dot when a bot saved something new since the owner
    last looked. Opens the Memory pane (`memory-pane.md`).
 4. **Library** row with its file count. Opens the Library page in the main area (the project's
    workspace files).
-5. **Chats** section label with a "+" icon button aligned right (tooltip "New chat"). The label
+5. **Conversations** section label with a "+" icon button aligned right (tooltip "New conversation"). The label
    has no fold arrow, and its icon lines up with the Memory and Library icons. Then the
-   chats, newest activity first. Only the chat list scrolls: the header, Board, Memory, Library
-   and the Chats label stay in place. It scrolls as the rail does (§1.3): the mouse wheel or a
+   conversations, newest activity first. Only the conversation list scrolls: the header, Board, Memory, Library
+   and the Conversations label stay in place. It scrolls as the rail does (§1.3): the mouse wheel or a
    drag, a fade at the cut edge, and ˄/˅ buttons on hover. The list ends 24 px above the
    floating user panel. No folding, no separate 1:1 and group sections, no Bots section
    (bots show in the top header).
 
-Chat row menu: Rename, Move to project, Move out of project, Delete.
+Conversation row menu: Rename, Move to project, Move out of project, Delete.
 
 ## 3. Bar 2 on Home
 
 - Title **"Home Sweet Home"**, subtitle "N bots · N skills" (skills = distinct skills used by the
   owner's bots).
 - One Memory row (bot and conversation memory outside projects). No Library row.
-- One chat list, newest activity first.
-- **First run** (no bots): subtitle "No bots yet", a dashed button "+ Hey, let's chat 👋" in the
+- One conversation list, newest activity first.
+- **First run** (no bots): subtitle "No bots yet", a dashed button "+ Hey, let's talk 👋" in the
   same style as the rail's New project tile, and the line "Bigger work? Start a project with + on
   the left."
 
@@ -87,10 +87,10 @@ collapses to the avatar (`user-panel.md` §4). Bar 2 is also hidden on the New p
 
 ## 5. Project Board (later, slice M8c)
 
-A read-only project-wide Board (chats as frames, live bot states, shared files, waiting handoffs),
+A read-only project-wide Board (conversations as frames, live bot states, shared files, waiting handoffs),
 after M8b. Hooks that earlier slices add so it fits without breaking anything:
 
-- M5b: the conversation API object carries `project_id`; moving a chat emits
+- M5b: the conversation API object carries `project_id`; moving a conversation emits
   `conversation.updated`; index `conversations(project_id)`.
 - M8: the flow store keeps `conversation_id` on every run, step and handoff; selectors do not
   assume one conversation.

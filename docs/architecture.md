@@ -62,7 +62,7 @@ Postgres. D35 explains why.
 | `core/events/` | `appendEvent(tx, type, data)`; the hub that wakes subscribers after commit | Be called outside a unit of work that also changes state |
 | `core/runs/` | The worker loop: claim through the queue port, leases, retries, cancellation, building the prompt, the bot's tools, writing the bot message | Decide who runs (that is `decideRuns`); touch files except through the workspace port |
 | `core/catalog/` | The model catalog from `config/models.yaml`, availability (key present), effort per model | Store keys anywhere |
-| `adapters/workspace/local-git/` | `resolve()` and the path sandbox, git commits | Know about bots or conversations beyond ids and write paths |
+| `adapters/workspace/local-git/` | `resolve()` and the path sandbox, git commits | Know about bots or conversations beyond ids and the Library root of the run |
 | `adapters/db/` | Drizzle table definitions, repositories, the unit of work | Business logic |
 | `app/` | `main.ts` (wiring), `config.ts` (env parsed with Zod), `cli.ts` | Logic of its own beyond wiring |
 

@@ -9,10 +9,10 @@
 
 - The side pane holds **Flow or Memory, one at a time** (D44). It is on the right by
   default. The ⇄ button (UI-12.1) swaps it to the left, and Flow and Memory share that side.
-- It opens from the Memory row in bar 2 (`left-bar.md` §2). The chat header keeps only its Flow
+- It opens from the Memory row in bar 2 (`left-bar.md` §2). The conversation header keeps only its Flow
   button; there is no Memory button there.
 - Opening: the pane slides in from its side over 200 ms ease-out, animating only `transform` and `opacity`. The
-  chat narrows once, at the end, so text does not reflow during the slide. Reduced motion: no
+  conversation narrows once, at the end, so text does not reflow during the slide. Reduced motion: no
   slide.
 
 ## 2. Content
@@ -25,7 +25,7 @@ Order follows D43 (project memory wins over bot memory):
 Each item: text, "last changed by", a "New" tag for saves the owner has not seen. Buttons: Add, and
 "Memory page ›" at the bottom.
 
-Outside projects: a 1:1 shows that bot's own memory; a group chat shows the conversation memory,
+Outside projects: a 1:1 shows that bot's own memory; a group conversation shows the conversation memory,
 then each bot's own.
 
 ## 3. Conflicts
@@ -34,7 +34,7 @@ then each bot's own.
 - When the owner's message disagrees with project memory (D43), the bot asks a question in its
   plan before it acts (`plan-card.md` §2). For a plain answer with no plan, it asks a normal
   question. The memory item gets a mark and the `primary` link **"Conflicts with your last message"**.
-  The link shows an underline only on hover. A click opens the chat from any page. The chat
+  The link shows an underline only on hover. A click opens the conversation from any page. The conversation
   scrolls to the question of the bot, and the question flashes `primary` one time.
 - After the owner answers, a different answer adds the line "This differs from project memory"
   with an **Update project memory** button. The line does not stop the work.

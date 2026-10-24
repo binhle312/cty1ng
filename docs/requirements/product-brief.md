@@ -31,7 +31,7 @@ solves each:
 2. **The work is invisible.** Chat platforms are designed for humans: a chat log shows
    messages, not who is working, who is waiting, which skill a bot used or how work moved
    between bots. The app adds an interactive view of
-   the flow beside the chat (Flow pane with Team, Timeline and Board maps; D26, D27, D30), plus
+   the flow beside the conversation (Flow pane with Team, Timeline and Board maps; D26, D27, D30), plus
    provenance and cost on every reply.
 3. **It cannot be shaped to the owner's needs.** The platform fixes the layout, the commands and
    the look. Here the owner defines the bots, personas and versioned skills, sets the
@@ -74,16 +74,16 @@ given the order. Nothing runs while the laptop sleeps or the app is closed; that
    toggle "always load", change avatar, edit name and persona.
 4. **Header**: every bot as a round avatar with a name tooltip, draggable into a conversation.
 5. **Conversation rail**: round icons with title tooltips; "+" at the top creates a conversation.
-6. **Chat**: one or more bots per conversation, `@mention` limited to members, streaming
+6. **Conversation**: one or more bots per conversation, `@mention` limited to members, streaming
    replies, skill provenance chips, message editing with branches.
 7. **Bot discussion**: optional, bounded by a turn budget the bots are told about.
 8. **Parity with the Discord prototype**: a workspace with files (one per project, D37), attachments,
    approval handoffs.
 9. **Statistics**: charts of usage by model, bot and skill (D24).
-10. **Flow view**: an animated Team and Timeline map beside the chat (D26, D27).
+10. **Flow view**: an animated Team and Timeline map beside the conversation (D26, D27).
 11. **Projects and memory** (D37, D38): conversations grouped into projects; bots
     remember how the owner likes them to work (bot memory) and facts about each project
-    (project memory), or about a multi-bot chat outside a project (conversation memory), visible
+    (project memory), or about a multi-bot conversation outside a project (conversation memory), visible
     and editable on a Memory page.
 12. **Sensitive-data guard** (D39): likely secrets (passwords, API keys, card or
     passport numbers) are caught before they are sent to a model provider or saved to memory.
@@ -116,15 +116,15 @@ Confirmed by the owner (2026-10-21).
 | Multiple humans, login, permissions | No second user yet; auth is real work and real risk | VPS phase (M9) |
 | VPS deployment | Local-first first | M9 |
 | Local models (Ollama, llama.cpp) | Hosted APIs only; the model catalog makes it a config change later. An option to consider for privacy, not decided. Rough cost: about 0.6 GB of RAM or VRAM per billion parameters at 4-bit, and about 30B parameters (≈ 18–20 GB) as a realistic minimum for role-bot work | Later, owner decides |
-| A coding IDE | Bots create and edit documents and prototypes (Markdown, mockups, plans). They never write production code and never run tests, builds or commands; implementation goes to a coding agent (Claude Code, Codex) | Never |
+| A coding IDE | Bots create and edit documents and prototypes (Markdown, mockups, plans). They never write or change code and never run tests, builds or commands on the owner's machine; implementation goes to a coding agent (Claude Code, Codex). The one exception: with the provider's Code execution tool on, a bot may run small scripts that analyse data in the provider's sandbox (D55) | Never |
 | Scheduled and proactive bots | Needs a scheduler and delivery rules (Researcher, Reminder) | New milestone after phase 1 |
 | Web access for bots | Provider web tools with their own security rules (D53; Researcher, Trip planner) | With the scheduled-bots milestone or later |
 | Reading external apps (calendars, task managers, mail) | Inside the app only for now | Much later |
-| A permanent activity log (who changed what, before and after, for every change) | One owner: chat lines, memory item fields, run steps and git history cover tracing (D38) | M9, with multiple users |
+| A permanent activity log (who changed what, before and after, for every change) | One owner: conversation lines, memory item fields, run steps and git history cover tracing (D38) | M9, with multiple users |
 | Payments and bookings | The trip planner proposes; a human pays. Never automatic, never stores card details | Later, if ever |
 | A "lead" bot that routes un-mentioned messages | Hides who decided what; extra cost (D2) | Maybe never |
 | Conversation search, archive, folders | Rail works for a few dozen conversations | Later |
-| History summarisation | Old messages are trimmed instead (`../conversation-rules.md`). When it comes: show it as a state and a system line, and let the owner start it by hand (`../research/chat-client-patterns.md` P10) | Later |
+| History summarisation | Old messages are trimmed instead (`../conversation-rules.md`). When it comes: show it as a state and a system line, and let the owner start it by hand (`../research/conversation-client-patterns.md` P10) | Later |
 | Structured question cards from bots (choices instead of free text) | Handoff cards cover the formal step for now (research P11) | Later |
 | Reply to a specific message | Mentions plus D31 cover it; needs a migration and API change (research P4) | After M5 |
 | Bots working on another project folder on the machine (following its AGENTS.md and skills) | Needs a secrets deny-list, review branches and approval rules (D23) | Later milestone |
@@ -142,7 +142,7 @@ closed for good.
 
 | Failure | What the app does about it | Status |
 | --- | --- | --- |
-| A bot overwrites the owner's document | Bots write only to their `write_paths`; every change is a git commit in the workspace, so it can be seen and reverted (M6). Writing into a real project folder goes to a review branch (D23) | Covered in M6; D23 later |
+| A bot overwrites the owner's document | Bots write only in the Library of their run, never in `attachments/`, and only after the owner approves the plan (D48, D52); every change is a git commit in the workspace, so it can be seen and reverted (M6). Writing into a real project folder goes to a review branch (D23) | Covered in M6; D23 later |
 | Bots argue in a loop | Discussion is off by default and bounded by a turn budget the bots are told about (D4); runs-per-hour cap; Stop button | Covered in M5 |
 | A confident but wrong research summary | Not covered yet. Candidates: sources required in summaries, a "verify" step, the Researcher's skill telling it to mark uncertainty | Open, with the Researcher |
 
@@ -153,8 +153,8 @@ journey 1 (see `../testing.md`).
 
 **J1. First use.** Owner opens the app → creates a skill `write-user-stories` → creates bot
 "BA" with a model and that skill → clicks "+" to create a conversation → drags BA from the header
-into the chat → chooses "Full history" → types "Write stories for a login page" → BA streams a
-reply, shows the chip `write-user-stories v1`, and writes `out/ba/stories.md`.
+into the conversation → chooses "Full history" → types "Write stories for a login page" → BA streams a
+reply, shows the chip `write-user-stories v1`, and writes `user-stories/login.md`.
 
 **J2. Team discussion.** Owner adds "Designer" to the same conversation → enables bot
 discussion with limit 4 → asks "@BA @Designer agree on the login screens" → the bots exchange up
@@ -168,7 +168,7 @@ to upgrade BA (unchecked) → owner leaves it → BA still uses v1 → later, on
 owner sees "v1 → v2 available", reviews the diff, clicks Upgrade.
 
 **J5. Model retired.** A provider retires BA's model → BA shows "model unavailable" → owner
-clicks "Clone with another model" → the create form opens prefilled → owner picks a new model
+clicks Clone on its banner → the create form opens prefilled → owner picks a new model
 and saves → adds the new bot to the conversation.
 
 **J6. Changed mind.** Owner edits an earlier message → a new branch starts there → bots reply
@@ -194,7 +194,7 @@ Use these words, with these meanings, in code, database, API, UI and docs.
 | **Model catalog** | `config/models.yaml`: the models a bot can be created with. |
 | **Effort** | A model's reasoning-effort setting, if the model has one. |
 | **Unavailable bot** | A bot whose model is not in the catalog or has no API key. Cannot run. |
-| **Conversation** | A chat with one human and zero or more bots, with its own workspace. |
+| **Conversation** | A thread of messages between one human and zero or more bots, with its own workspace. The UI, code, database and API always say "conversation", never "chat" (owner, 2026-10-23). |
 | **Member** | A bot in a conversation (`conversation_bots`): `pending_history`, `active` or `removed`. |
 | **History choice** | What a newly added bot may read: full history, or from the point it joined. |
 | **Message** | One entry in a conversation, by a human, a bot, or the system. |
@@ -205,13 +205,12 @@ Use these words, with these meanings, in code, database, API, UI and docs.
 | **Turn budget** | The maximum bot turns between two human messages in a conversation. |
 | **Event** | A persisted, sequence-numbered record of something visible changing. The UI is built from events. |
 | **Workspace** | The folder and git repo where bots read and write files: one per project, shared by its conversations, or one for a conversation outside any project (D37). |
-| **Write paths** | The workspace paths a bot may write to. |
 | **Handoff** | A bot's request that the owner approve files and pass them to another bot or to the owner. |
 | **Team directory** | The list of other bots (name, slug, one-line description) in every prompt, so a bot knows whom to mention or hand off to. |
 | **Estimated cost** | Tokens × catalog prices at the time of the run. An estimate, not an invoice. |
 | **Daily cap** | Owner-level limit on today's estimated spend; alerts at 75% and 90%, and new runs are refused once reached (D40). |
 | **Project** | A named group of conversations with a shared project memory (and, later, an attached folder, D23). A conversation may sit outside any project (D37). |
-| **Bot memory** | What a bot has learned about how the owner likes it to work, from 1:1 chats outside projects. Used by that bot everywhere (D38). |
+| **Bot memory** | What a bot has learned about how the owner likes it to work, from 1:1 conversations outside projects. Used by that bot everywhere (D38). |
 | **Library** | The project's workspace files as the UI names them: a row in the left bar that opens the files page (`../design/components/left-bar.md`). |
 | **Project memory** | Facts about the work, learned in a project's conversations and shared by every bot in that project, never outside it (D38). |
 | **Conversation memory** | Facts learned in a multi-bot conversation outside any project, shared by the bots in that conversation only; offered for merging into a project when the conversation moves into one (D38). |

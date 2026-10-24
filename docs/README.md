@@ -29,6 +29,7 @@ New to the project (human or agent), read in this order:
 | [realtime-events.md](realtime-events.md) | Event log, SSE stream, event types and payloads, reconnect |
 | [api.md](api.md) | HTTP endpoints, request and response shapes, errors |
 | [research/](research/) | Notes from studying other products (behaviour only, no copied code). Inputs, not spec |
+| [ideas/](ideas/README.md) | Future ideas the owner wants to keep. Not decisions, not spec; nobody builds from them |
 | [design/](design/README.md) | Screen sketches and mockups. **Not final**: the UI is agreed with the owner in each slice plan |
 | [flow-view.md](flow-view.md) | Flow pane: scene and cue model, swappable renderer, animation, performance and memory budgets |
 | [frontend-conventions.md](frontend-conventions.md) | TypeScript rules for the frontend and the lint settings that enforce them |

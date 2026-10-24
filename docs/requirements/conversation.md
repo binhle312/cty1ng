@@ -24,7 +24,7 @@ Chatting with one or more bots: messages, streaming, mentions, edits and branche
   Acceptance criteria: UI-3.20, UI-3.21.
 - **CV-10.** *(D39.)* As the owner, I want to be warned before a password, API key or card number in my message or file is sent to a model, so that I don't leak secrets by accident.  
   Acceptance criteria: UI-3.22, UI-3.23.
-- **CV-11.** *(D46.)* As the owner, I want each new chat to get a short title from my first message, so that I can find it again without the work of a rename.  
+- **CV-11.** *(D46.)* As the owner, I want each new conversation to get a short title from my first message, so that I can find it again without the work of a rename.  
   Acceptance criteria: UI-3.24 to UI-3.26.
 
 ## Acceptance criteria
@@ -121,16 +121,16 @@ Title (D46, rules in `../conversation-rules.md` §8)
   model for a short title (the model is asked for 2 to 6 words; the app keeps 60 characters or
   less). The app needs an available active bot for this, because it uses that bot's model. A
   first message stored with no such bot gets no title (`../conversation-rules.md` §8 rule 3). The title shows in the
-  header, the rail tooltip and the chat lists when `conversation.updated` arrives. The send
+  header, the rail tooltip and the conversation lists when `conversation.updated` arrives. The send
   and the bot reply do not wait for it. The app makes this request one time per conversation.
   Later messages and edits do not change the title.
 - UI-3.25: A title that the owner sets (rename in the header, the rail menu or conversation
   settings) always wins. The app never replaces it, also when the rename happens during the
   title request.
 - UI-3.26: If the request fails, times out, or gives an empty or flagged answer, the title
-  stays "New conversation", with no error in the chat. The app does not make the request when
+  stays "New conversation", with no error in the conversation. The app does not make the request when
   the first message needed "Send anyway" (D39), when a daily cap is reached (D20, D42), or when
-  the owner named the chat first. Titles are plain text, never Markdown.
+  the owner named the conversation first. Titles are plain text, never Markdown.
 
 Feedback (D51, used by Improve in slice M5d)
 
