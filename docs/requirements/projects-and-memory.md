@@ -33,7 +33,7 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
 | Plain answer (no plan) | Only when the owner clicks **Remember** on the bot's offer | The click | D48 |
 | Planning run | No. Its tools are read-only. It lists memory changes on the plan card | — | D48 |
 | Action run, the item is in the approved plan | Yes | The plan approval | D48 |
-| Action run, the item is not in the plan | Not decided (open question) | — | — |
+| Action run, the item is not in the plan | Not decided. Open question in D56 (proposed) | — | D56 |
 | A run that read the web | Only items in the approved plan, or the **Remember** button | Plan or click | D53 |
 | Memory is off (in Settings, or "Don't use memory" in the conversation) | No. The memory tools are not offered | — | D38 |
 | Tidy memory | Only the changes the owner applies on the proposal card | The owner applies | D38 |
