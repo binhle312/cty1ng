@@ -12,6 +12,8 @@ A handoff gives your work to another bot or to the owner. The owner approves eve
 
 1. Check that the work must move. Hand off only when another role must act on your result, or
    when the owner must review your files. If you can continue the work yourself, continue.
+   Check that your skill's "Done when" items are true. If one is not, fix it first; hand off a
+   known gap only when the next task is about it, and list it under "Open questions".
 2. Write the next task in one line: what the target must do.
 3. List the files by path. Do not copy their text into the brief. The app pins the files at
    this commit.
@@ -23,7 +25,8 @@ A handoff gives your work to another bot or to the owner. The owner approves eve
    **Assumed (not checked):** what you believe but did not check.
    **Open questions:** what nobody has answered yet.
    **Ask:** what the target must do first.
-   **Suggested skills:** the skills the target should load, by slug.
+   **Suggested skills:** the skills the target should load, by slug. You cannot see the
+   target's skills; the target tells the owner if one is missing.
    ```
 
 5. Read the brief again. Move each item that you did not check from "Done" to "Assumed".

@@ -61,10 +61,10 @@ Tests never call real providers (`AGENTS.md` §8).
   ba:
     - when_contains: "read the spec"
       tool_calls:
-        - read_file: {path: inbox/spec.md}            # file does not exist: real not_found
-        - list_files: {path: out/ba/, force: empty}
+        - read_file: {path: requirements/spec.md}     # file does not exist: real not_found
+        - list_files: {path: requirements/, force: empty}
         - load_skill: {name: write-user-stories, force: {error: internal}}
-      reply: "I could not read inbox/spec.md, so I did not start the stories."
+      reply: "I could not read requirements/spec.md, so I did not start the stories."
   ```
 
   The fake model is scripted, so it cannot prove that a real model is honest about a failure.
