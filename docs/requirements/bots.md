@@ -38,6 +38,8 @@ Design: `../design/components/bots-page.md` (agreed, round 9).
   description, persona, avatar style, model, effort, Advanced values, tool
   switches, and pins (with versions and always-load). All editable before saving. Cancel creates
   nothing. The page opens on step 4, Model, with every step ✓ (`../design/components/create-bot-page.md` §6).
+  The suggested name fits the name limit and is free ("(copy 2)" when "(copy)" is taken). A model
+  change turns off copied tools the new model does not have and says which ones (§3.0 there).
 - UI-4.5: **Order.** Pinned bots come first, in the owner's order; the others follow by the
   `bot_order` setting: *Recent activity* (default; bots with no activity follow, newest created
   first) or *Created*, each newest first or oldest first. Two sort buttons beside the Others

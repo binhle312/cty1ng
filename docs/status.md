@@ -54,6 +54,7 @@ migration and API changes in PR #20 (2026-10-24).
 | D53 accepted (web through provider web tools): check the default limits and approve the migration for the bot setting and the run flag | Web access milestone plan |
 | Approve the M3 migration for D46 (auto title) before it is written | M3 plan |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
+| Review the bot purge tombstone and `bots.create_request_hash` (`domain-model.md` §2 Purge, Idempotency), added after the M2 schema approval. The purge job itself is built with Trash (M5b) | M2 plan |
 | Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a migration approval | M3 and M7 plans |
 | Approve the M5b migrations: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars. Claude Code stops for this approval before it writes them | M5b plan |
 | Write the M5b brief: projects, memory (D37, D38, D43), goal and instructions (D45), pinning, the API contracts that D43 and D45 list as not written yet | M5b start |

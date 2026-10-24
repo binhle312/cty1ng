@@ -30,6 +30,7 @@ One shape for every error:
 | 400 | `invalid_skill_file`, `invalid_import`, `bad_request` |
 | 403 | `not_author`, `origin_rejected` |
 | 404 | `not_found` |
+| 410 | `bot_purged` (the bot was purged from Trash; only its tombstone remains, D50) |
 | 409 | `name_taken`, `slug_taken`, `stale_write` (the row changed since it was read; reload), `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending`, `run_not_queued`, `draft_not_pending`, `draft_stale`, `bot_list_changed`, `idempotency_key_reused` (same `Idempotency-Key` with a different body) |
 | 413 | `too_large` |
 | 422 | `validation_error`, `invalid_id`, `mention_not_member`, `bot_unavailable`, `bot_deleted`, `skill_deprecated`, `version_mismatch`, `effort_not_supported`, `model_not_available`, `sensitive_data`, `tool_job_conflict`, `tool_not_available` (the model has no such tool) |
@@ -84,7 +85,7 @@ endpoint to create one.
 | GET | `/bots?include_deleted=false` | | each with `available`, `skills` (pins), `last_activity_at` (latest message or run, NULL if none), `pinned_position`, `counts` (`projects`, `conversations`), `status` (most urgent, `design/components/bot-status.md` §3) and `health`; returned in header order (`domain-model.md` §2) |
 | PUT | `/bots/pins` | `{bot_ids: [...]}` | the whole pinned list, in order; bots not listed are unpinned. A deleted or unknown id, or a repeated id → 409 `bot_list_changed`, positions unchanged; emits `bots.reordered` |
 | POST | `/bots` | `{name, description, persona_md, avatar_style, avatar_colour, avatar_id?, model_id, effort?, history_share_pct?, request_limit?, max_reply_chars?, tool_settings?, pins: [{skill_id, skill_version_id?, always_load}], cloned_from_bot_id?}` | header `Idempotency-Key` (required, a UUID from the page): a repeat with the same key returns the first result and creates nothing (safe retry, `bots.md` UI-5.6). `skill_version_id` omitted = latest; omitted Advanced values and `tool_settings` take the defaults; 422 per field with the step it belongs to (`avatar_colour` must be `#RRGGBB`); 422 `tool_job_conflict` |
-| GET | `/bots/{id}` | | includes conversations it is in |
+| GET | `/bots/{id}` | | includes conversations it is in. A bot in Trash returns 422 `bot_deleted`; a purged bot returns 410 `bot_purged`. Old messages still show a purged bot's name and avatar through `author` (§8) |
 | PATCH | `/bots/{id}` | `{row_version, name?, description?, persona_md?, avatar_style?, avatar_colour?, avatar_id?, history_share_pct?, request_limit?, max_reply_chars?, tool_settings?}` | one save of the Profile or Model tab, in one transaction (`design/components/bot-page.md` §4.1). `avatar_id` is required when `avatar_style` becomes `upload`. `model_id`/`effort` → 422 |
 | DELETE | `/bots/{id}` | | soft delete; with D50 a move to Trash. Unpins the bot |
 | GET | `/bots/{id}/clone-template` | | prefilled POST body for the create form, without `avatar_colour`: the page picks it (the palette is frontend only, `design/components/bot-avatar.md` §5) |

@@ -44,12 +44,15 @@ bots
   tool_settings        JSON NOT NULL                 -- {<tool_id>: true | false} for every tool in the catalog that this bot's model can use (§4.1, D55)
   cloned_from_bot_id   TEXT NULL REFERENCES bots(id)
   create_key           TEXT NULL UNIQUE              -- Idempotency-Key of POST /bots; a repeat returns this bot (bots.md UI-5.6)
+  create_request_hash  TEXT NULL                     -- SHA-256 of the canonical POST /bots body; set with create_key (§2 Idempotency)
   pinned_position      INTEGER NULL                  -- 1 = first pinned bot; NULL = not pinned (design/components/pin.md, bots.md UI-4.5)
   created_by           TEXT NOT NULL
   created_at, updated_at
   deleted_at           TIMESTAMP NULL                -- soft delete (D12); with D50 this is "moved to Trash"
   purged_at            TIMESTAMP NULL                -- D50: Trash purge; the row stays as a record (name, slug, avatar, colour) for old messages
 
+CHECK (purged_at IS NULL OR deleted_at IS NOT NULL)
+CHECK ((create_key IS NULL) = (create_request_hash IS NULL))
 UNIQUE INDEX bots_name_kept ON bots(lower(name)) WHERE purged_at IS NULL
 UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position IS NOT NULL
 ```
@@ -59,11 +62,36 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
   extra fields, so a PATCH containing them returns 422. A test proves the row is unchanged.
 - **Write rule:** bots have no per-bot write folders. A bot writes only in the Library that its
   run saves to, anywhere except `attachments/` and `.git` (D52, `security.md` §2.3).
+- **Idempotency (UI-5.6):** POST /bots stores the `Idempotency-Key` in `create_key` and the
+  SHA-256 of the canonical request body in `create_request_hash`, in the same transaction as the
+  insert. Canonical body: the parsed body after Zod validation, before defaults are applied, as
+  JSON with sorted keys and no spaces. A repeat with the same key and the same hash returns the
+  first bot (200) and creates nothing. The same key with another hash returns 409
+  `idempotency_key_reused`. Keys stay with the bot row; a purge clears them (below).
+- **Purge (D50):** after `trash_days`, the purge job turns the bot row into a **tombstone** in one
+  transaction. It keeps `id`, `slug`, `name`, `avatar_style`, `avatar_colour`, `avatar_path`,
+  `model_id`, `effort`, `cloned_from_bot_id`, `created_by`, `created_at`, `deleted_at`, and sets
+  `purged_at`. It clears the rest so the NOT NULL columns still hold: `description = ''`,
+  `persona_md = ''`, `tool_settings = '{}'`, `pinned_position = NULL` (already NULL since the
+  delete), `create_key = NULL`, `create_request_hash = NULL`. In the same transaction it deletes
+  the bot's `bot_skills` rows, its bot-scope `memory_items` with their `memory_item_versions`, and
+  the bot's open skill drafts (`skill_drafts` with `target_bot_id` = the bot and no decision).
+  Rows that record history stay and keep their foreign keys: messages, runs, run steps,
+  `conversation_bots` (status `removed`), handoffs, `reply_feedback`, decided skill drafts. The
+  avatar file stays, because old messages show it. A tombstone is never updated again and never
+  restored.
 - **Clone:** there is no "clone" write endpoint. `GET /bots/{id}/clone-template` returns a
-  prefilled create payload (`name: "<name> (copy)"`, description, persona, avatar style (no
+  prefilled create payload (`name` per the clone name rule below, description, persona, avatar style (no
   colour: the page picks a free one, `design/components/bot-avatar.md` §5), model, effort, Advanced values, `tool_settings`, pins with their versions and
   `always_load`). The owner edits it in the create form and submits a normal create with
-  `cloned_from_bot_id`. Cancelling creates nothing. Bot memory is not copied.
+  `cloned_from_bot_id`. Cancelling creates nothing. Bot memory is not copied. A bot in Trash or
+  purged has no clone template (422 `bot_deleted`).
+- **Clone name:** the template name is "{name} (copy)". If that is longer than `bot_name_max`,
+  the base name is cut at a character boundary (never inside a grapheme) and trailing spaces
+  are removed, so the whole name fits: for a limit of 32, the base keeps at most 25 characters.
+  If the name is taken (Trash included), the template tries "{base} (copy 2)", "(copy 3)", …,
+  cutting the base again for each, and returns the first free one. It is only a suggestion: the
+  owner can change it, and the create checks it again (409 `name_taken`).
 - **Order** (`bots.md` UI-4.5, `app-shell.md` UI-2.1): pinned bots first, by `pinned_position`
   ascending; then the others by `settings.bot_order` and `settings.bot_order_direction`. With
   `'recent'` the order comes from `last_activity_at`, computed on read as the latest

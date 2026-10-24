@@ -60,6 +60,12 @@ Conversations, drag-to-add (M4).
   right reason; Clone on its banner opens the prefilled form with the model field empty (CL2).
 - Saving skill v2 with BA unchecked leaves BA on v1; checked moves only BA.
 - SVG avatar rejected; PNG re-encoded to WebP, stored by hash.
+- `POST /bots` repeated with the same `Idempotency-Key` and body → the first bot, nothing new;
+  same key with another body → 409 `idempotency_key_reused`.
+- Clone of a bot with a 30-character name suggests a name of at most 32 characters; with
+  "{name} (copy)" taken it suggests "(copy 2)".
+- Clone with a model that lacks a copied provider tool → that tool is off, the info line names
+  it, and a body that still turns it on → 422 `tool_not_available`.
 - `avatar_colour` that is not `#RRGGBB` → 422. A Profile save with a new uploaded image is one
   PATCH (`avatar_style: upload`, `avatar_id`) in one transaction.
 - `PUT /bots/pins` naming a deleted bot or the same bot twice → 409 `bot_list_changed`,
@@ -81,7 +87,7 @@ bot with it → clone with a different model → upgrade flow from J4.
 The UI design in the plan (layout, components, states), approved before UI code is written
 (`docs/workflow.md` §2; sketches in `docs/design/` are not specs).
 
-Migration (including `bots.pinned_position`, `avatar_style`, `avatar_colour`, `tool_settings`, `create_key`, `purged_at`, and removing `write_paths`; the owner approved this schema in the spec, PR #20, 2026-10-24, and still reviews the migration file); avatar upload code; catalog contents.
+Migration (including `bots.pinned_position`, `avatar_style`, `avatar_colour`, `tool_settings`, `create_key`, `purged_at`, and removing `write_paths`; the owner approved these columns in the spec, PR #20, 2026-10-24, and still reviews the migration file. **Still pending owner review:** the purge tombstone and `create_request_hash` (`domain-model.md` §2 Purge and Idempotency), added after that approval); avatar upload code; catalog contents.
 
 ## Open questions
 

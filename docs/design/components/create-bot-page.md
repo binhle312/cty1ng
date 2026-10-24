@@ -116,6 +116,23 @@ draw charts. It cannot change your files." MCP connector stays locked with "Need
 model". Provider tool switches work from the milestone that builds them (D53, D55); until then
 the rows show "later milestone" and stay off.
 
+### 3.0 When the model changes
+
+Tool switches belong to the model's tool list. When the owner picks another model (on step 4,
+or in Clone, where the switches come from the original bot), the page reconciles them at once:
+
+- A provider tool the new model does not have is turned off and leaves the list.
+- In a pair row (§3.1) set to the provider: if the new model has no such tool, the row moves to
+  **Internal**; with no internal tool for the job, it moves to **Off**.
+- View images turns off and goes grey when the new model does not read images.
+- A provider tool the new model has, but the old one did not, starts **off**.
+- An info line under the Tools title says what changed: "Turned off because Claude Haiku does not
+  have them: Web fetch, Code execution." It stays until the owner leaves step 4 or picks the
+  old model again (then the earlier switches come back).
+
+The server checks the final selection on Create: a tool the model does not have returns 422
+`tool_not_available`, shown on step 4 as an E3 error.
+
 ### 3.1 A tool that both can do (CS4c)
 
 When the app has an internal tool for a job that a provider tool also does, the catalog gives both
@@ -166,8 +183,11 @@ that cannot run) opens this page filled from `GET /bots/{id}/clone-template` (UI
   link **Open {name}** (UI-5.4).
 - **Copied:** description, avatar style (and the uploaded image), persona, skills with the same
   versions and Always load, tool switches, Advanced values, model and effort. **New:** the name
-  "{name} (copy)", a colour that the page picks by the default rule (`bot-avatar.md` §5), and empty bot memory.
-- Model and effort can change here, because this is a new bot.
+  "{name} (copy)" (cut to fit, see below), a colour that the page picks by the default rule (`bot-avatar.md` §5), and empty bot memory.
+- Model and effort can change here, because this is a new bot. A model change reconciles the
+  copied tool switches (§3.0).
+- The name follows the clone name rule (`../../domain-model.md` §2): cut to fit the name limit,
+  and "(copy 2)", "(copy 3)" when the name is taken.
 - Cancel or Leave creates nothing (E6).
 - **CL2, the model is gone.** For a bot that cannot run because its model is no longer offered,
   the banner says "{name} cannot run: its model is no longer offered. Pick a new model.
