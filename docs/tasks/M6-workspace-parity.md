@@ -57,3 +57,22 @@ D52 is accepted (each run writes on its own branch and saves to the Library when
 Before the plan starts, this brief gets the run worktrees, the save queue and file claims, the
 overlap notice, the unsaved changes card, the delete and move approval card, the Library card
 and page, and the `run_branches` migration.
+
+Parked for this brief (owner, 2026-10-24; notes in the agent checklist, pstack and handoff
+reviews). Each needs the owner's choice before the plan starts:
+
+- **"Done when" on the plan card.** The plan card shows the `## Steps` and `## Done when`
+  sections of the loaded skill (`requirements/skill-hub.md`, "Suggested skill layout"). At the
+  end of the action run, the app reports planned files that the run did not write ("Planned, not
+  written"). Proposed decision D54.
+- **Memory saves in a failed action run.** Files of a failed run wait as unsaved changes (D52),
+  but its memory saves stay. Choose: apply them only when the run ends `done`, or list them on
+  the unsaved changes card with Undo.
+- **Typed handoff brief.** `propose_handoff` gets fields (goal, done, assumed, open questions,
+  ask, suggested skills) instead of `summary`; the card shows "Assumed" items apart, and warns
+  when a suggested skill is not pinned to the target. Today the seed skill `hand-off-work`
+  writes these sections as Markdown in `summary`.
+- **Fork a handoff.** "Start in a new conversation" on the handoff card: the target starts in a
+  new conversation in the same project; the first conversation continues.
+- **Plan approval rates.** After M6, review how often plans are approved in their first version,
+  before any discussion of an auto-approve setting (D48 does not change now).
