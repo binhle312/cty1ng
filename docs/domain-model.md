@@ -69,11 +69,15 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
   first bot (200) and creates nothing. The same key with another hash returns 409
   `idempotency_key_reused`. Keys stay with the bot row; a purge clears them (below).
 - **Purge (D50):** after `trash_days`, the purge job turns the bot row into a **tombstone** in one
-  transaction. It keeps `id`, `slug`, `name`, `avatar_style`, `avatar_colour`, `avatar_path`,
-  `model_id`, `effort`, `cloned_from_bot_id`, `created_by`, `created_at`, `deleted_at`, and sets
-  `purged_at`. It clears the rest so the NOT NULL columns still hold: `description = ''`,
-  `persona_md = ''`, `tool_settings = '{}'`, `pinned_position = NULL` (already NULL since the
-  delete), `create_key = NULL`, `create_request_hash = NULL`. In the same transaction it deletes
+  transaction. Every column keeps its value, except these, which change so the NOT NULL columns
+  still hold: `description = ''`, `persona_md = ''`, `tool_settings = '{}'`,
+  `pinned_position = NULL` (already NULL since the delete), `create_key = NULL`,
+  `create_request_hash = NULL`, `memory_history_versions = NULL` (its memory is deleted below),
+  `updated_at = now` and `purged_at = now`. This list is closed: a column added later keeps its
+  value unless this rule names it. The kept values (for example `name`, the avatar columns,
+  `model_id`, `effort`, `request_limit`, `max_reply_chars`, `history_share_pct`) are never used
+  again for a run. In the same
+  transaction it deletes
   the bot's `bot_skills` rows, its bot-scope `memory_items` with their `memory_item_versions`, and
   the bot's open skill drafts (`skill_drafts` with `target_bot_id` = the bot and no decision).
   Rows that record history stay and keep their foreign keys: messages, runs, run steps,
