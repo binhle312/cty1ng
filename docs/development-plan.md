@@ -26,6 +26,7 @@ the builder agent with the prompt in `workflow.md` §3.
 | M9 | not written | VPS: auth, Docker, TLS, backups | separate milestone | M8 |
 | later | not written | Scheduled bots and web access (Researcher, Reminder; then Trip planner) | separate milestone | after phase 1 |
 | later | not written | External project folders (D23: documents first, write-capable design) | separate milestone | M9 or earlier, owner decides |
+| later | not written | Desktop app (Windows, Linux) and coding agents from the app (idea only: [ideas/desktop-app-and-cli-agents.md](ideas/desktop-app-and-cli-agents.md)) | separate milestone | M9 and external project folders (D23) |
 
 "Checkpoint: plan" means the builder stops after writing the plan and waits for the owner's
 approval (`workflow.md` §2). Every slice also needs the owner's review of migrations and
