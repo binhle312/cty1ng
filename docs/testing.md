@@ -52,6 +52,24 @@ Tests never call real providers (`AGENTS.md` §8).
     - when_contains: "fail"
       fail: timeout
   ```
+- **Tool faults.** A tool call in a script can carry `force: error` (with an error code) or
+  `force: empty`. The agent test helper then returns that result instead of running the tool.
+  Use real inputs first where they exist (a missing file, a path outside the write scope, bad
+  arguments); use `force` only for faults that a test cannot cause in another way.
+
+  ```yaml
+  ba:
+    - when_contains: "read the spec"
+      tool_calls:
+        - read_file: {path: requirements/spec.md}     # file does not exist: real not_found
+        - list_files: {path: requirements/, force: empty}
+        - load_skill: {name: write-user-stories, force: {error: internal}}
+      reply: "I could not read requirements/spec.md, so I did not start the stories."
+  ```
+
+  The fake model is scripted, so it cannot prove that a real model is honest about a failure.
+  The tests prove what the app does: the error reaches the model, the step shows the error, and
+  the run continues (`conversation-rules.md` §4, "Tool results").
 - A helper `fakeModel(scripts)` is available to backend tests; Playwright starts the backend
   with `FAKE_MODEL=1` and a chosen script set.
 
@@ -92,6 +110,19 @@ templates, upgrade dialog only moving checked pins, deprecation rules, edit whil
 Prompt contains persona, rules block with correct numbers, always-loaded bodies, on-demand
 list; `load_skill` returns the pinned version (not latest); `run_skills` matches; Stop cancels
 mid-stream and keeps partial text; retry after a crash reuses the same message.
+
+Faults (`conversation-rules.md` §4, "Tool results"), one named test each:
+
+- a tool error (`not_found`, `outside_write_scope`, forced `internal`): the next model request
+  holds `{error, message}` as the tool result, the `run_steps` row has `status = error` with the
+  code, and the run ends `done`, not `failed`;
+- an empty result (`list_files` on an empty folder): the tool result is `{files: []}` and the
+  step is `ok`;
+- bad input from the model: arguments that fail the Zod schema give `invalid_arguments`; an
+  unknown tool name gives `unknown_tool`; neither runs any tool code;
+- an `internal` error sends no stack trace or exception text to the model, the events or the API;
+- the prompt contains the line "If a tool returns an error or no data, say so";
+- a model that calls a failing tool again and again stops at `request_limit`.
 
 ### End to end (Playwright)
 
