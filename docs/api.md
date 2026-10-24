@@ -30,9 +30,9 @@ One shape for every error:
 | 400 | `invalid_skill_file`, `invalid_import`, `bad_request` |
 | 403 | `not_author`, `origin_rejected` |
 | 404 | `not_found` |
-| 409 | `name_taken`, `slug_taken`, `stale_write` (the row changed since it was read; reload), `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending`, `run_not_queued`, `draft_not_pending`, `draft_stale` |
+| 409 | `name_taken`, `slug_taken`, `stale_write` (the row changed since it was read; reload), `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending`, `run_not_queued`, `draft_not_pending`, `draft_stale`, `bot_list_changed`, `idempotency_key_reused` (same `Idempotency-Key` with a different body) |
 | 413 | `too_large` |
-| 422 | `validation_error`, `invalid_id`, `mention_not_member`, `bot_unavailable`, `bot_deleted`, `skill_deprecated`, `version_mismatch`, `effort_not_supported`, `model_not_available`, `sensitive_data` |
+| 422 | `validation_error`, `invalid_id`, `mention_not_member`, `bot_unavailable`, `bot_deleted`, `skill_deprecated`, `version_mismatch`, `effort_not_supported`, `model_not_available`, `sensitive_data`, `tool_job_conflict`, `tool_not_available` (the model has no such tool) |
 | 429 | `rate_limited` (runs per hour), `daily_cap_reached`, `provider_cap_reached` (D42) |
 
 ## 2. Skills
@@ -74,18 +74,19 @@ endpoint to create one.
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/models` | catalog entries with `available` (key present) and `efforts`; never key values |
+| GET | `/models` | catalog entries with `available` (key present), `efforts`, `multimodal` and `provider_tools`; never key values |
+| GET | `/tools` | the tool catalog (`domain-model.md` §4.1): id, label, kind, provider, job, added, sends_data_out, web, line, off_line, needs |
 
 ## 4. Bots
 
 | Method | Path | Body | Notes |
 | --- | --- | --- | --- |
-| GET | `/bots?include_deleted=false` | | each with `available`, `skills` (pins), `last_activity_at` (latest message or run, NULL if none) and `header_position`; returned in header order (`domain-model.md` §2) |
-| PUT | `/bots/order` | `{bot_ids: [...]}` | saves a custom header order; must list every non-deleted bot exactly once, else 409 `bot_list_changed`; emits `bots.reordered` |
-| POST | `/bots` | `{name, persona_md, model_id, effort?, write_paths?, request_limit?, max_reply_chars?, pins: [{skill_id, skill_version_id?, always_load}], avatar_id?, cloned_from_bot_id?}` | `skill_version_id` omitted = latest |
+| GET | `/bots?include_deleted=false` | | each with `available`, `skills` (pins), `last_activity_at` (latest message or run, NULL if none), `pinned_position`, `counts` (`projects`, `conversations`), `status` (most urgent, `design/components/bot-status.md` §3) and `health`; returned in header order (`domain-model.md` §2) |
+| PUT | `/bots/pins` | `{bot_ids: [...]}` | the whole pinned list, in order; bots not listed are unpinned. A deleted or unknown id, or a repeated id → 409 `bot_list_changed`, positions unchanged; emits `bots.reordered` |
+| POST | `/bots` | `{name, description, persona_md, avatar_style, avatar_colour, avatar_id?, model_id, effort?, history_share_pct?, request_limit?, max_reply_chars?, tool_settings?, pins: [{skill_id, skill_version_id?, always_load}], cloned_from_bot_id?}` | header `Idempotency-Key` (required, a UUID from the page): a repeat with the same key returns the first result and creates nothing (safe retry, `bots.md` UI-5.6). `skill_version_id` omitted = latest; omitted Advanced values and `tool_settings` take the defaults; 422 per field with the step it belongs to; 422 `tool_job_conflict` |
 | GET | `/bots/{id}` | | includes conversations it is in |
-| PATCH | `/bots/{id}` | `{row_version, name?, persona_md?, write_paths?, request_limit?, max_reply_chars?}` | `model_id`/`effort` → 422 |
-| DELETE | `/bots/{id}` | | soft delete |
+| PATCH | `/bots/{id}` | `{row_version, name?, description?, persona_md?, avatar_style?, avatar_colour?, history_share_pct?, request_limit?, max_reply_chars?, tool_settings?}` | `model_id`/`effort` → 422 |
+| DELETE | `/bots/{id}` | | soft delete; with D50 (proposed) a move to Trash. Unpins the bot |
 | GET | `/bots/{id}/clone-template` | | prefilled POST body for the create form |
 | PUT | `/bots/{id}/skills/{skill_id}` | `{skill_version_id, always_load}` | assign, upgrade, downgrade, toggle |
 | DELETE | `/bots/{id}/skills/{skill_id}` | | unassign |
@@ -107,7 +108,7 @@ endpoint to create one.
 | POST | `/conversations/{id}/messages` | `{client_id, content_md, mentions: [bot_id], attachment_ids: []}` | 201; routing happens server side. A repeated `client_id` in the same conversation returns 200 with the original message and routes nothing (safe retry) |
 | POST | `/conversations/{id}/messages/{message_id}/edit` | `{client_id, content_md, mentions, attachment_ids}` | creates a sibling branch; 409 `run_in_progress` |
 | PUT | `/conversations/{id}/active-branch` | `{message_id}` | switch to a sibling; leaf = newest below it |
-| POST | `/conversations/{id}/attachments` | multipart files | returns `attachment_ids`; saved under `inbox/` |
+| POST | `/conversations/{id}/attachments` | multipart files | returns `attachment_ids`; saved under `attachments/<yyyy-mm-dd>-<conversation-slug>/` (D52) |
 | POST | `/conversations/{id}/members` | `{bot_id}` | 409 `already_member`; posts the history card |
 | POST | `/conversations/{id}/members/{bot_id}/history` | `{mode: "full" \| "from_join"}` | activates the member |
 | DELETE | `/conversations/{id}/members/{bot_id}` | | removes |
@@ -132,7 +133,7 @@ expressions first (`requirements/time-range-picker.md` §Contract with the backe
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET / PATCH | `/settings` | `{bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd, provider_caps_usd, timezone, bot_order}`; GET adds `today_spend_usd` and `today_spend_by_provider_usd` |
+| GET / PATCH | `/settings` | `{bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd, provider_caps_usd, timezone, bot_order, bot_order_direction, bot limits and health thresholds (`domain-model.md` §10)}`; GET adds `today_spend_usd` and `today_spend_by_provider_usd` |
 | GET | `/usage?group_by=bot\|conversation\|provider\|day&from=&to=` | tokens and estimated cost (D21). With `group_by=bot`, title requests are one group with `bot_id: null` and the label "Conversation titles" (D46) |
 | GET | `/stats/summary?from=&to=&tz=&conversation_id=` | tiles with previous-period comparison (D24) |
 | GET | `/stats/models?from=&to=&tz=&bucket=&conversation_id=&metric=cost\|tokens\|requests` | series per model per bucket + table |
@@ -167,9 +168,12 @@ Conversation {
 }
 
 Bot {
-  id, slug, name, description, persona_md, avatar_url, model_id, model_label, effort,
+  id, slug, name, description, persona_md, avatar_style, avatar_colour, avatar_url, model_id, model_label, effort,
   available: boolean, unavailable_reason: "model_removed"|"no_api_key"|null,
-  write_paths, request_limit, max_reply_chars,
+  history_share_pct, request_limit, max_reply_chars, tool_settings: { [tool_id]: boolean },
+  pinned_position: number | null, last_activity_at, counts: { projects, conversations },
+  status: { state, conversation_id, conversation_title, also_running: number } | null,   // bot-status.md §3
+  health: { level: "cannot_run"|"needs_attention", reason } | null,                     // bots.md UI-4.6
   pins: { skill_id, slug, name, version, latest_version, always_load, deprecated }[],
   deleted: boolean, cloned_from_bot_id, created_at
 }
