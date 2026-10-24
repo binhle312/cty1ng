@@ -69,3 +69,7 @@ milestone" and stay off; the milestone that builds them (with D53) makes the swi
 
 Implemented in: `../design/components/create-bot-page.md` §3, `../requirements/bots.md` UI-5.5,
 `../domain-model.md` §2, §4.1, `../api.md` §3, §4.
+
+Related: D53 (web through provider tools; its *Rejected* list has our own sandbox, Microsoft
+MXC, and the app container parked to M9). `../ideas/desktop-app-and-cli-agents.md` (coding
+agents from the app, after M9; a sandbox for the agent process is still an open question there).
