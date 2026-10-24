@@ -10,6 +10,10 @@ nobody has to rediscover the reasoning. This index is the list of record.
   has a metadata line under its status: `Amends: D38, D43` or `Supersedes: D10`. Ids are two
   digits, in number order, separated by ", ". The line lists only decisions; other documents go
   in the status text.
+- An `Amends:` line that names a superseded decision is history only. The amending decision
+  still stands on its own; for the rest of the old rule, read the decision that supersedes it.
+  Example: D28 and D29 amend D10, which D34 supersedes. D28 (router) and D29 (SQLite) are
+  current; the stack is D34.
 - The old entry is not rewritten. Edit it only to set its status or to add a dated amendment
   that the owner approved ("Amended 2026-10-23 (owner): ..."), for a small change that needs no
   new entry.
