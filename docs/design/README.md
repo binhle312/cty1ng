@@ -20,7 +20,9 @@
 ## How a design becomes final
 
 1. The slice plan (see `../workflow.md` §2, step 2) includes a **UI design** section for any
-   slice that adds or changes a screen: the proposed layout, components and states.
+   slice that adds or changes a screen: the proposed layout, components and states. The owner
+   sees it visual first: a text wireframe, then a preview (`../workflow.md` §2, "Human
+   review: visual first").
 2. The owner discusses and approves it. That is a checkpoint, like a migration.
 3. The approved design becomes a spec in `components/<name>.md` (status line "Agreed in
    <slice or review>"), with theme-neutral art in `assets/` and rendered pictures in
