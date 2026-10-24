@@ -45,7 +45,7 @@ Step 2 of 4.                                              Back   Next / Create
 | Name | 1–32 characters, counter "12 / 32". Hint: "A short role name. You see it in the header, in mentions and in the status." Unique among bots, Trash included; upper and lower case are the same |
 | Description | 1–160 characters, a 3-line box, counter. Hint: "What the bot does and when to ask it, in one line. Other bots read it to choose who helps." (D18) |
 | Avatar style | 4 cards: **Flat** (default), Jelly, Pixel, + Upload image. The cards show the chosen colour. Upload uses the crop card (`bot-avatar.md` §6; upload rules in `../../security.md` §2.4) |
-| Colour | The colour row of `bot-avatar.md` §5: 8 swatches, **Custom** and **Random**. The default is a random one of the 8 that no other bot uses. Used colours are not shown |
+| Colour | The colour row of `bot-avatar.md` §5: 10 swatches from the theme, **Custom** and **Random**. The default is a random swatch that no other bot uses. Used colours are not shown |
 
 ### Step 2 · Persona (CS2)
 
@@ -163,7 +163,7 @@ that cannot run) opens this page filled from `GET /bots/{id}/clone-template` (UI
   link **Open {name}** (UI-5.4).
 - **Copied:** description, avatar style (and the uploaded image), persona, skills with the same
   versions and Always load, tool switches, Advanced values, model and effort. **New:** the name
-  "{name} (copy)", a colour by the default rule (`bot-avatar.md` §5), and empty bot memory.
+  "{name} (copy)", a colour that the page picks by the default rule (`bot-avatar.md` §5), and empty bot memory.
 - Model and effort can change here, because this is a new bot.
 - Cancel or Leave creates nothing (E6).
 - **CL2, the model is gone.** For a bot that cannot run because its model is no longer offered,

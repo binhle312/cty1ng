@@ -71,7 +71,7 @@ Three parts, top to bottom, with **no section headings**. A thin `outline` divid
 them; each field has its own label.
 
 1. **Appearance:** Avatar style cards (Flat, Jelly, Pixel, Upload image), then the Colour row
-   (`bot-avatar.md` §5, §6). Hint under "Colour": "Pick one of 8, mix your own with Custom, or let
+   (`bot-avatar.md` §5, §6). Hint under "Colour": "Pick a colour, mix your own with Custom, or let
    Random pick any colour."
 2. **Basics:** Name (≤ 32) and Description (one line, ≤ 160, a 3-line box), with the hints of the
    Create page (`create-bot-page.md` §2).

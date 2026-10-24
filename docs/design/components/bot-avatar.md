@@ -77,23 +77,27 @@ The bot colour is **any colour**, stored as `#RRGGBB` (`../../domain-model.md` �
 offers three ways to set it:
 
 ```
-(●)(●)(●)(●)(●)(●)(●)(●) | (◉ custom) [🎨 Custom] [⤮ Random]
+(●)(●)(●)(●)(●)(●)(●)(●)(●)(●) | (◉ custom) [🎨 Custom] [⤮ Random]
 ```
 
 | Part | Rule |
 | --- | --- |
-| 8 swatches | From the shared bot palette (`../themes.md` §3, `bot-*`). A click picks it. The picked swatch has the ✓ ring |
-| Custom swatch | Shows only when the colour is not one of the 8, after the divider, with the ✓ ring. **No hex text** beside it; the hex is in the Custom card |
+| 10 swatches | The theme's bot palette, `bot-1` … `bot-10` (`../themes.md` §3), in token order. A click picks it. The picked swatch has the ✓ ring |
+| Custom swatch | Shows only when the colour is not one of the swatches, after the divider, with the ✓ ring. **No hex text** beside it; the hex is in the Custom card |
 | **Custom** | Secondary button with a palette icon. Opens the Custom colour card |
 | **Random** | Secondary button with the Shuffle icon and the label "Random". Picks a random colour and shows it as the custom swatch. Each click picks another |
 
 - **Used colours are not shown.** There are no marks for colours that other bots use, and no
   warning. Two bots can share a colour; the name tells them apart.
-- **Default at create:** a random one of the 8 that no other bot uses; any of the 8 when all are
-  used. The owner does not see this rule. Clone uses the same rule.
+- **The palette is frontend only** (owner, 2026-10-24): the theme decides the swatches. The
+  backend does not know the palette; it stores and checks only `#RRGGBB`.
+- **Default at create:** the Create page picks a random swatch that no other bot uses (it has the
+  bot list); any swatch when all are used. The owner does not see this rule. Clone uses the same
+  rule: `clone-template` has no colour, and the page picks one.
 - **Random** picks a random hue, with saturation and lightness inside a range, so it never picks
   near black, near white or grey, and the bot stays easy to see in the dark and light themes.
-  Defaults (a frontend config value, not code): saturation 45–90 %, lightness 45–70 % (HSL).
+  Defaults (a frontend config value, not code; agreed by the owner 2026-10-24): saturation
+  45–90 %, lightness 45–70 % (HSL).
 - **Custom colour card (PR2):** a popover under the Custom button: a colour range box
   (saturation and value), a hue bar, **R**, **G**, **B** fields (0–255) and a **Hex** field, a
   preview of the avatar at header size (36 px), then **Cancel** and **Use** (`primary`, default).

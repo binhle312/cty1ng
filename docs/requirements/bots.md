@@ -35,7 +35,7 @@ Design: `../design/components/bots-page.md` (agreed, round 9).
 - UI-4.3: Delete asks for confirmation ("Messages from BA will stay, greyed") and moves the bot
   to Trash (D50, proposed): it disappears from the header and this page, and its messages stay.
 - UI-4.4: Clone opens the Create page prefilled from `clone-template`: name "<name> (copy)",
-  description, persona, avatar style, a free colour, model, effort, Advanced values, tool
+  description, persona, avatar style, model, effort, Advanced values, tool
   switches, and pins (with versions and always-load). All editable before saving. Cancel creates
   nothing. The page opens on step 4, Model, with every step ✓ (`../design/components/create-bot-page.md` §6).
 - UI-4.5: **Order.** Pinned bots come first, in the owner's order; the others follow by the
@@ -65,7 +65,8 @@ Design: `../design/components/create-bot-page.md` (agreed, round 9).
 
 - UI-5.1: A page of its own with four steps and a live preview card: **Basics** (name ≤ 32,
   description ≤ 160 in a 3-line box, avatar style Flat / Jelly / Pixel / Upload image, colour from
-  8 swatches, Custom or Random, with a random unused swatch as default; used colours are not
+  the theme's 10 swatches, Custom or Random, with a random unused swatch as default (the page
+  picks it; the palette is frontend only); used colours are not
   shown), **Persona** (≤ 8,000, Markdown, Write / Preview, with
   the persona template as placeholder), **Skills** (optional; tick non-deprecated skills, each
   pinned to its latest version, with an Always load switch), **Model** (model, effort shown only

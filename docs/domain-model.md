@@ -34,7 +34,7 @@ bots
   description          TEXT NOT NULL                 -- one line, ≤ bot_description_max (160) chars, shown to other bots (team directory, D18)
   persona_md           TEXT NOT NULL                 -- ≤ bot_persona_max (8,000) chars
   avatar_style         TEXT NOT NULL DEFAULT 'flat'  -- flat | jelly | pixel | upload (bot-avatar.md)
-  avatar_colour        TEXT NOT NULL                 -- any colour as '#RRGGBB' (bot-avatar.md §5); default at create: a random one of the 8 swatches no other bot uses
+  avatar_colour        TEXT NOT NULL                 -- any colour as '#RRGGBB' (bot-avatar.md §5); the Create page picks the default; the backend does not know the palette
   avatar_path          TEXT NULL                     -- data/avatars/<sha256>.webp when avatar_style = 'upload', else NULL
   model_id             TEXT NOT NULL                 -- catalog id, e.g. anthropic:<model-name>        (immutable, D7)
   effort               TEXT NULL                     -- one of the model's efforts, NULL if none       (immutable, D7)
@@ -60,8 +60,8 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
 - **Write rule:** bots have no per-bot write folders. A bot writes only in the Library that its
   run saves to, anywhere except `attachments/` and `.git` (D52, `security.md` §2.3).
 - **Clone:** there is no "clone" write endpoint. `GET /bots/{id}/clone-template` returns a
-  prefilled create payload (`name: "<name> (copy)"`, description, persona, avatar style, a free
-  colour, model, effort, Advanced values, `tool_settings`, pins with their versions and
+  prefilled create payload (`name: "<name> (copy)"`, description, persona, avatar style (no
+  colour: the page picks a free one, `design/components/bot-avatar.md` §5), model, effort, Advanced values, `tool_settings`, pins with their versions and
   `always_load`). The owner edits it in the create form and submits a normal create with
   `cloned_from_bot_id`. Cancelling creates nothing. Bot memory is not copied.
 - **Order** (`bots.md` UI-4.5, `app-shell.md` UI-2.1): pinned bots first, by `pinned_position`
