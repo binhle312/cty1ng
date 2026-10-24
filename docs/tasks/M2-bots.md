@@ -22,10 +22,12 @@ D7, D12, D16, D19; `docs/api.md` §3, §4; `docs/requirements/app-shell.md` (UI-
   what you checked in the PR.
 - Tables `bots`, `bot_skills`; slug generation (D19); one-line `description` (D18).
 - Endpoints `api.md` §3–4, plus `upgrade-candidates` and `upgrade_bot_ids` from §2.
-- Avatar upload pipeline with re-encoding; generated default avatar (initials + colour from
-  the slug).
-- Pages: bots list, create (including clone mode), detail (skills table, upgrade diff,
-  always-load, avatar change, unavailable banner).
+- Avatar upload pipeline with re-encoding and the crop card; avatar styles Flat, Jelly and Pixel
+  drawn from any bot colour (`#RRGGBB`); the colour row with Custom and Random; the default
+  colour is a random swatch no other bot uses (`design/components/bot-avatar.md` §5, §6).
+- Pages: bots list, create (including clone mode, `create-bot-page.md` §6), bot page
+  (`bot-page.md`: edit layout, Profile, Skills, Model and Activity tabs, save bar, colour band,
+  unavailable banner). The Memory tab waits for M5b; the Usage tab design is still in review.
 - Header bar with tooltips and unavailable badges (dragging into a conversation comes in M4);
   pinned zone with drag to pin, unpin and reorder; header order (pinned, then Recent activity or
   Created) with deferred reordering (UI-2.1, UI-2.9, UI-2.10).
@@ -34,7 +36,8 @@ D7, D12, D16, D19; `docs/api.md` §3, §4; `docs/requirements/app-shell.md` (UI-
 - Create page with four steps, preview card, Tools list and `Idempotency-Key` (UI-5.1–5.8);
   `config/tools.yaml` (`domain-model.md` §4.1) and `bots.tool_settings`. Provider tool switches
   stay "later milestone" (D53, D55).
-- Agreed designs: `docs/design/components/bots-page.md`, `create-bot-page.md`, `pin.md`,
+- Agreed designs: `docs/design/components/bots-page.md`, `create-bot-page.md`, `bot-page.md`,
+  `bot-avatar.md` §5–§6, `pin.md`,
   `bot-status.md`, `dashed-slot.md`, `time-format.md`, and the round 9 changes in
   `top-header.md` and `bot-card.md`.
 - Skill save dialog now lists real upgrade candidates (UI-7.4).
@@ -57,6 +60,8 @@ Conversations, drag-to-add (M4).
   right reason; "Clone with another model" opens a prefilled form.
 - Saving skill v2 with BA unchecked leaves BA on v1; checked moves only BA.
 - SVG avatar rejected; PNG re-encoded to WebP, stored by hash.
+- `avatar_colour` that is not `#RRGGBB` → 422. A Profile save with a new uploaded image is one
+  PATCH (`avatar_style: upload`, `avatar_id`) in one transaction.
 - `PUT /bots/pins` naming a deleted bot or the same bot twice → 409 `bot_list_changed`,
   positions unchanged.
 - `POST /bots` sent twice with the same `Idempotency-Key` creates one bot.

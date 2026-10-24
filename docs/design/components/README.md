@@ -28,7 +28,7 @@ against, not code to copy.
 
 | File | Component | Previews |
 | --- | --- | --- |
-| [bot-avatar.md](bot-avatar.md) | Bot avatar: styles, sizes, state faces, badges, animation setting | `../previews/command-dark/avatars.*`, `../assets/avatars/` |
+| [bot-avatar.md](bot-avatar.md) | Bot avatar: styles, sizes, state faces, badges, animation setting, colour row (Custom, Random), change and upload on the bot page | `../previews/command-dark/avatars.*`, `../assets/avatars/` |
 | [top-header.md](top-header.md) | Top header: bot roster, overflow, hover, focus, drag, ordering, pinned zone, empty state | `../previews/command-dark/top-header.*`, `header-pins.*` |
 | [bot-card.md](bot-card.md) | Bot card opened from a header avatar, with its pin button and status row | `../previews/command-dark/top-header.*` (card 7 and 7a–7h), `pin.*` (P2) |
 | [user-panel.md](user-panel.md) | Bottom-left user panel, its menu, the budget battery and the floating placement | `../previews/command-dark/user-panel.*` |
@@ -43,11 +43,11 @@ against, not code to copy.
 | [dashed-slot.md](dashed-slot.md) | **Standard.** Dashed slot (rest, active) for empty places to fill, and the gap and drop line of a drag | `../previews/command-dark/dashed-slot.*` |
 | [time-format.md](time-format.md) | **Standard.** Time format ("3 h ago" under 1 day, else local ISO time) and the sort icon and sort buttons | `../previews/command-dark/bot-card-v3.*`, `bots-grid-states.*` (S5) |
 | [bots-page.md](bots-page.md) | Bots page grid: page, V3 card, ⋯ menu, health, sort, pin and reorder, search, empty state | `../previews/command-dark/bots-grid.*`, `bots-grid-states.*`, `bot-card-v3.*` |
-| [create-bot-page.md](create-bot-page.md) | Create bot page: 4 steps, live preview card, Tools list, errors, sending, leave dialog | `../previews/command-dark/create-bot.*`, `create-bot-errors.*`, `create-bot-tools.*` |
+| [create-bot-page.md](create-bot-page.md) | Create bot page: 4 steps, live preview card, Tools list, errors, sending, leave dialog, Clone | `../previews/command-dark/create-bot.*`, `create-bot-errors.*`, `create-bot-tools.*`, `clone-bot.*` |
+| [bot-page.md](bot-page.md) | Bot page: edit layout (list and page), page top, tabs, Profile tab and save bar, colour band, Model, Skills and Activity tabs | `../previews/command-dark/bot-page.*`, `bot-avatar-change.*`, `bot-page-tabs.*` |
 | [plan-card.md](plan-card.md) | Plan card before a task that changes something: steps, conflict questions, Request changes, Reject | `../previews/command-dark/memory-check-plan.*` (cards S4b–S4e) |
 
 Files marked **Standard** are shared rules that many pages use; a page spec links to them and
 does not repeat them.
 
-Still in review (not here yet): the bot page (edit layout L1 and its tabs), Clone, the Trash
-page, the Library page content, the Flow pane (canvas round 7), Command light values.
+Still in review (not here yet): the bot page Usage tab, the Trash page, the Library page content, the Flow pane (canvas round 7), Command light values.

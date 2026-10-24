@@ -34,7 +34,7 @@ bots
   description          TEXT NOT NULL                 -- one line, ≤ bot_description_max (160) chars, shown to other bots (team directory, D18)
   persona_md           TEXT NOT NULL                 -- ≤ bot_persona_max (8,000) chars
   avatar_style         TEXT NOT NULL DEFAULT 'flat'  -- flat | jelly | pixel | upload (bot-avatar.md)
-  avatar_colour        TEXT NOT NULL                 -- one of the 8 palette keys; at create a random colour no other bot uses
+  avatar_colour        TEXT NOT NULL                 -- any colour as '#RRGGBB' (bot-avatar.md §5); default at create: a random one of the 8 swatches no other bot uses
   avatar_path          TEXT NULL                     -- data/avatars/<sha256>.webp when avatar_style = 'upload', else NULL
   model_id             TEXT NOT NULL                 -- catalog id, e.g. anthropic:<model-name>        (immutable, D7)
   effort               TEXT NULL                     -- one of the model's efforts, NULL if none       (immutable, D7)

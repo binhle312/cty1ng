@@ -3,8 +3,9 @@
 > **Status: agreed in the M2 Bots UI design review, round 9 (2026-10-23 and 2026-10-24),
 > steps 4a (CS1–CS4), 4b (E1–E6) and CS4b–CS4c (tools).** Previews:
 > `../previews/command-dark/create-bot.png` (CS1–CS4), `create-bot-errors.png` (E1–E6),
-> `create-bot-tools.png` (CS4b, CS4c). Requirements: `../../requirements/bots.md` UI-5.
-> Clone mode (step 4c) is still in review and is not in this file.
+> `create-bot-tools.png` (CS4b, CS4c), `clone-bot.png` (CL1, CL2, step 4c). Requirements:
+> `../../requirements/bots.md` UI-5. The colour row changed in step 5b (2026-10-24,
+> `bot-avatar.md` §5).
 
 **+ Create** on the Bots page, the header empty state ("Hey, add your bot here 👋") and the left
 bar first run open this page. It is a page of its own, with no bot list. **← Back** returns to
@@ -43,8 +44,8 @@ Step 2 of 4.                                              Back   Next / Create
 | --- | --- |
 | Name | 1–32 characters, counter "12 / 32". Hint: "A short role name. You see it in the header, in mentions and in the status." Unique among bots, Trash included; upper and lower case are the same |
 | Description | 1–160 characters, a 3-line box, counter. Hint: "What the bot does and when to ask it, in one line. Other bots read it to choose who helps." (D18) |
-| Avatar style | 4 cards: **Flat** (default), Jelly, Pixel, + Upload image (`bot-avatar.md`; upload rules in `../../security.md` §2.4) |
-| Colour | 8 swatches. The default is a random colour that no other bot uses; a grey dot marks colours in use; a dice button picks another unused colour |
+| Avatar style | 4 cards: **Flat** (default), Jelly, Pixel, + Upload image. The cards show the chosen colour. Upload uses the crop card (`bot-avatar.md` §6; upload rules in `../../security.md` §2.4) |
+| Colour | The colour row of `bot-avatar.md` §5: 8 swatches, **Custom** and **Random**. The default is a random one of the 8 that no other bot uses. Used colours are not shown |
 
 ### Step 2 · Persona (CS2)
 
@@ -123,7 +124,7 @@ job (D55).
 
 | Part | Content |
 | --- | --- |
-| Top | Band and avatar in the chosen style and colour, name, pill, description |
+| Top | Band (a plain fade of the bot colour, `bot-page.md` §5) and avatar in the chosen style and colour, name, pill, description |
 | Pill | "Not created yet"; "Ready to create" when every step is valid; "Creating" while sending |
 | Sections | Basics, Persona (first 3 lines), Skills (ticked skills with version and "always load"), Model (model, effort, Advanced values) |
 
@@ -149,3 +150,27 @@ The limits (name 32, description 160, persona 8,000, history 10–80 %) are sett
 defaults (`../../domain-model.md` §10).
 
 After a successful Create, the bot page opens on the Profile tab with a toast.
+
+## 6. Clone (CL1, CL2)
+
+**Clone** (the bot ⋯ menu, **Clone with another model** on the Model tab, or the banner of a bot
+that cannot run) opens this page filled from `GET /bots/{id}/clone-template` (UI-4.4).
+
+- **CL1, normal clone.** The page opens on **step 4, Model**, because a change of model is the
+  usual reason to clone (BT-3). Every step shows ✓, so **Create** works at once. A banner under
+  the stepper says **Cloning {name}**, "Everything is copied, with the same skill versions and
+  tools. Two things are new: bot memory starts empty, and the colour is a free one.", and the
+  link **Open {name}** (UI-5.4).
+- **Copied:** description, avatar style (and the uploaded image), persona, skills with the same
+  versions and Always load, tool switches, Advanced values, model and effort. **New:** the name
+  "{name} (copy)", a colour by the default rule (`bot-avatar.md` §5), and empty bot memory.
+- Model and effort can change here, because this is a new bot.
+- Cancel or Leave creates nothing (E6).
+- **CL2, the model is gone.** For a bot that cannot run because its model is no longer offered,
+  the banner says "{name} cannot run: its model is no longer offered. Pick a new model.
+  Everything else is copied." The Model field starts empty with the error under it ("{model} is
+  no longer offered. Pick another model."), step 4 has the red "!" and the preview Model section
+  the red (!) (E1, E3). Effort is off until a model is picked. The Tools list shows only internal
+  tools until then. Create is at 40 % until a model is picked.
+- **A skill version in Trash** (D49): that skill row on step 3 shows the red "!", and the owner
+  picks another version or unticks it.

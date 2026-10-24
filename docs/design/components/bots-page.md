@@ -7,7 +7,7 @@
 
 The Bots page opens from the user panel menu (Manage bots). It lands on a **grid of cards** (L2).
 A click on a card opens the bot page in the edit layout (L1: bot list on the left, the bot on the
-right). The bot page is still in review and is not in this file.
+right). The bot page and its tabs: `bot-page.md`.
 
 Label rule: the page is about bots, so labels do not repeat the word: "+ Create", "Search",
 "Delete", "← Back".
@@ -32,7 +32,7 @@ The whole card is one link to the bot page. Top to bottom:
 
 | Part | Content |
 | --- | --- |
-| Band | A strip in the bot colour across the top of the card |
+| Band | A plain fade of the bot colour across the top of the card (`bot-page.md` §5) |
 | Avatar | 72 px (`bot-avatar.md` §2) with the state badge in its top-right slot (`bot-status.md`) |
 | Name | Semibold, one line |
 | Model badge | "{model label} · {effort}", for example "Claude Sonnet · high" (no effort part when the model has none) |
@@ -60,7 +60,7 @@ click on the status line opens the list of its conversations, not the bot page.
 | Details | Opens the bot page (the same as a click on the card) |
 | Message | Opens the owner's one 1:1 conversation with this bot (creates it the first time) |
 | — divider — | |
-| Clone | Opens the Create page filled from this bot (design in review) |
+| Clone | Opens the Create page filled from this bot, on step 4 (`create-bot-page.md` §6) |
 | — divider — | |
 | Delete | `danger` text. Moves the bot to Trash (D50, proposed) |
 

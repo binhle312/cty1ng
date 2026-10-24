@@ -35,8 +35,10 @@ D49 accepted: deleted skills go to Trash, a `trash_days` setting (default 30), U
 permanent delete. D51 accepted: bots improve their skills from the owner's feedback (slice
 M5d, after M5c); M3 starts to store reply ratings. M2 Bots design round 9: the Bots page grid,
 the Create bot page and the standards for pin, bot status, dashed slot, time format and sort are
-agreed and saved in `design/components/`. Still in review: the bot page (edit layout L1 and its
-tabs) and Clone. D50 (bots to Trash) and D55 (provider tools first, tool switches) are proposed.
+agreed and saved in `design/components/`. The bot page (`bot-page.md`: edit layout, Profile,
+Skills and Activity tabs, colour band), Clone and the avatar colour rules (any colour, Custom,
+Random, upload with crop) are agreed too. Still in review: the Model tab (BP2) and the Usage tab;
+the Memory tab comes with M5b. D50 (bots to Trash) and D55 (provider tools first, tool switches) are proposed.
 
 ## Next
 
@@ -50,9 +52,9 @@ tabs) and Clone. D50 (bots to Trash) and D55 (provider tools first, tool switche
 | D53 accepted (web through provider web tools): check the default limits and approve the migration for the bot setting and the run flag | Web access milestone plan |
 | Approve the M3 migration for D46 (auto title) before it is written | M3 plan |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
-| Approve the M2 migration: `bots.pinned_position` (replaces `header_position`), `avatar_style`, `avatar_colour`, `tool_settings`, `create_key`, `purged_at`; `write_paths` removed. Claude Code stops for this approval before it writes the migration | M2 plan |
+| Approve the M2 migration: `bots.pinned_position` (replaces `header_position`), `avatar_style`, `avatar_colour` (any `#RRGGBB`), `tool_settings`, `create_key`, `purged_at`; `write_paths` removed. Claude Code stops for this approval before it writes the migration | M2 plan |
 | Accept or change D50 (deleted bots go to Trash) and D55 (provider tools first, one switch per tool; code execution and MCP connector conflicts) | M2 plan |
-| Finish the M2 design review: the bot page and Clone | M2 plan |
+| Finish the M2 design review: confirm the bot page Model tab (BP2) and review the Usage tab | M2 plan |
 | Approve the M5b migrations: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars. Claude Code stops for this approval before it writes them | M5b plan |
 | Write the M5b brief: projects, memory (D37, D38, D43), goal and instructions (D45), pinning, the API contracts that D43 and D45 list as not written yet | M5b start |
 
@@ -62,7 +64,7 @@ tabs) and Clone. D50 (bots to Trash) and D55 (provider tools first, tool switche
 | --- | --- | --- | --- |
 | M0 | not started | | |
 | M1 | not started | | Design approved: `design/components/skills-page.md` (round 8); D49 accepted |
-| M2 | UI design review | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec) | Agreed: `design/components/bots-page.md`, `create-bot-page.md` and the standards (round 9). Bot page and Clone in review |
+| M2 | UI design review | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec) | Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Model tab and Usage tab in review |
 | M3 | not started | | |
 | M4 | not started | | |
 | M5 | not started | | |

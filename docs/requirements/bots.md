@@ -37,7 +37,7 @@ Design: `../design/components/bots-page.md` (agreed, round 9).
 - UI-4.4: Clone opens the Create page prefilled from `clone-template`: name "<name> (copy)",
   description, persona, avatar style, a free colour, model, effort, Advanced values, tool
   switches, and pins (with versions and always-load). All editable before saving. Cancel creates
-  nothing. The Clone layout is still in review.
+  nothing. The page opens on step 4, Model, with every step ✓ (`../design/components/create-bot-page.md` §6).
 - UI-4.5: **Order.** Pinned bots come first, in the owner's order; the others follow by the
   `bot_order` setting: *Recent activity* (default; bots with no activity follow, newest created
   first) or *Created*, each newest first or oldest first. Two sort buttons beside the Others
@@ -65,7 +65,8 @@ Design: `../design/components/create-bot-page.md` (agreed, round 9).
 
 - UI-5.1: A page of its own with four steps and a live preview card: **Basics** (name ≤ 32,
   description ≤ 160 in a 3-line box, avatar style Flat / Jelly / Pixel / Upload image, colour from
-  8 swatches with a random unused default), **Persona** (≤ 8,000, Markdown, Write / Preview, with
+  8 swatches, Custom or Random, with a random unused swatch as default; used colours are not
+  shown), **Persona** (≤ 8,000, Markdown, Write / Preview, with
   the persona template as placeholder), **Skills** (optional; tick non-deprecated skills, each
   pinned to its latest version, with an Always load switch), **Model** (model, effort shown only
   if the model has efforts with `default_effort` preselected, the Tools list, and Advanced always
@@ -96,9 +97,21 @@ Design: `../design/components/create-bot-page.md` (agreed, round 9).
 
 ## Bot detail page (UI-6)
 
-- UI-6.1: Header: avatar (click to change: upload PNG/JPEG/WebP ≤ 2 MB, preview, save), name
-  and persona editable inline, model and effort read-only with "Clone with another model".
-- UI-6.2: Unavailable bots show a banner with the reason and the clone action.
+Design: `../design/components/bot-page.md` (agreed, round 9, except the Model, Memory and Usage
+tabs).
+
+- UI-6.1: The edit layout: the bot list on the left, the bot page on the right, at
+  `/bots/{slug}`. The page top shows the band in the bot colour, the 116 px avatar, name and
+  slug, the locked model badge, the status line, Message and ⋯. Tabs: Profile, Skills, Model,
+  Memory, Activity, Usage. **Profile** edits Appearance (avatar style, colour by swatch, Custom
+  or Random, or an uploaded PNG/JPEG/WebP ≤ 2 MB with a crop card), Basics (name, description)
+  and Persona, with one save bar; a change applies from the next run. The big avatar and the band
+  show an avatar change at once ("Not saved"); the rest of the app after Save. A colour change
+  recolours the Flat, Jelly and Pixel cards, never an uploaded image
+  (`../design/components/bot-avatar.md` §5, §6). **Model** shows model and effort read-only with
+  "Clone with another model", and the Tools and Advanced fields, which can change.
+- UI-6.2: A bot that cannot run shows a banner with the reason and Clone. Clone of a bot whose
+  model is gone opens with the model field empty and its error (CL2).
 - UI-6.3: Skills table: name, description, pinned version, always-load toggle, Remove.
   Changes save immediately and apply to the next run.
 - UI-6.4: When a newer version exists, the row shows "v3 → v5 available"; clicking opens a diff
