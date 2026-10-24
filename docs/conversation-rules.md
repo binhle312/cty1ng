@@ -270,15 +270,21 @@ m1 (human) ── m2 (BA) ── m3 (human) ── m4 (BA)
 When the owner asks, a bot turns a piece of work into a skill, for itself or for another bot
 in the conversation. The owner approves every draft and is its author.
 
+A skill draft is a change, so it has two approvals: first the plan card (D48), then the draft
+card. The planning run is read-only and cannot call `propose_skill`; the action run that the
+owner approves writes the draft.
+
 Example:
 
 1. The owner, after BA wrote good stories: "@BA make the way you just wrote these a skill for
    yourself."
-2. BA calls `propose_skill(target="ba", name="Write login stories", slug="write-login-stories",
-   description="…", body_md="…")`.
-3. A card appears: "BA drafted a skill for BA: Write login stories", with the text, "Pin to BA"
+2. BA replies with a plan card. Its **Skill drafts** section says "`write-login-stories` · New
+   skill · For BA · Needs your final review". The owner approves.
+3. In the action run, BA calls `propose_skill(target="ba", name="Write login stories",
+   slug="write-login-stories", description="…", body_md="…")`.
+4. A card appears: "BA drafted a skill for BA: Write login stories", with the text, "Pin to BA"
    ticked, always-load off, and [Edit] [Approve] [Reject].
-4. Approve creates `write-login-stories` v1 (author: the owner) and pins it to BA. BA's next
+5. Approve creates `write-login-stories` v1 (author: the owner) and pins it to BA. BA's next
    reply shows it in its provenance chips.
 
 Rules:
@@ -287,9 +293,13 @@ Rules:
   a bot name or slug of an **active member**, the caller included. For an edit, `skill` is the
   slug of an existing, non-deprecated skill, and the draft is based on its latest version; for
   a new skill, `slug` is proposed (`^[a-z0-9-]{1,64}$`) and must not be taken yet.
-- **Only when asked.** The tool is offered only in runs with `triggered_by = human`, never in
-  bot turns or handoff runs. The prompt says to use it only when the owner asks. A bot may
-  offer in one line ("Want me to save this as a skill?") and waits for a yes.
+- **Only when asked.** The tool is offered only in an action run whose approved plan lists a
+  skill draft (the plan card's **Skill drafts** line, `design/components/plan-card.md`). Each
+  call must match a listed draft (same `target`, and the same `slug` or `skill`); the server
+  checks this, and other calls return the tool error `draft_not_in_plan`. Plan approval allows
+  the draft only; the owner still approves the finished draft on its card (D41). The tool is never offered in other action runs, planning runs, bot turns or
+  handoff runs. The prompt says to use it only when the owner asks. A bot may offer in one line ("Want me to save this
+  as a skill?") and waits for a yes.
 - **Text only.** Name, description (≤ 1,024 characters), body (≤ 20,000 characters) and changelog. No files,
   no frontmatter beyond what the app writes, no tool permissions or write folders.
 - **Guard.** The text passes the sensitive-data guard (D39) or the tool returns an error

@@ -668,7 +668,7 @@ projects
   memory_history_versions   INTEGER NULL DEFAULT 5     -- on (5) at creation; NULL = history off; 1..20
   row_version               INTEGER NOT NULL DEFAULT 1
   created_by, created_at
-  deleted_at                TIMESTAMP NULL             -- memory recoverable for 30 days
+  deleted_at                TIMESTAMP NULL             -- in Trash with its conversations, memory, Library; purged after trash_days (D47, D49)
 
 conversations
   + project_id              TEXT NULL REFERENCES projects(id)   -- NULL = outside any project

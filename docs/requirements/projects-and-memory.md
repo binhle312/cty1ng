@@ -46,8 +46,10 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
 - UI-13.2: The owner can create a project (name, one-line description), rename it, and move a
   conversation into or out of a project from the conversation's menu. Moving shows which memory
   the bots will use from then on.
-- UI-13.3: Deleting a project asks for confirmation. Its conversations move out of the project,
-  and its memory is recoverable for 30 days from the Memory page.
+- UI-13.3: Deleting a project asks for confirmation. The dialog says that a conversation the
+  owner wants to keep must move out of the project first. The project goes to Trash as one item,
+  with its conversations, memory and Library files. The owner can restore the whole project,
+  not one conversation, for `trash_days` (D47, D49).
 - UI-13.4: When a bot saves, changes or forgets a memory, the conversation shows a system line
   ("BA remembered: target users are clinic staff · Project memory") with Undo. Undo reverts that
   change, even when memory history is off.
