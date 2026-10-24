@@ -62,7 +62,7 @@ tabs) and Clone. D50 (bots to Trash) and D55 (provider tools first, tool switche
 | --- | --- | --- | --- |
 | M0 | not started | | |
 | M1 | not started | | Design approved: `design/components/skills-page.md` (round 8); D49 accepted |
-| M2 | UI design review | | Agreed: `design/components/bots-page.md`, `create-bot-page.md` and the standards (round 9). Bot page and Clone in review |
+| M2 | UI design review | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec) | Agreed: `design/components/bots-page.md`, `create-bot-page.md` and the standards (round 9). Bot page and Clone in review |
 | M3 | not started | | |
 | M4 | not started | | |
 | M5 | not started | | |
