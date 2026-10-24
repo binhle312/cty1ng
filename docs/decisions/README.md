@@ -81,7 +81,7 @@ Implemented in: links.
 | D38 | [Bot, project and conversation memory](D38-bot-memory-and-project-memory.md) | accepted | D43, D48, D53 |
 | D39 | [Sensitive-data guard before anything reaches a model or memory](D39-sensitive-data-guard.md) | accepted |  |
 | D40 | [Cost alerts at 75% and 90% of the daily cap](D40-cost-alerts-at-75-and-90.md) | accepted |  |
-| D41 | [Bots draft skills; the owner approves and is the author](D41-bots-draft-skills-the-owner-approves.md) | accepted | own amendment 2026-10-23 |
+| D41 | [Bots draft skills; the owner approves and is the author](D41-bots-draft-skills-the-owner-approves.md) | accepted | D48; own amendment 2026-10-23 |
 | D42 | [Optional daily caps per provider, under the total cap](D42-per-provider-daily-caps.md) | accepted |  |
 | D43 | [Project memory beats bot memory; the bot asks about a conflict before it acts](D43-project-memory-beats-bot-memory.md) | accepted | D47, D48 |
 | D44 | [The side pane holds Flow or Memory, one at a time](D44-right-pane-holds-flow-or-memory.md) | accepted |  |
