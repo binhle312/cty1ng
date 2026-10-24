@@ -24,7 +24,7 @@ the builder agent with the prompt in `workflow.md` §3.
 | M8b | not written | Board: third map in the Flow pane (D30, `design/themes.md` §4) | **plan** (UI design) | M8 |
 | T2 | not written | Material theme: one token file plus the documented structural differences (D30) | merge (UI design, visual snapshots) | M0; any time, owner decides |
 | M9 | not written | VPS: auth, Docker, TLS, backups | separate milestone | M8 |
-| later | not written | Scheduled bots and web access (Researcher, Reminder; then Trip planner) | separate milestone | after phase 1 |
+| later | not written | Scheduled bots and web access (Researcher, Reminder; then Trip planner); web through provider web tools only (D53) | separate milestone | after phase 1 |
 | later | not written | External project folders (D23: documents first, write-capable design) | separate milestone | M9 or earlier, owner decides |
 
 "Checkpoint: plan" means the builder stops after writing the plan and waits for the owner's
