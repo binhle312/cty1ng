@@ -243,6 +243,11 @@ Example:
   - Approved → the target bot gets a run with `triggered_by = handoff` (not a bot turn).
   - Request changes → the source bot gets a run with the note.
 - Handoffs are separate from discussion: they are a formal "review my files" step.
+- **The brief.** The seed skill `hand-off-work` asks the bot to write `summary` as a short
+  brief for the next task: Goal, Done (checked, with sources), Assumed (not checked), Open
+  questions, Ask, Suggested skills. Files are named by path, never copied. The brief passes the
+  sensitive-data guard (D39) like any bot text. The app does not parse these sections yet; a
+  typed brief is a later proposal (D54).
 
 ## 6. Editing messages and branches (D13)
 

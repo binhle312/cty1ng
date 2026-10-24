@@ -16,4 +16,5 @@ description: Always loaded for every bot. General rules for how to plan, check a
 5. **Small choices: decide and say.** If a choice is easy to change later (a heading, an order,
    a file name), pick one. Say what you picked and why, in one line.
 6. **Hand off with a brief.** When you hand work to another bot or to the owner, give the files,
-   what is done, what is open, and what you need from them.
+   what is done, what is open, and what you need from them (skill `hand-off-work`). When you
+   receive a handoff, read its files first. Check each "Assumed" item before you build on it.

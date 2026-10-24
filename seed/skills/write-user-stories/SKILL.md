@@ -11,7 +11,7 @@ description: Use when the owner asks for user stories, requirements or acceptanc
 2. List the users and the problems. If one is not clear, ask one question and stop.
 3. Write `out/ba/stories.md` with the layout below. One story for each user goal.
 4. Read the file again. Check each item in "Done when".
-5. Propose a handoff to the Designer with the file and a short summary.
+5. Propose a handoff to the Designer with the file (skill `hand-off-work`).
 
 Layout of `out/ba/stories.md`:
 

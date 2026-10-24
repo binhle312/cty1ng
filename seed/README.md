@@ -7,6 +7,7 @@ The skills are written for this app. They start from the prototype's BA and Desi
 | File | What it is |
 | --- | --- |
 | `skills/working-principles/SKILL.md` | General rules for every bot: done, check, question, less, decide, hand off. Seeded bots pin it with "Always load" (D16) |
+| `skills/hand-off-work/SKILL.md` | How to write a handoff brief: Goal, Done (checked), Assumed, Open questions, Ask, Suggested skills (`docs/conversation-rules.md` §5) |
 | `skills/write-user-stories/SKILL.md` | BA skill in the suggested layout: Steps, Done when, Reply (`docs/requirements/skill-hub.md`, "Suggested skill layout") |
 
 The prototype's other skills (`interview-stakeholder`, `design-ui-prototype`,
