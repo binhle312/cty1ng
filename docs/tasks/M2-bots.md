@@ -81,7 +81,7 @@ bot with it → clone with a different model → upgrade flow from J4.
 The UI design in the plan (layout, components, states), approved before UI code is written
 (`docs/workflow.md` §2; sketches in `docs/design/` are not specs).
 
-Migration (including `bots.pinned_position`, `avatar_style`, `avatar_colour`, `tool_settings`, `create_key`, `purged_at`, and removing `write_paths`); avatar upload code; catalog contents.
+Migration (including `bots.pinned_position`, `avatar_style`, `avatar_colour`, `tool_settings`, `create_key`, `purged_at`, and removing `write_paths`; the owner approved this schema in the spec, PR #20, 2026-10-24, and still reviews the migration file); avatar upload code; catalog contents.
 
 ## Open questions
 

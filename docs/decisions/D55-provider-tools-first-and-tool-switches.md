@@ -1,9 +1,8 @@
 # D55. Provider tools first, one switch per tool, and one tool per job
 
-Status: proposed (2026-10-24). From the M2 Bots UI design review, round 9 (Create step 4,
-CS4b and CS4c, approved by the owner on 2026-10-24). The design is agreed; the rules below, and
-the two conflicts at the end, wait for the owner's approval. It extends D53 and touches the
-product brief non-goal "A coding IDE".
+Status: accepted (2026-10-24, owner). From the M2 Bots UI design review, round 9 (Create step
+4, CS4b and CS4c). The owner accepted the rules and settled the two conflicts at the end on
+2026-10-24 09:34. It extends D53 and changes the product brief non-goal "A coding IDE".
 
 Decision:
 
@@ -26,20 +25,23 @@ Decision:
 - **Dependencies.** A tool can need another tool (View images and Hand off need Files). Turning
   Files off turns them off too.
 
-Conflicts that need the owner (recommendation first):
+The two conflicts, as the owner settled them (2026-10-24):
 
 1. **Code execution** (for example Anthropic code execution) runs code in the provider's sandbox,
-   not on the owner's machine. The product brief says bots "never run tests, builds or commands".
-   **Recommended:** allow it as a provider tool, off by default, with the amber ⚠ (files and text
-   it works on go to the provider's sandbox), and change the non-goal to "bots never run code on
-   the owner's machine". The milestone that builds it checks the provider's sandbox rules (network
-   access, file retention) and records them. *Alternative:* do not offer it; the row is not shown.
+   not on the owner's machine. It is a provider tool, off by default, with the amber ⚠ (the files
+   and text it works on go to the provider's sandbox). **Its job is small scripts that analyse
+   data** (count, sort, compute, draw a chart). **It never writes or changes code**: coding work
+   goes to a coding agent (Claude Code, Codex), as the product brief says. The sandbox has no
+   access to the Library; a result that the bot wants to keep goes through the normal file tools,
+   behind the plan card (D48) and the run branch (D52). The milestone that builds it checks the
+   provider's sandbox rules (network access, file retention) and records them. Our own sandbox
+   (for example Microsoft MXC, see D53 *Rejected*) is not needed for this and needs its own
+   decision if it ever comes.
 2. **MCP connector** calls outside services, so it is a channel that can send conversation data
-   out of the app. D53 depends on "no channel to send data out" for runs that read the web.
-   **Recommended:** list it, but keep the switch locked ("Needs a decision") until a later decision
-   defines MCP servers in Settings and its rules. That decision must say what happens in a run that
-   read the web (for example: no MCP calls after a web result). *Alternative:* allow it now, off by
-   default, never in the same bot as a web tool.
+   out of the app. D53 depends on "no channel to send data out" for runs that read the web. It is
+   listed, but its switch stays locked ("Needs a decision") until a later decision defines MCP
+   servers in Settings and its rules. That decision must say what happens in a run that read the
+   web (for example: no MCP calls after a web result).
 
 Why: Provider tools give us web search, fetch, code and more with no code of ours to build or
 secure (D53 removed the parser from our machine for the same reason). Per-tool switches let the
@@ -51,6 +53,10 @@ Rejected:
 - **Internal tools only, provider tools hidden.** We would build and secure tools that providers
   already run well.
 - **All tools always on.** Every bot would get tools that can send data out or cost money.
+- **Code execution as a coding tool** (write or change project code, run tests or builds). Coding
+  agents do this better, and the app is not an IDE.
+- **No code execution at all.** Small analysis scripts are useful, and they run in the provider's
+  sandbox, not on the owner's machine.
 - **Both tools of a pair on, and the model chooses (option 1), or compare them by ratings.** Two
   tools for one job make runs hard to compare and to debug. A comparison by ratings may come later
   as its own decision.

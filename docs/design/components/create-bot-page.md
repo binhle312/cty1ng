@@ -110,7 +110,9 @@ Internal tools (phase 1):
 
 Provider tools come from the catalog for the chosen model (`../../domain-model.md` §4). For an
 Anthropic model today: Web search, Web fetch, Code execution (⚠), MCP connector (⚠), Advisor,
-Tool search. Until a model is picked, the list says "Provider tools show here after you pick a
+Tool search. Code execution runs small scripts that analyse data in the provider's sandbox, never
+code changes (D55); its line says so: "Run small Python scripts at Anthropic to analyse data and
+draw charts. It cannot change your files." MCP connector stays locked with "Needs a decision". Until a model is picked, the list says "Provider tools show here after you pick a
 model". Provider tool switches work from the milestone that builds them (D53, D55); until then
 the rows show "later milestone" and stay off.
 

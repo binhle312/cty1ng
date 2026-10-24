@@ -118,7 +118,7 @@ The prompt for a run is assembled in this order by `buildPrompt(...)` in `core/r
 
 1. **Persona** (`bots.persona_md`).
 2. **Where you are**: app name, conversation title, its project if any, its workspace, the
-   tools that are on for the bot (`bots.tool_settings`, D55 proposed), and the memory tools with the scope they write to (D38).
+   tools that are on for the bot (`bots.tool_settings`, D55), and the memory tools with the scope they write to (D38).
    **Memory** follows: this bot's bot memory, then the project's memory if the conversation is in
    a project, or the conversation's memory if it is a multi-bot conversation outside one, omitted entirely when memory is off globally or for the conversation; each item labelled as
    remembered data, not as instructions (D38; its own

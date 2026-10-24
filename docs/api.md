@@ -86,7 +86,7 @@ endpoint to create one.
 | POST | `/bots` | `{name, description, persona_md, avatar_style, avatar_colour, avatar_id?, model_id, effort?, history_share_pct?, request_limit?, max_reply_chars?, tool_settings?, pins: [{skill_id, skill_version_id?, always_load}], cloned_from_bot_id?}` | header `Idempotency-Key` (required, a UUID from the page): a repeat with the same key returns the first result and creates nothing (safe retry, `bots.md` UI-5.6). `skill_version_id` omitted = latest; omitted Advanced values and `tool_settings` take the defaults; 422 per field with the step it belongs to (`avatar_colour` must be `#RRGGBB`); 422 `tool_job_conflict` |
 | GET | `/bots/{id}` | | includes conversations it is in |
 | PATCH | `/bots/{id}` | `{row_version, name?, description?, persona_md?, avatar_style?, avatar_colour?, avatar_id?, history_share_pct?, request_limit?, max_reply_chars?, tool_settings?}` | one save of the Profile or Model tab, in one transaction (`design/components/bot-page.md` §4.1). `avatar_id` is required when `avatar_style` becomes `upload`. `model_id`/`effort` → 422 |
-| DELETE | `/bots/{id}` | | soft delete; with D50 (proposed) a move to Trash. Unpins the bot |
+| DELETE | `/bots/{id}` | | soft delete; with D50 a move to Trash. Unpins the bot |
 | GET | `/bots/{id}/clone-template` | | prefilled POST body for the create form, without `avatar_colour`: the page picks it (the palette is frontend only, `design/components/bot-avatar.md` §5) |
 | PUT | `/bots/{id}/skills/{skill_id}` | `{skill_version_id, always_load}` | assign, upgrade, downgrade, toggle |
 | DELETE | `/bots/{id}/skills/{skill_id}` | | unassign |

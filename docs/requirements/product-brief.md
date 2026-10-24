@@ -116,7 +116,7 @@ Confirmed by the owner (2026-10-21).
 | Multiple humans, login, permissions | No second user yet; auth is real work and real risk | VPS phase (M9) |
 | VPS deployment | Local-first first | M9 |
 | Local models (Ollama, llama.cpp) | Hosted APIs only; the model catalog makes it a config change later. An option to consider for privacy, not decided. Rough cost: about 0.6 GB of RAM or VRAM per billion parameters at 4-bit, and about 30B parameters (≈ 18–20 GB) as a realistic minimum for role-bot work | Later, owner decides |
-| A coding IDE | Bots create and edit documents and prototypes (Markdown, mockups, plans). They never write production code and never run tests, builds or commands; implementation goes to a coding agent (Claude Code, Codex) | Never |
+| A coding IDE | Bots create and edit documents and prototypes (Markdown, mockups, plans). They never write or change code and never run tests, builds or commands on the owner's machine; implementation goes to a coding agent (Claude Code, Codex). The one exception: with the provider's Code execution tool on, a bot may run small scripts that analyse data in the provider's sandbox (D55) | Never |
 | Scheduled and proactive bots | Needs a scheduler and delivery rules (Researcher, Reminder) | New milestone after phase 1 |
 | Web access for bots | Provider web tools with their own security rules (D53; Researcher, Trip planner) | With the scheduled-bots milestone or later |
 | Reading external apps (calendars, task managers, mail) | Inside the app only for now | Much later |

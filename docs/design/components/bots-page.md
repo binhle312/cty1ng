@@ -62,7 +62,7 @@ click on the status line opens the list of its conversations, not the bot page.
 | — divider — | |
 | Clone | Opens the Create page filled from this bot, on step 4 (`create-bot-page.md` §6) |
 | — divider — | |
-| Delete | `danger` text. Moves the bot to Trash (D50, proposed) |
+| Delete | `danger` text. Moves the bot to Trash (D50) |
 
 The menu has no Pin, Unpin or Move items. Pin and unpin are the corner badge; reorder is a drag or
 Alt+← and Alt+→ on a focused pinned card.

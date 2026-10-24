@@ -30,7 +30,7 @@ match it; a PR that changes a table changes this document too (and needs the own
 bots
   id                   TEXT PK
   slug                 TEXT UNIQUE NOT NULL          -- fixed at creation (D19)
-  name                 TEXT NOT NULL                 -- ≤ bot_name_max (32) chars; unique among bots not purged, Trash included (D50, proposed)
+  name                 TEXT NOT NULL                 -- ≤ bot_name_max (32) chars; unique among bots not purged, Trash included (D50)
   description          TEXT NOT NULL                 -- one line, ≤ bot_description_max (160) chars, shown to other bots (team directory, D18)
   persona_md           TEXT NOT NULL                 -- ≤ bot_persona_max (8,000) chars
   avatar_style         TEXT NOT NULL DEFAULT 'flat'  -- flat | jelly | pixel | upload (bot-avatar.md)
@@ -41,14 +41,14 @@ bots
   request_limit        INTEGER NOT NULL              -- model requests per run; default from setting bot_default_request_limit (30)
   max_reply_chars      INTEGER NOT NULL              -- default from setting bot_default_max_reply_chars (6000)
   history_share_pct    INTEGER NOT NULL              -- % of the model's context window for history per run, step 5 (D32); default bot_default_history_pct (40), range bot_history_min_pct–bot_history_max_pct (10–80)
-  tool_settings        JSON NOT NULL                 -- {<tool_id>: true | false} for every tool in the catalog that this bot's model can use (§4.1, D55, proposed)
+  tool_settings        JSON NOT NULL                 -- {<tool_id>: true | false} for every tool in the catalog that this bot's model can use (§4.1, D55)
   cloned_from_bot_id   TEXT NULL REFERENCES bots(id)
   create_key           TEXT NULL UNIQUE              -- Idempotency-Key of POST /bots; a repeat returns this bot (bots.md UI-5.6)
   pinned_position      INTEGER NULL                  -- 1 = first pinned bot; NULL = not pinned (design/components/pin.md, bots.md UI-4.5)
   created_by           TEXT NOT NULL
   created_at, updated_at
-  deleted_at           TIMESTAMP NULL                -- soft delete (D12); with D50 (proposed) this is "moved to Trash"
-  purged_at            TIMESTAMP NULL                -- D50 (proposed): Trash purge; the row stays as a record (name, slug, avatar, colour) for old messages
+  deleted_at           TIMESTAMP NULL                -- soft delete (D12); with D50 this is "moved to Trash"
+  purged_at            TIMESTAMP NULL                -- D50: Trash purge; the row stays as a record (name, slug, avatar, colour) for old messages
 
 UNIQUE INDEX bots_name_kept ON bots(lower(name)) WHERE purged_at IS NULL
 UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position IS NOT NULL
@@ -72,7 +72,7 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
   (`PUT /bots/pins`) rewrites `pinned_position` in one transaction: every bot gets NULL first,
   then the listed bots get 1…n, so the unique index never sees a duplicate. A delete sets `pinned_position` to NULL and closes the gap in the same
   transaction.
-- **Tool settings (D55, proposed):** at create, each internal tool is on and each provider tool
+- **Tool settings (D55):** at create, each internal tool is on and each provider tool
   is off, unless the request says otherwise. For two tools with the same `job` (§4.1), at most one
   is on; the service rejects a body that turns on both (422 `tool_job_conflict`). Provider tool
   switches have effect only from the milestone that builds them (D53).
@@ -329,7 +329,7 @@ skill_drafts                                              -- TypeID prefix `skil
   model the library does not know, or correct one it prices wrongly, without waiting for a release. A model with no known price still works; its runs show tokens and
   "cost unknown", and they do not count towards the daily cap (Settings shows a warning).
 
-### 4.1 Tool catalog (D55, proposed)
+### 4.1 Tool catalog (D55)
 
 `config/tools.yaml` (checked into the repo) lists every tool a bot can get. The Create page and
 the bot page build the Tools list from it (`design/components/create-bot-page.md` §3).
@@ -559,7 +559,7 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
 9. A message's content changes only while `status = streaming`.
 10. Every message's `parent_message_id` belongs to the same conversation.
 11. `run_skills` contains exactly the always-loaded pins plus the distinct `load_skill` calls.
-12. Bot names are unique among bots that are not purged, Trash included (case-insensitive, D50 proposed); slugs are unique forever.
+12. Bot names are unique among bots that are not purged, Trash included (case-insensitive, D50); slugs are unique forever.
 13. A request's `estimated_cost_usd` never changes after it finishes, even if prices do; a run's
     totals equal the sum of its requests.
 14. Every tool call of a run has exactly one `run_steps` row, in call order.

@@ -33,7 +33,7 @@ Design: `../design/components/bots-page.md` (agreed, round 9).
 - UI-4.2: Page action **+ Create**. The ⋯ menu on each card: Details, Message, Clone, Delete
   (`danger`), with dividers before Clone and before Delete.
 - UI-4.3: Delete asks for confirmation ("Messages from BA will stay, greyed") and moves the bot
-  to Trash (D50, proposed): it disappears from the header and this page, and its messages stay.
+  to Trash (D50): it disappears from the header and this page, and its messages stay.
 - UI-4.4: Clone opens the Create page prefilled from `clone-template`: name "<name> (copy)",
   description, persona, avatar style, model, effort, Advanced values, tool
   switches, and pins (with versions and always-load). All editable before saving. Cancel creates
@@ -85,7 +85,7 @@ Design: `../design/components/create-bot-page.md` (agreed, round 9).
 - UI-5.5: **Tools.** One list with a switch and a badge per tool: Internal (run by the app, on by
   default) or the provider name (run on the provider's servers, off by default). Order: internal
   only, then both, then provider only; then by the date the tool was added to the catalog. A job
-  that both can do is one row with Off / Internal / {Provider}; only one is on (D55, proposed).
+  that both can do is one row with Off / Internal / {Provider}; only one is on (D55).
   Provider tool switches work from the milestone that builds them (D53).
 - UI-5.6: **Sending.** Create is off with a "Creating" spinner, Back is off and the form is
   read-only while the request is on its way. A double click sends one request. A failure that is

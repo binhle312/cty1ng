@@ -1,8 +1,8 @@
 # D50. Deleted bots go to Trash and can be restored
 
-Status: proposed (2026-10-24). From the M2 Bots UI design review, round 9: the owner approved
-**Delete** in the bot ⋯ menu as a move to Trash ("Skills and Projects already say Delete for the
-same action"). The rules below wait for the owner's approval. It amends D12.
+Status: accepted (2026-10-24, owner). From the M2 Bots UI design review, round 9: the owner
+approved **Delete** in the bot ⋯ menu as a move to Trash ("Skills and Projects already say Delete
+for the same action") and then these rules. It amends D12.
 
 Decision:
 

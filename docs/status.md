@@ -38,7 +38,9 @@ the Create bot page and the standards for pin, bot status, dashed slot, time for
 agreed and saved in `design/components/`. The bot page (`bot-page.md`: edit layout, Profile,
 Skills and Activity tabs, colour band), Clone and the avatar colour rules (any colour, Custom,
 Random, upload with crop) are agreed too. The Usage tab design is agreed; its data (task verdict, setup change
-record, targets) is not specified yet. The Memory tab comes with M5b. D50 (bots to Trash) and D55 (provider tools first, tool switches) are proposed.
+record, targets) is not specified yet. The Memory tab comes with M5b. D50 (bots to Trash) and D55 (provider tools first, tool switches; code execution only for small
+analysis scripts in the provider's sandbox; MCP locked) are accepted, and the owner approved the M2
+migration and API changes in PR #20 (2026-10-24).
 
 ## Next
 
@@ -52,8 +54,6 @@ record, targets) is not specified yet. The Memory tab comes with M5b. D50 (bots 
 | D53 accepted (web through provider web tools): check the default limits and approve the migration for the bot setting and the run flag | Web access milestone plan |
 | Approve the M3 migration for D46 (auto title) before it is written | M3 plan |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
-| Approve the M2 migration: `bots.pinned_position` (replaces `header_position`), `avatar_style`, `avatar_colour` (any `#RRGGBB`), `tool_settings`, `create_key`, `purged_at`; `write_paths` removed. Claude Code stops for this approval before it writes the migration | M2 plan |
-| Accept or change D50 (deleted bots go to Trash) and D55 (provider tools first, one switch per tool; code execution and MCP connector conflicts) | M2 plan |
 | Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a migration approval | M3 and M7 plans |
 | Approve the M5b migrations: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars. Claude Code stops for this approval before it writes them | M5b plan |
 | Write the M5b brief: projects, memory (D37, D38, D43), goal and instructions (D45), pinning, the API contracts that D43 and D45 list as not written yet | M5b start |
