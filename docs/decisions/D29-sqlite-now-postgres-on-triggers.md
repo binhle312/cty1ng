@@ -1,6 +1,7 @@
 # D29. SQLite now; switch to PostgreSQL on defined triggers
 
 Status: accepted (2026-10-21). Confirms the database part of D10 and adds switch rules.
+Amends: D10
 Decision: Phase 1 stays on SQLite (WAL). The project moves to plain PostgreSQL when any of these
 happens: (1) more than one human uses the app (M9); (2) more than one process writes to the
 database; (3) p99 wait on `database is locked` exceeds 100 ms (logged metric); (4) a statistics

@@ -1,6 +1,7 @@
 # D45. Every run reads the project's goal and instructions
 
 Status: accepted (2026-10-22, owner). The owner agreed to it in the UI design review. It amends D37 (projects).
+Amends: D37
 Decision: A project has a **goal** and **instructions**.
 - The goal is `projects.description`, 500 characters or less. The left bar shows it.
 - The instructions are `projects.instructions_md`, a new column, 3000 characters or less. They are

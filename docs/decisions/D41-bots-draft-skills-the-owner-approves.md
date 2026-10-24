@@ -20,7 +20,7 @@ The owner's answers (2026-10-22):
 4. **One click.** Approve creates the version and pins it to the target bot, with "Pin to
    <bot>" ticked by default and always-load off (D16).
 5. **Text only.** A draft is name, description, body and changelog, within the usual skill
-   limits (body 50 KB, description 300 characters). No files, no scripts, no tool
+   limits (`../security.md` §2.5, amended 2026-10-23). No files, no scripts, no tool
    permissions: a skill can never widen what a bot may do.
 6. **Out of date.** If the skill gains a version while a draft waits, the draft is marked "Out
    of date" and the card offers "Ask <bot> to redraft". There is no merge view: approving the

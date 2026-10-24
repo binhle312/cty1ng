@@ -3,6 +3,7 @@
 Status: accepted (2026-10-24, owner). From the M2 Bots UI design review, round 9: the owner
 approved **Delete** in the bot ⋯ menu as a move to Trash ("Skills and Projects already say Delete
 for the same action") and then these rules. It amends D12.
+Amends: D12
 
 Decision:
 

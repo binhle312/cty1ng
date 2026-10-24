@@ -178,6 +178,14 @@ Start here: `worker.service.ts`. Do not: call the model except through the model
 - **Kept current by CI.** `pnpm check:index` fails when a file or subfolder is missing from
   its folder's table, or when the table names something that no longer exists. Whether a
   description is still true is a review item in the PR template.
+- **The same script checks the docs indexes.** It reads only fixed metadata, never prose:
+  - every story id (`- **CV-8.**`) in `docs/requirements/*.md` is inside the range that
+    `docs/requirements/README.md` gives for that file, and the last id of the range exists;
+  - every `Amends:` and `Supersedes:` line in `docs/decisions/` names decisions that exist, and
+    the "Changed by" column of `docs/decisions/README.md` lists exactly those entries;
+  - every decision file has one index row, and every row links to a file that exists.
+  Whether two decisions agree in meaning is not checkable; the reviewer checks it
+  (`workflow.md` §4).
 - Leaves only: the root `README.md` and this section link to the package indexes; there is no
   second, central file list to drift.
 

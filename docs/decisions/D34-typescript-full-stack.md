@@ -1,6 +1,7 @@
 # D34. TypeScript on the backend and the frontend
 
 Status: accepted (2026-10-21, owner). Supersedes D10.
+Supersedes: D10
 Decision: The backend is written in TypeScript on Node, like the frontend. The project starts
 from scratch, so nothing from the Python prototype is ported as code; behaviour is ported
 (`../porting-guide.md`).

@@ -3,6 +3,7 @@
 Status: accepted (2026-10-24, owner). From the M2 Bots UI design review, round 9 (Create step
 4, CS4b and CS4c). The owner accepted the rules and settled the two conflicts at the end on
 2026-10-24 09:34. It extends D53 and changes the product brief non-goal "A coding IDE".
+Amends: D53
 
 Decision:
 

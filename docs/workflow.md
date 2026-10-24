@@ -130,7 +130,9 @@ Check, in order:
    generated client only, immutability rules, sandbox use, Markdown rendering).
 3. Security: anything touching docs/security.md controls.
 4. Invariants in docs/domain-model.md §12 that this slice touches.
-5. Docs: does the PR update the owning document for every behaviour change?
+5. Docs: does the PR update the owning document for every behaviour change? For a changed
+   rule, does it still agree in meaning with each decision in its "Changed by" column
+   (`decisions/README.md`) and with every summary table that cites it?
 6. Simplicity: code that could be removed or made plainer.
 Report findings as PR comments, most severe first, each with the file, line, and why it
 matters. Do not push commits. Say explicitly if you found nothing serious.

@@ -1,6 +1,7 @@
 # D49. Deleted skills go to Trash, Trash keeps items for a set number of days, and only a permanent delete has Undo
 
 Status: accepted (2026-10-23, owner). The owner gave these rules in the UI design review, round 8. It amends D47 (project delete), the skill rules in `../domain-model.md` §3.4, and rule 5 of `../../AGENTS.md`.
+Amends: D47
 Decision:
 - **Delete a skill.** Only a deprecated skill has **Delete skill**. The delete works also while
   bots use the skill: the app removes it from every bot in the same transaction, and the dialog
