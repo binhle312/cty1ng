@@ -64,6 +64,8 @@ click on the status line opens the list of its conversations, not the bot page.
 | — divider — | |
 | Delete | `danger` text. Moves the bot to Trash (D50) |
 
+M5d adds **Improve** after Message (D51). It is always there, also below the offer threshold.
+
 The menu has no Pin, Unpin or Move items. Pin and unpin are the corner badge; reorder is a drag or
 Alt+← and Alt+→ on a focused pinned card.
 

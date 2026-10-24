@@ -47,6 +47,9 @@ A click on a card on the Bots page opens the bot in the **edit layout** (L1). Th
 | Row 3 | Status line (`bot-status.md`). A click opens the Activity tab |
 | Actions | **Message** (opens the owner's 1:1 conversation with the bot) and ⋯: Message, Clone, Delete (`danger`), as on the grid (`bots-page.md` §3), without Details |
 
+M5d adds **Improve** to the ⋯ menu, after Message, and the line "Draft vN waiting" with **Open**
+while an Improve draft card waits in the 1:1 conversation (D51).
+
 There is no numbers row: the Skills and Activity tabs show the counts.
 
 A bot that **cannot run** (no API key, model not in the catalog) shows a banner under the top
@@ -238,7 +241,7 @@ Then the whole-range tables. Each row opens the runs behind it:
 | --- | --- | --- |
 | The owner's verdict at the end of a task | M3 | An optional row "Did this do the job?" with **Yes** and **Bad answer** under a finished action run. No answer = not checked |
 | A rating later | M3 | A Bad answer or a good rating on the result reply counts too |
-| Test tasks | Later, with Improve bot (D51) | The paid probe runs the same tasks on two versions; the owner judges |
+| Test tasks | Later, with Improve bot (D51) | The paid probe runs the same tasks on two versions; the owner judges blind (A and B, D51) |
 | A model as judge | Not now | It costs money on every task and needs checks against the owner's verdicts first |
 
 Coverage ("45 of 61 checked") always shows, because a rate from few verdicts is weak.
