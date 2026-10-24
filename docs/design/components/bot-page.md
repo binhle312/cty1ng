@@ -115,7 +115,7 @@ use the same band.
 
 The tab holds the parts of Create step 4 that can change (`create-bot-page.md` §2, §3):
 
-1. **Tools:** the same list as Create. Tool switches **can change** after Create: they are bot
+1. **Tools:** the same list as Create (`create-bot-page.md` §3), with no legend line. Tool switches **can change** after Create: they are bot
    settings, not the model.
 2. **Advanced**, always open: History share, Model requests per run, Longest reply, with the
    Create defaults and ranges.

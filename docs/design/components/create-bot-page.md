@@ -85,7 +85,9 @@ The defaults are settings (`../../domain-model.md` §10), not numbers in the cod
 
 ## 3. Tools list (CS4b, CS4c)
 
-One list, under the title "Tools for {model}". Each row has a switch, the tool name, a badge,
+One list, under the title **Tools**, with no legend line: the badges say what each tool is (owner,
+2026-10-24). Until provider tools work, a dashed chip "{Provider} tools: later milestone" sits at
+the right of the title. Each row has a switch, the tool name, a badge,
 and one line that says what the tool does, what it costs, and what changes when it is off.
 
 | Badge | Meaning | Default |
