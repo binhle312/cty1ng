@@ -30,38 +30,85 @@ match it; a PR that changes a table changes this document too (and needs the own
 bots
   id                   TEXT PK
   slug                 TEXT UNIQUE NOT NULL          -- fixed at creation (D19)
-  name                 TEXT NOT NULL                 -- unique among non-deleted bots
-  description          TEXT NOT NULL                 -- one line, ≤ 160 chars, shown to other bots (team directory, D18)
-  persona_md           TEXT NOT NULL                 -- ≤ 20 KB
-  avatar_path          TEXT NULL                     -- data/avatars/<sha256>.webp; NULL = generated default
+  name                 TEXT NOT NULL                 -- ≤ bot_name_max (32) chars; unique among bots not purged, Trash included (D50)
+  description          TEXT NOT NULL                 -- one line, ≤ bot_description_max (160) chars, shown to other bots (team directory, D18)
+  persona_md           TEXT NOT NULL                 -- ≤ bot_persona_max (8,000) chars
+  avatar_style         TEXT NOT NULL DEFAULT 'flat'  -- flat | jelly | pixel | upload (bot-avatar.md)
+  avatar_colour        TEXT NOT NULL                 -- any colour as '#RRGGBB' (bot-avatar.md §5); the Create page picks the default; the backend does not know the palette
+  avatar_path          TEXT NULL                     -- data/avatars/<sha256>.webp when avatar_style = 'upload', else NULL
   model_id             TEXT NOT NULL                 -- catalog id, e.g. anthropic:<model-name>        (immutable, D7)
   effort               TEXT NULL                     -- one of the model's efforts, NULL if none       (immutable, D7)
-  write_paths          JSON NOT NULL                 -- default ["out/<slug>/"]
-  request_limit        INTEGER NOT NULL DEFAULT 30   -- model requests per run
-  max_reply_chars      INTEGER NOT NULL DEFAULT 6000
-  history_share_pct    INTEGER NOT NULL DEFAULT 40   -- % of the model's context window for history per run, 10–80, step 5 (D32)
+  request_limit        INTEGER NOT NULL              -- model requests per run; default from setting bot_default_request_limit (30)
+  max_reply_chars      INTEGER NOT NULL              -- default from setting bot_default_max_reply_chars (6000)
+  history_share_pct    INTEGER NOT NULL              -- % of the model's context window for history per run, step 5 (D32); default bot_default_history_pct (40), range bot_history_min_pct–bot_history_max_pct (10–80)
+  tool_settings        JSON NOT NULL                 -- {<tool_id>: true | false} for every tool in the catalog that this bot's model can use (§4.1, D55)
   cloned_from_bot_id   TEXT NULL REFERENCES bots(id)
-  header_position      INTEGER NULL                  -- custom header order, 1 = first; NULL until a custom order is saved (bots.md UI-4.5)
+  create_key           TEXT NULL UNIQUE              -- Idempotency-Key of POST /bots; a repeat returns this bot (bots.md UI-5.6)
+  create_request_hash  TEXT NULL                     -- SHA-256 of the canonical POST /bots body; set with create_key (§2 Idempotency)
+  pinned_position      INTEGER NULL                  -- 1 = first pinned bot; NULL = not pinned (design/components/pin.md, bots.md UI-4.5)
   created_by           TEXT NOT NULL
   created_at, updated_at
-  deleted_at           TIMESTAMP NULL                -- soft delete (D12)
+  deleted_at           TIMESTAMP NULL                -- soft delete (D12); with D50 this is "moved to Trash"
+  purged_at            TIMESTAMP NULL                -- D50: Trash purge; the row stays as a record (name, slug, avatar, colour) for old messages
 
-UNIQUE INDEX bots_name_live ON bots(lower(name)) WHERE deleted_at IS NULL
+CHECK (purged_at IS NULL OR deleted_at IS NOT NULL)
+CHECK ((create_key IS NULL) = (create_request_hash IS NULL))
+UNIQUE INDEX bots_name_kept ON bots(lower(name)) WHERE purged_at IS NULL
+UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position IS NOT NULL
 ```
 
 - `multimodal` is not stored on the bot: it is a property of the model in the catalog.
 - **Immutability (D7):** the update schema has no `model_id` or `effort` fields and forbids
   extra fields, so a PATCH containing them returns 422. A test proves the row is unchanged.
+- **Write rule:** bots have no per-bot write folders. A bot writes only in the Library that its
+  run saves to, anywhere except `attachments/` and `.git` (D52, `security.md` §2.3).
+- **Idempotency (UI-5.6):** POST /bots stores the `Idempotency-Key` in `create_key` and the
+  SHA-256 of the canonical request body in `create_request_hash`, in the same transaction as the
+  insert. Canonical body: the parsed body after Zod validation, before defaults are applied, as
+  JSON with sorted keys and no spaces. A repeat with the same key and the same hash returns the
+  first bot (200) and creates nothing. The same key with another hash returns 409
+  `idempotency_key_reused`. Keys stay with the bot row; a purge clears them (below).
+- **Purge (D50):** after `trash_days`, the purge job turns the bot row into a **tombstone** in one
+  transaction. Every column keeps its value, except these, which change so the NOT NULL columns
+  still hold: `description = ''`, `persona_md = ''`, `tool_settings = '{}'`,
+  `pinned_position = NULL` (already NULL since the delete), `create_key = NULL`,
+  `create_request_hash = NULL`, `memory_history_versions = NULL` (its memory is deleted below),
+  `updated_at = now` and `purged_at = now`. This list is closed: a column added later keeps its
+  value unless this rule names it. The kept values (for example `name`, the avatar columns,
+  `model_id`, `effort`, `request_limit`, `max_reply_chars`, `history_share_pct`) are never used
+  again for a run. In the same
+  transaction it deletes
+  the bot's `bot_skills` rows, its bot-scope `memory_items` with their `memory_item_versions`, and
+  the bot's open skill drafts (`skill_drafts` with `target_bot_id` = the bot and no decision).
+  Rows that record history stay and keep their foreign keys: messages, runs, run steps,
+  `conversation_bots` (status `removed`), handoffs, `reply_feedback`, decided skill drafts. The
+  avatar file stays, because old messages show it. A tombstone is never updated again and never
+  restored.
 - **Clone:** there is no "clone" write endpoint. `GET /bots/{id}/clone-template` returns a
-  prefilled create payload (`name: "<name> (copy)"`, persona, avatar, model, effort, write
-  paths, pins with their versions and `always_load`). The owner edits it in the create form and
-  submits a normal create with `cloned_from_bot_id`. Cancelling creates nothing.
-- **Header order** (`app-shell.md` UI-2.1): with `settings.bot_order = 'recent'` the order
-  comes from `last_activity_at`, computed on read as the latest `created_at` of the bot's
-  messages and runs; nothing is stored for it. With `'custom'` it is `header_position`
-  ascending; bots with NULL (created after the last save) follow, oldest first. Saving a custom
-  order rewrites `header_position` for every non-deleted bot in one transaction. Gaps left by
-  deleted bots are harmless.
+  prefilled create payload (`name` per the clone name rule below, description, persona, avatar style (no
+  colour: the page picks a free one, `design/components/bot-avatar.md` §5), model, effort, Advanced values, `tool_settings`, pins with their versions and
+  `always_load`). The owner edits it in the create form and submits a normal create with
+  `cloned_from_bot_id`. Cancelling creates nothing. Bot memory is not copied. A bot in Trash or
+  purged has no clone template (422 `bot_deleted`).
+- **Clone name:** the template name is "{name} (copy)". If that is longer than `bot_name_max`,
+  the base name is cut at a character boundary (never inside a grapheme) and trailing spaces
+  are removed, so the whole name fits: for a limit of 32, the base keeps at most 25 characters.
+  If the name is taken (Trash included), the template tries "{base} (copy 2)", "(copy 3)", …,
+  cutting the base again for each, and returns the first free one. It is only a suggestion: the
+  owner can change it, and the create checks it again (409 `name_taken`).
+- **Order** (`bots.md` UI-4.5, `app-shell.md` UI-2.1): pinned bots first, by `pinned_position`
+  ascending; then the others by `settings.bot_order` and `settings.bot_order_direction`. With
+  `'recent'` the order comes from `last_activity_at`, computed on read as the latest
+  `created_at` of the bot's messages and runs (bots with no activity follow, by `created_at`);
+  nothing is stored for it. With `'created'` it is `created_at`. Saving the pinned list
+  (`PUT /bots/pins`) rewrites `pinned_position` in one transaction: every bot gets NULL first,
+  then the listed bots get 1…n, so the unique index never sees a duplicate. A delete sets `pinned_position` to NULL and closes the gap in the same
+  transaction.
+- **Tool settings (D55):** at create, each internal tool is on and each provider tool
+  is off, unless the request says otherwise. For two tools with the same `job` (§4.1), at most one
+  is on; the service rejects a body that turns on both (422 `tool_job_conflict`). Provider tool
+  switches have effect only from the milestone that builds them (D53).
+- **Health** (`bots.md` UI-4.6) is computed on read from runs and pins; nothing is stored.
 - **Availability** is computed, not stored: a bot is *available* if its `model_id` is in the
   catalog and the model's API key variable is set.
 
@@ -289,8 +336,9 @@ skill_drafts                                              -- TypeID prefix `skil
   api_key_env: ANTHROPIC_API_KEY
   efforts: [low, medium, high]            # [] = the model has no effort setting
   default_effort: medium
-  multimodal: true
+  multimodal: true                        # reads images; View images is off and grey when false
   context_window: 200000
+  provider_tools: [web_search, web_fetch, code_execution, mcp_connector, advisor, tool_search]   # ids from config/tools.yaml (§4.1); [] = none
   price_override_per_mtok: null   # optional {input, output, cache_read, cache_write} in USD; otherwise genai-prices (D21)
 - id: deepseek:<model-name>
   label: <DeepSeek model label>
@@ -298,6 +346,7 @@ skill_drafts                                              -- TypeID prefix `skil
   efforts: []
   multimodal: false
   context_window: 64000
+  provider_tools: []
 ```
 
 - The create form lists only models whose `api_key_env` is set.
@@ -306,9 +355,45 @@ skill_drafts                                              -- TypeID prefix `skil
   per provider. Values above are placeholders; the agent implementing M2 must check current model
   ids and parameters in the provider docs.
 - Removing a model from the catalog makes its bots *unavailable* (J5 in the overview).
+- A model "has a web tool" (D53) when its `provider_tools` list has a tool whose catalog entry has
+  `web: true`.
 - Prices come from `genai-prices`; an override in the catalog wins (D21), so the owner can price a
   model the library does not know, or correct one it prices wrongly, without waiting for a release. A model with no known price still works; its runs show tokens and
   "cost unknown", and they do not count towards the daily cap (Settings shows a warning).
+
+### 4.1 Tool catalog (D55)
+
+`config/tools.yaml` (checked into the repo) lists every tool a bot can get. The Create page and
+the bot page build the Tools list from it (`design/components/create-bot-page.md` §3).
+
+```yaml
+- id: files                     # stable id, used as the key in bots.tool_settings
+  label: Files
+  kind: internal                # internal = run by this app | provider = run on the provider's servers
+  job: files                    # tools with the same job are one row; only one can be on
+  added: 2026-10-24             # date added to the catalog; sorts the list inside each group
+  sends_data_out: false         # true = amber ⚠ on the row
+  web: false                    # true = a web tool under D53
+  line: "List, read and write files in the conversation Library."
+  off_line: "The bot only talks. View images and Hand off turn off too."
+  needs: []                     # tool ids that must be on (view_images and hand_off need files)
+- id: web_fetch
+  label: Web fetch
+  kind: provider
+  provider: anthropic
+  job: web_fetch
+  added: 2026-10-24
+  sends_data_out: false
+  web: true
+  line: "Open a page from a search result or from your message and read its text."
+```
+
+- Internal tools in phase 1: `files`, `view_images`, `skills`, `hand_off`, `memory`.
+- A provider tool is offered to a bot only when the bot's model lists it in `provider_tools`.
+- Order in the list: internal tools with no provider tool for the same job, then jobs that both
+  can do, then provider-only tools; inside each group by `added`, oldest first.
+- Ids and parameters of provider tools change; the agent that builds them checks the provider
+  docs and records what it checked in the PR (as for models).
 
 ## 5. Conversations and members
 
@@ -464,11 +549,18 @@ handoffs
 
 ```
 settings
-  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, trash_days, improve_* (D51) …
+  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, bot_order_direction, trash_days, improve_* (D51), bot_* limits, health_* …
   value  JSON NOT NULL
 ```
 
-Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"custom"`), `trash_days = 30` (projects and skills, D49), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3` (D51; read by M5d, never hard-coded).
+Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"created"`), `bot_order_direction = "desc"` (`"desc"` | `"asc"`), `trash_days = 30` (projects and skills, D49), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3` (D51; read by M5d, never hard-coded).
+
+Bot limits and defaults (`bots.md` UI-4.6, UI-5.8; read by M2, never hard-coded):
+`bot_name_max = 32`, `bot_description_max = 160`, `bot_persona_max = 8000`,
+`bot_history_min_pct = 10`, `bot_history_max_pct = 80`, `bot_default_history_pct = 40`,
+`bot_default_request_limit = 30`, `bot_default_max_reply_chars = 6000`,
+`health_recent_runs = 5`, `health_failed_runs = 2`, `health_limit_stops = 3`,
+`health_limit_window_days = 7`.
 
 ## 11. Files on disk
 
@@ -478,8 +570,9 @@ data/
   avatars/<sha256>.webp                     re-encoded uploads, content-addressed
   workspaces/<project_id>/                  git repo shared by a project's conversations (D37)
   workspaces/<conversation_id>/             git repo of a conversation outside any project
-      inbox/<message_id>/<file>             attachments (bots: read-only)
-      out/<bot-slug>/...                    default bot write path
+      attachments/<yyyy-mm-dd>-<conversation-slug>/<file>   owner uploads (bots: read-only, D52)
+      README.md, .gitignore, .gitattributes      made by the app in the first commit (D52)
+      <topic folders>/...                   bot and owner files, by topic, not by author (D52)
   trash/<conversation_id>/                  workspaces of deleted conversations
 ```
 
@@ -498,7 +591,7 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
 9. A message's content changes only while `status = streaming`.
 10. Every message's `parent_message_id` belongs to the same conversation.
 11. `run_skills` contains exactly the always-loaded pins plus the distinct `load_skill` calls.
-12. Bot names are unique among non-deleted bots (case-insensitive); slugs are unique forever.
+12. Bot names are unique among bots that are not purged, Trash included (case-insensitive, D50); slugs are unique forever.
 13. A request's `estimated_cost_usd` never changes after it finishes, even if prices do; a run's
     totals equal the sum of its requests.
 14. Every tool call of a run has exactly one `run_steps` row, in call order.

@@ -24,8 +24,8 @@
 ```
 ┌─────────────────────────────────────────────────────────────┬─────────────┐
 │ Login redesign   (BA)(Des)  [+ Add bot]  Discussion: on 3/5  [■ Stop] [⚙]│ Files       │
-├─────────────────────────────────────────────────────────────┤ out/ba/…    │
-│ (B) Binh                                       ‹ 2/2 › Edit │ inbox/…     │
+├─────────────────────────────────────────────────────────────┤ user-stori… │
+│ (B) Binh                                       ‹ 2/2 › Edit │ attachments…│
 │     @BA write stories for the login page                    │             │
 │ (BA) BA                                                      │             │
 │     Here are the stories…                                    │             │

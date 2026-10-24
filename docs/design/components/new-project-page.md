@@ -13,10 +13,10 @@ title and the page's accessible name stay **"New project"**.
 
 | # | Title | Subtitle |
 | --- | --- | --- |
-| 1 | A new home for big ideas 🏡 | Its chats share one memory and one Library. |
+| 1 | A new home for big ideas 🏡 | Its conversations share one memory and one Library. |
 | 2 | Let's build something 🛠️ | Give your team a goal and some ground rules. |
 | 3 | New mission, who dis? 🚀 | Name it, aim it, and the bots will follow. |
-| 4 | Gather the team 🧩 | One goal, one memory, one Library for every chat inside. |
+| 4 | Gather the team 🧩 | One goal, one memory, one Library for every conversation inside. |
 | 5 | Plant a project 🌱 | Start small. It grows as your bots work. |
 | 6 | Clean slate ✨ | What are we making this time? |
 | 7 | Where should we start? 🗺️ | Set the goal, and your bots will help find the way. |
@@ -31,9 +31,9 @@ title and the page's accessible name stay **"New project"**.
     projects with their pin marks, then the new project as the newest unpinned project,
     selected, then the other projects. Other projects keep their waiting counts and unread
     marks.
-  - **Bar 2:** the header (tile, name, "0 chats · 0 bots · 0 files", goal), the Board row
-    ("Later", no counts), Memory 0, Library 0, and the Chats label with its + button. It shows
-    no chat rows.
+  - **Bar 2:** the header (tile, name, "0 conversations · 0 bots · 0 files", goal), the Board row
+    ("Later", no counts), Memory 0, Library 0, and the Conversations label with its + button. It shows
+    no conversation rows.
   - Under it: "The new project goes below your pinned projects, as the newest one. The other projects
     keep their pin marks, waiting counts and unread marks. Bar 2 does not show the instructions.
     Every bot in this project reads them."
@@ -85,7 +85,7 @@ page, Cancel goes back at once. The dialog has a joyful tone (owner, 2026-10-22)
 
 ## 6. After Create
 
-The project opens with an empty first chat. The owner adds bots in the chat, not on this page.
+The project opens with an empty first conversation. The owner adds bots in the conversation, not on this page.
 
 ## Requirement changes (requirements PR)
 

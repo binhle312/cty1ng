@@ -113,7 +113,7 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `message.feedback` | yes | `{message_id, feedback}` (`feedback` null when removed) | the owner rated a bot message, or changed or removed the rating (D51) |
 | `run.queued` | yes | `{run}` | run inserted |
 | `run.started` | yes | `{run}` | worker claimed it |
-| `run.step` | yes | `{run_id, conversation_id, actor_id, step}` | each bot tool call finishes (D26), e.g. `read_file out/ba/stories.md` |
+| `run.step` | yes | `{run_id, conversation_id, actor_id, step}` | each bot tool call finishes (D26), e.g. `read_file user-stories/login.md` |
 | `run.finished` | yes | `{run}` | done, failed or stopped |
 | `member.pending` | yes | `{conversation_id, bot_id, message_id}` | bot added, history card posted |
 | `member.joined` | yes | `{conversation_id, bot_id, history_from_seq}` | owner chose history |
@@ -123,7 +123,7 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `skill_draft.created` | yes | `{skill_draft}` | a bot proposed a skill (D41) |
 | `skill_draft.decided` | yes | `{skill_draft}` | approved / rejected / stale; an approval also emits `skill.created` or `skill.updated`, and `bot.updated` when pinned |
 | `bot.created` / `bot.updated` / `bot.deleted` | yes | `{bot}` | bot CRUD, avatar, pins |
-| `bots.reordered` | yes | `{bot_ids}` | custom header order saved (`PUT /bots/order`) |
+| `bots.reordered` | yes | `{pinned_bot_ids}` | pinned list saved: pin, unpin or reorder (`PUT /bots/pins`); the header and the Bots page follow at once |
 | `skill.created` / `skill.updated` / `skill.deprecated` | yes | `{skill}` | skill CRUD, new version |
 | `settings.updated` | yes | `{settings}` | global settings changed |
 | `spend.threshold_crossed` | yes | `{threshold_pct, today_spend_usd, cap_usd, provider}` | today's spend crossed 75%, 90% or 100% of the total cap (`provider` null) or of one provider's cap (D40, D42); once per threshold per cap per day |

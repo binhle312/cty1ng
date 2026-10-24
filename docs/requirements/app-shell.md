@@ -8,9 +8,9 @@ The frame around every page: the rail of conversations on the left and the bar o
   Acceptance criteria: UI-1.1 to UI-1.6.
 - **SH-2.** As the owner, I want all my bots visible in a header with name tooltips, so that I always know who is available.  
   Acceptance criteria: UI-2.1 to UI-2.3, UI-2.6 to UI-2.8.
-- **SH-3.** As the owner, I want to drag a bot from the header into the chat, so that adding a bot feels direct.  
+- **SH-3.** As the owner, I want to drag a bot from the header into the conversation, so that adding a bot feels direct.  
   Acceptance criteria: UI-2.4, UI-2.5.
-- **SH-6.** As the owner, I want the header to show my most active bots first, or an order I choose, and never to shuffle while I am using it, so that I can find a bot without chasing it.  
+- **SH-6.** As the owner, I want the header to show my pinned bots first in my order, then the others by recent activity or creation time, and never to shuffle while I am using it, so that I can find a bot without chasing it.  
   Acceptance criteria: UI-2.1, UI-2.9, UI-2.10, UI-4.5.
 - **SH-4.** As the owner opening the app for the first time, I want a short checklist of what to set up, so that I reach my first bot reply without reading documentation.  
   Acceptance criteria: UI-1.7 to UI-1.9.
@@ -41,20 +41,27 @@ Layout sketch: see `../design/screens.md` §1 (not final).
 
 ## Header (bot bar) (UI-2)
 
-- UI-2.1: Shows every non-deleted bot as a 36 px round avatar. The order follows the
-  `bot_order` setting:
-  - **Recent activity** (default): the bot with the latest message or run, in any
-    conversation, comes first (`last_activity_at`, `../api.md` §4). Bots with no activity
-    follow, by name. Clicking, hovering or opening a bot never changes the order.
-  - **Custom**: the order the owner saved on the Bots page (UI-4.5). Activity never changes it.
-    A bot created later goes to the end.
+- UI-2.1: Shows every non-deleted bot as a 36 px round avatar, in the same order as the Bots page
+  (`bots.md` UI-4.5):
+  - **Pinned** bots first, in the owner's order, then a short divider, then the others. The
+    pinned zone and the divider are always shown; with no pinned bot, the zone is a dashed pill
+    "Drag a bot here to pin it". Header avatars have no pin mark
+    (`../design/components/top-header.md` §3).
+  - **Others** by the `bot_order` setting: *Recent activity* (default): the bot with the latest
+    message or run, in any conversation, comes first (`last_activity_at`, `../api.md` §4); bots
+    with no activity follow, newest created first. *Created*: by creation time. Either can be
+    newest first or oldest first. Clicking, hovering or opening a bot never changes the order.
+  - Drag an avatar across the divider to pin it at the drop place, out of the zone to unpin it
+    (it goes to its sorted place), or inside the zone to reorder. Alt+← and Alt+→ on a focused
+    pinned avatar move it. Each change saves at once (`PUT /bots/pins`).
 - UI-2.2: Tooltip with the bot name on hover or focus within 300 ms.
 - UI-2.3: Unavailable bots show a small warning badge; tooltip adds the reason ("Model removed
   from catalog" / "API key not set").
-- UI-2.4: Avatars are draggable (dnd-kit). While dragging over the chat area of an open
-  conversation, the area shows a drop highlight and the text "Add <name> to this conversation".
-  Bots already in the conversation, unavailable bots, and drops outside the chat area do
-  nothing and show why ("Already here").
+- UI-2.4: Avatars are draggable (dnd-kit). While dragging over the area of an open
+  conversation, the area shows an active dashed slot and the text "Drop to add <name> to this
+  conversation". Bots already in the conversation, unavailable bots, and drops outside the
+  conversation area do nothing and show why ("Already here"). The drop place decides: in the
+  header a drop pins, unpins or reorders (UI-2.1); in the conversation it adds the bot.
 - UI-2.5: Dropping adds the bot (`../conversation-rules.md` §3); the history card appears within
   1 s.
 - UI-2.6: Clicking an avatar opens the bot card (`../design/components/bot-card.md`). Only one
@@ -65,7 +72,7 @@ Layout sketch: see `../design/screens.md` §1 (not final).
 - UI-2.8: The header holds the bot roster only, with no navigation links. Bots, Skills, Memory,
   Statistics and Settings open from the user panel menu (`../design/components/user-panel.md`).
   With no bots, the header shows a dashed "+" with "Hey, add your bot here 👋".
-- UI-2.9: Deferred reordering (Recent activity only). The order freezes when the pointer enters
+- UI-2.9: Deferred reordering (changes that come from activity). The order freezes when the pointer enters
   the header or focus moves into it, and stays frozen while the owner scrolls, drags, clicks or
   uses a bot's card; leaving with the pointer keeps it frozen. Activity that arrives meanwhile
   is recorded but no avatar moves. The pending order applies in one step at the next of these events:
@@ -73,7 +80,7 @@ Layout sketch: see `../design/screens.md` §1 (not final).
   another window or tab); or the page or route changes. A pointer, keyboard or drag interaction
   in the header always keeps it frozen. The update moves no avatar one by one, does nothing when the order is
   unchanged, and keeps the scroll position where it can. Rule: avatars never move while the
-  owner is engaging with the header.
+  owner is engaging with the header. The owner's own pin, unpin or drag applies at once.
 - UI-2.10: Keyboard: Tab reaches each avatar in display order, and the focused avatar scrolls
   into view. Arrow-key navigation between avatars is not provided (a later option).
 - UI-2.11: The header is sticky: it stays at the top of the window on every page while the

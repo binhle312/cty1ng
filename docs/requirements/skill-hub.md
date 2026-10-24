@@ -71,7 +71,7 @@ versions and rollback (D6), and the Improve bot can change them (D51).
 
 ## Skills drafted by bots (D41)
 
-- UI-7.9: When the owner asks, a bot drafts a skill and a card appears in the chat: "<Bot>
+- UI-7.9: When the owner asks, a bot drafts a skill and a card appears in the conversation: "<Bot>
   drafted a skill for <target bot>: <name>", with the slug, description, changelog and body
   (Markdown preview, raw HTML disabled), and the owner's message that asked for it.
 - UI-7.10: A draft that edits an existing skill shows a diff against the version it was based

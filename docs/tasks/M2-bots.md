@@ -22,13 +22,24 @@ D7, D12, D16, D19; `docs/api.md` §3, §4; `docs/requirements/app-shell.md` (UI-
   what you checked in the PR.
 - Tables `bots`, `bot_skills`; slug generation (D19); one-line `description` (D18).
 - Endpoints `api.md` §3–4, plus `upgrade-candidates` and `upgrade_bot_ids` from §2.
-- Avatar upload pipeline with re-encoding; generated default avatar (initials + colour from
-  the slug).
-- Pages: bots list, create (including clone mode), detail (skills table, upgrade diff,
-  always-load, avatar change, unavailable banner).
-- Header bar with tooltips and unavailable badges (dragging comes in M4); header order
-  (Recent activity / Custom) with deferred reordering (UI-2.1, UI-2.9, UI-2.10).
-- Bots page header-order control (UI-4.5), `PUT /bots/order`, setting `bot_order`.
+- Avatar upload pipeline with re-encoding and the crop card; avatar styles Flat, Jelly and Pixel
+  drawn from any bot colour (`#RRGGBB`); the colour row with Custom and Random; the default
+  colour is a random swatch no other bot uses (`design/components/bot-avatar.md` §5, §6).
+- Pages: bots list, create (including clone mode, `create-bot-page.md` §6), bot page
+  (`bot-page.md`: edit layout, Profile, Skills, Model and Activity tabs, save bar, colour band,
+  unavailable banner). The Memory tab waits for M5b; the Usage tab design is still in review.
+- Header bar with tooltips and unavailable badges (dragging into a conversation comes in M4);
+  pinned zone with drag to pin, unpin and reorder; header order (pinned, then Recent activity or
+  Created) with deferred reordering (UI-2.1, UI-2.9, UI-2.10).
+- Bots page pins and sort buttons (UI-4.5), `PUT /bots/pins`, settings `bot_order` and
+  `bot_order_direction`; health (UI-4.6), search (UI-4.7), empty state (UI-4.8).
+- Create page with four steps, preview card, Tools list and `Idempotency-Key` (UI-5.1–5.8);
+  `config/tools.yaml` (`domain-model.md` §4.1) and `bots.tool_settings`. Provider tool switches
+  stay "later milestone" (D53, D55).
+- Agreed designs: `docs/design/components/bots-page.md`, `create-bot-page.md`, `bot-page.md`,
+  `bot-avatar.md` §5–§6, `pin.md`,
+  `bot-status.md`, `dashed-slot.md`, `time-format.md`, and the round 9 changes in
+  `top-header.md` and `bot-card.md`.
 - Skill save dialog now lists real upgrade candidates (UI-7.4).
 - Events `bot.created|updated|deleted`, `bots.reordered`.
 - `make seed` also creates BA and Designer bots pinned to the seeded skills, with
@@ -40,17 +51,27 @@ Conversations, drag-to-add (M4).
 
 ## Acceptance criteria
 
-- UI-2.1, 2.2, 2.3, 2.6–2.10; UI-4.1–4.5; UI-5.1–5.4; UI-6.1–6.6 (6.7 and 6.8 show empty
+- UI-2.1, 2.2, 2.3, 2.6–2.10; UI-4.1–4.8; UI-5.1–5.8; UI-6.1–6.6 (6.7 and 6.8 show empty
   states until M3); UI-7.4.
 - Invariants 1, 3, 4, 6, 12.
 - PATCH with `model_id` or `effort` → 422, row unchanged.
 - Effort not in the model's list → 422 `effort_not_supported`.
 - Removing a model from `models.yaml` (or unsetting its key) makes the bot unavailable with the
-  right reason; "Clone with another model" opens a prefilled form.
+  right reason; Clone on its banner opens the prefilled form with the model field empty (CL2).
 - Saving skill v2 with BA unchecked leaves BA on v1; checked moves only BA.
 - SVG avatar rejected; PNG re-encoded to WebP, stored by hash.
-- `PUT /bots/order` missing a live bot, or naming a deleted one → 409 `bot_list_changed`,
+- `POST /bots` repeated with the same `Idempotency-Key` and body → the first bot, nothing new;
+  same key with another body → 409 `idempotency_key_reused`.
+- Clone of a bot with a 30-character name suggests a name of at most 32 characters; with
+  "{name} (copy)" taken it suggests "(copy 2)".
+- Clone with a model that lacks a copied provider tool → that tool is off, the info line names
+  it, and a body that still turns it on → 422 `tool_not_available`.
+- `avatar_colour` that is not `#RRGGBB` → 422. A Profile save with a new uploaded image is one
+  PATCH (`avatar_style: upload`, `avatar_id`) in one transaction.
+- `PUT /bots/pins` naming a deleted bot or the same bot twice → 409 `bot_list_changed`,
   positions unchanged.
+- `POST /bots` sent twice with the same `Idempotency-Key` creates one bot.
+- `tool_settings` with two tools of the same job on → 422 `tool_job_conflict`.
 - Header in Recent activity: activity events while the pointer is in the header move no
   avatar; the next click outside applies the new order once.
 
@@ -66,7 +87,7 @@ bot with it → clone with a different model → upgrade flow from J4.
 The UI design in the plan (layout, components, states), approved before UI code is written
 (`docs/workflow.md` §2; sketches in `docs/design/` are not specs).
 
-Migration (including `bots.header_position`); avatar upload code; catalog contents.
+Migration (including `bots.pinned_position`, `avatar_style`, `avatar_colour`, `tool_settings`, `create_key`, `create_request_hash`, `purged_at`, and removing `write_paths`; the owner approved these columns in the spec, PR #20, 2026-10-24, including the purge tombstone and `create_request_hash` (`domain-model.md` §2 Purge and Idempotency), and still reviews the migration file); avatar upload code; catalog contents.
 
 ## Open questions
 
