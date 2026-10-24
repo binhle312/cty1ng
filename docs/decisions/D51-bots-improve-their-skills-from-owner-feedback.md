@@ -82,7 +82,9 @@ Decision:
   won 2 of 3, 1 tie"), and the draft card shows the same line. The probe picks are evidence
   on the card only; they are not signals and never count toward the offer threshold.
   Reason: the owner asked for the draft, so a visible label pulls the owner toward the new
-  version.
+  version. Limit: the blind step hides labels and order, not content. If the new version adds
+  a visible rule (for example a failure case in each story), the owner can still guess it, so
+  the score is evidence, not proof.
 - **Compose.** The owner approves the draft as in D41. The owner is the author (D14), and the
   bot uses the new version. To roll back, the owner picks the old version on the bot page
   (D6). The signals that the draft used are marked as used, so they do not count again.
