@@ -98,7 +98,7 @@ Design: `../design/components/create-bot-page.md` (agreed, round 9).
 
 ## Bot detail page (UI-6)
 
-Design: `../design/components/bot-page.md` (agreed, round 9, except the Memory and Usage tabs).
+Design: `../design/components/bot-page.md` (agreed, round 9, except the Memory tab).
 
 - UI-6.1: The edit layout: the bot list on the left, the bot page on the right, at
   `/bots/{slug}`. The page top shows the band in the bot colour, the 116 px avatar, name and
@@ -122,6 +122,8 @@ Design: `../design/components/bot-page.md` (agreed, round 9, except the Memory a
 - UI-6.6: "Add skills" opens a picker of non-deprecated skills not yet assigned; adding pins
   the latest version.
 - UI-6.7: Lists the conversations this bot is in (links).
-- UI-6.8: Usage: runs, tokens (input, output, cache) and estimated cost for the range chosen in
-  a time range picker (`time-range-picker.md`, default "Last 7 days"), with a small chart (D21). Runs without
-  prices show "cost unknown".
+- UI-6.8: Usage: five tiles (task success, plans approved first time, runs finished, cost per
+  successful task, you wait), each with a status chip against an optional target and a trend chip,
+  then three views: Results, Changes (before and after a setup change) and Causes, for the range
+  of the time range picker (`time-range-picker.md`, default "Last 7 days") (D21). Every rate shows
+  its count. Runs without prices show "cost unknown" (`../design/components/bot-page.md` §9).

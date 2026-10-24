@@ -1,9 +1,11 @@
 # Bot page
 
 > **Status: agreed in the M2 Bots UI design review, round 9 (2026-10-23 and 2026-10-24),** except
-> the Memory tab (M5b) and the Usage tab (in review). Steps 3a (E1–E3), 3b (PF1–PF5), 3c (SK1–SK3), 3d (SK4, CH1), 5 (BP1) and 5b (PR1–PR3,
+> the Memory tab (M5b). The Usage tab (§9) was approved on 2026-10-24 as a design; the data it
+> needs is not specified yet (§9.6). Steps 3a (E1–E3), 3b (PF1–PF5), 3c (SK1–SK3), 3d (SK4, CH1), 5 (BP1) and 5b (PR1–PR3,
 > HB, RI, PR2, AV4). Previews: `../previews/command-dark/bot-page.png` (PR1, HB, PR3),
-> `bot-avatar-change.png` (PR2, AV4), `bot-page-tabs.png` (SK1–SK4, CH1). Requirements: `../../requirements/bots.md` UI-6.
+> `bot-avatar-change.png` (PR2, AV4), `bot-page-tabs.png` (SK1–SK4, CH1), `bot-usage.png` (W1–W3,
+> UV2, UV5). Requirements: `../../requirements/bots.md` UI-6.
 > Avatar and colour rules: `bot-avatar.md` §5 and §6.
 
 A click on a card on the Bots page opens the bot in the **edit layout** (L1). The URL is
@@ -62,7 +64,7 @@ The tabs follow the Create steps, then the parts Create does not have. Each tab 
 | **Model** | Create step 4 without the model field: Tools, Advanced (§6) | Save bar |
 | **Memory** | The bot's memory (D38), the Memory page list filtered to this bot. Designed with the Memory page (M5b) | — |
 | **Activity** | Count of conversations (§8) | — |
-| **Usage** | Runs, requests, tokens and cost. In review (UI-6.8) | — |
+| **Usage** | How well the bot works: tiles, then three views Results, Changes, Causes (§9) | — |
 
 ## 4. Profile tab (PR1, approved 2026-10-24)
 
@@ -150,3 +152,108 @@ active** (the bot's last reply or run there, `time-format.md`).
 - The 1:1 conversation is a normal row. No filters in M2.
 - Empty: "BA is in no conversations yet. Message BA, or drag it from the header into a
   conversation."
+
+## 9. Usage tab (UV1–UV5, W1–W3, approved 2026-10-24)
+
+The tab answers three questions about the bot: **Is it doing good work? Is it getting better?
+What explains the change?** There is no single health score, and every rate shows its count
+("23 of 27 checked").
+
+### 9.1 Top (always shown)
+
+1. "How well BA works.", then **Group by** (Auto / Day / Week) and the shared time range picker
+   (`../../requirements/time-range-picker.md`, D25) with Refresh. Default: Last 7 days, Auto.
+   Auto uses the bucket rule of the picker; Week helps when days have fewer than 5 items.
+2. **Five tiles:**
+
+   | Tile | Value | Count line |
+   | --- | --- | --- |
+   | Task success | % of checked tasks with a good verdict (§9.5) | "23 of 27 checked · 27 of 41 tasks checked" |
+   | Plans approved first time | % of answered plan cards approved with no Request changes | "11 of 14 answered plans" |
+   | Runs finished | % of runs that finished | "35 of 36 · 1 provider error not counted" |
+   | Cost per successful task | Cost of all runs (failed runs and retries too) ÷ successful tasks | "$4.50 for 23 tasks" |
+   | You wait, slow 10 % | p90 of the time from the owner's message to a finished reply, without the owner's own approval time | "90 % of waits were 48 s or less" |
+
+   Each tile has two chips. **Status:** "Meets target {n}", "Below target {n}" (`danger`), or
+   "No target"; the owner sets a target in the tile ⋯ menu. **Trend:** "▲ Better", "▼ Worse" or
+   "Not enough change", against the range before. A tile can be "Below target" and "Better" at
+   the same time. A click on a tile opens the view that explains it ("You wait" opens Causes at
+   Speed).
+3. A **view switch** under the tiles: **Results** (default) · **Changes** · **Causes**, with the
+   question as a hint. The view is in the URL (`?view=results`), like the time range.
+
+### 9.2 Results: is it doing good work? (W1)
+
+Five outcome charts, two per row, with "Setup changed" markers (§9.3):
+
+| Chart | Form | Note under it |
+| --- | --- | --- |
+| Task success | Line, success % and the target as a dashed line; a row under it with checked / all tasks | Under 5 checked tasks a point is hollow |
+| Plan decisions | 100 % stacked bars: approved first time, approved after changes, rejected; a count row | Open plans are counted apart, not in the bar |
+| Your ratings | Line, good ÷ all ratings on the bot's replies (`conversation.md` UI-3.27); a count row | Under 5 ratings a point is hollow |
+| Corrections and retries | Two lines: tasks with a correction (a Bad answer or Request changes on the result), tasks with a retry | A new request from the owner is not a correction |
+| Run outcomes | Stacked bars: finished, failed, stopped at limit, stopped by you; Count / Finished % switch | Paused and running runs show as text ("Now: 1 paused · 1 running") |
+
+### 9.3 Changes: is it getting better? (W2, UV2)
+
+- A **Setup changed** marker shows on the charts at each change of the bot setup: persona,
+  skill versions, skills added or removed, Always load, tool switches, Advanced values. Model and
+  price changes (of the catalog) get a grey marker with no action, because they change how the
+  numbers read.
+- The Changes view lists every change in the range, newest first. Each row shows the 1 or 2
+  biggest moves as chips. A click opens **Before and after**; a marker click in Results opens
+  this view at that row.
+- **Before and after** compares the same length of time on both sides (2 or 4 weeks; it can look
+  back past the range start), only for tasks in the same projects on both sides. Columns: Stat,
+  Before, After, Change, Evidence. A side with fewer than 20 items says "Not enough {items}"
+  in place of a verdict. A line under the table says: a marker shows when something changed,
+  not why the numbers moved.
+
+### 9.4 Causes: what explains the change? (W3, UV3, UV4)
+
+Chips at the top jump to a group. Small charts, three per row, with the markers on hover of the
+group. "Typical" is p50 and "Slow 10 %" is p90 (the tooltip says "90 % of runs were at or below
+this value"). Two values of the same unit share one axis; never two axes.
+
+| Group | Charts |
+| --- | --- |
+| Limits and effort | Limit pressure (request limit stops, daily cap pauses in grey, replies cut at the limit, each as a rate); model requests per run; tool calls per run; history cuts per 100 runs with the success of runs with a cut |
+| Spending | Cost per day with the daily cap as a line; cost per approved plan and per successful task; tokens per run (input, from cache, output; cached input is a part of input) |
+| Speed | Time to first word; run time (without approval waits); you wait |
+| Work with others | Handoffs sent, got, approved; memories saved and the part undone or forgotten later |
+
+Then the whole-range tables. Each row opens the runs behind it:
+
+| Table | Columns |
+| --- | --- |
+| Why runs failed | Reason, runs, share of failed. Provider errors are listed but not counted |
+| Tools | Tool, calls, failed %, typical time, cost |
+| Skills | Skill, version, loaded in (% of runs), success when loaded (with checked count). "Never loaded" is neutral |
+| Handoffs by bot | Bot, sent, got, approved, sent back |
+| Bot-to-bot turns used | Histogram of conversations; the bar that hit the limit is red and lists them |
+
+### 9.5 Where task success comes from (UV5)
+
+| Source | When | What it is |
+| --- | --- | --- |
+| The owner's verdict at the end of a task | M3 | An optional row "Did this do the job?" with **Yes** and **Bad answer** under a finished action run. No answer = not checked |
+| A rating later | M3 | A Bad answer or a good rating on the result reply counts too |
+| Test tasks | Later, with Improve bot (D51) | The paid probe runs the same tasks on two versions; the owner judges |
+| A model as judge | Not now | It costs money on every task and needs checks against the owner's verdicts first |
+
+Coverage ("45 of 61 checked") always shows, because a rate from few verdicts is weak.
+
+### 9.6 Not specified yet
+
+The design needs data that the spec does not hold yet. These go to the M3 and M7 briefs, with
+a migration that needs the owner's approval:
+
+- The task verdict on a run (§9.5) and the "Did this do the job?" row in `conversation.md`.
+- A record of setup changes per bot, with what changed and the versions (§9.3). Profile saves
+  keep no version (§4.1), so the marker names the field, not a persona version.
+- Per-tile targets (settings with no default: "No target").
+- Group by in the time range picker (a new option of UI-11).
+- The timings (time to first word, run time, wait) and tool call counts per run.
+
+Until M3 there are no runs. Empty state: "No runs yet. Usage shows here after BA replies in a
+conversation." The charts reuse the Statistics page parts (M7).

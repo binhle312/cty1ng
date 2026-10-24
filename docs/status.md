@@ -37,8 +37,8 @@ M5d, after M5c); M3 starts to store reply ratings. M2 Bots design round 9: the B
 the Create bot page and the standards for pin, bot status, dashed slot, time format and sort are
 agreed and saved in `design/components/`. The bot page (`bot-page.md`: edit layout, Profile,
 Skills and Activity tabs, colour band), Clone and the avatar colour rules (any colour, Custom,
-Random, upload with crop) are agreed too. Still in review: the Usage tab;
-the Memory tab comes with M5b. D50 (bots to Trash) and D55 (provider tools first, tool switches) are proposed.
+Random, upload with crop) are agreed too. The Usage tab design is agreed; its data (task verdict, setup change
+record, targets) is not specified yet. The Memory tab comes with M5b. D50 (bots to Trash) and D55 (provider tools first, tool switches) are proposed.
 
 ## Next
 
@@ -54,7 +54,7 @@ the Memory tab comes with M5b. D50 (bots to Trash) and D55 (provider tools first
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
 | Approve the M2 migration: `bots.pinned_position` (replaces `header_position`), `avatar_style`, `avatar_colour` (any `#RRGGBB`), `tool_settings`, `create_key`, `purged_at`; `write_paths` removed. Claude Code stops for this approval before it writes the migration | M2 plan |
 | Accept or change D50 (deleted bots go to Trash) and D55 (provider tools first, one switch per tool; code execution and MCP connector conflicts) | M2 plan |
-| Finish the M2 design review: the bot page Usage tab | M2 plan |
+| Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a migration approval | M3 and M7 plans |
 | Approve the M5b migrations: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars. Claude Code stops for this approval before it writes them | M5b plan |
 | Write the M5b brief: projects, memory (D37, D38, D43), goal and instructions (D45), pinning, the API contracts that D43 and D45 list as not written yet | M5b start |
 
@@ -64,7 +64,7 @@ the Memory tab comes with M5b. D50 (bots to Trash) and D55 (provider tools first
 | --- | --- | --- | --- |
 | M0 | not started | | |
 | M1 | not started | | Design approved: `design/components/skills-page.md` (round 8); D49 accepted |
-| M2 | UI design review | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec) | Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab in review |
+| M2 | UI design review | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec) | Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open |
 | M3 | not started | | |
 | M4 | not started | | |
 | M5 | not started | | |

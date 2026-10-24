@@ -44,10 +44,10 @@ against, not code to copy.
 | [time-format.md](time-format.md) | **Standard.** Time format ("3 h ago" under 1 day, else local ISO time) and the sort icon and sort buttons | `../previews/command-dark/bot-card-v3.*`, `bots-grid-states.*` (S5) |
 | [bots-page.md](bots-page.md) | Bots page grid: page, V3 card, ⋯ menu, health, sort, pin and reorder, search, empty state | `../previews/command-dark/bots-grid.*`, `bots-grid-states.*`, `bot-card-v3.*` |
 | [create-bot-page.md](create-bot-page.md) | Create bot page: 4 steps, live preview card, Tools list, errors, sending, leave dialog, Clone | `../previews/command-dark/create-bot.*`, `create-bot-errors.*`, `create-bot-tools.*`, `clone-bot.*` |
-| [bot-page.md](bot-page.md) | Bot page: edit layout (list and page), page top, tabs, Profile tab and save bar, colour band, Model, Skills and Activity tabs | `../previews/command-dark/bot-page.*`, `bot-avatar-change.*`, `bot-page-tabs.*` |
+| [bot-page.md](bot-page.md) | Bot page: edit layout (list and page), page top, tabs, Profile tab and save bar, colour band, Model, Skills, Activity and Usage tabs | `../previews/command-dark/bot-page.*`, `bot-avatar-change.*`, `bot-page-tabs.*`, `bot-usage.*` |
 | [plan-card.md](plan-card.md) | Plan card before a task that changes something: steps, conflict questions, Request changes, Reject | `../previews/command-dark/memory-check-plan.*` (cards S4b–S4e) |
 
 Files marked **Standard** are shared rules that many pages use; a page spec links to them and
 does not repeat them.
 
-Still in review (not here yet): the bot page Usage tab, the Trash page, the Library page content, the Flow pane (canvas round 7), Command light values.
+Still in review (not here yet): the Trash page, the Library page content, the Flow pane (canvas round 7), Command light values.
