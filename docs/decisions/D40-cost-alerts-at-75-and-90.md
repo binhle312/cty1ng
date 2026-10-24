@@ -1,6 +1,7 @@
 # D40. Cost alerts at 75% and 90% of the daily cap
 
 Status: accepted (2026-10-21, owner). Supersedes D20's 80% warning; the rest of D20 stands.
+Amends: D20
 Decision: When today's estimated spend crosses **75%** and then **90%** of the daily cap, the
 owner is notified:
 

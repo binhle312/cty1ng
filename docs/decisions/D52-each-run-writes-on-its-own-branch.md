@@ -4,6 +4,7 @@ Status: accepted (2026-10-23, owner). The owner gave the model ("like a git work
 project is main, the conversation is a branch") and closed every open point in the review
 thread. It amends D37 (workspace scope, moving a conversation) and D23 (branch for an external folder).
 It is built in M6.
+Amends: D23, D37
 
 Decision:
 

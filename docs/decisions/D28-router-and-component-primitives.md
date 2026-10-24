@@ -1,6 +1,7 @@
 # D28. TanStack Router and shadcn/ui on Base UI
 
 Status: accepted (2026-10-21). Adds to D10 (which named no router and assumed Radix).
+Amends: D10
 Decision: The frontend uses TanStack Router for routing, and shadcn/ui initialised on Base UI
 (`shadcn init` default since July 2026) instead of Radix. If the owner picks a UI concept built
 on another component library (`../design/concepts.md`), that choice replaces this one through a

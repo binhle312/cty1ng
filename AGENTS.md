@@ -23,6 +23,10 @@ Start with `docs/README.md` for the reading order.
 - If your change alters behaviour described in `docs/`, update the document **in the same PR**.
 - `docs/decisions/` records decisions, one file each (index in its README). You may not change an accepted decision on your own;
   propose a new entry with status `proposed` and ask the human.
+- **A decision is not always the whole current rule.** Before you build or explain behaviour
+  that a decision governs, look at its "Changed by" column in `docs/decisions/README.md`, read
+  those entries (the newest wins where they differ), and read the requirement that owns the
+  behaviour. Do not use one accepted decision alone when a later one amends it.
 
 ## 3. Which document to read for which task
 
@@ -38,6 +42,7 @@ Start with `docs/README.md` for the reading order.
 | The Flow pane, animations, renderers | `docs/flow-view.md` |
 | Frontend TypeScript rules | `docs/frontend-conventions.md` |
 | Design work with the `ui-ux-pro-max` skill | `docs/workflow.md` §2 (design skills) |
+| Showing a proposal, plan or review item to the human | `docs/workflow.md` §2 (human review: visual first) |
 | Styling, themes, design tokens | `docs/design/themes.md` (D30) |
 | Uploads, file tools, rendering bot output, request checks | `docs/security.md` |
 | Tests | `docs/testing.md` |

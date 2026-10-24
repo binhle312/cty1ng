@@ -21,6 +21,24 @@ conversations. Technical design: `../domain-model.md` §11, §14.
   about that conversation's topic, so that a quick team conversation keeps its context without needing a
   project. Acceptance criteria: UI-13.4, UI-13.11, UI-13.12.
 
+## When a bot may save memory
+
+This table is a summary of D38, D43, D48 and D53, in one place. It adds no rule. If it and a decision
+differ, the decision wins; fix the table. In every row that saves, the conversation shows the
+"Remembered" line with Undo (UI-13.4).
+
+| Situation | Can the bot save, change or forget memory? | Approval | Source |
+| --- | --- | --- | --- |
+| The owner says "remember X" or "forget X" | Yes, at once, in the current scope | The owner's request | D38, D48 |
+| Plain answer (no plan) | Only when the owner clicks **Remember** on the bot's offer | The click | D48 |
+| Planning run | No. Its tools are read-only. It lists memory changes on the plan card | — | D48 |
+| Action run, the item is in the approved plan | Yes | The plan approval | D48 |
+| Action run, the item is not in the plan | Not decided (open question) | — | — |
+| A run that read the web | Only items in the approved plan, or the **Remember** button | Plan or click | D53 |
+| Memory is off (in Settings, or "Don't use memory" in the conversation) | No. The memory tools are not offered | — | D38 |
+| Tidy memory | Only the changes the owner applies on the proposal card | The owner applies | D38 |
+| A new project memory item disagrees with the project instructions | Not at once. The bot asks the owner; it saves the item only if the owner agrees | The owner's answer | D43 |
+
 ## Acceptance criteria (UI-13)
 
 - UI-13.1: The rail groups conversations by project, with conversations outside any project

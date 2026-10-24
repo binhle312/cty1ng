@@ -1,6 +1,7 @@
 # D42. Optional daily caps per provider, under the total cap
 
 Status: accepted (2026-10-22, owner). Amends D20 (one global cap); D20's other rules and D40 stand.
+Amends: D20
 Decision: Keep the total daily cap of D20 and add an **optional daily cap per provider**
 (`anthropic`, `openai`, `deepseek`, … as in the model id prefix). A run is refused when **its
 provider's cap or the total cap** is reached, whichever comes first. A provider with no cap of its

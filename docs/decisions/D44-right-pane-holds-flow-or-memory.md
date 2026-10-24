@@ -2,6 +2,7 @@
 
 Status: accepted (2026-10-22, owner). The owner agreed to it in the UI design review. It amends D26 (Flow view beside the chat) and UI-12. The Flow maps of D30 do
 not change.
+Amends: D26
 Decision: The side pane next to the chat shows the Flow view or the Memory pane. It never shows
 both. The pane is on the right by default. The ⇄ button of UI-12.1 swaps the pane and the chat,
 for Flow and for Memory. The two use one saved side, so the owner sets the side one time. The Flow button in the chat header opens Flow. This is the only pane button in the chat

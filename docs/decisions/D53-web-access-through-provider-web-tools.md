@@ -5,6 +5,7 @@ goal is safety from malformed data and prompt injection when a bot reads the web
 chose provider web tools and the rules below instead of a sandbox for now. The default values
 are checked in the plan of the milestone that builds this. It amends D38 (memory saves) for runs
 that read the web.
+Amends: D38
 
 Decision:
 

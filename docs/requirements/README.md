@@ -10,11 +10,11 @@ lives in the technical documents one level up.
 | File | Stories | Acceptance criteria |
 | --- | --- | --- |
 | [product-brief.md](product-brief.md) | Problem, users, use cases and phases, goals, success measures, non-goals, trust failures, journeys J1–J6, glossary | (none; journeys are tested end to end) |
-| [app-shell.md](app-shell.md) | SH-1 to SH-5 | UI-1, UI-2 |
-| [conversation.md](conversation.md) | CV-1 to CV-7 | UI-3 |
-| [bots.md](bots.md) | BT-1 to BT-5 | UI-4, UI-5, UI-6 |
-| [skill-hub.md](skill-hub.md) | SK-1 to SK-4 | UI-7 |
-| [settings.md](settings.md) | ST-1 to ST-3 | UI-8, UI-9 |
+| [app-shell.md](app-shell.md) | SH-1 to SH-6 | UI-1, UI-2 |
+| [conversation.md](conversation.md) | CV-1 to CV-11 | UI-3 |
+| [bots.md](bots.md) | BT-1 to BT-6 | UI-4, UI-5, UI-6 |
+| [skill-hub.md](skill-hub.md) | SK-1 to SK-5 | UI-7 |
+| [settings.md](settings.md) | ST-1 to ST-4 | UI-8, UI-9 |
 | [statistics.md](statistics.md) | SA-1 to SA-4 | UI-10 |
 | [time-range-picker.md](time-range-picker.md) | TR-1 to TR-2 | UI-11 |
 | [flow-view.md](flow-view.md) | FL-1 to FL-4 | UI-12 |
