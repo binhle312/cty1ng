@@ -138,6 +138,27 @@ only for runs whose trigger message is on the active path (§6), so work from an
 branch is not remembered as if it happened here. It counts against the same budget as the
 transcript (below).
 
+### Tool results, empty results and tool errors
+
+A tool call never stops the run loop. Every result, also a failure, goes back to the model as the
+tool result, and the bot continues.
+
+- **Success with no data** is a normal result that says so, for example `{files: []}` for an
+  empty folder. It is not an error.
+- **Failure** is a tool result `{error: <code>, message: <one line>}`. The wrapper also writes the
+  `run_steps` row with `status = error` and the same code in `detail`. Examples: `not_found`
+  (no such file), `outside_write_scope`, `invalid_arguments` (the arguments fail the tool's Zod
+  schema), `unknown_tool`, `limit_reached` (handoff limit, §5). An unexpected exception gives
+  `internal`. The full error goes to the server log only, never to the model or the UI
+  (AGENTS.md §8).
+- **No automatic retry of a tool.** The model can call the tool again. `request_limit` (default
+  30) stops a loop.
+- **The prompt says** (part 2, with the tools): "If a tool returns an error or no data, say so in
+  your reply. Do not invent the result. Do not say that a step is done when its tool failed."
+  This is best effort, like the check in D43. The app guarantees only that the error reaches the
+  model and shows on the Flow timeline.
+- Stop (`AbortSignal`) is the only thing that ends a run in the middle of a tool call.
+
 ### Visible history
 
 `visibleHistory({ path, member, contextWindowTokens }): TranscriptLine[]` in

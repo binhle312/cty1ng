@@ -26,6 +26,9 @@ event log keeps the UI exact across reloads.
   values beyond "OFF"), tools `load_skill` (pinned version, records `run_skills`) and
   `list_files`/`read_file` against an empty workspace folder (the full sandbox port is M6, but
   all paths must already go through the ported `Workspace.resolve()`).
+- Tool results, empty results and tool errors (`conversation-rules.md` §4, "Tool results"):
+  every tool returns errors as `{error, message}` and never ends the run; the prompt line about
+  errors and no data; `force` in the fake model script (`testing.md` §2).
 - Streaming via `message.delta`, partial saves, retry reuses the message.
 - Run status reactions on the trigger message (UI-3.18, 3.19), placeholder emojis until the
   design review picks them.
@@ -76,6 +79,8 @@ panel, handoffs (M6); editing and branches (M4).
   duplicate message, the UI recovers on reconnect.
 - Stop during streaming → message `stopped` with partial text, run `stopped`.
 - `load_skill` returns the pinned version even when a newer version exists.
+- Every fault case in `testing.md` §3 (Agent, "Faults") passes: tool error, empty result,
+  invalid arguments, unknown tool, no stack trace, prompt line, `request_limit` stop.
 - Invariant 13: changing a price override in `models.yaml` does not change finished requests' cost.
 - A run with three tool-call rounds stores three `model_requests` rows whose sum equals the run totals.
 - Every race in `architecture.md` §11 that M3 touches has a parallel test with exactly one
@@ -136,7 +141,7 @@ panel, handoffs (M6); editing and branches (M4).
 ## Tests
 
 Worker tests (claim exclusivity per conversation, lease expiry, max attempts); agent tests with
-the fake model (prompt contents, provenance, cancel); race tests from `architecture.md` §11
+the fake model (prompt contents, provenance, cancel, tool faults); race tests from `architecture.md` §11
 (two workers claiming one run, a second run racing into a conversation, a stale worker
 writing after a reclaim, Stop racing finish, duplicate `client_id` sends in parallel), with the
 claim cases in the queue contract suite; API tests for messages and stream replay;
