@@ -86,5 +86,6 @@ versions and rollback (D6), and the Improve bot can change them (D51).
 - UI-7.14: The skill's History tab marks versions that came from a draft: "drafted by <bot>",
   linking to the card's message.
 - UI-7.15: A test with the fake model checks that `propose_skill` writes no skill and no pin
-  until Approve, that the tool is not offered in bot turns, and that a draft containing a
-  secret pattern is refused.
+  until Approve, that the tool is not offered in bot turns, planning runs or action runs whose
+  approved plan lists no skill draft, that a call which does not match a listed draft returns
+  the error `draft_not_in_plan`, and that a draft containing a secret pattern is refused.

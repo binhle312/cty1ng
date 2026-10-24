@@ -17,8 +17,10 @@ until you approve it." Top to bottom:
 2. The numbered steps.
 3. **Files:** each file the bot will write, with "new" or "changed".
 4. **Memory:** each memory change, or "No changes".
-5. **Skill drafts:** each skill the bot will draft, as "`<slug>` for <bot>", with "new" or
-   "new version". This line shows only when the plan has a draft (owner, 2026-10-24).
+5. **Skill drafts:** one entry for each skill the bot will draft: the slug, then "New skill" or
+   "New version", "For <bot>" and "Needs your final review", for example
+   "`write-login-stories` · New skill · For BA · Needs your final review". The whole section
+   shows only when the plan has at least one draft (owner, 2026-10-24).
 6. **Question before I start**, one block for each conflict (§2).
 7. A divider, then **Approve** (`primary`), **Request changes** and **Reject**.
 
