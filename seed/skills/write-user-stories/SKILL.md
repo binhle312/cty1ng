@@ -19,9 +19,9 @@ description: Use when the owner asks for user stories, requirements or acceptanc
 4. Write the stories with the layout below. One story for each user goal.
 5. Read the file again. Check each item in "Done when". Fix each item that is not true.
 6. If all items are true, propose a handoff to the Designer with the file (skill
-   `hand-off-work`). If an item stays false and you cannot fix it, do not hand off: name the
-   blocker and ask the owner. Hand off work with a gap only when the owner asks for it, or when
-   the next task is about that gap; list the gap under "Open questions".
+   `hand-off-work`). If an item stays false and you cannot fix it, name the blocker and ask
+   the owner. Do not hand off, with one exception: hand off work with a gap when the owner asks
+   for it, or when the next task is about that gap. Then list the gap under "Open questions".
 
 Layout of the stories file:
 
