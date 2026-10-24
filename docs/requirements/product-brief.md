@@ -168,7 +168,7 @@ to upgrade BA (unchecked) → owner leaves it → BA still uses v1 → later, on
 owner sees "v1 → v2 available", reviews the diff, clicks Upgrade.
 
 **J5. Model retired.** A provider retires BA's model → BA shows "model unavailable" → owner
-clicks "Clone with another model" → the create form opens prefilled → owner picks a new model
+clicks Clone on its banner → the create form opens prefilled → owner picks a new model
 and saves → adds the new bot to the conversation.
 
 **J6. Changed mind.** Owner edits an earlier message → a new branch starts there → bots reply

@@ -153,7 +153,7 @@ After a successful Create, the bot page opens on the Profile tab with a toast.
 
 ## 6. Clone (CL1, CL2)
 
-**Clone** (the bot ⋯ menu, **Clone with another model** on the Model tab, or the banner of a bot
+**Clone** (the bot ⋯ menu, or the banner of a bot
 that cannot run) opens this page filled from `GET /bots/{id}/clone-template` (UI-4.4).
 
 - **CL1, normal clone.** The page opens on **step 4, Model**, because a change of model is the

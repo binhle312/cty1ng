@@ -98,8 +98,7 @@ Design: `../design/components/create-bot-page.md` (agreed, round 9).
 
 ## Bot detail page (UI-6)
 
-Design: `../design/components/bot-page.md` (agreed, round 9, except the Model, Memory and Usage
-tabs).
+Design: `../design/components/bot-page.md` (agreed, round 9, except the Memory and Usage tabs).
 
 - UI-6.1: The edit layout: the bot list on the left, the bot page on the right, at
   `/bots/{slug}`. The page top shows the band in the bot colour, the 116 px avatar, name and
@@ -109,8 +108,9 @@ tabs).
   and Persona, with one save bar; a change applies from the next run. The big avatar and the band
   show an avatar change at once ("Not saved"); the rest of the app after Save. A colour change
   recolours the Flat, Jelly and Pixel cards, never an uploaded image
-  (`../design/components/bot-avatar.md` §5, §6). **Model** shows model and effort read-only with
-  "Clone with another model", and the Tools and Advanced fields, which can change.
+  (`../design/components/bot-avatar.md` §5, §6). **Model** holds the Tools and Advanced fields,
+  which can change; model and effort show only in the locked badge at the top, and Clone (⋯
+  menu) picks another model.
 - UI-6.2: A bot that cannot run shows a banner with the reason and Clone. Clone of a bot whose
   model is gone opens with the model field empty and its error (CL2).
 - UI-6.3: Skills table: name, description, pinned version, always-load toggle, Remove.

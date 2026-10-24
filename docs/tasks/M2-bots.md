@@ -57,7 +57,7 @@ Conversations, drag-to-add (M4).
 - PATCH with `model_id` or `effort` → 422, row unchanged.
 - Effort not in the model's list → 422 `effort_not_supported`.
 - Removing a model from `models.yaml` (or unsetting its key) makes the bot unavailable with the
-  right reason; "Clone with another model" opens a prefilled form.
+  right reason; Clone on its banner opens the prefilled form with the model field empty (CL2).
 - Saving skill v2 with BA unchecked leaves BA on v1; checked moves only BA.
 - SVG avatar rejected; PNG re-encoded to WebP, stored by hash.
 - `avatar_colour` that is not `#RRGGBB` → 422. A Profile save with a new uploaded image is one

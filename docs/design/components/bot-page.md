@@ -1,8 +1,7 @@
 # Bot page
 
 > **Status: agreed in the M2 Bots UI design review, round 9 (2026-10-23 and 2026-10-24),** except
-> the Model tab (BP2, follows from BP1, see §6), the Memory tab (M5b) and the Usage tab (in
-> review). Steps 3a (E1–E3), 3b (PF1–PF5), 3c (SK1–SK3), 3d (SK4, CH1), 5 (BP1) and 5b (PR1–PR3,
+> the Memory tab (M5b) and the Usage tab (in review). Steps 3a (E1–E3), 3b (PF1–PF5), 3c (SK1–SK3), 3d (SK4, CH1), 5 (BP1) and 5b (PR1–PR3,
 > HB, RI, PR2, AV4). Previews: `../previews/command-dark/bot-page.png` (PR1, HB, PR3),
 > `bot-avatar-change.png` (PR2, AV4), `bot-page-tabs.png` (SK1–SK4, CH1). Requirements: `../../requirements/bots.md` UI-6.
 > Avatar and colour rules: `bot-avatar.md` §5 and §6.
@@ -60,7 +59,7 @@ The tabs follow the Create steps, then the parts Create does not have. Each tab 
 | --- | --- | --- |
 | **Profile** | Create steps 1 and 2: Appearance, Basics, Persona (§4) | Save bar |
 | **Skills** | Count, and "↑{n}" in `primary` when updates wait (§7) | At once |
-| **Model** | Create step 4: model (read-only), Tools, Advanced (§6) | Save bar |
+| **Model** | Create step 4 without the model field: Tools, Advanced (§6) | Save bar |
 | **Memory** | The bot's memory (D38), the Memory page list filtered to this bot. Designed with the Memory page (M5b) | — |
 | **Activity** | Count of conversations (§8) | — |
 | **Usage** | Runs, requests, tokens and cost. In review (UI-6.8) | — |
@@ -112,21 +111,20 @@ every style and for an uploaded image. It changes at once when the owner picks a
 Save; only this page changes until Save. The Create preview card and the V3 cards on the Bots page
 use the same band.
 
-## 6. Model tab (BP2)
+## 6. Model tab (BP2, approved 2026-10-24)
 
-The tab holds what Create step 4 holds (`create-bot-page.md` §2, §3):
+The tab holds the parts of Create step 4 that can change (`create-bot-page.md` §2, §3):
 
-1. **Model** and **Effort**, read-only (D7), with the link **Clone with another model** (opens
-   Clone, `create-bot-page.md` §6).
-2. **Tools:** the same list as Create. Tool switches **can change** after Create: they are bot
+1. **Tools:** the same list as Create. Tool switches **can change** after Create: they are bot
    settings, not the model.
-3. **Advanced**, always open: History share, Model requests per run, Longest reply, with the
+2. **Advanced**, always open: History share, Model requests per run, Longest reply, with the
    Create defaults and ranges.
 
-Changes use the save bar (§4.1) and apply from the next run.
+There is **no model or effort field** on this tab (owner, 2026-10-24): the locked badge at the
+page top shows them (§2), and they never change (D7). To use another model, the owner uses
+**Clone** in the ⋯ menu (`create-bot-page.md` §6).
 
-> BP2 follows from the owner's choice of BP1 (2026-10-24 05:40). Its card was not approved on
-> its own; confirm it in the PR review.
+Changes use the save bar (§4.1) and apply from the next run.
 
 ## 7. Skills tab (SK1–SK4)
 
