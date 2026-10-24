@@ -45,7 +45,7 @@ against, not code to copy.
 | [bots-page.md](bots-page.md) | Bots page grid: page, V3 card, ⋯ menu, health, sort, pin and reorder, search, empty state | `../previews/command-dark/bots-grid.*`, `bots-grid-states.*`, `bot-card-v3.*` |
 | [create-bot-page.md](create-bot-page.md) | Create bot page: 4 steps, live preview card, Tools list, errors, sending, leave dialog, Clone | `../previews/command-dark/create-bot.*`, `create-bot-errors.*`, `create-bot-tools.*`, `clone-bot.*` |
 | [bot-page.md](bot-page.md) | Bot page: edit layout (list and page), page top, tabs, Profile tab and save bar, colour band, Model, Skills, Activity and Usage tabs | `../previews/command-dark/bot-page.*`, `bot-avatar-change.*`, `bot-page-tabs.*`, `bot-usage.*` |
-| [plan-card.md](plan-card.md) | Plan card before a task that changes something: steps, conflict questions, Request changes, Reject | `../previews/command-dark/memory-check-plan.*` (cards S4b–S4e) |
+| [plan-card.md](plan-card.md) | Plan card before a task that changes something: steps, files, memory, skill drafts, conflict questions, Request changes, Reject | `../previews/command-dark/memory-check-plan.*` (cards S4b–S4e) |
 
 Files marked **Standard** are shared rules that many pages use; a page spec links to them and
 does not repeat them.

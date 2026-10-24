@@ -278,8 +278,8 @@ Example:
 
 1. The owner, after BA wrote good stories: "@BA make the way you just wrote these a skill for
    yourself."
-2. BA replies with a plan card: "Draft the skill `write-login-stories` for BA" [Approve]
-   [Request changes] [Reject]. The owner approves.
+2. BA replies with a plan card. Its **Skill drafts** line says "`write-login-stories` for BA,
+   new". The owner approves.
 3. In the action run, BA calls `propose_skill(target="ba", name="Write login stories",
    slug="write-login-stories", description="…", body_md="…")`.
 4. A card appears: "BA drafted a skill for BA: Write login stories", with the text, "Pin to BA"
@@ -293,9 +293,11 @@ Rules:
   a bot name or slug of an **active member**, the caller included. For an edit, `skill` is the
   slug of an existing, non-deprecated skill, and the draft is based on its latest version; for
   a new skill, `slug` is proposed (`^[a-z0-9-]{1,64}$`) and must not be taken yet.
-- **Only when asked.** The tool is offered only in action runs that start from the owner's
-  Approve on a plan card (D48), never in planning runs, bot turns or handoff runs. The prompt
-  says to use it only when the owner asks. A bot may offer in one line ("Want me to save this
+- **Only when asked.** The tool is offered only in an action run whose approved plan lists a
+  skill draft (the plan card's **Skill drafts** line, `design/components/plan-card.md`). Each
+  call must match a listed draft (same `target`, and the same `slug` or `skill`); other calls
+  return an error. The tool is never offered in other action runs, planning runs, bot turns or
+  handoff runs. The prompt says to use it only when the owner asks. A bot may offer in one line ("Want me to save this
   as a skill?") and waits for a yes.
 - **Text only.** Name, description (≤ 1,024 characters), body (≤ 20,000 characters) and changelog. No files,
   no frontmatter beyond what the app writes, no tool permissions or write folders.

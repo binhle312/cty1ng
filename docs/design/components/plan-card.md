@@ -17,11 +17,17 @@ until you approve it." Top to bottom:
 2. The numbered steps.
 3. **Files:** each file the bot will write, with "new" or "changed".
 4. **Memory:** each memory change, or "No changes".
-5. **Question before I start**, one block for each conflict (§2).
-6. A divider, then **Approve** (`primary`), **Request changes** and **Reject**.
+5. **Skill drafts:** each skill the bot will draft, as "`<slug>` for <bot>", with "new" or
+   "new version". This line shows only when the plan has a draft (owner, 2026-10-24).
+6. **Question before I start**, one block for each conflict (§2).
+7. A divider, then **Approve** (`primary`), **Request changes** and **Reject**.
 
 While the card waits, the bot has read-only tools. Only Approve starts the action run, with the
 write tools and the approved plan.
+
+The Files, Memory and Skill drafts lists are data in the plan, not only text. The app uses the
+Skill drafts list to decide if the action run gets `propose_skill` (`../../conversation-rules.md`
+§7).
 
 ## 2. Conflict questions (D43)
 
