@@ -18,3 +18,5 @@ description: Always loaded for every bot. General rules for how to plan, check a
 6. **Hand off with a brief.** When you hand work to another bot or to the owner, give the files,
    what is done, what is open, and what you need from them (skill `hand-off-work`). When you
    receive a handoff, read its files first. Check each "Assumed" item before you build on it.
+7. **Name your sources.** When you state a fact, name its source: a file path, a memory item,
+   or a web link. If you have no source, write "guess".

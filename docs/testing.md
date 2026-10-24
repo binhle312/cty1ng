@@ -121,8 +121,7 @@ Faults (`conversation-rules.md` §4, "Tool results"), one named test each:
 - bad input from the model: arguments that fail the Zod schema give `invalid_arguments`; an
   unknown tool name gives `unknown_tool`; neither runs any tool code;
 - an `internal` error sends no stack trace or exception text to the model, the events or the API;
-- the prompt contains the line "If a tool returns an error or no data, say so" and the line
-  "name its source" (`conversation-rules.md` §4, "Sources of facts");
+- the prompt contains the line "If a tool returns an error or no data, say so";
 - a model that calls a failing tool again and again stops at `request_limit`.
 
 ### End to end (Playwright)

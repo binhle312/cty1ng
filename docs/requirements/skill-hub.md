@@ -63,8 +63,10 @@ and to check:
 | `## Reply` | What the reply names: the files, counts, open questions, unmet checks |
 
 The app does not validate the layout. A skill without these sections works as before. A shared
-skill `working-principles` holds the rules for every bot (plan, check, finish); the example bots
-pin it with "Always load" (D16). Process belongs in skills, not in the persona: skills have
+skill `working-principles` holds general working rules (plan, check, finish, name sources). The
+example bots pin it with "Always load" (D16). It is a normal skill: the owner turns it off or
+unpins it per bot. Only rules about the app's own guarantees (for example how tool errors reach
+the bot, `conversation-rules.md` §4) are fixed in the prompt. Process belongs in skills, not in the persona: skills have
 versions and rollback (D6), and the Improve bot can change them (D51).
 
 ## Skills drafted by bots (D41)

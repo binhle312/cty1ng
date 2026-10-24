@@ -28,8 +28,7 @@ event log keeps the UI exact across reloads.
   all paths must already go through the ported `Workspace.resolve()`).
 - Tool results, empty results and tool errors (`conversation-rules.md` §4, "Tool results"):
   every tool returns errors as `{error, message}` and never ends the run; the prompt line about
-  errors and no data; the prompt line about sources of facts; `force` in the fake model script
-  (`testing.md` §2).
+  errors and no data; `force` in the fake model script (`testing.md` §2).
 - Streaming via `message.delta`, partial saves, retry reuses the message.
 - Run status reactions on the trigger message (UI-3.18, 3.19), placeholder emojis until the
   design review picks them.

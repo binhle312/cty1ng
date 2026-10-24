@@ -159,12 +159,6 @@ tool result, and the bot continues.
   model and shows on the Flow timeline.
 - Stop (`AbortSignal`) is the only thing that ends a run in the middle of a tool call.
 
-### Sources of facts
-
-The prompt (part 2) also says: "When you state a fact, name its source: a file path, a memory
-item, or a web link. If you have no source, write 'guess'." This helps the owner tell checked
-facts from guesses in a plan or a reply. It is best effort, like the line about tool errors.
-
 ### Visible history
 
 `visibleHistory({ path, member, contextWindowTokens }): TranscriptLine[]` in
