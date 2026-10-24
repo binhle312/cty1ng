@@ -18,7 +18,7 @@
 
 One column, at most 620 px wide, with 20 px between fields. Top to bottom:
 
-1. **Header:** "Project settings", then "Every chat in {project} uses these settings. Bots read
+1. **Header:** "Project settings", then "Every conversation in {project} uses these settings. Bots read
    the changes on their next run."
 2. **Name, Goal, Instructions, Colour:** the same fields, limits, hints, placeholders and error
    messages as the New project page (`new-project-page.md` §3, §4). The Goal hint is "It shows
@@ -30,7 +30,7 @@ One column, at most 620 px wide, with 20 px between fields. Top to bottom:
    UI-13.9). Lower numbers ask for confirmation first (UI-13.9).
 5. **Delete project** section, 32 px below Memory history, with 28 px of padding inside, a
    `danger` border at low opacity and a `danger` tint. Title **"Done with this project? 📦"**,
-   text "The project goes to Trash with its chats, memory and Library. You can restore it for 30
+   text "The project goes to Trash with its conversations, memory and Library. You can restore it for 30
    days." Button **Delete project** (`danger` outline).
 6. **Save bar**, fixed at the bottom of the main area (§3).
 
@@ -67,7 +67,7 @@ The line under Instructions has these states:
 
 ## 5. Leave with unsaved changes
 
-Discard, Esc, or a click on another chat, project or page asks first, but only if something
+Discard, Esc, or a click on another conversation, project or page asks first, but only if something
 changed.
 
 - Title: **Leave without saving? 👀**
@@ -80,28 +80,28 @@ changed.
 **Delete project** opens a dialog:
 
 - Title: **Delete {project}? 🧹**
-- "Everything in the project goes to Trash:", then the real counts: 💬 "{n} chats, with all their
+- "Everything in the project goes to Trash:", then the real counts: 💬 "{n} conversations, with all their
   messages and runs", 🧠 "{n} memory items", 📚 "{n} Library files".
 - ↩️ "You can restore the project from Trash for 30 days, with all of it. You cannot restore one
-  chat alone. After 30 days, the app deletes it."
-- 💡 "To keep a chat, move it out of the project first."
+  conversation alone. After 30 days, the app deletes it."
+- 💡 "To keep a conversation, move it out of the project first."
 - Buttons: **Cancel** (default, with the focus ring, so Enter does not delete) and **Delete
   project** (`danger` fill). The owner does not type the name, because the delete can be undone
   for 30 days.
 
 After Delete:
 
-- Runs in the project stop first. Then the project, its chats, memory and Library go to Trash
+- Runs in the project stop first. Then the project, its conversations, memory and Library go to Trash
   as one item.
-- Home opens. The project tile and its chats are gone from the rail and bar 2.
-- A toast says "{project} and its {n} chats are in Trash." The word **Trash** is a link to the
+- Home opens. The project tile and its conversations are gone from the rail and bar 2.
+- A toast says "{project} and its {n} conversations are in Trash." The word **Trash** is a link to the
   Trash page. The toast has no Undo, because Trash is not permanent (D49, `buttons.md` §6).
 - The owner restores the project from Trash. A restore brings back the project with
-  all its chats, memory and Library, as they were. The Trash page is **not designed yet**.
+  all its conversations, memory and Library, as they were. The Trash page is **not designed yet**.
 
 ## Requirement changes (requirements PR)
 
-- UI-13.3 changes: delete sends the project and all its chats, memory and Library to Trash (D47).
+- UI-13.3 changes: delete sends the project and all its conversations, memory and Library to Trash (D47).
   It replaces "its conversations move out of the project" from D37.
 - A Trash page: list, restore, delete now, 30-day limit. To design.
 - `domain-model.md` §11, §14: a deleted project keeps its workspace in `data/trash/`; its

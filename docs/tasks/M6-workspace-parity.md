@@ -5,7 +5,7 @@ Checkpoint: **plan** (security).
 ## Goal
 
 Everything the Discord prototype could do with files works in the app: bots write to the
-conversation's workspace in their write paths, the owner attaches files and browses the
+Library of their run (D52; no per-bot write folders), the owner attaches files and browses the
 workspace, and handoffs with approval cards move work between bots. The `reference/` folder is
 deleted at the end.
 
@@ -19,7 +19,7 @@ files), §6; `docs/requirements/conversation.md` (UI-3.3 cards, 3.13, 3.16).
 
 - Full workspace port (git repo per project, or per conversation outside projects, D37; `write_file`, `view_file`,
   commit; memory is no longer a workspace file, D38), with the prototype's workspace tests passing.
-- Attachments: upload endpoint, `inbox/`, multimodal prompt building, binary stripping in
+- Attachments: upload endpoint, `attachments/<yyyy-mm-dd>-<conversation-slug>/` (D52), multimodal prompt building, binary stripping in
   history.
 - Sensitive-data guard for text attachments (D39): UI-3.23.
 - Files panel and viewer with safe headers.

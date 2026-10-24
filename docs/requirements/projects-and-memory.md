@@ -8,7 +8,7 @@ conversations. Technical design: `../domain-model.md` §11, §14.
 - **PM-1.** As the owner, I want to group conversations about one piece of work into a project,
   so that the bots working on it share what they learn and nothing leaks into unrelated work.
   Acceptance criteria: UI-13.1 to UI-13.3.
-- **PM-2.** As the owner, I want a bot I chat with one-to-one to remember how I like it to work,
+- **PM-2.** As the owner, I want a bot I talk with one-to-one to remember how I like it to work,
   and use that everywhere, so that I don't repeat my preferences in every conversation.
   Acceptance criteria: UI-13.4, UI-13.5.
 - **PM-3.** As the owner, I want bots in a project to remember facts about the work, shared by
@@ -17,8 +17,8 @@ conversations. Technical design: `../domain-model.md` §11, §14.
 - **PM-4.** As the owner, I want to see, edit, delete and recover what bots remember, so that
   nothing becomes permanent without my knowing. Acceptance criteria: UI-13.7 to UI-13.10,
   UI-13.13 to UI-13.15.
-- **PM-5.** As the owner, I want bots in a multi-bot chat outside any project to remember facts
-  about that chat's topic, so that a quick team chat keeps its context without needing a
+- **PM-5.** As the owner, I want bots in a multi-bot conversation outside any project to remember facts
+  about that conversation's topic, so that a quick team conversation keeps its context without needing a
   project. Acceptance criteria: UI-13.4, UI-13.11, UI-13.12.
 
 ## Acceptance criteria (UI-13)

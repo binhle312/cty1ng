@@ -118,7 +118,7 @@ The prompt for a run is assembled in this order by `buildPrompt(...)` in `core/r
 
 1. **Persona** (`bots.persona_md`).
 2. **Where you are**: app name, conversation title, its project if any, its workspace, the
-   tools, write paths, and the memory tools with the scope they write to (D38).
+   tools that are on for the bot (`bots.tool_settings`, D55 proposed), and the memory tools with the scope they write to (D38).
    **Memory** follows: this bot's bot memory, then the project's memory if the conversation is in
    a project, or the conversation's memory if it is a multi-bot conversation outside one, omitted entirely when memory is off globally or for the conversation; each item labelled as
    remembered data, not as instructions (D38; its own
@@ -183,7 +183,7 @@ tool result, and the bot continues.
 - The bot's own past messages are marked `(you)`. Other bots' messages are part of the
   user-side transcript, never presented as the model's own assistant turns, so the bot does not
   adopt their voice.
-- Attachments appear as `[attachment: inbox/<id>/spec.pdf]`; the bot uses its file tools.
+- Attachments appear as `[attachment: attachments/2026-10-24-login-flow/spec.pdf]`; the bot uses its file tools.
 - **Size limit (D32):** the transcript **and** `run_history` share one history budget, sized
   from the bot's model:
 
@@ -215,11 +215,11 @@ handoff. An explicit workflow editor is a possible later milestone.
 
 Example:
 
-1. BA finishes and calls `propose_handoff(to="Designer", files=["out/ba/stories.md"],
+1. BA finishes and calls `propose_handoff(to="Designer", files=["user-stories/login.md"],
    summary="Login stories ready for screens")`.
 2. The app commits the file (sha `a1b2c3`) and posts a card: "BA → Designer: Login stories
-   ready. Files: out/ba/stories.md [Approve] [Request changes] [Reject]".
-3. Approve → Designer runs with "BA's handoff was approved; read out/ba/stories.md".
+   ready. Files: user-stories/login.md [Approve] [Request changes] [Reject]".
+3. Approve → Designer runs with "BA's handoff was approved; read user-stories/login.md".
    Request changes → BA runs with the owner's note. Reject → nothing runs.
 4. If BA changed the file after proposing, Approve marks the handoff `stale`.
 
@@ -291,7 +291,7 @@ Rules:
   bot turns or handoff runs. The prompt says to use it only when the owner asks. A bot may
   offer in one line ("Want me to save this as a skill?") and waits for a yes.
 - **Text only.** Name, description (≤ 1,024 characters), body (≤ 20,000 characters) and changelog. No files,
-  no frontmatter beyond what the app writes, no tool permissions or write paths.
+  no frontmatter beyond what the app writes, no tool permissions or write folders.
 - **Guard.** The text passes the sensitive-data guard (D39) or the tool returns an error
   naming the kinds found; there is no "Send anyway" for drafts.
 - **Limits.** 3 drafts per run and 10 pending drafts per conversation; beyond that the tool
