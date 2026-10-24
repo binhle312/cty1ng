@@ -30,7 +30,9 @@ for bots to pin in M2.
   at start and once a day. `run_skills` gets its copy columns when M3 creates it. The
   Trash page itself is M5b; until then "Delete now" has no UI.
 - Events `skill.created|updated|deprecated|trashed|restored|purged`.
-- `make seed` imports the prototype's BA and Designer skills.
+- `make seed` imports the skills in `seed/skills/` (`seed/README.md`): `working-principles`,
+  `write-user-stories`, and the prototype's other BA and Designer skills, rewritten in the
+  suggested layout (`requirements/skill-hub.md`, "Suggested skill layout").
 
 ## Out of scope
 

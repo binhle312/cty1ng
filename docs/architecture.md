@@ -87,6 +87,7 @@ A pnpm workspace with three packages. Each folder marked † has a `README.md` i
 ├─ config/
 │  └─ models.yaml            model catalog and price overrides
 ├─ docs/                     this specification
+├─ seed/                     example skills and bots for `make seed` (seed/README.md)
 ├─ shared/ †                 code both sides import
 │  └─ src/
 │     ├─ events/             Zod schemas of the event envelope and every event type

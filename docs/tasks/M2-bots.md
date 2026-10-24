@@ -31,7 +31,8 @@ D7, D12, D16, D19; `docs/api.md` §3, §4; `docs/requirements/app-shell.md` (UI-
 - Bots page header-order control (UI-4.5), `PUT /bots/order`, setting `bot_order`.
 - Skill save dialog now lists real upgrade candidates (UI-7.4).
 - Events `bot.created|updated|deleted`, `bots.reordered`.
-- `make seed` also creates BA and Designer bots pinned to the seeded skills.
+- `make seed` also creates BA and Designer bots pinned to the seeded skills, with
+  `working-principles` pinned to both with "Always load" (D16).
 
 ## Out of scope
 

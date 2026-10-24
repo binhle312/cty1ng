@@ -50,6 +50,23 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
 - UI-7.8: Export opens a card with every active skill ticked and "Select all", then downloads
   `<n>-skills-<UTC timestamp>.zip` with `<slug>/SKILL.md` folders.
 
+## Suggested skill layout
+
+A skill body is free Markdown. The editor help and the example skills (`seed/skills/`) suggest
+this layout, because a fixed list of steps and a finish check make a bot's work easier to plan
+and to check:
+
+| Section | What it holds |
+| --- | --- |
+| `## Steps` | Numbered steps that the bot follows, in order |
+| `## Done when` | Yes or no checks that say the work is complete |
+| `## Reply` | What the reply names: the files, counts, open questions, unmet checks |
+
+The app does not validate the layout. A skill without these sections works as before. A shared
+skill `working-principles` holds the rules for every bot (plan, check, finish); the example bots
+pin it with "Always load" (D16). Process belongs in skills, not in the persona: skills have
+versions and rollback (D6), and the Improve bot can change them (D51).
+
 ## Skills drafted by bots (D41)
 
 - UI-7.9: When the owner asks, a bot drafts a skill and a card appears in the chat: "<Bot>
