@@ -1,6 +1,6 @@
 # D57. The plan card shows the progress of the action run
 
-Status: proposed (2026-10-25). The owner chose an app feature, not a skill, on a decision card in
+Status: accepted (2026-10-25, owner). The owner approved each review item of PR #28 on 2026-10-25. The owner chose an app feature, not a skill, on a decision card in
 the review thread "Show bot progress step by step" (2026-10-25 02:16), and chose the running card
 P1 (02:25). It amends D48 (what the plan card does after Approve). It uses the plan data and the
 run-end check of D54, and it amends D54's `check_done` (evidence, owner 2026-10-25 03:48).

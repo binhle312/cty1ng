@@ -6,7 +6,7 @@
 > **Changed in the M3 UI design review, round 10 (2026-10-24 and 2026-10-25):** the place in the
 > reply, the button order and icons, the folded line, and the conflict question in two lines.
 > Preview: `../previews/command-dark/conversation-cards.*` (card S3).
-> **Progress after Approve (D57, proposed 2026-10-25):** §4 and §6. Preview:
+> **Progress after Approve (D57, accepted 2026-10-25):** §4 and §6. Preview:
 > `../previews/command-dark/plan-progress.*` (P1–P5).
 
 A bot shows a plan card before each task that changes something (D48): it writes files, saves
@@ -88,7 +88,7 @@ At the end of the action run, the app compares the run with the plan (`runs.plan
 planned files not written, planned deletes and moves not done, files not in the plan, and each
 Done-when item that is `not_met` or `not_checked`. The check shows what happened on the run's
 branch, not what was saved, and it never changes after the run ends. The Done-when marks are the bot's own check, so the card says so. The
-plan card shows the result in its block "Check after the run" (D57, proposed; the owner approved
+plan card shows the result in its block "Check after the run" (D57; the owner approved
 this place on board P3).
 
 ## 5. Reject

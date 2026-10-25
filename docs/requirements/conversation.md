@@ -156,7 +156,7 @@ Feedback (D51, used by Improve in slice M5d)
 - UI-3.28: A tooltip on the buttons says "Your ratings help <bot> improve its skills".
   Ratings never change the message and never start a run.
 
-Plan progress (D57, proposed)
+Plan progress (D57)
 
 - UI-3.29: After Approve, the plan card stays open and shows each approved step as done, current
   or not started (and skipped, with the bot's note), each started step with its start time and
