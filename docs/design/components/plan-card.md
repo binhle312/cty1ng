@@ -114,7 +114,8 @@ do. Every step shows the dashed circle. The card changes to Running at `run.star
 
 **Running (P1, owner 2026-10-25 02:25).**
 
-- Head: **Plan**, the pill "Running · step {n} of {total}" (`on-surface` text on
+- Head: **Plan**, the pill "Running · {done} of {total} done", plus "· {n} skipped" when a step
+  was skipped (owner review, 2026-10-25 07:42) (`on-surface` text on
   `surface-raised`, with the spinner in the bot colour; Running is never amber, `bot-status.md`),
   "Approved 11:12 · version {n}" in `on-surface-muted`, and **Hide**.
 - Steps, one line each, 13 px icon, then "{n}. {text}", and at the right in 11 px
@@ -128,22 +129,23 @@ do. Every step shows the dashed circle. The card changes to Running at `run.star
   | Done | Check in `success` | `on-surface-muted`, start time · duration |
   | Current | Spinner in the bot colour | `on-surface`, weight 600, start time · duration so far |
   | Not started | Dashed circle in `on-surface-faint` | `on-surface-soft`, no time |
-  | Skipped | Arrow in `on-surface-muted` | `on-surface-muted`, the start time if the step started, the bot's note at the right |
+  | Skipped | Arrow in `on-surface-muted` | `on-surface-muted`, start time · duration if the step started, else the time of the mark with no duration; the bot's note at the right |
 
 - Under the current step, one line for each tool call of that step: "└ {tool} {target} ok" in
   mono 11 px `on-surface-muted`, with "ok" in `success` or "error" in `danger`. A tool call goes
-  under the current step that started last; when no step is current, under the step settled
-  last, or under step 1.
+  under the current step that started last. Before the first mark, it goes under step 1. After
+  that, a call made when no step is current goes to one line under the steps, "Other tool calls ·
+  {n}" in 11 px `on-surface-muted`, with the call lines under it.
 - The step state follows the mark rules of D57 (`plan-progress.rules.ts`): done and skipped are
   final, a second `started` keeps the first start time, and more than one step can be current.
-  The pill number is the settled steps (done or skipped) plus 1.
 - **Files:** each file, then "written" (`success`) or "not yet" (`on-surface-faint`).
   **Memory** as in §1.
 - The live line under the reply (UI-3.5) shows only the times ("2:10 · last step 0:04 ago"),
   because the card names the step.
 
 **Who checked a mark (D57).** Only tool calls that succeeded count, and not `mark_step` or
-`check_done`. A step marked done with no such tool call under it shows "Done · no
+`check_done`. A call counts only for a step that was open when the call began: calls shown under
+step 1 before the first mark, and calls in "Other tool calls", are not evidence. A step marked done with no such tool call under it shows "Done · no
 action recorded" in `on-surface-muted` with a ! icon, not the green check (never amber: amber is
 only for "Waiting for you"). Planned files and Done-when items with a quote that the app found
 show **checked by app** in 11 px `success`. A Done-when `met` whose quote is not in the file shows
@@ -180,7 +182,7 @@ at the right. The steps after it stay not started.
 **Show and Hide.** The owner can hide or show the card at any time, also while the run works
 (owner, 2026-10-25 03:44). **Hide** folds the card to its line; **Show** opens it again
 (`conversation-cards.md` §3). A card hidden during the run keeps the progress on its line, and the
-line updates live: "**Plan** [⟳ Running · step 2 of 4] · Show", then "step 3 of 4", and so on.
+line updates live: "**Plan** [⟳ Running · 1 of 4 done] · Show", then "2 of 4 done", and so on.
 After the run, the open card shows the step marks as they were at the end of the run.
 
 A plain answer has no plan, so it has no progress card (owner, 2026-10-25 02:13).

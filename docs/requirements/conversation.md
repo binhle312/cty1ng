@@ -160,7 +160,8 @@ Plan progress (D57)
 
 - UI-3.29: After Approve, the plan card stays open and shows each approved step as done, current
   or not started (and skipped, with the bot's note), each started step with its start time and
-  duration ("11:12:04 · 0:18"), with the pill "Running · step n of total".
+  duration ("11:12:04 · 0:18"), with the pill "Running · 2 of 4 done" (plus "· 1 skipped").
+  Calls made when no step is open show under "Other tool calls".
   The tool calls of the current step show as small lines under it. Each planned file shows
   "written" or "not yet". The state comes from `run_steps`, so a reload shows the same card
   (`../design/components/plan-card.md` §6).
@@ -177,5 +178,5 @@ Plan progress (D57)
   "bot says" or "not verified"; a step done with no tool call that succeeded shows "no action
   recorded". A mark on a done or skipped step gives the error `step_closed`.
 - UI-3.31: Show opens a folded plan card, Hide folds it, at any time. A card hidden while the
-  run works shows "Running · step n of total" on its line, updated live. A reply with no plan
+  run works shows "Running · 2 of 4 done" on its line, updated live. A reply with no plan
   has no progress card.

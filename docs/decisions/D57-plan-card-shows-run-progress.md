@@ -18,10 +18,12 @@ Decision:
   | Done | Green check, muted text, the start time and the duration ("11:12:04 · 0:18") |
   | Current | Spinner in the bot colour, bold text, the start time and the duration so far, and one small line for each tool call of the step (tool, target, ok or error) |
   | Not started | Dashed circle |
-  | Skipped | Arrow, muted text, the start time if the step started, the bot's note |
+  | Skipped | Arrow, muted text, the start time if the step started (else the time of the mark, no duration), the bot's note |
   | Stopped or failed | The stop square or the red !, at the step that was running |
 
-  The pill says "Running · step 3 of 4". Each file in the plan shows "written" or "not yet".
+  The pill counts the done steps: "Running · 2 of 4 done", and "· 1 skipped" when a step was
+  skipped (owner review, 2026-10-25 07:42; it replaces "step n of total"). The count never goes
+  above the total, also when steps run out of order. Each file in the plan shows "written" or "not yet".
 - **A queued run shows Queued (owner review, 2026-10-25).** An approved action run can wait for
   a file claim of another run (D52). Until `run.started`, the pill is "Queued · waits for
   Pricing conversation", with the clock icon in `on-surface-muted` (the Queued standard,
@@ -44,19 +46,24 @@ Decision:
   | Any mark | Done or skipped | Tool error `{error: "step_closed", message}`. Done and skipped are final |
 
   The bot can mark the steps in any order. More than one step can be current at the same time.
-  The pill counts the steps that are done or skipped ("step 3 of 4" means that 2 are settled).
 - **No new event.** A `mark_step` call is a tool call: it writes a `run_steps` row (kind
   `mark_step`) and its `run.step` event in one transaction (AGENTS.md §5 rule 3). The card state
   comes from these rows, so it is the same after a reload or an event replay.
 - **Tool calls go under the current step.** Each other tool call shows under the current step
-  that started last. Before the first `mark_step`, or when no step is current, they show under
-  the step that was settled last, or under step 1.
+  that started last. Before the first `mark_step`, calls show under step 1. After that, a call
+  made when no step is current shows in one muted line under the steps, "Other tool calls · 2",
+  with the call lines under it (owner review, 2026-10-25 07:42).
+- **Where a call shows is not what it proves.** A tool call that succeeded is evidence only for a
+  step that was open (`started`, not yet `done` or `skipped`) when the call began. Calls before the
+  first `mark_step` show under step 1, but they are not evidence, because no step was started.
+  Calls in "Other tool calls" are never evidence. A call after a step closes never makes that
+  step verified later.
 - **At the end the card folds, or stays open.** The card folds to one line only when every step
   is done (none skipped) and nothing is open in the run-end check (`runs.plan_check`, D54):
   "**Plan** [Done] 11:15 · 4 of 4 steps · 2 files · Show". In the check, a Done-when item is
   open when it is `not_met`, `not_checked`, or `met` with `verified: false`. Otherwise the card
   stays open. A step with no `done` and no `skipped` mark shows "Not marked done" (red !). A
-  skipped step keeps its arrow and note: the bot settled it, but it did not do it, so the pill
+  skipped step keeps its arrow and note: the bot closed it, but it did not do it, so the pill
   says "Done · 3 of 4 · 1 skipped" (owner review, 2026-10-25). A block "Check after the run"
   lists what `plan_check` found, also each planned delete or move that the run did not do
   (`planned_ops_not_done`). The block says that it shows what happened in the run, before the
@@ -64,7 +71,7 @@ Decision:
   or "Failed · 2 of 4".
 - **Show and Hide.** The owner can fold the card with **Hide** and open it with **Show** at any
   time, also while the run works. A card hidden during the run keeps the progress on its line,
-  updated live: "**Plan** [Running · step 2 of 4] · Show" (owner, 2026-10-25 03:44). After the
+  updated live: "**Plan** [Running · 2 of 4 done] · Show" (owner, 2026-10-25 03:44; wording 07:42). After the
   run, the open card shows the step marks as they were at the end of the run.
 - **The app reminds the bot once before the run ends (owner, 2026-10-25 03:48).** When the bot
   sends its final reply, the app checks for steps with no `done` or `skipped` mark and for
@@ -78,8 +85,8 @@ Decision:
 
   | Mark | App check | Shows |
   | --- | --- | --- |
-  | Step `done` with at least one tool call under it that succeeded | Tool calls exist | Green check |
-  | Step `done` with no tool call under it that succeeded | None | "Done · no action recorded", `on-surface-muted` with a ! icon (not amber: amber is only for "Waiting for you") |
+  | Step `done` with at least one call that succeeded while the step was open | Tool calls exist | Green check |
+  | Step `done` with no such call | None | "Done · no action recorded", `on-surface-muted` with a ! icon (not amber: amber is only for "Waiting for you") |
   | Planned file | The run wrote it (D54) | "written" · **checked by app** |
   | Done-when `met` with evidence | The quote is in the file, in the run's version | **checked by app** |
   | Done-when `met`, quote not found | Failed | **not verified** (`danger`) |
@@ -155,7 +162,10 @@ Consequences:
   open; a skipped step keeps its note, is not "Not marked done", and keeps the card open; a run
   that waits for a claim shows Queued; a step whose only tool call gave an error shows "no action
   recorded"; a mark on a done or skipped step gives `step_closed`; a second `started` keeps the
-  first start time; `done` with no `started` is accepted.
+  first start time; `done` with no `started` is accepted and shows "no action recorded"; the pill
+  never shows more done steps than the total; a call after a step closes goes to "Other tool
+  calls" and does not change that step; calls before the first mark show under step 1 but are not
+  evidence; a step skipped with no `started` shows the time of the mark and no duration.
 
 Implemented in: `../design/components/plan-card.md`, `../conversation-rules.md`, the slice brief
 that builds the plan card.

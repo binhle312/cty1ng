@@ -190,7 +190,8 @@ The step state comes from one pure rule, `core/plan-progress.rules.ts` (D57):
 - The bot can mark steps in any order, and more than one step can be current.
 
 Only tool calls that succeeded, and not `mark_step` or `check_done`, count as evidence that a
-step was done.
+step was done. A call counts only for a step that was open (`started`, not yet closed) when the
+call began. A call made before the first mark, or when no step is open, is evidence for no step.
 
 The prompt of the action run lists the approved steps with their numbers and says: "Call
 `mark_step` when you start a step and when you finish it. You can call it together with your
