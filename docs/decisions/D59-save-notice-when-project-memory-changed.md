@@ -10,7 +10,11 @@ Decision:
   memory items that changed or were deleted after the plan card's `decided_at`. It also checks
   the project instructions and goal (D45).
 - **No change: the save is as before.** No extra line, no extra cost.
-- **A change: the app saves, then shows a notice.** The notice is a system line under the reply:
+- **The check runs at each real Library save, not at run end.** The D52 save queue can save a run
+  some time after it ends, and the owner can use "Save to Library" on a failed or stopped run much
+  later. A check at run end would miss memory that changed in that time.
+- **A change: the app saves, then shows a notice.** The notice uses the same pattern as the D52
+  save notices (a system line under the reply):
   "Project memory changed after this plan was approved: "Skip Task 3" · by BA in Conversation B · 10:03".
   It has **View item** (opens the item on the Memory page) and **View saved files** (opens the
   Library history of the save).
@@ -19,6 +23,15 @@ Decision:
 - **The notice names who changed the item.** Bots save project memory without approval (D38),
   so a changed item is not always the owner's decision. `memory_items.last_changed_by_bot_id`
   and `last_change_message_id` give the name and the link.
+- **The notice is a snapshot.** The save records each detected change with the save result, as
+  D52 records overlaps: the item id, its text at the save, the change (changed or deleted), who
+  changed it, the message and the time. The notice and the inbox show this record, so they stay
+  the same after a reload, also when the item changes again later. **View item** opens the
+  current item, or its version history, also for a deleted item.
+- **It is not part of the plan check.** `runs.plan_check` (D54) stays the fixed record of what
+  the run did on its own branch, shown in "Check after the run" (D57). A memory change is about
+  the project context, not about the run's work: a run can be Done with all steps done and still
+  get this notice. The P3 rule of the plan card does not change.
 - **The same check runs on "Save to Library"** from the unsaved changes card of a failed or
   stopped run (D52, D56).
 - **A hold can come later.** As with file overlaps (D52), the checks are recorded. If the
@@ -45,13 +58,15 @@ Why: Without a check, A's work can rest on memory that changed while it ran. D43
 before the plan, and D52 checks file overlaps at the save. Neither looks at memory that changed
 during the run. A notice closes that gap at no cost, and the owner keeps the judgement.
 
-Rejected: options B and C (above); a stored memory revision per run (the plan card's
-`decided_at` and the item times already give the answer, and the owner rejected per-item
-memory attribution in D51).
+Rejected: options B and C (above); a check at run end stored in `runs.plan_check` (it misses
+changes between run end and the save, and it mixes the run's own result with its context); a
+stored memory revision per run (the plan card's `decided_at` and the item times already give
+the answer, and the owner rejected per-item memory attribution in D51).
 
 Consequences:
-- No new column for memory: `memory_items.updated_at`, `deleted_at` and the plan card's
-  `decided_at` are enough. The project instructions and goal need a change time; the M6 plan adds it.
+- No new column on `memory_items`: `updated_at`, `deleted_at` and the plan card's `decided_at`
+  find the changes. The project instructions and goal need a change time. The save result needs
+  a place for the snapshot, beside the D52 overlap records. The M6 plan adds both (migration).
 - A new system line kind. It needs a UI design round with the D52 notices.
 - The notice can come after the work is saved. The owner must read it to act.
 

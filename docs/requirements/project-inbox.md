@@ -54,11 +54,15 @@ There is no "overlap found, waits for you" state. D52 saves and then shows a not
   list updates live from the event stream, with no reload.
 - **UI-14.4** The inbox makes no model call. A test with the fake model shows zero model
   requests for any inbox load.
-- **UI-14.5** When an action run saves and no project memory item, instruction or goal changed
-  after its plan's `decided_at`, no memory notice appears.
+- **UI-14.5** When a Library save of an action run happens (from the save queue or from "Save to
+  Library" on unsaved changes) and no project memory item, instruction or goal changed after the
+  plan's `decided_at`, no memory notice appears.
 - **UI-14.6** When one or more changed, the save completes and a notice lists each item with its
   text, who changed it, the conversation and the time, with View item and View saved files. No
-  model call is made.
+  model call is made. The notice shows the snapshot recorded at the save: it is the same after a
+  reload, also when the item changed again or was deleted later. View item opens the current item
+  or its version history, also for a deleted item. The plan card's "Check after the run" and its
+  P3 state do not change because of this notice.
 - **UI-14.7** `search_project_conversations` returns hits only from other conversations of the
   same project, only from their active branch, and never from a conversation with "Don't use
   memory" on.
