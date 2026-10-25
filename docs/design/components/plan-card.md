@@ -7,7 +7,7 @@
 > reply, the button order and icons, the folded line, and the conflict question in two lines.
 > Preview: `../previews/command-dark/conversation-cards.*` (card S3).
 > **Progress after Approve (D57, proposed 2026-10-25):** §4 and §6. Preview:
-> `../previews/command-dark/plan-progress.*` (P1–P4).
+> `../previews/command-dark/plan-progress.*` (P1–P5).
 
 A bot shows a plan card before each task that changes something (D48): it writes files, saves
 memory, hands off or drafts a skill. A plain answer or question has no plan card.
@@ -134,7 +134,9 @@ from the run's `run_steps` rows, so it is the same after a reload. Preview:
 action recorded" in `on-surface-muted` with a ! icon, not the green check (never amber: amber is
 only for "Waiting for you"). Planned files and Done-when items with a quote that the app found
 show **checked by app** in 11 px `success`. A Done-when `met` whose quote is not in the file shows
-**not verified** in `danger`. Every other mark shows **bot says** in 11 px `on-surface-muted`.
+**not verified** in `danger`. A Done-when `not_met` shows **bot says** in 11 px
+`on-surface-muted`, with the bot's note under it. Steps have no source label: each step shows
+its tool-call count under it ("2 tool calls") as the evidence (board P5).
 
 **Done, all steps marked (P2).** The card folds to one line (`conversation-cards.md` §3):
 "**Plan** [Done] 11:15 · 4 of 4 steps · 2 files · Show".
