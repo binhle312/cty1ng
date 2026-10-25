@@ -65,6 +65,7 @@ Auto = `check_board.py` finds a break. Manual = check by eye.
 | P5 | No legend when the badges already explain | manual | Round 9 |
 | P6 | One pin glyph and its four states. A pin badge is never on a bot avatar | manual | `components/pin.md` |
 | P7 | Standard parts live in `components/`, one file each | manual | Owner 2026-10-23 |
+| P8 | A board shows the whole screen as the spec defines it, also parts from later slices. Draw each later part for real, with a small tag that names its slice ("M5"). Never leave a part out or hide it in a note | manual | Owner 2026-10-25 13:32 |
 
 ### Time
 
