@@ -34,7 +34,9 @@ Decision:
   nothing open in the run-end check (`runs.plan_check`, D54), the card folds to one line:
   "**Plan** [Done] 11:15 · 4 of 4 steps · 2 files · Show". Otherwise it stays open: each step
   with no `done` shows "Not marked done" (red !), and a block "Check after the run" lists what
-  `plan_check` found. A stopped or failed run keeps the card open with the pill "Stopped · 2 of 4"
+  `plan_check` found, also each planned delete or move that the run did not do
+  (`planned_ops_not_done`). The block says that it shows what happened in the run, before the
+  save. What was saved shows on the D52 card and its notices (D54). A stopped or failed run keeps the card open with the pill "Stopped · 2 of 4"
   or "Failed · 2 of 4".
 - **Show and Hide.** A folded card opens with **Show** and folds with **Hide**. The open card
   shows the step marks as they were at the end of the run.

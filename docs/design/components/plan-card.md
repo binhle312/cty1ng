@@ -135,10 +135,13 @@ from the run's `run_steps` rows, so it is the same after a reload. Preview:
 
 **Done, with something open (P3).** The card stays open. The pill is "Done · 3 of 4" in `danger`
 text on a `danger` tint. Each step with no `done` has the red ! and "Not marked done" at the
-right. Under Files, a block with a `danger` left edge: **Check after the run**, one line with the
-red ! for each item of `runs.plan_check` (D54): a step not marked done, "Planned, not written:
-{path}", "Not in plan: {path}", a delete or move not in the plan; then the Done-when result in
-11 px `on-surface-muted` ("Done when (from the skill): 2 of 3 met · 1 not checked").
+right. Under Files, a block with a `danger` left edge: **Check after the run**, then in 11 px
+`on-surface-muted` "What happened in this run, before the save" (the check never shows what was
+saved: a failed run or a rejected delete can differ, D54). One line with the red ! for each item
+of `runs.plan_check`: a step not marked done, "Planned, not written: {path}", "Planned, not done:
+delete {path}" or "move {path} → {to_path}" (`planned_ops_not_done`), "Not in plan: {path}", a
+delete or move not in the plan; then the Done-when result in 11 px `on-surface-muted` ("Done when
+(the bot's own check): 2 of 3 met · 1 not checked").
 
 **Stopped or failed (P4).** The card stays open. The pill is "Stopped · 2 of 4"
 (`on-surface-muted` on `surface-raised`) or "Failed · 2 of 4" (`danger`). The done steps keep
