@@ -10,6 +10,7 @@
 | --- | --- |
 | [screens.md](screens.md) | Text layout sketches for the shell, conversation page, statistics page and time range picker |
 | [concepts.md](concepts.md) | UI concept proposals (7 layouts, then 10 visual styles), compared; the owner picks one before M0 |
+| [ui-rules.md](ui-rules.md) | **Every agreed UI rule in one list**, each with its check (auto or manual) and the file that owns it. Read it before a board, a UI spec or UI code |
 | [themes.md](themes.md) | Theme system: Command and Material themes, modes, density, Board map, tokens (D30) |
 | [mockups.md](mockups.md) | Links to visual mockups (Flow view Team, Timeline, Files) and what they illustrate |
 | [components/](components/README.md) | **Agreed** component specs (bot avatar, top header, bot card, user panel, left bar, memory pane, new project page, project settings, plan card, buttons, skills page, Bots page, Create bot page, bot page, conversation page, composer, conversation system lines and cards) and the shared standards (pin, bot status, dashed slot, time format and sort), theme-neutral; index and the core-vs-theme rule in its README |

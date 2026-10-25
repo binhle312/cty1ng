@@ -41,6 +41,7 @@ Start with `docs/README.md` for the reading order.
 | Pages and components | `docs/requirements/<area>.md` (behaviour); `docs/design/` (sketches, not final) |
 | The Flow pane, animations, renderers | `docs/flow-view.md` |
 | Frontend TypeScript rules | `docs/frontend-conventions.md` |
+| A design board, a UI spec or UI code | `docs/design/ui-rules.md` (every agreed UI rule, one list) |
 | Design work with the `ui-ux-pro-max` skill | `docs/workflow.md` §2 (design skills) |
 | Showing a proposal, plan or review item to the human | `docs/workflow.md` §2 (human review: visual first) |
 | Styling, themes, design tokens | `docs/design/themes.md` (D30) |
