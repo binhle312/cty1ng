@@ -60,7 +60,7 @@ Why:
   so "Undo this run" is one revert.
 - **The owner reads less after a run.** The check lists only what differs from the plan.
 - **The file checks are exact.** The app compares the plan with the run's commits. Only the
-  Done-when states come from the bot, so the reply labels them as the bot's own check.
+  Done-when states come from the bot, so the card labels them as the bot's own check.
 
 Not chosen:
 
