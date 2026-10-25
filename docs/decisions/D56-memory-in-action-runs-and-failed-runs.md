@@ -58,11 +58,11 @@ items, and the risk of 2A is small.
 
 ## What changes in other documents
 
-- `../requirements/projects-and-memory.md`: memory table rows, UI-13.16 (1A) and UI-13.17 (2A).
+- `../requirements/projects-and-memory.md`: memory table rows, UI-13.17 (1A) and UI-13.18 (2A).
 - `../conversation-rules.md` §4: the error code `memory_not_in_plan`.
 - `../tasks/M6-workspace-parity.md`: the parked question is closed.
 - `../design/components/plan-card.md`: no change (the Memory list exists).
 - The D52 card text gets the memory line when M6 designs that card.
 
-Implemented in: `../requirements/projects-and-memory.md` (memory table, UI-13.16, UI-13.17),
+Implemented in: `../requirements/projects-and-memory.md` (memory table, UI-13.17, UI-13.18),
 `../tasks/M6-workspace-parity.md`. Built in M6, with the D52 card.

@@ -66,8 +66,8 @@ reviews). Each needs the owner's choice before the plan starts:
   end of the action run, the app reports planned files that the run did not write ("Planned, not
   written"). Proposed decision D54.
 - **Memory saves in a failed action run: decided in D56 (2026-10-25).** The memory saves stay;
-  the unsaved changes card lists them with Undo (UI-13.17). Action runs save only the memory
-  items on the approved plan (UI-13.16).
+  the unsaved changes card lists them with Undo (UI-13.18). Action runs save only the memory
+  items on the approved plan (UI-13.17).
 - **Typed handoff brief.** `propose_handoff` gets fields (goal, done, assumed, open questions,
   ask, suggested skills) instead of `summary`; the card shows "Assumed" items apart, and warns
   when a suggested skill is not pinned to the target. Today the seed skill `hand-off-work`

@@ -16,7 +16,7 @@ conversations. Technical design: `../domain-model.md` §11, §14.
   Acceptance criteria: UI-13.4, UI-13.6.
 - **PM-4.** As the owner, I want to see, edit, delete and recover what bots remember, so that
   nothing becomes permanent without my knowing. Acceptance criteria: UI-13.7 to UI-13.10,
-  UI-13.13 to UI-13.17.
+  UI-13.13 to UI-13.15, UI-13.17, UI-13.18.
 - **PM-5.** As the owner, I want bots in a multi-bot conversation outside any project to remember facts
   about that conversation's topic, so that a quick team conversation keeps its context without needing a
   project. Acceptance criteria: UI-13.4, UI-13.11, UI-13.12.
@@ -86,8 +86,8 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
   proposal card: each merge, rewrite or delete with a checkbox and before/after text. Nothing
   changes until the owner presses Apply. Applied changes can be undone like any other memory
   change.
-- UI-13.16: In an action run, a memory tool call for an item that is not on the approved plan's
+- UI-13.17: In an action run, a memory tool call for an item that is not on the approved plan's
   Memory list saves nothing and returns `memory_not_in_plan`. A fake-model test proves it (D56).
-- UI-13.17: When an action run fails or stops after it saved memory, the unsaved changes card
+- UI-13.18: When an action run fails or stops after it saved memory, the unsaved changes card
   lists each saved item with Undo, next to the unsaved files (D52, D56).
 
