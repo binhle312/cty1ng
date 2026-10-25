@@ -1,8 +1,9 @@
 # Composer
 
 > **Status: agreed in the M3 UI design review, round 10 (2026-10-24)**, step 4 (M1–M5, M4b) and
-> step 3 (P1, the Stop button). Previews: `../previews/command-dark/composer.*` and
-> `conversation-stop.*` (card P1). Labels use Simplified Technical English.
+> step 3 (P1, the Stop button). Previews: `../previews/command-dark/composer.*`,
+> `conversation-stop.*` (card P1), `composer-lines.*` and `composer-format-send.*` (format bar and
+> the Send icon, N1). Labels use Simplified Technical English.
 
 The composer is the message box at the bottom of the conversation page. It sits in the same
 760 px column as the messages (`conversation-page.md` §1). Requirements: UI-3.11 to UI-3.14,
@@ -15,7 +16,7 @@ UI-3.20 to UI-3.23.
 | Box | At least 44 px high, grows with the text. Radius 10 px, 1 px `outline-strong` border, `surface-raised` fill. 16 px from the column sides, 12 px from the bottom |
 | Left | The paperclip button (attach), `on-surface-muted` |
 | Text | Markdown. Placeholder "Message the team. Type @ to mention a bot." in `on-surface-muted` |
-| Send | A 32 px square button, radius 8 px, `primary` fill, an **up arrow** icon in `on-primary`. Off (40 %) while the box is empty |
+| Send | A 32 px square button, radius 8 px, `primary` fill, the **Enter key icon (↵)** in `on-primary` (owner, 2026-10-25 02:23, option N1; it replaces the up arrow). Off (40 %) while the box is empty |
 | Line under the box | 11 px, `on-surface-muted`. By default: "Enter sends · Shift+Enter adds a line". Other lines (§3) take its place |
 
 Keys: Enter sends. Shift+Enter or Alt+Enter adds a line. The same keys work in every message
@@ -60,8 +61,8 @@ of PR #26, 2026-10-25 02:14; preview `../previews/command-dark/composer-lines.*`
 
 ## 5. Markdown keys and the format bar
 
-> Agreed in the thread review of PR #26 (owner, 2026-10-25 01:47 and 01:51, option B). No board
-> yet; the sketch is in this section.
+> Agreed in the thread review of PR #26 (owner, 2026-10-25 01:47 and 01:51, option B; board F1–F3
+> approved 02:23). Preview: `../previews/command-dark/composer-format-send.*`.
 
 Every Markdown box has the same keys and the same format bar: the composer, Edit, Request
 changes, and the Bad answer note. The box stays plain Markdown text, not a rich editor.
