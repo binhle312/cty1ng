@@ -1,8 +1,8 @@
 # Plan card
 
 > **Status: agreed in the M0 UI design review (2026-10-22)**, canvas round 6.3, board V2 cards
-> S4b–S4e. Preview: `../previews/command-dark/memory-check-plan.png` (and `.html`). Follows D48
-> and D43. The labels and messages use Simplified Technical English.
+> S4b–S4e. Preview: `../previews/command-dark/plan-card.png` (and `.html`), cards S4b–S4e,
+> regenerated with the round 10 parts (owner review, 2026-10-25). Follows D48 and D43. The labels and messages use Simplified Technical English.
 > **Changed in the M3 UI design review, round 10 (2026-10-24 and 2026-10-25):** the place in the
 > reply, the button order and icons, the folded line, and the conflict question in two lines.
 > Preview: `../previews/command-dark/conversation-cards.*` (card S3).
