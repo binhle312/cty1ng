@@ -492,6 +492,13 @@ runs
 INDEX runs_claim ON runs(status, created_at)
 UNIQUE INDEX runs_one_running ON runs(conversation_id) WHERE status = 'running'   -- D11 in the database
 
+run_slots                                -- append-only; one row per admitted execution (proposed 2026-10-25, migration needs owner approval)
+  id               TEXT PK               -- TypeID prefix `rslot`; one run can have more than one slot
+  run_id           TEXT NOT NULL REFERENCES runs(id)
+  conversation_id  TEXT NOT NULL REFERENCES conversations(id)
+  used_at          TIMESTAMP NOT NULL    -- UTC, the time of the claim
+INDEX run_slots_window ON run_slots(conversation_id, used_at)
+
 model_requests                           -- one row per call to the provider (D21)
   id                  TEXT PK
   purpose             TEXT NOT NULL DEFAULT 'run'   -- run | title (D46)
@@ -518,6 +525,10 @@ run_history
   run_id         TEXT PK REFERENCES runs(id)
   messages_json  BLOB NOT NULL          -- provider-neutral messages (AI SDK message format, behind the model port), binaries stripped
 ```
+
+`run_slots` is the only record for the hourly run limit (`conversation-rules.md` §2, §9). The
+worker inserts a row in the same transaction as a first claim or a claim after a manual Retry.
+A lease recovery and a refused claim insert none. Rows are never updated or deleted.
 
 `run_history` keeps the bot's own tool calls and results between runs (as the prototype did),
 so a bot remembers what it read and wrote. Only runs on the active path are used, and they

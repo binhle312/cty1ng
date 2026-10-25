@@ -70,8 +70,23 @@ When a run finishes, `decideRuns` is called with the bot's message as trigger:
 - Changing the toggle or limit posts a notice ("Bot discussion limit changed to 8") and applies
   from the next routing decision. A running run is not interrupted.
 - **Safety cap:** independent of the budget, at most `runs_per_conversation_per_hour` (setting,
-  default 50, §9) runs per conversation per rolling hour; beyond it runs are refused with a
-  notice. A run counts when it is claimed.
+  default 50, §9) admitted executions per conversation per rolling hour. The worker checks the
+  cap when it claims a run, like the daily cap (D20, `domain-model.md` §13):
+  - The count is the number of `run_slots` rows of the conversation with `used_at` in the last
+    hour (`domain-model.md` §7). `run_slots` is the only record for this count; `started_at` is
+    a lifecycle time, not a counter.
+  - **Admitted:** the check, the claim and the insert of one `run_slots` row are one write
+    transaction (`BEGIN IMMEDIATE`). A first claim and a claim after a manual Retry (UI-3.7)
+    each insert a row, so one run can have more than one slot.
+  - **Lease recovery:** a claim of a `running` run with an expired lease (`architecture.md`
+    §6) continues the same execution. It inserts no row.
+  - **Refused:** when the count is at or above the setting, the run becomes `failed` with
+    `error = rate_limited`, with no `started_at` and no `run_slots` row. The run never started,
+    so it has no bot message and no Retry. In the same transaction the app posts one danger
+    notice for each refused run: "BA did not run. Hourly run limit reached (30 / 10) for this
+    conversation. Try again later or raise it in Settings." The first number is the live count
+    of slots in the window, the second is the setting. The worker does not retry the run; the
+    owner sends a new message when there is room.
 - **Stop:** cancels all queued runs and the running one in the conversation (`architecture.md`
   §6) and posts "Stopped by owner".
 
@@ -536,7 +551,7 @@ other code reads that constant instead of repeating the number.
 
 | Setting | Type, range | Default | What counts | Rule |
 | --- | --- | --- | --- | --- |
-| `runs_per_conversation_per_hour` | integer, 1–500 | 50 | runs claimed in the conversation in a rolling hour | §2 |
+| `runs_per_conversation_per_hour` | integer, 1–500 | 50 | `run_slots` rows of the conversation in a rolling hour: first claims and claims after a manual Retry, not lease recovery | §2 |
 | `handoff_max_per_conversation_24h` | integer, 1–50 | 5 | handoffs proposed in the conversation in a rolling 24 hours, any status | §5 |
 | `skill_draft_max_per_run` | integer, 1–10 | 3 | drafts the run created, any status | §7 |
 | `skill_draft_max_pending_per_conversation` | integer, 1–50 | 10 | drafts with status `pending` in the conversation now | §7 |
@@ -547,14 +562,31 @@ other code reads that constant instead of repeating the number.
 - **Parallel calls.** The app counts and inserts in one write transaction (`BEGIN IMMEDIATE`,
   `architecture.md` §11), so two parallel calls cannot both take the last slot.
 - **Changes apply to the next action.** A new value applies from the next run claim or tool
-  call. A lower limit does not delete pending drafts or handoffs, and does not stop queued or
-  running runs. Over the new limit, only new items are blocked until the count drops.
+  call. A lower limit does not delete pending drafts or handoffs, and does not stop a running
+  run. A queued run is checked at its claim with the new value, so it can be refused (§2).
+  Over the new limit, only new items are blocked until the count drops.
 - **How the owner changes them.** `PATCH /settings` with the key (`api.md` §7). The server
   validates the value with Zod and returns 422 when it is out of range. The Settings page shows
   `runs_per_conversation_per_hour` (UI-8.1). The other three get rows on the Settings page at the
   M5 global settings design round; until then the owner uses `PATCH /settings`.
 - `share_max_per_conversation_24h` (D58) and `plan_mark_reminders` (D57) are settings too. Their
   rules are in those decisions.
+
+### Tests
+
+Table tests in the `*.rules.ts` suites and service tests (`testing.md`) prove at least:
+
+- **Window boundary:** an item exactly one hour (or 24 hours) old no longer counts; one that
+  is a second newer still counts.
+- **Last slot in parallel:** two parallel claims or tool calls with one slot left give one
+  success and one refusal.
+- **Lower limit with queued runs:** the owner lowers `runs_per_conversation_per_hour` from 50
+  to 10 with 30 slots in the window; the next queued run is `failed` with `rate_limited`, has
+  no bot message, inserts no slot, and the notice says "30 / 10".
+- **Crash recovery:** a lease reclaim inserts no `run_slots` row; a manual Retry of the same
+  run inserts one.
+- **Pending slot freed:** after the owner approves, rejects, or a draft becomes stale, the next
+  `propose_skill` call in the conversation succeeds again.
 
 ### Fixed values (named constants)
 

@@ -10,7 +10,7 @@ bot has a one-line `description` ("Turns user stories into UI screens"), and eac
 contains a **team directory** listing the other bots' names and descriptions. A bot may hand
 off to any non-deleted, available bot or to `human`. If the target is not a member of the
 conversation, the approval card offers "Add <bot> and start". Limit: 5 handoffs per
-conversation per 24 hours.
+conversation per 24 hours (amended 2026-10-25: setting `handoff_max_per_conversation_24h`, see above).
 Why: Approval is already the gate, so a fixed target list mostly adds configuration. The team
 directory gives the bot the information a human teammate would have.
 Rejected: Per-bot allow-list of targets (prototype behaviour); an explicit workflow editor
