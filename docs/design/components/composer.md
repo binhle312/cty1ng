@@ -39,7 +39,8 @@ text shows the values that are set.
 
 ## 3. Lines under the box
 
-Only one line shows. When there are more, the first one in this list wins:
+Only one line shows. When there are more, the first one in this list wins (approved in the thread review
+of PR #26, 2026-10-25 02:14; preview `../previews/command-dark/composer-lines.*`):
 
 1. No connection: "No connection to the app server. Your messages are kept here until they are
    sent." (`conversation-page.md` §6, E3)
