@@ -12,6 +12,11 @@
 | 1 day or more | Exact local time, ISO order | 2026-10-20 16:40 |
 | No time | A phrase that says so | Idle · no activity yet |
 
+**Exception: the conversation and its cards use local clock time** (owner, 2026-10-25 03:58).
+Message times and card times show "11:10"; plan steps show the start time with seconds and the
+duration ("11:12:04 · 0:18", `plan-card.md` §6), because steps are often seconds apart and "x
+ago" would change every minute. A tooltip gives the full date and time ("2026-10-25 11:12:04").
+
 Local time uses the `timezone` setting (browser zone when NULL). Time ranges use the D25 picker (`../../requirements/time-range-picker.md`),
 not this rule.
 
