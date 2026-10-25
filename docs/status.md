@@ -70,7 +70,7 @@ cards inside the reply that fold after a decision, and the requirement edits tha
 | M0 | not started | | |
 | M1 | not started | | Design approved: `design/components/skills-page.md` (round 8); D49 accepted |
 | M2 | UI design review | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec) | Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open |
-| M3 | UI design agreed | (this PR) | Round 10: `design/components/conversation-page.md`, `composer.md`, `conversation-cards.md` |
+| M3 | UI design agreed | [#26](https://github.com/binhle312/cty1ng/pull/26) (spec) | Round 10: `design/components/conversation-page.md`, `composer.md`, `conversation-cards.md` |
 | M4 | not started | | |
 | M5 | not started | | |
 | M6 | not started | | |
