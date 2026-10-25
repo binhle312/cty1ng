@@ -113,7 +113,7 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `message.feedback` | yes | `{message_id, feedback}` (`feedback` null when removed) | the owner rated a bot message, or changed or removed the rating (D51) |
 | `run.queued` | yes | `{run}` | run inserted |
 | `run.started` | yes | `{run}` | worker claimed it |
-| `run.step` | yes | `{run_id, conversation_id, actor_id, step}` | each bot tool call finishes (D26), e.g. `read_file user-stories/login.md` |
+| `run.step` | yes | `{run_id, conversation_id, actor_id, step}` | each bot tool call finishes (D26), e.g. `read_file user-stories/login.md`; a `mark_step` call (D57) updates the plan card |
 | `run.finished` | yes | `{run}` | done, failed or stopped |
 | `member.pending` | yes | `{conversation_id, bot_id, message_id}` | bot added, history card posted |
 | `member.joined` | yes | `{conversation_id, bot_id, history_from_seq}` | owner chose history |

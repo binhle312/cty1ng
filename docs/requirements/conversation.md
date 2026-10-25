@@ -52,7 +52,8 @@ Messages
   text sits in a polite live region.
 - UI-3.5: The latest `run.step` shows as a subtle line under the streaming message
   ("Loading skill write-user-stories…") with the elapsed time since the run started and since
-  the last progress ("1:42 · last step 0:12 ago").
+  the last progress ("1:42 · last step 0:12 ago"). While a plan card shows progress (UI-3.29),
+  the line shows only the times, because the card names the step.
 - UI-3.6: Under each completed bot message, chips list `skills_used` as `<slug> v<version>`,
   always-loaded ones marked "always" (D15). Clicking a chip opens a side sheet with that exact
   version's content. No chips when none.
@@ -154,3 +155,28 @@ Feedback (D51, used by Improve in slice M5d)
   the right of the skill chip row (`../design/components/conversation-page.md` §3.2).
 - UI-3.28: A tooltip on the buttons says "Your ratings help <bot> improve its skills".
   Ratings never change the message and never start a run.
+
+Plan progress (D57)
+
+- UI-3.29: After Approve, the plan card stays open and shows each approved step as done, current
+  or not started (and skipped, with the bot's note), each started step with its start time and
+  duration ("11:12:04 · 0:18"), with the pill "Running · 2 of 4 done" (plus "· 1 skipped").
+  Calls made when no step is open show under "Other tool calls".
+  The tool calls of the current step show as small lines under it. Each planned file shows
+  "written" or "not yet". The state comes from `run_steps`, so a reload shows the same card
+  (`../design/components/plan-card.md` §6).
+- UI-3.29b: An approved run that waits for a file claim (D52) shows "Queued · waits for
+  {conversation}" with the clock icon, in grey, until it starts.
+- UI-3.30: When the run ends with every step done (none skipped) and nothing open in the run-end
+  check (D54), the card folds to "Plan [Done] … · Show". Otherwise it stays open: "Not marked
+  done" on each step with no done or skipped mark, a skipped step with its note ("Done · 3 of 4 ·
+  1 skipped"), and the block "Check after the run". A Done-when item `met` whose quote the app
+  did not find is open. A stopped or failed run keeps the
+  card open with "Stopped · n of total" or "Failed · n of total".
+- UI-3.30b: Before the run ends, the app reminds the bot once (setting `plan_mark_reminders`)
+  about steps and Done-when items with no mark. Each mark shows its source: "checked by app",
+  "bot says" or "not verified"; a step done with no tool call that succeeded shows "no action
+  recorded". A mark on a done or skipped step gives the error `step_closed`.
+- UI-3.31: Show opens a folded plan card, Hide folds it, at any time. A card hidden while the
+  run works shows "Running · 2 of 4 done" on its line, updated live. A reply with no plan
+  has no progress card.

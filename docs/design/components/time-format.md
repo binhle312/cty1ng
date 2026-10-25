@@ -12,6 +12,16 @@
 | 1 day or more | Exact local time, ISO order | 2026-10-20 16:40 |
 | No time | A phrase that says so | Idle · no activity yet |
 
+**Exception: the conversation and its cards use local clock time** (owner, 2026-10-25 03:58).
+Message times and card times show "11:10"; plan steps show the start time with seconds and the
+duration ("11:12:04 · 0:18", `plan-card.md` §6), because steps are often seconds apart and "x
+ago" would change every minute. A tooltip gives the full date and time ("2026-10-25 11:12:04").
+
+**Clock format (owner, 2026-10-25 03:59).** Every clock time uses the 24-hour clock with two
+digits for the hour, the minute and the second: "09:05", "09:05:07", "17:40". Never "9:05" or
+"5:40 PM". Durations are not clock times: "0:18" (minutes and seconds), "1:02:05" over an hour;
+the seconds always have two digits.
+
 Local time uses the `timezone` setting (browser zone when NULL). Time ranges use the D25 picker (`../../requirements/time-range-picker.md`),
 not this rule.
 

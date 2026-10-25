@@ -136,8 +136,11 @@ The prompt for a run is assembled in this order by `buildPrompt(...)` in `core/r
    `load_skill(slug)` before doing that kind of work".
    In runs triggered by the owner's message, the `propose_skill` tool is listed too (§7).
    In an action run whose approved plan has Done-when items, the `check_done` tool is listed
-   too: `check_done({item, state: "met" | "not_met", note})`; `not_met` needs a note, and an item
-   that is not in the plan returns `{error: "not_in_plan", message}` (D54).
+   too: `check_done({item, state: "met" | "not_met", note, evidence})`; `not_met` needs a note,
+   `met` needs `evidence: {path, quote}` (D57), and an item that is not in the plan returns
+   `{error: "not_in_plan", message}` (D54). At run end, the app checks that the quote is in the
+   run's final version of that file, and stores `evidence` and `verified` in
+   `runs.plan_check.done_when` (D57).
 7. **Transcript**: the visible history (below) as one user-role block.
 8. **The trigger**: the message the bot is answering, quoted and labelled.
 
@@ -168,6 +171,38 @@ tool result, and the bot continues.
   This is best effort, like the check in D43. The app guarantees only that the error reaches the
   model and shows on the Flow timeline.
 - Stop (`AbortSignal`) is the only thing that ends a run in the middle of a tool call.
+
+### Progress of an action run (D57)
+
+An action run (D48) gets the tool `mark_step({step, state: "started" | "done" | "skipped",
+note})`. `step` is a number from the approved plan (`plan_steps`, D54). `skipped` needs a note.
+Another number gives `{error: "not_in_plan", message}`; a `skipped` with no note gives
+`invalid_arguments`. The tool cannot add, remove or change a step. Each call writes a `run_steps`
+row (kind `mark_step`) and its `run.step` event, like every tool call. The plan card shows the
+steps from these rows (`design/components/plan-card.md` §6).
+
+The step state comes from one pure rule, `core/plan-progress.rules.ts` (D57):
+
+- `started` on a step that is not started makes it current, with the time of the mark.
+- `started` on a current step changes nothing (the first start time stays).
+- `done` or `skipped` settles the step, also with no `started` mark before it.
+- Any mark on a done or skipped step gives `{error: "step_closed", message}`.
+- The bot can mark steps in any order, and more than one step can be current.
+
+Only tool calls that succeeded, and not `mark_step` or `check_done`, count as evidence that a
+step was done. A call counts only for a step that was open (`started`, not yet closed) when the
+call began. A call made before the first mark, or when no step is open, is evidence for no step.
+
+The prompt of the action run lists the approved steps with their numbers and says: "Call
+`mark_step` when you start a step and when you finish it. You can call it together with your
+next tool call." A planning run and a run with no plan do not get the tool.
+
+**Reminder before the run ends (D57).** When the bot sends its final reply and a step has no
+`done` or `skipped` mark, or a Done-when item has no `check_done`, the app does not end the run.
+It sends one more turn with the open marks: "Before you reply: step 4 and Done-when item 2 have
+no mark. Mark each step done or skipped (with a note), and check each Done-when item. Mark done
+only what you really did." It does this at most `plan_mark_reminders` times (setting, default 1,
+0 = off). Each reminder is one model request and counts toward `request_limit`.
 
 ### Visible history
 

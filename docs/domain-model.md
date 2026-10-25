@@ -269,6 +269,7 @@ run_steps
   kind          TEXT NOT NULL   -- load_skill | list_files | read_file | view_file | write_file | propose_handoff
                                 --  | remember | update_memory | forget | restore_memory (D38)
                                 --  | propose_skill (D41)
+                                --  | mark_step (D57; target = the step number, detail = {state, note})
                                 --  | unknown_tool (the model named a tool that does not exist; target = that name)
   target        TEXT NOT NULL   -- skill slug@version, workspace path, handoff id, memory item id, or skill draft id
   status        TEXT NOT NULL   -- ok | error
@@ -556,7 +557,7 @@ settings
   value  JSON NOT NULL
 ```
 
-Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"created"`), `bot_order_direction = "desc"` (`"desc"` | `"asc"`), `trash_days = 30` (projects and skills, D49), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3`, `improve_probe_tasks_max = 10` (D51: the probe starts at the first and allows at most the second; read by M5d, never hard-coded).
+Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"created"`), `bot_order_direction = "desc"` (`"desc"` | `"asc"`), `trash_days = 30` (projects and skills, D49), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3`, `improve_probe_tasks_max = 10` (D51: the probe starts at the first and allows at most the second; read by M5d, never hard-coded), `plan_mark_reminders = 1` (D57: reminders before an action run ends when a step or Done-when item has no mark; 0 = off).
 
 Bot limits and defaults (`bots.md` UI-4.6, UI-5.8; read by M2, never hard-coded):
 `bot_name_max = 32`, `bot_description_max = 160`, `bot_persona_max = 8000`,
