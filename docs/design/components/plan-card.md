@@ -19,21 +19,27 @@ titles, file rows) is in `conversation-cards.md` §3. Top to bottom:
 1. **Plan**, then "· version {n}" from version 2, and the pill **Waiting for you**
    (`primary-tint`).
 2. The numbered steps.
-3. **Files:** each file the bot will write, with "new" or "changed".
+3. **Files:** each file the bot will write, with "new" or "changed". Then each delete and move,
+   for example "`drafts/old-tiers.md` · delete" and "`notes.md` → `pricing/notes.md` · move".
+   Approve covers these, so the save shows no second card for them (D54).
 4. **Memory:** each memory change, or "No changes".
 5. **Skill drafts:** one entry for each skill the bot will draft: the slug, then "New skill" or
    "New version", "For <bot>" and "Needs your final review", for example
    "`write-login-stories` · New skill · For BA · Needs your final review". The whole section
    shows only when the plan has at least one draft (owner, 2026-10-24).
-6. **Question before I start**, one block for each conflict (§2).
-7. A divider, then the buttons in the `buttons.md` order: **× Reject** (secondary, × icon),
+6. **Done when:** the items of the `## Done when` section of each skill that the plan uses,
+   numbered 1..n across all of them. Each item keeps its source skill and version. The section
+   shows only when at least one skill has one (D54).
+7. **Question before I start**, one block for each conflict (§2).
+8. A divider, then the buttons in the `buttons.md` order: **× Reject** (secondary, × icon),
    **Request changes** (secondary, pencil icon) and **✓ Approve** (primary, check icon, far right;
    owner, 2026-10-25 01:58).
 
 While the card waits, the bot has read-only tools. Only Approve starts the action run, with the
 write tools and the approved plan.
 
-The Files, Memory and Skill drafts lists are data in the plan, not only text. The app uses the
+The steps, Files (with deletes and moves), Memory, Skill drafts and Done when lists are data in
+the plan, not only text (`plan_steps`, `plan_files`, `plan_file_ops`, `plan_done_when`, D54). The app uses the
 Skill drafts list to decide if the action run gets `propose_skill` (`../../conversation-rules.md`
 §7).
 
@@ -75,6 +81,13 @@ line for each text (owner, 2026-10-24):
 
 The plan folds to one line: "**Plan** [Approved] 11:12 · 3 steps · 2 files · Show". The
 action run starts, and its result comes as a new reply under the folded line.
+
+At the end of the action run, the app compares the run with the plan (`runs.plan_check`, D54):
+planned files not written, planned deletes and moves not done, files not in the plan, and each
+Done-when item that is `not_met` or `not_checked`. The check shows what happened on the run's
+branch, not what was saved, and it never changes after the run ends. The Done-when marks are the bot's own check, so the card says so. The
+plan card shows the result in its block "Check after the run" (D57, proposed; the owner approved
+this place on board P3).
 
 ## 5. Reject
 

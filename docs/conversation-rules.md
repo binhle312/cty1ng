@@ -135,6 +135,9 @@ The prompt for a run is assembled in this order by `buildPrompt(...)` in `core/r
 6. **On-demand skills**: `- <slug>: <description>` for the other pins, and "call
    `load_skill(slug)` before doing that kind of work".
    In runs triggered by the owner's message, the `propose_skill` tool is listed too (§7).
+   In an action run whose approved plan has Done-when items, the `check_done` tool is listed
+   too: `check_done({item, state: "met" | "not_met", note})`; `not_met` needs a note, and an item
+   that is not in the plan returns `{error: "not_in_plan", message}` (D54).
 7. **Transcript**: the visible history (below) as one user-role block.
 8. **The trigger**: the message the bot is answering, quoted and labelled.
 
@@ -253,7 +256,7 @@ Example:
   brief for the next task: Goal, Done (checked, with sources), Assumed (not checked), Open
   questions, Ask, Suggested skills. Files are named by path, never copied. The brief passes the
   sensitive-data guard (D39) like any bot text. The app does not parse these sections yet; a
-  typed brief is a later proposal (D54).
+  typed brief is a later proposal (no number yet; D54 is the plan check).
 
 ## 6. Editing messages and branches (D13)
 

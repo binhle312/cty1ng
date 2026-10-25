@@ -54,6 +54,7 @@ cards inside the reply that fold after a decision, and the requirement edits tha
 | Item | Needed by |
 | --- | --- |
 | D52 accepted (each run writes on its own branch and saves to the Library): update the M6 brief and the documents D52 lists; approve the `run_branches` migration | M6 plan |
+| D54 accepted (the approved plan covers deletes and moves; run-end plan check): add the plan lists and `runs.plan_check` to `domain-model.md`, the `check_done` tool, and approve the migration | M6 plan |
 | D53 accepted (web through provider web tools): check the default limits and approve the migration for the bot setting and the run flag | Web access milestone plan |
 | Approve the M3 migration for D46 (auto title) before it is written | M3 plan |
 | Add the `surface-bubble` token (owner message box) to `design/themes.md` §3 after PR #10 merges | M3 plan |
