@@ -102,11 +102,16 @@ added ──▶ pending_history ──owner chooses──▶ active ──remove
                                                 └──── re-add ──────┘ (asks again)
 ```
 
-- Add by dragging a header avatar onto the chat area, or with the "Add bot" button.
+- Add with the add slot (+) in the conversation header, which is always first before the
+  member avatars (a click opens the picker), or by dragging a header avatar onto the
+  conversation or onto the add slot (`design/components/conversation-page.md` §2).
 - Adding inserts `conversation_bots(status = pending_history, joined_at_seq = <current seq>)` and
   a system message `kind = history_choice`: "Designer joined. What can it read?
   [Full history] [From here on]".
 - Choosing sets `history_from_seq` (0 or `joined_at_seq`) and `status = active`.
+- **M3 only:** the add skips `pending_history`. It inserts the member with `status = active`
+  and `history_from_seq = 0`, and posts no card (M3 brief). M4 adds the pending state and the
+  history card.
 - While pending, the bot cannot be mentioned (autocomplete shows it greyed with "waiting for
   your choice").
 - Removing sets `removed`, posts "Designer left". Its messages stay normal.
@@ -219,8 +224,9 @@ Example:
 
 1. BA finishes and calls `propose_handoff(to="Designer", files=["user-stories/login.md"],
    summary="Login stories ready for screens")`.
-2. The app commits the file (sha `a1b2c3`) and posts a card: "BA → Designer: Login stories
-   ready. Files: user-stories/login.md [Approve] [Request changes] [Reject]".
+2. The app commits the file (sha `a1b2c3`) and shows a card inside BA's reply: "BA → Designer:
+   Login stories ready. Files: user-stories/login.md [Reject] [Request changes] [Approve]"
+   (`design/components/conversation-cards.md` §4).
 3. Approve → Designer runs with "BA's handoff was approved; read user-stories/login.md".
    Request changes → BA runs with the owner's note. Reject → nothing runs.
 4. If BA changed the file after proposing, Approve marks the handoff `stale`.
@@ -235,8 +241,12 @@ Example:
 - Card actions (owner only): Approve, Request changes (with a note), Reject.
   - A decision applies only while `pending` (double clicks are no-ops).
   - Approve checks the files have not changed since the pinned commit; if they have, the
-    handoff becomes `stale` and the card says so.
-  - Approved → the target bot gets a run with `triggered_by = handoff` (not a bot turn).
+    handoff becomes `stale`, nothing starts, and the card says so, with no buttons. The app
+    checks only on Approve; it does not watch the files while the card waits.
+  - After a decision, the card folds to one line in the reply. A stale card does not fold.
+  - Approved → the target bot gets a run with `triggered_by = handoff` (not a bot turn). When
+    the target is `human`, the card shows only **✓ Done**: it is the same approve action and
+    status, and no run starts (`design/components/conversation-cards.md` §4).
   - Request changes → the source bot gets a run with the note.
 - Handoffs are separate from discussion: they are a formal "review my files" step.
 - **The brief.** The seed skill `hand-off-work` asks the bot to write `summary` as a short

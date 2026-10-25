@@ -13,7 +13,7 @@ conversations. Technical design: `../domain-model.md` §11, §14.
   Acceptance criteria: UI-13.4, UI-13.5.
 - **PM-3.** As the owner, I want bots in a project to remember facts about the work, shared by
   every bot in the project, so that a new conversation in the project starts with context.
-  Acceptance criteria: UI-13.4, UI-13.6.
+  Acceptance criteria: UI-13.4, UI-13.6, UI-13.16.
 - **PM-4.** As the owner, I want to see, edit, delete and recover what bots remember, so that
   nothing becomes permanent without my knowing. Acceptance criteria: UI-13.7 to UI-13.10,
   UI-13.13 to UI-13.15, UI-13.17, UI-13.18.
@@ -86,6 +86,11 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
   proposal card: each merge, rewrite or delete with a checkbox and before/after text. Nothing
   changes until the owner presses Apply. Applied changes can be undone like any other memory
   change.
+- UI-13.16: When a bot saves an item whose text is the same as an item in the same scope, the
+  memory tool saves nothing and returns "already saved", and the conversation shows no second
+  "Remembered" line. Example: "@BA @Designer remember: prices are in USD and EUR." gives one
+  item. The check compares the text exactly (after trimming spaces); a similar text is a new
+  item. A fake-model test checks this.
 - UI-13.17: In an action run, a memory tool call for an item that is not on the approved plan's
   Memory list saves nothing and returns `memory_not_in_plan`. A fake-model test proves it (D56).
 - UI-13.18: When an action run fails or stops after it saved memory, the unsaved changes card

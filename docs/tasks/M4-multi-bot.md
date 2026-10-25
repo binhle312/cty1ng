@@ -19,7 +19,7 @@ editing with branches, and conversation settings with preset icons.
 - `decideRuns` complete for human triggers (all rows of `conversation-rules.md` §1), mention
   validation (`mention_not_member`, `bot_unavailable`), mention tokens in the composer.
 - Several bots in one message: sequential runs where each later bot sees earlier replies (D31),
-  one status reaction per bot (UI-3.18).
+  one queued reaction per waiting bot (UI-3.18).
 - Member lifecycle with the history card (`pending_history` → `active` → `removed`), re-add asks
   again; `visibleHistory` honours `history_from_seq`.
 - Drag-to-add with dnd-kit (UI-2.4, 2.5) and the drop rules.
@@ -39,8 +39,8 @@ Bot-to-bot discussion (M5).
   9.4, 9.5.
 - Invariant 10.
 - A bot added "from here on" does not see earlier messages in its prompt (agent test).
-- "@BA @QA …": QA's prompt contains BA's reply; each bot's status reaction goes received →
-  working → done in order (D31, UI-3.18).
+- "@BA @QA …": QA's prompt contains BA's reply; both show the clock reaction at first, BA's goes
+  away when BA starts, QA's when QA starts (D31, UI-3.18).
 - Editing a message mid-conversation: bots answer on the new branch; switching back shows the
   old branch intact; the bot's next prompt contains only the active path.
 - Journey J6 and e2e steps 2, 6, 8 from `testing.md` §3 pass.

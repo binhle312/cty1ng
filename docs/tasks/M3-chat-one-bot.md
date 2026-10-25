@@ -6,7 +6,8 @@ shows it is too big for one review.
 
 ## Goal
 
-The owner creates conversations from the rail, adds one bot (via the "Add bot" button for now),
+The owner creates conversations from the rail, adds one bot (with the add slot (+) in the
+conversation header; drag-to-add comes in M4),
 chats with it, sees replies stream in with skill provenance chips, and can stop a run. The
 event log keeps the UI exact across reloads.
 
@@ -15,7 +16,9 @@ event log keeps the UI exact across reloads.
 `docs/architecture.md` §6, §7, §11; `docs/domain-model.md` §3.6–3.7, §5–8; `docs/conversation-rules.md`
 §1 (one-bot rows), §3 (simplified: see below), §4; `docs/realtime-events.md` (all); `docs/domain-model.md` §3.8;
 `docs/api.md` §5; `docs/requirements/app-shell.md` (UI-1), `docs/requirements/conversation.md`; `docs/porting-guide.md` §2–3 (agent, db, service rows);
-`docs/testing.md` §2–3; `docs/conversation-rules.md` §8 and D46 (auto title).
+`docs/testing.md` §2–3; `docs/conversation-rules.md` §8 and D46 (auto title); the agreed design
+in `docs/design/components/conversation-page.md`, `composer.md` and `conversation-cards.md`
+(round 10).
 
 ## In scope
 
@@ -30,16 +33,16 @@ event log keeps the UI exact across reloads.
   every tool returns errors as `{error, message}` and never ends the run; the prompt line about
   errors and no data; `force` in the fake model script (`testing.md` §2).
 - Streaming via `message.delta`, partial saves, retry reuses the message.
-- Run status reactions on the trigger message (UI-3.18, 3.19), placeholder emojis until the
-  design review picks them.
+- Run status reactions on the trigger message while a run is queued (UI-3.18, 3.19): avatar +
+  clock line icon, hover shows the time and × Cancel, gone when the run starts.
 - Send states for human messages with idempotent `client_id` (UI-3.20), message disposition
-  and cancelling one queued run (UI-3.21), typing/working states with elapsed time (UI-3.4,
+  and cancelling one queued run from its reaction (UI-3.21), typing/working states with elapsed time (UI-3.4,
   3.5), the stall timeout (`architecture.md` §6), clearing live indicators on disconnect
   (`realtime-events.md` §3), and `last_read_seq` with the "New" divider (UI-3.10).
 - `decideRuns` for the one-bot rows; `visibleHistory` with full history.
 - Rail (UI-1.1–1.6 except presets), conversation page (UI-3.1–3.7, 3.10, 3.14–3.15 without
-  discussion controls, 3.17), "Add bot" button that adds with full history directly (the
-  history card arrives in M4).
+  discussion controls, 3.17), the add slot (+) in the header that adds with full history
+  directly (the history card arrives in M4), Stop in the composer (`composer.md` §4).
 - Unread dots and `POST /read`.
 - Usage recording per model request (`model_requests`, raw `usage_details`, cost via
   genai-prices with catalog override, D21) and run totals;
@@ -72,8 +75,8 @@ panel, handoffs (M6); editing and branches (M4).
 
 ## Acceptance criteria
 
-- Journey J1 steps 1–3 pass in Playwright with the fake model (adding by button).
-- UI-1.1–1.6 (icons from avatars), UI-3.1–3.7, 3.10, 3.14, 3.15 (partial), 3.17.
+- Journey J1 steps 1–3 pass in Playwright with the fake model (adding with the add slot).
+- UI-1.1–1.6 (icons from avatars), UI-3.1–3.7, 3.10, 3.14, 3.14b, 3.15 (partial), 3.17.
 - Invariants 7, 8, 9, 11, 14, 15, 17, 18, 22.
 - Killing the backend mid-stream and restarting: the run is retried after the lease, no
   duplicate message, the UI recovers on reconnect.
@@ -156,8 +159,9 @@ above.
 
 ## Needs human review
 
-The UI design in the plan (layout, components, states), approved before UI code is written
-(`docs/workflow.md` §2; sketches in `docs/design/` are not specs).
+The UI design is agreed (round 10, `docs/design/components/conversation-page.md`, `composer.md`,
+`conversation-cards.md`). A change to it in the plan needs the owner's approval before UI code is
+written (`docs/workflow.md` §2).
 
 Migrations; event emission points; worker concurrency; Markdown renderer configuration.
 
