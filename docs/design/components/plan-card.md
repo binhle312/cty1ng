@@ -148,8 +148,11 @@ delete or move not in the plan; then the Done-when result in 11 px `on-surface-m
 their check. The step that was running shows the stop square or the red !, and "Stopped 11:14"
 at the right. The steps after it stay not started.
 
-**Show and Hide.** **Hide** folds an open card to its line; **Show** opens it again with the step
-marks as they were at the end of the run (§3 of `conversation-cards.md`).
+**Show and Hide.** The owner can hide or show the card at any time, also while the run works
+(owner, 2026-10-25 03:44). **Hide** folds the card to its line; **Show** opens it again
+(`conversation-cards.md` §3). A card hidden during the run keeps the progress on its line, and the
+line updates live: "**Plan** [⟳ Running · step 2 of 4] · Show", then "step 3 of 4", and so on.
+After the run, the open card shows the step marks as they were at the end of the run.
 
 A plain answer has no plan, so it has no progress card (owner, 2026-10-25 02:13).
 

@@ -38,8 +38,10 @@ Decision:
   (`planned_ops_not_done`). The block says that it shows what happened in the run, before the
   save. What was saved shows on the D52 card and its notices (D54). A stopped or failed run keeps the card open with the pill "Stopped · 2 of 4"
   or "Failed · 2 of 4".
-- **Show and Hide.** A folded card opens with **Show** and folds with **Hide**. The open card
-  shows the step marks as they were at the end of the run.
+- **Show and Hide.** The owner can fold the card with **Hide** and open it with **Show** at any
+  time, also while the run works. A card hidden during the run keeps the progress on its line,
+  updated live: "**Plan** [Running · step 2 of 4] · Show" (owner, 2026-10-25 03:44). After the
+  run, the open card shows the step marks as they were at the end of the run.
 - **Only runs with a plan.** A plain answer has no plan, so it has no progress card. It keeps the
   live line (UI-3.5). The bot does not write its own checklist (owner, 2026-10-25 02:13).
 - **Skills give the steps, the app shows them.** A skill's `## Steps` section helps the bot write

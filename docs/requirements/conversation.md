@@ -167,5 +167,6 @@ Plan progress (D57, proposed)
   the card folds to "Plan [Done] … · Show". Otherwise it stays open: "Not marked done" on each
   step with no done mark, and the block "Check after the run". A stopped or failed run keeps the
   card open with "Stopped · n of total" or "Failed · n of total".
-- UI-3.31: Show opens a folded plan card, Hide folds it. A reply with no plan has no progress
-  card.
+- UI-3.31: Show opens a folded plan card, Hide folds it, at any time. A card hidden while the
+  run works shows "Running · step n of total" on its line, updated live. A reply with no plan
+  has no progress card.
