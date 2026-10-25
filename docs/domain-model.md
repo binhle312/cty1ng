@@ -409,7 +409,6 @@ conversations
   title                    TEXT NOT NULL DEFAULT 'New conversation'
   title_source             TEXT NOT NULL DEFAULT 'default'   -- default | auto | manual (D46)
   auto_title_status        TEXT NULL        -- NULL = not tried | pending | done | failed | skipped (D46)
-  icon_preset              TEXT NULL        -- one of 10 preset ids; NULL = derived from bot avatars
   active_leaf_message_id   TEXT NULL REFERENCES messages(id)
   bot_chat_enabled         BOOLEAN NULL     -- NULL = use global setting
   bot_turn_limit           INTEGER NULL     -- NULL = use global; 1..20
@@ -417,7 +416,8 @@ conversations
   last_activity_at         TIMESTAMP NOT NULL
   last_read_seq            INTEGER NOT NULL DEFAULT 0   -- owner's read position: unread dot and "New" divider
   created_by, created_at
-  deleted_at               TIMESTAMP NULL
+  deleted_at               TIMESTAMP NULL   -- in Trash (D60)
+  purged_at                TIMESTAMP NULL   -- D60: Trash purge; the row stays for runs and Statistics
 
 conversation_bots
   conversation_id   TEXT REFERENCES conversations(id)
@@ -429,8 +429,13 @@ conversation_bots
   PRIMARY KEY (conversation_id, bot_id)
 ```
 
-Deleting a conversation is soft in the database; its workspace folder is moved to
-`data/trash/` so the owner can recover it by hand.
+Deleting a conversation moves it to Trash (D60): `deleted_at` is set and its workspace folder
+moves to `data/trash/<conversation_id>/`. A restore clears `deleted_at` and moves the folder
+back. After `trash_days` the purge deletes its messages, attachments, members, conversation memory
+and folder, and sets `purged_at`; the row and its run and model request rows stay for
+Statistics and the daily cap. A conversation in Trash before its project was deleted stays its
+own Trash item (D47, D60). There are no preset icons: the icon comes from the bot avatars
+(UI-1.3).
 
 The auto title (D46) has its rules in `conversation-rules.md` §8. `title_source` tells who wrote
 the title. A non-NULL `auto_title_status` means the one attempt is used. Both columns get a
@@ -595,7 +600,7 @@ data/
       attachments/<yyyy-mm-dd>-<conversation-slug>/<file>   owner uploads (bots: read-only, D52)
       README.md, .gitignore, .gitattributes      made by the app in the first commit (D52)
       <topic folders>/...                   bot and owner files, by topic, not by author (D52)
-  trash/<conversation_id>/                  workspaces of deleted conversations
+  trash/<conversation_id>/                  workspaces of conversations in Trash (D60)
 ```
 
 Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the DB).

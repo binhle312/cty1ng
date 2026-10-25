@@ -101,8 +101,8 @@ endpoint to create one.
 | GET | `/conversations` | | sorted by `last_activity_at`; includes member avatars for the rail icon and `unread` |
 | POST | `/conversations` | `{title?}` | a given `title` sets `title_source: "manual"` (D46) |
 | GET | `/conversations/{id}` | | settings (with effective values), members, active leaf |
-| PATCH | `/conversations/{id}` | `{row_version, title?, icon_preset?, bot_chat_enabled?, bot_turn_limit?}` | `null` = inherit global. A PATCH writes only the fields in its body. Send `title` only when the owner changed it: any `title` sets `title_source: "manual"`, and the app never writes an auto title after that (D46) |
-| DELETE | `/conversations/{id}` | | soft delete, workspace to trash |
+| PATCH | `/conversations/{id}` | `{row_version, title?, bot_chat_enabled?, bot_turn_limit?}` | `null` = inherit global. A PATCH writes only the fields in its body. Send `title` only when the owner changed it: any `title` sets `title_source: "manual"`, and the app never writes an auto title after that (D46) |
+| DELETE | `/conversations/{id}` | | moves to Trash (D60): stops its runs first, workspace to `data/trash/`; restore endpoint with the Trash page round (M5b) |
 | POST | `/conversations/{id}/read` | `{seq}` | sets `last_read_seq` (never moves backwards); drives unread dots and the "New" divider |
 | GET | `/conversations/{id}/messages?before_seq=&limit=` | | the **active path**, newest page first; each message has `siblings: {index, count, ids}` |
 | POST | `/conversations/{id}/messages` | `{client_id, content_md, mentions: [bot_id], attachment_ids: []}` | 201; routing happens server side. A repeated `client_id` in the same conversation returns 200 with the original message and routes nothing (safe retry) |
@@ -165,7 +165,7 @@ Message {
 Conversation {
   id, title,
   title_source: "default"|"auto"|"manual",   // D46; auto_title_status is internal and not returned
-  icon_preset, members, unread, row_version, …   // other fields as in §5
+  members, unread, row_version, …   // other fields as in §5
 }
 
 Bot {

@@ -65,7 +65,8 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
 - UI-13.8: The owner can edit or delete any item. When memory history is on, an item shows its
   earlier versions and the owner can restore one (UI-13.9).
 - UI-13.9: "Keep memory history" is a setting on bot detail (per bot), on the project (per
-  project), and in the settings of a multi-bot conversation outside a project. It is off when a
+  project), and at the top of the Memory pane of a multi-bot conversation outside a project
+  (`../design/components/memory-pane.md` §1.1). It is off when a
   bot is created and on (5 versions) for projects and those conversations, because several bots
   write to them. Turning it on sets 5 versions per item,
   adjustable from 1 to 20. Lowering the number asks for confirmation before deleting the

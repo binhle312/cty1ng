@@ -15,6 +15,17 @@
   conversation narrows once, at the end, so text does not reflow during the slide. Reduced motion: no
   slide.
 
+### 1.1 Settings for this conversation (M5b, round 12)
+
+A multi-bot conversation outside a project shows a "This conversation" block at the top of the
+pane, under the pane header, with an M5b tag on the board (there is no conversation settings
+page):
+
+- **Don't use memory** (switch, UI-9.6): "Bots here do not read or save memory."
+- **Keep earlier versions** (switch, UI-13.9): "{n} versions of each item." (default on, 5).
+
+The pane also opens from **Memory** in the conversation menu (`conversation-page.md` §2.1).
+
 ## 2. Content
 
 Order follows D43 (project memory wins over bot memory):

@@ -29,15 +29,19 @@ Layout sketch: see `../design/screens.md` §1 (not final).
   conversation titled "New conversation" and opens it. After the first message, the app can
   give it a short title one time (UI-3.24, D46).
 - UI-1.2: Each conversation is a 48 px round icon with a tooltip showing its title.
-- UI-1.3: Icon content when `icon_preset` is NULL, from **active** members' avatars:
+- UI-1.3: Icon content, from **active** members' avatars:
   0 bots → title initials on a neutral background; 1 → that avatar; 2 → two halves side by
   side; 3–4 → 2×2 grid; 5+ → three avatars and a "+N" tile. Removed bots are left out; deleted
-  bots are drawn grey. When `icon_preset` is set, the preset replaces it.
+  bots are drawn grey. Pending members are left out until the owner chooses their history. There
+  are no preset icons (round 12).
 - UI-1.4: The open conversation has an active indicator (pill on the left edge, as Discord).
   Conversations with unread messages show a dot.
 - UI-1.5: Sorted by last activity, newest first.
-- UI-1.6: Right-click or "…" on an icon: Rename, Conversation settings, Delete (confirmation
-  dialog naming the conversation).
+- UI-1.6: Right-click or ⋯ on a conversation row: the conversation menu (UI-9.7). **Delete**
+  opens a dialog that names the conversation and gives the real counts (messages and runs, files,
+  conversation memory items); a line says that a queued or running run stops first. **Cancel** is
+  the default. **Delete** moves the conversation to Trash (D60). Then the newest other
+  conversation in the same place opens, and a toast says "{title} is in Trash." with no Undo.
 
 ## Header (bot bar) (UI-2)
 
@@ -59,9 +63,12 @@ Layout sketch: see `../design/screens.md` §1 (not final).
   from catalog" / "API key not set").
 - UI-2.4: Avatars are draggable (dnd-kit). While dragging over the area of an open
   conversation, the area shows an active dashed slot and the text "Drop to add <name> to this
-  conversation". Bots already in the conversation, unavailable bots, and drops outside the
-  conversation area do nothing and show why ("Already here"). The drop place decides: in the
-  header a drop pins, unpins or reorders (UI-2.1); in the conversation it adds the bot.
+  conversation", and the add slot (+) in the conversation header is active too. Bots already in
+  the conversation and unavailable bots get no slot, and a tooltip says why ("Already here",
+  "Researcher cannot run: API key not set"). A drop outside the conversation area does nothing.
+  The drop place decides: in the header a drop pins, unpins or reorders (UI-2.1); in the
+  conversation it adds the bot. The keyboard and touch alternative is **Add here** on the bot
+  card (UI-2.6).
 - UI-2.5: Dropping adds the bot (`../conversation-rules.md` §3); the history card appears within
   1 s.
 - UI-2.6: Clicking an avatar opens the bot card (`../design/components/bot-card.md`). Only one

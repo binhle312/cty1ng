@@ -104,3 +104,4 @@ Implemented in: links.
 | D57 | [The plan card shows the progress of the action run](D57-plan-card-shows-run-progress.md) | accepted | |
 | D58 | [Bots read other conversations of the project on request, and the owner shares information between them](D58-read-and-share-across-project-conversations.md) | accepted | own amendment 2026-10-25 |
 | D59 | [A save shows a notice when project memory changed after the plan was approved](D59-save-notice-when-project-memory-changed.md) | accepted | |
+| D60 | [Deleted conversations go to Trash and can be restored](D60-deleted-conversations-go-to-trash.md) | proposed | |

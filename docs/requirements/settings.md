@@ -1,6 +1,7 @@
 # Settings
 
-Global settings and per-conversation settings.
+Global settings, and where each per-conversation setting lives (there is no conversation
+settings page).
 
 ## Stories
 
@@ -8,8 +9,8 @@ Global settings and per-conversation settings.
   Acceptance criteria: UI-8.1, UI-8.4.
 - **ST-2.** As the owner, I want a daily spending cap with warnings, so that a runaway discussion cannot surprise me with a bill.  
   Acceptance criteria: UI-8.2, UI-8.3.
-- **ST-3.** As the owner, I want per-conversation title, icon, discussion settings and members, so that each conversation fits its purpose.  
-  Acceptance criteria: UI-9.1 to UI-9.5.
+- **ST-3.** As the owner, I want to change a conversation's title, discussion settings, members and memory where I see them, so that each conversation fits its purpose without a separate settings page.  
+  Acceptance criteria: UI-9.1, UI-9.3 to UI-9.7.
 - **ST-4.** As the owner, I want to choose the theme, light or dark mode, density and whether the Flow pane opens by default, so that the app looks and reads the way I like to work. *(D30.)*  
   Acceptance criteria: UI-8.5.
 
@@ -44,15 +45,24 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
 
 ## Conversation settings (UI-9)
 
-Opened from the conversation header or the rail menu.
+There is no conversation settings page (round 12, owner 2026-10-25). Each setting is where the
+owner sees it. Designs: `../design/components/conversation-page.md` §2 and
+`../design/components/memory-pane.md` §1.1.
 
-- UI-9.1: Title.
-- UI-9.2: Icon: "Default (bot avatars)" plus 10 presets as round tiles: rocket, lightbulb,
-  code, palette, chart, book, flask, briefcase, chat bubble, star. Each has its own background
-  colour. Choosing saves immediately; the rail updates. Presets are static SVGs in the
-  frontend (Lucide glyphs, ISC licence). Upload is a later milestone.
-- UI-9.3: Bot discussion: "Use global (off)" / On / Off, and the turn limit (inherit or 1–20).
-- UI-9.4: Members with Remove.
-- UI-9.5: Danger zone: Delete conversation.
-- UI-9.6 *(D38)*: "Don't use memory" toggle. When on, bots in this conversation neither read nor
-  save memory of any scope, and the header shows a small "Memory off" badge.
+- UI-9.1: Title: a click on the title in the conversation header, or **Rename** in the
+  conversation menu (UI-9.7), edits it in place.
+- UI-9.2: *Removed (round 12).* No preset icons: the icon always comes from the bot avatars
+  (UI-1.3).
+- UI-9.3: Bot discussion (M5): a click on the discussion status in the header ("Discussion:
+  on · 3/5 used") opens a popover with "Use global (off)" / On / Off and the turn limit (inherit
+  or 1–20). A change saves at once and applies from the next bot message.
+- UI-9.4: Members: in the header, with the add slot and the members menu (UI-3.15).
+- UI-9.5: Delete: **Delete** in the conversation menu (UI-9.7) sends the conversation to Trash
+  (D60, UI-1.6).
+- UI-9.6 *(D38)* (M5b): "Don't use memory" toggle, at the top of the Memory pane for this
+  conversation. When on, bots in this conversation neither read nor save memory of any scope,
+  and the header shows a small "Memory off" badge.
+- UI-9.7: The conversation menu opens from ⋯ on the bar 2 row (on hover or focus) and from ⋯ in
+  the conversation header. Both have the same items: Rename, Memory (opens the Memory pane,
+  D44), Move to project (Move out of project inside a project), a divider, then **Delete** in
+  `danger` text.
