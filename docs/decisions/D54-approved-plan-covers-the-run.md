@@ -36,9 +36,10 @@ Decision:
 
   The rule that builds `plan_check` is one pure function in `core/` (`plan-check.rules.ts`). The
   `run.finished` event carries the run, so it carries `plan_check`. No new event type.
-- **The reply shows the check.** Under the bot's reply: "Plan check: 2 of 2 files written ·
-  0 not in plan · Done when 2 of 3", with each `not_met` and `not_checked` item on its own line.
-  The UI design goes to the M6 design round (AGENTS.md §7).
+- **The plan card shows the check.** The result goes in the plan card block "Check after the
+  run", for example "2 of 2 files written · 0 not in plan · Done when 2 of 3", with each `not_met`
+  and `not_checked` item on its own line. D57 (proposed, the progress card) sets the place and
+  the look; D54 sets only the data.
 
 Example: BA's approved plan lists `pricing/tiers.md` (new), delete `drafts/old-tiers.md` and two
 Done-when items. The run writes `tiers.md`, deletes the draft and also writes
@@ -77,7 +78,8 @@ Consequences:
 - `domain-model.md`: plan versions get the four lists; `runs` gets `plan_check` (JSON). This
   needs a migration, so the owner approves it in the M6 plan.
 - `design/components/plan-card.md`: the plan card shows the deletes and moves and the Done-when
-  items, and the reply shows the plan check line (changed in the same PR as this entry).
+  items, and the card shows the check (changed in the same PR as this entry; the block comes
+  with D57).
 - `conversation-rules.md`: the `check_done` tool and its errors; the D52 card lists only
   operations outside the plan.
 - The progress card proposal (D57, `mark_step`, review thread "Show bot progress step by step")

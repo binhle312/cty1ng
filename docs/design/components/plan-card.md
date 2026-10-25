@@ -82,10 +82,10 @@ The plan folds to one line: "**Plan** [Approved] 11:12 · 3 steps · 2 files · 
 action run starts, and its result comes as a new reply under the folded line.
 
 At the end of the action run, the app compares the run with the plan (`runs.plan_check`, D54,
-proposed). The reply shows one line, for example "Plan check: 2 of 2 files written · 0 not in
-plan · Done when 2 of 3", and one line for each planned file not written and each Done-when item
-that is `not_met` or `not_checked`. The Done-when marks are the bot's own check, so the line
-says so. The look of this line goes to the M6 design round.
+proposed): planned files not written, files not in the plan, and each Done-when item that is
+`not_met` or `not_checked`. The Done-when marks are the bot's own check, so the card says so. The
+plan card shows the result in its block "Check after the run" (D57, proposed; the owner approved
+this place on board P3).
 
 ## 5. Reject
 
