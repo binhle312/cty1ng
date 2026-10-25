@@ -66,8 +66,11 @@ Not chosen:
 
 - **No card for any delete or move** (also for those not in the plan). The owner cannot see an
   unplanned delete before it is saved.
-- **A model call at run end to judge Done when.** One more request and one more cost for a check
-  that the bot can make in the same turn as its last tool call.
+- **A model call at run end to judge Done when, now.** One more request and one more cost for a
+  check that the bot can make in the same turn as its last tool call. **Later, optional (owner,
+  2026-10-25):** a setting "Verify Done when" (off by default) adds a separate judge call at run
+  end. It is added only if M6 data shows that the bot's own `met` is not reliable. The measure:
+  how often the owner finds a problem in an item marked `met`.
 - **One plan that also covers a handoff and the next bot's plan** (level 4). The owner wants to
   see how bots do in real tasks first (owner, 2026-10-25). It waits for the plan approval rates
   that the M6 brief already parks.
