@@ -466,6 +466,9 @@ UNIQUE INDEX messages_client_id ON messages(conversation_id, client_id) WHERE cl
 - Messages with `kind = history_choice`, `handoff` or `skill_draft` render as cards. `card`
   holds the ids the card needs; the state (pending, chosen, approved…) is read from
   `conversation_bots`, `handoffs` or `skill_drafts`, so a card always shows the current state.
+- A card message that a bot run makes (`handoff`, `skill_draft`) has the `run_id` of that run.
+  The page uses it to show the card under the reply of the same run
+  (`design/components/conversation-cards.md` §3).
 
 ## 7. Runs
 

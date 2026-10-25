@@ -3,6 +3,9 @@
 > **Status: agreed in the M0 UI design review (2026-10-22)**, canvas round 6.3, board V2 cards
 > S4b–S4e. Preview: `../previews/command-dark/memory-check-plan.png` (and `.html`). Follows D48
 > and D43. The labels and messages use Simplified Technical English.
+> **Changed in the M3 UI design review, round 10 (2026-10-24 and 2026-10-25):** the place in the
+> reply, the button order and icons, the folded line, and the conflict question in two lines.
+> Preview: `../previews/command-dark/conversation-cards.*` (card S3).
 
 A bot shows a plan card before each task that changes something (D48): it writes files, saves
 memory, hands off or drafts a skill. A plain answer or question has no plan card.
@@ -10,7 +13,8 @@ memory, hands off or drafts a skill. A plain answer or question has no plan card
 ## 1. The card
 
 The card is part of the bot's reply, under the line "Here is my plan. I do not change anything
-until you approve it." Top to bottom:
+until you approve it.", indented like the reply text. The card look (border, fill, section
+titles, file rows) is in `conversation-cards.md` §3. Top to bottom:
 
 1. **Plan**, then "· version {n}" from version 2, and the pill **Waiting for you**
    (`primary-tint`).
@@ -22,7 +26,9 @@ until you approve it." Top to bottom:
    "`write-login-stories` · New skill · For BA · Needs your final review". The whole section
    shows only when the plan has at least one draft (owner, 2026-10-24).
 6. **Question before I start**, one block for each conflict (§2).
-7. A divider, then **Approve** (`primary`), **Request changes** and **Reject**.
+7. A divider, then the buttons in the `buttons.md` order: **× Reject** (secondary, × icon),
+   **Request changes** (secondary, pencil icon) and **✓ Approve** (primary, check icon, far right;
+   owner, 2026-10-25 01:58).
 
 While the card waits, the bot has read-only tools. Only Approve starts the action run, with the
 write tools and the approved plan.
@@ -34,9 +40,11 @@ Skill drafts list to decide if the action run gets `propose_skill` (`../../conve
 ## 2. Conflict questions (D43)
 
 For each conflict between the task and a project rule, the card has a block with a `primary`
-left edge: **Question before I start.** It names both texts, for example: Project memory says
-"Show prices without currency codes." Instructions, line 3, say "Prices are in USD and EUR."
-Which one do I follow?
+left edge. The heading is one line: **Question before I start: which one do I follow?** Then one
+line for each text (owner, 2026-10-24):
+
+- Project memory says "Show prices without currency codes."
+- Instructions, line 3, say "Prices are in USD and EUR."
 
 - Buttons: **Follow instructions** and **Follow memory**. The app selects **Follow
   instructions** first, so Approve is on at once (owner, 2026-10-22).
@@ -57,12 +65,18 @@ Which one do I follow?
   does too. Esc or **Cancel** closes the box and brings the buttons back.
 - A normal message that the owner sends while the plan waits counts as a change request for that
   plan.
-- After Send, the old plan folds to one line: **Plan**, the pill **Changes requested**, "Show plan
-  ›", and the note rendered as Markdown. The bot makes a new plan, still with read-only tools,
+- After Send, the old plan folds to one line: **Plan**, the pill **Changes requested**, "Show
+  ›", and the note rendered as Markdown. A folded line never repeats the word in its pill
+  (`conversation-cards.md` §3). The bot makes a new plan, still with read-only tools,
   with the next version number. Only the newest version can be approved. Each version is one more
   model call.
 
-## 4. Reject
+## 4. Approve
+
+The plan folds to one line: "**Plan** [Approved] 11:12 · 3 steps · 2 files · Show". The
+action run starts, and its result comes as a new reply under the folded line.
+
+## 5. Reject
 
 - The task ends. The app does not start the action run, so no file and no memory changes.
 - The plan folds to one line with the pill **Rejected** and "Nothing changed. No files, no

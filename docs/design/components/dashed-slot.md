@@ -27,6 +27,8 @@ the standard focus ring (`buttons.md`).
 | Header: empty pinned zone | Pill "Drag a bot here to pin it" with the pin glyph | A bot is dragged over it |
 | Header: no bots yet | "+" circle, "Hey, add your bot here 👋" | The Create page is open |
 | Conversation: drop to add a bot | Not shown | An avatar is over the conversation: "Drop to add {bot} to this conversation" |
+| Conversation header: add slot (+) | 24 px "+" circle, always first before the member avatars (`conversation-page.md` §2) | A bot is dragged from the top header |
+| Composer: drop files | Not shown | Files are dragged over the composer: "Drop files to attach · up to 10 files, 10 MB each" (`composer.md` §2) |
 | Empty seat in an empty state | Decoration only | Never |
 
 ## 3. Two drag helpers (not slots)
