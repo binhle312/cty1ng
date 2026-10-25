@@ -81,12 +81,15 @@ When a run finishes, `decideRuns` is called with the bot's message as trigger:
   - **Lease recovery:** a claim of a `running` run with an expired lease (`architecture.md`
     §6) continues the same execution. It inserts no row.
   - **Refused:** when the count is at or above the setting, the run becomes `failed` with
-    `error = rate_limited`, with no `started_at` and no `run_slots` row. The run never started,
-    so it has no bot message and no Retry. In the same transaction the app posts one danger
+    `error = rate_limited` and gets no `run_slots` row. A refused first claim sets no
+    `started_at`; the run never started, so it has no bot message and no Retry. A refused manual
+    Retry inserts no slot and creates no new message. The run goes back to `failed` with
+    `error = rate_limited`. It keeps its first `started_at` and its bot message, which shows
+    "Failed" with Retry again (UI-3.7). In the same transaction the app posts one danger
     notice for each refused run: "BA did not run. Hourly run limit reached (30 / 10) for this
     conversation. Try again later or raise it in Settings." The first number is the live count
-    of slots in the window, the second is the setting. The worker does not retry the run; the
-    owner sends a new message when there is room.
+    of slots in the window, the second is the setting. The worker does not retry the run. When
+    there is room, the owner sends a new message, or presses Retry on a refused manual Retry.
 - **Stop:** cancels all queued runs and the running one in the conversation (`architecture.md`
   §6) and posts "Stopped by owner".
 
