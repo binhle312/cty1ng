@@ -492,6 +492,13 @@ runs
 INDEX runs_claim ON runs(status, created_at)
 UNIQUE INDEX runs_one_running ON runs(conversation_id) WHERE status = 'running'   -- D11 in the database
 
+run_slots                                -- append-only; one row per admitted execution (proposed 2026-10-25, migration needs owner approval)
+  id               TEXT PK               -- TypeID prefix `rslot`; one run can have more than one slot
+  run_id           TEXT NOT NULL REFERENCES runs(id)
+  conversation_id  TEXT NOT NULL REFERENCES conversations(id)
+  used_at          TIMESTAMP NOT NULL    -- UTC, the time of the claim
+INDEX run_slots_window ON run_slots(conversation_id, used_at)
+
 model_requests                           -- one row per call to the provider (D21)
   id                  TEXT PK
   purpose             TEXT NOT NULL DEFAULT 'run'   -- run | title (D46)
@@ -518,6 +525,10 @@ run_history
   run_id         TEXT PK REFERENCES runs(id)
   messages_json  BLOB NOT NULL          -- provider-neutral messages (AI SDK message format, behind the model port), binaries stripped
 ```
+
+`run_slots` is the only record for the hourly run limit (`conversation-rules.md` §2, §9). The
+worker inserts a row in the same transaction as a first claim or a claim after a manual Retry.
+A lease recovery and a refused claim insert none. Rows are never updated or deleted.
 
 `run_history` keeps the bot's own tool calls and results between runs (as the prototype did),
 so a bot remembers what it read and wrote. Only runs on the active path are used, and they
@@ -553,11 +564,13 @@ handoffs
 
 ```
 settings
-  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_hour, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, bot_order_direction, trash_days, improve_* (D51), bot_* limits, health_* …
+  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_conversation_per_hour, handoff_max_per_conversation_24h, skill_draft_max_*, share_max_per_conversation_24h, plan_mark_reminders, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, bot_order_direction, trash_days, improve_* (D51), bot_* limits, health_* …
   value  JSON NOT NULL
 ```
 
-Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"created"`), `bot_order_direction = "desc"` (`"desc"` | `"asc"`), `trash_days = 30` (projects and skills, D49), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3`, `improve_probe_tasks_max = 10` (D51: the probe starts at the first and allows at most the second; read by M5d, never hard-coded), `plan_mark_reminders = 1` (D57: reminders before an action run ends when a step or Done-when item has no mark; 0 = off).
+Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"created"`), `bot_order_direction = "desc"` (`"desc"` | `"asc"`), `trash_days = 30` (projects and skills, D49), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3`, `improve_probe_tasks_max = 10` (D51: the probe starts at the first and allows at most the second; read by M5d, never hard-coded), `plan_mark_reminders = 1` (D57: reminders before an action run ends when a step or Done-when item has no mark; 0 = off), `share_max_per_conversation_24h = 5` (D58).
+
+Conversation limits (`conversation-rules.md` §9, which owns the type, range and what counts; read by the services, never hard-coded): `runs_per_conversation_per_hour = 50` (1–500), `handoff_max_per_conversation_24h = 5` (1–50), `skill_draft_max_per_run = 3` (1–10), `skill_draft_max_pending_per_conversation = 10` (1–50). They are safety caps: the server refuses 0, NULL and values out of range.
 
 Bot limits and defaults (`bots.md` UI-4.6, UI-5.8; read by M2, never hard-coded):
 `bot_name_max = 32`, `bot_description_max = 160`, `bot_persona_max = 8000`,

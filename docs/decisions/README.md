@@ -62,7 +62,7 @@ Implemented in: links.
 | D15 | [Skill provenance from server records](D15-skill-provenance-from-server-records.md) | accepted |  |
 | D16 | ["Always load" per pinned skill](D16-always-load-per-pinned-skill.md) | accepted |  |
 | D17 | [New repository; agent instructions in AGENTS.md](D17-new-repository-agent-instructions-in-agents-md.md) | accepted |  |
-| D18 | [Handoff targets and who decides the workflow](D18-handoff-targets-and-who-decides-the-workflow.md) | accepted |  |
+| D18 | [Handoff targets and who decides the workflow](D18-handoff-targets-and-who-decides-the-workflow.md) | accepted | own amendment 2026-10-25 |
 | D19 | [Bot slug fixed at creation](D19-bot-slug-fixed-at-creation.md) | accepted |  |
 | D20 | [Daily spending cap](D20-daily-spending-cap.md) | accepted | D40, D42 |
 | D21 | [Token and cost tracking](D21-token-and-cost-tracking.md) | accepted |  |

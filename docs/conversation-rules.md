@@ -69,8 +69,27 @@ When a run finishes, `decideRuns` is called with the bot's message as trigger:
 - Mentions of the owner by a bot trigger nothing (the UI highlights them).
 - Changing the toggle or limit posts a notice ("Bot discussion limit changed to 8") and applies
   from the next routing decision. A running run is not interrupted.
-- **Safety cap:** independent of the budget, at most `RUNS_PER_CONVERSATION_PER_HOUR` (default
-  50) runs per conversation per rolling hour; beyond it runs are refused with a notice.
+- **Safety cap:** independent of the budget, at most `runs_per_conversation_per_hour` (setting,
+  default 50, §9) admitted executions per conversation per rolling hour. The worker checks the
+  cap when it claims a run, like the daily cap (D20, `domain-model.md` §13):
+  - The count is the number of `run_slots` rows of the conversation with `used_at` in the last
+    hour (`domain-model.md` §7). `run_slots` is the only record for this count; `started_at` is
+    a lifecycle time, not a counter.
+  - **Admitted:** the check, the claim and the insert of one `run_slots` row are one write
+    transaction (`BEGIN IMMEDIATE`). A first claim and a claim after a manual Retry (UI-3.7)
+    each insert a row, so one run can have more than one slot.
+  - **Lease recovery:** a claim of a `running` run with an expired lease (`architecture.md`
+    §6) continues the same execution. It inserts no row.
+  - **Refused:** when the count is at or above the setting, the run becomes `failed` with
+    `error = rate_limited` and gets no `run_slots` row. A refused first claim sets no
+    `started_at`; the run never started, so it has no bot message and no Retry. A refused manual
+    Retry inserts no slot and creates no new message. The run goes back to `failed` with
+    `error = rate_limited`. It keeps its first `started_at` and its bot message, which shows
+    "Failed" with Retry again (UI-3.7). In the same transaction the app posts one danger
+    notice for each refused run: "BA did not run. Hourly run limit reached (30 / 10) for this
+    conversation. Try again later or raise it in Settings." The first number is the live count
+    of slots in the window, the second is the setting. The worker does not retry the run. When
+    there is room, the owner sends a new message, or presses Retry on a refused manual Retry.
 - **Stop:** cancels all queued runs and the running one in the conversation (`architecture.md`
   §6) and posts "Stopped by owner".
 
@@ -245,8 +264,8 @@ only what you really did." It does this at most `plan_mark_reminders` times (set
   recent backwards until the budget is used; older ones are dropped with
   `[N earlier messages omitted]` and `[N earlier runs of yours omitted]`. Summarisation is a
   later milestone.
-- Tokens are estimated (4 characters per token, 2 for text that is mostly non-Latin, which
-  tokenises worse). If the provider still rejects the request as too long, the run retries
+- Tokens are estimated with `TOKEN_ESTIMATE` (§9): 4 characters per token, 2 for text that is
+  mostly non-Latin, which tokenises worse. If the provider still rejects the request as too long, the run retries
   once with the budget halved, then fails with a clear error.
 - Known risk: history can contain injected instructions. The blast radius is limited by the
   sandbox (`security.md`) and by human approval of handoffs.
@@ -274,8 +293,10 @@ Example:
   not an active member, the card offers "Add <bot> and start" (the bot joins with full history,
   since the files are the point).
 - Files must exist and be inside the workspace; they are committed and the commit sha pinned.
-- Limit: 5 handoffs per conversation per 24 hours; beyond that the tool returns an error asking
-  the bot to tell the owner.
+- Limit: `handoff_max_per_conversation_24h` (setting, default 5, §9) handoffs per conversation
+  in a rolling 24-hour period. Pending, approved, changes-requested, rejected and stale handoffs
+  all count. Beyond that the tool returns `limit_reached` asking the bot to tell the owner, and
+  creates no handoff. A blocked call does not count.
 - Card actions (owner only): Approve, Request changes (with a note), Reject.
   - A decision applies only while `pending` (double clicks are no-ops).
   - Approve checks the files have not changed since the pinned commit; if they have, the
@@ -354,8 +375,11 @@ Rules:
   no frontmatter beyond what the app writes, no tool permissions or write folders.
 - **Guard.** The text passes the sensitive-data guard (D39) or the tool returns an error
   naming the kinds found; there is no "Send anyway" for drafts.
-- **Limits.** 3 drafts per run and 10 pending drafts per conversation; beyond that the tool
-  returns an error asking the bot to tell the owner.
+- **Limits.** At most `skill_draft_max_per_run` (setting, default 3, §9) drafts per run, of any
+  status, and at most `skill_draft_max_pending_per_conversation` (setting, default 10) drafts
+  with status `pending` per conversation. An approve, reject or stale frees a pending slot.
+  Beyond a limit the tool returns an error asking the bot to tell the owner, and creates no
+  draft. A blocked call does not count.
 - **Card actions (owner only):** Edit (the draft opens in the skill editor, UI-7.3), Approve
   (with "Pin to <bot>" and always-load), Reject. A decision applies only while `pending`.
 - **After Approve:** for an edit, the "Also upgrade these bots" dialog (D6) follows, listing
@@ -419,9 +443,10 @@ rail and the header show it.
    parallel, with no global queue. A title request never makes today's estimated spend pass a
    cap. The second check (rule 5) is a **reservation**, in one write transaction (`BEGIN
    IMMEDIATE`, `architecture.md` §11):
-   1. Compute the worst-case cost of this request: `(TITLE_MAX_INPUT_TOKENS × input price) +
-      (30 × output price)`. `TITLE_MAX_INPUT_TOKENS` is a constant in `auto-title.rules.ts`, 2500: the instruction plus 2000
-      characters at one token per character. This is above the real count for normal text.
+   1. Compute the worst-case cost of this request: `(TITLE_POLICY.maxInputTokens × input price)
+      + (TITLE_POLICY.maxOutputTokens × output price)` (rule 14). `maxInputTokens` is 2500: the
+      instruction plus `maxInputChars` (2000) at one token per character. This is above the real
+      count for normal text.
    2. Read today's spend (`domain-model.md` §13). It includes the reservations of the title
       requests that are in flight.
    3. If spend + worst case is more than the provider cap or the total cap, the status is
@@ -440,8 +465,10 @@ rail and the header show it.
 7. **The call.** It runs after the send transaction commits, in the background, through the
    model port. It does not wait for the bot run, and the bot run does not wait for it. Input:
    a fixed instruction and the message text as quoted data, with mentions as bot names, cut to
-   2000 characters. No persona, skills, memory, history or attachments. Limits: 30 output tokens,
-   `TITLE_REQUEST_TIMEOUT_SECONDS` (default 20), one attempt.
+   `TITLE_POLICY.maxInputChars` (2000) characters. No persona, skills, memory, history or
+   attachments. Limits: `TITLE_POLICY.maxOutputTokens` (30) output tokens,
+   `TITLE_REQUEST_TIMEOUT_SECONDS` (default 20), one attempt. The request and the reservation
+   (rule 6) read the same `TITLE_POLICY` values.
 
    ```text
    Write a title for a chat that starts with the message below. Use 2 to 6 words, in the
@@ -452,8 +479,9 @@ rail and the header show it.
 
 8. **Clean the answer.** `cleanTitle(raw)` keeps the first line, removes quotes, backticks,
    Markdown marks, control characters and a final full stop, and joins spaces. It cuts the text
-   to 60 characters at a word boundary. An empty result is a failure. The guard (D39) then
-   checks the result. A match is a failure, and the app logs only the kinds found. "2 to 6
+   to `TITLE_POLICY.maxTitleChars` (60) characters at a word boundary. This limit is for display
+   in the rail and the header; it does not change the cost. An empty result is a failure. The
+   guard (D39) then checks the result. A match is a failure, and the app logs only the kinds found. "2 to 6
    words" is a request to the model, not a check: the app enforces only "not empty" and "60
    characters or less". A one-word or an eight-word title within 60 characters is kept.
 9. **Write the title.** In one transaction:
@@ -490,6 +518,12 @@ rail and the header show it.
     approximately $0.0023. At $15 and $75, approximately $0.011. The reservation (rule 6) is
     larger: at $15 and $75, approximately $0.040. A failed call that returned no usage costs 0
     and frees its reservation.
+14. **Title policy.** The fixed numbers of the title call are one constant, `TITLE_POLICY`, in
+    `auto-title.rules.ts`: `maxInputChars` 2000, `maxInputTokens` 2500, `maxOutputTokens` 30
+    and `maxTitleChars` 60. The request (rule 7), the reservation (rule 6) and `cleanTitle`
+    (rule 8) read it; no other code repeats these numbers. The token values stay fixed because
+    the worst-case reservation depends on them. `maxTitleChars` is a display limit (§9).
+    `TITLE_REQUEST_TIMEOUT_SECONDS` is an environment variable (`architecture.md` §8).
 
 The pure parts live in `core/conversations/auto-title.rules.ts`:
 
@@ -508,3 +542,60 @@ export function cleanTitle(raw: string): string | null;
 
 Logs record the status and the reason (`auto_title skipped reason=cap`), never the message text
 or the title.
+
+## 9. Limits: settings and fixed values
+
+The owner can change a limit that controls how much work bots may do. It is a setting in the
+`settings` table (`domain-model.md` §10), with the default written next to the rule that uses
+it (AGENTS.md §10). A fixed rule or security check stays in code as one named constant, and
+other code reads that constant instead of repeating the number.
+
+### Settings
+
+| Setting | Type, range | Default | What counts | Rule |
+| --- | --- | --- | --- | --- |
+| `runs_per_conversation_per_hour` | integer, 1–500 | 50 | `run_slots` rows of the conversation in a rolling hour: first claims and claims after a manual Retry, not lease recovery | §2 |
+| `handoff_max_per_conversation_24h` | integer, 1–50 | 5 | handoffs proposed in the conversation in a rolling 24 hours, any status | §5 |
+| `skill_draft_max_per_run` | integer, 1–10 | 3 | drafts the run created, any status | §7 |
+| `skill_draft_max_pending_per_conversation` | integer, 1–50 | 10 | drafts with status `pending` in the conversation now | §7 |
+
+- **No 0, no NULL.** These limits are safety caps. A value cannot turn a cap off: the server
+  refuses 0, NULL and any value out of range.
+- **Blocked calls do not count.** A refused run, handoff or draft adds nothing to the count.
+- **Parallel calls.** The app counts and inserts in one write transaction (`BEGIN IMMEDIATE`,
+  `architecture.md` §11), so two parallel calls cannot both take the last slot.
+- **Changes apply to the next action.** A new value applies from the next run claim or tool
+  call. A lower limit does not delete pending drafts or handoffs, and does not stop a running
+  run. A queued run is checked at its claim with the new value, so it can be refused (§2).
+  Over the new limit, only new items are blocked until the count drops.
+- **How the owner changes them.** `PATCH /settings` with the key (`api.md` §7). The server
+  validates the value with Zod and returns 422 when it is out of range. The Settings page shows
+  `runs_per_conversation_per_hour` (UI-8.1). The other three get rows on the Settings page at the
+  M5 global settings design round; until then the owner uses `PATCH /settings`.
+- `share_max_per_conversation_24h` (D58) and `plan_mark_reminders` (D57) are settings too. Their
+  rules are in those decisions.
+
+### Tests
+
+Table tests in the `*.rules.ts` suites and service tests (`testing.md`) prove at least:
+
+- **Window boundary:** an item exactly one hour (or 24 hours) old no longer counts; one that
+  is a second newer still counts.
+- **Last slot in parallel:** two parallel claims or tool calls with one slot left give one
+  success and one refusal.
+- **Lower limit with queued runs:** the owner lowers `runs_per_conversation_per_hour` from 50
+  to 10 with 30 slots in the window; the next queued run is `failed` with `rate_limited`, has
+  no bot message, inserts no slot, and the notice says "30 / 10".
+- **Crash recovery:** a lease reclaim inserts no `run_slots` row; a manual Retry of the same
+  run inserts one.
+- **Pending slot freed:** after the owner approves, rejects, or a draft becomes stale, the next
+  `propose_skill` call in the conversation succeeds again.
+
+### Fixed values (named constants)
+
+| Constant | Values | Where | Why it stays fixed |
+| --- | --- | --- | --- |
+| `SKILL_LIMITS` | name 64, description 1,024, body 20,000 characters; slug `^[a-z0-9-]{1,64}$` | `shared/` | Security size checks (`security.md` §2.5); the frontend counters read the same constant |
+| `BOT_TURN_LIMIT_RANGE` | 1–20 | `shared/` | The allowed range of the setting `bot_turn_limit` (§2), not a setting itself |
+| `TOKEN_ESTIMATE` | 4 characters per token, 2 for mostly non-Latin text; one retry with half the budget | `core/conversations/visible-history.rules.ts` | Estimation method (§4), not an owner choice |
+| `TITLE_POLICY` | input 2000 characters and 2500 tokens, output 30 tokens, title 60 characters | `core/conversations/auto-title.rules.ts` | Input and output tokens set the worst-case title reservation (§8 rule 6); the title length is for display (§8 rule 14) |

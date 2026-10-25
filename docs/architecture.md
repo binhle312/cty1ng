@@ -278,7 +278,6 @@ invalid), plus `config/models.yaml`.
 | `RUN_MAX_ATTEMPTS` | `3` | |
 | `RUN_STALL_SECONDS` | `600` | No delta and no step for this long → run fails as `timed_out` |
 | `MODEL_REQUEST_TIMEOUT_SECONDS` | `300` | Read timeout per model request |
-| `RUNS_PER_CONVERSATION_PER_HOUR` | `50` | Safety cap independent of the turn budget |
 | `TITLE_REQUEST_TIMEOUT_SECONDS` | `20` | Timeout of the one auto title request (D46) |
 | `<PROVIDER>_API_KEY` | none | Names referenced by `config/models.yaml` |
 

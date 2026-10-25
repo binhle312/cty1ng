@@ -100,7 +100,9 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
 
 ### 2.7 Cost and abuse limits
 
-- `request_limit` per run, turn budget per conversation, runs per conversation per hour,
+- `request_limit` per run, turn budget per conversation, runs per conversation per hour and the
+  handoff and skill draft limits (settings with a minimum of 1, so they cannot be turned off;
+  `conversation-rules.md` §9),
   `MAX_CONCURRENT_RUNS`, and the daily spending caps (D20, D42).
 - The auto title (D46) makes at most one request per conversation (a database rule), with
   30 output tokens, a 20-second timeout, one attempt, and the same caps as a run. The app checks
