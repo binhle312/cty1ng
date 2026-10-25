@@ -57,7 +57,7 @@ cards inside the reply that fold after a decision, and the requirement edits tha
 | D53 accepted (web through provider web tools): check the default limits and approve the migration for the bot setting and the run flag | Web access milestone plan |
 | Approve the M3 migration for D46 (auto title) before it is written | M3 plan |
 | Add the `surface-bubble` token (owner message box) to `design/themes.md` §3 after PR #10 merges | M3 plan |
-| Put UI-13.18 (the memory tool skips an exact duplicate) in the M5b brief | M5b start |
+| Put UI-13.16 (the memory tool skips an exact duplicate) in the M5b brief | M5b start |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
 | Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a migration approval | M3 and M7 plans |
 | Approve the M5b migrations: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars. Claude Code stops for this approval before it writes them | M5b plan |
