@@ -82,8 +82,15 @@ There is no "overlap found, waits for you" state. D52 saves and then shows a not
 - **UI-14.14** A bot's `propose_share` shows a card in the source conversation with Reject and
   Send. Nothing reaches the target before Send.
 - **UI-14.15** An information card starts no run, in the target or the source.
-- **UI-14.16** Bot proposals beyond `share_max_per_conversation_per_day` (setting, default 5)
-  return a tool error that asks the bot to tell the owner.
+- **UI-14.16** Share proposal limit (D58, amendment 2026-10-25), with
+  `share_max_per_conversation_24h` set to 5 in the test:
+  - Proposals 1 to 5 from one source conversation in a rolling 24 hours each create a normal
+    proposal card. Pending, approved and rejected proposals all count; owner sends do not.
+  - The 6th returns `share_limit_reached`, creates no proposal card, and the app shows one notice
+    in the source conversation. The 7th and later return the same error and create no new notice.
+  - When the oldest proposal is more than 24 hours old, a 6th proposal creates a normal card. The
+    next blocked attempt after that shows a new notice.
+  - While the limit is reached, the owner can still send to another conversation, and no run starts.
 
 ## Open questions
 

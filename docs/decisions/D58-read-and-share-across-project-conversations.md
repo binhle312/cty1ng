@@ -36,8 +36,27 @@ Decision:
   - The information card starts no run. It is not a human message, so the reply rule (D3) does
     not apply. The target's bots see it in their visible history as a quote.
   - It is not a handoff (D18). A handoff asks a bot to do work; a shared message only informs.
-  - Limit: `share_max_per_conversation_per_day` (setting, default 5) for bot proposals. Owner
-    sends have no limit.
+  - Limit: `share_max_per_conversation_24h` (setting, default 5) for bot proposals. Owner
+    sends have no limit. The exact rule is in the amendment of 2026-10-25 below.
+
+**Amended 2026-10-25 (owner): share proposal limit.**
+
+- `share_max_per_conversation_24h` (setting, default 5) allows at most 5 bot-created share
+  proposals per source conversation in a **rolling 24-hour period**, not a calendar day.
+  Pending, approved and rejected proposals all count. Owner sends do not count and have no limit.
+- When the limit is reached, `propose_share` returns the tool error `share_limit_reached` and
+  creates no proposal. A blocked attempt does not count as a proposal.
+- The app, not the bot, shows one information notice in the source conversation on the first
+  blocked attempt: "Share limit reached. BA cannot propose another share from this conversation.
+  5 of 5 proposals · rolling 24 hours. You can still send information yourself." Later blocked
+  attempts return the error and create no new notice. A new notice can show only after the count
+  drops below the limit and the bot reaches it again.
+- The notice has no button and does not show what the bot wanted to share. Otherwise it would be
+  a proposal card again. The owner uses the normal Send to conversation action.
+- Rejected: a "Send as me" button on an over-limit proposal. Each blocked attempt would make a
+  card, so the limit would no longer protect the owner's attention. A one-time owner override,
+  with a record that the bot proposed it, can come later if manual sending proves slow in real use.
+- The look of the notice waits for the Inbox UI checkpoint.
 
 Why: Conversations in a project often depend on each other ("B skipped Task 3"). Project memory
 holds only what somebody saved. Search lets the owner ask about everything else, with sources,
