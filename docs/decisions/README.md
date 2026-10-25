@@ -101,3 +101,4 @@ Implemented in: links.
 | D54 | [The approved plan covers deletes and moves, and the app checks the run against the plan](D54-approved-plan-covers-the-run.md) | accepted |  |
 | D55 | [Provider tools first, one switch per tool, and one tool per job](D55-provider-tools-first-and-tool-switches.md) | accepted |  |
 | D56 | [Memory in action runs: items not in the plan, and runs that fail](D56-memory-in-action-runs-and-failed-runs.md) | accepted | |
+| D57 | [The plan card shows the progress of the action run](D57-plan-card-shows-run-progress.md) | proposed | |

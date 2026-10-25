@@ -269,6 +269,7 @@ run_steps
   kind          TEXT NOT NULL   -- load_skill | list_files | read_file | view_file | write_file | propose_handoff
                                 --  | remember | update_memory | forget | restore_memory (D38)
                                 --  | propose_skill (D41)
+                                --  | mark_step (D57; target = the step number, detail = {state, note})
                                 --  | unknown_tool (the model named a tool that does not exist; target = that name)
   target        TEXT NOT NULL   -- skill slug@version, workspace path, handoff id, memory item id, or skill draft id
   status        TEXT NOT NULL   -- ok | error

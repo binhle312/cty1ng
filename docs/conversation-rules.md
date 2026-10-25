@@ -169,6 +169,19 @@ tool result, and the bot continues.
   model and shows on the Flow timeline.
 - Stop (`AbortSignal`) is the only thing that ends a run in the middle of a tool call.
 
+### Progress of an action run (D57)
+
+An action run (D48) gets the tool `mark_step({step, state: "started" | "done" | "skipped",
+note})`. `step` is a number from the approved plan (`plan_steps`, D54). `skipped` needs a note.
+Another number gives `{error: "not_in_plan", message}`; a `skipped` with no note gives
+`invalid_arguments`. The tool cannot add, remove or change a step. Each call writes a `run_steps`
+row (kind `mark_step`) and its `run.step` event, like every tool call. The plan card shows the
+steps from these rows (`design/components/plan-card.md` §6).
+
+The prompt of the action run lists the approved steps with their numbers and says: "Call
+`mark_step` when you start a step and when you finish it. You can call it together with your
+next tool call." A planning run and a run with no plan do not get the tool.
+
 ### Visible history
 
 `visibleHistory({ path, member, contextWindowTokens }): TranscriptLine[]` in

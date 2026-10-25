@@ -52,7 +52,8 @@ Messages
   text sits in a polite live region.
 - UI-3.5: The latest `run.step` shows as a subtle line under the streaming message
   ("Loading skill write-user-stories…") with the elapsed time since the run started and since
-  the last progress ("1:42 · last step 0:12 ago").
+  the last progress ("1:42 · last step 0:12 ago"). While a plan card shows progress (UI-3.29),
+  the line shows only the times, because the card names the step.
 - UI-3.6: Under each completed bot message, chips list `skills_used` as `<slug> v<version>`,
   always-loaded ones marked "always" (D15). Clicking a chip opens a side sheet with that exact
   version's content. No chips when none.
@@ -154,3 +155,17 @@ Feedback (D51, used by Improve in slice M5d)
   the right of the skill chip row (`../design/components/conversation-page.md` §3.2).
 - UI-3.28: A tooltip on the buttons says "Your ratings help <bot> improve its skills".
   Ratings never change the message and never start a run.
+
+Plan progress (D57, proposed)
+
+- UI-3.29: After Approve, the plan card stays open and shows each approved step as done, current
+  or not started (and skipped, with the bot's note), with the pill "Running · step n of total".
+  The tool calls of the current step show as small lines under it. Each planned file shows
+  "written" or "not yet". The state comes from `run_steps`, so a reload shows the same card
+  (`../design/components/plan-card.md` §6).
+- UI-3.30: When the run ends with every step done and nothing open in the run-end check (D54),
+  the card folds to "Plan [Done] … · Show". Otherwise it stays open: "Not marked done" on each
+  step with no done mark, and the block "Check after the run". A stopped or failed run keeps the
+  card open with "Stopped · n of total" or "Failed · n of total".
+- UI-3.31: Show opens a folded plan card, Hide folds it. A reply with no plan has no progress
+  card.
