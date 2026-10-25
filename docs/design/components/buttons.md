@@ -37,8 +37,9 @@ A disabled button has a tooltip that says why, for example "No changes to save."
 
 A secondary button can have a small line icon before its label when two secondary actions sit
 side by side and must be different at a glance. The plan card and the handoff card use **×
-Reject** and **pencil Request changes** (round 10, owner 2026-10-25). A primary button that adds
-someone can have a plus icon: **+ Add Designer and start** (`conversation-cards.md` §4). The
+Reject**, **pencil Request changes** and **✓ Approve** (round 10, owner 2026-10-25). A primary
+button that adds someone has a plus icon: **+ Add Designer and start** (`conversation-cards.md`
+§4). Icons on other buttons (Save, Create, Add …) are not decided yet; a later review covers them. The
 label is still a verb, so the button works without the icon.
 
 ## 4. Labels

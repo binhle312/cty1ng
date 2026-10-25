@@ -61,7 +61,7 @@ makes them, under its text, indented like the text.
 | Card | Padding 12 × 14 px, radius 10 px, 1 px `outline-strong` border, `surface-container` fill |
 | Section title | 11 px, weight 600, `on-surface-muted` ("Files", "Memory") |
 | File row | The path in mono 12 px, then "new", "changed" or "pinned at a1b2c3" in `on-surface-muted` |
-| Buttons | Under a 1 px `outline` line, at the right, 30 px (`buttons.md`): **× Reject** (secondary, with an × icon), **Request changes** (secondary, with a pencil icon), then the primary button at the far right |
+| Buttons | Under a 1 px `outline` line, at the right, 30 px (`buttons.md`): **× Reject** (secondary, with an × icon), **Request changes** (secondary, with a pencil icon), then the primary button at the far right: **✓ Approve** (check icon) or **+ Add <bot> and start** |
 
 The icons make Reject and Request changes different at a glance without a new colour (owner,
 2026-10-25 00:02, option R4). Reject is not `danger`: it removes nothing.
@@ -91,7 +91,7 @@ bottom:
    label in bold: **Goal**, **Done**, **Assumed**, **Open**, **Ask**, **Suggested skills** (as
    skill chips).
 3. **Files:** each file with "pinned at <commit>".
-4. The buttons: × Reject, Request changes, **Approve**.
+4. The buttons: × Reject, Request changes, **✓ Approve**.
 
 **Target not a member** (S4d). Over the buttons: "Designer is not in this conversation. It
 joins with the full history, because the files are the point." The primary button is

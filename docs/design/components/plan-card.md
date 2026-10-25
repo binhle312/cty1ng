@@ -27,7 +27,8 @@ titles, file rows) is in `conversation-cards.md` §3. Top to bottom:
    shows only when the plan has at least one draft (owner, 2026-10-24).
 6. **Question before I start**, one block for each conflict (§2).
 7. A divider, then the buttons in the `buttons.md` order: **× Reject** (secondary, × icon),
-   **Request changes** (secondary, pencil icon) and **Approve** (primary, far right).
+   **Request changes** (secondary, pencil icon) and **✓ Approve** (primary, check icon, far right;
+   owner, 2026-10-25 01:58).
 
 While the card waits, the bot has read-only tools. Only Approve starts the action run, with the
 write tools and the approved plan.
