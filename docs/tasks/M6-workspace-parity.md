@@ -17,7 +17,7 @@ files), §6; `docs/requirements/conversation.md` (UI-3.3 cards, 3.13, 3.16).
 
 ## In scope
 
-- Full workspace port (git repo per project, or per conversation outside projects, D37; `write_file`, `view_file`,
+- Full workspace port (git repo per project, plus one Home Library for all conversations outside projects, D52 amendment 2026-10-25; `write_file`, `view_file`,
   commit; memory is no longer a workspace file, D38), with the prototype's workspace tests passing.
 - Attachments: upload endpoint, `attachments/<yyyy-mm-dd>-<conversation-slug>/` (D52), multimodal prompt building, binary stripping in
   history.
@@ -55,8 +55,9 @@ Is D18 (implicit workflow, handoff to any bot, team directory) accepted? Decide 
 
 D52 is accepted (each run writes on its own branch and saves to the Library when it ends).
 Before the plan starts, this brief gets the run worktrees, the save queue and file claims, the
-overlap notice, the unsaved changes card, the delete and move approval card, the Library card
-and page, and the `run_branches` schema design (initial schema for M6).
+overlap notice, the unsaved changes card, the delete and move approval card, the Library page
+for a project and for Home, the plan card mark for a file from another conversation (D52
+amendment 2026-10-25), and the `run_branches` schema design (initial schema for M6).
 
 Parked for this brief (owner, 2026-10-24; notes in the agent checklist, pstack and handoff
 reviews). Each needs the owner's choice before the plan starts:

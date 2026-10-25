@@ -14,8 +14,7 @@ Decision:
   | Conversation | Main (where the files are saved) |
   | --- | --- |
   | In a project | The project Library, shared by all its conversations |
-  | Outside a project, 1:1 with a bot | That conversation's Library. The owner has one 1:1 per bot, so this is the bot's own Library |
-  | Outside a project, several bots | That conversation's Library |
+  | Outside a project (1:1 or several bots) | The Home Library, shared by all conversations outside projects (amended 2026-10-25, below) |
   | With an external folder (D23, later) | The review branch `bots/<conversation-slug>`. The app never saves to the owner's own branch |
 
 - **Each action run gets its own branch.** When an action run starts (D48), the app makes a git
@@ -67,7 +66,7 @@ Decision:
   `attachments/`. (The current spec calls this folder `inbox/<message_id>/`; the message keeps
   the link to its files in the database.)
 - **Write rule (owner, 2026-10-23).** A bot writes only to the Library that its run saves to:
-  the conversation's Library outside a project, the project Library in a project. It can write any path
+  the Home Library outside a project, the project Library in a project. It can write any path
   in that Library except `attachments/` (read-only) and `.git`. Bots have no per-bot write folders (`write_paths` is
   removed by the Bots pages spec PR). `resolve()` keeps every path inside the run's worktree. The plan card (D48) lists
   the files before the owner approves, so the owner still sees each write in advance.
@@ -100,18 +99,19 @@ Decision:
   outside the plan with Approve and Reject. Approve saves it with the rest of the run. Reject
   saves the rest of the run without it. D23 already has this rule for an external folder; now
   every Library has it.
-- **Moving a conversation into a project (owner, 2026-10-23).** The move dialog has "Copy files to the
-  project Library", checked by default. Copy saves the conversation's files (not `attachments/`) to the
-  project Library as one commit "Moved from <conversation>", through the save queue. A file with the
-  same name gets the `-from-<conversation-slug>` suffix. Unchecked, nothing is copied. Either way, the
-  conversation's own Library stays as a read-only archive, readable from that conversation. A conversation cannot move
-  while one of its runs is running or has unsaved changes.
-- **A Library belongs to its owner and goes to Trash with it (owner, 2026-10-23).** A project
-  Library goes to Trash with its project and comes back with it (D47). A conversation outside a project
-  takes its own Library to Trash and back. Deleting a conversation inside a project leaves its files in
-  the project Library, because they belong to the project; git history still shows which conversation
-  wrote them. Unsaved changes and the run worktrees go to Trash with their conversation. The purge after
-  `trash_days` (D49) deletes the Library folder.
+- **Moving a conversation into a project (owner, 2026-10-23; amended 2026-10-25).** The move dialog
+  has "Copy files to the project Library", checked by default. Copy takes the files that the
+  conversation's runs saved to the Home Library (not `attachments/`). The run records give this
+  list. The app saves them to the project Library as one commit "Moved from <conversation>",
+  through the save queue. A file with the same name gets the `-from-<conversation-slug>` suffix.
+  Unchecked, the app copies nothing. Either way, the files stay in the Home Library. A conversation cannot move while one of
+  its runs is running or has unsaved changes.
+- **A Library belongs to its place and goes to Trash with it (owner, 2026-10-23; amended
+  2026-10-25).** A project Library goes to Trash with its project and comes back with it (D47).
+  The Home Library never goes to Trash. Deleting a conversation leaves its files in its Library
+  (project or Home), because they belong to the place; git history still shows which
+  conversation wrote them. Unsaved changes go to Trash with their conversation (D60). The purge
+  after `trash_days` (D49) deletes a project Library folder.
 - **The word "branch" is not in the UI.** D13 uses "branch" for edited messages. The UI says
   "Saved to Library", "unsaved changes" and "also changed in".
 
@@ -130,9 +130,65 @@ at 10:03. Its version is saved. The Onboarding conversation shows the notice, an
 starts at once. The owner reads both versions and presses Restore other version if the Pricing
 text was better.
 
-In a conversation outside a project, runs are one at a time (D11) and nobody else writes to its
-Library, so an overlap cannot happen there. The branch still gives the all-or-nothing save and
-the unsaved changes after a failure.
+Conversations outside a project share the Home Library (amended 2026-10-25), so an overlap can
+happen there too. The same save queue, file claims and notice apply.
+
+**Amended 2026-10-25 (owner): one Library per place, no Library per conversation.**
+
+A conversation holds only its context (instructions, memory, members) and its history
+(messages, runs). Files belong to the place of the conversation:
+
+```
+ BEFORE (2026-10-23)                     AFTER (2026-10-25)
+
+ Project "Login app"                     Project "Login app"
+ ├─ Sign-in screens ─┐                   ├─ Sign-in screens ─┐
+ ├─ Stories review ──┼─▶ Project Library ├─ Stories review ──┼─▶ Project Library
+ └─ Password reset ──┘                   └─ Password reset ──┘
+
+ Home                                    Home
+ ├─ BA (1:1) ──────────▶ Library A       ├─ BA (1:1) ────────┐
+ ├─ Designer (1:1) ────▶ Library B       ├─ Designer (1:1) ──┼─▶ Home Library
+ └─ Trip ideas ────────▶ Library C       └─ Trip ideas ──────┘
+```
+
+- **Two kinds of Library.** Each project has one project Library. All conversations outside
+  projects share one **Home Library**. A conversation has no Library of its own.
+- **Same save rules.** Home Library saves use the same save queue, file claims, overlap notice
+  and unsaved changes as a project Library.
+- **Guard for unrelated conversations.** Conversations in a project share one topic. Home
+  conversations do not, so two of them can use the same file name. When a planned write changes
+  a file that a run of another conversation saved last, the plan card marks it before the owner
+  approves:
+
+  ```
+  ┌ Plan · BA ─────────────────────────────────────────────┐
+  │ Files to write                                          │
+  │   + trips/budget.md                                     │
+  │   ~ notes.md   ⚠ last saved in "Trip ideas"             │
+  │                                   [Reject] [✓ Approve]  │
+  └─────────────────────────────────────────────────────────┘
+  ```
+
+  The mark is a fact, not a block. The owner approves, rejects or asks for a new file name.
+- **Bar 2 on Home** gets a **Library** row under Memory. It opens the same Library page as a
+  project Library. It replaces the "Library" item in the conversation row menu and its floating
+  card (2026-10-23).
+- **Privacy.** Every bot with the Files tool on can read every Home file. A bot that must not
+  read Home files needs its Files tool off (`create-bot-page.md`).
+
+Example: BA writes `stories.md` in the 1:1 "BA". The run ends and saves it to the Home Library.
+Later the owner asks Designer in the 1:1 "Designer" for a wireframe. Designer's next run starts
+from the newest Home Library, so it can open `stories.md`. The Library page on Home shows both
+files with their history.
+
+Why (amendment): Claude Projects and the owner's project tool use the same model: files belong
+to the place, and a chat holds its history. One Library per conversation hid files in many
+places, and a bot in one Home conversation could not use a file from another.
+
+Not chosen (amendment): **A Library per conversation (2026-10-23 rule).** Files are hard to
+find, and Home conversations cannot share work. **A folder per conversation inside the Home
+Library.** It brings back the per-author folders that D52 dropped.
 
 Why:
 
@@ -198,10 +254,10 @@ Consequences:
   off.
 - **Flow view (M8).** The run's last step shows "Saved to Library" (with an overlap mark when
   there is one) or "Unsaved changes".
-- **UI design (M6 Library round).** The overlap notice, the unsaved changes card, the delete and move approval card, the
-  Library entry for conversations outside a project (owner, 2026-10-23: the conversation row's ⋯ menu gets
-  "Library", which opens a floating card with the file tree on the left and the file content
-  on the right, like a git UI; the project Library page reuses the same tree and viewer), and an
+- **UI design (M6 Library round).** The round designs these parts: the overlap notice, the unsaved changes card,
+  and the delete and move approval card. It also designs the Library page, with the file tree on
+  the left and the file content on the right, like a git UI. One page serves a project and Home
+  (amended 2026-10-25). Last: the plan card mark for a file from another conversation, and an
   "Unsaved changes" list on the Library page.
 - **D37** changes from "conversations share one workspace" to "conversations share one main;
   each run writes on its own branch", and a move into a project can copy the conversation's files. **D23** keeps its review branch; each run's branch saves

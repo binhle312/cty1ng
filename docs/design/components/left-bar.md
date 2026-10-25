@@ -76,7 +76,8 @@ same menu (`conversation-page.md` §2.1, round 12).
 
 - Title **"Home Sweet Home"**, subtitle "N bots · N skills" (skills = distinct skills used by the
   owner's bots).
-- One Memory row (bot and conversation memory outside projects). No Library row.
+- One Memory row (bot and conversation memory outside projects), then one **Library** row: the
+  Home Library, shared by all conversations outside projects (D52 amendment 2026-10-25).
 - One conversation list, newest activity first.
 - **First run** (no bots): subtitle "No bots yet", a dashed button "+ Hey, let's talk 👋" in the
   same style as the rail's New project tile, and the line "Bigger work? Start a project with + on

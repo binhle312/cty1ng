@@ -60,8 +60,10 @@ there is no conversation settings page. The discussion status comes with slice M
 - **Delete** opens a dialog (the Delete project dialog pattern, `project-settings-page.md` §6):
   - Title: **Delete {title}? 🧹**
   - "The conversation goes to Trash with:", then the real counts: 💬 "{n} messages and {n}
-    runs", 📁 "{n} files", 🧠 "{n} conversation memory items" (only when the conversation has
-    conversation memory).
+    runs", 🧠 "{n} conversation memory items" (only when the conversation has conversation
+    memory).
+  - 📁 "Its files stay in the {project} Library." (Home: "the Home Library"; D52 amendment
+    2026-10-25).
   - Only while a bot is queued or running: ⏹ "{bot} is running. The run stops first."
   - Only in a project: 📂 "A restore puts it back in {project}."
   - ↩️ "You can restore it from Trash for 30 days. After 30 days, the app deletes it." (the

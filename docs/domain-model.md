@@ -380,7 +380,7 @@ the bot page build the Tools list from it (`design/components/create-bot-page.md
   added: 2026-10-24             # date added to the catalog; sorts the list inside each group
   sends_data_out: false         # true = amber ⚠ on the row
   web: false                    # true = a web tool under D53
-  line: "List, read and write files in the conversation Library."
+  line: "List, read and write files in the Library (the project's, or Home)."
   off_line: "The bot only talks. View images and Hand off turn off too."
   needs: []                     # tool ids that must be on (view_images and hand_off need files)
 - id: web_fetch
@@ -429,10 +429,10 @@ conversation_bots
   PRIMARY KEY (conversation_id, bot_id)
 ```
 
-Deleting a conversation moves it to Trash (D60): `deleted_at` is set and its workspace folder
-moves to `data/trash/<conversation_id>/`. A restore clears `deleted_at` and moves the folder
-back. After `trash_days` the purge deletes its messages, attachments, members, conversation memory
-and folder, and sets `purged_at`; the row and its run and model request rows stay for
+Deleting a conversation moves it to Trash (D60): `deleted_at` is set. Its files stay in the
+Library of its place, because a conversation has no Library of its own (D52 amendment
+2026-10-25). A restore clears `deleted_at`. After `trash_days` the purge deletes its messages,
+members, conversation memory and unsaved changes, and sets `purged_at`; the row and its run and model request rows stay for
 Statistics and the daily cap. A conversation in Trash before its project was deleted stays its
 own Trash item (D47, D60). There are no preset icons: the icon comes from the bot avatars
 (UI-1.3).
@@ -596,11 +596,10 @@ data/
   app.db                                    SQLite database (+ -wal, -shm)
   avatars/<sha256>.webp                     re-encoded uploads, content-addressed
   workspaces/<project_id>/                  git repo shared by a project's conversations (D37)
-  workspaces/<conversation_id>/             git repo of a conversation outside any project
+  workspaces/home/                          the Home Library: one git repo for all conversations outside projects (D52 amendment 2026-10-25)
       attachments/<yyyy-mm-dd>-<conversation-slug>/<file>   owner uploads (bots: read-only, D52)
       README.md, .gitignore, .gitattributes      made by the app in the first commit (D52)
       <topic folders>/...                   bot and owner files, by topic, not by author (D52)
-  trash/<conversation_id>/                  workspaces of conversations in Trash (D60)
 ```
 
 Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the DB).
