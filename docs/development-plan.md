@@ -21,7 +21,7 @@ the builder agent with the prompt in `workflow.md` §3.
 | M6 | [M6-workspace-parity.md](tasks/M6-workspace-parity.md) | Workspace sandbox, file tools, file panel, attachments, handoffs; delete `reference/` | **plan** (security) | M3 (can run after M4/M5) |
 | Inbox | not written | Project inbox (D58, D59; `requirements/project-inbox.md`): states, waits, notices, Send to conversation. No model calls | **plan** (schema, UI design) | M6 (needs D48 cards and D52 notices) |
 | M7 | [M7-statistics.md](tasks/M7-statistics.md) | Statistics page: models, bots, skills | merge (new chart dependency) | M5 (needs usage, provenance, discussion data) |
-| M8 | [M8-flow-view.md](tasks/M8-flow-view.md) | Flow pane: animated Team and Timeline maps, swappable renderer | **plan** (renderer contract, performance) | M7 (needs run steps from M3, discussion and handoffs from M5–M6) |
+| M8 | [M8-flow-view.md](tasks/M8-flow-view.md) | Flow pane: animated Timeline map, swappable renderer | **plan** (renderer contract, performance) | M7 (needs run steps from M3, discussion and handoffs from M5–M6) |
 | M8b | not written | Board: third map in the Flow pane (D30, `design/themes.md` §4) | **plan** (UI design) | M8 |
 | M8c | not written | Project-wide Board, read-only (`design/components/left-bar.md` §5); same project data as the inbox | **plan** (UI design) | M8b |
 | T2 | not written | Material theme: one token file plus the documented structural differences (D30) | merge (UI design, visual snapshots) | M0; any time, owner decides |

@@ -9,11 +9,18 @@ it must meet. Decisions: D26, D27. Stories and acceptance criteria: `requirement
 
 | Map | Question it answers | Phase |
 | --- | --- | --- |
-| **Team** | Who talks to whom, who is working, who is waiting on whom, right now? | M8 |
 | **Timeline** | How did the work happen, step by step, and what did each run cost? | M8 |
+| **Board** | The conversation as a spatial board (D30, `design/themes.md` §4) | M8b |
+| **Team** | Who talks to whom, who is working, who is waiting on whom, right now? | parked (D26 amendment 2026-10-25) |
 | **Files** | Where did this document come from, and who used it? | later |
 
-Mockups: `design/mockups.md`. They are illustrative, not final designs; the look is agreed with the owner in the M8 plan. This document fixes behaviour and architecture, not visual style.
+The Team map is parked until bots work together without the owner (one orchestrator bot with
+helper bots). Today the owner starts and approves all work, so the Timeline shows it better.
+When the Team map returns, it is designed again as a tree with the orchestrator at the top. The
+scene types below keep its fields so that it can come back without a contract change; M8 does
+not build them.
+
+Timeline look (agreed with the owner, 2026-10-25): `design/components/flow-timeline.md`. Older mockups: `design/mockups.md`, illustrative only. This document fixes behaviour and architecture, not visual style.
 
 The Flow view is **read-only** in M8. It is a second view of the same event log as the chat
 (`realtime-events.md`), so it can never disagree with the chat. A later milestone may let the
@@ -26,7 +33,7 @@ Sketch only (not final; see `design/README.md`):
 
 ```
 ┌─────────────────────────────┬┬──────────────────────────────┐
-│ Chat                        ││ Flow   [Team] [Timeline]  ⇄ ✕ │
+│ Conversation                ││ Flow · Timeline  Animations ⇄ ✕│
 │                             ││                              │
 │                             ││                              │
 └─────────────────────────────┴┴──────────────────────────────┘
@@ -39,7 +46,7 @@ Sketch only (not final; see `design/README.md`):
 - ⇄ swaps sides; ✕ closes Flow; a "Flow" button in the conversation header opens it.
 - Pane state (open, side, width, active map) is a per-browser convenience in `localStorage`,
   wrapped in try/catch; the page works without it.
-- Below 960 px wide, the panes become tabs (Chat | Flow).
+- Below 960 px wide, the panes become tabs (Conversation | Flow).
 - Library: `react-resizable-panels` (what shadcn/ui's "Resizable" wraps).
 
 ## 3. Architecture: data, scene, cues, renderer
@@ -65,9 +72,9 @@ Renderer ──▶ onSelect(target) ──▶ chat pane (filter / scroll)
 type ActorId = string;               // owner id or bot id
 
 interface FlowScene {
-  map: "team" | "timeline" | "files";
+  map: "timeline" | "board" | "team" | "files"; // M8: timeline; board in M8b; team parked; files later
   actors: Actor[];                   // you + bots in the conversation
-  links: Link[];                     // team map: aggregated relationships
+  links: Link[];                     // team map only (parked): aggregated relationships; empty in M8
   items: TimelineItem[];             // timeline map: ordered, windowed (§5)
   window: { fromSeq: number; toSeq: number; hasEarlier: boolean };
   selection: SelectionTarget | null;
@@ -97,7 +104,7 @@ type StepKind = "load_skill" | "list_files" | "read_file" | "view_file" | "write
 interface RunStep { kind: StepKind; target: string; status: "ok" | "error"; at: string }
 ```
 
-Built by pure selectors: `buildTeamScene(store)`, `buildTimelineScene(store, window)`. They
+Built by pure selectors: `buildTimelineScene(store, window)` in M8 (`buildTeamScene(store)` when the Team map returns). They
 are memoised and use structural sharing: an unchanged actor or link keeps the same object, so a
 renderer can skip it cheaply.
 
@@ -135,7 +142,7 @@ interface FlowRendererProps {
 type FlowRenderer = React.ComponentType<FlowRendererProps>;
 
 const renderers: Record<string, FlowRenderer> = {
-  diagram: DiagramRenderer,                // M8: React Flow + CSS/WAAPI animations
+  diagram: DiagramRenderer,                // M8: the Timeline (HTML/SVG lanes) + CSS/WAAPI animations
   // pixel: PixelRenderer,                 // later: e.g. PixiJS sprites, same props
 };
 ```
@@ -156,15 +163,20 @@ renderer exists.
 All durations and easings live in one file, `frontend/src/features/flow/motion.ts`, so the feel can be
 tuned in one place.
 
-| Cue | Team map | Timeline map | Duration |
+The Team column is kept for when the Team map returns (parked, not built in M8).
+
+The owner turns animations on or off with the **Animations** switch in the pane header
+(`requirements/flow-view.md` UI-12.7). It sets `motion`: On = `"full"`, Off = `"reduced"`.
+
+| Cue | Team map (parked) | Timeline map | Duration |
 | --- | --- | --- | --- |
 | `message.sent` | a dot travels along the link from sender to receiver, then fades; link weight updates | new row slides in from below | 600 ms / 150 ms |
 | `run.queued` | small "queued" badge appears | — | 150 ms |
-| `run.started` | running ring appears with a slow breathing pulse | run box appears, open | 200 ms, pulse 2 s loop |
+| `run.started` | running ring appears with a slow breathing pulse | run box appears, open, with a slow breathing outline in the bot colour | 200 ms, pulse 2 s loop |
 | `run.step` | current-step label on the node cross-fades | step line appended in the run box | 150 ms |
 | `run.finished` | ring fades out | box closes, cost appears | 300 ms |
 | `run.failed` / `run.stopped` | node shakes once (2 px) / ring turns grey | box turns red / grey | 300 ms |
-| `handoff.proposed` | link turns dashed amber with a slow dash flow while pending | handoff row with pulse on its badge | flow 1.5 s loop |
+| `handoff.proposed` | link turns dashed amber with a slow dash flow while pending | dashed amber arrow, pulse on its badge while it waits for the owner | flow 1.5 s loop |
 | `handoff.approved` | link flashes green once, flow stops | badge turns green | 400 ms |
 | `member.joined` / `left` | node scales/fades in or out; layout eases to new positions | lane appears or greys out | 250 ms / 300 ms |
 | `budget.exhausted` | brief amber outline around the map | notice row | 400 ms |
@@ -190,11 +202,11 @@ the browser at the same time.
 4. The cue queue is bounded (200). When the Flow pane is closed, collapsed below its minimum, or
    the browser tab is hidden (`visibilitychange`), cues are dropped, not queued; on return the
    renderer shows the current scene without catching up.
-5. Layout (positions of actors in the Team map) is computed only when the set of actors or
+5. *(Team map, parked; not in M8.)* Layout (positions of actors in the Team map) is computed only when the set of actors or
    links changes, not on every message, debounced by 200 ms, in a Web Worker (elkjs or dagre)
    so the main thread stays free. Positions animate to their new place.
-6. React Flow nodes and edges are memoised components with stable ids; `nodes`/`edges` arrays
-   are rebuilt only from changed scene parts (structural sharing from §3.1).
+6. Timeline rows, run chips and run boxes are memoised components with stable ids; the row list
+   is rebuilt only from changed scene parts (structural sharing from §3.1).
 7. Long timelines are windowed: 50 items in the DOM, "load earlier" pages 50 more, and a
    virtualised list keeps the DOM size flat however far the owner scrolls.
 
@@ -212,7 +224,7 @@ the browser at the same time.
 
 | Metric | Budget |
 | --- | --- |
-| Frame time while animating (12 actors, 40 links, 200 timeline items, 5 cues/s) | p95 ≤ 16.7 ms (60 fps) on the CI machine; logged with a 2× allowance in CI |
+| Frame time while animating (12 actors, 200 timeline items, 5 cues/s) | p95 ≤ 16.7 ms (60 fps) on the CI machine; logged with a 2× allowance in CI |
 | Opening the Flow pane on a 1,000-message conversation | ≤ 300 ms to first paint |
 | JS heap after opening/closing the pane 50 times and replaying 5,000 cues, after GC | within +5 MB of the baseline |
 | DOM nodes after scrolling the whole timeline | ≤ 2× the count at first paint |

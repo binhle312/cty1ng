@@ -14,7 +14,7 @@ The three picks are not the same kind of thing, so they become separate settings
 | **Theme** | Command, Material | Colours, type, shape, spacing, elevation, motion feel | Concepts 2 and 11 |
 | **Mode** | Follow system, light, dark | The colour set within a theme | Requirement "themes follow the OS" |
 | **Density** | Theme default, compact | Control heights and row padding | Command is compact by default |
-| **Flow pane default** | Closed, or open on Team, Timeline or Board | Whether the conversation opens with the Flow pane, and on which map | Concept 13 |
+| **Flow pane default** | Closed, or open on Timeline or Board | Whether the conversation opens with the Flow pane, and on which map | Concept 13 |
 
 Every theme ships both a light and a dark mode. Features never depend on the theme: ⌘K, keyboard
 shortcuts, the Flow pane and its Board map, charts and approvals work the same everywhere.
@@ -73,11 +73,12 @@ both. Chart colours come from these tokens, so charts switch with the theme.
 
 The Board shows the conversation spatially: threads as frames, runs with their steps, files,
 and handoffs as edges. It is built on the Flow view's scene and renderer (`../flow-view.md`,
-D26, D27): the same scene data, laid out as a board instead of the Team or Timeline map. So it
+D26, D27): the same scene data, laid out as a board instead of the Timeline map. So it
 adds a layout, not a new architecture. Keyboard: arrows pan, `F` fits, `G B` switches the Flow pane to the Board map.
 
-Decided (D30): the Board is the third tab of the Flow pane (Team, Timeline, Board). There is
-one split screen with three maps; no separate Chat + Board layout. Built in slice M8b, after the
+Decided (D30): the Board is a tab of the Flow pane. M8 ships only the Timeline (D26 amendment
+2026-10-25), so from M8b the pane has two maps, Timeline and Board; the Team map is parked. There is
+one split screen; no separate Chat + Board layout. Built in slice M8b, after the
 pane and its first two maps exist (M8).
 
 ## 5. Verification

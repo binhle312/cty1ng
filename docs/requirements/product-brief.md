@@ -31,7 +31,7 @@ solves each:
 2. **The work is invisible.** Chat platforms are designed for humans: a chat log shows
    messages, not who is working, who is waiting, which skill a bot used or how work moved
    between bots. The app adds an interactive view of
-   the flow beside the conversation (Flow pane with Team, Timeline and Board maps; D26, D27, D30), plus
+   the flow beside the conversation (Flow pane with Timeline and Board maps; D26, D27, D30), plus
    provenance and cost on every reply.
 3. **It cannot be shaped to the owner's needs.** The platform fixes the layout, the commands and
    the look. Here the owner defines the bots, personas and versioned skills, sets the
@@ -80,7 +80,7 @@ given the order. Nothing runs while the laptop sleeps or the app is closed; that
 8. **Parity with the Discord prototype**: a workspace with files (one per project, D37), attachments,
    approval handoffs.
 9. **Statistics**: charts of usage by model, bot and skill (D24).
-10. **Flow view**: an animated Team and Timeline map beside the conversation (D26, D27).
+10. **Flow view**: an animated Timeline map beside the conversation (D26, D27); a Team map comes back when bots work together without the owner.
 11. **Projects and memory** (D37, D38): conversations grouped into projects; bots
     remember how the owner likes them to work (bot memory) and facts about each project
     (project memory), or about a multi-bot conversation outside a project (conversation memory), visible

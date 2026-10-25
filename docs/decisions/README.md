@@ -70,7 +70,7 @@ Implemented in: links.
 | D23 | [Bots working on an external project folder](D23-bots-working-on-an-external-project-folder.md) | accepted in principle | D52 |
 | D24 | [Statistics page](D24-statistics-page.md) | accepted |  |
 | D25 | [One Grafana-style time range picker](D25-one-grafana-style-time-range-picker.md) | accepted |  |
-| D26 | [Flow view beside the chat](D26-flow-view-beside-the-chat.md) | accepted | D44 |
+| D26 | [Flow view beside the chat](D26-flow-view-beside-the-chat.md) | accepted | D44, own amendment 2026-10-25 |
 | D27 | [Flow rendering is swappable; animations have hard budgets](D27-swappable-flow-renderer-with-animation-budgets.md) | accepted |  |
 | D28 | [TanStack Router and shadcn/ui on Base UI](D28-router-and-component-primitives.md) | accepted |  |
 | D29 | [SQLite now; switch to PostgreSQL on defined triggers](D29-sqlite-now-postgres-on-triggers.md) | accepted |  |
