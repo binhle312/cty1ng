@@ -164,13 +164,18 @@ Plan progress (D57)
   The tool calls of the current step show as small lines under it. Each planned file shows
   "written" or "not yet". The state comes from `run_steps`, so a reload shows the same card
   (`../design/components/plan-card.md` §6).
-- UI-3.30: When the run ends with every step done and nothing open in the run-end check (D54),
-  the card folds to "Plan [Done] … · Show". Otherwise it stays open: "Not marked done" on each
-  step with no done mark, and the block "Check after the run". A stopped or failed run keeps the
+- UI-3.29b: An approved run that waits for a file claim (D52) shows "Queued · waits for
+  {conversation}" with the clock icon, in grey, until it starts.
+- UI-3.30: When the run ends with every step done (none skipped) and nothing open in the run-end
+  check (D54), the card folds to "Plan [Done] … · Show". Otherwise it stays open: "Not marked
+  done" on each step with no done or skipped mark, a skipped step with its note ("Done · 3 of 4 ·
+  1 skipped"), and the block "Check after the run". A Done-when item `met` whose quote the app
+  did not find is open. A stopped or failed run keeps the
   card open with "Stopped · n of total" or "Failed · n of total".
 - UI-3.30b: Before the run ends, the app reminds the bot once (setting `plan_mark_reminders`)
   about steps and Done-when items with no mark. Each mark shows its source: "checked by app",
-  "bot says" or "not verified"; a step done with no tool call shows "no action recorded".
+  "bot says" or "not verified"; a step done with no tool call that succeeded shows "no action
+  recorded". A mark on a done or skipped step gives the error `step_closed`.
 - UI-3.31: Show opens a folded plan card, Hide folds it, at any time. A card hidden while the
   run works shows "Running · step n of total" on its line, updated live. A reply with no plan
   has no progress card.

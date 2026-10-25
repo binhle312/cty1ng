@@ -7,7 +7,7 @@
 > reply, the button order and icons, the folded line, and the conflict question in two lines.
 > Preview: `../previews/command-dark/conversation-cards.*` (card S3).
 > **Progress after Approve (D57, accepted 2026-10-25):** §4 and §6. Preview:
-> `../previews/command-dark/plan-progress.*` (P1–P5).
+> `../previews/command-dark/plan-progress.*` (P0–P5).
 
 A bot shows a plan card before each task that changes something (D48): it writes files, saves
 memory, hands off or drafts a skill. A plain answer or question has no plan card.
@@ -107,6 +107,11 @@ marks the steps with the `mark_step` tool (`../../conversation-rules.md` §4). T
 from the run's `run_steps` rows, so it is the same after a reload. Preview:
 `../previews/command-dark/plan-progress.*`.
 
+**Queued (P0, owner review, 2026-10-25).** When the approved run waits for a file claim of another
+run (D52), the pill is "Queued · waits for {conversation}" with the clock icon, in
+`on-surface-muted` on `surface-raised` (`bot-status.md`). Never amber: the owner has nothing to
+do. Every step shows the dashed circle. The card changes to Running at `run.started`.
+
 **Running (P1, owner 2026-10-25 02:25).**
 
 - Head: **Plan**, the pill "Running · step {n} of {total}" (`on-surface` text on
@@ -123,30 +128,43 @@ from the run's `run_steps` rows, so it is the same after a reload. Preview:
   | Done | Check in `success` | `on-surface-muted`, start time · duration |
   | Current | Spinner in the bot colour | `on-surface`, weight 600, start time · duration so far |
   | Not started | Dashed circle in `on-surface-faint` | `on-surface-soft`, no time |
-  | Skipped | Arrow in `on-surface-muted` | `on-surface-muted`, the bot's note at the right |
+  | Skipped | Arrow in `on-surface-muted` | `on-surface-muted`, the start time if the step started, the bot's note at the right |
 
 - Under the current step, one line for each tool call of that step: "└ {tool} {target} ok" in
   mono 11 px `on-surface-muted`, with "ok" in `success` or "error" in `danger`. A tool call goes
-  under the newest started step; before the first mark, under step 1.
+  under the current step that started last; when no step is current, under the step settled
+  last, or under step 1.
+- The step state follows the mark rules of D57 (`plan-progress.rules.ts`): done and skipped are
+  final, a second `started` keeps the first start time, and more than one step can be current.
+  The pill number is the settled steps (done or skipped) plus 1.
 - **Files:** each file, then "written" (`success`) or "not yet" (`on-surface-faint`).
   **Memory** as in §1.
 - The live line under the reply (UI-3.5) shows only the times ("2:10 · last step 0:04 ago"),
   because the card names the step.
 
-**Who checked a mark (D57).** A step marked done with no tool call under it shows "Done · no
+**Who checked a mark (D57).** Only tool calls that succeeded count, and not `mark_step` or
+`check_done`. A step marked done with no such tool call under it shows "Done · no
 action recorded" in `on-surface-muted` with a ! icon, not the green check (never amber: amber is
 only for "Waiting for you"). Planned files and Done-when items with a quote that the app found
 show **checked by app** in 11 px `success`. A Done-when `met` whose quote is not in the file shows
 **not verified** in `danger`. A Done-when `not_met` shows **bot says** in 11 px
 `on-surface-muted`, with the bot's note under it. Steps have no source label: each step shows
-its tool-call count under it ("2 tool calls") as the evidence (board P5).
+its tool-call count under it ("2 tool calls", or "2 tool calls · 1 error") as the evidence
+(board P5). The app checks Done-when quotes at run end and stores the result in
+`plan_check.done_when` (`evidence`, `verified`), so the card shows the same label after a reload.
+While the run works, a Done-when `met` shows **bot says**; at run end it changes to **checked by
+app** or **not verified**.
 
-**Done, all steps marked (P2).** The card folds to one line (`conversation-cards.md` §3):
+**Done, all steps done (P2).** Only when every step is done (none skipped) and nothing is open
+in `plan_check`, the card folds to one line (`conversation-cards.md` §3):
 "**Plan** [Done] 11:15 · 4 of 4 steps · 2 files · Show".
 
-**Done, with something open (P3).** The card stays open. The pill is "Done · 3 of 4" in `danger`
-text on a `danger` tint. Each step with no `done` has the red ! and "Not marked done" at the
-right. Under Files, a block with a `danger` left edge: **Check after the run**, then in 11 px
+**Done, with something open (P3).** The card stays open. Open means: a step with no final mark,
+a skipped step, or an open item in `plan_check` (a Done-when item `not_met`, `not_checked`, or
+`met` with `verified: false`). The pill is "Done · 3 of 4" in `danger` text on a `danger` tint,
+with "· 1 skipped" when a step was skipped. Each step with no `done` and no `skipped` mark has the
+red ! and "Not marked done" at the right. A skipped step keeps its arrow and the bot's note.
+Under Files, a block with a `danger` left edge: **Check after the run**, then in 11 px
 `on-surface-muted` "What happened in this run, before the save" (the check never shows what was
 saved: a failed run or a rejected delete can differ, D54). One line with the red ! for each item
 of `runs.plan_check`: a step not marked done, "Planned, not written: {path}", "Planned, not done:

@@ -42,7 +42,7 @@ Decision:
   | `not_in_plan` | Paths that the run wrote and that are not in `plan_files` (D52 "not in plan"). The to_path of a planned move counts as planned |
   | `ops_not_in_plan` | Deletes and moves that the run recorded and that are not in `plan_file_ops` (these go to the D52 card) |
   | `planned_ops_not_done` | Entries in `plan_file_ops` that the run did not record |
-  | `done_when` | Each `plan_done_when` item with state `met`, `not_met` or `not_checked`, and the note |
+  | `done_when` | Each `plan_done_when` item with state `met`, `not_met` or `not_checked`, and the note. Changed by D57: also `evidence` {path, quote} and `verified` (true, false or null) |
 
   The rule that builds `plan_check` is one pure function in `core/` (`plan-check.rules.ts`). The
   `run.finished` event carries the run, so it carries `plan_check`. No new event type.
