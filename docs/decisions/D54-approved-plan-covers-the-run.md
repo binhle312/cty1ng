@@ -27,7 +27,9 @@ Decision:
 - **The bot checks each Done-when item.** The action run gets one tool:
   `check_done({item, state: "met" | "not_met", note})`. `not_met` needs a note. The bot can call
   it in the same model turn as other tools, so it adds no model request. An `item` that is not in
-  `plan_done_when` is a tool error (`{error: "not_in_plan", message}`).
+  `plan_done_when` is a tool error (`{error: "not_in_plan", message}`). Changed by D57
+  (2026-10-25): `met` needs `evidence: {path, quote}`, and the app checks that the quote is in
+  that file.
 - **The app checks the run at its end.** When the run ends (done, failed or stopped), the app
   writes `runs.plan_check` in the same transaction as the final run state. It describes what the
   run did on its own branch. It is fixed at run end and never recalculated. What was saved to the
@@ -40,14 +42,14 @@ Decision:
   | `not_in_plan` | Paths that the run wrote and that are not in `plan_files` (D52 "not in plan"). The to_path of a planned move counts as planned |
   | `ops_not_in_plan` | Deletes and moves that the run recorded and that are not in `plan_file_ops` (these go to the D52 card) |
   | `planned_ops_not_done` | Entries in `plan_file_ops` that the run did not record |
-  | `done_when` | Each `plan_done_when` item with state `met`, `not_met` or `not_checked`, and the note |
+  | `done_when` | Each `plan_done_when` item with state `met`, `not_met` or `not_checked`, and the note. Changed by D57: also `evidence` {path, quote} and `verified` (true, false or null) |
 
   The rule that builds `plan_check` is one pure function in `core/` (`plan-check.rules.ts`). The
   `run.finished` event carries the run, so it carries `plan_check`. No new event type.
 - **The plan card shows the check.** The result goes in the plan card block "Check after the
   run", for example "2 of 2 files written · 0 not in plan · Done when 2 of 3", with each `not_met`
   and `not_checked` item and each planned delete or move not done on its own line. The block says
-  that it shows what happened on the run's branch, not what was saved. D57 (proposed, the progress
+  that it shows what happened on the run's branch, not what was saved. D57 (the progress
   card) sets the place and the look; D54 sets only the data.
 
 Example: BA's approved plan lists `pricing/tiers.md` (new), delete `drafts/old-tiers.md` and two

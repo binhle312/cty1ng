@@ -73,6 +73,16 @@ reviews). Each needs the owner's choice before the plan starts:
 - **Memory saves in a failed action run: decided in D56 (2026-10-25).** The memory saves stay;
   the unsaved changes card lists them with Undo (UI-13.18). Action runs save only the memory
   items on the approved plan (UI-13.17).
+- **Progress in the plan card: decided in D57 (2026-10-25).** After Approve, the plan card shows
+  each step as done, current or not started, with the tool calls of the current step; the bot
+  marks steps with `mark_step`. Built with the plan card (`design/components/plan-card.md` §6).
+- **Cross-check by a second model (owner, 2026-10-25 03:58).** An optional reviewer that checks
+  a finished action run, later, off by default. It is the "Verify Done when" judge call that D54
+  parks. Rules: a different model family from the worker; it sees only the plan, the run's diff
+  and the Done-when items, not the worker's reasoning; read-only, and its verdict shows as a label
+  ("reviewer says"); it checks only risky items ("bot says", "not verified", deletes and moves).
+  Decide after M6 with the measured rate of `met` marks that the owner found wrong. A Reviewer bot
+  (pstack review, L4) is the same check as a normal bot with a handoff.
 - **Typed handoff brief.** `propose_handoff` gets fields (goal, done, assumed, open questions,
   ask, suggested skills) instead of `summary`; the card shows "Assumed" items apart, and warns
   when a suggested skill is not pinned to the target. Today the seed skill `hand-off-work`

@@ -73,16 +73,16 @@ proposal), not with this design.
 The icons make Reject and Request changes different at a glance without a new colour (owner,
 2026-10-25 00:02, option R4). Reject is not `danger`: it removes nothing.
 
-**After a decision the card folds** to one line (8 × 12 px, radius 8 px, `outline` border,
+**After a decision the card folds** (the plan card folds only when its action run ends with nothing open, D57 and `plan-card.md` §6) to one line (8 × 12 px, radius 8 px, `outline` border,
 `surface-container` fill, 12 px). The line has the card name, a status pill, then the facts in
 `on-surface-muted`, and a link to open the card again. The line does not repeat the word in the
 pill. The link is only **Show** (and **Hide** on the open card): the card name is already on the
 line, so the link does not repeat it (owner, 2026-10-25 02:28, a rule for every show/hide link). Examples:
 
-- "**Plan** [Approved] 11:12 · 3 steps · 2 files · Show"
+- "**Plan** [Done] 11:15 · 4 of 4 steps · 2 files · Show" (a plan card folds when its run ends, D57)
 - "(BA) → (Designer) **Handoff** [Approved] 11:31 · Designer started · 1 file · Show"
 
-Status pills: Approved and Done (§4, handoff to the owner) = `success` text on a `success` tint; Changes requested and Rejected =
+Status pills: Approved and Done (§4, handoff to the owner; a plan run with every step done, D57) = `success` text on a `success` tint; Changes requested and Rejected =
 `on-surface-muted` on `surface-raised`; Files changed = `danger` text on a `danger` tint. A
 decided card has no buttons (UI-3.3).
 
