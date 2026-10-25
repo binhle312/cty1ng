@@ -35,7 +35,9 @@ Decision:
   will write. When the action run starts, it claims those files in its Library. An action run
   that needs a file that another running action run claimed waits in the queue ("Waiting for
   Pricing conversation"). When the first run saves (or is discarded), its claims end, and the waiting run
-  starts from the new main. Runs with different files run at the same time.
+  starts from the new main. Runs with different files run at the same time. A planned delete
+  claims its path, and a planned move claims its path and its `to_path` (D54). These claims
+  conflict with writes and with other deletes and moves.
 - **Overlap rule (the fallback): git merge first, then last write wins, with a notice (owner,
   2026-10-23).** A bot can write a file that is not in its plan (owner, 2026-10-23); the save
   marks such a file "not in plan" in the conversation and in the history. An **overlap** is a file
@@ -91,11 +93,13 @@ Decision:
   newest files, and nothing the owner wrote is lost. An owner edit to a file that a running run
   also changes is an overlap at that run's save: the run's version wins, with the notice. Files that match the D23
   deny-list (`.env*`, `*.pem`, `*.key`, `id_*`) stay hidden from bots.
-- **A delete or a move always needs approval (owner, 2026-10-23, from Cowork).** This is true
-  even inside an approved plan. A bot's delete or move does not change files at once. The run
-  records it. At the save, a card lists each delete and move with Approve and Reject. Approve
-  saves them with the rest of the run. Reject saves the rest of the run without them. D23
-  already has this rule for an external folder; now every Library has it.
+- **Deletes and moves (owner, 2026-10-23, from Cowork; amended 2026-10-25 by D54).** A delete or
+  move listed in the approved plan needs no second approval (D54). An operation outside the
+  approved plan requires its own Approve or Reject decision at save time. A bot's delete or move
+  does not change files at once. The run records it. At the save, a card lists each operation
+  outside the plan with Approve and Reject. Approve saves it with the rest of the run. Reject
+  saves the rest of the run without it. D23 already has this rule for an external folder; now
+  every Library has it.
 - **Moving a conversation into a project (owner, 2026-10-23).** The move dialog has "Copy files to the
   project Library", checked by default. Copy saves the conversation's files (not `attachments/`) to the
   project Library as one commit "Moved from <conversation>", through the save queue. A file with the
