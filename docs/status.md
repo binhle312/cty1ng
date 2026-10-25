@@ -30,7 +30,7 @@ and check box standard (`buttons.md`). D43–D45 accepted
 sends the whole project to Trash; memory check choices) and D48 (bots plan first) accepted. Still
 in review: Trash page (with the Remember button and the "changed in another tab" cards), Library
 page content, Flow pane. D46 accepted: a one-time auto title from the first message (M3).
-The M3 migration waits for the owner's approval. Project Board is a later slice (M8c).
+The M3 schema design (D46) waits for the owner's approval. Project Board is a later slice (M8c).
 D49 accepted: deleted skills go to Trash, a `trash_days` setting (default 30), Undo only for a
 permanent delete. D51 accepted: bots improve their skills from the owner's feedback (slice
 M5d, after M5c); M3 starts to store reply ratings. M2 Bots design round 9: the Bots page grid,
@@ -53,17 +53,17 @@ cards inside the reply that fold after a decision, and the requirement edits tha
 
 | Item | Needed by |
 | --- | --- |
-| D52 accepted (each run writes on its own branch and saves to the Library): update the M6 brief and the documents D52 lists; approve the `run_branches` migration | M6 plan |
-| D54 accepted (the approved plan covers deletes and moves; run-end plan check): add the plan lists and `runs.plan_check` to `domain-model.md`, the `check_done` tool, and approve the migration | M6 plan |
+| D52 accepted (each run writes on its own branch and saves to the Library): update the M6 brief and the documents D52 lists; approve the `run_branches` schema design (initial schema for M6). The generated SQL is approved in the slice PR | M6 plan |
+| D54 accepted (the approved plan covers deletes and moves; run-end plan check): add the plan lists and `runs.plan_check` to `domain-model.md`, the `check_done` tool, and approve the schema design (initial schema for M6). The generated SQL is approved in the slice PR | M6 plan |
 | D57 accepted (the plan card shows the run's progress; `mark_step`, one reminder, mark sources, `check_done` evidence): build it with the plan card | Plan card slice (M5b, M5c or M6) |
-| D58 and D59 accepted (cross-conversation reading on request, Send to conversation, save notice when project memory changed): approve the FTS5 migration in the M5b plan, and the instructions/goal change time and D59 snapshot migration in the M6 plan; UI design of the inbox, information card and memory notice in the slice plans | M5b plan, M6 plan, Inbox plan |
-| D53 accepted (web through provider web tools): check the default limits and approve the migration for the bot setting and the run flag | Web access milestone plan |
-| Approve the M3 migration for D46 (auto title) before it is written | M3 plan |
+| D58 and D59 accepted (cross-conversation reading on request, Send to conversation, save notice when project memory changed): approve the FTS5 schema design (initial schema for M5b), and the instructions/goal change time and D59 snapshot schema design (initial schema for M6). The generated SQL is approved in each slice PR; UI design of the inbox, information card and memory notice in the slice plans | M5b plan, M6 plan, Inbox plan |
+| D53 accepted (web through provider web tools): check the default limits and approve the schema design for the bot setting and the run flag (initial schema for that milestone). The generated SQL is approved in the slice PR | Web access milestone plan |
+| Approve the M3 schema design for D46 (auto title) before it is written. The generated SQL is approved in the slice PR | M3 plan |
 | Add the `surface-bubble` token (owner message box) to `design/themes.md` §3 after PR #10 merges | M3 plan |
 | Put UI-13.16 (the memory tool skips an exact duplicate) in the M5b brief | M5b start |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
-| Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a migration approval | M3 and M7 plans |
-| Approve the M5b migrations: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars. Claude Code stops for this approval before it writes them | M5b plan |
+| Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a schema design approval (initial schema for M3 and M7). The generated SQL is approved in the slice PR | M3 and M7 plans |
+| Approve the M5b schema design: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars (initial schema for M5b). Claude Code stops for this approval before it writes them. The generated SQL is approved in the M5b PR | M5b plan |
 | Write the M5b brief: projects, memory (D37, D38, D43), goal and instructions (D45), pinning, the API contracts that D43 and D45 list as not written yet | M5b start |
 
 ## Slices

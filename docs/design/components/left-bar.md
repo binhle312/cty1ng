@@ -100,7 +100,7 @@ after M8b. Hooks that earlier slices add so it fits without breaking anything:
 ## Requirement changes (requirements PR)
 
 - `projects.pinned_position INTEGER NULL` (NULL = not pinned) and endpoints to pin, unpin and
-  reorder. **Migration, needs approval.**
+  reorder. **Schema change (initial schema for M5b), needs approval.**
 - `projects.description` becomes the goal, ≤ 500 chars (was "one line").
 - New token `primary-tint` in `../themes.md` §3 (Command dark #3A2E12; Material value set in T2).
 - Glossary: **Library** = the project's workspace files, as shown in the UI.

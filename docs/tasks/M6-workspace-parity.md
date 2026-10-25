@@ -56,7 +56,7 @@ Is D18 (implicit workflow, handoff to any bot, team directory) accepted? Decide 
 D52 is accepted (each run writes on its own branch and saves to the Library when it ends).
 Before the plan starts, this brief gets the run worktrees, the save queue and file claims, the
 overlap notice, the unsaved changes card, the delete and move approval card, the Library card
-and page, and the `run_branches` migration.
+and page, and the `run_branches` schema design (initial schema for M6).
 
 Parked for this brief (owner, 2026-10-24; notes in the agent checklist, pstack and handoff
 reviews). Each needs the owner's choice before the plan starts:

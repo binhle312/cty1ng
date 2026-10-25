@@ -90,7 +90,7 @@ Implemented in: links.
 | D43 | [Project memory beats bot memory; the bot asks about a conflict before it acts](D43-project-memory-beats-bot-memory.md) | accepted | D47, D48 |
 | D44 | [The side pane holds Flow or Memory, one at a time](D44-right-pane-holds-flow-or-memory.md) | accepted |  |
 | D45 | [Every run reads the project's goal and instructions](D45-project-goal-and-instructions.md) | accepted |  |
-| D46 | [The app writes a short title from the first message, one time only](D46-auto-title-from-the-first-message.md) | accepted |  |
+| D46 | [The app writes a short title from the first message, one time only](D46-auto-title-from-the-first-message.md) | accepted | own amendment 2026-10-25 |
 | D47 | [Delete sends the whole project to Trash; the owner picks what wins in a memory check](D47-delete-project-to-trash-and-memory-check-choices.md) | accepted | D49 |
 | D48 | [Bots plan first and wait for approval before they change anything](D48-bots-plan-before-they-change-anything.md) | accepted | D54, D56, D57 |
 | D49 | [Deleted skills go to Trash, Trash keeps items for a set number of days, and only a permanent delete has Undo](D49-skills-go-to-trash-and-trash-days-setting.md) | accepted |  |
