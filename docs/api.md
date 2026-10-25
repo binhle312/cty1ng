@@ -109,7 +109,7 @@ endpoint to create one.
 | POST | `/conversations/{id}/messages/{message_id}/edit` | `{client_id, content_md, mentions, attachment_ids}` | creates a sibling branch; 409 `run_in_progress` |
 | PUT | `/conversations/{id}/active-branch` | `{message_id}` | switch to a sibling; leaf = newest below it |
 | POST | `/conversations/{id}/attachments` | multipart files | returns `attachment_ids`; saved under `attachments/<yyyy-mm-dd>-<conversation-slug>/` (D52) |
-| POST | `/conversations/{id}/members` | `{bot_id}` | 409 `already_member`; posts the history card |
+| POST | `/conversations/{id}/members` | `{bot_id}` | 409 `already_member`; posts the history card. **M3 only:** the bot becomes `active` at once with `history_from_seq = 0`, and no card is posted (the history card comes in M4) |
 | POST | `/conversations/{id}/members/{bot_id}/history` | `{mode: "full" \| "from_join"}` | activates the member |
 | DELETE | `/conversations/{id}/members/{bot_id}` | | removes |
 | PUT | `/messages/{id}/feedback` | `{rating: "up" \| "down", note_md?}` | creates or replaces the rating of a bot message (D51); 409 `feedback_not_allowed` when it is not a complete bot message; 422 `sensitive_data` for the note |
@@ -156,6 +156,7 @@ Message {
   status: "streaming"|"complete"|"failed"|"stopped",
   skills_used: { skill_id, slug, version, mode: "always"|"loaded" }[],   // D15
   usage: { input_tokens, output_tokens, cache_read_tokens, cache_write_tokens, estimated_cost_usd | null } | null,  // D21
+  run: { model_id, model_label, effort } | null,   // read-only copy from the run that wrote a bot message (runs.model_id, runs.effort), never the bot's current settings; model_label falls back to model_id when the model is not in the catalog; null for human and system messages
   siblings: { index, count, ids } | null,
   card: HistoryChoiceCard | HandoffCard | SkillDraftCard | null,
   created_at

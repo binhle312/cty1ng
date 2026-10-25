@@ -92,7 +92,7 @@ changes, and the Bad answer note. The box stays plain Markdown text, not a rich 
 ```
                  ┌ B  I  S  <>  🔗 ┐   ← shows only while text is selected
 ┌────────────────┴────────────────┴────────────────────────────┐
-│ 📎  @BA write the ████████████ for the sign-in page.    [↑]  │
+│ 📎  @BA write the ████████████ for the sign-in page.    [↵]  │
 └──────────────────────────────────────────────────────────────┘
           hover B:  Bold · Ctrl+B
 ```

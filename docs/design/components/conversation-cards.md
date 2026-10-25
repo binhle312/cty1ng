@@ -56,6 +56,13 @@ M3 has no join card: the add slot adds with full history (M3 brief). The card co
 The plan card (`plan-card.md`) and the handoff card sit **inside the reply** of the bot that
 makes them, under its text, indented like the text.
 
+**Data.** The handoff card stays a separate message (`kind = handoff`, `domain-model.md` §6).
+It carries the `run_id` of the run that made it. The page shows a card message under the bot
+reply with the same `run_id`, so the place is the same after a reload, an event replay or a
+branch switch. No new column or migration is needed. The plan card follows the same rule. Its
+data contract (message kind and card fields) comes with the plan card slice (D48, the D57
+proposal), not with this design.
+
 | Part | Rule |
 | --- | --- |
 | Card | Padding 12 × 14 px, radius 10 px, 1 px `outline-strong` border, `surface-container` fill |
@@ -75,7 +82,7 @@ line, so the link does not repeat it (owner, 2026-10-25 02:28, a rule for every 
 - "**Plan** [Approved] 11:12 · 3 steps · 2 files · Show"
 - "(BA) → (Designer) **Handoff** [Approved] 11:31 · Designer started · 1 file · Show"
 
-Status pills: Approved = `success` text on a `success` tint; Changes requested and Rejected =
+Status pills: Approved and Done (§4, handoff to the owner) = `success` text on a `success` tint; Changes requested and Rejected =
 `on-surface-muted` on `surface-raised`; Files changed = `danger` text on a `danger` tint. A
 decided card has no buttons (UI-3.3).
 
@@ -88,9 +95,11 @@ bottom:
 
 1. Source avatar (20 px), **BA**, an arrow, target avatar, **Designer**, "Handoff" in
    `on-surface-muted`, and the pill **Waiting for you**.
-2. The brief from the `hand-off-work` skill (`conversation-rules.md` §5), one line each, the
-   label in bold: **Goal**, **Done**, **Assumed**, **Open**, **Ask**, **Suggested skills** (as
-   skill chips).
+2. The brief: the handoff `summary`, rendered as Markdown (raw HTML off). The app does not parse
+   it (`conversation-rules.md` §5, D54). The bold labels on the boards (**Goal**, **Done**,
+   **Assumed**, **Open**, **Ask**, **Suggested skills**) come from the bot's own text, which the
+   `hand-off-work` skill asks for. When the text has other headings or none, the card shows
+   the text as it is. Skill chips for suggested skills wait for the typed brief (D54).
 3. **Files:** each file with "pinned at <commit>".
 4. The buttons: × Reject, Request changes, **✓ Approve**.
 
@@ -99,6 +108,14 @@ joins with the full history, because the files are the point." The primary butto
 **+ Add Designer and start**, with a plus icon, the same sign as the add slot (owner,
 2026-10-25 00:02, option B). It adds the bot as an active member with full history and starts
 its run in one step (`conversation-rules.md` §5).
+
+**Target is the owner** (`propose_handoff(to="human")`). The header is source avatar, **BA**, an
+arrow, then **You**, "Handoff" and the pill **Waiting for you**. The brief and the files show as
+above. The only button is **✓ Done** (primary). Done is the UI label for the normal approve
+action (`POST /handoffs/{id}/decision` with `approve`); the handoff gets the normal `approved`
+status, and no bot run starts. The folded line shows the pill **Done** in place of Approved:
+"(BA) → You **Handoff** [Done] 11:31 · 1 file · Show". The stale check on Approve applies too.
+No new API action or database status (owner, 2026-10-25 02:43).
 
 **Stale** (Q2-A). Approve first checks the pinned files. If a file changed after the handoff,
 nothing starts and the card turns stale:

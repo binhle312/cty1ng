@@ -109,6 +109,9 @@ added ──▶ pending_history ──owner chooses──▶ active ──remove
   a system message `kind = history_choice`: "Designer joined. What can it read?
   [Full history] [From here on]".
 - Choosing sets `history_from_seq` (0 or `joined_at_seq`) and `status = active`.
+- **M3 only:** the add skips `pending_history`. It inserts the member with `status = active`
+  and `history_from_seq = 0`, and posts no card (M3 brief). M4 adds the pending state and the
+  history card.
 - While pending, the bot cannot be mentioned (autocomplete shows it greyed with "waiting for
   your choice").
 - Removing sets `removed`, posts "Designer left". Its messages stay normal.
@@ -241,7 +244,9 @@ Example:
     handoff becomes `stale`, nothing starts, and the card says so, with no buttons. The app
     checks only on Approve; it does not watch the files while the card waits.
   - After a decision, the card folds to one line in the reply. A stale card does not fold.
-  - Approved → the target bot gets a run with `triggered_by = handoff` (not a bot turn).
+  - Approved → the target bot gets a run with `triggered_by = handoff` (not a bot turn). When
+    the target is `human`, the card shows only **✓ Done**: it is the same approve action and
+    status, and no run starts (`design/components/conversation-cards.md` §4).
   - Request changes → the source bot gets a run with the note.
 - Handoffs are separate from discussion: they are a formal "review my files" step.
 - **The brief.** The seed skill `hand-off-work` asks the bot to write `summary` as a short

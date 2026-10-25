@@ -22,7 +22,7 @@ drawn before the header changes; the header in `conversation-header.*` (H2) wins
 | Reading column | One centred column, at most 760 px wide, with 16 px side padding. Messages, cards and the composer use the same column |
 | Space between messages | 20 px |
 | Owner message | At the right. Text in a box: fill `surface-bubble` (new token, see §9), radius 12 12 4 12 px (the small corner points to the owner), padding 8 × 11 px, at most 78 % of the column. The time (11 px, `on-surface-muted`) is above the box at the right |
-| Bot reply | Full column width, no box. Avatar 28 px at the left. The name line: name (13 px, weight 600), then model and effort as plain text ("Claude Sonnet · High", 11 px, `on-surface-muted`, effort with a capital letter, the same text as the Create bot preview card), then the time. The text starts under the name, indented to the name |
+| Bot reply | Full column width, no box. Avatar 28 px at the left. The name line: name (13 px, weight 600), then model and effort as plain text ("Claude Sonnet · High", 11 px, `on-surface-muted`, effort with a capital letter, the same text as the Create bot preview card), then the time. The text comes from `Message.run` (`api.md` §8): the model and effort of that run, not the bot's current settings The text starts under the name, indented to the name |
 | Mention | A token "@BA" in the bot colour on a dark tint of the bot colour, radius 4 px |
 | Deleted bot | Avatar and name in grey, tooltip "Deleted bot" (UI-3.2) |
 
