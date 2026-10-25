@@ -22,13 +22,14 @@ and summaries.
 - **PI-1.** As the owner, I want one list per project of everything that waits for me and every
   run that failed, so that I do not open each conversation to find them.
   Acceptance criteria: UI-14.1 to UI-14.4. Slice: Project inbox (after M6).
-- **PI-2.** As the owner, I want to know when a saved run used project memory that changed while
-  it ran, so that I can check its work. Acceptance criteria: UI-14.5, UI-14.6. Slice: M6 (D59).
+- **PI-2.** As the owner, I want to know when project context (memory, instructions or goal)
+  changed after a plan was approved and before its files were saved, so that I can check the work.
+  Acceptance criteria: UI-14.5 to UI-14.8. Slice: M6 (D59).
 - **PI-3.** As the owner, I want to ask a bot what other conversations in the project decided,
   with links to the messages, so that I do not search them myself.
-  Acceptance criteria: UI-14.7 to UI-14.10. Slice: M5b or the next slice after it (D58).
+  Acceptance criteria: UI-14.9 to UI-14.12. Slice: M5b or the next slice after it (D58).
 - **PI-4.** As the owner, I want to send information from one conversation to another, so that
-  the bots there know it, without starting work. Acceptance criteria: UI-14.11 to UI-14.14.
+  the bots there know it, without starting work. Acceptance criteria: UI-14.13 to UI-14.16.
   Slice: Project inbox (after M6).
 
 ## Inbox states
@@ -57,27 +58,32 @@ There is no "overlap found, waits for you" state. D52 saves and then shows a not
 - **UI-14.5** When a Library save of an action run happens (from the save queue or from "Save to
   Library" on unsaved changes) and no project memory item, instruction or goal changed after the
   plan's `decided_at`, no memory notice appears.
-- **UI-14.6** When one or more changed, the save completes and a notice lists each item with its
-  text, who changed it, the conversation and the time, with View item and View saved files. No
-  model call is made. The notice shows the snapshot recorded at the save: it is the same after a
-  reload, also when the item changed again or was deleted later. View item opens the current item
-  or its version history, also for a deleted item. The plan card's "Check after the run" and its
-  P3 state do not change because of this notice.
-- **UI-14.7** `search_project_conversations` returns hits only from other conversations of the
+- **UI-14.6** When one or more changed, the save completes and a notice lists each change with its
+  text, who changed it and the source, with the link for its kind (D59 table): a memory item shows
+  the bot and conversation (with "requested by you" when the change comes from an owner message),
+  or "You · Memory page", and View item; instructions or goal show "You · Project settings" and View
+  instructions or View goal. Every notice has View saved files. No model call is made.
+- **UI-14.7** A memory item whose latest change is a step of the saving run is left out. A change
+  made on the owner's request in the same conversation is not left out.
+- **UI-14.8** The notice shows the snapshot recorded at the save: it is the same after a reload,
+  also when the item changed again or was deleted later. View item opens the current item and its
+  history. With history off for the project, it shows the snapshot and "History is off for this
+  project". The plan card's "Check after the run" and its P3 state do not change because of this notice.
+- **UI-14.9** `search_project_conversations` returns hits only from other conversations of the
   same project, only from their active branch, and never from a conversation with "Don't use
   memory" on.
-- **UI-14.8** It returns at most `cross_search_max_hits` hits (setting, default 10).
-- **UI-14.9** A bot reply that uses a hit links the source message. The link opens that
+- **UI-14.10** It returns at most `cross_search_max_hits` hits (setting, default 10).
+- **UI-14.11** A bot reply that uses a hit links the source message. The link opens that
   conversation at that message.
-- **UI-14.10** No run calls the search unless the bot chose the tool. A test shows that a planning
+- **UI-14.12** No run calls the search unless the bot chose the tool. A test shows that a planning
   run with no such tool call reads no other conversation. A hit never creates a memory item.
-- **UI-14.11** The owner can send a message to another conversation of the same project. The
+- **UI-14.13** The owner can send a message to another conversation of the same project. The
   target shows an information card with the cited text, the source and a link back. No approval
   card appears.
-- **UI-14.12** A bot's `propose_share` shows a card in the source conversation with Reject and
+- **UI-14.14** A bot's `propose_share` shows a card in the source conversation with Reject and
   Send. Nothing reaches the target before Send.
-- **UI-14.13** An information card starts no run, in the target or the source.
-- **UI-14.14** Bot proposals beyond `share_max_per_conversation_per_day` (setting, default 5)
+- **UI-14.15** An information card starts no run, in the target or the source.
+- **UI-14.16** Bot proposals beyond `share_max_per_conversation_per_day` (setting, default 5)
   return a tool error that asks the bot to tell the owner.
 
 ## Open questions

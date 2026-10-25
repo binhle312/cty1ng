@@ -14,20 +14,40 @@ Decision:
   some time after it ends, and the owner can use "Save to Library" on a failed or stopped run much
   later. A check at run end would miss memory that changed in that time.
 - **A change: the app saves, then shows a notice.** The notice uses the same pattern as the D52
-  save notices (a system line under the reply):
-  "Project memory changed after this plan was approved: "Skip Task 3" · by BA in Conversation B · 10:03".
-  It has **View item** (opens the item on the Memory page) and **View saved files** (opens the
-  Library history of the save).
+  save notices (a system line under the reply). Its title names the kind of change, and its link
+  opens the right page:
+
+  | Kind | Example | Link |
+  | --- | --- | --- |
+  | Memory item, changed by a bot on its own | "Project memory changed after plan approval: "Skip Task 3" · BA · Conversation B · 10:03" | **View item** (Memory page) |
+  | Memory item, changed by a bot on the owner's request ("remember …", D38) | "… · BA · Conversation B · requested by you · 10:03" | **View item** |
+  | Memory item, edited by the owner on the Memory page | "… · You · Memory page · 10:03" | **View item** |
+  | Project instructions or goal (D45, only the owner) | "Project instructions changed after plan approval · You · Project settings · 10:03" | **View instructions** or **View goal** (Project settings) |
+
+  Each notice also has **View saved files** (opens the Library history of the save). "Requested
+  by you" shows only when the change can be traced to an owner message.
+- **A run's own memory changes give no notice.** Under D56 an action run can save memory that is
+  on its approved plan. The app leaves out a memory item when its latest change is a step of this
+  same run (D38: each memory tool call is a run step). A change on the owner's request in the
+  same conversation is not left out: it is not a step of the run.
+- **Known limit: the latest change decides.** If conversation B changes item X at 10:02 and run A
+  changes X again at 10:03, the latest change is A's, so no notice shows for B's change. Version
+  history does not close this gap: a version row stores the bot, not the run, and history can be
+  off. This is an accepted first trade-off (owner, 2026-10-25). A full change log per run would close it.
 - **No model call.** The check compares times in the database. It is exact for "changed". It
   does not say if the change contradicts the work; the owner decides that.
 - **The notice names who changed the item.** Bots save project memory without approval (D38),
   so a changed item is not always the owner's decision. `memory_items.last_changed_by_bot_id`
-  and `last_change_message_id` give the name and the link.
+  and `last_change_message_id` give the bot and the source. Both are NULL for an owner edit on
+  the Memory page. Instructions and goal have no item and no message: the source is Project settings.
 - **The notice is a snapshot.** The save records each detected change with the save result, as
-  D52 records overlaps: the item id, its text at the save, the change (changed or deleted), who
-  changed it, the message and the time. The notice and the inbox show this record, so they stay
-  the same after a reload, also when the item changes again later. **View item** opens the
-  current item, or its version history, also for a deleted item.
+  D52 records overlaps: the kind (`memory_item`, `project_instructions` or `project_goal`), the
+  item id (memory items only), the text at the save, the change (changed or deleted), who changed
+  it (bot or owner), the source (conversation and message, Memory page, or Project settings), and
+  the time. The notice and the inbox show this record, so they stay the same after a reload, also
+  when the item changes again later. **View item** opens the current item and its version history,
+  also for a deleted item. When history is off for the project, it shows the saved snapshot and
+  "History is off for this project", so the owner can tell the snapshot from missing history.
 - **It is not part of the plan check.** `runs.plan_check` (D54) stays the fixed record of what
   the run did on its own branch, shown in "Check after the run" (D57). A memory change is about
   the project context, not about the run's work: a run can be Done with all steps done and still
@@ -42,7 +62,7 @@ Example:
 | Time | What happens |
 | --- | --- |
 | 10:00 | Conversation A: the owner approves BA's plan for Tasks 1, 2 and 3. The action run starts |
-| 10:03 | Conversation B: the owner says "remember: skip Task 3 in this project". BA in B saves it to project memory |
+| 10:03 | Conversation B: the owner says "remember: skip Task 3 in this project". BA in B saves it to project memory (actor BA, requested by the owner) |
 | 10:05 | A: the run ends. The save queue saves its files. The check finds one item changed after 10:00. The notice shows under A's reply |
 | 10:06 | The owner opens the item, decides Task 3 is out, and asks BA in A to remove it. That is a new plan (D48) |
 
@@ -70,5 +90,5 @@ Consequences:
 - A new system line kind. It needs a UI design round with the D52 notices.
 - The notice can come after the work is saved. The owner must read it to act.
 
-Implemented in: `../requirements/project-inbox.md` (PI-2, UI-14.6); `D52-each-run-writes-on-its-own-branch.md`
+Implemented in: `../requirements/project-inbox.md` (PI-2, UI-14.5 to UI-14.8); `D52-each-run-writes-on-its-own-branch.md`
 and `../tasks/M6-workspace-parity.md` when the owner accepts.
