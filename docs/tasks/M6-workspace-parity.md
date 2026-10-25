@@ -61,10 +61,15 @@ and page, and the `run_branches` migration.
 Parked for this brief (owner, 2026-10-24; notes in the agent checklist, pstack and handoff
 reviews). Each needs the owner's choice before the plan starts:
 
-- **"Done when" on the plan card.** The plan card shows the `## Steps` and `## Done when`
-  sections of the loaded skill (`requirements/skill-hub.md`, "Suggested skill layout"). At the
-  end of the action run, the app reports planned files that the run did not write ("Planned, not
-  written"). Proposed decision D54.
+- **The approved plan covers the run (D54, proposed 2026-10-25).** The plan lists deletes and
+  moves, and Approve covers them; the D52 card shows only operations outside the plan. At run end
+  the app writes `runs.plan_check`: planned files not written, files not in the plan, and the
+  skill's `## Done when` items (the bot marks them with `check_done`). The plan card shows the
+  `## Steps` and `## Done when` sections of the loaded skill (`requirements/skill-hub.md`,
+  "Suggested skill layout"). This brief takes D54 when the owner accepts it.
+- **Read-only helpers in a run** (a `delegate` tool, parallel research inside one run). A
+  separate proposal after M6. **One plan for a chain of bots** (a handoff and the next bot's plan
+  in one approval) waits for the plan approval rates below (owner, 2026-10-25).
 - **Memory saves in a failed action run: decided in D56 (2026-10-25).** The memory saves stay;
   the unsaved changes card lists them with Undo (UI-13.18). Action runs save only the memory
   items on the approved plan (UI-13.17).
