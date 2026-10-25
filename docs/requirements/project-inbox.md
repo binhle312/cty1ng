@@ -1,7 +1,6 @@
 # Project inbox and cross-conversation work
 
-Draft (2026-10-25), from proposed decisions D58 and D59. Nothing here is built until the owner
-accepts them. The UI design is not approved: the screen comes in a design round in the slice
+From D58 and D59 (accepted 2026-10-25). The UI design is not approved: the screen comes in a design round in the slice
 plan (`../development-plan.md`). Related: D37, D38, D48, D52.
 
 The idea: the inbox tells the owner what is happening in the project. A bot helps, on request,

@@ -1,7 +1,7 @@
 # D59. A save shows a notice when project memory changed after the plan was approved
 
-Status: proposed (2026-10-25). The owner chose option A on a decision card in the project thread
-(2026-10-25). Only the owner moves it to accepted.
+Status: accepted (2026-10-25, owner). The owner chose option A on a decision card in the project
+thread and approved every review item of PR #29.
 Amends: D52
 
 Decision:

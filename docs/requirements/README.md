@@ -19,7 +19,7 @@ lives in the technical documents one level up.
 | [time-range-picker.md](time-range-picker.md) | TR-1 to TR-2 | UI-11 |
 | [flow-view.md](flow-view.md) | FL-1 to FL-4 | UI-12 |
 | [projects-and-memory.md](projects-and-memory.md) | PM-1 to PM-5 | UI-13 |
-| [project-inbox.md](project-inbox.md) | PI-1 to PI-4 (draft, D58, D59) | UI-14 |
+| [project-inbox.md](project-inbox.md) | PI-1 to PI-4 (D58, D59) | UI-14 |
 
 ## Ids
 

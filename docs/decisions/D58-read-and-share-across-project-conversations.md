@@ -1,6 +1,6 @@
 # D58. Bots read other conversations of the project on request, and the owner shares information between them
 
-Status: proposed (2026-10-25). It comes from the owner's question "when can the app have a
+Status: accepted (2026-10-25, owner). The owner approved every review item of PR #29. It comes from the owner's question "when can the app have a
 coordinator like Claude Cowork?" and from three review rounds in the project thread. The owner
 agreed the order: reading first (after M5b), the Project inbox after M6 (`../requirements/project-inbox.md`),
 the project Board in M8c, and a coordinator bot only if real use shows a need.

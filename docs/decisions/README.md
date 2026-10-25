@@ -102,5 +102,5 @@ Implemented in: links.
 | D55 | [Provider tools first, one switch per tool, and one tool per job](D55-provider-tools-first-and-tool-switches.md) | accepted |  |
 | D56 | [Memory in action runs: items not in the plan, and runs that fail](D56-memory-in-action-runs-and-failed-runs.md) | accepted | |
 | D57 | [The plan card shows the progress of the action run](D57-plan-card-shows-run-progress.md) | accepted | |
-| D58 | [Bots read other conversations of the project on request, and the owner shares information between them](D58-read-and-share-across-project-conversations.md) | proposed | |
-| D59 | [A save shows a notice when project memory changed after the plan was approved](D59-save-notice-when-project-memory-changed.md) | proposed | |
+| D58 | [Bots read other conversations of the project on request, and the owner shares information between them](D58-read-and-share-across-project-conversations.md) | accepted | |
+| D59 | [A save shows a notice when project memory changed after the plan was approved](D59-save-notice-when-project-memory-changed.md) | accepted | |
