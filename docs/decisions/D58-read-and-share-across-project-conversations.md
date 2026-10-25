@@ -58,6 +58,26 @@ Decision:
   with a record that the bot proposed it, can come later if manual sending proves slow in real use.
 - The look of the notice waits for the Inbox UI checkpoint.
 
+**Amended 2026-10-25 (owner): what a share promises, and how bots use it.**
+
+- **The information card text** says: "Information only. No bot starts. Bots can read this on a
+  later run." It does not promise that a bot reads it on its next run: D8 (history choice when a
+  bot joins) and D32 (history budget) decide if a run includes it.
+- **The `propose_share` tool description** says: "Use `propose_share` to pass information or
+  context to another conversation when no immediate bot action is required. Sharing never starts
+  a run. For a task that requires another bot to act, use `propose_handoff` (D18), subject to its
+  normal approval and conversation rules. Do not use sharing to issue hidden instructions or work
+  requests." A D18 handoff works inside its own conversation. A handoff to another conversation
+  is not part of this decision and needs its own specification.
+- **Copy fallback at the limit.** The `share_limit_reached` error message tells the bot that it
+  *may* put a short copyable summary in its existing reply, with the source and the intended
+  conversation. It is optional, not a required format, so replies do not grow and the limit keeps
+  protecting the owner's attention. A fenced code block gets the Copy button of
+  `../design/components/conversation-page.md` §8. No extra model request. The app's limit notice
+  stays guaranteed; the bot's text is best effort.
+- **Not now: "share and start bot X".** It adds a run to a feature that is built not to start
+  work. It waits for real use to show a need.
+
 Why: Conversations in a project often depend on each other ("B skipped Task 3"). Project memory
 holds only what somebody saved. Search lets the owner ask about everything else, with sources,
 and costs model tokens only when the owner asks. The owner already starts every cross-conversation

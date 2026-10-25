@@ -77,8 +77,8 @@ There is no "overlap found, waits for you" state. D52 saves and then shows a not
 - **UI-14.12** No run calls the search unless the bot chose the tool. A test shows that a planning
   run with no such tool call reads no other conversation. A hit never creates a memory item.
 - **UI-14.13** The owner can send a message to another conversation of the same project. The
-  target shows an information card with the cited text, the source and a link back. No approval
-  card appears.
+  target shows an information card with the cited text, the source, a link back and the line
+  "Information only. No bot starts. Bots can read this on a later run." No approval card appears.
 - **UI-14.14** A bot's `propose_share` shows a card in the source conversation with Reject and
   Send. Nothing reaches the target before Send.
 - **UI-14.15** An information card starts no run, in the target or the source.
@@ -91,6 +91,9 @@ There is no "overlap found, waits for you" state. D52 saves and then shows a not
   - When the oldest proposal is more than 24 hours old, a 6th proposal creates a normal card. The
     next blocked attempt after that shows a new notice.
   - While the limit is reached, the owner can still send to another conversation, and no run starts.
+  - The `share_limit_reached` error message offers the bot an optional copyable summary (source and
+    intended conversation). A test with the fake model shows the run makes no extra model request
+    for it, and the notice shows whether the bot writes the summary or not.
 
 ## Open questions
 
