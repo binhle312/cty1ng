@@ -21,14 +21,14 @@ titles, file rows) is in `conversation-cards.md` §3. Top to bottom:
 2. The numbered steps.
 3. **Files:** each file the bot will write, with "new" or "changed". Then each delete and move,
    for example "`drafts/old-tiers.md` · delete" and "`notes.md` → `pricing/notes.md` · move".
-   Approve covers these, so the save shows no second card for them (D54, proposed).
+   Approve covers these, so the save shows no second card for them (D54).
 4. **Memory:** each memory change, or "No changes".
 5. **Skill drafts:** one entry for each skill the bot will draft: the slug, then "New skill" or
    "New version", "For <bot>" and "Needs your final review", for example
    "`write-login-stories` · New skill · For BA · Needs your final review". The whole section
    shows only when the plan has at least one draft (owner, 2026-10-24).
 6. **Done when:** the items of the loaded skill's `## Done when` section, numbered. The section
-   shows only when the skill has one (D54, proposed).
+   shows only when the skill has one (D54).
 7. **Question before I start**, one block for each conflict (§2).
 8. A divider, then the buttons in the `buttons.md` order: **× Reject** (secondary, × icon),
    **Request changes** (secondary, pencil icon) and **✓ Approve** (primary, check icon, far right;
@@ -81,9 +81,9 @@ line for each text (owner, 2026-10-24):
 The plan folds to one line: "**Plan** [Approved] 11:12 · 3 steps · 2 files · Show". The
 action run starts, and its result comes as a new reply under the folded line.
 
-At the end of the action run, the app compares the run with the plan (`runs.plan_check`, D54,
-proposed): planned files not written, files not in the plan, and each Done-when item that is
-`not_met` or `not_checked`. The Done-when marks are the bot's own check, so the card says so. The
+At the end of the action run, the app compares the run with the plan (`runs.plan_check`, D54):
+planned files not written, files not in the plan, and each Done-when item that is `not_met` or
+`not_checked`. The Done-when marks are the bot's own check, so the card says so. The
 plan card shows the result in its block "Check after the run" (D57, proposed; the owner approved
 this place on board P3).
 

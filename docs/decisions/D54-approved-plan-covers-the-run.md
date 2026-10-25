@@ -1,8 +1,8 @@
 # D54. The approved plan covers deletes and moves, and the app checks the run against the plan
 
-Status: proposed (2026-10-25). The owner chose this scope on a decision card in the review
+Status: accepted (2026-10-25, owner). The owner chose this scope on a decision card in the review
 thread "Evaluate parallel bot runs" (levels 2 and 3 of the automation levels). It amends D52
-(delete and move approval) and D48 (what a plan lists). It is built in M6.
+(delete and move approval) and D48 (what a plan lists). It is built in M6. The owner approved each review item of PR #27 on 2026-10-25.
 Amends: D48, D52
 
 Decision:

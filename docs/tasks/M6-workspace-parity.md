@@ -61,12 +61,12 @@ and page, and the `run_branches` migration.
 Parked for this brief (owner, 2026-10-24; notes in the agent checklist, pstack and handoff
 reviews). Each needs the owner's choice before the plan starts:
 
-- **The approved plan covers the run (D54, proposed 2026-10-25).** The plan lists deletes and
+- **The approved plan covers the run (D54, accepted 2026-10-25).** The plan lists deletes and
   moves, and Approve covers them; the D52 card shows only operations outside the plan. At run end
   the app writes `runs.plan_check`: planned files not written, files not in the plan, and the
   skill's `## Done when` items (the bot marks them with `check_done`). The plan card shows the
   `## Steps` and `## Done when` sections of the loaded skill (`requirements/skill-hub.md`,
-  "Suggested skill layout"). This brief takes D54 when the owner accepts it.
+  "Suggested skill layout"). This brief builds D54.
 - **Read-only helpers in a run** (a `delegate` tool, parallel research inside one run). A
   separate proposal after M6. **One plan for a chain of bots** (a handoff and the next bot's plan
   in one approval) waits for the plan approval rates below (owner, 2026-10-25).

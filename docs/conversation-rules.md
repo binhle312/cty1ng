@@ -137,7 +137,7 @@ The prompt for a run is assembled in this order by `buildPrompt(...)` in `core/r
    In runs triggered by the owner's message, the `propose_skill` tool is listed too (§7).
    In an action run whose approved plan has Done-when items, the `check_done` tool is listed
    too: `check_done({item, state: "met" | "not_met", note})`; `not_met` needs a note, and an item
-   that is not in the plan returns `{error: "not_in_plan", message}` (D54, proposed).
+   that is not in the plan returns `{error: "not_in_plan", message}` (D54).
 7. **Transcript**: the visible history (below) as one user-role block.
 8. **The trigger**: the message the bot is answering, quoted and labelled.
 
