@@ -69,10 +69,11 @@ The icons make Reject and Request changes different at a glance without a new co
 **After a decision the card folds** to one line (8 × 12 px, radius 8 px, `outline` border,
 `surface-container` fill, 12 px). The line has the card name, a status pill, then the facts in
 `on-surface-muted`, and a link to open the card again. The line does not repeat the word in the
-pill. Examples:
+pill. The link is only **Show** (and **Hide** on the open card): the card name is already on the
+line, so the link does not repeat it (owner, 2026-10-25 02:28, a rule for every show/hide link). Examples:
 
-- "**Plan** [Approved] 11:12 · 3 steps · 2 files · Show plan"
-- "(BA) → (Designer) **Handoff** [Approved] 11:31 · Designer started · 1 file · Show brief"
+- "**Plan** [Approved] 11:12 · 3 steps · 2 files · Show"
+- "(BA) → (Designer) **Handoff** [Approved] 11:31 · Designer started · 1 file · Show"
 
 Status pills: Approved = `success` text on a `success` tint; Changes requested and Rejected =
 `on-surface-muted` on `surface-raised`; Files changed = `danger` text on a `danger` tint. A
