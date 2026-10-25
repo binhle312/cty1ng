@@ -15,13 +15,15 @@ the builder agent with the prompt in `workflow.md` §3.
 | M3 | [M3-chat-one-bot.md](tasks/M3-chat-one-bot.md) | Conversations, rail, messages, worker, agent port, streaming, Stop, provenance | **plan** (events, worker) | M2 |
 | M4 | [M4-multi-bot.md](tasks/M4-multi-bot.md) | Drag-to-add, history choice, mentions, routing, branches, conversation settings | **plan** (routing) | M3 |
 | M5 | [M5-bot-discussion.md](tasks/M5-bot-discussion.md) | Discussion toggle, turn budget, caps | merge | M4 |
-| M5b | not written | Projects and memory (D37, D38): project entity, rail grouping, bot and project memory, Memory page | **plan** (schema, UI design) | M5; before M6 (workspaces are per project) |
+| M5b | not written | Projects and memory (D37, D38): project entity, rail grouping, bot and project memory, Memory page. Cross-conversation reading (D58, proposed) here or in the next slice | **plan** (schema, UI design) | M5; before M6 (workspaces are per project) |
 | M5c | not written | Skills drafted by bots (D41): `propose_skill`, draft card with diff, approve and pin | **plan** (schema, UI design) | M4 |
 | M5d | not written | Bots improve their skills from the owner's feedback (D51): signal count, "Improve" in the bot's ⋯ menu, signal dialog, Improve run, draft card in the bot's 1:1 conversation, optional blind probe with a task count | **plan** (schema, UI design, cost) | M5c and the plan card (D48) |
 | M6 | [M6-workspace-parity.md](tasks/M6-workspace-parity.md) | Workspace sandbox, file tools, file panel, attachments, handoffs; delete `reference/` | **plan** (security) | M3 (can run after M4/M5) |
+| Inbox | not written | Project inbox (D58, D59, proposed; `requirements/project-inbox.md`): states, waits, notices, Send to conversation. No model calls | **plan** (schema, UI design) | M6 (needs D48 cards and D52 notices) |
 | M7 | [M7-statistics.md](tasks/M7-statistics.md) | Statistics page: models, bots, skills | merge (new chart dependency) | M5 (needs usage, provenance, discussion data) |
 | M8 | [M8-flow-view.md](tasks/M8-flow-view.md) | Flow pane: animated Team and Timeline maps, swappable renderer | **plan** (renderer contract, performance) | M7 (needs run steps from M3, discussion and handoffs from M5–M6) |
 | M8b | not written | Board: third map in the Flow pane (D30, `design/themes.md` §4) | **plan** (UI design) | M8 |
+| M8c | not written | Project-wide Board, read-only (`design/components/left-bar.md` §5); same project data as the inbox | **plan** (UI design) | M8b |
 | T2 | not written | Material theme: one token file plus the documented structural differences (D30) | merge (UI design, visual snapshots) | M0; any time, owner decides |
 | M9 | not written | VPS: auth, Docker, TLS, backups | separate milestone | M8 |
 | later | not written | Scheduled bots and web access (Researcher, Reminder; then Trip planner); web through provider web tools only (D53) | separate milestone | after phase 1 |
