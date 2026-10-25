@@ -112,13 +112,16 @@ from the run's `run_steps` rows, so it is the same after a reload. Preview:
 - Head: **Plan**, the pill "Running · step {n} of {total}" (`on-surface` text on
   `surface-raised`, with the spinner in the bot colour; Running is never amber, `bot-status.md`),
   "Approved 11:12 · version {n}" in `on-surface-muted`, and **Hide**.
-- Steps, one line each, 13 px icon, then "{n}. {text}", and the time at the right in 11 px
-  `on-surface-muted`:
+- Steps, one line each, 13 px icon, then "{n}. {text}", and at the right in 11 px
+  `on-surface-muted` the start time and the duration of the step: "11:12:04 · 0:18" (owner,
+  2026-10-25 03:55). The start time is local clock time with seconds, because steps are often
+  seconds apart; a tooltip gives the full date and time ("2026-10-25 11:12:04"). The current step's
+  duration counts up. A step that has not started shows no time:
 
   | State | Icon | Text |
   | --- | --- | --- |
-  | Done | Check in `success` | `on-surface-muted`, time the step took |
-  | Current | Spinner in the bot colour | `on-surface`, weight 600, time on this step |
+  | Done | Check in `success` | `on-surface-muted`, start time · duration |
+  | Current | Spinner in the bot colour | `on-surface`, weight 600, start time · duration so far |
   | Not started | Dashed circle in `on-surface-faint` | `on-surface-soft`, no time |
   | Skipped | Arrow in `on-surface-muted` | `on-surface-muted`, the bot's note at the right |
 
@@ -153,7 +156,7 @@ delete or move not in the plan; then the Done-when result in 11 px `on-surface-m
 
 **Stopped or failed (P4).** The card stays open. The pill is "Stopped · 2 of 4"
 (`on-surface-muted` on `surface-raised`) or "Failed · 2 of 4" (`danger`). The done steps keep
-their check. The step that was running shows the stop square or the red !, and "Stopped 11:14"
+their check. The step that was running shows the stop square or the red !, and "11:13:27 · stopped 11:14:08"
 at the right. The steps after it stay not started.
 
 **Show and Hide.** The owner can hide or show the card at any time, also while the run works

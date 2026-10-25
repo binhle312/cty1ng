@@ -159,7 +159,8 @@ Feedback (D51, used by Improve in slice M5d)
 Plan progress (D57, proposed)
 
 - UI-3.29: After Approve, the plan card stays open and shows each approved step as done, current
-  or not started (and skipped, with the bot's note), with the pill "Running · step n of total".
+  or not started (and skipped, with the bot's note), each started step with its start time and
+  duration ("11:12:04 · 0:18"), with the pill "Running · step n of total".
   The tool calls of the current step show as small lines under it. Each planned file shows
   "written" or "not yet". The state comes from `run_steps`, so a reload shows the same card
   (`../design/components/plan-card.md` §6).

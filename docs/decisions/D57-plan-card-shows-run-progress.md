@@ -13,8 +13,8 @@ Decision:
 
   | State | Look |
   | --- | --- |
-  | Done | Green check, muted text, the time the step took |
-  | Current | Spinner in the bot colour, bold text, the time on this step, and one small line for each tool call of the step (tool, target, ok or error) |
+  | Done | Green check, muted text, the start time and the duration ("11:12:04 · 0:18") |
+  | Current | Spinner in the bot colour, bold text, the start time and the duration so far, and one small line for each tool call of the step (tool, target, ok or error) |
   | Not started | Dashed circle |
   | Skipped | Arrow, muted text, the bot's note |
   | Stopped or failed | The stop square or the red !, at the step that was running |
