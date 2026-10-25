@@ -36,7 +36,7 @@ against, not code to copy.
 | [memory-pane.md](memory-pane.md) | Memory pane in the right pane: order, conflicts, outside projects, memory check card, open conflicts | `../previews/command-dark/left-bar.*` (cards M1–M6), `../previews/command-dark/memory-check-plan.*` (cards S4, S4b) |
 | [new-project-page.md](new-project-page.md) | New project page: layout A, greetings, fields, errors, leave dialog | `../previews/command-dark/new-project.*` |
 | [project-settings-page.md](project-settings-page.md) | Project settings page: fields, save bar, memory check line, Memory history, leave dialog, Delete project and after delete | `../previews/command-dark/project-settings.*`, `../previews/command-dark/delete-project.*` |
-| [buttons.md](buttons.md) | Button kinds, sizes, default button, order, labels, check boxes, Undo rule. Every page uses it | `../previews/command-dark/skills-editor.*` (card C0) |
+| [buttons.md](buttons.md) | Button kinds, sizes, default button, order, icons on buttons, labels, check boxes, Undo rule. Every page uses it | `../previews/command-dark/skills-editor.*` (card C0), `handoff-buttons.*` |
 | [skills-page.md](skills-page.md) | Skills page (layout B): list, editor, History, new skill, errors, bot cards after a save, deprecate, delete to Trash, clone, import, export | `../previews/command-dark/skills-layout.*`, `skills-editor.*`, `skills-lifecycle.*`, `skills-delete.*` |
 | [pin.md](pin.md) | **Standard.** Pin glyph, its four states, where it shows, pin, unpin and reorder rules | `../previews/command-dark/pin.*` |
 | [bot-status.md](bot-status.md) | **Standard.** Bot state words, icons and colours (amber only for Waiting for you), most urgent state for a bot in several conversations | `../previews/command-dark/bot-status.*`, `bot-card-v3.*` (M1) |
@@ -45,7 +45,10 @@ against, not code to copy.
 | [bots-page.md](bots-page.md) | Bots page grid: page, V3 card, ⋯ menu, health, sort, pin and reorder, search, empty state | `../previews/command-dark/bots-grid.*`, `bots-grid-states.*`, `bot-card-v3.*` |
 | [create-bot-page.md](create-bot-page.md) | Create bot page: 4 steps, live preview card, Tools list, errors, sending, leave dialog, Clone | `../previews/command-dark/create-bot.*`, `create-bot-errors.*`, `create-bot-tools.*`, `clone-bot.*` |
 | [bot-page.md](bot-page.md) | Bot page: edit layout (list and page), page top, tabs, Profile tab and save bar, colour band, Model, Skills, Activity and Usage tabs | `../previews/command-dark/bot-page.*`, `bot-avatar-change.*`, `bot-page-tabs.*`, `bot-usage.*` |
-| [plan-card.md](plan-card.md) | Plan card before a task that changes something: steps, files, memory, skill drafts, conflict questions, Request changes, Reject | `../previews/command-dark/memory-check-plan.*` (cards S4b–S4e) |
+| [plan-card.md](plan-card.md) | Plan card before a task that changes something: steps, files, memory, skill drafts, conflict questions, Approve, Request changes, Reject | `../previews/command-dark/memory-check-plan.*` (cards S4b–S4e), `conversation-cards.*` (S3) |
+| [conversation-page.md](conversation-page.md) | Conversation page: layout, header with the add slot and members menu, skill chips, Good and Bad, queued reactions, live states, failed, stopped and not sent, Edit, branches, New divider, Markdown | `../previews/command-dark/conversation-page.*`, `conversation-header.*`, `conversation-skills.*`, `conversation-reactions.*`, `conversation-live.*`, `conversation-errors.*`, `message-parts.*` |
+| [composer.md](composer.md) | Composer: box, keys, no bots, no-mention hint, @ list, attachments, file drop, secrets panel, lines under the box, Stop | `../previews/command-dark/composer.*`, `conversation-stop.*` (P1) |
+| [conversation-cards.md](conversation-cards.md) | System lines, join card, cards inside a reply and how they fold, handoff card (not a member, stale), memory lines and the Remember offer | `../previews/command-dark/conversation-cards.*`, `handoff-buttons.*`, `handoff-choices.*` |
 
 Files marked **Standard** are shared rules that many pages use; a page spec links to them and
 does not repeat them.

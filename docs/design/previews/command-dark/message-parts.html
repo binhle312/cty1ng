@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Message parts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</head>
+<body style="margin:0;background:#0E0F11">
+<div style="width: 1280px; height: 3060px; box-sizing: border-box; padding: 40px 48px; background: #0E0F11; color: #E7E8EA; font-family: Geist, system-ui, sans-serif; font-size: 13px; display: flex; flex-direction: column; gap: 18px;"><span style="font-size: 18px; font-weight: 600;">Step 6 · Message parts</span><div style="display: flex; flex-direction: column; gap: 4px; max-width: 960px;"><span style="font-weight: 600;">T1 · Time text contrast fix<span style="margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #17301D; color: #7FCB8B; font-size: 11px;">Approved 16:50</span></span><span style="color: #9BA1AB; font-size: 12px; line-height: 1.5;">The time used #6B717B, which is not a theme token and fails WCAG AA for 11 px text (themes.md §5 has a contrast test). All small grey text now uses on-surface-muted. Applied to every board in this round (times, placeholders, hints).</span></div><div style="display: flex; gap: 24px; align-items: center;"><span style="display: flex; flex-direction: column; gap: 6px;"><span style="color: #9BA1AB; font-size: 11px;">Before: #6B717B, 3.9:1 (fails AA 4.5:1)</span><span style="display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 8px; background: #0E0F11; border: 1px solid #23262B;"><span style="position: relative; width: 28px; height: 28px; flex-shrink: 0; display: inline-flex;"><span style="width: 28px; height: 28px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="21" height="21" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g170" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#6FA8FF"></stop></linearGradient>
+                  <clipPath id="b9c170"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#6FA8FF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c170)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span><span style="font-weight: 600;">BA</span><span style="font-size: 11px; color: #9BA1AB;">Claude Sonnet · High</span><span style="color: #6B717B; font-size: 11px;">10:41</span></span></span><span style="display: flex; flex-direction: column; gap: 6px;"><span style="color: #9BA1AB; font-size: 11px;">After: on-surface-muted #9BA1AB, 7.4:1</span><span style="display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 8px; background: #0E0F11; border: 1px solid #23262B;"><span style="position: relative; width: 28px; height: 28px; flex-shrink: 0; display: inline-flex;"><span style="width: 28px; height: 28px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="21" height="21" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g171" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#6FA8FF"></stop></linearGradient>
+                  <clipPath id="b9c171"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#6FA8FF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c171)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span><span style="font-weight: 600;">BA</span><span style="font-size: 11px; color: #9BA1AB;">Claude Sonnet · High</span><span style="color: #9BA1AB; font-size: 11px;">10:41</span></span></span></div><div style="display: flex; flex-direction: column; gap: 4px; max-width: 960px;"><span style="font-weight: 600;">T2 · Usage on hover of the bot time<span style="margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #17301D; color: #7FCB8B; font-size: 11px;">Approved 16:50</span></span><span style="color: #9BA1AB; font-size: 12px; line-height: 1.5;">UI-3.6b: the time gets a dotted underline on hover, and a tooltip shows tokens (input, output, cache) and the estimated cost. Keyboard: the time is focusable, so the tooltip also opens on focus.</span></div><div style="width: 960px; height: 330px; box-sizing: border-box; border: 1px solid #23262B; border-radius: 10px; overflow: hidden; background: #0E0F11; display: flex; flex-direction: column;"><div style="height: 52px; border-bottom: 1px solid #23262B; display: flex; align-items: center; gap: 10px; padding: 0 16px;"><span aria-hidden="true" style="position: relative; width: 28px; height: 28px; border-radius: 999px; box-sizing: border-box; border: 1.5px solid #3A3F46; background: #1E2125; flex-shrink: 0;"><svg viewBox="0 0 48 48" width="14" height="14" style="position: absolute; left: 2px; top: 7px;" aria-hidden="true"><path d="M7.85 37C7.85 23 15.45 11 24 11S40.15 23 40.15 37C40.15 41 36.35 42 24 42S7.85 41 7.85 37Z" fill="#6FA8FF"></path><ellipse cx="18.8" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse><ellipse cx="29.2" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse></svg><svg viewBox="0 0 48 48" width="14" height="14" style="position: absolute; left: 12px; top: 7px;" aria-hidden="true"><path d="M7.85 37C7.85 23 15.45 11 24 11S40.15 23 40.15 37C40.15 41 36.35 42 24 42S7.85 41 7.85 37Z" fill="#C98BFF"></path><ellipse cx="18.8" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse><ellipse cx="29.2" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse></svg></span><span title="Click to rename" style="font-weight: 600;">Sign-in screens</span><span style="flex-grow: 1;"></span><span style="display: flex; gap: 4px; align-items: center;"><span aria-label="Add bot" title="Add bot" style="width: 24px; height: 24px; box-sizing: border-box; border-radius: 50%; border: 1.5px dashed #3A3F46; background: transparent; color: #9BA1AB; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v12M6 12h12"></path></svg></span><span aria-label="Members: BA, Designer" style="display: flex; gap: 4px; padding: 2px 4px; border-radius: 999px; "><span style="position: relative; width: 24px; height: 24px; flex-shrink: 0; display: inline-flex;"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g150" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#6FA8FF"></stop></linearGradient>
+                  <clipPath id="b9c150"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#6FA8FF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c150)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span><span style="position: relative; width: 24px; height: 24px; flex-shrink: 0; display: inline-flex;"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g151" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#C98BFF"></stop></linearGradient>
+                  <clipPath id="b9c151"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#C98BFF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c151)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span></span></span><span style="height: 28px; padding: 0 10px; border-radius: 7px; box-sizing: border-box; border: 1px solid #3A3F46; color: #9BA1AB; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; white-space: nowrap;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.5"></circle><circle cx="18" cy="8" r="2.5"></circle><circle cx="9" cy="18" r="2.5"></circle><path d="M8 7l8 1M7 8l1.5 7.5M16.5 10l-6 6"></path></svg>Flow</span><span aria-label="More" style="width: 28px; height: 28px; border-radius: 7px; box-sizing: border-box; border: 1px solid #3A3F46; color: #9BA1AB; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg></span></div><div style="flex-grow: 1; display: flex; justify-content: center; overflow: hidden;"><div style="width: 100%; max-width: 792px; padding: 18px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; justify-content: flex-end;"><div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;"><span style="color: #9BA1AB; font-size: 11px;">10:40</span><div style="max-width: 78%; padding: 8px 11px; border-radius: 12px 12px 4px 12px; background: #262A30; line-height: 1.5;"><span style="color: #6FA8FF; background: #16243A; padding: 1px 5px; border-radius: 4px;">@BA</span> write user stories for the sign-in page. Ask for the email first, then the password.</div></div><div style="position: relative; display: flex; flex-direction: column; gap: 6px;"><span style="display: flex; align-items: center; gap: 8px;"><span style="position: relative; width: 28px; height: 28px; flex-shrink: 0; display: inline-flex;"><span style="width: 28px; height: 28px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="21" height="21" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g172" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#6FA8FF"></stop></linearGradient>
+                  <clipPath id="b9c172"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#6FA8FF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c172)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span><span style="font-weight: 600;">BA</span><span style="font-size: 11px; color: #9BA1AB;">Claude Sonnet · High</span><span style="color: #E7E8EA; font-size: 11px; text-decoration: underline dotted; text-underline-offset: 3px;">10:41</span></span><div style="padding-left: 36px; line-height: 1.6; color: #D6D8DC;">Here are 3 stories for the sign-in page. Each story has acceptance criteria.</div><span style="position: absolute; top: 30px; left: 150px; padding: 7px 10px; border-radius: 6px; background: #2A2E34; border: 1px solid #3A3F46; font-size: 11.5px; line-height: 1.5; white-space: nowrap; z-index: 4; color: #E7E8EA;"><b>Usage of this reply</b><br>Input 12,400 tokens · Output 1,850 · Cache read 9,000<br><span style="color: #9BA1AB;">Estimated cost $0.04 (D21, an estimate, not an invoice)</span></span></div><span style="height: 50px;"></span></div></div><div style="display: flex; justify-content: center; padding: 0 16px 12px;"><div style="position: relative; width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 6px;"><div style="border-radius: 10px; border: 1px solid #3A3F46; background: #1E2125; "><div style="min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 10px;"><span style="color: #9BA1AB; display: flex;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5l-8.6 8.6a5 5 0 0 1-7.1-7.1l8.6-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"></path></svg></span><span style="flex-grow: 1; color: #9BA1AB;">Message the team. Type @ to mention a bot.</span><span style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; background: #F5B544; color: #0E0F11; display: flex; align-items: center; justify-content: center; opacity: .4;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></span></div></div></div></div></div><div style="display: flex; flex-direction: column; gap: 4px; max-width: 960px;"><span style="font-weight: 600;">T3 · Edit your message<span style="margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #17301D; color: #7FCB8B; font-size: 11px;">Approved 16:50</span></span><span style="color: #9BA1AB; font-size: 12px; line-height: 1.5;">UI-3.8: on hover, an Edit icon shows under your bubble at the far right (Binh 16:50), the same place as Good/Bad under a bot reply. While a bot works it is off (40 %) with a tooltip. Edit opens inline (no dialog): the bubble becomes a text box with an amber border, and the note says it starts a branch and does not roll back files. Save is primary at the far right (C0).</span></div><div style="width: 960px; height: 340px; box-sizing: border-box; border: 1px solid #23262B; border-radius: 10px; overflow: hidden; background: #0E0F11; display: flex; flex-direction: column;"><div style="height: 52px; border-bottom: 1px solid #23262B; display: flex; align-items: center; gap: 10px; padding: 0 16px;"><span aria-hidden="true" style="position: relative; width: 28px; height: 28px; border-radius: 999px; box-sizing: border-box; border: 1.5px solid #3A3F46; background: #1E2125; flex-shrink: 0;"><svg viewBox="0 0 48 48" width="14" height="14" style="position: absolute; left: 2px; top: 7px;" aria-hidden="true"><path d="M7.85 37C7.85 23 15.45 11 24 11S40.15 23 40.15 37C40.15 41 36.35 42 24 42S7.85 41 7.85 37Z" fill="#6FA8FF"></path><ellipse cx="18.8" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse><ellipse cx="29.2" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse></svg><svg viewBox="0 0 48 48" width="14" height="14" style="position: absolute; left: 12px; top: 7px;" aria-hidden="true"><path d="M7.85 37C7.85 23 15.45 11 24 11S40.15 23 40.15 37C40.15 41 36.35 42 24 42S7.85 41 7.85 37Z" fill="#C98BFF"></path><ellipse cx="18.8" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse><ellipse cx="29.2" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse></svg></span><span title="Click to rename" style="font-weight: 600;">Sign-in screens</span><span style="flex-grow: 1;"></span><span style="display: flex; gap: 4px; align-items: center;"><span aria-label="Add bot" title="Add bot" style="width: 24px; height: 24px; box-sizing: border-box; border-radius: 50%; border: 1.5px dashed #3A3F46; background: transparent; color: #9BA1AB; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v12M6 12h12"></path></svg></span><span aria-label="Members: BA, Designer" style="display: flex; gap: 4px; padding: 2px 4px; border-radius: 999px; "><span style="position: relative; width: 24px; height: 24px; flex-shrink: 0; display: inline-flex;"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g150" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#6FA8FF"></stop></linearGradient>
+                  <clipPath id="b9c150"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#6FA8FF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c150)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span><span style="position: relative; width: 24px; height: 24px; flex-shrink: 0; display: inline-flex;"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g151" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#C98BFF"></stop></linearGradient>
+                  <clipPath id="b9c151"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#C98BFF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c151)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span></span></span><span style="height: 28px; padding: 0 10px; border-radius: 7px; box-sizing: border-box; border: 1px solid #3A3F46; color: #9BA1AB; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; white-space: nowrap;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.5"></circle><circle cx="18" cy="8" r="2.5"></circle><circle cx="9" cy="18" r="2.5"></circle><path d="M8 7l8 1M7 8l1.5 7.5M16.5 10l-6 6"></path></svg>Flow</span><span aria-label="More" style="width: 28px; height: 28px; border-radius: 7px; box-sizing: border-box; border: 1px solid #3A3F46; color: #9BA1AB; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg></span></div><div style="flex-grow: 1; display: flex; justify-content: center; overflow: hidden;"><div style="width: 100%; max-width: 792px; padding: 18px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; justify-content: flex-end;"><div style="position: relative; display: flex; flex-direction: column; align-items: flex-end; gap: 5px;"><span style="color: #9BA1AB; font-size: 11px;">10:40</span><div style="max-width: 78%; padding: 8px 11px; border-radius: 12px 12px 4px 12px; background: #262A30; line-height: 1.5; box-shadow: 0 0 0 1px #3A3F46;"><span style="color: #6FA8FF; background: #16243A; padding: 1px 5px; border-radius: 4px;">@BA</span> write user stories for the sign-in page. Ask for the email first, then the password.</div><span style="display: flex; align-items: center; gap: 6px; margin-top: -2px;"><span aria-label="Edit" style="width: 26px; height: 26px; border-radius: 6px; color: #9BA1AB; display: inline-flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path></svg></span></span></div><div style="display: flex; flex-direction: column; gap: 6px;"><span style="display: flex; align-items: center; gap: 8px;"><span style="position: relative; width: 28px; height: 28px; flex-shrink: 0; display: inline-flex;"><span style="width: 28px; height: 28px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="21" height="21" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g173" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#6FA8FF"></stop></linearGradient>
+                  <clipPath id="b9c173"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#6FA8FF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c173)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span><span style="font-weight: 600;">BA</span><span style="font-size: 11px; color: #9BA1AB;">Claude Sonnet · High</span><span style="color: #9BA1AB; font-size: 11px;">10:41</span></span><div style="padding-left: 36px; line-height: 1.6; color: #D6D8DC; display: flex; flex-direction: column; gap: 6px;"><span>Here are 3 stories for the sign-in page.</span><span style="display: flex; gap: 10px; align-items: flex-start;"><span style="flex: 1; min-width: 0;"><span style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;"><span style="padding: 0 6px; border-radius: 999px; font-size: 10.5px; line-height: 17px; white-space: nowrap; flex-shrink: 0; background: #1E2125; border: 1px solid #3A3F46; color: #9BA1AB; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">write-user-stories v3</span><span style="padding: 0 6px; border-radius: 999px; font-size: 10.5px; line-height: 17px; white-space: nowrap; flex-shrink: 0; background: #1E2125; border: 1px solid #3A3F46; color: #9BA1AB; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">working-principles v1 · always</span></span></span><span style="display: inline-flex; gap: 2px; flex-shrink: 0; margin-top: -3px;"><span aria-label="Good answer" title="Your ratings help BA improve its skills" style="width: 26px; height: 26px; border-radius: 6px; color: #9BA1AB; display: inline-flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11v9H4v-9z"></path><path d="M7 11l4-7a2 2 0 0 1 3 2l-1 4h5a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 16.8 20H7"></path></svg></span><span aria-label="Bad answer" title="Your ratings help BA improve its skills" style="width: 26px; height: 26px; border-radius: 6px; color: #9BA1AB; display: inline-flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 13V4H4v9z"></path><path d="M7 13l4 7a2 2 0 0 0 3-2l-1-4h5a2 2 0 0 0 2-2.3l-1.2-6A2 2 0 0 0 16.8 4H7"></path></svg></span></span></span></div></div></div></div><div style="display: flex; justify-content: center; padding: 0 16px 12px;"><div style="position: relative; width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 6px;"><div style="border-radius: 10px; border: 1px solid #3A3F46; background: #1E2125; "><div style="min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 10px;"><span style="color: #9BA1AB; display: flex;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5l-8.6 8.6a5 5 0 0 1-7.1-7.1l8.6-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"></path></svg></span><span style="flex-grow: 1; color: #9BA1AB;">Message the team. Type @ to mention a bot.</span><span style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; background: #F5B544; color: #0E0F11; display: flex; align-items: center; justify-content: center; opacity: .4;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></span></div></div></div></div></div><div style="width: 960px; height: 270px; box-sizing: border-box; border: 1px solid #23262B; border-radius: 10px; overflow: hidden; background: #0E0F11; display: flex; flex-direction: column;"><div style="height: 52px; border-bottom: 1px solid #23262B; display: flex; align-items: center; gap: 10px; padding: 0 16px;"><span aria-hidden="true" style="position: relative; width: 28px; height: 28px; border-radius: 999px; box-sizing: border-box; border: 1.5px solid #3A3F46; background: #1E2125; flex-shrink: 0;"><svg viewBox="0 0 48 48" width="14" height="14" style="position: absolute; left: 2px; top: 7px;" aria-hidden="true"><path d="M7.85 37C7.85 23 15.45 11 24 11S40.15 23 40.15 37C40.15 41 36.35 42 24 42S7.85 41 7.85 37Z" fill="#6FA8FF"></path><ellipse cx="18.8" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse><ellipse cx="29.2" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse></svg><svg viewBox="0 0 48 48" width="14" height="14" style="position: absolute; left: 12px; top: 7px;" aria-hidden="true"><path d="M7.85 37C7.85 23 15.45 11 24 11S40.15 23 40.15 37C40.15 41 36.35 42 24 42S7.85 41 7.85 37Z" fill="#C98BFF"></path><ellipse cx="18.8" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse><ellipse cx="29.2" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse></svg></span><span title="Click to rename" style="font-weight: 600;">Sign-in screens</span><span style="flex-grow: 1;"></span><span style="display: flex; gap: 4px; align-items: center;"><span aria-label="Add bot" title="Add bot" style="width: 24px; height: 24px; box-sizing: border-box; border-radius: 50%; border: 1.5px dashed #3A3F46; background: transparent; color: #9BA1AB; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v12M6 12h12"></path></svg></span><span aria-label="Members: BA, Designer" style="display: flex; gap: 4px; padding: 2px 4px; border-radius: 999px; "><span style="position: relative; width: 24px; height: 24px; flex-shrink: 0; display: inline-flex;"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g150" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#6FA8FF"></stop></linearGradient>
+                  <clipPath id="b9c150"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#6FA8FF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c150)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span><span style="position: relative; width: 24px; height: 24px; flex-shrink: 0; display: inline-flex;"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g151" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#C98BFF"></stop></linearGradient>
+                  <clipPath id="b9c151"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#C98BFF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c151)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span></span></span><span style="height: 28px; padding: 0 10px; border-radius: 7px; box-sizing: border-box; border: 1px solid #3A3F46; color: #9BA1AB; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; white-space: nowrap;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.5"></circle><circle cx="18" cy="8" r="2.5"></circle><circle cx="9" cy="18" r="2.5"></circle><path d="M8 7l8 1M7 8l1.5 7.5M16.5 10l-6 6"></path></svg>Flow</span><span aria-label="More" style="width: 28px; height: 28px; border-radius: 7px; box-sizing: border-box; border: 1px solid #3A3F46; color: #9BA1AB; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg></span></div><div style="flex-grow: 1; display: flex; justify-content: center; overflow: hidden;"><div style="width: 100%; max-width: 792px; padding: 18px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; justify-content: flex-end;"><div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;"><div style="width: 78%; box-sizing: border-box; padding: 10px 11px; border-radius: 12px; background: #1E2125; border: 1px solid #F5B544; line-height: 1.5;"><span style="color: #6FA8FF; background: #16243A; padding: 1px 5px; border-radius: 4px;">@BA</span> write user stories for the sign-in page. Ask for the email first, then the password, then a one-time code.<span style="display: inline-block; width: 1px; height: 15px; background: #E7E8EA; vertical-align: -3px;"></span></div><span style="display: flex; align-items: center; gap: 8px; width: 78%;"><span style="flex-grow: 1; color: #9BA1AB; font-size: 11px; display: flex; align-items: center; gap: 5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg>Saving starts a new branch. Files the bots changed are not rolled back.</span><span style="height: 28px; padding: 0 12px; border-radius: 8px; box-sizing: border-box; display: flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 12px; border: 1px solid #3A3F46; color: #E7E8EA; ">Cancel</span><span style="height: 28px; padding: 0 12px; border-radius: 8px; box-sizing: border-box; display: flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 12px; background: #F5B544; color: #0E0F11; font-weight: 600; ">Save</span></span></div><span style="height: 8px;"></span></div></div><div style="display: flex; justify-content: center; padding: 0 16px 12px;"><div style="position: relative; width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 6px;"><div style="border-radius: 10px; border: 1px solid #3A3F46; background: #1E2125; "><div style="min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 10px;"><span style="color: #9BA1AB; display: flex;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5l-8.6 8.6a5 5 0 0 1-7.1-7.1l8.6-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"></path></svg></span><span style="flex-grow: 1; color: #9BA1AB;">Message the team. Type @ to mention a bot.</span><span style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; background: #F5B544; color: #0E0F11; display: flex; align-items: center; justify-content: center; opacity: .4;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></span></div></div></div></div></div><div style="display: flex; flex-direction: column; gap: 4px; max-width: 960px;"><span style="font-weight: 600;">T4 · Switch branches<span style="margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #17301D; color: #7FCB8B; font-size: 11px;">Approved 16:50</span></span><span style="color: #9BA1AB; font-size: 12px; line-height: 1.5;">UI-3.9: a message with other versions shows ‹ 2 / 3 › under it, left of Edit (shown on hover). The arrows change the branch shown below it.</span></div><div style="width: 960px; height: 330px; box-sizing: border-box; border: 1px solid #23262B; border-radius: 10px; overflow: hidden; background: #0E0F11; display: flex; flex-direction: column;"><div style="height: 52px; border-bottom: 1px solid #23262B; display: flex; align-items: center; gap: 10px; padding: 0 16px;"><span aria-hidden="true" style="position: relative; width: 28px; height: 28px; border-radius: 999px; box-sizing: border-box; border: 1.5px solid #3A3F46; background: #1E2125; flex-shrink: 0;"><svg viewBox="0 0 48 48" width="14" height="14" style="position: absolute; left: 2px; top: 7px;" aria-hidden="true"><path d="M7.85 37C7.85 23 15.45 11 24 11S40.15 23 40.15 37C40.15 41 36.35 42 24 42S7.85 41 7.85 37Z" fill="#6FA8FF"></path><ellipse cx="18.8" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse><ellipse cx="29.2" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse></svg><svg viewBox="0 0 48 48" width="14" height="14" style="position: absolute; left: 12px; top: 7px;" aria-hidden="true"><path d="M7.85 37C7.85 23 15.45 11 24 11S40.15 23 40.15 37C40.15 41 36.35 42 24 42S7.85 41 7.85 37Z" fill="#C98BFF"></path><ellipse cx="18.8" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse><ellipse cx="29.2" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse></svg></span><span title="Click to rename" style="font-weight: 600;">Sign-in screens</span><span style="flex-grow: 1;"></span><span style="display: flex; gap: 4px; align-items: center;"><span aria-label="Add bot" title="Add bot" style="width: 24px; height: 24px; box-sizing: border-box; border-radius: 50%; border: 1.5px dashed #3A3F46; background: transparent; color: #9BA1AB; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v12M6 12h12"></path></svg></span><span aria-label="Members: BA, Designer" style="display: flex; gap: 4px; padding: 2px 4px; border-radius: 999px; "><span style="position: relative; width: 24px; height: 24px; flex-shrink: 0; display: inline-flex;"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g150" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#6FA8FF"></stop></linearGradient>
+                  <clipPath id="b9c150"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#6FA8FF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c150)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span><span style="position: relative; width: 24px; height: 24px; flex-shrink: 0; display: inline-flex;"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g151" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#C98BFF"></stop></linearGradient>
+                  <clipPath id="b9c151"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#C98BFF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c151)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span></span></span><span style="height: 28px; padding: 0 10px; border-radius: 7px; box-sizing: border-box; border: 1px solid #3A3F46; color: #9BA1AB; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; white-space: nowrap;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.5"></circle><circle cx="18" cy="8" r="2.5"></circle><circle cx="9" cy="18" r="2.5"></circle><path d="M8 7l8 1M7 8l1.5 7.5M16.5 10l-6 6"></path></svg>Flow</span><span aria-label="More" style="width: 28px; height: 28px; border-radius: 7px; box-sizing: border-box; border: 1px solid #3A3F46; color: #9BA1AB; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg></span></div><div style="flex-grow: 1; display: flex; justify-content: center; overflow: hidden;"><div style="width: 100%; max-width: 792px; padding: 18px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; justify-content: flex-end;"><div style="position: relative; display: flex; flex-direction: column; align-items: flex-end; gap: 5px;"><span style="color: #9BA1AB; font-size: 11px;">10:52</span><div style="max-width: 78%; padding: 8px 11px; border-radius: 12px 12px 4px 12px; background: #262A30; line-height: 1.5; box-shadow: 0 0 0 1px #3A3F46;"><span style="color: #6FA8FF; background: #16243A; padding: 1px 5px; border-radius: 4px;">@BA</span> write user stories for the sign-in page. Ask for the email first, then the password, then a one-time code.</div><span style="display: flex; align-items: center; gap: 6px; margin-top: -2px;"><span style="display: inline-flex; align-items: center; gap: 2px; color: #9BA1AB; font-size: 11px;"><span aria-label="Previous branch" style="width: 22px; height: 22px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></span><span style="font-variant-numeric: tabular-nums;">2 / 3</span><span aria-label="Next branch" style="width: 22px; height: 22px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span></span><span aria-label="Edit" style="width: 26px; height: 26px; border-radius: 6px; color: #9BA1AB; display: inline-flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path></svg></span></span></div><div style="display: flex; flex-direction: column; gap: 6px;"><span style="display: flex; align-items: center; gap: 8px;"><span style="position: relative; width: 28px; height: 28px; flex-shrink: 0; display: inline-flex;"><span style="width: 28px; height: 28px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="21" height="21" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g174" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#6FA8FF"></stop></linearGradient>
+                  <clipPath id="b9c174"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#6FA8FF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c174)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span><span style="font-weight: 600;">BA</span><span style="font-size: 11px; color: #9BA1AB;">Claude Sonnet · High</span><span style="color: #9BA1AB; font-size: 11px;">10:53</span></span><div style="padding-left: 36px; line-height: 1.6; color: #D6D8DC; display: flex; flex-direction: column; gap: 6px;"><span>Here are 4 stories for the sign-in page. S4 covers the one-time code.</span><span style="display: flex; gap: 10px; align-items: flex-start;"><span style="flex: 1; min-width: 0;"><span style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;"><span style="padding: 0 6px; border-radius: 999px; font-size: 10.5px; line-height: 17px; white-space: nowrap; flex-shrink: 0; background: #1E2125; border: 1px solid #3A3F46; color: #9BA1AB; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">write-user-stories v3</span><span style="padding: 0 6px; border-radius: 999px; font-size: 10.5px; line-height: 17px; white-space: nowrap; flex-shrink: 0; background: #1E2125; border: 1px solid #3A3F46; color: #9BA1AB; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">working-principles v1 · always</span></span></span><span style="display: inline-flex; gap: 2px; flex-shrink: 0; margin-top: -3px;"><span aria-label="Good answer" title="Your ratings help BA improve its skills" style="width: 26px; height: 26px; border-radius: 6px; color: #9BA1AB; display: inline-flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11v9H4v-9z"></path><path d="M7 11l4-7a2 2 0 0 1 3 2l-1 4h5a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 16.8 20H7"></path></svg></span><span aria-label="Bad answer" title="Your ratings help BA improve its skills" style="width: 26px; height: 26px; border-radius: 6px; color: #9BA1AB; display: inline-flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 13V4H4v9z"></path><path d="M7 13l4 7a2 2 0 0 0 3-2l-1-4h5a2 2 0 0 0 2-2.3l-1.2-6A2 2 0 0 0 16.8 4H7"></path></svg></span></span></span></div></div></div></div><div style="display: flex; justify-content: center; padding: 0 16px 12px;"><div style="position: relative; width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 6px;"><div style="border-radius: 10px; border: 1px solid #3A3F46; background: #1E2125; "><div style="min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 10px;"><span style="color: #9BA1AB; display: flex;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5l-8.6 8.6a5 5 0 0 1-7.1-7.1l8.6-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"></path></svg></span><span style="flex-grow: 1; color: #9BA1AB;">Message the team. Type @ to mention a bot.</span><span style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; background: #F5B544; color: #0E0F11; display: flex; align-items: center; justify-content: center; opacity: .4;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></span></div></div></div></div></div><div style="display: flex; flex-direction: column; gap: 4px; max-width: 960px;"><span style="font-weight: 600;">T5 · New divider and new-messages pill<span style="margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #17301D; color: #7FCB8B; font-size: 11px;">Approved 16:50</span></span><span style="color: #9BA1AB; font-size: 12px; line-height: 1.5;">UI-3.10: an amber "New" line sits above the first message you have not read. If you scrolled up when new messages arrive, a pill floats above the composer; a click scrolls down. Amber chosen: a marker, not a bot status.</span></div><div style="width: 960px; height: 410px; box-sizing: border-box; border: 1px solid #23262B; border-radius: 10px; overflow: hidden; background: #0E0F11; display: flex; flex-direction: column;"><div style="height: 52px; border-bottom: 1px solid #23262B; display: flex; align-items: center; gap: 10px; padding: 0 16px;"><span aria-hidden="true" style="position: relative; width: 28px; height: 28px; border-radius: 999px; box-sizing: border-box; border: 1.5px solid #3A3F46; background: #1E2125; flex-shrink: 0;"><svg viewBox="0 0 48 48" width="14" height="14" style="position: absolute; left: 2px; top: 7px;" aria-hidden="true"><path d="M7.85 37C7.85 23 15.45 11 24 11S40.15 23 40.15 37C40.15 41 36.35 42 24 42S7.85 41 7.85 37Z" fill="#6FA8FF"></path><ellipse cx="18.8" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse><ellipse cx="29.2" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse></svg><svg viewBox="0 0 48 48" width="14" height="14" style="position: absolute; left: 12px; top: 7px;" aria-hidden="true"><path d="M7.85 37C7.85 23 15.45 11 24 11S40.15 23 40.15 37C40.15 41 36.35 42 24 42S7.85 41 7.85 37Z" fill="#C98BFF"></path><ellipse cx="18.8" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse><ellipse cx="29.2" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse></svg></span><span title="Click to rename" style="font-weight: 600;">Sign-in screens</span><span style="flex-grow: 1;"></span><span style="display: flex; gap: 4px; align-items: center;"><span aria-label="Add bot" title="Add bot" style="width: 24px; height: 24px; box-sizing: border-box; border-radius: 50%; border: 1.5px dashed #3A3F46; background: transparent; color: #9BA1AB; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v12M6 12h12"></path></svg></span><span aria-label="Members: BA, Designer" style="display: flex; gap: 4px; padding: 2px 4px; border-radius: 999px; "><span style="position: relative; width: 24px; height: 24px; flex-shrink: 0; display: inline-flex;"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g150" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#6FA8FF"></stop></linearGradient>
+                  <clipPath id="b9c150"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#6FA8FF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c150)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span><span style="position: relative; width: 24px; height: 24px; flex-shrink: 0; display: inline-flex;"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g151" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#C98BFF"></stop></linearGradient>
+                  <clipPath id="b9c151"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#C98BFF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c151)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span></span></span><span style="height: 28px; padding: 0 10px; border-radius: 7px; box-sizing: border-box; border: 1px solid #3A3F46; color: #9BA1AB; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; white-space: nowrap;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.5"></circle><circle cx="18" cy="8" r="2.5"></circle><circle cx="9" cy="18" r="2.5"></circle><path d="M8 7l8 1M7 8l1.5 7.5M16.5 10l-6 6"></path></svg>Flow</span><span aria-label="More" style="width: 28px; height: 28px; border-radius: 7px; box-sizing: border-box; border: 1px solid #3A3F46; color: #9BA1AB; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg></span></div><div style="flex-grow: 1; display: flex; justify-content: center; overflow: hidden;"><div style="width: 100%; max-width: 792px; padding: 18px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; justify-content: flex-end;"><div style="display: flex; flex-direction: column; gap: 6px;"><span style="display: flex; align-items: center; gap: 8px;"><span style="position: relative; width: 28px; height: 28px; flex-shrink: 0; display: inline-flex;"><span style="width: 28px; height: 28px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="21" height="21" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g175" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#6FA8FF"></stop></linearGradient>
+                  <clipPath id="b9c175"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#6FA8FF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c175)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span><span style="font-weight: 600;">BA</span><span style="font-size: 11px; color: #9BA1AB;">Claude Sonnet · High</span><span style="color: #9BA1AB; font-size: 11px;">10:41</span></span><div style="padding-left: 36px; line-height: 1.6; color: #D6D8DC; display: flex; flex-direction: column; gap: 6px;"><span>Here are 3 stories for the sign-in page. Each story has acceptance criteria.</span></div></div><div style="display: flex; align-items: center; gap: 10px; color: #F5B544; font-size: 11px; font-weight: 600;"><span style="flex-grow: 1; height: 1px; background: #F5B544; opacity: .5;"></span>New<span style="flex-grow: 1; height: 1px; background: #F5B544; opacity: .5;"></span></div><div style="display: flex; flex-direction: column; gap: 6px;"><span style="display: flex; align-items: center; gap: 8px;"><span style="position: relative; width: 28px; height: 28px; flex-shrink: 0; display: inline-flex;"><span style="width: 28px; height: 28px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="21" height="21" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g176" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#C98BFF"></stop></linearGradient>
+                  <clipPath id="b9c176"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#C98BFF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c176)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span><span style="font-weight: 600;">Designer</span><span style="font-size: 11px; color: #9BA1AB;">Claude Sonnet · Medium</span><span style="color: #9BA1AB; font-size: 11px;">11:02</span></span><div style="padding-left: 36px; line-height: 1.6; color: #D6D8DC; display: flex; flex-direction: column; gap: 6px;"><span>I read the stories. The wireframe is in wireframes/sign-in.md.</span><span style="display: flex; gap: 10px; align-items: flex-start;"><span style="flex: 1; min-width: 0;"><span style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;"><span style="padding: 0 6px; border-radius: 999px; font-size: 10.5px; line-height: 17px; white-space: nowrap; flex-shrink: 0; background: #1E2125; border: 1px solid #3A3F46; color: #9BA1AB; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">write-user-stories v3</span><span style="padding: 0 6px; border-radius: 999px; font-size: 10.5px; line-height: 17px; white-space: nowrap; flex-shrink: 0; background: #1E2125; border: 1px solid #3A3F46; color: #9BA1AB; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">working-principles v1 · always</span></span></span><span style="display: inline-flex; gap: 2px; flex-shrink: 0; margin-top: -3px;"><span aria-label="Good answer" title="Your ratings help BA improve its skills" style="width: 26px; height: 26px; border-radius: 6px; color: #9BA1AB; display: inline-flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11v9H4v-9z"></path><path d="M7 11l4-7a2 2 0 0 1 3 2l-1 4h5a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 16.8 20H7"></path></svg></span><span aria-label="Bad answer" title="Your ratings help BA improve its skills" style="width: 26px; height: 26px; border-radius: 6px; color: #9BA1AB; display: inline-flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 13V4H4v9z"></path><path d="M7 13l4 7a2 2 0 0 0 3-2l-1-4h5a2 2 0 0 0 2-2.3l-1.2-6A2 2 0 0 0 16.8 4H7"></path></svg></span></span></span></div></div><div style="display: flex; justify-content: center; margin-bottom: -8px;"><span style="height: 28px; padding: 0 12px; border-radius: 999px; background: #1E2125; border: 1px solid #3A3F46; box-shadow: 0 6px 16px rgba(0,0,0,.45); display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>2 new messages</span></div></div></div><div style="display: flex; justify-content: center; padding: 0 16px 12px;"><div style="position: relative; width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 6px;"><div style="border-radius: 10px; border: 1px solid #3A3F46; background: #1E2125; "><div style="min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 10px;"><span style="color: #9BA1AB; display: flex;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5l-8.6 8.6a5 5 0 0 1-7.1-7.1l8.6-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"></path></svg></span><span style="flex-grow: 1; color: #9BA1AB;">Message the team. Type @ to mention a bot.</span><span style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; background: #F5B544; color: #0E0F11; display: flex; align-items: center; justify-content: center; opacity: .4;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></span></div></div></div></div></div><div style="display: flex; flex-direction: column; gap: 4px; max-width: 960px;"><span style="font-weight: 600;">T6 · Markdown in a bot reply<span style="margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #17301D; color: #7FCB8B; font-size: 11px;">Approved 16:50</span></span><span style="color: #9BA1AB; font-size: 12px; line-height: 1.5;">Raw HTML is off (AGENTS.md rule 8). Headings stay small (14 px), tables use thin lines, code blocks have a language label and Copy. Inline code uses the mono font. File paths are links to the file in the workspace.</span></div><div style="width: 960px; height: 560px; box-sizing: border-box; border: 1px solid #23262B; border-radius: 10px; overflow: hidden; background: #0E0F11; display: flex; flex-direction: column;"><div style="height: 52px; border-bottom: 1px solid #23262B; display: flex; align-items: center; gap: 10px; padding: 0 16px;"><span aria-hidden="true" style="position: relative; width: 28px; height: 28px; border-radius: 999px; box-sizing: border-box; border: 1.5px solid #3A3F46; background: #1E2125; flex-shrink: 0;"><svg viewBox="0 0 48 48" width="14" height="14" style="position: absolute; left: 2px; top: 7px;" aria-hidden="true"><path d="M7.85 37C7.85 23 15.45 11 24 11S40.15 23 40.15 37C40.15 41 36.35 42 24 42S7.85 41 7.85 37Z" fill="#6FA8FF"></path><ellipse cx="18.8" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse><ellipse cx="29.2" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse></svg><svg viewBox="0 0 48 48" width="14" height="14" style="position: absolute; left: 12px; top: 7px;" aria-hidden="true"><path d="M7.85 37C7.85 23 15.45 11 24 11S40.15 23 40.15 37C40.15 41 36.35 42 24 42S7.85 41 7.85 37Z" fill="#C98BFF"></path><ellipse cx="18.8" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse><ellipse cx="29.2" cy="29" rx="2.9" ry="3.7" fill="#0E0F11"></ellipse></svg></span><span title="Click to rename" style="font-weight: 600;">Sign-in screens</span><span style="flex-grow: 1;"></span><span style="display: flex; gap: 4px; align-items: center;"><span aria-label="Add bot" title="Add bot" style="width: 24px; height: 24px; box-sizing: border-box; border-radius: 50%; border: 1.5px dashed #3A3F46; background: transparent; color: #9BA1AB; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v12M6 12h12"></path></svg></span><span aria-label="Members: BA, Designer" style="display: flex; gap: 4px; padding: 2px 4px; border-radius: 999px; "><span style="position: relative; width: 24px; height: 24px; flex-shrink: 0; display: inline-flex;"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g150" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#6FA8FF"></stop></linearGradient>
+                  <clipPath id="b9c150"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#6FA8FF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c150)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span><span style="position: relative; width: 24px; height: 24px; flex-shrink: 0; display: inline-flex;"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g151" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#C98BFF"></stop></linearGradient>
+                  <clipPath id="b9c151"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#C98BFF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c151)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span></span></span><span style="height: 28px; padding: 0 10px; border-radius: 7px; box-sizing: border-box; border: 1px solid #3A3F46; color: #9BA1AB; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; white-space: nowrap;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.5"></circle><circle cx="18" cy="8" r="2.5"></circle><circle cx="9" cy="18" r="2.5"></circle><path d="M8 7l8 1M7 8l1.5 7.5M16.5 10l-6 6"></path></svg>Flow</span><span aria-label="More" style="width: 28px; height: 28px; border-radius: 7px; box-sizing: border-box; border: 1px solid #3A3F46; color: #9BA1AB; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg></span></div><div style="flex-grow: 1; display: flex; justify-content: center; overflow: hidden;"><div style="width: 100%; max-width: 792px; padding: 18px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; justify-content: flex-end;"><div style="display: flex; flex-direction: column; gap: 6px;"><span style="display: flex; align-items: center; gap: 8px;"><span style="position: relative; width: 28px; height: 28px; flex-shrink: 0; display: inline-flex;"><span style="width: 28px; height: 28px; border-radius: 50%; background: #1E2125; display: flex; align-items: center; justify-content: center; overflow: hidden; "><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="21" height="21" aria-hidden="true">
+                <defs>
+                  <linearGradient id="b9g177" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#92c2ff"></stop><stop offset="0.45" stop-color="#84b7ff"></stop><stop offset="0.8" stop-color="#76adff"></stop><stop offset="1" stop-color="#6FA8FF"></stop></linearGradient>
+                  <clipPath id="b9c177"><path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z"></path></clipPath>
+                </defs>
+                <ellipse cx="24" cy="42.6" rx="15" ry="2" fill="#000000" opacity="0"></ellipse>
+                <g>
+                  <g transform="matrix(0.95 0 0 1 1.200000000000001 0)">
+                  <path d="M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z" fill="#6FA8FF" stroke="none" stroke-width="0" stroke-linejoin="round"></path>
+                  <g clip-path="url(#b9c177)">
+                    <path d="M44 22C40 34 30 40.5 14 41.5C9 41.8 5 41 3 39.6L3 46L46 46Z" fill="#3f16c4" opacity="0"></path>
+                    <path d="M8 40Q12 43 18 43.5" stroke="#d5ebff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0"></path>
+                    <circle cx="31" cy="35.5" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                    <circle cx="34.5" cy="31" r="0.8" fill="#FFFFFF" opacity="0"></circle>
+                  </g>
+                  <path d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z" fill="#FFFFFF" opacity="0.5"></path>
+                  <path d="M0 0" stroke="#FFFFFF" stroke-width="2.8" fill="none" stroke-linecap="round" opacity="0"></path>
+                  <circle cx="14" cy="26" r="1.3" fill="#FFFFFF" opacity="0"></circle>
+                  <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill="#FF8FB0" opacity="0.45"></ellipse>
+                  </g>
+                  <g>
+                    <path d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z" fill="#0E0F11"></path>
+                    <path d="M0 0" fill="#3d2a6f"></path>
+                    <path d="M0 0" stroke="#0E0F11" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M0 0" fill="#FFFFFF"></path>
+                    <path d="M0 0" fill="#e2f1fd"></path>
+                  </g>
+                  <path d="M0 0" stroke="#0E0F11" stroke-width="1.3" fill="none" stroke-linecap="round"></path>
+                  <path d="M0 0" fill="#0E0F11"></path>
+                  <path d="M0 0" fill="#FF8FB0"></path>
+                  <path d="M22 34.8Q24 36.8 26 34.8" stroke="#0E0F11" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+                </g>
+                <circle cx="5.5" cy="42" r="1.3" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="42.6" cy="41.2" r="1" fill="#9dcaff" opacity="0"></circle>
+                <circle cx="44.6" cy="38.2" r="0.6" fill="#9dcaff" opacity="0"></circle>
+              </svg>
+</span></span><span style="font-weight: 600;">BA</span><span style="font-size: 11px; color: #9BA1AB;">Claude Sonnet · High</span><span style="color: #9BA1AB; font-size: 11px;">11:20</span></span><div style="padding-left: 36px; line-height: 1.6; color: #D6D8DC; display: flex; flex-direction: column; gap: 6px;"><span style="font-weight: 600; font-size: 14px; color: #E7E8EA;">Check against the wireframe</span><span>Two stories match. One has no screen yet:</span><table style="border-collapse: collapse; width: 100%; max-width: 560px;"><tr><th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #3A3F46; color: #9BA1AB; font-weight: 600; font-size: 12px;">Story</th><th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #3A3F46; color: #9BA1AB; font-weight: 600; font-size: 12px;">Screen</th><th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #3A3F46; color: #9BA1AB; font-weight: 600; font-size: 12px;">Status</th></tr><tr><td style="padding: 6px 10px; border-bottom: 1px solid #23262B; font-size: 12.5px; color: #D6D8DC;">S1 Enter email</td><td style="padding: 6px 10px; border-bottom: 1px solid #23262B; font-size: 12.5px; color: #D6D8DC;">Step 1</td><td style="padding: 6px 10px; border-bottom: 1px solid #23262B; font-size: 12.5px; color: #D6D8DC;">Matches</td></tr><tr><td style="padding: 6px 10px; border-bottom: 1px solid #23262B; font-size: 12.5px; color: #D6D8DC;">S2 Enter password</td><td style="padding: 6px 10px; border-bottom: 1px solid #23262B; font-size: 12.5px; color: #D6D8DC;">Step 2</td><td style="padding: 6px 10px; border-bottom: 1px solid #23262B; font-size: 12.5px; color: #D6D8DC;">Matches</td></tr><tr><td style="padding: 6px 10px; border-bottom: 1px solid #23262B; font-size: 12.5px; color: #D6D8DC;">S3 Reset password</td><td style="padding: 6px 10px; border-bottom: 1px solid #23262B; font-size: 12.5px; color: #D6D8DC;">None</td><td style="padding: 6px 10px; border-bottom: 1px solid #23262B; font-size: 12.5px; color: #D6D8DC;">Missing</td></tr></table><span>The story format I used, so the Designer can read it:</span><div style="border-radius: 8px; border: 1px solid #23262B; background: #16181B; overflow: hidden;"><div style="height: 28px; display: flex; align-items: center; padding: 0 6px 0 10px; border-bottom: 1px solid #23262B; color: #9BA1AB; font-size: 11px;"><span style="flex-grow: 1; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">yaml</span><span style="height: 22px; padding: 0 8px; border-radius: 5px; display: inline-flex; align-items: center;">Copy</span></div><pre style="margin: 0; padding: 10px 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 1.55; color: #D6D8DC;">story: S2
+as: a returning user
+i_want: to sign in with my email
+so_that: I see my saved trips</pre></div><span>Next step: add a <code style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; padding: 1px 5px; border-radius: 4px; background: #1E2125;">reset-password</code> screen. See <span style="color: #E7E8EA; text-decoration: underline; text-underline-offset: 2px;">stories/sign-in.md</span>.</span><span style="display: flex; gap: 10px; align-items: flex-start;"><span style="flex: 1; min-width: 0;"><span style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;"><span style="padding: 0 6px; border-radius: 999px; font-size: 10.5px; line-height: 17px; white-space: nowrap; flex-shrink: 0; background: #1E2125; border: 1px solid #3A3F46; color: #9BA1AB; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">write-user-stories v3</span><span style="padding: 0 6px; border-radius: 999px; font-size: 10.5px; line-height: 17px; white-space: nowrap; flex-shrink: 0; background: #1E2125; border: 1px solid #3A3F46; color: #9BA1AB; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">working-principles v1 · always</span></span></span><span style="display: inline-flex; gap: 2px; flex-shrink: 0; margin-top: -3px;"><span aria-label="Good answer" title="Your ratings help BA improve its skills" style="width: 26px; height: 26px; border-radius: 6px; color: #9BA1AB; display: inline-flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11v9H4v-9z"></path><path d="M7 11l4-7a2 2 0 0 1 3 2l-1 4h5a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 16.8 20H7"></path></svg></span><span aria-label="Bad answer" title="Your ratings help BA improve its skills" style="width: 26px; height: 26px; border-radius: 6px; color: #9BA1AB; display: inline-flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 13V4H4v9z"></path><path d="M7 13l4 7a2 2 0 0 0 3-2l-1-4h5a2 2 0 0 0 2-2.3l-1.2-6A2 2 0 0 0 16.8 4H7"></path></svg></span></span></span></div></div></div></div><div style="display: flex; justify-content: center; padding: 0 16px 12px;"><div style="position: relative; width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 6px;"><div style="border-radius: 10px; border: 1px solid #3A3F46; background: #1E2125; "><div style="min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 10px;"><span style="color: #9BA1AB; display: flex;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5l-8.6 8.6a5 5 0 0 1-7.1-7.1l8.6-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"></path></svg></span><span style="flex-grow: 1; color: #9BA1AB;">Message the team. Type @ to mention a bot.</span><span style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; background: #F5B544; color: #0E0F11; display: flex; align-items: center; justify-content: center; opacity: .4;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></span></div></div></div></div></div></div>
+</body>
+</html>

@@ -2,7 +2,8 @@
 
 > **Status: agreed in the UI design review (2026-10-23)**, canvas round 8, board W2 card C0.
 > Preview: `../previews/command-dark/skills-editor.*` (card C0). Every page and dialog uses
-> these kinds. A component spec names the kind, not its colours.
+> these kinds. A component spec names the kind, not its colours. Icons on buttons (§3) added in
+> round 10 (2026-10-25), preview `../previews/command-dark/handoff-buttons.*`.
 
 ## 1. Button kinds
 
@@ -31,6 +32,14 @@ A disabled button has a tooltip that says why, for example "No changes to save."
   right. Secondary and danger buttons go to its left.
 - A card with a bot or item list closes with no change on Skip or Cancel, Esc, or a click
   outside the card.
+
+### Icons on buttons
+
+A secondary button can have a small line icon before its label when two secondary actions sit
+side by side and must be different at a glance. The plan card and the handoff card use **×
+Reject** and **pencil Request changes** (round 10, owner 2026-10-25). A primary button that adds
+someone can have a plus icon: **+ Add Designer and start** (`conversation-cards.md` §4). The
+label is still a verb, so the button works without the icon.
 
 ## 4. Labels
 

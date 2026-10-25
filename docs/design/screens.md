@@ -21,6 +21,10 @@
 
 ## §3. Conversation page
 
+> **Replaced** by the agreed design in `components/conversation-page.md`, `composer.md` and
+> `conversation-cards.md` (round 10). The sketch below is kept for history only: the header now
+> has the add slot (+) first, then the member avatars, Flow and ⋯; Stop is in the composer.
+
 ```
 ┌─────────────────────────────────────────────────────────────┬─────────────┐
 │ Login redesign   (BA)(Des)  [+ Add bot]  Discussion: on 3/5  [■ Stop] [⚙]│ Files       │

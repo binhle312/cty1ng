@@ -8,7 +8,7 @@ status.
 definition of done in `AGENTS.md` §9). The owner updates it for owner-only steps (reviews,
 approvals). Keep it short: link to PRs and briefs instead of describing work.
 
-Last updated: 2026-10-24
+Last updated: 2026-10-25
 
 ## Now
 
@@ -40,7 +40,10 @@ Skills and Activity tabs, colour band), Clone and the avatar colour rules (any c
 Random, upload with crop) are agreed too. The Usage tab design is agreed; its data (task verdict, setup change
 record, targets) is not specified yet. The Memory tab comes with M5b. D50 (bots to Trash) and D55 (provider tools first, tool switches; code execution only for small
 analysis scripts in the provider's sandbox; MCP locked) are accepted, and the owner approved the M2
-migration and API changes in PR #20 (2026-10-24).
+migration and API changes in PR #20 (2026-10-24). M3 conversation design round 10 is agreed and
+saved in `design/components/` (`conversation-page.md`, `composer.md`, `conversation-cards.md`):
+the add slot (+) first in the header, Stop in the composer, reactions only while a run is queued,
+cards inside the reply that fold after a decision, and the requirement edits that follow.
 
 ## Next
 
@@ -53,6 +56,8 @@ migration and API changes in PR #20 (2026-10-24).
 | D52 accepted (each run writes on its own branch and saves to the Library): update the M6 brief and the documents D52 lists; approve the `run_branches` migration | M6 plan |
 | D53 accepted (web through provider web tools): check the default limits and approve the migration for the bot setting and the run flag | Web access milestone plan |
 | Approve the M3 migration for D46 (auto title) before it is written | M3 plan |
+| Add the `surface-bubble` token (owner message box) to `design/themes.md` §3 after PR #10 merges | M3 plan |
+| Put UI-13.16 (the memory tool skips an exact duplicate) in the M5b brief | M5b start |
 | Export Flow view mockup screenshots into `design/assets/` | M8 plan |
 | Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a migration approval | M3 and M7 plans |
 | Approve the M5b migrations: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars. Claude Code stops for this approval before it writes them | M5b plan |
@@ -65,7 +70,7 @@ migration and API changes in PR #20 (2026-10-24).
 | M0 | not started | | |
 | M1 | not started | | Design approved: `design/components/skills-page.md` (round 8); D49 accepted |
 | M2 | UI design review | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec) | Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open |
-| M3 | not started | | |
+| M3 | UI design agreed | (this PR) | Round 10: `design/components/conversation-page.md`, `composer.md`, `conversation-cards.md` |
 | M4 | not started | | |
 | M5 | not started | | |
 | M6 | not started | | |

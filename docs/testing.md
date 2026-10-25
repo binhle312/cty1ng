@@ -94,8 +94,9 @@ bots' replies (D31); the shared history budget (D32) with a small and a large
 `context_window`, the per-bot `history_share_pct` (10, 40, 80), newest-first filling across transcript and runs, and
 `run_history` excluding runs from an abandoned branch.
 
-Run status reactions (UI-3.18): a Vitest reducer test that `run.queued` → `run.started` →
-`run.finished` replaces one reaction per bot, including failed, stopped and replayed events.
+Run status reactions (UI-3.18): a Vitest reducer test that `run.queued` adds one clock reaction
+per bot and `run.started` or a cancel removes it, including replayed events; `run.finished`
+(done, failed, stopped) adds no reaction.
 
 ### Services and API
 
@@ -132,7 +133,7 @@ Faults (`conversation-rules.md` §4, "Tool results"), one named test each:
 2. drag BA from the header into the chat → choose "Full history";
 3. `@` shows only BA → send → reply streams → chip `write-user-stories v1` visible → the rail
    tooltip shows the fake auto title (D46);
-4. add Designer via "Add bot" → enable discussion with limit 2 → bots stop after 2 turns with
+4. add Designer with the add slot (+) in the conversation header → enable discussion with limit 2 → bots stop after 2 turns with
    the notice;
 5. Stop button during a run → message shows "Stopped";
 6. edit the first message → ‹ 2/2 › appears → switch back to ‹ 1/2 ›;

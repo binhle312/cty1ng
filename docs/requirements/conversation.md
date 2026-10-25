@@ -14,11 +14,11 @@ Chatting with one or more bots: messages, streaming, mentions, edits and branche
   Acceptance criteria: UI-3.11, UI-3.12, UI-3.14.
 - **CV-5.** As the owner, I want to attach files and browse the conversation's workspace, so that bots and I work on the same documents.  
   Acceptance criteria: UI-3.13, UI-3.16.
-- **CV-6.** As the owner, I want a conversation header with members, discussion status and a Stop button, so that I stay in control.  
+- **CV-6.** As the owner, I want a conversation header with the members, a way to add a bot and the discussion status, and a Stop button in the composer, so that I stay in control.  
   Acceptance criteria: UI-3.15.
 - **CV-7.** As the owner, I want the page to recover exactly after a reload or network drop, so that I never see duplicates or gaps.  
   Acceptance criteria: UI-3.17.
-- **CV-8.** As the owner, I want each bot to acknowledge my message with a status reaction that changes as it works, so that I know it received the message, when it started, and when it finished.  
+- **CV-8.** As the owner, I want each bot that waits to start on my message to show a reaction on it, so that I know the message was received and I can cancel a run that has not started. The reply shows the later states.  
   Acceptance criteria: UI-3.18, UI-3.19.
 - **CV-9.** As the owner, I want to see what happened to each message I send, including when it failed or is waiting for a bot, so that nothing I write gets lost or stuck silently.  
   Acceptance criteria: UI-3.20, UI-3.21.
@@ -33,15 +33,18 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
 
 ## Conversation page (UI-3)
 
-Layout sketch: see `../design/screens.md` §3 (not final).
+Agreed design (round 10): `../design/components/conversation-page.md`, `composer.md` and
+`conversation-cards.md`.
 
 Messages
 
 - UI-3.1: Messages render Markdown with raw HTML disabled (`../security.md`), code blocks with
   syntax highlighting, author avatar, name and time.
 - UI-3.2: Deleted bots' avatar and name render grey (D12), with tooltip "Deleted bot".
-- UI-3.3: System messages are visually distinct (centred, muted). Cards (history choice,
-  handoff) show their current state and disable their buttons once decided.
+- UI-3.3: System messages are a small centred pill, muted, and red only for a problem. Cards
+  (history choice, plan, handoff) show their current state and have no buttons once decided. A
+  plan or handoff card sits inside the reply of the bot that made it and folds to one line after
+  the decision. A stale handoff card does not fold.
 - UI-3.4: Bot replies stream in. The running bot shows one of two live states, both derived
   from existing events: **typing** while `message.delta` events arrive (it expires 10 s after
   the last delta), and **working: <latest step>** between deltas (for example during a long
@@ -55,41 +58,41 @@ Messages
   version's content. No chips when none.
 - UI-3.6b: Hovering the time of a bot message shows its usage: tokens (input / output / cache)
   and estimated cost (D21).
-- UI-3.7: Failed messages show the error summary and a "Retry" button (re-queues the run).
-  Stopped messages show "Stopped" and keep partial text.
-- UI-3.8: Human messages show "Edit" on hover. Editing opens inline; saving creates a branch
-  (`../conversation-rules.md` §6). The dialog warns that workspace files are not rolled back.
-  Edit is disabled with a tooltip while runs are active.
-- UI-3.9: Messages with siblings show ‹ i/n › to switch branches.
+- UI-3.7: Failed messages show "Failed" with a short reason in plain words (never the raw
+  error) and a "Retry" button (re-queues the run). Stopped messages show "Stopped by you" and
+  keep partial text, with no Retry.
+- UI-3.8: Human messages show an Edit button under the message, at the far right, on hover or
+  focus. Editing opens inline; saving creates a branch (`../conversation-rules.md` §6). A note
+  under the edit box says that workspace files are not rolled back. Edit is disabled with a
+  tooltip while runs are active.
+- UI-3.9: Messages with siblings show ‹ i/n › under the message, left of Edit, to switch
+  branches.
 - UI-3.18: Run status reactions. Every message that triggers runs (from the owner, a bot, or
-  an approved handoff) shows one reaction per triggered bot: the bot's small avatar plus a
-  status emoji. The emoji follows the run (`realtime-events.md` `run.*` events):
-  **received** (`run.queued`) → **working** (`run.started`) → **done** (`run.finished`,
-  complete). The emoji is replaced in place, never stacked. A failed run (including one that timed
-  out) shows a **failed** state and a stopped run a **stopped** state. A run refused by a limit shows no reaction (the
-  notice explains why). The five emojis are chosen in the frontend design phase; until then
-  the spec names the states only.
-- UI-3.19: Hovering or focusing a status reaction shows "<Bot>: received 17:04:02 · started
-  17:04:05 · done 17:04:41"; while working it adds the time since the last progress (P2 stall
-  timeout, `../architecture.md` §6). Reactions survive reload (they are derived from run state, not
+  an approved handoff) shows one reaction per **queued** bot: the bot's small avatar plus a
+  clock line icon (`run.queued`). The reaction goes away when that run starts (`run.started`)
+  or is cancelled. The reply shows the later states: typing and working (UI-3.4), failed and
+  stopped (UI-3.7). A run refused by a limit shows no reaction (the notice explains why).
+- UI-3.19: Hovering or focusing a status reaction shows "<Bot>: queued 17:04:02" and a × that
+  cancels that queued run. Reactions survive reload (they are derived from run state, not
   stored separately) and are announced to screen readers when they change.
 - UI-3.20: A human message whose POST fails shows "Not sent" with Retry and Delete (Delete is
   local only). Any later unsent message in the same conversation is marked "Not sent" too, so
   messages never arrive out of order. Retry reuses the same `client_id`, so a send that did
   reach the server is not duplicated.
-- UI-3.21: Under each human message, a small line says what happened to it: "Queued for
-  Designer" (with Cancel while the run has not started), "Nobody mentioned", or nothing once
-  the bots have started (the status reactions take over, UI-3.18). Messages sent while a bot
-  works are never merged into the running turn (D11).
+- UI-3.21: A human message that starts no run has a small line under it: "Nobody mentioned · no
+  bot replies". A queued run shows as its reaction (UI-3.18), with Cancel on hover, and under the
+  composer ("Queued: Designer"). Messages sent while a bot works are never merged into the
+  running turn (D11).
 - UI-3.22 *(D39)*: Before sending, the composer checks the text for likely secrets.
-  If any are found it lists them masked ("API key ending …9f2a", "card number ending 4242") with
-  Remove and "Send anyway". Without "Send anyway" the server refuses the message with 422
+  If any are found, a red panel above the composer lists them masked ("API key ending …9f2a",
+  "card number ending 4242") with Remove and "Send anyway". The message is not sent until every
+  match is removed or the owner clicks "Send anyway". Without "Send anyway" the server refuses the message with 422
   `sensitive_data`. Matched text is never logged.
 - UI-3.23 *(D39)*: Text attachments get the same check at upload. When an image or
   PDF is attached, the composer notes "Images and PDFs are not checked for secrets".
 - UI-3.10: Scrolling up loads older messages (pagination by `before_seq`); new messages
   auto-scroll only when the view is already at the bottom; otherwise a "New messages" pill
-  appears. A "New" divider sits above the first message after the owner's read position
+  appears. An amber "New" divider sits above the first message after the owner's read position
   (`last_read_seq`); it stays until the conversation is left.
 
 Composer
@@ -97,19 +100,24 @@ Composer
 - UI-3.11: Typing `@` opens an autocomplete listing only **active** members; pending members
   appear greyed with "waiting for your choice"; selection inserts a mention token rendered as a
   chip with the bot name.
-- UI-3.12: With 0 bots the composer shows "Add a bot to start" and Send is disabled. With ≥ 2
-  bots and no mention, a hint appears under the composer before sending: "No bot is mentioned;
-  nobody will reply."
+- UI-3.12: With 0 bots the composer shows "Add a bot to start" and Send is disabled; the
+  composer has no Add bot button (the add slot in the header adds bots, UI-3.15). With ≥ 2
+  bots and no mention, a hint appears under the composer before sending: "No bot is mentioned,
+  so nobody will reply. Type @ to mention a bot."
 - UI-3.13: Attachments by button or dropping files on the composer; limits 10 files, 10 MB
-  each, listed types (`../security.md`); rejected files show why.
-- UI-3.14: Enter sends, Shift+Enter inserts a newline.
+  each, listed types (`../security.md`); a rejected file stays as a red chip that says why
+  ("Type not allowed", "Over 10 MB", "11th file").
+- UI-3.14: Enter sends. Shift+Enter or Alt+Enter inserts a newline (the same keys in every
+  message and note box).
 
 Header and side panel
 
-- UI-3.15: Conversation header: title (click to rename), member avatars (click → menu with
-  "Remove from conversation"), "Add bot" button (opens a picker of non-member available bots),
-  discussion status ("Discussion: on · 3/5 used" or "off"), Stop button while any run is queued
-  or running, settings button.
+- UI-3.15: Conversation header: title (click to rename); the add slot (+), always first before
+  the member avatars (click opens a picker of non-member available bots; a header avatar dropped
+  on it or on the conversation adds that bot); member avatars (click → menu with each member's
+  model and effort and "Remove"); Flow; ⋯ with Rename, Conversation settings and Delete;
+  discussion status ("Discussion: on · 3/5 used" or "off", from slice M5). The Stop button sits
+  inside the composer at the left while any run is queued or running.
 - UI-3.16: Files side panel (collapsible) lists workspace files as a tree; clicking opens a
   read-only viewer for text (with Markdown preview), images and PDF.
 - UI-3.17: Reload or network drop restores the exact state with no duplicate or missing
@@ -138,7 +146,7 @@ Feedback (D51, used by Improve in slice M5d)
   Good answer and Bad answer. A click saves the rating at once. Bad answer also opens a short
   note box ("What was wrong?", optional, Markdown, 2,000 characters or less, same keys as the
   composer). The selected button stays visible. A second click on it removes the rating. The
-  note passes the sensitive-data check (UI-3.22). Icons and layout are chosen in the M3 UI
-  design review.
+  note passes the sensitive-data check (UI-3.22). They are thumbs up and thumbs down icons at
+  the right of the skill chip row (`../design/components/conversation-page.md` §3.2).
 - UI-3.28: A tooltip on the buttons says "Your ratings help <bot> improve its skills".
   Ratings never change the message and never start a run.
