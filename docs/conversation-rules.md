@@ -136,8 +136,9 @@ The prompt for a run is assembled in this order by `buildPrompt(...)` in `core/r
    `load_skill(slug)` before doing that kind of work".
    In runs triggered by the owner's message, the `propose_skill` tool is listed too (§7).
    In an action run whose approved plan has Done-when items, the `check_done` tool is listed
-   too: `check_done({item, state: "met" | "not_met", note})`; `not_met` needs a note, and an item
-   that is not in the plan returns `{error: "not_in_plan", message}` (D54).
+   too: `check_done({item, state: "met" | "not_met", note, evidence})`; `not_met` needs a note,
+   `met` needs `evidence: {path, quote}` (D57), and an item that is not in the plan returns
+   `{error: "not_in_plan", message}` (D54). The app checks that the quote is in that file.
 7. **Transcript**: the visible history (below) as one user-role block.
 8. **The trigger**: the message the bot is answering, quoted and labelled.
 
@@ -181,6 +182,13 @@ steps from these rows (`design/components/plan-card.md` §6).
 The prompt of the action run lists the approved steps with their numbers and says: "Call
 `mark_step` when you start a step and when you finish it. You can call it together with your
 next tool call." A planning run and a run with no plan do not get the tool.
+
+**Reminder before the run ends (D57).** When the bot sends its final reply and a step has no
+`done` or `skipped` mark, or a Done-when item has no `check_done`, the app does not end the run.
+It sends one more turn with the open marks: "Before you reply: step 4 and Done-when item 2 have
+no mark. Mark each step done or skipped (with a note), and check each Done-when item. Mark done
+only what you really did." It does this at most `plan_mark_reminders` times (setting, default 1,
+0 = off). Each reminder is one model request and counts toward `request_limit`.
 
 ### Visible history
 

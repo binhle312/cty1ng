@@ -130,6 +130,12 @@ from the run's `run_steps` rows, so it is the same after a reload. Preview:
 - The live line under the reply (UI-3.5) shows only the times ("2:10 · last step 0:04 ago"),
   because the card names the step.
 
+**Who checked a mark (D57).** A step marked done with no tool call under it shows "Done · no
+action recorded" in `on-surface-muted` with a ! icon, not the green check (never amber: amber is
+only for "Waiting for you"). Planned files and Done-when items with a quote that the app found
+show **checked by app** in 11 px `success`. A Done-when `met` whose quote is not in the file shows
+**not verified** in `danger`. Every other mark shows **bot says** in 11 px `on-surface-muted`.
+
 **Done, all steps marked (P2).** The card folds to one line (`conversation-cards.md` §3):
 "**Plan** [Done] 11:15 · 4 of 4 steps · 2 files · Show".
 

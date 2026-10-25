@@ -98,7 +98,7 @@ Implemented in: links.
 | D51 | [Bots improve their skills from the owner's feedback, and the owner approves each change](D51-bots-improve-their-skills-from-owner-feedback.md) | accepted | own amendments 2026-10-23, 2026-10-24 |
 | D52 | [Each run writes on its own branch and saves to the Library when it ends](D52-each-run-writes-on-its-own-branch.md) | accepted | D54, D56 |
 | D53 | [Bots read the web only through the provider's web tools, with rules for runs that read it](D53-web-access-through-provider-web-tools.md) | accepted | D55 |
-| D54 | [The approved plan covers deletes and moves, and the app checks the run against the plan](D54-approved-plan-covers-the-run.md) | accepted |  |
+| D54 | [The approved plan covers deletes and moves, and the app checks the run against the plan](D54-approved-plan-covers-the-run.md) | accepted | D57 |
 | D55 | [Provider tools first, one switch per tool, and one tool per job](D55-provider-tools-first-and-tool-switches.md) | accepted |  |
 | D56 | [Memory in action runs: items not in the plan, and runs that fail](D56-memory-in-action-runs-and-failed-runs.md) | accepted | |
 | D57 | [The plan card shows the progress of the action run](D57-plan-card-shows-run-progress.md) | proposed | |

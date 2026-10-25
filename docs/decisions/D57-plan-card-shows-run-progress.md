@@ -3,8 +3,8 @@
 Status: proposed (2026-10-25). The owner chose an app feature, not a skill, on a decision card in
 the review thread "Show bot progress step by step" (2026-10-25 02:16), and chose the running card
 P1 (02:25). It amends D48 (what the plan card does after Approve). It uses the plan data and the
-run-end check of D54.
-Amends: D48
+run-end check of D54, and it amends D54's `check_done` (evidence, owner 2026-10-25 03:48).
+Amends: D48, D54
 
 Decision:
 
@@ -42,6 +42,30 @@ Decision:
   time, also while the run works. A card hidden during the run keeps the progress on its line,
   updated live: "**Plan** [Running · step 2 of 4] · Show" (owner, 2026-10-25 03:44). After the
   run, the open card shows the step marks as they were at the end of the run.
+- **The app reminds the bot once before the run ends (owner, 2026-10-25 03:48).** When the bot
+  sends its final reply, the app checks for steps with no `done` or `skipped` mark and for
+  Done-when items with no `check_done`. If any are open, the run does not end yet. The app sends
+  the bot one more turn: "Before you reply: step 4 and Done-when item 2 have no mark. Mark each
+  step done or skipped (with a note), and check each Done-when item. Mark done only what you
+  really did." The number of reminders is the setting `plan_mark_reminders` (default 1, 0 = off).
+  A reminder is one model request, and it counts toward `request_limit`.
+- **The app shows which marks it checked (owner, 2026-10-25 03:48).** A model can claim work that
+  it did not do, so each mark shows its source:
+
+  | Mark | App check | Shows |
+  | --- | --- | --- |
+  | Step `done` with at least one tool call under it | Tool calls exist | Green check |
+  | Step `done` with no tool call under it | None | "Done · no action recorded", `on-surface-muted` with a ! icon (not amber: amber is only for "Waiting for you") |
+  | Planned file | The run wrote it (D54) | "written" · **checked by app** |
+  | Done-when `met` with evidence | The quote is in the file, in the run's version | **checked by app** |
+  | Done-when `met`, quote not found | Failed | **not verified** (`danger`) |
+  | Anything else | None | **bot says** |
+
+- **Done-when needs evidence (amends D54).** `check_done` with `state: "met"` must have
+  `evidence: {path, quote}`. The app looks for the quote, as plain text, in that file in the run's
+  version. With no evidence, the call gives `invalid_arguments`. A real quote that does not prove
+  the point still passes; that needs judgment, which is the optional judge call that D54 parks
+  for after M6, and the owner's Bad answer feedback (D51).
 - **Only runs with a plan.** A plain answer has no plan, so it has no progress card. It keeps the
   live line (UI-3.5). The bot does not write its own checklist (owner, 2026-10-25 02:13).
 - **Skills give the steps, the app shows them.** A skill's `## Steps` section helps the bot write
@@ -79,7 +103,10 @@ Consequences:
 
 - `design/components/plan-card.md` §4 and §6, `conversation-cards.md` §3: the running and
   finished states, Show and Hide.
-- `conversation-rules.md` §4: the `mark_step` tool and its error.
+- `conversation-rules.md` §4: the `mark_step` tool and its error, the reminder, and the evidence
+  on `check_done`.
+- `domain-model.md` settings: `plan_mark_reminders = 1`. When D57 is accepted, the `check_done`
+  line in D54 points to this evidence rule.
 - `domain-model.md` §3.8: `run_steps.kind` gets `mark_step`. No migration of its own: the plan
   tables come with D54 and the plan card slice.
 - `requirements/conversation.md`: UI-3.29 to UI-3.31; UI-3.5 shows only the times while a
@@ -89,7 +116,10 @@ Consequences:
 - Tests with the fake model: `mark_step` with a step that is not in the plan gives `not_in_plan`;
   `skipped` with no note gives `invalid_arguments`; a run with no mark for a step shows "Not
   marked done"; tool calls go under the current step; the card state is the same after a reload;
-  a plain answer has no card.
+  a plain answer has no card; a final reply with an open step gets one reminder, and a second
+  final reply ends the run; `plan_mark_reminders = 0` sends none; `done` with no tool call shows
+  "no action recorded"; `met` with a quote that is not in the file shows "not verified"; `met`
+  with no evidence gives `invalid_arguments`.
 
 Implemented in: `../design/components/plan-card.md`, `../conversation-rules.md`, the slice brief
 that builds the plan card.
