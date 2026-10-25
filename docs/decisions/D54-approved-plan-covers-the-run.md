@@ -77,7 +77,7 @@ Consequences:
 - `domain-model.md`: plan versions get the four lists; `runs` gets `plan_check` (JSON). This
   needs a migration, so the owner approves it in the M6 plan.
 - `design/components/plan-card.md`: the plan card shows the deletes and moves and the Done-when
-  items. This changes after PR #26 merges, because PR #26 changes the same file.
+  items, and the reply shows the plan check line (changed in the same PR as this entry).
 - `conversation-rules.md`: the `check_done` tool and its errors; the D52 card lists only
   operations outside the plan.
 - The progress card proposal (D57, `mark_step`, review thread "Show bot progress step by step")
