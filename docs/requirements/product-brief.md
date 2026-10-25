@@ -131,7 +131,7 @@ Confirmed by the owner (2026-10-21).
 | Executable skills (scripts) | Would need a real sandbox | Later, if ever |
 | Custom conversation icon upload | 10 presets cover it for now | Later |
 | "Regenerate" a bot reply | Editing human messages covers the main need | Later |
-| Files map in the Flow view; pixel-art Flow renderer | Team and Timeline first; renderer is swappable (D27) | Later |
+| Files map in the Flow view; pixel-art Flow renderer | Timeline first (Team map parked, D26 amendment); renderer is swappable (D27) | Later |
 | Branching the workspace with message branches | Complex; edits warn instead | Later, if needed |
 
 ## Trust failures we've seen
