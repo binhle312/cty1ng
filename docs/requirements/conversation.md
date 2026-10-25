@@ -11,7 +11,7 @@ Chatting with one or more bots: messages, streaming, mentions, edits and branche
 - **CV-3.** As the owner, I want to edit my earlier message and switch between versions, so that I can change direction without losing the old path.  
   Acceptance criteria: UI-3.8, UI-3.9.
 - **CV-4.** As the owner, I want @mention to offer only bots in this conversation, so that I never address someone who cannot answer.  
-  Acceptance criteria: UI-3.11, UI-3.12, UI-3.14.
+  Acceptance criteria: UI-3.11, UI-3.12, UI-3.14, UI-3.14b.
 - **CV-5.** As the owner, I want to attach files and browse the conversation's workspace, so that bots and I work on the same documents.  
   Acceptance criteria: UI-3.13, UI-3.16.
 - **CV-6.** As the owner, I want a conversation header with the members, a way to add a bot and the discussion status, and a Stop button in the composer, so that I stay in control.  
@@ -109,6 +109,10 @@ Composer
   ("Type not allowed", "Over 10 MB", "11th file").
 - UI-3.14: Enter sends. Shift+Enter or Alt+Enter inserts a newline (the same keys in every
   message and note box).
+- UI-3.14b: Every Markdown box supports Markdown keys (Ctrl+B bold, Ctrl+I italic, Ctrl+Shift+X
+  strike, Ctrl+E inline code, Ctrl+K link, and keys for code block, lists and quote; Cmd on
+  Mac). Selected text shows a small format bar with the five inline actions; each button's
+  tooltip names its key (`../design/components/composer.md` §5).
 
 Header and side panel
 

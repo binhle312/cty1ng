@@ -56,3 +56,52 @@ Only one line shows. When there are more, the first one in this list wins:
 - It is far from Send, so the owner does not press it by mistake. The header has no Stop.
 - Stop ends every queued and running run of the conversation (UI-3.15). The reply shows
   "Stopped by you" (`conversation-page.md` §6, E2).
+
+## 5. Markdown keys and the format bar
+
+> Agreed in the thread review of PR #26 (owner, 2026-10-25 01:47 and 01:51, option B). No board
+> yet; the sketch is in this section.
+
+Every Markdown box has the same keys and the same format bar: the composer, Edit, Request
+changes, and the Bad answer note. The box stays plain Markdown text, not a rich editor.
+
+### 5.1 Keys (Cmd in place of Ctrl on Mac)
+
+| Key | Action | Result |
+| --- | --- | --- |
+| Ctrl+B | Bold | `**text**` |
+| Ctrl+I | Italic | `_text_` |
+| Ctrl+Shift+X | Strike | `~~text~~` |
+| Ctrl+E | Inline code | `` `text` `` |
+| Ctrl+K | Link | `[text](url)`, then the cursor selects `url` |
+| Ctrl+Shift+C | Code block | a line with three back ticks before and after the selected lines |
+| Ctrl+Shift+8 | Bullet list | `- ` at the start of each selected line |
+| Ctrl+Shift+7 | Numbered list | `1. `, `2. ` … at the start of each selected line |
+| Ctrl+Shift+. | Quote | `> ` at the start of each selected line |
+
+- With a selection, the key wraps it. When the selection already has the same marks, the key
+  removes them. With no selection, the key adds the marks and puts the cursor between them.
+- One Ctrl+Z undoes one key action.
+- The box takes these keys only while it has the focus, and stops the browser action for them
+  then (Ctrl+B and Ctrl+K have other jobs in some browsers).
+
+### 5.2 Format bar (B)
+
+```
+                 ┌ B  I  S  <>  🔗 ┐   ← shows only while text is selected
+┌────────────────┴────────────────┴────────────────────────────┐
+│ 📎  @BA write the ████████████ for the sign-in page.    [↑]  │
+└──────────────────────────────────────────────────────────────┘
+          hover B:  Bold · Ctrl+B
+```
+
+- A small bar shows above the selection while text in the box is selected, and goes away when
+  the selection is empty or the box loses the focus.
+- Five 28 px icon buttons: Bold, Italic, Strike, Inline code, Link. `surface-raised` fill, 1 px
+  `outline-strong` border, radius 8 px, icons in `on-surface-muted`, an active mark in
+  `on-surface`.
+- Each button has an `aria-label` and a tooltip with its name and key ("Bold · Ctrl+B"). A
+  click does the same as the key and keeps the selection.
+- The bar also shows when the selection is made with the keyboard (Shift+arrows). Tab moves
+  into the bar, and Esc closes it and returns the focus to the text.
+- The line actions (code block, lists, quote) are keys only.

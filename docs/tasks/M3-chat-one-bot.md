@@ -76,7 +76,7 @@ panel, handoffs (M6); editing and branches (M4).
 ## Acceptance criteria
 
 - Journey J1 steps 1–3 pass in Playwright with the fake model (adding with the add slot).
-- UI-1.1–1.6 (icons from avatars), UI-3.1–3.7, 3.10, 3.14, 3.15 (partial), 3.17.
+- UI-1.1–1.6 (icons from avatars), UI-3.1–3.7, 3.10, 3.14, 3.14b, 3.15 (partial), 3.17.
 - Invariants 7, 8, 9, 11, 14, 15, 17, 18, 22.
 - Killing the backend mid-stream and restarting: the run is retried after the lease, no
   duplicate message, the UI recovers on reconnect.
