@@ -1,6 +1,10 @@
 # D46. The app writes a short title from the first message, one time only
 
-Status: accepted (2026-10-23, owner). The owner must approve the M3 migration before it is written.
+Status: accepted (2026-10-23, owner). The owner must approve the M3 migration before it is written. Amended
+2026-10-25 (owner): this amendment replaces the approval timing stated above. As of 2026-10-25, no
+application data exists. The owner approves the M3 schema design in `../domain-model.md` before SQL
+generation, then approves the generated SQL in the M3 PR (`../../AGENTS.md` §7). The conditional
+backfill rule in `../domain-model.md` §5 still applies if the tables already contain data.
 Decision: When the first human message of a conversation is sent, the app asks a model for a
 short title, one time only. The title call is not a run.
 
