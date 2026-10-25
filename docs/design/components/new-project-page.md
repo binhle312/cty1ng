@@ -89,7 +89,7 @@ The project opens with an empty first conversation. The owner adds bots in the c
 
 ## Requirement changes (requirements PR)
 
-- New column `projects.instructions_md TEXT NOT NULL DEFAULT ''`, ≤ 3000 chars. **Migration,
-  needs approval.**
+- New column `projects.instructions_md TEXT NOT NULL DEFAULT ''`, ≤ 3000 chars. **Schema change
+  (initial schema for M5b), needs approval.**
 - Prompt order and budget for goal and instructions (D45).
 - `POST /projects` and `PATCH /projects/{id}` take `description` (goal) and `instructions_md`.

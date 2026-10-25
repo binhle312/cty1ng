@@ -248,8 +248,9 @@ Coverage ("45 of 61 checked") always shows, because a rate from few verdicts is 
 
 ### 9.6 Not specified yet
 
-The design needs data that the spec does not hold yet. These go to the M3 and M7 briefs, with
-a migration that needs the owner's approval:
+The design needs data that the spec does not hold yet. These go to the M3 and M7 briefs, as a
+schema change in the initial schema for that slice. The owner approves the schema design first
+and the generated SQL in the slice PR:
 
 - The task verdict on a run (§9.5) and the "Did this do the job?" row in `conversation.md`.
 - A record of setup changes per bot, with what changed and the versions (§9.3). Profile saves

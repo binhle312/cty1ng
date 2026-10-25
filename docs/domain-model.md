@@ -3,6 +3,11 @@
 This document owns the database schema, the invariants, and what lives on disk. Migrations must
 match it; a PR that changes a table changes this document too (and needs the owner's review).
 
+As of 2026-10-25, no application data exists, so no backfill is currently required. Constraints,
+defaults, delete rules, and version history still apply. Each slice adds its tables and columns
+to the initial schema for that slice. The owner approves a schema change in two steps: the schema
+design in this document first, then the generated SQL in the slice PR (`../AGENTS.md` §7).
+
 ## 1. Conventions
 
 - Ids are UUIDv7 (D22), stored as `TEXT` (36 chars) in SQLite and as native `uuid` in Postgres
@@ -492,7 +497,7 @@ runs
 INDEX runs_claim ON runs(status, created_at)
 UNIQUE INDEX runs_one_running ON runs(conversation_id) WHERE status = 'running'   -- D11 in the database
 
-run_slots                                -- append-only; one row per admitted execution (proposed 2026-10-25, migration needs owner approval)
+run_slots                                -- append-only; one row per admitted execution (proposed 2026-10-25, schema design needs owner approval)
   id               TEXT PK               -- TypeID prefix `rslot`; one run can have more than one slot
   run_id           TEXT NOT NULL REFERENCES runs(id)
   conversation_id  TEXT NOT NULL REFERENCES conversations(id)
