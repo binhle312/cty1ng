@@ -16,14 +16,14 @@ conversations. Technical design: `../domain-model.md` §11, §14.
   Acceptance criteria: UI-13.4, UI-13.6.
 - **PM-4.** As the owner, I want to see, edit, delete and recover what bots remember, so that
   nothing becomes permanent without my knowing. Acceptance criteria: UI-13.7 to UI-13.10,
-  UI-13.13 to UI-13.15.
+  UI-13.13 to UI-13.17.
 - **PM-5.** As the owner, I want bots in a multi-bot conversation outside any project to remember facts
   about that conversation's topic, so that a quick team conversation keeps its context without needing a
   project. Acceptance criteria: UI-13.4, UI-13.11, UI-13.12.
 
 ## When a bot may save memory
 
-This table is a summary of D38, D43, D48 and D53, in one place. It adds no rule. If it and a decision
+This table is a summary of D38, D43, D48, D53 and D56, in one place. It adds no rule. If it and a decision
 differ, the decision wins; fix the table. In every row that saves, the conversation shows the
 "Remembered" line with Undo (UI-13.4).
 
@@ -33,7 +33,8 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
 | Plain answer (no plan) | Only when the owner clicks **Remember** on the bot's offer | The click | D48 |
 | Planning run | No. Its tools are read-only. It lists memory changes on the plan card | — | D48 |
 | Action run, the item is in the approved plan | Yes | The plan approval | D48 |
-| Action run, the item is not in the plan | Not decided. Open question in D56 (proposed) | — | D56 |
+| Action run, the item is not in the plan | No. The tool returns `memory_not_in_plan`; the bot can offer a **Remember** button | The click | D56 |
+| An action run saved memory, then failed or stopped | The items stay saved. The unsaved changes card lists them, each with Undo | The plan approval | D56, D52 |
 | A run that read the web | Only items in the approved plan, or the **Remember** button | Plan or click | D53 |
 | Memory is off (in Settings, or "Don't use memory" in the conversation) | No. The memory tools are not offered | — | D38 |
 | Tidy memory | Only the changes the owner applies on the proposal card | The owner applies | D38 |
@@ -85,4 +86,8 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
   proposal card: each merge, rewrite or delete with a checkbox and before/after text. Nothing
   changes until the owner presses Apply. Applied changes can be undone like any other memory
   change.
+- UI-13.16: In an action run, a memory tool call for an item that is not on the approved plan's
+  Memory list saves nothing and returns `memory_not_in_plan`. A fake-model test proves it (D56).
+- UI-13.17: When an action run fails or stops after it saved memory, the unsaved changes card
+  lists each saved item with Undo, next to the unsaved files (D52, D56).
 

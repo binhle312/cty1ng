@@ -1,10 +1,19 @@
 # D56. Memory in action runs: items not in the plan, and runs that fail
 
-Status: proposed (2026-10-24). Not accepted. The owner picks one option for each question below.
-It comes from the docs cleanup of 2026-10-24: the memory table in
-`../requirements/projects-and-memory.md` has one row with "Not decided", and D52 has a rule for
-the files of a failed run but not for its memory.
-Amends: D38, D48
+Status: accepted (2026-10-25, owner), options 1A and 2A. It comes from the docs cleanup of
+2026-10-24: the memory table in `../requirements/projects-and-memory.md` had one row with "Not
+decided", and D52 had a rule for the files of a failed run but not for its memory.
+Amends: D38, D48, D52
+
+Decision:
+
+- **1A. An action run saves only the memory changes on its approved plan.** The memory tools
+  (`remember`, `update_memory`, `forget`) accept only items on the plan card's Memory list. Other
+  calls return the tool error `memory_not_in_plan`. The bot can offer such an item with a
+  **Remember** button at the end of its reply; the owner's click saves it (D48).
+- **2A. Memory that a failed or stopped run saved stays saved, and the card shows it.** The
+  unsaved changes card of D52 also lists each memory item that the run saved, each with Undo:
+  "BA stopped. 1 file is not saved. 1 memory item was saved."
 
 ## The two questions
 
@@ -47,13 +56,13 @@ items, and the risk of 2A is small.
 - Web-read runs (D53): already only plan items or the Remember button.
 - D52 file rules.
 
-## If accepted
+## What changes in other documents
 
-- `../requirements/projects-and-memory.md`: the row "Action run, the item is not in the plan" gets
-  the chosen rule; a new criterion for the failed-run card.
-- `../conversation-rules.md`: the memory tool rule and the error `memory_not_in_plan` (1A).
-- `../design/components/plan-card.md`: no change for 1A (the Memory list exists).
-- D52 failed-run card text (2A), built in M6.
-- A fake-model test for each chosen rule (`../testing.md`).
+- `../requirements/projects-and-memory.md`: memory table rows, UI-13.16 (1A) and UI-13.17 (2A).
+- `../conversation-rules.md` §4: the error code `memory_not_in_plan`.
+- `../tasks/M6-workspace-parity.md`: the parked question is closed.
+- `../design/components/plan-card.md`: no change (the Memory list exists).
+- The D52 card text gets the memory line when M6 designs that card.
 
-Implemented in: nothing yet (proposed).
+Implemented in: `../requirements/projects-and-memory.md` (memory table, UI-13.16, UI-13.17),
+`../tasks/M6-workspace-parity.md`. Built in M6, with the D52 card.
