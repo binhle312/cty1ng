@@ -150,7 +150,9 @@ tool result, and the bot continues.
 - **Failure** is a tool result `{error: <code>, message: <one line>}`. The wrapper also writes the
   `run_steps` row with `status = error` and the same code in `detail`. Examples: `not_found`
   (no such file), `outside_write_scope`, `invalid_arguments` (the arguments fail the tool's Zod
-  schema), `unknown_tool`, `limit_reached` (handoff limit, §5). An unexpected exception gives
+  schema), `unknown_tool`, `limit_reached` (handoff limit, §5), `draft_not_in_plan` (§7) and
+  `memory_not_in_plan` (a memory change that the approved plan does not list, D56). An
+  unexpected exception gives
   `internal`. The full error goes to the server log only, never to the model or the UI
   (AGENTS.md §8).
 - **No automatic retry of a tool.** The model can call the tool again. `request_limit` (default

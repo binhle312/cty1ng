@@ -120,7 +120,8 @@ The app does not watch files while the card waits; the check runs only on Approv
 - When the owner mentions two bots with the same "remember", the first bot saves. The second
   bot's memory tool finds the same text in the same scope, saves nothing and returns "already
   saved", so the page shows one line (Q3-A, UI-13.16).
-- **Remember offer.** When a bot only offers a memory item (D48), a box under its reply shows
+- **Remember offer.** When a bot only offers a memory item (D48), or an action run gets
+  `memory_not_in_plan` for an item that is not on the plan (D56), a box under its reply shows
   it: 1 px dashed `outline-strong` border, radius 8 px, the text 'Save to project memory: "The
   sign-in flow asks for the email first."' and **Remember** (secondary, 28 px). The click is the
   owner's approval. After the click, the memory line above shows.
