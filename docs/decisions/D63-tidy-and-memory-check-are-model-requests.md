@@ -28,9 +28,11 @@ Decision:
 - **The app checks every new text (owner, PR #37 review).** A merge or rewrite text passes the
   sensitive-data guard (D39) and `memory_item_max_chars` when the card is stored (a failing row
   is off, with its reason) and again at Apply. A failing row is never saved.
-- **Instructions changed.** A check change stores `projects.instructions_version`. Decide and
-  Apply refuse a change with 409 `instructions_changed` when the version moved on; the row says
-  "The instructions changed. Check again."
+- **Instructions changed.** A check change stores `projects.instructions_version`. When the version
+  moved on, **Decide** (one item) refuses with 409 `instructions_changed`. **Apply** (a card of
+  several rows) skips that row with the reason `instructions_changed` and applies the other rows
+  (clarified 2026-10-26, owner, PR #37 review). The row says "The instructions changed. Check
+  again."
 - **Apply.** Applied rows are ordinary memory changes: versions when history is on, events, and
   a deleted item goes to Trash (D62). A merge keeps the first item with the new text and
   deletes the others. The toast is "Saved ✨". A flag row has no check box; it points to Decide

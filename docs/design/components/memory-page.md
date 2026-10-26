@@ -7,7 +7,7 @@
 > uses: `buttons.md`, `time-format.md`, `../ui-rules.md`.
 
 The Memory page is a light tool to control what bots remember (owner, 2026-10-25). It is not a
-place to read or write long notes. Each item is one short fact, at most `memory_item_max_chars` characters (default 300). A place holds at most `memory_items_max` items (default 50). The boards were drawn with the older 500 and 100; the settings win, and the examples here use the defaults.
+place to read or write long notes. Each item is one short fact, at most `memory_item_max_chars` characters (default 300). A place holds at most `memory_items_max` items (default 50). The examples and the previews use the defaults.
 
 ## 1. Where it opens
 

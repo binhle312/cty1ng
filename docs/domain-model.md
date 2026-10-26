@@ -804,14 +804,14 @@ UNIQUE INDEX memory_proposals_one_open ON memory_proposals(kind, scope, coalesce
   and reads change nothing.
 - Global switch: `settings.memory_enabled` (default true, UI-8.6).
 - **Trash (D62).** Delete sets `deleted_at`. A deleted item is not read by bots, not counted in
-  the 100 and not on the Memory page. Restore clears `deleted_at`; it is refused with 409
+  `memory_items_max` and not on the Memory page. Restore clears `deleted_at`; it is refused with 409
   `place_in_trash` while the item's bot, project or conversation is in Trash, and with 409
   `memory_full` when the place has `memory_items_max` live items. The purge deletes the row and its
   `memory_item_versions` rows. Nothing else points to a memory item.
 - **Move into a project (D38, D61, D62).** In one transaction: the ticked conversation items
   change to `scope = 'project'` with the project's id (same row, versions and source); the
   unticked items change scope the same way and get `deleted_at = now`, so a restore puts them in
-  the project memory. A count over 100 refuses the move with 409 `memory_full` and changes
+  the project memory. A count over `memory_items_max` refuses the move with 409 `memory_full` and changes
   nothing.
 - **Proposals (D63).** `memory_proposals` holds the Tidy cards and the memory check cards.
   One open card per place and kind (the unique index): a new request sets the open card of the
@@ -915,7 +915,7 @@ Conditional deletes keep some rows, so they also name each column for the rows t
 
 | Table | Delete row where | Kept rows: keep | Kept rows: clear |
 | --- | --- | --- | --- |
-| `memory_items` | `scope = 'conversation'` and `conversation_id` = the conversation | `id`, `scope`, `bot_id`, `project_id`, `conversation_id`, `text` (D38), `current_version`, `row_version`, `created_by_bot_id`, `source_message_id`, `last_changed_by_bot_id`, `last_change_message_id`, `created_at`, `updated_at`, `deleted_at` | none |
+| `memory_items` | `scope = 'conversation'` and `conversation_id` = the conversation | `id`, `scope`, `bot_id`, `project_id`, `conversation_id`, `text` (D38), `current_version`, `row_version`, `created_by_bot_id`, `source_message_id`, `last_changed_by_bot_id`, `last_change_message_id`, `created_at`, `updated_at`, `seen_at`, `deleted_at` | none |
 | `memory_item_versions` | its `memory_item_id` is deleted | `memory_item_id`, `version`, `text`, `changed_by_bot_id`, `changed_at` | none |
 | `memory_proposals` (D63) | `scope = 'conversation'` and `conversation_id` = the conversation | rows whose `message_id` or `run_id` is in the conversation (a Tidy card in a reply): `id`, `kind`, `scope`, `bot_id`, `project_id`, `conversation_id`, `worker_bot_id`, `status`, `model_request_id`, `run_id`, `message_id`, `created_at`, `updated_at`, `decided_at` | `changes` → `'[]'` (it holds item texts), `error` → NULL |
 

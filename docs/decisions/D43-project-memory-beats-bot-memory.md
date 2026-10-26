@@ -66,4 +66,8 @@ the check run and its status, and the **Update project memory** action.
 Why: D38 says that memory is data, not instructions from the owner. So the owner's answer must
 win. A question before the work costs less than work that the owner must undo. All bots and chats
 in a project share project memory, so the owner must see each change to it.
+*Note 2026-10-26 (owner, PR #37 review): the text above is kept as it was accepted. D63 changes
+the "check run" to one check request (no run). The API contracts are now written in `../api.md`
+§5a and §5b, and the M5b brief covers them.*
+
 Implemented in: `../conversation-rules.md`, `../domain-model.md` §14, `../api.md`, task M5b.
