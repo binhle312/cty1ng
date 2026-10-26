@@ -139,8 +139,7 @@ Title (D46, rules in `../conversation-rules.md` §8)
   header, the rail tooltip and the conversation lists when `conversation.updated` arrives. The send
   and the bot reply do not wait for it. The app makes this request one time per conversation.
   Later messages and edits do not change the title.
-- UI-3.25: A title that the owner sets (rename in the header, the rail menu or conversation
-  settings) always wins. The app never replaces it, also when the rename happens during the
+- UI-3.25: A title that the owner sets (rename in the header or the conversation menu) always wins. The app never replaces it, also when the rename happens during the
   title request.
 - UI-3.26: If the request fails, times out, or gives an empty or flagged answer, the title
   stays "New conversation", with no error in the conversation. The app does not make the request when

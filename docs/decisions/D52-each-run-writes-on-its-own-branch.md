@@ -106,7 +106,9 @@ Decision:
   through the save queue. A file with the same name gets the `-from-<conversation-slug>` suffix.
   The originals stay in the Home Library. After the move, the conversation uses the project
   Library. Only a Home conversation can move: a project conversation stays in its project (D61).
-  A conversation cannot move while one of its runs is running or has unsaved changes.
+  A conversation cannot move while it has a queued or running run, a save in progress, or
+  unsaved changes; the server checks again before it commits the move, and the move copies
+  pinned versions (D61, 2026-10-26).
 - **A Library belongs to its place and goes to Trash with it (owner, 2026-10-23; amended
   2026-10-25).** A project Library goes to Trash with its project and comes back with it (D47).
   The Home Library never goes to Trash. Deleting a conversation leaves its files in its Library

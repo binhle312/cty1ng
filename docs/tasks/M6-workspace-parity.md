@@ -35,6 +35,16 @@ files), §6; `docs/requirements/conversation.md` (UI-3.3 cards, 3.13, 3.16).
 - UI-3.3 (handoff cards), 3.13, 3.16.
 - All behaviours in `porting-guide.md` §3 have tests.
 - Security tests in `security.md` §3 for the workspace, attachments and file viewer pass.
+- Isolation (D61, invariant 23), each with a test: a run in Project A cannot list, read or write
+  a file of Project B or of the Home Library; a Home run cannot reach a project Library;
+  `propose_copy` gives the bot the place names only, never their files; Approve copies the pinned
+  version, also when a newer version exists; a copy starts no run; the copy record holds the
+  source place, path, commit and approval; a project conversation cannot move (API returns an
+  error), and a Home conversation moves only into a project; the move copies pinned versions and
+  is refused when a run is queued or running, a save is in progress or unsaved changes exist,
+  also when the run starts after the dialog opens; `copy_proposals_max_per_conversation_24h`
+  counts pending, approved, rejected and cancelled proposals, not blocked attempts, and not the
+  owner's own Copy to.
 - An image attached in turn 1 is not resent to the model in turn 3 (agent test inspects the
   request).
 

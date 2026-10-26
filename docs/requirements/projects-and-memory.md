@@ -47,7 +47,9 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
 - UI-13.2: The owner can create a project (name, one-line description), rename it, and move a
   Home conversation into a project from the conversation's menu. A project conversation never
   leaves its project (D61). The move dialog lists the conversation's saved files with ticked
-  boxes, and shows which memory and Library the bots will use from then on.
+  boxes and the pinned version of each, and shows which memory and Library the bots will use
+  from then on. Move is unavailable while the conversation has a queued or running run, a save
+  in progress, or unsaved changes; the server checks again before the move (D61).
 - UI-13.3: Deleting a project asks for confirmation. The dialog says: "To keep something from
   this project, ask a bot to write it to a file, then use Copy to." (D61). The project goes to
   Trash as one item, with its conversations, memory and Library files. The owner can restore the whole project,

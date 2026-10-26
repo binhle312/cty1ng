@@ -89,8 +89,9 @@ Rejected:
 
 Consequences: `domain-model.md` §5 adds `conversations.purged_at` and replaces the "recover by
 hand" line. `api.md` needs a restore endpoint for conversations (with the Trash page round,
-M5b). The Trash page design (M5b) shows conversations. The schema goes into the initial schema of
-slice M4.
+M5b). The Trash page design (M5b) shows conversations. Delete, Restore, the purge job and the
+schema (`deleted_at`, `purged_at`) come together in slice M5b, so a delete can always be undone
+(owner, 2026-10-26). The purge schema test starts in M4.
 
 Implemented in: `../domain-model.md` §5, §16, `../api.md` §5, `../requirements/app-shell.md` UI-1.6,
 `../design/components/conversation-page.md` §2.1.

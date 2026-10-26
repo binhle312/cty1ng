@@ -6,7 +6,7 @@ Checkpoint: **plan** (routing).
 
 Several bots in one conversation: drag from the header to add, the owner chooses what each new
 bot may read, `@mention` limited to members, reply rules applied, deleted bots greyed, message
-editing with branches, and the conversation menu with Delete to Trash. There is no conversation
+editing with branches, and the conversation menu with Rename. There is no conversation
 settings page and there are no preset icons (round 12).
 
 ## Read first
@@ -27,10 +27,10 @@ settings page and there are no preset icons (round 12).
 - Drag-to-add with dnd-kit (UI-2.4, 2.5) and the drop rules.
 - Editing and branches: edit endpoint, sibling navigation, active path for listing and for
   bots, edit blocked while runs are active.
-- Conversation menu on the bar 2 row and in the header (UI-9.7): Rename, Memory, Move to
-  project, Delete. Delete moves the conversation to Trash (D60; the restore and the Trash page
-  are M5b). After `trash_days` the purge job (M1) purges the conversation by the policy in
-  `domain-model.md` §16. Members picker, Remove rules and the empty picker (`conversation-page.md` §2.2).
+- Conversation menu on the bar 2 row and in the header (UI-9.7). In M4 only **Rename** works.
+  Memory, Move to project and Delete come in M5b (owner, 2026-10-26): Delete needs Restore and
+  the Trash page, Memory needs memory, and Move needs projects. The approved menu design shows
+  them with their M5b tag (`ui-rules.md` P8); M4 does not show them. Members picker, Remove rules and the empty picker (`conversation-page.md` §2.2).
 - Deleted bot rendering (UI-3.2).
 
 ## Out of scope
@@ -40,8 +40,8 @@ Bot-to-bot discussion (M5).
 ## Acceptance criteria
 
 - Every row of `conversation-rules.md` §1 has a passing table test.
-- UI-1.3 (derived icons), UI-1.6, UI-2.4, 2.5, UI-3.2, 3.8, 3.9, 3.11, 3.12, 3.15, UI-9.1, 9.4,
-  9.5, 9.7.
+- UI-1.3 (derived icons), UI-2.4, 2.5, UI-3.2, 3.8, 3.9, 3.11, 3.12, 3.15, UI-9.1, 9.4, and
+  UI-9.7 for Rename (UI-1.6 and UI-9.5, Delete, are M5b).
 - Invariant 10.
 - Invariant 24: the purge schema test (`domain-model.md` §16) fails for a table with no entry,
   for a covered table whose policy column names do not match its schema columns exactly (test
@@ -62,18 +62,17 @@ sends in parallel chain instead of forking, the bot turn counter at its limit, t
 PATCHes with the same `row_version`); Vitest for icon
 composition (0, 1, 2, 4, 7 bots, deleted, pending) and the mention autocomplete; Playwright as
 above (dnd-kit drag works with Playwright's mouse API; also test the keyboard alternative).
-Purge: the schema test from invariant 24 (reads the Drizzle schema, so it covers every table
-that later slices add), and a service test that purges a conversation and checks that the run
-costs stay and no cleared column holds text. M5b adds to that test a bot memory item learned in
-the conversation, which must stay.
+Purge: the schema test from invariant 24 starts in M4. It reads the Drizzle schema, so it also
+checks every table and column that later slices add, and it stays in CI. The Delete endpoint,
+the purge job, the purge service test and Restore are M5b.
 
 ## Needs human review
 
 The UI design in the plan (layout, components, states), approved before UI code is written
 (`docs/workflow.md` §2; sketches in `docs/design/` are not specs).
 
-Routing tests (read the table); the branch columns and `conversations.purged_at` in the initial
-schema of this slice (D60).
+Routing tests (read the table); the branch columns in the initial schema of this slice;
+the purge policy map for the tables of this slice (`domain-model.md` §16).
 
 ## Open questions
 
