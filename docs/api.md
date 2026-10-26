@@ -101,7 +101,7 @@ endpoint to create one.
 | GET | `/conversations` | | sorted by `last_activity_at`; includes member avatars for the rail icon and `unread` |
 | POST | `/conversations` | `{title?}` | a given `title` sets `title_source: "manual"` (D46) |
 | GET | `/conversations/{id}` | | settings (with effective values), members, active leaf |
-| PATCH | `/conversations/{id}` | `{row_version, title?, bot_chat_enabled?, bot_turn_limit?}` | `null` = inherit global. A PATCH writes only the fields in its body. Send `title` only when the owner changed it: any `title` sets `title_source: "manual"`, and the app never writes an auto title after that (D46) |
+| PATCH | `/conversations/{id}` | `{row_version, title?, bot_discussion_enabled?, bot_turn_limit?}` | `null` = inherit global. A PATCH writes only the fields in its body. Send `title` only when the owner changed it: any `title` sets `title_source: "manual"`, and the app never writes an auto title after that (D46) |
 | DELETE | `/conversations/{id}` | | M5b. moves to Trash (D60): stops its runs first; its saved files stay in the Library of its place; its unsaved changes go to Trash with it; restore endpoint with the Trash page round (M5b); a restore while its project is in Trash returns 409 `project_in_trash` (D60) |
 | POST | `/conversations/{id}/read` | `{seq}` | sets `last_read_seq` (never moves backwards); drives unread dots and the "New" divider |
 | GET | `/conversations/{id}/messages?before_seq=&limit=` | | the **active path**, newest page first; each message has `siblings: {index, count, ids}` |
@@ -133,7 +133,7 @@ expressions first (`requirements/time-range-picker.md` §Contract with the backe
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET / PATCH | `/settings` | `{bot_chat_enabled, bot_turn_limit, runs_per_conversation_per_hour, daily_cap_usd, provider_caps_usd, timezone, bot_order, bot_order_direction, conversation limits, bot limits and health thresholds (`domain-model.md` §10)}`. PATCH validates each key with Zod and returns 422 for a value out of range (conversation limits: `conversation-rules.md` §9); GET adds `today_spend_usd` and `today_spend_by_provider_usd` |
+| GET / PATCH | `/settings` | `{display_name, bot_discussion_enabled, bot_turn_limit, runs_per_conversation_per_hour, daily_cap_usd, provider_caps_usd, timezone, bot_order, bot_order_direction, conversation limits, bot limits and health thresholds (`domain-model.md` §10)}`. PATCH validates each key with Zod and returns 422 with the key for a value out of range or a broken cross-field rule (ranges: `domain-model.md` §10; conversation limits: `conversation-rules.md` §9); GET adds `today_spend_usd` and `today_spend_by_provider_usd` |
 | GET | `/usage?group_by=bot\|conversation\|provider\|day&from=&to=` | tokens and estimated cost (D21). With `group_by=bot`, title requests are one group with `bot_id: null` and the label "Conversation titles" (D46) |
 | GET | `/stats/summary?from=&to=&tz=&conversation_id=` | tiles with previous-period comparison (D24) |
 | GET | `/stats/models?from=&to=&tz=&bucket=&conversation_id=&metric=cost\|tokens\|requests` | series per model per bucket + table |

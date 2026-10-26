@@ -73,7 +73,8 @@ Decision:
   time, also while the run works. A card hidden during the run keeps the progress on its line,
   updated live: "**Plan** [Running · 2 of 4 done] · Show" (owner, 2026-10-25 03:44; wording 07:42). After the
   run, the open card shows the step marks as they were at the end of the run.
-- **The app reminds the bot once before the run ends (owner, 2026-10-25 03:48).** When the bot
+- **The app reminds the bot up to `plan_mark_reminders` times before the run ends (owner,
+  2026-10-25 03:48; heading amended 2026-10-26 by the owner, it said "once").** When the bot
   sends its final reply, the app checks for steps with no `done` or `skipped` mark and for
   Done-when items with no `check_done`. If any are open, the run does not end yet. The app sends
   the bot one more turn: "Before you reply: step 4 and Done-when item 2 have no mark. Mark each

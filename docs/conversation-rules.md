@@ -49,7 +49,7 @@ Effective settings: conversation value if not NULL, else the global setting.
 
 | Setting | Global default | Range |
 | --- | --- | --- |
-| `bot_chat_enabled` | false | on/off |
+| `bot_discussion_enabled` | false | on/off |
 | `bot_turn_limit` | 5 | 1–20 |
 
 When a run finishes, `decideRuns` is called with the bot's message as trigger:
@@ -569,9 +569,9 @@ other code reads that constant instead of repeating the number.
   run. A queued run is checked at its claim with the new value, so it can be refused (§2).
   Over the new limit, only new items are blocked until the count drops.
 - **How the owner changes them.** `PATCH /settings` with the key (`api.md` §7). The server
-  validates the value with Zod and returns 422 when it is out of range. The Settings page shows
-  `runs_per_conversation_per_hour` (UI-8.1). The other three get rows on the Settings page at the
-  M5 global settings design round; until then the owner uses `PATCH /settings`.
+  validates the value with Zod and returns 422 when it is out of range. The Settings page has a row
+  for each of them on its Limits page (UI-8.1, `design/components/settings-page.md` §4.4). A row
+  shows when its slice ships; until then the owner uses `PATCH /settings`.
 - `share_max_per_conversation_24h` (D58) and `plan_mark_reminders` (D57) are settings too. Their
   rules are in those decisions.
 
