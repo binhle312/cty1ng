@@ -16,7 +16,7 @@ conversations. Technical design: `../domain-model.md` §11, §14.
   Acceptance criteria: UI-13.4, UI-13.6, UI-13.16.
 - **PM-4.** As the owner, I want to see, edit, delete and recover what bots remember, so that
   nothing becomes permanent without my knowing. Acceptance criteria: UI-13.7 to UI-13.10,
-  UI-13.13 to UI-13.15, UI-13.17, UI-13.18.
+  UI-13.13 to UI-13.15, UI-13.17 to UI-13.21.
 - **PM-5.** As the owner, I want bots in a multi-bot conversation outside any project to remember facts
   about that conversation's topic, so that a quick team conversation keeps its context without needing a
   project. Acceptance criteria: UI-13.4, UI-13.11, UI-13.12.
@@ -37,7 +37,7 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
 | An action run saved memory, then failed or stopped | The items stay saved. The unsaved changes card lists them, each with Undo | The plan approval | D56, D52 |
 | A run that read the web | Only items in the approved plan, or the **Remember** button | Plan or click | D53 |
 | Memory is off (in Settings, or "Don't use memory" in the conversation) | No. The memory tools are not offered | — | D38 |
-| Tidy memory | Only the changes the owner applies on the proposal card | The owner applies | D38 |
+| Tidy memory | Only the changes the owner applies on the proposal card | The owner applies | D38, D63 |
 | A new project memory item disagrees with the project instructions | Not at once. The bot asks the owner; it saves the item only if the owner agrees | The owner's answer | D43 |
 
 ## Acceptance criteria (UI-13)
@@ -49,7 +49,9 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
   leaves its project (D61). The move dialog lists the conversation's saved files with ticked
   boxes and the pinned version of each, and shows which memory and Library the bots will use
   from then on. Move is unavailable while the conversation has a queued or running run, a save
-  in progress, or unsaved changes; the server checks again before the move (D61).
+  in progress, or unsaved changes; the server checks again before the move (D61). One dialog
+  holds the project, the conversation memory and the files
+  (`../design/components/conversation-page.md` §2.1a). The file part is M6.
 - UI-13.3: Deleting a project asks for confirmation. The dialog says: "To keep something from
   this project, ask a bot to write it to a file, then use Copy to." (D61). The project goes to
   Trash as one item, with its conversations, memory and Library files. The owner can restore the whole project,
@@ -64,7 +66,8 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
   it.
 - UI-13.7: A Memory page lists memory by scope (each bot; each project; each multi-bot
   conversation outside a project), with search. Each item
-  shows its text, who saved it, where, and when.
+  shows its text, who saved it, where, and when. A bot, project or conversation in Trash is not
+  listed. Design: `../design/components/memory-page.md`.
 - UI-13.8: The owner can edit or delete any item. When memory history is on, an item shows its
   earlier versions and the owner can restore one (UI-13.9).
 - UI-13.9: "Keep memory history" is a setting on bot detail (per bot), on the project (per
@@ -80,8 +83,9 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
   conversation's memory ("Remembered · Conversation memory"), read only by the bots in that
   conversation. Each bot still reads its own bot memory there.
 - UI-13.12: Moving such a conversation into a project lists its conversation memory with
-  checkboxes (all ticked) to merge into the project memory. Unticked items stay recoverable on
-  the Memory page for 30 days.
+  checkboxes (all ticked) to merge into the project memory. Unticked items go to Trash as
+  memory items of the project, for `trash_days` (D62). When the project has no room for the
+  ticked items (100), nothing moves and the dialog says how many to untick.
 - UI-13.13: When the owner says "remember …" or "forget …", the bot saves or removes it in the
   current scope, and the "Remembered" or "Forgot" line appears. A fake-model test checks this.
 - UI-13.14: With memory off, globally (UI-8.6) or for the conversation (UI-9.6), the bot's prompt
@@ -89,7 +93,9 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
 - UI-13.15: "Tidy" on a scope of the Memory page, or asking a bot to tidy its memory, produces a
   proposal card: each merge, rewrite or delete with a checkbox and before/after text. Nothing
   changes until the owner presses Apply. Applied changes can be undone like any other memory
-  change.
+  change. On the Memory page, Tidy is one model request with the model of the bot the owner
+  picks (D63); it counts toward the daily caps and shows its cost on the card. A test with the
+  fake model checks that the card changes nothing before Apply.
 - UI-13.16: When a bot saves an item whose text is the same as an item in the same scope, the
   memory tool saves nothing and returns "already saved", and the conversation shows no second
   "Remembered" line. Example: "@BA @Designer remember: prices are in USD and EUR." gives one
@@ -99,4 +105,11 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
   Memory list saves nothing and returns `memory_not_in_plan`. A fake-model test proves it (D56).
 - UI-13.18: When an action run fails or stops after it saved memory, the unsaved changes card
   lists each saved item with Undo, next to the unsaved files (D52, D56).
-
+- UI-13.19: Delete on a memory item moves it to Trash at once, with the toast "The item is in
+  Trash." and no Undo. Restore puts it back in its place with its versions (D62). A restore into
+  a place with 100 items is refused with 409 `memory_full`.
+- UI-13.20: A Tidy row whose item changed after the request read it is off and not ticked.
+  Apply checks each item's `row_version` again, applies the rows that still match, and returns
+  the rows it skipped. A service test changes an item between the request and Apply.
+- UI-13.21: Stop on a Tidy in flight cancels the request and stores no card. A Tidy request that
+  was in flight when the app stopped is marked failed at the next start.

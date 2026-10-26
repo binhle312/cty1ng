@@ -28,7 +28,7 @@ for bots to pin in M2.
   restore, import preview, export.
 - Delete to Trash, restore and purge (D49): the service and endpoints, and a purge job that runs
   at start and once a day. `run_skills` gets its copy columns when M3 creates it. The
-  Trash page itself is M5b; until then "Delete now" has no UI.
+  Trash page itself is M5b; until then the permanent delete (**Delete** on the Trash page, D62) has no UI.
 - Events `skill.created|updated|deprecated|trashed|restored|purged`.
 - `make seed` imports the skills in `seed/skills/` (`seed/README.md`): `working-principles`,
   `hand-off-work`, `write-user-stories`, and the prototype's other BA and Designer skills, rewritten in the

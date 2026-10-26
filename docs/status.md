@@ -48,7 +48,11 @@ the add slot (+) first in the header, Stop in the composer, reactions only while
 cards inside the reply that fold after a decision, and the requirement edits that follow. M5 global settings design round 14 is agreed and saved in
 `design/components/settings-page.md` and `conversation-page.md` §2.4: one short page per Settings
 item, one setting row that says what the owner notices, the discussion popover, and the ranges of
-every setting in `domain-model.md` §10.
+every setting in `domain-model.md` §10. M5b design round 15 is agreed and saved in
+`design/components/memory-page.md`, `trash-page.md` and `conversation-page.md` §2.1a: the Memory
+page with Tidy, one Trash page for every deleted item with multi-select, and the Move to project
+dialog. D62 (one Trash page, memory items included) and D63 (Tidy and the memory check are model
+requests) are proposed. The M5b brief is written.
 
 ## Next
 
@@ -64,11 +68,10 @@ every setting in `domain-model.md` §10.
 | D58 and D59 accepted (cross-conversation reading on request, Send to conversation, save notice when project memory changed): approve the FTS5 schema design (initial schema for M5b), and the instructions/goal change time and D59 snapshot schema design (initial schema for M6). The generated SQL is approved in each slice PR; UI design of the inbox, information card and memory notice in the slice plans | M5b plan, M6 plan, Inbox plan |
 | D53 accepted (web through provider web tools): check the default limits and approve the schema design for the bot setting and the run flag (initial schema for that milestone). The generated SQL is approved in the slice PR | Web access milestone plan |
 | Approve the M3 schema design for D46 (auto title) before it is written. The generated SQL is approved in the slice PR | M3 plan |
-| Put UI-13.16 (the memory tool skips an exact duplicate) in the M5b brief | M5b start |
-| Revisit when the Trash purge runs. M1 builds the purge job as its brief says (at start and once a day) and does not wait for this. M5b revisits the schedule: interval as a setting, deadline `deleted_at + trash_days` (parked by the owner 2026-10-26) | M5b start |
 | Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a schema design approval (initial schema for M3 and M7). The generated SQL is approved in the slice PR | M3 and M7 plans |
-| Approve the M5b schema design: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars (initial schema for M5b). Claude Code stops for this approval before it writes them. The generated SQL is approved in the M5b PR | M5b plan |
-| Write the M5b brief: projects, memory (D37, D38, D43), goal and instructions (D45), pinning, the API contracts that D43 and D45 list as not written yet | M5b start |
+| Approve the M5b schema design: `projects.instructions_md`, `colour`, `pinned_position`, goal ≤ 500 chars, `memory_proposals` and the `model_requests` change (D63) (initial schema for M5b, `domain-model.md` §14). Claude Code stops for this approval before it writes them. The generated SQL is approved in the M5b PR | M5b plan |
+| Accept or change D62 (one Trash page, memory items to Trash, label **Delete**, Undo held for `undo_seconds`, purge every `PURGE_INTERVAL_HOURS`) and D63 (Tidy and the memory check are model requests) | M5b plan |
+| Answer the M5b brief's open questions: D58 in M5b or later; D38 memory limits as settings | M5b plan |
 
 ## Slices
 
@@ -82,7 +85,7 @@ every setting in `domain-model.md` §10.
 | M5 | UI design agreed | [#35](https://github.com/binhle312/cty1ng/pull/35) (spec) | Round 14: `design/components/settings-page.md`, `conversation-page.md` §2.4; key `bot_discussion_enabled` |
 | M6 | not started | | |
 | M7 | not started | | |
-| M5b | not written | | Projects and memory (D37, D38, D43, D45); left bar pinning; side pane shared with Memory (D44) |
+| M5b | UI design agreed | (this PR, round 15 spec) | Brief: `tasks/M5b-projects-and-memory.md`. Round 15: `design/components/memory-page.md`, `trash-page.md`, `conversation-page.md` §2.1a; D62, D63 proposed |
 | M5c | not written | | Skills drafted by bots (D41) |
 | M5d | not written | | Bots improve their skills from the owner's feedback (D51) |
 | M8 | not started | | |
@@ -101,3 +104,4 @@ A slice can also be `blocked` (say on what in Notes).
 | 2026-10-21 | Specification: requirements, design sketches, decisions D1–D29, briefs M0–M8 |
 | 2026-10-21 | Repository created; spec merged (PRs #1–#5): send states and research notes, security checklist, frontend conventions, `ui-ux-pro-max` skill; D31, D32 accepted |
 | 2026-10-21 | Owner review: D6, D11, D13, D33 accepted; D9 accepted with a replaceable transport; D21 accepted with price overrides |
+| 2026-10-26 | M5b design round 15: Memory page with Tidy, Trash page with multi-select, Move to project dialog; D62, D63 proposed; M5b brief and API contracts written |

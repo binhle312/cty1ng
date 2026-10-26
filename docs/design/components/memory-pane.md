@@ -54,7 +54,7 @@ then each bot's own.
 
 ## 4. Memory check card (D43, D47)
 
-After the owner saves new instructions, the check run compares them with all project memory items.
+After the owner saves new instructions, the check request (D63: one model request, not a run) compares them with all project memory items.
 If items disagree, the Memory pane opens from **Review in Memory** (`project-settings-page.md` §4)
 with a card at the top:
 

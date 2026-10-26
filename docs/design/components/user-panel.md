@@ -15,8 +15,10 @@ Until the owner sets a display name, the name is **"Sir"** and the avatar letter
 
 ## 2. Menu
 
-Opens upward from the avatar or name: Manage bots, Manage skills, Memory, Statistics, a divider,
-Settings. Arrow keys move, Esc closes. The current page is marked with a `primary` bar; on the
+Opens upward from the avatar or name: Manage bots, Manage skills, Memory, Trash, Statistics, a
+divider, Settings. **Trash** (M5b, round 15) shows the number of items in Trash at the right, in
+`on-surface-muted`, and opens the Trash page (`trash-page.md`).
+Arrow keys move, Esc closes. The current page is marked with a `primary` bar; on the
 Settings page the gear stays lit.
 
 Collapsed left bar: only the avatar shows; its menu opens to the right with the name as a header.

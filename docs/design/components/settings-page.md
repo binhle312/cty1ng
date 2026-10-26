@@ -237,6 +237,7 @@ Probe tasks, most (D51). With no eligible task, the probe action is off.
 | Memory history versions (UI-13.9) | Project settings and the bot page (per project, per bot) |
 | "Don't use memory" for one conversation (UI-9.6) | The Memory pane |
 | Discussion for one conversation (UI-9.3) | The discussion status in the conversation header (§9) |
+| `undo_seconds` (D62) | `PATCH /settings` only. The time an Undo toast of a permanent delete stays |
 
 ## 9. Discussion status and popover in the conversation header (UI-3.15, UI-9.3)
 
