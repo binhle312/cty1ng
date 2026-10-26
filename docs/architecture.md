@@ -21,7 +21,7 @@ Node process (one process in phase 1)
   └─ core/ports/ interfaces the core needs; adapters implement them
         │
         ▼
-  data/app.db (SQLite, WAL)   data/workspaces/<project or conversation id>/   data/avatars/
+  data/app.db (SQLite, WAL)   data/workspaces/<project id>/ or home/   data/avatars/
 ```
 
 ## 2. Ports and adapters (D35)

@@ -194,7 +194,7 @@ Use these words, with these meanings, in code, database, API, UI and docs.
 | **Model catalog** | `config/models.yaml`: the models a bot can be created with. |
 | **Effort** | A model's reasoning-effort setting, if the model has one. |
 | **Unavailable bot** | A bot whose model is not in the catalog or has no API key. Cannot run. |
-| **Conversation** | A thread of messages between one human and zero or more bots, with its own workspace. The UI, code, database and API always say "conversation", never "chat" (owner, 2026-10-23). |
+| **Conversation** | A thread of messages between one human and zero or more bots. Its files are in the Library of its place (D52). The UI, code, database and API always say "conversation", never "chat" (owner, 2026-10-23). |
 | **Member** | A bot in a conversation (`conversation_bots`): `pending_history`, `active` or `removed`. |
 | **History choice** | What a newly added bot may read: full history, or from the point it joined. |
 | **Message** | One entry in a conversation, by a human, a bot, or the system. |
@@ -204,7 +204,7 @@ Use these words, with these meanings, in code, database, API, UI and docs.
 | **Bot turn** | A run triggered by another bot's message (not by the human). |
 | **Turn budget** | The maximum bot turns between two human messages in a conversation. |
 | **Event** | A persisted, sequence-numbered record of something visible changing. The UI is built from events. |
-| **Workspace** | The folder and git repo where bots read and write files: one per project, shared by its conversations, or one for a conversation outside any project (D37). |
+| **Workspace** | The folder and git repo where bots read and write files: one per project, shared by its conversations, and one Home Library for all conversations outside projects (D52 amendment 2026-10-25). |
 | **Handoff** | A bot's request that the owner approve files and pass them to another bot or to the owner. |
 | **Team directory** | The list of other bots (name, slug, one-line description) in every prompt, so a bot knows whom to mention or hand off to. |
 | **Estimated cost** | Tokens × catalog prices at the time of the run. An estimate, not an invoice. |

@@ -9,7 +9,7 @@ lives in `docs/`, and this file tells you which document to open for which task.
 ## 1. What this project is
 
 A local-first web chat app where one human talks with AI role bots (BA, Designer, …). Bots have
-personas, versioned skills, a per-conversation file workspace, and can hand work to each other
+personas, versioned skills, a file Library per project plus one Home Library, and can hand work to each other
 through human approvals. TypeScript everywhere (D34): backend on Node with Hono, Drizzle and the
 Vercel AI SDK; frontend React + Vite. Libraries sit behind ports (D35).
 
