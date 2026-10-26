@@ -107,7 +107,7 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
   lists each saved item with Undo, next to the unsaved files (D52, D56).
 - UI-13.19: Delete on a memory item moves it to Trash at once, with the toast "The item is in
   Trash." and no Undo. Restore puts it back in its place with its versions (D62). A restore into
-  a place with 100 items is refused with 409 `memory_full`.
+  a place with `memory_items_max` items (default 100) is refused with 409 `memory_full`.
 - UI-13.20: A Tidy row whose item changed after the request read it is off and not ticked.
   Apply checks each item's `row_version` again, applies the rows that still match, and returns
   the rows it skipped. A service test changes an item between the request and Apply.

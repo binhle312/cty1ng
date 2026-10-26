@@ -31,7 +31,7 @@ can move into a project and take its conversation memory with it.
   settings page as designed.
 - **Memory** (D38, D43): the three scopes, the memory tools (`remember`, `update_memory`, `forget`,
   `restore_memory`, `propose_memory_tidy`), the "Remembered" lines with Undo, the exact
-  duplicate check (UI-13.16), the sensitive-data guard, the 500-character and 100-item limits,
+  duplicate check (UI-13.16), the sensitive-data guard, the limits `memory_item_max_chars` and `memory_items_max`,
   history versions per bot, project and Home conversation, the global switch and "Don't use
   memory". Memory goes into the prompt in the D43 order.
 - **Memory page and pane** (`memory-page.md`, `memory-pane.md`): places list, item rows, edit,
@@ -52,8 +52,7 @@ can move into a project and take its conversation memory with it.
 ## Out of scope
 
 - The file part of Move to project and Copy to (M6, D61).
-- Cross-conversation reading and Send to conversation (D58), unless the owner moves them here
-  (open question 1).
+- Cross-conversation reading and Send to conversation (D58): the next slice (owner 2026-10-26).
 - A relevance filter for memory in the prompt (owner 2026-10-26 13:28: only with data, later).
 
 ## Acceptance criteria
@@ -102,9 +101,9 @@ adds, so a later relevance filter can be decided on data (owner 2026-10-26 13:28
 
 ## Open questions
 
-1. D58 (cross-conversation reading, FTS5 search entries): build it in M5b or in the next slice?
-   The FTS5 schema design is listed for M5b in `status.md`.
-2. D38's limits (500 characters, 100 items) are fixed numbers in the decision. The no-hardcode
-   rule (`AGENTS.md` §10) says such limits are settings with defaults. Recommendation: settings
-   `memory_item_max_chars = 500` and `memory_items_max = 100`, shown on Settings › Memory. Not
-   agreed yet.
+None. Decided in the PR #37 review (owner, 2026-10-26 14:34):
+
+- D58 (cross-conversation reading, FTS5 search entries) is the next slice after M5b, to keep M5b
+  smaller.
+- D38's limits are settings: `memory_item_max_chars` (default 500) and `memory_items_max`
+  (default 100), on Settings › Memory (`domain-model.md` §10).

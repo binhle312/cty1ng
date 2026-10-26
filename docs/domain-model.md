@@ -576,14 +576,14 @@ handoffs
 
 ```
 settings
-  key    TEXT PK      -- display_name, display_name_max, bot_discussion_enabled, bot_turn_limit, runs_per_conversation_per_hour, handoff_max_per_conversation_24h, skill_draft_max_*, share_max_per_conversation_24h, copy_proposals_max_per_conversation_24h, plan_mark_reminders, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, bot_order_direction, trash_days, undo_seconds, improve_* (D51), bot_* limits, health_* …
+  key    TEXT PK      -- display_name, display_name_max, bot_discussion_enabled, bot_turn_limit, runs_per_conversation_per_hour, handoff_max_per_conversation_24h, skill_draft_max_*, share_max_per_conversation_24h, copy_proposals_max_per_conversation_24h, plan_mark_reminders, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, bot_order_direction, trash_days, undo_seconds, memory_item_max_chars, memory_items_max, improve_* (D51), bot_* limits, health_* …
   value  JSON NOT NULL
 ```
 
-Defaults: `bot_discussion_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"created"`), `bot_order_direction = "desc"` (`"desc"` | `"asc"`), `trash_days = 30` (every item in Trash, D49, D62), `undo_seconds = 10` (D62: the Undo toast of a permanent delete), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3`, `improve_probe_tasks_max = 10` (D51: the probe starts at the first and allows at most the second; read by M5d, never hard-coded), `plan_mark_reminders = 1` (D57: reminders before an action run ends when a step or Done-when item has no mark; 0 = off), `share_max_per_conversation_24h = 5` (D58), `copy_proposals_max_per_conversation_24h = 5` (D61), `cross_search_max_hits = 10` (D58), `display_name = "Sir"` (UI-8.7: trimmed, 1 to `display_name_max` characters), `display_name_max = 32`, `memory_enabled = true` (UI-8.6). The Settings page shows most keys; `design/components/settings-page.md` §8 lists the ones that it does not show.
+Defaults: `bot_discussion_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"created"`), `bot_order_direction = "desc"` (`"desc"` | `"asc"`), `trash_days = 30` (every item in Trash, D49, D62), `undo_seconds = 10` (D62: the Undo toast of a permanent delete), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3`, `improve_probe_tasks_max = 10` (D51: the probe starts at the first and allows at most the second; read by M5d, never hard-coded), `plan_mark_reminders = 1` (D57: reminders before an action run ends when a step or Done-when item has no mark; 0 = off), `share_max_per_conversation_24h = 5` (D58), `copy_proposals_max_per_conversation_24h = 5` (D61), `cross_search_max_hits = 10` (D58), `display_name = "Sir"` (UI-8.7: trimmed, 1 to `display_name_max` characters), `display_name_max = 32`, `memory_enabled = true` (UI-8.6), `memory_item_max_chars = 500`, `memory_items_max = 100` (D38 amendment 2026-10-26). The Settings page shows most keys; `design/components/settings-page.md` §8 lists the ones that it does not show.
 
 **Ranges** (owner 2026-10-26; whole numbers; this list is the one source for the Settings page and
-the Zod schema of `PATCH /settings`): `trash_days` ≥ 1, no upper limit; `undo_seconds` 5–60; `display_name` 1 to
+the Zod schema of `PATCH /settings`): `trash_days` ≥ 1, no upper limit; `undo_seconds` 5–60; `memory_item_max_chars` 100–2,000; `memory_items_max` 10–500 (a lower value never deletes items: a place over it takes no new item until it is under it); `display_name` 1 to
 `display_name_max` characters after trim; `share_max_per_conversation_24h` 1–50;
 `copy_proposals_max_per_conversation_24h` 1–50; `cross_search_max_hits` 1–50;
 `plan_mark_reminders` 0–3; `bot_default_request_limit` 1–100 and `bot_default_max_reply_chars`
@@ -737,7 +737,7 @@ memory_items
   bot_id             TEXT NULL REFERENCES bots(id)     -- set when scope = bot
   project_id         TEXT NULL REFERENCES projects(id) -- set when scope = project
   conversation_id    TEXT NULL REFERENCES conversations(id) -- set when scope = conversation
-  text               TEXT NOT NULL                     -- ≤ 500 chars; passed the sensitive-data guard (D39)
+  text               TEXT NOT NULL                     -- ≤ memory_item_max_chars (500); passed the sensitive-data guard (D39)
   current_version    INTEGER NOT NULL DEFAULT 1
   row_version        INTEGER NOT NULL DEFAULT 1
   created_by_bot_id  TEXT NULL                         -- NULL = the owner
@@ -793,13 +793,14 @@ UNIQUE INDEX memory_proposals_one_open ON memory_proposals(kind, scope, coalesce
 - **Versions.** With history off, an update overwrites `text`, and only the previous text needed
   for Undo is kept until the next change. With history on, the old text goes to
   `memory_item_versions`, and rows beyond the setting are deleted in the same transaction.
-- **Limits:** 100 live items per bot, per project and per conversation, enforced in the service with a
+- **Limits:** `memory_items_max` (100) live items per bot, per project and per conversation, and
+  `memory_item_max_chars` (500) per item (§10; D38 amendment 2026-10-26), enforced in the service with a
   compare-and-set count (`architecture.md` §11).
 - Global switch: `settings.memory_enabled` (default true, UI-8.6).
 - **Trash (D62).** Delete sets `deleted_at`. A deleted item is not read by bots, not counted in
   the 100 and not on the Memory page. Restore clears `deleted_at`; it is refused with 409
   `place_in_trash` while the item's bot, project or conversation is in Trash, and with 409
-  `memory_full` when the place has 100 live items. The purge deletes the row and its
+  `memory_full` when the place has `memory_items_max` live items. The purge deletes the row and its
   `memory_item_versions` rows. Nothing else points to a memory item.
 - **Move into a project (D38, D61, D62).** In one transaction: the ticked conversation items
   change to `scope = 'project'` with the project's id (same row, versions and source); the
@@ -910,7 +911,7 @@ Conditional deletes keep some rows, so they also name each column for the rows t
 Other scope (no foreign key that the rule below names): `bots`, `skills`, `bot_skills`,
 `projects`, `settings`. The purge does not change them.
 
-Tables that later slices add get their entry in the same PR: search entries (M5b, delete row),
+Tables that later slices add get their entry in the same PR: search entries (the D58 slice after M5b, delete row),
 plan outcomes (D48: owner note → NULL, outcome keep), `run_branches` (M6: delete row and its
 branch), `library_copies` (M6: each column keep, named one by one; the file stays in the Library).
 

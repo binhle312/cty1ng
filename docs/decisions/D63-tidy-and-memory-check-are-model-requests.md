@@ -1,8 +1,8 @@
 # D63. Tidy memory and the memory check are model requests, not runs
 
-Status: proposed (2026-10-26). From the M5b UI design review, round 15, step 4: the owner
+Status: accepted (2026-10-26, owner, PR #37 review 14:34). From the M5b UI design review, round 15, step 4: the owner
 approved the Tidy boards Y1–Y8 and the recommendation "Tidy on the page is one model request,
-not a run" (14:07). The owner moves it to `accepted`.
+not a run" (14:07).
 Amends: D38, D43
 
 Decision:

@@ -1,9 +1,9 @@
 # D62. One Trash page for every deleted item, memory items included
 
-Status: proposed (2026-10-26). From the M5b UI design review, round 15: the owner approved the
+Status: accepted (2026-10-26, owner, PR #37 review 14:34). From the M5b UI design review, round 15: the owner approved the
 Memory page boards (13:28, "deleted memory item goes to Trash"), the Trash page boards with
 multi-select and the label **Delete** (13:40, 13:43), the purge check interval (13:43) and the
-Move dialog (13:52). The owner moves it to `accepted`.
+Move dialog (13:52).
 Amends: D38, D49, D60
 
 Decision:

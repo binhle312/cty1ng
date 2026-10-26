@@ -165,6 +165,8 @@ reminders).
 | Row | Effect | Note | Control |
 | --- | --- | --- | --- |
 | Bots use memory | Off: no bot reads or saves memory. Saved items stay and come back when you turn it on. | Default: on | Switch; the link **Open the Memory page** below |
+| Characters per item | A longer item holds more detail, and each run that reads memory costs more. Items saved before keep their text. | 100 to 2,000. Default: 500 | Number box, characters |
+| Items per place | More items let bots keep more facts, and each run that reads memory costs more. A lower number deletes nothing: a place over it takes no new item until you delete or tidy. | 10 to 500. Default: 100 | Number box, items |
 
 ### 4.9 Trash (D49, M5b)
 
