@@ -28,6 +28,8 @@ Decision:
 - **Restore while the project is in Trash (owner, 2026-10-26).** The conversation shows as its
   own row. **Restore** is off (40 % opacity, the C0 rule) with the tooltip "Restore {project}
   first", and the row has a link to the project's Trash row. The page shows no error message.
+  The server also refuses such a restore with 409 `project_in_trash` and changes nothing,
+  because a disabled button does not stop an API call.
 - **Projects.** A project delete (D47) moves only the conversations that were not in Trash. A
   conversation that was already in Trash stays its own Trash item: restoring the project does
   not bring it back. When the project is purged, its conversations in Trash are purged with it.

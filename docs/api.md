@@ -102,7 +102,7 @@ endpoint to create one.
 | POST | `/conversations` | `{title?}` | a given `title` sets `title_source: "manual"` (D46) |
 | GET | `/conversations/{id}` | | settings (with effective values), members, active leaf |
 | PATCH | `/conversations/{id}` | `{row_version, title?, bot_chat_enabled?, bot_turn_limit?}` | `null` = inherit global. A PATCH writes only the fields in its body. Send `title` only when the owner changed it: any `title` sets `title_source: "manual"`, and the app never writes an auto title after that (D46) |
-| DELETE | `/conversations/{id}` | | M5b. moves to Trash (D60): stops its runs first; its saved files stay in the Library of its place; its unsaved changes go to Trash with it; restore endpoint with the Trash page round (M5b) |
+| DELETE | `/conversations/{id}` | | M5b. moves to Trash (D60): stops its runs first; its saved files stay in the Library of its place; its unsaved changes go to Trash with it; restore endpoint with the Trash page round (M5b); a restore while its project is in Trash returns 409 `project_in_trash` (D60) |
 | POST | `/conversations/{id}/read` | `{seq}` | sets `last_read_seq` (never moves backwards); drives unread dots and the "New" divider |
 | GET | `/conversations/{id}/messages?before_seq=&limit=` | | the **active path**, newest page first; each message has `siblings: {index, count, ids}` |
 | POST | `/conversations/{id}/messages` | `{client_id, content_md, mentions: [bot_id], attachment_ids: []}` | 201; routing happens server side. A repeated `client_id` in the same conversation returns 200 with the original message and routes nothing (safe retry) |
