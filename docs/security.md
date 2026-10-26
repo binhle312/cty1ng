@@ -239,6 +239,12 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
   (Vitest).
 - Workspace: the prototype's path tests (absolute, `..`, symlink escape, `.git`, write outside
   scope).
+- Place isolation (D61, invariant 23): a run in Project A gets "not found" for every file tool
+  call that names a path of Project B or of the Home Library, also through `..`, an absolute
+  path or a symlink. A Home run gets the same for every project Library. Project B's memory and
+  Library index never appear in Project A's prompt. A file reaches another place only through
+  an approved copy, which the app does: after a `propose_copy` that is pending, rejected or
+  cancelled, the destination Library has no new commit and no new file.
 - Avatar: SVG rejected; PNG with a renamed `.jpg` accepted and re-encoded; polyglot file
   rejected or neutralised; > 2 MB rejected.
 - Zip: entry `../../x` rejected; absolute path rejected; zip bomb (ratio) rejected.
