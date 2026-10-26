@@ -19,10 +19,16 @@ Decision:
   The app copies the ticked files to the project Library as one save. The originals stay in the
   Home Library. After the move, the conversation uses the project Library. It does not take its
   old Library with it.
-  - **Pinned versions (owner, 2026-10-26).** Each file row shows its version ("saved 03:08 by
-    BA", commit id in the tooltip), and the move copies that version, as Copy to does. If a
-    newer version is saved while the dialog is open, the row says "A newer version was saved
-    at 03:20".
+  - **Pinned versions (owner, 2026-10-26).** Each file row shows and pins the **newest saved
+    version in the Home Library when the dialog opens** ("saved 03:08 by BA", commit id in the
+    tooltip). The move copies that version, as Copy to does. If another conversation made that
+    save, the row says so: "saved 03:20 by Designer in "Trip ideas"" (the wording of the D52
+    plan-card guard). If a newer version is saved while the dialog is open, the row says "A newer
+    version was saved at 03:25", and Move still copies the pinned version.
+    Example: "Ideas" saves `notes.md` at 03:08, then "Trip ideas" changes it at 03:20. When
+    "Ideas" moves into a project, the row shows "saved 03:20 by Designer in "Trip ideas"", and
+    the 03:20 version is copied. Not chosen: copy the moving conversation's own last version,
+    because the project would get an old file without the later edits.
   - **When a move is possible (owner, 2026-10-26).** Move to project is unavailable while the
     conversation has a queued or running run, a save in progress, or unsaved changes. The
     server checks these conditions again before it commits the move, because a run can start
