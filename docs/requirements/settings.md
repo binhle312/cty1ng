@@ -58,7 +58,7 @@ Design: `../design/components/settings-page.md` (round 14).
 - UI-8.8: New bots: the start values of the Create bot page (`bot_default_history_pct`,
   `bot_default_request_limit`, `bot_default_max_reply_chars`, UI-5.8). A change does not change
   existing bots.
-- UI-8.9 *(D49)* (M5b): Trash: `trash_days`, 1–365, default 30.
+- UI-8.9 *(D49)* (M5b): Trash: `trash_days`, a whole number of days, at least 1 (0 would delete at once, with no restore), no upper limit, default 30.
 - UI-8.10 *(D51)* (M5d): Skill improvement: the five `improve_*` settings.
 
 ## Conversation settings (UI-9)

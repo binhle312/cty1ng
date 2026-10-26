@@ -165,7 +165,7 @@ reminders).
 
 | Row | Effect | Note | Control |
 | --- | --- | --- | --- |
-| Keep items in Trash | After this time, the app deletes an item for good. A shorter time gives you less time to restore a mistake. | 1 to 365. Default: 30 | Number box, days |
+| Keep items in Trash | After this time, the app deletes an item for good. A shorter time gives you less time to restore a mistake. | At least 1. Default: 30 | Number box, days |
 
 ### 4.10 Skill improvement (D51, M5d)
 
