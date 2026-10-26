@@ -17,7 +17,7 @@ files), §6; `docs/requirements/conversation.md` (UI-3.3 cards, 3.13, 3.16).
 
 ## In scope
 
-- Full workspace port (git repo per project, or per conversation outside projects, D37; `write_file`, `view_file`,
+- Full workspace port (git repo per project, plus one Home Library for all conversations outside projects, D52 amendment 2026-10-25; `write_file`, `view_file`,
   commit; memory is no longer a workspace file, D38), with the prototype's workspace tests passing.
 - Attachments: upload endpoint, `attachments/<yyyy-mm-dd>-<conversation-slug>/` (D52), multimodal prompt building, binary stripping in
   history.
@@ -25,7 +25,11 @@ files), §6; `docs/requirements/conversation.md` (UI-3.3 cards, 3.13, 3.16).
 - Files panel and viewer with safe headers.
 - Handoffs: table, `propose_handoff` tool (D18 if accepted; otherwise ask), cards, decisions,
   stale detection, "Add <bot> and start", 24-hour limit.
-- Conversation delete moves the workspace to `data/trash/`.
+- Conversation delete (D60): saved files stay in the Library; unsaved changes go to Trash with the
+  conversation and are discarded at purge. Test: a delete and a restore leave the Library unchanged.
+- Move to project, file step (D61): M5b built the move itself. M6 adds the file list with
+  ticked boxes and pinned versions, the copy save, and the check for a save in progress or
+  unsaved changes (also checked by the server before the move).
 - Delete `reference/` and confirm every row of `porting-guide.md` §2 is done.
 
 ## Acceptance criteria
@@ -34,6 +38,19 @@ files), §6; `docs/requirements/conversation.md` (UI-3.3 cards, 3.13, 3.16).
 - UI-3.3 (handoff cards), 3.13, 3.16.
 - All behaviours in `porting-guide.md` §3 have tests.
 - Security tests in `security.md` §3 for the workspace, attachments and file viewer pass.
+- Isolation (D61, invariant 23), each with a test: a run in Project A cannot list, read or write
+  a file of Project B or of the Home Library; a Home run cannot reach a project Library;
+  `propose_copy` gives the bot the place names only, never their files; nothing is copied
+  without Approve (a pending, rejected or cancelled proposal leaves the destination Library with
+  no new commit and no new file); Approve copies the pinned
+  version, also when a newer version exists; a copy starts no run; the copy record holds the
+  source place, path, commit and approval; a project conversation cannot move (API returns an
+  error), and a Home conversation moves only into a project; the move copies the newest saved
+  version at dialog open (test: two Home conversations save `notes.md`, the first moves, and the
+  copy is the second save, with the other conversation named on the row) and is refused when a run is queued or running, a save is in progress or unsaved changes exist,
+  also when the run starts after the dialog opens; `copy_proposals_max_per_conversation_24h`
+  counts pending, approved, rejected and cancelled proposals, not blocked attempts, and not the
+  owner's own Copy to.
 - An image attached in turn 1 is not resent to the model in turn 3 (agent test inspects the
   request).
 
@@ -55,8 +72,11 @@ Is D18 (implicit workflow, handoff to any bot, team directory) accepted? Decide 
 
 D52 is accepted (each run writes on its own branch and saves to the Library when it ends).
 Before the plan starts, this brief gets the run worktrees, the save queue and file claims, the
-overlap notice, the unsaved changes card, the delete and move approval card, the Library card
-and page, and the `run_branches` schema design (initial schema for M6).
+overlap notice, the unsaved changes card, the delete and move approval card, the Library page
+for a project and for Home, the plan card mark for a file from another conversation (D52
+amendment 2026-10-25), and D61: Copy to (owner and `propose_copy`), Add from Home Library, the
+copy card with the pinned version, the New tag, the `library_copies` schema design and the
+`copy_proposals_max_per_conversation_24h` setting, and the `run_branches` schema design (initial schema for M6).
 
 Parked for this brief (owner, 2026-10-24; notes in the agent checklist, pstack and handoff
 reviews). Each needs the owner's choice before the plan starts:

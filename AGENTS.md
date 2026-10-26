@@ -9,7 +9,7 @@ lives in `docs/`, and this file tells you which document to open for which task.
 ## 1. What this project is
 
 A local-first web chat app where one human talks with AI role bots (BA, Designer, …). Bots have
-personas, versioned skills, a per-conversation file workspace, and can hand work to each other
+personas, versioned skills, a file Library per project plus one Home Library, and can hand work to each other
 through human approvals. TypeScript everywhere (D34): backend on Node with Hono, Drizzle and the
 Vercel AI SDK; frontend React + Vite. Libraries sit behind ports (D35).
 
@@ -41,6 +41,7 @@ Start with `docs/README.md` for the reading order.
 | Pages and components | `docs/requirements/<area>.md` (behaviour); `docs/design/` (sketches, not final) |
 | The Flow pane, animations, renderers | `docs/flow-view.md` |
 | Frontend TypeScript rules | `docs/frontend-conventions.md` |
+| A design board, a UI spec or UI code | `docs/design/ui-rules.md` (every agreed UI rule, one list) |
 | Design work with the `ui-ux-pro-max` skill | `docs/workflow.md` §2 (design skills) |
 | Showing a proposal, plan or review item to the human | `docs/workflow.md` §2 (human review: visual first) |
 | Styling, themes, design tokens | `docs/design/themes.md` (D30) |
@@ -87,7 +88,8 @@ If a command in this list does not exist yet (early slices), creating it is part
    `frontend/src/lib/api/generated/`. Never hand-write fetch calls for API endpoints. Never edit
    generated files by hand.
 5. Bot `model_id` and `effort` are never updated after insert. Skill versions are never updated
-   or deleted, except by the Trash purge (D49). Messages are never edited in place (edits create branches).
+   or deleted, except by the Trash purge (D49). Messages are never edited in place (edits create branches);
+   only the Trash purge clears their content (D60).
 6. API keys come only from environment variables. Never store, log, return or render them.
 7. Bot file tools go through the workspace port, whose `resolve()` is the only way a workspace
    path becomes a disk path; never open a workspace path any other way.

@@ -120,8 +120,10 @@ Header and side panel
 - UI-3.15: Conversation header: title (click to rename); the add slot (+), always first before
   the member avatars (click opens a picker of non-member available bots; a header avatar dropped
   on it or on the conversation adds that bot); member avatars (click → menu with each member's
-  model and effort and "Remove"); Flow; ⋯ with Rename, Conversation settings and Delete;
-  discussion status ("Discussion: on · 3/5 used" or "off", from slice M5). The Stop button sits
+  model and effort and "Remove"; Remove is off while that bot is queued or running); Flow; ⋯ with
+  the conversation menu (UI-9.7); discussion status ("Discussion: on · 3/5 used" or "off", from
+  slice M5; a click opens the discussion settings, UI-9.3). When every available bot is already a
+  member, the picker says so and has **+ Create**, which opens the create bot page. The Stop button sits
   inside the composer at the left while any run is queued or running.
 - UI-3.16: Files side panel (collapsible) lists workspace files as a tree; clicking opens a
   read-only viewer for text (with Markdown preview), images and PDF.
@@ -137,8 +139,7 @@ Title (D46, rules in `../conversation-rules.md` §8)
   header, the rail tooltip and the conversation lists when `conversation.updated` arrives. The send
   and the bot reply do not wait for it. The app makes this request one time per conversation.
   Later messages and edits do not change the title.
-- UI-3.25: A title that the owner sets (rename in the header, the rail menu or conversation
-  settings) always wins. The app never replaces it, also when the rename happens during the
+- UI-3.25: A title that the owner sets (rename in the header or the conversation menu) always wins. The app never replaces it, also when the rename happens during the
   title request.
 - UI-3.26: If the request fails, times out, or gives an empty or flagged answer, the title
   stays "New conversation", with no error in the conversation. The app does not make the request when

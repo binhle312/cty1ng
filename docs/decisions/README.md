@@ -82,7 +82,7 @@ Implemented in: links.
 | D35 | [Ports and adapters at the edges, not "switch anything"](D35-ports-and-adapters-at-the-edges.md) | accepted |  |
 | D36 | [Ids are TypeIDs everywhere outside the database](D36-typeid-outside-the-database.md) | accepted |  |
 | D37 | [Projects group conversations](D37-projects-group-conversations.md) | accepted | D45, D47, D52 |
-| D38 | [Bot, project and conversation memory](D38-bot-memory-and-project-memory.md) | accepted | D43, D48, D53, D56 |
+| D38 | [Bot, project and conversation memory](D38-bot-memory-and-project-memory.md) | accepted | D43, D48, D53, D56, D61 |
 | D39 | [Sensitive-data guard before anything reaches a model or memory](D39-sensitive-data-guard.md) | accepted |  |
 | D40 | [Cost alerts at 75% and 90% of the daily cap](D40-cost-alerts-at-75-and-90.md) | accepted |  |
 | D41 | [Bots draft skills; the owner approves and is the author](D41-bots-draft-skills-the-owner-approves.md) | accepted | D48; own amendment 2026-10-23 |
@@ -91,12 +91,12 @@ Implemented in: links.
 | D44 | [The side pane holds Flow or Memory, one at a time](D44-right-pane-holds-flow-or-memory.md) | accepted |  |
 | D45 | [Every run reads the project's goal and instructions](D45-project-goal-and-instructions.md) | accepted |  |
 | D46 | [The app writes a short title from the first message, one time only](D46-auto-title-from-the-first-message.md) | accepted | own amendment 2026-10-25 |
-| D47 | [Delete sends the whole project to Trash; the owner picks what wins in a memory check](D47-delete-project-to-trash-and-memory-check-choices.md) | accepted | D49 |
+| D47 | [Delete sends the whole project to Trash; the owner picks what wins in a memory check](D47-delete-project-to-trash-and-memory-check-choices.md) | accepted | D49, D61 |
 | D48 | [Bots plan first and wait for approval before they change anything](D48-bots-plan-before-they-change-anything.md) | accepted | D54, D56, D57 |
 | D49 | [Deleted skills go to Trash, Trash keeps items for a set number of days, and only a permanent delete has Undo](D49-skills-go-to-trash-and-trash-days-setting.md) | accepted |  |
 | D50 | [Deleted bots go to Trash and can be restored](D50-deleted-bots-go-to-trash.md) | accepted |  |
 | D51 | [Bots improve their skills from the owner's feedback, and the owner approves each change](D51-bots-improve-their-skills-from-owner-feedback.md) | accepted | own amendments 2026-10-23, 2026-10-24 |
-| D52 | [Each run writes on its own branch and saves to the Library when it ends](D52-each-run-writes-on-its-own-branch.md) | accepted | D54, D56, D59 |
+| D52 | [Each run writes on its own branch and saves to the Library when it ends](D52-each-run-writes-on-its-own-branch.md) | accepted | D54, D56, D59, own amendment 2026-10-25, D61 |
 | D53 | [Bots read the web only through the provider's web tools, with rules for runs that read it](D53-web-access-through-provider-web-tools.md) | accepted | D55 |
 | D54 | [The approved plan covers deletes and moves, and the app checks the run against the plan](D54-approved-plan-covers-the-run.md) | accepted | D57 |
 | D55 | [Provider tools first, one switch per tool, and one tool per job](D55-provider-tools-first-and-tool-switches.md) | accepted |  |
@@ -104,3 +104,5 @@ Implemented in: links.
 | D57 | [The plan card shows the progress of the action run](D57-plan-card-shows-run-progress.md) | accepted | |
 | D58 | [Bots read other conversations of the project on request, and the owner shares information between them](D58-read-and-share-across-project-conversations.md) | accepted | own amendment 2026-10-25 |
 | D59 | [A save shows a notice when project memory changed after the plan was approved](D59-save-notice-when-project-memory-changed.md) | accepted | |
+| D60 | [Deleted conversations go to Trash and can be restored](D60-deleted-conversations-go-to-trash.md) | accepted | |
+| D61 | [Projects are closed: files cross between places only by an approved copy](D61-files-cross-places-only-by-approved-copy.md) | accepted | |

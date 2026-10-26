@@ -45,11 +45,14 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
 - UI-13.1: The rail groups conversations by project, with conversations outside any project
   in their own group. "+" offers "New conversation" in the current project or outside one.
 - UI-13.2: The owner can create a project (name, one-line description), rename it, and move a
-  conversation into or out of a project from the conversation's menu. Moving shows which memory
-  the bots will use from then on.
-- UI-13.3: Deleting a project asks for confirmation. The dialog says that a conversation the
-  owner wants to keep must move out of the project first. The project goes to Trash as one item,
-  with its conversations, memory and Library files. The owner can restore the whole project,
+  Home conversation into a project from the conversation's menu. A project conversation never
+  leaves its project (D61). The move dialog lists the conversation's saved files with ticked
+  boxes and the pinned version of each, and shows which memory and Library the bots will use
+  from then on. Move is unavailable while the conversation has a queued or running run, a save
+  in progress, or unsaved changes; the server checks again before the move (D61).
+- UI-13.3: Deleting a project asks for confirmation. The dialog says: "To keep something from
+  this project, ask a bot to write it to a file, then use Copy to." (D61). The project goes to
+  Trash as one item, with its conversations, memory and Library files. The owner can restore the whole project,
   not one conversation, for `trash_days` (D47, D49).
 - UI-13.4: When a bot saves, changes or forgets a memory, the conversation shows a system line
   ("BA remembered: target users are clinic staff · Project memory") with Undo. Undo reverts that
@@ -65,7 +68,8 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
 - UI-13.8: The owner can edit or delete any item. When memory history is on, an item shows its
   earlier versions and the owner can restore one (UI-13.9).
 - UI-13.9: "Keep memory history" is a setting on bot detail (per bot), on the project (per
-  project), and in the settings of a multi-bot conversation outside a project. It is off when a
+  project), and at the top of the Memory pane of a multi-bot conversation outside a project
+  (`../design/components/memory-pane.md` §1.1). It is off when a
   bot is created and on (5 versions) for projects and those conversations, because several bots
   write to them. Turning it on sets 5 versions per item,
   adjustable from 1 to 20. Lowering the number asks for confirmation before deleting the

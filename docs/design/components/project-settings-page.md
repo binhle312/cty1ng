@@ -84,7 +84,8 @@ changed.
   messages and runs", 🧠 "{n} memory items", 📚 "{n} Library files".
 - ↩️ "You can restore the project from Trash for 30 days, with all of it. You cannot restore one
   conversation alone. After 30 days, the app deletes it."
-- 💡 "To keep a conversation, move it out of the project first."
+- 💡 "To keep something from this project, ask a bot to write it to a file, then use Copy to."
+  (D61: a project conversation never leaves its project.)
 - Buttons: **Cancel** (default, with the focus ring, so Enter does not delete) and **Delete
   project** (`danger` fill). The owner does not type the name, because the delete can be undone
   for 30 days.
