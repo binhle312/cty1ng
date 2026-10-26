@@ -70,8 +70,9 @@ Every bot also reads its own bot memory in project and conversation-memory chats
   conversation's memory is never shown to a bot outside that project or conversation.
 - **Moving a conversation into a project.** Its conversation memory is offered for merging
   into the project memory: the owner sees the list and unticks any item to leave behind. Items
-  left behind stay recoverable from the Memory page for 30 days. Moving a conversation out of a
-  project starts it with empty conversation memory; the project keeps its memory.
+  left behind stay recoverable from the Memory page for 30 days. ~~Moving a conversation out of a
+  project starts it with empty conversation memory; the project keeps its memory.~~ *(Removed by
+  D61, 2026-10-26: a project conversation never leaves its project.)*
 - **A 1:1 chat that gains a second bot** becomes a multi-bot conversation. From then on, saves
   go to its conversation memory; bot memory already saved there stays bot memory.
 

@@ -380,7 +380,7 @@ the bot page build the Tools list from it (`design/components/create-bot-page.md
   added: 2026-10-24             # date added to the catalog; sorts the list inside each group
   sends_data_out: false         # true = amber ⚠ on the row
   web: false                    # true = a web tool under D53
-  line: "List, read and write files in the conversation Library."
+  line: "List, read and write files in the Library (the project's, or Home)."
   off_line: "The bot only talks. View images and Hand off turn off too."
   needs: []                     # tool ids that must be on (view_images and hand_off need files)
 - id: web_fetch
@@ -409,7 +409,6 @@ conversations
   title                    TEXT NOT NULL DEFAULT 'New conversation'
   title_source             TEXT NOT NULL DEFAULT 'default'   -- default | auto | manual (D46)
   auto_title_status        TEXT NULL        -- NULL = not tried | pending | done | failed | skipped (D46)
-  icon_preset              TEXT NULL        -- one of 10 preset ids; NULL = derived from bot avatars
   active_leaf_message_id   TEXT NULL REFERENCES messages(id)
   bot_chat_enabled         BOOLEAN NULL     -- NULL = use global setting
   bot_turn_limit           INTEGER NULL     -- NULL = use global; 1..20
@@ -417,7 +416,8 @@ conversations
   last_activity_at         TIMESTAMP NOT NULL
   last_read_seq            INTEGER NOT NULL DEFAULT 0   -- owner's read position: unread dot and "New" divider
   created_by, created_at
-  deleted_at               TIMESTAMP NULL
+  deleted_at               TIMESTAMP NULL   -- in Trash (D60)
+  purged_at                TIMESTAMP NULL   -- D60: Trash purge; rows stay, content is cleared
 
 conversation_bots
   conversation_id   TEXT REFERENCES conversations(id)
@@ -429,8 +429,14 @@ conversation_bots
   PRIMARY KEY (conversation_id, bot_id)
 ```
 
-Deleting a conversation is soft in the database; its workspace folder is moved to
-`data/trash/` so the owner can recover it by hand.
+Deleting a conversation moves it to Trash (D60): `deleted_at` is set. Its files stay in the
+Library of its place, because a conversation has no Library of its own (D52 amendment
+2026-10-25). A restore clears `deleted_at`. After `trash_days` the purge sets `purged_at` and
+clears the content but keeps the rows, because runs, skill drafts, feedback and memory items
+point to the messages (D60). It acts only on data that the conversation owns; §16 gives the
+policy for every table and column. A conversation in Trash before its project was deleted stays its
+own Trash item (D47, D60). There are no preset icons: the icon comes from the bot avatars
+(UI-1.3).
 
 The auto title (D46) has its rules in `conversation-rules.md` §8. `title_source` tells who wrote
 the title. A non-NULL `auto_title_status` means the one attempt is used. Both columns get a
@@ -569,11 +575,11 @@ handoffs
 
 ```
 settings
-  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_conversation_per_hour, handoff_max_per_conversation_24h, skill_draft_max_*, share_max_per_conversation_24h, plan_mark_reminders, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, bot_order_direction, trash_days, improve_* (D51), bot_* limits, health_* …
+  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_conversation_per_hour, handoff_max_per_conversation_24h, skill_draft_max_*, share_max_per_conversation_24h, copy_proposals_max_per_conversation_24h, plan_mark_reminders, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, bot_order_direction, trash_days, improve_* (D51), bot_* limits, health_* …
   value  JSON NOT NULL
 ```
 
-Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"created"`), `bot_order_direction = "desc"` (`"desc"` | `"asc"`), `trash_days = 30` (projects and skills, D49), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3`, `improve_probe_tasks_max = 10` (D51: the probe starts at the first and allows at most the second; read by M5d, never hard-coded), `plan_mark_reminders = 1` (D57: reminders before an action run ends when a step or Done-when item has no mark; 0 = off), `share_max_per_conversation_24h = 5` (D58).
+Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"created"`), `bot_order_direction = "desc"` (`"desc"` | `"asc"`), `trash_days = 30` (projects and skills, D49), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3`, `improve_probe_tasks_max = 10` (D51: the probe starts at the first and allows at most the second; read by M5d, never hard-coded), `plan_mark_reminders = 1` (D57: reminders before an action run ends when a step or Done-when item has no mark; 0 = off), `share_max_per_conversation_24h = 5` (D58), `copy_proposals_max_per_conversation_24h = 5` (D61).
 
 Conversation limits (`conversation-rules.md` §9, which owns the type, range and what counts; read by the services, never hard-coded): `runs_per_conversation_per_hour = 50` (1–500), `handoff_max_per_conversation_24h = 5` (1–50), `skill_draft_max_per_run = 3` (1–10), `skill_draft_max_pending_per_conversation = 10` (1–50). They are safety caps: the server refuses 0, NULL and values out of range.
 
@@ -591,11 +597,10 @@ data/
   app.db                                    SQLite database (+ -wal, -shm)
   avatars/<sha256>.webp                     re-encoded uploads, content-addressed
   workspaces/<project_id>/                  git repo shared by a project's conversations (D37)
-  workspaces/<conversation_id>/             git repo of a conversation outside any project
+  workspaces/home/                          the Home Library: one git repo for all conversations outside projects (D52 amendment 2026-10-25)
       attachments/<yyyy-mm-dd>-<conversation-slug>/<file>   owner uploads (bots: read-only, D52)
       README.md, .gitignore, .gitattributes      made by the app in the first commit (D52)
       <topic folders>/...                   bot and owner files, by topic, not by author (D52)
-  trash/<conversation_id>/                  workspaces of deleted conversations
 ```
 
 Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the DB).
@@ -610,7 +615,8 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
 6. A deprecated skill cannot be newly assigned.
 7. `events.seq` is strictly increasing; every state change has its event in the same transaction.
 8. At most one `running` run per conversation (enforced by `runs_one_running`).
-9. A message's content changes only while `status = streaming`.
+9. A message's content changes only while `status = streaming`, or when the Trash purge clears
+   it (D60).
 10. Every message's `parent_message_id` belongs to the same conversation.
 11. `run_skills` contains exactly the always-loaded pins plus the distinct `load_skill` calls.
 12. Bot names are unique among bots that are not purged, Trash included (case-insensitive, D50); slugs are unique forever.
@@ -632,6 +638,13 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
 21. A restore never assigns a skill to a deleted bot; it only suggests bots (D49).
 22. A `reply_feedback` row belongs to a complete bot message, and its `run_id` and `bot_id`
     are the message's run and bot (D51). Feedback never changes the message.
+23. A run reads and writes only the Library of its own place: its project, or Home. A project
+    conversation never gets a `project_id` change, and a Home conversation changes it at most
+    once, into a project. Files cross places only by an approved copy (D61).
+24. After a conversation purge, no column that §16 marks `clear` holds content, no row that §16
+    marks `delete` is left, and every row of another scope is unchanged (D60). Every table has a
+    §16 entry. The column names in a covered table's entry match its schema columns exactly,
+    with no wildcard or default (schema test).
 
 ## 13. Usage and cost (D20, D21)
 
@@ -781,3 +794,73 @@ reply_feedback                                    -- TypeID prefix `fb`; built i
 - M5d adds the tables for Improve runs, probes, and "signal used by draft X", so a signal
   counts only once.
 
+## 16. Conversation purge policy (D60)
+
+The Trash purge of a conversation (after `trash_days`, or Delete now) acts only on data that the
+conversation **owns**. Data of another scope that only **refers** to the conversation stays as
+it is; its link shows "Deleted conversation" (owner, 2026-10-26).
+
+| Data | Owner | Purge |
+| --- | --- | --- |
+| Messages, cards, handoffs, skill drafts, run steps, run errors, plan notes, feedback notes | Conversation | Clear the content; keep ids, links, kinds, statuses and times |
+| Run history, events, search entries, members, unsaved changes, conversation memory | Conversation | Delete the row |
+| Bot or project memory learned there | Bot or project (D38) | Keep |
+| Skill versions approved from a draft | The owner's skill (D41) | Keep |
+| Saved files in the Library | The place (D52) | Keep |
+| Runs, model requests, run slots, ratings | Statistics, daily cap, Improve signals (D21, D51) | Keep |
+
+**Policy per table.** Every table has one entry. A **covered** table names every column,
+whatever its SQLite type (TEXT, JSON, BLOB, INTEGER, …), because ids, statuses and times are TEXT
+too. A column policy is `keep` or `clear` (to the value shown), or the table deletes the whole
+row. A delete can have a row condition.
+
+Delete-row tables need no column list, because the whole row goes, with any column that a
+later slice adds:
+
+| Table | Purge (rows of the purged conversation) |
+| --- | --- |
+| `conversation_bots` | delete row |
+| `run_history` | delete row (the BLOB `messages_json` holds tool results and file text) |
+| `events` | delete row (`conversation_id` = the conversation) |
+
+Every other covered table names **each column**. "Every other column", "keep all" and any
+default are not allowed: a column that is not named has no policy, and the schema test fails.
+
+| Table | Keep | Clear (to) |
+| --- | --- | --- |
+| `conversations` | `id`, `title_source`, `auto_title_status`, `active_leaf_message_id`, `bot_chat_enabled`, `bot_turn_limit`, `bot_turns_used`, `last_activity_at`, `last_read_seq`, `created_by`, `created_at`, `deleted_at`, `purged_at` (set), `project_id`, `memory_history_versions`, `memory_disabled` | `title` → "Deleted conversation" |
+| `messages` | `id`, `conversation_id`, `seq`, `parent_message_id`, `author_type`, `author_id`, `kind`, `status`, `run_id`, `client_id`, `edited_from_id`, `created_at`, `updated_at` | `content_md` → `''`, `card` → NULL, `mentions` → `'[]'`, `attachments` → `'[]'` |
+| `runs` | `id`, `conversation_id`, `bot_id`, `trigger_message_id`, `triggered_by`, `status`, `attempts`, `locked_until`, `cancel_requested`, `model_id`, `effort`, `input_tokens`, `output_tokens`, `cache_read_tokens`, `cache_write_tokens`, `requests`, `estimated_cost_usd`, `created_at`, `started_at`, `finished_at` | `error` → NULL |
+| `run_slots` | `id`, `run_id`, `conversation_id`, `used_at` | none |
+| `model_requests` | `id`, `purpose`, `conversation_id`, `run_id`, `seq_in_run`, `provider`, `model_requested`, `model_resolved`, `provider_response_id`, `finish_reason`, `input_tokens`, `output_tokens`, `cache_read_tokens`, `cache_write_tokens`, `usage_details`, `started_at`, `finished_at`, `latency_ms`, `estimated_cost_usd`, `reserved_cost_usd`, `price_source` | none |
+| `run_steps` | `id`, `run_id`, `seq_in_run`, `kind`, `status`, `started_at`, `finished_at` | `target` → `''`, `detail` → NULL |
+| `run_skills` | `run_id`, `skill_version_id`, `skill_slug`, `version`, `mode`, `first_loaded_at` | none |
+| `handoffs` | `id`, `conversation_id`, `from_bot_id`, `to_bot_id`, `commit_sha`, `status`, `message_id`, `created_by_run_id`, `created_at`, `decided_at` | `files` → `'[]'`, `summary` → `''`, `decision_note` → NULL |
+| `skill_drafts` | `id`, `conversation_id`, `message_id`, `source_message_id`, `created_by_run_id`, `drafted_by_bot_id`, `target_bot_id`, `kind`, `skill_id`, `base_version`, `status`, `result_skill_version_id`, `edited_by_owner`, `row_version`, `created_at`, `decided_at` | `slug`, `name`, `description`, `body_md` → `''`, `changelog` → NULL |
+| `skill_versions` (points to `skill_drafts`; the owner's skill) | `id`, `skill_id`, `version`, `description`, `body_md`, `changelog`, `created_by`, `skill_draft_id`, `created_at` | none |
+| `reply_feedback` | `id`, `message_id`, `run_id`, `bot_id`, `rating`, `created_at`, `updated_at` | `note_md` → NULL |
+
+Conditional deletes keep some rows, so they also name each column for the rows they keep:
+
+| Table | Delete row where | Kept rows: keep | Kept rows: clear |
+| --- | --- | --- | --- |
+| `memory_items` | `scope = 'conversation'` and `conversation_id` = the conversation | `id`, `scope`, `bot_id`, `project_id`, `conversation_id`, `text` (D38), `current_version`, `row_version`, `created_by_bot_id`, `source_message_id`, `last_changed_by_bot_id`, `last_change_message_id`, `created_at`, `updated_at`, `deleted_at` | none |
+| `memory_item_versions` | its `memory_item_id` is deleted | `memory_item_id`, `version`, `text`, `changed_by_bot_id`, `changed_at` | none |
+
+Other scope (no foreign key that the rule below names): `bots`, `skills`, `bot_skills`,
+`projects`, `settings`. The purge does not change them.
+
+Tables that later slices add get their entry in the same PR: search entries (M5b, delete row),
+plan outcomes (D48: owner note → NULL, outcome keep), `run_branches` (M6: delete row and its
+branch), `library_copies` (M6: each column keep, named one by one; the file stays in the Library).
+
+**Which tables are covered.** A table with a foreign key to `conversations`, `messages` or `runs`,
+or to a table whose entry clears or deletes something, **must** be covered. Only a table with no
+such key can be "other scope". This rule is checked by the schema test, not chosen by hand.
+
+**Schema test** (M4, runs in CI): it reads the Drizzle schema and the policy map in code. The
+map has one entry per column name; it has no wildcard, no "rest" key and no default. The test
+fails when a table has no entry, when the column names in a covered table's entry are not
+**exactly** the schema's column names (a column missing, or a name that does not exist), or when
+a table is "other scope" but has a foreign key that the rule above names. So a new column, for
+example `runs.private_prompt`, fails CI until someone gives it a policy.

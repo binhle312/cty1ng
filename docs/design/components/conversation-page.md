@@ -6,6 +6,10 @@
 > `conversation-live.*` (L1–L4), `conversation-stop.*` (P1), `conversation-errors.*` (E1–E4),
 > `message-parts.*` (T1–T6). The composer is in `composer.md`; system lines and cards are in
 > `conversation-cards.md`. Labels use Simplified Technical English.
+> **Round 12 (M4, 2026-10-25):** the conversation menu, the members picker and Remove rules, the
+> drag states, the discussion popover (M5) and the Delete dialog (§2.1–§2.4). Previews:
+> `conversation-menu.*`, `conversation-members.*`, `conversation-drag.*`,
+> `conversation-delete.*`. There is no conversation settings page.
 
 The conversation page is the page content area of the shell (`left-bar.md`, `top-header.md`,
 `user-panel.md`). Requirements: `../../requirements/conversation.md` (UI-3). Rules:
@@ -39,15 +43,68 @@ The round 6.1 conversation header, height 52 px, `outline` line under it:
 
 | Part | Rule |
 | --- | --- |
-| Add slot (+) | A 24 px circle, dashed slot standard (`dashed-slot.md`): rest = dashed `outline-strong`, a "+" in `on-surface-muted`. It is **always first**, before the member avatars, also when the conversation has no bots. A click opens the picker of bots that are not members (not deleted, available). While a bot is dragged from the top header, the slot is active (dashed `primary`, `primary-tint` fill). A drop on the slot or on the conversation area adds the bot (`top-header.md` row 8). Tooltip and `aria-label` "Add bot" |
+| Add slot (+) | A 24 px circle, dashed slot standard (`dashed-slot.md`): rest = dashed `outline-strong`, a "+" in `on-surface-muted`. It is **always first**, before the member avatars, also when the conversation has no bots. A click opens the picker of bots that are not members (not deleted, available), in header order (§2.2). While a bot is dragged from the top header, the slot is active (dashed `primary`, `primary-tint` fill). A drop on the slot or on the conversation area adds the bot (`top-header.md` row 8). Tooltip and `aria-label` "Add bot" |
 | Member avatars | 24 px, 4 px apart, in join order. State badges follow `bot-status.md` and scale with the avatar (a 16 px badge at 36 px is 44 %, so about 11 px at 24 px). A pending member is grey until the owner chooses its history (`conversation-cards.md` §2) |
-| Members menu | A click on any member avatar opens one menu with a row per member: avatar, name, model · effort (11 px, `on-surface-muted`) under the name, and **Remove** at the right of the row. The menu has no "Add bot" item: a bot is added only with the add slot or a drag |
+| Members menu | A click on any member avatar opens one menu with a row per member: avatar, name, model · effort (11 px, `on-surface-muted`) under the name, and **Remove** at the right of the row. The menu has no "Add bot" item: a bot is added only with the add slot, a drag or **Add here** on the bot card. Remove rules in §2.2 |
 | Flow | The agreed Flow button (round 6.1), 28 px |
-| ⋯ | Rename, Conversation settings, then **Delete** in `danger` text. The same items as the rail menu (UI-1.6) |
+| ⋯ | The conversation menu (§2.1), the same menu as ⋯ on the bar 2 row |
 
-The header has no Stop button (Stop is in the composer, `composer.md` §4) and no settings gear
-(Conversation settings is in ⋯). The discussion status ("Discussion: on · 3/5 used") comes with
-slice M5. It will be a small line under the title.
+The header has no Stop button (Stop is in the composer, `composer.md` §4) and no settings gear:
+there is no conversation settings page. The discussion status comes with slice M5 (§2.4).
+
+### 2.1 Conversation menu and Delete (UI-9.7, UI-1.6, D60)
+
+- Items: **Rename** (M4), **Memory** (M5b; opens the Memory pane, D44), **Move to project**
+  (M5b; only in a Home conversation; a project conversation has no move item, D61), a divider,
+  then **Delete** (M5b) in `danger` text. M4 shows only Rename; the board shows the M5b items
+  with their tag (`ui-rules.md` P8). ⋯ on the bar 2
+  row (it shows on hover or focus) and ⋯ in the header open the same menu.
+- **Delete** opens a dialog (the Delete project dialog pattern, `project-settings-page.md` §6):
+  - Title: **Delete {title}? 🧹**
+  - "The conversation goes to Trash with:", then the real counts: 💬 "{n} messages and {n}
+    runs", 🧠 "{n} conversation memory items" (only when the conversation has conversation
+    memory).
+  - 📁 "Its files stay in the {project} Library." (Home: "the Home Library"; D52 amendment
+    2026-10-25).
+  - Only while a bot is queued or running: ⏹ "{bot} is running. The run stops first."
+  - Only in a project: 📂 "A restore puts it back in {project}."
+  - ↩️ "You can restore it from Trash for 30 days. After 30 days, the app deletes it." (the
+    number is `trash_days`).
+  - Buttons: **Cancel** (default, with the focus ring) and **Delete** (`danger` fill). The owner
+    does not type the name.
+- After Delete: runs stop first, then the conversation goes to Trash. The newest other
+  conversation in the same place (the project or Home) opens; with none, the empty state shows.
+  A toast says "{title} is in Trash." The word **Trash** is a link to the Trash page. No Undo
+  (`buttons.md` §6).
+
+### 2.2 Add and remove members (UI-3.15, conversation-rules §3)
+
+- **Picker** (a click on the add slot): one row per bot that can run and is not a member, in
+  header order: avatar, name, model · effort under the name. Unavailable bots are not listed.
+  A click on a row adds the bot: it shows grey in the header and the join card asks what it can
+  read (`conversation-cards.md` §2).
+- **No bot left:** the picker says "Every bot that can run is in this conversation." and has
+  **+ Create** (secondary, 30 px), which opens the create bot page.
+- **Remove:** no dialog and no Undo. The bot leaves at once, its avatar goes from the header, and
+  the system line "{bot} left" shows. Adding it again asks for its history again.
+- **Remove while working:** while that bot is queued or running, Remove is off (40 % opacity)
+  with the tooltip "{bot} is working. Wait until it is done, or press Stop."
+
+### 2.3 Drag a bot from the top header (UI-2.4, UI-2.5)
+
+- A bot that can join: the conversation area becomes an active dashed slot (dashed `primary`,
+  `primary-tint` fill) with "+ Drop to add {bot} to this conversation", and the add slot is
+  active too. A drop on either adds the bot, and the join card shows.
+- A bot that is already a member, or cannot run: no slot. A tooltip at the pointer says why:
+  "Already here", or "{bot} cannot run: API key not set" (the UI-2.3 reason).
+- Keyboard and touch: **Add here** on the bot card (`bot-card.md` §1).
+
+### 2.4 Discussion status and settings (M5, UI-9.3)
+
+- The status is a small pill after the title: "Discussion: on · 3/5 used" or "Discussion: off".
+- A click opens a popover: title "Bot discussion", the choice "Use global (off)" / On / Off and
+  **Turn limit** ("Use global (5)" or 1–20), then "A change saves at once and applies from the
+  next bot message." There is no Save button.
 
 ## 3. Under a bot reply
 

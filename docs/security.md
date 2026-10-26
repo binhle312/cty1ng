@@ -61,8 +61,17 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
 - Read size limit (1 MB text); list limit (2,000 entries).
 - **No shell tool, no network tool, no code execution** in this milestone. Web access comes
   later, only through the provider's web tools (D53, ยง2.14).
-- Each project has one workspace shared by its conversations; a conversation outside any project
-  has its own (D37). Bots never see another project's or conversation's workspace.
+- Each run sees only the Library of its own place (D52 amendment 2026-10-25, D61):
+
+  | The run is in | It can read and write | It never sees |
+  | --- | --- | --- |
+  | A project conversation | That project's Library | Other projects' Libraries, the Home Library |
+  | A Home conversation | The one Home Library, shared by all Home conversations | Every project Library |
+
+  Home conversations share one Library on purpose, so a bot in one Home conversation can read
+  files that another Home conversation saved. A bot that must not read Home files needs its Files
+  tool off (`create-bot-page.md`). Files cross between places only by a copy that the owner
+  approves (D61); the app does the copy, never a bot.
 - `request_limit` per run caps tool loops.
 
 ### 2.4 Uploads
@@ -230,6 +239,12 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (ย
   (Vitest).
 - Workspace: the prototype's path tests (absolute, `..`, symlink escape, `.git`, write outside
   scope).
+- Place isolation (D61, invariant 23): a run in Project A gets "not found" for every file tool
+  call that names a path of Project B or of the Home Library, also through `..`, an absolute
+  path or a symlink. A Home run gets the same for every project Library. Project B's memory and
+  Library index never appear in Project A's prompt. A file reaches another place only through
+  an approved copy, which the app does: after a `propose_copy` that is pending, rejected or
+  cancelled, the destination Library has no new commit and no new file.
 - Avatar: SVG rejected; PNG with a renamed `.jpg` accepted and re-encoded; polyglot file
   rejected or neutralised; > 2 MB rejected.
 - Zip: entry `../../x` rejected; absolute path rejected; zip bomb (ratio) rejected.

@@ -68,13 +68,17 @@ Top to bottom:
    floating user panel. No folding, no separate 1:1 and group sections, no Bots section
    (bots show in the top header).
 
-Conversation row menu: Rename, Move to project, Move out of project, Delete.
+Conversation row menu (⋯ on hover or focus, or right-click): Rename, Memory, Move to project (Home
+conversations only; a project conversation stays in its project, D61), a divider, then Delete in
+`danger` text. The header ⋯ has the
+same menu (`conversation-page.md` §2.1, round 12).
 
 ## 3. Bar 2 on Home
 
 - Title **"Home Sweet Home"**, subtitle "N bots · N skills" (skills = distinct skills used by the
   owner's bots).
-- One Memory row (bot and conversation memory outside projects). No Library row.
+- One Memory row (bot and conversation memory outside projects), then one **Library** row: the
+  Home Library, shared by all conversations outside projects (D52 amendment 2026-10-25).
 - One conversation list, newest activity first.
 - **First run** (no bots): subtitle "No bots yet", a dashed button "+ Hey, let's talk 👋" in the
   same style as the rail's New project tile, and the line "Bigger work? Start a project with + on

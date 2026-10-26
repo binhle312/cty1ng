@@ -102,7 +102,7 @@ Internal tools (phase 1):
 
 | Tool | Line | When off |
 | --- | --- | --- |
-| Files | List, read and write files in the conversation Library | The bot only talks. View images and Hand off turn off too |
+| Files | List, read and write files in the Library (the project's, or Home) | The bot only talks. View images and Hand off turn off too |
 | View images | Look at PNG, JPEG and WebP files in the Library | Grey and off when the model does not read images (catalog flag `reads_images`) |
 | Skills | Load a skill when it needs one. Draft a new skill for you to approve | Only skills set to Always load reach the bot |
 | Hand off | Ask you to pass files to another bot | |

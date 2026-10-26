@@ -17,8 +17,8 @@ conversation. The server enforces the budget; bots are told how many turns remai
 - `decideRuns` for bot triggers (every row of `conversation-rules.md` §2), counter updates,
   notices.
 - Rules block in the prompt with live numbers.
-- Global settings page (UI-8.1, 8.2) and conversation discussion settings (UI-9.3), header
-  status (UI-3.15).
+- Global settings page (UI-8.1, 8.2), and the header discussion status with its popover
+  (UI-3.15, UI-9.3, `conversation-page.md` §2.4).
 - Runs-per-hour cap.
 - Daily spending cap (D20) and optional per-provider caps (D42): settings, check at claim time,
   75% / 90% / 100% alerts per cap (D40), UI-8.3.
