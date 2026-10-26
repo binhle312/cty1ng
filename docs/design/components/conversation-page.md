@@ -101,10 +101,31 @@ there is no conversation settings page. The discussion status comes with slice M
 
 ### 2.4 Discussion status and settings (M5, UI-9.3)
 
-- The status is a small pill after the title: "Discussion: on · 3/5 used" or "Discussion: off".
-- A click opens a popover: title "Bot discussion", the choice "Use global (off)" / On / Off and
-  **Turn limit** ("Use global (5)" or 1–20), then "A change saves at once and applies from the
-  next bot message." There is no Save button.
+Agreed in round 14 (2026-10-26). Previews: `discussion-popover.*` (D1–D4).
+
+- **Status:** a pill after the title, 24 px high, `outline-strong` border, 11.5 px
+  `on-surface-muted` text: "Discussion: off", "Discussion: on · 2/5 used", "Discussion: on · 5/5
+  used". The text is grey in every state: no state asks the owner to act (`ui-rules.md` C1).
+  While the popover is open, the border is `primary`.
+- **Popover** (380 px, `surface-raised`, radius 10 px, under the pill), title **Bot discussion**:
+  1. The segmented control **Global (off)** / **On** / **Off** ("Global" shows the global value in
+     brackets). Under it: "On: a bot that mentions another bot starts that bot, so bots can
+     discuss without you."
+  2. **Turn limit**: a segmented control **Global (5)** / **Custom** (owner 2026-10-26). A click
+     on **Custom** turns that segment into a number input in place, with the unit "turns" and
+     the focus in it. Enter or a click outside saves the number; Esc puts back the last value.
+     Under it while it is open: "1 to 20. Enter or a click outside saves it. Esc puts back the
+     last value." An out-of-range number does not save and shows the field error. A saved custom
+     limit shows as the number in the segment ("8 turns").
+     Under the control: "Bot replies to bots before they stop and wait for you. Your next
+     message starts the count again."
+  3. A line over an `outline` divider: "A change saves at once and applies from the next bot
+     message. Global values: **Settings**" (the link opens Settings › Bot discussion).
+- There is no Save button. Each change saves at once (`PATCH /conversations/{id}`, `null` =
+  Global) and posts one muted system line that names every change, for example "Bot discussion
+  turned on. Limit changed to 8." (`conversation-cards.md` §1).
+- At the limit, the conversation shows "Discussion limit reached (5/5). Reply to continue."
+  (`../../conversation-rules.md` §2).
 
 ## 3. Under a bot reply
 

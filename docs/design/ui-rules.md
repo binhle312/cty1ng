@@ -31,6 +31,7 @@ Auto = `check_board.py` finds a break. Manual = check by eye.
 | W6 | A folded line does not repeat a word after a status pill | manual | Round 10 (owner 2026-10-24 17:01) |
 | W7 | Popover and crop buttons say just "Use" | manual | Round 9 |
 | W8 | Text uses Simplified Technical English | manual | `docs/workflow.md` |
+| W9 | Every setting says what the owner notices when it changes, not only its range | manual | Owner 2026-10-26, `components/settings-page.md` §3.1 |
 
 ### Buttons and boxes
 
@@ -66,6 +67,7 @@ Auto = `check_board.py` finds a break. Manual = check by eye.
 | P6 | One pin glyph and its four states. A pin badge is never on a bot avatar | manual | `components/pin.md` |
 | P7 | Standard parts live in `components/`, one file each | manual | Owner 2026-10-23 |
 | P8 | A board shows the whole screen as the spec defines it, also parts from later slices. Draw each later part for real, with a small tag that names its slice ("M5"). Never leave a part out or hide it in a note | manual | Owner 2026-10-25 13:32 |
+| P9 | One control for one job: every number is the number box with its unit, every on/off is the switch, a named choice is the segmented control. A dropdown only for a long list | manual | Owner 2026-10-26, `components/settings-page.md` §3.2 |
 
 ### Time
 

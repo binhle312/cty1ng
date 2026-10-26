@@ -25,8 +25,8 @@ Examples:
 | Event | Text | Colour |
 | --- | --- | --- |
 | A bot leaves | "Designer left" | muted |
-| A setting changes | "Bot discussion limit changed to 8" | muted |
-| A daily cap refuses a run (D20) | "BA did not run. Daily cap reached ($10.02 / $10). Raise it in Settings or wait until midnight." and the link **Open Limits**. BA gets the red square badge (`bot-status.md`, "Paused · daily cap") | `danger` |
+| A setting changes | "Bot discussion limit changed to 8". When one popover change changes two values: "Bot discussion turned on. Limit changed to 8." (`conversation-page.md` §2.4) | muted |
+| A daily cap refuses a run (D20) | "BA did not run. Daily cap reached ($10.02 / $10). Raise it in Settings or wait until midnight." and the link **Open Spending** (Settings › Spending, `settings-page.md` §4.2). BA gets the red square badge (`bot-status.md`, "Paused · daily cap") | `danger` |
 | The hourly run limit refuses a run | "BA did not run. Hourly run limit reached (30 / 10) for this conversation. Try again later or raise it in Settings." One notice per refused run; the count is live (`conversation-rules.md` §2) | `danger` |
 | The discussion limit is reached | "Discussion limit reached (5/5). Reply to continue." | muted |
 | A join choice was made | "Designer joined · reads the full history · chosen 10:06" (§2) | muted |

@@ -20,17 +20,28 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
 
 ## Settings page (UI-8)
 
-- UI-8.1: Global defaults: bot discussion on/off, turn limit (1–20, default 5), runs per
-  conversation per hour.
+Design: `../design/components/settings-page.md` (round 14).
+
+- UI-8.0: Layout: a Settings list at the left and one short page for each item: Profile,
+  Spending, Bot discussion, Limits, New bots, Models, Appearance, Time, Memory, Trash, Skill
+  improvement. Every setting is one row with its name, what the owner notices when it changes,
+  and its range or default (owner 2026-10-26). A page saves with the save bar, except Models
+  (read-only) and Appearance (saves at once).
+- UI-8.1: Bot discussion: the global switch (default off) and turn limit (1–20, default 5). The
+  turn limit stays on when the switch is off, because a conversation that turns discussion on
+  uses it. Limits: runs per conversation per hour and the other conversation limits
+  (`../conversation-rules.md` §9), `share_max_per_conversation_24h`, `cross_search_max_hits`,
+  `copy_proposals_max_per_conversation_24h` and `plan_mark_reminders`. A row shows only when
+  its slice ships.
 - UI-8.2: Model catalog (read-only): label, id, efforts, available or the missing key's
   **name** (never its value), and the price per million tokens with its source
   ("genai-prices", "override" or "unknown", D21). Unknown prices are flagged with how to add an
   override in `config/models.yaml`.
-- UI-8.3: Daily spending cap in USD (empty = off), today's estimated spend with a progress bar,
-  and a breakdown by provider and by bot (D20, D21). Title requests show as one "Conversation
-  titles" row in the by-bot breakdown (D46). Each provider with a key also has an
+- UI-8.3: Daily spending cap in USD (empty = off), today's estimated spend with a progress bar
+  (D20, D21). Each provider with a key also has an
   optional cap of its own (empty = only the total applies), with its spend and progress bar
-  (D42). A run is refused when its provider's cap or the total is reached. At 75% and again at 90% of each cap (D40)
+  (D42). Spend by bot and by model is on the Statistics page (UI-10.3, UI-10.4), not in
+  Settings (owner 2026-10-26); the Spending page links to it. A run is refused when its provider's cap or the total is reached. At 75% and again at 90% of each cap (D40)
   the owner gets a banner across the app, a toast, and a system line in each conversation with
   a queued or running run; each fires once per day. At 100% a banner says bots have stopped. Note under the field: "Estimate only. Also set limits in your providers' consoles."
 - UI-8.4: Time settings: timezone (Local / UTC / any IANA zone) used by every time range
@@ -42,6 +53,13 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
   (`../design/themes.md` §1, §2).
 - UI-8.6 *(D38)*: Memory: a global switch. When off, no bot reads or saves memory anywhere;
   saved items are kept and return when it is turned back on. A link opens the Memory page.
+- UI-8.7: Profile: the owner's display name (`display_name`, default "Sir"). The user panel
+  shows it, and its first letter is the owner avatar (`../design/components/user-panel.md`).
+- UI-8.8: New bots: the start values of the Create bot page (`bot_default_history_pct`,
+  `bot_default_request_limit`, `bot_default_max_reply_chars`, UI-5.8). A change does not change
+  existing bots.
+- UI-8.9 *(D49)* (M5b): Trash: `trash_days`, 1–365, default 30.
+- UI-8.10 *(D51)* (M5d): Skill improvement: the five `improve_*` settings.
 
 ## Conversation settings (UI-9)
 
@@ -54,8 +72,9 @@ owner sees it. Designs: `../design/components/conversation-page.md` §2 and
 - UI-9.2: *Removed (round 12).* No preset icons: the icon always comes from the bot avatars
   (UI-1.3).
 - UI-9.3: Bot discussion (M5): a click on the discussion status in the header ("Discussion:
-  on · 3/5 used") opens a popover with "Use global (off)" / On / Off and the turn limit (inherit
-  or 1–20). A change saves at once and applies from the next bot message.
+  on · 3/5 used") opens a popover with "Global (off)" / On / Off and the turn limit "Global (5)" /
+  Custom, where Custom is a number input in place (1–20). A change saves at once and applies
+  from the next bot message (`../design/components/conversation-page.md` §2.4).
 - UI-9.4: Members: in the header, with the add slot and the members menu (UI-3.15).
 - UI-9.5 (M5b): Delete: **Delete** in the conversation menu (UI-9.7) sends the conversation to Trash
   (D60, UI-1.6).

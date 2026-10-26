@@ -410,7 +410,7 @@ conversations
   title_source             TEXT NOT NULL DEFAULT 'default'   -- default | auto | manual (D46)
   auto_title_status        TEXT NULL        -- NULL = not tried | pending | done | failed | skipped (D46)
   active_leaf_message_id   TEXT NULL REFERENCES messages(id)
-  bot_chat_enabled         BOOLEAN NULL     -- NULL = use global setting
+  bot_discussion_enabled         BOOLEAN NULL     -- NULL = use global setting
   bot_turn_limit           INTEGER NULL     -- NULL = use global; 1..20
   bot_turns_used           INTEGER NOT NULL DEFAULT 0
   last_activity_at         TIMESTAMP NOT NULL
@@ -575,11 +575,11 @@ handoffs
 
 ```
 settings
-  key    TEXT PK      -- bot_chat_enabled, bot_turn_limit, runs_per_conversation_per_hour, handoff_max_per_conversation_24h, skill_draft_max_*, share_max_per_conversation_24h, copy_proposals_max_per_conversation_24h, plan_mark_reminders, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, bot_order_direction, trash_days, improve_* (D51), bot_* limits, health_* …
+  key    TEXT PK      -- display_name, bot_discussion_enabled, bot_turn_limit, runs_per_conversation_per_hour, handoff_max_per_conversation_24h, skill_draft_max_*, share_max_per_conversation_24h, copy_proposals_max_per_conversation_24h, plan_mark_reminders, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, bot_order_direction, trash_days, improve_* (D51), bot_* limits, health_* …
   value  JSON NOT NULL
 ```
 
-Defaults: `bot_chat_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"created"`), `bot_order_direction = "desc"` (`"desc"` | `"asc"`), `trash_days = 30` (projects and skills, D49), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3`, `improve_probe_tasks_max = 10` (D51: the probe starts at the first and allows at most the second; read by M5d, never hard-coded), `plan_mark_reminders = 1` (D57: reminders before an action run ends when a step or Done-when item has no mark; 0 = off), `share_max_per_conversation_24h = 5` (D58), `copy_proposals_max_per_conversation_24h = 5` (D61).
+Defaults: `bot_discussion_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"created"`), `bot_order_direction = "desc"` (`"desc"` | `"asc"`), `trash_days = 30` (projects and skills, D49), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3`, `improve_probe_tasks_max = 10` (D51: the probe starts at the first and allows at most the second; read by M5d, never hard-coded), `plan_mark_reminders = 1` (D57: reminders before an action run ends when a step or Done-when item has no mark; 0 = off), `share_max_per_conversation_24h = 5` (D58), `copy_proposals_max_per_conversation_24h = 5` (D61), `cross_search_max_hits = 10` (D58), `display_name = "Sir"` (UI-8.7), `memory_enabled = true` (UI-8.6). The Settings page shows most keys; `design/components/settings-page.md` §8 lists the ones that it does not show.
 
 Conversation limits (`conversation-rules.md` §9, which owns the type, range and what counts; read by the services, never hard-coded): `runs_per_conversation_per_hour = 50` (1–500), `handoff_max_per_conversation_24h = 5` (1–50), `skill_draft_max_per_run = 3` (1–10), `skill_draft_max_pending_per_conversation = 10` (1–50). They are safety caps: the server refuses 0, NULL and values out of range.
 
@@ -655,7 +655,7 @@ Usage is derived from `model_requests` (detail) and `runs` (totals). All figures
 | Per message | the message's run |
 | Per bot | sum over its runs, by day, last 7 / 30 days. Title requests are not included |
 | Per conversation | sum of `model_requests` with this `conversation_id`: its runs plus its title request (D46) |
-| Conversation titles | sum of `model_requests` with `purpose = 'title'`; shown as one "Conversation titles" row where usage is split by bot (UI-8.3, statistics) |
+| Conversation titles | sum of `model_requests` with `purpose = 'title'`; shown as one "Conversation titles" group in `GET /usage?group_by=bot` (`api.md` §7); the Statistics bot ranking leaves it out (UI-10.4) |
 | Today (for the cap) | sum of `model_requests.estimated_cost_usd` for requests that finished since local midnight, plus `reserved_cost_usd` of the title requests in flight (D46). Each request counts once, so the partial usage of a running run is included. Per provider: the same sum for the requests with that `provider`. A request in a run is charged to its own provider, so a run with requests to two providers splits its cost. A request with NULL cost (unknown price) counts toward no cap (D21, D42) |
 
 Title requests (D46) are in `model_requests`, so the today sums include them with no extra
@@ -828,7 +828,7 @@ default are not allowed: a column that is not named has no policy, and the schem
 
 | Table | Keep | Clear (to) |
 | --- | --- | --- |
-| `conversations` | `id`, `title_source`, `auto_title_status`, `active_leaf_message_id`, `bot_chat_enabled`, `bot_turn_limit`, `bot_turns_used`, `last_activity_at`, `last_read_seq`, `created_by`, `created_at`, `deleted_at`, `purged_at` (set), `project_id`, `memory_history_versions`, `memory_disabled` | `title` → "Deleted conversation" |
+| `conversations` | `id`, `title_source`, `auto_title_status`, `active_leaf_message_id`, `bot_discussion_enabled`, `bot_turn_limit`, `bot_turns_used`, `last_activity_at`, `last_read_seq`, `created_by`, `created_at`, `deleted_at`, `purged_at` (set), `project_id`, `memory_history_versions`, `memory_disabled` | `title` → "Deleted conversation" |
 | `messages` | `id`, `conversation_id`, `seq`, `parent_message_id`, `author_type`, `author_id`, `kind`, `status`, `run_id`, `client_id`, `edited_from_id`, `created_at`, `updated_at` | `content_md` → `''`, `card` → NULL, `mentions` → `'[]'`, `attachments` → `'[]'` |
 | `runs` | `id`, `conversation_id`, `bot_id`, `trigger_message_id`, `triggered_by`, `status`, `attempts`, `locked_until`, `cancel_requested`, `model_id`, `effort`, `input_tokens`, `output_tokens`, `cache_read_tokens`, `cache_write_tokens`, `requests`, `estimated_cost_usd`, `created_at`, `started_at`, `finished_at` | `error` → NULL |
 | `run_slots` | `id`, `run_id`, `conversation_id`, `used_at` | none |
