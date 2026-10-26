@@ -100,7 +100,11 @@ type TimelineItem =
   | { kind: "run"; id: string; seq: number; at: string;            // at = the run's first start (runs.started_at)
       finishedAt: string | null; actor: ActorId; status: RunStatus; costUsd: number | null;
       durationMs: number | null;                                   // all tries together
-      tries: { startedAt: string }[];                              // one per run_slots row; length > 1 = retried (UI-3.7)
+      tries: { startedAt: string; finishedAt: string | null; status: RunStatus; reason: string | null }[];
+                                                                   // one per run_slots row; length > 1 = retried (UI-3.7).
+                                                                   // finishedAt, status and reason of an earlier try come from its
+                                                                   // run.finished event; after the event is pruned (30 days) they are null
+                                                                   // and the card shows "Try 1 · failed" with no reason
       steps: RunStep[] }                                           // all tries, in call order (seq_in_run)
   | { kind: "handoff"; id: string; seq: number; at: string; decidedAt: string | null; from: ActorId; to: ActorId | "human"; status: HandoffStatus; files: string[] }
   | { kind: "notice"; id: string; seq: number; at: string; text: string };
@@ -117,7 +121,7 @@ interface RunStep { kind: StepKind; target: string; status: "ok" | "error"; star
 
 A Retry (UI-3.7) queues the same run again, so the Timeline keeps one run item and adds a try;
 it never adds a second run item. There is no event for a tool call that has started, so the scene
-knows only finished steps; the open run box shows them and "Working · last step … ago"
+knows only finished steps; the run card shows them and "Working · last step … ago"
 (`design/components/flow-timeline.md` §4).
 
 Built by pure selectors: `buildTimelineScene(store, window)` in M8 (`buildTeamScene(store)` when the Team map returns). They

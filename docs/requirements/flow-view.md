@@ -42,7 +42,10 @@ Behaviour, architecture, animation and performance rules: `../flow-view.md`.
   participant, with the avatar, name and live status badge at the top; times (24-hour clock) on
   the left; message and handoff arrows between lifelines; a run chip on the bot's lifeline for
   each finished run (steps, duration, cost and bot turn n of limit); a red chip for a failed run;
-  a grey "Queued" pill; and one open run box for the running run that lists its steps live. A
+  a grey "Queued" pill. A click on a run chip opens its run card: each finished step with its
+  time, and for a retried run each try and the owner's Retry, with a footer of tries, time and
+  cost. The running run's card is open and adds a finished step live. One run stays one chip and
+  one card after a Retry (UI-3.7). A
   rejected handoff is a dashed grey arrow; a handoff that waits for the owner is a dashed amber
   arrow. Shows the active branch only. 50 items, "Load earlier" for more.
 - UI-12.6: Clicking a lifeline head (a bot's avatar at the top of the Timeline) filters the conversation to that bot's messages (a removable filter chip
