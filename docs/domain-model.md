@@ -410,7 +410,7 @@ conversations
   title_source             TEXT NOT NULL DEFAULT 'default'   -- default | auto | manual (D46)
   auto_title_status        TEXT NULL        -- NULL = not tried | pending | done | failed | skipped (D46)
   active_leaf_message_id   TEXT NULL REFERENCES messages(id)
-  bot_discussion_enabled         BOOLEAN NULL     -- NULL = use global setting
+  bot_discussion_enabled   BOOLEAN NULL     -- NULL = use global setting
   bot_turn_limit           INTEGER NULL     -- NULL = use global; 1..20
   bot_turns_used           INTEGER NOT NULL DEFAULT 0
   last_activity_at         TIMESTAMP NOT NULL
