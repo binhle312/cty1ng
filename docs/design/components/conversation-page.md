@@ -101,7 +101,7 @@ there is no conversation settings page. The discussion status comes with slice M
 
 ### 2.4 Discussion status and settings (M5, UI-9.3)
 
-Agreed in round 14 (2026-10-26). Previews: `discussion-popover.*` (D1–D4).
+Agreed in round 14 (2026-10-26). Previews: `discussion-popover.*` (D1, D2, D3a, D3b, D4).
 
 - **Status:** a pill after the title, 24 px high, `outline-strong` border, 11.5 px
   `on-surface-muted` text: "Discussion: off", "Discussion: on · 2/5 used", "Discussion: on · 5/5
@@ -121,9 +121,14 @@ Agreed in round 14 (2026-10-26). Previews: `discussion-popover.*` (D1–D4).
      message starts the count again."
   3. A line over an `outline` divider: "A change saves at once and applies from the next bot
      message. Global values: **Settings**" (the link opens Settings › Bot discussion).
-- There is no Save button. Each change saves at once (`PATCH /conversations/{id}`, `null` =
-  Global) and posts one muted system line that names every change, for example "Bot discussion
-  turned on. Limit changed to 8." (`conversation-cards.md` §1).
+- There is no Save button. Each change saves at once with its own `PATCH /conversations/{id}`
+  (`null` = Global). **One PATCH = one change = one notice** (owner 2026-10-26): turning
+  discussion on and then saving a custom limit of 8 posts two muted system lines, "Bot discussion
+  turned on." and "Bot discussion limit changed to 8." (`conversation-cards.md` §1).
+- While the Custom number is typed and not saved, the header pill and the turn count keep the old
+  values and no notice shows (D3a). The pill, the segment ("8 turns") and the count change only
+  after the PATCH succeeds (D3b). If it fails, the old value stays and the popover shows "The app
+  could not save the change. Try again." It never shows internal error text.
 - At the limit, the conversation shows "Discussion limit reached (5/5). Reply to continue."
   (`../../conversation-rules.md` §2).
 

@@ -204,7 +204,9 @@ reminders).
 - Every page except Models and Appearance has the save bar of Project settings
   (`project-settings-page.md` §3): "All changes are saved." with **Save changes** off; after a
   change, a `primary` dot, "{n} changes not saved", **Discard** and **Save changes**.
-- After a save, the toast "Saved ✨ Bots use the new settings from their next run."
+- After a save, the page shows the saved values, the change marks go away, **Save changes** is
+  off, and the toast says "Saved ✨" on every Settings page. Each row's text already says when
+  the change applies. A page opened again later shows the same saved values.
 - A value out of range keeps **Save changes** off and shows the field error. The server checks
   again and returns 422 (`../../api.md` §7).
 - A click on another page in the Settings list, or anywhere outside Settings, with unsaved

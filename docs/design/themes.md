@@ -47,8 +47,8 @@ Rules:
    libraries would double the bundle, the accessibility behaviour to verify and the tests.
 5. **No flash on load.** A small inline script in `index.html` reads the saved theme and mode
    and sets the `data-` attributes before the first paint.
-6. **Saved per browser** (localStorage, read with try/catch, falling back to Material + follow
-   system). In the VPS phase it moves to the user's settings row.
+6. **Saved per browser** (localStorage, read with try/catch, falling back to Command + follow
+   system, because Command ships first, D30). In the VPS phase it moves to the user's settings row.
 
 ## 3. Token set
 
