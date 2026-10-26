@@ -78,6 +78,16 @@ amendment 2026-10-25), and D61: Copy to (owner and `propose_copy`), Add from Hom
 copy card with the pinned version, the New tag, the `library_copies` schema design and the
 `copy_proposals_max_per_conversation_24h` setting, and the `run_branches` schema design (initial schema for M6).
 
+From the M5b design review, round 15 (2026-10-26), for the D61 copy work (new, not agreed; the
+owner confirms in the M6 plan):
+
+- `propose_copy` names the destination by the place id. The bot sees each place as id and name,
+  because project names need not be unique (owner 2026-10-26 13:36).
+- The copy suffix `-from-<place-slug>` (D61) gets a number when that name is taken too:
+  `notes-from-trip-ideas-2.md`.
+- The file step of the Move dialog (`design/components/conversation-page.md` §2.1a) is drawn
+  with its M6 tag; M6 builds it on `POST /conversations/{id}/move` (`file_paths`).
+
 Parked for this brief (owner, 2026-10-24; notes in the agent checklist, pstack and handoff
 reviews). Each needs the owner's choice before the plan starts:
 

@@ -44,7 +44,7 @@ title and the page's accessible name stay **"New project"**.
 
 | Field | Limit | Label hint | Placeholder |
 | --- | --- | --- | --- |
-| Name | unique among projects | none | Project name |
+| Name | required; need not be unique, because the id names a project (owner 2026-10-26) | none | Project name |
 | Goal | ≤ 500 chars, live counter | It shows under the project name. Every bot reads it. | What is the goal of this project? Example: Plan the pricing page for the March launch. |
 | Instructions | ≤ 3000 chars, live counter; optional | Optional · Markdown, as in an AGENTS.md file | `# Rules for every bot in this project` / `- How must bots write?` / `- Where do bots put files?` / `- What must bots ask you before they act?` |
 | Colour | the project colour set | none | The first colour is selected |
@@ -64,7 +64,6 @@ The field border turns `danger`. Each message says what is wrong, then what to d
 | Case | When | Message |
 | --- | --- | --- |
 | Name is empty | on Create | Type a name for the project. |
-| Name exists | on leave and on Create | A project with the name "{name}" exists. Type a different name. |
 | Goal is too long | live; the counter turns `danger` | The goal has {n} characters. The limit is 500. Make the goal shorter. |
 | Instructions are too long | live; the counter turns `danger` | The instructions have {n} characters. The limit is 3000. Make them shorter. |
 | Sensitive data (D39) in Goal or Instructions | on Create | Line {n} looks like an API key. The app does not save secrets. Remove the key, and put it in an environment variable. |

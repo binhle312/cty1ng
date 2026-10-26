@@ -10,6 +10,8 @@
 > drag states, the discussion popover (M5) and the Delete dialog (§2.1–§2.4). Previews:
 > `conversation-menu.*`, `conversation-members.*`, `conversation-drag.*`,
 > `conversation-delete.*`. There is no conversation settings page.
+> **Round 15 (M5b, 2026-10-26):** the Move to project dialog (§2.1a). Preview:
+> `move-to-project.*`.
 
 The conversation page is the page content area of the shell (`left-bar.md`, `top-header.md`,
 `user-panel.md`). Requirements: `../../requirements/conversation.md` (UI-3). Rules:
@@ -76,6 +78,44 @@ there is no conversation settings page. The discussion status comes with slice M
   conversation in the same place (the project or Home) opens; with none, the empty state shows.
   A toast says "{title} is in Trash." The word **Trash** is a link to the Trash page. No Undo
   (`buttons.md` §6).
+
+### 2.1a Move to project (UI-13.2, UI-13.12, D38, D61, D62; round 15)
+
+Agreed in the M5b design review, round 15 (2026-10-26 13:52), boards V1–V5. Preview:
+`../previews/command-dark/move-to-project.*`. Only a Home conversation has this item (D61).
+
+- **Move to project** opens one dialog (540 px) with everything that moves (V1):
+  - Title: **Move {title} to a project**
+  - **Project:** one radio row per project that is not in Trash: tile, name and its one-line
+    goal. The project of the last move is selected first; the first time, the first project.
+  - **Conversation memory · {k} of {n} ticked** (only a multi-bot conversation): one row per
+    item, all ticked at first, with "{bot} · {time}". The line under it: "Ticked items go into
+    the {project} memory. An unticked item goes to Trash, so you can restore it for
+    {trash_days} days." (D62)
+  - **Saved files · {k} of {n} ticked**, with the M6 tag: one row per file the conversation
+    saved, "saved {time} by {bot}". "The app copies the ticked files to the {project} Library.
+    The originals stay in the Home Library." M5b draws this part with its tag and does not
+    build it (P8); M6 builds it (D61).
+  - The line: "From then on, bots here read the {project} instructions, memory and Library. The
+    conversation stays in {project}: it cannot move back to Home or to another project."
+  - **Cancel** and **Move to {project}** (primary 36). The button label follows the selected
+    project.
+- **A 1:1 conversation** has no conversation memory (V5). The Memory part says: "This is a 1:1
+  conversation, so it has no conversation memory. {bot}'s own memory stays {bot}'s memory, and
+  {bot} still reads it in {project}."
+- **A bot is working** (V2): while a run is queued or running, **Move to project** in the menu is
+  off (B5) with the tooltip "{bot} is working. Wait until it is done, or press Stop." The same
+  holds during a save in progress or with unsaved changes (D61).
+- **The server checks again** (V3): when a run started after the dialog opened, nothing moves
+  and the dialog shows a `danger` line: "{bot} started a run after you opened this. Nothing
+  moved. Try again when {bot} is done." The dialog stays open with the owner's choices.
+- **The project has no room** for the ticked items (`memory_items_max`, default 50, D38): nothing moves and the
+  dialog shows a `danger` line: "{project} has room for {m} more items. Untick {x} items, or
+  tidy {project} memory first." (not drawn; the V3 pattern)
+- **After the move** (V4): the conversation shows in the project's bar 2, selected, and stays
+  open. A system line: "Moved from Home to {project} · {k} memory items merged · {f} files
+  copied" (the file part from M6). Toast: "{title} is in {project} now." No Undo: the move
+  cannot be undone (D61), and the dialog said so.
 
 ### 2.2 Add and remove members (UI-3.15, conversation-rules §3)
 

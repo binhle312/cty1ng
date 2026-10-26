@@ -165,6 +165,8 @@ reminders).
 | Row | Effect | Note | Control |
 | --- | --- | --- | --- |
 | Bots use memory | Off: no bot reads or saves memory. Saved items stay and come back when you turn it on. | Default: on | Switch; the link **Open the Memory page** below |
+| Characters per item | A longer item holds more detail, and each run that reads memory costs more. Items saved before keep their text. | 100 to 1,000. Default: 300 | Number box, characters |
+| Items per place | More items let bots keep more facts, and each run that reads memory costs more. A lower number deletes nothing: a place over it takes no new item until you delete or tidy. | 10 to 200. Default: 50 | Number box, items |
 
 ### 4.9 Trash (D49, M5b)
 
@@ -237,6 +239,7 @@ Probe tasks, most (D51). With no eligible task, the probe action is off.
 | Memory history versions (UI-13.9) | Project settings and the bot page (per project, per bot) |
 | "Don't use memory" for one conversation (UI-9.6) | The Memory pane |
 | Discussion for one conversation (UI-9.3) | The discussion status in the conversation header (§9) |
+| `undo_seconds` (D62) | `PATCH /settings` only. The time an Undo toast of a permanent delete stays |
 
 ## 9. Discussion status and popover in the conversation header (UI-3.15, UI-9.3)
 

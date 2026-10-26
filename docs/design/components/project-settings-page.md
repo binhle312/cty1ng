@@ -30,8 +30,8 @@ One column, at most 620 px wide, with 20 px between fields. Top to bottom:
    UI-13.9). Lower numbers ask for confirmation first (UI-13.9).
 5. **Delete project** section, 32 px below Memory history, with 28 px of padding inside, a
    `danger` border at low opacity and a `danger` tint. Title **"Done with this project? 📦"**,
-   text "The project goes to Trash with its conversations, memory and Library. You can restore it for 30
-   days." Button **Delete project** (`danger` outline).
+   text "The project goes to Trash with its conversations, memory and Library. You can restore it for
+   {trash_days} days." Button **Delete project** (`danger` outline).
 6. **Save bar**, fixed at the bottom of the main area (§3).
 
 ## 3. Saving
@@ -62,7 +62,7 @@ The line under Instructions has these states:
 | Check failed | `danger`, "Memory check failed. {cause}. The instructions are saved." and **Check again**. Example cause: "The daily cap stopped it" |
 
 - The save completes first, and the new instructions apply at once. The check runs after it, as
-  a normal run with cost tracking and the daily caps. The owner can leave the page.
+  one model request with cost tracking and the daily caps (D63). The owner can leave the page.
 - A new save of the instructions replaces a check that has not started.
 
 ## 5. Leave with unsaved changes
@@ -82,13 +82,13 @@ changed.
 - Title: **Delete {project}? 🧹**
 - "Everything in the project goes to Trash:", then the real counts: 💬 "{n} conversations, with all their
   messages and runs", 🧠 "{n} memory items", 📚 "{n} Library files".
-- ↩️ "You can restore the project from Trash for 30 days, with all of it. You cannot restore one
-  conversation alone. After 30 days, the app deletes it."
+- ↩️ "You can restore the project from Trash for {trash_days} days, with all of it. You cannot restore one
+  conversation alone. After {trash_days} days, the app deletes it." (`trash_days`, default 30, D62.)
 - 💡 "To keep something from this project, ask a bot to write it to a file, then use Copy to."
   (D61: a project conversation never leaves its project.)
 - Buttons: **Cancel** (default, with the focus ring, so Enter does not delete) and **Delete
   project** (`danger` fill). The owner does not type the name, because the delete can be undone
-  for 30 days.
+  for `trash_days`.
 
 After Delete:
 
@@ -98,15 +98,14 @@ After Delete:
 - A toast says "{project} and its {n} conversations are in Trash." The word **Trash** is a link to the
   Trash page. The toast has no Undo, because Trash is not permanent (D49, `buttons.md` §6).
 - The owner restores the project from Trash. A restore brings back the project with
-  all its conversations, memory and Library, as they were. The Trash page is **not designed yet**.
+  all its conversations, memory and Library, as they were (`trash-page.md`).
 
 ## Requirement changes (requirements PR)
 
 - UI-13.3 changes: delete sends the project and all its conversations, memory and Library to Trash (D47).
   It replaces "its conversations move out of the project" from D37.
-- A Trash page: list, restore, delete now, 30-day limit. To design.
-- `domain-model.md` §11, §14: a deleted project keeps its workspace in `data/trash/`; its
-  conversations and memory items get the same `deleted_at` and a link to the project delete, so a
-  restore brings back exactly that set.
-- API: `PATCH /projects/{id}` with `row_version`; delete and restore endpoints; the check run
-  status. The M5b brief defines them (D43 contract status).
+- The Trash page is designed in `trash-page.md` (D62, round 15).
+- `domain-model.md` §14: a project delete sets only `projects.deleted_at`; its live conversations
+  and memory items are in Trash through the project, so a restore brings back exactly that set
+  (D47, D60, D62). Its Library stays with the project (D52).
+- API: `api.md` §5a (projects, the memory check) and §5c (Trash restore and delete).

@@ -63,5 +63,5 @@ click on the row ticks or clears the box.
 
 ## 6. Undo
 
-Only a permanent delete shows a toast with **Undo** (for example "Delete now" on the Trash
+Only a permanent delete shows a toast with **Undo** (for example **Delete** on the Trash
 page). A move to Trash and Deprecate show no Undo, because the owner can reverse them (D49).

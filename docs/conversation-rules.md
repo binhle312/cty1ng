@@ -447,8 +447,8 @@ rail and the header show it.
       + (TITLE_POLICY.maxOutputTokens × output price)` (rule 14). `maxInputTokens` is 2500: the
       instruction plus `maxInputChars` (2000) at one token per character. This is above the real
       count for normal text.
-   2. Read today's spend (`domain-model.md` §13). It includes the reservations of the title
-      requests that are in flight.
+   2. Read today's spend (`domain-model.md` §13). It includes the reservations of every request
+      in flight: title requests and memory upkeep requests (D63).
    3. If spend + worst case is more than the provider cap or the total cap, the status is
       `skipped` and the app sends nothing.
    4. Otherwise insert the `model_requests` row with `reserved_cost_usd` = worst case and
@@ -459,9 +459,10 @@ rail and the header show it.
    `finished_at`, and sets `reserved_cost_usd` to NULL. The real cost is never more than the
    reservation for normal text. If the provider reports more input tokens, the app records the
    real cost: it is an estimate (D21), as with every request.
-   This rule covers title requests only. A running run can still pass a cap by one run (D20,
-   D40). Title reservations count in the check at run claim too, so a run does not use room
-   that a title has reserved.
+   Memory upkeep requests (Tidy and the memory check, D63) reserve the same way, with the
+   worst case of their own input and output limits. A running run can still pass a cap by one
+   run (D20, D40). All reservations count in the check at run claim too, so a run does not use
+   room that a title or upkeep request has reserved.
 7. **The call.** It runs after the send transaction commits, in the background, through the
    model port. It does not wait for the bot run, and the bot run does not wait for it. Input:
    a fixed instruction and the message text as quoted data, with mentions as bot names, cut to

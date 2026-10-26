@@ -16,6 +16,8 @@ The frame around every page: the rail of conversations on the left and the bar o
   Acceptance criteria: UI-1.7 to UI-1.9.
 - **SH-5.** As the owner, I want the app to reopen where I left off, so that closing it costs me nothing.  
   Acceptance criteria: UI-1.10 to UI-1.12.
+- **SH-7.** As the owner, I want one Trash page for everything I deleted, so that I can restore a mistake or delete things for good in one place, one or many at a time.  
+  Acceptance criteria: UI-1.14 to UI-1.19 (slice M5b, D62).
 
 ## Acceptance criteria
 
@@ -141,3 +143,30 @@ Browser storage is wrapped in try/catch, parsed with Zod on read (`../frontend-c
 and the app works without it. At M9, with several users, the first two browser rows move to the
 server per user so they follow the user across devices.
 
+## Trash page (UI-1, continued; M5b, D62)
+
+Design: `../design/components/trash-page.md`.
+
+- UI-1.14: **Trash** in the user panel menu opens the Trash page. It lists projects,
+  conversations, bots, skills and memory items in Trash, newest delete first, with a kind
+  filter and a count per kind. Items that went to Trash with their project are part of the
+  project's row, not rows of their own.
+- UI-1.15: Each row shows its kind, name, real counts, "Deleted {time}" and "Deletes on
+  {date}", where the date is `deleted_at + trash_days` in local time. The buttons are
+  **Restore** and **Delete**.
+- UI-1.16: Restore puts the item back in its place (D47, D49, D50, D60, D62) and the toast links
+  to it. A skill restore offers to assign the skill again to its active bots; a bot restore
+  offers to add the bot again to its conversations that are not in Trash. Nothing is added
+  without the owner's click.
+- UI-1.17: When an item's place is in Trash, Restore is off with the tooltip "Restore {place}
+  first" and a link to the place's row. The server refuses the restore with 409
+  `place_in_trash` and changes nothing. A test calls the endpoint directly.
+- UI-1.18: Delete removes the row and shows "{name} is deleted for good. Undo". The page sends
+  the delete only when the toast closes, after `undo_seconds`. Undo sends nothing and the row
+  comes back. A test checks that closing the page before the toast ends leaves the item in
+  Trash.
+- UI-1.19: With rows ticked, a bar shows "{n} selected · Clear · Restore {r} · Delete {d}". An
+  item whose place is in Trash and not ticked is not counted in {r}. Ticking the place too
+  restores the place first, then the item. One Undo toast covers a multi-delete. Each item is
+  its own transaction: when one fails, the others still go through, and the toast names the one
+  that failed.

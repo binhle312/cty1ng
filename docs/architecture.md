@@ -279,6 +279,7 @@ invalid), plus `config/models.yaml`.
 | `RUN_STALL_SECONDS` | `600` | No delta and no step for this long → run fails as `timed_out` |
 | `MODEL_REQUEST_TIMEOUT_SECONDS` | `300` | Read timeout per model request |
 | `TITLE_REQUEST_TIMEOUT_SECONDS` | `20` | Timeout of the one auto title request (D46) |
+| `PURGE_INTERVAL_HOURS` | `24` | How often the Trash purge job looks for items past `deleted_at + trash_days`; it also runs at start (D62). It does not change how long Trash keeps an item |
 | `<PROVIDER>_API_KEY` | none | Names referenced by `config/models.yaml` |
 
 ## 9. Observability
