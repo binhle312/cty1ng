@@ -671,10 +671,11 @@ Usage is derived from `model_requests` (detail) and `runs` (totals). All figures
 | Per conversation | sum of `model_requests` with this `conversation_id`: its runs plus its title request (D46) |
 | Conversation titles | sum of `model_requests` with `purpose = 'title'`; shown as one "Conversation titles" group in `GET /usage?group_by=bot` (`api.md` §7); the Statistics bot ranking leaves it out (UI-10.4) |
 | Memory upkeep | sum of `model_requests` with `purpose` `memory_tidy` or `memory_check` (D63); one "Memory upkeep" group in `GET /usage?group_by=bot`; no conversation, so not in the per-conversation total; the Statistics bot ranking leaves it out |
-| Today (for the cap) | sum of `model_requests.estimated_cost_usd` for requests that finished since local midnight, plus `reserved_cost_usd` of the title requests in flight (D46). Each request counts once, so the partial usage of a running run is included. Per provider: the same sum for the requests with that `provider`. A request in a run is charged to its own provider, so a run with requests to two providers splits its cost. A request with NULL cost (unknown price) counts toward no cap (D21, D42) |
+| Today (for the cap) | sum of `model_requests.estimated_cost_usd` for requests that finished since local midnight, plus `reserved_cost_usd` of every request in flight that holds a reservation: title requests (D46) and memory upkeep requests, Tidy and check (D63). Each request counts once, so the partial usage of a running run is included. Per provider: the same sum for the requests with that `provider`. A request in a run is charged to its own provider, so a run with requests to two providers splits its cost. A request with NULL cost (unknown price) counts toward no cap (D21, D42) |
 
-Title requests (D46) are in `model_requests`, so the today sums include them with no extra
-query. The app checks the same caps two times before a title call: in the send transaction and
+Title requests (D46) and memory upkeep requests (D63) are in `model_requests`, so the today
+sums include them with no extra query. The same sum, reservations included, serves the total
+cap, each provider cap, the check at run claim and the 75 % and 90 % alerts (D40). The app checks the same caps two times before a title call: in the send transaction and
 just before dispatch. The second check reserves the worst-case cost in the same transaction,
 so a title request never makes estimated spend pass a cap (`conversation-rules.md` §8 rule 6).
 Many title requests can be in flight. A reached cap skips the call and adds no notice.
@@ -716,6 +717,7 @@ projects
   name                      TEXT NOT NULL              -- not unique: the id names a project (owner 2026-10-26)
   description               TEXT NOT NULL DEFAULT ''   -- the goal, ≤ 500 chars (D45)
   instructions_md           TEXT NOT NULL DEFAULT ''   -- ≤ 3000 chars; only the owner edits it (D45)
+  instructions_version      INTEGER NOT NULL DEFAULT 1 -- +1 on each save of instructions_md; check changes store it (D63)
   colour                    TEXT NOT NULL              -- '#RRGGBB' from the project colour set (new-project-page.md §3)
   pinned_position           INTEGER NULL               -- NULL = not pinned in the rail (left-bar.md)
   memory_history_versions   INTEGER NULL DEFAULT 5     -- on (5) at creation; NULL = history off; 1..20
@@ -745,6 +747,7 @@ memory_items
   last_changed_by_bot_id   TEXT NULL                 -- NULL = the owner (Memory page edit)
   last_change_message_id   TEXT NULL REFERENCES messages(id)  -- NULL for owner edits
   created_at, updated_at
+  seen_at            TIMESTAMP NULL                    -- the owner saw the latest change; NULL or < updated_at = New tag. Per user at M9
   deleted_at         TIMESTAMP NULL                    -- in Trash for trash_days (D62); also set for items left behind on a move
   CHECK ((scope = 'bot' AND bot_id IS NOT NULL AND project_id IS NULL AND conversation_id IS NULL)
       OR (scope = 'project' AND project_id IS NOT NULL AND bot_id IS NULL AND conversation_id IS NULL)
@@ -771,7 +774,7 @@ memory_proposals                                        -- a Tidy or memory chec
   model_request_id   TEXT NULL REFERENCES model_requests(id)  -- NULL when the run's tool made it (Y8)
   run_id             TEXT NULL REFERENCES runs(id)     -- set when a run made it with propose_memory_tidy
   message_id         TEXT NULL REFERENCES messages(id) -- the card in a conversation (Y8)
-  changes            JSON NOT NULL DEFAULT '[]'        -- [{kind: merge|rewrite|delete|flag, item_ids, item_row_versions, new_text?, why, decision?}]
+  changes            JSON NOT NULL DEFAULT '[]'        -- [{kind: merge|rewrite|delete|flag, item_ids, item_row_versions, instructions_version?, new_text?, why, invalid_reason?, decision?}]
   error              TEXT NULL                         -- failed: the reason shown on the page
   created_at, updated_at, decided_at
   CHECK (kind IN ('tidy', 'check'))
@@ -780,7 +783,7 @@ UNIQUE INDEX memory_proposals_one_open ON memory_proposals(kind, scope, coalesce
 ```
 
 - **Schema design for M5b (round 15, needs the owner's approval):** `instructions_md`,
-  `colour`, `pinned_position`, the goal limit, `memory_proposals`,
+  `instructions_version`, `colour`, `pinned_position`, the goal limit, `memory_proposals`,
   and the `model_requests` change (§7, D63). The generated SQL is approved in the M5b PR.
 - **What is in Trash with a project (D47, D60, D62).** A project delete sets only
   `projects.deleted_at`. Its live conversations and memory items are in Trash through the
@@ -796,6 +799,9 @@ UNIQUE INDEX memory_proposals_one_open ON memory_proposals(kind, scope, coalesce
 - **Limits:** `memory_items_max` (100) live items per bot, per project and per conversation, and
   `memory_item_max_chars` (500) per item (§10; D38 amendment 2026-10-26), enforced in the service with a
   compare-and-set count (`architecture.md` §11).
+- **Seen (New tag).** An item is new while `seen_at` is NULL or older than `updated_at`.
+  `POST /memory/seen` sets `seen_at = now` for the live items of one place, emits `memory.seen`,
+  and reads change nothing.
 - Global switch: `settings.memory_enabled` (default true, UI-8.6).
 - **Trash (D62).** Delete sets `deleted_at`. A deleted item is not read by bots, not counted in
   the 100 and not on the Memory page. Restore clears `deleted_at`; it is refused with 409
@@ -808,8 +814,13 @@ UNIQUE INDEX memory_proposals_one_open ON memory_proposals(kind, scope, coalesce
   the project memory. A count over 100 refuses the move with 409 `memory_full` and changes
   nothing.
 - **Proposals (D63).** `memory_proposals` holds the Tidy cards and the memory check cards.
-  A new request for a place sets the open one to `replaced`. Apply reads each change's
+  One open card per place and kind (the unique index): a new request sets the open card of the
+  same kind to `replaced`. Every merge or rewrite text passes the sensitive-data guard and
+  `memory_item_max_chars` when the card is stored (a failing change gets `invalid_reason`) and
+  again at Apply; a failing change is never saved. Apply reads each change's
   `item_row_versions`; a change whose item has a newer `row_version` is skipped and returned. A
+  check change also stores `instructions_version`; Decide and Apply refuse it with 409
+  `instructions_changed` when the project's version moved on. A
   merge updates the first item and moves the others to Trash. `check` proposals keep a change
   with `decision = 'later'` as an open conflict (`design/components/memory-pane.md` §4). At
   start, the app sets every `requested` proposal to `failed`.

@@ -76,6 +76,13 @@ can move into a project and take its conversation memory with it.
   back (places first); a conversation alone while its project is in Trash returns
   `place_in_trash`. A purge test with a fake clock purges an item at `deleted_at + trash_days`
   and not one second before, and a second run purges nothing.
+- Caps: a title request and a Tidy request in flight at the same time near the cap; the second
+  reservation sees the first, and neither passes the cap (D63, `conversation-rules.md` §8 rule 6).
+- Tidy texts: a fake model proposes a rewrite with a secret and one over
+  `memory_item_max_chars`; both rows are off with their reason, and Apply saves neither.
+- Decide: a check finds a conflict with line 4, the owner saves new instructions, then Decide on
+  the old conflict returns 409 `instructions_changed` and changes nothing.
+- Seen: open a place, restart the app, and the New tags stay gone; a GET changes nothing.
 - Memory upkeep requests appear in `GET /usage?group_by=bot` as "Memory upkeep" and count toward
   the daily caps (D63).
 
@@ -92,7 +99,8 @@ adds, so a later relevance filter can be decided on data (owner 2026-10-26 13:28
 
 ## Needs human review
 
-- The schema design (`domain-model.md` §14): `projects.instructions_md`, `colour`,
+- The schema design (`domain-model.md` §14): `projects.instructions_md`, `instructions_version`,
+  `colour`, `memory_items.seen_at`,
   `pinned_position`, the goal limit, `memory_proposals`, and `model_requests` with two new
   purposes and a NULL-able `conversation_id` (§7, D63). Claude Code stops for this approval
   before it writes them. The generated SQL is approved in the M5b PR.

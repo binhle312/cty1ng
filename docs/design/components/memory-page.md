@@ -137,6 +137,7 @@ The toast: "The item is in Trash." with **Trash** as a link. No Undo (B7).
 | The card | Above the list: "{bot} suggests {n} changes and {f} flag · {k} of {n} ticked". One row per change: check box, kind (MERGE, REWRITE, DELETE, FLAG, 11 px caps), the old texts struck through in `on-surface-faint`, the new text, and one "why" line. A delete row says "A deleted item goes to Trash." A flag row has no check box and says to use Decide on the item. Footer: "Tidy with {bot} · 1 request · {cost} · {time}", **Discard** and **Apply {k} changes** (off at 0 ticked) | Y3 |
 | After Apply | Changed items get the New tag and "You applied {bot}'s tidy · {time}". The toast "Saved ✨" | Y4 |
 | Stale row | An item changed after the bot read it: its row is off (40 %) and not ticked, with "You changed this item after {bot} read it. Press Tidy again to include it." | Y5 |
+| Invalid row | A new text with a secret or over `memory_item_max_chars`: the row is off and not ticked, with the reason ("This text looks like a password." or "The text is too long."). The app checks again at Apply and never saves such a row (D63) | — |
 | Nothing to change | Toast "{bot} found nothing to change." No card | Y6 |
 | Failed | A `danger` box under the head: "Tidy failed: {reason}. Nothing changed." and **Try again**. At a spending cap the reason is the cap | Y7 |
 | In a conversation | "@BA tidy the project memory" gives the same card inside BA's reply; the footer says the place ("Project memory · Login app") | Y8 |

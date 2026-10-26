@@ -129,6 +129,7 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `spend.threshold_crossed` | yes | `{threshold_pct, today_spend_usd, cap_usd, provider}` | today's spend crossed 75%, 90% or 100% of the total cap (`provider` null) or of one provider's cap (D40, D42); once per threshold per cap per day |
 | `project.created` / `project.updated` / `project.deleted` / `projects.reordered` | yes | `{project}` or `{pinned_project_ids}` | project CRUD, pin and reorder, conversation moved (D37); a move also emits `conversation.updated` |
 | `memory.saved` / `memory.updated` / `memory.deleted` | yes | `{memory_item, conversation_id?}` | a bot or the owner changed memory (D38); drives the "Remembered: …" line |
+| `memory.seen` | yes | `{scope, id}` | the owner opened a place on the Memory page; New tags and the place dot go away (D38) |
 | `memory.restored` | yes | `{memory_item}` | an item came back from Trash or an earlier version was restored (D62) |
 | `memory_proposal.updated` | yes | `{proposal}` | a Tidy or memory check card changed status: requested, ready, failed, stopped, applied, discarded, replaced (D63) |
 | `trash.changed` | yes | `{counts}` | an item went into Trash or left it (restore, Delete, purge), next to the item's own event (`skill.restored`, `conversation.updated`, `memory.restored`, …) (D62); drives the user panel Trash count and the Trash page |

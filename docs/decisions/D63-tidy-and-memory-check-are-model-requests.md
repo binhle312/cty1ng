@@ -25,11 +25,19 @@ Decision:
 - **Stale rows.** When the owner or a bot changed an item after the request read it, the rows
   for that item are off and not ticked: "You changed this item after BA read it. Press Tidy
   again to include it." The other rows still apply.
+- **The app checks every new text (owner, PR #37 review).** A merge or rewrite text passes the
+  sensitive-data guard (D39) and `memory_item_max_chars` when the card is stored (a failing row
+  is off, with its reason) and again at Apply. A failing row is never saved.
+- **Instructions changed.** A check change stores `projects.instructions_version`. Decide and
+  Apply refuse a change with 409 `instructions_changed` when the version moved on; the row says
+  "The instructions changed. Check again."
 - **Apply.** Applied rows are ordinary memory changes: versions when history is on, events, and
   a deleted item goes to Trash (D62). A merge keeps the first item with the new text and
   deletes the others. The toast is "Saved ✨". A flag row has no check box; it points to Decide
   on the item.
-- **One open card per place.** A new Tidy replaces a card that the owner did not apply.
+- **One open card per place and kind.** A new Tidy replaces a Tidy card that the owner did not
+  apply; a new check replaces an open check card. A Tidy card and a check card can be open at
+  the same time, because they do different jobs (clarified 2026-10-26, owner, PR #37 review).
   **Stop** cancels the request in flight; nothing is stored. A request that was in flight when
   the app stopped is marked failed at the next start.
 - **Asked in a conversation.** "@BA tidy the project memory" is a normal run. The bot calls the

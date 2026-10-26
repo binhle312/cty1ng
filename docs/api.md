@@ -31,7 +31,7 @@ One shape for every error:
 | 403 | `not_author`, `origin_rejected` |
 | 404 | `not_found` |
 | 410 | `bot_purged` (the bot was purged from Trash; only its tombstone remains, D50) |
-| 409 | `name_taken`, `slug_taken`, `stale_write` (the row changed since it was read; reload), `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending`, `run_not_queued`, `draft_not_pending`, `draft_stale`, `bot_list_changed`, `idempotency_key_reused` (same `Idempotency-Key` with a different body), `place_in_trash` (restore while the item's project, conversation or bot is in Trash; D60, D62), `memory_full` (`memory_items_max` live items in the place), `conversation_in_project` (move of a project conversation, D61), `proposal_not_ready` |
+| 409 | `name_taken`, `slug_taken`, `stale_write` (the row changed since it was read; reload), `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending`, `run_not_queued`, `draft_not_pending`, `draft_stale`, `bot_list_changed`, `idempotency_key_reused` (same `Idempotency-Key` with a different body), `place_in_trash` (restore while the item's project, conversation or bot is in Trash; D60, D62), `memory_full` (`memory_items_max` live items in the place), `conversation_in_project` (move of a project conversation, D61), `proposal_not_ready`, `instructions_changed` (a memory check decision after a newer instruction save, D63) |
 | 413 | `too_large` |
 | 422 | `validation_error`, `invalid_id`, `mention_not_member`, `bot_unavailable`, `bot_deleted`, `skill_deprecated`, `version_mismatch`, `effort_not_supported`, `model_not_available`, `sensitive_data`, `tool_job_conflict`, `tool_not_available` (the model has no such tool) |
 | 429 | `rate_limited` (runs per hour), `daily_cap_reached`, `provider_cap_reached` (D42) |
@@ -138,19 +138,20 @@ A place is `{scope: "bot" | "project" | "conversation", id}`.
 
 | Method | Path | Body | Notes |
 | --- | --- | --- | --- |
-| GET | `/memory/places` | | the places list of the Memory page: bots, projects, multi-bot Home conversations not in Trash, each with `count` and `has_new` |
-| GET | `/memory?scope=&id=` | | the place's live items, newest change first: `id, text, row_version, created_by, source {conversation_id, title, in_trash, purged}, last_changed_by, updated_at, is_new, conflict?`. Opening a place marks its items seen |
+| GET | `/memory/places` | | the places list of the Memory page: bots, projects, multi-bot Home conversations not in Trash, each with `count` and `has_new` (any item with `seen_at` NULL or older than `updated_at`) |
+| GET | `/memory?scope=&id=` | | the place's live items, newest change first: `id, text, row_version, created_by, source {conversation_id, title, in_trash, purged}, last_changed_by, updated_at, is_new, conflict?`. A read changes nothing |
+| POST | `/memory/seen` | `{scope, id}` | the page calls it when it opens a place: sets `seen_at` on the place's live items and emits `memory.seen` |
 | GET | `/memory/search?q=` | | matches in every place, grouped by place (`memory-page.md` §4) |
 | POST | `/memory` | `{scope, id, text}` | the owner adds an item. 422 `sensitive_data` (no override, D39), 422 `validation_error` over `memory_item_max_chars`, 409 `memory_full` at `memory_items_max` |
 | PATCH | `/memory/{id}` | `{row_version, text}` | the owner edits. Same checks; 409 `stale_write` |
 | DELETE | `/memory/{id}` | | moves the item to Trash (D62) |
 | GET | `/memory/{id}/versions` | | earlier versions, newest first; empty when history is off |
 | POST | `/memory/{id}/versions/{version}/restore` | `{row_version}` | a new version with the old text |
-| POST | `/memory/{id}/decide` | `{row_version, keep: "instruction" \| "memory"}` | resolves an open conflict (`memory-page.md` §5, D43): `instruction` rewrites the item, `memory` changes the instruction line |
+| POST | `/memory/{id}/decide` | `{row_version, instructions_version, keep: "instruction" \| "memory"}` | resolves an open conflict (`memory-page.md` §5, D43): `instruction` rewrites the item, `memory` changes the instruction line. 409 `stale_write` when the item changed; 409 `instructions_changed` when the instructions changed since the check |
 | POST | `/memory/tidy` | `{scope, id, worker_bot_id}` | 202 with the proposal (`status: requested`). One model request (D63); 429 `daily_cap_reached` or `provider_cap_reached` before it starts. A new request replaces the place's open card |
-| GET | `/memory/proposals/{id}` | | `status`, `changes` (each with `stale: bool`), `cost_usd`, `error` |
+| GET | `/memory/proposals/{id}` | | `status`, `changes` (each with `stale: bool` and `invalid_reason`), `cost_usd`, `error` |
 | POST | `/memory/proposals/{id}/stop` | | cancels a request in flight; status `stopped`, no card |
-| POST | `/memory/proposals/{id}/apply` | `{change_indexes: []}` | applies the ticked changes that are not stale, one transaction; returns `applied` and `skipped` indexes. 409 `proposal_not_ready` |
+| POST | `/memory/proposals/{id}/apply` | `{change_indexes: []}` | applies the ticked changes that are not stale, one transaction; returns `applied` and `skipped` indexes with the reason of each skip (`stale`, `instructions_changed`, `sensitive_data`, `too_long`). Every merge or rewrite text passes the sensitive-data guard and `memory_item_max_chars` again; a failing change is never saved. 409 `proposal_not_ready` |
 | POST | `/memory/proposals/{id}/discard` | | status `discarded` |
 
 The memory check card (`memory-pane.md` §4) uses the same proposal endpoints; its `apply` body
