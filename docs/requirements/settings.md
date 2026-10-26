@@ -64,5 +64,5 @@ owner sees it. Designs: `../design/components/conversation-page.md` §2 and
   and the header shows a small "Memory off" badge.
 - UI-9.7: The conversation menu opens from ⋯ on the bar 2 row (on hover or focus) and from ⋯ in
   the conversation header. Both have the same items: Rename, Memory (opens the Memory pane,
-  D44), Move to project (Move out of project inside a project), a divider, then **Delete** in
-  `danger` text.
+  D44), Move to project (only for a Home conversation: a project conversation stays in its
+  project, D61), a divider, then **Delete** in `danger` text.

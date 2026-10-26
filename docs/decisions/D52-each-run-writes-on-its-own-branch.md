@@ -100,12 +100,13 @@ Decision:
   saves the rest of the run without it. D23 already has this rule for an external folder; now
   every Library has it.
 - **Moving a conversation into a project (owner, 2026-10-23; amended 2026-10-25).** The move dialog
-  has "Copy files to the project Library", checked by default. Copy takes the files that the
-  conversation's runs saved to the Home Library (not `attachments/`). The run records give this
-  list. The app saves them to the project Library as one commit "Moved from <conversation>",
+  lists the files that the conversation's runs saved to the Home Library (not `attachments/`),
+  each with a ticked box (amended by D61, 2026-10-26). The run records give this list. The app
+  saves the ticked files to the project Library as one commit "Moved from <conversation>",
   through the save queue. A file with the same name gets the `-from-<conversation-slug>` suffix.
-  Unchecked, the app copies nothing. Either way, the files stay in the Home Library. A conversation cannot move while one of
-  its runs is running or has unsaved changes.
+  The originals stay in the Home Library. After the move, the conversation uses the project
+  Library. Only a Home conversation can move: a project conversation stays in its project (D61).
+  A conversation cannot move while one of its runs is running or has unsaved changes.
 - **A Library belongs to its place and goes to Trash with it (owner, 2026-10-23; amended
   2026-10-25).** A project Library goes to Trash with its project and comes back with it (D47).
   The Home Library never goes to Trash. Deleting a conversation leaves its files in its Library

@@ -9,7 +9,8 @@ Decision:
   the project with all its chats, memory and Library, as they were. The owner cannot restore one
   chat of a deleted project alone. After 30 days, the app deletes the item.
 - **Undo.** After the delete, a toast has Undo for 10 seconds.
-- **Keep a chat.** To keep a chat, the owner moves it out of the project before the delete. The
+- **Keep a chat.** *Replaced by D61 (2026-10-26):* a project conversation never leaves its
+  project. To keep something, the owner asks a bot to write it to a file, then uses Copy to. The
   confirm dialog says this.
 - **Memory check: the owner picks.** In the check card after an instruction save (D43), each
   item that disagrees has three choices:

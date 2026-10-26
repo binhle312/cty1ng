@@ -45,11 +45,12 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
 - UI-13.1: The rail groups conversations by project, with conversations outside any project
   in their own group. "+" offers "New conversation" in the current project or outside one.
 - UI-13.2: The owner can create a project (name, one-line description), rename it, and move a
-  conversation into or out of a project from the conversation's menu. Moving shows which memory
-  the bots will use from then on.
-- UI-13.3: Deleting a project asks for confirmation. The dialog says that a conversation the
-  owner wants to keep must move out of the project first. The project goes to Trash as one item,
-  with its conversations, memory and Library files. The owner can restore the whole project,
+  Home conversation into a project from the conversation's menu. A project conversation never
+  leaves its project (D61). The move dialog lists the conversation's saved files with ticked
+  boxes, and shows which memory and Library the bots will use from then on.
+- UI-13.3: Deleting a project asks for confirmation. The dialog says: "To keep something from
+  this project, ask a bot to write it to a file, then use Copy to." (D61). The project goes to
+  Trash as one item, with its conversations, memory and Library files. The owner can restore the whole project,
   not one conversation, for `trash_days` (D47, D49).
 - UI-13.4: When a bot saves, changes or forgets a memory, the conversation shows a system line
   ("BA remembered: target users are clinic staff · Project memory") with Undo. Undo reverts that

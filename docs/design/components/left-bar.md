@@ -68,8 +68,9 @@ Top to bottom:
    floating user panel. No folding, no separate 1:1 and group sections, no Bots section
    (bots show in the top header).
 
-Conversation row menu (⋯ on hover or focus, or right-click): Rename, Memory, Move to project (Move
-out of project inside a project), a divider, then Delete in `danger` text. The header ⋯ has the
+Conversation row menu (⋯ on hover or focus, or right-click): Rename, Memory, Move to project (Home
+conversations only; a project conversation stays in its project, D61), a divider, then Delete in
+`danger` text. The header ⋯ has the
 same menu (`conversation-page.md` §2.1, round 12).
 
 ## 3. Bar 2 on Home
