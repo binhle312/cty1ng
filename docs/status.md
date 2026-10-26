@@ -63,7 +63,6 @@ cards inside the reply that fold after a decision, and the requirement edits tha
 | Approve the M3 schema design for D46 (auto title) before it is written. The generated SQL is approved in the slice PR | M3 plan |
 | Add the `surface-bubble` token (owner message box) to `design/themes.md` §3 after PR #10 merges | M3 plan |
 | Put UI-13.16 (the memory tool skips an exact duplicate) in the M5b brief | M5b start |
-| Approve the Flow pane Animations switch (UI-12.7: pane header, default On, same value as "Always reduce motion") | M8 plan |
 | Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a schema design approval (initial schema for M3 and M7). The generated SQL is approved in the slice PR | M3 and M7 plans |
 | Approve the M5b schema design: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars (initial schema for M5b). Claude Code stops for this approval before it writes them. The generated SQL is approved in the M5b PR | M5b plan |
 | Write the M5b brief: projects, memory (D37, D38, D43), goal and instructions (D45), pinning, the API contracts that D43 and D45 list as not written yet | M5b start |

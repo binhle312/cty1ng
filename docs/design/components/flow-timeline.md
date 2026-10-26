@@ -4,8 +4,8 @@
 > Timeline board F2 ("timeline look good", 13:01) and chose "Timeline only, Team map later"
 > (D26 amendment 2026-10-25). On 2026-10-26 the owner approved the PR #33 review fixes (finished steps
 > only, one chip per run after a Retry, the lane and overflow rules in §3) and the run card R3
-> with tries, step times and a footer (from the owner's mockup). The **Animations switch** (§6) is **New, not agreed**: it waits for the owner in the PR
-> review. Previews: `../previews/command-dark/flow-timeline.png` (and `.html`, which shows the
+> with tries, step times and a footer (from the owner's mockup), and then the **Animations switch** (§6, boards N3 to N5
+> on the Flow canvas). Previews: `../previews/command-dark/flow-timeline.png` (and `.html`, which shows the
 > breathing outline) and `flow-timeline-overflow.png` (7 bots, the map scrolled sideways).
 
 The Flow pane shows how the work in one conversation happened. In M8 it has one map, the
@@ -81,7 +81,7 @@ running in the normal text colour with a spinner in the bot colour, idle and que
 The accessible list alternative (UI-12.9) lists the same items in the same order with the same
 click results.
 
-## 6. Animations switch (**New, not agreed**)
+## 6. Animations switch
 
 | Part | Rule |
 | --- | --- |
