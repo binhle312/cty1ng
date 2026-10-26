@@ -44,8 +44,10 @@ Bot-to-bot discussion (M5).
   9.5, 9.7.
 - Invariant 10.
 - Invariant 24: the purge schema test (`domain-model.md` §16) fails for a table with no entry,
-  for a column of a covered table with no policy, and for an "other scope" table with a foreign
-  key to `conversations`, `messages`, `runs` or a cleared table.
+  for a covered table whose policy column names do not match its schema columns exactly (test
+  case: add `runs.private_prompt` with no entry), and for an "other scope" table with a foreign
+  key to `conversations`, `messages`, `runs` or a cleared table. The policy map has no wildcard
+  or default.
 - A bot added "from here on" does not see earlier messages in its prompt (agent test).
 - "@BA @QA …": QA's prompt contains BA's reply; both show the clock reaction at first, BA's goes
   away when BA starts, QA's when QA starts (D31, UI-3.18).

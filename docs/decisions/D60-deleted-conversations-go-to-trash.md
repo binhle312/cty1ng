@@ -51,7 +51,9 @@ Decision:
     only `scope = 'conversation'`). The policy is in `domain-model.md` §16.
   - **Covered is decided by a rule.** A table with a foreign key to `conversations`, `messages`,
     `runs` or a table that the purge clears or deletes must be covered.
-  - **A schema test fails CI** when a table has no entry or a covered column has no policy.
+  - **No wildcard.** A covered table names each column; "every other column keep" is not a
+    policy. The schema test fails CI when a table has no entry, or when a covered table's
+    policy column names are not exactly its schema columns.
   - The conversation row keeps its id and `purged_at`, and its title becomes "Deleted
     conversation".
 

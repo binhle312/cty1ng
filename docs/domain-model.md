@@ -643,7 +643,8 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
     once, into a project. Files cross places only by an approved copy (D61).
 24. After a conversation purge, no column that §16 marks `clear` holds content, no row that §16
     marks `delete` is left, and every row of another scope is unchanged (D60). Every table has a
-    §16 entry, and every column of a covered table has a policy (schema test).
+    §16 entry. The column names in a covered table's entry match its schema columns exactly,
+    with no wildcard or default (schema test).
 
 ## 13. Usage and cost (D20, D21)
 
@@ -808,39 +809,58 @@ it is; its link shows "Deleted conversation" (owner, 2026-10-26).
 | Saved files in the Library | The place (D52) | Keep |
 | Runs, model requests, run slots, ratings | Statistics, daily cap, Improve signals (D21, D51) | Keep |
 
-**Policy per table.** Every table has one entry. A **covered** table lists every column, whatever
-its SQLite type (TEXT, JSON, BLOB, INTEGER, …), because ids, statuses and times are TEXT too.
-A column policy is `keep`, `clear` (to the value shown) or the whole row is `delete`. A `delete`
-can have a row condition.
+**Policy per table.** Every table has one entry. A **covered** table names every column,
+whatever its SQLite type (TEXT, JSON, BLOB, INTEGER, …), because ids, statuses and times are TEXT
+too. A column policy is `keep` or `clear` (to the value shown), or the table deletes the whole
+row. A delete can have a row condition.
 
-| Table | Class | Purge (rows of the purged conversation) |
+Delete-row tables need no column list, because the whole row goes, with any column that a
+later slice adds:
+
+| Table | Purge (rows of the purged conversation) |
+| --- | --- |
+| `conversation_bots` | delete row |
+| `run_history` | delete row (the BLOB `messages_json` holds tool results and file text) |
+| `events` | delete row (`conversation_id` = the conversation) |
+
+Every other covered table names **each column**. "Every other column", "keep all" and any
+default are not allowed: a column that is not named has no policy, and the schema test fails.
+
+| Table | Keep | Clear (to) |
 | --- | --- | --- |
-| `conversations` | covered | `title` → "Deleted conversation"; `purged_at` set; every other column keep |
-| `conversation_bots` | covered | delete row |
-| `messages` | covered | `content_md` → `''`, `card` → NULL, `mentions` → `'[]'`, `attachments` → `'[]'`; every other column keep |
-| `runs` | covered | `error` → NULL; every other column keep |
-| `run_slots` | covered | keep all |
-| `model_requests` | covered | keep all |
-| `run_history` | covered | delete row (the BLOB `messages_json` holds tool results and file text) |
-| `run_steps` | covered | `target` → `''`, `detail` → NULL; `kind`, `status`, `seq_in_run`, times keep |
-| `run_skills` | covered | keep all |
-| `events` | covered | delete row (`conversation_id` = the conversation) |
-| `handoffs` | covered | `summary` → `''`, `files` → `'[]'`, `decision_note` → NULL; every other column keep |
-| `skill_drafts` | covered | `slug`, `name`, `description`, `body_md` → `''`, `changelog` → NULL; every other column keep |
-| `skill_versions` | covered | keep all (it points to `skill_drafts`; the version is the owner's skill) |
-| `memory_items` | covered | delete row where `scope = 'conversation'`; rows of bot or project scope keep all |
-| `memory_item_versions` | covered | delete row where its item is deleted; other rows keep all |
-| `reply_feedback` | covered | `note_md` → NULL; `rating` and every other column keep |
-| `bots`, `skills`, `bot_skills`, `projects`, `settings` | other scope | not changed |
+| `conversations` | `id`, `title_source`, `auto_title_status`, `active_leaf_message_id`, `bot_chat_enabled`, `bot_turn_limit`, `bot_turns_used`, `last_activity_at`, `last_read_seq`, `created_by`, `created_at`, `deleted_at`, `purged_at` (set), `project_id`, `memory_history_versions`, `memory_disabled` | `title` → "Deleted conversation" |
+| `messages` | `id`, `conversation_id`, `seq`, `parent_message_id`, `author_type`, `author_id`, `kind`, `status`, `run_id`, `client_id`, `edited_from_id`, `created_at`, `updated_at` | `content_md` → `''`, `card` → NULL, `mentions` → `'[]'`, `attachments` → `'[]'` |
+| `runs` | `id`, `conversation_id`, `bot_id`, `trigger_message_id`, `triggered_by`, `status`, `attempts`, `locked_until`, `cancel_requested`, `model_id`, `effort`, `input_tokens`, `output_tokens`, `cache_read_tokens`, `cache_write_tokens`, `requests`, `estimated_cost_usd`, `created_at`, `started_at`, `finished_at` | `error` → NULL |
+| `run_slots` | `id`, `run_id`, `conversation_id`, `used_at` | none |
+| `model_requests` | `id`, `purpose`, `conversation_id`, `run_id`, `seq_in_run`, `provider`, `model_requested`, `model_resolved`, `provider_response_id`, `finish_reason`, `input_tokens`, `output_tokens`, `cache_read_tokens`, `cache_write_tokens`, `usage_details`, `started_at`, `finished_at`, `latency_ms`, `estimated_cost_usd`, `reserved_cost_usd`, `price_source` | none |
+| `run_steps` | `id`, `run_id`, `seq_in_run`, `kind`, `status`, `started_at`, `finished_at` | `target` → `''`, `detail` → NULL |
+| `run_skills` | `run_id`, `skill_version_id`, `skill_slug`, `version`, `mode`, `first_loaded_at` | none |
+| `handoffs` | `id`, `conversation_id`, `from_bot_id`, `to_bot_id`, `commit_sha`, `status`, `message_id`, `created_by_run_id`, `created_at`, `decided_at` | `files` → `'[]'`, `summary` → `''`, `decision_note` → NULL |
+| `skill_drafts` | `id`, `conversation_id`, `message_id`, `source_message_id`, `created_by_run_id`, `drafted_by_bot_id`, `target_bot_id`, `kind`, `skill_id`, `base_version`, `status`, `result_skill_version_id`, `edited_by_owner`, `row_version`, `created_at`, `decided_at` | `slug`, `name`, `description`, `body_md` → `''`, `changelog` → NULL |
+| `skill_versions` (points to `skill_drafts`; the owner's skill) | `id`, `skill_id`, `version`, `description`, `body_md`, `changelog`, `created_by`, `skill_draft_id`, `created_at` | none |
+| `reply_feedback` | `id`, `message_id`, `run_id`, `bot_id`, `rating`, `created_at`, `updated_at` | `note_md` → NULL |
+
+Conditional deletes keep some rows, so they also name each column for the rows they keep:
+
+| Table | Delete row where | Kept rows: keep | Kept rows: clear |
+| --- | --- | --- | --- |
+| `memory_items` | `scope = 'conversation'` and `conversation_id` = the conversation | `id`, `scope`, `bot_id`, `project_id`, `conversation_id`, `text` (D38), `current_version`, `row_version`, `created_by_bot_id`, `source_message_id`, `last_changed_by_bot_id`, `last_change_message_id`, `created_at`, `updated_at`, `deleted_at` | none |
+| `memory_item_versions` | its `memory_item_id` is deleted | `memory_item_id`, `version`, `text`, `changed_by_bot_id`, `changed_at` | none |
+
+Other scope (no foreign key that the rule below names): `bots`, `skills`, `bot_skills`,
+`projects`, `settings`. The purge does not change them.
 
 Tables that later slices add get their entry in the same PR: search entries (M5b, delete row),
 plan outcomes (D48: owner note → NULL, outcome keep), `run_branches` (M6: delete row and its
-branch), `library_copies` (M6: keep all; the file stays in the Library).
+branch), `library_copies` (M6: each column keep, named one by one; the file stays in the Library).
 
 **Which tables are covered.** A table with a foreign key to `conversations`, `messages` or `runs`,
 or to a table whose entry clears or deletes something, **must** be covered. Only a table with no
 such key can be "other scope". This rule is checked by the schema test, not chosen by hand.
 
-**Schema test** (M4, runs in CI): it reads the Drizzle schema. It fails when a table has no
-entry, when a covered table has a column with no policy, or when a table is "other scope" but
-has a foreign key that the rule above names.
+**Schema test** (M4, runs in CI): it reads the Drizzle schema and the policy map in code. The
+map has one entry per column name; it has no wildcard, no "rest" key and no default. The test
+fails when a table has no entry, when the column names in a covered table's entry are not
+**exactly** the schema's column names (a column missing, or a name that does not exist), or when
+a table is "other scope" but has a foreign key that the rule above names. So a new column, for
+example `runs.private_prompt`, fails CI until someone gives it a policy.
