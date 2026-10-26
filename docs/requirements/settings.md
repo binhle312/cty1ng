@@ -53,8 +53,9 @@ Design: `../design/components/settings-page.md` (round 14).
   (`../design/themes.md` §1, §2).
 - UI-8.6 *(D38)*: Memory: a global switch. When off, no bot reads or saves memory anywhere;
   saved items are kept and return when it is turned back on. A link opens the Memory page.
-- UI-8.7: Profile: the owner's display name (`display_name`, default "Sir"). The user panel
-  shows it, and its first letter is the owner avatar (`../design/components/user-panel.md`).
+- UI-8.7: Profile: the owner's display name (`display_name`, default "Sir"). After the app
+  trims spaces, it must have 1 to `display_name_max` characters (default 32); an empty or too
+  long name shows a field error and does not save (422 from the server). The user panel shows it, and its first letter is the owner avatar (`../design/components/user-panel.md`).
 - UI-8.8: New bots: the start values of the Create bot page (`bot_default_history_pct`,
   `bot_default_request_limit`, `bot_default_max_reply_chars`, UI-5.8). A change does not change
   existing bots.

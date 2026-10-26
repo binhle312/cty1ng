@@ -90,7 +90,12 @@ The texts below are the agreed labels. Values are the defaults in `../../domain-
 
 | Row | Effect | Note | Control |
 | --- | --- | --- | --- |
-| Your name | Shows in the user panel. Its first letter is your avatar. | Default: Sir | Text box, 220 px |
+| Your name | Shows in the user panel. Its first letter is your avatar. | 1 to 32 characters. Default: Sir | Text box, 220 px |
+
+The app trims spaces at the start and end before it checks the name. An empty name shows the
+field error "Enter a name." A name longer than `display_name_max` (default 32) shows "Use 32
+characters or fewer." with the number from the setting. While the field has an error, **Save
+changes** stays off. The server checks again and returns 422 (`../../api.md` §7).
 
 ### 4.2 Spending (UI-8.3, D20, D40, D42)
 
@@ -220,7 +225,7 @@ reminders).
 | Setting | Where the owner changes it |
 | --- | --- |
 | `bot_order`, `bot_order_direction` | The sort buttons on the Bots page (`bots-page.md` §5) |
-| Bot form limits (`bot_name_max`, `bot_description_max`, `bot_persona_max`, `bot_history_min_pct`, `bot_history_max_pct`) and health thresholds (`health_*`) | `PATCH /settings` only. They are close to security size checks or rarely changed |
+| Form limits (`display_name_max`, `bot_name_max`, `bot_description_max`, `bot_persona_max`, `bot_history_min_pct`, `bot_history_max_pct`) and health thresholds (`health_*`) | `PATCH /settings` only. They are close to security size checks or rarely changed |
 | Memory history versions (UI-13.9) | Project settings and the bot page (per project, per bot) |
 | "Don't use memory" for one conversation (UI-9.6) | The Memory pane |
 | Discussion for one conversation (UI-9.3) | The discussion status in the conversation header (§9) |
