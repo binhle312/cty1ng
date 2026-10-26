@@ -227,5 +227,5 @@ A run refused by a limit (E4) is a system line, in `conversation-cards.md` §1.
 ## 9. New token
 
 The owner box needs a fill one step lighter than `surface-raised`. This spec names it
-`surface-bubble`. Its value per theme goes into `../themes.md` §3 in a later PR (that file is
-in an open PR now). Until then, the Command dark value is the one in the preview.
+`surface-bubble`. Its values are in `../themes.md` §3 (Command dark #262A30, the value in the
+previews; Material in T2).

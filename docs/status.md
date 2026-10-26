@@ -64,7 +64,6 @@ every setting in `domain-model.md` §10.
 | D58 and D59 accepted (cross-conversation reading on request, Send to conversation, save notice when project memory changed): approve the FTS5 schema design (initial schema for M5b), and the instructions/goal change time and D59 snapshot schema design (initial schema for M6). The generated SQL is approved in each slice PR; UI design of the inbox, information card and memory notice in the slice plans | M5b plan, M6 plan, Inbox plan |
 | D53 accepted (web through provider web tools): check the default limits and approve the schema design for the bot setting and the run flag (initial schema for that milestone). The generated SQL is approved in the slice PR | Web access milestone plan |
 | Approve the M3 schema design for D46 (auto title) before it is written. The generated SQL is approved in the slice PR | M3 plan |
-| Add the `surface-bubble` token (owner message box) to `design/themes.md` §3 after PR #10 merges | M3 plan |
 | Put UI-13.16 (the memory tool skips an exact duplicate) in the M5b brief | M5b start |
 | Decide when the Trash purge runs (now: at start and once a day, M1 brief). Proposal parked by the owner 2026-10-26: in the app, interval as an env var, deadline `deleted_at + trash_days` | M5b start |
 | Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a schema design approval (initial schema for M3 and M7). The generated SQL is approved in the slice PR | M3 and M7 plans |
