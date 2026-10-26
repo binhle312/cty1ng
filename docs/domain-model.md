@@ -580,10 +580,10 @@ settings
   value  JSON NOT NULL
 ```
 
-Defaults: `bot_discussion_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"created"`), `bot_order_direction = "desc"` (`"desc"` | `"asc"`), `trash_days = 30` (every item in Trash, D49, D62), `undo_seconds = 10` (D62: the Undo toast of a permanent delete), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3`, `improve_probe_tasks_max = 10` (D51: the probe starts at the first and allows at most the second; read by M5d, never hard-coded), `plan_mark_reminders = 1` (D57: reminders before an action run ends when a step or Done-when item has no mark; 0 = off), `share_max_per_conversation_24h = 5` (D58), `copy_proposals_max_per_conversation_24h = 5` (D61), `cross_search_max_hits = 10` (D58), `display_name = "Sir"` (UI-8.7: trimmed, 1 to `display_name_max` characters), `display_name_max = 32`, `memory_enabled = true` (UI-8.6), `memory_item_max_chars = 500`, `memory_items_max = 100` (D38 amendment 2026-10-26). The Settings page shows most keys; `design/components/settings-page.md` §8 lists the ones that it does not show.
+Defaults: `bot_discussion_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"created"`), `bot_order_direction = "desc"` (`"desc"` | `"asc"`), `trash_days = 30` (every item in Trash, D49, D62), `undo_seconds = 10` (D62: the Undo toast of a permanent delete), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3`, `improve_probe_tasks_max = 10` (D51: the probe starts at the first and allows at most the second; read by M5d, never hard-coded), `plan_mark_reminders = 1` (D57: reminders before an action run ends when a step or Done-when item has no mark; 0 = off), `share_max_per_conversation_24h = 5` (D58), `copy_proposals_max_per_conversation_24h = 5` (D61), `cross_search_max_hits = 10` (D58), `display_name = "Sir"` (UI-8.7: trimmed, 1 to `display_name_max` characters), `display_name_max = 32`, `memory_enabled = true` (UI-8.6), `memory_item_max_chars = 300`, `memory_items_max = 50` (D38 amendment 2026-10-26: about 7,500 tokens at most for the bot and project memory of one request). The Settings page shows most keys; `design/components/settings-page.md` §8 lists the ones that it does not show.
 
 **Ranges** (owner 2026-10-26; whole numbers; this list is the one source for the Settings page and
-the Zod schema of `PATCH /settings`): `trash_days` ≥ 1, no upper limit; `undo_seconds` 5–60; `memory_item_max_chars` 100–2,000; `memory_items_max` 10–500 (a lower value never deletes items: a place over it takes no new item until it is under it); `display_name` 1 to
+the Zod schema of `PATCH /settings`): `trash_days` ≥ 1, no upper limit; `undo_seconds` 5–60; `memory_item_max_chars` 100–1,000; `memory_items_max` 10–200 (a lower value never deletes items: a place over it takes no new item until it is under it); `display_name` 1 to
 `display_name_max` characters after trim; `share_max_per_conversation_24h` 1–50;
 `copy_proposals_max_per_conversation_24h` 1–50; `cross_search_max_hits` 1–50;
 `plan_mark_reminders` 0–3; `bot_default_request_limit` 1–100 and `bot_default_max_reply_chars`
@@ -739,7 +739,7 @@ memory_items
   bot_id             TEXT NULL REFERENCES bots(id)     -- set when scope = bot
   project_id         TEXT NULL REFERENCES projects(id) -- set when scope = project
   conversation_id    TEXT NULL REFERENCES conversations(id) -- set when scope = conversation
-  text               TEXT NOT NULL                     -- ≤ memory_item_max_chars (500); passed the sensitive-data guard (D39)
+  text               TEXT NOT NULL                     -- ≤ memory_item_max_chars (300); passed the sensitive-data guard (D39)
   current_version    INTEGER NOT NULL DEFAULT 1
   row_version        INTEGER NOT NULL DEFAULT 1
   created_by_bot_id  TEXT NULL                         -- NULL = the owner
@@ -796,8 +796,8 @@ UNIQUE INDEX memory_proposals_one_open ON memory_proposals(kind, scope, coalesce
 - **Versions.** With history off, an update overwrites `text`, and only the previous text needed
   for Undo is kept until the next change. With history on, the old text goes to
   `memory_item_versions`, and rows beyond the setting are deleted in the same transaction.
-- **Limits:** `memory_items_max` (100) live items per bot, per project and per conversation, and
-  `memory_item_max_chars` (500) per item (§10; D38 amendment 2026-10-26), enforced in the service with a
+- **Limits:** `memory_items_max` (50) live items per bot, per project and per conversation, and
+  `memory_item_max_chars` (300) per item (§10; D38 amendment 2026-10-26), enforced in the service with a
   compare-and-set count (`architecture.md` §11).
 - **Seen (New tag).** An item is new while `seen_at` is NULL or older than `updated_at`.
   `POST /memory/seen` sets `seen_at = now` for the live items of one place, emits `memory.seen`,

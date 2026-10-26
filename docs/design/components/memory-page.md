@@ -7,7 +7,7 @@
 > uses: `buttons.md`, `time-format.md`, `../ui-rules.md`.
 
 The Memory page is a light tool to control what bots remember (owner, 2026-10-25). It is not a
-place to read or write long notes. Each item is one short fact, at most `memory_item_max_chars` characters (default 500). A place holds at most `memory_items_max` items (default 100). The numbers on the boards use the defaults.
+place to read or write long notes. Each item is one short fact, at most `memory_item_max_chars` characters (default 300). A place holds at most `memory_items_max` items (default 50). The boards were drawn with the older 500 and 100; the settings win, and the examples here use the defaults.
 
 ## 1. Where it opens
 
@@ -42,7 +42,7 @@ Two columns, centred, the Settings list pattern (`settings-page.md` §2):
   - bot: "Bot memory. {bot} learns it in your 1:1 conversations and reads it in every
     conversation, also in projects."
   - conversation: "Conversation memory. Only the bots in {conversation} read it."
-- Then the count only: "8 of 100 items" (`on-surface-faint`). The head does not repeat facts
+- Then the count only: "8 of 50 items" (the limit is `memory_items_max`) (`on-surface-faint`). The head does not repeat facts
   that the line or the rows already show (W2).
 - Buttons at the right, 30 px: **Tidy** (secondary, §8) and **+ Add** (primary, §3.4). A place
   with no items has no Tidy.
@@ -63,7 +63,7 @@ Two columns, centred, the Settings list pattern (`settings-page.md` §2):
 
 - Edit turns the row into a box in place: the text field (`primary` border), a hint "Bots in
   {place} read the new text from their next run. Enter saves, Esc cancels.", the counter
-  "{n} / 500", **Cancel** and **Save** (30 px).
+  "{n} / {max}" (`memory_item_max_chars`), **Cancel** and **Save** (30 px).
 - After Save: the agreed toast "Saved ✨ Bots in {place} use the new text from their next run."
   The meta line becomes "You changed it · 1 min ago · …".
 
@@ -103,8 +103,8 @@ The toast: "The item is in Trash." with **Trash** as a link. No Undo (B7).
 | Conflict with instructions (D43) | Under the item, in `primary`: 'Disagrees with instructions, line 4: "…"' and **Decide** (primary 30) | M1 |
 | Decide | Under the item: "Which one is correct?", two radio choices that say the result: "Keep the instruction: {value}" ("The memory item becomes …") and "Keep the memory: {value}" ("Line 4 of the instructions becomes …"). The hint "Not sure? Cancel. Until you decide, bots follow the instructions." **Cancel** and **Apply**. Cancel is decide later | M9 |
 | A secret (D39) | The box border and a line in `danger`: "This text looks like a password. Memory never keeps passwords, keys or tokens. Remove it, then save." No override | M12 |
-| 500 characters | The counter turns `danger` ("512 / 500"), a line "Make the text 500 characters or fewer.", **Save** off with the tooltip "The text is too long." | M13 |
-| 100 items | The count line in `danger`: "100 of 100 items. Bots cannot save more here until you delete or tidy items." **+ Add** off with the tooltip "This place has 100 items. Delete an item or use Tidy first." | M13 |
+| `memory_item_max_chars` | The counter turns `danger` ("312 / 300"), a line "Make the text 300 characters or fewer.", **Save** off with the tooltip "The text is too long." | M13 |
+| `memory_items_max` | The count line in `danger`: "50 of 50 items. Bots cannot save more here until you delete or tidy items." **+ Add** off with the tooltip "This place has 50 items. Delete an item or use Tidy first." | M13 |
 | Memory off in Settings (UI-8.6) | A banner above the head: "Memory is off. Bots do not read or save memory. Your items stay, and you can still edit them." and **Open Settings** | M14 |
 | Source in Trash or purged (D60) | The conversation link keeps its name and gets an "In Trash" tag; after the purge it says "Deleted conversation" in `on-surface-faint`, with no link | M15 |
 | A place with no items | The bot avatar (72 px), "{bot} has no memory yet", one line on how it gets memory, and **+ Add** in the head | M16 |
@@ -125,7 +125,7 @@ The toast: "The item is in Trash." with **Trash** as a link. No Undo (B7).
   **Keep earlier versions**, "On: you can restore an earlier text of each item. A lower number
   deletes the oldest versions, after you confirm.", note "1 to 20. Off when a bot is created. 5
   when you turn it on.", a number box and a switch.
-- Then the bot line from §3.1, "{n} of 100 items · All memory: Memory page", **Tidy**, **+ Add**
+- Then the bot line from §3.1, "{n} of 50 items · All memory: Memory page", **Tidy**, **+ Add**
   and the same rows as the page.
 
 ## 8. Tidy memory (D38, D63; boards Y1–Y8)

@@ -65,7 +65,7 @@ Every bot also reads its own bot memory in project and conversation-memory chats
   (`conversation-rules.md` §4). Memory has its own limits instead of sharing the history budget:
   at most 500 characters per item and 100 items per scope. A bot that hits the limit must update
   or forget an item before saving another. *Amended 2026-10-26 (owner, PR #37): the two limits
-  are settings, `memory_item_max_chars` (default 500) and `memory_items_max` (default 100), on
+  are settings, `memory_item_max_chars` (default 300) and `memory_items_max` (default 50), on
   Settings › Memory, by the no-hardcode rule (`../../AGENTS.md` §10).*
 - **Safety.** Memory text passes the sensitive-data guard (D39) with no override: secrets are
   never saved to memory. Memory is data, not instructions from the owner. A project's or a

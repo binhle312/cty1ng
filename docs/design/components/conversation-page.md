@@ -109,7 +109,7 @@ Agreed in the M5b design review, round 15 (2026-10-26 13:52), boards V1–V5. Pr
 - **The server checks again** (V3): when a run started after the dialog opened, nothing moves
   and the dialog shows a `danger` line: "{bot} started a run after you opened this. Nothing
   moved. Try again when {bot} is done." The dialog stays open with the owner's choices.
-- **The project has no room** for the ticked items (100 items, D38): nothing moves and the
+- **The project has no room** for the ticked items (`memory_items_max`, default 50, D38): nothing moves and the
   dialog shows a `danger` line: "{project} has room for {m} more items. Untick {x} items, or
   tidy {project} memory first." (not drawn; the V3 pattern)
 - **After the move** (V4): the conversation shows in the project's bar 2, selected, and stays
