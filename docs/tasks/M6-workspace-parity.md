@@ -40,7 +40,9 @@ files), §6; `docs/requirements/conversation.md` (UI-3.3 cards, 3.13, 3.16).
   `propose_copy` gives the bot the place names only, never their files; Approve copies the pinned
   version, also when a newer version exists; a copy starts no run; the copy record holds the
   source place, path, commit and approval; a project conversation cannot move (API returns an
-  error), and a Home conversation moves only into a project; the move copies pinned versions and
+  error), and a Home conversation moves only into a project; the move copies the newest saved version at dialog open
+  (test: two Home conversations save `notes.md`, the first moves, and the copy is the second
+  save, with the other conversation named on the row) and
   is refused when a run is queued or running, a save is in progress or unsaved changes exist,
   also when the run starts after the dialog opens; `copy_proposals_max_per_conversation_24h`
   counts pending, approved, rejected and cancelled proposals, not blocked attempts, and not the
