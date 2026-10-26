@@ -90,5 +90,5 @@ hand" line. `api.md` needs a restore endpoint for conversations (with the Trash 
 M5b). The Trash page design (M5b) shows conversations. The schema goes into the initial schema of
 slice M4.
 
-Implemented in: `../domain-model.md` §5, `../api.md` §5, `../requirements/app-shell.md` UI-1.6,
+Implemented in: `../domain-model.md` §5, §16, `../api.md` §5, `../requirements/app-shell.md` UI-1.6,
 `../design/components/conversation-page.md` §2.1.
