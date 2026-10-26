@@ -33,6 +33,10 @@ Decision:
     conversation has a queued or running run, a save in progress, or unsaved changes. The
     server checks these conditions again before it commits the move, because a run can start
     after the dialog opens. If one is true, the move fails and nothing changes.
+  - **Two slices (owner, 2026-10-26).** M5b builds the move itself: `project_id`, the project's
+    memory and instructions from then on, and the check for a queued or running run. M6 adds
+    the file step (ticked boxes, pinned versions, the copy save) and the check for a save in
+    progress or unsaved changes, because Libraries and saves start in M6.
 - **Copy to.** A file goes from one place to another only as a copy that the owner approves:
   - The owner presses **Copy to** on a file in a Library page, and picks Home or a project.
   - A bot proposes a copy with the tool `propose_copy` (file and destination). The bot sees the

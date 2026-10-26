@@ -27,6 +27,9 @@ files), §6; `docs/requirements/conversation.md` (UI-3.3 cards, 3.13, 3.16).
   stale detection, "Add <bot> and start", 24-hour limit.
 - Conversation delete (D60): saved files stay in the Library; unsaved changes go to Trash with the
   conversation and are discarded at purge. Test: a delete and a restore leave the Library unchanged.
+- Move to project, file step (D61): M5b built the move itself. M6 adds the file list with
+  ticked boxes and pinned versions, the copy save, and the check for a save in progress or
+  unsaved changes (also checked by the server before the move).
 - Delete `reference/` and confirm every row of `porting-guide.md` §2 is done.
 
 ## Acceptance criteria
