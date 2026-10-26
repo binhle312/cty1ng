@@ -54,9 +54,10 @@ there is no conversation settings page. The discussion status comes with slice M
 
 ### 2.1 Conversation menu and Delete (UI-9.7, UI-1.6, D60)
 
-- Items: **Rename**, **Memory** (opens the Memory pane, D44), **Move to project** (only in a
-  Home conversation; a project conversation has no move item, D61), a divider, then **Delete** in
-  `danger` text. ⋯ on the bar 2
+- Items: **Rename** (M4), **Memory** (M5b; opens the Memory pane, D44), **Move to project**
+  (M5b; only in a Home conversation; a project conversation has no move item, D61), a divider,
+  then **Delete** (M5b) in `danger` text. M4 shows only Rename; the board shows the M5b items
+  with their tag (`ui-rules.md` P8). ⋯ on the bar 2
   row (it shows on hover or focus) and ⋯ in the header open the same menu.
 - **Delete** opens a dialog (the Delete project dialog pattern, `project-settings-page.md` §6):
   - Title: **Delete {title}? 🧹**

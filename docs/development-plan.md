@@ -13,7 +13,7 @@ the builder agent with the prompt in `workflow.md` §3.
 | M1 | [M1-skill-hub.md](tasks/M1-skill-hub.md) | Skills: versions, authorship, clone, deprecate, import/export | **plan** (schema) | M0 |
 | M2 | [M2-bots.md](tasks/M2-bots.md) | Model catalog, bots CRUD, clone, avatars, pins, header bar | **plan** (schema, uploads) | M1 |
 | M3 | [M3-chat-one-bot.md](tasks/M3-chat-one-bot.md) | Conversations, rail, messages, worker, agent port, streaming, Stop, provenance | **plan** (events, worker) | M2 |
-| M4 | [M4-multi-bot.md](tasks/M4-multi-bot.md) | Drag-to-add, history choice, mentions, routing, branches, conversation menu and Delete to Trash | **plan** (routing) | M3 |
+| M4 | [M4-multi-bot.md](tasks/M4-multi-bot.md) | Drag-to-add, history choice, mentions, routing, branches, conversation menu (Rename; Delete to Trash is M5b) | **plan** (routing) | M3 |
 | M5 | [M5-bot-discussion.md](tasks/M5-bot-discussion.md) | Discussion toggle, turn budget, caps | merge | M4 |
 | M5b | not written | Projects and memory (D37, D38): project entity, rail grouping, bot and project memory, Memory page. Conversation menu items Memory, Move to project and Delete (D60): Delete endpoint, Trash page with Restore, purge job and its service test (`domain-model.md` §16), `conversations.deleted_at` and `purged_at`. Cross-conversation reading (D58) here or in the next slice | **plan** (schema, UI design) | M5; before M6 (workspaces are per project) |
 | M5c | not written | Skills drafted by bots (D41): `propose_skill`, draft card with diff, approve and pin | **plan** (schema, UI design) | M4 |

@@ -38,7 +38,7 @@ Layout sketch: see `../design/screens.md` §1 (not final).
   Conversations with unread messages show a dot.
 - UI-1.5: Sorted by last activity, newest first.
 - UI-1.6: Right-click or ⋯ on a conversation row: the conversation menu (UI-9.7). **Delete**
-  opens a dialog that names the conversation and gives the real counts (messages and runs,
+  (M5b) opens a dialog that names the conversation and gives the real counts (messages and runs,
   conversation memory items) and says that its files stay in the Library; a line says that a queued or running run stops first. **Cancel** is
   the default. **Delete** moves the conversation to Trash (D60). Then the newest other
   conversation in the same place opens, and a toast says "{title} is in Trash." with no Undo.

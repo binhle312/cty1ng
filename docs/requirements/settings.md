@@ -57,7 +57,7 @@ owner sees it. Designs: `../design/components/conversation-page.md` §2 and
   on · 3/5 used") opens a popover with "Use global (off)" / On / Off and the turn limit (inherit
   or 1–20). A change saves at once and applies from the next bot message.
 - UI-9.4: Members: in the header, with the add slot and the members menu (UI-3.15).
-- UI-9.5: Delete: **Delete** in the conversation menu (UI-9.7) sends the conversation to Trash
+- UI-9.5 (M5b): Delete: **Delete** in the conversation menu (UI-9.7) sends the conversation to Trash
   (D60, UI-1.6).
 - UI-9.6 *(D38)* (M5b): "Don't use memory" toggle, at the top of the Memory pane for this
   conversation. When on, bots in this conversation neither read nor save memory of any scope,
