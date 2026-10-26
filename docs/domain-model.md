@@ -417,7 +417,7 @@ conversations
   last_read_seq            INTEGER NOT NULL DEFAULT 0   -- owner's read position: unread dot and "New" divider
   created_by, created_at
   deleted_at               TIMESTAMP NULL   -- in Trash (D60)
-  purged_at                TIMESTAMP NULL   -- D60: Trash purge; the row stays for runs and Statistics
+  purged_at                TIMESTAMP NULL   -- D60: Trash purge; rows stay, content is cleared
 
 conversation_bots
   conversation_id   TEXT REFERENCES conversations(id)
@@ -431,9 +431,11 @@ conversation_bots
 
 Deleting a conversation moves it to Trash (D60): `deleted_at` is set. Its files stay in the
 Library of its place, because a conversation has no Library of its own (D52 amendment
-2026-10-25). A restore clears `deleted_at`. After `trash_days` the purge deletes its messages,
-members, conversation memory and unsaved changes, and sets `purged_at`; the row and its run and model request rows stay for
-Statistics and the daily cap. A conversation in Trash before its project was deleted stays its
+2026-10-25). A restore clears `deleted_at`. After `trash_days` the purge sets `purged_at` and
+clears the content but keeps the rows, because runs, skill drafts, feedback and memory items
+point to the messages (D60): message text, cards and attachments, run step inputs and outputs,
+and feedback notes become empty. Its events, search entries, members, conversation memory and
+unsaved changes are deleted. Run and model request rows stay for Statistics and the daily cap. A conversation in Trash before its project was deleted stays its
 own Trash item (D47, D60). There are no preset icons: the icon comes from the bot avatars
 (UI-1.3).
 
@@ -614,7 +616,8 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
 6. A deprecated skill cannot be newly assigned.
 7. `events.seq` is strictly increasing; every state change has its event in the same transaction.
 8. At most one `running` run per conversation (enforced by `runs_one_running`).
-9. A message's content changes only while `status = streaming`.
+9. A message's content changes only while `status = streaming`, or when the Trash purge clears
+   it (D60).
 10. Every message's `parent_message_id` belongs to the same conversation.
 11. `run_skills` contains exactly the always-loaded pins plus the distinct `load_skill` calls.
 12. Bot names are unique among bots that are not purged, Trash included (case-insensitive, D50); slugs are unique forever.

@@ -29,9 +29,30 @@ Decision:
 - **Projects.** A project delete (D47) moves only the conversations that were not in Trash. A
   conversation that was already in Trash stays its own Trash item: restoring the project does
   not bring it back. When the project is purged, its conversations in Trash are purged with it.
-- **Purge.** The purge deletes the messages, conversation memory, members and unsaved changes.
-  Files in the Library stay. The conversation row stays as a small record (`purged_at`, title) and run and
-  model request rows stay, so Statistics and the daily cap stay correct.
+- **Purge: empty records, not deletes (owner, 2026-10-26).** Runs, skill drafts, feedback and
+  memory items in other scopes point to the conversation's messages, so the purge keeps every
+  row and clears what a person can read:
+  - Messages keep id, branch tree, author, kind, status, run and times. `content_md` becomes
+    empty, and `card`, `mentions` and `attachments` become empty values.
+  - Run steps keep their rows (one per tool call) and lose their tool inputs and outputs.
+    Feedback keeps its rating and loses its note.
+  - The conversation's events, search entries, conversation memory, members and unsaved changes
+    are deleted.
+  - The conversation row keeps its id and `purged_at`, and its title becomes "Deleted
+    conversation". Run and model request rows stay, so Statistics and the daily cap stay correct.
+  - Files in the Library stay (D52 amendment 2026-10-25).
+
+  ```
+  BEFORE PURGE                         AFTER PURGE
+  messages  id, tree, text, cards      messages  id, tree, ""        ← links still valid
+  runs      trigger → message          runs      trigger → message   ← unchanged
+  run_steps tool input / output        run_steps (empty)             ← one row per call kept
+  feedback  rating + note              feedback  rating              ← D51 signal kept
+  events, search, members              (deleted)
+  ```
+
+  Bot and project memory that a bot learned in the conversation stays. Its source link still
+  works, and the source shows "Deleted conversation".
 
 Example: The owner deletes "Sign-in screens" in Login app while Designer is running. The run
 stops, the conversation goes to Trash and "Stories review" opens. Five days later the owner
