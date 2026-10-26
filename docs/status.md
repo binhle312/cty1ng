@@ -45,7 +45,10 @@ analysis scripts in the provider's sandbox; MCP locked) are accepted, and the ow
 migration and API changes in PR #20 (2026-10-24). M3 conversation design round 10 is agreed and
 saved in `design/components/` (`conversation-page.md`, `composer.md`, `conversation-cards.md`):
 the add slot (+) first in the header, Stop in the composer, reactions only while a run is queued,
-cards inside the reply that fold after a decision, and the requirement edits that follow.
+cards inside the reply that fold after a decision, and the requirement edits that follow. M5 global settings design round 14 is agreed and saved in
+`design/components/settings-page.md` and `conversation-page.md` §2.4: one short page per Settings
+item, one setting row that says what the owner notices, the discussion popover, and the ranges of
+every setting in `domain-model.md` §10.
 
 ## Next
 
@@ -63,6 +66,7 @@ cards inside the reply that fold after a decision, and the requirement edits tha
 | Approve the M3 schema design for D46 (auto title) before it is written. The generated SQL is approved in the slice PR | M3 plan |
 | Add the `surface-bubble` token (owner message box) to `design/themes.md` §3 after PR #10 merges | M3 plan |
 | Put UI-13.16 (the memory tool skips an exact duplicate) in the M5b brief | M5b start |
+| Decide when the Trash purge runs (now: at start and once a day, M1 brief). Proposal parked by the owner 2026-10-26: in the app, interval as an env var, deadline `deleted_at + trash_days` | M5b start |
 | Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a schema design approval (initial schema for M3 and M7). The generated SQL is approved in the slice PR | M3 and M7 plans |
 | Approve the M5b schema design: `projects.instructions_md`, `projects.pinned_position`, goal ≤ 500 chars (initial schema for M5b). Claude Code stops for this approval before it writes them. The generated SQL is approved in the M5b PR | M5b plan |
 | Write the M5b brief: projects, memory (D37, D38, D43), goal and instructions (D45), pinning, the API contracts that D43 and D45 list as not written yet | M5b start |
@@ -76,7 +80,7 @@ cards inside the reply that fold after a decision, and the requirement edits tha
 | M2 | UI design review | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec) | Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open |
 | M3 | UI design agreed | [#26](https://github.com/binhle312/cty1ng/pull/26) (spec) | Round 10: `design/components/conversation-page.md`, `composer.md`, `conversation-cards.md` |
 | M4 | not started | | |
-| M5 | not started | | |
+| M5 | UI design agreed | [#35](https://github.com/binhle312/cty1ng/pull/35) (spec) | Round 14: `design/components/settings-page.md`, `conversation-page.md` §2.4; key `bot_discussion_enabled` |
 | M6 | not started | | |
 | M7 | not started | | |
 | M5b | not written | | Projects and memory (D37, D38, D43, D45); left bar pinning; side pane shared with Memory (D44) |
