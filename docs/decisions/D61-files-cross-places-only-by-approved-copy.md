@@ -2,8 +2,9 @@
 
 Status: accepted (2026-10-26, owner). From the round 12 thread: the owner set the isolation rule
 (02:44), the copy flow (03:10) and three clarifications (03:15), then approved the whole set
-(03:16). It amends D47 (keep a conversation) and D52 (moving a conversation into a project).
-Amends: D47, D52
+(03:16). It amends D38 (no move out of a project), D47 (keep a conversation) and D52 (moving a
+conversation into a project).
+Amends: D38, D47, D52
 
 Decision:
 

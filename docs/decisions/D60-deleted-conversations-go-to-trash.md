@@ -1,8 +1,8 @@
 # D60. Deleted conversations go to Trash and can be restored
 
-Status: proposed (2026-10-25). From the M4 UI design review, round 12, step 5: the owner chose
-"Trash, like projects" for a deleted conversation. The details below wait for the owner's
-review. It replaces the rule that a deleted conversation's workspace moves to `data/trash/` and
+Status: accepted (2026-10-26, owner). From the M4 UI design review, round 12, step 5: the owner
+chose "Trash, like projects" for a deleted conversation (2026-10-25), then approved each rule
+below in the PR #34 review (2026-10-26). It replaces the rule that a deleted conversation's workspace moves to `data/trash/` and
 the owner recovers it by hand. It follows the D52 amendment of 2026-10-25: a conversation has no
 Library of its own.
 
@@ -26,7 +26,7 @@ Decision:
   members, conversation memory and unsaved changes. A conversation of a project goes back into that
   project.
 - **Restore while the project is in Trash (owner, 2026-10-26).** The conversation shows as its
-  own row. **Restore** is off (40 % opacity, the C0 rule) with the tooltip "Restore {project}
+  own row. **Restore** is off (40 % opacity with a tooltip, UI rule B5) with the tooltip "Restore {project}
   first", and the row has a link to the project's Trash row. The page shows no error message.
   The server also refuses such a restore with 409 `project_in_trash` and changes nothing,
   because a disabled button does not stop an API call.
