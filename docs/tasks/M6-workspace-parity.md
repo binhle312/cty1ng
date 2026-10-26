@@ -25,7 +25,8 @@ files), §6; `docs/requirements/conversation.md` (UI-3.3 cards, 3.13, 3.16).
 - Files panel and viewer with safe headers.
 - Handoffs: table, `propose_handoff` tool (D18 if accepted; otherwise ask), cards, decisions,
   stale detection, "Add <bot> and start", 24-hour limit.
-- Conversation delete moves the workspace to `data/trash/`.
+- Conversation delete (D60): saved files stay in the Library; unsaved changes go to Trash with the
+  conversation and are discarded at purge. Test: a delete and a restore leave the Library unchanged.
 - Delete `reference/` and confirm every row of `porting-guide.md` §2 is done.
 
 ## Acceptance criteria
