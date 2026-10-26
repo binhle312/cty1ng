@@ -50,8 +50,9 @@ against, not code to copy.
 | [conversation-page.md](conversation-page.md) | Conversation page: layout, header with the add slot and members menu, skill chips, Good and Bad, queued reactions, live states, failed, stopped and not sent, Edit, branches, New divider, Markdown | `../previews/command-dark/conversation-page.*`, `conversation-header.*`, `conversation-skills.*`, `conversation-reactions.*`, `conversation-live.*`, `conversation-errors.*`, `message-parts.*` |
 | [composer.md](composer.md) | Composer: box, keys, no bots, no-mention hint, @ list, attachments, file drop, secrets panel, lines under the box, Stop, Markdown keys and the format bar | `../previews/command-dark/composer.*`, `composer-lines.*`, `composer-format-send.*`, `conversation-stop.*` (P1) |
 | [conversation-cards.md](conversation-cards.md) | System lines, join card, cards inside a reply and how they fold, handoff card (not a member, stale), memory lines and the Remember offer | `../previews/command-dark/conversation-cards.*`, `handoff-buttons.*`, `handoff-choices.*` |
+| [flow-timeline.md](flow-timeline.md) | Flow pane with the Timeline map: pane header, lifelines, rows, run chips, open run box, queued pill, handoff arrows, Load earlier, Animations switch | `../previews/command-dark/flow-timeline.*`, `flow-timeline-overflow.*` |
 
 Files marked **Standard** are shared rules that many pages use; a page spec links to them and
 does not repeat them.
 
-Still in review (not here yet): the Trash page, the Library page content, the Flow pane (canvas round 7), Command light values.
+Still in review (not here yet): the Trash page, the Library page content, the Board map (M8b), Command light values.

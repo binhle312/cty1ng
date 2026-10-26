@@ -12,8 +12,8 @@ owner). Agents cannot open it; when a slice needs it, the owner exports screensh
 
 | Board | Illustrates | Requirement |
 | --- | --- | --- |
-| Team | Participants as cards, links weighted by mentions, handoff state (approved, waiting for you), running ring | `../requirements/flow-view.md` FL-2, UI-12.4 |
-| Timeline | Lifelines per participant, messages and handoffs as arrows, runs expanded into steps with time and cost | FL-3, UI-12.5 |
+| Team | Participants as cards, links weighted by mentions, handoff state (approved, waiting for you), running ring | `../requirements/flow-view.md` FL-2, UI-12.4 (parked, D26 amendment 2026-10-25) |
+| Timeline | Lifelines per participant, messages and handoffs as arrows, runs expanded into steps with time and cost | FL-3, UI-12.5. Superseded by the agreed spec `components/flow-timeline.md` |
 | Files | Who attached, read and wrote each workspace file, including in-progress writes | Not in scope yet (Files map is a later milestone) |
 
 What the mockups are meant to settle: **which information** each map shows. What they are not
