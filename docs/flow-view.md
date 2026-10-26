@@ -84,7 +84,7 @@ interface Actor {
   id: ActorId; kind: "human" | "bot"; name: string; avatarUrl: string | null;
   status: "idle" | "queued" | "running" | "waiting_for_owner" | "removed" | "deleted";
   runs: number; costUsd: number | null;
-  currentStep?: { kind: StepKind; target: string };   // while running
+  lastStep?: { kind: StepKind; target: string; at: string };   // while running: the last FINISHED step (run.step comes after a tool call ends)
 }
 
 interface Link {
@@ -93,16 +93,32 @@ interface Link {
   lastAt: string;
 }
 
+// Every item has `at` (UTC ISO time of the event that created it) for the time column, and `seq`
+// (the event order) for sorting and windowing.
 type TimelineItem =
-  | { kind: "message"; id: string; seq: number; from: ActorId; to: ActorId[]; text: string; botTurn?: [number, number] }
-  | { kind: "run"; id: string; seq: number; actor: ActorId; status: RunStatus; costUsd: number | null;
-      durationMs: number | null; steps: RunStep[] }
-  | { kind: "handoff"; id: string; seq: number; from: ActorId; to: ActorId | "human"; status: HandoffStatus; files: string[] }
-  | { kind: "notice"; id: string; seq: number; text: string };
+  | { kind: "message"; id: string; seq: number; at: string; from: ActorId; to: ActorId[]; text: string; botTurn?: [number, number] }
+  | { kind: "run"; id: string; seq: number; at: string;            // at = the run's first start (runs.started_at)
+      finishedAt: string | null; actor: ActorId; status: RunStatus; costUsd: number | null;
+      durationMs: number | null;                                   // all tries together
+      tries: { startedAt: string }[];                              // one per run_slots row; length > 1 = retried (UI-3.7)
+      steps: RunStep[] }                                           // all tries, in call order (seq_in_run)
+  | { kind: "handoff"; id: string; seq: number; at: string; decidedAt: string | null; from: ActorId; to: ActorId | "human"; status: HandoffStatus; files: string[] }
+  | { kind: "notice"; id: string; seq: number; at: string; text: string };
 
-type StepKind = "load_skill" | "list_files" | "read_file" | "view_file" | "write_file" | "propose_handoff";
-interface RunStep { kind: StepKind; target: string; status: "ok" | "error"; at: string }
+// The same list as run_steps.kind in domain-model.md §3.8. A test asserts the two lists match.
+type StepKind =
+  | "load_skill" | "list_files" | "read_file" | "view_file" | "write_file" | "propose_handoff"
+  | "remember" | "update_memory" | "forget" | "restore_memory"   // D38
+  | "propose_skill"                                              // D41
+  | "mark_step"                                                  // D57
+  | "unknown_tool";
+interface RunStep { kind: StepKind; target: string; status: "ok" | "error"; startedAt: string; finishedAt: string }
 ```
+
+A Retry (UI-3.7) queues the same run again, so the Timeline keeps one run item and adds a try;
+it never adds a second run item. There is no event for a tool call that has started, so the scene
+knows only finished steps; the open run box shows them and "Working · last step … ago"
+(`design/components/flow-timeline.md` §4).
 
 Built by pure selectors: `buildTimelineScene(store, window)` in M8 (`buildTeamScene(store)` when the Team map returns). They
 are memoised and use structural sharing: an unchanged actor or link keeps the same object, so a
@@ -142,7 +158,7 @@ interface FlowRendererProps {
 type FlowRenderer = React.ComponentType<FlowRendererProps>;
 
 const renderers: Record<string, FlowRenderer> = {
-  diagram: DiagramRenderer,                // M8: the Timeline (HTML/SVG lanes) + CSS/WAAPI animations
+  diagram: DiagramRenderer,                // M8: the Timeline; library chosen in the M8 plan, HTML/SVG preferred (D27 amendment 2026-10-26)
   // pixel: PixelRenderer,                 // later: e.g. PixiJS sprites, same props
 };
 ```
@@ -173,7 +189,7 @@ The owner turns animations on or off with the **Animations** switch in the pane 
 | `message.sent` | a dot travels along the link from sender to receiver, then fades; link weight updates | new row slides in from below | 600 ms / 150 ms |
 | `run.queued` | small "queued" badge appears | — | 150 ms |
 | `run.started` | running ring appears with a slow breathing pulse | run box appears, open, with a slow breathing outline in the bot colour | 200 ms, pulse 2 s loop |
-| `run.step` | current-step label on the node cross-fades | step line appended in the run box | 150 ms |
+| `run.step` | last-step label on the node cross-fades | finished step line appended in the run box | 150 ms |
 | `run.finished` | ring fades out | box closes, cost appears | 300 ms |
 | `run.failed` / `run.stopped` | node shakes once (2 px) / ring turns grey | box turns red / grey | 300 ms |
 | `handoff.proposed` | link turns dashed amber with a slow dash flow while pending | dashed amber arrow, pulse on its badge while it waits for the owner | flow 1.5 s loop |

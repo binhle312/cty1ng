@@ -1,7 +1,9 @@
 # D30. Switchable themes (Command, Material) and conversation views
 
 Status: accepted (2026-10-21, owner). The owner picked concepts 2, 11 and 13 and wants to switch
-between more than one look.
+between more than one look. Amended 2026-10-26 (owner): the Team map is parked (D26 amendment
+2026-10-25), so the Board is the **second** map of the Flow pane (Timeline, Board), not the third.
+The Board is still built in M8b; its design is parked until the owner asks for it.
 Decision: Two themes, Command and Material, each with light and dark modes, implemented as
 semantic design tokens over one component set (Base UI + Tailwind, D28). Density is a separate
 setting. The spatial canvas (concept 13) is not a theme but a **third map in the Flow pane**

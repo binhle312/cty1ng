@@ -10,7 +10,7 @@ replaced later (for example by pixel-art characters) without touching the logic.
 
 ## Read first
 
-`docs/flow-view.md` (all); `docs/design/components/flow-timeline.md`; `docs/decisions/` D18, D26 (and its 2026-10-25 amendment), D27; `docs/requirements/flow-view.md`, `docs/requirements/conversation.md` (UI-3.5);
+`docs/flow-view.md` (all); `docs/design/components/flow-timeline.md`; `docs/decisions/` D18, D26 (and its 2026-10-25 amendment), D27 (and its 2026-10-26 amendment), D30 (and its 2026-10-26 amendment); `docs/requirements/flow-view.md`, `docs/requirements/conversation.md` (UI-3.5);
 `docs/realtime-events.md` §2–4; `docs/domain-model.md` §3.8; `docs/conversation-rules.md` §6
 (branches); `docs/design/mockups.md` (illustrative, not final).
 
@@ -46,7 +46,7 @@ the Timeline (run steps exist since M3; if anything is missing, list it in the p
 
 ## Tests
 
-Selector and cue-builder unit tests; conformance and performance Playwright specs; Vitest for
+Selector and cue-builder unit tests (including: a retried run stays one item with two tries; `StepKind` matches `run_steps.kind`); conformance and performance Playwright specs; Vitest for
 the split pane persistence (including `localStorage` throwing); e2e: open Flow during a
 two-bot discussion, see the open run box close on one bot's lifeline and open on the next, turn
 the Animations switch off and see the same state with no running animations, click a run step
@@ -58,13 +58,13 @@ The UI design in the plan (layout, components, states), approved before UI code 
 (`docs/workflow.md` §2; sketches in `docs/design/` are not specs).
 
 The renderer contract (`renderer.ts`, `model.ts`): it is the long-lived interface; chart and
-graph dependencies (react-resizable-panels; React Flow only if the plan shows the Timeline needs it).
+graph dependencies (react-resizable-panels, and the Timeline library the plan picks).
 
 ## Open questions
 
-- Does the Timeline need React Flow? It is lanes and rows, so plain HTML and SVG with a
-  virtualised list may be enough. The plan answers this; a new dependency needs the owner's
-  approval (AGENTS.md §7).
+- The Timeline library (D27 amendment 2026-10-26): the plan picks it. Plain HTML and SVG with a
+  virtualised list is preferred, because the Timeline is lanes and rows, not a graph. A new
+  dependency needs the owner's approval (AGENTS.md §7).
 
 - None from D30: the Board is the pane's third map (D30, accepted) and is built in M8b. Keep
   the tab strip and the renderer registry ready for a third map.

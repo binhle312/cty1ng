@@ -2,9 +2,11 @@
 
 > **Status: agreed in the Flow view sketch round, round 11 (2026-10-25).** The owner approved the
 > Timeline board F2 ("timeline look good", 13:01) and chose "Timeline only, Team map later"
-> (D26 amendment 2026-10-25). The **Animations switch** (§6) and the lane width rule (§3) are
-> **New, not agreed**: they wait for the owner in the PR review. Preview:
-> `../previews/command-dark/flow-timeline.png` (and `.html`, which shows the breathing outline).
+> (D26 amendment 2026-10-25). On 2026-10-26 the owner approved the PR #33 review fixes: the open run
+> box shows finished steps only, one chip per run after a Retry, and the lane and overflow rules
+> (§3). The **Animations switch** (§6) is **New, not agreed**: it waits for the owner in the PR
+> review. Previews: `../previews/command-dark/flow-timeline.png` (and `.html`, which shows the
+> breathing outline) and `flow-timeline-overflow.png` (7 bots, the map scrolled sideways).
 
 The Flow pane shows how the work in one conversation happened. In M8 it has one map, the
 Timeline. Requirements: `../../requirements/flow-view.md` FL-1, FL-3, FL-4, UI-12.1 to UI-12.9
@@ -39,7 +41,12 @@ One lane per participant: **You** first, then the bots in the order they joined.
 | Time column | Left, 11 px `on-surface-muted`, tabular numbers, 24-hour clock ("09:12"). A time shows on the row where a new owner or bot action starts; the run chip that follows it has no time |
 | Rows | One item per row, about 24 to 30 px apart, oldest at the top, newest at the bottom |
 | Top line | "Active branch only · Load earlier" in 11 px `on-surface-muted`, centred. "Load earlier" is a link that loads 50 more items (`../../flow-view.md` §5 rule 7) |
-| Lane width (**New, not agreed**) | The lanes share the pane width. Each lane is at least 72 px wide. When the lanes do not fit, the map scrolls sideways and the time column stays fixed |
+| Lane width | The lanes share the pane width. Each lane is at least 72 px wide |
+| Sideways scroll | When the lanes do not fit, the lanes scroll sideways (a thin scroll bar at the bottom). The time column stays fixed, 50 px wide, with a `surface-container` fill and a 1 px `outline` line at its right, so lanes, arrows and labels pass under it |
+| Labels | One line each. An arrow label starts 6 px right of the left end of its arrow, never under the time column, and stops at the far end of the arrow. Text that does not fit ends with "…", and a tooltip on hover or focus shows the full text. Lane names longer than the lane end with "…" too |
+| Chips | A run chip is centred on its lane. When a centred chip would pass the pane edge, it moves inward until it fits (at the right edge it ends near its lane) |
+| Open run box | 256 px wide. It starts 12 px left of its lane and grows to the right. If it would pass the right edge of the pane, it moves left until it fits, but never under the time column. It sits above the lanes and arrows it covers |
+| Keyboard | The map itself is not a tab stop for each item. Keyboard and screen reader users use the list alternative (UI-12.9), which has the same items and clicks. With focus on the map, the left and right arrow keys scroll it sideways |
 
 ## 4. Items
 
@@ -50,12 +57,12 @@ One lane per participant: **You** first, then the bots in the order they joined.
 | Handoff, approved | Solid arrow from the bot to the target bot. Label "Handoff · 2 files" and a `success` ✓ "approved" | 09:26 Designer → Writer |
 | Handoff, rejected | Dashed arrow in `on-surface-muted` at lower contrast. Label "Handoff · ✕ rejected by you" | 09:31 BA → QA |
 | Handoff, waiting for you | Dashed arrow in `primary` (amber). Label "Handoff · Waiting for you" in `primary` | Designer → QA |
-| Run chip (finished) | On the bot's lifeline. Padding 2 × 8 px, `radius-control`, 1 px `outline-strong` border, `surface-raised` fill, 11 px. ✓, "Run" in `on-surface`, then "4 steps · 1:02 · $0.07" in `on-surface-muted`. A run after a handoff adds "· turn 2 of 6" (bot turn n of limit) | BA "Run 4 steps · 1:02 · $0.07" |
-| Run chip (retry) | Same chip, "Run" then "Retry · 2 steps · 0:38 · $0.05" | 09:44 Designer |
-| Run chip (failed) | `danger` border and tint, "!" icon, "Run failed" in `danger`, then the short reason and the time: "· no answer in time · 0:31". Never the raw error | 09:40 Designer |
+| Run chip (finished) | One chip per run, on the bot's lifeline, on the row of the run's first start. Padding 2 × 8 px, `radius-control`, 1 px `outline-strong` border, `surface-raised` fill, 11 px. ✓, "Run" in `on-surface`, then "4 steps · 1:02 · $0.07" in `on-surface-muted`. A run after a handoff adds "· turn 2 of 6" (bot turn n of limit) | BA "Run 4 steps · 1:02 · $0.07" |
+| Run chip (failed) | `danger` border and tint, "!" icon, "Run failed" in `danger`, then the short reason and the time: "· no answer in time · 0:31". Never the raw error | Designer, before a Retry |
+| Run chip after a Retry | Retry queues the **same** run again (UI-3.7, `../../conversation-rules.md` §2), so the run keeps its one chip. The chip shows the latest state and adds "· retried once" (or "· retried 2 times") with a redo icon. Steps, time and cost count all tries. The count is the run's `run_slots` rows minus one | 09:40 Designer "Run 2 steps · 1:09 · $0.05 · retried once" |
 | Run chip (stopped) | Same as finished, with a grey square and "Stopped by you" | — |
 | Queued | Pill (`radius-pill`, `surface-raised`, 11 px `on-surface-muted`) with the clock icon and "Queued", on the bot's lifeline under the message that queued it (D11) | 10:02 QA |
-| Open run box | The running run only. On the bot's lifeline, 256 px wide, padding 8 × 10 px, `radius-card`, 1 px `outline-strong` border, `surface-raised` fill, 11.5 px. Top line: spinner in the bot colour, "Run · Running", and at the right the time so far and cost ("0:58 · $0.04"). Then one line per step: ✓ and the step for a done step ("Read `stories/sign-in.md`"), spinner and 600 weight for the current step with its own time at the right ("Writing `wireframes/2fa.md` 0:14"). Paths in mono. "Hide" link at the bottom right folds it to a run chip ("Show" opens it again; fold links say only Show or Hide) | 10:02 Designer |
+| Open run box | The running run only. On the bot's lifeline, 256 px wide, padding 8 × 10 px, `radius-card`, 1 px `outline-strong` border, `surface-raised` fill, 11.5 px. Top line: spinner in the bot colour, "Run · Running", and at the right the time so far and cost ("0:58 · $0.04"). Then one line per **finished** step: ✓ (or a red "!" for an error) and the step ("Read `stories/sign-in.md`"). The app learns about a step only when its tool call ends (`run.step`), so the box never names a tool in progress. The last line is the same as the conversation's working state L2 (`conversation-page.md` §5): a spinner in the bot colour and "Working · last step 0:12 ago". During a Retry, the top line says "Run · Running · retry 1", and a thin line "Retry · 09:44" separates the steps of each try. Paths in mono. "Hide" link at the bottom right folds it to a run chip ("Show" opens it again; fold links say only Show or Hide) | 10:02 Designer |
 | Notice | Centred text in 11 px `on-surface-muted`, no arrow ("Bot turns used up: 6 of 6") | — |
 
 Status colours follow `bot-status.md`: amber only for "Waiting for you", red only for a problem,
