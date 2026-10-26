@@ -24,11 +24,20 @@ Decision:
   setting as projects, skills and bots. Then the app purges it.
 - **Restore.** A restore brings back the conversation as it was: messages, branches, runs,
   members, conversation memory and unsaved changes. A conversation of a project goes back into that
-  project. If its project is in Trash, the restore is blocked and the Trash page says to restore
-  the project first.
+  project.
+- **Restore while the project is in Trash (owner, 2026-10-26).** The conversation shows as its
+  own row. **Restore** is off (40 % opacity, the C0 rule) with the tooltip "Restore {project}
+  first", and the row has a link to the project's Trash row. The page shows no error message.
 - **Projects.** A project delete (D47) moves only the conversations that were not in Trash. A
   conversation that was already in Trash stays its own Trash item: restoring the project does
   not bring it back. When the project is purged, its conversations in Trash are purged with it.
+  - **Own deadline (owner, 2026-10-26).** A conversation keeps its own `deleted_at` and Trash
+    deadline. A project delete or restore does not change them. The conversation was deleted
+    first, so it expires first; only **Delete now** on the project purges it earlier, with the
+    project.
+  - **Own Trash item, same owner (owner, 2026-10-26).** A separate Trash item still belongs to
+    its project. A restore always puts it back into that project, never into Home or another
+    project (D61).
 - **Purge: empty records, not deletes (owner, 2026-10-26).** Runs, skill drafts, feedback and
   memory items in other scopes point to the conversation's messages, so the purge keeps the
   rows that others point to and clears what a person can read. It acts only on data that the
