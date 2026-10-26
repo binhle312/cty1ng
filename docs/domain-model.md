@@ -433,9 +433,8 @@ Deleting a conversation moves it to Trash (D60): `deleted_at` is set. Its files 
 Library of its place, because a conversation has no Library of its own (D52 amendment
 2026-10-25). A restore clears `deleted_at`. After `trash_days` the purge sets `purged_at` and
 clears the content but keeps the rows, because runs, skill drafts, feedback and memory items
-point to the messages (D60): message text, cards and attachments, run step inputs and outputs,
-and feedback notes become empty. Its events, search entries, members, conversation memory and
-unsaved changes are deleted. Run and model request rows stay for Statistics and the daily cap. A conversation in Trash before its project was deleted stays its
+point to the messages (D60). It acts only on data that the conversation owns; §16 gives the
+policy for every table and column. A conversation in Trash before its project was deleted stays its
 own Trash item (D47, D60). There are no preset icons: the icon comes from the bot avatars
 (UI-1.3).
 
@@ -642,6 +641,9 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
 23. A run reads and writes only the Library of its own place: its project, or Home. A project
     conversation never gets a `project_id` change, and a Home conversation changes it at most
     once, into a project. Files cross places only by an approved copy (D61).
+24. After a conversation purge, no column that §16 marks `clear` holds content, no row that §16
+    marks `delete` is left, and every row of another scope is unchanged (D60). Every table has a
+    §16 entry, and every column of a covered table has a policy (schema test).
 
 ## 13. Usage and cost (D20, D21)
 
@@ -791,3 +793,54 @@ reply_feedback                                    -- TypeID prefix `fb`; built i
 - M5d adds the tables for Improve runs, probes, and "signal used by draft X", so a signal
   counts only once.
 
+## 16. Conversation purge policy (D60)
+
+The Trash purge of a conversation (after `trash_days`, or Delete now) acts only on data that the
+conversation **owns**. Data of another scope that only **refers** to the conversation stays as
+it is; its link shows "Deleted conversation" (owner, 2026-10-26).
+
+| Data | Owner | Purge |
+| --- | --- | --- |
+| Messages, cards, handoffs, skill drafts, run steps, run errors, plan notes, feedback notes | Conversation | Clear the content; keep ids, links, kinds, statuses and times |
+| Run history, events, search entries, members, unsaved changes, conversation memory | Conversation | Delete the row |
+| Bot or project memory learned there | Bot or project (D38) | Keep |
+| Skill versions approved from a draft | The owner's skill (D41) | Keep |
+| Saved files in the Library | The place (D52) | Keep |
+| Runs, model requests, run slots, ratings | Statistics, daily cap, Improve signals (D21, D51) | Keep |
+
+**Policy per table.** Every table has one entry. A **covered** table lists every column, whatever
+its SQLite type (TEXT, JSON, BLOB, INTEGER, …), because ids, statuses and times are TEXT too.
+A column policy is `keep`, `clear` (to the value shown) or the whole row is `delete`. A `delete`
+can have a row condition.
+
+| Table | Class | Purge (rows of the purged conversation) |
+| --- | --- | --- |
+| `conversations` | covered | `title` → "Deleted conversation"; `purged_at` set; every other column keep |
+| `conversation_bots` | covered | delete row |
+| `messages` | covered | `content_md` → `''`, `card` → NULL, `mentions` → `'[]'`, `attachments` → `'[]'`; every other column keep |
+| `runs` | covered | `error` → NULL; every other column keep |
+| `run_slots` | covered | keep all |
+| `model_requests` | covered | keep all |
+| `run_history` | covered | delete row (the BLOB `messages_json` holds tool results and file text) |
+| `run_steps` | covered | `target` → `''`, `detail` → NULL; `kind`, `status`, `seq_in_run`, times keep |
+| `run_skills` | covered | keep all |
+| `events` | covered | delete row (`conversation_id` = the conversation) |
+| `handoffs` | covered | `summary` → `''`, `files` → `'[]'`, `decision_note` → NULL; every other column keep |
+| `skill_drafts` | covered | `slug`, `name`, `description`, `body_md` → `''`, `changelog` → NULL; every other column keep |
+| `skill_versions` | covered | keep all (it points to `skill_drafts`; the version is the owner's skill) |
+| `memory_items` | covered | delete row where `scope = 'conversation'`; rows of bot or project scope keep all |
+| `memory_item_versions` | covered | delete row where its item is deleted; other rows keep all |
+| `reply_feedback` | covered | `note_md` → NULL; `rating` and every other column keep |
+| `bots`, `skills`, `bot_skills`, `projects`, `settings` | other scope | not changed |
+
+Tables that later slices add get their entry in the same PR: search entries (M5b, delete row),
+plan outcomes (D48: owner note → NULL, outcome keep), `run_branches` (M6: delete row and its
+branch), `library_copies` (M6: keep all; the file stays in the Library).
+
+**Which tables are covered.** A table with a foreign key to `conversations`, `messages` or `runs`,
+or to a table whose entry clears or deletes something, **must** be covered. Only a table with no
+such key can be "other scope". This rule is checked by the schema test, not chosen by hand.
+
+**Schema test** (M4, runs in CI): it reads the Drizzle schema. It fails when a table has no
+entry, when a covered table has a column with no policy, or when a table is "other scope" but
+has a foreign key that the rule above names.

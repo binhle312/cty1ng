@@ -12,7 +12,7 @@ settings page and there are no preset icons (round 12).
 ## Read first
 
 `docs/conversation-rules.md` §1, §3, §4, §6; `docs/decisions/` D3, D8, D11, D12, D13;
-`docs/decisions/` D60; `docs/domain-model.md` §5–6, invariant 10; `docs/api.md` §5; `docs/requirements/app-shell.md` (UI-1.3, 1.6, 2.4–2.5),
+`docs/decisions/` D60; `docs/domain-model.md` §5–6, §16, invariants 10 and 24; `docs/api.md` §5; `docs/requirements/app-shell.md` (UI-1.3, 1.6, 2.4–2.5),
 `docs/requirements/conversation.md` (UI-3.8, 3.9, 3.11, 3.12, 3.15), `docs/requirements/settings.md` (UI-9);
 `docs/design/components/conversation-page.md` §2 (round 12 design); `docs/testing.md` §3 (domain).
 
@@ -29,7 +29,8 @@ settings page and there are no preset icons (round 12).
   bots, edit blocked while runs are active.
 - Conversation menu on the bar 2 row and in the header (UI-9.7): Rename, Memory, Move to
   project, Delete. Delete moves the conversation to Trash (D60; the restore and the Trash page
-  are M5b). Members picker, Remove rules and the empty picker (`conversation-page.md` §2.2).
+  are M5b). After `trash_days` the purge job (M1) purges the conversation by the policy in
+  `domain-model.md` §16. Members picker, Remove rules and the empty picker (`conversation-page.md` §2.2).
 - Deleted bot rendering (UI-3.2).
 
 ## Out of scope
@@ -42,6 +43,9 @@ Bot-to-bot discussion (M5).
 - UI-1.3 (derived icons), UI-1.6, UI-2.4, 2.5, UI-3.2, 3.8, 3.9, 3.11, 3.12, 3.15, UI-9.1, 9.4,
   9.5, 9.7.
 - Invariant 10.
+- Invariant 24: the purge schema test (`domain-model.md` §16) fails for a table with no entry,
+  for a column of a covered table with no policy, and for an "other scope" table with a foreign
+  key to `conversations`, `messages`, `runs` or a cleared table.
 - A bot added "from here on" does not see earlier messages in its prompt (agent test).
 - "@BA @QA …": QA's prompt contains BA's reply; both show the clock reaction at first, BA's goes
   away when BA starts, QA's when QA starts (D31, UI-3.18).
@@ -56,6 +60,10 @@ sends in parallel chain instead of forking, the bot turn counter at its limit, t
 PATCHes with the same `row_version`); Vitest for icon
 composition (0, 1, 2, 4, 7 bots, deleted, pending) and the mention autocomplete; Playwright as
 above (dnd-kit drag works with Playwright's mouse API; also test the keyboard alternative).
+Purge: the schema test from invariant 24 (reads the Drizzle schema, so it covers every table
+that later slices add), and a service test that purges a conversation and checks that the run
+costs stay and no cleared column holds text. M5b adds to that test a bot memory item learned in
+the conversation, which must stay.
 
 ## Needs human review
 

@@ -30,23 +30,37 @@ Decision:
   conversation that was already in Trash stays its own Trash item: restoring the project does
   not bring it back. When the project is purged, its conversations in Trash are purged with it.
 - **Purge: empty records, not deletes (owner, 2026-10-26).** Runs, skill drafts, feedback and
-  memory items in other scopes point to the conversation's messages, so the purge keeps every
-  row and clears what a person can read:
-  - Messages keep id, branch tree, author, kind, status, run and times. `content_md` becomes
-    empty, and `card`, `mentions` and `attachments` become empty values.
-  - Run steps keep their rows (one per tool call) and lose their tool inputs and outputs.
-    Feedback keeps its rating and loses its note.
-  - The conversation's events, search entries, conversation memory, members and unsaved changes
-    are deleted.
+  memory items in other scopes point to the conversation's messages, so the purge keeps the
+  rows that others point to and clears what a person can read. It acts only on data that the
+  **conversation owns**. Data of another scope that only refers to it stays:
+
+  | Data | Owner | Purge |
+  | --- | --- | --- |
+  | Messages, cards, handoffs, skill drafts, run steps, run errors, plan notes, feedback notes | Conversation | Clear the content; keep ids, links, statuses and times |
+  | Run history, events, search entries, members, unsaved changes | Conversation | Delete the row |
+  | Conversation memory | Conversation | Delete |
+  | Bot or project memory learned there | Bot or project (D38) | Keep |
+  | Skill versions approved from a draft | The owner's skill (D41) | Keep |
+  | Saved files in the Library | The place (D52) | Keep |
+  | Runs, model requests, run slots, ratings | Statistics, daily cap, D51 | Keep |
+
+  - **A policy for every column.** A table can hold data that must stay and content that must
+    go (`runs`: keep `status` and `estimated_cost_usd`, clear `error`). So each covered table
+    lists every column, of every type (BLOB too: `run_history.messages_json`), as keep or
+    clear, or the table deletes the row. A delete can have a row condition (`memory_items`:
+    only `scope = 'conversation'`). The policy is in `domain-model.md` §16.
+  - **Covered is decided by a rule.** A table with a foreign key to `conversations`, `messages`,
+    `runs` or a table that the purge clears or deletes must be covered.
+  - **A schema test fails CI** when a table has no entry or a covered column has no policy.
   - The conversation row keeps its id and `purged_at`, and its title becomes "Deleted
-    conversation". Run and model request rows stay, so Statistics and the daily cap stay correct.
-  - Files in the Library stay (D52 amendment 2026-10-25).
+    conversation".
 
   ```
   BEFORE PURGE                         AFTER PURGE
   messages  id, tree, text, cards      messages  id, tree, ""        ← links still valid
   runs      trigger → message          runs      trigger → message   ← unchanged
-  run_steps tool input / output        run_steps (empty)             ← one row per call kept
+  run_steps target / detail            run_steps kind, status        ← one row per call kept
+  run_history provider messages        (deleted)                     ← tool results, file text
   feedback  rating + note              feedback  rating              ← D51 signal kept
   events, search, members              (deleted)
   ```
