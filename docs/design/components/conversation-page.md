@@ -121,9 +121,10 @@ Agreed in round 14 (2026-10-26). Previews: `discussion-popover.*` (D1, D2, D3a, 
      message starts the count again."
   3. A line over an `outline` divider: "A change saves at once and applies from the next bot
      message. Global values: **Settings**" (the link opens Settings › Bot discussion).
-- There is no Save button. Each change saves at once with its own `PATCH /conversations/{id}`
-  (`null` = Global). **One PATCH = one change = one notice** (owner 2026-10-26): turning
-  discussion on and then saving a custom limit of 8 posts two muted system lines, "Bot discussion
+- There is no Save button. Each popover action saves at once with a one-field
+  `PATCH /conversations/{id}` (`null` = Global). **One successful popover setting change produces
+  one notice** (owner 2026-10-26). A no-op (the same value again) or a failed save posts no
+  notice. Turning discussion on and then saving a custom limit of 8 posts two muted system lines, "Bot discussion
   turned on." and "Bot discussion limit changed to 8." (`conversation-cards.md` §1).
 - While the Custom number is typed and not saved, the header pill and the turn count keep the old
   values and no notice shows (D3a). The pill, the segment ("8 turns") and the count change only

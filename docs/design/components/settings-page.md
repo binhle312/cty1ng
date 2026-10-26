@@ -128,10 +128,10 @@ that turns discussion on in its header (owner question 2026-10-26).
 | Handoffs per 24 hours | M6 | At the cap, bots cannot hand work to other bots in that conversation. You can still mention bots. | 1 to 50. Default: 5 |
 | Skill drafts per run | M5c | A bot can propose this many skill drafts in one run. Each draft is a card that you review. | 1 to 10. Default: 3 |
 | Skill drafts waiting | M5c | When this many drafts wait for your decision, bots cannot propose more until you decide. | 1 to 50. Default: 10 |
-| Shares per 24 hours | M5b | Bot proposals to send information to another conversation. At the cap, the bot tells you that it cannot send more. | Default: 5 |
-| Search hits | M5b | Results that one search in other conversations of the project gives a bot. More hits give the bot more context and make the run cost more. | Default: 10 |
-| Copy proposals per 24 hours | M6 | Bot proposals to copy files to another Library. At the cap, the bot tells you. You can still copy files. | Default: 5 |
-| Plan mark reminders | Plan card | Before an action run ends, the app reminds the bot to mark the plan steps that it did not mark. 0 = no reminder. | Default: 1 |
+| Shares per 24 hours | M5b | Bot proposals to send information to another conversation. At the cap, the bot tells you that it cannot send more. | 1 to 50. Default: 5 |
+| Search hits | M5b | Results that one search in other conversations of the project gives a bot. More hits give the bot more context and make the run cost more. | 1 to 50. Default: 10 |
+| Copy proposals per 24 hours | M6 | Bot proposals to copy files to another Library. At the cap, the bot tells you. You can still copy files. | 1 to 50. Default: 5 |
+| Plan mark reminders | Plan card | Before an action run ends, the app reminds the bot to mark the plan steps that it did not mark. 0 = no reminder. | 0 to 3. Default: 1 |
 
 Every control is a number box with its unit (runs, handoffs, drafts, shares, hits, proposals,
 reminders).
@@ -141,8 +141,8 @@ reminders).
 | Row | Effect | Note |
 | --- | --- | --- |
 | History share | How much of the model context a new bot uses for the conversation history. More history: the bot knows more of the conversation, and each reply costs more. | 10 to 80. Default: 40. Existing bots keep their value. |
-| Request limit | Model requests in one run. At the limit, the run stops and says so. A higher limit allows bigger tasks and more spend. | Default: 30. Existing bots keep their value. |
-| Reply length | The longest reply of a new bot. Longer replies give more detail and take longer to read. | Default: 6,000. Existing bots keep their value. |
+| Request limit | Model requests in one run. At the limit, the run stops and says so. A higher limit allows bigger tasks and more spend. | 1 to 100. Default: 30. Existing bots keep their value. |
+| Reply length | The longest reply of a new bot. Longer replies give more detail and take longer to read. | 500 to 20,000 characters. Default: 6,000. Existing bots keep their value. |
 
 ### 4.6 Models (UI-8.2)
 
@@ -176,11 +176,17 @@ reminders).
 
 | Row | Effect | Note |
 | --- | --- | --- |
-| Feedback signals | Improve shows for a bot after this many of your ratings and notes. A lower number gives earlier offers from less evidence. | Default: 3 |
-| Conversations | The signals must come from this many conversations, so one bad day does not start it. | Default: 2 |
-| Bad signals | At least this many signals must be negative: Bad answer, Reject or a rejected draft. | Default: 1 |
-| Probe tasks | Tasks in a blind test of the new skill version. More tasks give a surer result and cost more. | Default: 3 |
-| Probe tasks, most | The highest number of tasks that you can choose for one test. | Default: 10 |
+| Feedback signals | Improve shows for a bot after this many of your ratings and notes. A lower number gives earlier offers from less evidence. | 1 to 50. Default: 3 |
+| Conversations | The signals must come from this many conversations, so one bad day does not start it. | 1 to Feedback signals. Default: 2 |
+| Bad signals | At least this many signals must be negative: Bad answer, Reject or a rejected draft. | 1 to Feedback signals. Default: 1 |
+| Probe tasks | Tasks in a blind test of the new skill version. More tasks give a surer result and cost more. | 1 to Probe tasks, most. Default: 3 |
+| Probe tasks, most | The highest number of tasks that you can choose for one test. | 1 to 50. Default: 10 |
+
+Ranges and cross-field checks: `../../domain-model.md` §10. A value that breaks a rule between two
+rows (for example Feedback signals lower than Conversations) shows the error on the row that
+changed and keeps **Save changes** off; the app never changes the other row. For an actual
+probe, the owner chooses 1 to the number of eligible past tasks behind the signals, at most
+Probe tasks, most (D51). With no eligible task, the probe action is off.
 
 ## 5. Appearance page (UI-8.5, D30)
 

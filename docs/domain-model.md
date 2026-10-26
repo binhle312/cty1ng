@@ -581,6 +581,19 @@ settings
 
 Defaults: `bot_discussion_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"created"`), `bot_order_direction = "desc"` (`"desc"` | `"asc"`), `trash_days = 30` (projects and skills, D49), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3`, `improve_probe_tasks_max = 10` (D51: the probe starts at the first and allows at most the second; read by M5d, never hard-coded), `plan_mark_reminders = 1` (D57: reminders before an action run ends when a step or Done-when item has no mark; 0 = off), `share_max_per_conversation_24h = 5` (D58), `copy_proposals_max_per_conversation_24h = 5` (D61), `cross_search_max_hits = 10` (D58), `display_name = "Sir"` (UI-8.7: trimmed, 1 to `display_name_max` characters), `display_name_max = 32`, `memory_enabled = true` (UI-8.6). The Settings page shows most keys; `design/components/settings-page.md` §8 lists the ones that it does not show.
 
+**Ranges** (owner 2026-10-26; whole numbers; this list is the one source for the Settings page and
+the Zod schema of `PATCH /settings`): `trash_days` ≥ 1, no upper limit; `display_name` 1 to
+`display_name_max` characters after trim; `share_max_per_conversation_24h` 1–50;
+`copy_proposals_max_per_conversation_24h` 1–50; `cross_search_max_hits` 1–50;
+`plan_mark_reminders` 0–3; `bot_default_request_limit` 1–100 and `bot_default_max_reply_chars`
+500–20,000 (the same ranges apply to `bots.request_limit` and `bots.max_reply_chars`);
+`improve_min_signals` 1–50; `improve_min_conversations` 1 to `improve_min_signals`;
+`improve_min_bad_signals` 1 to `improve_min_signals` (D51 needs negative evidence for an offer);
+`improve_probe_tasks_max` 1–50; `improve_probe_tasks` 1 to `improve_probe_tasks_max`.
+**Cross-field checks:** a save that breaks a rule between two keys (for example Feedback signals
+lowered below Conversations) is refused: the row shows its error, **Save changes** stays off, and
+the server returns 422 with the key. The app never changes the other value on its own.
+
 Conversation limits (`conversation-rules.md` §9, which owns the type, range and what counts; read by the services, never hard-coded): `runs_per_conversation_per_hour = 50` (1–500), `handoff_max_per_conversation_24h = 5` (1–50), `skill_draft_max_per_run = 3` (1–10), `skill_draft_max_pending_per_conversation = 10` (1–50). They are safety caps: the server refuses 0, NULL and values out of range.
 
 Bot limits and defaults (`bots.md` UI-4.6, UI-5.8; read by M2, never hard-coded):
