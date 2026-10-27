@@ -121,7 +121,7 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `handoff.created` | yes | `{handoff}` | bot proposed a handoff |
 | `handoff.decided` | yes | `{handoff}` | approve / changes / reject / stale |
 | `skill_draft.created` | yes | `{skill_draft}` | a bot proposed a skill (D41) |
-| `skill_draft.decided` | yes | `{skill_draft}` | approved / rejected / stale; an approval also emits `skill.created` or `skill.updated`, and `bot.updated` when pinned |
+| `skill_draft.decided` | yes | `{skill_draft}` | approved / rejected / stale; an approval also emits `skill.created` or `skill.updated`; a new version or a deprecate of the skill marks its pending edit drafts stale and emits one event per draft (D64) |
 | `bot.created` / `bot.updated` / `bot.deleted` | yes | `{bot}` | bot CRUD, avatar, pins |
 | `bots.reordered` | yes | `{pinned_bot_ids}` | pinned list saved: pin, unpin or reorder (`PUT /bots/pins`); the header and the Bots page follow at once |
 | `skill.created` / `skill.updated` / `skill.deprecated` | yes | `{skill}` | skill CRUD, new version |

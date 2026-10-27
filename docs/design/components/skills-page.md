@@ -5,16 +5,22 @@
 > `skills-editor.*` (C0–C6), `skills-lifecycle.*` (D1–D6) and `skills-delete.*` (D2a, D7–D8),
 > each a `.png` and a `.html`. Buttons and check boxes follow `buttons.md`. Follows D5, D6, D14,
 > D16, D39 and D49. The labels and messages use Simplified Technical English.
+> **Changed in the M5c UI design review, round 16 (2026-10-27):** the page uses the bot page
+> layout (owner, 03:36): a page top and the tabs **Skill**, **Bots** and **History** (§2, §2a,
+> §13); **+ Create** in place of **+ New**; editing a skill draft (§17, D64).
+> Preview: `../previews/command-dark/skills-page-tabs.*` (S1–S3) and `skill-draft-edit.*`
+> (E1–E5). The round 8 previews still show the old header and the History panel; this file
+> wins.
 
 ## 1. Where it opens
 
 - From **Manage skills** in the user panel menu (`user-panel.md`).
 - The page belongs to the whole app, not to a project. Bar 2 is hidden, and the rail stays.
 
-## 2. Layout B: list and editor side by side
+## 2. Layout: list and skill page side by side (bot page layout)
 
 - **List column**, 300 px, `surface-container`:
-  - Title **Skills** and **+ New** (`primary`, small).
+  - Title **Skills** and **+ Create** (`primary`, small).
   - Search box "Search skills" (name or slug).
   - The **Show deprecated** check box, then **Import** and **Export** as text buttons.
   - One row for each skill: the name, a version pill, the slug (`font-mono`), and "n bots",
@@ -25,9 +31,14 @@
   - The selected row has `primary-tint` and a 3 px `primary` mark at its left edge. A skill
     with unsaved changes has a `primary` dot after its name.
   - The list has no row menu and no Clone. All actions are in the skill header.
-- **Skill header:** the name with its version pill, then the slug · "by {author}" · "used by
-  n bots, m on an older version". On the right: **History** and **⋯** (§9).
-- **Editor**, below the header, one column, 14 px between fields:
+- **Page top** (as `bot-page.md` §2): the name (22 px, weight 600) with its version pill, then
+  the slug (mono) · "by {author}" · "used by n bots, m on an older version". When a skill draft
+  for this skill waits, a third line: "Draft v4 from BA waits for you · in {conversation}", the
+  first part a `primary` link to the card (`skill-draft-card.md` §6). On the right: **⋯** (§9).
+- **Tabs** (as `bot-page.md` §3), each with an icon: **Skill**, **Bots** with the count and
+  "↑m" in `primary` when m bots use an older version, **History** with the number of versions.
+  The open tab has the 2 px `primary` underline.
+- **Skill tab:** the editor, one column, 14 px between fields:
   1. **Name**, counter "n / 64".
   2. **Description**, hint "Say when a bot must use this skill. Bots read it in every prompt,
      so keep it short.", counter "n / 1,024".
@@ -35,7 +46,8 @@
      the skill.", counter "n / 20,000". The tabs **Write** and **Preview** sit on top of the
      body box, with "Markdown" at the right of the tab bar. The open tab has a 2 px `primary`
      underline. The tab bar has the same border colour as the box.
-- **Save bar**, fixed at the bottom of the editor (§5).
+- **Save bar**, fixed at the bottom of the Skill tab (§5). The Bots and History tabs have no
+  save bar.
 - Only the field in focus gets a `primary` border. Changed fields get no other mark.
 
 The Body opens in **Preview** when it has text. It opens in **Write** when it is empty (new
@@ -44,15 +56,29 @@ skill) or when it has an error (§6). Preview renders Markdown with raw HTML off
 The description and the body must not say the same thing. The description says *when* to use
 the skill. The body says *how* to do the task.
 
+## 2a. Bots tab (S2, UI-7.5a)
+
+The skill side of the bot page Skills tab (`bot-page.md` §7), with the same row parts:
+
+- The line "Changes save at once. Each bot uses them from its next run." and **+ Add**
+  (secondary, 30 px) at the right.
+- Columns **Bot**, **Version**, **Always load**, and ⋯. Each row: the avatar, the name and the
+  model line; the version pill with "latest", or "Upgrade to v{N}" as a `primary` link that
+  opens the upgrade dialog (`bot-page.md` §7 SK3); the Always load switch (D16); ⋯ with
+  **Change version** and **Remove** (`danger` text), as on the bot page.
+- **+ Add** opens the bot list (§7) with no box ticked; the bots that use the skill are not in
+  it. The added bots get the latest version and Always load off.
+- No bot uses it: "No bot uses this skill yet." and **+ Add**.
+
 ## 3. Empty state
 
 Before the first skill: 📚 **No skills yet**, then "A skill tells a bot how to do one task, for
 example "Write user stories". Write one here, or import SKILL.md folders." and the buttons
-**Import** and **+ New skill**.
+**Import** and **+ Create skill**.
 
 ## 4. New skill (C1)
 
-- **+ New** adds an item "New skill" with the pill "not saved" at the top of the list, and opens
+- **+ Create** adds an item "New skill" with the pill "not saved" at the top of the list, and opens
   an empty editor with the header "New skill" and "A skill tells a bot how to do one task. You
   can assign it to bots after you save it."
 - Only a new skill has the **Slug** field, under Name. Hint: "Made from the name. Fixed after
@@ -118,6 +144,15 @@ Skip." is at the bottom. In M1 no bots exist, so only the toast shows.
 - Text: "Tick the bots that must use this skill. They get v1."
 - No box starts ticked. **Skip** is the default. **Assign** (`primary`) is disabled until a box
   is ticked.
+
+### 7.3 After an approved skill draft (D64)
+
+The same two cards open in the centre of the conversation after the owner approves a skill
+draft (`skill-draft-card.md` §4). Two differences: the new-skill card starts with the drafting
+bot ticked and an **Always load** switch (off) on its row, and **Assign** is the default. The
+upgrade card has a second group, **Does not have it**, with every other bot not in Trash, not
+ticked, so the owner can give the new version to any bot (D65). Upgrading keeps each bot's
+Always load; a newly assigned bot gets Always load off unless the owner turns it on.
 
 ## 8. A skill by another author (C5)
 
@@ -201,21 +236,22 @@ starts ticked. Buttons: **Skip** and **Remove from {n} bots** (`danger`), disabl
 - **Create** makes the copy at v1, with the owner as author, and then shows the assign card
   (§7.2). Cancel or leave, and nothing is saved, so no unwanted copies stay in the list.
 
-## 13. History (B2, UI-7.5)
+## 13. History tab (S3, UI-7.5, UI-7.14)
 
-- **History** opens a floating panel at the right of the editor (290 px, `surface-raised`,
-  shadow). Versions are newest first, each with the version pill, the changelog line, who and
-  when, "latest" on the newest, and "used by {n} bots".
-- A click on a version shows the diff from that version to the latest in the editor area,
-  read-only: added lines in `success`, removed lines in `danger` with a strike, the description
-  diff above the body. Buttons: **Back to editor** and **Restore v{k}** (`primary`), which makes
-  a new version with the old text.
-- **Compare** at the bottom of the panel picks any two versions.
-- Esc or ✕ closes the panel.
+The History tab replaces the round 8 floating panel (round 16).
+
+- At the left, 300 px: versions newest first, each with the version pill, the changelog line,
+  who and when, "latest" on the newest, and "{n} bots" that use it. A version that came from a
+  skill draft says "You · drafted by BA", with BA as a link to the card's message (D41).
+- At the right: the diff from the selected version to the latest, read-only: "v3 → v4 ·
+  Read-only", "Description: no change" or the description diff, then the body diff (added lines
+  in `success`, removed lines in `danger` with a strike, unchanged lines folded as "{n} lines
+  with no change · Show"). **Restore v{k}** (secondary) makes a new version with the old text.
+- **Compare** under the list picks any two versions.
 
 ## 14. Leave with unsaved changes (C6)
 
-A click on another skill, the rail or + New asks first, but only if something changed.
+A click on another skill, the rail or + Create asks first, but only if something changed.
 Title **Leave without saving? 👀**, text "You changed the description and the body of {skill}.
 The app has not saved them yet. Stay and save, or let them go." The text names the changed
 fields. Buttons: **Let them go** (`danger`) and **Stay on this skill** (`primary`, default).
@@ -258,9 +294,25 @@ fields. Buttons: **Let them go** (`danger`) and **Stay on this skill** (`primary
   basic format and no ":", for example `6-skills-20261023T035956Z.zip`. It holds
   `<slug>/SKILL.md` for each ticked skill. The toast says "Exported 6 skills to {file}."
 
+## 17. Edit a skill draft (E1–E5, D41, D64)
+
+**Edit** on a skill draft card (`skill-draft-card.md` §3) opens the draft on this page:
+
+- A new skill shows as a list item with the pill "not saved"; a new version selects the skill.
+- The page top says "New skill. You are the author when you approve it." (or the skill's line),
+  and "{bot} drafted this skill in {conversation}. Approve saves v{N}. Cancel goes
+  back to the conversation and changes nothing."
+- Only the Skill tab works. Bots and History are at 40 % with the tooltip "Approve the draft
+  first."
+- The save bar: "No changes to the draft." or "{n} changes not saved", the changelog box with
+  the bot's line, **Cancel** and **✓ Approve as v{N}** (primary). Approve checks like Save
+  (§6), goes back to the conversation and opens the float card (§7, D64).
+- The slug of a new skill can be changed here. A taken slug shows the §6 error.
+
 ## Requirement changes (this PR)
 
-- `skill-hub.md` UI-7.1 to UI-7.8 and SK-3 follow this file.
+- `skill-hub.md` UI-7.1 to UI-7.8 and SK-3 follow this file. Round 16: UI-7.2, UI-7.5, UI-7.5a
+  and UI-7.12 to UI-7.14 follow this file and `skill-draft-card.md`.
 - Limits (`security.md` §2.5, `domain-model.md` §3.1): name 64, description 1,024, body
   20,000 characters, as in the Agent Skills standard.
 - API (`api.md` §2): import apply takes the picked folders, export takes the picked skills,
