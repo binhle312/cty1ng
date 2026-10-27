@@ -338,8 +338,9 @@ m1 (human) ── m2 (BA) ── m3 (human) ── m4 (BA)
 
 ## 7. Skills drafted by bots (D41)
 
-When the owner asks, a bot turns a piece of work into a skill, for itself or for another bot
-in the conversation. The owner approves every draft and is its author.
+When the owner asks, a bot turns a piece of work into a skill. A bot drafts only for itself
+(D65); after Approve, the owner gives the skill to any bots. The owner approves every draft and
+is its author.
 
 A skill draft is a change, so it has two approvals: first the plan card (D48), then the draft
 card. The planning run is read-only and cannot call `propose_skill`; the action run that the
@@ -350,25 +351,26 @@ Example:
 1. The owner, after BA wrote good stories: "@BA make the way you just wrote these a skill for
    yourself."
 2. BA replies with a plan card. Its **Skill drafts** section says "`write-login-stories` · New
-   skill · For BA · Needs your final review". The owner approves.
-3. In the action run, BA calls `propose_skill(target="ba", name="Write login stories",
+   skill · Needs your final review". The owner approves.
+3. In the action run, BA calls `propose_skill(name="Write login stories",
    slug="write-login-stories", description="…", body_md="…")`.
-4. A card appears: "Skill draft · New skill · For BA", with the text and [Reject] [Edit]
+4. A card appears: "Skill draft · New skill", with the text and [Reject] [Edit]
    [Approve]. The card shows the skill only (D64).
 5. Approve creates `write-login-stories` v1 (author: the owner). A float card asks "Add
-   write-login-stories to bots?" with BA ticked. The owner presses Assign. BA's next reply shows
-   the skill in its provenance chips.
+   write-login-stories to bots?" with BA ticked. The owner also ticks Designer and presses
+   Assign. The next replies of BA and Designer show the skill in their provenance chips.
 
 Rules:
 
-- `propose_skill(target, name, description, body_md, slug?, skill?, changelog?)`. `target` is
-  a bot name or slug of an **active member**, the caller included. For an edit, `skill` is the
-  slug of an existing, non-deprecated skill, and the draft is based on its latest version; for
+- `propose_skill(name, description, body_md, slug?, skill?, changelog?)`. There is no target
+  bot (D65). For an edit, `skill` is the slug of an existing, non-deprecated skill **that the
+  calling bot uses** (else the tool error `skill_not_used`), and the draft is based on its
+  latest version; for
   a new skill, `slug` is proposed (`^[a-z0-9-]{1,64}$`). If the slug is taken, the app uses the
   next free one (`-2`, `-3`, …) and the card says so (D64).
 - **Only when asked.** The tool is offered only in an action run whose approved plan lists a
   skill draft (the plan card's **Skill drafts** line, `design/components/plan-card.md`). Each
-  call must match a listed draft (same `target`, and the same `slug` or `skill`); the server
+  call must match a listed draft (the same `slug` or `skill`); the server
   checks this, and other calls return the tool error `draft_not_in_plan`. Plan approval allows
   the draft only; the owner still approves the finished draft on its card (D41). The tool is never offered in other action runs, planning runs, bot turns or
   handoff runs. The prompt says to use it only when the owner asks. A bot may offer in one line ("Want me to save this
@@ -385,10 +387,10 @@ Rules:
 - **Card actions (owner only):** Reject, Edit (the draft opens on the Skills page, Skill tab,
   UI-7.12), Approve. The card has no pin or Always load choice (D64). A decision applies only
   while `pending`.
-- **After Approve:** a float card asks about the bots (D64). New skill: "Add <slug> to bots?",
-  the target bot ticked. New version: "Also upgrade these bots to v<N>?" (D6), every bot on an
-  older version ticked, the target included; each bot keeps its Always load. Skip leaves the
-  skill unused. A run already going keeps the pins it started with.
+- **After Approve:** a float card asks about the bots (D64, D65). It lists every bot that is not
+  in Trash, and the owner may tick any of them. New skill: "Add <slug> to bots?", the drafting
+  bot ticked. New version: "Also upgrade these bots to v<N>?" (D6), every bot on an older
+  version ticked; each bot keeps its Always load. Skip leaves the skill unused. A run already going keeps the pins it started with.
 - **Out of date:** a new version or a deprecate of the skill marks its pending edit drafts
   `stale` at once, and the card offers "Ask <bot> to redraft" (D41 rule 6, D64).
 - **Memory or skill?** Facts and preferences go to memory (D38); procedures go to a skill.

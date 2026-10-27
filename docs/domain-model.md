@@ -84,7 +84,7 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
   again for a run. In the same
   transaction it deletes
   the bot's `bot_skills` rows, its bot-scope `memory_items` with their `memory_item_versions`, and
-  the bot's open skill drafts (`skill_drafts` with `target_bot_id` = the bot and no decision).
+  the bot's open skill drafts (`skill_drafts` with `drafted_by_bot_id` = the bot and no decision).
   Rows that record history stay and keep their foreign keys: messages, runs, run steps,
   `conversation_bots` (status `removed`), handoffs, `reply_feedback`, decided skill drafts. The
   avatar file stays, because old messages show it. A tombstone is never updated again and never
@@ -300,7 +300,6 @@ skill_drafts                                              -- TypeID prefix `skil
   source_message_id  TEXT NOT NULL REFERENCES messages(id)   -- the owner's message that asked
   created_by_run_id  TEXT NOT NULL REFERENCES runs(id)
   drafted_by_bot_id  TEXT NOT NULL REFERENCES bots(id)
-  target_bot_id      TEXT NOT NULL REFERENCES bots(id)       -- an active member; may be the drafter
   kind               TEXT NOT NULL                -- new | edit
   skill_id           TEXT NULL REFERENCES skills(id)         -- set when kind = edit
   base_version       INTEGER NULL                 -- latest version when drafted; set when kind = edit
@@ -334,7 +333,10 @@ skill_drafts                                              -- TypeID prefix `skil
   the bot proposed it. The card shows the same choice before Approve. A slug that the owner
   typed in the editor is not changed: a taken one returns 409 `slug_taken`, as on the Skills
   page.
-- Deleting the target bot leaves the draft pending; approving it then creates the skill, and
+- A draft has no target bot (D65): the drafting bot drafts for itself, and the owner assigns
+  the approved skill to any bots. An edit draft is allowed only for a skill that the drafting
+  bot uses when it calls the tool.
+- Deleting the drafting bot leaves the draft pending; approving it then creates the skill, and
   the float card leaves the bot out.
 
 ## 4. Model catalog
@@ -912,7 +914,7 @@ default are not allowed: a column that is not named has no policy, and the schem
 | `run_steps` | `id`, `run_id`, `seq_in_run`, `kind`, `status`, `started_at`, `finished_at` | `target` → `''`, `detail` → NULL |
 | `run_skills` | `run_id`, `skill_version_id`, `skill_slug`, `version`, `mode`, `first_loaded_at` | none |
 | `handoffs` | `id`, `conversation_id`, `from_bot_id`, `to_bot_id`, `commit_sha`, `status`, `message_id`, `created_by_run_id`, `created_at`, `decided_at` | `files` → `'[]'`, `summary` → `''`, `decision_note` → NULL |
-| `skill_drafts` | `id`, `conversation_id`, `message_id`, `source_message_id`, `created_by_run_id`, `drafted_by_bot_id`, `target_bot_id`, `kind`, `skill_id`, `base_version`, `status`, `result_skill_version_id`, `edited_by_owner`, `row_version`, `created_at`, `decided_at` | `slug`, `name`, `description`, `body_md` → `''`, `changelog` → NULL |
+| `skill_drafts` | `id`, `conversation_id`, `message_id`, `source_message_id`, `created_by_run_id`, `drafted_by_bot_id`, `kind`, `skill_id`, `base_version`, `status`, `result_skill_version_id`, `edited_by_owner`, `row_version`, `created_at`, `decided_at` | `slug`, `name`, `description`, `body_md` → `''`, `changelog` → NULL |
 | `skill_versions` (points to `skill_drafts`; the owner's skill) | `id`, `skill_id`, `version`, `description`, `body_md`, `changelog`, `created_by`, `skill_draft_id`, `created_at` | none |
 | `reply_feedback` | `id`, `message_id`, `run_id`, `bot_id`, `rating`, `created_at`, `updated_at` | `note_md` → NULL |
 

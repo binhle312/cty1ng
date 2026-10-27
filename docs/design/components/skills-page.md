@@ -148,9 +148,9 @@ Skip." is at the bottom. In M1 no bots exist, so only the toast shows.
 ### 7.3 After an approved skill draft (D64)
 
 The same two cards open in the centre of the conversation after the owner approves a skill
-draft (`skill-draft-card.md` §4). Two differences: the new-skill card starts with the target
+draft (`skill-draft-card.md` §4). Two differences: the new-skill card starts with the drafting
 bot ticked and an **Always load** switch (off) on its row, and **Assign** is the default. The
-upgrade card lists the target bot too. Upgrading keeps each bot's Always load.
+upgrade card lists the drafting bot too. The owner may tick any bot that is not in Trash (D65). Upgrading keeps each bot's Always load.
 
 ## 8. A skill by another author (C5)
 
@@ -298,7 +298,7 @@ fields. Buttons: **Let them go** (`danger`) and **Stay on this skill** (`primary
 
 - A new skill shows as a list item with the pill "not saved"; a new version selects the skill.
 - The page top says "New skill. You are the author when you approve it." (or the skill's line),
-  and "{bot} drafted this skill for {target} in {conversation}. Approve saves v{N}. Cancel goes
+  and "{bot} drafted this skill in {conversation}. Approve saves v{N}. Cancel goes
   back to the conversation and changes nothing."
 - Only the Skill tab works. Bots and History are at 40 % with the tooltip "Approve the draft
   first."

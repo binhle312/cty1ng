@@ -55,8 +55,9 @@ dialog. D62 (one Trash page, memory items included) and D63 (Tidy and the memory
 requests) are accepted, and the memory limits are settings (D38 amendment). D58 moves to the
 next slice after M5b. The M5b brief is written. M5c design round 16 (skill draft card) is
 agreed: `design/components/skill-draft-card.md` and the Skills page in the bot page layout
-(`skills-page.md`, Skill, Bots and History tabs). D64 is accepted, and the owner approved the
-API changes and the Skills page layout change in PR #38 (2026-10-27).
+(`skills-page.md`, Skill, Bots and History tabs). D64 and D65 are accepted (a bot drafts skills
+only for itself; the owner assigns them to any bot), and the owner approved the API changes and
+the Skills page layout change in PR #38 (2026-10-27). M5c now depends on M3, not M4.
 
 ## Next
 
@@ -88,7 +89,7 @@ API changes and the Skills page layout change in PR #38 (2026-10-27).
 | M6 | not started | | |
 | M7 | not started | | |
 | M5b | UI design agreed | [#37](https://github.com/binhle312/cty1ng/pull/37) (spec) | Brief: `tasks/M5b-projects-and-memory.md`. Round 15: `design/components/memory-page.md`, `trash-page.md`, `conversation-page.md` §2.1a; D62, D63 accepted |
-| M5c | UI design agreed | [#38](https://github.com/binhle312/cty1ng/pull/38) (spec) | Skills drafted by bots (D41, D64 accepted). Round 16: `design/components/skill-draft-card.md`, `skills-page.md` §2a, §13, §17. Brief not written |
+| M5c | UI design agreed | [#38](https://github.com/binhle312/cty1ng/pull/38) (spec) | Skills drafted by bots (D41, D64, D65 accepted). Round 16: `design/components/skill-draft-card.md`, `skills-page.md` §2a, §13, §17. Brief not written |
 | M5d | not written | | Bots improve their skills from the owner's feedback (D51) |
 | M8 | not started | | |
 | M8b | not written | | Board map in the Flow pane (D30) |
@@ -107,4 +108,4 @@ A slice can also be `blocked` (say on what in Notes).
 | 2026-10-21 | Repository created; spec merged (PRs #1–#5): send states and research notes, security checklist, frontend conventions, `ui-ux-pro-max` skill; D31, D32 accepted |
 | 2026-10-21 | Owner review: D6, D11, D13, D33 accepted; D9 accepted with a replaceable transport; D21 accepted with price overrides |
 | 2026-10-26 | M5b design round 15: Memory page with Tidy, Trash page with multi-select, Move to project dialog; D62, D63 accepted; M5b brief and API contracts written |
-| 2026-10-27 | M5c design round 16: skill draft card, float card for the bots after Approve, Edit on the Skills page, Skills page in the bot page layout; D64 accepted |
+| 2026-10-27 | M5c design round 16: skill draft card, float card for the bots after Approve, Edit on the Skills page, Skills page in the bot page layout; D64, D65 accepted |

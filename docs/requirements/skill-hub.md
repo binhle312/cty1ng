@@ -76,7 +76,7 @@ versions and rollback (D6), and the Improve bot can change them (D51).
 ## Skills drafted by bots (D41)
 
 - UI-7.9: When the owner asks, a bot drafts a skill and a card appears in the conversation, with
-  the head "Skill draft · New skill · For <target bot>" (or "New version"), the name and slug,
+  the head "Skill draft · New skill" (or "New version"), the name and slug,
   the description, the body (Markdown preview, raw HTML disabled, first 8 lines and "n more lines
   · Show"), What changed, and "Asked in your message at <time>" with a link. The card is a
   preview: the owner does not type on it (D64). Layout, states and copy:
@@ -86,14 +86,15 @@ versions and rollback (D6), and the Improve bot can change them (D51).
 - UI-7.11: The card has the buttons Reject, Edit and Approve, and no pin or Always load choice
   (D64). Approve creates the version and folds the card: "Approved · <time> · <slug> v<N>",
   with a link to the skill. Then a float card in the centre of the screen asks which bots use
-  it: "Add <slug> to bots?" with the target bot ticked, or "Also upgrade these bots to v<N>?"
+  it, from every bot not in Trash (D65): "Add <slug> to bots?" with the drafting bot ticked, or
+  "Also upgrade these bots to v<N>?"
   with every bot on an older version ticked (`../design/components/skills-page.md` §7).
 - UI-7.11a: A new-skill draft whose slug is taken shows the next free slug
   (`write-login-stories-2`) and the line "write-login-stories is taken, so the app uses
   write-login-stories-2. To pick another slug, use Edit." The slug is checked when the card
   loads and again on Approve.
 - UI-7.12: Edit opens the draft on the Skills page, Skill tab only (Bots and History are off
-  until Approve), with the line "<Bot> drafted this skill for <target> in <conversation>". The
+  until Approve), with the line "<Bot> drafted this skill in <conversation>". The
   save bar has Cancel and "Approve as v<N>". Approve there saves, goes back to the conversation,
   folds the card with "edited by you" and opens the same float card.
 - UI-7.13: When the skill gets a new version, or is deprecated, the app marks its pending edit
@@ -103,7 +104,8 @@ versions and rollback (D6), and the Improve bot can change them (D51).
   linking to the card's message. The bot page Skills tab shows "Draft v<N> waiting" on the row
   of a skill with a pending draft for that bot, linking to the card.
 - UI-7.15: A test with the fake model checks that `propose_skill` writes no skill and no pin
-  until Approve, that Approve pins nothing (D64), that a new version of the skill marks its
+  until Approve, that Approve pins nothing (D64), that `propose_skill` has no target and
+  refuses a new version of a skill that the bot does not use (D65), that a new version of the skill marks its
   pending edit drafts stale, that a taken slug gets the next free suffix, that the tool is not
   offered in bot turns, planning runs or action runs whose approved plan lists no skill draft, that a call which does not match a listed draft returns
   the error `draft_not_in_plan`, and that a draft containing a secret pattern is refused.

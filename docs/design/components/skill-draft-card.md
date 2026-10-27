@@ -1,9 +1,9 @@
 # Skill draft card
 
-> **Status: agreed in the M5c UI design review (2026-10-27)**, canvas round 16, boards K1–K10,
-> E1–E7 and S1–S3. Previews: `../previews/command-dark/skill-draft-card.*` (K1–K10),
+> **Status: agreed in the M5c UI design review (2026-10-27)**, canvas round 16, boards K1–K7,
+> K9, K10 (K8 removed by D65), E1–E7 and S1–S3. Previews: `../previews/command-dark/skill-draft-card.*` (K1–K7, K9, K10),
 > `skill-draft-edit.*` (E1–E5, E7) and `skills-page-tabs.*` (S1–S3), each a `.png` and a
-> `.html`. Follows D41 and D64, with D6, D14, D15, D16, D39, D48, D50 and D51. Card
+> `.html`. Follows D41, D64 and D65, with D6, D14, D15, D16, D39, D48, D50 and D51. Card
 > parts, buttons and the fold come from `conversation-cards.md` §3 and `buttons.md`. The labels
 > and messages use Simplified Technical English.
 
@@ -16,7 +16,7 @@ use the skill is a second question, on a float card after Approve (§4, D64).
 The card sits inside the bot's reply, under a line such as "I wrote the skill as a draft. The
 app saves nothing until you approve it." Top to bottom:
 
-1. **Head:** "**Skill draft** · New skill · For BA" (or "New version"), then the pill **Waiting
+1. **Head:** "**Skill draft** · New skill" (or "New version"), then the pill **Waiting
    for you** (`primary-tint`).
 2. **Name** (weight 600) and the slug (mono 12 px, `on-surface-muted`).
 3. **Description**, as text.
@@ -79,8 +79,8 @@ a `primary` border. **Skip**, Esc or a click outside closes it; the skill stays 
 
 | Draft | Title and text | Rows | Buttons |
 | --- | --- | --- | --- |
-| New skill (K3) | "Created ✨ Add write-login-stories to bots?" "Tick the bots that must use this skill. They get v1. BA is ticked, because you asked BA for it." | The target bot ticked, with an **Always load** switch (off) on its row; the other bots not ticked | **Skip**, **Assign** (primary, default; 40 % with no box ticked) |
-| New version (K4) | "Saved v4 ✨ Also upgrade these bots to v4?" "These bots use an older version. They keep it until you upgrade them. Tick the bots to move to v4. Always load stays as it is for each bot." | Every bot on an older version, ticked, with its version pill; the target bot included | **Skip**, **Upgrade** (primary, default) |
+| New skill (K3) | "Created ✨ Add write-login-stories to bots?" "Tick the bots that must use this skill. They get v1. BA is ticked, because BA drafted it. Untick BA if you do not want it." | The drafting bot ticked, with an **Always load** switch (off) on its row; the other bots not ticked. The owner may tick any bot (D65) | **Skip**, **Assign** (primary, default; 40 % with no box ticked) |
+| New version (K4) | "Saved v4 ✨ Also upgrade these bots to v4?" "These bots use an older version. They keep it until you upgrade them. Tick the bots to move to v4. Always load stays as it is for each bot." | Every bot on an older version, ticked, with its version pill | **Skip**, **Upgrade** (primary, default) |
 
 Assign and Upgrade send one call for all ticked bots (`api.md` §2, `POST /skills/{id}/bots`).
 A bot in Trash (D50) is not in the list. A new version with no bot on an older version opens no
@@ -92,7 +92,6 @@ float card; the folded line is enough.
 | --- | --- | --- |
 | Out of date | K6 | The pill **Out of date** (`danger` tint). The line, in `danger`: "Not approved. write-user-stories got v4 at 11:40, after BA made this draft from v3. An approve now would remove that change." One button: **Ask BA to redraft** (primary), which fills the composer with "@BA make the draft of write-user-stories again, from v4." The app marks the draft at once when the skill gets a version or is deprecated (D64) |
 | Slug taken | K7 | Under the slug: "write-login-stories is taken, so the app uses write-login-stories-2. To pick another slug, use Edit." The slug line shows `write-login-stories-2`. Approve works |
-| Target bot in Trash | K8 | "Designer is in Trash. After you approve, the float card offers the skill to the other bots. Restore Designer to add it later." Trash is a link to the Trash page |
 | Two drafts in one run | K9 | One card per draft, each with its own decision. A decided card folds; the others stay open |
 | From Improve (M5d) | K10 | The same card in the owner's 1:1 conversation with the bot, with the signals, the length change and **Test on past tasks** (D51). Tagged M5d (P8) |
 

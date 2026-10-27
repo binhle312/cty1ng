@@ -26,8 +26,9 @@ titles, file rows) is in `conversation-cards.md` §3. Top to bottom:
    Approve covers these, so the save shows no second card for them (D54).
 4. **Memory:** each memory change, or "No changes".
 5. **Skill drafts:** one entry for each skill the bot will draft: the slug, then "New skill" or
-   "New version", "For <bot>" and "Needs your final review", for example
-   "`write-login-stories` · New skill · For BA · Needs your final review". The whole section
+   "New version", and "Needs your final review", for example
+   "`write-login-stories` · New skill · Needs your final review". A bot drafts only for itself,
+   so the line names no bot (D65). The whole section
    shows only when the plan has at least one draft (owner, 2026-10-24).
 6. **Done when:** the items of the `## Done when` section of each skill that the plan uses,
    numbered 1..n across all of them. Each item keeps its source skill and version. The section
