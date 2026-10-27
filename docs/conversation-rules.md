@@ -438,7 +438,8 @@ rail and the header show it.
    in the send transaction, and again just before it sends the request (rule 6). If a cap is
    reached at either check, the status is `skipped`. The title adds no notice to the chat. A run
    that the cap stops posts its own notice (D20). A message that starts no run gets no notice.
-   A model with no known price is allowed and counts toward no cap (D21, D42).
+   A model with no known price is skipped (reason `cap`) while a cap applies to it, and allowed
+   when no cap applies (D21, D42 amendment 2026-10-27).
 6. **Parallel title requests, hard cap.** Title requests for different conversations run in
    parallel, with no global queue. A title request never makes today's estimated spend pass a
    cap. The second check (rule 5) is a **reservation**, in one write transaction (`BEGIN

@@ -93,6 +93,18 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
   2.3 (sandbox), by the turn budget and caps, and by the owner approving handoffs. Never
   give bots a capability whose misuse would be worse than "bad text in the workspace" without
   revisiting this document.
+- **Never all three in one run (owner, 2026-10-27).** A run must never have all three of:
+  (1) private data (Library files, memory, conversation history), (2) untrusted text (web
+  results, attachments, files that came from outside), and (3) a channel that sends data out of
+  the app without an owner approval (a model-written URL, an MCP call, an outbound request).
+  Injected text can then read private data and send it out. Today: bots have (1) and (2), but
+  no (3): D53 rule 1 allows only search-result or owner URLs, and the MCP switch stays locked
+  (D55).
+  **Gate:** every PR that adds a tool, or changes a tool's flags in `config/tools.yaml`, answers
+  in its description "Can this tool send data out without an approval?". If yes, the PR also
+  says which rule takes away (1) or (2) for runs that have it (for example D53: no MCP call
+  after a web result). Without that answer, the PR is not done. A test with the fake model
+  proves the rule.
 - Bots may draft skills but never save them (D41). A skill reaches every run that loads it, so
   injected text in a skill would persist; only an owner-approved, owner-authored version is
   ever written. Drafts are text only (no files, no tool permissions), pass the sensitive-data
@@ -112,7 +124,11 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
 - `request_limit` per run, turn budget per conversation, runs per conversation per hour and the
   handoff and skill draft limits (settings with a minimum of 1, so they cannot be turned off;
   `conversation-rules.md` §9),
-  `MAX_CONCURRENT_RUNS`, and the daily spending caps (D20, D42).
+  `MAX_CONCURRENT_RUNS`, and the daily spending caps (D20, D42). While a cap applies, a model with
+  no known price is refused (`price_unknown`, D42 amendment 2026-10-27), so no model passes the cap
+  with no limit.
+- The app's caps are estimates. The hard limit is the monthly spend limit that the owner sets in
+  each provider's console (D20).
 - The auto title (D46) makes at most one request per conversation (a database rule), with
   30 output tokens, a 20-second timeout, one attempt, and the same caps as a run. The app checks
   caps in the send transaction and again just before dispatch, where it reserves the worst-case

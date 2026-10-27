@@ -34,7 +34,7 @@ One shape for every error:
 | 409 | `name_taken`, `slug_taken`, `stale_write` (the row changed since it was read; reload), `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending`, `run_not_queued`, `draft_not_pending`, `draft_stale`, `bot_list_changed`, `idempotency_key_reused` (same `Idempotency-Key` with a different body), `place_in_trash` (restore while the item's project, conversation or bot is in Trash; D60, D62), `memory_full` (`memory_items_max` live items in the place), `conversation_in_project` (move of a project conversation, D61), `proposal_not_ready`, `instructions_changed` (a memory check decision after a newer instruction save, D63) |
 | 413 | `too_large` |
 | 422 | `validation_error`, `invalid_id`, `mention_not_member`, `bot_unavailable`, `bot_deleted`, `skill_deprecated`, `version_mismatch`, `effort_not_supported`, `model_not_available`, `sensitive_data`, `tool_job_conflict`, `tool_not_available` (the model has no such tool) |
-| 429 | `rate_limited` (runs per hour), `daily_cap_reached`, `provider_cap_reached` (D42) |
+| 429 | `rate_limited` (runs per hour), `daily_cap_reached`, `provider_cap_reached` (D42), `price_unknown` (a cap applies and the model has no known price, D42 amendment 2026-10-27) |
 
 ## 2. Skills
 

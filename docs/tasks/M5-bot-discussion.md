@@ -44,6 +44,9 @@ conversation. The server enforces the budget; bots are told how many turns remai
 - With a total cap of $1 and an OpenAI cap of $0.10 (fake prices), the run that crosses the
   OpenAI cap finishes, the next OpenAI bot run is refused with `provider_cap_reached`, and a bot
   on another provider still runs. Alerts fire once per threshold per cap.
+- With a total cap on, a bot on a fake model with no price is refused with `price_unknown` and
+  the notice; with the cap off, the same bot runs and shows "cost unknown"; a title request on
+  that model is `skipped` with reason `cap` (D42 amendment 2026-10-27).
 
 ## Tests
 
