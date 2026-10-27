@@ -33,6 +33,9 @@ gets one more line under its file row (D52 amendment 2026-10-25): the info icon 
 in {conversation}" (the conversation is a link), 11 px `on-surface-muted`. It is a fact, not a
 block, so it is not amber (C1). The owner approves, rejects or asks for another file name.
 
+Cards in §3 and §4 draw from the run's save state (`api.md` §5d, `GET /runs/{id}/save`), so they
+show the same after a refresh or in another tab.
+
 ## 3. Unsaved changes card (C3)
 
 A failed or stopped run that wrote files shows this card under its failed (E1) or stopped (E2)
@@ -80,8 +83,8 @@ A bot that calls `propose_copy` (D61) shows this card inside its reply:
 - Rows, label column 90 px: **Source** (this place), **File** (mono), **Version** ("saved {time}
   by {bot}", the commit id in the tooltip; before the save: "the version that this run saves",
   in `on-surface-muted`), **Destination**.
-- **Show file** (secondary 30) opens the pinned version on the Library page. It is not shown
-  before the save.
+- **Show file** (secondary 30) opens the pinned version on the Library page, with the "Older
+  version" line when a newer one exists (`library-page.md` §3.4). It is not shown before the save.
 - When the file changes again before the decision: "A newer version was saved at {time}.
   Approve still copies the {time} version." (D61)
 - Buttons: **× Reject** and **✓ Approve** (primary, far right). No buttons before the save.

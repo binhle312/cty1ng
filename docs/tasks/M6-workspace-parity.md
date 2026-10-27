@@ -91,7 +91,7 @@ owner confirms in the M6 plan):
 - The copy suffix `-from-<place-slug>` (D61) gets a number when that name is taken too:
   `notes-from-trip-ideas-2.md`.
 - The file step of the Move dialog (`design/components/conversation-page.md` §2.1a) is drawn
-  with its M6 tag; M6 builds it on `POST /conversations/{id}/move` (`file_paths`).
+  with its M6 tag; M6 builds it on `POST /conversations/{id}/move` (`files`: path and pinned commit).
 
 Parked for this brief (owner, 2026-10-24; notes in the agent checklist, pstack and handoff
 reviews). Each needs the owner's choice before the plan starts:

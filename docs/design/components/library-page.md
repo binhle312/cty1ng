@@ -1,11 +1,12 @@
 # Library page
 
 > **Status: agreed in the M6 UI design review, round 17 (2026-10-27):** boards L1–L8, L3b and
-> L5b (step 1, 15:42). Previews: `../previews/command-dark/library-page.*` (L1–L8, L3b, L5b),
-> each a `.png` and a `.html`. Follows D52 (with its 2026-10-25 amendment), D54, D60 and D61.
-> The conversation parts (overlap notice, unsaved changes card, save card, plan card mark, copy
-> card) are in `library-cards.md`. Standards it uses: `buttons.md`, `time-format.md`,
-> `../ui-rules.md`. The labels and messages use Simplified Technical English.
+> L5b (step 1, 15:42); L2b, L9 and L9b (step 3, PR #41 review fixes). Previews:
+> `../previews/command-dark/library-page.*` (L1–L9b), each a `.png` and a `.html`. Follows D52
+> (with its 2026-10-25 amendment), D54, D60 and D61. The conversation parts (overlap notice,
+> unsaved changes card, save card, plan card mark, copy card) are in `library-cards.md`.
+> Standards it uses: `buttons.md`, `time-format.md`, `../ui-rules.md`. The labels and messages
+> use Simplified Technical English.
 
 The Library page shows the files of one place: a project Library or the Home Library (D52
 amendment 2026-10-25). It works like a git UI: a file tree at the left, the file at the right, and
@@ -20,6 +21,7 @@ shows only in a tooltip and in the History tab facts.
   file**) opens the page on the Files tab with that file open. The page replaces the Files side
   panel of the old UI-3.16 (owner, 2026-10-27).
 - **Open** in the toast after a copy (§7) opens the destination Library on the copied file.
+- **Show file** on a copy card opens the pinned version of the file, not the newest one (§3.4).
 
 ## 2. Layout
 
@@ -70,7 +72,24 @@ does not show for an image.
 
 A file that a copy added (D61) has the **New** pill in the tree. The **Library** row in bar 2 has
 the same pill while one new file or more remains. Opening the file clears its tag. Opening the
-page alone clears nothing (D61).
+page alone clears nothing (D61). The viewer sends `POST /libraries/{place}/seen` when the owner
+opens the file; a prefetch or a refresh does not clear the tag. Other open tabs drop the tag on
+the `library.seen` event.
+
+### 3.4 An older version (L9, L9b)
+
+**Show file** on a copy card (`library-cards.md` §5) opens the version that the card pinned
+(D61). The facts line (§3.1) describes that version. Under it, one line in `surface-raised`,
+12 px, with the info icon, starting with **Older version.**:
+
+| Case | Text | Link |
+| --- | --- | --- |
+| The file changed after this version | "The newest version was saved {time}." | **Open newest version** |
+| The file was moved after this version | "This file was moved to `{path}` {time}." | **Open newest version** (opens the new path) |
+| The file was deleted after this version | "This file was deleted {time}." | none; the tree selects nothing |
+
+When the pinned version is the newest, the line does not show. **Copy to** in this view copies
+the version on screen.
 
 ## 4. History tab (L2)
 
@@ -96,10 +115,20 @@ Save titles (one row per commit on main):
 
 ### 4.1 The changed files (GitHub "Files changed" style, owner 2026-10-27)
 
-- The head: the title "{bot} in {conversation}: {n} files" (15 px, weight 600) and, at the right,
-  the links **Show all** and **Hide all** (12 px, `on-surface-muted`). Under it the facts:
-  "Saved {time} · run of {bot} in {conversation} · {commit} · {n} files · +{a} −{r}". The
-  added count is `success`, the removed count is `danger`.
+- The head: "{title}: {n} files" (15 px, weight 600), where {title} is the save title of the
+  table above ("BA in Sign-in screens: 3 files", "Owner edit: 1 file", L2b), and, at the right,
+  the links **Show all** and **Hide all** (12 px, `on-surface-muted`). Under it the facts, with
+  the avatar of the save row: "Saved {time} · {source} · {commit} · {n} files · +{a} −{r}". The
+  added count is `success`, the removed count is `danger`. {source} follows the save kind:
+
+  | Save | {source} |
+  | --- | --- |
+  | A run | "run of {bot} in {conversation}" (the conversation is a link) |
+  | Owner edit | "you changed it on your disk" |
+  | Owner upload | "you uploaded it in {conversation}" |
+  | Owner restore | "you restored the version from {conversation}" |
+  | A copy | "copied from {source place}" |
+  | The first commit | "the app made the Library" |
 - Then one block per file. The block head is 38 px, `surface-container`, 1 px
   `outline-strong` border, radius 8 px: a fold arrow, the status word ("changed" in
   `on-surface-soft`, "new" in `success`, "deleted" in `danger`, "moved" in `on-surface-soft`),
@@ -196,4 +225,5 @@ Home Library. The facts and the History tab name the Home conversations.
   file panel (D44: the right pane holds Flow or Memory).
 - New setting `library_diff_open_max_lines` (default 400, 50–5,000): a file block with more
   changed lines starts folded in the History tab.
-- API: `api.md` §5d (Library endpoints).
+- API: `api.md` §5d (Library endpoints, the save state, `POST /libraries/{place}/seen`) and the
+  Move body `files: [{path, commit}]` (`api.md` §5).

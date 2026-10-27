@@ -104,7 +104,7 @@ endpoint to create one.
 | GET | `/conversations/{id}` | | settings (with effective values), members, active leaf |
 | PATCH | `/conversations/{id}` | `{row_version, title?, bot_discussion_enabled?, bot_turn_limit?, memory_disabled?, memory_history_versions?}` | `null` = inherit global. A PATCH writes only the fields in its body. Send `title` only when the owner changed it: any `title` sets `title_source: "manual"`, and the app never writes an auto title after that (D46). `memory_disabled` and `memory_history_versions` are M5b (UI-9.6, UI-13.9); `memory_history_versions` only on a multi-bot Home conversation (422 otherwise) |
 | DELETE | `/conversations/{id}` | | M5b. Moves to Trash (D60): stops its runs first; its saved files stay in the Library of its place; its unsaved changes go to Trash with it. Restore and the permanent delete are on the Trash endpoints (§5c) |
-| POST | `/conversations/{id}/move` | `{row_version, project_id, memory_item_ids: [], file_paths?: []}` | M5b (D38, D61, D62). Home conversations only (409 `conversation_in_project`). 409 `run_in_progress` when a run is queued or running (M6 adds: a save is in progress, or unsaved changes, D61); 409 `memory_full` with `{room}` when the project cannot take the ticked items; 409 `place_in_trash` for a project in Trash. One transaction: `project_id`, the memory items (ticked to the project, unticked to Trash), a system line, `conversation.updated` and memory events. `file_paths` is M6 (422 until then) |
+| POST | `/conversations/{id}/move` | `{row_version, project_id, memory_item_ids: [], files?: [{path, commit}]}` | M5b (D38, D61, D62). Home conversations only (409 `conversation_in_project`). 409 `run_in_progress` when a run is queued or running (M6 adds: a save is in progress, or unsaved changes, D61); 409 `memory_full` with `{room}` when the project cannot take the ticked items; 409 `place_in_trash` for a project in Trash. One transaction: `project_id`, the memory items (ticked to the project, unticked to Trash), a system line, `conversation.updated` and memory events. `files` is M6 (422 until then): each `commit` is the version that the dialog pinned (D61); the server checks that it is a save of that path in the Home Library (422 `version_mismatch`) and copies that version, as `/libraries/{place}/copies` does |
 | POST | `/conversations/{id}/read` | `{seq}` | sets `last_read_seq` (never moves backwards); drives unread dots and the "New" divider |
 | GET | `/conversations/{id}/messages?before_seq=&limit=` | | the **active path**, newest page first; each message has `siblings: {index, count, ids}` |
 | POST | `/conversations/{id}/messages` | `{client_id, content_md, mentions: [bot_id], attachment_ids: []}` | 201; routing happens server side. A repeated `client_id` in the same conversation returns 200 with the original message and routes nothing (safe retry) |
@@ -178,20 +178,24 @@ listed or served.
 | Method | Path | Body | Notes |
 | --- | --- | --- | --- |
 | GET | `/libraries/{place}/files?path=` | | tree listing of main: `path, kind, size, new` (D61 New tag), and the last save `{commit, at, by_bot_id?, by_owner, conversation_id?}` |
-| GET | `/libraries/{place}/files/content?path=&commit=` | | file bytes with safe headers (`security.md`); `commit` = a pinned version, else main. Marks a New file as seen (D61) |
+| GET | `/libraries/{place}/files/content?path=&commit=` | | file bytes with safe headers (`security.md`); `commit` = a pinned version (also of a path that was deleted or moved later), else main. Read-only: it does not clear the New tag |
+| POST | `/libraries/{place}/seen` | `{path}` | the viewer sends it when the owner opens a file (not on a prefetch or refresh): clears the D61 New tag and emits `library.seen`, so other tabs drop the tag. Same pattern as `POST /memory/seen` |
 | GET | `/libraries/{place}/saves?path=&cursor=` | | History rows, newest first: `commit, kind (run \| owner_edit \| owner_upload \| owner_restore \| copy \| first), title, bot_id?, conversation_id?, file_count, overlap, at` |
 | GET | `/libraries/{place}/saves/{commit}` | | the changed files: `path, status (changed \| new \| deleted \| moved), from_path?, added, removed, note (overlap_merged \| overlap_won \| not_in_plan \| approved_at_save)?, binary, diff?` |
-| GET | `/libraries/{place}/unsaved` | | runs with unsaved changes (`run_branches` state `unsaved`): run, bot, conversation, state, files, `discard_on` |
+| GET | `/libraries/{place}/unsaved` | | runs with unsaved changes or a save that waits for a decision: one **save state** (below) per run, newest first |
+| GET | `/runs/{id}/save` | | the save state of one run. The unsaved changes card, the save card (`library-cards.md` §3, §4) and the Unsaved changes tab draw from it, also after a refresh |
 | POST | `/runs/{id}/unsaved/save` | | the normal save (merge, overlap rule, save queue); 409 `nothing_unsaved`. A delete or move outside the plan returns 409 `save_not_waiting` until `/runs/{id}/save-decision` |
 | POST | `/runs/{id}/unsaved/discard` | | discards the run's changes. The page sends it when the Undo toast closes (D62 pattern) |
-| POST | `/runs/{id}/save-decision` | `{ops: [{op_id, action: "approve" \| "reject"}]}` | the save card of `library-cards.md` §4; every waiting op needs an action (422 `validation_error`); then the save runs |
+| POST | `/runs/{id}/save-decision` | `{ops: [{op_id, action: "approve" \| "reject"}]}` | the save card of `library-cards.md` §4; `op_id` values come from the save state; every waiting op needs an action (422 `validation_error`); then the save runs |
 | POST | `/libraries/{place}/restore` | `{path, commit}` | Restore other version (D52): a new save "Owner restore" through the save queue |
 | POST | `/libraries/{place}/copies` | `{source_place, items: [{path, commit}]}` | the owner's Copy to and Add from Home Library (D61): one save "Copied from {source}", the `-from-<place-slug>` suffix when a name is taken; no limit |
 | POST | `/copy-proposals/{id}/decision` | `{action: "approve" \| "reject"}` | a bot's `propose_copy` card (D61); 409 `copy_not_pending` (waits for the save, or decided) |
 | POST | `/libraries/{place}/open-folder` | | opens the Library folder in the system file manager on the owner's computer; the server builds the path from the place, never from the request; not available on a VPS (M9) |
 
-Events: `library.saved`, `library.unsaved`, `library.restored`, `library.discarded` (D52) and
-`library.copied` (D61) refresh an open Library page. They go into `realtime-events.md` with the
+**Save state** (one shape, read by every card and the tab): `{run_id, bot_id, conversation_id, state, run_state, at, discard_on?, files: [{path, status, from_path?}], ops: [{op_id, kind: "delete" \| "move", path, to_path?, reason, action?}]}`. `state` is `waiting_decision` (an op outside the plan has no action yet), `unsaved`, `saved` or `discarded`; `run_state` is `done`, `failed` or `stopped`. `ops` lists only the deletes and moves outside the approved plan (D52, D54); `reason` is the bot's reason; `action` is set after the decision. The M6 schema stores these ops with `run_branches`; this response is their only read.
+
+Events: `library.saved`, `library.unsaved`, `library.restored`, `library.discarded` (D52),
+`library.copied` and `library.seen` (D61) refresh an open Library page. They go into `realtime-events.md` with the
 rest of the M6 brief work (D52 consequences).
 
 ## 6. Handoffs
