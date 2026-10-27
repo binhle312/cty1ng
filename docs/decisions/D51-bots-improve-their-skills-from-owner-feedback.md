@@ -6,7 +6,8 @@ is a setting. Amended the same day by the owner: a change note is neutral, not b
 iterative work such as design review needs many rounds. Amended on 2026-10-24 by the owner,
 from the pstack review and sketches: a blind probe, per-run choices (signals and number of
 tasks), an "Improve" item in the bot's ⋯ menu, and the draft card in the bot's 1:1
-conversation. It uses D6 (pinned versions), D41 (skill drafts), D48 (plan card) and D39 (guard).
+conversation. Amended on 2026-10-27 by the owner, from the review thread "Explain our eval and
+guardrail features": fixed test cases for each skill. It uses D6 (pinned versions), D41 (skill drafts), D48 (plan card) and D39 (guard).
 The idea comes from google-research/harness2 (propose, probe, compose), adapted to one owner
 and few tasks.
 
@@ -85,6 +86,35 @@ Decision:
   version. Limit: the blind step hides labels and order, not content. If the new version adds
   a visible rule (for example a failure case in each story), the owner can still guess it, so
   the score is evidence, not proof.
+- **Test cases (owner, 2026-10-27).** The probe replays only the tasks behind the new signals.
+  So a task that a skill did well before can break with a new version, and the owner does not
+  see it. To stop this, each skill keeps a small set of fixed tasks:
+  - **Save.** Each probe task has **Save as test case**, before and after the reveal. A test
+    case belongs to the skill, not to one version. It stores a copy of the task (the owner's
+    message that started the task, as text), the place of the task (its project, or Home), the
+    run it came from, and an optional note from the owner: "A good answer has …" (Markdown,
+    at most 2,000 characters, passes the guard, D39).
+  - **Why a copy.** The source conversation can go to Trash and be purged (D60). The test case
+    keeps its own text, so it stays usable.
+  - **Limit.** At most `skill_test_cases_max` test cases for each skill (default 5). At the
+    limit, the button is disabled with the tooltip "5 of 5 test cases saved. Remove one on the
+    skill page".
+  - **The probe uses them first.** The task count step lists the saved test cases first, all
+    ticked, then the tasks of the signals. The owner can untick any task. The total stays at
+    most `improve_probe_tasks_max`. Each test case runs once with the current version and once
+    with the draft, blind, as above. The "A good answer has …" note shows to the owner after
+    the pick, not before, so it does not change the pick.
+  - **The owner still judges.** No model judges a test case. Picks on test cases are evidence
+    on the draft card, as other probe picks are. They are not signals.
+  - **The Library can change.** A replay reads the current Library of its place, with
+    read-only tools. Files can be different from the day the test case was saved. The card
+    shows the saved date of each test case. This is an accepted limit.
+  - **Place gone.** When the project of a test case is in Trash, the probe skips the test case
+    and shows "Project in Trash". When the project is purged, its test cases are deleted.
+  - **Remove.** The skill page lists the test cases with Remove. Remove is a permanent delete
+    with the Undo toast (D62). When the skill goes to Trash or is purged (D49), its test cases
+    go with it.
+  - The M5d UI design round designs the button, the list and the task count step.
 - **Compose.** The owner approves the draft as in D41. The owner is the author (D14), and the
   bot uses the new version. To roll back, the owner picks the old version on the bot page
   (D6). The signals that the draft used are marked as used, so they do not count again.
@@ -130,7 +160,8 @@ Consequences:
 - Slice **M5d** (after M5c): the Improve run, the signal count, the "Improve <bot>" button and
   the "Improve" menu item, the signal dialog, the draft card in the 1:1 conversation with its
   "Draft vN waiting" link, the evidence list on the draft card, and the blind probe with its
-  task count step. M5d needs a brief and a UI design round.
+  task count step, and the test cases (amendment 2026-10-27). M5d needs a brief and a UI
+  design round.
 - Signals must exist before M5d, or Improve has nothing to read. So:
   - M3 adds the reply rating (`reply_feedback`, UI-3.27 and UI-3.28, `PUT` and `DELETE`
     `/messages/{id}/feedback`, event `message.feedback`).
@@ -138,10 +169,11 @@ Consequences:
     outcome (approved, changes requested, rejected, superseded by a normal message) and the
     owner's note.
   - `skill_drafts` already stores `rejected` (D41).
-- New TypeID prefix: `fb` (`reply_feedback`). M5d adds the tables for Improve runs and probes.
+- New TypeID prefix: `fb` (`reply_feedback`). M5d adds the tables for Improve runs and probes,
+  and `skill_test_cases` (TypeID prefix `stest`, `../domain-model.md` §15).
 - New settings, with their defaults: `improve_min_signals = 3`,
   `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3`,
-  `improve_probe_tasks_max = 10` (`../domain-model.md` §10). M5d adds them to the Settings page.
+  `improve_probe_tasks_max = 10`, `skill_test_cases_max = 5` (`../domain-model.md` §10). M5d adds them to the Settings page.
 - Costs: one Improve run per Draft vN, and two runs per probe task (6 with the default; the owner
   sets the count for each probe). Both count against the caps.
 

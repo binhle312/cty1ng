@@ -580,7 +580,7 @@ settings
   value  JSON NOT NULL
 ```
 
-Defaults: `bot_discussion_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"created"`), `bot_order_direction = "desc"` (`"desc"` | `"asc"`), `trash_days = 30` (every item in Trash, D49, D62), `undo_seconds = 10` (D62: the Undo toast of a permanent delete), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3`, `improve_probe_tasks_max = 10` (D51: the probe starts at the first and allows at most the second; read by M5d, never hard-coded), `plan_mark_reminders = 1` (D57: reminders before an action run ends when a step or Done-when item has no mark; 0 = off), `share_max_per_conversation_24h = 5` (D58), `copy_proposals_max_per_conversation_24h = 5` (D61), `cross_search_max_hits = 10` (D58), `display_name = "Sir"` (UI-8.7: trimmed, 1 to `display_name_max` characters), `display_name_max = 32`, `memory_enabled = true` (UI-8.6), `memory_item_max_chars = 300`, `memory_items_max = 50` (D38 amendment 2026-10-26: about 7,500 tokens at most for the bot and project memory of one request). The Settings page shows most keys; `design/components/settings-page.md` §8 lists the ones that it does not show.
+Defaults: `bot_discussion_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"created"`), `bot_order_direction = "desc"` (`"desc"` | `"asc"`), `trash_days = 30` (every item in Trash, D49, D62), `undo_seconds = 10` (D62: the Undo toast of a permanent delete), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3`, `improve_probe_tasks_max = 10` (D51: the probe starts at the first and allows at most the second; read by M5d, never hard-coded), `skill_test_cases_max = 5` (D51 amendment 2026-10-27: test cases kept for each skill), `plan_mark_reminders = 1` (D57: reminders before an action run ends when a step or Done-when item has no mark; 0 = off), `share_max_per_conversation_24h = 5` (D58), `copy_proposals_max_per_conversation_24h = 5` (D61), `cross_search_max_hits = 10` (D58), `display_name = "Sir"` (UI-8.7: trimmed, 1 to `display_name_max` characters), `display_name_max = 32`, `memory_enabled = true` (UI-8.6), `memory_item_max_chars = 300`, `memory_items_max = 50` (D38 amendment 2026-10-26: about 7,500 tokens at most for the bot and project memory of one request). The Settings page shows most keys; `design/components/settings-page.md` §8 lists the ones that it does not show.
 
 **Ranges** (owner 2026-10-26; whole numbers; this list is the one source for the Settings page and
 the Zod schema of `PATCH /settings`): `trash_days` ≥ 1, no upper limit; `undo_seconds` 5–60; `memory_item_max_chars` 100–1,000; `memory_items_max` 10–200 (a lower value never deletes items: a place over it takes no new item until it is under it); `display_name` 1 to
@@ -590,7 +590,8 @@ the Zod schema of `PATCH /settings`): `trash_days` ≥ 1, no upper limit; `undo_
 500–20,000 (the same ranges apply to `bots.request_limit` and `bots.max_reply_chars`);
 `improve_min_signals` 1–50; `improve_min_conversations` 1 to `improve_min_signals`;
 `improve_min_bad_signals` 1 to `improve_min_signals` (D51 needs negative evidence for an offer);
-`improve_probe_tasks_max` 1–50; `improve_probe_tasks` 1 to `improve_probe_tasks_max`.
+`improve_probe_tasks_max` 1–50; `improve_probe_tasks` 1 to `improve_probe_tasks_max`;
+`skill_test_cases_max` 1–20 (a lower value never deletes test cases: a skill over it takes no new one until it is under it).
 **Cross-field checks:** a save that breaks a rule between two keys (for example Feedback signals
 lowered below Conversations) is refused: the row shows its error, **Save changes** stays off, and
 the server returns 422 with the key. The app never changes the other value on its own.
@@ -864,6 +865,26 @@ reply_feedback                                    -- TypeID prefix `fb`; built i
   `created_by_run_id` gives the run.
 - M5d adds the tables for Improve runs, probes, and "signal used by draft X", so a signal
   counts only once.
+- **Test cases (D51 amendment 2026-10-27).** Fixed tasks of a skill that every probe replays
+  first. Schema design for M5d (built in M5d, with its generated SQL in the M5d PR):
+
+```
+skill_test_cases                                  -- TypeID prefix `stest`; built in M5d
+  id                 TEXT PK
+  skill_id           TEXT NOT NULL REFERENCES skills(id)
+  task_md            TEXT NOT NULL                -- copy of the owner's task message; passed the guard (D39)
+  project_id         TEXT NULL REFERENCES projects(id)  -- NULL = Home
+  source_run_id      TEXT NOT NULL REFERENCES runs(id)  -- the probe task's original run
+  good_answer_md     TEXT NULL                    -- "A good answer has …"; ≤ 2,000 chars; passed the guard
+  created_at
+```
+
+  - At most `skill_test_cases_max` rows for each skill; the insert checks the count in the same
+    transaction.
+  - A test case is never updated. To change it, the owner removes it and saves the task again.
+  - Remove deletes the row (permanent, with Undo, D62). The skill's purge (D49) and the
+    project's purge delete its rows. A conversation purge (§16) keeps them: the test case is a
+    copy that the owner saved on purpose.
 
 ## 16. Conversation purge policy (D60)
 
@@ -924,7 +945,9 @@ Other scope (no foreign key that the rule below names): `bots`, `skills`, `bot_s
 
 Tables that later slices add get their entry in the same PR: search entries (the D58 slice after M5b, delete row),
 plan outcomes (D48: owner note → NULL, outcome keep), `run_branches` (M6: delete row and its
-branch), `library_copies` (M6: each column keep, named one by one; the file stays in the Library).
+branch), `library_copies` (M6: each column keep, named one by one; the file stays in the Library),
+`skill_test_cases` (M5d, D51 amendment 2026-10-27: each column keep, named one by one; the owner
+saved the task copy on purpose, and Remove deletes it).
 
 **Which tables are covered.** A table with a foreign key to `conversations`, `messages` or `runs`,
 or to a table whose entry clears or deletes something, **must** be covered. Only a table with no
