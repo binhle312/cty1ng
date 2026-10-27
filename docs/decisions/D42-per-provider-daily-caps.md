@@ -30,7 +30,8 @@ Amendment (owner, 2026-10-27): **no price, no run under a cap.**
   `cap`, as for a reached cap. A refused memory upkeep request returns 429 `price_unknown`.
 - With no cap that applies, a model with no known price works as before: tokens are recorded and
   the cost shows "cost unknown".
-- Settings flags the model (UI-8.2) and says that its runs are refused while a cap is on.
+- Settings flags the model (UI-8.2) and says that its requests are refused when the daily cap or
+  this model's provider cap is on. A cap of another provider does not apply to it.
 - Example: total cap $10. A new provider model is not in `genai-prices` yet and has no override.
   BA uses it. BA's next run fails with the notice. The owner adds
   `price_override_per_mtok` in `config/models.yaml`, and BA runs again.

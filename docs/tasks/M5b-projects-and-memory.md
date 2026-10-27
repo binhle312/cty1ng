@@ -78,6 +78,10 @@ can move into a project and take its conversation memory with it.
   and not one second before, and a second run purges nothing.
 - Caps: a title request and a Tidy request in flight at the same time near the cap; the second
   reservation sees the first, and neither passes the cap (D63, `conversation-rules.md` §8 rule 6).
+- Unknown price (D42 amendment 2026-10-27): a Tidy and a memory check request on a fake model
+  with no price return 429 `price_unknown` while the total cap is on, and also while only that
+  model's provider cap is on; a cap of another provider does not refuse it; with no cap that
+  applies, the request is allowed and its cost shows "cost unknown".
 - Tidy texts: a fake model proposes a rewrite with a secret and one over
   `memory_item_max_chars`; both rows are off with their reason, and Apply saves neither.
 - Decide: a check finds a conflict with line 4, the owner saves new instructions, then Decide on

@@ -93,18 +93,24 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
   2.3 (sandbox), by the turn budget and caps, and by the owner approving handoffs. Never
   give bots a capability whose misuse would be worse than "bad text in the workspace" without
   revisiting this document.
-- **Never all three in one run (owner, 2026-10-27).** A run must never have all three of:
-  (1) private data (Library files, memory, conversation history), (2) untrusted text (web
-  results, attachments, files that came from outside), and (3) a channel that sends data out of
-  the app without an owner approval (a model-written URL, an MCP call, an outbound request).
-  Injected text can then read private data and send it out. Today: bots have (1) and (2), but
-  no (3): D53 rule 1 allows only search-result or owner URLs, and the MCP switch stays locked
-  (D55).
-  **Gate:** every PR that adds a tool, or changes a tool's flags in `config/tools.yaml`, answers
-  in its description "Can this tool send data out without an approval?". If yes, the PR also
-  says which rule takes away (1) or (2) for runs that have it (for example D53: no MCP call
-  after a web result). Without that answer, the PR is not done. A test with the fake model
-  proves the rule.
+- **The three-part rule (owner, 2026-10-27). This is a review gate, not a guarantee.** Injected
+  text does the most damage in a run that has all three of: (1) private data (Library files,
+  memory, conversation history), (2) untrusted text (web results, attachments, files that came
+  from outside), and (3) a way to send data out of the app without an owner approval (a URL that
+  the model writes, a search query, an MCP call, any outbound request).
+  - **Today (3) is not empty.** A web search query is written by the model, so a run that read
+    private data and an injected page can put private text in a query. The query goes to the
+    search provider, not to a server that the attacker picks, and the app cannot check a query
+    inside a provider tool before it is sent. Limits: web access is off by default for each
+    bot, `web_searches_per_run` (default 5), fetch only of search-result or owner URLs (D53
+    rule 1), and the MCP switch stays locked (D55). This is an accepted risk.
+  - **Gate:** every PR that adds a way for run data to leave the app answers in its description
+    "Can this send data out without an approval?" This covers a new tool, a changed flag in
+    `config/tools.yaml`, a provider tool, a new adapter call and a new setting, not only the
+    `sends_data_out` flag. If yes, the PR says what limits it in runs that have (1) and (2), or
+    why the risk is accepted, and the owner approves it. Where the app enforces the limit (for
+    example D53 rule 1), a fake-model test proves the app check. A fake model cannot prove what
+    a real model does, so no test claims that.
 - Bots may draft skills but never save them (D41). A skill reaches every run that loads it, so
   injected text in a skill would persist; only an owner-approved, owner-authored version is
   ever written. Drafts are text only (no files, no tool permissions), pass the sensitive-data
@@ -127,8 +133,9 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
   `MAX_CONCURRENT_RUNS`, and the daily spending caps (D20, D42). While a cap applies, a model with
   no known price is refused (`price_unknown`, D42 amendment 2026-10-27), so no model passes the cap
   with no limit.
-- The app's caps are estimates. The hard limit is the monthly spend limit that the owner sets in
-  each provider's console (D20).
+- The app's daily caps are estimates, not hard limits. The owner turns on the spend limits that
+  each provider enforces, where the provider has them. A budget that only sends an alert stops no
+  request, and an enforced limit can still let a small amount through (D20).
 - The auto title (D46) makes at most one request per conversation (a database rule), with
   30 output tokens, a 20-second timeout, one attempt, and the same caps as a run. The app checks
   caps in the send transaction and again just before dispatch, where it reserves the worst-case
