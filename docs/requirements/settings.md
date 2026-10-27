@@ -36,7 +36,8 @@ Design: `../design/components/settings-page.md` (round 14).
 - UI-8.2: Model catalog (read-only): label, id, efforts, available or the missing key's
   **name** (never its value), and the price per million tokens with its source
   ("genai-prices", "override" or "unknown", D21). Unknown prices are flagged with how to add an
-  override in `config/models.yaml`.
+  override in `config/models.yaml`, and with the note that requests on the model are refused
+  when the daily cap or the model's provider cap is on (D42 amendment 2026-10-27).
 - UI-8.3: Daily spending cap in USD (empty = off), today's estimated spend with a progress bar
   (D20, D21). Each provider with a key also has an
   optional cap of its own (empty = only the total applies), with its spend and progress bar

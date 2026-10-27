@@ -149,9 +149,10 @@ reminders).
 - The table (§3.3): Label, Model id, Efforts, Key, Price in / out, Source. Key shows ✓ and the
   variable **name** in `success`, or "Not set:" and the name in `danger`. A price that is not
   known shows "Unknown" in `danger`, with Source "unknown".
-- Under the table: "Prices are in USD per million tokens. A run with an unknown price counts
-  towards no cap, so a cap cannot stop it. To add a price, set `price_override_per_mtok` for the
-  model in config/models.yaml."
+- Under the table: "Prices are in USD per million tokens." A row with an unknown price adds:
+  "This model has no known price. When the daily cap or this model's provider cap is on,
+  requests that use it are refused. Add a price (`price_override_per_mtok`) in
+  config/models.yaml to use it under a cap." (D42 amendment 2026-10-27.)
 - No save bar: the page has nothing to save.
 
 ### 4.7 Time (UI-8.4, M7)

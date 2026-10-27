@@ -381,7 +381,8 @@ skill_drafts                                              -- TypeID prefix `skil
   `web: true`.
 - Prices come from `genai-prices`; an override in the catalog wins (D21), so the owner can price a
   model the library does not know, or correct one it prices wrongly, without waiting for a release. A model with no known price still works; its runs show tokens and
-  "cost unknown", and they do not count towards the daily cap (Settings shows a warning).
+  "cost unknown". While a cap applies to it (the total cap, or its provider's cap), a request on
+  it is refused with `price_unknown` (D42 amendment 2026-10-27; Settings shows a warning).
 
 ### 4.1 Tool catalog (D55)
 
@@ -697,7 +698,9 @@ just before dispatch. The second check reserves the worst-case cost in the same 
 so a title request never makes estimated spend pass a cap (`conversation-rules.md` §8 rule 6).
 Many title requests can be in flight. A reached cap skips the call and adds no notice.
 
-Daily cap check (D20, D42) happens when a run is claimed: first the bot's provider cap, if set
+Daily cap check (D20, D42) happens when a run is claimed: first the price (a cap applies and
+the bot's model has no known price → `failed` with `price_unknown`, D42 amendment 2026-10-27),
+then the bot's provider cap, if set
 (today's spend on that provider ≥ its cap → `failed` with `provider_cap_reached`), then the total
 (today's spend ≥ cap → `failed` with `daily_cap_reached`); either way a system notice names the
 cap that was hit. Crossing 75% and 90% of any cap (D40) emits a `spend.threshold_crossed` event
