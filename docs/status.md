@@ -53,8 +53,9 @@ every setting in `domain-model.md` §10. M5b design round 15 is agreed and saved
 page with Tidy, one Trash page for every deleted item with multi-select, and the Move to project
 dialog. D62 (one Trash page, memory items included) and D63 (Tidy and the memory check are model
 requests) are accepted, and the memory limits are settings (D38 amendment). D58 moves to the
-next slice after M5b. The M5b brief is written. M5c design round 16 (skill draft card) is agreed: `design/components/skill-draft-card.md` and the Skills page in the bot page layout
-(`skills-page.md`, Skill, Bots and History tabs); D64 is accepted, and the owner approved the
+next slice after M5b. The M5b brief is written. M5c design round 16 (skill draft card) is
+agreed: `design/components/skill-draft-card.md` and the Skills page in the bot page layout
+(`skills-page.md`, Skill, Bots and History tabs). D64 is accepted, and the owner approved the
 API changes and the Skills page layout change in PR #38 (2026-10-27).
 
 ## Next
