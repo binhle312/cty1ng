@@ -50,6 +50,7 @@ One shape for every error:
 | GET | `/skills/{id}/diff?from=2&to=5` | | unified diff of bodies and descriptions |
 | POST | `/skills/{id}/versions/{version}/restore` | `{changelog?}` | creates N+1 with that content |
 | GET | `/skills/{id}/upgrade-candidates` | | author's bots pinned to older versions (for the save dialog) |
+| POST | `/skills/{id}/bots` | `{skill_version_id, bots: [{bot_id, always_load?}]}` | the float card after a skill draft is approved (D64): assigns or upgrades the listed bots to that version in one transaction; `always_load` left out keeps the bot's value (off for a new assign); a bot in Trash returns 409 `place_in_trash` |
 | POST | `/skills/{id}/deprecate` | `{remove_bot_ids: []}` | author only; removes the listed pins in the same transaction |
 | POST | `/skills/{id}/undeprecate` | | author only |
 | POST | `/skills/{id}/trash` | `{row_version}` | author only; deprecated skills only (409 `not_deprecated`); removes every pin, returns the bots it removed (D49) |
@@ -69,7 +70,7 @@ endpoint to create one.
 | Method | Path | Body | Notes |
 | --- | --- | --- | --- |
 | GET | `/skill-drafts/{id}` | | draft with `diff` against `base_version` for an edit |
-| POST | `/skill-drafts/{id}/decision` | `{action: "approve" \| "reject", row_version, slug?, name?, description?, body_md?, changelog?, pin: bool, always_load: bool}` | text fields only when the owner edited; edited text is checked by the guard again (422 `sensitive_data`, no override); 409 `draft_not_pending`, `draft_stale`, `slug_taken` |
+| POST | `/skill-drafts/{id}/decision` | `{action: "approve" \| "reject", row_version, slug?, name?, description?, body_md?, changelog?}` | pins nothing (D64); text fields only when the owner edited; edited text is checked by the guard again (422 `sensitive_data`, no override); a taken slug from the bot gets the next free suffix; 409 `draft_not_pending`, `draft_stale`, and `slug_taken` only for a slug the owner typed; returns the skill version and the bot list for the float card |
 
 ## 3. Models
 

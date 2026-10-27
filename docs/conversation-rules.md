@@ -178,7 +178,7 @@ tool result, and the bot continues.
 - **Failure** is a tool result `{error: <code>, message: <one line>}`. The wrapper also writes the
   `run_steps` row with `status = error` and the same code in `detail`. Examples: `not_found`
   (no such file), `outside_write_scope`, `invalid_arguments` (the arguments fail the tool's Zod
-  schema), `unknown_tool`, `limit_reached` (handoff limit, §5), `draft_not_in_plan` (§7) and
+  schema), `unknown_tool`, `limit_reached` (handoff limit, §5), `draft_not_in_plan`, `skill_changed` and `skill_not_read` (§7) and
   `memory_not_in_plan` (a memory change that the approved plan does not list, D56). An
   unexpected exception gives
   `internal`. The full error goes to the server log only, never to the model or the UI
@@ -338,8 +338,10 @@ m1 (human) ── m2 (BA) ── m3 (human) ── m4 (BA)
 
 ## 7. Skills drafted by bots (D41)
 
-When the owner asks, a bot turns a piece of work into a skill, for itself or for another bot
-in the conversation. The owner approves every draft and is its author.
+When the owner asks, a bot turns a piece of work into a skill, or drafts a new version of a
+skill. The draft names no target bot (D65); after Approve, only the owner gives the skill to
+bots. The owner approves every draft and
+is its author.
 
 A skill draft is a change, so it has two approvals: first the plan card (D48), then the draft
 card. The planning run is read-only and cannot call `propose_skill`; the action run that the
@@ -350,23 +352,32 @@ Example:
 1. The owner, after BA wrote good stories: "@BA make the way you just wrote these a skill for
    yourself."
 2. BA replies with a plan card. Its **Skill drafts** section says "`write-login-stories` · New
-   skill · For BA · Needs your final review". The owner approves.
-3. In the action run, BA calls `propose_skill(target="ba", name="Write login stories",
+   skill · Needs your final review". The owner approves.
+3. In the action run, BA calls `propose_skill(name="Write login stories",
    slug="write-login-stories", description="…", body_md="…")`.
-4. A card appears: "BA drafted a skill for BA: Write login stories", with the text, "Pin to BA"
-   ticked, always-load off, and [Edit] [Approve] [Reject].
-5. Approve creates `write-login-stories` v1 (author: the owner) and pins it to BA. BA's next
-   reply shows it in its provenance chips.
+4. A card appears: "Skill draft · New skill", with the text and [Reject] [Edit]
+   [Approve]. The card shows the skill only (D64).
+5. Approve creates `write-login-stories` v1 (author: the owner). A float card asks "Add
+   write-login-stories to bots?" with BA ticked. The owner also ticks Designer and presses
+   Assign. The next replies of BA and Designer show the skill in their provenance chips.
 
 Rules:
 
-- `propose_skill(target, name, description, body_md, slug?, skill?, changelog?)`. `target` is
-  a bot name or slug of an **active member**, the caller included. For an edit, `skill` is the
-  slug of an existing, non-deprecated skill, and the draft is based on its latest version; for
-  a new skill, `slug` is proposed (`^[a-z0-9-]{1,64}$`) and must not be taken yet.
+- `propose_skill(name, description, body_md, slug?, skill?, base_version?, changelog?)`. There
+  is no target bot (D65). For an edit, `skill` is the slug of an existing, non-deprecated skill,
+  assigned to the calling bot or not, and `base_version` is the version that `read_skill_base`
+  returned. The server refuses the call with `skill_changed` when `base_version` is not the
+  latest version (the bot reads the skill again), and with `skill_not_read` when the run has no
+  `read_skill_base` step for that skill and version. For a new skill, `slug` is proposed (`^[a-z0-9-]{1,64}$`). If the slug is taken, the app uses the
+  next free one (`-2`, `-3`, …) and the card says so (D64).
+- `read_skill_base(skill)` (D65) returns the latest version of a skill that the approved plan
+  lists as a new version: description, body and version number. It is offered only with
+  `propose_skill`, is read-only, and writes no pin and no `run_skills` row. Another skill
+  returns `draft_not_in_plan`. `load_skill` is unchanged: it reads only the bot's pinned
+  versions.
 - **Only when asked.** The tool is offered only in an action run whose approved plan lists a
   skill draft (the plan card's **Skill drafts** line, `design/components/plan-card.md`). Each
-  call must match a listed draft (same `target`, and the same `slug` or `skill`); the server
+  call must match a listed draft (the same `slug` or `skill`); the server
   checks this, and other calls return the tool error `draft_not_in_plan`. Plan approval allows
   the draft only; the owner still approves the finished draft on its card (D41). The tool is never offered in other action runs, planning runs, bot turns or
   handoff runs. The prompt says to use it only when the owner asks. A bot may offer in one line ("Want me to save this
@@ -380,10 +391,15 @@ Rules:
   with status `pending` per conversation. An approve, reject or stale frees a pending slot.
   Beyond a limit the tool returns an error asking the bot to tell the owner, and creates no
   draft. A blocked call does not count.
-- **Card actions (owner only):** Edit (the draft opens in the skill editor, UI-7.3), Approve
-  (with "Pin to <bot>" and always-load), Reject. A decision applies only while `pending`.
-- **After Approve:** for an edit, the "Also upgrade these bots" dialog (D6) follows, listing
-  other bots on older versions, unchecked. A run already going keeps the pins it started with.
+- **Card actions (owner only):** Reject, Edit (the draft opens on the Skills page, Skill tab,
+  UI-7.12), Approve. The card has no pin or Always load choice (D64). A decision applies only
+  while `pending`.
+- **After Approve:** a float card asks about the bots (D64, D65). It lists every bot that is not
+  in Trash, and the owner may tick any of them. New skill: "Add <slug> to bots?", the drafting
+  bot ticked. New version: "Also upgrade these bots to v<N>?" (D6), every bot on an older
+  version ticked; each bot keeps its Always load. Skip leaves the skill unused. A run already going keeps the pins it started with.
+- **Out of date:** a new version or a deprecate of the skill marks its pending edit drafts
+  `stale` at once, and the card offers "Ask <bot> to redraft" (D41 rule 6, D64).
 - **Memory or skill?** Facts and preferences go to memory (D38); procedures go to a skill.
   The rules block says so, so "always write stories as Given / When / Then" becomes a memory
   and "how to write a login story" becomes a skill.
