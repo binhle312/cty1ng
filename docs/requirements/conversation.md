@@ -125,8 +125,10 @@ Header and side panel
   slice M5; a click opens the discussion settings, UI-9.3). When every available bot is already a
   member, the picker says so and has **+ Create**, which opens the create bot page. The Stop button sits
   inside the composer at the left while any run is queued or running.
-- UI-3.16: Files side panel (collapsible) lists workspace files as a tree; clicking opens a
-  read-only viewer for text (with Markdown preview), images and PDF.
+- UI-3.16: The Library page (`../design/components/library-page.md`, round 17) replaces the
+  Files side panel: a file link in a conversation opens the page with that file. The page lists
+  the Library as a tree; a click opens a read-only viewer for text (with Markdown preview),
+  images and PDF.
 - UI-3.17: Reload or network drop restores the exact state with no duplicate or missing
   messages (event replay).
 

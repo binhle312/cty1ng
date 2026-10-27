@@ -53,9 +53,11 @@ against, not code to copy.
 | [conversation-cards.md](conversation-cards.md) | System lines, join card, cards inside a reply and how they fold, handoff card (not a member, stale), memory lines and the Remember offer | `../previews/command-dark/conversation-cards.*`, `handoff-buttons.*`, `handoff-choices.*` |
 | [flow-timeline.md](flow-timeline.md) | Flow pane with the Timeline map: pane header, lifelines, rows, run chips, open run box, queued pill, handoff arrows, Load earlier, Animations switch | `../previews/command-dark/flow-timeline.*`, `flow-timeline-overflow.*` |
 | [memory-page.md](memory-page.md) | Memory page: places list, place head, item row, edit, add, earlier versions, delete to Trash, search, conflicts and Decide, limits, memory off, bot page Memory tab, Tidy memory and its card | `../previews/command-dark/memory-page.*`, `memory-page-states.*`, `memory-tidy.*` |
+| [library-page.md](library-page.md) | Library page (M6, round 17): page top, Files, History (files changed, like a GitHub PR) and Unsaved changes tabs, attachments, New tag, Copy to, Add from Home Library, Open folder, Home Library | `../previews/command-dark/library-page.*` |
+| [library-cards.md](library-cards.md) | Library parts in a conversation (M6): overlap notice, plan card mark, unsaved changes card, save card for changes outside the plan, copy card and its states | `../previews/command-dark/library-cards.*` |
 | [trash-page.md](trash-page.md) | Trash page: kind list, rows with Restore and Delete, restore blocked by its place, skill and bot restore dialogs, Undo of a permanent delete, several items at once, empty Trash | `../previews/command-dark/trash-page.*` |
 
 Files marked **Standard** are shared rules that many pages use; a page spec links to them and
 does not repeat them.
 
-Still in review (not here yet): the Library page content, the Board map (M8b), Command light values.
+Still in review (not here yet): the Board map (M8b), Command light values.

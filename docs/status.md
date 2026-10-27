@@ -8,7 +8,7 @@ status.
 definition of done in `AGENTS.md` §9). The owner updates it for owner-only steps (reviews,
 approvals). Keep it short: link to PRs and briefs instead of describing work.
 
-Last updated: 2026-10-26
+Last updated: 2026-10-27
 
 ## Now
 
@@ -28,8 +28,7 @@ with the memory check card and Delete project, plan card, Skills page (round 8) 
 and check box standard (`buttons.md`). D43–D45 accepted
 (memory precedence, right pane holds Flow or Memory, project goal and instructions). D47 (delete
 sends the whole project to Trash; memory check choices) and D48 (bots plan first) accepted. Still
-in review: Trash page (with the Remember button and the "changed in another tab" cards), Library
-page content. Flow pane: M8 ships only the Timeline (D26 amendment 2026-10-25, Timeline in
+in review: Trash page (with the Remember button and the "changed in another tab" cards). Flow pane: M8 ships only the Timeline (D26 amendment 2026-10-25, Timeline in
 `design/components/flow-timeline.md`); the Team map is parked until bots work together without
 the owner. D46 accepted: a one-time auto title from the first message (M3).
 The M3 schema design (D46) waits for the owner's approval. Project Board is a later slice (M8c).
@@ -57,7 +56,10 @@ next slice after M5b. The M5b brief is written. M5c design round 16 (skill draft
 agreed: `design/components/skill-draft-card.md` and the Skills page in the bot page layout
 (`skills-page.md`, Skill, Bots and History tabs). D64 and D65 are accepted (bots draft skills
 only when the owner asks; only the owner assigns them), and the owner approved the API changes and
-the Skills page layout change in PR #38 (2026-10-27). M5c now depends on M3, not M4.
+the Skills page layout change in PR #38 (2026-10-27). M5c now depends on M3, not M4. M6 design round 17 (Library) is agreed:
+`design/components/library-page.md` (Files, History and Unsaved changes tabs, Copy to, Add from
+Home Library) and `library-cards.md` (overlap notice, unsaved changes card, save card, plan card
+mark, copy card). Next: the pre-coding diagram gate, then M0.
 
 ## Next
 

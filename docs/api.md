@@ -31,7 +31,7 @@ One shape for every error:
 | 403 | `not_author`, `origin_rejected` |
 | 404 | `not_found` |
 | 410 | `bot_purged` (the bot was purged from Trash; only its tombstone remains, D50) |
-| 409 | `name_taken`, `slug_taken`, `stale_write` (the row changed since it was read; reload), `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending`, `run_not_queued`, `draft_not_pending`, `draft_stale`, `bot_list_changed`, `idempotency_key_reused` (same `Idempotency-Key` with a different body), `place_in_trash` (restore while the item's project, conversation or bot is in Trash; D60, D62), `memory_full` (`memory_items_max` live items in the place), `conversation_in_project` (move of a project conversation, D61), `proposal_not_ready`, `instructions_changed` (a memory check decision after a newer instruction save, D63) |
+| 409 | `name_taken`, `slug_taken`, `stale_write` (the row changed since it was read; reload), `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending`, `run_not_queued`, `draft_not_pending`, `draft_stale`, `bot_list_changed`, `idempotency_key_reused` (same `Idempotency-Key` with a different body), `place_in_trash` (restore while the item's project, conversation or bot is in Trash; D60, D62), `memory_full` (`memory_items_max` live items in the place), `conversation_in_project` (move of a project conversation, D61), `proposal_not_ready`, `copy_not_pending`, `save_not_waiting`, `nothing_unsaved`, `instructions_changed` (a memory check decision after a newer instruction save, D63) |
 | 413 | `too_large` |
 | 422 | `validation_error`, `invalid_id`, `mention_not_member`, `bot_unavailable`, `bot_deleted`, `skill_deprecated`, `version_mismatch`, `effort_not_supported`, `model_not_available`, `sensitive_data`, `tool_job_conflict`, `tool_not_available` (the model has no such tool) |
 | 429 | `rate_limited` (runs per hour), `daily_cap_reached`, `provider_cap_reached` (D42), `price_unknown` (a cap applies and the model has no known price, D42 amendment 2026-10-27) |
@@ -118,8 +118,6 @@ endpoint to create one.
 | DELETE | `/messages/{id}/feedback` | | removes the rating (D51) |
 | POST | `/conversations/{id}/stop` | | cancels queued and running runs |
 | POST | `/runs/{id}/cancel` | | cancels one **queued** run (status `stopped`, no message); 409 `run_not_queued` once it has started (use Stop) |
-| GET | `/conversations/{id}/files?path=` | | workspace listing (read-only) |
-| GET | `/conversations/{id}/files/content?path=` | | file bytes with safe headers (security.md) |
 
 ## 5a. Projects (M5b; D37, D43, D45, D47)
 
@@ -169,6 +167,32 @@ An item is `{kind: "project" | "conversation" | "bot" | "skill" | "memory_item",
 | POST | `/trash/delete` | `{items: []}` | permanent delete (the purge of each item) now; one transaction per item; one result per item. The page sends it when the Undo toast closes (D62) |
 
 `POST /skills/{id}/restore` and `DELETE /skills/{id}` (§2) call the same services for one skill.
+
+## 5d. Library (M6; D52, D61; `design/components/library-page.md`, `library-cards.md`)
+
+`{place}` is a project id or `home`. A Library belongs to its place, so every path below checks
+that the place exists and is not in Trash (409 `place_in_trash`). Paths are relative to the
+Library root and go through the workspace port `resolve()` (security rule 7); `.git` is never
+listed or served.
+
+| Method | Path | Body | Notes |
+| --- | --- | --- | --- |
+| GET | `/libraries/{place}/files?path=` | | tree listing of main: `path, kind, size, new` (D61 New tag), and the last save `{commit, at, by_bot_id?, by_owner, conversation_id?}` |
+| GET | `/libraries/{place}/files/content?path=&commit=` | | file bytes with safe headers (`security.md`); `commit` = a pinned version, else main. Marks a New file as seen (D61) |
+| GET | `/libraries/{place}/saves?path=&cursor=` | | History rows, newest first: `commit, kind (run \| owner_edit \| owner_upload \| owner_restore \| copy \| first), title, bot_id?, conversation_id?, file_count, overlap, at` |
+| GET | `/libraries/{place}/saves/{commit}` | | the changed files: `path, status (changed \| new \| deleted \| moved), from_path?, added, removed, note (overlap_merged \| overlap_won \| not_in_plan \| approved_at_save)?, binary, diff?` |
+| GET | `/libraries/{place}/unsaved` | | runs with unsaved changes (`run_branches` state `unsaved`): run, bot, conversation, state, files, `discard_on` |
+| POST | `/runs/{id}/unsaved/save` | | the normal save (merge, overlap rule, save queue); 409 `nothing_unsaved`. A delete or move outside the plan returns 409 `save_not_waiting` until `/runs/{id}/save-decision` |
+| POST | `/runs/{id}/unsaved/discard` | | discards the run's changes. The page sends it when the Undo toast closes (D62 pattern) |
+| POST | `/runs/{id}/save-decision` | `{ops: [{op_id, action: "approve" \| "reject"}]}` | the save card of `library-cards.md` §4; every waiting op needs an action (422 `validation_error`); then the save runs |
+| POST | `/libraries/{place}/restore` | `{path, commit}` | Restore other version (D52): a new save "Owner restore" through the save queue |
+| POST | `/libraries/{place}/copies` | `{source_place, items: [{path, commit}]}` | the owner's Copy to and Add from Home Library (D61): one save "Copied from {source}", the `-from-<place-slug>` suffix when a name is taken; no limit |
+| POST | `/copy-proposals/{id}/decision` | `{action: "approve" \| "reject"}` | a bot's `propose_copy` card (D61); 409 `copy_not_pending` (waits for the save, or decided) |
+| POST | `/libraries/{place}/open-folder` | | opens the Library folder in the system file manager on the owner's computer; the server builds the path from the place, never from the request; not available on a VPS (M9) |
+
+Events: `library.saved`, `library.unsaved`, `library.restored`, `library.discarded` (D52) and
+`library.copied` (D61) refresh an open Library page. They go into `realtime-events.md` with the
+rest of the M6 brief work (D52 consequences).
 
 ## 6. Handoffs
 

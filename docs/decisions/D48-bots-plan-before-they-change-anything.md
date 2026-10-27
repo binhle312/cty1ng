@@ -25,7 +25,7 @@ Decision:
 - **Other approvals stay.** A handoff card (`../conversation-rules.md` §5) and a skill draft card
   (D41) still need their own approval, because they show the finished work.
 Example: The owner writes "Write the price table for the three tiers." BA replies with a plan:
-three steps, the file `out/ba/tiers.md` (new), no memory changes, and the question "Project memory
+three steps, the file `pricing/tiers.md` (new), no memory changes, and the question "Project memory
 says 'Show prices without currency codes.' Instructions, line 3, say 'Prices are in USD and EUR.'
 Which one do I follow?" The owner keeps "Follow instructions" and presses Approve. BA writes the
 file.
@@ -45,3 +45,7 @@ action run with the approved plan; Reject starts no run; a conflict gives a ques
 Why: The owner wants to see what a bot will change, and to settle conflicts, before the bot acts.
 A question in a plan costs less than work that the owner must undo.
 Implemented in: `../design/components/plan-card.md`, `../conversation-rules.md`, the slice briefs.
+
+**Amended 2026-10-27 (round 17, path follow-up).** The example used `out/ba/tiers.md`. D52 dropped
+the `out/<slug>/` folders (folders are by topic), so the example now uses `pricing/tiers.md`, as
+the plan card board does. The decision does not change.
