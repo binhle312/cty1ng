@@ -71,8 +71,9 @@ Decision:
   the signals: once with the current version and once with the draft, with read-only
   tools and no file writes. First a small step sets the number of tasks for this probe: it
   starts at `improve_probe_tasks` (default 3), the owner can change it from 1 to the number of
-  tasks behind the signals, at most `improve_probe_tasks_max` (default 10), and the estimated
-  cost updates with it. The app reserves the cost as D46 does, so a probe never passes the cap.
+  eligible tasks (the skill's saved test cases plus the tasks behind the signals, amendment
+  2026-10-27), at most `improve_probe_tasks_max` (default 10), and the estimated cost updates
+  with it. With no eligible task, "Test on past tasks" is off. The app reserves the cost as D46 does, so a probe never passes the cap.
   The replayed messages pass the guard (D39) again. No model judges the answers in this
   version: the owner judges.
 - **The probe is blind (owner, 2026-10-24).** The owner sees one task at a time, with
@@ -94,18 +95,30 @@ Decision:
     message that started the task, as text), the place of the task (its project, or Home), the
     run it came from, and an optional note from the owner: "A good answer has …" (Markdown,
     at most 2,000 characters, passes the guard, D39).
+  - **Only the message is saved.** The Save step says: "Only this message is saved. Earlier
+    messages and attachments are not replayed." A task such as "Update the design from my
+    last notes" needs its earlier messages, so it makes a weak test case. Self-contained tasks
+    make good ones.
   - **Why a copy.** The source conversation can go to Trash and be purged (D60). The test case
     keeps its own text, so it stays usable.
   - **Limit.** At most `skill_test_cases_max` test cases for each skill (default 5). At the
     limit, the button is disabled with the tooltip "5 of 5 test cases saved. Remove one on the
     skill page".
-  - **The probe uses them first.** The task count step lists the saved test cases first, all
-    ticked, then the tasks of the signals. The owner can untick any task. The total stays at
-    most `improve_probe_tasks_max`. Each test case runs once with the current version and once
+  - **The probe uses them first.** The task count step lists every eligible task: the saved
+    test cases first, then the tasks of the signals. The app ticks them in this order until the
+    count reaches `improve_probe_tasks_max`; the rest stay unticked. The owner can tick or
+    untick any task, and can never tick more than `improve_probe_tasks_max`. The app never
+    deletes a test case to make room. Example: 5 saved test cases, 4 signal tasks and
+    `improve_probe_tasks_max` = 6 give the 5 test cases and the first signal task ticked.
+    A skill with saved test cases and no new signal can still run a probe. Each test case runs once with the current version and once
     with the draft, blind, as above. The "A good answer has …" note shows to the owner after
     the pick, not before, so it does not change the pick.
   - **The owner still judges.** No model judges a test case. Picks on test cases are evidence
     on the draft card, as other probe picks are. They are not signals.
+  - **Two scores, not one.** One total can hide a regression: a draft that wins 4 signal tasks
+    and loses 1 saved test case looks good overall. So the reveal and the draft card show one
+    line for each group: "Saved test cases: v4 lost 1 of 5, 4 ties" and "Signal tasks: v4 won
+    4 of 4". A group with no task shows no line.
   - **The Library can change.** A replay reads the current Library of its place, with
     read-only tools. Files can be different from the day the test case was saved. The card
     shows the saved date of each test case. This is an accepted limit.
@@ -114,7 +127,10 @@ Decision:
   - **Remove.** The skill page lists the test cases with Remove. Remove is a permanent delete
     with the Undo toast (D62). When the skill goes to Trash or is purged (D49), its test cases
     go with it.
-  - The M5d UI design round designs the button, the list and the task count step.
+  - **Settings.** The Skill improvement page gets the row "Test cases, most"
+    (`skill_test_cases_max`, `../design/components/settings-page.md` §4.10).
+  - The M5d UI design round designs the button, the list, the task count step and the new
+    Settings row.
 - **Compose.** The owner approves the draft as in D41. The owner is the author (D14), and the
   bot uses the new version. To roll back, the owner picks the old version on the bot page
   (D6). The signals that the draft used are marked as used, so they do not count again.

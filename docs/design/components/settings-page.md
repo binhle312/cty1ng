@@ -183,12 +183,15 @@ reminders).
 | Bad signals | At least this many signals must be negative: Bad answer, Reject or a rejected draft. | 1 to Feedback signals. Default: 1 |
 | Probe tasks | Tasks in a blind test of the new skill version. More tasks give a surer result and cost more. | 1 to Probe tasks, most. Default: 3 |
 | Probe tasks, most | The highest number of tasks that you can choose for one test. | 1 to 50. Default: 10 |
+| Test cases, most | Saved tasks that each skill keeps. Every test of a new version runs them first, so you see when a change breaks a task that worked before. | 1 to 20. Default: 5 |
 
 Ranges and cross-field checks: `../../domain-model.md` §10. A value that breaks a rule between two
 rows (for example Feedback signals lower than Conversations) shows the error on the row that
 changed and keeps **Save changes** off; the app never changes the other row. For an actual
-probe, the owner chooses 1 to the number of eligible past tasks behind the signals, at most
-Probe tasks, most (D51). With no eligible task, the probe action is off.
+probe, the owner chooses 1 to the number of eligible tasks (the skill's saved test cases plus the
+past tasks behind the signals), at most Probe tasks, most (D51, amendment 2026-10-27). With no
+eligible task, the probe action is off. A lower Test cases, most never deletes a saved test case.
+The new row is part of the M5d UI design checkpoint.
 
 ## 5. Appearance page (UI-8.5, D30)
 
