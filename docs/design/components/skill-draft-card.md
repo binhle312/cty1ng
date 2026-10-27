@@ -55,7 +55,7 @@ From the next run, the bots that use the skill show it in their provenance chips
 - The list has the item with the pill "not saved" (new skill) or the skill selected (new
   version).
 - The page top says "New skill. You are the author when you approve it." and, with the bot
-  avatar, "BA drafted this skill for BA in {conversation}. Approve saves v1. Cancel goes back to
+  avatar, "BA drafted this skill in {conversation}. Approve saves v1. Cancel goes back to
   the conversation and changes nothing." The conversation is a link.
 - Only the **Skill** tab works. **Bots** and **History** are at 40 % with the tooltip "Approve
   the draft first." (B5).
@@ -80,11 +80,11 @@ a `primary` border. **Skip**, Esc or a click outside closes it; the skill stays 
 | Draft | Title and text | Rows | Buttons |
 | --- | --- | --- | --- |
 | New skill (K3) | "Created ✨ Add write-login-stories to bots?" "Tick the bots that must use this skill. They get v1. BA is ticked, because BA drafted it. Untick BA if you do not want it." | The drafting bot ticked, with an **Always load** switch (off) on its row; the other bots not ticked. The owner may tick any bot (D65) | **Skip**, **Assign** (primary, default; 40 % with no box ticked) |
-| New version (K4) | "Saved v4 ✨ Also upgrade these bots to v4?" "These bots use an older version. They keep it until you upgrade them. Tick the bots to move to v4. Always load stays as it is for each bot." | Every bot on an older version, ticked, with its version pill | **Skip**, **Upgrade** (primary, default) |
+| New version (K4) | "Saved v4 ✨ Also upgrade these bots to v4?" "Bots on an older version keep it until you upgrade them. Always load stays as it is for each bot. You can also give v4 to bots that do not have the skill." | Two groups with a small title each. **Uses an older version**: every such bot, ticked, with its version pill. **Does not have it**: every other bot, not ticked; a ticked row gets an **Always load** switch (off) | **Skip**, **Upgrade** (primary, default; 40 % with no box ticked) |
 
 Assign and Upgrade send one call for all ticked bots (`api.md` §2, `POST /skills/{id}/bots`).
-A bot in Trash (D50) is not in the list. A new version with no bot on an older version opens no
-float card; the folded line is enough.
+A bot in Trash (D50) is not in the list. The float card opens while at least one bot can take
+the skill or version (D65).
 
 ## 5. Other states
 

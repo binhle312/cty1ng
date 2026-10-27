@@ -4,6 +4,9 @@ Status: accepted (2026-10-27, owner, PR #38 review 04:28). From the M5c UI desig
 separate the skill from the bot actions (03:22), chose the bot page layout for the Skills page
 (03:36) and approved the boards and the six open items (03:53).
 Amends: D41
+Amended 2026-10-27 (owner): D65 removes the target bot. Where this file says "target bot", read
+"drafting bot" (new skill, ticked) or "every bot" (new version: bots on an older version ticked,
+bots without the skill not ticked).
 
 Decision:
 

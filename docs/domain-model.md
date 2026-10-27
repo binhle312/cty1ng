@@ -277,7 +277,7 @@ run_steps
   seq_in_run    INTEGER NOT NULL
   kind          TEXT NOT NULL   -- load_skill | list_files | read_file | view_file | write_file | propose_handoff
                                 --  | remember | update_memory | forget | restore_memory (D38) | propose_memory_tidy (D63)
-                                --  | propose_skill (D41)
+                                --  | propose_skill (D41) | read_skill_base (D65; target = slug@version)
                                 --  | mark_step (D57; target = the step number, detail = {state, note})
                                 --  | unknown_tool (the model named a tool that does not exist; target = that name)
   target        TEXT NOT NULL   -- skill slug@version, workspace path, handoff id, memory item id, or skill draft id
@@ -306,7 +306,7 @@ skill_drafts                                              -- TypeID prefix `skil
   drafted_by_bot_id  TEXT NOT NULL REFERENCES bots(id)
   kind               TEXT NOT NULL                -- new | edit
   skill_id           TEXT NULL REFERENCES skills(id)         -- set when kind = edit
-  base_version       INTEGER NULL                 -- latest version when drafted; set when kind = edit
+  base_version       INTEGER NULL                 -- the version the bot read (read_skill_base); set when kind = edit
   slug               TEXT NOT NULL                -- proposed slug (new) or the skill's slug (edit)
   name               TEXT NOT NULL
   description        TEXT NOT NULL                -- ≤ 1,024 chars
@@ -340,6 +340,11 @@ skill_drafts                                              -- TypeID prefix `skil
 - A draft has no target bot (D65): it names only the drafting bot, and the owner assigns the
   approved skill to any bots. An edit draft may be for any non-deprecated skill that the
   approved plan lists, assigned to the drafting bot or not.
+- **Base version:** an edit draft stores the `base_version` that the bot passed. `propose_skill`
+  accepts it only if it is the latest version of the skill and the run has a
+  `read_skill_base` step (`run_steps.target` = `slug@version`) for it; else the tool errors
+  `skill_changed` or `skill_not_read`, and no draft is written. A version saved after the draft
+  exists marks the draft `stale` (above).
 - Deleting the drafting bot leaves the draft pending; approving it then creates the skill, and
   the float card leaves the bot out.
 

@@ -33,12 +33,21 @@ Decision:
     returns the tool error `draft_not_in_plan`, as for `propose_skill`.
   - It returns the latest version's description, body and version number.
   - It writes no pin and no `run_skills` row, so the reply's skill chips (D15) stay true.
+- **The draft names the version it read.** For a new version, `propose_skill` must pass
+  `base_version`, the version that `read_skill_base` returned. The server refuses the call with
+  the tool error `skill_changed` ("design-review is now v4. Read it again.") when it is not the
+  latest version, and with `skill_not_read` when the run has no `read_skill_base` step for that
+  skill and version. So a draft never starts from text older than the latest version, and a
+  number that the bot did not read is refused (PR #38 review, owner 10:09).
 - **The owner assigns to any bot.** After Approve, the float card (D64) lists every bot that is
   not in Trash. The owner may tick any of them.
   - New skill: the drafting bot starts ticked, because the owner asked that bot. The owner may
     untick it. Text: "BA is ticked, because BA drafted it. Untick BA if you do not want it." If
     the drafting bot is in Trash (D50), no bot starts ticked and **Skip** is the default.
-  - New version: every bot on an older version starts ticked, as in D64.
+  - New version: two groups. **Uses an older version**: those bots start ticked, with their
+    version pill, as in D64. **Does not have it**: every other bot not in Trash, not ticked,
+    with an Always load switch (off) when ticked. So the owner can give v3 to BA even when only
+    Designer had the skill. The float card opens while at least one bot can take the version.
 - **The card names no target.** The card head is "Skill draft · New skill" (or "New version").
   The editor line is "BA drafted this skill in {conversation}".
 - **Later.** A coordinator may ask a bot to draft a skill. The same plan, draft card, Approve and
@@ -67,8 +76,9 @@ Rejected:
 - **Let `load_skill` read any skill in a drafting run.** It gives access to every skill, and it
   writes `run_skills` rows, so the chips would show a skill that the bot did not use.
 
-Consequences: `propose_skill(name, description, body_md, slug?, skill?, changelog?)`. New tool
-`read_skill_base(skill)`. `skill_drafts` loses `target_bot_id` (schema design only; no code
+Consequences: `propose_skill(name, description, body_md, slug?, skill?, base_version?,
+changelog?)`, `base_version` required with `skill`. New tool `read_skill_base(skill)`, recorded
+as a run step. New tool errors `skill_changed` and `skill_not_read`. `skill_drafts` loses `target_bot_id` (schema design only; no code
 exists). The plan check matches a call by `slug` or `skill` only. The board "target bot in
 Trash" is removed. M5c no longer needs conversations with several bots, so it depends on M3,
 not M4.

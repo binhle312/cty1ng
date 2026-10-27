@@ -1,6 +1,9 @@
 # D41. Bots draft skills; the owner approves and is the author
 
 Status: accepted (2026-10-22, owner). Amended 2026-10-23 (owner): the size limits are now those in `../security.md` §2.5 (description 1,024 characters, body 20,000 characters).
+Amended 2026-10-27 (owner): D64 and D65 change rules 2, 4 and 7 and flow steps 3 and 4. A draft
+has no target bot; Approve pins nothing; a float card then lets the owner assign or upgrade any
+bots. Read D64 and D65 before you use this decision.
 
 Decision: When the owner asks, a bot may draft a new skill, or a new version of an existing
 skill, for itself or for another bot in the conversation. The draft is a proposal, never a

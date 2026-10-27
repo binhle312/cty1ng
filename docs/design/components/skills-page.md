@@ -150,7 +150,9 @@ Skip." is at the bottom. In M1 no bots exist, so only the toast shows.
 The same two cards open in the centre of the conversation after the owner approves a skill
 draft (`skill-draft-card.md` §4). Two differences: the new-skill card starts with the drafting
 bot ticked and an **Always load** switch (off) on its row, and **Assign** is the default. The
-upgrade card lists the drafting bot too. The owner may tick any bot that is not in Trash (D65). Upgrading keeps each bot's Always load.
+upgrade card has a second group, **Does not have it**, with every other bot not in Trash, not
+ticked, so the owner can give the new version to any bot (D65). Upgrading keeps each bot's
+Always load; a newly assigned bot gets Always load off unless the owner turns it on.
 
 ## 8. A skill by another author (C5)
 

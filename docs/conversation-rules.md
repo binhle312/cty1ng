@@ -178,7 +178,7 @@ tool result, and the bot continues.
 - **Failure** is a tool result `{error: <code>, message: <one line>}`. The wrapper also writes the
   `run_steps` row with `status = error` and the same code in `detail`. Examples: `not_found`
   (no such file), `outside_write_scope`, `invalid_arguments` (the arguments fail the tool's Zod
-  schema), `unknown_tool`, `limit_reached` (handoff limit, §5), `draft_not_in_plan` (§7) and
+  schema), `unknown_tool`, `limit_reached` (handoff limit, §5), `draft_not_in_plan`, `skill_changed` and `skill_not_read` (§7) and
   `memory_not_in_plan` (a memory change that the approved plan does not list, D56). An
   unexpected exception gives
   `internal`. The full error goes to the server log only, never to the model or the UI
@@ -363,9 +363,12 @@ Example:
 
 Rules:
 
-- `propose_skill(name, description, body_md, slug?, skill?, changelog?)`. There is no target
-  bot (D65). For an edit, `skill` is the slug of an existing, non-deprecated skill, assigned to
-  the calling bot or not, and the draft is based on its latest version. For a new skill, `slug` is proposed (`^[a-z0-9-]{1,64}$`). If the slug is taken, the app uses the
+- `propose_skill(name, description, body_md, slug?, skill?, base_version?, changelog?)`. There
+  is no target bot (D65). For an edit, `skill` is the slug of an existing, non-deprecated skill,
+  assigned to the calling bot or not, and `base_version` is the version that `read_skill_base`
+  returned. The server refuses the call with `skill_changed` when `base_version` is not the
+  latest version (the bot reads the skill again), and with `skill_not_read` when the run has no
+  `read_skill_base` step for that skill and version. For a new skill, `slug` is proposed (`^[a-z0-9-]{1,64}$`). If the slug is taken, the app uses the
   next free one (`-2`, `-3`, …) and the card says so (D64).
 - `read_skill_base(skill)` (D65) returns the latest version of a skill that the approved plan
   lists as a new version: description, body and version number. It is offered only with

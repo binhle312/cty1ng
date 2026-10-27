@@ -87,7 +87,8 @@ versions and rollback (D6), and the Improve bot can change them (D51).
   (D64). Approve creates the version and folds the card: "Approved · <time> · <slug> v<N>",
   with a link to the skill. Then a float card in the centre of the screen asks which bots use
   it, from every bot not in Trash (D65): "Add <slug> to bots?" with the drafting bot ticked, or
-  "Also upgrade these bots to v<N>?"
+  "Also upgrade these bots to v<N>?" with the bots on an older version ticked and the bots
+  without the skill not ticked
   with every bot on an older version ticked (`../design/components/skills-page.md` §7).
 - UI-7.11a: A new-skill draft whose slug is taken shows the next free slug
   (`write-login-stories-2`) and the line "write-login-stories is taken, so the app uses
@@ -107,7 +108,10 @@ versions and rollback (D6), and the Improve bot can change them (D51).
   until Approve, that Approve pins nothing (D64), that `propose_skill` has no target (D65),
   that a new version of a skill not assigned to the bot works when the approved plan lists it,
   that `read_skill_base` returns the latest version (not the bot's pin), writes no pin and no
-  `run_skills` row, and refuses a skill that the plan does not list, that a new version of the
+  `run_skills` row, and refuses a skill that the plan does not list, that `propose_skill`
+  refuses a `base_version` that is not the latest (`skill_changed`) or was not read in the run
+  (`skill_not_read`), that the new-version float card lists bots without the skill (not
+  ticked), that a new version of the
   skill marks its pending edit drafts stale, that a taken slug gets the next free suffix, that
   the tools are not offered in bot turns, planning runs or action runs whose approved plan
   lists no skill draft, that a call which does not match a listed draft returns the error
