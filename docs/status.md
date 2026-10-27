@@ -90,7 +90,7 @@ the Skills page layout change in PR #38 (2026-10-27). M5c now depends on M3, not
 | M7 | not started | | |
 | M5b | UI design agreed | [#37](https://github.com/binhle312/cty1ng/pull/37) (spec) | Brief: `tasks/M5b-projects-and-memory.md`. Round 15: `design/components/memory-page.md`, `trash-page.md`, `conversation-page.md` §2.1a; D62, D63 accepted |
 | M5c | UI design agreed | [#38](https://github.com/binhle312/cty1ng/pull/38) (spec) | Skills drafted by bots (D41, D64, D65 accepted). Round 16: `design/components/skill-draft-card.md`, `skills-page.md` §2a, §13, §17. Brief not written |
-| M5d | not written | | Bots improve their skills from the owner's feedback (D51) |
+| M5d | not written | [#39](https://github.com/binhle312/cty1ng/pull/39) (spec) | Bots improve their skills from the owner's feedback (D51). D51 amendment 2026-10-27: saved test cases for each skill, approved by the owner |
 | M8 | not started | | |
 | M8b | not written | | Board map in the Flow pane (D30) |
 | M8c | proposed | | Project-wide Board, read-only, after M8b (`design/components/left-bar.md` §5) |
@@ -109,3 +109,4 @@ A slice can also be `blocked` (say on what in Notes).
 | 2026-10-21 | Owner review: D6, D11, D13, D33 accepted; D9 accepted with a replaceable transport; D21 accepted with price overrides |
 | 2026-10-26 | M5b design round 15: Memory page with Tidy, Trash page with multi-select, Move to project dialog; D62, D63 accepted; M5b brief and API contracts written |
 | 2026-10-27 | M5c design round 16: skill draft card, float card for the bots after Approve, Edit on the Skills page, Skills page in the bot page layout; D64, D65 accepted |
+| 2026-10-27 | Eval and guardrail review: D51 amendment, saved test cases for each skill (#39); D42 amendment, no price means no request under a cap, and the security review gate for new ways out, with the residual prompt-injection risk accepted by the owner (#40) |
