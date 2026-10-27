@@ -3,7 +3,7 @@
 > **Status: agreed in the M5c UI design review (2026-10-27)**, canvas round 16, boards K1–K10,
 > E1–E7 and S1–S3. Previews: `../previews/command-dark/skill-draft-card.*` (K1–K10),
 > `skill-draft-edit.*` (E1–E5, E7) and `skills-page-tabs.*` (S1–S3), each a `.png` and a
-> `.html`. Follows D41 and D64 (proposed), with D6, D14, D15, D16, D39, D48, D50 and D51. Card
+> `.html`. Follows D41 and D64, with D6, D14, D15, D16, D39, D48, D50 and D51. Card
 > parts, buttons and the fold come from `conversation-cards.md` §3 and `buttons.md`. The labels
 > and messages use Simplified Technical English.
 

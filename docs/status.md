@@ -53,9 +53,9 @@ every setting in `domain-model.md` §10. M5b design round 15 is agreed and saved
 page with Tidy, one Trash page for every deleted item with multi-select, and the Move to project
 dialog. D62 (one Trash page, memory items included) and D63 (Tidy and the memory check are model
 requests) are accepted, and the memory limits are settings (D38 amendment). D58 moves to the
-next slice after M5b. The M5b brief is written. M5c design round 16 (skill draft card) is in
-review: `design/components/skill-draft-card.md` and the Skills page in the bot page layout
-(`skills-page.md`, Skill, Bots and History tabs); D64 is proposed.
+next slice after M5b. The M5b brief is written. M5c design round 16 (skill draft card) is agreed: `design/components/skill-draft-card.md` and the Skills page in the bot page layout
+(`skills-page.md`, Skill, Bots and History tabs); D64 is accepted, and the owner approved the
+API changes and the Skills page layout change in PR #38 (2026-10-27).
 
 ## Next
 
@@ -69,7 +69,6 @@ review: `design/components/skill-draft-card.md` and the Skills page in the bot p
 | D54 accepted (the approved plan covers deletes and moves; run-end plan check): add the plan lists and `runs.plan_check` to `domain-model.md`, the `check_done` tool, and approve the schema design (initial schema for M6). The generated SQL is approved in the slice PR | M6 plan |
 | D57 accepted (the plan card shows the run's progress; `mark_step`, one reminder, mark sources, `check_done` evidence): build it with the plan card | Plan card slice (M5b, M5c or M6) |
 | D58 and D59 accepted (cross-conversation reading on request, Send to conversation, save notice when project memory changed): approve the FTS5 schema design (initial schema for the slice after M5b, owner 2026-10-26), and the instructions/goal change time and D59 snapshot schema design (initial schema for M6). The generated SQL is approved in each slice PR; UI design of the inbox, information card and memory notice in the slice plans | Next slice plan, M6 plan, Inbox plan |
-| D64 proposed (the skill draft card is for the skill only; a float card for the bots after Approve; slug auto-suffix; drafts marked stale at once): accept it, and approve the API changes (decision body without `pin` and `always_load`, `POST /skills/{id}/bots`) and the Skills page layout change for M1 | M5c plan, M1 build |
 | D53 accepted (web through provider web tools): check the default limits and approve the schema design for the bot setting and the run flag (initial schema for that milestone). The generated SQL is approved in the slice PR | Web access milestone plan |
 | Approve the M3 schema design for D46 (auto title) before it is written. The generated SQL is approved in the slice PR | M3 plan |
 | Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a schema design approval (initial schema for M3 and M7). The generated SQL is approved in the slice PR | M3 and M7 plans |
@@ -80,7 +79,7 @@ review: `design/components/skill-draft-card.md` and the Skills page in the bot p
 | Slice | State | PR | Notes |
 | --- | --- | --- | --- |
 | M0 | not started | | |
-| M1 | not started | | Design approved: `design/components/skills-page.md` (round 8); D49 accepted. Round 16 moves the page to the bot page layout (in review) |
+| M1 | not started | | Design approved: `design/components/skills-page.md` (round 8); D49 accepted. Round 16 moves the page to the bot page layout (agreed, #38) |
 | M2 | UI design review | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec) | Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open |
 | M3 | UI design agreed | [#26](https://github.com/binhle312/cty1ng/pull/26) (spec) | Round 10: `design/components/conversation-page.md`, `composer.md`, `conversation-cards.md` |
 | M4 | not started | | |
@@ -88,7 +87,7 @@ review: `design/components/skill-draft-card.md` and the Skills page in the bot p
 | M6 | not started | | |
 | M7 | not started | | |
 | M5b | UI design agreed | [#37](https://github.com/binhle312/cty1ng/pull/37) (spec) | Brief: `tasks/M5b-projects-and-memory.md`. Round 15: `design/components/memory-page.md`, `trash-page.md`, `conversation-page.md` §2.1a; D62, D63 accepted |
-| M5c | UI design review | (this PR, round 16 spec) | Skills drafted by bots (D41, D64 proposed). Round 16: `design/components/skill-draft-card.md`, `skills-page.md` §2a, §13, §17. Brief not written |
+| M5c | UI design agreed | [#38](https://github.com/binhle312/cty1ng/pull/38) (spec) | Skills drafted by bots (D41, D64 accepted). Round 16: `design/components/skill-draft-card.md`, `skills-page.md` §2a, §13, §17. Brief not written |
 | M5d | not written | | Bots improve their skills from the owner's feedback (D51) |
 | M8 | not started | | |
 | M8b | not written | | Board map in the Flow pane (D30) |
@@ -107,4 +106,4 @@ A slice can also be `blocked` (say on what in Notes).
 | 2026-10-21 | Repository created; spec merged (PRs #1–#5): send states and research notes, security checklist, frontend conventions, `ui-ux-pro-max` skill; D31, D32 accepted |
 | 2026-10-21 | Owner review: D6, D11, D13, D33 accepted; D9 accepted with a replaceable transport; D21 accepted with price overrides |
 | 2026-10-26 | M5b design round 15: Memory page with Tidy, Trash page with multi-select, Move to project dialog; D62, D63 accepted; M5b brief and API contracts written |
-| 2026-10-27 | M5c design round 16: skill draft card, float card for the bots after Approve, Edit on the Skills page, Skills page in the bot page layout; D64 proposed |
+| 2026-10-27 | M5c design round 16: skill draft card, float card for the bots after Approve, Edit on the Skills page, Skills page in the bot page layout; D64 accepted |

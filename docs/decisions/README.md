@@ -108,4 +108,4 @@ Implemented in: links.
 | D61 | [Projects are closed: files cross between places only by an approved copy](D61-files-cross-places-only-by-approved-copy.md) | accepted | |
 | D62 | [One Trash page for every deleted item, memory items included](D62-one-trash-page-for-every-deleted-item.md) | accepted | |
 | D63 | [Tidy memory and the memory check are model requests, not runs](D63-tidy-and-memory-check-are-model-requests.md) | accepted | |
-| D64 | [The skill draft card is for the skill only; bot actions follow on a float card](D64-skill-draft-card-is-for-the-skill-only.md) | proposed | |
+| D64 | [The skill draft card is for the skill only; bot actions follow on a float card](D64-skill-draft-card-is-for-the-skill-only.md) | accepted | |

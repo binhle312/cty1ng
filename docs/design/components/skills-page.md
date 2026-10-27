@@ -7,7 +7,7 @@
 > D16, D39 and D49. The labels and messages use Simplified Technical English.
 > **Changed in the M5c UI design review, round 16 (2026-10-27):** the page uses the bot page
 > layout (owner, 03:36): a page top and the tabs **Skill**, **Bots** and **History** (§2, §2a,
-> §13); **+ Create** in place of **+ New**; editing a skill draft (§17, D64 proposed).
+> §13); **+ Create** in place of **+ New**; editing a skill draft (§17, D64).
 > Preview: `../previews/command-dark/skills-page-tabs.*` (S1–S3) and `skill-draft-edit.*`
 > (E1–E5). The round 8 previews still show the old header and the History panel; this file
 > wins.

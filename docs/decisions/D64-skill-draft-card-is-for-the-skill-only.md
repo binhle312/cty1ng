@@ -1,6 +1,6 @@
 # D64. The skill draft card is for the skill only; bot actions follow on a float card
 
-Status: proposed (2026-10-27). From the M5c UI design review, round 16: the owner asked to
+Status: accepted (2026-10-27, owner, PR #38 review 04:28). From the M5c UI design review, round 16: the owner asked to
 separate the skill from the bot actions (03:22), chose the bot page layout for the Skills page
 (03:36) and approved the boards and the six open items (03:53).
 Amends: D41
