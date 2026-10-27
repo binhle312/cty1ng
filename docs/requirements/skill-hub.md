@@ -7,7 +7,7 @@ Writing, versioning, cloning, deprecating, importing and exporting skills.
 - **SK-1.** As the owner, I want to create and edit skills in the browser with a preview, so that I can write playbooks without touching files.  
   Acceptance criteria: UI-7.1 to UI-7.3.
 - **SK-2.** As the author, I want every save to create a version and to choose which bots upgrade, so that bots change only when I decide.  
-  Acceptance criteria: UI-7.4, UI-7.5.
+  Acceptance criteria: UI-7.4, UI-7.5, UI-7.5a.
 - **SK-3.** As the owner, I want to deprecate a skill, and later delete it through Trash, so that bots change only when I decide and a mistake is easy to undo (D49).  
   Acceptance criteria: UI-7.6, UI-7.6a.
 - **SK-4.** As the owner, I want to import and export SKILL.md folders, so that I can write skills in my editor or with an AI agent.  
@@ -24,7 +24,8 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
 - UI-7.1: List: name, slug, latest version, "n bots" with "m older" when bots use an older
   version, or "Not used". Order: last change first. Search by name or slug. "Show deprecated"
   check box. Layout, states and copy: `../design/components/skills-page.md`.
-- UI-7.2: Actions: New, Import, Export in the list; History and the ⋯ menu in the skill header.
+- UI-7.2: Actions: Create, Import, Export in the list; the ⋯ menu in the page top. The page has
+  the tabs Skill, Bots and History, as on the bot page (round 16).
   ⋯ for an active skill: Clone, Export, Deprecate; for a deprecated skill: Clone, Delete skill.
   Deprecate and Delete are author only.
 - UI-7.3: Editor: name (≤ 64 characters), slug (only when creating, made from the name until the
@@ -35,8 +36,11 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
 - UI-7.4: Saving creates a new version, then shows "Also upgrade these bots to vN?" with the
   author's bots on older versions, all ticked, and Skip / Upgrade (D6). After Create, the card
   "Add {skill} to bots?" lists the bots, none ticked, with Skip / Assign.
-- UI-7.5: History panel: versions newest first with changelog; diff between any two; "Restore"
+- UI-7.5: History tab: versions newest first with changelog; diff between any two; "Restore"
   (creates a new version).
+- UI-7.5a: Bots tab: the bots that use the skill, with the version, "Upgrade to v<N>" on an
+  older version, the Always load switch and a ⋯ menu (Remove from bot), and "+ Add". Changes
+  save at once and apply from each bot's next run.
 - UI-7.6: Deprecate lists the bots that use the skill, all ticked: ticked bots stop using it,
   unticked bots keep it and it works as before. A deprecated skill is read-only and has "Remove
   from bots" and "Make active again".
@@ -71,21 +75,35 @@ versions and rollback (D6), and the Improve bot can change them (D51).
 
 ## Skills drafted by bots (D41)
 
-- UI-7.9: When the owner asks, a bot drafts a skill and a card appears in the conversation: "<Bot>
-  drafted a skill for <target bot>: <name>", with the slug, description, changelog and body
-  (Markdown preview, raw HTML disabled), and the owner's message that asked for it.
+- UI-7.9: When the owner asks, a bot drafts a skill and a card appears in the conversation, with
+  the head "Skill draft · New skill · For <target bot>" (or "New version"), the name and slug,
+  the description, the body (Markdown preview, raw HTML disabled, first 8 lines and "n more lines
+  · Show"), What changed, and "Asked in your message at <time>" with a link. The card is a
+  preview: the owner does not type on it (D64). Layout, states and copy:
+  `../design/components/skill-draft-card.md`.
 - UI-7.10: A draft that edits an existing skill shows a diff against the version it was based
   on ("v3 → draft"), as on the History tab (UI-7.5).
-- UI-7.11: The card has "Pin to <target bot>" (ticked) and "Always load" (off), and the buttons
-  Edit, Approve and Reject. Approve creates the version and, if ticked, pins it, in one step.
-  The card then says "Approved: <slug> v<N>, pinned to <bot>" with a link to the skill.
-- UI-7.12: Edit opens the skill editor (UI-7.3) filled with the draft. Saving there approves
-  it, and the card notes "edited by you before approving".
-- UI-7.13: A draft whose skill gained a version, or was deprecated, since it was made shows
-  "Out of date" instead of Approve, with "Ask <bot> to redraft", which fills the composer.
+- UI-7.11: The card has the buttons Reject, Edit and Approve, and no pin or Always load choice
+  (D64). Approve creates the version and folds the card: "Approved · <time> · <slug> v<N>",
+  with a link to the skill. Then a float card in the centre of the screen asks which bots use
+  it: "Add <slug> to bots?" with the target bot ticked, or "Also upgrade these bots to v<N>?"
+  with every bot on an older version ticked (`../design/components/skills-page.md` §7).
+- UI-7.11a: A new-skill draft whose slug is taken shows the next free slug
+  (`write-login-stories-2`) and the line "write-login-stories is taken, so the app uses
+  write-login-stories-2. To pick another slug, use Edit." The slug is checked when the card
+  loads and again on Approve.
+- UI-7.12: Edit opens the draft on the Skills page, Skill tab only (Bots and History are off
+  until Approve), with the line "<Bot> drafted this skill for <target> in <conversation>". The
+  save bar has Cancel and "Approve as v<N>". Approve there saves, goes back to the conversation,
+  folds the card with "edited by you" and opens the same float card.
+- UI-7.13: When the skill gets a new version, or is deprecated, the app marks its pending edit
+  drafts "Out of date" at once (D64). The card shows the reason, no Approve, and "Ask <bot> to
+  redraft", which fills the composer. In the editor, Approve turns off with the same reason.
 - UI-7.14: The skill's History tab marks versions that came from a draft: "drafted by <bot>",
-  linking to the card's message.
+  linking to the card's message. The bot page Skills tab shows "Draft v<N> waiting" on the row
+  of a skill with a pending draft for that bot, linking to the card.
 - UI-7.15: A test with the fake model checks that `propose_skill` writes no skill and no pin
-  until Approve, that the tool is not offered in bot turns, planning runs or action runs whose
-  approved plan lists no skill draft, that a call which does not match a listed draft returns
+  until Approve, that Approve pins nothing (D64), that a new version of the skill marks its
+  pending edit drafts stale, that a taken slug gets the next free suffix, that the tool is not
+  offered in bot turns, planning runs or action runs whose approved plan lists no skill draft, that a call which does not match a listed draft returns
   the error `draft_not_in_plan`, and that a draft containing a secret pattern is refused.

@@ -321,16 +321,21 @@ skill_drafts                                              -- TypeID prefix `skil
 - The draft keeps the bot's text. If the owner edits before approving, the approved version
   holds the owner's text and `edited_by_owner` is set, so the bot's original stays visible.
 - **Approve**, in one transaction: create the skill (v1, author = owner) or version
-  `base_version + 1`, with `created_by` = owner and `skill_draft_id` set; if "Pin to <bot>" is
-  ticked, upsert the target bot's `bot_skills` row to that version (`always_load` as chosen,
-  off by default); set the draft `approved`. The draft must still be `pending`
-  (compare-and-set, `architecture.md` §11).
-- **Stale:** an edit draft whose skill gained a version after `base_version`, or was
-  deprecated, cannot be approved. Approve sets it `stale` and returns 409 `draft_stale`.
-- **Slug taken:** a new-skill draft whose slug was taken since returns 409 `slug_taken`; the
-  owner changes the slug on the card and approves again.
-- Deleting the target bot leaves the draft pending; approving it then creates the skill
-  without a pin.
+  `base_version + 1`, with `created_by` = owner and `skill_draft_id` set; set the draft
+  `approved`. Approve writes no `bot_skills` row (D64): the float card that follows assigns or
+  upgrades the bots with a separate call. The draft must still be `pending` (compare-and-set,
+  `architecture.md` §11).
+- **Stale:** the transaction that creates a version of a skill, or deprecates it, sets every
+  `pending` edit draft of that skill to `stale` and writes `skill_draft.decided` (D64). Approve
+  on an edit draft whose skill gained a version after `base_version`, or was deprecated, still
+  sets it `stale` and returns 409 `draft_stale`, as a guard.
+- **Slug taken:** for a new-skill draft whose `slug` is taken, Approve uses the first free slug
+  of `slug-2`, `slug-3`, … (cut so it stays ≤ 64 characters) and keeps `slug` on the draft as
+  the bot proposed it. The card shows the same choice before Approve. A slug that the owner
+  typed in the editor is not changed: a taken one returns 409 `slug_taken`, as on the Skills
+  page.
+- Deleting the target bot leaves the draft pending; approving it then creates the skill, and
+  the float card leaves the bot out.
 
 ## 4. Model catalog
 

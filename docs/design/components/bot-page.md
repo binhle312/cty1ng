@@ -48,7 +48,8 @@ A click on a card on the Bots page opens the bot in the **edit layout** (L1). Th
 | Actions | **Message** (opens the owner's 1:1 conversation with the bot) and ⋯: Message, Clone, Delete (`danger`), as on the grid (`bots-page.md` §3), without Details |
 
 M5d adds **Improve** to the ⋯ menu, after Message, and the line "Draft vN waiting" with **Open**
-while an Improve draft card waits in the 1:1 conversation (D51).
+while an Improve draft card waits in the 1:1 conversation (D51). From M5c, a skill draft for this
+bot that waits in any conversation shows "Draft v{N} waiting" on its Skills tab row (§7).
 
 There is no numbers row: the Skills and Activity tabs show the counts.
 
@@ -137,6 +138,7 @@ Changes use the save bar (§4.1) and apply from the next run.
 | --- | --- |
 | SK1 Rows | Name and description in one line, the version the bot uses, **Always load** switch, ⋯. Order: always-load skills first, then by name. Changes save at once and apply from the next run; there is no save bar. A deprecated skill has the Deprecated pill with a tooltip (UI-6.5) and no upgrade link. The table head of Always load has a tooltip: "On: the whole skill goes into every run. Off: the bot sees the name and description and loads it when it needs it." (D16) |
 | SK1 Update | A newer version shows "v5 available" as a `primary` link that opens the upgrade dialog. This is the "↑1" on the tab |
+| SK1 Draft (M5c) | A skill draft for this bot that waits for the owner shows "Draft v4 waiting" in place of "v5 available", as a `primary` link to the card (`skill-draft-card.md` §6, preview `skill-draft-edit.*` E7). A new-skill draft is not a row until it is approved and assigned |
 | SK1 ⋯ | **Change version**, divider, **Remove** (`danger` text). Remove asks nothing and has no Undo: it deletes nothing, and the owner can add the skill again |
 | SK2 + Add | The bot-list card pattern (`buttons.md`): check boxes, search, primary button at the far right. Rows: name, description, latest version. It hides skills the bot has and deprecated skills. No box starts ticked. The button counts ("Add 2") and is at 40 % with none. Skip, Esc or a click outside closes it. Each added skill gets its latest version and Always load off. Create step 3 uses the same card |
 | SK3 Upgrade | Dialog: the changelog line of each newer version, newest first; then the diff from the used version to the new one in the skill History colours (added green, removed red with a strike). **Body** and **Description** tabs, and a line when the other tab has changes too. **Upgrade to v5** is the default button. Words say "uses v3", never "pins" |
