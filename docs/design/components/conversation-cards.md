@@ -54,8 +54,9 @@ M3 has no join card: the add slot adds with full history (M3 brief). The card co
 
 ## 3. Cards inside a bot reply (S3, S4)
 
-The plan card (`plan-card.md`) and the handoff card sit **inside the reply** of the bot that
-makes them, under its text, indented like the text.
+The plan card (`plan-card.md`), the handoff card and the skill draft card
+(`skill-draft-card.md`, M5c) sit **inside the reply** of the bot that makes them, under its text,
+indented like the text.
 
 **Data.** The handoff card stays a separate message (`kind = handoff`, `domain-model.md` §6).
 It carries the `run_id` of the run that made it. The page shows a card message under the bot
@@ -82,6 +83,7 @@ line, so the link does not repeat it (owner, 2026-10-25 02:28, a rule for every 
 
 - "**Plan** [Done] 11:15 · 4 of 4 steps · 2 files · Show" (a plan card folds when its run ends, D57)
 - "(BA) → (Designer) **Handoff** [Approved] 11:31 · Designer started · 1 file · Show"
+- "**Skill draft** [Approved] 11:24 · write-login-stories v1 · Show"
 
 Status pills: Approved and Done (§4, handoff to the owner; a plan run with every step done, D57) = `success` text on a `success` tint; Changes requested and Rejected =
 `on-surface-muted` on `surface-raised`; Files changed = `danger` text on a `danger` tint. A

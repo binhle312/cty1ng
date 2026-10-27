@@ -85,7 +85,7 @@ Implemented in: links.
 | D38 | [Bot, project and conversation memory](D38-bot-memory-and-project-memory.md) | accepted | D43, D48, D53, D56, D61, D62, D63, own amendment 2026-10-26 |
 | D39 | [Sensitive-data guard before anything reaches a model or memory](D39-sensitive-data-guard.md) | accepted |  |
 | D40 | [Cost alerts at 75% and 90% of the daily cap](D40-cost-alerts-at-75-and-90.md) | accepted |  |
-| D41 | [Bots draft skills; the owner approves and is the author](D41-bots-draft-skills-the-owner-approves.md) | accepted | D48; own amendment 2026-10-23 |
+| D41 | [Bots draft skills; the owner approves and is the author](D41-bots-draft-skills-the-owner-approves.md) | accepted | D48, D64, D65; own amendment 2026-10-23 |
 | D42 | [Optional daily caps per provider, under the total cap](D42-per-provider-daily-caps.md) | accepted |  |
 | D43 | [Project memory beats bot memory; the bot asks about a conflict before it acts](D43-project-memory-beats-bot-memory.md) | accepted | D47, D48, D63 |
 | D44 | [The side pane holds Flow or Memory, one at a time](D44-right-pane-holds-flow-or-memory.md) | accepted |  |
@@ -108,3 +108,5 @@ Implemented in: links.
 | D61 | [Projects are closed: files cross between places only by an approved copy](D61-files-cross-places-only-by-approved-copy.md) | accepted | |
 | D62 | [One Trash page for every deleted item, memory items included](D62-one-trash-page-for-every-deleted-item.md) | accepted | |
 | D63 | [Tidy memory and the memory check are model requests, not runs](D63-tidy-and-memory-check-are-model-requests.md) | accepted | |
+| D64 | [The skill draft card is for the skill only; bot actions follow on a float card](D64-skill-draft-card-is-for-the-skill-only.md) | accepted | D65 |
+| D65 | [Bots draft skills only when the owner asks; only the owner assigns them](D65-bots-draft-skills-only-when-asked.md) | accepted | |
