@@ -103,7 +103,11 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
     search provider, not to a server that the attacker picks, and the app cannot check a query
     inside a provider tool before it is sent. Limits: web access is off by default for each
     bot, `web_searches_per_run` (default 5), fetch only of search-result or owner URLs (D53
-    rule 1), and the MCP switch stays locked (D55). This is an accepted risk.
+    rule 1), and the MCP switch stays locked (D55).
+  - **The owner accepts this residual risk for phase 1 (owner, 2026-10-27).** The gate is a
+    review process, not technical prevention. Five searches per run give fewer chances, but one
+    query can still leak private data. So the owner's approval of each new way out, as the gate
+    below requires, is the control that matters.
   - **Gate:** every PR that adds a way for run data to leave the app answers in its description
     "Can this send data out without an approval?" This covers a new tool, a changed flag in
     `config/tools.yaml`, a provider tool, a new adapter call and a new setting, not only the
