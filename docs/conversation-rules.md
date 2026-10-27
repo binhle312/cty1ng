@@ -338,8 +338,9 @@ m1 (human) ── m2 (BA) ── m3 (human) ── m4 (BA)
 
 ## 7. Skills drafted by bots (D41)
 
-When the owner asks, a bot turns a piece of work into a skill. A bot drafts only for itself
-(D65); after Approve, the owner gives the skill to any bots. The owner approves every draft and
+When the owner asks, a bot turns a piece of work into a skill, or drafts a new version of a
+skill. The draft names no target bot (D65); after Approve, only the owner gives the skill to
+bots. The owner approves every draft and
 is its author.
 
 A skill draft is a change, so it has two approvals: first the plan card (D48), then the draft
@@ -363,11 +364,14 @@ Example:
 Rules:
 
 - `propose_skill(name, description, body_md, slug?, skill?, changelog?)`. There is no target
-  bot (D65). For an edit, `skill` is the slug of an existing, non-deprecated skill **that the
-  calling bot uses** (else the tool error `skill_not_used`), and the draft is based on its
-  latest version; for
-  a new skill, `slug` is proposed (`^[a-z0-9-]{1,64}$`). If the slug is taken, the app uses the
+  bot (D65). For an edit, `skill` is the slug of an existing, non-deprecated skill, assigned to
+  the calling bot or not, and the draft is based on its latest version. For a new skill, `slug` is proposed (`^[a-z0-9-]{1,64}$`). If the slug is taken, the app uses the
   next free one (`-2`, `-3`, …) and the card says so (D64).
+- `read_skill_base(skill)` (D65) returns the latest version of a skill that the approved plan
+  lists as a new version: description, body and version number. It is offered only with
+  `propose_skill`, is read-only, and writes no pin and no `run_skills` row. Another skill
+  returns `draft_not_in_plan`. `load_skill` is unchanged: it reads only the bot's pinned
+  versions.
 - **Only when asked.** The tool is offered only in an action run whose approved plan lists a
   skill draft (the plan card's **Skill drafts** line, `design/components/plan-card.md`). Each
   call must match a listed draft (the same `slug` or `skill`); the server

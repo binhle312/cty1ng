@@ -1,7 +1,7 @@
 # Skill draft card
 
-> **Status: agreed in the M5c UI design review (2026-10-27)**, canvas round 16, boards K1–K7,
-> K9, K10 (K8 removed by D65), E1–E7 and S1–S3. Previews: `../previews/command-dark/skill-draft-card.*` (K1–K7, K9, K10),
+> **Status: agreed in the M5c UI design review (2026-10-27)**, canvas round 16, boards K1–K9,
+> E1–E7 and S1–S3. Previews: `../previews/command-dark/skill-draft-card.*` (K1–K9),
 > `skill-draft-edit.*` (E1–E5, E7) and `skills-page-tabs.*` (S1–S3), each a `.png` and a
 > `.html`. Follows D41, D64 and D65, with D6, D14, D15, D16, D39, D48, D50 and D51. Card
 > parts, buttons and the fold come from `conversation-cards.md` §3 and `buttons.md`. The labels
@@ -92,8 +92,8 @@ float card; the folded line is enough.
 | --- | --- | --- |
 | Out of date | K6 | The pill **Out of date** (`danger` tint). The line, in `danger`: "Not approved. write-user-stories got v4 at 11:40, after BA made this draft from v3. An approve now would remove that change." One button: **Ask BA to redraft** (primary), which fills the composer with "@BA make the draft of write-user-stories again, from v4." The app marks the draft at once when the skill gets a version or is deprecated (D64) |
 | Slug taken | K7 | Under the slug: "write-login-stories is taken, so the app uses write-login-stories-2. To pick another slug, use Edit." The slug line shows `write-login-stories-2`. Approve works |
-| Two drafts in one run | K9 | One card per draft, each with its own decision. A decided card folds; the others stay open |
-| From Improve (M5d) | K10 | The same card in the owner's 1:1 conversation with the bot, with the signals, the length change and **Test on past tasks** (D51). Tagged M5d (P8) |
+| Two drafts in one run | K8 | One card per draft, each with its own decision. A decided card folds; the others stay open |
+| From Improve (M5d) | K9 | The same card in the owner's 1:1 conversation with the bot, with the signals, the length change and **Test on past tasks** (D51). Tagged M5d (P8) |
 
 ## 6. Where else a waiting draft shows
 

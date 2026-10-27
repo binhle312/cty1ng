@@ -109,4 +109,4 @@ Implemented in: links.
 | D62 | [One Trash page for every deleted item, memory items included](D62-one-trash-page-for-every-deleted-item.md) | accepted | |
 | D63 | [Tidy memory and the memory check are model requests, not runs](D63-tidy-and-memory-check-are-model-requests.md) | accepted | |
 | D64 | [The skill draft card is for the skill only; bot actions follow on a float card](D64-skill-draft-card-is-for-the-skill-only.md) | accepted | D65 |
-| D65 | [A bot drafts skills only for itself; the owner assigns them to any bot](D65-a-bot-drafts-skills-only-for-itself.md) | accepted | |
+| D65 | [Bots draft skills only when the owner asks; only the owner assigns them](D65-bots-draft-skills-only-when-asked.md) | accepted | |

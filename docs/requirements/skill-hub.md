@@ -102,10 +102,13 @@ versions and rollback (D6), and the Improve bot can change them (D51).
   redraft", which fills the composer. In the editor, Approve turns off with the same reason.
 - UI-7.14: The skill's History tab marks versions that came from a draft: "drafted by <bot>",
   linking to the card's message. The bot page Skills tab shows "Draft v<N> waiting" on the row
-  of a skill with a pending draft for that bot, linking to the card.
+  of a skill that has a pending new-version draft, linking to the card.
 - UI-7.15: A test with the fake model checks that `propose_skill` writes no skill and no pin
-  until Approve, that Approve pins nothing (D64), that `propose_skill` has no target and
-  refuses a new version of a skill that the bot does not use (D65), that a new version of the skill marks its
-  pending edit drafts stale, that a taken slug gets the next free suffix, that the tool is not
-  offered in bot turns, planning runs or action runs whose approved plan lists no skill draft, that a call which does not match a listed draft returns
-  the error `draft_not_in_plan`, and that a draft containing a secret pattern is refused.
+  until Approve, that Approve pins nothing (D64), that `propose_skill` has no target (D65),
+  that a new version of a skill not assigned to the bot works when the approved plan lists it,
+  that `read_skill_base` returns the latest version (not the bot's pin), writes no pin and no
+  `run_skills` row, and refuses a skill that the plan does not list, that a new version of the
+  skill marks its pending edit drafts stale, that a taken slug gets the next free suffix, that
+  the tools are not offered in bot turns, planning runs or action runs whose approved plan
+  lists no skill draft, that a call which does not match a listed draft returns the error
+  `draft_not_in_plan`, and that a draft containing a secret pattern is refused.

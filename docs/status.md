@@ -55,8 +55,8 @@ dialog. D62 (one Trash page, memory items included) and D63 (Tidy and the memory
 requests) are accepted, and the memory limits are settings (D38 amendment). D58 moves to the
 next slice after M5b. The M5b brief is written. M5c design round 16 (skill draft card) is
 agreed: `design/components/skill-draft-card.md` and the Skills page in the bot page layout
-(`skills-page.md`, Skill, Bots and History tabs). D64 and D65 are accepted (a bot drafts skills
-only for itself; the owner assigns them to any bot), and the owner approved the API changes and
+(`skills-page.md`, Skill, Bots and History tabs). D64 and D65 are accepted (bots draft skills
+only when the owner asks; only the owner assigns them), and the owner approved the API changes and
 the Skills page layout change in PR #38 (2026-10-27). M5c now depends on M3, not M4.
 
 ## Next

@@ -246,6 +246,10 @@ ticked by default) in the same layout, as `<n>-skills-<UTC timestamp, ISO basic>
 - For the others, the prompt lists `- <slug>: <description>` and the bot calls
   `load_skill(slug)`, which returns the **pinned** version's body.
 - `load_skill` for a slug the bot does not have returns an error string listing its skills.
+- In a run that may draft a new version of a skill (D65), `read_skill_base(skill)` returns the
+  **latest** version of that skill (description, body, version number), read-only. It works
+  only for a skill that the approved plan lists as a new version, writes no pin and no
+  `run_skills` row, and does not change `load_skill`.
 
 ### 3.7 Provenance (D15)
 
@@ -333,9 +337,9 @@ skill_drafts                                              -- TypeID prefix `skil
   the bot proposed it. The card shows the same choice before Approve. A slug that the owner
   typed in the editor is not changed: a taken one returns 409 `slug_taken`, as on the Skills
   page.
-- A draft has no target bot (D65): the drafting bot drafts for itself, and the owner assigns
-  the approved skill to any bots. An edit draft is allowed only for a skill that the drafting
-  bot uses when it calls the tool.
+- A draft has no target bot (D65): it names only the drafting bot, and the owner assigns the
+  approved skill to any bots. An edit draft may be for any non-deprecated skill that the
+  approved plan lists, assigned to the drafting bot or not.
 - Deleting the drafting bot leaves the draft pending; approving it then creates the skill, and
   the float card leaves the bot out.
 
