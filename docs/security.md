@@ -257,6 +257,20 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (�
 - Tests (with the fake model): a bot with web access off never sends a web tool; a run that
   read the web cannot save memory without approval; a model-written fetch URL is refused.
 
+### 2.15 Open folder (D52, M6)
+
+`POST /libraries/{place}/open-folder` is the only endpoint that starts a program on the owner's
+computer (owner, 2026-10-28):
+
+- The request has no path. The server builds the folder path from the place id, and the place
+  must exist and must not be in Trash.
+- The server starts the system file manager with a fixed command (`open` on macOS, `explorer` on
+  Windows, `xdg-open` on Linux) and the folder path as one argument, with no shell
+  (`execFile`, never `exec`). A file or folder name can never become a command.
+- The endpoint has the same Host and Origin checks as every other POST (§2.1), so another
+  website cannot call it.
+- On a VPS (M9) the button is hidden and the endpoint refuses the request.
+
 ## 3. Security tests (must exist)
 
 - Host header `evil.com` → 403; `Origin: https://evil.com` on POST → 403; no Origin on POST →
@@ -280,6 +294,9 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (�
 - SQL injection strings are stored or rejected literally; unknown `metric`/`sort` → 422.
 - Unknown JSON fields → 422; a body over 1 MB → 413.
 - An unhandled error returns a code and request id, with no stack trace in the body.
+- Open folder (§2.15): a body with a path field → 422; a place in Trash → 409; the process
+  starter gets a fixed command and one argument, with no shell (a test double checks it); on
+  VPS mode → refused.
 
 ## 4. Added by the VPS milestone (not now)
 

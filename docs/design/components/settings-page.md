@@ -244,6 +244,7 @@ The new row is part of the M5d UI design checkpoint.
 | "Don't use memory" for one conversation (UI-9.6) | The Memory pane |
 | Discussion for one conversation (UI-9.3) | The discussion status in the conversation header (§9) |
 | `undo_seconds` (D62) | `PATCH /settings` only. The time an Undo toast of a permanent delete stays |
+| `library_diff_open_max_lines` (round 17) | `PATCH /settings` only. A file in the Library History tab with more changed lines starts folded (`library-page.md` §4.1) |
 
 ## 9. Discussion status and popover in the conversation header (UI-3.15, UI-9.3)
 

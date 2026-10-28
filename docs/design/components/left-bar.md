@@ -3,7 +3,7 @@
 > **Status: agreed in the M0 UI design review (2026-10-22)**, canvas rounds 6.0 and 6.1.
 > Previews: `../previews/command-dark/left-bar-rail.png` (rail) and
 > `../previews/command-dark/left-bar.png` (inner bar, Memory pane, New project page), each with a
-> `.html`. The Library page content is **not designed yet**.
+> `.html`. The Library page content is in `library-page.md` (round 17).
 
 The left bar is two bars side by side: the **rail** (projects) and **bar 2** (what is inside the
 selected project, or Home). The floating user panel (`user-panel.md` §4) sits over the bottom of

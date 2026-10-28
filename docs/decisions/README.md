@@ -63,7 +63,7 @@ Implemented in: links.
 | D16 | ["Always load" per pinned skill](D16-always-load-per-pinned-skill.md) | accepted |  |
 | D17 | [New repository; agent instructions in AGENTS.md](D17-new-repository-agent-instructions-in-agents-md.md) | accepted |  |
 | D18 | [Handoff targets and who decides the workflow](D18-handoff-targets-and-who-decides-the-workflow.md) | accepted | own amendment 2026-10-25 |
-| D19 | [Bot slug fixed at creation](D19-bot-slug-fixed-at-creation.md) | accepted |  |
+| D19 | [Bot slug fixed at creation](D19-bot-slug-fixed-at-creation.md) | accepted | D38, D52 (amendment 2026-10-27) |
 | D20 | [Daily spending cap](D20-daily-spending-cap.md) | accepted | D40, D42 |
 | D21 | [Token and cost tracking](D21-token-and-cost-tracking.md) | accepted |  |
 | D22 | [Use UUIDv7 instead of ULID for ids](D22-use-uuidv7-instead-of-ulid-for-ids.md) | accepted (shown as TypeIDs, D36) |  |
@@ -92,7 +92,7 @@ Implemented in: links.
 | D45 | [Every run reads the project's goal and instructions](D45-project-goal-and-instructions.md) | accepted |  |
 | D46 | [The app writes a short title from the first message, one time only](D46-auto-title-from-the-first-message.md) | accepted | own amendment 2026-10-25 |
 | D47 | [Delete sends the whole project to Trash; the owner picks what wins in a memory check](D47-delete-project-to-trash-and-memory-check-choices.md) | accepted | D49, D61 |
-| D48 | [Bots plan first and wait for approval before they change anything](D48-bots-plan-before-they-change-anything.md) | accepted | D54, D56, D57 |
+| D48 | [Bots plan first and wait for approval before they change anything](D48-bots-plan-before-they-change-anything.md) | accepted | D54, D56, D57; own amendment 2026-10-27 |
 | D49 | [Deleted skills go to Trash, Trash keeps items for a set number of days, and only a permanent delete has Undo](D49-skills-go-to-trash-and-trash-days-setting.md) | accepted | D62 |
 | D50 | [Deleted bots go to Trash and can be restored](D50-deleted-bots-go-to-trash.md) | accepted |  |
 | D51 | [Bots improve their skills from the owner's feedback, and the owner approves each change](D51-bots-improve-their-skills-from-owner-feedback.md) | accepted | own amendments 2026-10-23, 2026-10-24, 2026-10-27 |

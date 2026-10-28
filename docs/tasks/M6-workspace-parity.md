@@ -12,8 +12,8 @@ deleted at the end.
 ## Read first
 
 `docs/porting-guide.md` (all); `docs/security.md` §2.2–2.4; `docs/conversation-rules.md` §5;
-`docs/decisions/` D18, D19; `docs/domain-model.md` §9, §11; `docs/api.md` §5 (attachments,
-files), §6; `docs/requirements/conversation.md` (UI-3.3 cards, 3.13, 3.16).
+`docs/decisions/` D18, D19, D52, D54, D61; `docs/domain-model.md` §9, §11; `docs/api.md` §5 (attachments), §5d (Library), §6; `docs/requirements/conversation.md` (UI-3.3 cards, 3.13, 3.16); the round 17 UI design:
+`docs/design/components/library-page.md` and `library-cards.md`.
 
 ## In scope
 
@@ -22,7 +22,9 @@ files), §6; `docs/requirements/conversation.md` (UI-3.3 cards, 3.13, 3.16).
 - Attachments: upload endpoint, `attachments/<yyyy-mm-dd>-<conversation-slug>/` (D52), multimodal prompt building, binary stripping in
   history.
 - Sensitive-data guard for text attachments (D39): UI-3.23.
-- Files panel and viewer with safe headers.
+- The Library page and its viewer with safe headers (`design/components/library-page.md`; it
+  replaces the Files side panel, UI-3.16), and the Library parts in a conversation
+  (`design/components/library-cards.md`).
 - Handoffs: table, `propose_handoff` tool (D18 if accepted; otherwise ask), cards, decisions,
   stale detection, "Add <bot> and start", 24-hour limit.
 - Conversation delete (D60): saved files stay in the Library; unsaved changes go to Trash with the
@@ -71,22 +73,26 @@ The sandbox port, file-serving headers, upload handling.
 Is D18 (implicit workflow, handoff to any bot, team directory) accepted? Decide before starting.
 
 D52 is accepted (each run writes on its own branch and saves to the Library when it ends).
-Before the plan starts, this brief gets the run worktrees, the save queue and file claims, the
-overlap notice, the unsaved changes card, the delete and move approval card, the Library page
-for a project and for Home, the plan card mark for a file from another conversation (D52
-amendment 2026-10-25), and D61: Copy to (owner and `propose_copy`), Add from Home Library, the
-copy card with the pinned version, the New tag, the `library_copies` schema design and the
-`copy_proposals_max_per_conversation_24h` setting, and the `run_branches` schema design (initial schema for M6).
+The UI design is agreed in round 17 (2026-10-27): the overlap notice, the unsaved changes card,
+the save card for a delete or move outside the plan, the Library page for a project and for
+Home, the plan card mark for a file from another conversation (D52 amendment 2026-10-25), and
+for D61 Copy to, Add from Home Library, the copy card with the pinned version and the New tag
+(`design/components/library-page.md`, `library-cards.md`, API `api.md` §5d). Before the plan
+starts, this brief still gets the run worktrees, the save queue and file claims, the
+`library_copies` schema design, the `copy_proposals_max_per_conversation_24h` setting, the
+`run_branches` schema design (initial schema for M6) and the `library.*` events in
+`realtime-events.md`.
 
-From the M5b design review, round 15 (2026-10-26), for the D61 copy work (new, not agreed; the
-owner confirms in the M6 plan):
+For the D61 copy work (agreed; the source of each item is in brackets):
 
 - `propose_copy` names the destination by the place id. The bot sees each place as id and name,
-  because project names need not be unique (owner 2026-10-26 13:36).
+  because project names need not be unique (owner, 2026-10-26 13:36).
 - The copy suffix `-from-<place-slug>` (D61) gets a number when that name is taken too:
-  `notes-from-trip-ideas-2.md`.
+  `notes-from-trip-ideas-2.md` (round 17, `design/components/library-page.md` §6; owner,
+  2026-10-28).
 - The file step of the Move dialog (`design/components/conversation-page.md` §2.1a) is drawn
-  with its M6 tag; M6 builds it on `POST /conversations/{id}/move` (`file_paths`).
+  with its M6 tag; M6 builds it on `POST /conversations/{id}/move` (`files`: path and pinned commit)
+  (round 15 board; `api.md` §5, PR #41 review).
 
 Parked for this brief (owner, 2026-10-24; notes in the agent checklist, pstack and handoff
 reviews). Each needs the owner's choice before the plan starts:
