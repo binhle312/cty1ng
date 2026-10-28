@@ -23,6 +23,16 @@ design in this document first, then the generated SQL in the slice PR (`../AGENT
   constant `"owner"`; the column exists so multi-user is an addition (D1).
 - JSON columns are validated by Zod schemas in the services before writing and parsed again
   when read.
+- **Every primary key column is declared `NOT NULL`** (owner, 2026-10-28), also a single `id TEXT
+  PK`. SQLite allows NULL in a primary key column that is not `INTEGER PRIMARY KEY`, unless the
+  table is `STRICT` or `WITHOUT ROWID`. The schema test checks every primary key column.
+- **Links inside one conversation use composite foreign keys** (owner, 2026-10-28). `messages`
+  and `runs` have `UNIQUE (conversation_id, id)`, and a link from a row of a conversation to a
+  message or run of the same conversation includes `conversation_id`, so the database refuses a
+  link into another conversation. A composite key with a NULL column is not checked, so an
+  optional link (a root message's parent, an empty leaf) still works. A future link that must
+  point into another conversation on purpose (for example D58's Send to conversation) uses a
+  plain foreign key and says why.
 - SQLite runs in WAL mode with `foreign_keys=ON` and `busy_timeout = 5000`; writes use
   `BEGIN IMMEDIATE` (`architecture.md` §11).
 - Rows edited from forms (`bots`, `skills`, `conversations`) carry `row_version INTEGER NOT NULL
@@ -273,7 +283,7 @@ ticked by default) in the same layout, as `<n>-skills-<UTC timestamp, ISO basic>
 
 ```
 run_skills
-  run_id            TEXT REFERENCES runs(id)
+  run_id            TEXT NOT NULL REFERENCES runs(id)
   skill_version_id  TEXT NULL REFERENCES skill_versions(id)   -- NULL after the skill's purge (D49)
   skill_slug        TEXT NOT NULL      -- copy at run time, kept after the purge
   version           INTEGER NOT NULL   -- copy at run time
@@ -318,9 +328,9 @@ author of the version that results (D14).
 skill_drafts                                              -- TypeID prefix `skilld`
   id                 TEXT PK
   conversation_id    TEXT NOT NULL REFERENCES conversations(id)
-  message_id         TEXT NOT NULL REFERENCES messages(id)   -- the card (kind = skill_draft)
-  source_message_id  TEXT NOT NULL REFERENCES messages(id)   -- the owner's message that asked
-  created_by_run_id  TEXT NOT NULL REFERENCES runs(id)
+  message_id         TEXT NOT NULL                -- the card (kind = skill_draft); composite FK below
+  source_message_id  TEXT NOT NULL                -- the owner's message that asked; composite FK below
+  created_by_run_id  TEXT NOT NULL                -- composite FK below
   drafted_by_bot_id  TEXT NOT NULL REFERENCES bots(id)
   kind               TEXT NOT NULL                -- new | edit
   skill_id           TEXT NULL REFERENCES skills(id)         -- set when kind = edit
@@ -337,6 +347,9 @@ skill_drafts                                              -- TypeID prefix `skil
   created_at, decided_at
   CHECK ((kind = 'new' AND skill_id IS NULL AND base_version IS NULL)
       OR (kind = 'edit' AND skill_id IS NOT NULL AND base_version IS NOT NULL))
+  FOREIGN KEY (conversation_id, message_id) REFERENCES messages(conversation_id, id)
+  FOREIGN KEY (conversation_id, source_message_id) REFERENCES messages(conversation_id, id)
+  FOREIGN KEY (conversation_id, created_by_run_id) REFERENCES runs(conversation_id, id)
 ```
 
 - The draft keeps the bot's text. If the owner edits before approving, the approved version
@@ -444,7 +457,7 @@ conversations
   title                    TEXT NOT NULL DEFAULT 'New conversation'
   title_source             TEXT NOT NULL DEFAULT 'default'   -- default | auto | manual (D46)
   auto_title_status        TEXT NULL        -- NULL = not tried | pending | done | failed | skipped (D46)
-  active_leaf_message_id   TEXT NULL REFERENCES messages(id)
+  active_leaf_message_id   TEXT NULL                -- FOREIGN KEY (id, active_leaf_message_id) REFERENCES messages(conversation_id, id)
   bot_discussion_enabled   BOOLEAN NULL     -- NULL = use global setting
   bot_turn_limit           INTEGER NULL     -- NULL = use global; 1..20
   bot_turns_used           INTEGER NOT NULL DEFAULT 0
@@ -455,8 +468,8 @@ conversations
   purged_at                TIMESTAMP NULL   -- D60: Trash purge; rows stay, content is cleared
 
 conversation_bots
-  conversation_id   TEXT REFERENCES conversations(id)
-  bot_id            TEXT REFERENCES bots(id)
+  conversation_id   TEXT NOT NULL REFERENCES conversations(id)
+  bot_id            TEXT NOT NULL REFERENCES bots(id)
   status            TEXT NOT NULL      -- pending_history | active | removed
   joined_at_seq     INTEGER NOT NULL   -- events.seq when added
   history_from_seq  INTEGER NULL       -- 0 = full history; = joined_at_seq = from here on; NULL until chosen
@@ -491,7 +504,7 @@ messages
   id                 TEXT PK
   conversation_id    TEXT NOT NULL REFERENCES conversations(id)
   seq                INTEGER NOT NULL     -- events.seq of message.created; global order
-  parent_message_id  TEXT NULL REFERENCES messages(id)   -- tree for branches (D13)
+  parent_message_id  TEXT NULL            -- tree for branches (D13); composite FK below
   author_type        TEXT NOT NULL        -- human | bot | system
   author_id          TEXT NULL            -- owner id or bot id; NULL for system
   kind               TEXT NOT NULL DEFAULT 'text'   -- text | history_choice | handoff | skill_draft | notice
@@ -500,12 +513,15 @@ messages
   mentions           JSON NOT NULL DEFAULT '[]'      -- bot ids, in order
   attachments        JSON NOT NULL DEFAULT '[]'      -- [{path, kind, size}]
   status             TEXT NOT NULL        -- streaming | complete | failed | stopped
-  run_id             TEXT NULL REFERENCES runs(id)
+  run_id             TEXT NULL            -- composite FK below
   client_id          TEXT NULL            -- browser-generated id of a human message; makes a resend idempotent
   edited_from_id     TEXT NULL REFERENCES messages(id)   -- the sibling this edit replaces
   created_at, updated_at
 INDEX messages_by_parent ON messages(conversation_id, parent_message_id)
 UNIQUE INDEX messages_client_id ON messages(conversation_id, client_id) WHERE client_id IS NOT NULL
+UNIQUE (conversation_id, id)                                                   -- target of the composite FKs (§1)
+FOREIGN KEY (conversation_id, parent_message_id) REFERENCES messages(conversation_id, id)   -- invariant 10
+FOREIGN KEY (conversation_id, run_id) REFERENCES runs(conversation_id, id)
 ```
 
 - Content is updated in place **only** while `status = streaming` (partial saves). After that a
@@ -522,9 +538,9 @@ UNIQUE INDEX messages_client_id ON messages(conversation_id, client_id) WHERE cl
 ```
 runs
   id                  TEXT PK
-  conversation_id     TEXT NOT NULL
-  bot_id              TEXT NOT NULL
-  trigger_message_id  TEXT NOT NULL REFERENCES messages(id)
+  conversation_id     TEXT NOT NULL REFERENCES conversations(id)
+  bot_id              TEXT NOT NULL REFERENCES bots(id)
+  trigger_message_id  TEXT NOT NULL     -- composite FK below
   triggered_by        TEXT NOT NULL     -- human | bot | handoff
   status              TEXT NOT NULL     -- queued | running | done | failed | stopped
   attempts            INTEGER NOT NULL DEFAULT 0
@@ -537,6 +553,8 @@ runs
   created_at, started_at, finished_at
 INDEX runs_claim ON runs(status, created_at)
 UNIQUE INDEX runs_one_running ON runs(conversation_id) WHERE status = 'running'   -- D11 in the database
+UNIQUE (conversation_id, id)                                                       -- target of the composite FKs (§1)
+FOREIGN KEY (conversation_id, trigger_message_id) REFERENCES messages(conversation_id, id)
 
 run_slots                                -- append-only; one row per admitted execution (proposed 2026-10-25, schema design needs owner approval)
   id               TEXT PK               -- TypeID prefix `rslot`; one run can have more than one slot
@@ -605,6 +623,8 @@ handoffs
   id, conversation_id, from_bot_id, to_bot_id (NULL = human), files JSON, summary,
   commit_sha, status (pending | approved | changes_requested | rejected | stale),
   message_id, created_by_run_id, created_at, decided_at, decision_note
+  FOREIGN KEY (conversation_id, message_id) REFERENCES messages(conversation_id, id)
+  FOREIGN KEY (conversation_id, created_by_run_id) REFERENCES runs(conversation_id, id)
 ```
 
 ## 10. Settings
@@ -669,7 +689,9 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
 8. At most one `running` run per conversation (enforced by `runs_one_running`).
 9. A message's content changes only while `status = streaming`, or when the Trash purge clears
    it (D60).
-10. Every message's `parent_message_id` belongs to the same conversation.
+10. Every message's `parent_message_id` belongs to the same conversation, and so does every
+    other same-conversation link (§1). Composite foreign keys enforce it; the test proves that the
+    database refuses a link into another conversation.
 11. `run_skills` contains exactly the always-loaded pins plus the distinct `load_skill` calls.
 12. Bot names are unique among bots that are not purged, Trash included (case-insensitive, D50); slugs are unique forever.
 13. A request's `estimated_cost_usd` never changes after it finishes, even if prices do; a run's
