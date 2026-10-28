@@ -17,7 +17,7 @@ flowchart LR
   subgraph pc["Owner's computer"]
     browser["Browser<br/>React app"]
     app["The app<br/>one Node process<br/>127.0.0.1:8000"]
-    data[("data/ folder<br/>app.db · workspaces/ · avatars/")]
+    data[("data/ folder<br/>app.db · libraries/ · run-worktrees/ · avatars/")]
     fm["System file manager"]
   end
   providers["Model providers<br/>and their web tools (D53)"]
@@ -48,7 +48,7 @@ flowchart TB
     boot["Startup task<br/>title pending → failed, no retry (D46)"]
   end
   db[("SQLite, WAL<br/>data/app.db")]
-  ws[("Git repos<br/>data/workspaces/")]
+  ws[("Git repos<br/>data/libraries/ · data/run-worktrees/")]
   prov["Model providers"]
   http --> db
   worker --> db
@@ -66,7 +66,7 @@ files in production builds. The browser uses the generated TypeScript client for
 `EventSource` for SSE.
 
 **What survives a restart.** Run state, leases and events live in SQLite. Library files and
-unsaved run branches live on disk (`data/workspaces/`, D52). Timers, open streams and event
+unsaved run branches live on disk (`data/libraries/`, `data/run-worktrees/`, D52). Timers, open streams and event
 notifications live in memory; the app creates them again at start, and the browser reconnects
 with `Last-Event-ID` (`realtime-events.md`).
 
@@ -200,7 +200,8 @@ kebab-case.
 
 ### 4.1 Import rules
 
-Arrows are allowed imports. Any other import fails CI.
+Solid arrows are allowed imports; any other import fails CI. Dashed arrows are HTTP and SSE at
+runtime, not imports: the frontend never imports backend code.
 
 ```mermaid
 flowchart TB
@@ -234,14 +235,14 @@ flowchart TB
   appr --> CORE
   ah --> svc
   as --> svc
-  AD -. "implement" .-> ports
+  AD -- "imports, implements" --> ports
   svc --> rules
   svc --> ports
   CORE --> shared
   AD --> shared
   FE --> shared
-  gen -- "HTTP" --> ah
-  rt -- "SSE" --> as
+  gen -. "HTTP (runtime)" .-> ah
+  rt -. "SSE (runtime)" .-> as
 ```
 
 - `app/` may import anything in the backend. It is the only place adapters are chosen.
@@ -330,9 +331,11 @@ queued ──claim (lease)──▶ running ──▶ done
   index and a compare-and-set claim, §11), not by locks in memory, so it survives restarts and
   a later multi-process worker.
 - Different conversations run concurrently, up to `MAX_CONCURRENT_RUNS` (default 3).
-- A crash leaves a `running` row with an expired lease; the next claim picks it up again
-  (`attempts + 1`). After `MAX_ATTEMPTS` (default 3) it becomes `failed`. `attempts` is also
-  the fencing token that stops the old worker's late writes (§11).
+- A crash leaves a `running` row with an expired lease. A worker reclaims it with its own
+  compare-and-set (`attempts + 1`, §11). When `attempts` has reached `RUN_MAX_ATTEMPTS`
+  (default 3), the worker does not reclaim it: the run becomes `failed` with
+  `error = "lease_expired"`, and the message shows Retry (UI-3.7). `attempts` is also the
+  fencing token that stops the old worker's late writes (§11).
 - **Idempotency:** a run produces exactly one bot message; the message row is created when the
   run starts (status `streaming`) and reused on retry, so retries never duplicate messages.
 - **Stall timeout:** the lease covers a crashed worker, not a provider that hangs. Each model
@@ -356,9 +359,21 @@ memory, so each job also runs once at start; that run catches up on any time the
 | Job | When | What it does | Slice |
 | --- | --- | --- | --- |
 | Trash purge (D49, D50, D60, D62) | At start and every `PURGE_INTERVAL_HOURS` (default 24) | Purges each item where `deleted_at + trash_days` is at or before now. One item per transaction, with its event | M1 (skills), M5b (every item) |
-| Unsaved changes discard (D52) | The same job, the same interval | Discards each unsaved run branch where the run's end `+ trash_days` is at or before now. One branch per transaction, with `library.discarded`. A branch of a conversation in Trash goes at that conversation's purge | M6 |
+| Unsaved changes discard (D52) | The same job, the same interval | Discards each unsaved run branch at `discard_on`: the run's end `+ trash_days`, or the purge of its conversation or project, whichever comes first. Example: the run fails on Oct 1, the conversation goes to Trash on Oct 20, `trash_days` is 30: the changes go on Oct 31, the conversation on Nov 19 | M6 |
 
-Both are idempotent: a second pass finds nothing. An item can stay up to one interval longer than
+**Discard steps.** Git and SQLite cannot share a transaction, so the discard has two steps:
+
+1. Database first, in one transaction: `UPDATE run_branches SET state = 'discarded' WHERE run_id = ?
+   AND state = 'unsaved'`, with `library.discarded`. Save uses the same compare-and-set on
+   `state = 'unsaved'`: it moves the row to `saving` before the merge. The loser changes 0 rows.
+   A loser job skips the row; a loser Save returns 409 `nothing_unsaved`.
+2. Then disk: remove the run's worktree and its branch. Every job pass and every start also
+   removes the disk leftovers of `discarded` rows. A worktree or branch that is already gone
+   counts as done, so a crash between the two steps leaves nothing behind.
+
+The `saving` state is part of the M6 `run_branches` schema design (owner, 2026-10-28).
+
+Both jobs are idempotent: a second pass finds nothing. An item can stay up to one interval longer than
 `trash_days`, never shorter (D62). On a VPS (§10) pg-boss schedules are one possible way to run
 these jobs; that is not agreed.
 
@@ -392,7 +407,7 @@ invalid), plus `config/models.yaml`.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `DATA_DIR` | `./data` | Database, workspaces, avatars |
+| `DATA_DIR` | `./data` | Database, Libraries, run worktrees, avatars (`domain-model.md` §11) |
 | `HOST` | `127.0.0.1` | Must stay loopback in phase 1 (startup refuses `0.0.0.0`) |
 | `PORT` | `8000` | |
 | `ALLOWED_ORIGINS` | `http://127.0.0.1:5173,http://localhost:5173` | Dev frontend origins; prod build is same-origin |
@@ -471,6 +486,8 @@ error) and handles it.
 | Race | Rule | The loser gets |
 | --- | --- | --- |
 | Two workers claim the same queued run | Compare-and-set: `UPDATE runs SET status = 'running', locked_until = ?, attempts = attempts + 1 WHERE id = ? AND status = 'queued'` | 0 rows: picks another run |
+| Two workers reclaim the same run after its lease expired (§6) | Compare-and-set: `UPDATE runs SET locked_until = ?, attempts = attempts + 1 WHERE id = ? AND status = 'running' AND locked_until < ? AND attempts < ?` (now, `RUN_MAX_ATTEMPTS`). The status stays `running`, so the partial unique index still holds | 0 rows: picks another run. The old worker's writes carry the old `attempts`, so they change 0 rows |
+| A run with an expired lease has used all its attempts | Compare-and-set in one transaction: `UPDATE runs SET status = 'failed', error = 'lease_expired' WHERE id = ? AND status = 'running' AND locked_until < ? AND attempts >= ?`, then the message becomes `failed`, with `run.finished` and `message.failed` | 0 rows: another worker already ended it; nothing more to do |
 | Two runs start in one conversation (D11) | Partial unique index `runs_one_running ON runs(conversation_id) WHERE status = 'running'`, so the claim above fails even if the "no running run" check raced | Constraint error: treated as 0 rows |
 | A worker whose lease expired keeps writing after another worker reclaimed the run | `attempts` is a **fencing token**: every write a worker makes for a run (partial text, steps, finish) adds `AND attempts = <its attempt>` | 0 rows: the worker stops and discards its result |
 | Stop and finish at the same moment | Both are compare-and-set on `status = 'running'` (with the fencing token) | Whichever commits second changes 0 rows; the run ends either `stopped` or `done`, never both |

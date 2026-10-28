@@ -33,9 +33,13 @@ deleted at the end.
   ticked boxes and pinned versions, the copy save, and the check for a save in progress or
   unsaved changes (also checked by the server before the move).
 - Unsaved changes discard (D52, `architecture.md` §6.1): the Trash purge job also discards each
-  unsaved run branch after the run's end + `trash_days`, one branch per transaction, with
-  `library.discarded`. Test: a branch one day past the date is discarded, a branch one day
-  before it stays, and a second pass changes nothing.
+  unsaved run branch at `discard_on` (the run's end + `trash_days`, or the purge of its
+  conversation or project, whichever comes first). Database step first, then the disk step;
+  `run_branches.state` gets `saving` (schema design approval in the M6 plan). Tests: a branch one
+  day past the date is discarded, a branch one day before it stays; a conversation in Trash does
+  not keep the changes past their own date; a crash after the database step leaves no worktree
+  after the next pass; Save and the discard racing on one row give one winner; a second pass
+  changes nothing.
 - `openFolder(place)` on the workspace port (`security.md` §2.15); the contract suite covers it.
 - Delete `reference/` and confirm every row of `porting-guide.md` §2 is done.
 

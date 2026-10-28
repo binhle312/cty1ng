@@ -628,11 +628,12 @@ Bot limits and defaults (`bots.md` UI-4.6, UI-5.8; read by M2, never hard-coded)
 data/
   app.db                                    SQLite database (+ -wal, -shm)
   avatars/<sha256>.webp                     re-encoded uploads, content-addressed
-  workspaces/<project_id>/                  git repo shared by a project's conversations (D37)
-  workspaces/home/                          the Home Library: one git repo for all conversations outside projects (D52 amendment 2026-10-25)
+  libraries/<project_id>/                   a project's Library: one git repo, main checked out, shared by its conversations (D37, D52)
+  libraries/home/                           the Home Library: one git repo for all conversations outside projects (D52 amendment 2026-10-25)
       attachments/<yyyy-mm-dd>-<conversation-slug>/<file>   owner uploads (bots: read-only, D52)
       README.md, .gitignore, .gitattributes      made by the app in the first commit (D52)
       <topic folders>/...                   bot and owner files, by topic, not by author (D52)
+  run-worktrees/<run_id>/                   the git worktree of one action run (D52); removed after the save or the discard (architecture.md §6.1)
 ```
 
 Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the DB).
