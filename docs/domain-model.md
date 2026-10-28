@@ -127,7 +127,6 @@ skills
   slug                           TEXT UNIQUE NOT NULL     -- ^[a-z0-9-]{1,64}$
   name                           TEXT NOT NULL            -- ≤ 64 chars
   author_id                      TEXT NOT NULL            -- D14
-  latest_version_id              TEXT NOT NULL REFERENCES skill_versions(id)
   cloned_from_skill_version_id   TEXT NULL REFERENCES skill_versions(id)
   created_at
   updated_at                                              -- last change (new version, deprecate, restore); list order
@@ -145,15 +144,17 @@ skill_versions                                            -- no UPDATE; DELETE o
   created_by    TEXT NOT NULL
   skill_draft_id TEXT NULL REFERENCES skill_drafts(id)    -- set when approved from a bot's draft (D41)
   created_at
-  UNIQUE (skill_id, version)
+  UNIQUE (skill_id, version)                              -- also finds the latest version: the highest one
+  UNIQUE (skill_id, id)                                   -- target of the bot_skills composite foreign key
 
 bot_skills                                                -- a bot's "go.mod"
-  bot_id            TEXT REFERENCES bots(id)
-  skill_id          TEXT REFERENCES skills(id)
-  skill_version_id  TEXT NOT NULL REFERENCES skill_versions(id)   -- the pin (D6)
+  bot_id            TEXT NOT NULL REFERENCES bots(id)
+  skill_id          TEXT NOT NULL REFERENCES skills(id)
+  skill_version_id  TEXT NOT NULL                         -- the pin (D6)
   always_load       BOOLEAN NOT NULL DEFAULT FALSE                 -- D16
   added_at, updated_at
   PRIMARY KEY (bot_id, skill_id)                          -- one version of a skill per bot
+  FOREIGN KEY (skill_id, skill_version_id) REFERENCES skill_versions(skill_id, id)   -- the pinned version belongs to this skill (invariant 3)
 ```
 
 `name`, `description` and body follow the `SKILL.md` format:
@@ -170,6 +171,23 @@ description: Write docs/stories.md as user stories with acceptance criteria.
 
 The frontmatter `name` is the slug. `description` is per version (it can improve over time).
 
+**Latest version (owner, 2026-10-28).** A skill has no pointer to its latest version. The latest
+version is the row with the highest `version` for the skill, found through
+`UNIQUE (skill_id, version)` (`ORDER BY version DESC LIMIT 1`). This is always correct, because
+versions are never updated and a Restore also creates `N+1` (§3.2). It also removes a circular
+foreign key between `skills` and `skill_versions`, which needs deferred checks that SQLite and
+Postgres declare in different ways (D29 guardrail 1).
+
+- **Create:** the `skills` row and its v1 are inserted in the same transaction, so a committed
+  skill always has at least one version (invariant 25).
+- **Two saves at once:** the request sends `base_version`; the insert of `N+1` fails on
+  `UNIQUE (skill_id, version)` for the loser, which gets 409 `stale_write` (`api.md` §2,
+  `architecture.md` §11). Unchanged.
+- **Pins:** the composite foreign key keeps each pin inside its skill (invariant 3).
+  `bot_skills.bot_id` and `bot_skills.skill_id` are declared `NOT NULL`, because SQLite does not
+  always enforce NOT NULL on the columns of a composite primary key, and a NULL would skip the
+  foreign key check.
+
 ### 3.2 Versions and pins (D6)
 
 The mental model is Go modules: a skill is a module, a version is a release, and a bot's pin
@@ -177,9 +195,9 @@ is its `go.mod` line.
 
 | Action | Effect |
 | --- | --- |
-| Author saves an edit | New `skill_versions` row `N+1`; `latest_version_id` moves. **No pin moves.** |
+| Author saves an edit | New `skill_versions` row `N+1`, which is now the latest. **No pin moves.** |
 | Save dialog "Also upgrade these bots" | Lists the author's bots pinned to older versions, all ticked. Ticked ones move to `N+1` in the same transaction. |
-| Assign a skill to a bot | Pins `latest_version_id` at that moment. |
+| Assign a skill to a bot | Pins the latest version (the highest `version`) at that moment. |
 | Upgrade / downgrade on bot detail | Moves that one pin to the chosen version. |
 | Restore old version vK | Creates `N+1` with vK's content (history is append-only). |
 | Clone a bot | Copies pins and `always_load` exactly. |
@@ -642,7 +660,8 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
 
 1. `bots.model_id` and `bots.effort` never change after insert.
 2. `skill_versions` rows are never updated; only the Trash purge deletes them, with their skill (D49).
-3. `bot_skills.skill_version_id` belongs to `bot_skills.skill_id`.
+3. `bot_skills.skill_version_id` belongs to `bot_skills.skill_id`. The composite foreign key
+   enforces it; the test proves that the database refuses a pin to another skill's version.
 4. Editing a skill does not change any `bot_skills` row unless the author checked that bot.
 5. Only the author can create versions, deprecate, delete or restore a skill.
 6. A deprecated skill cannot be newly assigned.
@@ -678,6 +697,8 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
     marks `delete` is left, and every row of another scope is unchanged (D60). Every table has a
     §16 entry. The column names in a covered table's entry match its schema columns exactly,
     with no wildcard or default (schema test).
+25. Every committed skill has at least one version: a skill and its v1 are inserted in one
+    transaction (§3.1).
 
 ## 13. Usage and cost (D20, D21)
 
