@@ -374,7 +374,8 @@ memory, so each job also runs once at start; that run catches up on any time the
 **One branch per attempt (owner, 2026-10-28).** A Retry queues the same run again, and its new
 try starts from the newest main; the failed try's changes stay (`design/components/library-cards.md`
 §3). So each attempt has its own branch `runs/<run-id>/<attempt>`, worktree
-`data/run-worktrees/<run_id>-<attempt>/` and `run_branches` row, keyed by `(run_id, attempt)`.
+`data/run-worktrees/<run_id>-<attempt>/` and `run_branches` row, keyed by `(run_id, attempt)`,
+a foreign key to the try in `run_attempts` (`domain-model.md` §7).
 Every save and discard names the attempt. A try that a lease reclaim replaces (§6, §11) is
 treated like a failed try: if it wrote files, its branch becomes unsaved changes with its own
 `discard_on`, and the reclaimed attempt starts a new worktree from the newest main.

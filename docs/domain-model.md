@@ -284,16 +284,20 @@ ticked by default) in the same layout, as `<n>-skills-<UTC timestamp, ISO basic>
 ```
 run_skills
   run_id            TEXT NOT NULL REFERENCES runs(id)
+  attempt           INTEGER NOT NULL   -- the try that used the skill (§7 run_attempts)
   skill_version_id  TEXT NULL REFERENCES skill_versions(id)   -- NULL after the skill's purge (D49)
   skill_slug        TEXT NOT NULL      -- copy at run time, kept after the purge
   version           INTEGER NOT NULL   -- copy at run time
   mode              TEXT NOT NULL      -- always | loaded
   first_loaded_at   TIMESTAMP
-  PRIMARY KEY (run_id, skill_slug)     -- a run has one bot, and a bot has one version of a skill
+  PRIMARY KEY (run_id, attempt, skill_slug)   -- a run has one bot, and a bot has one version of a skill
+  FOREIGN KEY (run_id, attempt) REFERENCES run_attempts(run_id, attempt)
 ```
 
-Written by the server: one row per always-loaded pin when the run starts, one row per distinct
-`load_skill` call. The message payload includes the list so the UI can render chips. No model
+Written by the server: one row per always-loaded pin when the try starts, one row per distinct
+`load_skill` call in that try (owner, 2026-10-28: each try has its own rows, so a Retry that
+loads other skills does not hide what the failed try used). "Skill used" is still counted once
+per run (§13.1). The message payload includes the list so the UI can render chips. No model
 tokens are involved.
 
 ### 3.8 Run steps (D26)
@@ -302,7 +306,8 @@ tokens are involved.
 run_steps
   id            TEXT PK
   run_id        TEXT NOT NULL REFERENCES runs(id)
-  seq_in_run    INTEGER NOT NULL
+  attempt       INTEGER NOT NULL   -- the try that made the call (§7 run_attempts)
+  seq_in_run    INTEGER NOT NULL   -- keeps counting across tries
   kind          TEXT NOT NULL   -- load_skill | list_files | read_file | view_file | write_file | propose_handoff
                                 --  | remember | update_memory | forget | restore_memory (D38) | propose_memory_tidy (D63)
                                 --  | propose_skill (D41) | read_skill_base (D65; target = slug@version)
@@ -313,6 +318,7 @@ run_steps
   detail        JSON NULL       -- e.g. {bytes: 4120} or {error: "outside write scope"}
   started_at, finished_at
   UNIQUE (run_id, seq_in_run)
+  FOREIGN KEY (run_id, attempt) REFERENCES run_attempts(run_id, attempt)
 ```
 
 Written by the agent's tool wrappers as each tool call finishes, in the same transaction as its
@@ -559,16 +565,30 @@ FOREIGN KEY (conversation_id, trigger_message_id) REFERENCES messages(conversati
 run_slots                                -- append-only; one row per admitted execution (proposed 2026-10-25, schema design needs owner approval)
   id               TEXT PK               -- TypeID prefix `rslot`; one run can have more than one slot
   run_id           TEXT NOT NULL REFERENCES runs(id)
-  conversation_id  TEXT NOT NULL REFERENCES conversations(id)
+  conversation_id  TEXT NOT NULL REFERENCES conversations(id)   -- copy of the run's, for the window index
   used_at          TIMESTAMP NOT NULL    -- UTC, the time of the claim
 INDEX run_slots_window ON run_slots(conversation_id, used_at)
+FOREIGN KEY (conversation_id, run_id) REFERENCES runs(conversation_id, id)   -- the copy cannot differ (§1)
+
+run_attempts                             -- one row per try of a run (owner, 2026-10-28)
+  run_id       TEXT NOT NULL REFERENCES runs(id)
+  attempt      INTEGER NOT NULL          -- the runs.attempts value that the claim set; the fencing token (§12 #15)
+  status       TEXT NOT NULL             -- running | done | failed | stopped
+  error        TEXT NULL                 -- same values as runs.error; lease_expired for a try that a reclaim replaced
+  started_at   TIMESTAMP NOT NULL        -- the time of the claim
+  finished_at  TIMESTAMP NULL
+  PRIMARY KEY (run_id, attempt)
+  CHECK (status IN ('running', 'done', 'failed', 'stopped'))
+  CHECK ((status = 'running') = (finished_at IS NULL))
+UNIQUE INDEX run_attempts_one_running ON run_attempts(run_id) WHERE status = 'running'
 
 model_requests                           -- one row per call to the provider (D21)
   id                  TEXT PK
   purpose             TEXT NOT NULL DEFAULT 'run'   -- run | title (D46) | memory_tidy | memory_check (D63)
   conversation_id     TEXT NULL REFERENCES conversations(id)  -- NULL only for memory_tidy and memory_check (D63)
   run_id              TEXT NULL REFERENCES runs(id)  -- NULL when purpose is not 'run'
-  seq_in_run          INTEGER NOT NULL               -- 1 for a title or memory request
+  attempt             INTEGER NULL                   -- the try that made the request; NULL when purpose is not 'run'
+  seq_in_run          INTEGER NOT NULL               -- 1 for a title or memory request; keeps counting across tries
   provider            TEXT NOT NULL      -- anthropic, openai, …
   model_requested     TEXT NOT NULL      -- catalog model id
   model_resolved      TEXT NULL          -- model name the provider reports (may be a dated snapshot)
@@ -583,7 +603,10 @@ model_requests                           -- one row per call to the provider (D2
   UNIQUE (run_id, seq_in_run)
   CHECK (purpose IN ('run', 'title', 'memory_tidy', 'memory_check'))
   CHECK ((purpose = 'run') = (run_id IS NOT NULL))
+  CHECK ((purpose = 'run') = (attempt IS NOT NULL))
   CHECK ((purpose IN ('run', 'title')) = (conversation_id IS NOT NULL))
+  FOREIGN KEY (conversation_id, run_id) REFERENCES runs(conversation_id, id)   -- not checked when run_id is NULL (§1)
+  FOREIGN KEY (run_id, attempt) REFERENCES run_attempts(run_id, attempt)
 UNIQUE INDEX model_requests_one_title ON model_requests(conversation_id) WHERE purpose = 'title'   -- D46
 
 run_history
@@ -594,6 +617,24 @@ run_history
 `run_slots` is the only record for the hourly run limit (`conversation-rules.md` §2, §9). The
 worker inserts a row in the same transaction as a first claim or a claim after a manual Retry.
 A lease recovery and a refused claim insert none. Rows are never updated or deleted.
+
+`run_attempts` is the record of each try (owner, 2026-10-28). The Flow run card lists the tries
+with their start, end, state and reason (`flow-view.md`), and the Library keys unsaved branches
+by `(run_id, attempt)` (`architecture.md` §6.1). The worker writes it in the same transaction as
+the `runs` change:
+
+- **Claim** (a first claim, a claim after a manual Retry, or a lease reclaim): insert the row
+  with `status = 'running'` and the new `attempts` value. A refused claim inserts none.
+- **Lease reclaim:** in the same transaction, the replaced try becomes `failed` with
+  `error = 'lease_expired'` and `finished_at` = the time of the reclaim. When the attempts are used
+  up, the last try and the run become `failed` with `lease_expired` (`architecture.md` §11).
+- **End** (done, failed, stopped, timed out): the current try gets the run's end state, error and
+  time. The write carries `AND attempt = <its attempt>`, like every write of the worker.
+
+`runs` keeps its own fields: `started_at` is the first claim, and `status`, `error` and
+`finished_at` are those of the newest try. `run_steps`, `model_requests` and `run_skills` say
+which try they belong to, so a run total is the sum over all its tries, and a try's own figures
+are the sum over its rows.
 
 `run_history` keeps the bot's own tool calls and results between runs (as the prototype did),
 so a bot remembers what it read and wrote. Only runs on the active path are used, and they
@@ -692,7 +733,8 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
 10. Every message's `parent_message_id` belongs to the same conversation, and so does every
     other same-conversation link (§1). Composite foreign keys enforce it; the test proves that the
     database refuses a link into another conversation.
-11. `run_skills` contains exactly the always-loaded pins plus the distinct `load_skill` calls.
+11. For each try, `run_skills` contains exactly the always-loaded pins plus the distinct
+    `load_skill` calls of that try.
 12. Bot names are unique among bots that are not purged, Trash included (case-insensitive, D50); slugs are unique forever.
 13. A request's `estimated_cost_usd` never changes after it finishes, even if prices do; a run's
     totals equal the sum of its requests.
@@ -721,6 +763,9 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
     with no wildcard or default (schema test).
 25. Every committed skill has at least one version: a skill and its v1 are inserted in one
     transaction (§3.1).
+26. Every claim that the worker makes has exactly one `run_attempts` row, and a run has at most
+    one `running` try (`run_attempts_one_running`). Every `run_steps`, `run_skills` and run
+    `model_requests` row belongs to a try of its run (composite foreign key, §7).
 
 ## 13. Usage and cost (D20, D21)
 
@@ -763,7 +808,7 @@ a toast and a system line.
 | Active time | Sum of `finished_at − started_at` over runs |
 | Bot turns | Runs with `triggered_by = bot` |
 | Cache hit rate | cache_read_tokens ÷ (input_tokens + cache_read_tokens) |
-| Skill used | A `run_skills` row; counted once per run |
+| Skill used | A run with a `run_skills` row for the skill; counted once per run, also when two tries of the run used it |
 | Never loaded | An on-demand pin (`always_load = false`) with no `run_skills` row in the period |
 | Bucket | A time bucket (5 min, 1 h, 1 day, 1 week) aligned to the timezone in settings (default: browser local); chosen from the range length (`requirements/time-range-picker.md` §Contract with the backend and the URL). Computed in TypeScript with Node's built-in time zone data, not SQL, because SQLite has no time zone database (D29) |
 
@@ -962,7 +1007,7 @@ it is; its link shows "Deleted conversation" (owner, 2026-10-26).
 | Bot or project memory learned there | Bot or project (D38) | Keep |
 | Skill versions approved from a draft | The owner's skill (D41) | Keep |
 | Saved files in the Library | The place (D52) | Keep |
-| Runs, model requests, run slots, ratings | Statistics, daily cap, Improve signals (D21, D51) | Keep |
+| Runs, run tries, model requests, run slots, ratings | Statistics, daily cap, Improve signals (D21, D51) | Keep |
 
 **Policy per table.** Every table has one entry. A **covered** table names every column,
 whatever its SQLite type (TEXT, JSON, BLOB, INTEGER, …), because ids, statuses and times are TEXT
@@ -987,9 +1032,10 @@ default are not allowed: a column that is not named has no policy, and the schem
 | `messages` | `id`, `conversation_id`, `seq`, `parent_message_id`, `author_type`, `author_id`, `kind`, `status`, `run_id`, `client_id`, `edited_from_id`, `created_at`, `updated_at` | `content_md` → `''`, `card` → NULL, `mentions` → `'[]'`, `attachments` → `'[]'` |
 | `runs` | `id`, `conversation_id`, `bot_id`, `trigger_message_id`, `triggered_by`, `status`, `attempts`, `locked_until`, `cancel_requested`, `model_id`, `effort`, `input_tokens`, `output_tokens`, `cache_read_tokens`, `cache_write_tokens`, `requests`, `estimated_cost_usd`, `created_at`, `started_at`, `finished_at` | `error` → NULL |
 | `run_slots` | `id`, `run_id`, `conversation_id`, `used_at` | none |
-| `model_requests` | `id`, `purpose`, `conversation_id`, `run_id`, `seq_in_run`, `provider`, `model_requested`, `model_resolved`, `provider_response_id`, `finish_reason`, `input_tokens`, `output_tokens`, `cache_read_tokens`, `cache_write_tokens`, `usage_details`, `started_at`, `finished_at`, `latency_ms`, `estimated_cost_usd`, `reserved_cost_usd`, `price_source` | none |
-| `run_steps` | `id`, `run_id`, `seq_in_run`, `kind`, `status`, `started_at`, `finished_at` | `target` → `''`, `detail` → NULL |
-| `run_skills` | `run_id`, `skill_version_id`, `skill_slug`, `version`, `mode`, `first_loaded_at` | none |
+| `run_attempts` | `run_id`, `attempt`, `status`, `started_at`, `finished_at` | `error` → NULL |
+| `model_requests` | `id`, `purpose`, `conversation_id`, `run_id`, `attempt`, `seq_in_run`, `provider`, `model_requested`, `model_resolved`, `provider_response_id`, `finish_reason`, `input_tokens`, `output_tokens`, `cache_read_tokens`, `cache_write_tokens`, `usage_details`, `started_at`, `finished_at`, `latency_ms`, `estimated_cost_usd`, `reserved_cost_usd`, `price_source` | none |
+| `run_steps` | `id`, `run_id`, `attempt`, `seq_in_run`, `kind`, `status`, `started_at`, `finished_at` | `target` → `''`, `detail` → NULL |
+| `run_skills` | `run_id`, `attempt`, `skill_version_id`, `skill_slug`, `version`, `mode`, `first_loaded_at` | none |
 | `handoffs` | `id`, `conversation_id`, `from_bot_id`, `to_bot_id`, `commit_sha`, `status`, `message_id`, `created_by_run_id`, `created_at`, `decided_at` | `files` → `'[]'`, `summary` → `''`, `decision_note` → NULL |
 | `skill_drafts` | `id`, `conversation_id`, `message_id`, `source_message_id`, `created_by_run_id`, `drafted_by_bot_id`, `kind`, `skill_id`, `base_version`, `status`, `result_skill_version_id`, `edited_by_owner`, `row_version`, `created_at`, `decided_at` | `slug`, `name`, `description`, `body_md` → `''`, `changelog` → NULL |
 | `skill_versions` (points to `skill_drafts`; the owner's skill) | `id`, `skill_id`, `version`, `description`, `body_md`, `changelog`, `created_by`, `skill_draft_id`, `created_at` | none |
