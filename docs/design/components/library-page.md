@@ -218,7 +218,7 @@ Project Library pages only. The button opens a dialog (600 px):
 
 Opens the Library folder on the owner's computer in the system file manager (D52). The server
 opens only the folder of this Library, never a path from the request. On a VPS (M9) the button
-is not shown.
+is not shown. The security rules are in `security.md` §2.15.
 
 ## 10. Home Library (L8)
 
