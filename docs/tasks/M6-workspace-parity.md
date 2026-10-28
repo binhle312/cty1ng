@@ -83,15 +83,16 @@ starts, this brief still gets the run worktrees, the save queue and file claims,
 `run_branches` schema design (initial schema for M6) and the `library.*` events in
 `realtime-events.md`.
 
-From the M5b design review, round 15 (2026-10-26), for the D61 copy work (new, not agreed; the
-owner confirms in the M6 plan):
+For the D61 copy work (agreed; the source of each item is in brackets):
 
 - `propose_copy` names the destination by the place id. The bot sees each place as id and name,
-  because project names need not be unique (owner 2026-10-26 13:36).
+  because project names need not be unique (owner, 2026-10-26 13:36).
 - The copy suffix `-from-<place-slug>` (D61) gets a number when that name is taken too:
-  `notes-from-trip-ideas-2.md`.
+  `notes-from-trip-ideas-2.md` (round 17, `design/components/library-page.md` §6; owner,
+  2026-10-28).
 - The file step of the Move dialog (`design/components/conversation-page.md` §2.1a) is drawn
-  with its M6 tag; M6 builds it on `POST /conversations/{id}/move` (`files`: path and pinned commit).
+  with its M6 tag; M6 builds it on `POST /conversations/{id}/move` (`files`: path and pinned commit)
+  (round 15 board; `api.md` §5, PR #41 review).
 
 Parked for this brief (owner, 2026-10-24; notes in the agent checklist, pstack and handoff
 reviews). Each needs the owner's choice before the plan starts:
