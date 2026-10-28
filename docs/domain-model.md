@@ -633,7 +633,7 @@ data/
       attachments/<yyyy-mm-dd>-<conversation-slug>/<file>   owner uploads (bots: read-only, D52)
       README.md, .gitignore, .gitattributes      made by the app in the first commit (D52)
       <topic folders>/...                   bot and owner files, by topic, not by author (D52)
-  run-worktrees/<run_id>/                   the git worktree of one action run (D52); removed after the save or the discard (architecture.md §6.1)
+  run-worktrees/<run_id>-<attempt>/         the git worktree of one attempt of an action run (D52); removed after the save or the discard (architecture.md §6.1)
 ```
 
 Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the DB).

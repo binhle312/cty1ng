@@ -39,7 +39,8 @@ deleted at the end.
   day past the date is discarded, a branch one day before it stays; a conversation in Trash does
   not keep the changes past their own date; a crash after the database step leaves no worktree
   after the next pass; Save and the discard racing on one row give one winner; a second pass
-  changes nothing.
+  changes nothing; a failed try and its Retry keep two separate unsaved rows, and discarding one
+  leaves the other.
 - `openFolder(place)` on the workspace port (`security.md` §2.15); the contract suite covers it.
 - Delete `reference/` and confirm every row of `porting-guide.md` §2 is done.
 

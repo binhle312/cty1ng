@@ -364,14 +364,23 @@ memory, so each job also runs once at start; that run catches up on any time the
 **Discard steps.** Git and SQLite cannot share a transaction, so the discard has two steps:
 
 1. Database first, in one transaction: `UPDATE run_branches SET state = 'discarded' WHERE run_id = ?
-   AND state = 'unsaved'`, with `library.discarded`. Save uses the same compare-and-set on
+   AND attempt = ? AND state = 'unsaved'`, with `library.discarded`. Save uses the same compare-and-set on
    `state = 'unsaved'`: it moves the row to `saving` before the merge. The loser changes 0 rows.
    A loser job skips the row; a loser Save returns 409 `nothing_unsaved`.
-2. Then disk: remove the run's worktree and its branch. Every job pass and every start also
+2. Then disk: remove the attempt's worktree and its branch. Every job pass and every start also
    removes the disk leftovers of `discarded` rows. A worktree or branch that is already gone
    counts as done, so a crash between the two steps leaves nothing behind.
 
-The `saving` state is part of the M6 `run_branches` schema design (owner, 2026-10-28).
+**One branch per attempt (owner, 2026-10-28).** A Retry queues the same run again, and its new
+try starts from the newest main; the failed try's changes stay (`design/components/library-cards.md`
+§3). So each attempt has its own branch `runs/<run-id>/<attempt>`, worktree
+`data/run-worktrees/<run_id>-<attempt>/` and `run_branches` row, keyed by `(run_id, attempt)`.
+Every save and discard names the attempt. A try that a lease reclaim replaces (§6, §11) is
+treated like a failed try: if it wrote files, its branch becomes unsaved changes with its own
+`discard_on`, and the reclaimed attempt starts a new worktree from the newest main.
+
+The `saving` state and the `attempt` key are part of the M6 `run_branches` schema design
+(owner, 2026-10-28).
 
 Both jobs are idempotent: a second pass finds nothing. An item can stay up to one interval longer than
 `trash_days`, never shorter (D62). On a VPS (§10) pg-boss schedules are one possible way to run
