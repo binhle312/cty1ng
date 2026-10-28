@@ -59,7 +59,8 @@ only when the owner asks; only the owner assigns them), and the owner approved t
 the Skills page layout change in PR #38 (2026-10-27). M5c now depends on M3, not M4. M6 design round 17 (Library) is agreed:
 `design/components/library-page.md` (Files, History and Unsaved changes tabs, Copy to, Add from
 Home Library) and `library-cards.md` (overlap notice, unsaved changes card, save card, plan card
-mark, copy card). Next: the pre-coding diagram gate, then M0.
+mark, copy card), with the owner's review in PR #41 (2026-10-28). Next: the pre-coding diagram
+gate, then M0.
 
 ## Next
 
