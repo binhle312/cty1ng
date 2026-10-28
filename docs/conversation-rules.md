@@ -200,7 +200,7 @@ Another number gives `{error: "not_in_plan", message}`; a `skipped` with no note
 row (kind `mark_step`) and its `run.step` event, like every tool call. The plan card shows the
 steps from these rows (`design/components/plan-card.md` §6).
 
-The step state comes from one pure rule, `core/plan-progress.rules.ts` (D57):
+The step state comes from one pure rule, `core/plans/plan-progress.rules.ts` (D57):
 
 - `started` on a step that is not started makes it current, with the time of the mark.
 - `started` on a current step changes nothing (the first start time stays).

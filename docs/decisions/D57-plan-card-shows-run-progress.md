@@ -170,3 +170,7 @@ Consequences:
 
 Implemented in: `../design/components/plan-card.md`, `../conversation-rules.md`, the slice brief
 that builds the plan card.
+
+Amendment (owner, 2026-10-28, pre-coding diagram review): the rules file sits in its feature
+folder, `core/plans/plan-progress.rules.ts`, like every rules file (`../architecture.md` §4.1).
+Only the path changes; the rule stays the same.

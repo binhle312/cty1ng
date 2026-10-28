@@ -264,9 +264,10 @@ computer (owner, 2026-10-28):
 
 - The request has no path. The server builds the folder path from the place id, and the place
   must exist and must not be in Trash.
-- The server starts the system file manager with a fixed command (`open` on macOS, `explorer` on
-  Windows, `xdg-open` on Linux) and the folder path as one argument, with no shell
-  (`execFile`, never `exec`). A file or folder name can never become a command.
+- The server opens the folder through the workspace port (`openFolder(place)`,
+  `architecture.md` §2). The local-git adapter starts the system file manager with a fixed
+  command (`open` on macOS, `explorer` on Windows, `xdg-open` on Linux) and the folder path as
+  one argument, with no shell (`execFile`, never `exec`). A file or folder name can never become a command.
 - The endpoint has the same Host and Origin checks as every other POST (§2.1), so another
   website cannot call it.
 - On a VPS (M9) the button is hidden and the endpoint refuses the request.
