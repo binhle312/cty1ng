@@ -163,7 +163,7 @@ changes card in the conversation (`library-cards.md` §3), with a head that name
 - The tab lists only failed or stopped runs, and its count is the number of these runs. A run
   that finished but waits for a choice on a delete or move outside the plan is not here: its save
   card is in the conversation (`library-cards.md` §4).
-- Foot: "Discarded on {date} if you do nothing." (the run's end + `trash_days`, D52), then
+- Foot: "Discarded on {date} if you do nothing." (`discard_on`: the run's end + `trash_days`, or the purge of its conversation or project if that comes first; `architecture.md` §6.1), then
   **Discard** (danger, 30 px) and **Save** (primary, 30 px). The label is "Save", not "Save to
   Library", because the page is the Library (W2).
 - **Save** runs the normal save (merge, overlap rule, save queue). If the run has a delete or

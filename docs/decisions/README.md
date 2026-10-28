@@ -96,12 +96,12 @@ Implemented in: links.
 | D49 | [Deleted skills go to Trash, Trash keeps items for a set number of days, and only a permanent delete has Undo](D49-skills-go-to-trash-and-trash-days-setting.md) | accepted | D62 |
 | D50 | [Deleted bots go to Trash and can be restored](D50-deleted-bots-go-to-trash.md) | accepted |  |
 | D51 | [Bots improve their skills from the owner's feedback, and the owner approves each change](D51-bots-improve-their-skills-from-owner-feedback.md) | accepted | own amendments 2026-10-23, 2026-10-24, 2026-10-27 |
-| D52 | [Each run writes on its own branch and saves to the Library when it ends](D52-each-run-writes-on-its-own-branch.md) | accepted | D54, D56, D59, own amendment 2026-10-25, D61 |
+| D52 | [Each run writes on its own branch and saves to the Library when it ends](D52-each-run-writes-on-its-own-branch.md) | accepted | D54, D56, D59, own amendment 2026-10-25, D61, own amendment 2026-10-28 |
 | D53 | [Bots read the web only through the provider's web tools, with rules for runs that read it](D53-web-access-through-provider-web-tools.md) | accepted | D55 |
 | D54 | [The approved plan covers deletes and moves, and the app checks the run against the plan](D54-approved-plan-covers-the-run.md) | accepted | D57 |
 | D55 | [Provider tools first, one switch per tool, and one tool per job](D55-provider-tools-first-and-tool-switches.md) | accepted |  |
 | D56 | [Memory in action runs: items not in the plan, and runs that fail](D56-memory-in-action-runs-and-failed-runs.md) | accepted | |
-| D57 | [The plan card shows the progress of the action run](D57-plan-card-shows-run-progress.md) | accepted | |
+| D57 | [The plan card shows the progress of the action run](D57-plan-card-shows-run-progress.md) | accepted | own amendment 2026-10-28 |
 | D58 | [Bots read other conversations of the project on request, and the owner shares information between them](D58-read-and-share-across-project-conversations.md) | accepted | own amendment 2026-10-25 |
 | D59 | [A save shows a notice when project memory changed after the plan was approved](D59-save-notice-when-project-memory-changed.md) | accepted | |
 | D60 | [Deleted conversations go to Trash and can be restored](D60-deleted-conversations-go-to-trash.md) | accepted | D62 |

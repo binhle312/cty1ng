@@ -32,6 +32,16 @@ deleted at the end.
 - Move to project, file step (D61): M5b built the move itself. M6 adds the file list with
   ticked boxes and pinned versions, the copy save, and the check for a save in progress or
   unsaved changes (also checked by the server before the move).
+- Unsaved changes discard (D52, `architecture.md` §6.1): the Trash purge job also discards each
+  unsaved run branch at `discard_on` (the run's end + `trash_days`, or the purge of its
+  conversation or project, whichever comes first). Database step first, then the disk step;
+  `run_branches.state` gets `saving` (schema design approval in the M6 plan). Tests: a branch one
+  day past the date is discarded, a branch one day before it stays; a conversation in Trash does
+  not keep the changes past their own date; a crash after the database step leaves no worktree
+  after the next pass; Save and the discard racing on one row give one winner; a second pass
+  changes nothing; a failed try and its Retry keep two separate unsaved rows, and discarding one
+  leaves the other.
+- `openFolder(place)` on the workspace port (`security.md` §2.15); the contract suite covers it.
 - Delete `reference/` and confirm every row of `porting-guide.md` §2 is done.
 
 ## Acceptance criteria

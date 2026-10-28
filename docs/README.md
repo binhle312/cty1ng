@@ -24,6 +24,7 @@ New to the project (human or agent), read in this order:
 | [requirements/](requirements/README.md) | Product requirements: user stories and acceptance criteria per area |
 | [decisions/](decisions/README.md) | One file per design decision: its reason and what was rejected; index in the README |
 | [architecture.md](architecture.md) | Components, ports and adapters, repository layout and import rules, folder indexes, request flow |
+| [diagrams.md](diagrams.md) | Index of every diagram: what it shows and which document holds it |
 | [domain-model.md](domain-model.md) | Tables, invariants, skills and versions, model catalog, files on disk |
 | [conversation-rules.md](conversation-rules.md) | Who replies, bot-to-bot budget, joining, what a bot sees, handoffs, branches |
 | [realtime-events.md](realtime-events.md) | Event log, SSE stream, event types and payloads, reconnect |

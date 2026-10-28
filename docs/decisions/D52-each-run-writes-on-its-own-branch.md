@@ -271,3 +271,10 @@ Consequences:
 
 Implemented in: `../tasks/M6-workspace-parity.md` (the brief and the documents listed above
 change before the M6 plan starts).
+
+Amendment (owner, 2026-10-28, PR #42 review): **one branch per attempt.** A Retry queues the same
+run again (UI-3.7), and the failed try's unsaved changes stay. So the branch is
+`runs/<run-id>/<attempt>` and the worktree is `data/run-worktrees/<run-id>-<attempt>/`, not
+`runs/<run-id>` and `data/run-worktrees/<run-id>/`. The `run_branches` row, every save and every
+discard name the attempt. A try that a lease reclaim replaces counts as a failed try. Details:
+`../architecture.md` §6.1, `../api.md` §5d.
