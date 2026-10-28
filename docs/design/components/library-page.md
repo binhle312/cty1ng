@@ -51,6 +51,8 @@ Two columns:
 
 ### 3.1 Facts line
 
+The viewer reads these facts from `GET /libraries/{place}/files/detail` (`api.md` §5d).
+
 12 px, `on-surface-muted`, with a 16 px avatar of who made the last save:
 
 - A bot save: "Saved {time} by {bot} in {conversation}". The conversation is a link.
@@ -156,7 +158,11 @@ changes card in the conversation (`library-cards.md` §3), with a head that name
   right.
 - The file rows: the sign (~ changed, + new, − delete, → move) and the path. A delete or move that
   the plan did not list has the pill "delete · needs your OK" or "move · needs your OK" (D52).
-- **Show** opens the diff of each file under its row (the §4.1 diff box).
+- **Show** opens the diff of each file under its row (the §4.1 diff box). The page loads the diffs
+  when the owner presses Show (`GET /runs/{id}/save/diff`), not when the tab opens.
+- The tab lists only failed or stopped runs, and its count is the number of these runs. A run
+  that finished but waits for a choice on a delete or move outside the plan is not here: its save
+  card is in the conversation (`library-cards.md` §4).
 - Foot: "Discarded on {date} if you do nothing." (the run's end + `trash_days`, D52), then
   **Discard** (danger, 30 px) and **Save** (primary, 30 px). The label is "Save", not "Save to
   Library", because the page is the Library (W2).
@@ -225,5 +231,6 @@ Home Library. The facts and the History tab name the Home conversations.
   file panel (D44: the right pane holds Flow or Memory).
 - New setting `library_diff_open_max_lines` (default 400, 50–5,000): a file block with more
   changed lines starts folded in the History tab.
-- API: `api.md` §5d (Library endpoints, the save state, `POST /libraries/{place}/seen`) and the
+- API: `api.md` §5d (Library endpoints, the save state, `GET /runs/{id}/save/diff`,
+  `GET /libraries/{place}/files/detail`, `POST /libraries/{place}/seen`) and the
   Move body `files: [{path, commit}]` (`api.md` §5).

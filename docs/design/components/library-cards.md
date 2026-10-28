@@ -44,7 +44,7 @@ line (`conversation-page.md` §6). It is the same part as the card on the Librar
 already above it:
 
 - Head: **Unsaved changes**, then "{n} files are not saved" in `on-surface-muted`, and **Show** /
-  **Hide** at the right (the diff of each file).
+  **Hide** at the right (the diff of each file, loaded on Show from `GET /runs/{id}/save/diff`).
 - The file rows: sign and path (`library-page.md` §5).
 - Foot: "Discarded on {date} if you do nothing.", **Discard** (danger 30), **Save to Library**
   (primary 30).
