@@ -183,7 +183,7 @@ erDiagram
   conversations ||--o{ runs : "has"
   bots ||--o{ runs : "runs as"
   messages ||--o{ runs : "trigger"
-  runs ||--o| messages : "reply and its cards"
+  runs ||--o{ messages : "reply and its cards"
   runs ||--|{ run_attempts : "one row per try"
   runs ||--o{ run_slots : "admitted claims"
   run_attempts ||--o{ model_requests : "purpose = run"
@@ -730,7 +730,7 @@ conversations
   title                    TEXT NOT NULL DEFAULT 'New conversation'
   title_source             TEXT NOT NULL DEFAULT 'default'   -- default | auto | manual (D46)
   auto_title_status        TEXT NULL        -- NULL = not tried | pending | done | failed | skipped (D46)
-  active_leaf_message_id   TEXT NULL                -- FOREIGN KEY (id, active_leaf_message_id) REFERENCES messages(conversation_id, id)
+  active_leaf_message_id   TEXT NULL                -- composite FK below
   bot_discussion_enabled   BOOLEAN NULL     -- NULL = use global setting
   bot_turn_limit           INTEGER NULL     -- NULL = use global; 1..20
   bot_turns_used           INTEGER NOT NULL DEFAULT 0
@@ -739,6 +739,7 @@ conversations
   created_by, created_at
   deleted_at               TIMESTAMP NULL   -- in Trash (D60)
   purged_at                TIMESTAMP NULL   -- D60: Trash purge; rows stay, content is cleared
+FOREIGN KEY (id, active_leaf_message_id) REFERENCES messages(conversation_id, id)   -- the leaf is in this conversation (§1)
 
 conversation_bots
   conversation_id   TEXT NOT NULL REFERENCES conversations(id)
@@ -788,13 +789,14 @@ messages
   status             TEXT NOT NULL        -- streaming | complete | failed | stopped
   run_id             TEXT NULL            -- composite FK below
   client_id          TEXT NULL            -- browser-generated id of a human message; makes a resend idempotent
-  edited_from_id     TEXT NULL REFERENCES messages(id)   -- the sibling this edit replaces
+  edited_from_id     TEXT NULL            -- the sibling this edit replaces; composite FK below
   created_at, updated_at
 INDEX messages_by_parent ON messages(conversation_id, parent_message_id)
 UNIQUE INDEX messages_client_id ON messages(conversation_id, client_id) WHERE client_id IS NOT NULL
 UNIQUE (conversation_id, id)                                                   -- target of the composite FKs (§1)
 FOREIGN KEY (conversation_id, parent_message_id) REFERENCES messages(conversation_id, id)   -- invariant 10
 FOREIGN KEY (conversation_id, run_id) REFERENCES runs(conversation_id, id)
+FOREIGN KEY (conversation_id, edited_from_id) REFERENCES messages(conversation_id, id)
 ```
 
 - Content is updated in place **only** while `status = streaming` (partial saves). After that a
@@ -1004,8 +1006,8 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
 8. At most one `running` run per conversation (enforced by `runs_one_running`).
 9. A message's content changes only while `status = streaming`, or when the Trash purge clears
    it (D60).
-10. Every message's `parent_message_id` belongs to the same conversation, and so does every
-    other same-conversation link (§1). Composite foreign keys enforce it; the test proves that the
+10. Every message's `parent_message_id` and `edited_from_id` belong to the same conversation,
+    and so does every other same-conversation link (§1), the conversation's active leaf included. Composite foreign keys enforce it; the test proves that the
     database refuses a link into another conversation.
 11. For each try, `run_skills` contains exactly the always-loaded pins plus the distinct
     `load_skill` calls of that try.
@@ -1194,6 +1196,12 @@ UNIQUE INDEX memory_proposals_one_open ON memory_proposals(kind, scope, coalesce
   3. Disk step after the database step (as in `architecture.md` §6.1): remove
      `data/libraries/<project_id>/` and the project's unsaved run branches. This step is slice
      M6; the rest is M5b.
+
+  **Disk recovery (owner, 2026-10-29).** Step 3 runs after `purged_at` is committed, so the
+  due-item query no longer finds the project. So at start and in each purge pass, the M6 job
+  also removes any `data/libraries/<project_id>/` folder, run worktree and run branch that
+  belongs to a project with `purged_at` set. A folder or branch that is already gone counts as
+  done. No new table: the tombstone is the record.
 
   A purged project is not listed anywhere and cannot be restored; its endpoints return 410
   `project_purged` (New code, added with the M5b API).

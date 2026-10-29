@@ -101,10 +101,11 @@ type TimelineItem =
       finishedAt: string | null; actor: ActorId; status: RunStatus; costUsd: number | null;
       durationMs: number | null;                                   // all tries together
       tries: { startedAt: string; finishedAt: string | null; status: RunStatus; reason: string | null }[];
-                                                                   // one per run_slots row; length > 1 = retried (UI-3.7).
-                                                                   // finishedAt, status and reason of an earlier try come from its
-                                                                   // run.finished event; after the event is pruned (30 days) they are null
-                                                                   // and the card shows "Try 1 · failed" with no reason
+                                                                   // one per run_attempts row (domain-model.md §7): first claim,
+                                                                   // manual Retry and lease reclaim each add a try. Read from the
+                                                                   // table, so an old try keeps its end, state and reason after the
+                                                                   // events are pruned (owner, 2026-10-29)
+      retries: number;                                             // run_attempts rows with started_by = 'retry'; "retried N times"
       steps: RunStep[] }                                           // all tries, in call order (seq_in_run)
   | { kind: "handoff"; id: string; seq: number; at: string; decidedAt: string | null; from: ActorId; to: ActorId | "human"; status: HandoffStatus; files: string[] }
   | { kind: "notice"; id: string; seq: number; at: string; text: string };
@@ -120,7 +121,10 @@ interface RunStep { kind: StepKind; target: string; status: "ok" | "error"; star
 ```
 
 A Retry (UI-3.7) queues the same run again, so the Timeline keeps one run item and adds a try;
-it never adds a second run item. There is no event for a tool call that has started, so the scene
+it never adds a second run item. A lease reclaim after a crash also adds a try, but no Retry.
+`run_slots` counts only the hourly run limit; the Timeline does not read it (owner, 2026-10-29).
+The plain reason of a try that a reclaim replaced (`lease_expired`) is "the app stopped during
+this try" (UI-3.7). There is no event for a tool call that has started, so the scene
 knows only finished steps; the run card shows them and "Working · last step … ago"
 (`design/components/flow-timeline.md` §4).
 
