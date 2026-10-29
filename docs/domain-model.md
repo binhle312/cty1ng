@@ -39,6 +39,273 @@ design in this document first, then the generated SQL in the slice PR (`../AGENT
   DEFAULT 1` for optimistic locking; a stale write returns 409 `stale_write`
   (`architecture.md` §11).
 
+## 1a. Diagrams by domain
+
+These ERDs show the keys and the columns that carry a rule (owner review, 2026-10-28 and
+2026-10-29). The tables in the sections below stay the full schema; where a diagram leaves out
+a column or a rule, the section wins (`diagrams.md`).
+
+### ERD 1: bots and skills (§2, §3, §15)
+
+A pin is one row per bot and skill (D6). A version is never updated. The latest version is the
+highest `version`. A composite foreign key keeps each pin inside its skill.
+
+```mermaid
+erDiagram
+  bots ||--o{ bot_skills : "pins"
+  skills ||--o{ bot_skills : "pinned by"
+  skill_versions ||--o{ bot_skills : "pinned version"
+  skills ||--|{ skill_versions : "has"
+  skill_versions |o--o{ skills : "cloned_from"
+  bots |o--o{ bots : "cloned_from"
+  bots ||--o{ skill_drafts : "drafted_by"
+  skills |o--o{ skill_drafts : "edit of"
+  skill_drafts |o--o| skill_versions : "approved as"
+  skills ||--o{ skill_test_cases : "has (M5d)"
+  bots {
+    text id PK
+    text slug UK "fixed (D19)"
+    text name "unique while not purged"
+    text model_id "immutable (D7)"
+    text effort "immutable (D7)"
+    json tool_settings
+    ts deleted_at "Trash (D50)"
+    ts purged_at "tombstone"
+  }
+  skills {
+    text id PK
+    text slug UK
+    ts deprecated_at
+    ts trashed_at "D49"
+  }
+  skill_versions {
+    text id PK "also UNIQUE (skill_id, id)"
+    text skill_id FK
+    int version "UNIQUE with skill_id"
+    text skill_draft_id FK "D41"
+  }
+  bot_skills {
+    text bot_id PK "NOT NULL"
+    text skill_id PK "NOT NULL"
+    text skill_version_id FK "with skill_id: composite FK (inv. 3)"
+    bool always_load "D16"
+  }
+  skill_drafts {
+    text id PK
+    text kind "new or edit"
+    text skill_id FK
+    int base_version
+    text status "pending approved rejected stale"
+    text result_skill_version_id FK
+  }
+  skill_test_cases {
+    text id PK
+    text skill_id FK
+    text source_run_id FK
+  }
+```
+
+### ERD 2: projects, conversations and messages (§5, §6, §9, §14, §15)
+
+Messages form a tree per conversation (D13). Links inside one conversation use composite
+foreign keys (§1). Cards read their state from `handoffs` and `skill_drafts`.
+
+```mermaid
+erDiagram
+  projects |o--o{ conversations : "groups (D37)"
+  conversations ||--o{ conversation_bots : "members"
+  bots ||--o{ conversation_bots : "member of"
+  conversations ||--o{ messages : "has"
+  messages |o--o{ messages : "parent (branches, D13)"
+  conversations |o--o| messages : "active_leaf"
+  messages ||--o| reply_feedback : "rated (D51)"
+  conversations ||--o{ handoffs : "has"
+  messages ||--o| handoffs : "card"
+  conversations ||--o{ skill_drafts : "has"
+  messages ||--o| skill_drafts : "card"
+  projects {
+    text id PK
+    text instructions_md "D45"
+    int instructions_version
+    ts deleted_at "Trash (D47)"
+  }
+  conversations {
+    text id PK
+    text project_id FK "NULL = Home"
+    text active_leaf_message_id FK
+    int bot_turns_used "D4"
+    text auto_title_status "D46"
+    ts deleted_at "Trash (D60)"
+    ts purged_at
+  }
+  conversation_bots {
+    text conversation_id PK
+    text bot_id PK
+    text status "pending_history active removed"
+    int history_from_seq "D8"
+  }
+  messages {
+    text id PK "also UNIQUE (conversation_id, id)"
+    text conversation_id FK
+    int seq "events.seq"
+    text parent_message_id FK "composite, same conversation"
+    text kind "text history_choice handoff skill_draft notice"
+    text status "streaming complete failed stopped"
+    text run_id FK
+    text client_id "UNIQUE per conversation"
+  }
+  reply_feedback {
+    text id PK
+    text message_id FK "UNIQUE"
+    text run_id FK
+    text rating "up down"
+  }
+  handoffs {
+    text id PK
+    text from_bot_id FK
+    text to_bot_id FK "NULL = human"
+    text status
+  }
+  skill_drafts {
+    text id PK
+    text message_id FK
+    text created_by_run_id FK
+  }
+```
+
+### ERD 3: runs, usage and events (§7, §3.7, §3.8, §8)
+
+One running run per conversation (D11). One `run_attempts` row per try; steps, requests and
+skills used name their try. Cost lives on each model request; run totals are sums (D21).
+
+```mermaid
+erDiagram
+  conversations ||--o{ runs : "has"
+  bots ||--o{ runs : "runs as"
+  messages ||--o{ runs : "trigger"
+  runs ||--o| messages : "reply and its cards"
+  runs ||--|{ run_attempts : "one row per try"
+  runs ||--o{ run_slots : "admitted claims"
+  run_attempts ||--o{ model_requests : "purpose = run"
+  conversations |o--o{ model_requests : "run or title"
+  run_attempts ||--o{ run_steps : "tool calls (D26)"
+  run_attempts ||--o{ run_skills : "provenance (D15)"
+  skill_versions |o--o{ run_skills : "NULL after purge"
+  runs ||--o| run_history : "tool history"
+  conversations |o--o{ events : "NULL = app-wide"
+  runs {
+    text id PK "also UNIQUE (conversation_id, id)"
+    text conversation_id FK
+    text bot_id FK
+    text trigger_message_id FK "composite, same conversation"
+    text status "of the newest try"
+    int attempts "fencing token"
+    ts locked_until "lease"
+    text error "of the newest try"
+  }
+  run_attempts {
+    text run_id PK
+    int attempt PK "= runs.attempts at the claim"
+    text status "running done failed stopped"
+    text error "lease_expired when replaced"
+    ts started_at
+    ts finished_at
+  }
+  run_slots {
+    text id PK
+    text run_id FK
+    text conversation_id FK "composite with run_id"
+    ts used_at "hourly limit"
+  }
+  model_requests {
+    text id PK
+    text purpose "run title memory_tidy memory_check"
+    text conversation_id FK "composite with run_id"
+    text run_id FK
+    int attempt FK "with run_id"
+    int seq_in_run "UNIQUE with run_id"
+    num estimated_cost_usd "never changes"
+    num reserved_cost_usd
+  }
+  run_steps {
+    text id PK
+    text run_id FK
+    int attempt FK "with run_id"
+    int seq_in_run "counts across tries"
+    text kind
+    text status "ok error"
+  }
+  run_skills {
+    text run_id PK
+    int attempt PK
+    text skill_slug PK "copy"
+    int version "copy"
+    text skill_version_id FK
+  }
+  run_history {
+    text run_id PK
+    blob messages_json
+  }
+  events {
+    int seq PK "global"
+    text conversation_id
+    text type
+  }
+```
+
+### ERD 4: memory (§14)
+
+One table for the three scopes, with a CHECK that exactly one place is set (D38). One open Tidy
+or check card per place and kind (D63). A card names its items inside `changes`, not by a
+foreign key.
+
+```mermaid
+erDiagram
+  projects |o--o{ memory_items : "scope = project"
+  bots |o--o{ memory_items : "scope = bot; also actor columns"
+  conversations |o--o{ memory_items : "scope = conversation"
+  messages |o--o{ memory_items : "source"
+  memory_items ||--o{ memory_item_versions : "history"
+  memory_items }o..o{ memory_proposals : "item_ids in changes JSON, not a FK"
+  projects |o--o{ memory_proposals : "scope = project"
+  bots |o--o{ memory_proposals : "place or worker bot"
+  conversations |o--o{ memory_proposals : "scope = conversation"
+  model_requests |o--o| memory_proposals : "made it (page)"
+  runs |o--o{ memory_proposals : "made it (tool)"
+  memory_items {
+    text id PK
+    text scope "exactly one place set (CHECK)"
+    text bot_id FK
+    text project_id FK
+    text conversation_id FK
+    text created_by_bot_id FK "NULL = owner"
+    text last_changed_by_bot_id FK "NULL = owner"
+    text source_message_id FK
+    text text "guarded (D39)"
+    int row_version
+    ts deleted_at "Trash (D62)"
+  }
+  memory_item_versions {
+    text memory_item_id PK
+    int version PK
+    text changed_by_bot_id FK "NULL = owner"
+    text text
+  }
+  memory_proposals {
+    text id PK
+    text kind "tidy check (D63)"
+    text scope "exactly one place set (CHECK)"
+    text bot_id FK
+    text project_id FK
+    text conversation_id FK
+    text worker_bot_id FK
+    text model_request_id FK "not both (CHECK)"
+    text run_id FK "not both (CHECK)"
+    text status "one open per place and kind"
+    json changes "item_ids, item_row_versions"
+  }
+```
+
 ## 2. Bots
 
 ```
@@ -573,12 +840,14 @@ FOREIGN KEY (conversation_id, run_id) REFERENCES runs(conversation_id, id)   -- 
 run_attempts                             -- one row per try of a run (owner, 2026-10-28)
   run_id       TEXT NOT NULL REFERENCES runs(id)
   attempt      INTEGER NOT NULL          -- the runs.attempts value that the claim set; the fencing token (§12 #15)
+  started_by   TEXT NOT NULL             -- first | retry | reclaim: the kind of claim (owner, 2026-10-29)
   status       TEXT NOT NULL             -- running | done | failed | stopped
   error        TEXT NULL                 -- same values as runs.error; lease_expired for a try that a reclaim replaced
   started_at   TIMESTAMP NOT NULL        -- the time of the claim
   finished_at  TIMESTAMP NULL
   PRIMARY KEY (run_id, attempt)
   CHECK (status IN ('running', 'done', 'failed', 'stopped'))
+  CHECK (started_by IN ('first', 'retry', 'reclaim'))
   CHECK ((status = 'running') = (finished_at IS NULL))
 UNIQUE INDEX run_attempts_one_running ON run_attempts(run_id) WHERE status = 'running'
 
@@ -628,6 +897,11 @@ the `runs` change:
 - **Lease reclaim:** in the same transaction, the replaced try becomes `failed` with
   `error = 'lease_expired'` and `finished_at` = the time of the reclaim. When the attempts are used
   up, the last try and the run become `failed` with `lease_expired` (`architecture.md` §11).
+- **Attempt limit** (owner, 2026-10-29): `RUN_MAX_ATTEMPTS` counts the tries since the newest
+  `first` or `retry` row, not all rows of the run, so a manual Retry gives the run its full
+  number of tries again. `runs.attempts` keeps counting and stays the fencing token. Example
+  with the default 3: first claim (1), Retry (2), reclaim (3), reclaim (4); a crash of try 4
+  ends the run, because tries 2, 3 and 4 are three tries since the Retry.
 - **End** (done, failed, stopped, timed out): the current try gets the run's end state, error and
   time. The write carries `AND attempt = <its attempt>`, like every write of the worker.
 
@@ -833,6 +1107,7 @@ projects
   row_version               INTEGER NOT NULL DEFAULT 1
   created_by, created_at
   deleted_at                TIMESTAMP NULL             -- in Trash with its conversations, memory, Library; purged after trash_days (D47, D49)
+  purged_at                 TIMESTAMP NULL             -- set by the purge; the row stays as a tombstone (owner, 2026-10-29)
 
 conversations
   + project_id              TEXT NULL REFERENCES projects(id)   -- NULL = outside any project
@@ -851,9 +1126,9 @@ memory_items
   text               TEXT NOT NULL                     -- ≤ memory_item_max_chars (300); passed the sensitive-data guard (D39)
   current_version    INTEGER NOT NULL DEFAULT 1
   row_version        INTEGER NOT NULL DEFAULT 1
-  created_by_bot_id  TEXT NULL                         -- NULL = the owner
+  created_by_bot_id  TEXT NULL REFERENCES bots(id)     -- NULL = the owner
   source_message_id  TEXT NULL REFERENCES messages(id) -- where it was learned
-  last_changed_by_bot_id   TEXT NULL                 -- NULL = the owner (Memory page edit)
+  last_changed_by_bot_id   TEXT NULL REFERENCES bots(id)  -- NULL = the owner (Memory page edit)
   last_change_message_id   TEXT NULL REFERENCES messages(id)  -- NULL for owner edits
   created_at, updated_at
   seen_at            TIMESTAMP NULL                    -- the owner saw the latest change; NULL or < updated_at = New tag. Per user at M9
@@ -869,7 +1144,7 @@ memory_item_versions                                    -- earlier texts; trimme
   memory_item_id     TEXT NOT NULL REFERENCES memory_items(id)
   version            INTEGER NOT NULL
   text               TEXT NOT NULL
-  changed_by_bot_id  TEXT NULL
+  changed_by_bot_id  TEXT NULL REFERENCES bots(id)     -- NULL = the owner
   changed_at         TIMESTAMP NOT NULL
   PRIMARY KEY (memory_item_id, version)
 
@@ -877,7 +1152,9 @@ memory_proposals                                        -- a Tidy or memory chec
   id                 TEXT PK
   kind               TEXT NOT NULL                     -- tidy | check
   scope              TEXT NOT NULL                     -- bot | project | conversation (same rule as memory_items)
-  bot_id, project_id, conversation_id                  -- the place; same CHECK as memory_items
+  bot_id             TEXT NULL REFERENCES bots(id)     -- set when scope = bot
+  project_id         TEXT NULL REFERENCES projects(id) -- set when scope = project
+  conversation_id    TEXT NULL REFERENCES conversations(id) -- set when scope = conversation
   worker_bot_id      TEXT NOT NULL REFERENCES bots(id) -- whose model and effort did the work
   status             TEXT NOT NULL                     -- requested | ready | failed | stopped | applied | discarded | replaced
   model_request_id   TEXT NULL REFERENCES model_requests(id)  -- NULL when the run's tool made it (Y8)
@@ -887,6 +1164,10 @@ memory_proposals                                        -- a Tidy or memory chec
   error              TEXT NULL                         -- failed: the reason shown on the page
   created_at, updated_at, decided_at
   CHECK (kind IN ('tidy', 'check'))
+  CHECK ((scope = 'bot' AND bot_id IS NOT NULL AND project_id IS NULL AND conversation_id IS NULL)
+      OR (scope = 'project' AND project_id IS NOT NULL AND bot_id IS NULL AND conversation_id IS NULL)
+      OR (scope = 'conversation' AND conversation_id IS NOT NULL AND bot_id IS NULL AND project_id IS NULL))
+  CHECK (model_request_id IS NULL OR run_id IS NULL)   -- one maker: the page's request or a run's tool
 UNIQUE INDEX memory_proposals_one_open ON memory_proposals(kind, scope, coalesce(bot_id, project_id, conversation_id))
   WHERE status IN ('requested', 'ready')
 ```
@@ -899,6 +1180,23 @@ UNIQUE INDEX memory_proposals_one_open ON memory_proposals(kind, scope, coalesce
   project; their own `deleted_at` stays NULL, so a project restore brings back exactly them. A
   conversation or memory item with its own `deleted_at` is its own Trash item, with its own
   deadline, and is purged with the project at the latest.
+- **Project purge (owner, 2026-10-29).** The row stays as a tombstone, like a bot (D50) or a
+  conversation (§16), so `conversations.project_id` and old links still resolve and show
+  "Deleted project". The purge job does it in steps; each step is idempotent, so a crash between
+  steps leaves work that the next run finishes:
+  1. Each conversation of the project (in Trash through it, or with its own `deleted_at`) is
+     purged by the §16 policy, one conversation per transaction. Its runs and requests stay
+     for statistics.
+  2. One transaction: delete the project's `memory_items` (with their `memory_item_versions`),
+     its `memory_proposals` and its `skill_test_cases`; set `purged_at = now`,
+     `name` → "Deleted project", `description` → `''`, `instructions_md` → `''`,
+     `pinned_position` → NULL; emit `trash.changed`.
+  3. Disk step after the database step (as in `architecture.md` §6.1): remove
+     `data/libraries/<project_id>/` and the project's unsaved run branches. This step is slice
+     M6; the rest is M5b.
+
+  A purged project is not listed anywhere and cannot be restored; its endpoints return 410
+  `project_purged` (New code, added with the M5b API).
 - **Which scope a save goes to** is decided by the service, not the bot. In a 1:1 conversation
   outside any project, the bot memory of that bot. In a project conversation, that project's
   memory. In a multi-bot conversation outside a project, that conversation's memory (D38).
@@ -920,14 +1218,18 @@ UNIQUE INDEX memory_proposals_one_open ON memory_proposals(kind, scope, coalesce
 - **Move into a project (D38, D61, D62).** In one transaction: the ticked conversation items
   change to `scope = 'project'` with the project's id (same row, versions and source); the
   unticked items change scope the same way and get `deleted_at = now`, so a restore puts them in
-  the project memory. A count over `memory_items_max` refuses the move with 409 `memory_full` and changes
+  the project memory. In the same transaction, the conversation's open Tidy and check cards
+  (`requested` or `ready`) become `replaced` (owner, 2026-10-29), because their place no longer
+  has memory. A count over `memory_items_max` refuses the move with 409 `memory_full` and changes
   nothing.
 - **Proposals (D63).** `memory_proposals` holds the Tidy cards and the memory check cards.
   One open card per place and kind (the unique index): a new request sets the open card of the
   same kind to `replaced`. Every merge or rewrite text passes the sensitive-data guard and
   `memory_item_max_chars` when the card is stored (a failing change gets `invalid_reason`) and
   again at Apply; a failing change is never saved. Apply reads each change's
-  `item_row_versions`; a change whose item has a newer `row_version` is skipped and returned. A
+  `item_row_versions` and checks each item's current `scope`, place id and `row_version`
+  against the card (owner, 2026-10-29); a change whose item has moved to another place or
+  has a newer `row_version` is skipped as stale and returned. A
   check change also stores `instructions_version`; Decide and Apply refuse it with 409
   `instructions_changed` when the project's version moved on. A
   merge updates the first item and moves the others to Trash. `check` proposals keep a change
@@ -1032,7 +1334,7 @@ default are not allowed: a column that is not named has no policy, and the schem
 | `messages` | `id`, `conversation_id`, `seq`, `parent_message_id`, `author_type`, `author_id`, `kind`, `status`, `run_id`, `client_id`, `edited_from_id`, `created_at`, `updated_at` | `content_md` → `''`, `card` → NULL, `mentions` → `'[]'`, `attachments` → `'[]'` |
 | `runs` | `id`, `conversation_id`, `bot_id`, `trigger_message_id`, `triggered_by`, `status`, `attempts`, `locked_until`, `cancel_requested`, `model_id`, `effort`, `input_tokens`, `output_tokens`, `cache_read_tokens`, `cache_write_tokens`, `requests`, `estimated_cost_usd`, `created_at`, `started_at`, `finished_at` | `error` → NULL |
 | `run_slots` | `id`, `run_id`, `conversation_id`, `used_at` | none |
-| `run_attempts` | `run_id`, `attempt`, `status`, `started_at`, `finished_at` | `error` → NULL |
+| `run_attempts` | `run_id`, `attempt`, `started_by`, `status`, `started_at`, `finished_at` | `error` → NULL |
 | `model_requests` | `id`, `purpose`, `conversation_id`, `run_id`, `attempt`, `seq_in_run`, `provider`, `model_requested`, `model_resolved`, `provider_response_id`, `finish_reason`, `input_tokens`, `output_tokens`, `cache_read_tokens`, `cache_write_tokens`, `usage_details`, `started_at`, `finished_at`, `latency_ms`, `estimated_cost_usd`, `reserved_cost_usd`, `price_source` | none |
 | `run_steps` | `id`, `run_id`, `attempt`, `seq_in_run`, `kind`, `status`, `started_at`, `finished_at` | `target` → `''`, `detail` → NULL |
 | `run_skills` | `run_id`, `attempt`, `skill_version_id`, `skill_slug`, `version`, `mode`, `first_loaded_at` | none |
