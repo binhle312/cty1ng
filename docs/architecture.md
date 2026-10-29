@@ -75,7 +75,8 @@ with `Last-Event-ID` (`realtime-events.md`).
 - A title request that was `pending` when the app stopped becomes `failed` at start and is never
   retried (D46).
 - A `running` run whose lease expired is claimed again by the worker, with `attempts + 1`, until
-  `RUN_MAX_ATTEMPTS` (§6, §11). This is part of every claim, not a startup step.
+  it has had `RUN_MAX_ATTEMPTS` tries since its first claim or its last manual Retry (§6, §11).
+  This is part of every claim, not a startup step.
 
 ## 2. Ports and adapters (D35)
 
@@ -332,7 +333,9 @@ queued ──claim (lease)──▶ running ──▶ done
   a later multi-process worker.
 - Different conversations run concurrently, up to `MAX_CONCURRENT_RUNS` (default 3).
 - A crash leaves a `running` row with an expired lease. A worker reclaims it with its own
-  compare-and-set (`attempts + 1`, §11). When `attempts` has reached `RUN_MAX_ATTEMPTS`
+  compare-and-set (`attempts + 1`, §11). The limit counts the tries since the run's first claim
+  or its last manual Retry, not all tries of the run (owner, 2026-10-29): a manual Retry gives
+  the run `RUN_MAX_ATTEMPTS` tries again. When the run has used them
   (default 3), the worker does not reclaim it: the run becomes `failed` with
   `error = "lease_expired"`, and the message shows Retry (UI-3.7). `attempts` is also the
   fencing token that stops the old worker's late writes (§11).
@@ -374,7 +377,8 @@ memory, so each job also runs once at start; that run catches up on any time the
 **One branch per attempt (owner, 2026-10-28).** A Retry queues the same run again, and its new
 try starts from the newest main; the failed try's changes stay (`design/components/library-cards.md`
 §3). So each attempt has its own branch `runs/<run-id>/<attempt>`, worktree
-`data/run-worktrees/<run_id>-<attempt>/` and `run_branches` row, keyed by `(run_id, attempt)`.
+`data/run-worktrees/<run_id>-<attempt>/` and `run_branches` row, keyed by `(run_id, attempt)`,
+a foreign key to the try in `run_attempts` (`domain-model.md` §7).
 Every save and discard names the attempt. A try that a lease reclaim replaces (§6, §11) is
 treated like a failed try: if it wrote files, its branch becomes unsaved changes with its own
 `discard_on`, and the reclaimed attempt starts a new worktree from the newest main.
@@ -422,7 +426,7 @@ invalid), plus `config/models.yaml`.
 | `ALLOWED_ORIGINS` | `http://127.0.0.1:5173,http://localhost:5173` | Dev frontend origins; prod build is same-origin |
 | `MAX_CONCURRENT_RUNS` | `3` | Across conversations |
 | `RUN_LEASE_SECONDS` | `900` | |
-| `RUN_MAX_ATTEMPTS` | `3` | |
+| `RUN_MAX_ATTEMPTS` | `3` | Tries of a run since its first claim or its last manual Retry, lease reclaims included (§6) |
 | `RUN_STALL_SECONDS` | `600` | No delta and no step for this long → run fails as `timed_out` |
 | `MODEL_REQUEST_TIMEOUT_SECONDS` | `300` | Read timeout per model request |
 | `TITLE_REQUEST_TIMEOUT_SECONDS` | `20` | Timeout of the one auto title request (D46) |
@@ -495,8 +499,8 @@ error) and handles it.
 | Race | Rule | The loser gets |
 | --- | --- | --- |
 | Two workers claim the same queued run | Compare-and-set: `UPDATE runs SET status = 'running', locked_until = ?, attempts = attempts + 1 WHERE id = ? AND status = 'queued'` | 0 rows: picks another run |
-| Two workers reclaim the same run after its lease expired (§6) | Compare-and-set: `UPDATE runs SET locked_until = ?, attempts = attempts + 1 WHERE id = ? AND status = 'running' AND locked_until < ? AND attempts < ?` (now, `RUN_MAX_ATTEMPTS`). The status stays `running`, so the partial unique index still holds | 0 rows: picks another run. The old worker's writes carry the old `attempts`, so they change 0 rows |
-| A run with an expired lease has used all its attempts | Compare-and-set in one transaction: `UPDATE runs SET status = 'failed', error = 'lease_expired' WHERE id = ? AND status = 'running' AND locked_until < ? AND attempts >= ?`, then the message becomes `failed`, with `run.finished` and `message.failed` | 0 rows: another worker already ended it; nothing more to do |
+| Two workers reclaim the same run after its lease expired (§6) | Compare-and-set: `UPDATE runs SET locked_until = ?, attempts = attempts + 1 WHERE id = ? AND status = 'running' AND locked_until < ? AND attempts - (SELECT max(attempt) FROM run_attempts WHERE run_id = runs.id AND started_by <> 'reclaim') + 1 < ?` (now, `RUN_MAX_ATTEMPTS`): the tries since the first claim or the last manual Retry (`domain-model.md` §7). The status stays `running`, so the partial unique index still holds | 0 rows: picks another run. The old worker's writes carry the old `attempts`, so they change 0 rows |
+| A run with an expired lease has used all its attempts | Compare-and-set in one transaction: `UPDATE runs SET status = 'failed', error = 'lease_expired' WHERE id = ? AND status = 'running' AND locked_until < ? AND attempts - (SELECT max(attempt) FROM run_attempts WHERE run_id = runs.id AND started_by <> 'reclaim') + 1 >= ?`, then the message becomes `failed`, with `run.finished` and `message.failed` | 0 rows: another worker already ended it; nothing more to do |
 | Two runs start in one conversation (D11) | Partial unique index `runs_one_running ON runs(conversation_id) WHERE status = 'running'`, so the claim above fails even if the "no running run" check raced | Constraint error: treated as 0 rows |
 | A worker whose lease expired keeps writing after another worker reclaimed the run | `attempts` is a **fencing token**: every write a worker makes for a run (partial text, steps, finish) adds `AND attempts = <its attempt>` | 0 rows: the worker stops and discards its result |
 | Stop and finish at the same moment | Both are compare-and-set on `status = 'running'` (with the fencing token) | Whichever commits second changes 0 rows; the run ends either `stopped` or `done`, never both |

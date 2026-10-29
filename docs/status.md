@@ -61,8 +61,10 @@ the Skills page layout change in PR #38 (2026-10-27). M5c now depends on M3, not
 Home Library) and `library-cards.md` (overlap notice, unsaved changes card, save card, plan card
 mark, copy card), with the owner's review in PR #41 (2026-10-28). Pre-coding diagram gate,
 step 1 (system context, the process, component map, VPS topology) is agreed: `architecture.md`
-§1, §4.1, §6.1, §10 and the index `diagrams.md`. No new ports (owner, 2026-10-28). Next: the
-detailed diagrams before the slices that use them, then M0.
+§1, §4.1, §6.1, §10 and the index `diagrams.md`. No new ports (owner, 2026-10-28). Step 2
+(ERDs by domain, `domain-model.md` §1a) is in review, with its schema fixes: no latest-version
+pointer, composite keys inside a conversation, `run_attempts`, memory foreign keys, the project
+purge. Next: the state and sequence diagrams before the slices that use them, then M0.
 
 ## Next
 
@@ -116,3 +118,4 @@ A slice can also be `blocked` (say on what in Notes).
 | 2026-10-27 | M5c design round 16: skill draft card, float card for the bots after Approve, Edit on the Skills page, Skills page in the bot page layout; D64, D65 accepted |
 | 2026-10-27 | Eval and guardrail review: D51 amendment, saved test cases for each skill (#39); D42 amendment, no price means no request under a cap, and the security review gate for new ways out, with the residual prompt-injection risk accepted by the owner (#40) |
 | 2026-10-28 | Pre-coding diagram gate step 1: system overview and component boundaries in Mermaid; D57 path amendment |
+| 2026-10-29 | Pre-coding diagram gate step 2: four ERDs by domain and the schema fixes from the owner's review |
