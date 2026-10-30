@@ -147,6 +147,9 @@ A pnpm workspace with three packages. Each folder marked † has a `README.md` i
 ├─ AGENTS.md                 rules for coding agents
 ├─ CLAUDE.md                 "@AGENTS.md"
 ├─ README.md                 what it is, quickstart
+├─ PRODUCT.md, DESIGN.md     the Impeccable skill's snapshot of the brief and the theme
+│                            (not a spec; workflow.md §2)
+├─ .impeccable/              Impeccable settings and design.json (its hook cache is ignored)
 ├─ Makefile                  dev, test, lint, seed shortcuts
 ├─ package.json              workspace scripts (lint, typecheck, test, e2e, gen:api, check:index)
 ├─ pnpm-workspace.yaml

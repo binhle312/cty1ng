@@ -45,6 +45,12 @@ brief ready ──▶ plan ──(owner approves, if checkpointed)──▶ buil
    recommendations that conflict with them (another component library, other fonts or
    palettes) are listed as alternatives for the owner, not applied. Results are written into the
    plan or `docs/design/`, never with `--persist`.
+   The builder may also use the `impeccable` skill. It reads `PRODUCT.md`, `DESIGN.md` and
+   `.impeccable/design.json` at the repository root: a short snapshot of the product brief and
+   of the Command dark theme, so the skill keeps the agreed look. The snapshot is not a spec;
+   `docs/` wins where they differ, and whoever changes the owning document updates the
+   snapshot. `pnpm check:index` fails when a snapshot colour differs from
+   `frontend/src/themes/command.css` (owner, 2026-10-30).
 3. **Build.** Small commits. Tests alongside code, not at the end.
 4. **Self-check.** Every command in `AGENTS.md` §4 passes. The builder fills the PR template
    (§6).
