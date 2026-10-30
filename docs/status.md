@@ -88,6 +88,23 @@ that use them, then M0.
 | Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a schema design approval (initial schema for M3 and M7). The generated SQL is approved in the slice PR | M3 and M7 plans |
 | Decide on a "+N" list of all bots in the header (`design/components/top-header.md` §4) after testing the header with 12–15 bots | After M2 is built |
 | Approve the M5b schema design: `projects.instructions_md`, `instructions_version`, `colour`, `pinned_position`, goal ≤ 500 chars, `memory_items.seen_at`, `memory_proposals` and the `model_requests` change (D63) (initial schema for M5b, `domain-model.md` §14). Claude Code stops for this approval before it writes them. The generated SQL is approved in the M5b PR | M5b plan |
+| Decide on the `uuid` advisory (moderate, through `typeid-js` 1.2.0, which needs `uuid` ^10): a pnpm override to `uuid` 11.1.1 now (a dependency change), or wait for an upstream fix. We do not call the affected code | Before M1 |
+
+## Follow-ups
+
+Known gaps that no PR has fixed yet. Each has a target; the slice plan that is the target takes
+it in, and the row goes when its PR merges.
+
+| Item | Found in | Target |
+| --- | --- | --- |
+| `api.md` §1 error table lacks `not_deprecated` and `feedback_not_allowed`, which `api.md` uses | #46 | Docs PR before M1 |
+| `realtime-events.md` §4 lacks `skill.trashed`, `skill.restored` and `skill.purged` from the M1 brief | #46 | Docs PR before M1 |
+| The D36 prefix table lacks `rslot` and `mprop`, which `shared/src/ids.ts` has (a decision change: owner approval) | #46 | Docs PR before M1 |
+| Event pruning: delete events older than 30 days (`domain-model.md` §8); the stream's gap rule and `reset` are built | #48 | M1 (its purge job is the first timed job) |
+| The OpenAPI docs page when `APP_ENV=dev` (`security.md` §2.10); needs a new dependency | #48 | M0c (with `gen:api`) |
+| The `db_lock_wait_seconds` histogram (`architecture.md` §9, D29 switch trigger 3); there is no metrics output yet | #48 | M3 (the worker brings concurrent writes) |
+| A guard that refuses a second SQLite writer in one process (it would deadlock; today a comment in `adapters/db/client.ts`) | #48 | M1 |
+| `esbuild` advisory (moderate, dev only, through `drizzle-kit` 0.31.11); no stable fix | #48 | Update `drizzle-kit` when 1.0 is stable (Dependabot) |
 
 ## Slices
 
