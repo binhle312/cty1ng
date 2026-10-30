@@ -133,9 +133,14 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `memory.restored` | yes | `{memory_item}` | an item came back from Trash or an earlier version was restored (D62) |
 | `memory_proposal.updated` | yes | `{proposal}` | a Tidy or memory check card changed status: requested, ready, failed, stopped, applied, discarded, replaced (D63) |
 | `trash.changed` | yes | `{counts}` | an item went into Trash or left it (restore, Delete, purge), next to the item's own event (`skill.restored`, `conversation.updated`, `memory.restored`, …) (D62); drives the user panel Trash count and the Trash page |
+| `test.ping` | yes | `{note}` | **test only**: `POST /api/_test/events`, mounted only when `APP_ENV=test` and left out of the OpenAPI schema, so the generated client never has it |
 
 Adding an event type: add it here first, then to the backend `EventType` enum and the frontend
-reducer. A test asserts the three lists match.
+reducer. A test asserts the three lists match. Until every type is built,
+`scripts/check-events.ts` keeps an explicit `PENDING` list of the types in this table that are
+not yet in `shared/`: the table must equal the `shared/` types plus `PENDING`, the two must not
+overlap, and each slice moves its types out of `PENDING` when it adds them. The list only gets
+shorter (owner, 2026-10-30).
 
 ## 5. Ordering and transactions
 

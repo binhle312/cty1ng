@@ -73,7 +73,7 @@ that use them, then M0.
 
 ## Next
 
-1. Start M0 locally in Claude Code with the builder prompt in `workflow.md` §3.
+1. Owner approves the M0a plan (draft PR), then M0a is built; M0b and M0c follow, each with its own plan.
 
 ## Waiting on the owner
 
@@ -93,7 +93,7 @@ that use them, then M0.
 
 | Slice | State | PR | Notes |
 | --- | --- | --- | --- |
-| M0 | not started | | |
+| M0 | planning | | Three parts (M0a tooling, M0b backend, M0c frontend). M0a plan in review |
 | M1 | not started | | Design approved: `design/components/skills-page.md` (round 8); D49 accepted. Round 16 moves the page to the bot page layout (agreed, #38) |
 | M2 | UI design review | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec) | Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open |
 | M3 | UI design agreed | [#26](https://github.com/binhle312/cty1ng/pull/26) (spec) | Round 10: `design/components/conversation-page.md`, `composer.md`, `conversation-cards.md` |

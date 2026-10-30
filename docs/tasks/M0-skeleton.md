@@ -9,6 +9,28 @@ in `AGENTS.md` §4 exists and passes in CI, the security middleware is in place,
 and SSE stream work end to end with a test event, and the app shell (header, rail, empty pages)
 renders. Later slices only add features; they should never need to set up tooling.
 
+## Parts
+
+M0 is built and merged in three parts, one PR each, in this order (owner, 2026-10-30). The split
+follows risk, so each review is small: tooling first, so every later PR runs the gates; the
+backend core next, where the security review matters most; the frontend last. Each part has
+its own plan checkpoint.
+
+| Part | Branch | Scope (items in "In scope" below) | Acceptance criteria |
+| --- | --- | --- | --- |
+| **M0a** Tooling and CI | `m0a-tooling` | pnpm workspace, Node and pnpm pins, root scripts that exist so far, `Makefile`; `tsconfig`, ESLint, Prettier and the SQL lint rules; `.dependency-cruiser.cjs`; `scripts/` (`check:index` with the docs checks, `check-events` with `PENDING`, the bundle budget check with its fixture); `shared/` (event envelope, `test.ping`, TypeID schemas, error codes); CI, Dependabot, CodeQL, the security review workflow, the PR template; `README.md` quickstart | 6, 7, 9 (fixture), 10 |
+| **M0b** Backend core | `m0b-backend` | Everything under "Backend", ports and adapters, the event layer, the security middleware, the fake model plumbing, `db:*` scripts, `.env.example` | 2, 3, 4, 8, 10 |
+| **M0c** Frontend shell | `m0c-frontend` | Everything under "Frontend", the theme layer, lazy routes and the bundle budget on the real build, `gen:api` and its freshness check, Playwright | 1, 5, 9 (real build), 10, 11 |
+
+Owner answers that apply to every part (2026-10-30):
+
+- Node 24 LTS (`.nvmrc` = `24`, `engines.node` = `>=24 <25`); pnpm pinned in `packageManager`
+  and installed with npm in CI, not with corepack (newer Node versions drop corepack).
+- Laptop screens only (14 inch and larger): no mobile layout.
+- Command **dark** only in M0 (`design/themes.md` §2); light comes when its values are agreed.
+- The rail's New project "+" tile shows turned off (40% opacity, tooltip "Projects are not
+  available yet", `design/ui-rules.md` B5) until projects exist (M5b).
+
 ## Read first
 
 `AGENTS.md`; `docs/architecture.md` (all); `docs/realtime-events.md` §1–3, §5;
@@ -54,7 +76,7 @@ renders. Later slices only add features; they should never need to set up toolin
   empty pages' loading state (`requirements/README.md`).
 - The transport interface and the SSE adapter, backend and frontend (`realtime-events.md` §1a).
 - Theme layer (D30): semantic tokens as CSS variables, `frontend/src/themes/` with the
-  **Command** theme in light and dark (Material comes in slice T2), the `data-theme`/`data-mode` attributes with the no-flash
+  **Command** theme in dark (light when its values are agreed; Material comes in slice T2), the `data-theme`/`data-mode` attributes with the no-flash
   script, and the lint rule against raw colours (`design/themes.md` §2). The Appearance
   settings UI comes later with the Settings page.
 - Lazy route setup and the first-load bundle budget check in CI (`frontend-conventions.md` §4);
@@ -103,7 +125,7 @@ queue and workspace adapters (their slices add them); pg-boss (VPS phase).
     keys and closes with Esc, focus back on the avatar. With the left bar collapsed (Ctrl+B),
     focus on the avatar shows "Sir · Menu" and the menu opens to the right (UI-1.20, UI-1.21;
     component and e2e test).
-11. `docs/` is unchanged except where this slice had to correct something (listed in the PR).
+12. `docs/` is unchanged except where this slice had to correct something (listed in the PR).
 
 ## Tests
 

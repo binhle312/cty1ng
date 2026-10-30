@@ -428,7 +428,14 @@ invalid), plus `config/models.yaml`.
 | `MODEL_REQUEST_TIMEOUT_SECONDS` | `300` | Read timeout per model request |
 | `TITLE_REQUEST_TIMEOUT_SECONDS` | `20` | Timeout of the one auto title request (D46) |
 | `PURGE_INTERVAL_HOURS` | `24` | How often the Trash purge job looks for items past `deleted_at + trash_days`; it also runs at start (D62). It does not change how long Trash keeps an item |
+| `APP_ENV` | `dev` | `dev`, `test` or `prod`: app behaviour (OpenAPI docs page only in `dev`, test routes only in `test`) |
+| `FAKE_MODEL` | `0` | `1` wires the fake model and the `fake:scripted` catalog entry (`testing.md` §2) |
+| `LOG_LEVEL` | `info` | A Pino level: `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
 | `<PROVIDER>_API_KEY` | none | Names referenced by `config/models.yaml` |
+
+`NODE_ENV` is about build and runtime optimisation (`security.md` §2.10); `APP_ENV` is about app
+behaviour. Startup refuses `APP_ENV=test` together with `NODE_ENV=production`, so test routes
+never run in a production build (owner, 2026-10-30).
 
 ## 9. Observability
 
