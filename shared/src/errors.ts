@@ -8,6 +8,7 @@ export const ERROR_CODES = [
   "bad_request",
   "not_author",
   "origin_rejected",
+  "host_rejected",
   "not_found",
   "bot_purged",
   "name_taken",
@@ -46,6 +47,7 @@ export const ERROR_CODES = [
   "daily_cap_reached",
   "provider_cap_reached",
   "price_unknown",
+  "internal_error",
 ] as const;
 
 export const ErrorCode = z.enum(ERROR_CODES);
@@ -53,13 +55,14 @@ export type ErrorCode = z.infer<typeof ErrorCode>;
 
 // The HTTP status of each code (api.md §1).
 export const ERROR_STATUS: Readonly<
-  Record<ErrorCode, 400 | 403 | 404 | 409 | 410 | 413 | 422 | 429>
+  Record<ErrorCode, 400 | 403 | 404 | 409 | 410 | 413 | 422 | 429 | 500>
 > = {
   invalid_skill_file: 400,
   invalid_import: 400,
   bad_request: 400,
   not_author: 403,
   origin_rejected: 403,
+  host_rejected: 403,
   not_found: 404,
   bot_purged: 410,
   name_taken: 409,
@@ -98,9 +101,11 @@ export const ERROR_STATUS: Readonly<
   daily_cap_reached: 429,
   provider_cap_reached: 429,
   price_unknown: 429,
+  internal_error: 500,
 };
 
-// The one error shape of every response (api.md §1).
+// The one error shape of every response (api.md §1). `request_id` matches the `X-Request-Id`
+// header and the server log (security.md §2.10).
 export const ApiError = z
   .object({
     error: z
@@ -108,6 +113,7 @@ export const ApiError = z
         code: ErrorCode,
         message: z.string(),
         field: z.string().optional(),
+        request_id: z.string().optional(),
       })
       .strict(),
   })

@@ -25,16 +25,20 @@ One shape for every error:
 {"error": {"code": "mention_not_member", "message": "Designer is not in this conversation.", "field": "mentions[0]"}}
 ```
 
+Every response has an `X-Request-Id` header. An error body also carries it as `request_id`,
+and the server log line of that request has the same id (`security.md` §2.10).
+
 | HTTP | Codes |
 | --- | --- |
-| 400 | `invalid_skill_file`, `invalid_import`, `bad_request` |
-| 403 | `not_author`, `origin_rejected` |
+| 400 | `invalid_skill_file`, `invalid_import`, `bad_request` (also a missing, duplicate or malformed `Host` header) |
+| 403 | `not_author`, `origin_rejected`, `host_rejected` (a well-formed `Host` that is not on the allowlist, `security.md` §2.1) |
 | 404 | `not_found` |
 | 410 | `bot_purged` (the bot was purged from Trash; only its tombstone remains, D50) |
 | 409 | `name_taken`, `slug_taken`, `stale_write` (the row changed since it was read; reload), `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending`, `run_not_queued`, `draft_not_pending`, `draft_stale`, `bot_list_changed`, `idempotency_key_reused` (same `Idempotency-Key` with a different body), `place_in_trash` (restore while the item's project, conversation or bot is in Trash; D60, D62), `memory_full` (`memory_items_max` live items in the place), `conversation_in_project` (move of a project conversation, D61), `proposal_not_ready`, `copy_not_pending`, `save_not_waiting`, `nothing_unsaved`, `instructions_changed` (a memory check decision after a newer instruction save, D63) |
 | 413 | `too_large` |
 | 422 | `validation_error`, `invalid_id`, `mention_not_member`, `bot_unavailable`, `bot_deleted`, `skill_deprecated`, `version_mismatch`, `effort_not_supported`, `model_not_available`, `sensitive_data`, `tool_job_conflict`, `tool_not_available` (the model has no such tool) |
 | 429 | `rate_limited` (runs per hour), `daily_cap_reached`, `provider_cap_reached` (D42), `price_unknown` (a cap applies and the model has no known price, D42 amendment 2026-10-27) |
+| 500 | `internal_error` (an unexpected error caught before the response is sent; no stack trace, SQL or path in the body) |
 
 ## 2. Skills
 
