@@ -12,6 +12,8 @@ test("the shell runs under the CSP with no violation", async ({ page }) => {
   expect(response?.headers()["content-security-policy"]).toContain("default-src 'self'");
   await page.getByRole("button", { name: "Home menu" }).click();
   await page.keyboard.press("Escape");
+  // The menu's backdrop takes pointer events until its close animation ends.
+  await expect(page.getByRole("menu")).toBeHidden();
   await page.getByRole("button", { name: "New project" }).hover();
   await page.getByRole("button", { name: OWNER_MENU }).click();
   await page.getByRole("menuitem", { name: "Statistics" }).click();

@@ -13,7 +13,9 @@ describe("OpenAPI docs page", () => {
     const page = await dev.request("/api/docs");
     expect(page.status).toBe(200);
     const html = await page.text();
-    expect(html).not.toMatch(/<script>|<style>|style=/);
+    // No inline script or style: every <script> has a src, and there is no <style> or style=.
+    expect(html).not.toMatch(/<script\b(?![^>]*\ssrc=)|<style\b|\sstyle\s*=/i);
+    expect(html).toMatch(/<script\s[^>]*src=/i);
     expect(page.headers.get("content-security-policy")).toContain("default-src 'self'");
     for (const file of [
       "/api/docs/init.js",
