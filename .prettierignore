@@ -1,0 +1,10 @@
+# Prettier checks code and config only. Documentation is written by hand (docs/README.md).
+*.md
+docs/
+seed/
+mockups/
+.agents/
+.claude/
+.impeccable/
+pnpm-lock.yaml
+frontend/src/lib/api/generated/

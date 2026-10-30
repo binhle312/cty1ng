@@ -1,0 +1,13 @@
+# The three packages of architecture.md §4. backend/ and frontend/ come in M0b and M0c.
+packages:
+  - shared
+  - backend
+  - frontend
+
+# Install scripts run only for native packages listed here as true (security.md §2.11).
+# esbuild ships its binary as an optional platform package, so its script is not needed.
+allowBuilds:
+  esbuild: false
+
+# Refuse to install on a Node version outside "engines" (Node 24 LTS, D34).
+engineStrict: true
