@@ -127,3 +127,25 @@ describe("POST /api/_test/events", () => {
     expect(Object.keys(paths ?? {})).toEqual(["/api/health", "/api/stream"]);
   });
 });
+
+// Review of PR #48: over a real server, three HEAD requests left three open subscriptions.
+describe("HEAD /api/stream over HTTP", () => {
+  it("opens no subscription", async () => {
+    const subscribe = server.hub.subscribe.bind(server.hub);
+    let opened = 0;
+    server.hub.subscribe = (afterSeq, signal) => {
+      opened += 1;
+      return subscribe(afterSeq, signal);
+    };
+    for (let i = 0; i < 3; i++) {
+      const response = await fetch(`${server.url}/api/stream`, { method: "HEAD" });
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toBe("text/event-stream");
+    }
+    expect(opened).toBe(0);
+    // The spy works: a GET opens one.
+    await connect();
+    await sleep(50);
+    expect(opened).toBe(1);
+  });
+});

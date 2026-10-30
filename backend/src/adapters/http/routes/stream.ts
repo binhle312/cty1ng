@@ -39,17 +39,18 @@ export function streamRoutes(openStream: OpenStream) {
       }
       afterSeq = Number(lastEventId);
     }
+    const headers = {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "X-Accel-Buffering": "no",
+    };
+    // Hono answers HEAD with this GET handler and drops the body without cancelling it, so a
+    // stream opened here would never end. HEAD gets the headers only.
+    if (c.req.method === "HEAD") return new Response(null, { status: 200, headers });
     const log = c.get("log");
     const body = openStream(afterSeq, c.req.raw.signal, (error) => {
       log.error({ err: error }, "event stream failed");
     });
-    return new Response(body, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "X-Accel-Buffering": "no",
-      },
-    });
+    return new Response(body, { status: 200, headers });
   });
 }
