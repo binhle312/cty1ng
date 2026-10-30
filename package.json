@@ -19,7 +19,7 @@
   "devDependencies": {
     "@cty1ng/shared": "workspace:*",
     "@eslint/js": "10.0.1",
-    "@types/node": "24.19.2",
+    "@types/node": "26.6.5",
     "dependency-cruiser": "18.7.0",
     "eslint": "10.13.0",
     "eslint-plugin-drizzle": "0.2.3",
