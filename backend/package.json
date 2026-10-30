@@ -1,0 +1,31 @@
+{
+  "name": "@cty1ng/backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../.env src/app/main.ts",
+    "start": "node --env-file-if-exists=../.env src/app/main.ts",
+    "cli": "node --env-file-if-exists=../.env src/app/cli.ts",
+    "typecheck": "tsc -p .",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node --env-file-if-exists=../.env src/app/cli.ts db migrate",
+    "db:check": "drizzle-kit check && node scripts/db-check.ts"
+  },
+  "dependencies": {
+    "@cty1ng/shared": "workspace:*",
+    "@hono/node-server": "2.1.5",
+    "@hono/zod-openapi": "1.6.3",
+    "better-sqlite3": "13.0.3",
+    "drizzle-orm": "0.45.4",
+    "hono": "4.13.14",
+    "pino": "10.4.0",
+    "typeid-js": "1.2.0",
+    "uuidv7": "1.2.1",
+    "yaml": "2.9.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "9.6.0",
+    "drizzle-kit": "0.31.11"
+  }
+}
