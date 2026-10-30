@@ -22,9 +22,11 @@ export function darkColours(css: string): Map<string, string> {
   return colours;
 }
 
-// The `colors:` map of DESIGN.md's front matter: name → lower-case hex.
+// The `colors:` map of DESIGN.md's front matter: name → lower-case hex. A Windows checkout may
+// give the file CRLF line endings, so they are normalised first.
 export function snapshotColours(markdown: string): Map<string, string> {
-  const frontMatter = /^---\n([\s\S]*?)\n---/.exec(markdown)?.[1] ?? "";
+  const text = markdown.replace(/\r\n?/g, "\n");
+  const frontMatter = /^---\n([\s\S]*?)\n---/.exec(text)?.[1] ?? "";
   const colours = new Map<string, string>();
   let inColours = false;
   for (const line of frontMatter.split("\n")) {

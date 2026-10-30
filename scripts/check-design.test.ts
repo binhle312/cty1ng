@@ -52,6 +52,11 @@ describe("design snapshot colours", () => {
     ]);
   });
 
+  it("reads DESIGN.md with CRLF line endings, as a Windows checkout writes it", () => {
+    write(DESIGN_MD, designMd('  surface: "#0E0F11"\n  primary: "#F5B544"').replace(/\n/g, "\r\n"));
+    expect(checkDesignSnapshot(root)).toEqual([]);
+  });
+
   it("compares with the dark block, not the light one", () => {
     write(DESIGN_MD, designMd('  surface: "#ffffff"\n  primary: "#f5b544"'));
     expect(checkDesignSnapshot(root)).toHaveLength(1);
