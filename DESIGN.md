@@ -35,7 +35,7 @@ components:
     rounded: "{rounded.card}"
     height: "36px"
   button-secondary:
-    backgroundColor: "{colors.surface}"
+    backgroundColor: "transparent"
     textColor: "{colors.on-surface}"
     rounded: "{rounded.card}"
     height: "36px"

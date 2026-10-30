@@ -31,7 +31,7 @@
       "refersTo": "button-secondary",
       "description": "Secondary action from the agreed button specification.",
       "html": "<button class=\"ds-control ds-secondary\">Cancel</button>",
-      "css": ".ds-secondary { font: 13px Geist, sans-serif; box-sizing: border-box; height: 36px; padding: 0 14px; border: 1px solid #3A3F46; border-radius: 8px; background: #0E0F11; color: #E7E8EA; } .ds-control:focus-visible { outline: 2px solid #F5B544; outline-offset: 2px; }"
+      "css": ".ds-secondary { font: 13px Geist, sans-serif; box-sizing: border-box; height: 36px; padding: 0 14px; border: 1px solid #3A3F46; border-radius: 8px; background: transparent; color: #E7E8EA; } .ds-control:focus-visible { outline: 2px solid #F5B544; outline-offset: 2px; }"
     },
     {
       "name": "Number box",
