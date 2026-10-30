@@ -74,7 +74,7 @@ A changed row gets the 3 px `primary` mark at its left edge, as on Project setti
 
 Read-only lists (Models) use one table: a header row in 11 px weight 600 `on-surface-muted`, rows
 of 12 px with 9 px padding and an `outline` line under each. Model ids and key names use the mono
-font at 10.5 px.
+font at 11 px (`../ui-rules.md` L1; was 10.5 px, shell review 2026-10-30).
 
 ### 3.4 Spend meter
 

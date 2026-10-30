@@ -23,7 +23,9 @@ definitions); `docs/api.md` §7; `docs/requirements/statistics.md`, `docs/requir
 - The shared `TimeRangePicker` (UI-11.1 to UI-11.10, date-math parser §11.3, URL contract §11.4,
   refresh control §11.5);
   also used by the bot usage panel (UI-6.8).
-- The page, UI-10.1 to UI-10.9; header link (UI-2.8).
+- The page, UI-10.1 to UI-10.9; header link (UI-2.8). The user panel Statistics item (shown
+  since M0, UI-1.20) now opens a real page, and the battery opens this page instead of Settings ›
+  Spending (UI-1.22).
 - A seed script `make seed-usage` that generates 90 days of realistic fake runs, requests and
   skill loads, for development and the performance check.
 
@@ -35,6 +37,7 @@ provider invoice reconciliation; anything multi-user.
 ## Acceptance criteria
 
 - UI-10.1 to UI-10.9; UI-11.1 to UI-11.10 (including the calendar, UI-11.5b).
+- A click, Enter or a tap on the battery opens Statistics (UI-1.22).
 - Date-math parser table tests: every quick range, rounding for From vs To, DST change days,
   month ends, invalid input.
 - Opening `/stats?from=now-7d&to=now` shows "Last 7 days"; shifting back produces an absolute

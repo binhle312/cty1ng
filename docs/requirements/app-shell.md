@@ -18,6 +18,10 @@ The frame around every page: the rail of conversations on the left and the bar o
   Acceptance criteria: UI-1.10 to UI-1.12.
 - **SH-7.** As the owner, I want one Trash page for everything I deleted, so that I can restore a mistake or delete things for good in one place, one or many at a time.  
   Acceptance criteria: UI-1.14 to UI-1.19 (slice M5b, D62).
+- **SH-8.** As the owner, I want one panel at the bottom of the left bar that opens every
+  management page and shows today's budget, so that I find them with a mouse, the keyboard or
+  touch, also when the left bar is collapsed.  
+  Acceptance criteria: UI-1.20, UI-1.21 (slice M0); UI-1.22, UI-1.23 (slice M5).
 
 ## Acceptance criteria
 
@@ -76,8 +80,8 @@ Layout sketch: see `../design/screens.md` §1 (not final).
 - UI-2.6: Clicking an avatar opens the bot card (`../design/components/bot-card.md`). Only one
   card is open at a time. The card links to the bot's settings.
 - UI-2.7: The roster uses the middle 6 of 12 page columns. When there are more bots than fit, the
-  zone scrolls horizontally with fade edges, and ‹ › buttons show on hover
-  (`../design/components/top-header.md`).
+  zone scrolls horizontally with fade edges, and ‹ › buttons show on hover and while keyboard
+  focus is inside the header. On touch, a swipe scrolls it (`../design/components/top-header.md`).
 - UI-2.8: The header holds the bot roster only, with no navigation links. Bots, Skills, Memory,
   Statistics and Settings open from the user panel menu (`../design/components/user-panel.md`).
   With no bots, the header shows a dashed "+" with "Hey, add your bot here 👋".
@@ -170,3 +174,25 @@ Design: `../design/components/trash-page.md`.
   restores the place first, then the item. One Undo toast covers a multi-delete. Each item is
   its own transaction: when one fails, the others still go through, and the toast names the one
   that failed.
+
+## User panel (UI-1, continued)
+
+Design: `../design/components/user-panel.md`.
+
+- UI-1.20 (M0): The panel floats over the bottom of the left bar. A click, Enter or Space on the
+  avatar or name opens the menu upward: Manage bots, Manage skills, Memory, Trash, Statistics, a
+  divider, Settings. An item shows when its page exists; an empty placeholder page counts (owner
+  2026-10-30), so M0 shows Manage bots, Manage skills, Statistics and Settings; Memory and Trash come with
+  their pages in M5b. Arrow keys move, Esc
+  closes the menu and focus goes back to the avatar. The current page is marked.
+- UI-1.21 (M0): With the left bar collapsed, only the avatar shows. Hover and keyboard focus show
+  the tooltip "{name} · Menu" within 300 ms; the menu opens to the right with the name as its
+  header. A tap on touch opens the menu.
+- UI-1.22 (M5): With a total cap set, the battery shows what is left of today's total cap, in
+  the colours of `user-panel.md` §3. It is a button: Tab reaches it, hover and keyboard focus
+  show the `used / cap` rows, and a click, Enter or a tap opens Statistics. Until M7 ships the
+  Statistics page, it opens Settings › Spending, which shows the same numbers for each cap.
+  With no total cap there is no battery.
+- UI-1.23 (M5): With the left bar collapsed and a total cap set, the menu header shows
+  "{name} · {n}% left today", the percent in the battery colour for that level. With no cap it
+  shows the name only. No dot on the collapsed avatar.

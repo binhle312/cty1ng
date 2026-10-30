@@ -1,6 +1,7 @@
 # Left bar
 
-> **Status: agreed in the M0 UI design review (2026-10-22)**, canvas rounds 6.0 and 6.1.
+> **Status: agreed in the M0 UI design review (2026-10-22)**, canvas rounds 6.0 and 6.1. The
+> keyboard reorder and tile menu (§1.2) agreed in the shell review (2026-10-30).
 > Previews: `../previews/command-dark/left-bar-rail.png` (rail) and
 > `../previews/command-dark/left-bar.png` (inner bar, Memory pane, New project page), each with a
 > `.html`. The Library page content is in `library-page.md` (round 17).
@@ -31,16 +32,30 @@ waiting signals on a project tile stay as in the earlier rounds. Every badge sit
   it solid `primary` with the tooltip "Pin to top". Click pins it.
 - The first pin goes to the top; each later pin goes below the earlier ones.
 - Hover a pinned project: an unpin badge. Click returns the project to its creation-time place.
+- Keyboard: the tile menu (§1.2) has **Pin to top** and **Unpin**.
 
 ### 1.2 Reorder pinned projects
 
 - Drag a pinned project: its slot becomes a dashed gap and a `primary` drop line shows where it
   lands. Only inside the pinned group. Esc cancels.
 - A drag that starts on a pinned project reorders; a drag that starts anywhere else scrolls.
-- Keyboard alternative (nice to have, owner decision 2026-10-22): on a focused pinned tile,
-  Alt+↑ and Alt+↓ move it one place, and a screen reader announces the new place. A right-click or
-  Shift+F10 menu has Move up, Move down, Unpin, Project settings. Until one of them ships, drag is
-  the only way to reorder (a known gap against WCAG 2.5.7).
+- **Keyboard** (required, owner 2026-10-30; it was "nice to have" on 2026-10-22): Tab reaches
+  each tile. On a focused pinned tile, Alt+↑ and Alt+↓ move it one place inside the pinned group
+  and save at once, as a drag does. Focus stays on the tile and a screen reader says the new place:
+  "Writing, pinned, 2 of 4". At the top or the bottom nothing moves and the screen reader says the
+  place again.
+- **Tile menu**: right-click, Shift+F10 or the Menu key on a focused tile. The header is the project
+  name in `on-surface-muted`. Arrow keys move, Enter runs the item, Esc closes the menu and focus goes
+  back to the tile.
+
+  | Tile | Menu items |
+  | --- | --- |
+  | Pinned | Move up, Move down, Unpin, a divider, Project settings. Move up is off on the first pinned tile ("Already at the top"), Move down on the last ("Already at the bottom"), as `buttons.md` §1 |
+  | Not pinned | Pin to top, a divider, Project settings |
+
+- **Touch** (owner 2026-10-30): a tap on a tile opens the project; the bar 2 header ⋯ menu (§2)
+  has the same pin items for the open project, so pin, unpin and reorder need no drag. On the
+  rail, a long press on a pinned tile starts the drag, as in the header (`top-header.md` HD6).
 
 ### 1.3 Scroll
 
@@ -52,7 +67,9 @@ projects scroll with the list (they are not sticky).
 
 Top to bottom:
 
-1. **Project header**: 32 px project tile, name, ⋯ menu. Under it a stats line
+1. **Project header**: 32 px project tile, name, ⋯ menu. The ⋯ menu has the pin items of the tile
+   menu for this project (§1.2: Move up, Move down, Unpin, or Pin to top), a divider, Project
+   settings, Hide bar (Ctrl+B). Under it a stats line
    "4 conversations · 3 bots · 12 files" in `on-surface-muted`, then the **goal** (`projects.description`) in
    `on-surface-muted`, clamped to 3 lines; hover shows the full text.
 2. **Board** row, shown as "Later" until slice M8c (§5).

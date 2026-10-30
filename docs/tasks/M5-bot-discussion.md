@@ -25,6 +25,8 @@ conversation. The server enforces the budget; bots are told how many turns remai
 - Runs-per-hour cap.
 - Daily spending cap (D20) and optional per-provider caps (D42): settings, check at claim time,
   75% / 90% / 100% alerts per cap (D40), UI-8.3.
+- The user panel budget battery and the budget in the collapsed menu header (UI-1.22, UI-1.23,
+  `design/components/user-panel.md` §2, §3).
 
 ## Acceptance criteria
 
@@ -38,6 +40,12 @@ conversation. The server enforces the budget; bots are told how many turns remai
   21 is refused with the field error (component test).
 - Every Settings row has a name, an effect line and a note (component test against the row data;
   `ui-rules.md` W9).
+- Battery (component test, fake spend): at 62% left it is green, at 25% amber, at 10% red, at 0%
+  an empty red outline, and with no total cap it is gone. Tab focus shows the `used / cap` rows
+  as hover does; Enter opens Settings › Spending; a tap in a touch-emulated e2e run opens the
+  same page (Statistics from M7).
+  Collapsed, the menu header says "Sir · 62% left today", and with no cap only "Sir"
+  (UI-1.22, UI-1.23).
 - Runs-per-hour cap refuses with 429 / notice.
 - With a cap of $0.10 and fake prices, the run that crosses the cap finishes and the next one is
   refused with `daily_cap_reached`; raising the cap lets runs continue.

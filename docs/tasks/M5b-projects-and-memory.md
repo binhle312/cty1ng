@@ -87,6 +87,14 @@ can move into a project and take its conversation memory with it.
 - Decide: a check finds a conflict with line 4, the owner saves new instructions, then Decide on
   the old conflict returns 409 `instructions_changed` and changes nothing.
 - Seen: open a place, restart the app, and the New tags stay gone; a GET changes nothing.
+- Rail keyboard (`left-bar.md` §1.2): with three pinned projects, Alt+↓ on the first moves it to
+  place 2, saves with `PUT /projects/{id}/pin`, keeps focus on it, and the live region says
+  "{name}, pinned, 2 of 3"; Alt+↑ on the first does nothing. Shift+F10 on a pinned tile opens
+  Move up (off on the first), Move down, Unpin, Project settings; on an unpinned tile, Pin to top
+  and Project settings. Pin to top from the menu pins the project, as the badge does.
+- Rail touch (`left-bar.md` §1.2): in a touch-emulated e2e run, tap a pinned project, then Move
+  down in the bar 2 header ⋯ menu moves it one place with no drag; a long press on a pinned
+  tile starts the drag.
 - Memory upkeep requests appear in `GET /usage?group_by=bot` as "Memory upkeep" and count toward
   the daily caps (D63).
 

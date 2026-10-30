@@ -36,7 +36,7 @@ Rule: a pin badge is never on a bot avatar.
 | Pin | The item goes to the end of the pinned group (the first pin is at the top) and glows `primary` for a moment. Saves at once |
 | Unpin | The item goes back to its sorted place in the others (projects: creation time; bots: the `bot_order` sort). Saves at once |
 | Reorder | Drag a pinned item inside the pinned group only. Its old place becomes a gap and a drop line shows where it lands (`dashed-slot.md` §3). Esc cancels |
-| Keyboard | Alt+← and Alt+→ (Alt+↑ and Alt+↓ on the rail) move a focused pinned item one place |
+| Keyboard | Alt+← and Alt+→ (Alt+↑ and Alt+↓ on the rail) move a focused pinned item one place. On the rail, the tile menu also has Move up, Move down, Pin to top and Unpin (`left-bar.md` §1.2) |
 | Undo | None. Pin and unpin are one click to reverse (`buttons.md`, Undo rule) |
 | Search on | Pin and unpin still work. Drag is off, so the owner never reorders a part of the list |
 
