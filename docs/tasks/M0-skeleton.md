@@ -24,7 +24,8 @@ its own plan checkpoint.
 
 Owner answers that apply to every part (2026-10-30):
 
-- Node 24 LTS (`.nvmrc` = `24`, `engines.node` = `>=24 <25`); pnpm pinned in `packageManager`
+- Node 24 LTS (`.nvmrc` = `24`, `engines.node` = `>=24.15 <25`: jsdom 30 needs 24.15, PR #49
+  review); pnpm pinned in `packageManager`
   and installed with npm in CI, not with corepack (newer Node versions drop corepack).
 - Laptop screens only (14 inch and larger): no mobile layout.
 - Command **dark** only in M0 (`design/themes.md` §2); light comes when its values are agreed.

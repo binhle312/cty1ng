@@ -106,3 +106,17 @@ says how the code keeps first load small and long lists fast.
 | **Virtualised long lists** | The message list is virtualised: only the messages near the viewport are in the DOM. It loads older messages on scroll (UI-3.10), keeps the scroll position when they arrive, and still supports "New messages", the "New" divider and jumping to a message. The same applies to the Flow timeline (`flow-view.md` §5) and to any other list that can pass about 200 rows. Library: TanStack Virtual (new dependency, approved with M0's list). |
 | **Bundle budget** | CI fails when the first-load JavaScript of the app shell grows past its budget: **250 KB gzipped** to start, measured on the production build. Raising it needs a line in the PR saying why. Lazy chunks get a warning above 300 KB each. |
 
+
+## 5. Known pitfalls
+
+Things a slice learned the hard way. Check this list during the risk probes (`workflow.md` §2
+step 2), and add to it when a build finds a new one.
+
+| Area | Pitfall | What to do |
+| --- | --- | --- |
+| CSP (`security.md` §2.1) | No inline script or style is allowed, and no `eval`. | Put scripts in files. Keep Zod jitless (`frontend/src/lib/zod-config.ts`), so it does not use `new Function`. Do not use Base UI's Select or ScrollArea: they add inline styles. Before using a new library, check it in the production build with `watchCsp` (`testing.md` §3). |
+| Base UI tooltip | A tooltip has no `tooltip` role. | In tests, find the tooltip by its text, not with `getByRole("tooltip")`. |
+| Base UI menu | A link item stays open after a click. | Give `Menu.LinkItem` `closeOnClick` (see `frontend/src/components/ui/menu.tsx`). |
+| Tests: `act()` | When the callback returns a value (for example `act(() => fireEvent.click(x))`), `act()` returns a promise, and `no-floating-promises` fails. | Give the callback braces so it returns nothing, and call `act()` as a statement: `act(() => { fireEvent.click(x); });`. Use `await act(() => promise)` only for async work. |
+| Arrow functions | `no-confusing-void-expression` fails when an arrow function returns the value of a call that returns nothing. | Put the body in braces: `() => { doIt(); }`. |
+| TanStack Query | `fetchQuery` is deprecated, and `no-deprecated` fails. | Use `queryClient.query({ … })`. |

@@ -11,7 +11,7 @@ you set and hand work to each other only with your approval.
 
 ## Quickstart
 
-Needs Node 24 (`.nvmrc`) and the pnpm version in `package.json` (`packageManager`). One
+Needs Node 24.15 or a newer 24 (`.nvmrc`; jsdom 30 needs 24.15) and the pnpm version in `package.json` (`packageManager`). One
 command starts the app; it installs the dependencies first when they are missing or out of
 date:
 

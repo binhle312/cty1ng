@@ -4,7 +4,7 @@
   "type": "module",
   "packageManager": "pnpm@12.16.1",
   "engines": {
-    "node": ">=24 <25"
+    "node": ">=24.15 <25"
   },
   "scripts": {
     "dev": "pnpm -r --parallel --if-present dev",
@@ -20,7 +20,8 @@
     "check:bundle": "tsx scripts/check-bundle.ts",
     "gen:api": "tsx scripts/gen-api.ts",
     "db:check": "pnpm --filter @cty1ng/backend db:check",
-    "e2e": "playwright test -c frontend/playwright.config.ts"
+    "e2e": "playwright test -c frontend/playwright.config.ts",
+    "e2e:serve": "tsx scripts/e2e-serve.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",

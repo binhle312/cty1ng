@@ -56,7 +56,7 @@ Layout sketch: see `../design/screens.md` §1 (not final).
   - **Pinned** bots first, in the owner's order, then a short divider, then the others. The
     pinned zone and the divider show when one or more bots exist; with bots but no pinned bot,
     the zone is a dashed pill "Drag a bot here to pin it". With no bots, only the add slot of
-    UI-2.6 shows (owner, 2026-10-30). Header avatars have no pin mark
+    UI-2.8 shows (owner, 2026-10-30). Header avatars have no pin mark
     (`../design/components/top-header.md` §3).
   - **Others** by the `bot_order` setting: *Recent activity* (default): the bot with the latest
     message or run, in any conversation, comes first (`last_activity_at`, `../api.md` §4); bots

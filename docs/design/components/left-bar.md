@@ -99,7 +99,8 @@ same menu (`conversation-page.md` §2.1, round 12).
 - One conversation list, newest activity first.
 - **First run** (no bots): subtitle "No bots yet", a dashed button "+ Hey, let's talk 👋" in the
   same style as the rail's New project tile, and the line "Bigger work? Start a project with + on
-  the left."
+  the left." Until projects exist (M5b), the line is not shown, because the rail's + is turned
+  off (M0c plan, decision C).
 
 ## 4. Hiding bar 2
 

@@ -12,11 +12,9 @@ allowBuilds:
   esbuild: false
   "@scarf/scarf": false
 
-# Refuse to install on a Node version outside "engines" (Node 24 LTS, D34).
+# Refuse to install on a Node version outside "engines" (Node 24 LTS, D34; 24.15 or newer,
+# because jsdom 30 needs it).
 engineStrict: true
-
-minimumReleaseAgeExclude:
-  - lucide-react@1.65.0
 
 # @hey-api/json-schema-ref-parser pins js-yaml 4.2.0, which has three high advisories
 # (GHSA-52cp-r559-cp3m, GHSA-5p4m-2wfm-xmqj, GHSA-2883-xcg3-v3hh). 4.3.2 fixes them in the same
