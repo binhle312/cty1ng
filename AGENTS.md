@@ -61,6 +61,7 @@ pnpm lint                       # ESLint, Prettier check, import rules (dependen
 pnpm typecheck                  # tsc across all packages
 pnpm test                       # Vitest: unit, service, API and contract tests
 pnpm check:index                # every indexed folder's README.md lists its files (§5 rule 9)
+pnpm check:events               # the event table in docs/realtime-events.md §4 matches shared/
 pnpm gen:api                    # regenerate the typed API client from the backend's OpenAPI
 pnpm e2e                        # Playwright, uses the fake model
 
