@@ -73,7 +73,7 @@ that use them, then M0.
 
 ## Next
 
-1. Owner reviews M0a ([#46](https://github.com/binhle312/cty1ng/pull/46)); then the M0b plan (backend core).
+1. Owner approves the M0b plan (backend core, draft PR); then M0b is built.
 
 ## Waiting on the owner
 
@@ -93,7 +93,7 @@ that use them, then M0.
 
 | Slice | State | PR | Notes |
 | --- | --- | --- | --- |
-| M0 | building | [#46](https://github.com/binhle312/cty1ng/pull/46) (M0a) | Three parts (M0a tooling, M0b backend, M0c frontend). M0a plan approved 2026-10-30 |
+| M0 | building | [#46](https://github.com/binhle312/cty1ng/pull/46) (M0a, merged) | Three parts (M0a tooling, M0b backend, M0c frontend). M0a merged 2026-10-30; M0b plan in review |
 | M1 | not started | | Design approved: `design/components/skills-page.md` (round 8); D49 accepted. Round 16 moves the page to the bot page layout (agreed, #38) |
 | M2 | UI design review | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec) | Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open |
 | M3 | UI design agreed | [#26](https://github.com/binhle312/cty1ng/pull/26) (spec) | Round 10: `design/components/conversation-page.md`, `composer.md`, `conversation-cards.md` |
