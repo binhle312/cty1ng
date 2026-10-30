@@ -8,7 +8,7 @@
   },
   "scripts": {
     "lint": "eslint . && prettier --check . && pnpm lint:imports",
-    "lint:imports": "depcruise --config .dependency-cruiser.cjs shared",
+    "lint:imports": "tsx scripts/lint-imports.ts",
     "format": "prettier --write .",
     "typecheck": "tsc -p . && pnpm -r --if-present typecheck",
     "test": "vitest run",
