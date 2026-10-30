@@ -15,8 +15,12 @@ export interface SseOptions {
   onError: (error: unknown) => void;
 }
 
-// Turns the transport's ordered events into an SSE body. `afterSeq` is the parsed
-// Last-Event-ID, or null on a first connection.
+// Turns the transport's events into an SSE body. `afterSeq` is the parsed Last-Event-ID, or
+// null on a first connection.
+//
+// Backpressure: the body takes the next event from the transport only when the client has read
+// the frame before it (`pull`, at most one frame queued). A long replay to a slow client holds
+// one page of events (the hub reads the events table a page at a time), not the whole replay.
 export function sseBody(
   transport: Transport,
   afterSeq: number | null,
@@ -26,55 +30,70 @@ export function sseBody(
   const encoder = new TextEncoder();
   // Stops the transport when the request ends (client gone) or the body is cancelled.
   const abort = new AbortController();
-  const stop = (): void => {
-    abort.abort();
-  };
-  signal.addEventListener("abort", stop);
+  const events = transport.subscribe(afterSeq, abort.signal)[Symbol.asyncIterator]();
+  let body: ReadableStreamDefaultController<Uint8Array> | undefined;
   let heartbeat: ReturnType<typeof setInterval> | undefined;
   let closed = false;
 
-  return new ReadableStream<Uint8Array>({
-    start(controller) {
-      const send = (text: string): void => {
-        if (!closed) controller.enqueue(encoder.encode(text));
-      };
-      send(retryFrame(options.retryMs ?? RETRY_MS));
-      heartbeat = setInterval(() => {
-        send(PING_FRAME);
-      }, options.heartbeatMs ?? HEARTBEAT_MS);
+  // The cursor a control event reports: the client's own when it resumes, else the newest seq
+  // (a fresh start, or after a reset).
+  let maxSeq = 0;
+  let cursor = afterSeq ?? 0;
 
-      void (async () => {
-        // The cursor a control event reports: the client's own when it resumes, else the newest
-        // seq (a fresh start, or after a reset).
-        let maxSeq = 0;
-        let cursor = afterSeq ?? 0;
+  function finish(closeBody: boolean): void {
+    if (closed) return;
+    closed = true;
+    clearInterval(heartbeat);
+    signal.removeEventListener("abort", onAbort);
+    abort.abort();
+    void events.return?.(undefined).catch(options.onError);
+    if (closeBody) body?.close();
+  }
+  function onAbort(): void {
+    finish(true);
+  }
+  signal.addEventListener("abort", onAbort);
+
+  return new ReadableStream<Uint8Array>(
+    {
+      start(controller) {
+        body = controller;
+        controller.enqueue(encoder.encode(retryFrame(options.retryMs ?? RETRY_MS)));
+        // A ping only into an empty queue: a client that is not reading needs none.
+        heartbeat = setInterval(() => {
+          if (!closed && (controller.desiredSize ?? 0) > 0) {
+            controller.enqueue(encoder.encode(PING_FRAME));
+          }
+        }, options.heartbeatMs ?? HEARTBEAT_MS);
+        if (signal.aborted) finish(true);
+      },
+      async pull(controller) {
         try {
-          for await (const event of transport.subscribe(afterSeq, abort.signal)) {
-            if (event.type === "ready") {
-              maxSeq = event.data.max_seq;
-              if (afterSeq === null) cursor = maxSeq;
-            }
-            if (event.type === "reset") cursor = maxSeq;
-            send(eventFrame(event, cursor));
-            if ("seq" in event) cursor = event.seq;
+          const next = await events.next();
+          if (closed) return;
+          if (next.done === true) {
+            finish(true);
+            return;
           }
+          const event = next.value;
+          if (event.type === "ready") {
+            maxSeq = event.data.max_seq;
+            if (afterSeq === null) cursor = maxSeq;
+          }
+          if (event.type === "reset") cursor = maxSeq;
+          controller.enqueue(encoder.encode(eventFrame(event, cursor)));
+          if ("seq" in event) cursor = event.seq;
         } catch (error) {
+          if (closed) return;
           options.onError(error);
-        } finally {
-          clearInterval(heartbeat);
-          signal.removeEventListener("abort", stop);
-          abort.abort();
-          if (!closed) {
-            closed = true;
-            controller.close();
-          }
+          finish(true);
         }
-      })();
+      },
+      cancel() {
+        finish(false);
+      },
     },
-    cancel() {
-      closed = true;
-      clearInterval(heartbeat);
-      stop();
-    },
-  });
+    // At most one frame queued (the default count strategy, made explicit).
+    new CountQueuingStrategy({ highWaterMark: 1 }),
+  );
 }
