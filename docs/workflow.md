@@ -227,6 +227,6 @@ inside a module, update docs to match code, and fix review findings.
 | Brief is ambiguous | Builder asks; owner answers in the brief (so the answer is kept) |
 | CI red on main | Fix main first; no slice merges onto a red main |
 | Agents disagree in review | Owner decides; if it is a design question, record it in `decisions/` |
-| Owner sees a problem in how a slice was built (slow, too many questions, surprises) | Change the owning rule and add an entry to `lessons-learned.md`, in one PR |
+| Owner sees a problem in how a slice was built (slow, too many questions, surprises) | Change the owning rule and add a lesson to `lessons-learned/`, in one PR |
 | Slice too big | Split the brief into parts (M3a, M3b), each mergeable; UI and infrastructure go in different parts (§2 step 1) |
 | Docs drift found later | Fix the doc or code in a small PR; note it in the next slice's plan |
