@@ -9,6 +9,9 @@ export const TEST_PINGS_KEY = ["realtime", "test-pings"] as const;
 // applied one is skipped.
 export function createEventReducer(queryClient: QueryClient) {
   let lastSeq: number | null = null;
+  // The newest seq of the last `ready`. The server sends `reset` right after `ready`, and the
+  // stream then continues after this seq (realtime-events.md §3, the `id:` of `reset`).
+  let readyMaxSeq: number | null = null;
 
   return {
     get lastSeq(): number | null {
@@ -25,12 +28,15 @@ export function createEventReducer(queryClient: QueryClient) {
         case "ready":
           // A first connection starts at the newest event. A reconnect keeps the cursor: the
           // replay that follows must not be skipped.
-          lastSeq ??= event.data.max_seq;
+          readyMaxSeq = event.data.max_seq;
+          lastSeq ??= readyMaxSeq;
           return true;
         case "reset":
           // The server lost the cursor (pruned events or a new database). Everything cached
-          // may be stale, and the seq can start lower than before.
-          lastSeq = null;
+          // may be stale, and the seq can start lower than before. The cursor moves to where
+          // the server continues, not to null: a later reconnect's `ready` must not move it
+          // past the events that the server replays then.
+          lastSeq = readyMaxSeq;
           void queryClient.invalidateQueries();
           return true;
         case "test.ping": {

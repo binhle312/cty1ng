@@ -42,7 +42,7 @@ describe("event reducer", () => {
     expect(notes()).toEqual(["n11", "n12"]);
   });
 
-  it("on reset, forgets the cursor and refetches everything", async () => {
+  it("on reset, moves the cursor to where the server continues and refetches everything", async () => {
     const { queryClient, reducer } = setup();
     let fetches = 0;
     await queryClient.query({
@@ -53,10 +53,27 @@ describe("event reducer", () => {
       },
     });
     reducer.apply(ping(50));
+    // A new database: the server sends ready with its newest seq, then reset.
+    reducer.apply({ type: "ready", data: { max_seq: 0 } });
     reducer.apply({ type: "reset", data: {} });
-    expect(reducer.lastSeq).toBeNull();
-    // A new database starts its seq again from 1.
+    expect(reducer.lastSeq).toBe(0);
+    // The new database starts its seq again from 1.
     expect(reducer.apply(ping(1))).toBe(true);
     expect(queryClient.getQueryState(["anything"])?.isInvalidated).toBe(true);
+  });
+
+  it("after a reset, applies the events a later reconnect replays", () => {
+    const { reducer, notes } = setup();
+    reducer.apply({ type: "ready", data: { max_seq: 10 } });
+    // A reconnect with a cursor the server no longer has: ready, then reset. The stream
+    // continues after 20.
+    reducer.apply({ type: "ready", data: { max_seq: 20 } });
+    reducer.apply({ type: "reset", data: {} });
+    // The stream drops before any event arrives. The next reconnect resumes after 20, and the
+    // server replays 21 and 22 after its ready.
+    reducer.apply({ type: "ready", data: { max_seq: 22 } });
+    expect(reducer.apply(ping(21))).toBe(true);
+    expect(reducer.apply(ping(22))).toBe(true);
+    expect(notes()).toEqual(["n21", "n22"]);
   });
 });

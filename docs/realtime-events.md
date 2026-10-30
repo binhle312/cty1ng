@@ -94,6 +94,10 @@ The client appends `text` only if `offset` equals its current length.
 - A reducer applies each event to the TanStack Query cache (`queryClient.setQueryData`) so
   pages update without refetching.
 - The last applied `seq` is kept in memory; `EventSource` handles `Last-Event-ID` itself.
+  The first `ready` sets it to `max_seq`; a later `ready` (a reconnect) leaves it, so the
+  replay that follows is applied. A `reset` sets it to the `max_seq` of the `ready` just
+  before it, where the stream continues (the `id:` of the `reset`), never to empty: an empty
+  cursor would let the next reconnect's `ready` skip the events replayed after it.
 - Events are idempotent to apply: applying `message.created` for a message already in the
   cache replaces it rather than duplicating it. (Optimistic messages are matched by a
   `client_id` the browser sends with the POST.)
