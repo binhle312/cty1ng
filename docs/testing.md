@@ -125,6 +125,21 @@ Faults (`conversation-rules.md` §4, "Tool results"), one named test each:
 - the prompt contains the line "If a tool returns an error or no data, say so";
 - a model that calls a failing tool again and again stops at `request_limit`.
 
+### Run and handoff behaviour
+
+Lessons from an earlier prototype. Each needs a named test in the slice that builds it:
+
+1. A run's history is appended exactly once, only on success (no duplicate turns on retry).
+2. A crashed run is retried after its lease expires; after `RUN_MAX_ATTEMPTS` it fails visibly
+   (`architecture.md` §6).
+3. Images and PDFs are not sent to the model again on every later turn: history holds
+   placeholders, and `view_file` brings them back.
+4. A handoff approval is pinned to a commit; changed files make it stale.
+5. A daily handoff limit stops runaway loops and tells the owner.
+6. Replies longer than `max_reply_chars` are truncated with a pointer to the files.
+7. Bots never start another bot's work themselves; only an approval or the budgeted discussion
+   does.
+
 ### End to end (Playwright)
 
 `e2e/journey-first-use.spec.ts` follows J1 from `requirements/product-brief.md`, then continues:

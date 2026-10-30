@@ -3,8 +3,8 @@
 Status: accepted (2026-10-21, owner). Supersedes D10.
 Supersedes: D10
 Decision: The backend is written in TypeScript on Node, like the frontend. The project starts
-from scratch, so nothing from the Python prototype is ported as code; behaviour is ported
-(`../porting-guide.md`).
+from scratch, so nothing from the Python prototype is ported as code; only behaviour that the
+specification asks for is rebuilt.
 Why: One language and one schema system (Zod, D33) across both halves, so API and event
 types are defined once. The owner asked for the choice that holds up at VPS scale; at that
 scale throughput is bound by model providers and the database, not the language, so the

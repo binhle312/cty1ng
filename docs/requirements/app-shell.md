@@ -40,7 +40,7 @@ Layout sketch: see `../design/screens.md` §1 (not final).
   side; 3–4 → 2×2 grid; 5+ → three avatars and a "+N" tile. Removed bots are left out; deleted
   bots are drawn grey. Pending members are left out until the owner chooses their history. There
   are no preset icons (round 12).
-- UI-1.4: The open conversation has an active indicator (pill on the left edge, as Discord).
+- UI-1.4: The open conversation has an active indicator (a pill on the left edge).
   Conversations with unread messages show a dot.
 - UI-1.5: Sorted by last activity, newest first.
 - UI-1.6: Right-click or ⋯ on a conversation row: the conversation menu (UI-9.7). **Delete**

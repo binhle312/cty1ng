@@ -7,6 +7,4 @@ queries:
 paths-ignore:
   # Vendored third-party skills: never edited in place (AGENTS.md §8), updated from upstream.
   - .agents/skills
-  # Read-only copy of the old prototype, deleted in M6 (porting-guide.md).
-  - reference
   - docs

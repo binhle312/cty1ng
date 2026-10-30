@@ -6,7 +6,7 @@ are the user stories in this folder ([README.md](README.md)).
 ## What we are building
 
 A chat application where a human works with AI "role bots" (for example a Business Analyst and
-a Designer). It is our own chat platform: no Discord, no Slack. Chat platforms are built for
+a Designer). It is our own chat platform, not a bot inside a third-party chat service. Chat platforms are built for
 people talking to people; this one is built for a person **and** their bots, so the person can
 see what each bot is doing, how it works, and whether it is doing the work well. Phase 1 runs on
 one machine for one human; later phases may run on a VPS for several humans.
@@ -19,7 +19,7 @@ and hand work to each other only through the human's approval.
 
 Confirmed by the owner (2026-10-21).
 
-The prototype (`discord-role-bots`) proved that role bots with skills and a shared workspace
+An earlier prototype proved that role bots with skills and a shared workspace
 are useful, but it lives inside a third-party chat platform. Four problems follow, and phase 1
 solves each:
 
@@ -77,7 +77,7 @@ given the order. Nothing runs while the laptop sleeps or the app is closed; that
 6. **Conversation**: one or more bots per conversation, `@mention` limited to members, streaming
    replies, skill provenance chips, message editing with branches.
 7. **Bot discussion**: optional, bounded by a turn budget the bots are told about.
-8. **Parity with the Discord prototype**: a workspace with files (one per project, D37), attachments,
+8. **Parity with the earlier prototype**: a workspace with files (one per project, D37), attachments,
    approval handoffs.
 9. **Statistics**: charts of usage by model, bot and skill (D24).
 10. **Flow view**: an animated Timeline map beside the conversation (D26, D27); a Team map comes back when bots work together without the owner.

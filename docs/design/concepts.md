@@ -13,7 +13,7 @@ screen is organised around**, not in colour.
 
 | # | Concept | Organised around | Library | Lineage | Density | Best at | Main risk |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Workbench | Chat plus a details panel (members, turns, files, spend) | shadcn/ui on Base UI | Slack, Discord | Medium | Familiar, everything visible, lowest build risk | Plain; right panel competes with Flow for space |
+| 1 | Workbench | Chat plus a details panel (members, turns, files, spend) | shadcn/ui on Base UI | Slack | Medium | Familiar, everything visible, lowest build risk | Plain; right panel competes with Flow for space |
 | 2 | Command | Keyboard: ⌘K palette for mentions and actions, status line | Base UI + cmdk | Linear, Raycast, terminals | High | Fast for a power user; very little chrome | Discoverability; dark-first needs a good light theme |
 | 3 | Notebook | The conversation as a document: sections, rendered outputs inline, margin notes | Mantine | Notion, Obsidian, Tufte margins | Low | Reading and reviewing bot output; reads like a report | Live chatter feels heavy; layout work for streaming |
 | 4 | Studio | Dockable panes: chat, file editor, Flow, runs table | Fluent UI 2 + Dockview | VS Code, JetBrains | Very high | Working on files and watching runs side by side | Complex to build and test; overwhelming at first |

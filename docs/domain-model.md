@@ -912,7 +912,7 @@ the `runs` change:
 which try they belong to, so a run total is the sum over all its tries, and a try's own figures
 are the sum over its rows.
 
-`run_history` keeps the bot's own tool calls and results between runs (as the prototype did),
+`run_history` keeps the bot's own tool calls and results between runs,
 so a bot remembers what it read and wrote. Only runs on the active path are used, and they
 share the history budget with the transcript (D32). The conversation transcript given to the
 bot is built from `messages` (see `conversation-rules.md` §4).
@@ -933,7 +933,7 @@ task; clients with an older cursor get `reset` (`realtime-events.md` §2).
 
 ## 9. Handoffs
 
-Same shape and rules as the prototype, keyed by conversation:
+One row per handoff, keyed by conversation:
 
 ```
 handoffs

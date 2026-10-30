@@ -51,8 +51,6 @@ environment, provider-side data handling.
 
 ### 2.3 Bot tools and the workspace sandbox
 
-Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
-
 - Every path goes through `Workspace.resolve()`: refuses absolute paths, drive letters, `..`
   escapes, symlinks resolving outside the root, and anything under `.git`.
 - Writes only inside the Library that the run saves to, anywhere except `attachments/`
@@ -190,7 +188,7 @@ Ported from the prototype (`porting-guide.md`); its tests come along unchanged.
   `.gitignore` excludes `.env*` (except `.env.example`), `data/`, and local databases.
 - **CodeQL** code scanning (`.github/workflows/codeql.yml`, advanced setup, `security-extended`
   queries) runs on every PR, on `main` and weekly. It scans the workflows now and the TypeScript
-  code from M0 on. Vendored skills (`.agents/skills/`), `reference/` and `docs/` are excluded
+  code from M0 on. Vendored skills (`.agents/skills/`) and `docs/` are excluded
   (`.github/codeql/codeql-config.yml`). GitHub's default CodeQL setup stays off, because it
   conflicts with the advanced one.
 - PRs that touch the paths in `AGENTS.md` §7 (security-sensitive code) also get an automated
@@ -279,7 +277,7 @@ computer (owner, 2026-10-28):
 - Startup with `HOST=0.0.0.0` fails.
 - Markdown XSS corpus (script tags, event handlers, `javascript:` links, SVG) renders inert
   (Vitest).
-- Workspace: the prototype's path tests (absolute, `..`, symlink escape, `.git`, write outside
+- Workspace: path tests (absolute, `..`, symlink escape, `.git`, write outside
   scope).
 - Place isolation (D61, invariant 23): a run in Project A gets "not found" for every file tool
   call that names a path of Project B or of the Home Library, also through `..`, an absolute

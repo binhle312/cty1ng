@@ -12,7 +12,7 @@ renders. Later slices only add features; they should never need to set up toolin
 ## Read first
 
 `AGENTS.md`; `docs/architecture.md` (all); `docs/realtime-events.md` §1–3, §5;
-`docs/security.md` §2.1, §2.6, §2.8–2.11; `docs/testing.md` §1, §2, §4; `docs/porting-guide.md` §1; decisions D34, D35;
+`docs/security.md` §2.1, §2.6, §2.8–2.11; `docs/testing.md` §1, §2, §4; decisions D34, D35;
 `docs/requirements/app-shell.md` (layout only); `docs/design/screens.md` §1 (sketch, not final);
 `docs/design/themes.md` §2, §3, §5 (D30).
 
@@ -69,7 +69,6 @@ renders. Later slices only add features; they should never need to set up toolin
   in `.github/workflows/codeql.yml`,
   the automated security review workflow, request body limit and the error handler
   (`security.md` §2.7–2.11).
-- `reference/discord-role-bots/` copied in with its README (`porting-guide.md` §1).
 - `README.md` quickstart; `.env.example` with every variable in `architecture.md` §8.
 - PR template from `workflow.md` §6 as `.github/pull_request_template.md`.
 
