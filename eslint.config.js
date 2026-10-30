@@ -13,8 +13,10 @@ const SQL_RULES = [
     message: "sql.raw() does not bind values (security.md §2.8). Use the sql`` tagged template.",
   },
   {
+    // Only calls on the database handle: `db`/`tx`, bare or as a property (`this.db`), the same
+    // names as the drizzle rules below. `map.get("key")` is not SQL.
     selector:
-      "CallExpression[callee.property.name=/^(run|execute|all|get|values)$/][arguments.0.type=/^(Literal|TemplateLiteral|BinaryExpression)$/]",
+      "CallExpression:matches([callee.object.name=/^(db|tx)$/], [callee.object.property.name=/^(db|tx)$/])[callee.property.name=/^(run|execute|all|get|values)$/][arguments.0.type=/^(Literal|TemplateLiteral|BinaryExpression)$/]",
     message:
       "No SQL from a string (security.md §2.8). Use the query builder or the sql`` tagged template.",
   },

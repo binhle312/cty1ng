@@ -25,9 +25,11 @@ describe("SQL lint rules", () => {
     ["db.run with a string", 'db.run("DELETE FROM bots");'],
     ["db.execute with a template string", "db.execute(`SELECT * FROM bots WHERE id = '${id}'`);"],
     ["db.run with string concatenation", 'db.run("SELECT * FROM bots WHERE id = " + id);'],
+    ["tx.all with a string", 'tx.all("SELECT * FROM bots");'],
+    ["this.db.get with a string", 'repo.db.get("SELECT * FROM bots");'],
   ])("reject %s", async (_label, statement) => {
     const found = await messages(
-      `declare const sql: any, db: any, id: string;\n${statement}\n`,
+      `declare const sql: any, db: any, tx: any, repo: any, id: string;\n${statement}\n`,
       DB_FILE,
     );
     expect(found.some((m) => m.startsWith("no-restricted-syntax"))).toBe(true);
@@ -38,6 +40,16 @@ describe("SQL lint rules", () => {
       "declare const sql: any, db: any, id: string;\ndb.run(sql`SELECT ${id}`);\n",
       DB_FILE,
     );
+    expect(found.filter((m) => m.startsWith("no-restricted-syntax"))).toEqual([]);
+  });
+
+  // Review of PR #46: the rule matched method names on any object.
+  it.each([
+    ["Map.get with a string key", 'new Map<string, number>().get("key");'],
+    ["URLSearchParams.get", 'new URLSearchParams("a=1").get("a");'],
+    ["a cache's run method", 'cache.run("job");'],
+  ])("does not flag %s", async (_label, statement) => {
+    const found = await messages(`declare const cache: any;\n${statement}\n`, DB_FILE);
     expect(found.filter((m) => m.startsWith("no-restricted-syntax"))).toEqual([]);
   });
 });
