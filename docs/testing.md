@@ -164,6 +164,31 @@ open at the "New" divider.
 
 Each slice's brief lists which of these steps must pass by its end.
 
+### Fast loop while building
+
+A full gate run is slow, mostly because Playwright starts two backends and builds the frontend.
+While fixing, run only what the change touches, and run the full suite once at the end
+(`workflow.md` §2 step 4):
+
+| To run | Command |
+| --- | --- |
+| One Vitest file | `pnpm exec vitest run <path>` |
+| Some end-to-end tests | `pnpm e2e -g "<test title>"` |
+| The end-to-end servers, kept running | `pnpm e2e:serve` in a second terminal |
+
+When `pnpm e2e:serve` runs, `pnpm e2e` reuses its servers instead of starting new ones
+(`reuseExistingServer`, local only; CI always starts fresh servers). The servers keep one
+database until you stop the script, so a test that needs a fresh database fails on the second
+run: restart the script. The backend serves the frontend build from disk, so after a frontend
+change run `pnpm build` before `pnpm e2e`; after a backend change, restart the script.
+
+### Test helpers
+
+| Helper | File | Use |
+| --- | --- | --- |
+| `renderApp(path)` | `frontend/test/render-app.tsx` | Component tests on the real app: routes, shell and providers on an in-memory address. Returns the Testing Library view and the router. |
+| `watchCsp(page)` | `frontend/test/e2e/csp.ts` | End-to-end tests: collects every CSP violation of a page; assert that the list is empty. |
+
 ### Themes (D30)
 
 From M0, per `design/themes.md` §5: a token contrast test (WCAG AA), axe checks in every theme

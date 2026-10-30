@@ -21,7 +21,8 @@ const backend = (port: number, env: Record<string, string>) => ({
   command: "node src/app/main.ts",
   cwd: join(REPO, "backend"),
   url: `http://127.0.0.1:${String(port)}/api/health`,
-  reuseExistingServer: false,
+  // Locally, `pnpm e2e:serve` keeps the servers running between runs; CI always starts fresh ones.
+  reuseExistingServer: process.env.CI === undefined,
   timeout: 60_000,
   env: {
     PORT: String(port),

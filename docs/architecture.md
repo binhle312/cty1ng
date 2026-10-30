@@ -156,7 +156,8 @@ A pnpm workspace with three packages. Each folder marked † has a `README.md` i
 ├─ docs/                     this specification
 ├─ seed/                     example skills and bots for `make seed` (seed/README.md)
 ├─ scripts/                  repository scripts: checks (check:index, check:events, check:bundle,
-│                            lint:imports, db:check), gen:api, start (the production build)
+│                            lint:imports, db:check), gen:api, start (the production build),
+│                            e2e:serve (the e2e servers, kept running)
 ├─ shared/ †                 code both sides import
 │  └─ src/
 │     ├─ events/             Zod schemas of the event envelope and every event type
