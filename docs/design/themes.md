@@ -45,10 +45,15 @@ Rules:
 4. **No second component library.** Material is reproduced with tokens on Base UI, not with MUI.
    We get the Material look, not Google's components (no ripple, no exact M3 motion specs). Two
    libraries would double the bundle, the accessibility behaviour to verify and the tests.
-5. **No flash on load.** A small inline script in `index.html` reads the saved theme and mode
-   and sets the `data-` attributes before the first paint.
+5. **No flash on load.** A small blocking script in its own file, `/theme-init.js`, loaded in
+   the `<head>` of `index.html`, reads the saved theme and mode and sets the `data-` attributes
+   before the first paint. It is a separate file, not inline, because the CSP
+   (`../security.md` §2.1) blocks inline scripts (owner, 2026-10-30). It has no imports and
+   wraps everything in try/catch, so broken storage never blocks the first paint.
 6. **Saved per browser** (localStorage, read with try/catch, falling back to Command + follow
    system, because Command ships first, D30). In the VPS phase it moves to the user's settings row.
+   **M0 ships Command dark only** (owner, 2026-10-30): the Command light values are not agreed
+   yet, so "Follow system" and "light" show dark until they are.
 
 ## 3. Token set
 

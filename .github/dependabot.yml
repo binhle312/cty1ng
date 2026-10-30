@@ -1,0 +1,17 @@
+# Weekly dependency updates (docs/security.md §2.11). New dependencies still need the owner's
+# approval (AGENTS.md §7); Dependabot only updates the ones we have.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

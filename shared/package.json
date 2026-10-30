@@ -1,0 +1,17 @@
+{
+  "name": "@cty1ng/shared",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./events": "./src/events/index.ts",
+    "./ids": "./src/ids.ts",
+    "./errors": "./src/errors.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  }
+}

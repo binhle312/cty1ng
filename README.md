@@ -9,15 +9,27 @@ you set and hand work to each other only with your approval.
 
 > Status: see [docs/status.md](docs/status.md) for the current step, what is done and what is left.
 
-## Quickstart (after M0)
+## Quickstart
+
+Needs Node 24 (`.nvmrc`) and the pnpm version in `package.json` (`packageManager`).
+
+```bash
+nvm use                       # Node 24
+npm install -g pnpm@12.16.1   # or let corepack pick it from package.json
+pnpm install
+pnpm lint && pnpm typecheck && pnpm test && pnpm check:index && pnpm check:events
+```
+
+The app itself comes with M0b (backend) and M0c (frontend):
 
 ```bash
 cp .env.example .env          # add at least one provider API key
 make dev                      # http://127.0.0.1:5173
-make seed                     # optional: BA and Designer bots with their skills
+make seed                     # optional: BA and Designer bots with their skills (M1)
 ```
 
-Runs on `127.0.0.1` only. There is no login in phase 1; do not expose the port.
+Runs on `127.0.0.1` only. There is no login in phase 1; do not expose the port. The code
+layout and the folder indexes are in [docs/architecture.md](docs/architecture.md) §4.
 
 ## Documentation
 
