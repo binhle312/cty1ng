@@ -85,9 +85,21 @@ Auto = `check_board.py` finds a break. Manual = check by eye.
 | --- | --- | --- | --- |
 | V1 | A limit, threshold or default that the owner may change is a setting with a default, never fixed | manual | AGENTS.md §10 |
 
+### Legibility
+
+Canvas notes on a board (card titles, captions, slice tags) are not app text; these rules do not
+cover them.
+
+| # | Rule | Check | Source |
+| --- | --- | --- | --- |
+| L1 | App text is 11 px or more. Body text stays `text-base` | manual | Owner 2026-10-30, shell review |
+| L2 | Text inside a badge (16 px) or the budget battery is 10 px or more, at weight 600 or more. The battery percent is 10.5 px | manual | Owner 2026-10-30, `components/user-panel.md` §3 |
+| L3 | Text contrast is 4.5:1 or more against what is behind it, both tones of the battery included. Check it in the built app at 100% and 200% browser zoom | manual | Owner 2026-10-30, shell review |
+
 ## Open conflicts
 
 | Conflict | Where | Status |
 | --- | --- | --- |
 | Agreed round 10 parts use 28 px buttons (Flow in the conversation header, Retry under a failed reply). B2 allows 30 or 36. The check gives a warning, not an error | `conversation-page.md`, `buttons.md` §2 | For the standardisation thread |
 | "Delete project" on the Project settings page breaks W2 | `project-settings-page.md`, `buttons.md` §1 | For the standardisation thread |
+| Previews made before L1 and L2 still draw some app text under 11 px (badges at 9 px, meta lines at 10.5 px). The shell previews (`user-panel`, `left-bar-rail`, `left-bar`, `top-header`) are fixed; the others keep it until they are next regenerated. The rules win | `previews/command-dark/` | Fix each preview when its slice regenerates it |

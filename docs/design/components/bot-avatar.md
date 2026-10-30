@@ -49,7 +49,8 @@ shown even when animations are off.
 
 Rules:
 - One badge slot (top-right, 16 px at header size, 2 px ring in the page background). No ring
-  around the avatar, no fading for queued (fading reads as disabled).
+  around the avatar, no fading for queued (fading reads as disabled). A glyph in the badge ("?",
+  "!") is 10 px or more, weight 600 or more (`../ui-rules.md` L2).
 - Removed or deleted bots are not shown.
 - Uploaded images never animate and have no faces; they get the same badges. Every bot keeps its
   colour (§5), used for its band, its spinner, the Flow view and group icons.

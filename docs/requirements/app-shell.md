@@ -76,8 +76,8 @@ Layout sketch: see `../design/screens.md` §1 (not final).
 - UI-2.6: Clicking an avatar opens the bot card (`../design/components/bot-card.md`). Only one
   card is open at a time. The card links to the bot's settings.
 - UI-2.7: The roster uses the middle 6 of 12 page columns. When there are more bots than fit, the
-  zone scrolls horizontally with fade edges, and ‹ › buttons show on hover
-  (`../design/components/top-header.md`).
+  zone scrolls horizontally with fade edges, and ‹ › buttons show on hover and while keyboard
+  focus is inside the header. On touch, a swipe scrolls it (`../design/components/top-header.md`).
 - UI-2.8: The header holds the bot roster only, with no navigation links. Bots, Skills, Memory,
   Statistics and Settings open from the user panel menu (`../design/components/user-panel.md`).
   With no bots, the header shows a dashed "+" with "Hey, add your bot here 👋".
