@@ -1,0 +1,21 @@
+# The example of testing.md §2. Tests load scripts with loadFakeScripts().
+ba:
+  - when_contains: "login"
+    tool_calls:
+      - load_skill: { name: write-user-stories }
+      - write_file: { path: user-stories/login.md, content: "# Login stories\n..." }
+    reply: "I wrote user-stories/login.md. @Designer can you sketch the screens?"
+  - when_contains: "read the spec"
+    tool_calls:
+      - read_file: { path: requirements/spec.md }
+      - list_files: { path: requirements/, force: empty }
+      - load_skill: { name: write-user-stories, force: { error: internal } }
+    reply: "I could not read requirements/spec.md, so I did not start the stories."
+designer:
+  - reply: "Two screens: sign-in and reset. @BA agreed?"
+_titles:
+  - when_contains: "login"
+    title: "Login page user stories"
+    delay_ms: 500
+  - when_contains: "fail"
+    fail: timeout
