@@ -181,6 +181,10 @@ When `pnpm e2e:serve` runs, `pnpm e2e` reuses its servers instead of starting ne
 database until you stop the script, so a test that needs a fresh database fails on the second
 run: restart the script. The backend serves the frontend build from disk, so after a frontend
 change run `pnpm build` before `pnpm e2e`; after a backend change, restart the script.
+Each server runs as its own process group. When you stop the script (Ctrl+C or SIGTERM), it
+stops every process in each group and waits until they have stopped, so Playwright never reuses
+an old server. A group that is still running after `E2E_SERVE_STOP_MS` (default 10000 ms) is
+killed.
 
 ### Test helpers
 
