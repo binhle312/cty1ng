@@ -92,6 +92,9 @@ can move into a project and take its conversation memory with it.
   "{name}, pinned, 2 of 3"; Alt+↑ on the first does nothing. Shift+F10 on a pinned tile opens
   Move up (off on the first), Move down, Unpin, Project settings; on an unpinned tile, Pin to top
   and Project settings. Pin to top from the menu pins the project, as the badge does.
+- Rail touch (`left-bar.md` §1.2): in a touch-emulated e2e run, tap a pinned project, then Move
+  down in the bar 2 header ⋯ menu moves it one place with no drag; a long press on a pinned
+  tile starts the drag.
 - Memory upkeep requests appear in `GET /usage?group_by=bot` as "Memory upkeep" and count toward
   the daily caps (D63).
 

@@ -63,4 +63,4 @@ Content and states are as above; only the placement changed.
 ## Requirement changes (requirements PR)
 
 - New owner setting: display name (default "Sir").
-- The battery and its hover in `app-shell.md`.
+- The battery and its hover in `app-shell.md`: done in UI-1.20 to UI-1.23 (shell review, 2026-10-30).

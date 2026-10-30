@@ -53,6 +53,10 @@ waiting signals on a project tile stay as in the earlier rounds. Every badge sit
   | Pinned | Move up, Move down, Unpin, a divider, Project settings. Move up is off on the first pinned tile ("Already at the top"), Move down on the last ("Already at the bottom"), as `buttons.md` §1 |
   | Not pinned | Pin to top, a divider, Project settings |
 
+- **Touch** (owner 2026-10-30): a tap on a tile opens the project; the bar 2 header ⋯ menu (§2)
+  has the same pin items for the open project, so pin, unpin and reorder need no drag. On the
+  rail, a long press on a pinned tile starts the drag, as in the header (`top-header.md` HD6).
+
 ### 1.3 Scroll
 
 Mouse wheel or drag, a fade at the cut edge, and ˄/˅ buttons on hover (as the top header). The
@@ -63,7 +67,9 @@ projects scroll with the list (they are not sticky).
 
 Top to bottom:
 
-1. **Project header**: 32 px project tile, name, ⋯ menu. Under it a stats line
+1. **Project header**: 32 px project tile, name, ⋯ menu. The ⋯ menu has the pin items of the tile
+   menu for this project (§1.2: Move up, Move down, Unpin, or Pin to top), a divider, Project
+   settings, Hide bar (Ctrl+B). Under it a stats line
    "4 conversations · 3 bots · 12 files" in `on-surface-muted`, then the **goal** (`projects.description`) in
    `on-surface-muted`, clamped to 3 lines; hover shows the full text.
 2. **Board** row, shown as "Later" until slice M8c (§5).

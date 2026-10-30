@@ -47,7 +47,8 @@ renders. Later slices only add features; they should never need to set up toolin
   `adapters/model/fake/` (no agent yet, just the switch and fixture loader).
 - Frontend: Vite + React + TS strict, Tailwind, shadcn/ui on Base UI (D28), TanStack Query,
   TanStack Router with empty pages (Conversation, Bots, Bot detail, Create bot, Skills, Skill
-  editor, Settings), app shell with header and rail placeholders, `lib/realtime/` with the SSE
+  editor, Settings), app shell with header and rail placeholders and the user panel with its
+  menu (UI-1.20, UI-1.21; the battery comes in M5), `lib/realtime/` with the SSE
   connection and the reducer skeleton.
   A shared `Skeleton` component (theme tokens, 200 ms delay, reduced-motion aware) used by the
   empty pages' loading state (`requirements/README.md`).
@@ -98,6 +99,10 @@ queue and workspace adapters (their slices add them); pg-boss (VPS phase).
 9. The bundle budget check runs in CI and fails a build that exceeds it (shown with a test
    fixture).
 10. All CI gates run and pass on the PR.
+11. The user panel menu opens with a click, Enter and a tap, lists only the pages that exist
+    (Manage bots, Manage skills, Settings), moves with the arrow keys and closes with Esc, focus
+    back on the avatar. With the left bar collapsed (Ctrl+B), focus on the avatar shows
+    "Sir · Menu" and the menu opens to the right (UI-1.20, UI-1.21; component and e2e test).
 11. `docs/` is unchanged except where this slice had to correct something (listed in the PR).
 
 ## Tests

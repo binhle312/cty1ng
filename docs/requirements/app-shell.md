@@ -18,6 +18,10 @@ The frame around every page: the rail of conversations on the left and the bar o
   Acceptance criteria: UI-1.10 to UI-1.12.
 - **SH-7.** As the owner, I want one Trash page for everything I deleted, so that I can restore a mistake or delete things for good in one place, one or many at a time.  
   Acceptance criteria: UI-1.14 to UI-1.19 (slice M5b, D62).
+- **SH-8.** As the owner, I want one panel at the bottom of the left bar that opens every
+  management page and shows today's budget, so that I find them with a mouse, the keyboard or
+  touch, also when the left bar is collapsed.  
+  Acceptance criteria: UI-1.20, UI-1.21 (slice M0); UI-1.22, UI-1.23 (slice M5).
 
 ## Acceptance criteria
 
@@ -170,3 +174,22 @@ Design: `../design/components/trash-page.md`.
   restores the place first, then the item. One Undo toast covers a multi-delete. Each item is
   its own transaction: when one fails, the others still go through, and the toast names the one
   that failed.
+
+## User panel (UI-1, continued)
+
+Design: `../design/components/user-panel.md`.
+
+- UI-1.20 (M0): The panel floats over the bottom of the left bar. A click, Enter or Space on the
+  avatar or name opens the menu upward: Manage bots, Manage skills, Memory, Trash, Statistics, a
+  divider, Settings. An item whose slice has not shipped stays hidden. Arrow keys move, Esc
+  closes the menu and focus goes back to the avatar. The current page is marked.
+- UI-1.21 (M0): With the left bar collapsed, only the avatar shows. Hover and keyboard focus show
+  the tooltip "{name} · Menu" within 300 ms; the menu opens to the right with the name as its
+  header. A tap on touch opens the menu.
+- UI-1.22 (M5): With a total cap set, the battery shows what is left of today's total cap, in
+  the colours of `user-panel.md` §3. It is a button: Tab reaches it, hover and keyboard focus
+  show the `used / cap` rows, a click or Enter opens Statistics, and on touch a tap opens
+  Statistics. With no total cap there is no battery.
+- UI-1.23 (M5): With the left bar collapsed and a total cap set, the menu header shows
+  "{name} · {n}% left today", the percent in the battery colour for that level. With no cap it
+  shows the name only. No dot on the collapsed avatar.
