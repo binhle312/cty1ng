@@ -4,9 +4,12 @@
   "type": "module",
   "packageManager": "pnpm@12.16.1",
   "engines": {
-    "node": ">=24 <25"
+    "node": ">=24.15 <25"
   },
   "scripts": {
+    "dev": "pnpm -r --parallel --if-present dev",
+    "build": "pnpm --filter @cty1ng/frontend build",
+    "start": "tsx scripts/start.ts",
     "lint": "eslint . && prettier --check . && pnpm lint:imports",
     "lint:imports": "tsx scripts/lint-imports.ts",
     "format": "prettier --write .",
@@ -14,15 +17,23 @@
     "test": "vitest run",
     "check:index": "tsx scripts/check-index.ts",
     "check:events": "tsx scripts/check-events.ts",
-    "check:bundle": "tsx scripts/check-bundle.ts"
+    "check:bundle": "tsx scripts/check-bundle.ts",
+    "gen:api": "tsx scripts/gen-api.ts",
+    "db:check": "pnpm --filter @cty1ng/backend db:check",
+    "e2e": "playwright test -c frontend/playwright.config.ts",
+    "e2e:serve": "tsx scripts/e2e-serve.ts"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@cty1ng/shared": "workspace:*",
     "@eslint/js": "10.0.1",
+    "@hey-api/openapi-ts": "0.99.0",
+    "@playwright/test": "1.64.1",
     "@types/node": "26.6.5",
     "dependency-cruiser": "18.7.0",
     "eslint": "10.13.0",
     "eslint-plugin-drizzle": "0.2.3",
+    "eslint-plugin-react-hooks": "7.1.1",
     "globals": "17.13.0",
     "prettier": "3.9.10",
     "tsx": "4.23.15",

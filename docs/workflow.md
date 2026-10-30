@@ -30,8 +30,28 @@ brief ready ──▶ plan ──(owner approves, if checkpointed)──▶ buil
 ```
 
 1. **Brief.** `docs/tasks/<slice>.md` exists and its open questions are answered.
+   **Spec gap pass.** Before the slice starts, an agent reads the brief and the specs it lists
+   and asks one question: what does this slice need that the specs do not say? Typical gaps:
+   page URLs, two rules that conflict, what the app remembers after a reload, keyboard
+   shortcuts inside text boxes, first-run and empty states. The owner answers them in one
+   round, and the answers go into the owning documents in a docs-only PR. Decisions made here
+   are cheap; the same decisions made during the build stop it.
+   **Slice size.** Keep UI work and infrastructure in separate slices or PRs. Static serving,
+   docs pages, code generation, CI jobs and launch scripts are one PR; the screens that use
+   them are another. Smaller PRs mean shorter builds, smaller reviews and fewer full gate runs
+   (§8, "Slice too big").
 2. **Plan.** The builder reads the brief and the documents it lists, then writes a short plan
    (files to touch, migrations, tests to add, risks) as the first comment of a draft PR.
+   **Risk probes first.** Before the builder writes the plan, it runs short checks on every
+   part that it has not used in this repository yet, and puts the results in the plan as
+   evidence. For example: does the library work under our CSP (no `new Function`, no inline
+   style; `security.md` §2.1)? Does the generated client type-check with the new endpoints?
+   Does the component library give the roles and close behaviour that the spec and the tests
+   expect? A probe is a few minutes in a scratch file, not a build. Check the known pitfalls
+   in `frontend-conventions.md` §5 first.
+   **One round of questions.** The plan ends with an "Open questions" list that holds every
+   question for the owner, so the owner answers them all at once. A question found later in
+   the build is a sign that a probe or the spec gap pass missed something; note it in the PR.
    For slices marked *checkpoint* in `development-plan.md`, the owner approves the plan before
    building. This is the cheapest place to catch a wrong direction.
    **UI design checkpoint.** If the slice adds or changes a screen, the plan has a "UI design"
@@ -45,9 +65,13 @@ brief ready ──▶ plan ──(owner approves, if checkpointed)──▶ buil
    recommendations that conflict with them (another component library, other fonts or
    palettes) are listed as alternatives for the owner, not applied. Results are written into the
    plan or `docs/design/`, never with `--persist`.
-3. **Build.** Small commits. Tests alongside code, not at the end.
-4. **Self-check.** Every command in `AGENTS.md` §4 passes. The builder fills the PR template
-   (§6).
+3. **Build.** Small commits. Tests alongside code, not at the end. While fixing, run only the
+   affected tests (`testing.md` §3, "Fast loop while building"); keep the end-to-end servers
+   running with `pnpm e2e:serve`.
+4. **Self-check.** Every command in `AGENTS.md` §4 passes, run once in full at the end. The
+   builder fills the PR template (§6). Anything new that the build taught (a library pitfall,
+   a lint pattern, a test helper) goes into `frontend-conventions.md` §5 or `testing.md` in
+   the same PR, so the next slice does not learn it again.
 5. **Cross-review.** The other agent reviews (prompt in §4). Findings become PR comments; the
    builder fixes or answers each.
 6. **Owner review.** Focus on `Needs human review` items, migrations, the evidence table, and
@@ -110,7 +134,8 @@ Start a **fresh session per slice** so context is not polluted by earlier work. 
 You are the builder for slice <M#> of this repository.
 1. Read AGENTS.md, docs/README.md, and docs/tasks/<M#>-<name>.md, then every document the
    brief lists under "Read first".
-2. Write a plan as described in docs/workflow.md §2 step 2. Open a draft PR with the plan.
+2. Write a plan as described in docs/workflow.md §2 step 2: run the risk probes first, and
+   end the plan with every open question in one list. Open a draft PR with the plan.
    Stop and wait for my approval if the brief says "checkpoint: plan".
 3. Build the slice on branch <m#-name>. Keep to the brief's scope; list anything else you
    notice under "Follow-ups" in the PR instead of doing it.
@@ -202,5 +227,6 @@ inside a module, update docs to match code, and fix review findings.
 | Brief is ambiguous | Builder asks; owner answers in the brief (so the answer is kept) |
 | CI red on main | Fix main first; no slice merges onto a red main |
 | Agents disagree in review | Owner decides; if it is a design question, record it in `decisions/` |
-| Slice too big | Split the brief into parts (M3a, M3b), each mergeable |
+| Owner sees a problem in how a slice was built (slow, too many questions, surprises) | Change the owning rule and add a lesson to `lessons-learned/`, in one PR |
+| Slice too big | Split the brief into parts (M3a, M3b), each mergeable; UI and infrastructure go in different parts (§2 step 1) |
 | Docs drift found later | Fix the doc or code in a small PR; note it in the next slice's plan |

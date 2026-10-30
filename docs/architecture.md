@@ -155,7 +155,9 @@ A pnpm workspace with three packages. Each folder marked † has a `README.md` i
 │  └─ models.yaml            model catalog and price overrides
 ├─ docs/                     this specification
 ├─ seed/                     example skills and bots for `make seed` (seed/README.md)
-├─ scripts/                  repository checks: check:index, check:events, check:bundle, lint:imports
+├─ scripts/                  repository scripts: checks (check:index, check:events, check:bundle,
+│                            lint:imports, db:check), gen:api, start (the production build),
+│                            e2e:serve (the e2e servers, kept running)
 ├─ shared/ †                 code both sides import
 │  └─ src/
 │     ├─ events/             Zod schemas of the event envelope and every event type
@@ -295,7 +297,8 @@ Start here: `worker.service.ts`. Do not: call the model except through the model
     `docs/requirements/README.md` gives for that file, and the last id of the range exists;
   - every `Amends:` and `Supersedes:` line in `docs/decisions/` names decisions that exist, and
     the "Changed by" column of `docs/decisions/README.md` lists exactly those entries;
-  - every decision file has one index row, and every row links to a file that exists.
+  - every decision file has one index row, and every row links to a file that exists;
+  - `docs/lessons-learned/README.md` lists every lesson file, like a folder index.
   Whether two decisions agree in meaning is not checkable; the reviewer checks it
   (`workflow.md` §4).
 - Leaves only: the root `README.md` and this section link to the package indexes; there is no
@@ -438,6 +441,11 @@ invalid), plus `config/models.yaml`.
 `NODE_ENV` is about build and runtime optimisation (`security.md` §2.10); `APP_ENV` is about app
 behaviour. Startup refuses `APP_ENV=test` together with `NODE_ENV=production`, so test routes
 never run in a production build (owner, 2026-10-30).
+
+With `NODE_ENV=production` the backend also serves the built frontend (`frontend/dist`, from
+`pnpm build`) on its own address, and stops at start when the build is missing. `pnpm start`
+(or `make start`) builds and starts it in one command; `make dev` runs the Vite dev server,
+which forwards `/api` to the backend (M0c).
 
 ## 9. Observability
 

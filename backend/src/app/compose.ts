@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import type { Logger } from "pino";
 import { systemClock } from "../adapters/clock/system-clock.ts";
 import { openReader } from "../adapters/db/client.ts";
@@ -19,6 +21,12 @@ export function compose(
   log: Logger,
   options: { clock?: Clock; sse?: Omit<SseOptions, "onError"> } = {},
 ) {
+  // A production build must have the frontend built first, or every page would be a 404.
+  if (config.frontendDir !== null && !existsSync(join(config.frontendDir, "index.html"))) {
+    throw new Error(
+      `NODE_ENV=production serves the built frontend, but ${config.frontendDir}/index.html does not exist. Run \`pnpm build\` first, or start with \`pnpm start\`.`,
+    );
+  }
   const { writer, applied } = openDatabase(config);
   if (applied > 0) log.info({ applied }, "migrations applied");
   const reader = openReader(config.databaseFile);
@@ -50,6 +58,8 @@ export function compose(
     openStream: (afterSeq, signal, onError) =>
       sseBody(hub, afterSeq, signal, { ...options.sse, onError }),
     testPing: config.appEnv === "test" ? createTestPingService({ uow, appendEvent }) : null,
+    apiDocs: config.appEnv === "dev",
+    frontendDir: config.frontendDir,
   });
 
   return {

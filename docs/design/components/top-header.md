@@ -40,7 +40,7 @@ sticky on every page (UI-2.11), background `surface`, bottom line `outline`.
 
 | # | Item | Behaviour |
 | --- | --- | --- |
-| HD1 | Zone | Always shown. Pinned bots sit left of a short divider, the others right of it. With no pinned bot, the zone is a dashed slot pill "Drag a bot here to pin it" with the pin glyph |
+| HD1 | Zone | Shown when one or more bots exist. Pinned bots sit left of a short divider, the others right of it. With bots but no pinned bot, the zone is a dashed slot pill "Drag a bot here to pin it" with the pin glyph. With no bots, only the add slot of state 11 shows: there is nothing to drag (M0c plan, owner 2026-10-30) |
 | H1 | Pin and state | Header avatars have **no pin mark**: the top-right slot shows the state (`bot-status.md`), and "pinned" is the place left of the divider. Tooltip: "BA · pinned · Running"; the bot card pin button is lit |
 | HD2 | Drag to pin | Drag an avatar from the others across the divider: the zone becomes an active dashed slot and a drop line shows where it lands. The drop pins the bot at that place |
 | HD3 | Drag to unpin | Drag a pinned avatar out of the zone and drop it right of the divider: the bot is unpinned and goes to its sorted place, not to the drop spot. The tooltip says "Unpin" |

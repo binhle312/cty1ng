@@ -3,6 +3,7 @@
 // A new exception needs a comment that says why (frontend-conventions.md §3).
 import js from "@eslint/js";
 import drizzle from "eslint-plugin-drizzle";
+import reactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
@@ -66,6 +67,11 @@ export default tseslint.config(
     languageOptions: { sourceType: "commonjs" },
   },
   {
+    // Plain scripts that run in the browser (the no-flash theme script).
+    files: ["frontend/public/**/*.js"],
+    languageOptions: { globals: globals.browser, sourceType: "script" },
+  },
+  {
     files: ["**/*.{ts,tsx}"],
     extends: [tseslint.configs.strictTypeChecked],
     languageOptions: {
@@ -90,6 +96,10 @@ export default tseslint.config(
     },
   },
   {
+    files: ["frontend/**/*.{ts,tsx}"],
+    extends: [reactHooks.configs.flat["recommended-latest"]],
+  },
+  {
     files: ["frontend/src/components/**/*.{ts,tsx}", "frontend/src/features/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-syntax": ["error", ...SQL_RULES, ...RAW_COLOUR_RULES],
@@ -97,7 +107,7 @@ export default tseslint.config(
   },
   {
     // The repository scripts are command-line tools: they print their results.
-    files: ["scripts/**/*.ts", "backend/scripts/**/*.ts"],
+    files: ["scripts/**/*.ts"],
     rules: { "no-console": "off" },
   },
 );

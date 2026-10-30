@@ -10,9 +10,11 @@ The Hono app (`docs/api.md`). Handlers parse input, call one service and map the
 | `errors.ts` | `ApiFailure`, the one error shape, the generic error handler (no stack to the client) |
 | `router.ts` | Makes every router, so all routes validate the same way (422 `validation_error`) |
 | `context.ts` | The values every handler reads from the context: request id, logger |
+| `static.ts` | The built frontend in a production build: files, and `index.html` for page paths; never for `/api/*` |
 | `routes/` | One file per route group |
 | `routes/health.ts` | `GET /api/health` |
 | `routes/stream.ts` | `GET /api/stream`: parses `Last-Event-ID`, the SSE adapter writes the body |
 | `routes/test-events.ts` | `POST /api/_test/events` (APP_ENV=test only, not in the OpenAPI schema) |
+| `routes/api-docs.ts` | `GET /api/docs`: the OpenAPI docs page (APP_ENV=dev only), Swagger UI with no inline script |
 
 Start here: `app.ts`. Do not: weaken a check in `middleware.ts` (`AGENTS.md` §7, §8).

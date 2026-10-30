@@ -54,8 +54,9 @@ Layout sketch: see `../design/screens.md` §1 (not final).
 - UI-2.1: Shows every non-deleted bot as a 36 px round avatar, in the same order as the Bots page
   (`bots.md` UI-4.5):
   - **Pinned** bots first, in the owner's order, then a short divider, then the others. The
-    pinned zone and the divider are always shown; with no pinned bot, the zone is a dashed pill
-    "Drag a bot here to pin it". Header avatars have no pin mark
+    pinned zone and the divider show when one or more bots exist; with bots but no pinned bot,
+    the zone is a dashed pill "Drag a bot here to pin it". With no bots, only the add slot of
+    UI-2.8 shows (owner, 2026-10-30). Header avatars have no pin mark
     (`../design/components/top-header.md` §3).
   - **Others** by the `bot_order` setting: *Recent activity* (default): the bot with the latest
     message or run, in any conversation, comes first (`last_activity_at`, `../api.md` §4); bots
@@ -142,6 +143,7 @@ Where the reopen state lives in phase 1:
 | Draft text | Kept per conversation until sent | Browser (`localStorage`) |
 | Flow pane (open, side, width, tab) | As left | Browser (`../flow-view.md` §2) |
 | Theme, mode, density | As set | Browser (UI-8.5) |
+| Bar 2 hidden (Ctrl+B or its ⋯ menu) | Visible until the owner hides it; a page that hides bar 2 by itself (New project) does not change it | Browser (`localStorage`) |
 
 Browser storage is wrapped in try/catch, parsed with Zod on read (`../frontend-conventions.md`),
 and the app works without it. At M9, with several users, the first two browser rows move to the

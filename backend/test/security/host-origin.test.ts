@@ -168,6 +168,8 @@ describe("HEAD /api/stream", () => {
         return new ReadableStream();
       },
       testPing: null,
+      apiDocs: false,
+      frontendDir: null,
     });
     const response = await app.request(`http://${HOST}/api/stream`, {
       method: "HEAD",

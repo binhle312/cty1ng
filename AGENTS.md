@@ -64,6 +64,7 @@ pnpm check:index                # every indexed folder's README.md lists its fil
 pnpm check:events               # the event table in docs/realtime-events.md §4 matches shared/
 pnpm gen:api                    # regenerate the typed API client from the backend's OpenAPI
 pnpm e2e                        # Playwright, uses the fake model
+pnpm e2e:serve                  # while building: keep the e2e servers running (testing.md §3)
 
 # database (backend)
 pnpm --filter backend db:generate   # write a migration after changing the Drizzle schema

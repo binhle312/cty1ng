@@ -37,6 +37,7 @@ New to the project (human or agent), read in this order:
 | [security.md](security.md) | Threat model and the controls that must exist |
 | [testing.md](testing.md) | Test layers, fake model, what each slice must prove |
 | [workflow.md](workflow.md) | Using Claude Code and Codex together, branches, reviews, human checkpoints |
+| [lessons-learned/](lessons-learned/README.md) | One file per lesson: what went wrong in how we build, why, and which rule changed |
 | [development-plan.md](development-plan.md) | Slices M0–M9 in order, dependencies, checkpoints |
 | [tasks/](tasks/) | One brief per slice, ready to hand to an agent |
 

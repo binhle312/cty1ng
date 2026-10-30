@@ -1,0 +1,41 @@
+/* The Command theme (D30, design/themes.md §3). A theme is this file only: the value of every
+   semantic token. Components never read these variables directly; styles.css maps them to
+   Tailwind utilities (bg-surface, rounded-control, …).
+   M0 ships dark only (owner, 2026-10-30): the light values are not agreed yet, so the dark
+   values are also the default when no data- attribute is set. */
+:root,
+:root[data-theme="command"][data-mode="dark"] {
+  color-scheme: dark;
+
+  --token-surface: #0e0f11;
+  --token-surface-container: #16181b;
+  --token-surface-raised: #1e2125;
+  --token-surface-bubble: #262a30;
+  --token-on-surface: #e7e8ea;
+  --token-on-surface-muted: #9ba1ab;
+  --token-primary: #f5b544;
+  --token-on-primary: #0e0f11;
+  --token-primary-container: #1b170d;
+  --token-primary-tint: #3a2e12;
+  --token-outline: #23262b;
+  --token-outline-strong: #3a3f46;
+  --token-running: #7db8e3;
+  --token-waiting: #f5b544;
+  --token-danger: #f2777a;
+  --token-success: #7fcb8b;
+
+  --token-font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --token-font-mono: "Geist Mono Variable", ui-monospace, monospace;
+  --token-text-base: 13px;
+
+  --token-radius-control: 6px;
+  --token-radius-card: 8px;
+  --token-radius-pill: 999px;
+
+  --token-control-height: 28px;
+  --token-row-padding-y: 8px;
+
+  --token-duration-fast: 120ms;
+  --token-duration-medium: 200ms;
+  --token-easing-standard: ease-out;
+}

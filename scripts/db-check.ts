@@ -1,4 +1,4 @@
-// `pnpm --filter backend db:check`: the Drizzle schema and the committed migrations agree
+// `pnpm db:check` (or `pnpm --filter backend db:check`): the Drizzle schema and the committed migrations agree
 // (testing.md §4). drizzle-kit generates into a copy of migrations/; a new file means the
 // schema has changes that no migration holds. drizzle-kit needs a relative `out`, so the copy
 // is a temporary folder inside backend/.
@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 import { cpSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 
-const backend = resolve(import.meta.dirname, "..");
+const backend = resolve(import.meta.dirname, "../backend");
 const temp = mkdtempSync(join(backend, ".db-check-"));
 try {
   cpSync(join(backend, "migrations"), join(temp, "migrations"), { recursive: true });

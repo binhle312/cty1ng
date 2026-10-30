@@ -12,6 +12,7 @@ const HealthBody = z
 const route = createRoute({
   method: "get",
   path: "/health",
+  operationId: "getHealth",
   responses: {
     200: {
       description: "The database works",

@@ -1,5 +1,4 @@
-# CI gates (docs/testing.md §4). Every gate must pass before a merge. M0b adds db:check, M0c
-# adds the generated-client freshness check, the build with check:bundle, and Playwright.
+# CI gates (docs/testing.md §4). Every gate must pass before a merge.
 name: CI
 
 on:
@@ -23,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        gate: [lint, typecheck, test, "check:index", "check:events"]
+        gate: [lint, typecheck, test, "check:index", "check:events", "db:check"]
     steps:
       - uses: actions/checkout@v7
         with:
@@ -60,3 +59,90 @@ jobs:
       # security.md §2.11. One retry: the npm advisory endpoint sometimes does not answer.
       - name: pnpm audit (high and critical)
         run: pnpm audit --audit-level high || (sleep 20 && pnpm audit --audit-level high)
+
+  # M0 AC5: the committed client is what `pnpm gen:api` makes from the backend's OpenAPI.
+  api-client:
+    name: gen:api fresh
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install pnpm (version from packageManager)
+        run: npm install -g "$(node -p "require('./package.json').packageManager")"
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm gen:api
+
+      - name: Fail when the generated client is stale
+        run: |
+          if [ -n "$(git status --porcelain -- frontend/src/lib/api/generated)" ]; then
+            git status --porcelain -- frontend/src/lib/api/generated
+            git diff -- frontend/src/lib/api/generated | head -100
+            echo "The API client is stale: run \`pnpm gen:api\` and commit the result."
+            exit 1
+          fi
+
+  # M0 AC9: the first-load budget of frontend-conventions.md §4, on the real build.
+  bundle:
+    name: build + check:bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install pnpm (version from packageManager)
+        run: npm install -g "$(node -p "require('./package.json').packageManager")"
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+
+      - run: pnpm check:bundle
+
+  # Playwright against the production build that the backend serves (testing.md §3).
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install pnpm (version from packageManager)
+        run: npm install -g "$(node -p "require('./package.json').packageManager")"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium for Playwright
+        run: pnpm exec playwright install --with-deps chromium
+
+      - run: pnpm e2e
+
+      - name: Keep the report of a failed run
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+          retention-days: 7

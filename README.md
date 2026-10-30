@@ -11,26 +11,31 @@ you set and hand work to each other only with your approval.
 
 ## Quickstart
 
-Needs Node 24 (`.nvmrc`) and the pnpm version in `package.json` (`packageManager`).
+Needs Node 24.15 or a newer 24 (`.nvmrc`; jsdom 30 needs 24.15) and the pnpm version in `package.json` (`packageManager`). One
+command starts the app; it installs the dependencies first when they are missing or out of
+date:
 
 ```bash
 nvm use                       # Node 24
 npm install -g pnpm@12.16.1   # or let corepack pick it from package.json
-pnpm install
-pnpm lint && pnpm typecheck && pnpm test && pnpm check:index && pnpm check:events
+make dev                      # open http://127.0.0.1:5173 (API on http://127.0.0.1:8000)
 ```
 
-Run the app (the backend since M0b; the frontend comes with M0c):
+Other commands:
 
 ```bash
-cp .env.example .env          # provider API keys from M3
-make dev                      # backend on http://127.0.0.1:8000 (frontend on :5173 from M0c)
-curl http://127.0.0.1:8000/api/health
+make start                    # the production build on http://127.0.0.1:8000 (pnpm start)
+cp .env.example .env          # settings; provider API keys from M3
 make seed                     # optional: BA and Designer bots with their skills (M1)
+pnpm lint && pnpm typecheck && pnpm test && pnpm check:index && pnpm check:events
+pnpm e2e                      # Playwright; first run: pnpm exec playwright install chromium
+pnpm gen:api                  # regenerate the API client after an API change
 ```
 
 The backend applies pending database migrations when it starts. Other database commands:
-`pnpm --filter backend db:generate`, `db:migrate`, `db:check`.
+`pnpm --filter backend db:generate`, `db:migrate`, `pnpm db:check`. In development the API docs
+are at http://127.0.0.1:8000/api/docs. The repository scripts (checks, `gen:api`, `start`) are
+in `scripts/`.
 
 Runs on `127.0.0.1` only. There is no login in phase 1; do not expose the port. The code
 layout and the folder indexes are in [docs/architecture.md](docs/architecture.md) §4.
