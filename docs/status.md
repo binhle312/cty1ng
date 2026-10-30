@@ -73,7 +73,7 @@ that use them, then M0.
 
 ## Next
 
-1. Owner reviews M0b ([#48](https://github.com/binhle312/cty1ng/pull/48), backend core); then the M0c plan (frontend shell, with its UI design section).
+1. Owner reviews M0c (PR_M0C, frontend shell); then M0 is done and the M1 plan (Skill Hub) starts.
 
 ## Waiting on the owner
 
@@ -100,17 +100,19 @@ it in, and the row goes when its PR merges.
 | `realtime-events.md` §4 lacks `skill.trashed`, `skill.restored` and `skill.purged` from the M1 brief | #46 | Docs PR before M1 |
 | The D36 prefix table lacks `rslot` and `mprop`, which `shared/src/ids.ts` has (a decision change: owner approval) | #46 | Docs PR before M1 |
 | Event pruning: delete events older than 30 days (`domain-model.md` §8); the stream's gap rule and `reset` are built | #48 | M1 (its purge job is the first timed job) |
-| The OpenAPI docs page when `APP_ENV=dev` (`security.md` §2.10); needs a new dependency | #48 | M0c (with `gen:api`) |
 | The `db_lock_wait_seconds` histogram (`architecture.md` §9, D29 switch trigger 3); there is no metrics output yet | #48 | M3 (the worker brings concurrent writes) |
 | A guard that refuses a second SQLite writer in one process (it would deadlock; today a comment in `adapters/db/client.ts`) | #48 | M1 |
 | `esbuild` advisory (moderate, dev only, through `drizzle-kit` 0.31.11); no stable fix | #48 | Update `drizzle-kit` when 1.0 is stable (Dependabot) |
+| Reserve the bot slug `new`: `/bots/new` is the Create bot page, so the server must refuse it as a slug | PR_M0C | M2 |
+| Rail and bar 2 list scrolling (fade, ˄/˅ buttons, the list ends 24 px above the user panel, `left-bar.md` §1.3, §2): M0 has no lists yet | PR_M0C | M5b (projects) and M3 (conversations) |
+| More visual snapshots: `themes.md` §5 asks for 8 key screens × 2 themes × 2 modes; M0 has one screen in Command dark | PR_M0C | Each slice adds its screens; light and Material with their values |
 | `uuid` advisory GHSA-w5hq-g745-h8pq (moderate, through `typeid-js` 1.2.0, which needs `uuid` ^10). **Accepted risk** (owner, 2026-10-30): the flaw is in v3/v5/v6 with a caller buffer; `typeid-js` uses only `stringify` and `v7`, and our code never calls `uuid`. No override | #48 | Update `typeid-js` when a version allows `uuid` ≥ 11.1.1 |
 
 ## Slices
 
 | Slice | State | PR | Notes |
 | --- | --- | --- | --- |
-| M0 | building | [#46](https://github.com/binhle312/cty1ng/pull/46) (M0a, merged), [#48](https://github.com/binhle312/cty1ng/pull/48) (M0b) | Three parts (M0a tooling, M0b backend, M0c frontend). M0a merged 2026-10-30; M0b plan approved 2026-10-30, built, in review |
+| M0 | building | [#46](https://github.com/binhle312/cty1ng/pull/46) (M0a, merged), [#48](https://github.com/binhle312/cty1ng/pull/48) (M0b, merged), PR_M0C (M0c) | Three parts (M0a tooling, M0b backend, M0c frontend). M0a and M0b merged 2026-10-30; M0c plan approved 2026-10-30, built, in review |
 | M1 | not started | | Design approved: `design/components/skills-page.md` (round 8); D49 accepted. Round 16 moves the page to the bot page layout (agreed, #38) |
 | M2 | UI design review | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec) | Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open |
 | M3 | UI design agreed | [#26](https://github.com/binhle312/cty1ng/pull/26) (spec) | Round 10: `design/components/conversation-page.md`, `composer.md`, `conversation-cards.md` |

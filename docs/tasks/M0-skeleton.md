@@ -80,12 +80,16 @@ Owner answers that apply to every part (2026-10-30):
   script, and the lint rule against raw colours (`design/themes.md` §2). The Appearance
   settings UI comes later with the Settings page.
 - Lazy route setup and the first-load bundle budget check in CI (`frontend-conventions.md` §4);
-  the empty pages that later hold Statistics, Flow and the skill editor are lazy routes already.
+  the empty pages that later hold Statistics and the skill editor are lazy routes already. (The
+  Flow view is a pane in the conversation page, not a page: its lazy chunk comes with M8.)
 - `tsconfig` and ESLint settings from `frontend-conventions.md` §3 for all three packages, the
   SQL rules from `security.md` §2.8, Prettier.
 - API client generation (`pnpm gen:api`) from `/api/openapi.json` (produced by
   `@hono/zod-openapi`) into `frontend/src/lib/api/generated/`, with a CI freshness check. Pick a
-  generator that emits TanStack Query hooks and Zod schemas; record the choice in the PR.
+  generator that emits TanStack Query hooks and Zod schemas; record the choice in the PR. (Chosen
+  in M0c: Hey API. Its TanStack Query plugin emits query and mutation *options* that our code
+  passes to TanStack's own hooks, `useQuery(getHealthOptions())`, not hooks; its Zod plugin
+  emits the schemas that check every response.)
 - CI workflow (GitHub Actions) running all gates in `testing.md` §4, Dependabot config
   (npm and `github-actions` ecosystems), `javascript-typescript` added to the CodeQL matrix
   in `.github/workflows/codeql.yml`,

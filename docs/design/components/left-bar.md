@@ -104,7 +104,13 @@ same menu (`conversation-page.md` §2.1, round 12).
 ## 4. Hiding bar 2
 
 Bar 2 can be hidden from the ⋯ menu or with Ctrl+B. Hidden, only the rail shows and the user panel
-collapses to the avatar (`user-panel.md` §4). Bar 2 is also hidden on the New project page.
+collapses to the avatar (`user-panel.md` §4). A click on a rail tile shows it again. Bar 2 is also
+hidden on the New project page; that does not change the owner's choice, which this browser keeps
+(`../../requirements/app-shell.md`, "Where the reopen state lives").
+
+Ctrl+B does nothing to bar 2 while the focus is in a place where the owner types (an input, a text
+area, a Markdown editor): there the key keeps its own job, such as bold in the composer
+(`composer.md` §5.1), and the shell does not stop it (M0c plan, owner 2026-10-30).
 
 ## 5. Project Board (later, slice M8c)
 

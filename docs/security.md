@@ -37,6 +37,11 @@ environment, provider-side data handling.
 - Response headers: `Content-Security-Policy: default-src 'self'; img-src 'self' data:;
   object-src 'none'; frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`,
   `Referrer-Policy: no-referrer`.
+- The CSP stays without `'unsafe-inline'` and `'unsafe-eval'`. So the frontend has no inline
+  script or style (the no-flash theme script is a file), runs Zod without its `new Function`
+  fast path (`frontend/src/lib/zod-config.ts`), and does not use the Base UI parts that add
+  inline styles (Select, ScrollArea) without a decision. The end-to-end tests run on the
+  production build and fail on any CSP violation (M0c).
 
 ### 2.2 Rendering untrusted text
 
@@ -173,7 +178,8 @@ environment, provider-side data handling.
 
 - Production builds run with `NODE_ENV=production`, no watch mode, no Vite source maps, Hono's
   error handler returning the generic error shape, and
-  the OpenAPI docs page only when `APP_ENV=dev`.
+  the OpenAPI docs page only when `APP_ENV=dev` (`/api/docs`: Swagger UI from the
+  `swagger-ui-dist` package, served by the backend under the same CSP).
 - Error responses carry a code and a short message, never a stack trace, SQL or file path.
   The full error is logged server side with a request id that the response also returns.
 - Logs never contain API keys (2.6), message or file contents, or attachment names beyond
