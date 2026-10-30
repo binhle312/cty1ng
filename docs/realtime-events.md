@@ -66,6 +66,9 @@ conversation).
   `Last-Event-ID` is right after a first connection or a reset, even before a persisted event
   arrives, and a reconnect does not miss events or loop on `reset`.
 - A `Last-Event-ID` that is not a sequence number gets 400 `bad_request`.
+- Backpressure: the server reads the next event only when the client has read the one before,
+  so a long replay to a slow client holds one page of events in memory, not the whole replay.
+- `HEAD /api/stream` returns the headers only and opens no subscription.
 - Heartbeat: a comment line `: ping` every 15 s keeps proxies from closing the connection.
 - `retry: 2000` tells the browser to reconnect after 2 s.
 

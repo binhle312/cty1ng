@@ -24,7 +24,8 @@ environment, provider-side data handling.
 ### 2.1 Network exposure
 
 - Bind to `127.0.0.1` only. Startup refuses `HOST=0.0.0.0` or any non-loopback address with a
-  clear error, until the VPS milestone adds authentication.
+  clear error, until the VPS milestone adds authentication. It also refuses a loopback address
+  that the Host check below does not serve (`::1`, `127.0.0.2`); `HOST=localhost` is allowed.
 - **Host check:** reject requests whose `Host` header is not `127.0.0.1:<port>` or
   `localhost:<port>` with 403 `host_rejected` (blocks DNS rebinding). A missing, duplicate or
   malformed `Host` is a bad request (400 `bad_request`), not always an attack.

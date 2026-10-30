@@ -1,6 +1,8 @@
 import { connect } from "node:net";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { HOST, ORIGIN, testBackend, testServer } from "../helpers.ts";
+import { createHttpApp } from "../../src/adapters/http/app.ts";
+import { loadConfig } from "../../src/app/config.ts";
+import { HOST, ORIGIN, memoryLogger, testBackend, testServer } from "../helpers.ts";
 
 // security.md §2.1 and §3, M0 AC3: the Host and Origin checks on every route, the stream too.
 let backend: ReturnType<typeof testBackend>;
@@ -148,4 +150,48 @@ describe("Host check on the wire", () => {
     expect(response).toMatch(/^HTTP\/1\.1 403/);
     expect(response).toContain("host_rejected");
   });
+});
+
+// Review of PR #48: no request may be refused because of the stream's HEAD handling, and a
+// HEAD must not open a subscription (Hono runs the GET handler and drops the body).
+describe("HEAD /api/stream", () => {
+  it("answers with the stream headers and opens no subscription", async () => {
+    let opened = 0;
+    const app = createHttpApp({
+      log: memoryLogger().log,
+      allowedHosts: [HOST],
+      allowedOrigins: [ORIGIN],
+      health: () =>
+        Promise.resolve({ db: "ok", worker: "not_started", catalog: { models: 0, available: 0 } }),
+      openStream: () => {
+        opened += 1;
+        return new ReadableStream();
+      },
+      testPing: null,
+    });
+    const response = await app.request(`http://${HOST}/api/stream`, {
+      method: "HEAD",
+      headers: { host: HOST },
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("text/event-stream");
+    expect(opened).toBe(0);
+  });
+});
+
+// Review of PR #48: every HOST the configuration accepts must be one the Host check serves.
+describe("HOST settings and the Host check agree", () => {
+  it.each(["127.0.0.1", "localhost", "::1", "127.0.0.2"])(
+    "HOST=%s is refused or its own requests pass",
+    (host) => {
+      let config;
+      try {
+        config = loadConfig({ HOST: host, PORT: "8000" });
+      } catch {
+        return; // refused at start: fine
+      }
+      const own = host.includes(":") ? `[${host}]:8000` : `${host}:8000`;
+      expect(config.allowedHosts).toContain(own);
+    },
+  );
 });

@@ -9,6 +9,9 @@ import { z } from "zod";
 // process starts in (M0b plan, decision F).
 export const REPO_ROOT = resolve(import.meta.dirname, "../../..");
 
+// The hosts the Host check accepts (security.md §2.1); HOST must be one of them.
+const SERVED_HOSTS: readonly string[] = ["127.0.0.1", "localhost"];
+
 const LOG_LEVELS = ["fatal", "error", "warn", "info", "debug", "trace", "silent"] as const;
 
 const Flag = z.enum(["0", "1"]).transform((value) => value === "1");
@@ -52,10 +55,17 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
   }
   const e = parsed.data;
 
-  // security.md §2.1: loopback only until the VPS milestone adds authentication.
+  // security.md §2.1: loopback only until the VPS milestone adds authentication, and only the
+  // addresses the Host check serves (127.0.0.1:PORT, localhost:PORT), so the server never
+  // refuses its own requests.
   if (!isLoopback(e.HOST)) {
     throw new ConfigError(
       `HOST=${e.HOST} is not a loopback address. cty1ng has no login yet, so it binds only to 127.0.0.1 (docs/security.md §2.1).`,
+    );
+  }
+  if (!SERVED_HOSTS.includes(e.HOST)) {
+    throw new ConfigError(
+      `HOST=${e.HOST} is a loopback address, but the Host check serves only ${SERVED_HOSTS.join(" and ")}. Use HOST=127.0.0.1 (docs/security.md §2.1).`,
     );
   }
   // architecture.md §8: test routes never run in a production build.
@@ -73,14 +83,14 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
   }
 
   const dataDir = isAbsolute(e.DATA_DIR) ? e.DATA_DIR : resolve(REPO_ROOT, e.DATA_DIR);
-  const ownOrigins = [`http://127.0.0.1:${e.PORT}`, `http://localhost:${e.PORT}`];
+  const ownOrigins = SERVED_HOSTS.map((host) => `http://${host}:${e.PORT}`);
   return {
     dataDir,
     databaseFile: resolve(dataDir, "app.db"),
     host: e.HOST,
     port: e.PORT,
     allowedOrigins: [...new Set([...ownOrigins, ...origins])],
-    allowedHosts: [`127.0.0.1:${e.PORT}`, `localhost:${e.PORT}`],
+    allowedHosts: SERVED_HOSTS.map((host) => `${host}:${e.PORT}`),
     appEnv: e.APP_ENV,
     fakeModel: e.FAKE_MODEL,
     logLevel: e.LOG_LEVEL,

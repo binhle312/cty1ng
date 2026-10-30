@@ -25,12 +25,16 @@ describe("loadConfig", () => {
     expect(config.allowedHosts).toEqual(["127.0.0.1:8000", "localhost:8000"]);
   });
 
-  it.each(["127.0.0.1", "localhost", "::1", "127.0.0.2"])(
-    "accepts the loopback HOST %s",
-    (host) => {
-      expect(loadConfig({ HOST: host }).host).toBe(host);
-    },
-  );
+  it.each(["127.0.0.1", "localhost"])("accepts HOST=%s", (host) => {
+    expect(loadConfig({ HOST: host }).host).toBe(host);
+  });
+
+  // Review of PR #48: these are loopback, but the Host check would refuse their requests.
+  it.each(["::1", "127.0.0.2"])("refuses HOST=%s, which the Host check does not serve", (host) => {
+    expect(() => loadConfig({ HOST: host })).toThrow(
+      /the Host check serves only 127\.0\.0\.1 and localhost/,
+    );
+  });
 
   it("refuses an ALLOWED_ORIGINS entry that is not an origin", () => {
     expect(() => loadConfig({ ALLOWED_ORIGINS: "http://a.test/path" })).toThrow(/not an origin/);

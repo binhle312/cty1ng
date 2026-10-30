@@ -420,7 +420,7 @@ invalid), plus `config/models.yaml`.
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `DATA_DIR` | `./data` | Database, Libraries, run worktrees, avatars (`domain-model.md` §11) |
-| `HOST` | `127.0.0.1` | Must stay loopback in phase 1 (startup refuses `0.0.0.0`) |
+| `HOST` | `127.0.0.1` | `127.0.0.1` or `localhost` in phase 1: the addresses the Host check serves. Startup refuses `0.0.0.0`, any non-loopback address, and other loopback addresses (`::1`, `127.0.0.2`) |
 | `PORT` | `8000` | |
 | `ALLOWED_ORIGINS` | `http://127.0.0.1:5173,http://localhost:5173` | Dev frontend origins; prod build is same-origin |
 | `MAX_CONCURRENT_RUNS` | `3` | Across conversations |
