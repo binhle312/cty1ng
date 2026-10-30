@@ -48,8 +48,9 @@ spent, 0% = cap reached.
   in the menu header (§2).
 - The battery is a button. Tab reaches it, with the 2 px `primary` focus ring.
 - Hover and keyboard focus show text rows `used / cap`: Total first, then each provider; the caps
-  line up in one right-aligned column; "—" = provider has no cap of its own. Click or Enter opens
-  Statistics. On touch, a tap opens Statistics, which shows the same numbers.
+  line up in one right-aligned column; "—" = provider has no cap of its own. Click, Enter or a
+  tap on touch opens Statistics. Until M7 ships the Statistics page, it opens Settings ›
+  Spending, whose meters show the same numbers (`settings-page.md` §4.2; owner 2026-10-30).
 
 ## 4. Floating placement (round 6.0)
 

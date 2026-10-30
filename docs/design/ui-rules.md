@@ -92,7 +92,7 @@ cover them.
 
 | # | Rule | Check | Source |
 | --- | --- | --- | --- |
-| L1 | App text is 11 px or more. Body text stays `text-base` | manual | Owner 2026-10-30, shell review |
+| L1 | App text is 11 px or more, except text inside a badge or the battery (L2). Body text stays `text-base` | manual | Owner 2026-10-30, shell review |
 | L2 | Text inside a badge (16 px) or the budget battery is 10 px or more, at weight 600 or more. The battery percent is 10.5 px | manual | Owner 2026-10-30, `components/user-panel.md` §3 |
 | L3 | Text contrast is 4.5:1 or more against what is behind it, both tones of the battery included. Check it in the built app at 100% and 200% browser zoom. A disabled item (B5) is exempt, as in WCAG 1.4.3; its tooltip says why it is off | manual | Owner 2026-10-30, shell review |
 

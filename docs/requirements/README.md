@@ -10,7 +10,7 @@ lives in the technical documents one level up.
 | File | Stories | Acceptance criteria |
 | --- | --- | --- |
 | [product-brief.md](product-brief.md) | Problem, users, use cases and phases, goals, success measures, non-goals, trust failures, journeys J1–J6, glossary | (none; journeys are tested end to end) |
-| [app-shell.md](app-shell.md) | SH-1 to SH-6 | UI-1, UI-2 |
+| [app-shell.md](app-shell.md) | SH-1 to SH-8 | UI-1, UI-2 |
 | [conversation.md](conversation.md) | CV-1 to CV-11 | UI-3 |
 | [bots.md](bots.md) | BT-1 to BT-6 | UI-4, UI-5, UI-6 |
 | [skill-hub.md](skill-hub.md) | SK-1 to SK-5 | UI-7 |

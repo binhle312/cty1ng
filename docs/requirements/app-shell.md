@@ -181,15 +181,17 @@ Design: `../design/components/user-panel.md`.
 
 - UI-1.20 (M0): The panel floats over the bottom of the left bar. A click, Enter or Space on the
   avatar or name opens the menu upward: Manage bots, Manage skills, Memory, Trash, Statistics, a
-  divider, Settings. An item whose slice has not shipped stays hidden. Arrow keys move, Esc
+  divider, Settings. An item shows when its page exists; an empty placeholder page counts (owner
+  2026-10-30), so M0 shows Manage bots, Manage skills and Settings. Arrow keys move, Esc
   closes the menu and focus goes back to the avatar. The current page is marked.
 - UI-1.21 (M0): With the left bar collapsed, only the avatar shows. Hover and keyboard focus show
   the tooltip "{name} · Menu" within 300 ms; the menu opens to the right with the name as its
   header. A tap on touch opens the menu.
 - UI-1.22 (M5): With a total cap set, the battery shows what is left of today's total cap, in
   the colours of `user-panel.md` §3. It is a button: Tab reaches it, hover and keyboard focus
-  show the `used / cap` rows, a click or Enter opens Statistics, and on touch a tap opens
-  Statistics. With no total cap there is no battery.
+  show the `used / cap` rows, and a click, Enter or a tap opens Statistics. Until M7 ships the
+  Statistics page, it opens Settings › Spending, which shows the same numbers for each cap.
+  With no total cap there is no battery.
 - UI-1.23 (M5): With the left bar collapsed and a total cap set, the menu header shows
   "{name} · {n}% left today", the percent in the battery colour for that level. With no cap it
   shows the name only. No dot on the collapsed avatar.

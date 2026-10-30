@@ -42,7 +42,8 @@ conversation. The server enforces the budget; bots are told how many turns remai
   `ui-rules.md` W9).
 - Battery (component test, fake spend): at 62% left it is green, at 25% amber, at 10% red, at 0%
   an empty red outline, and with no total cap it is gone. Tab focus shows the `used / cap` rows
-  as hover does; Enter opens Statistics; a tap in a touch-emulated e2e run opens Statistics.
+  as hover does; Enter opens Settings › Spending; a tap in a touch-emulated e2e run opens the
+  same page (Statistics from M7).
   Collapsed, the menu header says "Sir · 62% left today", and with no cap only "Sir"
   (UI-1.22, UI-1.23).
 - Runs-per-hour cap refuses with 429 / notice.

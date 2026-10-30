@@ -100,9 +100,10 @@ queue and workspace adapters (their slices add them); pg-boss (VPS phase).
    fixture).
 10. All CI gates run and pass on the PR.
 11. The user panel menu opens with a click, Enter and a tap, lists only the pages that exist
-    (Manage bots, Manage skills, Settings), moves with the arrow keys and closes with Esc, focus
-    back on the avatar. With the left bar collapsed (Ctrl+B), focus on the avatar shows
-    "Sir · Menu" and the menu opens to the right (UI-1.20, UI-1.21; component and e2e test).
+    (Manage bots, Manage skills, Settings; empty pages count), moves with the arrow keys and
+    closes with Esc, focus back on the avatar. With the left bar collapsed (Ctrl+B), focus on
+    the avatar shows "Sir · Menu" and the menu opens to the right (UI-1.20, UI-1.21; component
+    and e2e test).
 11. `docs/` is unchanged except where this slice had to correct something (listed in the PR).
 
 ## Tests
