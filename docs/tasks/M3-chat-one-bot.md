@@ -15,7 +15,7 @@ event log keeps the UI exact across reloads.
 
 `docs/architecture.md` §6, §7, §11; `docs/domain-model.md` §3.6–3.7, §5–8; `docs/conversation-rules.md`
 §1 (one-bot rows), §3 (simplified: see below), §4; `docs/realtime-events.md` (all); `docs/domain-model.md` §3.8;
-`docs/api.md` §5; `docs/requirements/app-shell.md` (UI-1), `docs/requirements/conversation.md`; `docs/porting-guide.md` §2–3 (agent, db, service rows);
+`docs/api.md` §5; `docs/requirements/app-shell.md` (UI-1), `docs/requirements/conversation.md`;
 `docs/testing.md` §2–3; `docs/conversation-rules.md` §8 and D46 (auto title); the agreed design
 in `docs/design/components/conversation-page.md`, `composer.md` and `conversation-cards.md`
 (round 10).

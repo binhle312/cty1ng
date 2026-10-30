@@ -270,7 +270,7 @@ only what you really did." It does this at most `plan_mark_reminders` times (set
 - Known risk: history can contain injected instructions. The blast radius is limited by the
   sandbox (`security.md`) and by human approval of handoffs.
 
-## 5. Handoffs (from the prototype)
+## 5. Handoffs
 
 **Who decides the workflow (D18).** In phase 1 the workflow is implicit: the owner shapes it by
 writing personas and skills (a skill can end with "when done, hand off to the Designer"), the

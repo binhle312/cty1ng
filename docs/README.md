@@ -36,7 +36,6 @@ New to the project (human or agent), read in this order:
 | [frontend-conventions.md](frontend-conventions.md) | TypeScript rules for the frontend and the lint settings that enforce them |
 | [security.md](security.md) | Threat model and the controls that must exist |
 | [testing.md](testing.md) | Test layers, fake model, what each slice must prove |
-| [porting-guide.md](porting-guide.md) | What to reuse from the old Discord project and how |
 | [workflow.md](workflow.md) | Using Claude Code and Codex together, branches, reviews, human checkpoints |
 | [development-plan.md](development-plan.md) | Slices M0–M9 in order, dependencies, checkpoints |
 | [tasks/](tasks/) | One brief per slice, ready to hand to an agent |

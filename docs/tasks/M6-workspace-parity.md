@@ -4,21 +4,20 @@ Checkpoint: **plan** (security).
 
 ## Goal
 
-Everything the Discord prototype could do with files works in the app: bots write to the
+Everything an earlier prototype could do with files works in the app: bots write to the
 Library of their run (D52; no per-bot write folders), the owner attaches files and browses the
-workspace, and handoffs with approval cards move work between bots. The `reference/` folder is
-deleted at the end.
+workspace, and handoffs with approval cards move work between bots.
 
 ## Read first
 
-`docs/porting-guide.md` (all); `docs/security.md` §2.2–2.4; `docs/conversation-rules.md` §5;
+`docs/security.md` §2.2–2.4; `docs/testing.md` §3 (run and handoff behaviour); `docs/conversation-rules.md` §5;
 `docs/decisions/` D18, D19, D52, D54, D61; `docs/domain-model.md` §9, §11; `docs/api.md` §5 (attachments), §5d (Library), §6; `docs/requirements/conversation.md` (UI-3.3 cards, 3.13, 3.16); the round 17 UI design:
 `docs/design/components/library-page.md` and `library-cards.md`.
 
 ## In scope
 
 - Full workspace port (git repo per project, plus one Home Library for all conversations outside projects, D52 amendment 2026-10-25; `write_file`, `view_file`,
-  commit; memory is no longer a workspace file, D38), with the prototype's workspace tests passing.
+  commit; memory is no longer a workspace file, D38), with the workspace path tests of `security.md` §3 passing.
 - Attachments: upload endpoint, `attachments/<yyyy-mm-dd>-<conversation-slug>/` (D52), multimodal prompt building, binary stripping in
   history.
 - Sensitive-data guard for text attachments (D39): UI-3.23.
@@ -42,13 +41,12 @@ deleted at the end.
   changes nothing; a failed try and its Retry keep two separate unsaved rows, and discarding one
   leaves the other.
 - `openFolder(place)` on the workspace port (`security.md` §2.15); the contract suite covers it.
-- Delete `reference/` and confirm every row of `porting-guide.md` §2 is done.
 
 ## Acceptance criteria
 
 - Journey J3 passes in Playwright.
 - UI-3.3 (handoff cards), 3.13, 3.16.
-- All behaviours in `porting-guide.md` §3 have tests.
+- Every behaviour in `testing.md` §3 "Run and handoff behaviour" that M6 touches has a test.
 - Security tests in `security.md` §3 for the workspace, attachments and file viewer pass.
 - Isolation (D61, invariant 23), each with a test: a run in Project A cannot list, read or write
   a file of Project B or of the Home Library; a Home run cannot reach a project Library;

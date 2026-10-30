@@ -47,7 +47,6 @@ Start with `docs/README.md` for the reading order.
 | Styling, themes, design tokens | `docs/design/themes.md` (D30) |
 | Uploads, file tools, rendering bot output, request checks | `docs/security.md` |
 | Tests | `docs/testing.md` |
-| Moving code from the old Discord project | `docs/porting-guide.md` |
 | How to work, branch, review | `docs/workflow.md` |
 | Finding a file in the code | The folder's `README.md` index (`docs/architecture.md` §4.2) |
 | Ports, adapters, import rules | `docs/architecture.md` §2, §4.1 (D35) |

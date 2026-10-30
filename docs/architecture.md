@@ -350,9 +350,6 @@ queued ──claim (lease)──▶ running ──▶ done
   `AbortSignal` passed to the model port and checked between tool calls; the message keeps its
   partial text with status `stopped`.
 
-This is the prototype's job/lease design (see `porting-guide.md`), keyed by conversation
-instead of a chat-platform thread.
-
 ### 6.1 Timed jobs
 
 Timed jobs need no scheduler abstraction now (owner, 2026-10-28). `app/main.ts` starts one timer

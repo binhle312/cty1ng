@@ -1,8 +1,8 @@
 # seed
 
 Example content that `make seed` and "Load the examples" (UI-1.7, `POST /setup/examples`) import.
-The skills are written for this app. They start from the prototype's BA and Designer skills
-(`docs/porting-guide.md`).
+The skills are written for this app. They start from the BA and Designer skills of an earlier
+prototype.
 
 | File | What it is |
 | --- | --- |
@@ -10,8 +10,8 @@ The skills are written for this app. They start from the prototype's BA and Desi
 | `skills/hand-off-work/SKILL.md` | How to write a handoff brief: Goal, Done (checked), Assumed, Open questions, Ask, Suggested skills (`docs/conversation-rules.md` §5) |
 | `skills/write-user-stories/SKILL.md` | BA skill in the suggested layout: Steps, Done when, Reply (`docs/requirements/skill-hub.md`, "Suggested skill layout") |
 
-The prototype's other skills (`interview-stakeholder`, `design-ui-prototype`,
-`review-against-stories`) move here in M1, in the same layout.
+Three more skills (`interview-stakeholder`, `design-ui-prototype`,
+`review-against-stories`) are written here in M1, in the same layout.
 
 Try a cross-model review: add a bot that uses another provider, pin a review skill, and mention
 it after BA replies. Two models that agree are a strong signal; nothing in the app needs to change.

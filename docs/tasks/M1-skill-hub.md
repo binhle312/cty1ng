@@ -22,7 +22,7 @@ for bots to pin in M2.
   M2; say which in the plan).
 - Services and endpoints in `api.md` §2, except `upgrade-candidates` (returns an empty list
   until M2) and the upgrade part of `POST /versions` (accepts `upgrade_bot_ids: []` only).
-- `SKILL.md` parsing/serialising (port `_split_frontmatter` from the prototype).
+- `SKILL.md` parsing/serialising (frontmatter split and serialise).
 - Import preview/apply (zip upload) and CLI `app skills import|export <folder>`.
 - Pages: skill list, editor (create/edit/read-only for non-authors), history with diff and
   restore, import preview, export.
@@ -31,7 +31,7 @@ for bots to pin in M2.
   Trash page itself is M5b; until then the permanent delete (**Delete** on the Trash page, D62) has no UI.
 - Events `skill.created|updated|deprecated|trashed|restored|purged`.
 - `make seed` imports the skills in `seed/skills/` (`seed/README.md`): `working-principles`,
-  `hand-off-work`, `write-user-stories`, and the prototype's other BA and Designer skills, rewritten in the
+  `hand-off-work`, `write-user-stories`, and the other BA and Designer skills listed in `seed/README.md`, written in the
   suggested layout (`requirements/skill-hub.md`, "Suggested skill layout").
 
 ## Out of scope
