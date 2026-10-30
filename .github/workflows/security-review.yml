@@ -1,0 +1,54 @@
+# Automated security review of security-sensitive changes (docs/security.md §2.11). It assists
+# the owner's review; it does not replace it.
+#
+# Guards (owner, 2026-10-30):
+# - `pull_request` only, never `pull_request_target`, so a fork PR never gets the secret.
+# - Runs only for the owner's own PRs from branches of this repository: the action reads
+#   untrusted PR content and is not hardened against prompt injection.
+# - The action is pinned to a commit; Dependabot proposes updates.
+# - Without the ANTHROPIC_API_KEY repository secret the job skips with a notice.
+name: Security review
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      # The security-sensitive paths of AGENTS.md §7.
+      - "backend/src/adapters/workspace/**"
+      - "backend/src/adapters/http/**"
+      - "backend/src/app/config.ts"
+      - "frontend/src/lib/markdown/**"
+      - ".env.example"
+      - ".github/workflows/**"
+
+permissions: {}
+
+jobs:
+  review:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write # comments on the PR lines
+    env:
+      HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+    steps:
+      - name: Skip without a key
+        if: env.HAS_KEY != 'true'
+        run: echo "::notice::Security review skipped. Add the ANTHROPIC_API_KEY repository secret to turn it on."
+
+      - uses: actions/checkout@v7
+        if: env.HAS_KEY == 'true'
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+
+      - uses: anthropics/claude-code-security-review@0c6a49f1fa56a1d472575da86a94dbc1edb78eda # main, 2026-10-30
+        if: env.HAS_KEY == 'true'
+        with:
+          claude-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          comment-pr: true
+          exclude-directories: docs,.agents,mockups

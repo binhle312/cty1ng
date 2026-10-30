@@ -1,0 +1,62 @@
+# CI gates (docs/testing.md §4). Every gate must pass before a merge. M0b adds db:check, M0c
+# adds the generated-client freshness check, the build with check:bundle, and Playwright.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  gate:
+    name: ${{ matrix.gate }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        gate: [lint, typecheck, test, "check:index", "check:events"]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      # pnpm comes from npm, not corepack: newer Node versions no longer ship corepack.
+      - name: Install pnpm (version from packageManager)
+        run: npm install -g "$(node -p "require('./package.json').packageManager")"
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm ${{ matrix.gate }}
+
+  audit:
+    name: audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install pnpm (version from packageManager)
+        run: npm install -g "$(node -p "require('./package.json').packageManager")"
+
+      # security.md §2.11. One retry: the npm advisory endpoint sometimes does not answer.
+      - name: pnpm audit (high and critical)
+        run: pnpm audit --audit-level high || (sleep 20 && pnpm audit --audit-level high)
