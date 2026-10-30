@@ -61,6 +61,11 @@ conversation).
   stream's first `ready` event (which carries the current max seq) as its cursor.
 - **Gap rule:** if the client's cursor is older than the retention window (events are kept 30
   days), the server sends `event: reset` and the client reloads state with GETs.
+- `ready` and `reset` also carry an `id:` line: the cursor the stream continues from (the
+  client's `Last-Event-ID` when it resumes, else the newest seq). So the browser's
+  `Last-Event-ID` is right after a first connection or a reset, even before a persisted event
+  arrives, and a reconnect does not miss events or loop on `reset`.
+- A `Last-Event-ID` that is not a sequence number gets 400 `bad_request`.
 - Heartbeat: a comment line `: ping` every 15 s keeps proxies from closing the connection.
 - `retry: 2000` tells the browser to reconnect after 2 s.
 

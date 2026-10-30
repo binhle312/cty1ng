@@ -20,13 +20,17 @@ pnpm install
 pnpm lint && pnpm typecheck && pnpm test && pnpm check:index && pnpm check:events
 ```
 
-The app itself comes with M0b (backend) and M0c (frontend):
+Run the app (the backend since M0b; the frontend comes with M0c):
 
 ```bash
-cp .env.example .env          # add at least one provider API key
-make dev                      # http://127.0.0.1:5173
+cp .env.example .env          # provider API keys from M3
+make dev                      # backend on http://127.0.0.1:8000 (frontend on :5173 from M0c)
+curl http://127.0.0.1:8000/api/health
 make seed                     # optional: BA and Designer bots with their skills (M1)
 ```
+
+The backend applies pending database migrations when it starts. Other database commands:
+`pnpm --filter backend db:generate`, `db:migrate`, `db:check`.
 
 Runs on `127.0.0.1` only. There is no login in phase 1; do not expose the port. The code
 layout and the folder indexes are in [docs/architecture.md](docs/architecture.md) §4.

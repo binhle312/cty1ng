@@ -925,10 +925,11 @@ events
   conversation_id  TEXT NULL                   -- NULL for app-wide events (bots, skills, settings)
   type             TEXT NOT NULL
   payload          JSON NOT NULL
-  created_at
+  created_at       TEXT NOT NULL               -- ISO-8601 UTC
 ```
 
-Types and payloads: `realtime-events.md`. Events older than 30 days are pruned by a daily
+`conversation_id` gets its foreign key with the `conversations` table (M3); M0 creates only
+`events` and `settings`. Types and payloads: `realtime-events.md`. Events older than 30 days are pruned by a daily
 task; clients with an older cursor get `reset` (`realtime-events.md` §2).
 
 ## 9. Handoffs
