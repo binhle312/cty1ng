@@ -9,7 +9,7 @@
     "typecheck": "tsc -p .",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file-if-exists=../.env src/app/cli.ts db migrate",
-    "db:check": "drizzle-kit check && node scripts/db-check.ts"
+    "db:check": "drizzle-kit check && node ../scripts/db-check.ts"
   },
   "dependencies": {
     "@cty1ng/shared": "workspace:*",
@@ -19,6 +19,7 @@
     "drizzle-orm": "0.45.4",
     "hono": "4.13.14",
     "pino": "10.4.0",
+    "swagger-ui-dist": "5.34.0",
     "typeid-js": "1.2.0",
     "uuidv7": "1.2.1",
     "yaml": "2.9.1",

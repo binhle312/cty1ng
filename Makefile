@@ -1,15 +1,32 @@
-# Shortcuts for the pnpm scripts (AGENTS.md §4). Run from the repository root.
-.PHONY: dev test lint seed
+# Shortcuts for the pnpm scripts (AGENTS.md §4). Run from the repository root. `make dev` and
+# `make start` work on a fresh clone: they install the dependencies first when needed.
+.PHONY: dev start test lint e2e seed install
 
-# Starts every package that has a dev script: the backend (M0b) and the frontend (M0c).
-dev:
-	pnpm -r --parallel --if-present dev
+# pnpm writes this file on every install; it is older than the lockfile when an install is due.
+DEPS := node_modules/.modules.yaml
 
-test:
+$(DEPS): pnpm-lock.yaml package.json shared/package.json backend/package.json frontend/package.json
+	pnpm install --frozen-lockfile
+	@touch $@
+
+install: $(DEPS)
+
+# Backend on http://127.0.0.1:8000, frontend on http://127.0.0.1:5173 (open this one).
+dev: $(DEPS)
+	pnpm dev
+
+# The production build on http://127.0.0.1:8000.
+start: $(DEPS)
+	pnpm start
+
+test: $(DEPS)
 	pnpm test
 
-lint:
+lint: $(DEPS)
 	pnpm lint
+
+e2e: $(DEPS)
+	pnpm e2e
 
 # Imports the example skills and bots in seed/ (seed/README.md). Built in M1.
 seed:

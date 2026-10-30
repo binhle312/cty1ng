@@ -9,8 +9,6 @@ The Node backend: Hono over HTTP, Drizzle on SQLite, ports and adapters (D35,
 | `tsconfig.json` | Type-check settings for this package |
 | `drizzle.config.ts` | drizzle-kit settings: the schema file and the migrations folder |
 | `migrations/` | SQL that drizzle-kit writes from the schema, reviewed like code (`docs/architecture.md` §10) |
-| `scripts/` | Package scripts |
-| `scripts/db-check.ts` | `db:check`: fails when the schema has changes that no migration holds |
 | `src/` | The source |
 | `src/app/` | The composition root, configuration and the CLI |
 | `src/core/` | Business logic and the ports; never imports an adapter |
