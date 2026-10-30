@@ -37,6 +37,9 @@ export interface Config {
   // `host:port` values the Host header may have.
   allowedHosts: readonly string[];
   appEnv: "dev" | "test" | "prod";
+  // The built frontend that the backend serves, only with NODE_ENV=production
+  // (architecture.md §1.2). In development Vite serves it.
+  frontendDir: string | null;
   fakeModel: boolean;
   logLevel: (typeof LOG_LEVELS)[number];
   // Values of every `*_API_KEY` variable, for log redaction only (security.md §2.6).
@@ -92,6 +95,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     allowedOrigins: [...new Set([...ownOrigins, ...origins])],
     allowedHosts: SERVED_HOSTS.map((host) => `${host}:${e.PORT}`),
     appEnv: e.APP_ENV,
+    frontendDir: e.NODE_ENV === "production" ? resolve(REPO_ROOT, "frontend/dist") : null,
     fakeModel: e.FAKE_MODEL,
     logLevel: e.LOG_LEVEL,
     secrets: Object.entries(env)

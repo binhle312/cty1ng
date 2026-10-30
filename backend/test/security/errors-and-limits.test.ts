@@ -70,6 +70,8 @@ describe("unhandled errors", () => {
       Promise.reject(new Error("SQLITE_CORRUPT at /home/owner/data/app.db: SELECT secret")),
     openStream: () => new ReadableStream(),
     testPing: null,
+    apiDocs: false,
+    frontendDir: null,
   });
 
   it("gives 500 internal_error with the request id, and no stack, SQL or path", async () => {

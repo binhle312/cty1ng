@@ -5,6 +5,7 @@ import { createRouter } from "../router.ts";
 const route = createRoute({
   method: "get",
   path: "/stream",
+  operationId: "getStream",
   description: "The app's one event stream (realtime-events.md §2), as server-sent events.",
   request: {
     headers: z.object({ "last-event-id": z.string().optional() }),

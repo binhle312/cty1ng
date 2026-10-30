@@ -13,6 +13,7 @@ describe("loadConfig", () => {
       host: "127.0.0.1",
       port: 8000,
       appEnv: "dev",
+      frontendDir: null,
       fakeModel: false,
       logLevel: "info",
     });
@@ -23,6 +24,13 @@ describe("loadConfig", () => {
       "http://localhost:5173",
     ]);
     expect(config.allowedHosts).toEqual(["127.0.0.1:8000", "localhost:8000"]);
+  });
+
+  it("serves the built frontend only with NODE_ENV=production", () => {
+    expect(loadConfig({ NODE_ENV: "production" }).frontendDir).toBe(
+      join(REPO_ROOT, "frontend/dist"),
+    );
+    expect(loadConfig({ NODE_ENV: "development" }).frontendDir).toBeNull();
   });
 
   it.each(["127.0.0.1", "localhost"])("accepts HOST=%s", (host) => {
