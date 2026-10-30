@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { checkDesignSnapshot } from "./check-design.ts";
 
 // The checks behind `pnpm check:index` (architecture.md §4.2). Each function returns a list of
 // problems; an empty list means the check passed. They read fixed metadata only, never prose.
@@ -242,5 +243,6 @@ export function checkAll(root: string): string[] {
     ...checkFolderIndexes(root),
     ...checkStoryRanges(join(root, "docs/requirements")),
     ...checkDecisions(join(root, "docs/decisions")),
+    ...checkDesignSnapshot(root),
   ].map((problem) => problem.replaceAll(`${root}/`, ""));
 }

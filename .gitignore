@@ -23,6 +23,9 @@ coverage/
 playwright-report/
 test-results/
 
+# Impeccable's hook cache (the config and design.json are committed, docs/workflow.md §2)
+.impeccable/hook.cache.json
+
 # OS and editors
 .DS_Store
 .idea/

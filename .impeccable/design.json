@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-30T03:50:23.446942+00:00",
+  "title": "Design system: cty1ng",
+  "extensions": {
+    "motion": [
+      {
+        "name": "duration-fast",
+        "value": "120ms",
+        "purpose": "Command fast transitions."
+      },
+      {
+        "name": "duration-medium",
+        "value": "200ms",
+        "purpose": "Command medium transitions."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action from the agreed button specification.",
+      "html": "<button class=\"ds-control ds-primary\">Save changes</button>",
+      "css": ".ds-primary { font: 13px Geist, sans-serif; box-sizing: border-box; height: 36px; padding: 0 14px; border: 0; border-radius: 8px; background: #F5B544; color: #0E0F11; font-weight: 600; } .ds-control:focus-visible { outline: 2px solid #F5B544; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Secondary action from the agreed button specification.",
+      "html": "<button class=\"ds-control ds-secondary\">Cancel</button>",
+      "css": ".ds-secondary { font: 13px Geist, sans-serif; box-sizing: border-box; height: 36px; padding: 0 14px; border: 1px solid #3A3F46; border-radius: 8px; background: transparent; color: #E7E8EA; } .ds-control:focus-visible { outline: 2px solid #F5B544; outline-offset: 2px; }"
+    },
+    {
+      "name": "Number box",
+      "kind": "input",
+      "description": "Number field based on the agreed settings control.",
+      "html": "<label class=\"ds-label\">Daily cap <input class=\"ds-control ds-number\" type=\"number\" placeholder=\"No cap\"></label>",
+      "css": ".ds-label { font: 13px Geist, sans-serif; box-sizing: border-box; color: #E7E8EA; } .ds-number { font: 13px Geist, sans-serif; box-sizing: border-box; display: block; width: 170px; height: 34px; margin-top: 8px; padding: 0 8px; border: 1px solid #3A3F46; border-radius: 8px; background: #0E0F11; color: #E7E8EA; } .ds-control:focus-visible { outline: 2px solid #F5B544; outline-offset: 2px; }"
+    },
+    {
+      "name": "Project navigation",
+      "kind": "nav",
+      "description": "Project navigation row based on the left bar specification.",
+      "html": "<nav aria-label=\"Project\"><button class=\"ds-control ds-row\">Library</button></nav>",
+      "css": ".ds-row { font: 13px Geist, sans-serif; box-sizing: border-box; padding: 8px; border: 0; border-radius: 8px; background: #16181B; color: #E7E8EA; } .ds-control:focus-visible { outline: 2px solid #F5B544; outline-offset: 2px; }"
+    },
+    {
+      "name": "Skill chip",
+      "kind": "chip",
+      "description": "Skill provenance label from the conversation specification.",
+      "html": "<span class=\"ds-chip\">write-user-stories v3</span>",
+      "css": ".ds-chip { display: inline-block; padding: 2px 6px; border: 1px solid #23262B; border-radius: 999px; background: #16181B; color: #E7E8EA; font: 11px \"Geist Mono\", monospace; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Collaborative studio",
+    "overview": "The interface is warm and approachable. It gives the owner and role bots a clear place to work together, with familiar controls and visible bot identities. Keep the conversation easy to read through long work sessions.",
+    "keyCharacteristics": [
+      "Compact controls and a clear reading area.",
+      "Distinct bot avatars and visible work states.",
+      "Semantic colours, with labels or icons for status."
+    ],
+    "rules": [],
+    "dos": [
+      "Do use the agreed component specifications and UI rules.",
+      "Do make bot authorship and work states clear.",
+      "Do use the word \"conversation\" in the interface."
+    ],
+    "donts": [
+      "Don't rely on colour alone to communicate a state.",
+      "Don't treat an illustration as an approved component specification."
+    ]
+  }
+}
