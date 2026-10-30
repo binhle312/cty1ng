@@ -1,0 +1,75 @@
+@import "tailwindcss";
+@import "./themes/command.css";
+
+/* Semantic tokens as Tailwind utilities (design/themes.md §2). The default palette is removed,
+   so `bg-red-500` does not exist: components can use only the tokens below. The values come
+   from the active theme file at run time. */
+@theme {
+  --color-*: initial;
+  --color-surface: var(--token-surface);
+  --color-surface-container: var(--token-surface-container);
+  --color-surface-raised: var(--token-surface-raised);
+  --color-surface-bubble: var(--token-surface-bubble);
+  --color-on-surface: var(--token-on-surface);
+  --color-on-surface-muted: var(--token-on-surface-muted);
+  --color-primary: var(--token-primary);
+  --color-on-primary: var(--token-on-primary);
+  --color-primary-container: var(--token-primary-container);
+  --color-primary-tint: var(--token-primary-tint);
+  --color-outline: var(--token-outline);
+  --color-outline-strong: var(--token-outline-strong);
+  --color-running: var(--token-running);
+  --color-waiting: var(--token-waiting);
+  --color-danger: var(--token-danger);
+  --color-success: var(--token-success);
+
+  --font-sans: var(--token-font-sans);
+  --font-mono: var(--token-font-mono);
+
+  /* App text is 11 px or more (design/ui-rules.md L1). */
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: var(--token-text-base);
+  --text-lg: 14px;
+  --text-xl: 18px;
+
+  --radius-control: var(--token-radius-control);
+  --radius-card: var(--token-radius-card);
+  --radius-pill: var(--token-radius-pill);
+
+  --ease-standard: var(--token-easing-standard);
+
+  /* Shell sizes from the agreed specs (left-bar.md, top-header.md, user-panel.md). They are
+     the same in every theme. */
+  --spacing-rail: 60px;
+  --spacing-bar-two: 260px;
+  --spacing-header: 52px;
+  --spacing-tile: 40px;
+  --spacing-panel: 48px;
+  --spacing-avatar: 36px;
+  --spacing-button: 36px;
+  --spacing-button-small: 30px;
+  --spacing-control: var(--token-control-height);
+}
+
+@utility border-dashed-slot {
+  border-width: 1.5px;
+  border-style: dashed;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    background-color: var(--color-surface);
+    color: var(--color-on-surface);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+}
