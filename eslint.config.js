@@ -97,7 +97,7 @@ export default tseslint.config(
   },
   {
     // The repository scripts are command-line tools: they print their results.
-    files: ["scripts/**/*.ts"],
+    files: ["scripts/**/*.ts", "backend/scripts/**/*.ts"],
     rules: { "no-console": "off" },
   },
 );

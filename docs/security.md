@@ -24,9 +24,11 @@ environment, provider-side data handling.
 ### 2.1 Network exposure
 
 - Bind to `127.0.0.1` only. Startup refuses `HOST=0.0.0.0` or any non-loopback address with a
-  clear error, until the VPS milestone adds authentication.
+  clear error, until the VPS milestone adds authentication. It also refuses a loopback address
+  that the Host check below does not serve (`::1`, `127.0.0.2`); `HOST=localhost` is allowed.
 - **Host check:** reject requests whose `Host` header is not `127.0.0.1:<port>` or
-  `localhost:<port>` (blocks DNS rebinding).
+  `localhost:<port>` with 403 `host_rejected` (blocks DNS rebinding). A missing, duplicate or
+  malformed `Host` is a bad request (400 `bad_request`), not always an attack.
 - **Origin check:** for every non-GET request, require `Origin` to be the app's own origin or
   one in `ALLOWED_ORIGINS` (dev frontend). Reject missing or foreign origins with 403
   `origin_rejected`. GET endpoints that return data also check `Origin` when present.
@@ -273,7 +275,7 @@ computer (owner, 2026-10-28):
 
 ## 3. Security tests (must exist)
 
-- Host header `evil.com` → 403; `Origin: https://evil.com` on POST → 403; no Origin on POST →
+- Host header `evil.com` → 403 `host_rejected`; missing or duplicate Host → 400; `Origin: https://evil.com` on POST → 403; no Origin on POST →
   403; correct origin → passes.
 - Startup with `HOST=0.0.0.0` fails.
 - Markdown XSS corpus (script tags, event handlers, `javascript:` links, SVG) renders inert
