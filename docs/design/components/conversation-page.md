@@ -177,7 +177,7 @@ Agreed in round 14 (2026-10-26). Previews: `discussion-popover.*` (D1, D2, D3a, 
 
 ### 3.1 Skill chips (K1)
 
-- Chips list `skills_used` as `<slug> v<version>`, mono font 10.5 px, `surface-container` fill,
+- Chips list `skills_used` as `<slug> v<version>`, mono font 11 px (`../ui-rules.md` L1; was 10.5 px), `surface-container` fill,
   `outline` border, pill shape. An always-load skill adds " · always" (UI-3.6).
 - Order: skills the bot loaded for this task first, always-load skills last.
 - Only the first 3 chips show. Then a dashed chip "+N more" (dashed `outline-strong`,

@@ -182,7 +182,8 @@ Design: `../design/components/user-panel.md`.
 - UI-1.20 (M0): The panel floats over the bottom of the left bar. A click, Enter or Space on the
   avatar or name opens the menu upward: Manage bots, Manage skills, Memory, Trash, Statistics, a
   divider, Settings. An item shows when its page exists; an empty placeholder page counts (owner
-  2026-10-30), so M0 shows Manage bots, Manage skills and Settings. Arrow keys move, Esc
+  2026-10-30), so M0 shows Manage bots, Manage skills, Statistics and Settings; Memory and Trash come with
+  their pages in M5b. Arrow keys move, Esc
   closes the menu and focus goes back to the avatar. The current page is marked.
 - UI-1.21 (M0): With the left bar collapsed, only the avatar shows. Hover and keyboard focus show
   the tooltip "{name} · Menu" within 300 ms; the menu opens to the right with the name as its
