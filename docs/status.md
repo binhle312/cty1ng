@@ -73,7 +73,7 @@ that use them, then M0.
 
 ## Next
 
-1. M1c, backend maintenance (event pruning, the SQLite writer guard): the plan waits for the owner's approval (`tasks/M1c-backend-maintenance.md`, PR link below). M1a ([#52](https://github.com/binhle312/cty1ng/pull/52)) and M1b ([#54](https://github.com/binhle312/cty1ng/pull/54)) are merged.
+1. M1c, backend maintenance (event pruning, the SQLite writer guard): the plan waits for the owner's approval ([#55](https://github.com/binhle312/cty1ng/pull/55), `tasks/M1c-backend-maintenance.md`). M1a ([#52](https://github.com/binhle312/cty1ng/pull/52)) and M1b ([#54](https://github.com/binhle312/cty1ng/pull/54)) are merged.
 2. After M1c: M2, Bots.
 
 ## Waiting on the owner
@@ -113,7 +113,7 @@ it in, and the row goes when its PR merges.
 | Slice | State | PR | Notes |
 | --- | --- | --- | --- |
 | M0 | merged | [#46](https://github.com/binhle312/cty1ng/pull/46) (M0a), [#48](https://github.com/binhle312/cty1ng/pull/48) (M0b), [#49](https://github.com/binhle312/cty1ng/pull/49) (M0c), [#50](https://github.com/binhle312/cty1ng/pull/50) (Impeccable snapshot) | Three parts (M0a tooling, M0b backend, M0c frontend), all merged 2026-10-30 |
-| M1 | planning | [#51](https://github.com/binhle312/cty1ng/pull/51) (spec gap pass), [#52](https://github.com/binhle312/cty1ng/pull/52) (plan and M1a backend, merged), [#54](https://github.com/binhle312/cty1ng/pull/54) (M1b Skills page, merged) | Plan approved 2026-10-31, split into M1a (backend, #52) and M1b (Skills page, #54), both merged; M1c (backend maintenance) plan in review. Design approved: `design/components/skills-page.md` (round 8); D49 accepted. Round 16 moves the page to the bot page layout (agreed, #38) |
+| M1 | planning | [#51](https://github.com/binhle312/cty1ng/pull/51) (spec gap pass), [#52](https://github.com/binhle312/cty1ng/pull/52) (plan and M1a backend, merged), [#54](https://github.com/binhle312/cty1ng/pull/54) (M1b Skills page, merged) | Plan approved 2026-10-31, split into M1a (backend, #52) and M1b (Skills page, #54), both merged; M1c (backend maintenance) plan in review in [#55](https://github.com/binhle312/cty1ng/pull/55). Design approved: `design/components/skills-page.md` (round 8); D49 accepted. Round 16 moves the page to the bot page layout (agreed, #38) |
 | M2 | UI design review | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec) | Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open |
 | M3 | UI design agreed | [#26](https://github.com/binhle312/cty1ng/pull/26) (spec) | Round 10: `design/components/conversation-page.md`, `composer.md`, `conversation-cards.md` |
 | M4 | not started | | |
