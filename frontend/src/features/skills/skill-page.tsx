@@ -12,7 +12,7 @@ import {
 import { Button } from "../../components/ui/button.tsx";
 import { Tab, TabsList, TabsPanel, TabsRoot } from "../../components/ui/tabs.tsx";
 import { showToast } from "../../components/ui/toast.tsx";
-import { Tooltip } from "../../components/ui/tooltip.tsx";
+import { TimeText } from "../../components/ui/time-text.tsx";
 import { apiErrorText } from "../../lib/api/api-error.ts";
 import {
   createSkillVersionMutation,
@@ -24,7 +24,7 @@ import {
   undeprecateSkillMutation,
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import type { GetSkillResponse } from "../../lib/api/generated/types.gen.ts";
-import { formatFullTime, formatTime } from "../../lib/time-format.ts";
+import { LoadError } from "./load-error.tsx";
 import { useExportSkills } from "./export-card.tsx";
 import { useLeaveGuard } from "./leave-guard.tsx";
 import { Pill, VersionPill } from "./pills.tsx";
@@ -36,9 +36,9 @@ import { SkillEditorSkeleton } from "./skill-editor-skeleton.tsx";
 import { SkillFields } from "./skill-fields.tsx";
 import {
   changedFields,
-  discard,
   fieldProblems,
   hasProblem,
+  isDirty,
   leaveText,
   newForm,
   saveKind,
@@ -64,17 +64,20 @@ export function SkillPage() {
   });
 
   if (skills.isPending) return <SkillEditorSkeleton />;
+  // A failed request is not a missing skill: the error state comes before Page not found.
+  if (skills.isError) {
+    return (
+      <LoadError text="The app could not load the skills." onRetry={() => void skills.refetch()} />
+    );
+  }
   // The shell's Page not found replaces the whole Skills page (skills-page.md §1).
   // eslint-disable-next-line @typescript-eslint/only-throw-error -- the router's way to show Page not found
   if (row === undefined) throw notFound();
   if (detail.isPending) return <SkillEditorSkeleton />;
   if (detail.isError) {
-    return <p className="px-8 py-6 text-on-surface-muted">{apiErrorText(detail.error)}</p>;
+    return <LoadError text={apiErrorText(detail.error)} onRetry={() => void detail.refetch()} />;
   }
-  // A new version or a rename gives a new editor with the saved text; a refetch with the same
-  // data keeps the edit.
-  const key = `${detail.data.id}:${String(detail.data.latest_version.version)}:${String(detail.data.row_version)}`;
-  return <SkillView key={key} skill={detail.data} />;
+  return <SkillView key={detail.data.id} skill={detail.data} />;
 }
 
 function SkillView({ skill }: { skill: SkillDetail }) {
@@ -91,6 +94,28 @@ function SkillView({ skill }: { skill: SkillDetail }) {
     body_md: skill.body_md,
   };
   const [form, setForm] = useState(() => newForm(saved, false));
+  // The saved state that the edit started from. Saves send it, so the server refuses a save
+  // over a change made in another place (409 `stale_write`) instead of overwriting it.
+  const server = { version: skill.latest_version.version, rowVersion: skill.row_version };
+  const [base, setBase] = useState(server);
+  // When the skill changes on the server, an editor with no changes takes the new text; an
+  // editor with changes keeps them and shows the conflict.
+  const serverKey = `${String(server.version)}:${String(server.rowVersion)}`;
+  const [seenKey, setSeenKey] = useState(serverKey);
+  if (seenKey !== serverKey) {
+    setSeenKey(serverKey);
+    if (!isDirty(form)) {
+      setForm(newForm(saved, false));
+      setBase(server);
+    }
+  }
+  const conflict = base.version !== server.version || base.rowVersion !== server.rowVersion;
+  // After this page's own save, the editor's text is the saved text, based on the result.
+  const savedHere = (result: { latest_version: { version: number }; row_version: number }) => {
+    setBase({ version: result.latest_version.version, rowVersion: result.row_version });
+    setForm((current) => newForm(current.current, false));
+    setChangelog("");
+  };
   const [changelog, setChangelog] = useState("");
   const [saveError, setSaveError] = useState<SaveError | null>(null);
   const [dialog, setDialog] = useState<"deprecate" | "delete" | null>(null);
@@ -101,7 +126,7 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   const dirty = changes.length > 0 && !readOnly;
   const kind = saveKind(form);
   const problems = fieldProblems(form, settings.limits);
-  const latest = skill.latest_version.version;
+  const latest = server.version;
 
   useEffect(() => {
     setDirtySlug(dirty ? skill.slug : null);
@@ -120,7 +145,8 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   };
   const rename = useMutation({
     ...renameSkillMutation(),
-    onSuccess: () => {
+    onSuccess: (result) => {
+      savedHere(result);
       showToast("Saved ✨");
     },
     onError,
@@ -128,6 +154,7 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   const saveVersion = useMutation({
     ...createSkillVersionMutation(),
     onSuccess: (result) => {
+      savedHere(result);
       // M1 has no bots, so no upgrade card opens: only the toast (skills-page.md §7).
       showToast(`Saved v${String(result.latest_version.version)} ✨`);
     },
@@ -140,21 +167,21 @@ function SkillView({ skill }: { skill: SkillDetail }) {
     if (kind === "rename") {
       rename.mutate({
         path: { id: skill.id },
-        body: { name: form.current.name, row_version: skill.row_version },
+        body: { name: form.current.name, row_version: base.rowVersion },
       });
       return;
     }
-    const renamed = form.current.name !== skill.name;
+    const renamed = form.current.name !== form.saved.name;
     const note = changelog.trim();
     saveVersion.mutate({
       path: { id: skill.id },
       body: {
-        base_version: latest,
+        base_version: base.version,
         description: form.current.description,
         body_md: form.current.body_md,
         upgrade_bot_ids: [],
         ...(note === "" ? {} : { changelog: note }),
-        ...(renamed ? { name: form.current.name, row_version: skill.row_version } : {}),
+        ...(renamed ? { name: form.current.name, row_version: base.rowVersion } : {}),
       },
     });
   };
@@ -175,13 +202,21 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   const dialogFailed = (error: unknown) => {
     setDialogError(apiErrorText(error));
   };
+  // Deprecate and Make active again change the skill here, so they move the base too.
+  const movedBase = (result: { latest_version: { version: number }; row_version: number }) => {
+    setBase({ version: result.latest_version.version, rowVersion: result.row_version });
+  };
   const deprecate = useMutation({
     ...deprecateSkillMutation(),
-    onSuccess: closeDialog,
+    onSuccess: (result) => {
+      movedBase(result);
+      closeDialog();
+    },
     onError: dialogFailed,
   });
   const undeprecate = useMutation({
     ...undeprecateSkillMutation(),
+    onSuccess: movedBase,
     onError: (error) => {
       showToast(apiErrorText(error));
     },
@@ -205,9 +240,11 @@ function SkillView({ skill }: { skill: SkillDetail }) {
 
   const blockedReason = saving
     ? "Saving."
-    : hasProblem(problems) || saveError?.field != null
-      ? "Fix the errors first."
-      : null;
+    : conflict
+      ? "This skill changed in another place."
+      : hasProblem(problems) || saveError?.field != null
+        ? "Fix the errors first."
+        : null;
 
   return (
     <>
@@ -303,13 +340,21 @@ function SkillView({ skill }: { skill: SkillDetail }) {
               changelog={changelog}
               onChangelog={setChangelog}
               onDiscard={() => {
-                setForm(discard);
+                // Discard puts back the saved text: the newest one, also after a conflict.
+                setForm(newForm(saved, false));
+                setBase(server);
                 setChangelog("");
                 setSaveError(null);
               }}
               onSave={save}
               blockedReason={blockedReason}
-              error={saveError?.field === null ? saveError.message : null}
+              error={
+                conflict
+                  ? "This skill changed in another place. Your changes are kept here. Copy what you need, then Discard to load the new text."
+                  : saveError?.field === null
+                    ? saveError.message
+                    : null
+              }
             />
           )}
         </TabsPanel>
@@ -421,14 +466,7 @@ function DeprecatedBanner({
   return (
     <div className="mx-8 mt-4 flex shrink-0 items-center gap-4 rounded-card border border-waiting bg-primary-container px-4 py-3">
       <div className="grow text-sm">
-        <p className="font-semibold">
-          Deprecated{" "}
-          {at !== null && (
-            <Tooltip label={formatFullTime(at)} side="top">
-              <time dateTime={at}>{formatTime(at, new Date())}</time>
-            </Tooltip>
-          )}
-        </p>
+        <p className="font-semibold">Deprecated {at !== null && <TimeText iso={at} />}</p>
         <p className="text-on-surface-muted">
           {skill.bots_using === 0
             ? "No bot uses it."

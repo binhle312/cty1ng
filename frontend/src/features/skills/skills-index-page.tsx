@@ -1,6 +1,7 @@
 import { Navigate, Link } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { Button, buttonVariants } from "../../components/ui/button.tsx";
+import { LoadError } from "./load-error.tsx";
 import { SkillEditorSkeleton } from "./skill-editor-skeleton.tsx";
 import { useAllSkills } from "./skill-queries.ts";
 import { useSkillsPage } from "./skills-context.tsx";
@@ -9,10 +10,10 @@ import { useSkillsPage } from "./skills-context.tsx";
 // state before the first skill (§3). A deprecated skill at the top opens only when nothing
 // else is there.
 export function SkillsIndexPage() {
-  const { data: skills, isPending, isError } = useAllSkills();
+  const { data: skills, isPending, isError, refetch } = useAllSkills();
   if (isPending) return <SkillEditorSkeleton />;
   if (isError) {
-    return <p className="px-8 py-6 text-on-surface-muted">The app could not load the skills.</p>;
+    return <LoadError text="The app could not load the skills." onRetry={() => void refetch()} />;
   }
   const top = skills.find((skill) => !skill.deprecated) ?? skills[0];
   if (top !== undefined) {

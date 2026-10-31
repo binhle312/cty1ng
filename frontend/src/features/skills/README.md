@@ -28,6 +28,7 @@ Export card. Routes: `src/routes/skills.tsx`.
 | `skill-queries.ts` | The skill list query, the editor's limits from the settings |
 | `pills.tsx` | Version, Deprecated, "not saved" and import status pills |
 | `skill-editor-skeleton.tsx` | The page while it loads |
+| `load-error.tsx` | The error state of a list or page: what failed, and Try again |
 
 Start here: `skills-layout.tsx`. Do not: check a field's limit here; the rules are in
 `shared/src/skills.ts`, so the editor and the server refuse the same text.
