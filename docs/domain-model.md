@@ -65,7 +65,9 @@ erDiagram
   bots {
     text id PK
     text slug UK "fixed (D19)"
-    text name "unique while not purged"
+    text name
+    text name_key "unique while not purged"
+    int row_version
     text model_id "immutable (D7)"
     text effort "immutable (D7)"
     json tool_settings
@@ -312,19 +314,21 @@ erDiagram
 ```
 bots
   id                   TEXT PK
-  slug                 TEXT UNIQUE NOT NULL          -- fixed at creation (D19)
-  name                 TEXT NOT NULL                 -- ≤ bot_name_max (32) chars; unique among bots not purged, Trash included (D50)
+  slug                 TEXT UNIQUE NOT NULL          -- fixed at creation (D19); the slug rule below; never reused
+  name                 TEXT NOT NULL                 -- ≤ bot_name_max (32) chars, stored trimmed with inner spaces collapsed (§2 Name key)
+  name_key             TEXT NOT NULL                 -- botNameKey(name); unique among bots not purged, Trash included (D50, §2 Name key)
+  row_version          INTEGER NOT NULL DEFAULT 1    -- §1; raised by every Profile or Model save, delete and restore; not by pins (§2 Concurrency)
   description          TEXT NOT NULL                 -- one line, ≤ bot_description_max (160) chars, shown to other bots (team directory, D18)
   persona_md           TEXT NOT NULL                 -- ≤ bot_persona_max (8,000) chars
-  avatar_style         TEXT NOT NULL DEFAULT 'flat'  -- flat | jelly | pixel | upload (bot-avatar.md)
+  avatar_style         TEXT NOT NULL DEFAULT 'flat'  -- flat | jelly | pixel | upload (bot-avatar.md); until a slice draws Jelly and Pixel, the API refuses them (422 validation_error)
   avatar_colour        TEXT NOT NULL                 -- any colour as '#RRGGBB' (bot-avatar.md §5); the Create page picks the default; the backend does not know the palette
-  avatar_path          TEXT NULL                     -- data/avatars/<sha256>.webp when avatar_style = 'upload', else NULL
+  avatar_path          TEXT NULL                     -- avatars/<sha256>.webp (under DATA_DIR) when avatar_style = 'upload', else NULL (§2 Avatar files)
   model_id             TEXT NOT NULL                 -- catalog id, e.g. anthropic:<model-name>        (immutable, D7)
   effort               TEXT NULL                     -- one of the model's efforts, NULL if none       (immutable, D7)
   request_limit        INTEGER NOT NULL              -- model requests per run; default from setting bot_default_request_limit (30)
   max_reply_chars      INTEGER NOT NULL              -- default from setting bot_default_max_reply_chars (6000)
   history_share_pct    INTEGER NOT NULL              -- % of the model's context window for history per run, step 5 (D32); default bot_default_history_pct (40), range bot_history_min_pct–bot_history_max_pct (10–80)
-  tool_settings        JSON NOT NULL                 -- {<tool_id>: true | false} for every tool in the catalog that this bot's model can use (§4.1, D55)
+  tool_settings        JSON NOT NULL                 -- {<tool_id>: true | false} as last saved (§4.1, D55); read through the effective-settings rule below
   cloned_from_bot_id   TEXT NULL REFERENCES bots(id)
   create_key           TEXT NULL UNIQUE              -- Idempotency-Key of POST /bots; a repeat returns this bot (bots.md UI-5.6)
   create_request_hash  TEXT NULL                     -- SHA-256 of the canonical POST /bots body; set with create_key (§2 Idempotency)
@@ -336,7 +340,7 @@ bots
 
 CHECK (purged_at IS NULL OR deleted_at IS NOT NULL)
 CHECK ((create_key IS NULL) = (create_request_hash IS NULL))
-UNIQUE INDEX bots_name_kept ON bots(lower(name)) WHERE purged_at IS NULL
+UNIQUE INDEX bots_name_kept ON bots(name_key) WHERE purged_at IS NULL
 UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position IS NOT NULL
 ```
 
@@ -351,6 +355,16 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
   JSON with sorted keys and no spaces. A repeat with the same key and the same hash returns the
   first bot (200) and creates nothing. The same key with another hash returns 409
   `idempotency_key_reused`. Keys stay with the bot row; a purge clears them (below).
+  **Order of checks (M2 spec gap pass, owner 2026-11-01):** inside the create transaction, the
+  key lookup comes first, after the body parses and before every check that reads data that can
+  change (catalog, API keys, skills, deprecation, Trash, names). So a repeat of a request that
+  committed returns the first bot even when, since then, its model lost its key, a pinned skill
+  was deprecated or trashed, or the bot was moved to Trash. The test: the server commits, the
+  response is lost, a skill is deprecated, and the retry with the same key and body returns the
+  first bot. **Retry in the page:** the Create page keeps the body and the key that it sent
+  until it knows the outcome (`create-bot-page.md` §5, E5). While the outcome is unknown, the
+  form stays read-only and Try again sends that same snapshot. A body that changes after a
+  known outcome (for example after a 422) is a new request with a new key.
 - **Purge (D50):** after `trash_days`, the purge job turns the bot row into a **tombstone** in one
   transaction. Every column keeps its value, except these, which change so the NOT NULL columns
   still hold: `description = ''`, `persona_md = ''`, `tool_settings = '{}'`,
@@ -366,13 +380,37 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
   Rows that record history stay and keep their foreign keys: messages, runs, run steps,
   `conversation_bots` (status `removed`), handoffs, `reply_feedback`, decided skill drafts. The
   avatar file stays, because old messages show it. A tombstone is never updated again and never
-  restored.
+  restored. Each slice adds its own table to this step when it creates the table: M2 deletes
+  `bot_skills` (the purge job of M1 takes bots in M2), M5b adds the bot memory and
+  `memory_history_versions`, M5c the open drafts. The purge emits `bot.purged` and
+  `trash.changed` (`realtime-events.md` §4).
+- **Restore (D50).** In M2 only the temporary CLI `bots restore <slug>` restores a bot
+  (`api.md` §4); the M5b Trash page replaces it. A restore clears `deleted_at`, raises
+  `row_version`, leaves the bot unpinned and emits `bot.restored` and `trash.changed`. It always
+  works, because the name and the slug stay taken while the bot is in Trash.
 - **Clone:** there is no "clone" write endpoint. `GET /bots/{id}/clone-template` returns a
   prefilled create payload (`name` per the clone name rule below, description, persona, avatar style (no
   colour: the page picks a free one, `design/components/bot-avatar.md` §5), model, effort, Advanced values, `tool_settings`, pins with their versions and
   `always_load`). The owner edits it in the create form and submits a normal create with
   `cloned_from_bot_id`. Cancelling creates nothing. Bot memory is not copied. A bot in Trash or
-  purged has no clone template (422 `bot_deleted`).
+  purged has no clone template (422 `bot_deleted`). With `avatar_style: upload` the template
+  also has the `avatar_id`, so the clone uses the same image.
+- **Clone of a deprecated pin (M2 spec gap pass, owner 2026-11-01).** A deprecated skill cannot
+  be newly assigned (§12 invariant 6), with this narrow exception: a `POST /bots` pin to a
+  deprecated skill is accepted only when, checked inside the create transaction, the body has
+  `cloned_from_bot_id`, that source bot is live (not in Trash, not purged), and the source has a
+  pin to that same skill at that same `skill_version_id`. Otherwise the pin gets 422
+  `skill_deprecated` with `field: "pins[i]"`. `cloned_from_bot_id` alone never passes a
+  deprecated skill. Create step 3 shows such a pin ticked with the Deprecated pill; the owner
+  can untick it.
+- **Clone with a model that cannot run (CL2, M2 spec gap pass).** A model removed from the
+  catalog: the template still names it, and the page empties the Model field with its error. A
+  model whose API key is not set: the page keeps it, shows it as unavailable ("API key not set:
+  {ENV_NAME}") and Create stays off until the key is set and the app restarted, or the owner
+  picks another model. The server refuses both on Create (422 `model_not_available`).
+- **Selected skills are checked again on Create.** A pin to a skill that went to Trash after the
+  page loaded gets 422 `validation_error` with `field: "pins[i]"`. Trash holds the whole skill,
+  not one version: the owner unticks it, or restores the skill first.
 - **Clone name:** the template name is "{name} (copy)". If that is longer than `bot_name_max`,
   the base name is cut at a character boundary (never inside a grapheme) and trailing spaces
   are removed, so the whole name fits: for a limit of 32, the base keeps at most 25 characters.
@@ -390,8 +428,72 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
 - **Tool settings (D55):** at create, each internal tool is on and each provider tool
   is off, unless the request says otherwise. For two tools with the same `job` (§4.1), at most one
   is on; the service rejects a body that turns on both (422 `tool_job_conflict`). Provider tool
-  switches have effect only from the milestone that builds them (D53).
-- **Health** (`bots.md` UI-4.6) is computed on read from runs and pins; nothing is stored.
+  switches have effect only from the milestone that builds them (D53). In M2 no internal tool
+  exists yet: their switches show, start on and save, and each later slice reads the saved
+  switch when it builds the tool.
+- **Effective tool settings (M2 spec gap pass, owner 2026-11-01).** The stored JSON can miss a
+  tool (one added to `config/tools.yaml` later) or name one the model lost. One pure function in
+  `core/` gives the effective settings, in this order: (1) start from the stored values; (2) a
+  tool with no stored value takes its default (internal on, provider off); (2a) a tool whose
+  catalog `switch` is `later` (a provider tool that no milestone has built yet) or `locked` (MCP
+  connector, D55) is off, whatever is stored; (3) drop every tool
+  the model does not offer, and turn off View images when the model is not `multimodal`;
+  (4) turn off a tool whose `needs` tool is off; (5) where a job has more than one tool on, keep
+  the tool that has a stored value on and turn the defaulted one off, so a new internal tool
+  never takes a job that a saved provider choice holds; (6) run the `needs` check of step 4
+  again, so a tool whose needed tool step 5 turned off is off too. GET returns the effective settings and
+  writes nothing; the stored JSON changes only on a save. `POST /bots` and `PATCH /bots/{id}`
+  check the body against the same rules: a tool the model does not offer, or a tool on whose
+  `switch` is `later` or `locked`, gets 422 `tool_not_available`, two tools of one job on get 422 `tool_job_conflict`, and a tool on while
+  its `needs` tool is off gets 422 `validation_error` with `field: "tool_settings.<id>"`. The
+  service then stores the effective result of the body.
+- **Name key (M2 spec gap pass, owner 2026-11-01).** Names compare by `name_key`, made by one
+  pure function `botNameKey()` in `core/`: trim, collapse each run of white space to one space,
+  Unicode NFKC, then Unicode default case folding (full folding, `CaseFolding.txt` statuses C
+  and F, so "ẞ", "ß", "SS" and "ss" all match), then NFKC again. JavaScript has no built-in
+  case folding (upper then lower case maps "ẞ" to "ß" but "ß" to "ss"), so the M2 plan picks how
+  to get it: a table generated from `CaseFolding.txt`, or a library (a new dependency). The stored `name` is trimmed and collapsed too. The partial unique index on `name_key`
+  is the final check: a create or rename that loses a race gets 409 `name_taken`. SQLite
+  `lower()` folds ASCII only, so it is not used. Tests: "BÁ" and "bá", " BA " and "BA",
+  full-width "ＢＡ" and "ba", "ẞ", "ß" and "SS", two creates at once, a rename to a name held in
+  Trash.
+- **Slug (D19, M2 spec gap pass, owner 2026-11-01).** Made from the name at create: Unicode NFKD,
+  remove combining marks, "đ" and "Đ" to "d", lower case, each run of characters outside `a–z`
+  and `0–9` to one "-", trim "-" at both ends. Empty (for example a name of emoji only) → `bot`.
+  At most `BOT_SLUG_MAX` (40, a fixed format rule) characters **with** its suffix: the base is
+  cut, with no "-" at its end, so that "-2", "-3", … still fits. `new` is reserved (the Create
+  page URL) and counts as taken. A slug held by any row (live, Trash or tombstone) is taken
+  forever. The create transaction picks the suffix: one writer at a time (`BEGIN IMMEDIATE`)
+  makes the pick safe, and the unique index is the final check.
+- **Concurrency (M2 spec gap pass, owner 2026-11-01).** Three kinds of write, three checks; a
+  conflict never loses the owner's input:
+  - Profile and Model saves send `row_version`; a stale one gets 409 `stale_write`. The page
+    loads the newest values, keeps the owner's edits and shows the conflict
+    (`design/components/bot-page.md` §4.1), as the skill editor does.
+  - A skill pin (`PUT /bots/{id}/skills/{skill_id}`) sends `expected`: the pin as the page saw
+    it (`{skill_version_id, always_load}`, or `null` when it saw no pin). A mismatch gets 409
+    `stale_write` with the current pin, so an old Always load click cannot send an old version.
+    Remove (`DELETE`) needs no expected state: the owner wants the skill gone at any version;
+    removing a pin that is already gone returns 204.
+  - The pinned order (`PUT /bots/pins`) sends `expected_bot_ids`, the pinned list the page saw.
+    A mismatch gets 409 `bot_list_changed`, and the page reloads the order.
+  Pin and order writes do not raise `bots.row_version`, so a pin never makes an open Profile
+  edit stale.
+- **Avatar files (M2 spec gap pass, owner 2026-11-01).** `avatar_id` is the SHA-256 (64 hex
+  characters) of the re-encoded file; there is no avatars table. A file is **used** while any
+  `bots` row names it: live, in Trash or a tombstone. The purge job deletes a file that no row
+  names and whose time is older than `AVATAR_ORPHAN_HOURS` (default 24, `architecture.md` §8).
+  The time counts from when the file was last uploaded **or last stopped being used**: an upload
+  of the same content refreshes it, and so does the save that removes the last row naming the
+  file (a bot that changes its image), in that save's write lock. So a file always gets the full
+  grace period after it becomes unused; the next purge pass after that deletes it. The upload writes or refreshes
+  the file, and the cleanup checks and deletes it, each while it holds the database write lock,
+  so neither can run between the other's check and its write. A bot save that names an
+  `avatar_id` checks, inside its transaction, that the file exists: else 422
+  `validation_error` with `field: "avatar_id"` ("Upload the image again."). Limits:
+  `security.md` §2.4.
+- **Health** (`bots.md` UI-4.6) is computed on read from runs and pins; nothing is stored. M2
+  has no runs: the lines it can show are "Cannot run" and "Uses a deprecated skill".
 - **Availability** is computed, not stored: a bot is *available* if its `model_id` is in the
   catalog and the model's API key variable is set.
 
@@ -490,7 +592,7 @@ is its `go.mod` line.
 | Action | Effect |
 | --- | --- |
 | Author saves an edit | New `skill_versions` row `N+1`, which is now the latest. **No pin moves.** |
-| Save dialog "Also upgrade these bots" | Lists the author's bots pinned to older versions, all ticked. Ticked ones move to `N+1` in the same transaction. |
+| Save dialog "Also upgrade these bots" | Opens **after** the save has committed `N+1`. Lists the author's bots pinned to older versions, all ticked. **Upgrade** is a separate request (`POST /skills/{id}/bots`) that moves the ticked pins to `N+1` in one transaction; it never creates a version. Skip moves nothing. (M2 spec gap pass, owner 2026-11-01: `POST /skills/{id}/versions` has no `upgrade_bot_ids`.) |
 | Assign a skill to a bot | Pins the latest version (the highest `version`) at that moment. |
 | Upgrade / downgrade on bot detail | Moves that one pin to the chosen version. |
 | Restore old version vK | Creates `N+1` with vK's content (history is append-only). |
@@ -521,6 +623,13 @@ Why integers and not semver: compatibility of prose cannot be checked by a machi
 - **In Trash:** the skill is in no list or picker, and its slug stays taken, so a restore
   always works. **Restore** clears `trashed_at`; the skill stays deprecated. The app then
   suggests to assign it again to the bots in `trashed_bot_ids` that are not deleted.
+  **Restore exception (M2 spec gap pass, owner 2026-11-01; M5b builds it with the restore
+  dialog, M2 does not).** These
+  suggested assigns pin a deprecated skill, which invariant 6 otherwise forbids. The server
+  allows it only through `POST /skills/{id}/bots` with `restore_suggestion: true`, and only when,
+  checked inside the transaction, the skill is deprecated and out of Trash, and each listed bot
+  is live and in the skill's `trashed_bot_ids`. Restore keeps `trashed_bot_ids` until the next
+  delete. The pin gets the latest version. Any other bot gets 422 `skill_deprecated`.
 - **Purge:** after `trash_days` (§10), or **Delete** on the Trash page (D62), the app deletes the
   `skill_versions` rows and the `skills` row. Before that, in the same transaction, it sets
   `run_skills.skill_version_id`, `skills.cloned_from_skill_version_id`,
@@ -715,7 +824,17 @@ skill_drafts                                              -- TypeID prefix `skil
   provider_tools: []
 ```
 
-- The create form lists only models whose `api_key_env` is set.
+- The create form lists every model. A model whose `api_key_env` is not set is grey with the
+  reason ("API key not set: {ENV_NAME}") and cannot be picked; `POST /bots` refuses it with 422
+  `model_not_available` (M2 spec gap pass: this replaces "lists only models whose key is set",
+  which contradicted the agreed grey rows). In M2 the row has no "Add a key" link; M5 adds it
+  with the Settings Models page.
+- **Providers in M2 (owner, 2026-11-01):** Anthropic only, through `ai` and `@ai-sdk/anthropic`.
+  Other providers come when the owner needs them, each as a new dependency for approval.
+- **Fake models (`testing.md` §2):** with `FAKE_MODEL=1` the catalog is the entries of
+  `config/models.yaml` plus two fake entries, both run by the fake adapter and available with no
+  key: `fake:scripted` (no efforts, not multimodal) and `fake:effort` (efforts low, medium,
+  high; default medium; multimodal). Neither has provider tools.
 - `effort` must be one of the model's `efforts`, or NULL when the list is empty.
 - `adapters/model/ai-sdk/effort.ts` maps effort to each provider's option in one function with a test
   per provider. Values above are placeholders; the agent implementing M2 must check current model
@@ -744,6 +863,7 @@ the bot page build the Tools list from it (`design/components/create-bot-page.md
   line: "List, read and write files in the Library (the project's, or Home)."
   off_line: "The bot only talks. View images and Hand off turn off too."
   needs: []                     # tool ids that must be on (view_images and hand_off need files)
+  switch: open                  # may the owner turn it on? open = yes, the choice is saved | later = forced off | locked = forced off, needs a decision (D55)
 - id: web_fetch
   label: Web fetch
   kind: provider
@@ -753,10 +873,24 @@ the bot page build the Tools list from it (`design/components/create-bot-page.md
   sends_data_out: false
   web: true
   line: "Open a page from a search result or from your message and read its text."
+  switch: later                 # M2: no provider tool is built yet
 ```
 
 - Internal tools in phase 1: `files`, `view_images`, `skills`, `hand_off`, `memory`.
 - A provider tool is offered to a bot only when the bot's model lists it in `provider_tools`.
+- `switch` (M2 spec gap pass, owner 2026-11-01) says whether the owner may turn the tool on for
+  a bot. It is a gate, not the choice: the bot's own on or off stays in `bots.tool_settings`.
+  - `open`: the server accepts and saves the owner's choice. This holds even when the tool has
+    no code yet, so in M2 every internal tool is `open` and its saved choice waits for the slice
+    that builds the tool.
+  - `later`: forced off; the page shows "later milestone". Every provider tool until its
+    milestone (D53, D55).
+  - `locked`: forced off; the page shows "Needs a decision". The MCP connector until its
+    decision (D55).
+
+  A `later` or `locked` tool has no working switch on the page, and the server refuses it on
+  and reads it as off (§2 Effective tool settings). Changing `later` to `open` only lifts the
+  gate: the milestone that does it must still build the tool and wire it into runs.
 - Order in the list: internal tools with no provider tool for the same job, then jobs that both
   can do, then provider-only tools; inside each group by `added`, oldest first.
 - Ids and parameters of provider tools change; the agent that builds them checks the provider
@@ -1022,12 +1156,26 @@ Bot limits and defaults (`bots.md` UI-4.6, UI-5.8; read by M2, never hard-coded)
 `health_recent_runs = 5`, `health_failed_runs = 2`, `health_limit_stops = 3`,
 `health_limit_window_days = 7`.
 
+Their ranges (M2 spec gap pass, owner 2026-11-01; whole numbers; the Zod schema of
+`PATCH /settings` uses them): `bot_name_max` 16–64; `bot_description_max` 80–500;
+`bot_persona_max` 1,000–32,000; `bot_history_min_pct` 5–50, `bot_history_max_pct` 50–90 and
+`bot_default_history_pct` 5–90, each a multiple of 5; `health_recent_runs` 1–50;
+`health_limit_stops` 1–50; `health_limit_window_days` 1–30. `bot_default_request_limit` and
+`bot_default_max_reply_chars` keep their ranges above. **Cross-field checks** (422 with the key,
+as above): `bot_history_min_pct` < `bot_history_max_pct`, `bot_history_min_pct` ≤
+`bot_default_history_pct` ≤ `bot_history_max_pct`, and `health_failed_runs` from 1 to
+`health_recent_runs`. **A lower limit never changes a saved bot** (as for skills): a bot keeps a
+name, description, persona or history share outside the new limits, and runs use the stored
+value. A save checks only the fields it sends: a field that the owner changes must fit the
+limits, so a bot over a new limit can still save other fields. The form shows the field over the
+limit with its error only when the owner edits it.
+
 ## 11. Files on disk
 
 ```
 data/
   app.db                                    SQLite database (+ -wal, -shm)
-  avatars/<sha256>.webp                     re-encoded uploads, content-addressed
+  avatars/<sha256>.webp                     re-encoded uploads, content-addressed; unused files leave after AVATAR_ORPHAN_HOURS (§2 Avatar files)
   libraries/<project_id>/                   a project's Library: one git repo, main checked out, shared by its conversations (D37, D52)
   libraries/home/                           the Home Library: one git repo for all conversations outside projects (D52 amendment 2026-10-25)
       attachments/<yyyy-mm-dd>-<conversation-slug>/<file>   owner uploads (bots: read-only, D52)
@@ -1046,7 +1194,10 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
    enforces it; the test proves that the database refuses a pin to another skill's version.
 4. Editing a skill does not change any `bot_skills` row unless the author checked that bot.
 5. Only the author can create versions, deprecate, delete or restore a skill.
-6. A deprecated skill cannot be newly assigned.
+6. A deprecated skill cannot be newly assigned, with two narrow exceptions that the server
+   checks inside the transaction: a clone that copies a live source bot's pin to that same skill
+   and version (§2 Clone of a deprecated pin, M2), and the restore suggestion for a bot in the
+   skill's `trashed_bot_ids` (§3.4, M5b). `cloned_from_bot_id` alone passes nothing.
 7. `events.seq` is strictly increasing; every state change has its event in the same transaction.
 8. At most one `running` run per conversation (enforced by `runs_one_running`).
 9. A message's content changes only while `status = streaming`, or when the Trash purge clears
@@ -1056,7 +1207,9 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
     database refuses a link into another conversation.
 11. For each try, `run_skills` contains exactly the always-loaded pins plus the distinct
     `load_skill` calls of that try.
-12. Bot names are unique among bots that are not purged, Trash included (case-insensitive, D50); slugs are unique forever.
+12. Bot names are unique among bots that are not purged, Trash included, by `name_key`
+    (white space, Unicode compatibility forms and case do not count, §2 Name key, D50); slugs are
+    unique forever.
 13. A request's `estimated_cost_usd` never changes after it finishes, even if prices do; a run's
     totals equal the sum of its requests.
 14. Every tool call of a run has exactly one `run_steps` row, in call order.

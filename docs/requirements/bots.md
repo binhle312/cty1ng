@@ -31,7 +31,7 @@ Design: `../design/components/bots-page.md` (agreed, round 9).
   projects and conversations, a health line when needed, and the status line
   (`../design/components/bot-status.md`). A click on a card opens the bot page.
 - UI-4.2: Page action **+ Create**. The ⋯ menu on each card: Details, Message, Clone, Delete
-  (`danger`), with dividers before Clone and before Delete.
+  (`danger`), with dividers before Clone and before Delete. Message comes with M3; M2 hides it.
 - UI-4.3: Delete asks for confirmation ("Messages from BA will stay, greyed") and moves the bot
   to Trash (D50): it disappears from the header and this page, and its messages stay.
 - UI-4.4: Clone opens the Create page prefilled from `clone-template`: name "<name> (copy)",
@@ -79,8 +79,10 @@ Design: `../design/components/create-bot-page.md` (agreed, round 9).
   step 4. Models with no API key are grey with the reason.
 - UI-5.2: Model and effort show the note "You cannot change the model or the effort after you
   create the bot. To use another one later, clone the bot."
-- UI-5.3: Validation errors per field, under the field (unique name, Trash included, case
-  insensitive; effort supported; sizes). Next keeps the owner on a step with errors. The server
+- UI-5.3: Validation errors per field, under the field (unique name, Trash included, compared
+  by the name key of `../domain-model.md` §2; effort supported; sizes). The page's own name check
+  uses the bots it has and is only a hint: names in Trash are not in that list, so the server's
+  `name_taken` on Create shows under Name on step 1. Next keeps the owner on a step with errors. The server
   checks again on Create: steps with a problem get a red "!" in the stepper and a red (!) icon
   in the preview card, and nothing is created.
 - UI-5.4: When opened from Clone, a banner says "Cloning BA" and links to the original.
@@ -106,7 +108,7 @@ Design: `../design/components/bot-page.md` (agreed, round 9, except the Memory t
   `/bots/{slug}`. The page top shows the band in the bot colour, the 116 px avatar, name and
   slug, the locked model badge, the status line, Message and ⋯. Tabs: Profile, Skills, Model,
   Memory, Activity, Usage. **Profile** edits Appearance (avatar style, colour by swatch, Custom
-  or Random, or an uploaded PNG/JPEG/WebP ≤ 2 MB with a crop card), Basics (name, description)
+  or Random, or an uploaded PNG/JPEG/WebP up to the avatar size limit (`AVATAR_MAX_BYTES`, default 2 MB, `../security.md` §2.4) with a crop card), Basics (name, description)
   and Persona, with one save bar; a change applies from the next run. The big avatar and the band
   show an avatar change at once ("Not saved"); the rest of the app after Save. A colour change
   recolours the Flat, Jelly and Pixel cards, never an uploaded image
@@ -114,7 +116,9 @@ Design: `../design/components/bot-page.md` (agreed, round 9, except the Memory t
   which can change; model and effort show only in the locked badge at the top, and Clone (⋯
   menu) picks another model.
 - UI-6.2: A bot that cannot run shows a banner with the reason and Clone. Clone of a bot whose
-  model is gone opens with the model field empty and its error (CL2).
+  model is gone opens with the model field empty and its error (CL2). Clone of a bot whose model
+  has no API key keeps the model, shown unavailable, and Create stays off until the key is set
+  or another model is picked (`../design/components/create-bot-page.md` §6).
 - UI-6.3: Skills table: name, description, pinned version, always-load toggle, Remove.
   Changes save immediately and apply to the next run.
 - UI-6.4: When a newer version exists, the row shows "v3 → v5 available"; clicking opens a diff
@@ -129,3 +133,6 @@ Design: `../design/components/bot-page.md` (agreed, round 9, except the Memory t
   then three views: Results, Changes (before and after a setup change) and Causes, for the range
   of the time range picker (`time-range-picker.md`, default "Last 7 days") (D21). Every rate shows
   its count. Runs without prices show "cost unknown" (`../design/components/bot-page.md` §9).
+- UI-6.9: URLs: `/bots`, `/bots/{slug}?tab=…`, `/bots/new`, `/bots/new?from={bot id}`
+  (`../design/components/bot-page.md` §1, `create-bot-page.md` §7). In M2 the Memory tab is
+  hidden (M5b) and the Usage tab shows its empty state (UI-6.8).

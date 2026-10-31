@@ -37,6 +37,9 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
 - UI-7.4: Saving creates a new version, then shows "Also upgrade these bots to vN?" with the
   author's bots on older versions, all ticked, and Skip / Upgrade (D6). After Create, the card
   "Add {skill} to bots?" lists the bots, none ticked, with Skip / Assign.
+  Upgrade and Assign are a separate request after the save (`POST /skills/{id}/bots`), so a
+  save never waits for this choice and the choice never creates a version (M2 spec gap pass,
+  owner 2026-11-01).
 - UI-7.5: History tab: versions newest first with changelog; diff between any two; "Restore"
   (creates a new version).
 - UI-7.5a: Bots tab: the bots that use the skill, with the version, "Upgrade to v<N>" on an

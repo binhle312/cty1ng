@@ -27,6 +27,8 @@ export const PENDING = [
   "bot.created",
   "bot.updated",
   "bot.deleted",
+  "bot.restored",
+  "bot.purged",
   "bots.reordered",
   "spend.threshold_crossed",
   "project.created",

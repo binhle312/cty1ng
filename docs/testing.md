@@ -21,9 +21,16 @@ without a human clicking around, and that a human reviewer can trust the proof.
 
 Tests never call real providers (`AGENTS.md` §8).
 
-- The backend accepts `FAKE_MODEL=1`; the catalog then exposes `fake:scripted` (available, no
-  key) and `app/main.ts` wires `adapters/model/fake/` instead of the AI SDK adapter. It builds
-  on the AI SDK's mock language model, so streaming and usage have the real shapes.
+- The backend accepts `FAKE_MODEL=1`; the catalog then exposes `fake:scripted` and
+  `fake:effort` (both available with no key, `domain-model.md` §4) next to the entries of
+  `config/models.yaml`, and `app/main.ts` wires `adapters/model/fake/` instead of the AI SDK
+  adapter for both. It builds on the AI SDK's mock language model, so streaming and usage have
+  the real shapes. `fake:effort` has efforts, so the Create page's effort menu and a clone to
+  another model can be tested end to end.
+- **Fake mode does not depend on the developer's keys** (M2 spec gap pass, owner 2026-11-01).
+  The test setup (Vitest and the Playwright servers) clears every `*_API_KEY` variable, so the
+  real catalog entries are always unavailable and grey in tests, whatever `.env` holds.
+  Provider tools are tested in service tests with a test catalog, not end to end.
 - The fake reads a **script** keyed by bot slug from `backend/test/fixtures/fake-scripts/*.yaml`:
 
   ```yaml

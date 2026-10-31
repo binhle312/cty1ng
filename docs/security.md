@@ -83,7 +83,7 @@ environment, provider-side data handling.
 
 | Upload | Accepted | Checks |
 | --- | --- | --- |
-| Avatar | PNG, JPEG, WebP ≤ 2 MB | Detect type from content (`sharp`), reject others incl. SVG; strip metadata; re-encode to 256×256 WebP; store by SHA-256 |
+| Avatar | PNG, JPEG, WebP; the file ≤ `AVATAR_MAX_BYTES` (default 2 MB), the whole multipart request ≤ `AVATAR_MAX_BYTES` + 64 KB for the part headers and boundaries; either one over gets 413 `too_large` (M2 spec gap pass, owner 2026-11-01) | Detect type from content (`sharp`), reject others incl. SVG; refuse an image over 25 million pixels before it is decoded (`limitInputPixels`, fixed); strip metadata; re-encode to 256×256 WebP; store by SHA-256. The size limit is an environment variable (`architecture.md` §8) and `GET /avatars/limits` gives it to the page; the accepted types, the pixel limit and the output size are fixed security rules. Unused files: `domain-model.md` §2 Avatar files |
 | Attachment | Text (`.md .txt .csv .json .yaml .html .css .js .ts .py .sql .xml .svg`), images, PDF; 10 files × 10 MB | Sanitised file name; saved under `attachments/<yyyy-mm-dd>-<conversation-slug>/` (D52); SVG and HTML are only ever shown as text |
 | Skill zip | `.zip` ≤ 5 MB, ≤ 200 entries, ≤ 20 MB uncompressed (every entry, by the size its header states), a `SKILL.md` ≤ 1 MB uncompressed | `POST /skills/import/preview` has its own two limits in place of the 1 MB JSON limit (§2.7): the zip file part ≤ 5 MB, and the whole multipart request ≤ 5 MB + 64 KB for the part headers and boundaries; either one over gets 413. Every other route keeps its own limit (1 MB JSON, and the avatar and attachment limits in this table). Reject entries with absolute paths or `..` (zip slip); only `<slug>/SKILL.md` read, every other file is listed as skipped and never opened; the total is checked from the entry headers before any entry is opened, a `SKILL.md` over 1 MB is not read and its row is invalid, and the reader stops an entry that grows past the size its header states, so a zip bomb is never fully unpacked (M1 plan, decision 2: this replaces a 100:1 ratio limit, which refused valid repetitive Markdown); UTF-8 only; YAML parsed with the `yaml` package's default core schema (no custom tags); frontmatter validated by a Zod schema |
 
@@ -255,6 +255,10 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (�
   name refuses the whole preview). The
   check runs in the skill service, so no path can skip it. M1 builds the pattern rules in
   `core/` as pure functions; M3 uses them for messages.
+- Bots the owner writes are checked too (M2 spec gap pass, owner 2026-11-01): the name,
+  description and persona on `POST /bots` (also a clone) and `PATCH /bots/{id}`, and the seed.
+  The persona reaches every run, as a skill does. A match is refused with no override (422
+  `sensitive_data`); the check runs in the bot service.
 - Auto titles (D46): a first message with matches ("Send anyway") gets no title request. The
   guard also checks the model's title; a match keeps "New conversation".
 - Pattern-based and incomplete by nature: a warning, not a guarantee. Images and PDFs are not
@@ -308,7 +312,9 @@ computer (owner, 2026-10-28):
   an approved copy, which the app does: after a `propose_copy` that is pending, rejected or
   cancelled, the destination Library has no new commit and no new file.
 - Avatar: SVG rejected; PNG with a renamed `.jpg` accepted and re-encoded; polyglot file
-  rejected or neutralised; > 2 MB rejected.
+  rejected or neutralised; a file of exactly `AVATAR_MAX_BYTES` passes and one byte more gets
+  413, a request over `AVATAR_MAX_BYTES` + 64 KB gets 413 (tests set the variable); an image over
+  25 million pixels is refused before it is decoded.
 - Zip: entry `../../x` rejected; absolute path rejected; zip bomb (over 20 MB in all) rejected; a `SKILL.md` over 1 MB is an invalid row and is not read; more than 200 entries rejected; a zip of exactly 5 MB in a multipart request passes the import route, a zip of 5 MB + 1 byte gets 413, and a JSON body over 1 MB on a JSON route still gets 413.
 - API responses never contain the value of any `*_API_KEY` (a test sets a sentinel key and
   scans every endpoint's output).
