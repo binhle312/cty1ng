@@ -44,7 +44,7 @@ Step 2 of 4.                                              Back   Next / Create
 | --- | --- |
 | Name | 1–32 characters, counter "12 / 32". Hint: "A short role name. You see it in the header, in mentions and in the status." Unique among bots, Trash included; upper and lower case are the same |
 | Description | 1–160 characters, a 3-line box, counter. Hint: "What the bot does and when to ask it, in one line. Other bots read it to choose who helps." (D18) |
-| Avatar style | 4 cards: **Flat** (default), Jelly, Pixel, + Upload image. The cards show the chosen colour. Upload uses the crop card (`bot-avatar.md` §6; upload rules in `../../security.md` §2.4) |
+| Avatar style | 4 cards: **Flat** (default), Jelly, Pixel, + Upload image. Until a slice draws Jelly and Pixel (`bot-avatar.md` §1), only Flat and Upload image show (M2). The cards show the chosen colour. Upload uses the crop card (`bot-avatar.md` §6; upload rules in `../../security.md` §2.4) |
 | Colour | The colour row of `bot-avatar.md` §5: 10 swatches from the theme, **Custom** and **Random**. The default is a random swatch that no other bot uses. Used colours are not shown |
 
 ### Step 2 · Persona (CS2)
@@ -68,8 +68,9 @@ bodies, no paging). The search filters in the browser.
 
 In this order:
 
-1. **Model** menu, grouped by provider. A model with no API key is grey with the reason and an
-   "Add a key" link to Settings. **Effort** menu, only when the model has efforts, set to
+1. **Model** menu, grouped by provider. A model with no API key is grey with the reason ("API
+   key not set: {ENV_NAME}") and cannot be picked. M5 adds an "Add a key" link to Settings →
+   Models; M2 has no link (M2 spec gap pass, owner 2026-11-01). **Effort** menu, only when the model has efforts, set to
    `default_effort`. Note under both: "You cannot change the model or the effort after you
    create the bot. To use another one later, clone the bot." (D7)
 2. **Tools** (§3).
@@ -103,7 +104,7 @@ Internal tools (phase 1):
 | Tool | Line | When off |
 | --- | --- | --- |
 | Files | List, read and write files in the Library (the project's, or Home) | The bot only talks. View images and Hand off turn off too |
-| View images | Look at PNG, JPEG and WebP files in the Library | Grey and off when the model does not read images (catalog flag `reads_images`) |
+| View images | Look at PNG, JPEG and WebP files in the Library | Grey and off when the model does not read images (catalog flag `multimodal`) |
 | Skills | Load a skill when it needs one. Draft a new skill for you to approve | Only skills set to Always load reach the bot |
 | Hand off | Ask you to pass files to another bot | |
 | Memory | Remember and update facts, with Undo | The bot still reads memory, but cannot save |
@@ -159,11 +160,11 @@ job (D55).
 
 | Card | When | What the owner sees |
 | --- | --- | --- |
-| E1 | A field is wrong | A red message under the field, with the fix in the words. A size error shows at once (the counter turns red). A taken name shows when the owner leaves the field, checked against the bot list that the page has. An empty required field shows after Next. Next stays on: a click with errors keeps the owner on the step and moves focus to the first error |
+| E1 | A field is wrong | A red message under the field, with the fix in the words. A size error shows at once (the counter turns red). A taken name shows when the owner leaves the field, checked against the bot list that the page has. This check is only a hint: names in Trash stay taken but are not in that list, so the server's 409 `name_taken` on Create is the real check and shows under Name on step 1 as an E3 error: "{name} is taken by another bot, maybe one in Trash. Pick another name." (M2 spec gap pass, owner 2026-11-01) An empty required field shows after Next. Next stays on: a click with errors keeps the owner on the step and moves focus to the first error |
 | E2 | Persona over the limit | The owner can keep typing (nothing is cut). "Too long by {n} characters. Move long procedures into a skill." Empty: "Write a persona. The bot needs it to work." after Next |
 | E3 | The server finds problems on Create | Nothing is created and the input stays. Steps with a problem get a red "!" in the stepper; their preview sections get a red (!) icon. A click opens that step, where the message is under the field. Create is off (40 %) until they are fixed |
 | E4 | Sending | Create is off with a spinner and "Creating". Back is off and the form is read-only. The preview card has no current section and no Edit links; its pill says Creating. A double click sends one request |
-| E5 | Create failed (no connection, server error) | A red banner under the stepper: "Could not create the bot. The app could not reach the server. Your input is kept." and Try again. No stack trace and no internal text. Try again sends the same request with the same retry key, so a retry never makes two bots (`../../api.md` §4) |
+| E5 | Create failed (no connection, server error) | A red banner under the stepper: "Could not create the bot. The app could not reach the server. Your input is kept." and Try again. No stack trace and no internal text. Try again sends the same request with the same retry key, so a retry never makes two bots (`../../api.md` §4). Until the outcome is known, the page keeps that request as sent and the form stays read-only: Try again resends it unchanged, so an edit cannot ride on the old key. When the answer comes, a bot that was created opens as after Create; an input error unlocks the form, and the next Create is a new request with a new key (`../../domain-model.md` §2 Idempotency; M2 spec gap pass, owner 2026-11-01) |
 | E6 | Leave with input | Cancel, ← Back, the rail or a header bot opens "Leave without creating? {name} is not created. What you typed in the 4 steps is lost." with Stay and **Leave** (`danger`). Esc = Stay. With nothing typed, the owner leaves at once. No draft is saved. The browser's own question covers a closed tab or a reload |
 
 The limits (name 32, description 160, persona 8,000, history 10–80 %) are settings with these
@@ -189,11 +190,29 @@ that cannot run) opens this page filled from `GET /bots/{id}/clone-template` (UI
 - The name follows the clone name rule (`../../domain-model.md` §2): cut to fit the name limit,
   and "(copy 2)", "(copy 3)" when the name is taken.
 - Cancel or Leave creates nothing (E6).
-- **CL2, the model is gone.** For a bot that cannot run because its model is no longer offered,
+- **CL2, the model is gone.** For a bot that cannot run because its model is no longer offered (removed from the catalog),
   the banner says "{name} cannot run: its model is no longer offered. Pick a new model.
   Everything else is copied." The Model field starts empty with the error under it ("{model} is
   no longer offered. Pick another model."), step 4 has the red "!" and the preview Model section
   the red (!) (E1, E3). Effort is off until a model is picked. The Tools list shows only internal
   tools until then. Create is at 40 % until a model is picked.
-- **A skill version in Trash** (D49): that skill row on step 3 shows the red "!", and the owner
-  picks another version or unticks it.
+- **The model has no API key** (M2 spec gap pass, owner 2026-11-01). The Model field keeps the
+  model, shown grey as unavailable, with the error "API key not set: {ENV_NAME}. Set it and
+  restart the app, or pick another model." Step 4 has the red "!", and Create is at 40 % until
+  the key is set (after a restart the page sees it) or the owner picks another model. Only a
+  model that is gone from the catalog empties the field.
+- **A skill in Trash** (D49): Trash holds the whole skill, not one version. That skill row on
+  step 3 shows the red "!" and "This skill is in Trash. Untick it, or restore the skill first."
+  Create checks every ticked skill again on the server (E3).
+- **A deprecated skill** that the source bot uses stays ticked on step 3 with the Deprecated
+  pill, and the owner can untick it. It is not in the list for new picks. The server accepts it
+  only as a copy of the source bot's pin (`../../domain-model.md` §2 Clone of a deprecated pin).
+
+## 7. URLs (M2 spec gap pass, owner 2026-11-01)
+
+| URL | Opens |
+| --- | --- |
+| `/bots/new` | This page, step 1 |
+| `/bots/new?from={bot id}` | Clone of that bot (§6). A bot in Trash, purged or unknown shows "The app could not find the bot to copy." with **← Back**; a load failure shows "The app could not load the bot to copy." with **Try again** |
+
+`new` is a reserved slug (`../../domain-model.md` §2 Slug).

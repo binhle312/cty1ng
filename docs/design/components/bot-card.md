@@ -22,6 +22,10 @@ divided by 1 px `outline-strong` lines:
 3. **Actions:** **Message** (opens the owner's one 1:1 with this bot, creating it the first time)
    and **Add here** (adds the bot to the open conversation; the keyboard and touch alternative to
    dragging; greyed with the reason, such as "Already here", when it cannot).
+   **M2** hides both actions: there are no conversations yet. M3 adds Message and Add here;
+   Add here then follows the one-bot limit of M3 (greyed with the reason when the conversation
+   already has a bot), and M4 brings several members and the history choice (M2 spec gap pass,
+   owner 2026-11-01).
 
 ## 2. Status row by state
 

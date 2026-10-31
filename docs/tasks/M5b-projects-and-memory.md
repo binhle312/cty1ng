@@ -44,7 +44,9 @@ can move into a project and take its conversation memory with it.
 - **Trash** (D62): the Trash page, Restore and Delete per row and for several rows, the restore
   dialogs for a skill and a bot, `place_in_trash`, the Undo toast held for `undo_seconds`, Trash
   in the user panel menu with its count. Remove the temporary CLI commands `skills trash` and
-  `skills restore` that M1 added (`api.md` §2), with their tests and the `api.md` lines; the
+  `skills restore` that M1 added, and `bots trash` and `bots restore` that M2 added (`api.md`
+  §2), with their tests and the `api.md` lines; the restore dialog of a skill uses
+  `restore_suggestion` on `POST /skills/{id}/bots` (`domain-model.md` §3.4); the
   Trash page replaces them (owner, 2026-10-30). The skill delete toast's **Trash** becomes a
   link (`skills-page.md` §11).
 - **Purge job** (D49, D50, D60, D62): at start and every `PURGE_INTERVAL_HOURS` (default 24),

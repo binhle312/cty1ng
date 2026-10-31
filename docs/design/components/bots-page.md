@@ -58,7 +58,7 @@ click on the status line opens the list of its conversations, not the bot page.
 | Item | Action |
 | --- | --- |
 | Details | Opens the bot page (the same as a click on the card) |
-| Message | Opens the owner's one 1:1 conversation with this bot (creates it the first time) |
+| Message | Opens the owner's one 1:1 conversation with this bot (creates it the first time). Hidden in M2, with the divider before Clone; M3 adds it (M2 spec gap pass, owner 2026-11-01) |
 | — divider — | |
 | Clone | Opens the Create page filled from this bot, on step 4 (`create-bot-page.md` §6) |
 | — divider — | |
@@ -68,6 +68,10 @@ M5d adds **Improve** after Message (D51). It is always there, also below the off
 
 The menu has no Pin, Unpin or Move items. Pin and unpin are the corner badge; reorder is a drag or
 Alt+← and Alt+→ on a focused pinned card.
+
+**M2 data** (no conversations or runs yet): the numbers show real skill counts and "↑{n}",
+and 0 projects and 0 conversations; the status is "Idle · no activity yet"; the health line can
+only be "Cannot run" or "Uses a deprecated skill" (M2 spec gap pass, owner 2026-11-01).
 
 ## 4. Health (S7)
 

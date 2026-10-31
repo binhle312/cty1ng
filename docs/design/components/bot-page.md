@@ -11,6 +11,19 @@
 A click on a card on the Bots page opens the bot in the **edit layout** (L1). The URL is
 `/bots/{slug}`, so a link or a reload opens the same bot.
 
+**URLs (M2 spec gap pass, owner 2026-11-01).** A reload keeps the bot and the tab:
+
+| URL | Opens |
+| --- | --- |
+| `/bots` | The grid (`bots-page.md`), or its empty state |
+| `/bots/{slug}` | That bot, Profile tab. `?tab=skills`, `?tab=model`, `?tab=activity` or `?tab=usage` (Usage adds its view and range, §9.1); `?tab=memory` from M5b |
+| `/bots/new`, `/bots/new?from={bot id}` | The Create page and Clone (`create-bot-page.md` §7) |
+
+The page finds the bot id from the slug in the `GET /bots` list; the API takes ids. A slug that
+is unknown or belongs to a bot in Trash shows "The app could not find this bot. It may be in
+Trash." with **← Back** (M2: the restore is the temporary CLI, `../../api.md` §2). A list that
+does not load shows "The app could not load the bots." with **Try again**, never Page not found.
+
 ## 1. Edit layout (E1–E3)
 
 ```
@@ -53,6 +66,9 @@ draft of a skill that this bot has shows "Draft v{N} waiting" on its Skills tab 
 
 There is no numbers row: the Skills and Activity tabs show the counts.
 
+**M2 (no conversations yet):** **Message** is hidden, here and in the ⋯ menu; M3 adds it (M2
+spec gap pass, owner 2026-11-01).
+
 A bot that **cannot run** (no API key, model not in the catalog) shows a banner under the top
 with the reason and **Clone** (UI-6.2). Clone then opens with the model field empty (CL2,
 `create-bot-page.md` §6).
@@ -69,6 +85,9 @@ The tabs follow the Create steps, then the parts Create does not have. Each tab 
 | **Memory** | The bot's memory (D38), the Memory page list filtered to this bot. Designed with the Memory page (M5b) | — |
 | **Activity** | Count of conversations (§8) | — |
 | **Usage** | How well the bot works: tiles, then three views Results, Changes, Causes (§9) | — |
+
+In M2 the Memory tab is hidden (it comes with M5b), and the Usage tab shows only its empty state
+(§9.6) until M3 brings runs (M2 spec gap pass, owner 2026-11-01).
 
 ## 4. Profile tab (PR1, approved 2026-10-24)
 
@@ -105,6 +124,14 @@ there, so it never jumps.
   counter turns red over its limit.
 - A save that fails on the server keeps the text, and a toast says "Could not save BA. Try
   again."
+- **Conflicts (M2 spec gap pass, owner 2026-11-01), as on the Skills page**
+  (`skills-page.md`, "Texts added in the M1b build"). A save that the server refuses as stale
+  (409 `stale_write`): the page loads the newest values at once, keeps the owner's edits, and
+  the save bar says "BA changed in another place. Your changes are kept here. Copy what you
+  need, then Discard to load the new values." Save is off until Discard. The same text shows
+  when an event says the bot changed while this tab has unsaved changes; a tab with no changes
+  takes the new values at once. A name taken meanwhile (409 `name_taken`) shows under Name.
+  Text typed while a Save is pending stays as a change after it.
 - **Leave with unsaved changes** (Discard, Esc, ← Back, another bot, tab or page) asks first,
   with the dialog of `project-settings-page.md` §5: **Leave without saving? 👀**, a text that
   names the changed fields, **Stay on this page** (`primary`, default) and **Let them go**
@@ -144,6 +171,11 @@ Changes use the save bar (§4.1) and apply from the next run.
 | SK3 Upgrade | Dialog: the changelog line of each newer version, newest first; then the diff from the used version to the new one in the skill History colours (added green, removed red with a strike). **Body** and **Description** tabs, and a line when the other tab has changes too. **Upgrade to v5** is the default button. Words say "uses v3", never "pins" |
 | SK4 Change version | Lists every version, newest first, with its changelog line and local time (`time-format.md`). ✓ and "BA uses this" mark the current one; "latest" in green. A pick opens the SK3 dialog for that version ("Move Write user stories to v2?", **Use v2**). Going back keeps the "v5 available" link. A deprecated skill can change to any version that exists |
 
+**A pin that changed in another place** (M2 spec gap pass, owner 2026-11-01). Each Skills tab
+change sends the pin as the tab saw it (`../../api.md` §4). When the server refuses it as stale,
+the tab loads the newest pins, keeps no change, and a toast says "{skill} changed in another
+place. Check it and try again." Remove of a skill that is already gone just takes the row away.
+
 ## 8. Activity tab (CH1)
 
 Every conversation the bot is in (UI-6.7). Columns: **Conversation** (a link), the other bots,
@@ -155,8 +187,9 @@ active** (the bot's last reply or run there, `time-format.md`).
   Project A to Z (blank projects last), Status most urgent first, Last active newest first (the
   default).
 - The 1:1 conversation is a normal row. No filters in M2.
-- Empty: "BA is in no conversations yet. Message BA, or drag it from the header into a
-  conversation."
+- Empty, by slice (M2 spec gap pass, owner 2026-11-01): M2 "BA is in no conversations yet.";
+  M3 adds "Message BA to start one."; M4 adds "or drag it from the header into a
+  conversation." Each slice changes the text when it builds that action.
 
 ## 9. Usage tab (UV1–UV5, W1–W3, approved 2026-10-24)
 

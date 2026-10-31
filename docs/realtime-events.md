@@ -152,11 +152,13 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `handoff.decided` | yes | `{handoff}` | approve / changes / reject / stale |
 | `skill_draft.created` | yes | `{skill_draft}` | a bot proposed a skill (D41) |
 | `skill_draft.decided` | yes | `{skill_draft}` | approved / rejected / stale; an approval also emits `skill.created` or `skill.updated`; a new version or a deprecate of the skill marks its pending edit drafts stale and emits one event per draft (D64) |
-| `bot.created` / `bot.updated` / `bot.deleted` | yes | `{bot}` | bot CRUD, avatar, pins |
+| `bot.created` / `bot.updated` / `bot.deleted` | yes | `{bot}` | bot CRUD, avatar, skill pins (also pins that a skill endpoint moves or removes: the upgrade and assign cards, deprecate, skill Trash; one event per bot); `bot.deleted` is the move to Trash (D50) |
+| `bot.restored` | yes | `{bot}` | the bot came back from Trash, not pinned (D50; the temporary CLI in M2, the Trash page from M5b) |
+| `bot.purged` | yes | `{bot_id}` | the purge turned the bot into a tombstone (D50); it leaves the Trash list |
 | `bots.reordered` | yes | `{pinned_bot_ids}` | pinned list saved: pin, unpin or reorder (`PUT /bots/pins`); the header and the Bots page follow at once |
 | `skill.created` / `skill.updated` / `skill.deprecated` | yes | `{skill}` | skill CRUD: create (also a clone and an import), rename, new version, version restore, undeprecate (`skill.updated`), deprecate |
 | `skill.trashed` / `skill.purged` | yes | `{skill_id}` | the skill went to Trash, or was purged from it (D49); the skill leaves every list |
-| `skill.restored` | yes | `{skill}` | the skill came back from Trash, still deprecated (D49) |
+| `skill.restored` | yes | `{skill}` | the skill came back from Trash, still deprecated (D49). On any `skill.*` event the client also refreshes the bot list, because bot data comes from skills: the skill count, "↑n" and the "Uses a deprecated skill" health line (M2 spec gap pass, owner 2026-11-01) |
 | `settings.updated` | yes | `{settings}` | global settings changed |
 | `spend.threshold_crossed` | yes | `{threshold_pct, today_spend_usd, cap_usd, provider}` | today's spend crossed 75%, 90% or 100% of the total cap (`provider` null) or of one provider's cap (D40, D42); once per threshold per cap per day |
 | `project.created` / `project.updated` / `project.deleted` / `projects.reordered` | yes | `{project}` or `{pinned_project_ids}` | project CRUD, pin and reorder, conversation moved (D37); a move also emits `conversation.updated` |
@@ -164,7 +166,7 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `memory.seen` | yes | `{scope, id}` | the owner opened a place on the Memory page; New tags and the place dot go away (D38) |
 | `memory.restored` | yes | `{memory_item}` | an item came back from Trash or an earlier version was restored (D62) |
 | `memory_proposal.updated` | yes | `{proposal}` | a Tidy or memory check card changed status: requested, ready, failed, stopped, applied, discarded, replaced (D63) |
-| `trash.changed` | yes | `{counts: {[kind]: number}}`, one count per Trash kind that exists (M1: `{skill: n}`) | an item went into Trash or left it (restore, Delete, purge), next to the item's own event (`skill.restored`, `conversation.updated`, `memory.restored`, …) (D62); drives the user panel Trash count and the Trash page |
+| `trash.changed` | yes | `{counts: {[kind]: number}}`, one count per Trash kind that exists (M1: `{skill: n}`; M2 adds `bot`) | an item went into Trash or left it (restore, Delete, purge), next to the item's own event (`skill.restored`, `conversation.updated`, `memory.restored`, …) (D62); drives the user panel Trash count and the Trash page |
 | `test.ping` | yes | `{note}` | **test only**: `POST /api/_test/events`, mounted only when `APP_ENV=test` and left out of the OpenAPI schema, so the generated client never has it |
 
 Adding an event type: add it here first, then to the backend `EventType` enum and the frontend

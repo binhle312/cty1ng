@@ -444,8 +444,10 @@ invalid), plus `config/models.yaml`.
 | `EVENT_PRUNE_INTERVAL_HOURS` | `24` | How often the event pruning job runs; it also runs at start (§6.1). A positive integer |
 | `IMPORT_PREVIEW_MINUTES` | `15` | How long the server keeps a skill import preview in memory (`domain-model.md` §3.5) |
 | `IMPORT_PREVIEW_MAX` | `5` | Previews kept at once; a new one drops the oldest |
+| `AVATAR_MAX_BYTES` | `2097152` | Largest avatar file (2 MB); the whole upload request may be 64 KB more (`security.md` §2.4). A positive integer |
+| `AVATAR_ORPHAN_HOURS` | `24` | An avatar file that no bot row names is deleted by the purge job once it is older than this (`domain-model.md` §2 Avatar files). A positive integer |
 | `APP_ENV` | `dev` | `dev`, `test` or `prod`: app behaviour (OpenAPI docs page only in `dev`, test routes only in `test`) |
-| `FAKE_MODEL` | `0` | `1` wires the fake model and the `fake:scripted` catalog entry (`testing.md` §2) |
+| `FAKE_MODEL` | `0` | `1` wires the fake model and the `fake:scripted` and `fake:effort` catalog entries (`testing.md` §2) |
 | `LOG_LEVEL` | `info` | A Pino level: `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
 | `<PROVIDER>_API_KEY` | none | Names referenced by `config/models.yaml` |
 
