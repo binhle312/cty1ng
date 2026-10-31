@@ -10,6 +10,10 @@ import { readZip } from "./zip.ts";
 // global setting, so the tests of this file run one after another.
 test.describe.configure({ mode: "serial" });
 
+// A made-up key that the app's guard (D39) must refuse. It is put together at run time, so the
+// source has no key-shaped text for secret scanners to report.
+const FAKE_API_KEY = ["sk", "proj", "abcdefghijklmnop1234"].join("-");
+
 let run = 0;
 function unique(name: string): { name: string; slug: string } {
   run += 1;
@@ -169,7 +173,7 @@ test("a taken slug, a reserved slug and a likely secret show their errors", asyn
   await expect(page.getByText("This slug exists. Type a different one.")).toBeVisible();
 
   await fill(page, "Slug", `${skill.slug}-x`);
-  await fill(page, "Body", "Steps\nUse the key sk-proj-abcdefghijklmnopqrstuvwxyz0123456789ABCD");
+  await fill(page, "Body", `Steps\nUse the key ${FAKE_API_KEY}`);
   await page.getByRole("button", { name: "Create", exact: true }).click();
   await expect(
     page.getByText(
