@@ -4,7 +4,7 @@ import { Button } from "../../components/ui/button.tsx";
 import { Checkbox } from "../../components/ui/checkbox.tsx";
 import { Skeleton, SkeletonArea } from "../../components/ui/skeleton.tsx";
 import { showToast } from "../../components/ui/toast.tsx";
-import { Tooltip } from "../../components/ui/tooltip.tsx";
+import { TimeText } from "../../components/ui/time-text.tsx";
 import {
   getSkillDiffOptions,
   listSkillVersionsOptions,
@@ -13,7 +13,6 @@ import {
 import type { ListSkillVersionsResponse } from "../../lib/api/generated/types.gen.ts";
 import { apiErrorText } from "../../lib/api/api-error.ts";
 import { cn } from "../../lib/cn.ts";
-import { formatFullTime, formatTime } from "../../lib/time-format.ts";
 import { DiffView } from "./diff-view.tsx";
 import { VersionPill } from "./pills.tsx";
 import type { SkillRow } from "./skill-queries.ts";
@@ -157,43 +156,52 @@ function VersionItem({
   onPick: () => void;
 }) {
   const who = skill.is_author && version.created_by === skill.author_id ? "You" : "Another author";
-  const content = (
-    <span className="flex min-w-0 grow flex-col gap-0.5 text-left">
-      <span className="flex items-start gap-2">
-        <VersionPill version={version.version} />
-        <span className="min-w-0 grow">
-          {version.changelog ?? (version.version === 1 ? "First version" : "No note")}
-        </span>
+  const head = (
+    <span className="flex min-w-0 grow items-start gap-2 text-left">
+      <VersionPill version={version.version} />
+      <span className="min-w-0 grow">
+        {version.changelog ?? (version.version === 1 ? "First version" : "No note")}
       </span>
+    </span>
+  );
+  // The row's control covers the whole row (its ::after), so a click anywhere picks the
+  // version. The time sits above it and is outside the control, so it can take focus for its
+  // tooltip.
+  const cover = "after:absolute after:inset-0 after:rounded-control";
+  return (
+    <div
+      className={cn(
+        "relative flex flex-col gap-0.5 rounded-control border border-transparent px-3 py-2 hover:bg-surface-raised",
+        (selected || ticked) && "border-primary bg-primary-tint hover:bg-primary-tint",
+      )}
+    >
+      {comparing ? (
+        <Checkbox checked={ticked} onChange={onPick} className={cover}>
+          {head}
+        </Checkbox>
+      ) : (
+        <button
+          type="button"
+          aria-pressed={selected}
+          className={cn(
+            "flex w-full outline-none focus-visible:after:outline-2 focus-visible:after:outline-primary",
+            cover,
+          )}
+          onClick={onPick}
+        >
+          {head}
+        </button>
+      )}
       <span className="flex gap-2 text-sm text-on-surface-muted">
         <span className="grow">
-          {who} ·{" "}
-          <Tooltip label={formatFullTime(version.created_at)} side="top">
-            <time dateTime={version.created_at}>{formatTime(version.created_at, new Date())}</time>
-          </Tooltip>
+          {who} · <TimeText iso={version.created_at} className="relative z-10" />
         </span>
         {version.version === latest && <span>latest</span>}
         {version.bots_using > 0 && (
           <span>{version.bots_using === 1 ? "1 bot" : `${String(version.bots_using)} bots`}</span>
         )}
       </span>
-    </span>
-  );
-  const frame = cn(
-    "flex w-full gap-2 rounded-control border border-transparent px-3 py-2 hover:bg-surface-raised",
-    (selected || ticked) && "border-primary bg-primary-tint hover:bg-primary-tint",
-  );
-  if (comparing) {
-    return (
-      <Checkbox checked={ticked} onChange={onPick} className={frame}>
-        {content}
-      </Checkbox>
-    );
-  }
-  return (
-    <button type="button" aria-pressed={selected} className={frame} onClick={onPick}>
-      {content}
-    </button>
+    </div>
   );
 }
 

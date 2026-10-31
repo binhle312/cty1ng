@@ -14,4 +14,5 @@ them without a decision.
 | `checkbox.tsx` | The check box of `buttons.md` §5, with an optional label |
 | `tabs.tsx` | Tabs with the 2 px `primary` underline |
 | `toast.tsx` | Toasts: `showToast(text)` and the one `Toaster` in the shell |
+| `time-text.tsx` | A time with its full time in a tooltip, from hover or keyboard focus |
 | `markdown.tsx` | Safe Markdown: no raw HTML, safe links only, no images loaded (`docs/security.md` §2.2) |
