@@ -31,8 +31,9 @@ export function Checkbox({
       onCheckedChange={(next) => {
         onChange(next);
       }}
+      // `relative z-10` keeps the box above a label that covers its row with ::after (History).
       className={cn(
-        "flex size-3.5 shrink-0 items-center justify-center rounded-xs border border-outline-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary data-checked:border-primary data-checked:bg-primary data-disabled:border-outline data-disabled:bg-surface-raised data-disabled:opacity-50",
+        "relative z-10 flex size-3.5 shrink-0 items-center justify-center rounded-xs border border-outline-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary data-checked:border-primary data-checked:bg-primary data-disabled:border-outline data-disabled:bg-surface-raised data-disabled:opacity-50",
         children === undefined && className,
       )}
     >
