@@ -43,4 +43,26 @@ describe("SKILL.md", () => {
     const skill = { slug: "a", description: "Use when: the owner asks # for it", bodyMd: "# A\n" };
     expect(parseSkillMd(serialiseSkillMd(skill))).toEqual(skill);
   });
+
+  // Review of PR #52: the parser trimmed the description and every leading blank line of the
+  // body, so an untouched export imported as `changed`.
+  it("round-trips a description with outer spaces and a body that starts with blank lines", () => {
+    const skill = { slug: "a", description: " Use it. ", bodyMd: "\n\n# A\n" };
+    expect(parseSkillMd(serialiseSkillMd(skill))).toEqual(skill);
+  });
+
+  // Review of PR #52: the parser turned CRLF into LF in the body too.
+  it("keeps CRLF line endings in the body and the description", () => {
+    const skill = {
+      slug: "a",
+      description: "Line one\r\nline two",
+      bodyMd: "\r\n# A\r\n\r\n1. Do it.\r\n",
+    };
+    expect(parseSkillMd(serialiseSkillMd(skill))).toEqual(skill);
+    expect(parseSkillMd("---\r\nname: a\r\ndescription: d\r\n---\r\n\r\nx\r\ny")).toEqual({
+      slug: "a",
+      description: "d",
+      bodyMd: "x\r\ny",
+    });
+  });
 });

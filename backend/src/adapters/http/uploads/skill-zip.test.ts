@@ -86,6 +86,19 @@ describe("readSkillZip", () => {
     expect(await failureOf(readSkillZip(zip))).toMatchObject({ code: "too_large" });
   });
 
+  // Review of PR #52: a directory entry skipped the count, whatever size its header stated.
+  it("counts a directory entry's stated size toward the 20 MB", async () => {
+    const zip = await zipOf([
+      { path: "notes/SKILL.md", data: "---\nname: notes\n---\n" },
+      { path: "notes/big", data: Buffer.alloc(SKILL_ZIP.maxTotalUncompressedBytes, 0) },
+    ]);
+    const asDirectory = Buffer.from(
+      zip.toString("latin1").replaceAll("notes/big", "notes/bi/"),
+      "latin1",
+    );
+    expect(await failureOf(readSkillZip(asDirectory))).toMatchObject({ code: "too_large" });
+  });
+
   it(`refuses a zip with more than ${String(SKILL_ZIP.maxEntries)} entries`, async () => {
     const files = Array.from({ length: SKILL_ZIP.maxEntries + 1 }, (_, index) => ({
       path: `notes/f${String(index)}.txt`,
