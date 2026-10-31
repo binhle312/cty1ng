@@ -2,10 +2,10 @@
 
 import * as z from 'zod';
 
-import type { Client, ClientMeta, Options as Options2, RequestResult, ServerSentEventsResult, TDataShape } from './client';
+import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type ServerSentEventsResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetHealthData, GetHealthErrors, GetHealthResponses, GetStreamData, GetStreamResponse, GetStreamResponses } from './types.gen';
-import { zGetHealthResponse, zGetStreamHeaders, zGetStreamResponse } from './zod.gen';
+import type { ApplySkillImportData, ApplySkillImportResponses, CreateSkillData, CreateSkillResponses, CreateSkillVersionData, CreateSkillVersionResponses, DeleteSkillData, DeleteSkillResponses, DeprecateSkillData, DeprecateSkillResponses, ExportSkillsData, ExportSkillsResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetSettingsData, GetSettingsResponses, GetSkillData, GetSkillDiffData, GetSkillDiffResponses, GetSkillResponses, GetSkillVersionData, GetSkillVersionResponses, GetStreamData, GetStreamResponse, GetStreamResponses, ListSkillsData, ListSkillsResponses, ListSkillUpgradeCandidatesData, ListSkillUpgradeCandidatesResponses, ListSkillVersionsData, ListSkillVersionsResponses, PreviewSkillImportData, PreviewSkillImportResponses, RenameSkillData, RenameSkillResponses, RestoreSkillData, RestoreSkillResponses, RestoreSkillVersionData, RestoreSkillVersionResponses, TrashSkillData, TrashSkillResponses, UndeprecateSkillData, UndeprecateSkillResponses, UpdateSettingsData, UpdateSettingsResponses } from './types.gen';
+import { zApplySkillImportBody, zApplySkillImportResponse, zCreateSkillBody, zCreateSkillResponse, zCreateSkillVersionBody, zCreateSkillVersionPath, zCreateSkillVersionResponse, zDeleteSkillPath, zDeleteSkillResponse, zDeprecateSkillBody, zDeprecateSkillPath, zDeprecateSkillResponse, zExportSkillsQuery, zExportSkillsResponse, zGetHealthResponse, zGetSettingsResponse, zGetSkillDiffPath, zGetSkillDiffQuery, zGetSkillDiffResponse, zGetSkillPath, zGetSkillResponse, zGetSkillVersionPath, zGetSkillVersionResponse, zGetStreamHeaders, zGetStreamResponse, zListSkillsQuery, zListSkillsResponse, zListSkillUpgradeCandidatesPath, zListSkillUpgradeCandidatesResponse, zListSkillVersionsPath, zListSkillVersionsResponse, zPreviewSkillImportBody, zPreviewSkillImportResponse, zRenameSkillBody, zRenameSkillPath, zRenameSkillResponse, zRestoreSkillPath, zRestoreSkillResponse, zRestoreSkillVersionBody, zRestoreSkillVersionPath, zRestoreSkillVersionResponse, zTrashSkillBody, zTrashSkillPath, zTrashSkillResponse, zUndeprecateSkillBody, zUndeprecateSkillPath, zUndeprecateSkillResponse, zUpdateSettingsBody, zUpdateSettingsResponse } from './zod.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -29,6 +29,267 @@ export const getHealth = <ThrowOnError extends boolean = false>(options?: Option
     }).parseAsync(data),
     responseValidator: async (data) => await zGetHealthResponse.parseAsync(data),
     url: '/api/health',
+    ...options
+});
+
+export const getSettings = <ThrowOnError extends boolean = false>(options?: Options<GetSettingsData, ThrowOnError>): RequestResult<GetSettingsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetSettingsResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: z.never().optional(),
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetSettingsResponse.parseAsync(data),
+    url: '/api/settings',
+    ...options
+});
+
+export const updateSettings = <ThrowOnError extends boolean = false>(options: Options<UpdateSettingsData, ThrowOnError>): RequestResult<UpdateSettingsResponses, unknown, ThrowOnError> => (options.client ?? client).patch<UpdateSettingsResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zUpdateSettingsBody,
+        path: z.never().optional(),
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zUpdateSettingsResponse.parseAsync(data),
+    url: '/api/settings',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const exportSkills = <ThrowOnError extends boolean = false>(options?: Options<ExportSkillsData, ThrowOnError>): RequestResult<ExportSkillsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ExportSkillsResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: z.never().optional(),
+        query: zExportSkillsQuery.optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zExportSkillsResponse.parseAsync(data),
+    url: '/api/skills/export',
+    ...options
+});
+
+export const previewSkillImport = <ThrowOnError extends boolean = false>(options: Options<PreviewSkillImportData, ThrowOnError>): RequestResult<PreviewSkillImportResponses, unknown, ThrowOnError> => (options.client ?? client).post<PreviewSkillImportResponses, unknown, ThrowOnError>({
+    ...formDataBodySerializer,
+    requestValidator: async (data) => await z.object({
+        body: zPreviewSkillImportBody,
+        path: z.never().optional(),
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zPreviewSkillImportResponse.parseAsync(data),
+    url: '/api/skills/import/preview',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+export const applySkillImport = <ThrowOnError extends boolean = false>(options: Options<ApplySkillImportData, ThrowOnError>): RequestResult<ApplySkillImportResponses, unknown, ThrowOnError> => (options.client ?? client).post<ApplySkillImportResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zApplySkillImportBody,
+        path: z.never().optional(),
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zApplySkillImportResponse.parseAsync(data),
+    url: '/api/skills/import/apply',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const listSkills = <ThrowOnError extends boolean = false>(options?: Options<ListSkillsData, ThrowOnError>): RequestResult<ListSkillsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListSkillsResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: z.never().optional(),
+        query: zListSkillsQuery.optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zListSkillsResponse.parseAsync(data),
+    url: '/api/skills',
+    ...options
+});
+
+export const createSkill = <ThrowOnError extends boolean = false>(options: Options<CreateSkillData, ThrowOnError>): RequestResult<CreateSkillResponses, unknown, ThrowOnError> => (options.client ?? client).post<CreateSkillResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zCreateSkillBody,
+        path: z.never().optional(),
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zCreateSkillResponse.parseAsync(data),
+    url: '/api/skills',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteSkill = <ThrowOnError extends boolean = false>(options: Options<DeleteSkillData, ThrowOnError>): RequestResult<DeleteSkillResponses, unknown, ThrowOnError> => (options.client ?? client).delete<DeleteSkillResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zDeleteSkillPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zDeleteSkillResponse.parseAsync(data),
+    url: '/api/skills/{id}',
+    ...options
+});
+
+export const getSkill = <ThrowOnError extends boolean = false>(options: Options<GetSkillData, ThrowOnError>): RequestResult<GetSkillResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetSkillResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zGetSkillPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetSkillResponse.parseAsync(data),
+    url: '/api/skills/{id}',
+    ...options
+});
+
+export const renameSkill = <ThrowOnError extends boolean = false>(options: Options<RenameSkillData, ThrowOnError>): RequestResult<RenameSkillResponses, unknown, ThrowOnError> => (options.client ?? client).patch<RenameSkillResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zRenameSkillBody,
+        path: zRenameSkillPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zRenameSkillResponse.parseAsync(data),
+    url: '/api/skills/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const listSkillVersions = <ThrowOnError extends boolean = false>(options: Options<ListSkillVersionsData, ThrowOnError>): RequestResult<ListSkillVersionsResponses, unknown, ThrowOnError> => (options.client ?? client).get<ListSkillVersionsResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zListSkillVersionsPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zListSkillVersionsResponse.parseAsync(data),
+    url: '/api/skills/{id}/versions',
+    ...options
+});
+
+export const createSkillVersion = <ThrowOnError extends boolean = false>(options: Options<CreateSkillVersionData, ThrowOnError>): RequestResult<CreateSkillVersionResponses, unknown, ThrowOnError> => (options.client ?? client).post<CreateSkillVersionResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zCreateSkillVersionBody,
+        path: zCreateSkillVersionPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zCreateSkillVersionResponse.parseAsync(data),
+    url: '/api/skills/{id}/versions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const getSkillVersion = <ThrowOnError extends boolean = false>(options: Options<GetSkillVersionData, ThrowOnError>): RequestResult<GetSkillVersionResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetSkillVersionResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zGetSkillVersionPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetSkillVersionResponse.parseAsync(data),
+    url: '/api/skills/{id}/versions/{version}',
+    ...options
+});
+
+export const getSkillDiff = <ThrowOnError extends boolean = false>(options: Options<GetSkillDiffData, ThrowOnError>): RequestResult<GetSkillDiffResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetSkillDiffResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zGetSkillDiffPath,
+        query: zGetSkillDiffQuery
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetSkillDiffResponse.parseAsync(data),
+    url: '/api/skills/{id}/diff',
+    ...options
+});
+
+export const restoreSkillVersion = <ThrowOnError extends boolean = false>(options: Options<RestoreSkillVersionData, ThrowOnError>): RequestResult<RestoreSkillVersionResponses, unknown, ThrowOnError> => (options.client ?? client).post<RestoreSkillVersionResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zRestoreSkillVersionBody,
+        path: zRestoreSkillVersionPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zRestoreSkillVersionResponse.parseAsync(data),
+    url: '/api/skills/{id}/versions/{version}/restore',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const listSkillUpgradeCandidates = <ThrowOnError extends boolean = false>(options: Options<ListSkillUpgradeCandidatesData, ThrowOnError>): RequestResult<ListSkillUpgradeCandidatesResponses, unknown, ThrowOnError> => (options.client ?? client).get<ListSkillUpgradeCandidatesResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zListSkillUpgradeCandidatesPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zListSkillUpgradeCandidatesResponse.parseAsync(data),
+    url: '/api/skills/{id}/upgrade-candidates',
+    ...options
+});
+
+export const deprecateSkill = <ThrowOnError extends boolean = false>(options: Options<DeprecateSkillData, ThrowOnError>): RequestResult<DeprecateSkillResponses, unknown, ThrowOnError> => (options.client ?? client).post<DeprecateSkillResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zDeprecateSkillBody,
+        path: zDeprecateSkillPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zDeprecateSkillResponse.parseAsync(data),
+    url: '/api/skills/{id}/deprecate',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const undeprecateSkill = <ThrowOnError extends boolean = false>(options: Options<UndeprecateSkillData, ThrowOnError>): RequestResult<UndeprecateSkillResponses, unknown, ThrowOnError> => (options.client ?? client).post<UndeprecateSkillResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zUndeprecateSkillBody,
+        path: zUndeprecateSkillPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zUndeprecateSkillResponse.parseAsync(data),
+    url: '/api/skills/{id}/undeprecate',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const trashSkill = <ThrowOnError extends boolean = false>(options: Options<TrashSkillData, ThrowOnError>): RequestResult<TrashSkillResponses, unknown, ThrowOnError> => (options.client ?? client).post<TrashSkillResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zTrashSkillBody,
+        path: zTrashSkillPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zTrashSkillResponse.parseAsync(data),
+    url: '/api/skills/{id}/trash',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const restoreSkill = <ThrowOnError extends boolean = false>(options: Options<RestoreSkillData, ThrowOnError>): RequestResult<RestoreSkillResponses, unknown, ThrowOnError> => (options.client ?? client).post<RestoreSkillResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zRestoreSkillPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zRestoreSkillResponse.parseAsync(data),
+    url: '/api/skills/{id}/restore',
     ...options
 });
 

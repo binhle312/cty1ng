@@ -1,6 +1,7 @@
 import { ERROR_STATUS, type ApiError, type ErrorCode } from "@cty1ng/shared/errors";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { DomainError } from "../../core/errors.ts";
 import type { HttpEnv } from "./context.ts";
 
 // A known failure: a service or a middleware throws it, and it becomes the one error shape of
@@ -33,6 +34,9 @@ export function errorResponse(c: Context<HttpEnv>, failure: ApiFailure): Respons
 // SQL or path.
 export function onError(error: Error, c: Context<HttpEnv>): Response {
   if (error instanceof ApiFailure) return errorResponse(c, error);
+  if (error instanceof DomainError) {
+    return errorResponse(c, new ApiFailure(error.code, error.message, error.field));
+  }
   // Framework rejections (malformed JSON, a missing or wrong Content-Type): api.md §1 has one
   // code for a request that cannot be read.
   if (error instanceof HTTPException && error.status === 413) {

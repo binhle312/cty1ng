@@ -1,4 +1,7 @@
 import type { Health } from "../../core/health/health.service.ts";
+import type { createSettingsService } from "../../core/settings/settings.service.ts";
+import type { SkillImportService } from "../../core/skills/skill-import.service.ts";
+import type { SkillsService } from "../../core/skills/skills.service.ts";
 import type { Logger } from "pino";
 import { notFound, onError } from "./errors.ts";
 import {
@@ -13,6 +16,8 @@ import {
 import { createRouter } from "./router.ts";
 import { apiDocsRoutes } from "./routes/api-docs.ts";
 import { healthRoutes } from "./routes/health.ts";
+import { settingsRoutes } from "./routes/settings.ts";
+import { SKILL_UPLOAD_PATHS, skillRoutes } from "./routes/skills.ts";
 import { streamRoutes, type OpenStream } from "./routes/stream.ts";
 import { testEventRoutes } from "./routes/test-events.ts";
 import { frontendFiles } from "./static.ts";
@@ -22,6 +27,9 @@ export interface HttpDeps {
   allowedHosts: readonly string[];
   allowedOrigins: readonly string[];
   health: () => Promise<Health>;
+  settings: ReturnType<typeof createSettingsService>;
+  skills: SkillsService;
+  skillImport: SkillImportService;
   openStream: OpenStream;
   // Only when APP_ENV=test.
   testPing: ((note: string) => Promise<number>) | null;
@@ -43,12 +51,15 @@ export function createHttpApp(deps: HttpDeps) {
   app.use(originCheck(deps.allowedOrigins));
   app.use(securityHeaders());
   app.use(corsForAllowedOrigins(deps.allowedOrigins));
-  app.use(maxBody());
+  // Upload routes set their own limit (security.md §2.4); every other route keeps 1 MB.
+  app.use(maxBody(SKILL_UPLOAD_PATHS));
   app.onError(onError);
   app.notFound(notFound);
 
   const api = createRouter()
     .route("/", healthRoutes(deps.health))
+    .route("/", settingsRoutes(deps.settings))
+    .route("/", skillRoutes({ skills: deps.skills, skillImport: deps.skillImport }))
     .route("/", streamRoutes(deps.openStream));
   if (deps.testPing !== null) api.route("/", testEventRoutes(deps.testPing));
   if (deps.apiDocs) api.route("/", apiDocsRoutes());

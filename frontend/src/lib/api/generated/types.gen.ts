@@ -38,6 +38,699 @@ export type GetHealthResponses = {
 
 export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
 
+export type GetSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/settings';
+};
+
+export type GetSettingsResponses = {
+    /**
+     * Every built setting, with its default when it was never saved
+     */
+    200: {
+        trash_days: number;
+        skill_name_max: number;
+        skill_body_max: number;
+        skill_body_warn_lines: number;
+    };
+};
+
+export type GetSettingsResponse = GetSettingsResponses[keyof GetSettingsResponses];
+
+export type UpdateSettingsData = {
+    body: {
+        trash_days?: number;
+        skill_name_max?: number;
+        skill_body_max?: number;
+        skill_body_warn_lines?: number;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/settings';
+};
+
+export type UpdateSettingsResponses = {
+    /**
+     * The saved settings
+     */
+    200: {
+        trash_days: number;
+        skill_name_max: number;
+        skill_body_max: number;
+        skill_body_warn_lines: number;
+    };
+};
+
+export type UpdateSettingsResponse = UpdateSettingsResponses[keyof UpdateSettingsResponses];
+
+export type ExportSkillsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        ids?: string;
+    };
+    url: '/api/skills/export';
+};
+
+export type ExportSkillsResponses = {
+    /**
+     * A zip of `<slug>/SKILL.md` folders
+     */
+    200: Blob | File;
+};
+
+export type ExportSkillsResponse = ExportSkillsResponses[keyof ExportSkillsResponses];
+
+export type PreviewSkillImportData = {
+    body: {
+        file: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/skills/import/preview';
+};
+
+export type PreviewSkillImportResponses = {
+    /**
+     * What Apply would change; nothing is written
+     */
+    200: {
+        preview_id: string;
+        file: string;
+        rows: Array<{
+            slug: string;
+            status: 'new' | 'changed' | 'unchanged' | 'invalid' | 'conflict';
+            reason: string | null;
+            name: string;
+            from_version: number | null;
+            to_version: number | null;
+            diff: {
+                description: Array<{
+                    op: 'same' | 'add' | 'del';
+                    text: string;
+                }> | null;
+                body: Array<{
+                    op: 'same' | 'add' | 'del';
+                    text: string;
+                }>;
+            } | null;
+            skipped_files: Array<string>;
+        }>;
+    };
+};
+
+export type PreviewSkillImportResponse = PreviewSkillImportResponses[keyof PreviewSkillImportResponses];
+
+export type ApplySkillImportData = {
+    body: {
+        preview_id: string;
+        slugs: Array<string>;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/skills/import/apply';
+};
+
+export type ApplySkillImportResponses = {
+    /**
+     * The ticked rows were applied
+     */
+    200: {
+        created: number;
+        new_versions: number;
+        skills: Array<{
+            id: string;
+            slug: string;
+            name: string;
+            author_id: string;
+            is_author: boolean;
+            row_version: number;
+            latest_version: {
+                version: number;
+                description: string;
+                changelog: string | null;
+                created_at: string;
+            };
+            bots_using: number;
+            bots_outdated: number;
+            deprecated: boolean;
+            deprecated_at: string | null;
+            updated_at: string;
+            cloned_from: {
+                skill_id: string;
+                slug: string;
+                version: number;
+            } | null;
+        }>;
+    };
+};
+
+export type ApplySkillImportResponse = ApplySkillImportResponses[keyof ApplySkillImportResponses];
+
+export type ListSkillsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        include_deprecated?: 'true' | 'false';
+    };
+    url: '/api/skills';
+};
+
+export type ListSkillsResponses = {
+    /**
+     * Skills not in Trash, newest change first
+     */
+    200: Array<{
+        id: string;
+        slug: string;
+        name: string;
+        author_id: string;
+        is_author: boolean;
+        row_version: number;
+        latest_version: {
+            version: number;
+            description: string;
+            changelog: string | null;
+            created_at: string;
+        };
+        bots_using: number;
+        bots_outdated: number;
+        deprecated: boolean;
+        deprecated_at: string | null;
+        updated_at: string;
+        cloned_from: {
+            skill_id: string;
+            slug: string;
+            version: number;
+        } | null;
+    }>;
+};
+
+export type ListSkillsResponse = ListSkillsResponses[keyof ListSkillsResponses];
+
+export type CreateSkillData = {
+    body: {
+        slug: string;
+        name: string;
+        description: string;
+        body_md: string;
+        cloned_from_skill_version_id?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/skills';
+};
+
+export type CreateSkillResponses = {
+    /**
+     * The skill and its v1
+     */
+    201: {
+        id: string;
+        slug: string;
+        name: string;
+        author_id: string;
+        is_author: boolean;
+        row_version: number;
+        latest_version: {
+            version: number;
+            description: string;
+            changelog: string | null;
+            created_at: string;
+        };
+        bots_using: number;
+        bots_outdated: number;
+        deprecated: boolean;
+        deprecated_at: string | null;
+        updated_at: string;
+        cloned_from: {
+            skill_id: string;
+            slug: string;
+            version: number;
+        } | null;
+    };
+};
+
+export type CreateSkillResponse = CreateSkillResponses[keyof CreateSkillResponses];
+
+export type DeleteSkillData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/skills/{id}';
+};
+
+export type DeleteSkillResponses = {
+    /**
+     * Purged from Trash
+     */
+    204: void;
+};
+
+export type DeleteSkillResponse = DeleteSkillResponses[keyof DeleteSkillResponses];
+
+export type GetSkillData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/skills/{id}';
+};
+
+export type GetSkillResponses = {
+    /**
+     * The skill with its latest body
+     */
+    200: {
+        id: string;
+        slug: string;
+        name: string;
+        author_id: string;
+        is_author: boolean;
+        row_version: number;
+        latest_version: {
+            version: number;
+            description: string;
+            changelog: string | null;
+            created_at: string;
+        };
+        bots_using: number;
+        bots_outdated: number;
+        deprecated: boolean;
+        deprecated_at: string | null;
+        updated_at: string;
+        cloned_from: {
+            skill_id: string;
+            slug: string;
+            version: number;
+        } | null;
+        body_md: string;
+    };
+};
+
+export type GetSkillResponse = GetSkillResponses[keyof GetSkillResponses];
+
+export type RenameSkillData = {
+    body: {
+        name: string;
+        row_version: number;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/skills/{id}';
+};
+
+export type RenameSkillResponses = {
+    /**
+     * Renamed; no new version
+     */
+    200: {
+        id: string;
+        slug: string;
+        name: string;
+        author_id: string;
+        is_author: boolean;
+        row_version: number;
+        latest_version: {
+            version: number;
+            description: string;
+            changelog: string | null;
+            created_at: string;
+        };
+        bots_using: number;
+        bots_outdated: number;
+        deprecated: boolean;
+        deprecated_at: string | null;
+        updated_at: string;
+        cloned_from: {
+            skill_id: string;
+            slug: string;
+            version: number;
+        } | null;
+    };
+};
+
+export type RenameSkillResponse = RenameSkillResponses[keyof RenameSkillResponses];
+
+export type ListSkillVersionsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/skills/{id}/versions';
+};
+
+export type ListSkillVersionsResponses = {
+    /**
+     * Versions, newest first
+     */
+    200: Array<{
+        id: string;
+        version: number;
+        description: string;
+        body_md: string;
+        changelog: string | null;
+        created_by: string;
+        created_at: string;
+        bots_using: number;
+    }>;
+};
+
+export type ListSkillVersionsResponse = ListSkillVersionsResponses[keyof ListSkillVersionsResponses];
+
+export type CreateSkillVersionData = {
+    body: {
+        base_version: number;
+        description: string;
+        body_md: string;
+        changelog?: string;
+        upgrade_bot_ids: Array<string>;
+        name?: string;
+        row_version?: number;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/skills/{id}/versions';
+};
+
+export type CreateSkillVersionResponses = {
+    /**
+     * Version N+1 is saved
+     */
+    201: {
+        id: string;
+        slug: string;
+        name: string;
+        author_id: string;
+        is_author: boolean;
+        row_version: number;
+        latest_version: {
+            version: number;
+            description: string;
+            changelog: string | null;
+            created_at: string;
+        };
+        bots_using: number;
+        bots_outdated: number;
+        deprecated: boolean;
+        deprecated_at: string | null;
+        updated_at: string;
+        cloned_from: {
+            skill_id: string;
+            slug: string;
+            version: number;
+        } | null;
+    };
+};
+
+export type CreateSkillVersionResponse = CreateSkillVersionResponses[keyof CreateSkillVersionResponses];
+
+export type GetSkillVersionData = {
+    body?: never;
+    path: {
+        id: string;
+        version: number;
+    };
+    query?: never;
+    url: '/api/skills/{id}/versions/{version}';
+};
+
+export type GetSkillVersionResponses = {
+    /**
+     * One version
+     */
+    200: {
+        id: string;
+        version: number;
+        description: string;
+        body_md: string;
+        changelog: string | null;
+        created_by: string;
+        created_at: string;
+        bots_using: number;
+    };
+};
+
+export type GetSkillVersionResponse = GetSkillVersionResponses[keyof GetSkillVersionResponses];
+
+export type GetSkillDiffData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query: {
+        from: number;
+        to: number;
+    };
+    url: '/api/skills/{id}/diff';
+};
+
+export type GetSkillDiffResponses = {
+    /**
+     * A line diff of the descriptions and the bodies
+     */
+    200: {
+        description: Array<{
+            op: 'same' | 'add' | 'del';
+            text: string;
+        }> | null;
+        body: Array<{
+            op: 'same' | 'add' | 'del';
+            text: string;
+        }>;
+    };
+};
+
+export type GetSkillDiffResponse = GetSkillDiffResponses[keyof GetSkillDiffResponses];
+
+export type RestoreSkillVersionData = {
+    body: {
+        changelog?: string;
+    };
+    path: {
+        id: string;
+        version: number;
+    };
+    query?: never;
+    url: '/api/skills/{id}/versions/{version}/restore';
+};
+
+export type RestoreSkillVersionResponses = {
+    /**
+     * A new version with that version's text
+     */
+    201: {
+        id: string;
+        slug: string;
+        name: string;
+        author_id: string;
+        is_author: boolean;
+        row_version: number;
+        latest_version: {
+            version: number;
+            description: string;
+            changelog: string | null;
+            created_at: string;
+        };
+        bots_using: number;
+        bots_outdated: number;
+        deprecated: boolean;
+        deprecated_at: string | null;
+        updated_at: string;
+        cloned_from: {
+            skill_id: string;
+            slug: string;
+            version: number;
+        } | null;
+    };
+};
+
+export type RestoreSkillVersionResponse = RestoreSkillVersionResponses[keyof RestoreSkillVersionResponses];
+
+export type ListSkillUpgradeCandidatesData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/skills/{id}/upgrade-candidates';
+};
+
+export type ListSkillUpgradeCandidatesResponses = {
+    /**
+     * Bots on older versions (M2)
+     */
+    200: Array<{
+        bot_id: string;
+    }>;
+};
+
+export type ListSkillUpgradeCandidatesResponse = ListSkillUpgradeCandidatesResponses[keyof ListSkillUpgradeCandidatesResponses];
+
+export type DeprecateSkillData = {
+    body: {
+        remove_bot_ids: Array<string>;
+        row_version: number;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/skills/{id}/deprecate';
+};
+
+export type DeprecateSkillResponses = {
+    /**
+     * Deprecated
+     */
+    200: {
+        id: string;
+        slug: string;
+        name: string;
+        author_id: string;
+        is_author: boolean;
+        row_version: number;
+        latest_version: {
+            version: number;
+            description: string;
+            changelog: string | null;
+            created_at: string;
+        };
+        bots_using: number;
+        bots_outdated: number;
+        deprecated: boolean;
+        deprecated_at: string | null;
+        updated_at: string;
+        cloned_from: {
+            skill_id: string;
+            slug: string;
+            version: number;
+        } | null;
+    };
+};
+
+export type DeprecateSkillResponse = DeprecateSkillResponses[keyof DeprecateSkillResponses];
+
+export type UndeprecateSkillData = {
+    body: {
+        row_version: number;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/skills/{id}/undeprecate';
+};
+
+export type UndeprecateSkillResponses = {
+    /**
+     * Active again
+     */
+    200: {
+        id: string;
+        slug: string;
+        name: string;
+        author_id: string;
+        is_author: boolean;
+        row_version: number;
+        latest_version: {
+            version: number;
+            description: string;
+            changelog: string | null;
+            created_at: string;
+        };
+        bots_using: number;
+        bots_outdated: number;
+        deprecated: boolean;
+        deprecated_at: string | null;
+        updated_at: string;
+        cloned_from: {
+            skill_id: string;
+            slug: string;
+            version: number;
+        } | null;
+    };
+};
+
+export type UndeprecateSkillResponse = UndeprecateSkillResponses[keyof UndeprecateSkillResponses];
+
+export type TrashSkillData = {
+    body: {
+        row_version: number;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/skills/{id}/trash';
+};
+
+export type TrashSkillResponses = {
+    /**
+     * In Trash; the bots it was removed from
+     */
+    200: {
+        skill_id: string;
+        removed_bot_ids: Array<string>;
+    };
+};
+
+export type TrashSkillResponse = TrashSkillResponses[keyof TrashSkillResponses];
+
+export type RestoreSkillData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/skills/{id}/restore';
+};
+
+export type RestoreSkillResponses = {
+    /**
+     * Out of Trash, still deprecated
+     */
+    200: {
+        skill: {
+            id: string;
+            slug: string;
+            name: string;
+            author_id: string;
+            is_author: boolean;
+            row_version: number;
+            latest_version: {
+                version: number;
+                description: string;
+                changelog: string | null;
+                created_at: string;
+            };
+            bots_using: number;
+            bots_outdated: number;
+            deprecated: boolean;
+            deprecated_at: string | null;
+            updated_at: string;
+            cloned_from: {
+                skill_id: string;
+                slug: string;
+                version: number;
+            } | null;
+        };
+        suggested_bot_ids: Array<string>;
+    };
+};
+
+export type RestoreSkillResponse = RestoreSkillResponses[keyof RestoreSkillResponses];
+
 export type GetStreamData = {
     body?: never;
     headers?: {

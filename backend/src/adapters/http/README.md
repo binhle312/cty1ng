@@ -13,6 +13,10 @@ The Hono app (`docs/api.md`). Handlers parse input, call one service and map the
 | `static.ts` | The built frontend in a production build: files, and `index.html` for page paths; never for `/api/*` |
 | `routes/` | One file per route group |
 | `routes/health.ts` | `GET /api/health` |
+| `routes/settings.ts` | `GET` and `PATCH /api/settings` |
+| `routes/skills.ts` | Every `/api/skills` route (`docs/api.md` §2), the zip upload limit |
+| `uploads/` | Checks and readers for uploaded files |
+| `uploads/skill-zip.ts` | Reads a skill zip with the size, entry and path checks (`docs/security.md` §2.4); writes the export zip |
 | `routes/stream.ts` | `GET /api/stream`: parses `Last-Event-ID`, the SSE adapter writes the body |
 | `routes/test-events.ts` | `POST /api/_test/events` (APP_ENV=test only, not in the OpenAPI schema) |
 | `routes/api-docs.ts` | `GET /api/docs`: the OpenAPI docs page (APP_ENV=dev only), Swagger UI with no inline script |

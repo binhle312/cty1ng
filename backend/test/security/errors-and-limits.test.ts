@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { createHttpApp } from "../../src/adapters/http/app.ts";
-import { HOST, ORIGIN, memoryLogger, testBackend } from "../helpers.ts";
+import { HOST, ORIGIN, memoryLogger, testBackend, idleServices } from "../helpers.ts";
 
 // security.md §2.9, §2.10 and §3: unknown fields → 422, a body over 1 MB → 413, and an
 // unhandled error gives a code and a request id, never a stack trace.
@@ -72,6 +72,7 @@ describe("unhandled errors", () => {
     testPing: null,
     apiDocs: false,
     frontendDir: null,
+    ...idleServices(),
   });
 
   it("gives 500 internal_error with the request id, and no stack, SQL or path", async () => {

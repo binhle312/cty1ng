@@ -20,6 +20,553 @@ export const zHealth = z.object({
  */
 export const zGetHealthResponse = zHealth;
 
+/**
+ * Every built setting, with its default when it was never saved
+ */
+export const zGetSettingsResponse = z.object({
+    trash_days: z.int().gte(1),
+    skill_name_max: z.int().gte(16).lte(128),
+    skill_body_max: z.int().gte(1000).lte(100000),
+    skill_body_warn_lines: z.int().gte(50).lte(5000)
+});
+
+export const zUpdateSettingsBody = z.object({
+    trash_days: z.int().gte(1).optional(),
+    skill_name_max: z.int().gte(16).lte(128).optional(),
+    skill_body_max: z.int().gte(1000).lte(100000).optional(),
+    skill_body_warn_lines: z.int().gte(50).lte(5000).optional()
+});
+
+/**
+ * The saved settings
+ */
+export const zUpdateSettingsResponse = z.object({
+    trash_days: z.int().gte(1),
+    skill_name_max: z.int().gte(16).lte(128),
+    skill_body_max: z.int().gte(1000).lte(100000),
+    skill_body_warn_lines: z.int().gte(50).lte(5000)
+});
+
+export const zExportSkillsQuery = z.object({
+    ids: z.string().optional()
+});
+
+/**
+ * A zip of `<slug>/SKILL.md` folders
+ */
+export const zExportSkillsResponse = z.instanceof(Blob);
+
+export const zPreviewSkillImportBody = z.object({
+    file: z.instanceof(Blob)
+});
+
+/**
+ * What Apply would change; nothing is written
+ */
+export const zPreviewSkillImportResponse = z.object({
+    preview_id: z.string(),
+    file: z.string(),
+    rows: z.array(z.object({
+        slug: z.string(),
+        status: z.enum([
+            'new',
+            'changed',
+            'unchanged',
+            'invalid',
+            'conflict'
+        ]),
+        reason: z.string().nullable(),
+        name: z.string(),
+        from_version: z.int().gt(0).nullable(),
+        to_version: z.int().gt(0).nullable(),
+        diff: z.object({
+            description: z.array(z.object({
+                op: z.enum([
+                    'same',
+                    'add',
+                    'del'
+                ]),
+                text: z.string()
+            })).nullable(),
+            body: z.array(z.object({
+                op: z.enum([
+                    'same',
+                    'add',
+                    'del'
+                ]),
+                text: z.string()
+            }))
+        }).nullable(),
+        skipped_files: z.array(z.string())
+    }))
+});
+
+export const zApplySkillImportBody = z.object({
+    preview_id: z.string(),
+    slugs: z.array(z.string())
+});
+
+/**
+ * The ticked rows were applied
+ */
+export const zApplySkillImportResponse = z.object({
+    created: z.int().gte(0),
+    new_versions: z.int().gte(0),
+    skills: z.array(z.object({
+        id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        slug: z.string(),
+        name: z.string(),
+        author_id: z.string(),
+        is_author: z.boolean(),
+        row_version: z.int().gt(0),
+        latest_version: z.object({
+            version: z.int().gt(0),
+            description: z.string(),
+            changelog: z.string().nullable(),
+            created_at: z.string()
+        }),
+        bots_using: z.int().gte(0),
+        bots_outdated: z.int().gte(0),
+        deprecated: z.boolean(),
+        deprecated_at: z.string().nullable(),
+        updated_at: z.string(),
+        cloned_from: z.object({
+            skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+            slug: z.string(),
+            version: z.int().gt(0)
+        }).nullable()
+    }))
+});
+
+export const zListSkillsQuery = z.object({
+    include_deprecated: z.enum(['true', 'false']).optional()
+});
+
+/**
+ * Skills not in Trash, newest change first
+ */
+export const zListSkillsResponse = z.array(z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    slug: z.string(),
+    name: z.string(),
+    author_id: z.string(),
+    is_author: z.boolean(),
+    row_version: z.int().gt(0),
+    latest_version: z.object({
+        version: z.int().gt(0),
+        description: z.string(),
+        changelog: z.string().nullable(),
+        created_at: z.string()
+    }),
+    bots_using: z.int().gte(0),
+    bots_outdated: z.int().gte(0),
+    deprecated: z.boolean(),
+    deprecated_at: z.string().nullable(),
+    updated_at: z.string(),
+    cloned_from: z.object({
+        skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        slug: z.string(),
+        version: z.int().gt(0)
+    }).nullable()
+}));
+
+export const zCreateSkillBody = z.object({
+    slug: z.string(),
+    name: z.string(),
+    description: z.string(),
+    body_md: z.string(),
+    cloned_from_skill_version_id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/).optional()
+});
+
+/**
+ * The skill and its v1
+ */
+export const zCreateSkillResponse = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    slug: z.string(),
+    name: z.string(),
+    author_id: z.string(),
+    is_author: z.boolean(),
+    row_version: z.int().gt(0),
+    latest_version: z.object({
+        version: z.int().gt(0),
+        description: z.string(),
+        changelog: z.string().nullable(),
+        created_at: z.string()
+    }),
+    bots_using: z.int().gte(0),
+    bots_outdated: z.int().gte(0),
+    deprecated: z.boolean(),
+    deprecated_at: z.string().nullable(),
+    updated_at: z.string(),
+    cloned_from: z.object({
+        skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        slug: z.string(),
+        version: z.int().gt(0)
+    }).nullable()
+});
+
+export const zDeleteSkillPath = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+/**
+ * Purged from Trash
+ */
+export const zDeleteSkillResponse = z.void();
+
+export const zGetSkillPath = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+/**
+ * The skill with its latest body
+ */
+export const zGetSkillResponse = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    slug: z.string(),
+    name: z.string(),
+    author_id: z.string(),
+    is_author: z.boolean(),
+    row_version: z.int().gt(0),
+    latest_version: z.object({
+        version: z.int().gt(0),
+        description: z.string(),
+        changelog: z.string().nullable(),
+        created_at: z.string()
+    }),
+    bots_using: z.int().gte(0),
+    bots_outdated: z.int().gte(0),
+    deprecated: z.boolean(),
+    deprecated_at: z.string().nullable(),
+    updated_at: z.string(),
+    cloned_from: z.object({
+        skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        slug: z.string(),
+        version: z.int().gt(0)
+    }).nullable(),
+    body_md: z.string()
+});
+
+export const zRenameSkillBody = z.object({
+    name: z.string(),
+    row_version: z.int().gt(0)
+});
+
+export const zRenameSkillPath = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+/**
+ * Renamed; no new version
+ */
+export const zRenameSkillResponse = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    slug: z.string(),
+    name: z.string(),
+    author_id: z.string(),
+    is_author: z.boolean(),
+    row_version: z.int().gt(0),
+    latest_version: z.object({
+        version: z.int().gt(0),
+        description: z.string(),
+        changelog: z.string().nullable(),
+        created_at: z.string()
+    }),
+    bots_using: z.int().gte(0),
+    bots_outdated: z.int().gte(0),
+    deprecated: z.boolean(),
+    deprecated_at: z.string().nullable(),
+    updated_at: z.string(),
+    cloned_from: z.object({
+        skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        slug: z.string(),
+        version: z.int().gt(0)
+    }).nullable()
+});
+
+export const zListSkillVersionsPath = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+/**
+ * Versions, newest first
+ */
+export const zListSkillVersionsResponse = z.array(z.object({
+    id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    version: z.int().gt(0),
+    description: z.string(),
+    body_md: z.string(),
+    changelog: z.string().nullable(),
+    created_by: z.string(),
+    created_at: z.string(),
+    bots_using: z.int().gte(0)
+}));
+
+export const zCreateSkillVersionBody = z.object({
+    base_version: z.int().gt(0),
+    description: z.string(),
+    body_md: z.string(),
+    changelog: z.string().optional(),
+    upgrade_bot_ids: z.array(z.string()),
+    name: z.string().optional(),
+    row_version: z.int().gt(0).optional()
+});
+
+export const zCreateSkillVersionPath = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+/**
+ * Version N+1 is saved
+ */
+export const zCreateSkillVersionResponse = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    slug: z.string(),
+    name: z.string(),
+    author_id: z.string(),
+    is_author: z.boolean(),
+    row_version: z.int().gt(0),
+    latest_version: z.object({
+        version: z.int().gt(0),
+        description: z.string(),
+        changelog: z.string().nullable(),
+        created_at: z.string()
+    }),
+    bots_using: z.int().gte(0),
+    bots_outdated: z.int().gte(0),
+    deprecated: z.boolean(),
+    deprecated_at: z.string().nullable(),
+    updated_at: z.string(),
+    cloned_from: z.object({
+        skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        slug: z.string(),
+        version: z.int().gt(0)
+    }).nullable()
+});
+
+export const zGetSkillVersionPath = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    version: z.int().gt(0)
+});
+
+/**
+ * One version
+ */
+export const zGetSkillVersionResponse = z.object({
+    id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    version: z.int().gt(0),
+    description: z.string(),
+    body_md: z.string(),
+    changelog: z.string().nullable(),
+    created_by: z.string(),
+    created_at: z.string(),
+    bots_using: z.int().gte(0)
+});
+
+export const zGetSkillDiffPath = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+export const zGetSkillDiffQuery = z.object({
+    from: z.int().gt(0),
+    to: z.int().gt(0)
+});
+
+/**
+ * A line diff of the descriptions and the bodies
+ */
+export const zGetSkillDiffResponse = z.object({
+    description: z.array(z.object({
+        op: z.enum([
+            'same',
+            'add',
+            'del'
+        ]),
+        text: z.string()
+    })).nullable(),
+    body: z.array(z.object({
+        op: z.enum([
+            'same',
+            'add',
+            'del'
+        ]),
+        text: z.string()
+    }))
+});
+
+export const zRestoreSkillVersionBody = z.object({
+    changelog: z.string().optional()
+});
+
+export const zRestoreSkillVersionPath = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    version: z.int().gt(0)
+});
+
+/**
+ * A new version with that version's text
+ */
+export const zRestoreSkillVersionResponse = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    slug: z.string(),
+    name: z.string(),
+    author_id: z.string(),
+    is_author: z.boolean(),
+    row_version: z.int().gt(0),
+    latest_version: z.object({
+        version: z.int().gt(0),
+        description: z.string(),
+        changelog: z.string().nullable(),
+        created_at: z.string()
+    }),
+    bots_using: z.int().gte(0),
+    bots_outdated: z.int().gte(0),
+    deprecated: z.boolean(),
+    deprecated_at: z.string().nullable(),
+    updated_at: z.string(),
+    cloned_from: z.object({
+        skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        slug: z.string(),
+        version: z.int().gt(0)
+    }).nullable()
+});
+
+export const zListSkillUpgradeCandidatesPath = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+/**
+ * Bots on older versions (M2)
+ */
+export const zListSkillUpgradeCandidatesResponse = z.array(z.object({
+    bot_id: z.string()
+}));
+
+export const zDeprecateSkillBody = z.object({
+    remove_bot_ids: z.array(z.string()),
+    row_version: z.int().gt(0)
+});
+
+export const zDeprecateSkillPath = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+/**
+ * Deprecated
+ */
+export const zDeprecateSkillResponse = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    slug: z.string(),
+    name: z.string(),
+    author_id: z.string(),
+    is_author: z.boolean(),
+    row_version: z.int().gt(0),
+    latest_version: z.object({
+        version: z.int().gt(0),
+        description: z.string(),
+        changelog: z.string().nullable(),
+        created_at: z.string()
+    }),
+    bots_using: z.int().gte(0),
+    bots_outdated: z.int().gte(0),
+    deprecated: z.boolean(),
+    deprecated_at: z.string().nullable(),
+    updated_at: z.string(),
+    cloned_from: z.object({
+        skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        slug: z.string(),
+        version: z.int().gt(0)
+    }).nullable()
+});
+
+export const zUndeprecateSkillBody = z.object({
+    row_version: z.int().gt(0)
+});
+
+export const zUndeprecateSkillPath = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+/**
+ * Active again
+ */
+export const zUndeprecateSkillResponse = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    slug: z.string(),
+    name: z.string(),
+    author_id: z.string(),
+    is_author: z.boolean(),
+    row_version: z.int().gt(0),
+    latest_version: z.object({
+        version: z.int().gt(0),
+        description: z.string(),
+        changelog: z.string().nullable(),
+        created_at: z.string()
+    }),
+    bots_using: z.int().gte(0),
+    bots_outdated: z.int().gte(0),
+    deprecated: z.boolean(),
+    deprecated_at: z.string().nullable(),
+    updated_at: z.string(),
+    cloned_from: z.object({
+        skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        slug: z.string(),
+        version: z.int().gt(0)
+    }).nullable()
+});
+
+export const zTrashSkillBody = z.object({
+    row_version: z.int().gt(0)
+});
+
+export const zTrashSkillPath = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+/**
+ * In Trash; the bots it was removed from
+ */
+export const zTrashSkillResponse = z.object({
+    skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    removed_bot_ids: z.array(z.string())
+});
+
+export const zRestoreSkillPath = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+/**
+ * Out of Trash, still deprecated
+ */
+export const zRestoreSkillResponse = z.object({
+    skill: z.object({
+        id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        slug: z.string(),
+        name: z.string(),
+        author_id: z.string(),
+        is_author: z.boolean(),
+        row_version: z.int().gt(0),
+        latest_version: z.object({
+            version: z.int().gt(0),
+            description: z.string(),
+            changelog: z.string().nullable(),
+            created_at: z.string()
+        }),
+        bots_using: z.int().gte(0),
+        bots_outdated: z.int().gte(0),
+        deprecated: z.boolean(),
+        deprecated_at: z.string().nullable(),
+        updated_at: z.string(),
+        cloned_from: z.object({
+            skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+            slug: z.string(),
+            version: z.int().gt(0)
+        }).nullable()
+    }),
+    suggested_bot_ids: z.array(z.string())
+});
+
 export const zGetStreamHeaders = z.object({
     'last-event-id': z.string().optional()
 });
