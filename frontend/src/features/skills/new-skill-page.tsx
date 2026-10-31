@@ -55,9 +55,13 @@ function useCloneSource(versionId: string | undefined) {
   return useQuery({
     queryKey: ["skill-clone-source", versionId, limits.nameMax],
     enabled: versionId !== undefined,
-    staleTime: Infinity,
+    // Each Clone looks again at the slugs that are taken: a copy made since the last Clone
+    // takes `-copy`, so the next one must get `-copy-2` (skills-page.md §12). Nothing is kept
+    // after the page closes, and the open editor keeps its text when this fetches again.
+    gcTime: 0,
+    refetchOnWindowFocus: false,
     queryFn: async (): Promise<CloneSource | null> => {
-      const skills = await queryClient.query(allSkillsOptions());
+      const skills = await queryClient.query({ ...allSkillsOptions(), staleTime: 0 });
       const slugs = new Set(skills.map((skill) => skill.slug));
       for (const skill of skills) {
         const versions = await queryClient.query(
