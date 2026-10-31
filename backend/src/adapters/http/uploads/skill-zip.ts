@@ -66,6 +66,13 @@ export function readSkillZip(zip: Uint8Array): Promise<ImportFolder[]> {
             archive.readEntry();
             return;
           }
+          // Every entry counts by the size its header states, read or not.
+          total += entry.uncompressedSize;
+          if (total > SKILL_ZIP.maxTotalUncompressedBytes) {
+            archive.close();
+            fail(new ApiFailure("too_large", "The zip unpacks to more than 20 MB."));
+            return;
+          }
           const [folder = "", ...rest] = name.split("/");
           const isSkillMd = rest.length === 1 && rest[0] === "SKILL.md";
           if (rest.length === 0) {
@@ -82,12 +89,6 @@ export function readSkillZip(zip: Uint8Array): Promise<ImportFolder[]> {
           if (entry.uncompressedSize > SKILL_ZIP.maxSkillMdBytes) {
             folderOf(folder).skillMd = "too_large";
             archive.readEntry();
-            return;
-          }
-          total += entry.uncompressedSize;
-          if (total > SKILL_ZIP.maxTotalUncompressedBytes) {
-            archive.close();
-            fail(new ApiFailure("too_large", "The zip unpacks to more than 20 MB."));
             return;
           }
           archive.openReadStream(entry, (streamError, stream) => {

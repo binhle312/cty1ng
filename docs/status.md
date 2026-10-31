@@ -73,7 +73,7 @@ that use them, then M0.
 
 ## Next
 
-1. The owner reviews the M1 plan (first comment of the draft PR on `m1-skill-hub`): schema, dependencies, UI design and five open questions. Then M1a (backend) is built.
+1. The owner reviews M1a, the skill hub backend ([#52](https://github.com/binhle312/cty1ng/pull/52)): the migration SQL, the new dependencies, the zip handling and the guard. After it merges, M1b (the Skills page) starts on `m1b-skill-hub-ui`.
 
 ## Waiting on the owner
 
@@ -96,7 +96,6 @@ it in, and the row goes when its PR merges.
 
 | Item | Found in | Target |
 | --- | --- | --- |
-| `realtime-events.md` §4 lacks `skill.trashed`, `skill.restored` and `skill.purged` from the M1 brief. They go into the table in the M1 build PR, together with `shared/`, because `PENDING` in `check-events.ts` only gets shorter | #46 | M1 |
 | Temporary CLI `skills trash` and `skills restore` (M1 spec gap pass, owner 2026-10-30): remove them when the Trash page exists | [#51](https://github.com/binhle312/cty1ng/pull/51) | M5b |
 | Event pruning: delete events older than 30 days (`domain-model.md` §8); the stream's gap rule and `reset` are built | #48 | M1 (its purge job is the first timed job) |
 | The `db_lock_wait_seconds` histogram (`architecture.md` §9, D29 switch trigger 3); there is no metrics output yet | #48 | M3 (the worker brings concurrent writes) |
@@ -112,7 +111,7 @@ it in, and the row goes when its PR merges.
 | Slice | State | PR | Notes |
 | --- | --- | --- | --- |
 | M0 | merged | [#46](https://github.com/binhle312/cty1ng/pull/46) (M0a), [#48](https://github.com/binhle312/cty1ng/pull/48) (M0b), [#49](https://github.com/binhle312/cty1ng/pull/49) (M0c), [#50](https://github.com/binhle312/cty1ng/pull/50) (Impeccable snapshot) | Three parts (M0a tooling, M0b backend, M0c frontend), all merged 2026-10-30 |
-| M1 | planning | [#51](https://github.com/binhle312/cty1ng/pull/51) (spec gap pass), [#52](https://github.com/binhle312/cty1ng/pull/52) (plan, draft) | Spec gaps answered by the owner 2026-10-30. Design approved: `design/components/skills-page.md` (round 8); D49 accepted. Round 16 moves the page to the bot page layout (agreed, #38) |
+| M1 | building | [#51](https://github.com/binhle312/cty1ng/pull/51) (spec gap pass), [#52](https://github.com/binhle312/cty1ng/pull/52) (plan and M1a backend, in review) | Plan approved 2026-10-31, split into M1a (backend, #52) and M1b (Skills page). Design approved: `design/components/skills-page.md` (round 8); D49 accepted. Round 16 moves the page to the bot page layout (agreed, #38) |
 | M2 | UI design review | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec) | Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open |
 | M3 | UI design agreed | [#26](https://github.com/binhle312/cty1ng/pull/26) (spec) | Round 10: `design/components/conversation-page.md`, `composer.md`, `conversation-cards.md` |
 | M4 | not started | | |
@@ -147,3 +146,4 @@ A slice can also be `blocked` (say on what in Notes).
 | 2026-10-30 | Removed the prototype references and `porting-guide.md` (owner); its run and handoff lessons moved to `testing.md` §3 |
 | 2026-10-30 | M0 merged: tooling (#46), backend (#48), frontend shell (#49), Impeccable design snapshot with its colour check (#50) |
 | 2026-10-30 | M1 spec gap pass: 28 gaps answered (skill `row_version`, rename without a version, slug rule, import preview rules, skill limit settings, the guard on skills, URLs, temporary CLI restore); D6 and D36 amended |
+| 2026-10-31 | M1 plan approved: split into M1a (backend) and M1b (UI); a `SKILL.md` over 1 MB replaces the 100:1 zip ratio; `GET`/`PATCH /settings` for the skill limits and `trash_days`. M1a built in #52 |
