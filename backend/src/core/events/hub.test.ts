@@ -56,4 +56,28 @@ describe("event hub after pruning", () => {
     const events = await stream.waitFor(3);
     expect(events[2]).toMatchObject({ type: "test.ping", seq: 4, data: { note: "d" } });
   });
+
+  it("sends `ready` and `reset` when events after the cursor are pruned between two pages", async () => {
+    // 1–101 are old, 102 and 103 are new. The hub reads 100 events a page.
+    for (let i = 1; i <= 101; i++) await append(`old ${i}`);
+    clock.advance(DAY);
+    for (const note of ["new 102", "new 103"]) await append(note);
+    clock.advance(30 * DAY);
+
+    const stream = backend.hub.subscribe(0, abort.signal)[Symbol.asyncIterator]();
+    const next = async () => (await stream.next()).value;
+    expect(await next()).toEqual({ type: "ready", data: { max_seq: 103 } });
+    // The first page: events 1–100.
+    for (let seq = 1; seq <= 100; seq++) expect(await next()).toMatchObject({ seq });
+
+    // The job runs before the second page: 101 goes, which this subscriber has not sent.
+    expect(await backend.eventPruning.pruneDue()).toBe(101);
+
+    // Not 102: the client would miss 101 and keep stale state. It reloads, and the stream
+    // continues after the newest event.
+    expect(await next()).toEqual({ type: "ready", data: { max_seq: 103 } });
+    expect(await next()).toEqual({ type: "reset", data: {} });
+    await append("new 104");
+    expect(await next()).toMatchObject({ type: "test.ping", seq: 104 });
+  });
 });

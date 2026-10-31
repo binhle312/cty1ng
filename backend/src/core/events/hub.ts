@@ -47,6 +47,10 @@ export function createEventHub(deps: {
     yield { type: "ready", data: { max_seq: maxSeq } };
 
     let cursor = maxSeq;
+    // Whether the cursor is the seq of an event that was stored, so the next event must be
+    // cursor + 1. After a complete prune the newest seq is unknown (`max_seq` is 0), so the
+    // first event read sets the cursor.
+    let anchored = newest !== null;
     if (afterSeq !== null) {
       // The cursor is outside the kept events: older than the oldest (pruned, §2 "gap rule"),
       // or newer than the newest (the database was reset). The client reloads with GETs.
@@ -63,12 +67,31 @@ export function createEventHub(deps: {
     while (!stopped()) {
       const seen = notifies;
       const page = await deps.readers.events.after(cursor, PAGE_SIZE);
+      let gap = false;
       for (const row of page) {
         if (stopped()) return;
+        // Seqs have no gaps (the transport contract), so a skipped seq was pruned before this
+        // subscriber sent it.
+        if (anchored && row.seq !== cursor + 1) {
+          gap = true;
+          break;
+        }
         cursor = row.seq;
+        anchored = true;
         const parsed = StreamEvent.safeParse({ type: row.type, seq: row.seq, data: row.payload });
         if (parsed.success) yield parsed.data;
         else deps.onInvalidEvent(row.seq, row.type);
+      }
+      if (gap) {
+        // The gap rule during a replay (realtime-events.md §2): `ready` with the newest seq, then
+        // `reset`, as at the start. The client reloads, and the stream continues after the
+        // newest event.
+        const now = await deps.readers.events.bounds();
+        cursor = now.newest ?? 0;
+        anchored = now.newest !== null;
+        yield { type: "ready", data: { max_seq: cursor } };
+        yield { type: "reset", data: {} };
+        continue;
       }
       if (page.length < PAGE_SIZE) await waitForNotify(seen, signal);
     }

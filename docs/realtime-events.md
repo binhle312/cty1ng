@@ -64,6 +64,11 @@ conversation).
   and the client reloads state with GETs. Exactly: with `oldest` the seq of the oldest kept
   event, a cursor below `oldest − 1` gets `reset`; a cursor of `oldest − 1` or later gets the
   replay. When every event was pruned, `max_seq` is 0, so any cursor above 0 gets `reset`.
+  The rule holds during a replay too: seqs have no gaps (the transport contract), so when the
+  next stored event is not the cursor + 1, the job pruned events that the stream had not sent
+  yet. The server then sends `ready` with the newest seq and `reset`, as at the start, and
+  continues after that seq. After a complete prune the first event read sets the cursor, so the
+  one `reset` above is not followed by a second.
 - `ready` and `reset` also carry an `id:` line: the cursor the stream continues from (the
   client's `Last-Event-ID` when it resumes, else the newest seq). So the browser's
   `Last-Event-ID` is right after a first connection or a reset, even before a persisted event
