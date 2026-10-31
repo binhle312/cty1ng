@@ -825,3 +825,44 @@ test("a Clone's Create tries no other slug after a general failure", async ({ pa
   expect(posts).toBe(1);
   await expect(page.getByLabel("Slug", { exact: true })).toHaveValue(`${skill.slug}-copy`);
 });
+
+test("Deprecate and Make active again keep a conflict from another tab", async ({
+  page,
+  context,
+}) => {
+  const skill = unique("Conflict kept");
+  await createSkill(page, skill);
+  await page.getByRole("tab", { name: "Write" }).click();
+  await fill(page, "Description", "My unsaved description.");
+
+  // Another tab saves v2; the stream tells this tab, and the conflict shows.
+  const other = await context.newPage();
+  await other.goto(`/skills/${skill.slug}`);
+  await saveBody(other, "## Steps\n1. Saved in the other tab.", 2);
+  const conflict = page.getByText(/This skill changed in another place\. Your changes are kept/);
+  await expect(conflict).toBeVisible();
+
+  // Deprecate and Make active again from this tab must not take the other tab's v2 as the base
+  // of this edit: that would hide the conflict, and Save would overwrite v2.
+  await page.getByRole("button", { name: "Skill actions" }).click();
+  await page.getByRole("menuitem", { name: "Deprecate" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Deprecate" }).click();
+  await page.getByRole("button", { name: "Make active again" }).click();
+  await expect(page.getByRole("button", { name: "Make active again" })).toBeHidden();
+
+  await expect(conflict).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save as v3" })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
+  await expect(page.getByLabel("Description", { exact: true })).toHaveValue(
+    "My unsaved description.",
+  );
+  // Discard loads the newest text.
+  await page.getByRole("button", { name: "Discard" }).click();
+  await expect(page.getByText("All changes are saved.")).toBeVisible();
+  await page.getByRole("tab", { name: "Write" }).click();
+  await expect(page.getByLabel("Body", { exact: true })).toHaveValue(
+    "## Steps\n1. Saved in the other tab.",
+  );
+});
