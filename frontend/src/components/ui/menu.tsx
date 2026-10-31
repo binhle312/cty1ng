@@ -65,6 +65,16 @@ export function MenuLinkItem({
   );
 }
 
+// A menu item that runs an action. `danger` is for an item that removes or hides something
+// (buttons.md §1, skills-page.md §9).
+export function MenuItem({
+  danger = false,
+  className,
+  ...props
+}: ComponentProps<typeof BaseMenu.Item> & { danger?: boolean }) {
+  return <BaseMenu.Item {...props} className={cn(ITEM, danger && "text-danger", className)} />;
+}
+
 export function MenuHeader({ children }: { children: ReactNode }) {
   return (
     <div className="px-2 pt-1 pb-1.5 text-xs font-semibold text-on-surface-muted">{children}</div>
