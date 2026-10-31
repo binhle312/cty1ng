@@ -11,8 +11,8 @@ a lazy route: `<name>.tsx` holds the route, `<name>.lazy.tsx` the page, in its o
 | `home.tsx` | `/` |
 | `conversation.tsx` | `/c/conv_…`; any other id is Page not found |
 | `bots.tsx` | `/bots`, `/bots/new`, `/bots/{slug}` |
-| `skills.tsx` | `/skills`, and the lazy route `/skills/{slug}` |
-| `skill.lazy.tsx` | The skill editor page |
+| `skills.tsx` | `/skills`, `/skills/new`, `/skills/import`, `/skills/{slug}`, and their search params |
+| `skills.lazy.tsx` | The Skills page, in its own chunk |
 | `stats.tsx` | The lazy route `/stats` |
 | `stats.lazy.tsx` | The Statistics page |
 | `settings.tsx` | `/settings` |

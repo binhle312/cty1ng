@@ -7,6 +7,7 @@ every response, and TanStack Query options (`useQuery(getHealthOptions())`).
 | File | What it is for |
 | --- | --- |
 | `client.ts` | Points the generated client at relative `/api` URLs |
+| `api-error.ts` | Reads the error body that a failed request throws (`docs/api.md` §1) |
 
 Start here: `generated/@tanstack/react-query.gen.ts`. Do not: edit `generated/` by hand, or
 call `fetch` for an API endpoint.
