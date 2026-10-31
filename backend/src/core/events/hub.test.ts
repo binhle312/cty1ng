@@ -1,3 +1,4 @@
+import type { StreamEvent } from "@cty1ng/shared/events";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { collect, manualClock, testBackend } from "../../../test/helpers.ts";
 
@@ -65,7 +66,10 @@ describe("event hub after pruning", () => {
     clock.advance(30 * DAY);
 
     const stream = backend.hub.subscribe(0, abort.signal)[Symbol.asyncIterator]();
-    const next = async () => (await stream.next()).value;
+    const next = async (): Promise<StreamEvent | undefined> => {
+      const result = await stream.next();
+      return result.done === true ? undefined : result.value;
+    };
     expect(await next()).toEqual({ type: "ready", data: { max_seq: 103 } });
     // The first page: events 1–100.
     for (let seq = 1; seq <= 100; seq++) expect(await next()).toMatchObject({ seq });
