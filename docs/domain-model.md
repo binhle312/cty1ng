@@ -434,23 +434,28 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
 - **Effective tool settings (M2 spec gap pass, owner 2026-11-01).** The stored JSON can miss a
   tool (one added to `config/tools.yaml` later) or name one the model lost. One pure function in
   `core/` gives the effective settings, in this order: (1) start from the stored values; (2) a
-  tool with no stored value takes its default (internal on, provider off); (3) drop every tool
+  tool with no stored value takes its default (internal on, provider off); (2a) a tool whose
+  catalog `switch` is `later` (a provider tool that no milestone has built yet) or `locked` (MCP
+  connector, D55) is off, whatever is stored; (3) drop every tool
   the model does not offer, and turn off View images when the model is not `multimodal`;
   (4) turn off a tool whose `needs` tool is off; (5) where a job has more than one tool on, keep
   the tool that has a stored value on and turn the defaulted one off, so a new internal tool
   never takes a job that a saved provider choice holds. GET returns the effective settings and
   writes nothing; the stored JSON changes only on a save. `POST /bots` and `PATCH /bots/{id}`
-  check the body against the same rules: a tool the model does not offer gets 422
-  `tool_not_available`, two tools of one job on get 422 `tool_job_conflict`, and a tool on while
+  check the body against the same rules: a tool the model does not offer, or a tool on whose
+  `switch` is `later` or `locked`, gets 422 `tool_not_available`, two tools of one job on get 422 `tool_job_conflict`, and a tool on while
   its `needs` tool is off gets 422 `validation_error` with `field: "tool_settings.<id>"`. The
   service then stores the effective result of the body.
 - **Name key (M2 spec gap pass, owner 2026-11-01).** Names compare by `name_key`, made by one
   pure function `botNameKey()` in `core/`: trim, collapse each run of white space to one space,
-  Unicode NFKC, then case-fold (upper case, then lower case, so "ß" and "SS" match), then NFKC
-  again. The stored `name` is trimmed and collapsed too. The partial unique index on `name_key`
+  Unicode NFKC, then Unicode default case folding (full folding, `CaseFolding.txt` statuses C
+  and F, so "ẞ", "ß", "SS" and "ss" all match), then NFKC again. JavaScript has no built-in
+  case folding (upper then lower case maps "ẞ" to "ß" but "ß" to "ss"), so the M2 plan picks how
+  to get it: a table generated from `CaseFolding.txt`, or a library (a new dependency). The stored `name` is trimmed and collapsed too. The partial unique index on `name_key`
   is the final check: a create or rename that loses a race gets 409 `name_taken`. SQLite
   `lower()` folds ASCII only, so it is not used. Tests: "BÁ" and "bá", " BA " and "BA",
-  full-width "ＢＡ" and "ba", two creates at once, a rename to a name held in Trash.
+  full-width "ＢＡ" and "ba", "ẞ", "ß" and "SS", two creates at once, a rename to a name held in
+  Trash.
 - **Slug (D19, M2 spec gap pass, owner 2026-11-01).** Made from the name at create: Unicode NFKD,
   remove combining marks, "đ" and "Đ" to "d", lower case, each run of characters outside `a–z`
   and `0–9` to one "-", trim "-" at both ends. Empty (for example a name of emoji only) → `bot`.
@@ -477,7 +482,10 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
   characters) of the re-encoded file; there is no avatars table. A file is **used** while any
   `bots` row names it: live, in Trash or a tombstone. The purge job deletes a file that no row
   names and whose time is older than `AVATAR_ORPHAN_HOURS` (default 24, `architecture.md` §8).
-  An upload of the same content again refreshes the file time. The upload writes or refreshes
+  The time counts from when the file was last uploaded **or last stopped being used**: an upload
+  of the same content refreshes it, and so does the save that removes the last row naming the
+  file (a bot that changes its image), in that save's write lock. So a file always gets the full
+  grace period after it becomes unused; the next purge pass after that deletes it. The upload writes or refreshes
   the file, and the cleanup checks and deletes it, each while it holds the database write lock,
   so neither can run between the other's check and its write. A bot save that names an
   `avatar_id` checks, inside its transaction, that the file exists: else 422
@@ -614,7 +622,8 @@ Why integers and not semver: compatibility of prose cannot be checked by a machi
 - **In Trash:** the skill is in no list or picker, and its slug stays taken, so a restore
   always works. **Restore** clears `trashed_at`; the skill stays deprecated. The app then
   suggests to assign it again to the bots in `trashed_bot_ids` that are not deleted.
-  **Restore exception (M2 spec gap pass, owner 2026-11-01; the UI comes in M5b).** These
+  **Restore exception (M2 spec gap pass, owner 2026-11-01; M5b builds it with the restore
+  dialog, M2 does not).** These
   suggested assigns pin a deprecated skill, which invariant 6 otherwise forbids. The server
   allows it only through `POST /skills/{id}/bots` with `restore_suggestion: true`, and only when,
   checked inside the transaction, the skill is deprecated and out of Trash, and each listed bot
@@ -853,6 +862,7 @@ the bot page build the Tools list from it (`design/components/create-bot-page.md
   line: "List, read and write files in the Library (the project's, or Home)."
   off_line: "The bot only talks. View images and Hand off turn off too."
   needs: []                     # tool ids that must be on (view_images and hand_off need files)
+  switch: open                  # open = the switch saves | later = off until its milestone builds it | locked = off, needs a decision (D55)
 - id: web_fetch
   label: Web fetch
   kind: provider
@@ -862,10 +872,16 @@ the bot page build the Tools list from it (`design/components/create-bot-page.md
   sends_data_out: false
   web: true
   line: "Open a page from a search result or from your message and read its text."
+  switch: later                 # M2: no provider tool is built yet
 ```
 
 - Internal tools in phase 1: `files`, `view_images`, `skills`, `hand_off`, `memory`.
 - A provider tool is offered to a bot only when the bot's model lists it in `provider_tools`.
+- `switch` (M2 spec gap pass, owner 2026-11-01): `open` for every internal tool (its saved switch
+  waits for the slice that builds it), `later` for every provider tool until the milestone that
+  builds it changes it to `open` (D53, D55), `locked` for the MCP connector until its decision.
+  The page shows `later` as "later milestone" and `locked` as "Needs a decision", both off with no
+  working switch; the server keeps them off (§2 Effective tool settings).
 - Order in the list: internal tools with no provider tool for the same job, then jobs that both
   can do, then provider-only tools; inside each group by `added`, oldest first.
 - Ids and parameters of provider tools change; the agent that builds them checks the provider
@@ -1171,8 +1187,8 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
 5. Only the author can create versions, deprecate, delete or restore a skill.
 6. A deprecated skill cannot be newly assigned, with two narrow exceptions that the server
    checks inside the transaction: a clone that copies a live source bot's pin to that same skill
-   and version (§2 Clone of a deprecated pin), and the restore suggestion for a bot in the
-   skill's `trashed_bot_ids` (§3.4). `cloned_from_bot_id` alone passes nothing.
+   and version (§2 Clone of a deprecated pin, M2), and the restore suggestion for a bot in the
+   skill's `trashed_bot_ids` (§3.4, M5b). `cloned_from_bot_id` alone passes nothing.
 7. `events.seq` is strictly increasing; every state change has its event in the same transaction.
 8. At most one `running` run per conversation (enforced by `runs_one_running`).
 9. A message's content changes only while `status = streaming`, or when the Trash purge clears

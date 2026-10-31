@@ -100,13 +100,13 @@ endpoint to create one.
 | Method | Path | Notes |
 | --- | --- | --- |
 | GET | `/models` | catalog entries with `available` (key present), `efforts`, `multimodal` and `provider_tools`; never key values |
-| GET | `/tools` | the tool catalog (`domain-model.md` §4.1): id, label, kind, provider, job, added, sends_data_out, web, line, off_line, needs |
+| GET | `/tools` | the tool catalog (`domain-model.md` §4.1): id, label, kind, provider, job, added, sends_data_out, web, line, off_line, needs, switch |
 
 ## 4. Bots
 
 | Method | Path | Body | Notes |
 | --- | --- | --- | --- |
-| GET | `/bots` | | the bots not in Trash (D50 dropped "Show deleted"; the M5b Trash endpoints list deleted bots), each with `row_version`, `available` (and the reason when not), `skills` (pins, with `latest_version` and `deprecated`), `tool_settings` (effective, `domain-model.md` §2), `last_activity_at` (latest message or run, NULL if none), `pinned_position`, `counts` (`skills`, `skill_updates`, `projects`, `conversations`), `status` (most urgent, `design/components/bot-status.md` §3) and `health`; returned in header order (`domain-model.md` §2). **In M2** (no conversations or runs): `projects` and `conversations` are 0, `last_activity_at` is NULL, `status` is idle; `skills`, `skill_updates` and the "Uses a deprecated skill" and "Cannot run" health lines use real data |
+| GET | `/bots` | | the bots not in Trash (D50 dropped "Show deleted"; the M5b Trash endpoints list deleted bots), each with `row_version`, `available` (and the reason when not), `pins` (with `latest_version` and `deprecated`), `tool_settings` (effective, `domain-model.md` §2), `last_activity_at` (latest message or run, NULL if none), `pinned_position`, `counts` (`skills`, `skill_updates`, `projects`, `conversations`), `status` (most urgent, `design/components/bot-status.md` §3) and `health`; returned in header order (`domain-model.md` §2). **In M2** (no conversations or runs): `projects` and `conversations` are 0, `last_activity_at` is NULL, `status` is idle; `skills`, `skill_updates` and the "Uses a deprecated skill" and "Cannot run" health lines use real data |
 | PUT | `/bots/pins` | `{bot_ids: [...], expected_bot_ids: [...]}` | the whole pinned list, in order; bots not listed are unpinned. `expected_bot_ids` is the pinned list the page saw, in order. A deleted or unknown id, a repeated id, or `expected_bot_ids` that is not the current pinned list → 409 `bot_list_changed`, positions unchanged; emits `bots.reordered`. Does not raise any bot's `row_version` |
 | POST | `/bots` | `{name, description, persona_md, avatar_style, avatar_colour, avatar_id?, model_id, effort?, history_share_pct?, request_limit?, max_reply_chars?, tool_settings?, pins: [{skill_id, skill_version_id?, always_load}], cloned_from_bot_id?}` | header `Idempotency-Key` (required, a UUID from the page): a repeat with the same key returns the first result and creates nothing (safe retry, `bots.md` UI-5.6). `skill_version_id` omitted = latest; omitted Advanced values and `tool_settings` take the defaults; 422 per field with the step it belongs to (`avatar_colour` must be `#RRGGBB`); 422 `tool_job_conflict`, `tool_not_available`, `model_not_available` (not in the catalog, or no API key), `effort_not_supported`, `skill_deprecated` (a pin, except the clone rule of `domain-model.md` §2); 409 `name_taken`. The key lookup comes before every check of data that can change (`domain-model.md` §2 Idempotency). The name, description and persona pass the sensitive-data guard (422 `sensitive_data`, `security.md` §2.13) |
 | GET | `/bots/{id}` | | includes conversations it is in. A bot in Trash returns 422 `bot_deleted`; a purged bot returns 410 `bot_purged`. Old messages still show a purged bot's name and avatar through `author` (§8) |
@@ -276,8 +276,9 @@ Conversation {
 Bot {
   id, slug, name, description, persona_md, avatar_style, avatar_colour, avatar_url, model_id, model_label, effort,
   available: boolean, unavailable_reason: "model_removed"|"no_api_key"|null,
-  history_share_pct, request_limit, max_reply_chars, tool_settings: { [tool_id]: boolean },
-  pinned_position: number | null, last_activity_at, counts: { projects, conversations },
+  history_share_pct, request_limit, max_reply_chars, tool_settings: { [tool_id]: boolean },   // effective (domain-model.md §2)
+  row_version,                                     // Profile and Model saves (domain-model.md §2 Concurrency)
+  pinned_position: number | null, last_activity_at, counts: { skills, skill_updates, projects, conversations },
   status: { state, conversation_id, conversation_title, also_running: number } | null,   // bot-status.md §3
   health: { level: "cannot_run"|"needs_attention", reason } | null,                     // bots.md UI-4.6
   pins: { skill_id, slug, name, version, latest_version, always_load, deprecated }[],

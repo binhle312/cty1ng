@@ -36,8 +36,9 @@ skill and Trash events); `docs/testing.md` §2 (fake models).
   `create-bot-page.md` E5).
 - Effective tool settings: one pure function for defaults, model tools, `multimodal`, `needs`
   and one tool per job, used by GET and checked on POST and PATCH (`domain-model.md` §2).
-  Internal tool switches show, start on and save; provider tools show "later milestone" and stay
-  off (D53, D55).
+  Internal tool switches show, start on and save; provider tools have `switch: later` and the
+  MCP connector `switch: locked`: they show "later milestone" or "Needs a decision", the server
+  refuses them on (422 `tool_not_available`) and reads them as off (D53, D55).
 - The sensitive-data guard on the bot name, description and persona (`security.md` §2.13).
 - Avatar upload pipeline: `sharp`, the file and request limits from `AVATAR_MAX_BYTES`,
   `GET /avatars/limits`, the pixel limit, re-encoding, the crop card, and the cleanup of unused
@@ -91,13 +92,15 @@ skill and Trash events); `docs/testing.md` §2 (fake models).
 
 Conversations, Message and Add here (M3), drag-to-add (M4), the Memory tab (M5b), the Trash page
 and bot restore in the app (M5b), Jelly and Pixel avatars, providers other than Anthropic, the
-restore suggestion assign (`restore_suggestion`, its UI is M5b).
+restore exception to invariant 6 (`restore_suggestion` and its server check, with the restore
+dialog in M5b).
 
 ## Acceptance criteria
 
 - UI-2.1, 2.2, 2.3, 2.6–2.10; UI-4.1–4.8; UI-5.1–5.8; UI-6.0–6.6 (6.7 and 6.8 show empty
   states until M3); UI-7.4, UI-7.5a, UI-7.6, UI-7.6a with bots.
-- Invariants 1, 3, 4, 6 (with both exceptions as server checks), 12, 19.
+- Invariants 1, 3, 4, 6 (with the clone exception as a server check; the restore exception is
+  M5b), 12, 19.
 - PATCH with `model_id` or `effort` → 422, row unchanged.
 - Effort not in the model's list → 422 `effort_not_supported`.
 - Removing a model from `models.yaml` makes the bot unavailable with "model removed"; Clone on
@@ -111,7 +114,8 @@ restore suggestion assign (`restore_suggestion`, its UI is M5b).
   or a request over that plus 64 KB, → 413 `too_large`. An image over 25 million pixels is
   refused before it is decoded. An unused file older than `AVATAR_ORPHAN_HOURS` is deleted; a
   file that any bot row names (live, Trash, tombstone) is kept; an upload of the same content
-  refreshes its time.
+  refreshes its time, and so does the save that removes its last use, so it gets the full grace
+  period after it becomes unused.
 - `POST /bots` repeated with the same `Idempotency-Key` and body → the first bot, nothing new,
   also after a skill it pins was deprecated in between; same key with another body → 409
   `idempotency_key_reused`. The Create page resends its snapshot on Try again; an edit after a
@@ -132,10 +136,12 @@ restore suggestion assign (`restore_suggestion`, its UI is M5b).
   load click never sends an old version.
 - Two Profile saves with the same `row_version` → one wins, the other gets 409 `stale_write`,
   and the page keeps its edits.
-- `tool_settings` with two tools of the same job on → 422 `tool_job_conflict`. A tool added to
+- `tool_settings` with two tools of the same job on → 422 `tool_job_conflict`; a provider tool
+  on (switch `later`) or the MCP connector on (`locked`) → 422 `tool_not_available`, and a stored
+  `true` for one reads as off. A tool added to
   `tools.yaml` after a bot was saved reads as its default, but never turns on when its `needs`
   tool is off or its job is taken.
-- Name key: "BÁ" and "bá", " BA " and "BA", "ＢＡ" and "ba" collide (409 `name_taken`), also
+- Name key: "BÁ" and "bá", " BA " and "BA", "ＢＡ" and "ba", "ẞ", "ß" and "SS" collide (409 `name_taken`), also
   with a bot in Trash and for two creates at once. Slugs: "Thiết kế" → `thiet-ke`, an emoji
   name → `bot`, the name "New" → `new-2`, a long name with a suffix stays ≤ 40.
 - A likely secret in the name, description or persona → 422 `sensitive_data`.
@@ -167,8 +173,10 @@ create skill → create bot with it → clone with a different model → upgrade
   `create_request_hash`, `purged_at`, and no `write_paths`) and `bot_skills`. The owner approved
   the columns in the spec (PR #20, 2026-10-24; `row_version` and `name_key` in the M2 spec gap
   pass) and still reviews the migration file.
-- New dependencies: `ai`, `@ai-sdk/anthropic` and `sharp` (backend); the plan lists the
-  frontend ones (for example `@dnd-kit` for drag, and any crop or colour picker library).
+- New dependencies: `ai`, `@ai-sdk/anthropic` and `sharp` (backend), and a case folding
+  library if the plan picks one over a generated table (`domain-model.md` §2 Name key); the plan
+  lists the frontend ones (for example `@dnd-kit` for drag, and any crop or colour picker
+  library).
 - API change: `upgrade_bot_ids` leaves `POST /skills/{id}/versions`.
 - Avatar upload code; catalog contents.
 

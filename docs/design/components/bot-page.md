@@ -70,8 +70,9 @@ There is no numbers row: the Skills and Activity tabs show the counts.
 spec gap pass, owner 2026-11-01).
 
 A bot that **cannot run** (no API key, model not in the catalog) shows a banner under the top
-with the reason and **Clone** (UI-6.2). Clone then opens with the model field empty (CL2,
-`create-bot-page.md` §6).
+with the reason and **Clone** (UI-6.2). For a model removed from the catalog, Clone opens with
+the model field empty (CL2); for a model with no API key, Clone keeps the model, shown
+unavailable (`create-bot-page.md` §6).
 
 ## 3. Tabs (BP1)
 
@@ -129,8 +130,11 @@ there, so it never jumps.
   (409 `stale_write`): the page loads the newest values at once, keeps the owner's edits, and
   the save bar says "BA changed in another place. Your changes are kept here. Copy what you
   need, then Discard to load the new values." Save is off until Discard. The same text shows
-  when an event says the bot changed while this tab has unsaved changes; a tab with no changes
-  takes the new values at once. A name taken meanwhile (409 `name_taken`) shows under Name.
+  when a `bot.updated` event carries a `row_version` above the one this tab's edit started
+  from, while this tab has unsaved changes. An event with the same `row_version` (a skill pin
+  or the pinned order changed, which never raise it) only refreshes the Skills tab, the counts
+  and the header, and never blocks a Profile or Model edit. A tab with no changes takes the new
+  values at once. A name taken meanwhile (409 `name_taken`) shows under Name.
   Text typed while a Save is pending stays as a change after it.
 - **Leave with unsaved changes** (Discard, Esc, ← Back, another bot, tab or page) asks first,
   with the dialog of `project-settings-page.md` §5: **Leave without saving? 👀**, a text that

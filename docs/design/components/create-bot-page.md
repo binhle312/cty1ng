@@ -115,7 +115,8 @@ Tool search. Code execution runs small scripts that analyse data in the provider
 code changes (D55); its line says so: "Run small Python scripts at Anthropic to analyse data and
 draw charts. It cannot change your files." MCP connector stays locked with "Needs a decision". Until a model is picked, the list says "Provider tools show here after you pick a
 model". Provider tool switches work from the milestone that builds them (D53, D55); until then
-the rows show "later milestone" and stay off.
+the rows show "later milestone" and stay off: their catalog `switch` is `later` (MCP connector:
+`locked`), and the server refuses them on (`../../domain-model.md` §4.1).
 
 ### 3.0 When the model changes
 
