@@ -73,7 +73,7 @@ that use them, then M0.
 
 ## Next
 
-1. M1 plan (Skill Hub) as the first comment of a draft PR on `m1-skill-hub`, with the risk probes (CSP for the four proposed dependencies, the Drizzle migration for a later `ADD COLUMN … REFERENCES`); checkpoint: the owner approves the schema, the dependencies and the UI design before the build.
+1. The owner reviews the M1 plan (first comment of the draft PR on `m1-skill-hub`): schema, dependencies, UI design and five open questions. Then M1a (backend) is built.
 
 ## Waiting on the owner
 
