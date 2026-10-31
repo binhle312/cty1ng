@@ -16,12 +16,13 @@ const Frontmatter = z.looseObject({ name: z.string(), description: z.string() })
 
 // The reason a file is not a skill (shown in the import preview), or the parsed skill.
 export function parseSkillMd(text: string): SkillMd | { invalid: string } {
-  const normalised = text.replace(/\r\n/g, "\n");
-  const match = /^---\n([\s\S]*?)\n---(?:\n|$)([\s\S]*)$/.exec(normalised);
+  // The `---` lines may end in CRLF. Only the frontmatter is normalised; the body keeps its line
+  // endings.
+  const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/.exec(text);
   if (match === null) return { invalid: "The file has no frontmatter between --- lines." };
   // The default core schema: no custom tags (security.md §2.4). An unknown tag is only a
   // warning in the yaml package, so any warning or error makes the file invalid.
-  const doc = parseDocument(match[1] ?? "", { schema: "core" });
+  const doc = parseDocument((match[1] ?? "").replace(/\r\n/g, "\n"), { schema: "core" });
   if (doc.errors.length > 0 || doc.warnings.length > 0) {
     return { invalid: "The frontmatter is not valid YAML." };
   }
@@ -36,10 +37,12 @@ export function parseSkillMd(text: string): SkillMd | { invalid: string } {
   if (!frontmatter.success) {
     return { invalid: "The frontmatter needs a name and a description, both text." };
   }
+  // The description and the body are kept as written, so an export imports as `unchanged`; only
+  // the one blank line that `serialiseSkillMd` puts after the frontmatter is dropped.
   return {
     slug: frontmatter.data.name.trim(),
-    description: frontmatter.data.description.trim(),
-    bodyMd: (match[2] ?? "").replace(/^\n+/, ""),
+    description: frontmatter.data.description,
+    bodyMd: (match[2] ?? "").replace(/^\r?\n/, ""),
   };
 }
 

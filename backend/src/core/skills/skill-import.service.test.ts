@@ -173,6 +173,31 @@ describe("preview", () => {
     );
   });
 
+  // Review of PR #52: parsing trimmed the description and the body's first blank lines, and
+  // turned CRLF in the body into LF.
+  it("an untouched export previews as unchanged", async () => {
+    await backend.skills.create(
+      { slug: "notes", name: "Notes", description: " Use it. ", bodyMd: "\n\n## Steps" },
+      OWNER_ID,
+    );
+    await backend.skills.create(
+      { slug: "windows", name: "Windows", description: "Use it.", bodyMd: "## Steps\r\n\r\n1." },
+      OWNER_ID,
+    );
+    const { files } = await backend.skills.exportFiles(null);
+    const preview = await backend.skillImport.preview(
+      "a.zip",
+      files.map((file) =>
+        folder(file.path.split("/")[0] ?? "", new TextEncoder().encode(file.text)),
+      ),
+      OWNER_ID,
+    );
+    expect(preview.rows.map((row) => [row.slug, row.status])).toEqual([
+      ["notes", "unchanged"],
+      ["windows", "unchanged"],
+    ]);
+  });
+
   it("an invalid UTF-8 file is invalid", async () => {
     const preview = await backend.skillImport.preview(
       "x.zip",
