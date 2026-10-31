@@ -22,11 +22,10 @@ export const SETTING_DEFAULTS = {
   skill_body_warn_lines: 500,
 } as const satisfies { [K in keyof typeof SETTING_SCHEMAS]: z.infer<(typeof SETTING_SCHEMAS)[K]> };
 
-export type SettingKey = keyof typeof SETTING_SCHEMAS;
-export const SETTING_KEYS = Object.keys(SETTING_SCHEMAS) as SettingKey[];
-
 export const Settings = z.object(SETTING_SCHEMAS).strict();
 export type Settings = z.infer<typeof Settings>;
+export type SettingKey = keyof Settings;
+export const SETTING_KEYS = Settings.keyof().options;
 
 // A PATCH changes only the keys it names; an unknown key fails (api.md §1, `.strict()`).
 export const SettingsPatch = Settings.partial();

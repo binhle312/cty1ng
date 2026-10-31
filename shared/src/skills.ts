@@ -19,7 +19,7 @@ export function slugProblem(slug: string): SlugProblem | null {
   if (slug === "") return "empty";
   if (slug.length > SKILL_FORMAT.slugMax) return "too_long";
   if (!SKILL_FORMAT.slugPattern.test(slug)) return "pattern";
-  if ((SKILL_FORMAT.reservedSlugs as readonly string[]).includes(slug)) return "reserved";
+  if (SKILL_FORMAT.reservedSlugs.some((reserved) => reserved === slug)) return "reserved";
   return null;
 }
 
@@ -99,6 +99,10 @@ export const Skill = z
   .strict();
 export type Skill = z.infer<typeof Skill>;
 
+// `GET /skills/{id}`: the skill with the body of its latest version.
+export const SkillDetail = Skill.extend({ body_md: z.string() }).strict();
+export type SkillDetail = z.infer<typeof SkillDetail>;
+
 export const SkillVersion = z
   .object({
     id: SkillVersionId,
@@ -118,3 +122,42 @@ export type SkillVersion = z.infer<typeof SkillVersion>;
 // unchanged runs and show them again.
 export const DiffLine = z.object({ op: z.enum(["same", "add", "del"]), text: z.string() }).strict();
 export type DiffLine = z.infer<typeof DiffLine>;
+
+export const SkillDiff = z
+  .object({ description: z.array(DiffLine).nullable(), body: z.array(DiffLine) })
+  .strict();
+export type SkillDiff = z.infer<typeof SkillDiff>;
+
+// One folder of an import zip (domain-model.md §3.5, skills-page.md §15). `new` and `changed`
+// rows can be applied; `unchanged`, `invalid` and `conflict` rows are listed only.
+export const SkillImportRow = z
+  .object({
+    slug: z.string(),
+    status: z.enum(["new", "changed", "unchanged", "invalid", "conflict"]),
+    // Why a row is invalid or a conflict; null otherwise.
+    reason: z.string().nullable(),
+    // The name a new skill gets (its slug), or the existing skill's name.
+    name: z.string(),
+    // `changed`: latest → new version; `unchanged`: the version it equals; `new`: 1.
+    from_version: z.number().int().positive().nullable(),
+    to_version: z.number().int().positive().nullable(),
+    diff: SkillDiff.nullable(),
+    // Files in the folder other than SKILL.md: listed, never opened (security.md §2.4).
+    skipped_files: z.array(z.string()),
+  })
+  .strict();
+export type SkillImportRow = z.infer<typeof SkillImportRow>;
+
+export const SkillImportPreview = z
+  .object({ preview_id: z.string(), file: z.string(), rows: z.array(SkillImportRow) })
+  .strict();
+export type SkillImportPreview = z.infer<typeof SkillImportPreview>;
+
+export const SkillImportResult = z
+  .object({
+    created: z.number().int().nonnegative(),
+    new_versions: z.number().int().nonnegative(),
+    skills: z.array(Skill),
+  })
+  .strict();
+export type SkillImportResult = z.infer<typeof SkillImportResult>;
