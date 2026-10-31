@@ -4,13 +4,17 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "../../components/ui/button.tsx";
 import { showToast } from "../../components/ui/toast.tsx";
+import { readApiError } from "../../lib/api/api-error.ts";
 import {
-  createSkillMutation,
+  getSettingsOptions,
   getSkillVersionOptions,
   listSkillVersionsOptions,
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
+import { createSkill } from "../../lib/api/generated/sdk.gen.ts";
+import type { CreateSkillData } from "../../lib/api/generated/types.gen.ts";
 import { NotFoundPage } from "../placeholder/not-found-page.tsx";
 import { useLeaveGuard } from "./leave-guard.tsx";
+import { LoadError } from "./load-error.tsx";
 import { SaveBarFrame, SaveButton } from "./save-bar.tsx";
 import { saveErrorOf, type SaveError } from "./save-error.ts";
 import { SkillEditorSkeleton } from "./skill-editor-skeleton.tsx";
@@ -31,9 +35,14 @@ const EMPTY: Fields = { name: "", slug: "", description: "", body_md: "" };
 
 interface CloneSource {
   skillName: string;
+  skillSlug: string;
   version: number;
   versionId: string;
-  fields: Fields;
+  description: string;
+  body_md: string;
+  // The slugs in the skill list when the Clone opened. Skills in Trash keep their slugs but are
+  // not listed (api.md §2), so Create can still find a slug taken (see `createWithFreeSlug`).
+  takenSlugs: ReadonlySet<string>;
 }
 
 // `/skills/new` and `/skills/new?from={skill version id}` (skills-page.md §1, §4, §12). Clone
@@ -41,9 +50,25 @@ interface CloneSource {
 export function NewSkillPage() {
   const { from } = useSearch({ from: "/skills/new" });
   const source = useCloneSource(from);
+  // The copy's name is cut to the name limit, so a Clone waits for the settings (a failed load
+  // uses the defaults, as the editor does).
+  const settings = useQuery(getSettingsOptions());
   if (from === undefined) return <NewSkillView key="new" source={null} />;
-  if (source.isPending) return <SkillEditorSkeleton />;
-  if (source.isError || source.data === null) return <NotFoundPage />;
+  // A failed request is not a missing version: the error state with Try again. A failed
+  // background refresh keeps the editor on the data it has.
+  if (source.data === undefined) {
+    if (source.isError) {
+      return (
+        <LoadError
+          text="The app could not load the skill to copy."
+          onRetry={() => void source.refetch()}
+        />
+      );
+    }
+    return <SkillEditorSkeleton />;
+  }
+  if (source.data === null) return <NotFoundPage />;
+  if (settings.isPending) return <SkillEditorSkeleton />;
   return <NewSkillView key={from} source={source.data} />;
 }
 
@@ -51,9 +76,9 @@ export function NewSkillPage() {
 // looks for it in each skill's version list (most are in the cache already).
 function useCloneSource(versionId: string | undefined) {
   const queryClient = useQueryClient();
-  const { limits } = useEditorSettings();
   return useQuery({
-    queryKey: ["skill-clone-source", versionId, limits.nameMax],
+    // The settings are not in the key: a new limit must not open a new editor over a draft.
+    queryKey: ["skill-clone-source", versionId],
     enabled: versionId !== undefined,
     // Each Clone looks again at the slugs that are taken: a copy made since the last Clone
     // takes `-copy`, so the next one must get `-copy-2` (skills-page.md §12). Nothing is kept
@@ -74,14 +99,12 @@ function useCloneSource(versionId: string | undefined) {
         );
         return {
           skillName: skill.name,
+          skillSlug: skill.slug,
           version: version.version,
           versionId: version.id,
-          fields: {
-            name: copyName(skill.name, limits.nameMax),
-            slug: copySlug(skill.slug, (slug) => slugs.has(slug)),
-            description: version.description,
-            body_md: version.body_md,
-          },
+          description: version.description,
+          body_md: version.body_md,
+          takenSlugs: slugs,
         };
       }
       return null;
@@ -89,12 +112,50 @@ function useCloneSource(versionId: string | undefined) {
   });
 }
 
+// Create (skills-page.md §12). A copy's slug that the owner did not change is the app's
+// proposal: when the server finds it taken (by a skill in Trash, or one made since the Clone
+// opened), the app takes the next free suffix and tries again. A slug the owner typed shows
+// the error instead.
+async function createWithFreeSlug(
+  body: CreateSkillData["body"],
+  // The Clone source when the slug is still the app's proposal, else null.
+  proposal: CloneSource | null,
+) {
+  const refused = new Set<string>();
+  let slug = body.slug;
+  for (;;) {
+    try {
+      const { data } = await createSkill({ body: { ...body, slug }, throwOnError: true });
+      return data;
+    } catch (error) {
+      if (proposal === null || readApiError(error)?.code !== "slug_taken") throw error;
+      refused.add(slug);
+      slug = copySlug(
+        proposal.skillSlug,
+        (candidate) => proposal.takenSlugs.has(candidate) || refused.has(candidate),
+      );
+    }
+  }
+}
+
 function NewSkillView({ source }: { source: CloneSource | null }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const settings = useEditorSettings();
+  const [proposedSlug] = useState(() =>
+    source === null ? null : copySlug(source.skillSlug, (slug) => source.takenSlugs.has(slug)),
+  );
   const [form, setForm] = useState(() => {
-    const form = newForm(source?.fields ?? EMPTY, true);
+    const fields =
+      source === null || proposedSlug === null
+        ? EMPTY
+        : {
+            name: copyName(source.skillName, settings.limits.nameMax),
+            slug: proposedSlug,
+            description: source.description,
+            body_md: source.body_md,
+          };
+    const form = newForm(fields, true);
     // A copy's slug is already set, so a new name does not change it.
     return { ...form, slugEdited: source !== null };
   });
@@ -107,7 +168,7 @@ function NewSkillView({ source }: { source: CloneSource | null }) {
   });
 
   const create = useMutation({
-    ...createSkillMutation(),
+    mutationFn: (input: Parameters<typeof createWithFreeSlug>) => createWithFreeSlug(...input),
     onSuccess: async (skill) => {
       // M1 has no bots, so the assign card does not open: only the toast (skills-page.md §7).
       showToast(`Created ${skill.name} ✨`);
@@ -158,7 +219,9 @@ function NewSkillView({ source }: { source: CloneSource | null }) {
           settings={settings}
           problems={problems}
           serverError={saveError?.field == null ? null : saveError}
-          readOnly={false}
+          // The page leaves after Create, so text typed while it is pending would be lost: the
+          // fields wait until the request ends.
+          readOnly={create.isPending}
         />
       </div>
       <SaveBarFrame>
@@ -178,15 +241,16 @@ function NewSkillView({ source }: { source: CloneSource | null }) {
           disabledReason={reason}
           onClick={() => {
             setSaveError(null);
-            create.mutate({
-              body: {
+            create.mutate([
+              {
                 slug: form.current.slug,
                 name: form.current.name,
                 description: form.current.description,
                 body_md: form.current.body_md,
                 ...(source === null ? {} : { cloned_from_skill_version_id: source.versionId }),
               },
-            });
+              form.current.slug === proposedSlug ? source : null,
+            ]);
           }}
         />
       </SaveBarFrame>
