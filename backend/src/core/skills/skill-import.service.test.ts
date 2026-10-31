@@ -155,6 +155,24 @@ describe("preview", () => {
     expect(error).toMatchObject({ code: "sensitive_data", field: "file" });
   });
 
+  // Review of PR #52: the preview did not guard the slug, so the row showed as `new` and Apply
+  // then refused it and rolled back the valid rows too.
+  it("a new skill whose slug looks like a secret is invalid", async () => {
+    const slug = "sk-proj-abcdefghijklmnop1234";
+    const preview = await backend.skillImport.preview(
+      "a.zip",
+      [folder(slug), folder("fresh")],
+      OWNER_ID,
+    );
+    expect(preview.rows.map((row) => [row.slug, row.status])).toEqual([
+      ["fresh", "new"],
+      [slug, "invalid"],
+    ]);
+    expect(preview.rows[1]?.reason).toBe(
+      "The folder name looks like an API key. The app does not save secrets in skills. Rename the folder.",
+    );
+  });
+
   it("an invalid UTF-8 file is invalid", async () => {
     const preview = await backend.skillImport.preview(
       "x.zip",

@@ -152,6 +152,13 @@ export function createSkillImportService(deps: {
       ...content,
     });
     if (seen.skillId === null) {
+      // Apply saves the slug of a new skill, and the guard reads it there (createInTx).
+      const [secret] = findSensitive(slug);
+      if (secret !== undefined) {
+        return invalid(
+          `The folder name looks like ${sensitiveLabel(secret.kind)}. The app does not save secrets in skills. Rename the folder.`,
+        );
+      }
       if (slug.length > limits.nameMax) {
         return invalid(
           `The folder name is the new skill's name, and it has ${String(slug.length)} characters. The limit is ${String(limits.nameMax)}. Rename the folder.`,
