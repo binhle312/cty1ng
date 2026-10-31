@@ -1,5 +1,5 @@
-// Times on pages (design/components/time-format.md §1, ui-rules T1, T3): under one day "5 min
-// ago" or "3 h ago", otherwise the local time in ISO order, "2026-10-21 14:05", on a 24-hour
+// Times on pages (design/components/time-format.md §1, ui-rules T1, T3): under one minute "Just
+// now", under one day "5 min ago" or "3 h ago", otherwise the local time in ISO order, "2026-10-21 14:05", on a 24-hour
 // clock. The full time with its UTC offset goes in a tooltip. `now` is passed in so tests can
 // fix it.
 const MINUTE = 60_000;
@@ -12,7 +12,7 @@ export function formatTime(iso: string, now: Date): string {
   const time = new Date(iso);
   const age = now.getTime() - time.getTime();
   if (age < DAY) {
-    if (age < MINUTE) return "just now";
+    if (age < MINUTE) return "Just now";
     if (age < HOUR) return `${String(Math.floor(age / MINUTE))} min ago`;
     return `${String(Math.floor(age / HOUR))} h ago`;
   }

@@ -73,7 +73,7 @@ Auto = `check_board.py` finds a break. Manual = check by eye.
 
 | # | Rule | Check | Source |
 | --- | --- | --- | --- |
-| T1 | Under 1 day "x ago" ("5 min ago", "3 h ago"). Otherwise local ISO time ("2026-10-20 16:40") | auto | `components/time-format.md` §1 |
+| T1 | Under 1 minute "Just now". Under 1 day "x ago" ("5 min ago", "3 h ago"). Otherwise local ISO time ("2026-10-20 16:40") | auto | `components/time-format.md` §1 |
 | T2 | The conversation and its cards use local clock time, full date in a tooltip | manual | `components/time-format.md` §1 |
 | T3 | 24-hour clock, two digits: "09:05", "09:05:07". Never "9:05" or "5:40 PM" | auto (AM/PM) | `components/time-format.md` §1 |
 | T4 | Every time range uses the D25 picker. The bucket follows the range | manual | `../requirements/time-range-picker.md` |

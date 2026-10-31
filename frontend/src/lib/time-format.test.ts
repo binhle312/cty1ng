@@ -8,8 +8,8 @@ process.env.TZ = "UTC";
 describe("formatTime", () => {
   const now = new Date("2026-10-31T12:00:00Z");
 
-  it("says x ago under one day", () => {
-    expect(formatTime("2026-10-31T11:59:30Z", now)).toBe("just now");
+  it("says Just now under one minute, and x ago under one day", () => {
+    expect(formatTime("2026-10-31T11:59:30Z", now)).toBe("Just now");
     expect(formatTime("2026-10-31T11:55:00Z", now)).toBe("5 min ago");
     expect(formatTime("2026-10-31T09:00:00Z", now)).toBe("3 h ago");
     expect(formatTime("2026-10-30T12:00:01Z", now)).toBe("23 h ago");
