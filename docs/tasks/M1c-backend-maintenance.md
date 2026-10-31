@@ -55,9 +55,11 @@ The `db_lock_wait_seconds` histogram (M3). Any UI.
   and a new event gets the next seq.
 - After pruning, `events.seq` never goes back: a new event gets a seq above every pruned one
   (invariant 7).
-- A client whose `Last-Event-ID` is older than the oldest kept event gets `reset` with the
-  `id:` the stream continues from, then the live events (`realtime-events.md` §2). A client
-  whose cursor is still inside the window gets the replay, not `reset`.
+- The gap rule (`realtime-events.md` §2), where `oldest` is the seq of the oldest kept event: a
+  client whose `Last-Event-ID` is below `oldest − 1` gets `reset` with the `id:` the stream
+  continues from, then the live events. A cursor of exactly `oldest − 1` needs no pruned event,
+  so it gets the replay from `oldest`, not `reset`; so does any later cursor. This is what
+  `core/events/hub.ts` and the transport contract do today; keep it.
 - A second `openWriter` for the same file in one process throws, also when the second path is
   a symlink, a hard link or a relative path to the same file; after the first writer closes, a
   new one opens. A failed open leaves the file free. A writer for another file, and any
@@ -72,8 +74,9 @@ The `db_lock_wait_seconds` histogram (M3). Any UI.
   deleted and one at the cutoff is kept; all events old (complete removal), then a new event
   gets a seq above every pruned one.
 - Timed job, as in `app/timed-jobs.test.ts`: at start, on the interval, after a failure.
-- SSE: prune, then reconnect with a pruned cursor (`reset` with its `id:`) and with a kept one
-  (the replay); reconnect after a complete removal.
+- SSE: prune, then reconnect with a cursor below `oldest − 1` (`reset` with its `id:`), with
+  exactly `oldest − 1` (the replay from `oldest`, no `reset`) and with a later one (the
+  replay); reconnect after a complete removal.
 - Writer guard: the same path; a symlink, a hard link and a relative path with `..` to the
   same file; after close; another file; readers while a writer is open; a failed open (a file
   that is not a database) leaves the file free.
