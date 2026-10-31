@@ -61,16 +61,16 @@ export function readSkillZip(zip: Uint8Array): Promise<ImportFolder[]> {
             );
             return;
           }
-          const name = entry.fileName;
-          if (name.endsWith("/")) {
-            archive.readEntry();
-            return;
-          }
-          // Every entry counts by the size its header states, read or not.
+          // Every entry counts by the size its header states, read or not, a directory too.
           total += entry.uncompressedSize;
           if (total > SKILL_ZIP.maxTotalUncompressedBytes) {
             archive.close();
             fail(new ApiFailure("too_large", "The zip unpacks to more than 20 MB."));
+            return;
+          }
+          const name = entry.fileName;
+          if (name.endsWith("/")) {
+            archive.readEntry();
             return;
           }
           const [folder = "", ...rest] = name.split("/");
