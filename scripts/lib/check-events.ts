@@ -28,10 +28,6 @@ export const PENDING = [
   "bot.updated",
   "bot.deleted",
   "bots.reordered",
-  "skill.created",
-  "skill.updated",
-  "skill.deprecated",
-  "settings.updated",
   "spend.threshold_crossed",
   "project.created",
   "project.updated",
@@ -43,7 +39,6 @@ export const PENDING = [
   "memory.seen",
   "memory.restored",
   "memory_proposal.updated",
-  "trash.changed",
 ] as const;
 
 // The names in the first column of the §4 table, for example `bot.created` / `bot.updated`.

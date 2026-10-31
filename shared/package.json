@@ -6,7 +6,9 @@
     ".": "./src/index.ts",
     "./events": "./src/events/index.ts",
     "./ids": "./src/ids.ts",
-    "./errors": "./src/errors.ts"
+    "./errors": "./src/errors.ts",
+    "./settings": "./src/settings.ts",
+    "./skills": "./src/skills.ts"
   },
   "scripts": {
     "typecheck": "tsc -p ."

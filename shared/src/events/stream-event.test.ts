@@ -3,7 +3,19 @@ import { EVENT_TYPES, StreamEvent } from "./stream-event.ts";
 
 describe("StreamEvent", () => {
   it("lists every type of the union", () => {
-    expect(EVENT_TYPES).toEqual(["ready", "reset", "test.ping"]);
+    expect(EVENT_TYPES).toEqual([
+      "ready",
+      "reset",
+      "test.ping",
+      "skill.created",
+      "skill.updated",
+      "skill.deprecated",
+      "skill.trashed",
+      "skill.restored",
+      "skill.purged",
+      "trash.changed",
+      "settings.updated",
+    ]);
   });
 
   it("parses a persisted event with its seq", () => {
