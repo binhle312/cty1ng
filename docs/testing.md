@@ -164,6 +164,20 @@ open at the "New" divider.
 
 Each slice's brief lists which of these steps must pass by its end.
 
+### Edge cases each slice tests
+
+The normal path of an acceptance criterion is not enough. For each screen or flow it builds,
+a slice tests these cases where they apply (`workflow.md` §2 step 4, "Spec walk"):
+
+| Case | Example |
+| --- | --- |
+| The same data changes in another tab | An unsaved edit stays and the conflict shows |
+| The same action twice | A second Clone gets the next free slug |
+| A request fails | The error state shows, not Page not found or an empty list |
+| Keyboard only | Every tooltip, menu and dialog opens and closes from the keyboard |
+| Leaving with unsaved work | Every way out asks first, including moves inside one path |
+| Moving through the app, not only reloads | A test that reloads can hide a cache bug |
+
 ### Fast loop while building
 
 A full gate run is slow, mostly because Playwright starts two backends and builds the frontend.
@@ -194,6 +208,12 @@ killed.
 | `watchCsp(page)` | `frontend/test/e2e/csp.ts` | End-to-end tests: collects every CSP violation of a page; assert that the list is empty. |
 | `readZip(buffer)` | `frontend/test/e2e/zip.ts` | End-to-end tests: the files of a downloaded zip (the skill export), by name. |
 
+**Fake secrets.** Test code never holds text with the full shape of a real credential: GitHub
+secret scanning reports it (`security.md` §2.11). A test of the likely-secret guard (D39) builds
+the value at run time, for example `["sk", "proj", "abcdefghijklmnop1234"].join("-")`, or uses
+a short value that the guard catches and a scanner does not (lesson
+`no-real-looking-secrets-in-tests.md`).
+
 ### Themes (D30)
 
 From M0, per `design/themes.md` §5: a token contrast test (WCAG AA), axe checks in every theme
@@ -213,4 +233,5 @@ high`, CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also
 
 A PR description maps each acceptance criterion of its task to the test that proves it, or to a
 screenshot for purely visual criteria (Playwright can save screenshots:
-`frontend/test/e2e/__screenshots__/`). "Tested manually" alone is not evidence.
+`frontend/test/e2e/__screenshots__/`). "Tested manually" alone is not evidence. For a bug fix, the PR also says that its test failed
+on the code before the fix (`workflow.md` §2 step 3).

@@ -16,6 +16,11 @@ and what changed because of it. Newest first.
 
 | File | Lesson | Source | Status |
 | --- | --- | --- | --- |
+| `self-review-against-the-spec.md` | Before the PR, check the code against each spec section and test the edge cases | M1b, PR #54 | applied |
+| `prove-the-test-fails-first.md` | See a fix's test fail on the old code | M1b, PR #54 | applied |
+| `full-gate-before-the-report.md` | Run every §4 check before the report, and report only what ran | M1b, PR #54 | applied |
+| `no-real-looking-secrets-in-tests.md` | No real-looking secrets in test code | M1b, PR #54 | applied |
+| `flag-ui-choices-in-review-fixes.md` | List the UI choices made in review fixes for the owner | M1b, PR #54 | applied |
 | `e2e-server-reuse.md` | Keep the end-to-end servers running between local runs; run only the affected tests while fixing | M0c, PR #49 | open (sandbox hang) |
 | `risk-probes-before-plan.md` | Try new libraries and parts in short probes before writing the plan | M0c, PR #49 | applied |
 | `one-round-of-questions.md` | Put every open question in the plan, so the owner answers once | M0c, PR #49 | applied |
