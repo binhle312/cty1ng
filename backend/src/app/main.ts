@@ -36,8 +36,10 @@ function start(): void {
 
   const stopJobs = startTimedJobs({
     skills: app.skills,
+    eventPruning: app.eventPruning,
     log,
     purgeIntervalHours: config.purgeIntervalHours,
+    eventPruneIntervalHours: config.eventPruneIntervalHours,
   });
 
   const shutdown = (): void => {
