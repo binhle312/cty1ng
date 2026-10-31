@@ -376,6 +376,12 @@ The spec did not name these; the build uses them:
 - A rename only: the toast "Saved ✨" (no version number).
 - A save that the server refuses as stale (409 `stale_write`): "This skill changed in another
   place. Reload the page to see the change." in the save bar.
+- The skill changes in another tab while this tab has unsaved changes (review of #54): the
+  edit stays, Save is off, and the save bar says "This skill changed in another place. Your
+  changes are kept here. Copy what you need, then Discard to load the new text." Discard loads
+  the newest saved text. An editor with no changes takes the new text at once.
+- A list or skill that does not load: "The app could not load the skills." and **Try again**,
+  never Page not found.
 - Why a button is off (`ui-rules.md` B5): "No changes to save.", "Fill in every field.", "Fix
   the errors first.", "Tick a skill to export.", "Tick a row to apply."
 - Deprecate in M1 (no bots): "No bot uses it." in place of the bot list.

@@ -358,3 +358,82 @@ test("the Skills page has no axe violations", async ({ page }) => {
   await page.getByRole("tab", { name: /History/ }).click();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
+
+// Review fixes for #54. Each test fails on the code before the fix.
+
+test("a change in another tab keeps this tab's unsaved edit and shows the conflict", async ({
+  page,
+  context,
+}) => {
+  const skill = unique("Two tabs");
+  await createSkill(page, skill);
+  await page.getByRole("tab", { name: "Write" }).click();
+  await fill(page, "Description", "My unsaved description.");
+
+  const other = await context.newPage();
+  await other.goto(`/skills/${skill.slug}`);
+  await other.getByLabel("Name", { exact: true }).fill(`${skill.name} renamed`);
+  await other.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(other.getByText("Saved ✨")).toBeVisible();
+
+  // The stream tells the first tab; its page top shows the new name, the edit stays.
+  await expect(pageTitle(page)).toHaveText(`${skill.name} renamed`);
+  await expect(page.getByLabel("Description", { exact: true })).toHaveValue(
+    "My unsaved description.",
+  );
+  await expect(
+    page.getByText(/This skill changed in another place\. Your changes are kept/),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save as v2" })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
+  // Discard loads the newest text.
+  await page.getByRole("button", { name: "Discard" }).click();
+  await expect(page.getByLabel("Name", { exact: true })).toHaveValue(`${skill.name} renamed`);
+  await expect(page.getByText("All changes are saved.")).toBeVisible();
+});
+
+test("leaving an edited Clone for a new skill asks first", async ({ page }) => {
+  const skill = unique("Clone leave");
+  await createSkill(page, skill);
+  await page.getByRole("button", { name: "Skill actions" }).click();
+  await page.getByRole("menuitem", { name: "Clone" }).click();
+  await fill(page, "Description", "Edited copy.");
+  await page.getByRole("link", { name: "Create", exact: true }).click();
+  const dialog = page.getByRole("alertdialog", { name: "Leave without saving? 👀" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Stay on this skill" }).click();
+  await expect(page).toHaveURL(/\/skills\/new\?from=skillv_/);
+  await expect(page.getByLabel("Description", { exact: true })).toHaveValue("Edited copy.");
+});
+
+test("a second Clone of a skill proposes the next free slug", async ({ page }) => {
+  const skill = unique("Clone twice");
+  await createSkill(page, skill);
+  // In-app moves only: a reload would clear the cache that kept the old slug.
+  for (const slug of [`${skill.slug}-copy`, `${skill.slug}-copy-2`]) {
+    await page
+      .getByRole("navigation", { name: "Skills" })
+      .getByRole("link", { name: new RegExp(`^${skill.name} v1`) })
+      .click();
+    await expect(page).toHaveURL(`/skills/${skill.slug}`);
+    await page.getByRole("button", { name: "Skill actions" }).click();
+    await page.getByRole("menuitem", { name: "Clone" }).click();
+    await expect(page.getByLabel("Slug", { exact: true })).toHaveValue(slug);
+    await page.getByRole("button", { name: "Create", exact: true }).click();
+    await expect(page).toHaveURL(`/skills/${slug}`);
+  }
+});
+
+test("a time's full value opens from the keyboard", async ({ page }) => {
+  const skill = unique("Time tip");
+  await createSkill(page, skill);
+  await page.getByRole("tab", { name: /History/ }).click();
+  const time = page.getByRole("main").locator("time").first();
+  await time.focus();
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Tab");
+  await expect(time).toBeFocused();
+  await expect(page.getByText(/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d [+-]\d\d:\d\d$/)).toBeVisible();
+});
