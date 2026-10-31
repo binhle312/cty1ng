@@ -23,11 +23,15 @@ export interface EventsReader {
   after(seq: number, limit: number): Promise<PersistedEvent[]>;
   // The oldest and newest kept seq; both null when there is no event.
   bounds(): Promise<{ oldest: number | null; newest: number | null }>;
+  // The highest seq ever given, kept or pruned; null before the first event.
+  lastSeq(): Promise<number | null>;
 }
 
 export interface EventsWriter extends EventsReader {
   // Inserts the event and returns its seq.
   append(event: NewEvent): Promise<number>;
+  // Deletes the events created before `cutoff` (domain-model.md §8); returns how many.
+  deleteBefore(cutoff: Date): Promise<number>;
 }
 
 export interface SettingsReader {

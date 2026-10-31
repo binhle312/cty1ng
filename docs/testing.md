@@ -210,6 +210,12 @@ killed.
 | `watchCsp(page)` | `frontend/test/e2e/csp.ts` | End-to-end tests: collects every CSP violation of a page; assert that the list is empty. |
 | `readZip(buffer)` | `frontend/test/e2e/zip.ts` | End-to-end tests: the files of a downloaded zip (the skill export), by name. |
 
+**Loops on microtasks.** A loop that awaits only resolved promises (a reader that returns
+`Promise.resolve`) never lets a timer run, so Vitest's own timeout cannot stop it and the test
+worker hangs. A test for "this waits" bounds the work instead: wrap the read with a counter that
+throws after a small number of calls, then check that a zero-delay timer runs
+(`backend/src/core/events/hub.test.ts`).
+
 **Fake secrets.** Test code never holds text with the full shape of a real credential: GitHub
 secret scanning reports it (`security.md` §2.11). A test of the likely-secret guard (D39) builds
 the value at run time, for example `["sk", "proj", "abcdefghijklmnop1234"].join("-")`, or uses

@@ -39,6 +39,7 @@ export function sseBody(
   // (a fresh start, or after a reset).
   let maxSeq = 0;
   let cursor = afterSeq ?? 0;
+  let ready = false;
 
   function finish(closeBody: boolean): void {
     if (closed) return;
@@ -78,7 +79,11 @@ export function sseBody(
           const event = next.value;
           if (event.type === "ready") {
             maxSeq = event.data.max_seq;
-            if (afterSeq === null) cursor = maxSeq;
+            // Only the first `ready` of a first connection starts at the newest seq. A later
+            // one (the gap rule during a replay) keeps the last sent seq until its `reset`, so
+            // a drop in between resumes there and gets the reset again.
+            if (afterSeq === null && !ready) cursor = maxSeq;
+            ready = true;
           }
           if (event.type === "reset") cursor = maxSeq;
           controller.enqueue(encoder.encode(eventFrame(event, cursor)));

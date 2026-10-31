@@ -34,7 +34,8 @@ function fixture(wrap: (hub: Transport) => Transport): TransportFixture {
           if (outcome === "commit") throw error;
         });
     },
-    // Pruning comes with the first timed job; the test deletes on its own connection.
+    // The contract prunes by seq on its own connection; the pruning job (by time) is tested in
+    // core/events/hub.test.ts and test/api/stream.test.ts.
     pruneBefore: (seq) => {
       const sqlite = new Database(backend.config.databaseFile);
       sqlite.prepare("DELETE FROM events WHERE seq < ?").run(seq);
