@@ -90,4 +90,35 @@ describe("sseBody control events", () => {
       "7 test.ping",
     ]);
   });
+
+  // A first connection (no Last-Event-ID): only its first `ready` carries the newest seq. A
+  // later one keeps the last sent seq, so a drop before the `reset` resumes there and the
+  // server sends the reset again.
+  it("keeps the last sent seq as the id of a later `ready` on a first connection", async () => {
+    const ping = (seq: number) =>
+      ({ type: "test.ping", seq, data: { note: String(seq) } }) as const;
+    const transport: Transport = {
+      async *subscribe() {
+        await Promise.resolve();
+        yield { type: "ready", data: { max_seq: 2 } };
+        yield ping(3);
+        yield ping(4);
+        yield { type: "ready", data: { max_seq: 8 } };
+        yield { type: "reset", data: {} };
+        yield ping(9);
+      },
+    };
+    const body = sseBody(transport, null, new AbortController().signal, {
+      onError: () => undefined,
+    });
+    const frames = parseFrames(await new Response(body).text()).filter((f) => f.event);
+    expect(frames.map((f) => `${f.id ?? "-"} ${f.event ?? ""}`)).toEqual([
+      "2 ready",
+      "3 test.ping",
+      "4 test.ping",
+      "4 ready",
+      "8 reset",
+      "9 test.ping",
+    ]);
+  });
 });
