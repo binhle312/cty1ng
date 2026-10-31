@@ -9,7 +9,9 @@ import type { EditorSettings } from "./skill-queries.ts";
 // The editor fields of the Skill tab (skills-page.md §2, §4, §6): Name, Slug (a new skill
 // only), Description and Body, each with its counter. Only the field in focus gets a `primary`
 // border. An empty field shows its error after the owner leaves it; a field over its limit, a
-// bad slug or an error from the server shows at once.
+// bad slug or an error from the server shows at once. Read-only fields are real read-only
+// controls, not disabled ones: they take focus, so the owner can select and copy the text from
+// the keyboard (owner, 2026-10-31).
 
 const BODY_PLACEHOLDER = `## Steps
 1. Read the brief and the open questions.
@@ -50,7 +52,7 @@ export function SkillFields({
     value: form.current[name],
     error: errorOf(name),
     counter: counter(name, form.current[name], settings.limits),
-    disabled: readOnly,
+    readOnly,
     onChange: (value: string) => {
       onChange(name, value);
     },
@@ -60,7 +62,7 @@ export function SkillFields({
   });
 
   return (
-    <div className={cn("flex flex-col gap-3.5", readOnly && "cursor-not-allowed")}>
+    <div className="flex flex-col gap-3.5">
       <TextField label="Name" {...field("name")} />
       {form.isNew && (
         <TextField
@@ -97,7 +99,7 @@ interface FieldProps {
   value: string;
   error: string | null;
   counter: { text: string; over: boolean };
-  disabled: boolean;
+  readOnly: boolean;
   placeholder?: string | undefined;
   onChange: (value: string) => void;
   onLeave: () => void;
@@ -147,7 +149,7 @@ function FieldFrame({
 }
 
 const BOX =
-  "w-full rounded-control border border-outline-strong bg-surface px-2.5 py-1.5 outline-none placeholder:text-on-surface-muted focus:border-primary disabled:opacity-40";
+  "w-full rounded-control border border-outline-strong bg-surface px-2.5 py-1.5 outline-none placeholder:text-on-surface-muted focus:border-primary read-only:bg-surface-raised";
 
 function TextField({
   multiline = false,
@@ -158,7 +160,7 @@ function TextField({
   const common = {
     id,
     value: props.value,
-    disabled: props.disabled,
+    readOnly: props.readOnly,
     placeholder: props.placeholder,
     "aria-invalid": props.error !== null,
     "aria-describedby": props.error === null ? undefined : `${id}-error`,
@@ -228,7 +230,7 @@ function BodyField(props: FieldProps & { warning: string | null }) {
           <textarea
             id={id}
             value={props.value}
-            disabled={props.disabled}
+            readOnly={props.readOnly}
             placeholder={props.placeholder}
             aria-label={props.label}
             aria-invalid={props.error !== null}
@@ -237,13 +239,11 @@ function BodyField(props: FieldProps & { warning: string | null }) {
             onChange={(event) => {
               props.onChange(event.target.value);
             }}
-            className="field-sizing-content block min-h-72 w-full resize-none bg-transparent px-3 py-2.5 font-mono outline-none placeholder:text-on-surface-muted disabled:opacity-40"
+            className="field-sizing-content block min-h-72 w-full resize-none bg-transparent px-3 py-2.5 font-mono outline-none placeholder:text-on-surface-muted read-only:bg-surface-raised"
           />
         </TabsPanel>
         <TabsPanel value="preview">
-          <Markdown className={cn("markdown min-h-72 px-4 py-3", props.disabled && "opacity-40")}>
-            {props.value}
-          </Markdown>
+          <Markdown className="markdown min-h-72 px-4 py-3">{props.value}</Markdown>
         </TabsPanel>
       </TabsRoot>
     </FieldFrame>

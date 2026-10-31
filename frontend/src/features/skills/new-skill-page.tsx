@@ -28,7 +28,7 @@ import {
   setField,
   type SkillFields as Fields,
 } from "./skill-form.ts";
-import { allSkillsOptions, useEditorSettings } from "./skill-queries.ts";
+import { allSkillsOptions, limitsReason, useEditorSettings } from "./skill-queries.ts";
 
 const EMPTY: Fields = { name: "", slug: "", description: "", body_md: "" };
 
@@ -50,8 +50,8 @@ export function NewSkillPage() {
   const { from } = useSearch({ from: "/skills/new" });
   const source = useCloneSource(from);
   // The copy's name is cut to the name limit, so a Clone waits for the settings, once: after
-  // the first answer, success or failure, it never waits again. A failed load uses the defaults,
-  // as the editor does. (A query with no data goes back to pending on each new try, so waiting
+  // the first answer, success or failure, it never waits again. After a failed load the editor
+  // opens with no limit and the settings error; Create waits for the limits. (A query with no data goes back to pending on each new try, so waiting
   // on `isPending` would show the skeleton again and again while the settings fail.)
   const settings = useQuery(getSettingsOptions());
   const [settingsSettled, setSettingsSettled] = useState(false);
@@ -199,11 +199,13 @@ function NewSkillView({ source }: { source: CloneSource | null }) {
   const filled = EDITOR_FIELDS.every((field) => form.current[field].trim() !== "");
   const reason = create.isPending
     ? "Saving."
-    : !filled
-      ? "Fill in every field."
-      : hasProblem(problems) || saveError?.field != null
-        ? "Fix the errors first."
-        : null;
+    : limitsReason(settings) !== null
+      ? limitsReason(settings)
+      : !filled
+        ? "Fill in every field."
+        : hasProblem(problems) || saveError?.field != null
+          ? "Fix the errors first."
+          : null;
 
   return (
     <>
@@ -223,6 +225,13 @@ function NewSkillView({ source }: { source: CloneSource | null }) {
             : "You are the author of the copy. Later changes to the original do not change it."}
         </p>
       </header>
+      {settings.limitsFailed && (
+        <LoadError
+          className="shrink-0 py-3"
+          text="The app could not load the limits for skills, so Create is off. Your text is kept."
+          onRetry={settings.retry}
+        />
+      )}
       <div className="min-h-0 grow overflow-y-auto px-8 py-5">
         <SkillFields
           form={form}

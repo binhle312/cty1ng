@@ -13,7 +13,7 @@ import { Button } from "../../components/ui/button.tsx";
 import { Tab, TabsList, TabsPanel, TabsRoot } from "../../components/ui/tabs.tsx";
 import { showToast } from "../../components/ui/toast.tsx";
 import { TimeText } from "../../components/ui/time-text.tsx";
-import { apiErrorText } from "../../lib/api/api-error.ts";
+import { apiErrorText, readApiError } from "../../lib/api/api-error.ts";
 import {
   createSkillVersionMutation,
   deprecateSkillMutation,
@@ -29,7 +29,7 @@ import { useExportSkills } from "./export-card.tsx";
 import { useLeaveGuard } from "./leave-guard.tsx";
 import { Pill, VersionPill } from "./pills.tsx";
 import { EditSaveBar, ReadOnlySaveBar } from "./save-bar.tsx";
-import { saveErrorOf, type SaveError } from "./save-error.ts";
+import { CONFLICT_TEXT, saveErrorOf, type SaveError } from "./save-error.ts";
 import { SkillBotsTab } from "./skill-bots-tab.tsx";
 import { DeleteDialog, DeprecateDialog } from "./skill-dialogs.tsx";
 import { SkillEditorSkeleton } from "./skill-editor-skeleton.tsx";
@@ -47,7 +47,13 @@ import {
   setField,
 } from "./skill-form.ts";
 import { SkillHistory } from "./skill-history.tsx";
-import { usedByLine, useAllSkills, useEditorSettings } from "./skill-queries.ts";
+import {
+  allSkillsOptions,
+  limitsReason,
+  usedByLine,
+  useAllSkills,
+  useEditorSettings,
+} from "./skill-queries.ts";
 import { useSkillsPage } from "./skills-context.tsx";
 
 type SkillDetail = GetSkillResponse;
@@ -151,6 +157,13 @@ function SkillView({ skill }: { skill: SkillDetail }) {
 
   const onError = (error: unknown) => {
     setSaveError(saveErrorOf(error));
+    // A stale save: load the newest version now. The edit stays, and the conflict shows.
+    if (readApiError(error)?.code === "stale_write") {
+      void queryClient.invalidateQueries({
+        queryKey: getSkillOptions({ path: { id: skill.id } }).queryKey,
+      });
+      void queryClient.invalidateQueries({ queryKey: allSkillsOptions().queryKey });
+    }
   };
   const rename = useMutation({
     ...renameSkillMutation(),
@@ -261,11 +274,13 @@ function SkillView({ skill }: { skill: SkillDetail }) {
 
   const blockedReason = saving
     ? "Saving."
-    : conflict
-      ? "This skill changed in another place."
-      : hasProblem(problems) || saveError?.field != null
-        ? "Fix the errors first."
-        : null;
+    : limitsReason(settings) !== null
+      ? limitsReason(settings)
+      : conflict
+        ? "This skill changed in another place."
+        : hasProblem(problems) || saveError?.field != null
+          ? "Fix the errors first."
+          : null;
 
   return (
     <>
@@ -333,6 +348,13 @@ function SkillView({ skill }: { skill: SkillDetail }) {
           </Tab>
         </TabsList>
         <TabsPanel value="skill" className="flex min-h-0 grow flex-col">
+          {settings.limitsFailed && !readOnly && (
+            <LoadError
+              className="shrink-0 py-3"
+              text="The app could not load the limits for skills, so Save is off. Your changes are kept."
+              onRetry={settings.retry}
+            />
+          )}
           <div className="min-h-0 grow overflow-y-auto px-8 py-5">
             <SkillFields
               form={form}
@@ -350,7 +372,7 @@ function SkillView({ skill }: { skill: SkillDetail }) {
             <ReadOnlySaveBar
               text={
                 dirty
-                  ? "This skill was deprecated with your changes not saved. Deprecated skills are read-only: copy what you need before you leave."
+                  ? "This skill was deprecated. Your changes are still here, but you cannot save them. Copy what you need before you leave."
                   : "Deprecated skills are read-only. Make it active again to edit it."
               }
             />
@@ -376,11 +398,7 @@ function SkillView({ skill }: { skill: SkillDetail }) {
               onSave={save}
               blockedReason={blockedReason}
               error={
-                conflict
-                  ? "This skill changed in another place. Your changes are kept here. Copy what you need, then Discard to load the new text."
-                  : saveError?.field === null
-                    ? saveError.message
-                    : null
+                conflict ? CONFLICT_TEXT : saveError?.field === null ? saveError.message : null
               }
             />
           )}

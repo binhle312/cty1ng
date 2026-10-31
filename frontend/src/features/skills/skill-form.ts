@@ -102,6 +102,8 @@ export function counter(
   limits: SkillLimits,
 ): { text: string; over: boolean } {
   const max = skillFieldMax(field, limits);
+  // An unknown limit (the settings have not loaded) shows only the length.
+  if (!Number.isFinite(max)) return { text: formatCount(value.length), over: false };
   return {
     text: `${formatCount(value.length)} / ${formatCount(max)}`,
     over: value.length > max,

@@ -18,21 +18,44 @@ export function useAllSkills() {
 }
 
 // The editor's limits come from `GET /settings`, so its counters and errors match the server
-// (skills-page.md, "Requirement changes"). Until the settings load, the defaults apply.
+// (skills-page.md, "Requirement changes"). The defaults can differ from the owner's saved
+// limits, so until the settings load no limit applies: the counters show only the length, and
+// Save and Create stay off (`limitsKnown`). A failed load shows an error with Try again
+// (owner, 2026-10-31). The other values are not limits, and their defaults apply meanwhile.
 export interface EditorSettings {
   limits: SkillLimits;
+  limitsKnown: boolean;
+  limitsFailed: boolean;
+  retry: () => void;
   warnLines: number;
   trashDays: number;
 }
 
+const NO_LIMITS: SkillLimits = {
+  nameMax: Number.POSITIVE_INFINITY,
+  bodyMax: Number.POSITIVE_INFINITY,
+};
+
 export function useEditorSettings(): EditorSettings {
-  const { data } = useQuery(getSettingsOptions());
+  const { data, isError, refetch } = useQuery(getSettingsOptions());
   const settings = data ?? SETTING_DEFAULTS;
   return {
-    limits: { nameMax: settings.skill_name_max, bodyMax: settings.skill_body_max },
+    limits:
+      data === undefined
+        ? NO_LIMITS
+        : { nameMax: data.skill_name_max, bodyMax: data.skill_body_max },
+    limitsKnown: data !== undefined,
+    limitsFailed: data === undefined && isError,
+    retry: () => void refetch(),
     warnLines: settings.skill_body_warn_lines,
     trashDays: settings.trash_days,
   };
+}
+
+// Why Save or Create is off while the limits are not known, or null.
+export function limitsReason(settings: EditorSettings): string | null {
+  if (settings.limitsKnown) return null;
+  return settings.limitsFailed ? "The limits did not load." : "Loading the limits.";
 }
 
 // "used by 3 bots, 1 on an older version" (skills-page.md §2).
