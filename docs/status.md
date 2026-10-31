@@ -105,6 +105,7 @@ it in, and the row goes when its PR merges.
 | Reserve the bot slug `new`: `/bots/new` is the Create bot page, so the server must refuse it as a slug | [#49](https://github.com/binhle312/cty1ng/pull/49) | M2 |
 | Rail and bar 2 list scrolling (fade, ˄/˅ buttons, the list ends 24 px above the user panel, `left-bar.md` §1.3, §2): M0 has no lists yet | [#49](https://github.com/binhle312/cty1ng/pull/49) | M5b (projects) and M3 (conversations) |
 | More visual snapshots: `themes.md` §5 asks for 8 key screens × 2 themes × 2 modes; M0 has one screen in Command dark | [#49](https://github.com/binhle312/cty1ng/pull/49) | Each slice adds its screens; light and Material with their values |
+| Copy slug on the server: today the Clone page tries `-copy-2`, `-copy-3` … after a confirmed `slug_taken` (a skill in Trash keeps its slug). If many collisions make it slow, the server picks the suffix, for example an `auto_suffix` flag on `POST /skills` as `/skill-drafts/{id}/decision` does (an API change; owner, 2026-10-31; `design/components/skills-page.md`, "Texts added in the M1b build") | [#54](https://github.com/binhle312/cty1ng/pull/54) | When collisions get slow; not planned before M5b |
 | `uuid` advisory GHSA-w5hq-g745-h8pq (moderate, through `typeid-js` 1.2.0, which needs `uuid` ^10). **Accepted risk** (owner, 2026-10-30): the flaw is in v3/v5/v6 with a caller buffer; `typeid-js` uses only `stringify` and `v7`, and our code never calls `uuid`. No override | #48 | Update `typeid-js` when a version allows `uuid` ≥ 11.1.1 |
 
 ## Slices
