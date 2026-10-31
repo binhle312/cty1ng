@@ -28,6 +28,7 @@ lint: $(DEPS)
 e2e: $(DEPS)
 	pnpm e2e
 
-# Imports the example skills and bots in seed/ (seed/README.md). Built in M1.
-seed:
-	@echo "make seed: not built yet (slice M1)"
+# Imports the example skills in seed/ through the import service (seed/README.md). A second run
+# changes nothing. M2 adds the example bots.
+seed: $(DEPS)
+	pnpm --filter backend cli skills import $(CURDIR)/seed/skills --apply

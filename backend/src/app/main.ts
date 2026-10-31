@@ -2,9 +2,11 @@ import { serve } from "@hono/node-server";
 import { createLogger } from "../adapters/log/pino-logger.ts";
 import { compose } from "./compose.ts";
 import { ConfigError, loadConfig } from "./config.ts";
+import { startTimedJobs } from "./timed-jobs.ts";
 
-// Starts the backend: configuration first, then migrations, then the server. Any failure before
-// listening stops the process with a clear message and a non-zero exit (M0b plan, decision E).
+// Starts the backend: configuration first, then migrations, then the server and the timed jobs.
+// Any failure before listening stops the process with a clear message and a non-zero exit (M0b
+// plan, decision E).
 function start(): void {
   let config;
   try {
@@ -32,8 +34,15 @@ function start(): void {
     },
   );
 
+  const stopJobs = startTimedJobs({
+    skills: app.skills,
+    log,
+    purgeIntervalHours: config.purgeIntervalHours,
+  });
+
   const shutdown = (): void => {
     log.info("shutting down");
+    stopJobs();
     server.close();
     // Open event streams would keep the server open.
     if ("closeAllConnections" in server) server.closeAllConnections();
