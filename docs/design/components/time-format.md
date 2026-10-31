@@ -8,6 +8,7 @@
 
 | Age | Format | Example |
 | --- | --- | --- |
+| Under 1 minute | "Just now" (owner, 2026-10-31) | Just now |
 | Under 1 day | "x ago" | 5 min ago, 3 h ago |
 | 1 day or more | Exact local time, ISO order | 2026-10-20 16:40 |
 | No time | A phrase that says so | Idle · no activity yet |

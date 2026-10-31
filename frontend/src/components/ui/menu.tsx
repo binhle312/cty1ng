@@ -24,7 +24,9 @@ export function MenuPopup({
 }: MenuPopupProps) {
   return (
     <BaseMenu.Portal>
-      <BaseMenu.Positioner side={side} align={align} sideOffset={sideOffset}>
+      {/* z-50, as dialogs and toasts: Base UI sets no z-index, and page parts at z-10 would show
+          through. */}
+      <BaseMenu.Positioner side={side} align={align} sideOffset={sideOffset} className="z-50">
         <BaseMenu.Popup
           aria-label={label}
           className="min-w-48 rounded-card border border-outline-strong bg-surface-raised p-1 text-on-surface shadow-xl outline-none"
@@ -63,6 +65,16 @@ export function MenuLinkItem({
       {children}
     </BaseMenu.LinkItem>
   );
+}
+
+// A menu item that runs an action. `danger` is for an item that removes or hides something
+// (buttons.md §1, skills-page.md §9).
+export function MenuItem({
+  danger = false,
+  className,
+  ...props
+}: ComponentProps<typeof BaseMenu.Item> & { danger?: boolean }) {
+  return <BaseMenu.Item {...props} className={cn(ITEM, danger && "text-danger", className)} />;
 }
 
 export function MenuHeader({ children }: { children: ReactNode }) {

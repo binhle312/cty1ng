@@ -13,7 +13,8 @@ export async function renderApp(path = "/") {
     defaultPendingMs: 0,
     defaultPendingMinMs: 0,
   });
-  const queryClient = new QueryClient();
+  // A failed request fails at once: the error state shows without TanStack Query's retries.
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const view = render(
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

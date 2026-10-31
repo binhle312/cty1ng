@@ -197,7 +197,8 @@ environment, provider-side data handling.
 - CI runs `pnpm audit --audit-level high`; Dependabot opens weekly update
   PRs. New dependencies need the owner's approval (`AGENTS.md` §7).
 - The repository is public: GitHub secret scanning and push protection are on, and
-  `.gitignore` excludes `.env*` (except `.env.example`), `data/`, and local databases.
+  `.gitignore` excludes `.env*` (except `.env.example`), `data/`, and local databases. Test
+  code holds no real-looking credentials either (`testing.md` §3, "Fake secrets").
 - **CodeQL** code scanning (`.github/workflows/codeql.yml`, advanced setup, `security-extended`
   queries) runs on every PR, on `main` and weekly. It scans the workflows now and the TypeScript
   code from M0 on. Vendored skills (`.agents/skills/`) and `docs/` are excluded

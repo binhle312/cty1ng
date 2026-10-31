@@ -58,7 +58,6 @@ test.describe("app shell", () => {
     ["/bots/new", "Create bot"],
     ["/bots/ba", "Bot"],
     ["/skills", "Skills"],
-    ["/skills/write-user-stories", "Skill"],
     ["/stats", "Statistics"],
     ["/settings", "Settings"],
     ["/c/conv_01h455vb4pex5vsknk084sn02q", "Conversation"],
@@ -71,10 +70,15 @@ test.describe("app shell", () => {
     });
   }
 
-  test("shows Page not found for an unknown page and a conversation id of the wrong kind", async ({
+  test("shows Page not found for an unknown page, a conversation id of the wrong kind and an unknown skill", async ({
     page,
   }) => {
-    for (const path of ["/no/such/page", "/c/bot_01h455vb4pex5vsknk084sn02q", "/c/123"]) {
+    for (const path of [
+      "/no/such/page",
+      "/c/bot_01h455vb4pex5vsknk084sn02q",
+      "/c/123",
+      "/skills/no-such-skill",
+    ]) {
       await page.goto(path);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText("Page not found");
     }

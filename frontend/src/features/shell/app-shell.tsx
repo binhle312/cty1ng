@@ -1,4 +1,5 @@
 import { useCallback, type ReactNode } from "react";
+import { Toaster } from "../../components/ui/toast.tsx";
 import { BarTwo } from "./bar-two.tsx";
 import { useBarTwo, useToggleKey } from "./bar-two-state.ts";
 import { Rail } from "./rail.tsx";
@@ -42,6 +43,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+      <Toaster />
     </div>
   );
 }

@@ -73,13 +73,26 @@ brief ready ──▶ plan ──(owner approves, if checkpointed)──▶ buil
    `frontend/src/themes/command.css` (owner, 2026-10-30).
 3. **Build.** Small commits. Tests alongside code, not at the end. While fixing, run only the
    affected tests (`testing.md` §3, "Fast loop while building"); keep the end-to-end servers
-   running with `pnpm e2e:serve`.
-4. **Self-check.** Every command in `AGENTS.md` §4 passes, run once in full at the end. The
-   builder fills the PR template (§6). Anything new that the build taught (a library pitfall,
+   running with `pnpm e2e:serve`. A bug fix's test is written first and seen to fail; if it was
+   written after the fix, run it against the old code in an isolated checkout (a `git
+   worktree` of the commit before the fix, with the new test copied in), not by stashing the
+   fix (owner, 2026-10-31). Stop every other end-to-end server first: Playwright reuses a
+   server that runs on its port, which would test the other checkout (`testing.md` §3). See
+   it fail there (lesson `prove-the-test-fails-first.md`).
+4. **Self-check.** Every command in `AGENTS.md` §4 passes, run once in full at the end:
+   after the last code change, before the push, and with the full `pnpm e2e`. A report names
+   each check and its result and says which checks did not run; nobody reports a run that has
+   not finished (lesson `full-gate-before-the-report.md`).
+   **Spec walk.** Before the PR, the builder reads each section of the slice's spec against the
+   code, not only the acceptance criteria, and tests the edge cases in `testing.md` §3 ("Edge
+   cases each slice tests"). The PR lists the sections checked (lesson
+   `self-review-against-the-spec.md`). The builder fills the PR template (§6). Anything new that the build taught (a library pitfall,
    a lint pattern, a test helper) goes into `frontend-conventions.md` §5 or `testing.md` in
    the same PR, so the next slice does not learn it again.
 5. **Cross-review.** The other agent reviews (prompt in §4). Findings become PR comments; the
-   builder fixes or answers each.
+   builder fixes or answers each. A finding says what is wrong, not which text or layout to
+   use: when a fix needs a new text, state, flow or layout, the PR lists it under `Needs human
+   review` (`AGENTS.md` §7; lesson `flag-ui-choices-in-review-fixes.md`).
 6. **Owner review.** Focus on `Needs human review` items, migrations, the evidence table, and
    one run of the app. Merge when satisfied.
 7. **Docs.** If something diverged from the docs, the PR already updated them. If a decision

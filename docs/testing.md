@@ -164,6 +164,20 @@ open at the "New" divider.
 
 Each slice's brief lists which of these steps must pass by its end.
 
+### Edge cases each slice tests
+
+The normal path of an acceptance criterion is not enough. For each screen or flow it builds,
+a slice tests these cases where they apply (`workflow.md` §2 step 4, "Spec walk"):
+
+| Case | Example |
+| --- | --- |
+| The same data changes in another tab | An unsaved edit stays and the conflict shows |
+| The same action twice | A second Clone gets the next free slug |
+| A request fails | The error state shows, not Page not found or an empty list |
+| Keyboard only | Every tooltip, menu and dialog opens and closes from the keyboard |
+| Leaving with unsaved work | Every way out asks first, including moves inside one path |
+| Moving through the app, not only reloads | A test that reloads can hide a cache bug |
+
 ### Fast loop while building
 
 A full gate run is slow, mostly because Playwright starts two backends and builds the frontend.
@@ -177,7 +191,9 @@ While fixing, run only what the change touches, and run the full suite once at t
 | The end-to-end servers, kept running | `pnpm e2e:serve` in a second terminal |
 
 When `pnpm e2e:serve` runs, `pnpm e2e` reuses its servers instead of starting new ones
-(`reuseExistingServer`, local only; CI always starts fresh servers). The servers keep one
+(`reuseExistingServer`, local only; CI always starts fresh servers). It reuses any server on
+its ports, also one from another checkout: before you test old code in a `git worktree`
+(`workflow.md` §2 step 3), check that ports 8100 and 8101 are free. The servers keep one
 database until you stop the script, so a test that needs a fresh database fails on the second
 run: restart the script. The backend serves the frontend build from disk, so after a frontend
 change run `pnpm build` before `pnpm e2e`; after a backend change, restart the script.
@@ -190,8 +206,15 @@ killed.
 
 | Helper | File | Use |
 | --- | --- | --- |
-| `renderApp(path)` | `frontend/test/render-app.tsx` | Component tests on the real app: routes, shell and providers on an in-memory address. Returns the Testing Library view and the router. |
+| `renderApp(path)` | `frontend/test/render-app.tsx` | Component tests on the real app: routes, shell and providers on an in-memory address. Returns the Testing Library view and the router. Queries do not retry, so a failed request shows its error state at once. |
 | `watchCsp(page)` | `frontend/test/e2e/csp.ts` | End-to-end tests: collects every CSP violation of a page; assert that the list is empty. |
+| `readZip(buffer)` | `frontend/test/e2e/zip.ts` | End-to-end tests: the files of a downloaded zip (the skill export), by name. |
+
+**Fake secrets.** Test code never holds text with the full shape of a real credential: GitHub
+secret scanning reports it (`security.md` §2.11). A test of the likely-secret guard (D39) builds
+the value at run time, for example `["sk", "proj", "abcdefghijklmnop1234"].join("-")`, or uses
+a short value that the guard catches and a scanner does not (lesson
+`no-real-looking-secrets-in-tests.md`).
 
 ### Themes (D30)
 
@@ -212,4 +235,5 @@ high`, CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also
 
 A PR description maps each acceptance criterion of its task to the test that proves it, or to a
 screenshot for purely visual criteria (Playwright can save screenshots:
-`frontend/test/e2e/__screenshots__/`). "Tested manually" alone is not evidence.
+`frontend/test/e2e/__screenshots__/`). "Tested manually" alone is not evidence. For a bug fix, the PR also says that its test failed
+on the code before the fix (`workflow.md` §2 step 3).

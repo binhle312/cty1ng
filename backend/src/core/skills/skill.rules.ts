@@ -1,19 +1,22 @@
-import { SKILL_FORMAT, slugProblem } from "@cty1ng/shared/skills";
+import {
+  skillFieldProblem,
+  slugFieldProblem,
+  type SkillLimits,
+  type SkillTextField,
+} from "@cty1ng/shared/skills";
 import type { ErrorCode } from "@cty1ng/shared/errors";
 import { findSensitive, sensitiveLabel } from "../guard/sensitive-data.rules.ts";
 
 // Checks on skill text (domain-model.md §3.1, security.md §2.5 and §2.13). Pure: the limits come
-// in from the settings, and the result says what is wrong; the service refuses. The messages
-// are the editor's (design/components/skills-page.md §4, §6).
+// in from the settings, and the result says what is wrong; the service refuses. The empty, limit
+// and slug messages are in `shared/` so the editor shows the same ones
+// (design/components/skills-page.md §4, §6); the secret check is here only.
 
-export interface SkillLimits {
-  nameMax: number;
-  bodyMax: number;
-}
+export type { SkillLimits };
 
 export interface SkillProblem {
   code: ErrorCode;
-  field: "slug" | "name" | "description" | "body_md" | "changelog";
+  field: SkillTextField | "changelog";
   message: string;
 }
 
@@ -25,14 +28,6 @@ export interface SkillText {
   // Optional and never empty-checked, but saved and shown, so the guard reads it.
   changelog?: string | undefined;
 }
-
-const EMPTY: Record<SkillProblem["field"], string> = {
-  slug: "Type a slug.",
-  name: "Type a name.",
-  description: "Type a description.",
-  body_md: "Type the steps.",
-  changelog: "",
-};
 
 const NOUN: Record<SkillProblem["field"], string> = {
   slug: "slug",
@@ -49,25 +44,19 @@ export function skillTextProblem(text: SkillText, limits: SkillLimits): SkillPro
     const problem = slugTextProblem(text.slug);
     if (problem !== null) return problem;
   }
-  const fields: [SkillProblem["field"], string | undefined, number][] = [
-    ["name", text.name, limits.nameMax],
-    ["description", text.description, SKILL_FORMAT.descriptionMax],
-    ["body_md", text.bodyMd, limits.bodyMax],
+  const fields: [SkillTextField, string | undefined][] = [
+    ["name", text.name],
+    ["description", text.description],
+    ["body_md", text.bodyMd],
   ];
-  for (const [field, value, max] of fields) {
+  for (const [field, value] of fields) {
     if (value === undefined) continue;
-    if (value.trim() === "") return { code: "validation_error", field, message: EMPTY[field] };
-    if (value.length > max) {
-      return {
-        code: "validation_error",
-        field,
-        message: `The ${NOUN[field]} has ${count(value.length)} characters. The limit is ${count(max)}. Make it shorter.`,
-      };
-    }
+    const message = skillFieldProblem(field, value, limits);
+    if (message !== null) return { code: "validation_error", field, message };
   }
   const guarded: [SkillProblem["field"], string | undefined][] = [
     ["slug", text.slug],
-    ...fields.map(([field, value]): [SkillProblem["field"], string | undefined] => [field, value]),
+    ...fields,
     ["changelog", text.changelog],
   ];
   for (const [field, value] of guarded) {
@@ -85,17 +74,6 @@ export function skillTextProblem(text: SkillText, limits: SkillLimits): SkillPro
 }
 
 export function slugTextProblem(slug: string): SkillProblem | null {
-  const problem = slugProblem(slug);
-  if (problem === null) return null;
-  const message = {
-    empty: EMPTY.slug,
-    too_long: `The slug has ${count(slug.length)} characters. The limit is ${String(SKILL_FORMAT.slugMax)}. Make it shorter.`,
-    pattern: "Use lowercase letters, digits and single hyphens, not at the start or end.",
-    reserved: "This slug is reserved. Type a different one.",
-  }[problem];
-  return { code: "validation_error", field: "slug", message };
-}
-
-function count(n: number): string {
-  return n.toLocaleString("en-US");
+  const message = slugFieldProblem(slug);
+  return message === null ? null : { code: "validation_error", field: "slug", message };
 }
