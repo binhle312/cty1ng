@@ -11,6 +11,10 @@ export function createRouter() {
       const issue = result.error.issues[0];
       if (issue === undefined)
         throw new ApiFailure("validation_error", "The request is not valid.");
+      // A malformed TypeID or a wrong prefix in the path (api.md §1, D36).
+      if (result.target === "param" && String(issue.path.at(-1)).endsWith("id")) {
+        throw new ApiFailure("invalid_id", issue.message, issue.path.map(String).join("."));
+      }
       // An unknown field (Zod `.strict()`) names the field in `keys`, not in `path`.
       const path = issue.code === "unrecognized_keys" ? [...issue.path, ...issue.keys] : issue.path;
       const field = path.map(String).join(".");

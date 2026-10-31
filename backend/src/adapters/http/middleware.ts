@@ -98,15 +98,16 @@ export function corsForAllowedOrigins(
   });
 }
 
-// security.md §3: a body over 1 MB gets 413. A security check, so fixed in code. Uploads (M2)
-// get their own limit on their route.
+// security.md §2.7 and §3: a body over 1 MB gets 413. A security check, so fixed in code. The
+// upload routes in `uploadPaths` skip it and set their own limit on the route (§2.4).
 export const MAX_BODY_BYTES = 1024 * 1024;
 
-export function maxBody(): MiddlewareHandler<HttpEnv> {
-  return bodyLimit({
+export function maxBody(uploadPaths: readonly string[] = []): MiddlewareHandler<HttpEnv> {
+  const limit = bodyLimit({
     maxSize: MAX_BODY_BYTES,
     onError: () => {
       throw new ApiFailure("too_large", "The request body is too large.");
     },
   });
+  return (c, next) => (uploadPaths.includes(c.req.path) ? next() : limit(c, next));
 }

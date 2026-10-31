@@ -1,12 +1,30 @@
-import { asc, eq, gt, max, min, and } from "drizzle-orm";
-import { ConversationId } from "@cty1ng/shared/ids";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  inArray,
+  isNotNull,
+  isNull,
+  lte,
+  max,
+  min,
+  notExists,
+  sql,
+} from "drizzle-orm";
+import { alias } from "drizzle-orm/sqlite-core";
+import { ConversationId, SkillId, SkillVersionId } from "@cty1ng/shared/ids";
 import type {
   EventsWriter,
   PersistedEvent,
   SettingsWriter,
+  SkillRecord,
+  SkillVersionRecord,
+  SkillsWriter,
 } from "../../core/ports/repositories.ts";
 import type { Db } from "./client.ts";
-import { events, settings } from "./schema.ts";
+import { events, settings, skills, skillVersions } from "./schema.ts";
 
 // Repositories over one Drizzle connection: the writer inside a transaction, or the reader
 // outside one (the reader never calls the write methods; its connection is read-only).
@@ -84,4 +102,158 @@ export function settingsRepository(db: Db): SettingsWriter {
       return Promise.resolve(result.changes === 1);
     },
   };
+}
+
+export function skillsRepository(db: Db): SkillsWriter {
+  // The latest version of a skill is its highest `version` (domain-model.md §3.1).
+  const newer = alias(skillVersions, "newer");
+  const isLatest = notExists(
+    db
+      .select({ one: sql`1` })
+      .from(newer)
+      .where(
+        and(eq(newer.skillId, skillVersions.skillId), gt(newer.version, skillVersions.version)),
+      ),
+  );
+
+  return {
+    list: ({ includeDeprecated }) => {
+      const rows = db
+        .select({ skill: skills, latest: skillVersions })
+        .from(skills)
+        .innerJoin(skillVersions, and(eq(skillVersions.skillId, skills.id), isLatest))
+        .where(
+          and(
+            isNull(skills.trashedAt),
+            includeDeprecated ? undefined : isNull(skills.deprecatedAt),
+          ),
+        )
+        .orderBy(desc(skills.updatedAt), desc(skills.id))
+        .all();
+      return Promise.resolve(
+        rows.map((row) => ({ skill: toSkill(row.skill), latest: toVersion(row.latest) })),
+      );
+    },
+    byId: (id) =>
+      Promise.resolve(oneSkill(db.select().from(skills).where(eq(skills.id, id)).get())),
+    bySlug: (slug) =>
+      Promise.resolve(oneSkill(db.select().from(skills).where(eq(skills.slug, slug)).get())),
+    trashed: () => {
+      const rows = db
+        .select()
+        .from(skills)
+        .where(isNotNull(skills.trashedAt))
+        .orderBy(desc(skills.trashedAt))
+        .all();
+      return Promise.resolve(rows.map(toSkill));
+    },
+    trashedUntil: (cutoff) => {
+      const rows = db
+        .select({ id: skills.id })
+        .from(skills)
+        .where(and(isNotNull(skills.trashedAt), lte(skills.trashedAt, cutoff)))
+        .orderBy(asc(skills.trashedAt))
+        .all();
+      return Promise.resolve(rows.map((row) => SkillId.parse(row.id)));
+    },
+    latestVersion: (skillId) => {
+      const row = db
+        .select()
+        .from(skillVersions)
+        .where(eq(skillVersions.skillId, skillId))
+        .orderBy(desc(skillVersions.version))
+        .limit(1)
+        .get();
+      return Promise.resolve(row === undefined ? null : toVersion(row));
+    },
+    version: (skillId, version) => {
+      const row = db
+        .select()
+        .from(skillVersions)
+        .where(and(eq(skillVersions.skillId, skillId), eq(skillVersions.version, version)))
+        .get();
+      return Promise.resolve(row === undefined ? null : toVersion(row));
+    },
+    versionById: (id) => {
+      const row = db.select().from(skillVersions).where(eq(skillVersions.id, id)).get();
+      return Promise.resolve(row === undefined ? null : toVersion(row));
+    },
+    versions: (skillId) => {
+      const rows = db
+        .select()
+        .from(skillVersions)
+        .where(eq(skillVersions.skillId, skillId))
+        .orderBy(desc(skillVersions.version))
+        .all();
+      return Promise.resolve(rows.map(toVersion));
+    },
+    insertSkill: (skill) => {
+      const result = db
+        .insert(skills)
+        .values(skill)
+        .onConflictDoNothing({ target: skills.slug })
+        .run();
+      return Promise.resolve(result.changes === 1);
+    },
+    insertVersion: (version) => {
+      const result = db.insert(skillVersions).values(version).onConflictDoNothing().run();
+      return Promise.resolve(result.changes === 1);
+    },
+    updateSkill: (id, change, expectedRowVersion) => {
+      const result = db
+        .update(skills)
+        .set({ ...change, rowVersion: sql`${skills.rowVersion} + 1` })
+        .where(
+          and(
+            eq(skills.id, id),
+            expectedRowVersion === undefined
+              ? undefined
+              : eq(skills.rowVersion, expectedRowVersion),
+          ),
+        )
+        .run();
+      return Promise.resolve(result.changes === 1);
+    },
+    purge: (id) => {
+      const versionIds = db
+        .select({ id: skillVersions.id })
+        .from(skillVersions)
+        .where(eq(skillVersions.skillId, id))
+        .all()
+        .map((row) => row.id);
+      // Clones keep their text; only the link to the purged version goes (domain-model.md §3.4).
+      const clones =
+        versionIds.length === 0
+          ? []
+          : db
+              .update(skills)
+              .set({ clonedFromSkillVersionId: null, rowVersion: sql`${skills.rowVersion} + 1` })
+              .where(inArray(skills.clonedFromSkillVersionId, versionIds))
+              .returning({ id: skills.id })
+              .all();
+      db.delete(skillVersions).where(eq(skillVersions.skillId, id)).run();
+      db.delete(skills).where(eq(skills.id, id)).run();
+      return Promise.resolve(clones.map((row) => SkillId.parse(row.id)));
+    },
+  };
+}
+
+function oneSkill(row: typeof skills.$inferSelect | undefined): SkillRecord | null {
+  return row === undefined ? null : toSkill(row);
+}
+
+// Parsed at the boundary: the TypeID columns give plain strings.
+function toSkill(row: typeof skills.$inferSelect): SkillRecord {
+  return {
+    ...row,
+    id: SkillId.parse(row.id),
+    clonedFromSkillVersionId:
+      row.clonedFromSkillVersionId === null
+        ? null
+        : SkillVersionId.parse(row.clonedFromSkillVersionId),
+  };
+}
+
+function toVersion(row: typeof skillVersions.$inferSelect): SkillVersionRecord {
+  return { ...row, id: SkillVersionId.parse(row.id), skillId: SkillId.parse(row.skillId) };
 }

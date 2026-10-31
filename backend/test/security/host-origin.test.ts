@@ -2,7 +2,7 @@ import { connect } from "node:net";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createHttpApp } from "../../src/adapters/http/app.ts";
 import { loadConfig } from "../../src/app/config.ts";
-import { HOST, ORIGIN, memoryLogger, testBackend, testServer } from "../helpers.ts";
+import { HOST, ORIGIN, memoryLogger, testBackend, testServer, idleServices } from "../helpers.ts";
 
 // security.md §2.1 and §3, M0 AC3: the Host and Origin checks on every route, the stream too.
 let backend: ReturnType<typeof testBackend>;
@@ -170,6 +170,7 @@ describe("HEAD /api/stream", () => {
       testPing: null,
       apiDocs: false,
       frontendDir: null,
+      ...idleServices(),
     });
     const response = await app.request(`http://${HOST}/api/stream`, {
       method: "HEAD",

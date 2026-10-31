@@ -1,6 +1,7 @@
 // `pnpm gen:api`: the typed API client in frontend/src/lib/api/generated/ (AGENTS.md §5 rule 4),
-// from the OpenAPI document of the backend app. The app is built in this process with stub
-// services, so no server, port or database is needed. CI runs this and fails when the result
+// from the OpenAPI document of the backend app. The app is composed in this process on a
+// temporary data folder, so no server or port is needed and the document is exactly the app's.
+// CI runs this and fails when the result
 // differs from the committed files (M0 AC5).
 //
 // Generator: Hey API (M0c plan, decision H). Its TanStack Query plugin makes query and mutation
@@ -11,8 +12,9 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "n
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { createClient } from "@hey-api/openapi-ts";
-import { createHttpApp } from "../backend/src/adapters/http/app.ts";
 import { createLogger } from "../backend/src/adapters/log/pino-logger.ts";
+import { compose } from "../backend/src/app/compose.ts";
+import { loadConfig } from "../backend/src/app/config.ts";
 
 const REPO = resolve(import.meta.dirname, "..");
 export const GENERATED = join(REPO, "frontend/src/lib/api/generated");
@@ -24,21 +26,22 @@ const HOST = "127.0.0.1:8000";
 const UNCHECKED_RUNTIME = ["client", "core"];
 
 async function openApiDocument(): Promise<unknown> {
-  const app = createHttpApp({
-    log: createLogger({ level: "silent", secrets: [] }),
-    allowedHosts: [HOST],
-    allowedOrigins: [],
-    health: () => Promise.reject(new Error("not used")),
-    openStream: () => new ReadableStream(),
-    testPing: null,
-    apiDocs: false,
-    frontendDir: null,
-  });
-  const response = await app.request(`http://${HOST}/api/openapi.json`, {
-    headers: { host: HOST },
-  });
-  if (!response.ok) throw new Error(`/api/openapi.json answered ${String(response.status)}`);
-  return response.json();
+  const dataDir = mkdtempSync(join(tmpdir(), "gen-api-data-"));
+  // APP_ENV=prod: no test routes and no docs page in the document.
+  const backend = compose(
+    loadConfig({ DATA_DIR: dataDir, APP_ENV: "prod" }),
+    createLogger({ level: "silent", secrets: [] }),
+  );
+  try {
+    const response = await backend.app.request(`http://${HOST}/api/openapi.json`, {
+      headers: { host: HOST },
+    });
+    if (!response.ok) throw new Error(`/api/openapi.json answered ${String(response.status)}`);
+    return await response.json();
+  } finally {
+    backend.close();
+    rmSync(dataDir, { recursive: true, force: true });
+  }
 }
 
 async function main(): Promise<void> {
@@ -53,7 +56,18 @@ async function main(): Promise<void> {
       logs: { level: "silent" },
       plugins: [
         "@hey-api/client-fetch",
-        "zod",
+        {
+          name: "zod",
+          // `format: binary` (a zip upload or download) is a Blob or File, as the generated
+          // types say; the plugin's default `z.string()` refuses the File before it is sent
+          // (M1 plan, probe P6).
+          $resolvers: {
+            string: (ctx) =>
+              ctx.schema.format === "binary"
+                ? ctx.$(ctx.plugin.imports.z).attr("instanceof").call(ctx.$("Blob"))
+                : undefined,
+          },
+        },
         { name: "@hey-api/sdk", validator: true },
         "@tanstack/react-query",
       ],

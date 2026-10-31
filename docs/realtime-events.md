@@ -136,7 +136,9 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `skill_draft.decided` | yes | `{skill_draft}` | approved / rejected / stale; an approval also emits `skill.created` or `skill.updated`; a new version or a deprecate of the skill marks its pending edit drafts stale and emits one event per draft (D64) |
 | `bot.created` / `bot.updated` / `bot.deleted` | yes | `{bot}` | bot CRUD, avatar, pins |
 | `bots.reordered` | yes | `{pinned_bot_ids}` | pinned list saved: pin, unpin or reorder (`PUT /bots/pins`); the header and the Bots page follow at once |
-| `skill.created` / `skill.updated` / `skill.deprecated` | yes | `{skill}` | skill CRUD, new version |
+| `skill.created` / `skill.updated` / `skill.deprecated` | yes | `{skill}` | skill CRUD: create (also a clone and an import), rename, new version, version restore, undeprecate (`skill.updated`), deprecate |
+| `skill.trashed` / `skill.purged` | yes | `{skill_id}` | the skill went to Trash, or was purged from it (D49); the skill leaves every list |
+| `skill.restored` | yes | `{skill}` | the skill came back from Trash, still deprecated (D49) |
 | `settings.updated` | yes | `{settings}` | global settings changed |
 | `spend.threshold_crossed` | yes | `{threshold_pct, today_spend_usd, cap_usd, provider}` | today's spend crossed 75%, 90% or 100% of the total cap (`provider` null) or of one provider's cap (D40, D42); once per threshold per cap per day |
 | `project.created` / `project.updated` / `project.deleted` / `projects.reordered` | yes | `{project}` or `{pinned_project_ids}` | project CRUD, pin and reorder, conversation moved (D37); a move also emits `conversation.updated` |

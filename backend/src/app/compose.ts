@@ -5,6 +5,7 @@ import { systemClock } from "../adapters/clock/system-clock.ts";
 import { openReader } from "../adapters/db/client.ts";
 import { sqliteReaders, sqliteUnitOfWork } from "../adapters/db/unit-of-work.ts";
 import { createHttpApp } from "../adapters/http/app.ts";
+import { typeIdIds } from "../adapters/ids/typeid-ids.ts";
 import { sseBody, type SseOptions } from "../adapters/sse/sse-stream.ts";
 import { buildCatalog } from "../core/catalog/catalog.ts";
 import { createAppendEvent } from "../core/events/append-event.ts";
@@ -12,6 +13,9 @@ import { createEventHub } from "../core/events/hub.ts";
 import { createTestPingService } from "../core/events/test-ping.service.ts";
 import { createHealthService } from "../core/health/health.service.ts";
 import type { Clock } from "../core/ports/clock.ts";
+import { createSettingsService } from "../core/settings/settings.service.ts";
+import { createSkillImportService } from "../core/skills/skill-import.service.ts";
+import { createSkillsService } from "../core/skills/skills.service.ts";
 import type { Config } from "./config.ts";
 import { openDatabase } from "./database.ts";
 
@@ -49,12 +53,25 @@ export function compose(
     },
   });
   const catalog = buildCatalog({ fakeModel: config.fakeModel });
+  const settings = createSettingsService({ uow, readers, appendEvent });
+  const skills = createSkillsService({ uow, readers, appendEvent, clock, ids: typeIdIds });
+  const skillImport = createSkillImportService({
+    uow,
+    readers,
+    skills,
+    clock,
+    previewMinutes: config.importPreviewMinutes,
+    previewMax: config.importPreviewMax,
+  });
 
   const app = createHttpApp({
     log,
     allowedHosts: config.allowedHosts,
     allowedOrigins: config.allowedOrigins,
     health: createHealthService({ readers, catalog }),
+    settings,
+    skills,
+    skillImport,
     openStream: (afterSeq, signal, onError) =>
       sseBody(hub, afterSeq, signal, { ...options.sse, onError }),
     testPing: config.appEnv === "test" ? createTestPingService({ uow, appendEvent }) : null,
@@ -68,6 +85,9 @@ export function compose(
     readers,
     hub,
     appendEvent,
+    settings,
+    skills,
+    skillImport,
     close: () => {
       reader.close();
       writer.close();

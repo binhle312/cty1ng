@@ -33,9 +33,9 @@ round 8 previews `skills-*`); `docs/api.md` §1, §2; `docs/requirements/skill-h
   for create, rename, version, version restore and import, with no override (`security.md` §2.13).
   M3 reuses them for messages.
 - Import preview/apply (zip upload) with the in-memory preview (`domain-model.md` §3.5,
-  `IMPORT_PREVIEW_MINUTES`, `IMPORT_PREVIEW_MAX`), and the zip route's own body limit and ratio
-  check: the 5 MB file part and the 5 MB + 64 KB request; the other routes keep their limits
-  (`security.md` §2.4).
+  `IMPORT_PREVIEW_MINUTES`, `IMPORT_PREVIEW_MAX`), and the zip route's own body limit and size
+  checks: the 5 MB file part and the 5 MB + 64 KB request, 20 MB unpacked, a `SKILL.md` ≤ 1 MB;
+  the other routes keep their limits (`security.md` §2.4).
 - CLI `skills import <folder> [--apply]`, `skills export <folder> [--slug …]`, and the temporary
   `skills trash` and `skills restore <slug>` (`api.md` §2), which M5b removes.
 - Pages, at the URLs in `skills-page.md` §1: skill list, page top and the tabs Skill, Bots
@@ -44,8 +44,7 @@ round 8 previews `skills-*`); `docs/api.md` §1, §2; `docs/requirements/skill-h
   follows `security.md` §2.2: no raw HTML, only `http`, `https` and `mailto` links, and no
   external images.
 - Delete to Trash, restore and purge (D49): the service and endpoints, and a purge job that runs
-  at start and every `PURGE_INTERVAL_HOURS` (`architecture.md` §6.1, §8; not in `app/config.ts`
-  yet). M1's purge clears `skills.cloned_from_skill_version_id` only; M3 adds `run_skills` and
+  at start and every `PURGE_INTERVAL_HOURS` (`architecture.md` §6.1, §8). M1's purge clears `skills.cloned_from_skill_version_id` only; M3 adds `run_skills` and
   M5c `skill_drafts` (`domain-model.md` §3.4). The Trash page itself is M5b; until then the
   delete toast has no link and restore is the CLI or the API.
 - Events `skill.created|updated|deprecated|trashed|restored|purged` and `trash.changed`
@@ -77,7 +76,8 @@ CLI write (accepted: a reload shows them).
 - Import: invalid files are reported and nothing is written; apply after the data changed since
   preview returns 409 `stale_write` (also when a skill was deleted and made again with the same
   slug); an expired or used preview returns 409 `preview_expired`; a deprecated or trashed slug
-  is a conflict; zip-slip, oversized and high-ratio zips rejected; a zip of exactly 5 MB passes.
+  is a conflict; zip-slip and oversized zips rejected, a `SKILL.md` over 1 MB is an invalid row; a zip of exactly
+  5 MB passes.
 - The editor's counters, errors and line warning use the `skill_*` settings: a test lowers
   `skill_name_max` and the editor and the server refuse the same name.
 - The URL of a deprecated skill opens after a reload, with **Show deprecated** off.

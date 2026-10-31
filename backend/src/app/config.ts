@@ -25,6 +25,9 @@ const Env = z.object({
   NODE_ENV: z.string().optional(),
   FAKE_MODEL: Flag.default(false),
   LOG_LEVEL: z.enum(LOG_LEVELS).default("info"),
+  PURGE_INTERVAL_HOURS: z.coerce.number().positive().default(24),
+  IMPORT_PREVIEW_MINUTES: z.coerce.number().positive().default(15),
+  IMPORT_PREVIEW_MAX: z.coerce.number().int().min(1).default(5),
 });
 
 export interface Config {
@@ -42,6 +45,11 @@ export interface Config {
   frontendDir: string | null;
   fakeModel: boolean;
   logLevel: (typeof LOG_LEVELS)[number];
+  // How often the Trash purge job runs; it also runs at start (architecture.md §6.1, §8).
+  purgeIntervalHours: number;
+  // Skill import previews kept in memory (domain-model.md §3.5).
+  importPreviewMinutes: number;
+  importPreviewMax: number;
   // Values of every `*_API_KEY` variable, for log redaction only (security.md §2.6).
   secrets: readonly string[];
 }
@@ -98,6 +106,9 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     frontendDir: e.NODE_ENV === "production" ? resolve(REPO_ROOT, "frontend/dist") : null,
     fakeModel: e.FAKE_MODEL,
     logLevel: e.LOG_LEVEL,
+    purgeIntervalHours: e.PURGE_INTERVAL_HOURS,
+    importPreviewMinutes: e.IMPORT_PREVIEW_MINUTES,
+    importPreviewMax: e.IMPORT_PREVIEW_MAX,
     secrets: Object.entries(env)
       .filter(([name, value]) => name.endsWith("_API_KEY") && value !== undefined && value !== "")
       .map(([, value]) => value ?? ""),

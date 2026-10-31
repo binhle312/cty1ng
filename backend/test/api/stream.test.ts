@@ -124,7 +124,9 @@ describe("POST /api/_test/events", () => {
     const schema: unknown = await (await fetch(`${server.url}/api/openapi.json`)).json();
     const paths =
       typeof schema === "object" && schema !== null && "paths" in schema ? schema.paths : {};
-    expect(Object.keys(paths ?? {})).toEqual(["/api/health", "/api/stream"]);
+    const keys = Object.keys(paths ?? {});
+    expect(keys).toContain("/api/stream");
+    expect(keys.filter((path) => path.startsWith("/api/_test"))).toEqual([]);
   });
 });
 

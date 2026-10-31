@@ -1,9 +1,10 @@
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
-import { cpSync, writeFileSync } from "node:fs";
+import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import Database from "better-sqlite3";
 import { readMigrationFiles } from "drizzle-orm/migrator";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { z } from "zod";
 import { sleep, tempDir } from "../../../test/helpers.ts";
 import { openWriter } from "./client.ts";
 import { MIGRATIONS_FOLDER, migrate } from "./migrate.ts";
@@ -25,21 +26,34 @@ afterEach(() => {
 function withExtraMigration(tag: string, sql: string): string {
   const folder = join(dir.path, "migrations");
   cpSync(MIGRATIONS_FOLDER, folder, { recursive: true });
-  const [first] = readMigrationFiles({ migrationsFolder: folder });
+  const journal = join(folder, "meta/_journal.json");
+  const { entries } = JournalFile.parse(JSON.parse(readFileSync(journal, "utf8")));
+  const last = entries.at(-1);
   writeFileSync(join(folder, `${tag}.sql`), sql);
   writeFileSync(
-    join(folder, "meta/_journal.json"),
+    journal,
     JSON.stringify({
       version: "7",
       dialect: "sqlite",
       entries: [
-        { idx: 0, version: "6", when: first?.folderMillis, tag: "0000_init", breakpoints: true },
-        { idx: 1, version: "6", when: (first?.folderMillis ?? 0) + 1, tag, breakpoints: true },
+        ...entries,
+        {
+          idx: entries.length,
+          version: "6",
+          when: (last?.when ?? 0) + 1,
+          tag,
+          breakpoints: true,
+        },
       ],
     }),
   );
   return folder;
 }
+
+const JournalFile = z.object({
+  entries: z.array(z.looseObject({ when: z.number() })),
+});
+const COMMITTED = readMigrationFiles({ migrationsFolder: MIGRATIONS_FOLDER }).length;
 
 const tables = (sqlite: Database.Database) =>
   sqlite
@@ -52,14 +66,14 @@ const tables = (sqlite: Database.Database) =>
 describe("migrate", () => {
   it("applies the pending migrations, then nothing on a second run", () => {
     const sqlite = openWriter(join(dir.path, "app.db"));
-    expect(migrate(sqlite, MIGRATIONS_FOLDER)).toBe(
-      readMigrationFiles({ migrationsFolder: MIGRATIONS_FOLDER }).length,
-    );
+    expect(migrate(sqlite, MIGRATIONS_FOLDER)).toBe(COMMITTED);
     expect(migrate(sqlite, MIGRATIONS_FOLDER)).toBe(0);
     expect(tables(sqlite)).toEqual([
       "__drizzle_migrations",
       "events",
       "settings",
+      "skill_versions",
+      "skills",
       "sqlite_sequence",
     ]);
     sqlite.close();
@@ -97,10 +111,11 @@ describe("migrate", () => {
         env: { PATH: process.env.PATH, DATA_DIR: dir.path },
       }),
     );
-    expect(applied).toEqual([0, 0, 1]);
+    // The `db migrate` CLI prints how many migrations it applied: one process applies all.
+    expect(applied).toEqual([0, 0, COMMITTED]);
     const sqlite = new Database(file);
     expect(sqlite.prepare("SELECT count(*) AS n FROM __drizzle_migrations").get()).toEqual({
-      n: 1,
+      n: COMMITTED,
     });
     sqlite.close();
   });
@@ -110,7 +125,7 @@ describe("migrate", () => {
     const sqlite = openWriter(file);
     migrate(sqlite, MIGRATIONS_FOLDER);
     sqlite.close();
-    const folder = withExtraMigration("0001_extra", "CREATE TABLE extra (id integer);");
+    const folder = withExtraMigration("9999_extra", "CREATE TABLE extra (id integer);");
     const script = `import { migrate } from ${JSON.stringify(join(import.meta.dirname, "migrate.ts"))};
 import { openWriter } from ${JSON.stringify(join(import.meta.dirname, "client.ts"))};
 console.log(migrate(openWriter(${JSON.stringify(file)}), ${JSON.stringify(folder)}) + " migration(s) applied");`;
@@ -119,13 +134,15 @@ console.log(migrate(openWriter(${JSON.stringify(file)}), ${JSON.stringify(folder
     );
     expect(applied).toEqual([0, 0, 1]);
     const check = new Database(file);
-    expect(check.prepare("SELECT count(*) AS n FROM __drizzle_migrations").get()).toEqual({ n: 2 });
+    expect(check.prepare("SELECT count(*) AS n FROM __drizzle_migrations").get()).toEqual({
+      n: COMMITTED + 1,
+    });
     check.close();
   });
 
   it("rolls back every migration of the run when one fails", () => {
     const folder = withExtraMigration(
-      "0001_broken",
+      "9999_broken",
       "CREATE TABLE ok_table (id integer);\n--> statement-breakpoint\nNOT SQL;\n",
     );
     const sqlite = openWriter(join(dir.path, "app.db"));

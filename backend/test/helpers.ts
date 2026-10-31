@@ -3,6 +3,15 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { serve, type ServerType } from "@hono/node-server";
+import Database from "better-sqlite3";
+import { systemClock } from "../src/adapters/clock/system-clock.ts";
+import { sqliteReaders, sqliteUnitOfWork } from "../src/adapters/db/unit-of-work.ts";
+import { typeIdIds } from "../src/adapters/ids/typeid-ids.ts";
+import { createAppendEvent } from "../src/core/events/append-event.ts";
+import type { Clock } from "../src/core/ports/clock.ts";
+import { createSettingsService } from "../src/core/settings/settings.service.ts";
+import { createSkillImportService } from "../src/core/skills/skill-import.service.ts";
+import { createSkillsService } from "../src/core/skills/skills.service.ts";
 import { createLogger, type Logger } from "../src/adapters/log/pino-logger.ts";
 import { compose } from "../src/app/compose.ts";
 import { loadConfig, type Config } from "../src/app/config.ts";
@@ -43,11 +52,11 @@ export function memoryLogger(secrets: readonly string[] = []): { log: Logger; li
 }
 
 // The composed backend on a temporary database.
-export function testBackend(env: NodeJS.ProcessEnv = {}, sse = { heartbeatMs: 50 }) {
+export function testBackend(env: NodeJS.ProcessEnv = {}, options: { clock?: Clock } = {}) {
   const dir = tempDir("backend");
   const config = testConfig(dir.path, env);
   const { log, lines } = memoryLogger(config.secrets);
-  const backend = compose(config, log, { sse });
+  const backend = compose(config, log, { sse: { heartbeatMs: 50 }, ...options });
   return {
     ...backend,
     config,
@@ -67,6 +76,53 @@ export function testBackend(env: NodeJS.ProcessEnv = {}, sse = { heartbeatMs: 50
       backend.close();
       dir.remove();
     },
+  };
+}
+
+// The backend on a data folder the test owns, so a test can stop it and start it again.
+export function backendAt(dataDir: string) {
+  return compose(testConfig(dataDir), memoryLogger().log);
+}
+
+// A new TypeID, for a test that writes a row through a repository.
+export const newTestId = (prefix: string): string => typeIdIds.newId(prefix);
+
+// A clock that moves only when the test moves it.
+export function manualClock(start = new Date("2026-10-31T09:00:00.000Z")) {
+  let now = start.getTime();
+  return {
+    now: () => new Date(now),
+    advance: (ms: number) => {
+      now += ms;
+    },
+  };
+}
+
+// The services of `createHttpApp` for a test that builds the HTTP app itself and never calls
+// them: real services over an empty in-memory database.
+export function idleServices() {
+  const db = new Database(":memory:");
+  const uow = sqliteUnitOfWork(db, () => undefined);
+  const readers = sqliteReaders(db);
+  const appendEvent = createAppendEvent({ clock: systemClock, notify: () => undefined });
+  const skills = createSkillsService({
+    uow,
+    readers,
+    appendEvent,
+    clock: systemClock,
+    ids: typeIdIds,
+  });
+  return {
+    settings: createSettingsService({ uow, readers, appendEvent }),
+    skills,
+    skillImport: createSkillImportService({
+      uow,
+      readers,
+      skills,
+      clock: systemClock,
+      previewMinutes: 15,
+      previewMax: 5,
+    }),
   };
 }
 
