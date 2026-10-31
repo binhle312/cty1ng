@@ -368,3 +368,21 @@ fields. Buttons: **Let them go** (`danger`) and **Stay on this skill** (`primary
   the changelog Enter key (§5), no card without bots (§7), the M1 states of the Bots tab, the
   banner and the delete toast (§2a, §10.2, §11), the Clone slug suffix (§12), import names and
   the deprecated conflict (§15).
+
+## Texts added in the M1b build (2026-10-31, for the owner's review in the M1b PR)
+
+The spec did not name these; the build uses them:
+
+- A rename only: the toast "Saved ✨" (no version number).
+- A save that the server refuses as stale (409 `stale_write`): "This skill changed in another
+  place. Reload the page to see the change." in the save bar.
+- Why a button is off (`ui-rules.md` B5): "No changes to save.", "Fill in every field.", "Fix
+  the errors first.", "Tick a skill to export.", "Tick a row to apply."
+- Deprecate in M1 (no bots): "No bot uses it." in place of the bot list.
+- History: v1 with no changelog says "First version", a later version "No note". A skill with
+  one version: "This skill has one version. Each save adds a version here." The latest version
+  picked: "Pick an older version to see what changed." **Compare** turns the version rows into
+  check boxes with "Tick two versions." and becomes **Stop comparing**.
+- Import: before a file is chosen, "Choose a zip of SKILL.md folders. The app changes nothing
+  until you apply." and **Choose a file**; an empty group says "None."; an expired preview (409
+  `preview_expired`): "The preview is too old. The app applied nothing. Preview again."

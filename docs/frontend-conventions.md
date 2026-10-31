@@ -120,3 +120,7 @@ step 2), and add to it when a build finds a new one.
 | Tests: `act()` | When the callback returns a value (for example `act(() => fireEvent.click(x))`), `act()` returns a promise, and `no-floating-promises` fails. | Give the callback braces so it returns nothing, and call `act()` as a statement: `act(() => { fireEvent.click(x); });`. Use `await act(() => promise)` only for async work. |
 | Arrow functions | `no-confusing-void-expression` fails when an arrow function returns the value of a call that returns nothing. | Put the body in braces: `() => { doIt(); }`. |
 | TanStack Query | `fetchQuery` is deprecated, and `no-deprecated` fails. | Use `queryClient.query({ … })`. |
+| A page that finds its item in a list | The skill page finds its skill in the cached list. Opened right after a Create, the list is still old, the page throws `notFound()`, and the router keeps Page not found. | Refetch the list (`await queryClient.invalidateQueries(…)`) before you navigate to the new item. |
+| Base UI toast | `Toast.Title` renders an `<h2>`, so a toast adds a heading to the page. | In tests, look for page headings inside `main`. |
+| Base UI tabs | `onValueChange` gives the value as `any`, and `no-unsafe-argument` fails. | Map it to a literal: `value === "bots" ? "bots" : "skill"`. |
+| Disabled buttons | A `disabled` button gets no hover or focus, so its "why" tooltip (`ui-rules.md` B5) never shows. | Use `aria-disabled` and ignore the click, as `SaveButton` in `features/skills/save-bar.tsx` does. |
