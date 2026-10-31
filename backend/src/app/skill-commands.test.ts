@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { tempDir, testBackend } from "../../test/helpers.ts";
@@ -50,6 +50,28 @@ describe("skills import", () => {
     expect(await importSkills(backend, dir.path, true, out)).toBe(0);
     expect(lines.at(-1)).toBe("Nothing to import.");
     expect((await backend.readers.events.after(0, 1000)).length).toBe(events);
+  });
+
+  it("lists a linked SKILL.md as skipped and never follows it", async () => {
+    const outside = join(dir.path, "..", `outside-${String(process.pid)}.md`);
+    writeFileSync(outside, "---\nname: linked\ndescription: Use it.\n---\n\nbody");
+    mkdirSync(join(dir.path, "linked"));
+    symlinkSync(outside, join(dir.path, "linked", "SKILL.md"));
+    try {
+      expect(await importSkills(backend, dir.path, false, out)).toBe(1);
+      expect(lines[0]).toBe(
+        "invalid   linked                       The folder has no SKILL.md.  (skipped: SKILL.md)",
+      );
+    } finally {
+      rmSync(outside);
+    }
+  });
+
+  it("marks a SKILL.md over 1 MB as invalid without reading it", async () => {
+    mkdirSync(join(dir.path, "big"));
+    writeFileSync(join(dir.path, "big", "SKILL.md"), "x".repeat(1024 * 1024 + 1));
+    expect(await importSkills(backend, dir.path, false, out)).toBe(1);
+    expect(lines[0]).toBe("invalid   big                          SKILL.md is larger than 1 MB.");
   });
 
   it("exits 1 when a row is invalid or a conflict, and still imports the good rows", async () => {
