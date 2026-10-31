@@ -149,7 +149,13 @@ export function createSkillsService(deps: SkillsDeps) {
   async function createInTx(tx: Tx, input: NewSkillInput, actor: string): Promise<SkillId> {
     const settings = await readSettings(tx.settings);
     checkText(
-      { slug: input.slug, name: input.name, description: input.description, bodyMd: input.bodyMd },
+      {
+        slug: input.slug,
+        name: input.name,
+        description: input.description,
+        bodyMd: input.bodyMd,
+        changelog: input.changelog,
+      },
       settings,
     );
     if (input.clonedFromSkillVersionId !== undefined) {
@@ -201,8 +207,15 @@ export function createSkillsService(deps: SkillsDeps) {
     const latest = await tx.skills.latestVersion(id);
     if (latest === null || latest.version !== input.baseVersion) throw stale();
     const settings = await readSettings(tx.settings);
+    // Without a rename the saved name is checked too: a lowered skill_name_max refuses the
+    // Save until the name is shorter (domain-model.md §10).
     checkText(
-      { name: input.rename?.name, description: input.description, bodyMd: input.bodyMd },
+      {
+        name: input.rename?.name ?? skill.name,
+        description: input.description,
+        bodyMd: input.bodyMd,
+        changelog: input.changelog,
+      },
       settings,
     );
     const now = clock.now();

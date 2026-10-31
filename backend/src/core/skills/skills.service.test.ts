@@ -175,6 +175,29 @@ describe("limits come from the settings", () => {
     await backend.skills.create(input("notes", { name: "A name with 16 c" }), OWNER_ID);
   });
 
+  // Review of PR #52: a Save without a rename checked no name, so it passed over a lowered limit.
+  it("a lowered skill_name_max refuses a Save of a skill whose saved name is now too long", async () => {
+    const skill = await backend.skills.create(
+      input("notes", { name: "A name of thirty-four characters!" }),
+      OWNER_ID,
+    );
+    await backend.settings.update({ skill_name_max: 16 });
+    const save = (rename?: { name: string; rowVersion: number }) =>
+      backend.skills.addVersion(
+        skill.id,
+        { baseVersion: 1, description: "d", bodyMd: "b", upgradeBotIds: [], rename },
+        OWNER_ID,
+      );
+    expect(await failure(save())).toMatchObject({ code: "validation_error", field: "name" });
+    expect(
+      await failure(backend.skills.restoreVersion(skill.id, 1, undefined, OWNER_ID)),
+    ).toMatchObject({
+      field: "name",
+    });
+    const saved = await save({ name: "Short name", rowVersion: 1 });
+    expect(saved.latest_version.version).toBe(2);
+  });
+
   it("a lowered skill_body_max refuses a longer body", async () => {
     await backend.settings.update({ skill_body_max: 1_000 });
     const error = await failure(
@@ -225,6 +248,36 @@ describe("the sensitive data guard on every write path (D39, no override)", () =
       ),
     );
     expect(error.code).toBe("sensitive_data");
+  });
+
+  // Review of PR #52: the changelog and the slug are saved and shown, so the guard reads them.
+  it("a changelog of a new version or a version restore", async () => {
+    const skill = await backend.skills.create(input("notes"), OWNER_ID);
+    const error = await failure(
+      backend.skills.addVersion(
+        skill.id,
+        {
+          baseVersion: 1,
+          description: "Use it.",
+          bodyMd: "## Steps",
+          changelog: "password: hunter22",
+          upgradeBotIds: [],
+        },
+        OWNER_ID,
+      ),
+    );
+    expect(error).toMatchObject({ code: "sensitive_data", field: "changelog" });
+    expect(
+      await failure(backend.skills.restoreVersion(skill.id, 1, "password: hunter22", OWNER_ID)),
+    ).toMatchObject({ code: "sensitive_data", field: "changelog" });
+    expect(await backend.skills.versions(skill.id)).toHaveLength(1);
+  });
+
+  it("a slug", async () => {
+    const error = await failure(
+      backend.skills.create(input("sk-proj-abcdefghijklmnop1234"), OWNER_ID),
+    );
+    expect(error).toMatchObject({ code: "sensitive_data", field: "slug" });
   });
 
   it("restore of an old version that holds a secret", async () => {

@@ -29,6 +29,12 @@ describe("SKILL.md", () => {
       "---\nname: !!js/function x\ndescription: d\n---\n",
       "The frontmatter is not valid YAML.",
     ],
+    [
+      // Review of PR #52: parsing passed and toJS() threw, so the whole preview failed (500).
+      "nested aliases (a YAML bomb)",
+      `---\na: &a [x, x, x, x, x, x, x, x, x, x]\nb: &b [*a, *a, *a, *a, *a, *a, *a, *a, *a, *a]\nc: &c [*b, *b, *b, *b, *b, *b, *b, *b, *b, *b]\nname: a\ndescription: d\n---\n`,
+      "The frontmatter is not valid YAML.",
+    ],
   ])("reports %s", (_label, text, reason) => {
     expect(parseSkillMd(text)).toEqual({ invalid: reason });
   });

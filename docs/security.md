@@ -247,8 +247,11 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
 - Memory writes and skill drafts (D41) with a match are refused, with no override.
 - Skills the owner writes are checked too (M1 spec gap pass, owner 2026-10-30): create (also of
   a clone), a rename (`PATCH /skills/{id}` and the `name` of `POST /versions`), a new version, a
-  version restore and every import row, from the editor, the CLI and the seed. A
-  match is refused with no override (422 `sensitive_data`, an import row is `invalid`). The
+  version restore and every import row, from the editor, the CLI and the seed. The check reads
+  every field that is saved and shown: the slug, name, description, body and changelog, and the
+  import file name, which goes into each changelog ("Imported from {file}"). A
+  match is refused with no override (422 `sensitive_data`, an import row is `invalid`, a file
+  name refuses the whole preview). The
   check runs in the skill service, so no path can skip it. M1 builds the pattern rules in
   `core/` as pure functions; M3 uses them for messages.
 - Auto titles (D46): a first message with matches ("Send anyway") gets no title request. The

@@ -63,6 +63,23 @@ describe("skillTextProblem (skills-page.md §6)", () => {
     });
   });
 
+  // Review of PR #52: every saved field goes through the guard, not only the edited text.
+  it("refuses a likely secret in the slug and in the changelog", () => {
+    expect(
+      skillTextProblem({ ...good, slug: "sk-proj-abcdefghijklmnop1234" }, limits),
+    ).toMatchObject({
+      code: "sensitive_data",
+      field: "slug",
+    });
+    expect(skillTextProblem({ ...good, changelog: "password: hunter22" }, limits)).toEqual({
+      code: "sensitive_data",
+      field: "changelog",
+      message:
+        "The changelog looks like a password. The app does not save secrets in skills. Remove it.",
+    });
+    expect(skillTextProblem({ ...good, changelog: "" }, limits)).toBeNull();
+  });
+
   it("checks only the fields it is given", () => {
     expect(skillTextProblem({ name: "Renamed" }, limits)).toBeNull();
   });

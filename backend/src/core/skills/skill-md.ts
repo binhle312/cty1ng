@@ -25,7 +25,13 @@ export function parseSkillMd(text: string): SkillMd | { invalid: string } {
   if (doc.errors.length > 0 || doc.warnings.length > 0) {
     return { invalid: "The frontmatter is not valid YAML." };
   }
-  const data: unknown = doc.toJS();
+  // toJS() can still throw, for example on too many nested aliases (a YAML bomb).
+  let data: unknown;
+  try {
+    data = doc.toJS({ maxAliasCount: 20 });
+  } catch {
+    return { invalid: "The frontmatter is not valid YAML." };
+  }
   const frontmatter = Frontmatter.safeParse(data);
   if (!frontmatter.success) {
     return { invalid: "The frontmatter needs a name and a description, both text." };

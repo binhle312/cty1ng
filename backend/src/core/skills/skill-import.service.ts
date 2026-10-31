@@ -7,6 +7,7 @@ import {
   type SkillImportRow,
 } from "@cty1ng/shared/skills";
 import { DomainError } from "../errors.ts";
+import { findSensitive, sensitiveLabel } from "../guard/sensitive-data.rules.ts";
 import type { Clock } from "../ports/clock.ts";
 import type { Readers, SkillRecord, UnitOfWork } from "../ports/repositories.ts";
 import { readSettings } from "../settings/settings.service.ts";
@@ -52,6 +53,8 @@ interface StoredPreview {
   file: string;
   expiresAt: number;
   rows: Map<string, StoredRow>;
+  // Set while an Apply runs, so a second Apply of the same preview gets `preview_expired`.
+  applying: boolean;
 }
 
 export function createSkillImportService(deps: {
@@ -100,7 +103,9 @@ export function createSkillImportService(deps: {
     const slug = folder.folder;
     const base = {
       slug,
-      name: slug.slice(0, limits.nameMax),
+      // A new skill gets its slug as its name; a slug longer than skill_name_max is refused
+      // below, never cut (domain-model.md §3.5, §10).
+      name: slug,
       from_version: null,
       to_version: null,
       diff: null,
@@ -147,6 +152,11 @@ export function createSkillImportService(deps: {
       ...content,
     });
     if (seen.skillId === null) {
+      if (slug.length > limits.nameMax) {
+        return invalid(
+          `The folder name is the new skill's name, and it has ${String(slug.length)} characters. The limit is ${String(limits.nameMax)}. Rename the folder.`,
+        );
+      }
       return {
         row: { ...base, status: "new", reason: null, to_version: 1 },
         seen,
@@ -177,6 +187,12 @@ export function createSkillImportService(deps: {
         ...content,
       };
     }
+    // A new version is refused while the saved name is over a lowered limit (§10).
+    if (skill.name.length > limits.nameMax) {
+      return invalid(
+        `The skill's name has ${String(skill.name.length)} characters. The limit is ${String(limits.nameMax)}. Rename the skill, then import again.`,
+      );
+    }
     return {
       row: {
         ...base,
@@ -205,6 +221,16 @@ export function createSkillImportService(deps: {
       folders: readonly ImportFolder[],
       actor: string,
     ): Promise<SkillImportPreview> => {
+      // The file name goes into every changelog ("Imported from {file}"), so the guard reads it
+      // (security.md §2.13).
+      const [match] = findSensitive(file);
+      if (match !== undefined) {
+        throw new DomainError(
+          "sensitive_data",
+          `The file name looks like ${sensitiveLabel(match.kind)}. The app does not save secrets in skills. Rename the file.`,
+          "file",
+        );
+      }
       const settings = await readSettings(deps.readers.settings);
       const limits = { nameMax: settings.skill_name_max, bodyMax: settings.skill_body_max };
       const rows = new Map<string, StoredRow>();
@@ -224,6 +250,7 @@ export function createSkillImportService(deps: {
         file,
         expiresAt: deps.clock.now().getTime() + deps.previewMinutes * 60_000,
         rows,
+        applying: false,
       });
       return { preview_id: id, file, rows: [...rows.values()].map((stored) => stored.row) };
     },
@@ -236,7 +263,7 @@ export function createSkillImportService(deps: {
     ): Promise<SkillImportResult> => {
       dropExpired();
       const preview = previews.get(previewId);
-      if (preview?.actor !== actor) {
+      if (preview?.actor !== actor || preview.applying) {
         throw new DomainError(
           "preview_expired",
           "This preview is gone: it expired, was applied, or the app restarted. Preview again.",
@@ -257,53 +284,60 @@ export function createSkillImportService(deps: {
         return stored;
       });
 
-      const result = await deps.uow.run(async (tx) => {
-        const ids: SkillId[] = [];
-        let created = 0;
-        let newVersions = 0;
-        for (const stored of picked) {
-          const now = await seenNow(tx.skills, stored.row.slug);
-          if (!sameSeen(now, stored.seen)) {
-            throw new DomainError(
-              "stale_write",
-              "A skill changed after the preview. The app applied nothing. Preview again.",
-            );
-          }
-          const changelog = `Imported from ${preview.file}`;
-          if (stored.row.status === "new") {
-            ids.push(
-              await deps.skills.createInTx(
+      // Claimed before the first await; a failed Apply frees it again (a stale_write keeps the
+      // preview, and nothing was written).
+      preview.applying = true;
+      const result = await deps.uow
+        .run(async (tx) => {
+          const ids: SkillId[] = [];
+          let created = 0;
+          let newVersions = 0;
+          for (const stored of picked) {
+            const now = await seenNow(tx.skills, stored.row.slug);
+            if (!sameSeen(now, stored.seen)) {
+              throw new DomainError(
+                "stale_write",
+                "A skill changed after the preview. The app applied nothing. Preview again.",
+              );
+            }
+            const changelog = `Imported from ${preview.file}`;
+            if (stored.row.status === "new") {
+              ids.push(
+                await deps.skills.createInTx(
+                  tx,
+                  {
+                    slug: stored.row.slug,
+                    name: stored.row.name,
+                    description: stored.description,
+                    bodyMd: stored.bodyMd,
+                    changelog,
+                  },
+                  actor,
+                ),
+              );
+              created += 1;
+            } else if (stored.seen.skillId !== null && stored.seen.latestVersion !== null) {
+              await deps.skills.addVersionInTx(
                 tx,
+                stored.seen.skillId,
                 {
-                  slug: stored.row.slug,
-                  name: stored.row.name,
+                  baseVersion: stored.seen.latestVersion,
                   description: stored.description,
                   bodyMd: stored.bodyMd,
                   changelog,
+                  upgradeBotIds: [],
                 },
                 actor,
-              ),
-            );
-            created += 1;
-          } else if (stored.seen.skillId !== null && stored.seen.latestVersion !== null) {
-            await deps.skills.addVersionInTx(
-              tx,
-              stored.seen.skillId,
-              {
-                baseVersion: stored.seen.latestVersion,
-                description: stored.description,
-                bodyMd: stored.bodyMd,
-                changelog,
-                upgradeBotIds: [],
-              },
-              actor,
-            );
-            ids.push(stored.seen.skillId);
-            newVersions += 1;
+              );
+              ids.push(stored.seen.skillId);
+              newVersions += 1;
+            }
           }
-        }
-        return { ids, created, newVersions };
-      });
+          return { ids, created, newVersions };
+        })
+        .finally(() => {
+          preview.applying = false;
+        });
       previews.delete(previewId);
       const skills: Skill[] = [];
       for (const id of result.ids) skills.push(await deps.skills.summary(id, actor));

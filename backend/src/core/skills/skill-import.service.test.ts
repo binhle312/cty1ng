@@ -109,6 +109,52 @@ describe("preview", () => {
     expect(await backend.readers.skills.bySlug("fresh")).toBeNull();
   });
 
+  // Review of PR #52: the name of a new skill was cut to skill_name_max instead of refused.
+  it("refuses a new skill whose slug is longer than skill_name_max; never cuts it", async () => {
+    await backend.settings.update({ skill_name_max: 16 });
+    const preview = await backend.skillImport.preview(
+      "a.zip",
+      [folder("long-skill-name-abcde-new"), folder("short-name")],
+      OWNER_ID,
+    );
+    expect(preview.rows).toEqual([
+      expect.objectContaining({
+        slug: "long-skill-name-abcde-new",
+        name: "long-skill-name-abcde-new",
+        status: "invalid",
+        reason:
+          "The folder name is the new skill's name, and it has 25 characters. The limit is 16. Rename the folder.",
+      }),
+      expect.objectContaining({ slug: "short-name", name: "short-name", status: "new" }),
+    ]);
+  });
+
+  it("refuses a new version of a skill whose saved name is over a lowered skill_name_max", async () => {
+    await backend.skills.create(
+      {
+        slug: "notes",
+        name: "A name of thirty-four characters!",
+        description: "Use it.",
+        bodyMd: "x",
+      },
+      OWNER_ID,
+    );
+    await backend.settings.update({ skill_name_max: 16 });
+    const preview = await backend.skillImport.preview("a.zip", [folder("notes")], OWNER_ID);
+    expect(preview.rows[0]).toMatchObject({
+      status: "invalid",
+      reason:
+        "The skill's name has 33 characters. The limit is 16. Rename the skill, then import again.",
+    });
+  });
+
+  it("refuses a file name that looks like a secret (it goes into every changelog)", async () => {
+    const error = await failure(
+      backend.skillImport.preview("sk-proj-abcdefghijklmnop1234.zip", [folder("fresh")], OWNER_ID),
+    );
+    expect(error).toMatchObject({ code: "sensitive_data", field: "file" });
+  });
+
   it("an invalid UTF-8 file is invalid", async () => {
     const preview = await backend.skillImport.preview(
       "x.zip",
@@ -142,6 +188,22 @@ describe("apply", () => {
     ]);
     expect(result.skills[1]?.latest_version.changelog).toBe("Imported from team.zip");
     expect(await backend.readers.skills.bySlug("skip-me")).toBeNull();
+  });
+
+  // Review of PR #52: two Apply calls at once could both use one preview.
+  it("two Apply calls of one preview at once: one applies, the other gets preview_expired", async () => {
+    const preview = await backend.skillImport.preview(
+      "a.zip",
+      [folder("one"), folder("two")],
+      OWNER_ID,
+    );
+    const results = await Promise.allSettled([
+      backend.skillImport.apply(preview.preview_id, ["one"], OWNER_ID),
+      backend.skillImport.apply(preview.preview_id, ["two"], OWNER_ID),
+    ]);
+    expect(results.map((result) => result.status)).toEqual(["fulfilled", "rejected"]);
+    expect(results[1]).toMatchObject({ reason: { code: "preview_expired" } });
+    expect(await backend.readers.skills.bySlug("two")).toBeNull();
   });
 
   it("a used preview gets preview_expired", async () => {

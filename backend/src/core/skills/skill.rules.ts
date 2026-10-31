@@ -13,7 +13,7 @@ export interface SkillLimits {
 
 export interface SkillProblem {
   code: ErrorCode;
-  field: "slug" | "name" | "description" | "body_md";
+  field: "slug" | "name" | "description" | "body_md" | "changelog";
   message: string;
 }
 
@@ -22,6 +22,8 @@ export interface SkillText {
   name?: string | undefined;
   description?: string | undefined;
   bodyMd?: string | undefined;
+  // Optional and never empty-checked, but saved and shown, so the guard reads it.
+  changelog?: string | undefined;
 }
 
 const EMPTY: Record<SkillProblem["field"], string> = {
@@ -29,6 +31,7 @@ const EMPTY: Record<SkillProblem["field"], string> = {
   name: "Type a name.",
   description: "Type a description.",
   body_md: "Type the steps.",
+  changelog: "",
 };
 
 const NOUN: Record<SkillProblem["field"], string> = {
@@ -36,9 +39,11 @@ const NOUN: Record<SkillProblem["field"], string> = {
   name: "name",
   description: "description",
   body_md: "body",
+  changelog: "changelog",
 };
 
-// The first problem, in field order, or null. Only the fields that are given are checked.
+// The first problem, in field order, or null. Only the fields that are given are checked. The
+// guard (D39, security.md §2.13) reads every saved field: the slug and the changelog too.
 export function skillTextProblem(text: SkillText, limits: SkillLimits): SkillProblem | null {
   if (text.slug !== undefined) {
     const problem = slugTextProblem(text.slug);
@@ -60,7 +65,12 @@ export function skillTextProblem(text: SkillText, limits: SkillLimits): SkillPro
       };
     }
   }
-  for (const [field, value] of fields) {
+  const guarded: [SkillProblem["field"], string | undefined][] = [
+    ["slug", text.slug],
+    ...fields.map(([field, value]): [SkillProblem["field"], string | undefined] => [field, value]),
+    ["changelog", text.changelog],
+  ];
+  for (const [field, value] of guarded) {
     if (value === undefined) continue;
     const [match] = findSensitive(value);
     if (match === undefined) continue;
