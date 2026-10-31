@@ -41,6 +41,12 @@ export function setField(form: SkillForm, field: SkillTextField, value: string):
   return { ...form, current };
 }
 
+// After a save, the text that the request sent is the saved text. Edits typed while the
+// request was pending stay as changes.
+export function markSaved(form: SkillForm, sent: SkillFields): SkillForm {
+  return { ...form, saved: sent };
+}
+
 export function discard(form: SkillForm): SkillForm {
   return { ...form, current: form.saved, slugEdited: false };
 }

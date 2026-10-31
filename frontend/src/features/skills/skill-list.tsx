@@ -99,7 +99,7 @@ export function SkillList() {
               <Skeleton key={key} className="mx-2 mb-2 h-12" />
             ))}
           </SkeletonArea>
-        ) : isError ? (
+        ) : isError && skills === undefined ? (
           <p className="px-2 text-on-surface-muted">The app could not load the skills.</p>
         ) : (
           <ul>

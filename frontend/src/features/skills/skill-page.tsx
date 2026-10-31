@@ -39,6 +39,8 @@ import {
   fieldProblems,
   hasProblem,
   isDirty,
+  markSaved,
+  type SkillFields as FormFields,
   leaveText,
   newForm,
   saveKind,
@@ -64,8 +66,9 @@ export function SkillPage() {
   });
 
   if (skills.isPending) return <SkillEditorSkeleton />;
-  // A failed request is not a missing skill: the error state comes before Page not found.
-  if (skills.isError) {
+  // A failed request is not a missing skill: the error state comes before Page not found. A
+  // failed background refresh keeps the editor and its unsaved text on the data it has.
+  if (skills.data === undefined) {
     return (
       <LoadError text="The app could not load the skills." onRetry={() => void skills.refetch()} />
     );
@@ -74,7 +77,7 @@ export function SkillPage() {
   // eslint-disable-next-line @typescript-eslint/only-throw-error -- the router's way to show Page not found
   if (row === undefined) throw notFound();
   if (detail.isPending) return <SkillEditorSkeleton />;
-  if (detail.isError) {
+  if (detail.data === undefined) {
     return <LoadError text={apiErrorText(detail.error)} onRetry={() => void detail.refetch()} />;
   }
   return <SkillView key={detail.data.id} skill={detail.data} />;
@@ -110,11 +113,15 @@ function SkillView({ skill }: { skill: SkillDetail }) {
     }
   }
   const conflict = base.version !== server.version || base.rowVersion !== server.rowVersion;
-  // After this page's own save, the editor's text is the saved text, based on the result.
-  const savedHere = (result: { latest_version: { version: number }; row_version: number }) => {
+  // After this page's own save, the text it sent is the saved text, based on the result.
+  const savedHere = (
+    result: { latest_version: { version: number }; row_version: number },
+    sent: FormFields,
+    note: string,
+  ) => {
     setBase({ version: result.latest_version.version, rowVersion: result.row_version });
-    setForm((current) => newForm(current.current, false));
-    setChangelog("");
+    setForm((current) => markSaved(current, sent));
+    setChangelog((current) => (current.trim() === note ? "" : current));
   };
   const [changelog, setChangelog] = useState("");
   const [saveError, setSaveError] = useState<SaveError | null>(null);
@@ -123,7 +130,9 @@ function SkillView({ skill }: { skill: SkillDetail }) {
 
   const readOnly = skill.deprecated || !skill.is_author;
   const changes = changedFields(form);
-  const dirty = changes.length > 0 && !readOnly;
+  // Unsaved text is protected also when the skill turns read-only under it (deprecated in
+  // another place): the text stays on screen, and leaving asks first.
+  const dirty = changes.length > 0;
   const kind = saveKind(form);
   const problems = fieldProblems(form, settings.limits);
   const latest = server.version;
@@ -145,8 +154,7 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   };
   const rename = useMutation({
     ...renameSkillMutation(),
-    onSuccess: (result) => {
-      savedHere(result);
+    onSuccess: () => {
       showToast("Saved ✨");
     },
     onError,
@@ -154,7 +162,6 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   const saveVersion = useMutation({
     ...createSkillVersionMutation(),
     onSuccess: (result) => {
-      savedHere(result);
       // M1 has no bots, so no upgrade card opens: only the toast (skills-page.md §7).
       showToast(`Saved v${String(result.latest_version.version)} ✨`);
     },
@@ -164,26 +171,39 @@ function SkillView({ skill }: { skill: SkillDetail }) {
 
   const save = () => {
     setSaveError(null);
+    // The text this request sends; typing goes on while it is pending.
+    const sent = form.current;
+    const note = changelog.trim();
     if (kind === "rename") {
-      rename.mutate({
-        path: { id: skill.id },
-        body: { name: form.current.name, row_version: base.rowVersion },
-      });
+      rename.mutate(
+        { path: { id: skill.id }, body: { name: sent.name, row_version: base.rowVersion } },
+        {
+          onSuccess: (result) => {
+            savedHere(result, sent, note);
+          },
+        },
+      );
       return;
     }
-    const renamed = form.current.name !== form.saved.name;
-    const note = changelog.trim();
-    saveVersion.mutate({
-      path: { id: skill.id },
-      body: {
-        base_version: base.version,
-        description: form.current.description,
-        body_md: form.current.body_md,
-        upgrade_bot_ids: [],
-        ...(note === "" ? {} : { changelog: note }),
-        ...(renamed ? { name: form.current.name, row_version: base.rowVersion } : {}),
+    const renamed = sent.name !== form.saved.name;
+    saveVersion.mutate(
+      {
+        path: { id: skill.id },
+        body: {
+          base_version: base.version,
+          description: sent.description,
+          body_md: sent.body_md,
+          upgrade_bot_ids: [],
+          ...(note === "" ? {} : { changelog: note }),
+          ...(renamed ? { name: sent.name, row_version: base.rowVersion } : {}),
+        },
       },
-    });
+      {
+        onSuccess: (result) => {
+          savedHere(result, sent, note);
+        },
+      },
+    );
   };
 
   const exportSkill = useExportSkills();
@@ -202,21 +222,22 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   const dialogFailed = (error: unknown) => {
     setDialogError(apiErrorText(error));
   };
-  // Deprecate and Make active again change the skill here, so they move the base too.
-  const movedBase = (result: { latest_version: { version: number }; row_version: number }) => {
-    setBase({ version: result.latest_version.version, rowVersion: result.row_version });
-  };
+  // Deprecate and Make active again change the skill here, so they move the base too, but
+  // only when the edit was based on the newest data when the action started. Otherwise the
+  // move would hide a change made in another place, and Save would overwrite it.
+  const moveBase =
+    (inSync: boolean) => (result: { latest_version: { version: number }; row_version: number }) => {
+      if (inSync) {
+        setBase({ version: result.latest_version.version, rowVersion: result.row_version });
+      }
+    };
   const deprecate = useMutation({
     ...deprecateSkillMutation(),
-    onSuccess: (result) => {
-      movedBase(result);
-      closeDialog();
-    },
+    onSuccess: closeDialog,
     onError: dialogFailed,
   });
   const undeprecate = useMutation({
     ...undeprecateSkillMutation(),
-    onSuccess: movedBase,
     onError: (error) => {
       showToast(apiErrorText(error));
     },
@@ -278,10 +299,10 @@ function SkillView({ skill }: { skill: SkillDetail }) {
           skill={skill}
           pending={undeprecate.isPending}
           onActivate={() => {
-            undeprecate.mutate({
-              path: { id: skill.id },
-              body: { row_version: skill.row_version },
-            });
+            undeprecate.mutate(
+              { path: { id: skill.id }, body: { row_version: skill.row_version } },
+              { onSuccess: moveBase(!conflict) },
+            );
           }}
         />
       )}
@@ -326,7 +347,13 @@ function SkillView({ skill }: { skill: SkillDetail }) {
             />
           </div>
           {skill.deprecated ? (
-            <ReadOnlySaveBar text="Deprecated skills are read-only. Make it active again to edit it." />
+            <ReadOnlySaveBar
+              text={
+                dirty
+                  ? "This skill was deprecated with your changes not saved. Deprecated skills are read-only: copy what you need before you leave."
+                  : "Deprecated skills are read-only. Make it active again to edit it."
+              }
+            />
           ) : !skill.is_author ? (
             <ReadOnlySaveBar
               text="You cannot edit this skill. Only its author can change it."
@@ -383,10 +410,13 @@ function SkillView({ skill }: { skill: SkillDetail }) {
         onCancel={closeDialog}
         onConfirm={() => {
           if (deprecate.isPending) return;
-          deprecate.mutate({
-            path: { id: skill.id },
-            body: { remove_bot_ids: [], row_version: skill.row_version },
-          });
+          deprecate.mutate(
+            {
+              path: { id: skill.id },
+              body: { remove_bot_ids: [], row_version: skill.row_version },
+            },
+            { onSuccess: moveBase(!conflict) },
+          );
         }}
       />
       <DeleteDialog

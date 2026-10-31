@@ -8,6 +8,7 @@ import {
   fieldProblems,
   hasProblem,
   leaveText,
+  markSaved,
   newForm,
   saveKind,
   setField,
@@ -142,5 +143,17 @@ describe("the skill editor form", () => {
     );
     form = setField(form, "name", "y");
     expect(leaveText(form, "y")).toContain("You changed the name, the description and the body");
+  });
+});
+
+describe("markSaved", () => {
+  it("keeps edits typed while the save was pending as changes", () => {
+    const start = newForm(SAVED, false);
+    const sent = setField(start, "description", "Sent text.");
+    const typedLater = setField(sent, "body_md", "Typed while saving.");
+    const after = markSaved(typedLater, sent.current);
+    expect(after.saved).toEqual(sent.current);
+    expect(after.current.body_md).toBe("Typed while saving.");
+    expect(changedFields(after)).toEqual(["body_md"]);
   });
 });
