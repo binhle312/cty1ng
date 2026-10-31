@@ -59,8 +59,11 @@ conversation).
   sends all events with `seq > 812`, then live ones. First connection without the header: the
   server sends nothing old; the client loads current state with normal GETs, then uses the
   stream's first `ready` event (which carries the current max seq) as its cursor.
-- **Gap rule:** if the client's cursor is older than the retention window (events are kept 30
-  days), the server sends `event: reset` and the client reloads state with GETs.
+- **Gap rule:** if the client's cursor is older than the retention window (events are kept
+  `EVENT_RETENTION_DAYS`, default 30; `architecture.md` §6.1), the server sends `event: reset`
+  and the client reloads state with GETs. Exactly: with `oldest` the seq of the oldest kept
+  event, a cursor below `oldest − 1` gets `reset`; a cursor of `oldest − 1` or later gets the
+  replay. When every event was pruned, `max_seq` is 0, so any cursor above 0 gets `reset`.
 - `ready` and `reset` also carry an `id:` line: the cursor the stream continues from (the
   client's `Last-Event-ID` when it resumes, else the newest seq). So the browser's
   `Last-Event-ID` is right after a first connection or a reset, even before a persisted event

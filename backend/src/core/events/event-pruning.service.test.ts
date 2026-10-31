@@ -1,4 +1,3 @@
-import Database from "better-sqlite3";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { manualClock, testBackend } from "../../../test/helpers.ts";
 
@@ -67,10 +66,8 @@ describe("event pruning", () => {
     await append("b");
     expect(await backend.eventPruning.pruneDue()).toBe(1);
     expect(await backend.eventPruning.pruneDue()).toBe(0);
-    const sqlite = new Database(backend.config.databaseFile, { readonly: true });
-    expect(sqlite.prepare("SELECT seq, type FROM events").all()).toEqual([
-      { seq: 2, type: "test.ping" },
-    ]);
-    sqlite.close();
+    // Only the kept event is in the log: the prune added none.
+    expect(await kept()).toEqual([[2, { note: "b" }]]);
+    expect(await backend.readers.events.bounds()).toEqual({ oldest: 2, newest: 2 });
   });
 });

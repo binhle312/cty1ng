@@ -7,6 +7,9 @@ in the same transaction as the change (`AGENTS.md` §5 rule 3).
 | --- | --- |
 | `append-event.ts` | `appendEvent(tx, …)`: checks the event's schema, inserts it, wakes the hub after commit |
 | `hub.ts` | The in-process hub, the core side of the transport port: replay, the gap rule, live events |
+| `hub.test.ts` | The hub after a complete prune: it waits for the next notify instead of looping |
+| `event-pruning.service.ts` | Deletes the events older than `EVENT_RETENTION_DAYS` (the timed job; writes no event) |
+| `event-pruning.service.test.ts` | The cutoff edge, a complete removal, seq after a prune, no event written |
 | `test-ping.service.ts` | Appends `test.ping` for `POST /api/_test/events` (APP_ENV=test only) |
 
 Start here: `hub.ts`. Do not: send events from memory; subscribers always read the `events`

@@ -969,8 +969,10 @@ events
 ```
 
 `conversation_id` gets its foreign key with the `conversations` table (M3); M0 creates only
-`events` and `settings`. Types and payloads: `realtime-events.md`. Events older than 30 days are pruned by a daily
-task; clients with an older cursor get `reset` (`realtime-events.md` §2).
+`events` and `settings`. Types and payloads: `realtime-events.md`. Events older than `EVENT_RETENTION_DAYS` (default 30)
+are pruned at start and every `EVENT_PRUNE_INTERVAL_HOURS` (default 24) (`architecture.md` §6.1,
+§8); pruning writes no event. `AUTOINCREMENT` keeps `seq` from going back after a prune, even when
+every event is gone. Clients with an older cursor get `reset` (`realtime-events.md` §2).
 
 ## 9. Handoffs
 
