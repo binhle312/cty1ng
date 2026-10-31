@@ -643,3 +643,92 @@ test("a Clone skips a slug that a skill in Trash keeps", async ({ page }) => {
   await page.getByRole("button", { name: "Create", exact: true }).click();
   await expect(page).toHaveURL(`/skills/${skill.slug}-copy-2`);
 });
+
+// Fourth review of #54. Each test fails on the code before its fix.
+
+test("a Clone opens with the default limits when the settings fail", async ({ page }) => {
+  test.setTimeout(60_000);
+  const skill = unique("Clone no settings");
+  await createSkill(page, skill);
+  await openClone(page);
+  let requests = 0;
+  await page.route("**/api/settings", (route) => {
+    requests += 1;
+    return route.fulfill({
+      status: 500,
+      contentType: "application/json",
+      body: JSON.stringify({ error: { code: "internal_error", message: "Something failed." } }),
+    });
+  });
+  await page.reload();
+  // TanStack Query tries three more times; then the editor opens on the defaults and stays.
+  const slug = page.getByLabel("Slug", { exact: true });
+  await expect(slug).toHaveValue(`${skill.slug}-copy`, { timeout: 20_000 });
+  // The editor's own tries end; then no more requests come: the page does not loop.
+  await page.waitForTimeout(10_000);
+  const settled = requests;
+  await page.waitForTimeout(5_000);
+  expect(requests).toBe(settled);
+  await expect(slug).toHaveValue(`${skill.slug}-copy`);
+});
+
+test("Cancel waits for a pending Create", async ({ page }) => {
+  const skill = unique("Cancel create");
+  await page.goto("/skills/new");
+  await fill(page, "Name", skill.name);
+  await fill(page, "Description", "Use it.");
+  await fill(page, "Body", "## Steps");
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(
+    (url) => url.pathname === "/api/skills",
+    async (route) => {
+      if (route.request().method() !== "POST") return route.fallback();
+      await held;
+      await route.continue();
+    },
+  );
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  const cancel = page.getByRole("button", { name: "Cancel" });
+  await expect(cancel).toHaveAttribute("aria-disabled", "true");
+  // Playwright waits for an aria-disabled button to turn on; a person can still click it.
+  await cancel.click({ force: true });
+  await expect(page).toHaveURL("/skills/new");
+  release();
+  await expect(page).toHaveURL(`/skills/${skill.slug}`);
+});
+
+test("a Create that ends after the owner left does not move the page", async ({ page }) => {
+  const skill = unique("Late create");
+  await page.goto("/skills/new");
+  await fill(page, "Name", skill.name);
+  await fill(page, "Description", "Use it.");
+  await fill(page, "Body", "## Steps");
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(
+    (url) => url.pathname === "/api/skills",
+    async (route) => {
+      if (route.request().method() !== "POST") return route.fallback();
+      await held;
+      await route.continue();
+    },
+  );
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "Projects" })
+    .getByRole("link", { name: "Home" })
+    .click();
+  await page
+    .getByRole("alertdialog", { name: "Leave without saving? 👀" })
+    .getByRole("button", { name: "Let them go" })
+    .click();
+  await expect(page).toHaveURL("/");
+  release();
+  await expect(page.getByText(`Created ${skill.name} ✨`)).toBeVisible();
+  await expect(page).toHaveURL("/");
+});

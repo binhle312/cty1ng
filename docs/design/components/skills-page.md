@@ -388,7 +388,10 @@ The spec did not name these; the build uses them:
 - A Clone whose source does not load: "The app could not load the skill to copy." and **Try
   again**; Page not found only when the version does not exist (third review of #54).
 - While Create is pending, the fields are read-only: the page leaves after Create, so text
-  typed meanwhile would be lost. A settings change does not reset an open Clone.
+  typed meanwhile would be lost. **Cancel** is off too, with the tooltip "Creating the skill."
+  If the owner leaves another way, a Create that ends later shows its toast and does not move
+  the page (fourth review of #54). A settings change does not reset an open Clone. When the
+  settings do not load, a Clone opens with the default limits; it does not wait again.
 - A copy's slug and skills in Trash: the list does not show skills in Trash, but they keep
   their slugs (D49). When Create finds the proposed copy slug taken, the app tries the next
   suffix (`-copy-2`, `-copy-3` …) until one is free. A slug the owner typed shows the error
