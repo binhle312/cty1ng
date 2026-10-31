@@ -17,6 +17,24 @@
 - From **Manage skills** in the user panel menu (`user-panel.md`).
 - The page belongs to the whole app, not to a project. Bar 2 is hidden, and the rail stays.
 
+**URLs (M1 spec gap pass, owner 2026-10-30).** A reload keeps the page, the tab and the compared
+versions:
+
+| URL | Opens |
+| --- | --- |
+| `/skills` | The skill changed last (the top of the list), or the empty state (§3) |
+| `/skills/{slug}` | That skill, Skill tab. `?tab=bots` or `?tab=history`; History adds `&from=3&to=5` for a Compare pair |
+| `/skills/new` | New skill (§4) |
+| `/skills/new?from={skill version id}` | Clone of that version (§12) |
+| `/skills/import` | The import page (§15), before a file is chosen |
+
+The page loads the list with `include_deprecated=true` and finds the skill id from the slug in
+it, so the URL of a deprecated skill works after a reload; **Show deprecated** only filters the
+rows on screen. The API takes ids.
+`new` and `import` are reserved slugs (`domain-model.md` §3.1). An unknown or trashed slug shows
+the not-found state of the shell. A reload or a closed browser tab with unsaved changes asks the
+browser's own "Leave site?" question; nothing else of an unsaved edit is kept.
+
 ## 2. Layout: list and skill page side by side (bot page layout)
 
 - **List column**, 300 px, `surface-container`:
@@ -39,11 +57,11 @@
   "↑m" in `primary` when m bots use an older version, **History** with the number of versions.
   The open tab has the 2 px `primary` underline.
 - **Skill tab:** the editor, one column, 14 px between fields:
-  1. **Name**, counter "n / 64".
+  1. **Name**, counter "n / {skill_name_max}" (default 64).
   2. **Description**, hint "Say when a bot must use this skill. Bots read it in every prompt,
      so keep it short.", counter "n / 1,024".
   3. **Body**, hint "The steps a bot follows for this task. Bots read it only when they load
-     the skill.", counter "n / 20,000". The tabs **Write** and **Preview** sit on top of the
+     the skill.", counter "n / {skill_body_max}" (default 20,000). The tabs **Write** and **Preview** sit on top of the
      body box, with "Markdown" at the right of the tab bar. The open tab has a 2 px `primary`
      underline. The tab bar has the same border colour as the box.
 - **Save bar**, fixed at the bottom of the Skill tab (§5). The Bots and History tabs have no
@@ -69,6 +87,8 @@ The skill side of the bot page Skills tab (`bot-page.md` §7), with the same row
 - **+ Add** opens the bot list (§7) with no box ticked; the bots that use the skill are not in
   it. The added bots get the latest version and Always load off.
 - No bot uses it: "No bot uses this skill yet." and **+ Add**.
+- No bot exists (M1): the same line, and **+ Add** is disabled with the tooltip "Create a bot
+  first."
 
 ## 3. Empty state
 
@@ -82,11 +102,16 @@ example "Write user stories". Write one here, or import SKILL.md folders." and t
   an empty editor with the header "New skill" and "A skill tells a bot how to do one task. You
   can assign it to bots after you save it."
 - Only a new skill has the **Slug** field, under Name. Hint: "Made from the name. Fixed after
-  you create it." Counter "n / 64". The slug matches `^[a-z0-9-]{1,64}$` and is fixed after
-  Create (D19).
+  you create it." Counter "n / 64". The slug follows the slug rule in `domain-model.md` §3.1
+  (lowercase letters, digits, single hyphens inside, 1–64 characters) and is fixed after
+  Create (D19). A slug that breaks the rule shows "Use lowercase letters, digits and single
+  hyphens, not at the start or end."; `new` and `import` show "This slug is reserved. Type a
+  different one."
 - **Slug from the name:** while the owner has not edited the slug, the app makes it from the
   name: lowercase, accents removed, spaces and other characters become "-", no "-" at the start
-  or end, no "--". Example: "Viết câu chuyện" → `viet-cau-chuyen`. A name with no Latin letters
+  or end, no "--", cut to 64 characters (and no "-" at the cut). `đ` and `Đ` become `d`, as
+  Unicode accent removal leaves them. Example: "Viết câu chuyện" → `viet-cau-chuyen`, "Đặt
+  lịch" → `dat-lich`. A name with no Latin letters
   (for example Japanese) gives an empty slug, and the owner types one. After the owner edits
   the slug, the app stops.
 - Placeholders are examples, in `on-surface-muted`:
@@ -104,6 +129,12 @@ example "Write user stories". Write one here, or import SKILL.md folders." and t
 - With changes: a `primary` dot, "{n} changes not saved", a one-line box "What changed? One
   line, optional" (the changelog, shown in History), **Discard** and **Save as v{n+1}**.
 - Discard puts back the saved text.
+- **A rename only** (M1 spec gap pass, owner 2026-10-30): the display name is not versioned
+  (`domain-model.md` §3.1). When only the name changed, the button is **Save** (no version) and
+  the changelog box is hidden. When the name and the description or the body changed, **Save as
+  v{n+1}** saves both in one request, so a Save never half-succeeds (`api.md` §2).
+- Enter in the changelog box is the same as the Save button when it is enabled. There is no
+  Ctrl+S. The Body box gets the Markdown keys of the composer in M3 (UI-3.14b).
 
 ## 6. Errors and warnings (C3)
 
@@ -114,11 +145,12 @@ over its limit turns `danger`.
 | --- | --- |
 | Slug exists | "This slug exists. Type a different one." |
 | Description over the limit | "The description has 1,047 characters. The limit is 1,024. Make it shorter." |
-| Name or body over the limit | The same pattern, with the limit 64 or 20,000 |
+| Name or body over the limit | The same pattern, with the limit `skill_name_max` or `skill_body_max` (defaults 64 and 20,000) |
 | Text looks like a secret (D39) | "Line 5 looks like an API key. The app does not save secrets in skills. Remove the key." |
 
-A body over 500 lines gets a warning only, in `waiting`: "The body has 612 lines. Bots read the
-full body each time they load it. Try to keep it under 500 lines." The Agent Skills standard
+A body over `skill_body_warn_lines` lines (default 500) gets a warning only, in `waiting`: "The
+body has 612 lines. Bots read the full body each time they load it. Try to keep it under 500
+lines." (the example uses the default). The Agent Skills standard
 recommends this length but does not require it.
 
 ## 7. Bot cards after a save
@@ -126,7 +158,11 @@ recommends this length but does not require it.
 Both cards use the same bot list: one row for each bot with a check box, the bot avatar, the
 name and, in C4, the version pill. A ticked row has a `primary` border. **Skip**, Esc or a click
 outside the card closes it with no change. The line "A click outside this card is the same as
-Skip." is at the bottom. In M1 no bots exist, so only the toast shows.
+Skip." is at the bottom.
+
+**No bot to list** (M1 spec gap pass, owner 2026-10-30): when no bot fits the card (in M1 no bots
+exist; later, no bot uses an older version), the card does not open, and only a toast shows:
+"Saved v{n} ✨" after a save, "Created {name} ✨" after Create.
 
 ### 7.1 Upgrade the bots (C4, UI-7.4)
 
@@ -200,7 +236,8 @@ shows in two places. No label ends in "…" (`buttons.md`).
      UTC offset.
   2. "{n} bots still use it." or "No bot uses it."
   3. "New bots cannot add it."
-  - Buttons: **Remove from bots** and **Make active again** (`primary`).
+  - Buttons: **Remove from bots** and **Make active again** (`primary`). **Remove from bots** is
+    hidden when no bot uses the skill.
 - The editor is read-only. The save bar says "Deprecated skills are read-only. Make it active
   again to edit it."
 - Bots that still use it show the Deprecated pill on their pages (M2).
@@ -221,7 +258,8 @@ starts ticked. Buttons: **Skip** and **Remove from {n} bots** (`danger`), disabl
   (default) and **Delete skill** (`danger` fill). "30" is the Trash setting (D49).
 - After Delete (D7c): the app removes the skill from the bots, and the skill leaves the list.
   The toast says "{skill} is in Trash." The word **Trash** is a link to the Trash page. No
-  Undo: moving to Trash is not permanent (D49).
+  Undo: moving to Trash is not permanent (D49). Until the Trash page exists (M5b), **Trash** is
+  plain text, not a link, and the dialog lists no bots in M1.
 - Trash keeps the list of bots that used the skill. A restore suggests to assign it again to
   those bots that are still active, never to bots in Trash. The Trash page round (M5b) draws
   this card.
@@ -232,7 +270,9 @@ starts ticked. Buttons: **Skip** and **Remove from {n} bots** (`danger`), disabl
   skill · copy of {skill} v{n}" and "You are the author of the copy. Later changes to the
   original do not change it."
 - The fields hold the text of the version on screen. The name gets " (copy)" and the slug gets
-  "-copy". The owner can change every field.
+  "-copy". The owner can change every field. When the copy's slug is taken, the app tries
+  "-copy-2", "-copy-3" and so on. The name and the slug are cut so they stay within their
+  limits; the slug is cut before its suffix, so the suffix stays.
 - **Create** makes the copy at v1, with the owner as author, and then shows the assign card
   (§7.2). Cancel or leave, and nothing is saved, so no unwanted copies stay in the list.
 
@@ -268,7 +308,8 @@ fields. Buttons: **Let them go** (`danger`) and **Stay on this skill** (`primary
   3. **No change** — pill Unchanged, "Same as v3".
   4. **Skipped** — pill Invalid with the reason (for example "The folder name has "_". Use
      lowercase letters, digits and hyphens."), or Conflict ("{author} made this skill. Only the
-     author can add a version.").
+     author can add a version.", "Deprecated. Make it active again to import.", "This skill is
+     in Trash.").
 - Each row of groups 1 and 2 has a check box, and every box starts ticked. Rows of groups 3 and 4
   have a disabled box. The save bar says "{k} of {n} picked. Rows with a problem are skipped."
   and has **Cancel** and **Apply {k} changes**.
@@ -277,6 +318,9 @@ fields. Buttons: **Let them go** (`danger`) and **Stay on this skill** (`primary
   skipped: … Bots cannot run scripts." (`security.md` §2.4).
 - "Import never changes the version that a bot uses. Skills that are not in the file stay as
   they are."
+- A new skill gets its slug as its name ("becomes v1 · named {slug}"); the owner renames it
+  later. Import never renames an existing skill. Each new version has the changelog "Imported
+  from {file}" (`domain-model.md` §3.5).
 - After Apply: toast "Imported 4 changes ✨ 2 new skills, 2 new versions." The new and changed
   skills move to the top of the list. If a skill changed after the preview, the app applies
   nothing and shows "A skill changed after the preview. The app applied nothing. Preview again."
@@ -313,7 +357,14 @@ fields. Buttons: **Let them go** (`danger`) and **Stay on this skill** (`primary
 
 - `skill-hub.md` UI-7.1 to UI-7.8 and SK-3 follow this file. Round 16: UI-7.2, UI-7.5, UI-7.5a
   and UI-7.12 to UI-7.14 follow this file and `skill-draft-card.md`.
-- Limits (`security.md` §2.5, `domain-model.md` §3.1): name 64, description 1,024, body
-  20,000 characters, as in the Agent Skills standard.
+- Limits (`security.md` §2.5, `domain-model.md` §3.1, §10): description 1,024 characters and
+  the slug rule are fixed, as in the Agent Skills standard; the name, the body and the line
+  warning are the settings `skill_name_max`, `skill_body_max` and `skill_body_warn_lines`
+  (defaults 64, 20,000 and 500). The editor reads them from `GET /settings`, so its counters,
+  errors and warning always match the server.
 - API (`api.md` §2): import apply takes the picked folders, export takes the picked skills,
   `POST /skills/{id}/trash`, and the restore endpoint (D49).
+- M1 spec gap pass (owner, 2026-10-30): URLs (§1), the slug rule and `đ` (§4), a rename only and
+  the changelog Enter key (§5), no card without bots (§7), the M1 states of the Bots tab, the
+  banner and the delete toast (§2a, §10.2, §11), the Clone slug suffix (§12), import names and
+  the deprecated conflict (§15).

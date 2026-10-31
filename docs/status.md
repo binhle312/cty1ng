@@ -73,7 +73,7 @@ that use them, then M0.
 
 ## Next
 
-1. Owner reviews M0c ([#49](https://github.com/binhle312/cty1ng/pull/49), frontend shell); then M0 is done and the M1 plan (Skill Hub) starts.
+1. M1 plan (Skill Hub) as the first comment of a draft PR on `m1-skill-hub`, with the risk probes (CSP for the four proposed dependencies, the Drizzle migration for a later `ADD COLUMN … REFERENCES`); checkpoint: the owner approves the schema, the dependencies and the UI design before the build.
 
 ## Waiting on the owner
 
@@ -96,9 +96,8 @@ it in, and the row goes when its PR merges.
 
 | Item | Found in | Target |
 | --- | --- | --- |
-| `api.md` §1 error table lacks `not_deprecated` and `feedback_not_allowed`, which `api.md` uses | #46 | Docs PR before M1 |
-| `realtime-events.md` §4 lacks `skill.trashed`, `skill.restored` and `skill.purged` from the M1 brief | #46 | Docs PR before M1 |
-| The D36 prefix table lacks `rslot` and `mprop`, which `shared/src/ids.ts` has (a decision change: owner approval) | #46 | Docs PR before M1 |
+| `realtime-events.md` §4 lacks `skill.trashed`, `skill.restored` and `skill.purged` from the M1 brief. They go into the table in the M1 build PR, together with `shared/`, because `PENDING` in `check-events.ts` only gets shorter | #46 | M1 |
+| Temporary CLI `skills trash` and `skills restore` (M1 spec gap pass, owner 2026-10-30): remove them when the Trash page exists | M1 spec gap pass | M5b |
 | Event pruning: delete events older than 30 days (`domain-model.md` §8); the stream's gap rule and `reset` are built | #48 | M1 (its purge job is the first timed job) |
 | The `db_lock_wait_seconds` histogram (`architecture.md` §9, D29 switch trigger 3); there is no metrics output yet | #48 | M3 (the worker brings concurrent writes) |
 | A guard that refuses a second SQLite writer in one process (it would deadlock; today a comment in `adapters/db/client.ts`) | #48 | M1 |
@@ -112,8 +111,8 @@ it in, and the row goes when its PR merges.
 
 | Slice | State | PR | Notes |
 | --- | --- | --- | --- |
-| M0 | building | [#46](https://github.com/binhle312/cty1ng/pull/46) (M0a, merged), [#48](https://github.com/binhle312/cty1ng/pull/48) (M0b, merged), [#49](https://github.com/binhle312/cty1ng/pull/49) (M0c) | Three parts (M0a tooling, M0b backend, M0c frontend). M0a and M0b merged 2026-10-30; M0c plan approved 2026-10-30, built, in review |
-| M1 | not started | | Design approved: `design/components/skills-page.md` (round 8); D49 accepted. Round 16 moves the page to the bot page layout (agreed, #38) |
+| M0 | merged | [#46](https://github.com/binhle312/cty1ng/pull/46) (M0a), [#48](https://github.com/binhle312/cty1ng/pull/48) (M0b), [#49](https://github.com/binhle312/cty1ng/pull/49) (M0c), [#50](https://github.com/binhle312/cty1ng/pull/50) (Impeccable snapshot) | Three parts (M0a tooling, M0b backend, M0c frontend), all merged 2026-10-30 |
+| M1 | planning | M1 spec gap pass (this PR) | Spec gaps answered by the owner 2026-10-30. Design approved: `design/components/skills-page.md` (round 8); D49 accepted. Round 16 moves the page to the bot page layout (agreed, #38) |
 | M2 | UI design review | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec) | Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open |
 | M3 | UI design agreed | [#26](https://github.com/binhle312/cty1ng/pull/26) (spec) | Round 10: `design/components/conversation-page.md`, `composer.md`, `conversation-cards.md` |
 | M4 | not started | | |
@@ -146,3 +145,5 @@ A slice can also be `blocked` (say on what in Notes).
 | 2026-10-29 | Pre-coding diagram gate step 2: four ERDs by domain and the schema fixes from the owner's review |
 | 2026-10-30 | Shell review: keyboard reorder and tile menu on the rail, focus and touch in the header, collapsed user panel tooltip and budget, battery focus, text size rules L1–L3 |
 | 2026-10-30 | Removed the prototype references and `porting-guide.md` (owner); its run and handoff lessons moved to `testing.md` §3 |
+| 2026-10-30 | M0 merged: tooling (#46), backend (#48), frontend shell (#49), Impeccable design snapshot with its colour check (#50) |
+| 2026-10-30 | M1 spec gap pass: 28 gaps answered (skill `row_version`, rename without a version, slug rule, import preview rules, skill limit settings, the guard on skills, URLs, temporary CLI restore); D6 and D36 amended |

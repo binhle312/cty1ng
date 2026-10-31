@@ -34,9 +34,9 @@ and the server log line of that request has the same id (`security.md` §2.10).
 | 403 | `not_author`, `origin_rejected`, `host_rejected` (a well-formed `Host` that is not on the allowlist, `security.md` §2.1) |
 | 404 | `not_found` |
 | 410 | `bot_purged` (the bot was purged from Trash; only its tombstone remains, D50) |
-| 409 | `name_taken`, `slug_taken`, `stale_write` (the row changed since it was read; reload), `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending`, `run_not_queued`, `draft_not_pending`, `draft_stale`, `bot_list_changed`, `idempotency_key_reused` (same `Idempotency-Key` with a different body), `place_in_trash` (restore while the item's project, conversation or bot is in Trash; D60, D62), `memory_full` (`memory_items_max` live items in the place), `conversation_in_project` (move of a project conversation, D61), `proposal_not_ready`, `copy_not_pending`, `save_not_waiting`, `nothing_unsaved`, `instructions_changed` (a memory check decision after a newer instruction save, D63) |
+| 409 | `name_taken`, `slug_taken`, `stale_write` (the row changed since it was read; reload), `run_in_progress` (e.g. edit while running), `already_member`, `handoff_not_pending`, `run_not_queued`, `draft_not_pending`, `draft_stale`, `bot_list_changed`, `idempotency_key_reused` (same `Idempotency-Key` with a different body), `place_in_trash` (restore while the item's project, conversation or bot is in Trash; D60, D62), `memory_full` (`memory_items_max` live items in the place), `conversation_in_project` (move of a project conversation, D61), `proposal_not_ready`, `copy_not_pending`, `save_not_waiting`, `nothing_unsaved`, `instructions_changed` (a memory check decision after a newer instruction save, D63), `not_deprecated` (trash of a skill that is not deprecated, D49), `preview_expired` (a skill import preview that is unknown, expired or already applied, `domain-model.md` §3.5), `feedback_not_allowed` (a rating on a message that is not a complete bot message, D51) |
 | 413 | `too_large` |
-| 422 | `validation_error`, `invalid_id`, `mention_not_member`, `bot_unavailable`, `bot_deleted`, `skill_deprecated`, `version_mismatch`, `effort_not_supported`, `model_not_available`, `sensitive_data`, `tool_job_conflict`, `tool_not_available` (the model has no such tool) |
+| 422 | `validation_error`, `invalid_id`, `mention_not_member`, `bot_unavailable`, `bot_deleted`, `skill_deprecated` (assign, edit, rename or version restore of a deprecated skill), `version_mismatch`, `effort_not_supported`, `model_not_available`, `sensitive_data`, `tool_job_conflict`, `tool_not_available` (the model has no such tool) |
 | 429 | `rate_limited` (runs per hour), `daily_cap_reached`, `provider_cap_reached` (D42), `price_unknown` (a cap applies and the model has no known price, D42 amendment 2026-10-27) |
 | 500 | `internal_error` (an unexpected error caught before the response is sent; no stack trace, SQL or path in the body) |
 
@@ -45,26 +45,42 @@ and the server log line of that request has the same id (`security.md` §2.10).
 | Method | Path | Body | Notes |
 | --- | --- | --- | --- |
 | GET | `/skills?include_deprecated=false` | | list with `latest_version`, `bots_using`, `bots_outdated`; newest `updated_at` first; skills in Trash are never listed |
-| POST | `/skills` | `{slug, name, description, body_md, cloned_from_skill_version_id?}` | creates v1, author = owner; also the Create of a clone (§3.3 of `domain-model.md`) |
+| POST | `/skills` | `{slug, name, description, body_md, cloned_from_skill_version_id?}` | creates v1, author = owner; also the Create of a clone (§3.3 of `domain-model.md`); a reserved or malformed slug returns 422 `validation_error` with `field: "slug"`, a taken one 409 `slug_taken` |
 | GET | `/skills/{id}` | | includes latest version body |
-| PATCH | `/skills/{id}` | `{name, row_version}` | metadata only; author only |
-| POST | `/skills/{id}/versions` | `{base_version, description, body_md, changelog?, upgrade_bot_ids: []}` | author only; creates N+1; moves listed pins |
-| GET | `/skills/{id}/versions` | | list, newest first |
+| PATCH | `/skills/{id}` | `{name, row_version}` | rename only, creates no version; author only; a likely secret in the name returns 422 `sensitive_data` (`security.md` §2.13) |
+| POST | `/skills/{id}/versions` | `{base_version, description, body_md, changelog?, upgrade_bot_ids: [], name?, row_version?}` | author only; creates N+1; moves listed pins. `name` and `row_version` come together, when the Save also renames: one transaction does both, so a Save never half-succeeds |
+| GET | `/skills/{id}/versions` | | list, newest first: `version, description, changelog, created_by, created_at, bots_using` (M1: always 0) |
 | GET | `/skills/{id}/versions/{version}` | | one version (used by provenance chips) |
-| GET | `/skills/{id}/diff?from=2&to=5` | | unified diff of bodies and descriptions |
+| GET | `/skills/{id}/diff?from=2&to=5` | | `{description: DiffLine[] \| null, body: DiffLine[]}`, a line diff as JSON; `description` is null when it did not change. `DiffLine {op: "same" \| "add" \| "del", text}`, every line, so the History tab can fold the `same` runs and show them again |
 | POST | `/skills/{id}/versions/{version}/restore` | `{changelog?}` | creates N+1 with that content |
 | GET | `/skills/{id}/upgrade-candidates` | | author's bots pinned to older versions (for the save dialog) |
 | POST | `/skills/{id}/bots` | `{skill_version_id, bots: [{bot_id, always_load?}]}` | the float card after a skill draft is approved (D64): assigns or upgrades the listed bots to that version in one transaction; `always_load` left out keeps the bot's value (off for a new assign); a bot in Trash returns 409 `place_in_trash` |
-| POST | `/skills/{id}/deprecate` | `{remove_bot_ids: []}` | author only; removes the listed pins in the same transaction |
-| POST | `/skills/{id}/undeprecate` | | author only |
+| POST | `/skills/{id}/deprecate` | `{remove_bot_ids: [], row_version}` | author only; removes the listed pins in the same transaction |
+| POST | `/skills/{id}/undeprecate` | `{row_version}` | author only |
 | POST | `/skills/{id}/trash` | `{row_version}` | author only; deprecated skills only (409 `not_deprecated`); removes every pin, returns the bots it removed (D49) |
 | POST | `/skills/{id}/restore` | | author only; out of Trash, still deprecated; returns `suggested_bot_ids` (bots not deleted) |
 | DELETE | `/skills/{id}` | | permanent delete of a skill in Trash (**Delete** on the M5b Trash page, D62) |
-| POST | `/skills/import/preview` | zip upload | returns per-skill `new / changed (diff) / unchanged / invalid / conflict` and a `preview_id` |
-| POST | `/skills/import/apply` | `{preview_id, slugs: []}` | applies the previewed changes of the ticked slugs only; 409 if anything changed since |
+| POST | `/skills/import/preview` | zip upload | returns per-skill `new / changed (diff) / unchanged / invalid / conflict` and a `preview_id`; the zip limits are in `security.md` §2.4 |
+| POST | `/skills/import/apply` | `{preview_id, slugs: []}` | applies the previewed changes of the ticked slugs only; 409 `stale_write` if anything changed since, 409 `preview_expired` if the preview is gone or used (`domain-model.md` §3.5) |
 | GET | `/skills/export?ids=` | | zip of the latest versions of the picked skills, named `<n>-skills-<UTC timestamp, ISO basic>.zip` |
 
-The CLI (`app skills import <folder>` / `export <folder>`) calls the same services directly.
+**Deprecated and trashed skills.** A rename, a new version or a version restore of a deprecated
+skill returns 422 `skill_deprecated`. A skill in Trash returns 404 `not_found` from every
+endpoint except `POST /skills/{id}/restore` and `DELETE /skills/{id}`. Every write to a
+`skills` row raises its `row_version`; the endpoints whose body has `row_version` refuse a stale
+one with 409 `stale_write`.
+
+The CLI calls the same services directly (`pnpm --filter backend cli skills …`):
+
+- `skills import <folder>` prints the preview and writes nothing; `--apply` applies every good
+  row. Exit code 0, or 1 when a row is invalid or a conflict.
+- `skills export <folder> [--slug <slug> …]` writes `<slug>/SKILL.md` folders (all active skills
+  when no `--slug`); it refuses a folder that is not empty.
+- `skills trash` lists the skills in Trash, and `skills restore <slug>` restores one. **Temporary**
+  (owner, 2026-10-30): they exist only because the Trash page comes in M5b, and M5b removes them.
+
+The CLI is another process, so the server's event hub does not wake for its writes: an open page
+shows a CLI change after a reload (accepted for M1, owner 2026-10-30).
 
 ## 2a. Skill drafts (D41)
 
@@ -218,7 +234,7 @@ expressions first (`requirements/time-range-picker.md` §Contract with the backe
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET / PATCH | `/settings` | `{display_name, bot_discussion_enabled, bot_turn_limit, runs_per_conversation_per_hour, daily_cap_usd, provider_caps_usd, timezone, bot_order, bot_order_direction, conversation limits, bot limits and health thresholds (`domain-model.md` §10)}`. PATCH validates each key with Zod and returns 422 with the key for a value out of range or a broken cross-field rule (ranges: `domain-model.md` §10; conversation limits: `conversation-rules.md` §9); GET adds `today_spend_usd` and `today_spend_by_provider_usd` |
+| GET / PATCH | `/settings` | `{display_name, bot_discussion_enabled, bot_turn_limit, runs_per_conversation_per_hour, daily_cap_usd, provider_caps_usd, timezone, bot_order, bot_order_direction, conversation limits, skill limits (`skill_name_max`, `skill_body_max`, `skill_body_warn_lines`), bot limits and health thresholds (`domain-model.md` §10)}`. PATCH validates each key with Zod and returns 422 with the key for a value out of range or a broken cross-field rule (ranges: `domain-model.md` §10; conversation limits: `conversation-rules.md` §9); GET adds `today_spend_usd` and `today_spend_by_provider_usd` |
 | GET | `/usage?group_by=bot\|conversation\|provider\|day&from=&to=` | tokens and estimated cost (D21). With `group_by=bot`, title requests are one group with `bot_id: null` and the label "Conversation titles" (D46), and Tidy and memory check requests one more with the label "Memory upkeep" (D63) |
 | GET | `/stats/summary?from=&to=&tz=&conversation_id=` | tiles with previous-period comparison (D24) |
 | GET | `/stats/models?from=&to=&tz=&bucket=&conversation_id=&metric=cost\|tokens\|requests` | series per model per bucket + table |
@@ -265,8 +281,9 @@ Bot {
 }
 
 Skill {
-  id, slug, name, author_id, is_author: boolean,
+  id, slug, name, author_id, is_author: boolean, row_version,
   latest_version: { version, description, changelog, created_at },
-  bots_using: number, bots_outdated: number, deprecated: boolean, cloned_from: {...}|null
+  bots_using: number, bots_outdated: number, deprecated: boolean, deprecated_at: string | null,
+  updated_at, cloned_from: {...}|null
 }
 ```

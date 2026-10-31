@@ -43,7 +43,10 @@ can move into a project and take its conversation memory with it.
   dialog (D60) and the Move dialog without its file part (`conversation-page.md` §2.1a).
 - **Trash** (D62): the Trash page, Restore and Delete per row and for several rows, the restore
   dialogs for a skill and a bot, `place_in_trash`, the Undo toast held for `undo_seconds`, Trash
-  in the user panel menu with its count.
+  in the user panel menu with its count. Remove the temporary CLI commands `skills trash` and
+  `skills restore` that M1 added (`api.md` §2), with their tests and the `api.md` lines; the
+  Trash page replaces them (owner, 2026-10-30). The skill delete toast's **Trash** becomes a
+  link (`skills-page.md` §11).
 - **Purge job** (D49, D50, D60, D62): at start and every `PURGE_INTERVAL_HOURS` (default 24),
   each item where `deleted_at + trash_days` is at or before now (clock port), one item per
   transaction, idempotent. Conversation purge by the §16 policy. The M1 purge job (skills)

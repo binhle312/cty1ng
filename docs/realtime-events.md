@@ -144,7 +144,7 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `memory.seen` | yes | `{scope, id}` | the owner opened a place on the Memory page; New tags and the place dot go away (D38) |
 | `memory.restored` | yes | `{memory_item}` | an item came back from Trash or an earlier version was restored (D62) |
 | `memory_proposal.updated` | yes | `{proposal}` | a Tidy or memory check card changed status: requested, ready, failed, stopped, applied, discarded, replaced (D63) |
-| `trash.changed` | yes | `{counts}` | an item went into Trash or left it (restore, Delete, purge), next to the item's own event (`skill.restored`, `conversation.updated`, `memory.restored`, …) (D62); drives the user panel Trash count and the Trash page |
+| `trash.changed` | yes | `{counts: {[kind]: number}}`, one count per Trash kind that exists (M1: `{skill: n}`) | an item went into Trash or left it (restore, Delete, purge), next to the item's own event (`skill.restored`, `conversation.updated`, `memory.restored`, …) (D62); drives the user panel Trash count and the Trash page |
 | `test.ping` | yes | `{note}` | **test only**: `POST /api/_test/events`, mounted only when `APP_ENV=test` and left out of the OpenAPI schema, so the generated client never has it |
 
 Adding an event type: add it here first, then to the backend `EventType` enum and the frontend
