@@ -257,7 +257,10 @@ test("deprecate, open after a reload, make active, deprecate and delete", async 
   await expect(
     page.getByText("Deprecated skills are read-only. Make it active again to edit it."),
   ).toBeVisible();
-  await expect(page.getByLabel("Name", { exact: true })).toBeDisabled();
+  // Read-only controls, not disabled ones: they still take focus for copying (owner, 2026-10-31).
+  await expect(page.getByLabel("Name", { exact: true })).not.toBeEditable();
+  await page.getByLabel("Name", { exact: true }).focus();
+  await expect(page.getByLabel("Name", { exact: true })).toBeFocused();
 
   // With Show deprecated off, the list hides it, and its URL still opens after a reload.
   await page.reload();
@@ -272,7 +275,7 @@ test("deprecate, open after a reload, make active, deprecate and delete", async 
 
   await page.getByRole("button", { name: "Make active again" }).click();
   await expect(page.getByRole("button", { name: "Make active again" })).toBeHidden();
-  await expect(page.getByLabel("Name", { exact: true })).toBeEnabled();
+  await expect(page.getByLabel("Name", { exact: true })).toBeEditable();
 
   await page.getByRole("button", { name: "Skill actions" }).click();
   await page.getByRole("menuitem", { name: "Deprecate" }).click();
@@ -490,8 +493,20 @@ test("a deprecation in another tab keeps the leave question for unsaved text", a
   await expect(leave).toBeVisible();
   await leave.getByRole("button", { name: "Stay on this skill" }).click();
   await expect(
-    page.getByText(/This skill was deprecated with your changes not saved/),
+    page.getByText(
+      /This skill was deprecated\. Your changes are still here, but you cannot save them/,
+    ),
   ).toBeVisible();
+  // The text can be selected and copied from the keyboard.
+  const description = page.getByLabel("Description", { exact: true });
+  await description.focus();
+  await expect(description).toBeFocused();
+  await page.keyboard.press("ControlOrMeta+a");
+  expect(
+    await description.evaluate((box: HTMLTextAreaElement) =>
+      box.value.slice(box.selectionStart, box.selectionEnd),
+    ),
+  ).toBe("My unsaved description.");
 });
 
 test("a failed background refresh keeps the editor and its unsaved text", async ({
@@ -618,7 +633,7 @@ test("the fields wait while Create is pending", async ({ page }) => {
     },
   );
   await page.getByRole("button", { name: "Create", exact: true }).click();
-  await expect(page.getByLabel("Body", { exact: true })).toBeDisabled();
+  await expect(page.getByLabel("Body", { exact: true })).not.toBeEditable();
   release();
   await expect(page).toHaveURL(`/skills/${skill.slug}`);
 });
@@ -646,13 +661,14 @@ test("a Clone skips a slug that a skill in Trash keeps", async ({ page }) => {
 
 // Fourth review of #54. Each test fails on the code before its fix.
 
-test("a Clone opens with the default limits when the settings fail", async ({ page }) => {
+test("a Clone opens with a settings error, and Create waits for the limits", async ({ page }) => {
   test.setTimeout(60_000);
   const skill = unique("Clone no settings");
   await createSkill(page, skill);
   await openClone(page);
   let requests = 0;
-  await page.route("**/api/settings", (route) => {
+  const settingsUrl = "**/api/settings";
+  await page.route(settingsUrl, (route) => {
     requests += 1;
     return route.fulfill({
       status: 500,
@@ -661,15 +677,37 @@ test("a Clone opens with the default limits when the settings fail", async ({ pa
     });
   });
   await page.reload();
-  // TanStack Query tries three more times; then the editor opens on the defaults and stays.
+  // TanStack Query tries three more times; then the editor opens with no limit.
   const slug = page.getByLabel("Slug", { exact: true });
   await expect(slug).toHaveValue(`${skill.slug}-copy`, { timeout: 20_000 });
+  const alert = page
+    .getByRole("alert")
+    .filter({ hasText: "The app could not load the limits for skills, so Create is off." });
+  // The editor's own settings query tries again when it opens, so the error comes after its
+  // retries; until then Create is off with "Loading the limits."
+  await expect(alert).toBeVisible({ timeout: 15_000 });
+  const create = page.getByRole("button", { name: "Create", exact: true });
+  await expect(create).toHaveAttribute("aria-disabled", "true");
+  // The name counter shows no default limit that may not be the owner's: only the length. (The
+  // slug and description limits are fixed rules, not settings, so they still show.)
+  const nameLength = String(`${skill.name} (copy)`.length);
+  await expect(page.getByText(nameLength, { exact: true })).toBeVisible();
+  await expect(page.getByText(`${nameLength} / 64`, { exact: true })).toHaveCount(0);
+  await fill(page, "Description", "Edited while the limits are missing.");
   // The editor's own tries end; then no more requests come: the page does not loop.
   await page.waitForTimeout(10_000);
   const settled = requests;
   await page.waitForTimeout(5_000);
   expect(requests).toBe(settled);
-  await expect(slug).toHaveValue(`${skill.slug}-copy`);
+  // Try again loads the limits and keeps the draft.
+  await page.unroute(settingsUrl);
+  await alert.getByRole("button", { name: "Try again" }).click();
+  await expect(alert).toBeHidden();
+  await expect(create).not.toHaveAttribute("aria-disabled", "true");
+  await expect(page.getByLabel("Description", { exact: true })).toHaveValue(
+    "Edited while the limits are missing.",
+  );
+  await expect(page.getByText(`${nameLength} / 64`, { exact: true })).toBeVisible();
 });
 
 test("Cancel waits for a pending Create", async ({ page }) => {
@@ -731,4 +769,59 @@ test("a Create that ends after the owner left does not move the page", async ({ 
   release();
   await expect(page.getByText(`Created ${skill.name} ✨`)).toBeVisible();
   await expect(page).toHaveURL("/");
+});
+
+// Owner's answers on #54 (2026-10-31). Each test fails on the code before its change.
+
+test("a stale save loads the newest version and keeps the edit", async ({ page, context }) => {
+  const skill = unique("Stale save");
+  await createSkill(page, skill);
+  // This tab hears nothing from the stream, so it does not learn of the other tab's save.
+  await page.route("**/api/stream", (route) => route.abort());
+  await page.reload();
+  await page.getByRole("tab", { name: "Write" }).click();
+  await fill(page, "Description", "My unsaved description.");
+
+  const other = await context.newPage();
+  await other.goto(`/skills/${skill.slug}`);
+  // A new version (a rename alone makes none, and a version save does not check it).
+  await saveBody(other, "## Steps\n1. Saved in the other tab.", 2);
+
+  await page.getByRole("button", { name: "Save as v2" }).click();
+  await expect(
+    page.getByText(/This skill changed in another place\. Your changes are kept/),
+  ).toBeVisible();
+  await expect(page.getByRole("tab", { name: /History/ })).toHaveText(/History\s*2/);
+  await expect(page.getByLabel("Description", { exact: true })).toHaveValue(
+    "My unsaved description.",
+  );
+  await page.getByRole("button", { name: "Discard" }).click();
+  await expect(page.getByText("All changes are saved.")).toBeVisible();
+  await page.getByRole("tab", { name: "Write" }).click();
+  await expect(page.getByLabel("Body", { exact: true })).toHaveValue(
+    "## Steps\n1. Saved in the other tab.",
+  );
+});
+
+test("a Clone's Create tries no other slug after a general failure", async ({ page }) => {
+  const skill = unique("Clone server error");
+  await createSkill(page, skill);
+  await openClone(page);
+  let posts = 0;
+  await page.route(
+    (url) => url.pathname === "/api/skills",
+    (route) => {
+      if (route.request().method() !== "POST") return route.fallback();
+      posts += 1;
+      return route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "internal_error", message: "Something failed." } }),
+      });
+    },
+  );
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await expect(page.getByText("Something failed.")).toBeVisible();
+  expect(posts).toBe(1);
+  await expect(page.getByLabel("Slug", { exact: true })).toHaveValue(`${skill.slug}-copy`);
 });

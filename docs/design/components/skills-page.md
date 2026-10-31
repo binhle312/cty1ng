@@ -369,13 +369,15 @@ fields. Buttons: **Let them go** (`danger`) and **Stay on this skill** (`primary
   banner and the delete toast (§2a, §10.2, §11), the Clone slug suffix (§12), import names and
   the deprecated conflict (§15).
 
-## Texts added in the M1b build (2026-10-31, for the owner's review in the M1b PR)
+## Texts added in the M1b build (2026-10-31, reviewed by the owner in the M1b PR)
 
-The spec did not name these; the build uses them:
+The spec did not name these; the build uses them. The owner approved them on 2026-10-31, with
+the changes marked "owner, 2026-10-31".
 
 - A rename only: the toast "Saved ✨" (no version number).
-- A save that the server refuses as stale (409 `stale_write`): "This skill changed in another
-  place. Reload the page to see the change." in the save bar.
+- A save that the server refuses as stale (409 `stale_write`): the page loads the newest
+  version at once, keeps the edit, and shows the conflict below (owner, 2026-10-31: a stale
+  save offers a recovery that keeps the draft, not only "reload").
 - The skill changes in another tab while this tab has unsaved changes (review of #54): the
   edit stays, Save is off, and the save bar says "This skill changed in another place. Your
   changes are kept here. Copy what you need, then Discard to load the new text." Discard loads
@@ -390,15 +392,26 @@ The spec did not name these; the build uses them:
 - While Create is pending, the fields are read-only: the page leaves after Create, so text
   typed meanwhile would be lost. **Cancel** is off too, with the tooltip "Creating the skill."
   If the owner leaves another way, a Create that ends later shows its toast and does not move
-  the page (fourth review of #54). A settings change does not reset an open Clone. When the
-  settings do not load, a Clone opens with the default limits; it does not wait again.
+  the page (fourth review of #54). A settings change does not reset an open Clone.
+- The limits did not load (owner, 2026-10-31): the defaults can differ from the owner's saved
+  limits, so no limit applies until they load. The name and body counters show only the
+  length, and Save and Create stay off ("Loading the limits." / "The limits did not load.").
+  A failed load shows "The app could not load the limits for skills, so Save is off. Your
+  changes are kept." (Create: "…so Create is off. Your text is kept.") with **Try again**. The
+  owner can go on editing; Try again keeps the draft. A Clone waits only for the first answer.
 - A copy's slug and skills in Trash: the list does not show skills in Trash, but they keep
   their slugs (D49). When Create finds the proposed copy slug taken, the app tries the next
-  suffix (`-copy-2`, `-copy-3` …) until one is free. A slug the owner typed shows the error
-  instead.
+  suffix (`-copy-2`, `-copy-3` …) until one is free. Only a confirmed 409 `slug_taken` leads
+  to a new try, never a timeout or another failure. A slug the owner typed shows the error
+  instead (owner, 2026-10-31: approved for M1; the server checks uniqueness, so listing Trash
+  slugs would still leave a race. If many collisions make it slow, the server picks the
+  suffix).
 - The skill is deprecated in another place while this tab has unsaved changes: the text stays,
-  read-only, leaving asks first, and the save bar says "This skill was deprecated with your
-  changes not saved. Deprecated skills are read-only: copy what you need before you leave."
+  leaving asks first, and the save bar says "This skill was deprecated. Your changes are still
+  here, but you cannot save them. Copy what you need before you leave." (owner, 2026-10-31).
+- Read-only fields (a deprecated skill, another author's skill, a pending Create) are real
+  read-only controls, not disabled ones: they take focus, so the owner can select and copy the
+  text from the keyboard (owner, 2026-10-31).
 - Why a button is off (`ui-rules.md` B5): "No changes to save.", "Fill in every field.", "Fix
   the errors first.", "Tick a skill to export.", "Tick a row to apply."
 - Deprecate in M1 (no bots): "No bot uses it." in place of the bot list.

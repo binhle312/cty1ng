@@ -10,7 +10,12 @@ bug. The test only failed after it moved through the app as a person does (list 
 it checks the bug.
 
 **Change.** A bug fix's test is written first and seen to fail. If it was written after the fix,
-the builder stashes the fix, rebuilds, and runs the test against the old code. The PR says
-which tests were seen to fail.
+the builder runs it against the old code in an isolated checkout (a `git worktree`), and stops
+every other end-to-end server first. The PR says which tests were seen to fail.
+
+**Later (2026-10-31).** The first version said "stash the fix". The owner asked for an
+isolated checkout instead. The first worktree run then passed against the old code: two e2e
+servers left from the main checkout were still on ports 8100 and 8101, and Playwright reused
+them, so the run tested the new code. Hence the rule to stop other servers first.
 
 **Rule now in.** `../workflow.md` §2 step 3; `../testing.md` §5 "Evidence in PRs".

@@ -191,7 +191,9 @@ While fixing, run only what the change touches, and run the full suite once at t
 | The end-to-end servers, kept running | `pnpm e2e:serve` in a second terminal |
 
 When `pnpm e2e:serve` runs, `pnpm e2e` reuses its servers instead of starting new ones
-(`reuseExistingServer`, local only; CI always starts fresh servers). The servers keep one
+(`reuseExistingServer`, local only; CI always starts fresh servers). It reuses any server on
+its ports, also one from another checkout: before you test old code in a `git worktree`
+(`workflow.md` §2 step 3), check that ports 8100 and 8101 are free. The servers keep one
 database until you stop the script, so a test that needs a fresh database fails on the second
 run: restart the script. The backend serves the frontend build from disk, so after a frontend
 change run `pnpm build` before `pnpm e2e`; after a backend change, restart the script.
