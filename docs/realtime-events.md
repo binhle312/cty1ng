@@ -68,7 +68,9 @@ conversation).
   pruned events that the stream had not sent yet when the next stored event is not the
   cursor + 1, or when no event follows the cursor although a higher seq was given (the
   last seq stays in `sqlite_sequence` after a prune). The server then sends `ready` with the
-  newest seq and `reset`, as at the start, and continues after that seq. A prune wakes every
+  newest kept seq and `reset`, as at the start. It reads on after the highest seq known then
+  (the newest kept or the last given, whichever is higher), so it handles each gap once, also
+  when the clock went back and a prune removed the newest seq but kept an older one. A prune wakes every
   stream, so a stream that waits for events checks this too. After a complete prune the first
   event read sets the cursor, so the one `reset` above is not followed by a second.
 - `ready` and `reset` also carry an `id:` line: the cursor the stream continues from (the

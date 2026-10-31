@@ -106,6 +106,42 @@ describe("event hub after pruning", () => {
     expect(await next()).toMatchObject({ type: "test.ping", seq: 102 });
   });
 
+  it("handles a gap once when the clock went back and the newest seq was pruned", async () => {
+    // Event 1 is new. The clock goes back 40 days for event 2, then forward again, so the prune
+    // deletes 2 and keeps 1: the newest kept seq is 1, but the last given seq stays 2.
+    await append("new 1");
+    clock.advance(-40 * DAY);
+    await append("old 2");
+    clock.advance(40 * DAY);
+    expect(await backend.eventPruning.pruneDue()).toBe(1);
+
+    const after = backend.readers.events.after.bind(backend.readers.events);
+    let reads = 0;
+    vi.spyOn(backend.readers.events, "after").mockImplementation((seq, limit) => {
+      reads += 1;
+      if (reads > MAX_READS) throw new Error(`reset loop: ${reads} reads without a new event`);
+      return after(seq, limit);
+    });
+
+    const stream = collect(backend.hub.subscribe(null, abort.signal));
+    const types = () => stream.items.map((event) => event.type);
+    expect((await stream.waitFor(3)).map((event) => event.type)).toEqual([
+      "ready",
+      "ready",
+      "reset",
+    ]);
+
+    // One reset, then a wait: a zero-delay timer runs and no other event came.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    expect(types()).toEqual(["ready", "ready", "reset"]);
+    expect(reads).toBeLessThanOrEqual(4);
+
+    // A new event arrives, and no second reset.
+    await append("new 3");
+    expect((await stream.waitFor(4)).at(3)).toMatchObject({ type: "test.ping", seq: 3 });
+    expect(types().filter((type) => type === "reset")).toHaveLength(1);
+  });
+
   it("wakes a waiting subscriber when a prune removes an event it has not sent", async () => {
     for (const note of ["a", "b", "c"]) await append(note);
     const stream = collect(backend.hub.subscribe(3, abort.signal));

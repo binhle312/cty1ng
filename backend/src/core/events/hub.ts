@@ -92,13 +92,16 @@ export function createEventHub(deps: {
         else deps.onInvalidEvent(row.seq, row.type);
       }
       if (gap) {
-        // The gap rule during a replay (realtime-events.md §2): `ready` with the newest seq, then
-        // `reset`, as at the start. The client reloads, and the stream continues after the
-        // newest event.
+        // The gap rule during a replay (realtime-events.md §2): `ready` with the newest kept seq,
+        // then `reset`, as at the start, and the client reloads. The stream reads on after the
+        // highest seq known now, the last given one included. No event is stored between the
+        // newest kept seq and it, so the same gap is not found again (for example when the clock
+        // went back and the newest seq was pruned); an event committed later has a higher seq.
         const now = await deps.readers.events.bounds();
-        cursor = now.newest ?? 0;
-        anchored = now.newest !== null;
-        yield { type: "ready", data: { max_seq: cursor } };
+        const last = await deps.readers.events.lastSeq();
+        cursor = Math.max(now.newest ?? 0, last ?? 0);
+        anchored = cursor > 0;
+        yield { type: "ready", data: { max_seq: now.newest ?? 0 } };
         yield { type: "reset", data: {} };
         continue;
       }
