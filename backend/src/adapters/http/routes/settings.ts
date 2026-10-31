@@ -1,4 +1,4 @@
-import { createRoute } from "@hono/zod-openapi";
+import { createRoute, z } from "@hono/zod-openapi";
 import { Settings, SettingsPatch } from "@cty1ng/shared/settings";
 import type { createSettingsService } from "../../../core/settings/settings.service.ts";
 import { createRouter } from "../router.ts";
@@ -7,10 +7,14 @@ import { createRouter } from "../router.ts";
 // out of its range, or an unknown key, is a 422 with the key as `field`. Every operation id has
 // "Settings" in it (the frontend's event reducer finds the cached queries by it).
 
+// No query string on either route (security.md §2.9).
+const NoQuery = z.object({}).strict();
+
 const getRoute = createRoute({
   method: "get",
   path: "/settings",
   operationId: "getSettings",
+  request: { query: NoQuery },
   responses: {
     200: {
       description: "Every built setting, with its default when it was never saved",
@@ -24,6 +28,7 @@ const patchRoute = createRoute({
   path: "/settings",
   operationId: "updateSettings",
   request: {
+    query: NoQuery,
     body: { required: true, content: { "application/json": { schema: SettingsPatch } } },
   },
   responses: {

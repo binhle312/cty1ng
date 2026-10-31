@@ -108,6 +108,20 @@ describe("create, read, list", () => {
     expect(await errorOf(response)).toEqual({ code: "validation_error", field: "slug" });
   });
 
+  // Review of PR #52: query strings were not strict (security.md §2.9).
+  it.each([
+    "/skills?extra=yes",
+    "/skills/export?ids=&extra=1",
+    "/skills/{id}/diff?from=1&to=1&extra=1",
+    "/skills/{id}?extra=1",
+    "/settings?extra=1",
+  ])("an unknown query key on %s gives 422", async (path) => {
+    const { id } = await created();
+    const response = await send("GET", path.replace("{id}", id));
+    expect(response.status).toBe(422);
+    expect((await errorOf(response)).code).toBe("validation_error");
+  });
+
   it("an unknown field gives 422", async () => {
     const response = await send("POST", "/skills", { ...newSkill, extra: 1 });
     expect(response.status).toBe(422);

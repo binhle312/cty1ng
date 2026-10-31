@@ -30,6 +30,8 @@ const IdParam = z.object({ id: SkillId });
 const VersionParam = z.object({ id: SkillId, version: z.coerce.number().int().positive() });
 const RowVersion = z.number().int().positive();
 const Changelog = z.string().optional();
+// A route that takes no query string still refuses one (security.md §2.9).
+const NoQuery = z.object({}).strict();
 const ImportFile = z.instanceof(File).openapi({ type: "string", format: "binary" });
 
 const routes = {
@@ -39,10 +41,12 @@ const routes = {
     path: "/skills/export",
     operationId: "exportSkills",
     request: {
-      query: z.object({
-        // Comma-separated skill ids; none means every active skill.
-        ids: z.string().optional(),
-      }),
+      query: z
+        .object({
+          // Comma-separated skill ids; none means every active skill.
+          ids: z.string().optional(),
+        })
+        .strict(),
     },
     responses: {
       200: {
@@ -64,6 +68,7 @@ const routes = {
       }),
     ] as const,
     request: {
+      query: NoQuery,
       body: {
         required: true,
         content: { "multipart/form-data": { schema: z.object({ file: ImportFile }) } },
@@ -76,6 +81,7 @@ const routes = {
     path: "/skills/import/apply",
     operationId: "applySkillImport",
     request: {
+      query: NoQuery,
       body: {
         required: true,
         content: {
@@ -92,7 +98,7 @@ const routes = {
     path: "/skills",
     operationId: "listSkills",
     request: {
-      query: z.object({ include_deprecated: z.enum(["true", "false"]).optional() }),
+      query: z.object({ include_deprecated: z.enum(["true", "false"]).optional() }).strict(),
     },
     responses: { 200: json(z.array(Skill), "Skills not in Trash, newest change first") },
   }),
@@ -101,6 +107,7 @@ const routes = {
     path: "/skills",
     operationId: "createSkill",
     request: {
+      query: NoQuery,
       body: {
         required: true,
         content: {
@@ -124,7 +131,10 @@ const routes = {
     method: "get",
     path: "/skills/{id}",
     operationId: "getSkill",
-    request: { params: IdParam },
+    request: {
+      query: NoQuery,
+      params: IdParam,
+    },
     responses: { 200: json(SkillDetail, "The skill with its latest body") },
   }),
   renameSkill: createRoute({
@@ -132,6 +142,7 @@ const routes = {
     path: "/skills/{id}",
     operationId: "renameSkill",
     request: {
+      query: NoQuery,
       params: IdParam,
       body: {
         required: true,
@@ -149,6 +160,7 @@ const routes = {
     path: "/skills/{id}/versions",
     operationId: "createSkillVersion",
     request: {
+      query: NoQuery,
       params: IdParam,
       body: {
         required: true,
@@ -179,7 +191,10 @@ const routes = {
     method: "get",
     path: "/skills/{id}/versions",
     operationId: "listSkillVersions",
-    request: { params: IdParam },
+    request: {
+      query: NoQuery,
+      params: IdParam,
+    },
     responses: {
       200: json(z.array(SkillVersionListItem), "Versions, newest first, without their bodies"),
     },
@@ -188,7 +203,10 @@ const routes = {
     method: "get",
     path: "/skills/{id}/versions/{version}",
     operationId: "getSkillVersion",
-    request: { params: VersionParam },
+    request: {
+      query: NoQuery,
+      params: VersionParam,
+    },
     responses: { 200: json(SkillVersion, "One version") },
   }),
   getSkillDiff: createRoute({
@@ -197,10 +215,12 @@ const routes = {
     operationId: "getSkillDiff",
     request: {
       params: IdParam,
-      query: z.object({
-        from: z.coerce.number().int().positive(),
-        to: z.coerce.number().int().positive(),
-      }),
+      query: z
+        .object({
+          from: z.coerce.number().int().positive(),
+          to: z.coerce.number().int().positive(),
+        })
+        .strict(),
     },
     responses: {
       200: json(
@@ -214,6 +234,7 @@ const routes = {
     path: "/skills/{id}/versions/{version}/restore",
     operationId: "restoreSkillVersion",
     request: {
+      query: NoQuery,
       params: VersionParam,
       body: {
         required: true,
@@ -226,7 +247,7 @@ const routes = {
     method: "get",
     path: "/skills/{id}/upgrade-candidates",
     operationId: "listSkillUpgradeCandidates",
-    request: { params: IdParam },
+    request: { params: IdParam, query: NoQuery },
     responses: {
       200: json(z.array(z.object({ bot_id: z.string() })), "Bots on older versions (M2)"),
     },
@@ -236,6 +257,7 @@ const routes = {
     path: "/skills/{id}/deprecate",
     operationId: "deprecateSkill",
     request: {
+      query: NoQuery,
       params: IdParam,
       body: {
         required: true,
@@ -255,6 +277,7 @@ const routes = {
     path: "/skills/{id}/undeprecate",
     operationId: "undeprecateSkill",
     request: {
+      query: NoQuery,
       params: IdParam,
       body: {
         required: true,
@@ -270,6 +293,7 @@ const routes = {
     path: "/skills/{id}/trash",
     operationId: "trashSkill",
     request: {
+      query: NoQuery,
       params: IdParam,
       body: {
         required: true,
@@ -289,7 +313,10 @@ const routes = {
     method: "post",
     path: "/skills/{id}/restore",
     operationId: "restoreSkill",
-    request: { params: IdParam },
+    request: {
+      query: NoQuery,
+      params: IdParam,
+    },
     responses: {
       200: json(
         z.object({ skill: Skill, suggested_bot_ids: z.array(z.string()) }),
@@ -301,7 +328,10 @@ const routes = {
     method: "delete",
     path: "/skills/{id}",
     operationId: "deleteSkill",
-    request: { params: IdParam },
+    request: {
+      query: NoQuery,
+      params: IdParam,
+    },
     responses: { 204: { description: "Purged from Trash" } },
   }),
 };
