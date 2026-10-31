@@ -239,7 +239,7 @@ The new row is part of the M5d UI design checkpoint.
 | Setting | Where the owner changes it |
 | --- | --- |
 | `bot_order`, `bot_order_direction` | The sort buttons on the Bots page (`bots-page.md` §5) |
-| Form limits (`display_name_max`, `bot_name_max`, `bot_description_max`, `bot_persona_max`, `bot_history_min_pct`, `bot_history_max_pct`) and health thresholds (`health_*`) | `PATCH /settings` only. They are close to security size checks or rarely changed |
+| Form limits (`display_name_max`, `skill_name_max`, `skill_body_max`, `skill_body_warn_lines`, `bot_name_max`, `bot_description_max`, `bot_persona_max`, `bot_history_min_pct`, `bot_history_max_pct`) and health thresholds (`health_*`) | `PATCH /settings` only. They are close to security size checks or rarely changed |
 | Memory history versions (UI-13.9) | Project settings and the bot page (per project, per bot) |
 | "Don't use memory" for one conversation (UI-9.6) | The Memory pane |
 | Discussion for one conversation (UI-9.3) | The discussion status in the conversation header (§9) |

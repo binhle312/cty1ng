@@ -85,15 +85,18 @@ environment, provider-side data handling.
 | --- | --- | --- |
 | Avatar | PNG, JPEG, WebP ≤ 2 MB | Detect type from content (`sharp`), reject others incl. SVG; strip metadata; re-encode to 256×256 WebP; store by SHA-256 |
 | Attachment | Text (`.md .txt .csv .json .yaml .html .css .js .ts .py .sql .xml .svg`), images, PDF; 10 files × 10 MB | Sanitised file name; saved under `attachments/<yyyy-mm-dd>-<conversation-slug>/` (D52); SVG and HTML are only ever shown as text |
-| Skill zip | `.zip` ≤ 5 MB, ≤ 200 entries, ≤ 20 MB uncompressed | Reject entries with absolute paths or `..` (zip slip); only `<slug>/SKILL.md` read, every other file is listed as skipped and never opened; UTF-8 only; YAML parsed with the `yaml` package's default core schema (no custom tags); frontmatter validated by a Zod schema |
+| Skill zip | `.zip` ≤ 5 MB, ≤ 200 entries, ≤ 20 MB uncompressed, each entry ≤ 100 times its compressed size | `POST /skills/import/preview` has its own two limits in place of the 1 MB JSON limit (§2.7): the zip file part ≤ 5 MB, and the whole multipart request ≤ 5 MB + 64 KB for the part headers and boundaries; either one over gets 413. Every other route keeps its own limit (1 MB JSON, and the avatar and attachment limits in this table). Reject entries with absolute paths or `..` (zip slip); only `<slug>/SKILL.md` read, every other file is listed as skipped and never opened; the reader stops an entry at the size its header states and at the ratio limit, so a zip bomb is never fully unpacked; UTF-8 only; YAML parsed with the `yaml` package's default core schema (no custom tags); frontmatter validated by a Zod schema |
 
 ### 2.5 Skills, personas and prompt injection
 
 - Skills and personas are text in the database; they are never written to code paths and never
   executed.
-- Size limits: skill name 64 characters, description 1,024 characters, body 20,000 characters
-  (all required; a body over 500 lines gets a warning only), persona 8,000 characters (`bot_persona_max`). The server checks the
-  same limits as the editor, also on import and on bot drafts (D41).
+- Size limits: skill name `skill_name_max` (64) characters, description 1,024 characters, body
+  `skill_body_max` (20,000) characters (all required; a body over `skill_body_warn_lines` (500)
+  lines gets a warning only), persona 8,000 characters (`bot_persona_max`). The slug and the
+  description limit are fixed format rules (`domain-model.md` §3.1); the others are settings
+  (§10 there). The server checks the same limits as the editor, in the service, so the editor,
+  Clone, import, the CLI, the seed and bot drafts (D41) all pass the same check.
 - Prompt injection from any source is an **accepted risk** whose blast radius is limited by
   2.3 (sandbox), by the turn budget and caps, and by the owner approving handoffs. Never
   give bots a capability whose misuse would be worse than "bad text in the workspace" without
@@ -242,6 +245,12 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (�
   provider. Matches are shown masked, and sending needs an explicit "Send anyway", which the
   server checks (`confirm_sensitive`, 422 `sensitive_data`).
 - Memory writes and skill drafts (D41) with a match are refused, with no override.
+- Skills the owner writes are checked too (M1 spec gap pass, owner 2026-10-30): create (also of
+  a clone), a rename (`PATCH /skills/{id}` and the `name` of `POST /versions`), a new version, a
+  version restore and every import row, from the editor, the CLI and the seed. A
+  match is refused with no override (422 `sensitive_data`, an import row is `invalid`). The
+  check runs in the skill service, so no path can skip it. M1 builds the pattern rules in
+  `core/` as pure functions; M3 uses them for messages.
 - Auto titles (D46): a first message with matches ("Send anyway") gets no title request. The
   guard also checks the model's title; a match keeps "New conversation".
 - Pattern-based and incomplete by nature: a warning, not a guarantee. Images and PDFs are not
@@ -296,7 +305,7 @@ computer (owner, 2026-10-28):
   cancelled, the destination Library has no new commit and no new file.
 - Avatar: SVG rejected; PNG with a renamed `.jpg` accepted and re-encoded; polyglot file
   rejected or neutralised; > 2 MB rejected.
-- Zip: entry `../../x` rejected; absolute path rejected; zip bomb (ratio) rejected.
+- Zip: entry `../../x` rejected; absolute path rejected; zip bomb (an entry over 100 times its compressed size, or over 20 MB in all) rejected; a zip of exactly 5 MB in a multipart request passes the import route, a zip of 5 MB + 1 byte gets 413, and a JSON body over 1 MB on a JSON route still gets 413.
 - API responses never contain the value of any `*_API_KEY` (a test sets a sentinel key and
   scans every endpoint's output).
 - SQL injection strings are stored or rejected literally; unknown `metric`/`sort` → 422.

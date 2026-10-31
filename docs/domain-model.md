@@ -75,6 +75,7 @@ erDiagram
   skills {
     text id PK
     text slug UK
+    int row_version
     ts deprecated_at
     ts trashed_at "D49"
   }
@@ -82,7 +83,7 @@ erDiagram
     text id PK "also UNIQUE (skill_id, id)"
     text skill_id FK
     int version "UNIQUE with skill_id"
-    text skill_draft_id FK "D41"
+    text skill_draft_id FK "D41, added by M5c"
   }
   bot_skills {
     text bot_id PK "NOT NULL"
@@ -401,12 +402,13 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
 ```
 skills
   id                             TEXT PK
-  slug                           TEXT UNIQUE NOT NULL     -- ^[a-z0-9-]{1,64}$
-  name                           TEXT NOT NULL            -- ≤ 64 chars
+  slug                           TEXT UNIQUE NOT NULL     -- Agent Skills name rule, see "Slug" below
+  name                           TEXT NOT NULL            -- display name, not versioned; ≤ skill_name_max (§10)
   author_id                      TEXT NOT NULL            -- D14
   cloned_from_skill_version_id   TEXT NULL REFERENCES skill_versions(id)
+  row_version                    INTEGER NOT NULL DEFAULT 1   -- §1; every write to this row raises it; form writes check it (api.md §2)
   created_at
-  updated_at                                              -- last change (new version, deprecate, restore); list order
+  updated_at                                              -- last change (rename, new version, deprecate, undeprecate, trash, restore); list order
   deprecated_at                  TIMESTAMP NULL
   trashed_at                     TIMESTAMP NULL           -- in Trash (D49); set only when deprecated_at is set
   trashed_bot_ids                JSON NULL                -- bots that used it at delete time, for the restore suggestion
@@ -416,10 +418,10 @@ skill_versions                                            -- no UPDATE; DELETE o
   skill_id      TEXT NOT NULL REFERENCES skills(id)
   version       INTEGER NOT NULL                          -- 1, 2, 3 … per skill
   description   TEXT NOT NULL                             -- ≤ 1,024 chars, required, shown to the bot
-  body_md       TEXT NOT NULL                             -- ≤ 20,000 chars, required
+  body_md       TEXT NOT NULL                             -- ≤ skill_body_max (§10) chars, required
   changelog     TEXT NULL                                 -- one line, optional
   created_by    TEXT NOT NULL
-  skill_draft_id TEXT NULL REFERENCES skill_drafts(id)    -- set when approved from a bot's draft (D41)
+  skill_draft_id TEXT NULL REFERENCES skill_drafts(id)    -- set when approved from a bot's draft (D41); M5c adds it, see below
   created_at
   UNIQUE (skill_id, version)                              -- also finds the latest version: the highest one
   UNIQUE (skill_id, id)                                   -- target of the bot_skills composite foreign key
@@ -447,6 +449,21 @@ description: Write docs/stories.md as user stories with acceptance criteria.
 ```
 
 The frontmatter `name` is the slug. `description` is per version (it can improve over time).
+The display `name` is not in `SKILL.md` and is not versioned: a rename changes `skills.name` and
+creates no version. So an export and a re-import into another app lose a custom display name
+(§3.5).
+
+**Slug (M1 spec gap pass, owner 2026-10-30).** The slug follows the Agent Skills `name` rule: 1–64
+characters, lowercase letters, digits and hyphens, no hyphen at the start or the end, no `--`
+(`^[a-z0-9]+(-[a-z0-9]+)*$`, length ≤ 64). These are format rules, fixed in code, so an export is
+always a valid skill folder. The slugs `new` and `import` are reserved (they are page URLs,
+`design/components/skills-page.md` §1); every create path refuses them: the editor, Clone,
+import, a bot's draft (D41) and the seed. The slug is fixed after Create (D19).
+
+**Columns added by later slices.** `skill_versions.skill_draft_id` comes with `skill_drafts` in
+M5c, as `ALTER TABLE … ADD COLUMN … REFERENCES skill_drafts(id)` with a NULL default, which
+SQLite allows (owner, 2026-10-30). M1 creates neither the column nor an empty `skill_drafts`
+table. `bot_skills` comes with `bots` in M2.
 
 **Latest version (owner, 2026-10-28).** A skill has no pointer to its latest version. The latest
 version is the row with the highest `version` for the skill, found through
@@ -508,7 +525,8 @@ Why integers and not semver: compatibility of prose cannot be checked by a machi
   `skill_versions` rows and the `skills` row. Before that, in the same transaction, it sets
   `run_skills.skill_version_id`, `skills.cloned_from_skill_version_id`,
   `skill_drafts.skill_id` and `skill_drafts.result_skill_version_id` to NULL where they point
-  to it. The slug is then free for a new skill. Old runs show the copy in `run_skills`
+  to it. Each slice adds its own table to this step when it creates the table: M1 clears
+  `skills.cloned_from_skill_version_id` only, M3 adds `run_skills`, M5c adds `skill_drafts`. The slug is then free for a new skill. Old runs show the copy in `run_skills`
   ("write-user-stories v4 (deleted)") and never link to a new skill with the same slug.
 
 ### 3.5 Import and export (D5)
@@ -523,14 +541,36 @@ skills/
 
 Import (UI: upload a zip or choose a folder; CLI: `app skills import <folder>`):
 
+The UI takes a zip; only the CLI reads a folder.
+
 1. **Preview** (no writes): for each `<slug>/SKILL.md` → `new`, `changed` (with a diff against
    the latest version), `unchanged`, or `invalid` (with the reason: bad frontmatter, slug
-   mismatch, too large, not UTF-8). Skills authored by someone else are `conflict: not author`.
-   A slug of a skill in Trash is `conflict: in Trash`. Files other than `SKILL.md` are listed
-   as skipped and never read (bots cannot run code).
+   mismatch, a slug that breaks the slug rule or is reserved (§3.1), too large, not UTF-8, a
+   likely secret (D39, `security.md` §2.13)). Skills authored by someone else are
+   `conflict: not author`. A slug of a skill in Trash is `conflict: in Trash`. A slug of a
+   deprecated skill is `conflict: deprecated` ("Deprecated. Make it active again to import.").
+   Files other than `SKILL.md` are listed as skipped and never read (bots cannot run code).
 2. **Apply** (after confirmation): for the rows the owner ticked (all by default), `new` →
    create skill v1; `changed` → new version; others skipped. All in one transaction. Skills absent from the folder are untouched (one-way,
    additive).
+
+**Names and changelog on import.** A new skill gets its slug as its display name; the owner can
+rename it. Import never renames an existing skill. Each created version has the changelog
+"Imported from {file}" (the zip name, or the folder name for the CLI).
+
+**The preview (M1 spec gap pass, owner 2026-10-30).** The server keeps a preview in memory, not
+in the database, for `IMPORT_PREVIEW_MINUTES` (default 15), and keeps at most
+`IMPORT_PREVIEW_MAX` (default 5) previews; a new one drops the oldest
+(`architecture.md` §8). A restart loses every preview. For each row the preview records what it
+saw: the skill id (or that the slug was free), the skill's `row_version`, its latest version,
+and its author, deprecated and Trash state. Apply checks all of these again inside its
+transaction, so a skill that was deleted and made again with the same slug, renamed, or
+deprecated after the preview is caught; a version number alone would miss that. Results:
+
+- Any recorded value changed → 409 `stale_write`; nothing is written.
+- The preview is unknown, expired or already applied → 409 `preview_expired`; nothing is written.
+- A successful Apply removes the preview, so a second Apply of the same `preview_id` returns
+  `preview_expired`.
 
 Export writes the latest version of the skills the owner picked (every non-deprecated skill is
 ticked by default) in the same layout, as `<n>-skills-<UTC timestamp, ISO basic>.zip`.
@@ -611,7 +651,7 @@ skill_drafts                                              -- TypeID prefix `skil
   slug               TEXT NOT NULL                -- proposed slug (new) or the skill's slug (edit)
   name               TEXT NOT NULL
   description        TEXT NOT NULL                -- ≤ 1,024 chars
-  body_md            TEXT NOT NULL                -- ≤ 20,000 chars; passed the guard (D39)
+  body_md            TEXT NOT NULL                -- ≤ skill_body_max (§10) chars; passed the guard (D39)
   changelog          TEXT NULL
   status             TEXT NOT NULL DEFAULT 'pending'  -- pending | approved | rejected | stale
   result_skill_version_id TEXT NULL REFERENCES skill_versions(id)  -- set when approved
@@ -949,7 +989,7 @@ handoffs
 
 ```
 settings
-  key    TEXT PK      -- display_name, display_name_max, bot_discussion_enabled, bot_turn_limit, runs_per_conversation_per_hour, handoff_max_per_conversation_24h, skill_draft_max_*, share_max_per_conversation_24h, copy_proposals_max_per_conversation_24h, library_diff_open_max_lines, plan_mark_reminders, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, bot_order_direction, trash_days, undo_seconds, memory_item_max_chars, memory_items_max, improve_* (D51), bot_* limits, health_* …
+  key    TEXT PK      -- display_name, display_name_max, bot_discussion_enabled, bot_turn_limit, runs_per_conversation_per_hour, handoff_max_per_conversation_24h, skill_draft_max_*, share_max_per_conversation_24h, copy_proposals_max_per_conversation_24h, library_diff_open_max_lines, plan_mark_reminders, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, bot_order_direction, trash_days, undo_seconds, memory_item_max_chars, memory_items_max, improve_* (D51), skill_* limits, bot_* limits, health_* …
   value  JSON NOT NULL
 ```
 
@@ -970,6 +1010,8 @@ lowered below Conversations) is refused: the row shows its error, **Save changes
 the server returns 422 with the key. The app never changes the other value on its own.
 
 Conversation limits (`conversation-rules.md` §9, which owns the type, range and what counts; read by the services, never hard-coded): `runs_per_conversation_per_hour = 50` (1–500), `handoff_max_per_conversation_24h = 5` (1–50), `skill_draft_max_per_run = 3` (1–10), `skill_draft_max_pending_per_conversation = 10` (1–50). They are safety caps: the server refuses 0, NULL and values out of range.
+
+Skill limits (M1 spec gap pass, owner 2026-10-30; read by M1, never hard-coded): `skill_name_max = 64` (16–128), `skill_body_max = 20000` (1,000–100,000), `skill_body_warn_lines = 500` (50–5,000; a warning only). These are app choices. The format rules of the Agent Skills standard (slug, description ≤ 1,024 characters) are fixed in code (`SKILL_FORMAT`, `conversation-rules.md` §9), so an export is always valid. A lower limit never changes a saved skill: a Save or an import of a skill over it is refused until the text is shorter. The Settings page does not show them (`design/components/settings-page.md` §8).
 
 Bot limits and defaults (`bots.md` UI-4.6, UI-5.8; read by M2, never hard-coded):
 `bot_name_max = 32`, `bot_description_max = 160`, `bot_persona_max = 8000`,

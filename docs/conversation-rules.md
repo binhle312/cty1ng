@@ -368,7 +368,7 @@ Rules:
   assigned to the calling bot or not, and `base_version` is the version that `read_skill_base`
   returned. The server refuses the call with `skill_changed` when `base_version` is not the
   latest version (the bot reads the skill again), and with `skill_not_read` when the run has no
-  `read_skill_base` step for that skill and version. For a new skill, `slug` is proposed (`^[a-z0-9-]{1,64}$`). If the slug is taken, the app uses the
+  `read_skill_base` step for that skill and version. For a new skill, `slug` is proposed (the slug rule, `domain-model.md` §3.1). If the slug is taken, the app uses the
   next free one (`-2`, `-3`, …) and the card says so (D64).
 - `read_skill_base(skill)` (D65) returns the latest version of a skill that the approved plan
   lists as a new version: description, body and version number. It is offered only with
@@ -382,7 +382,7 @@ Rules:
   the draft only; the owner still approves the finished draft on its card (D41). The tool is never offered in other action runs, planning runs, bot turns or
   handoff runs. The prompt says to use it only when the owner asks. A bot may offer in one line ("Want me to save this
   as a skill?") and waits for a yes.
-- **Text only.** Name, description (≤ 1,024 characters), body (≤ 20,000 characters) and changelog. No files,
+- **Text only.** Name (≤ `skill_name_max`), description (≤ 1,024 characters), body (≤ `skill_body_max`, default 20,000 characters) and changelog. No files,
   no frontmatter beyond what the app writes, no tool permissions or write folders.
 - **Guard.** The text passes the sensitive-data guard (D39) or the tool returns an error
   naming the kinds found; there is no "Send anyway" for drafts.
@@ -613,7 +613,7 @@ Table tests in the `*.rules.ts` suites and service tests (`testing.md`) prove at
 
 | Constant | Values | Where | Why it stays fixed |
 | --- | --- | --- | --- |
-| `SKILL_LIMITS` | name 64, description 1,024, body 20,000 characters; slug `^[a-z0-9-]{1,64}$` | `shared/` | Security size checks (`security.md` §2.5); the frontend counters read the same constant |
+| `SKILL_FORMAT` | description 1,024 characters; slug 1–64 characters, `^[a-z0-9]+(-[a-z0-9]+)*$`; reserved slugs `new`, `import` | `shared/` | Format rules of the Agent Skills standard, so every export is valid, and page URLs (`domain-model.md` §3.1). The name and body limits are settings (`domain-model.md` §10) |
 | `BOT_TURN_LIMIT_RANGE` | 1–20 | `shared/` | The allowed range of the setting `bot_turn_limit` (§2), not a setting itself |
 | `TOKEN_ESTIMATE` | 4 characters per token, 2 for mostly non-Latin text; one retry with half the budget | `core/conversations/visible-history.rules.ts` | Estimation method (§4), not an owner choice |
 | `TITLE_POLICY` | input 2000 characters and 2500 tokens, output 30 tokens, title 60 characters | `core/conversations/auto-title.rules.ts` | Input and output tokens set the worst-case title reservation (§8 rule 6); the title length is for display (§8 rule 14) |

@@ -28,10 +28,11 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
   the tabs Skill, Bots and History, as on the bot page (round 16).
   ⋯ for an active skill: Clone, Export, Deprecate; for a deprecated skill: Clone, Delete skill.
   Deprecate and Delete are author only.
-- UI-7.3: Editor: name (≤ 64 characters), slug (only when creating, made from the name until the
-  owner edits it, accents removed), description (≤ 1,024), body (≤ 20,000, Markdown, Write and
+- UI-7.3: Editor: name (≤ `skill_name_max`, 64; not versioned: a rename alone creates no
+  version), slug (only when creating, made from the name until the
+  owner edits it, accents removed, the slug rule of `../domain-model.md` §3.1), description (≤ 1,024), body (≤ `skill_body_max`, 20,000, Markdown, Write and
   Preview tabs, opens in Preview when it has text), changelog line in the save bar. Every field
-  except the changelog is required. A body over 500 lines gets a warning only. Non-authors see
+  except the changelog is required. A body over `skill_body_warn_lines` (500) lines gets a warning only. Non-authors see
   disabled fields and "Clone to edit" instead of Save.
 - UI-7.4: Saving creates a new version, then shows "Also upgrade these bots to vN?" with the
   author's bots on older versions, all ticked, and Skip / Upgrade (D6). After Create, the card
@@ -39,7 +40,7 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
 - UI-7.5: History tab: versions newest first with changelog; diff between any two; "Restore"
   (creates a new version).
 - UI-7.5a: Bots tab: the bots that use the skill, with the version, "Upgrade to v<N>" on an
-  older version, the Always load switch and a ⋯ menu (Remove from bot), and "+ Add". Changes
+  older version, the Always load switch and a ⋯ menu (Change version, Remove), and "+ Add". Changes
   save at once and apply from each bot's next run.
 - UI-7.6: Deprecate lists the bots that use the skill, all ticked: ticked bots stop using it,
   unticked bots keep it and it works as before. A deprecated skill is read-only and has "Remove
@@ -49,8 +50,9 @@ Shared rules for every story: `README.md` §Applies to every story. Layouts refe
   suggests assigning it again to those bots that are still active.
 - UI-7.7: Import: upload a zip (or, via the CLI, a folder) → preview grouped as New skills, New
   versions of your skills (with diff), No change, Skipped (invalid or conflict, with the
-  reason); each good row has a check box, all ticked → "Apply n changes". Files other than
-  `SKILL.md` are listed as skipped. Nothing is written before Apply.
+  reason; a deprecated skill or one in Trash is a conflict); each good row has a check box, all ticked → "Apply n changes". Files other than
+  `SKILL.md` are listed as skipped. Nothing is written before Apply. A new skill is named after
+  its slug; import never renames a skill.
 - UI-7.8: Export opens a card with every active skill ticked and "Select all", then downloads
   `<n>-skills-<UTC timestamp>.zip` with `<slug>/SKILL.md` folders.
 
@@ -88,8 +90,7 @@ versions and rollback (D6), and the Improve bot can change them (D51).
   with a link to the skill. Then a float card in the centre of the screen asks which bots use
   it, from every bot not in Trash (D65): "Add <slug> to bots?" with the drafting bot ticked, or
   "Also upgrade these bots to v<N>?" with the bots on an older version ticked and the bots
-  without the skill not ticked
-  with every bot on an older version ticked (`../design/components/skills-page.md` §7).
+  without the skill not ticked (`../design/components/skills-page.md` §7).
 - UI-7.11a: A new-skill draft whose slug is taken shows the next free slug
   (`write-login-stories-2`) and the line "write-login-stories is taken, so the app uses
   write-login-stories-2. To pick another slug, use Edit." The slug is checked when the card

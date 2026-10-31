@@ -18,6 +18,8 @@ Decision: Every id keeps the UUIDv7 value from D22. In the database it is stored
 
 A new table picks its prefix in the same PR that adds it, and this table is updated with it. Proposed with
 D37 and D38: `proj` (projects), `mem` (memory items). With D41: `skilld` (skill drafts). With D51: `fb` (reply feedback), `stest` (skill test cases, amendment 2026-10-27).
+Amended 2026-10-30 (owner, M1 spec gap pass): `rslot` (`run_slots`, `conversation-rules.md` §9)
+and `mprop` (`memory_proposals`, D63), which `shared/src/ids.ts` already defines.
 
 - **One conversion point.** A Drizzle custom column type in `adapters/db/` turns a TypeID into
   a UUID on write and back on read. No other code converts.

@@ -436,6 +436,8 @@ invalid), plus `config/models.yaml`.
 | `MODEL_REQUEST_TIMEOUT_SECONDS` | `300` | Read timeout per model request |
 | `TITLE_REQUEST_TIMEOUT_SECONDS` | `20` | Timeout of the one auto title request (D46) |
 | `PURGE_INTERVAL_HOURS` | `24` | How often the Trash purge job looks for items past `deleted_at + trash_days`; it also runs at start (D62). It does not change how long Trash keeps an item |
+| `IMPORT_PREVIEW_MINUTES` | `15` | How long the server keeps a skill import preview in memory (`domain-model.md` §3.5) |
+| `IMPORT_PREVIEW_MAX` | `5` | Previews kept at once; a new one drops the oldest |
 | `APP_ENV` | `dev` | `dev`, `test` or `prod`: app behaviour (OpenAPI docs page only in `dev`, test routes only in `test`) |
 | `FAKE_MODEL` | `0` | `1` wires the fake model and the `fake:scripted` catalog entry (`testing.md` §2) |
 | `LOG_LEVEL` | `info` | A Pino level: `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |

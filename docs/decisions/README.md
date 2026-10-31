@@ -50,7 +50,7 @@ Implemented in: links.
 | D3 | [Reply rule](D03-reply-rule.md) | accepted |  |
 | D4 | [Bot-to-bot discussion with a server-enforced turn budget](D04-bot-to-bot-turn-budget.md) | accepted |  |
 | D5 | [Hybrid skill storage](D05-hybrid-skill-storage.md) | accepted |  |
-| D6 | [Skill versions are pinned per bot (Go-modules style)](D06-skill-versions-are-pinned-per-bot-go-modules-style.md) | accepted |  |
+| D6 | [Skill versions are pinned per bot (Go-modules style)](D06-skill-versions-are-pinned-per-bot-go-modules-style.md) | accepted | own amendment 2026-10-30 |
 | D7 | [Model and effort are fixed at bot creation](D07-model-and-effort-are-fixed-at-bot-creation.md) | accepted |  |
 | D8 | [History choice when a bot joins](D08-history-choice-when-a-bot-joins.md) | accepted |  |
 | D9 | [SSE + POST transport with an ordered event log](D09-sse-post-transport-with-an-ordered-event-log.md) | accepted |  |
@@ -80,7 +80,7 @@ Implemented in: links.
 | D33 | [Zod for runtime validation in the frontend](D33-zod-for-frontend-runtime-validation.md) | accepted |  |
 | D34 | [TypeScript on the backend and the frontend](D34-typescript-full-stack.md) | accepted |  |
 | D35 | [Ports and adapters at the edges, not "switch anything"](D35-ports-and-adapters-at-the-edges.md) | accepted |  |
-| D36 | [Ids are TypeIDs everywhere outside the database](D36-typeid-outside-the-database.md) | accepted |  |
+| D36 | [Ids are TypeIDs everywhere outside the database](D36-typeid-outside-the-database.md) | accepted | own amendment 2026-10-30 |
 | D37 | [Projects group conversations](D37-projects-group-conversations.md) | accepted | D45, D47, D52 |
 | D38 | [Bot, project and conversation memory](D38-bot-memory-and-project-memory.md) | accepted | D43, D48, D53, D56, D61, D62, D63, own amendment 2026-10-26 |
 | D39 | [Sensitive-data guard before anything reaches a model or memory](D39-sensitive-data-guard.md) | accepted |  |
