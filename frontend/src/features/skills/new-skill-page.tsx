@@ -1,8 +1,7 @@
 import { copyName, copySlug } from "@cty1ng/shared/skills";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useState } from "react";
-import { Button } from "../../components/ui/button.tsx";
+import { useEffect, useRef, useState } from "react";
 import { showToast } from "../../components/ui/toast.tsx";
 import { readApiError } from "../../lib/api/api-error.ts";
 import {
@@ -50,9 +49,13 @@ interface CloneSource {
 export function NewSkillPage() {
   const { from } = useSearch({ from: "/skills/new" });
   const source = useCloneSource(from);
-  // The copy's name is cut to the name limit, so a Clone waits for the settings (a failed load
-  // uses the defaults, as the editor does).
+  // The copy's name is cut to the name limit, so a Clone waits for the settings, once: after
+  // the first answer, success or failure, it never waits again. A failed load uses the defaults,
+  // as the editor does. (A query with no data goes back to pending on each new try, so waiting
+  // on `isPending` would show the skeleton again and again while the settings fail.)
   const settings = useQuery(getSettingsOptions());
+  const [settingsSettled, setSettingsSettled] = useState(false);
+  if (!settingsSettled && !settings.isPending) setSettingsSettled(true);
   if (from === undefined) return <NewSkillView key="new" source={null} />;
   // A failed request is not a missing version: the error state with Try again. A failed
   // background refresh keeps the editor on the data it has.
@@ -68,7 +71,7 @@ export function NewSkillPage() {
     return <SkillEditorSkeleton />;
   }
   if (source.data === null) return <NotFoundPage />;
-  if (settings.isPending) return <SkillEditorSkeleton />;
+  if (!settingsSettled) return <SkillEditorSkeleton />;
   return <NewSkillView key={from} source={source.data} />;
 }
 
@@ -167,14 +170,25 @@ function NewSkillView({ source }: { source: CloneSource | null }) {
     text: leaveText(form, name),
   });
 
+  // Set when the editor closes: a Create that ends after that shows its toast but does not move
+  // the page that the owner went to.
+  const closed = useRef(false);
+  useEffect(() => {
+    closed.current = false;
+    return () => {
+      closed.current = true;
+    };
+  }, []);
+
   const create = useMutation({
     mutationFn: (input: Parameters<typeof createWithFreeSlug>) => createWithFreeSlug(...input),
     onSuccess: async (skill) => {
       // M1 has no bots, so the assign card does not open: only the toast (skills-page.md §7).
       showToast(`Created ${skill.name} ✨`);
-      allowLeave();
       // The skill page finds the skill in the list, so the list must have it first.
       await queryClient.invalidateQueries({ queryKey: allSkillsOptions().queryKey });
+      if (closed.current) return;
+      allowLeave();
       await navigate({ to: "/skills/$slug", params: { slug: skill.slug } });
     },
     onError: (error) => {
@@ -228,14 +242,16 @@ function NewSkillView({ source }: { source: CloneSource | null }) {
         <span className="grow text-sm text-danger">
           {saveError?.field === null ? saveError.message : ""}
         </span>
-        <Button
+        <SaveButton
+          label="Cancel"
+          kind="secondary"
+          // The request cannot be taken back, so Cancel waits for it (the skill may be created).
+          disabledReason={create.isPending ? "Creating the skill." : null}
           onClick={() => {
             allowLeave();
             void navigate({ to: "/skills" });
           }}
-        >
-          Cancel
-        </Button>
+        />
         <SaveButton
           label="Create"
           disabledReason={reason}
