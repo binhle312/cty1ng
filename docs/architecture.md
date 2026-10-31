@@ -547,8 +547,11 @@ loser's rolled-back transaction leaves no event. Event order uses the global `ev
 - **SQLite (phase 1):** WAL mode, `busy_timeout = 5000`, and every write transaction starts
   with `BEGIN IMMEDIATE`, so it takes the write lock up front. That serialises writers, which
   is what "lock the conversation" means here. Reads never block.
-- **One writer per process (M1c).** better-sqlite3 is synchronous: a second writer connection on
-  the same thread would wait for the lock on that thread, and the first could never commit.
+- **One writer per thread (M1c).** better-sqlite3 is synchronous: a write on a second writer
+  connection on the same thread blocks the thread while it waits for the first writer's lock,
+  for up to `busy_timeout` (5 s), and then fails with `SQLITE_BUSY`; the first writer cannot
+  commit while the thread is blocked. The guard catches this programming error at once, at the
+  open (owner's review, 2026-10-31).
   `openWriter` refuses a second writer for the same database file in one thread
   (`WriterAlreadyOpenError`). It keys on the file's device and inode, read after the open, so a
   symlink, a hard link or another path to the same file is caught. A failed open registers

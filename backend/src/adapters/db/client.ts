@@ -9,9 +9,11 @@ export type Db = BetterSQLite3Database<typeof schema>;
 const BUSY_TIMEOUT_MS = 5000;
 
 // The writers open in this thread, by the identity of their file. better-sqlite3 is synchronous,
-// so a second writer on one thread would wait for the lock on the only thread, and the first
-// could never commit. A writer in another process or on a worker thread has its own lock wait
-// (`busy_timeout`) and is not limited here.
+// so a second writer's write on one thread blocks the thread while it waits for the first
+// writer's lock, for up to `busy_timeout`, and then fails with SQLITE_BUSY: the first writer
+// cannot commit while the thread is blocked. The guard catches this programming error at once,
+// at the open. A writer in another process or on a worker thread waits on its own thread and is
+// not limited here.
 const openWriters = new Map<string, Database.Database>();
 
 export class WriterAlreadyOpenError extends Error {}
@@ -40,7 +42,7 @@ export function openWriter(file: string): Database.Database {
   if (openWriters.has(key)) {
     sqlite.close();
     throw new WriterAlreadyOpenError(
-      `A writer is already open for ${file} in this process; open one writer per database (docs/architecture.md §11)`,
+      `A writer is already open for ${file} in this thread; open one writer per database (docs/architecture.md §11)`,
     );
   }
   try {

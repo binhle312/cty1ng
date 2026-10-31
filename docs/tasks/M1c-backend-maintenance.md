@@ -6,7 +6,8 @@ Checkpoint: **plan** (short; the configuration names and the writer guard's beha
 
 Two backend tasks that earlier slices left as follow-ups (`status.md`), built in one small PR
 after M1b and before M2 (owner, 2026-10-31): the event log is pruned every day, and a second
-SQLite writer for the same database in one process is refused instead of deadlocking. No new
+SQLite writer for the same database in one process is refused at the open, instead of blocking
+the thread until `busy_timeout` and failing with `SQLITE_BUSY`. No new
 screen, table or endpoint.
 
 ## Read first
