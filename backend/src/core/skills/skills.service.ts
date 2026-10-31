@@ -1,4 +1,10 @@
-import type { DiffLine, Skill, SkillDetail, SkillVersion } from "@cty1ng/shared/skills";
+import type {
+  DiffLine,
+  Skill,
+  SkillDetail,
+  SkillVersion,
+  SkillVersionListItem,
+} from "@cty1ng/shared/skills";
 import { SkillId, SkillVersionId } from "@cty1ng/shared/ids";
 import type { Settings } from "@cty1ng/shared/settings";
 import { DomainError } from "../errors.ts";
@@ -272,9 +278,9 @@ export function createSkillsService(deps: SkillsDeps) {
         return toShape(tx.skills, await liveSkill(tx.skills, id), actor);
       }),
 
-    versions: async (id: SkillId): Promise<SkillVersion[]> => {
+    versions: async (id: SkillId): Promise<SkillVersionListItem[]> => {
       await liveSkill(readers.skills, id);
-      return (await readers.skills.versions(id)).map(versionShape);
+      return (await readers.skills.versions(id)).map(versionListItem);
     },
 
     version: async (id: SkillId, version: number): Promise<SkillVersion> => {
@@ -493,17 +499,20 @@ function versionRow(
   };
 }
 
-function versionShape(row: SkillVersionRecord): SkillVersion {
+function versionListItem(row: SkillVersionRecord): SkillVersionListItem {
   return {
     id: row.id,
     version: row.version,
     description: row.description,
-    body_md: row.bodyMd,
     changelog: row.changelog,
     created_by: row.createdBy,
     created_at: row.createdAt.toISOString(),
     bots_using: 0,
   };
+}
+
+function versionShape(row: SkillVersionRecord): SkillVersion {
+  return { ...versionListItem(row), body_md: row.bodyMd };
 }
 
 // The changelog is one line (skills-page.md §5); empty means none.

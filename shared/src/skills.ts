@@ -118,6 +118,10 @@ export const SkillVersion = z
   .strict();
 export type SkillVersion = z.infer<typeof SkillVersion>;
 
+// A row of `GET /skills/{id}/versions` (api.md §2): no body; one version is read on its own.
+export const SkillVersionListItem = SkillVersion.omit({ body_md: true });
+export type SkillVersionListItem = z.infer<typeof SkillVersionListItem>;
+
 // A line diff (api.md §2, `GET /skills/{id}/diff`): every line, so the History tab can fold the
 // unchanged runs and show them again.
 export const DiffLine = z.object({ op: z.enum(["same", "add", "del"]), text: z.string() }).strict();

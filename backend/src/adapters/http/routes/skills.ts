@@ -8,6 +8,7 @@ import {
   SkillImportPreview,
   SkillImportResult,
   SkillVersion,
+  SkillVersionListItem,
 } from "@cty1ng/shared/skills";
 import { OWNER_ID } from "../../../core/owner.ts";
 import type { SkillImportService } from "../../../core/skills/skill-import.service.ts";
@@ -179,7 +180,9 @@ const routes = {
     path: "/skills/{id}/versions",
     operationId: "listSkillVersions",
     request: { params: IdParam },
-    responses: { 200: json(z.array(SkillVersion), "Versions, newest first") },
+    responses: {
+      200: json(z.array(SkillVersionListItem), "Versions, newest first, without their bodies"),
+    },
   }),
   getSkillVersion: createRoute({
     method: "get",

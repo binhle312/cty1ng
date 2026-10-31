@@ -390,13 +390,12 @@ export type ListSkillVersionsData = {
 
 export type ListSkillVersionsResponses = {
     /**
-     * Versions, newest first
+     * Versions, newest first, without their bodies
      */
     200: Array<{
         id: string;
         version: number;
         description: string;
-        body_md: string;
         changelog: string | null;
         created_by: string;
         created_at: string;

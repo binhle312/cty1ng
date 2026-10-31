@@ -185,7 +185,15 @@ describe("edits", () => {
     const restored = await send("POST", `/skills/${id}/versions/1/restore`, {});
     expect(restored.status).toBe(201);
     expect(await restored.json()).toMatchObject({ latest_version: { version: 3 } });
-    expect(await (await send("GET", `/skills/${id}/versions`)).json()).toHaveLength(3);
+    const versions: unknown = await (await send("GET", `/skills/${id}/versions`)).json();
+    expect(versions).toHaveLength(3);
+    if (!Array.isArray(versions)) throw new Error("not a list");
+    for (const item of versions) expect(item).not.toHaveProperty("body_md");
+    expect(versions).toEqual([
+      expect.objectContaining({ version: 3, changelog: "Restored v1" }),
+      expect.objectContaining({ version: 2 }),
+      expect.objectContaining({ version: 1 }),
+    ]);
     expect(await (await send("GET", `/skills/${id}/versions/2`)).json()).toMatchObject({
       body_md: "b2",
     });

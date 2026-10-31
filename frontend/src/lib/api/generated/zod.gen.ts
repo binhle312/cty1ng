@@ -290,13 +290,12 @@ export const zListSkillVersionsPath = z.object({
 });
 
 /**
- * Versions, newest first
+ * Versions, newest first, without their bodies
  */
 export const zListSkillVersionsResponse = z.array(z.object({
     id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
     version: z.int().gt(0),
     description: z.string(),
-    body_md: z.string(),
     changelog: z.string().nullable(),
     created_by: z.string(),
     created_at: z.string(),
