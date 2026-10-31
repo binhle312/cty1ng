@@ -12,7 +12,7 @@ The composition root (D35): the only place that wires adapters into the core.
 | `skill-commands.ts` | The `skills` commands; they call the same services as the API (`trash` and `restore` until M5b) |
 | `skill-commands.test.ts` | Import with and without `--apply`, a second run, export, Trash and restore |
 | `skill-folders.ts` | Reads `<folder>/<slug>/SKILL.md` for import with the zip's rules; writes an export into an empty folder |
-| `timed-jobs.ts` | The timed jobs (`docs/architecture.md` §6.1): the Trash purge at start and every `PURGE_INTERVAL_HOURS` |
-| `timed-jobs.test.ts` | The purge runs at start, on the interval, and after a failure |
+| `timed-jobs.ts` | The timed jobs (`docs/architecture.md` §6.1): the Trash purge and the event pruning, each at start and on its interval |
+| `timed-jobs.test.ts` | Each job runs at start, on its interval, and after a failure, which never stops the other |
 
 Start here: `compose.ts`. Do not: put business rules here; they belong in `core/`.

@@ -1,14 +1,17 @@
 import Database from "better-sqlite3";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { collect, readFrames, sleep, testServer, type SseFrame } from "../helpers.ts";
+import { collect, manualClock, readFrames, sleep, testServer, type SseFrame } from "../helpers.ts";
 
 // M0 AC4 over a real HTTP server: the test endpoint appends an event, a connected SSE client
 // receives it with the right id, a reconnect with Last-Event-ID replays what it missed, and an
 // old cursor gets `reset` (realtime-events.md §2).
+const DAY = 86_400_000;
+let clock: ReturnType<typeof manualClock>;
 let server: Awaited<ReturnType<typeof testServer>>;
 let abort: AbortController;
 beforeEach(async () => {
-  server = await testServer();
+  clock = manualClock();
+  server = await testServer({}, { clock });
   abort = new AbortController();
 });
 afterEach(async () => {
@@ -103,6 +106,72 @@ describe("GET /api/stream", () => {
       headers: { "last-event-id": "abc" },
     });
     expect(response.status).toBe(400);
+  });
+});
+
+// The gap rule after the pruning job (realtime-events.md §2, M1c): `oldest` is the seq of the
+// oldest kept event.
+describe("GET /api/stream after the event pruning", () => {
+  // Events 1 and 2 are past the 30-day window; 3 and 4 are at its edge, so they stay.
+  async function pruneTheFirstTwo() {
+    for (const note of ["a", "b"]) await append(note);
+    clock.advance(DAY);
+    for (const note of ["c", "d"]) await append(note);
+    clock.advance(30 * DAY);
+    expect(await server.eventPruning.pruneDue()).toBe(2);
+    expect(await server.readers.events.bounds()).toEqual({ oldest: 3, newest: 4 });
+  }
+
+  it("sends `reset` with the id the stream continues from for a cursor below oldest − 1", async () => {
+    await pruneTheFirstTwo();
+    const stream = await connect("1");
+    expect(await waitForEvents(stream, 2)).toEqual(['1 ready {"max_seq":4}', "4 reset {}"]);
+    await append("e");
+    expect((await waitForEvents(stream, 3)).at(-1)).toBe('5 test.ping {"note":"e"}');
+  });
+
+  it("replays from oldest, with no `reset`, for a cursor of exactly oldest − 1", async () => {
+    await pruneTheFirstTwo();
+    const stream = await connect("2");
+    expect(await waitForEvents(stream, 3)).toEqual([
+      '2 ready {"max_seq":4}',
+      '3 test.ping {"note":"c"}',
+      '4 test.ping {"note":"d"}',
+    ]);
+  });
+
+  it("replays the events after a later cursor", async () => {
+    await pruneTheFirstTwo();
+    const stream = await connect("3");
+    expect(await waitForEvents(stream, 2)).toEqual([
+      '3 ready {"max_seq":4}',
+      '4 test.ping {"note":"d"}',
+    ]);
+  });
+
+  // `max_seq` is the high mark, the highest seq ever given, also when no event is kept (one
+  // high mark; owner, 2026-10-31).
+  it("keeps working after a complete removal: no `reset` for a client that saw every event", async () => {
+    for (const note of ["a", "b", "c"]) await append(note);
+    clock.advance(31 * DAY);
+    expect(await server.eventPruning.pruneDue()).toBe(3);
+    const stream = await connect("3");
+    expect(await waitForEvents(stream, 1)).toEqual(['3 ready {"max_seq":3}']);
+    await append("d");
+    expect(await waitForEvents(stream, 2)).toEqual([
+      '3 ready {"max_seq":3}',
+      '4 test.ping {"note":"d"}',
+    ]);
+  });
+
+  it("sends `reset` after a complete removal for a cursor below the high mark", async () => {
+    for (const note of ["a", "b", "c"]) await append(note);
+    clock.advance(31 * DAY);
+    expect(await server.eventPruning.pruneDue()).toBe(3);
+    const stream = await connect("1");
+    expect(await waitForEvents(stream, 2)).toEqual(['1 ready {"max_seq":3}', "3 reset {}"]);
+    await append("d");
+    expect((await waitForEvents(stream, 3)).at(-1)).toBe('4 test.ping {"note":"d"}');
   });
 });
 

@@ -7,6 +7,7 @@ import {
   inArray,
   isNotNull,
   isNull,
+  lt,
   lte,
   max,
   min,
@@ -44,6 +45,11 @@ export function eventsRepository(db: Db): EventsWriter {
         .get();
       return Promise.resolve(row.seq);
     },
+    // `created_at` is ISO-8601 UTC text, so text order is time order.
+    deleteBefore: (cutoff) => {
+      const result = db.delete(events).where(lt(events.createdAt, cutoff)).run();
+      return Promise.resolve(result.changes);
+    },
     after: (seq, limit) => {
       const rows = db
         .select()
@@ -60,6 +66,13 @@ export function eventsRepository(db: Db): EventsWriter {
         .from(events)
         .get();
       return Promise.resolve({ oldest: row?.oldest ?? null, newest: row?.newest ?? null });
+    },
+    // AUTOINCREMENT keeps the highest seq in `sqlite_sequence`, also after every row is gone.
+    lastSeq: () => {
+      const row = db.get<{ seq: number } | undefined>(
+        sql`SELECT seq FROM sqlite_sequence WHERE name = ${"events"}`,
+      );
+      return Promise.resolve(row?.seq ?? null);
     },
   };
 }

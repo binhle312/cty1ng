@@ -367,6 +367,7 @@ memory, so each job also runs once at start; that run catches up on any time the
 | Job | When | What it does | Slice |
 | --- | --- | --- | --- |
 | Trash purge (D49, D50, D60, D62) | At start and every `PURGE_INTERVAL_HOURS` (default 24) | Purges each item where `deleted_at + trash_days` is at or before now. One item per transaction, with its event | M1 (skills), M5b (every item) |
+| Event pruning (M1c) | At start and every `EVENT_PRUNE_INTERVAL_HOURS` (default 24) | Deletes the events whose `created_at` is before now − `EVENT_RETENTION_DAYS` (default 30) × 24 h, in one transaction. Writes no event, but wakes the open streams so they check for lost events; `seq` never goes back (`AUTOINCREMENT`). A client with an older cursor gets `reset` (`realtime-events.md` §2). Separate from `trash_days` | M1c |
 | Unsaved changes discard (D52) | The same job, the same interval | Discards each unsaved run branch at `discard_on`: the run's end `+ trash_days`, or the purge of its conversation or project, whichever comes first. Example: the run fails on Oct 1, the conversation goes to Trash on Oct 20, `trash_days` is 30: the changes go on Oct 31, the conversation on Nov 19 | M6 |
 
 **Discard steps.** Git and SQLite cannot share a transaction, so the discard has two steps:
@@ -391,7 +392,10 @@ treated like a failed try: if it wrote files, its branch becomes unsaved changes
 The `saving` state and the `attempt` key are part of the M6 `run_branches` schema design
 (owner, 2026-10-28).
 
-Both jobs are idempotent: a second pass finds nothing. An item can stay up to one interval longer than
+The jobs are idempotent: a second pass finds nothing. Each job has its own timer and catches
+its own errors, so a failed run of one never stops the other. Node runs a timer longer than
+2³¹ − 1 ms (about 24.8 days) after 1 ms, so a longer interval (for example 720 hours) waits in
+steps of at most that length; any positive interval is supported. An item can stay up to one interval longer than
 `trash_days`, never shorter (D62). On a VPS (§10) pg-boss schedules are one possible way to run
 these jobs; that is not agreed.
 
@@ -436,6 +440,8 @@ invalid), plus `config/models.yaml`.
 | `MODEL_REQUEST_TIMEOUT_SECONDS` | `300` | Read timeout per model request |
 | `TITLE_REQUEST_TIMEOUT_SECONDS` | `20` | Timeout of the one auto title request (D46) |
 | `PURGE_INTERVAL_HOURS` | `24` | How often the Trash purge job looks for items past `deleted_at + trash_days`; it also runs at start (D62). It does not change how long Trash keeps an item |
+| `EVENT_RETENTION_DAYS` | `30` | How long the `events` log keeps an event (`domain-model.md` §8); older events are pruned (§6.1). A positive integer; separate from `trash_days` |
+| `EVENT_PRUNE_INTERVAL_HOURS` | `24` | How often the event pruning job runs; it also runs at start (§6.1). A positive integer |
 | `IMPORT_PREVIEW_MINUTES` | `15` | How long the server keeps a skill import preview in memory (`domain-model.md` §3.5) |
 | `IMPORT_PREVIEW_MAX` | `5` | Previews kept at once; a new one drops the oldest |
 | `APP_ENV` | `dev` | `dev`, `test` or `prod`: app behaviour (OpenAPI docs page only in `dev`, test routes only in `test`) |
@@ -541,6 +547,19 @@ loser's rolled-back transaction leaves no event. Event order uses the global `ev
 - **SQLite (phase 1):** WAL mode, `busy_timeout = 5000`, and every write transaction starts
   with `BEGIN IMMEDIATE`, so it takes the write lock up front. That serialises writers, which
   is what "lock the conversation" means here. Reads never block.
+- **One writer per thread (M1c).** better-sqlite3 is synchronous: a write on a second writer
+  connection on the same thread blocks the thread while it waits for the first writer's lock,
+  for up to `busy_timeout` (5 s), and then fails with `SQLITE_BUSY`; the first writer cannot
+  commit while the thread is blocked. The guard catches this programming error at once, at the
+  open (owner's review, 2026-10-31).
+  `openWriter` refuses a second writer for the same database file in one thread
+  (`WriterAlreadyOpenError`). It keys on the file's device and inode, read after the open, so a
+  symlink, a hard link or another path to the same file is caught. A failed open registers
+  nothing; the writer's `close()` frees the file only after it succeeds, and only for the
+  connection that holds it. `:memory:` and `""` have no file, so `openWriter` refuses them;
+  the app always writes to its database file. Readers are not limited. Another process (the
+  `db migrate` and `skills` CLI) or a worker thread opens its own writer; SQLite's lock and
+  `busy_timeout` order them.
 - **Postgres (D29):** the same statements work unchanged. Where a transaction must read and
   then write the same row (the send above), it uses `SELECT … FOR UPDATE` on the conversation.
   The queue adapter on pg-boss claims jobs with `SKIP LOCKED`.

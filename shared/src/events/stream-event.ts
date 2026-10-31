@@ -8,6 +8,7 @@ import { Skill } from "../skills.ts";
 // events and are never persisted, so they have no `seq`.
 export const Seq = z.number().int().positive();
 
+// `max_seq` is the high mark: the highest seq ever given, kept or pruned (realtime-events.md §2).
 export const ReadyData = z.object({ max_seq: z.number().int().nonnegative() }).strict();
 export const ResetData = z.object({}).strict();
 export const TestPingData = z.object({ note: z.string().max(200) }).strict();

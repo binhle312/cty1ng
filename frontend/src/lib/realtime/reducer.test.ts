@@ -62,6 +62,24 @@ describe("event reducer", () => {
     expect(queryClient.getQueryState(["anything"])?.isInvalidated).toBe(true);
   });
 
+  it("on a reset during a replay, moves the cursor past the pruned events and refetches", () => {
+    const { queryClient, reducer, notes } = setup();
+    queryClient.setQueryData(["anything"], 1);
+    // A client that saw event 1 resumes; the server replays from 2.
+    reducer.apply(ping(1));
+    reducer.apply({ type: "ready", data: { max_seq: 103 } });
+    reducer.apply(ping(2));
+    reducer.apply(ping(100));
+    // The server pruned 101 before it sent it: ready with the newest seq, then reset.
+    reducer.apply({ type: "ready", data: { max_seq: 103 } });
+    reducer.apply({ type: "reset", data: {} });
+    expect(reducer.lastSeq).toBe(103);
+    expect(queryClient.getQueryState(["anything"])?.isInvalidated).toBe(true);
+    expect(reducer.apply(ping(103))).toBe(false);
+    expect(reducer.apply(ping(104))).toBe(true);
+    expect(notes()).toEqual(["n1", "n2", "n100", "n104"]);
+  });
+
   it("after a reset, applies the events a later reconnect replays", () => {
     const { reducer, notes } = setup();
     reducer.apply({ type: "ready", data: { max_seq: 10 } });

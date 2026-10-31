@@ -141,9 +141,9 @@ export async function freePort(): Promise<number> {
 }
 
 // The composed backend behind a real HTTP server on a free loopback port.
-export async function testServer(env: NodeJS.ProcessEnv = {}) {
+export async function testServer(env: NodeJS.ProcessEnv = {}, options: { clock?: Clock } = {}) {
   const port = await freePort();
-  const backend = testBackend({ PORT: String(port), ...env });
+  const backend = testBackend({ PORT: String(port), ...env }, options);
   const server: ServerType = await new Promise((resolve) => {
     const s = serve({ fetch: backend.app.fetch, hostname: "127.0.0.1", port }, () => {
       resolve(s);

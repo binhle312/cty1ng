@@ -16,6 +16,8 @@ describe("loadConfig", () => {
       frontendDir: null,
       fakeModel: false,
       logLevel: "info",
+      eventRetentionDays: 30,
+      eventPruneIntervalHours: 24,
     });
     expect(config.allowedOrigins).toEqual([
       "http://127.0.0.1:8000",
@@ -43,6 +45,22 @@ describe("loadConfig", () => {
       /the Host check serves only 127\.0\.0\.1 and localhost/,
     );
   });
+
+  it.each(["EVENT_RETENTION_DAYS", "EVENT_PRUNE_INTERVAL_HOURS"])(
+    "accepts only a positive integer for %s",
+    (name) => {
+      expect(loadConfig({ [name]: "7" })).toMatchObject(
+        name === "EVENT_RETENTION_DAYS"
+          ? { eventRetentionDays: 7 }
+          : { eventPruneIntervalHours: 7 },
+      );
+      for (const value of ["0", "-1", "1.5", "abc"]) {
+        expect(() => loadConfig({ [name]: value }), value).toThrow(
+          new RegExp(`Invalid configuration: ${name}: `),
+        );
+      }
+    },
+  );
 
   it("refuses an ALLOWED_ORIGINS entry that is not an origin", () => {
     expect(() => loadConfig({ ALLOWED_ORIGINS: "http://a.test/path" })).toThrow(/not an origin/);

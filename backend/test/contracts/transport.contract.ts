@@ -12,7 +12,7 @@ export interface TransportFixture {
   // Appends a `test.ping` in a transaction that ends only when `hold` resolves, then commits or
   // rolls back.
   appendHeld(note: string, hold: Promise<void>, outcome: "commit" | "rollback"): Promise<void>;
-  // Deletes the kept events with seq below `seq`, as the 30-day pruning does.
+  // Deletes the kept events with seq below `seq`, as the event pruning does.
   pruneBefore(seq: number): void;
   close(): void | Promise<void>;
 }

@@ -4,7 +4,8 @@ import { openWriter } from "../../src/adapters/db/client.ts";
 import { sqliteUnitOfWork } from "../../src/adapters/db/unit-of-work.ts";
 
 // A second writer on its own thread, as a second process would be. In one thread a second
-// SQLite writer would wait for the first synchronously and never let it commit.
+// SQLite writer would block the thread while it waits for the first, then fail with
+// SQLITE_BUSY, and `openWriter` refuses it.
 const Request = z.object({
   id: z.number(),
   key: z.string(),
