@@ -97,7 +97,7 @@ it in, and the row goes when its PR merges.
 | Item | Found in | Target |
 | --- | --- | --- |
 | `realtime-events.md` §4 lacks `skill.trashed`, `skill.restored` and `skill.purged` from the M1 brief. They go into the table in the M1 build PR, together with `shared/`, because `PENDING` in `check-events.ts` only gets shorter | #46 | M1 |
-| Temporary CLI `skills trash` and `skills restore` (M1 spec gap pass, owner 2026-10-30): remove them when the Trash page exists | M1 spec gap pass | M5b |
+| Temporary CLI `skills trash` and `skills restore` (M1 spec gap pass, owner 2026-10-30): remove them when the Trash page exists | [#51](https://github.com/binhle312/cty1ng/pull/51) | M5b |
 | Event pruning: delete events older than 30 days (`domain-model.md` §8); the stream's gap rule and `reset` are built | #48 | M1 (its purge job is the first timed job) |
 | The `db_lock_wait_seconds` histogram (`architecture.md` §9, D29 switch trigger 3); there is no metrics output yet | #48 | M3 (the worker brings concurrent writes) |
 | A guard that refuses a second SQLite writer in one process (it would deadlock; today a comment in `adapters/db/client.ts`) | #48 | M1 |
@@ -112,7 +112,7 @@ it in, and the row goes when its PR merges.
 | Slice | State | PR | Notes |
 | --- | --- | --- | --- |
 | M0 | merged | [#46](https://github.com/binhle312/cty1ng/pull/46) (M0a), [#48](https://github.com/binhle312/cty1ng/pull/48) (M0b), [#49](https://github.com/binhle312/cty1ng/pull/49) (M0c), [#50](https://github.com/binhle312/cty1ng/pull/50) (Impeccable snapshot) | Three parts (M0a tooling, M0b backend, M0c frontend), all merged 2026-10-30 |
-| M1 | planning | M1 spec gap pass (this PR) | Spec gaps answered by the owner 2026-10-30. Design approved: `design/components/skills-page.md` (round 8); D49 accepted. Round 16 moves the page to the bot page layout (agreed, #38) |
+| M1 | planning | [#51](https://github.com/binhle312/cty1ng/pull/51) (spec gap pass) | Spec gaps answered by the owner 2026-10-30. Design approved: `design/components/skills-page.md` (round 8); D49 accepted. Round 16 moves the page to the bot page layout (agreed, #38) |
 | M2 | UI design review | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec) | Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open |
 | M3 | UI design agreed | [#26](https://github.com/binhle312/cty1ng/pull/26) (spec) | Round 10: `design/components/conversation-page.md`, `composer.md`, `conversation-cards.md` |
 | M4 | not started | | |
