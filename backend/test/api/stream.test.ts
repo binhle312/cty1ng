@@ -149,14 +149,27 @@ describe("GET /api/stream after the event pruning", () => {
     ]);
   });
 
-  it("keeps working after a complete removal: `reset`, then a new event with the next seq", async () => {
+  // `max_seq` is the high mark, the highest seq ever given, also when no event is kept (one
+  // high mark; owner, 2026-10-31).
+  it("keeps working after a complete removal: no `reset` for a client that saw every event", async () => {
     for (const note of ["a", "b", "c"]) await append(note);
     clock.advance(31 * DAY);
     expect(await server.eventPruning.pruneDue()).toBe(3);
-    // No kept event, so the newest seq is 0 and a cursor above it gets `reset` (the reset
-    // behaviour after a complete removal stays as it is; owner, 2026-10-31).
     const stream = await connect("3");
-    expect(await waitForEvents(stream, 2)).toEqual(['3 ready {"max_seq":0}', "0 reset {}"]);
+    expect(await waitForEvents(stream, 1)).toEqual(['3 ready {"max_seq":3}']);
+    await append("d");
+    expect(await waitForEvents(stream, 2)).toEqual([
+      '3 ready {"max_seq":3}',
+      '4 test.ping {"note":"d"}',
+    ]);
+  });
+
+  it("sends `reset` after a complete removal for a cursor below the high mark", async () => {
+    for (const note of ["a", "b", "c"]) await append(note);
+    clock.advance(31 * DAY);
+    expect(await server.eventPruning.pruneDue()).toBe(3);
+    const stream = await connect("1");
+    expect(await waitForEvents(stream, 2)).toEqual(['1 ready {"max_seq":3}', "3 reset {}"]);
     await append("d");
     expect((await waitForEvents(stream, 3)).at(-1)).toBe('4 test.ping {"note":"d"}');
   });

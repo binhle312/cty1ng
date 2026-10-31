@@ -44,8 +44,8 @@ describe("event hub after pruning", () => {
       return after(seq, limit);
     });
 
-    // A reconnect on the same hub, with the cursor of the last event it saw.
-    const stream = collect(backend.hub.subscribe(3, abort.signal));
+    // A reconnect on the same hub, with a cursor below the pruned events, so it gets `reset`.
+    const stream = collect(backend.hub.subscribe(1, abort.signal));
     expect((await stream.waitFor(2)).map((event) => event.type)).toEqual(["ready", "reset"]);
 
     // A zero-delay timer runs, so the subscriber is waiting, not looping.
@@ -100,7 +100,7 @@ describe("event hub after pruning", () => {
     // Every stored event goes, 101 too, so the next page is empty.
     expect(await backend.eventPruning.pruneDue()).toBe(101);
 
-    expect(await next()).toEqual({ type: "ready", data: { max_seq: 0 } });
+    expect(await next()).toEqual({ type: "ready", data: { max_seq: 101 } });
     expect(await next()).toEqual({ type: "reset", data: {} });
     await append("new 102");
     expect(await next()).toMatchObject({ type: "test.ping", seq: 102 });
@@ -123,7 +123,8 @@ describe("event hub after pruning", () => {
       return after(seq, limit);
     });
 
-    const stream = collect(backend.hub.subscribe(null, abort.signal));
+    // A client that saw event 1 resumes; 2 was pruned before it was sent.
+    const stream = collect(backend.hub.subscribe(1, abort.signal));
     const types = () => stream.items.map((event) => event.type);
     expect((await stream.waitFor(3)).map((event) => event.type)).toEqual([
       "ready",
@@ -136,10 +137,52 @@ describe("event hub after pruning", () => {
     expect(types()).toEqual(["ready", "ready", "reset"]);
     expect(reads).toBeLessThanOrEqual(4);
 
+    // A reconnect with the id the reset gave (the high mark, 2) gets no second reset.
+    const again = collect(backend.hub.subscribe(2, abort.signal));
+    await new Promise<void>((resolve) => setTimeout(resolve, 20));
+    expect(again.items).toEqual([{ type: "ready", data: { max_seq: 2 } }]);
+
     // A new event arrives, and no second reset.
     await append("new 3");
     expect((await stream.waitFor(4)).at(3)).toMatchObject({ type: "test.ping", seq: 3 });
     expect(types().filter((type) => type === "reset")).toHaveLength(1);
+  });
+
+  it("sends `reset` when the first event after an empty start is pruned before it is sent", async () => {
+    // Every event pruned: the stream starts on an empty table, and the last given seq is 1.
+    await append("old 1");
+    clock.advance(31 * DAY);
+    expect(await backend.eventPruning.pruneDue()).toBe(1);
+
+    const after = backend.readers.events.after.bind(backend.readers.events);
+    let reads = 0;
+    vi.spyOn(backend.readers.events, "after").mockImplementation((seq, limit) => {
+      reads += 1;
+      if (reads > MAX_READS) throw new Error(`reset loop: ${reads} reads without a new event`);
+      return after(seq, limit);
+    });
+    const stream = collect(backend.hub.subscribe(null, abort.signal));
+    const types = () =>
+      stream.items.map((event) => ("seq" in event ? `${event.type}:${event.seq}` : event.type));
+    expect((await stream.waitFor(1)).map((event) => event.type)).toEqual(["ready"]);
+
+    // Another process stores event 2 with an old time (no notify here), and the job prunes it
+    // before this stream sends it. Then event 3 comes.
+    clock.advance(-40 * DAY);
+    await backend.uow.run((tx) =>
+      tx.events.append({
+        type: "test.ping",
+        conversationId: null,
+        payload: { note: "old 2" },
+        createdAt: clock.now(),
+      }),
+    );
+    clock.advance(40 * DAY);
+    expect(await backend.eventPruning.pruneDue()).toBe(1);
+    await append("new 3");
+
+    await stream.waitFor(4, 500).catch(() => undefined);
+    expect(types()).toEqual(["ready", "ready", "reset", "test.ping:3"]);
   });
 
   it("wakes a waiting subscriber when a prune removes an event it has not sent", async () => {

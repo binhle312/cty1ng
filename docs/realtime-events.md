@@ -58,25 +58,28 @@ conversation).
 - Reconnect: the browser's `EventSource` sends `Last-Event-ID: 812` automatically. The server
   sends all events with `seq > 812`, then live ones. First connection without the header: the
   server sends nothing old; the client loads current state with normal GETs, then uses the
-  stream's first `ready` event (which carries the current max seq) as its cursor.
+  stream's first `ready` event (which carries the high mark) as its cursor.
+- **High mark:** `max_seq` in `ready` is the highest seq ever given, kept or pruned (the events
+  port's `lastSeq()`; SQLite keeps it in `sqlite_sequence` after a prune). Seqs have no gaps
+  (the transport contract), so every seq up to the high mark was given, and the stream's next
+  event must be the cursor + 1 (one high mark; owner, 2026-10-31).
 - **Gap rule:** if the client's cursor is older than the retention window (events are kept
   `EVENT_RETENTION_DAYS`, default 30; `architecture.md` §6.1), the server sends `event: reset`
   and the client reloads state with GETs. Exactly: with `oldest` the seq of the oldest kept
   event, a cursor below `oldest − 1` gets `reset`; a cursor of `oldest − 1` or later gets the
-  replay. When every event was pruned, `max_seq` is 0, so any cursor above 0 gets `reset`.
-  The rule holds during a replay too: seqs have no gaps (the transport contract), so the job
-  pruned events that the stream had not sent yet when the next stored event is not the
-  cursor + 1, or when no event follows the cursor although a higher seq was given (the
-  last seq stays in `sqlite_sequence` after a prune). The server then sends `ready` with the
-  newest kept seq and `reset`, as at the start. It reads on after the highest seq known then
-  (the newest kept or the last given, whichever is higher), so it handles each gap once, also
-  when the clock went back and a prune removed the newest seq but kept an older one. A prune wakes every
-  stream, so a stream that waits for events checks this too. After a complete prune the first
-  event read sets the cursor, so the one `reset` above is not followed by a second.
+  replay. When every event was pruned, a cursor below the high mark gets `reset`, and a
+  cursor at the high mark (the client saw every event) gets none. A cursor above the high mark
+  also gets `reset` (the database was reset).
+  The rule holds during a replay too: the job pruned events that the stream had not sent yet
+  when the next stored event is not the cursor + 1, or when no event follows the cursor
+  although the high mark is above it. The server then sends `ready` with the high mark and
+  `reset`, as at the start, and continues after the high mark, so it handles each gap once,
+  also when the clock went back and a prune removed the newest seq but kept an older one. A
+  prune wakes every stream, so a stream that waits for events checks this too.
 - `ready` and `reset` also carry an `id:` line: the cursor the stream continues from (the
-  client's `Last-Event-ID` when it resumes, else the newest seq). A later `ready` in the same
+  client's `Last-Event-ID` when it resumes, else the high mark). A later `ready` in the same
   stream (the gap rule during a replay) keeps the seq of the last event sent; only its `reset`
-  moves the id to the newest seq. So the browser's `Last-Event-ID` is right after a first
+  moves the id to the high mark. So the browser's `Last-Event-ID` is right after a first
   connection or a reset, even before a persisted event arrives, a drop between that `ready`
   and its `reset` resumes from the last event sent (and gets the `reset` again), and a
   reconnect does not miss events or loop on `reset`.

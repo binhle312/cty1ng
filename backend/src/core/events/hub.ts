@@ -43,20 +43,21 @@ export function createEventHub(deps: {
     afterSeq: number | null,
     signal: AbortSignal,
   ): AsyncGenerator<StreamEvent> {
-    const { oldest, newest } = await deps.readers.events.bounds();
-    const maxSeq = newest ?? 0;
-    yield { type: "ready", data: { max_seq: maxSeq } };
+    // One high mark: the highest seq ever given, kept or pruned (realtime-events.md §2). `ready`
+    // carries it and the stream continues after it. Seqs have no gaps (the transport contract),
+    // so every seq up to it was given, and the next event must be the cursor + 1. `oldest` is
+    // read first: an event committed in between is above `oldest` and at most the high mark.
+    const { oldest } = await deps.readers.events.bounds();
+    const highMark = (await deps.readers.events.lastSeq()) ?? 0;
+    yield { type: "ready", data: { max_seq: highMark } };
 
-    let cursor = maxSeq;
-    // Whether the cursor is the seq of an event that was stored, so the next event must be
-    // cursor + 1. After a complete prune the newest seq is unknown (`max_seq` is 0), so the
-    // first event read sets the cursor.
-    let anchored = newest !== null;
+    let cursor = highMark;
     if (afterSeq !== null) {
-      // The cursor is outside the kept events: older than the oldest (pruned, §2 "gap rule"),
-      // or newer than the newest (the database was reset). The client reloads with GETs.
-      const tooOld = oldest !== null && afterSeq < oldest - 1;
-      if (tooOld || afterSeq > maxSeq) {
+      // The cursor is outside the kept events: older than the oldest kept one, or with every
+      // event pruned and below the high mark (pruned, §2 "gap rule"), or above the high mark
+      // (the database was reset). The client reloads with GETs.
+      const pruned = oldest === null ? afterSeq < highMark : afterSeq < oldest - 1;
+      if (pruned || afterSeq > highMark) {
         yield { type: "reset", data: {} };
       } else {
         cursor = afterSeq;
@@ -69,7 +70,7 @@ export function createEventHub(deps: {
       const seen = notifies;
       let page = await deps.readers.events.after(cursor, PAGE_SIZE);
       let gap = false;
-      if (page.length === 0 && anchored) {
+      if (page.length === 0) {
         // An empty page has no seq to compare, but events after the cursor may have been pruned
         // unsent. The last given seq is read first, then the page again: an event committed in
         // between is in the second page, so it is not taken for a gap.
@@ -79,29 +80,23 @@ export function createEventHub(deps: {
       }
       for (const row of page) {
         if (stopped()) return;
-        // Seqs have no gaps (the transport contract), so a skipped seq was pruned before this
-        // subscriber sent it.
-        if (anchored && row.seq !== cursor + 1) {
+        // A skipped seq was pruned before this subscriber sent it.
+        if (row.seq !== cursor + 1) {
           gap = true;
           break;
         }
         cursor = row.seq;
-        anchored = true;
         const parsed = StreamEvent.safeParse({ type: row.type, seq: row.seq, data: row.payload });
         if (parsed.success) yield parsed.data;
         else deps.onInvalidEvent(row.seq, row.type);
       }
       if (gap) {
-        // The gap rule during a replay (realtime-events.md §2): `ready` with the newest kept seq,
-        // then `reset`, as at the start, and the client reloads. The stream reads on after the
-        // highest seq known now, the last given one included. No event is stored between the
-        // newest kept seq and it, so the same gap is not found again (for example when the clock
-        // went back and the newest seq was pruned); an event committed later has a higher seq.
-        const now = await deps.readers.events.bounds();
-        const last = await deps.readers.events.lastSeq();
-        cursor = Math.max(now.newest ?? 0, last ?? 0);
-        anchored = cursor > 0;
-        yield { type: "ready", data: { max_seq: now.newest ?? 0 } };
+        // The gap rule during a replay (realtime-events.md §2): `ready` with the high mark now,
+        // then `reset`, as at the start; the client reloads and the stream continues after it.
+        // Every lost seq is at or below it, so the same gap is not found again; an event
+        // committed later has a higher seq.
+        cursor = (await deps.readers.events.lastSeq()) ?? cursor;
+        yield { type: "ready", data: { max_seq: cursor } };
         yield { type: "reset", data: {} };
         continue;
       }

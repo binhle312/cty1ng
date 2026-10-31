@@ -26,7 +26,7 @@ const SETTINGS_QUERIES = operationMatches(/Settings/);
 // applied one is skipped.
 export function createEventReducer(queryClient: QueryClient) {
   let lastSeq: number | null = null;
-  // The newest seq of the last `ready`. The server sends `reset` right after `ready`, and the
+  // The high mark of the last `ready` (the highest seq ever given). The server sends `reset` right after `ready`, and the
   // stream then continues after this seq (realtime-events.md §3, the `id:` of `reset`).
   let readyMaxSeq: number | null = null;
 
