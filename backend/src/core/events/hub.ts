@@ -17,11 +17,16 @@ export function createEventHub(deps: {
   // A stored event that does not parse (for example a type from a newer version) is skipped.
   onInvalidEvent: (seq: number, type: string) => void;
 }): EventHub {
-  let lastNotified = 0;
+  // How many notifies the hub has had. A subscriber waits for a notify after the read it just
+  // made, not for a seq above its cursor: after pruning, a notified seq can be above the cursor
+  // with no kept event to read, and comparing seqs would read empty pages without end.
+  let notifies = 0;
   const waiters = new Set<() => void>();
 
-  function waitForNotify(cursor: number, signal: AbortSignal): Promise<void> {
-    if (lastNotified > cursor || signal.aborted) return Promise.resolve();
+  // Resolves at the first notify after `seen`, at once if one already came. A notify before the
+  // read began was committed before it, so the read saw that event; a later one ends the wait.
+  function waitForNotify(seen: number, signal: AbortSignal): Promise<void> {
+    if (notifies > seen || signal.aborted) return Promise.resolve();
     return new Promise((resolve) => {
       const wake = (): void => {
         waiters.delete(wake);
@@ -56,6 +61,7 @@ export function createEventHub(deps: {
     // A function, not `signal.aborted` directly: the signal can abort while this generator waits.
     const stopped = (): boolean => signal.aborted;
     while (!stopped()) {
+      const seen = notifies;
       const page = await deps.readers.events.after(cursor, PAGE_SIZE);
       for (const row of page) {
         if (stopped()) return;
@@ -64,14 +70,14 @@ export function createEventHub(deps: {
         if (parsed.success) yield parsed.data;
         else deps.onInvalidEvent(row.seq, row.type);
       }
-      if (page.length < PAGE_SIZE) await waitForNotify(cursor, signal);
+      if (page.length < PAGE_SIZE) await waitForNotify(seen, signal);
     }
   }
 
   return {
     subscribe,
-    notify(seq) {
-      lastNotified = Math.max(lastNotified, seq);
+    notify() {
+      notifies += 1;
       for (const wake of [...waiters]) wake();
     },
   };

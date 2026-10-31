@@ -9,6 +9,7 @@ import { typeIdIds } from "../adapters/ids/typeid-ids.ts";
 import { sseBody, type SseOptions } from "../adapters/sse/sse-stream.ts";
 import { buildCatalog } from "../core/catalog/catalog.ts";
 import { createAppendEvent } from "../core/events/append-event.ts";
+import { createEventPruning } from "../core/events/event-pruning.service.ts";
 import { createEventHub } from "../core/events/hub.ts";
 import { createTestPingService } from "../core/events/test-ping.service.ts";
 import { createHealthService } from "../core/health/health.service.ts";
@@ -52,6 +53,11 @@ export function compose(
       hub.notify(seq);
     },
   });
+  const eventPruning = createEventPruning({
+    uow,
+    clock,
+    retentionDays: config.eventRetentionDays,
+  });
   const catalog = buildCatalog({ fakeModel: config.fakeModel });
   const settings = createSettingsService({ uow, readers, appendEvent });
   const skills = createSkillsService({ uow, readers, appendEvent, clock, ids: typeIdIds });
@@ -88,6 +94,7 @@ export function compose(
     settings,
     skills,
     skillImport,
+    eventPruning,
     close: () => {
       reader.close();
       writer.close();

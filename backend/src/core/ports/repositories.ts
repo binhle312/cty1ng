@@ -28,6 +28,8 @@ export interface EventsReader {
 export interface EventsWriter extends EventsReader {
   // Inserts the event and returns its seq.
   append(event: NewEvent): Promise<number>;
+  // Deletes the events created before `cutoff` (domain-model.md §8); returns how many.
+  deleteBefore(cutoff: Date): Promise<number>;
 }
 
 export interface SettingsReader {

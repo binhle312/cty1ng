@@ -26,6 +26,8 @@ const Env = z.object({
   FAKE_MODEL: Flag.default(false),
   LOG_LEVEL: z.enum(LOG_LEVELS).default("info"),
   PURGE_INTERVAL_HOURS: z.coerce.number().positive().default(24),
+  EVENT_RETENTION_DAYS: z.coerce.number().int().positive().default(30),
+  EVENT_PRUNE_INTERVAL_HOURS: z.coerce.number().int().positive().default(24),
   IMPORT_PREVIEW_MINUTES: z.coerce.number().positive().default(15),
   IMPORT_PREVIEW_MAX: z.coerce.number().int().min(1).default(5),
 });
@@ -47,6 +49,10 @@ export interface Config {
   logLevel: (typeof LOG_LEVELS)[number];
   // How often the Trash purge job runs; it also runs at start (architecture.md §6.1, §8).
   purgeIntervalHours: number;
+  // How long events are kept, and how often the pruning job runs; it also runs at start
+  // (architecture.md §6.1, §8).
+  eventRetentionDays: number;
+  eventPruneIntervalHours: number;
   // Skill import previews kept in memory (domain-model.md §3.5).
   importPreviewMinutes: number;
   importPreviewMax: number;
@@ -107,6 +113,8 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     fakeModel: e.FAKE_MODEL,
     logLevel: e.LOG_LEVEL,
     purgeIntervalHours: e.PURGE_INTERVAL_HOURS,
+    eventRetentionDays: e.EVENT_RETENTION_DAYS,
+    eventPruneIntervalHours: e.EVENT_PRUNE_INTERVAL_HOURS,
     importPreviewMinutes: e.IMPORT_PREVIEW_MINUTES,
     importPreviewMax: e.IMPORT_PREVIEW_MAX,
     secrets: Object.entries(env)
