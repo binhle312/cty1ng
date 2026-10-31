@@ -149,4 +149,4 @@ A slice can also be `blocked` (say on what in Notes).
 | 2026-10-31 | M1 plan approved: split into M1a (backend) and M1b (UI); a `SKILL.md` over 1 MB replaces the 100:1 zip ratio; `GET`/`PATCH /settings` for the skill limits and `trash_days`. M1a built and merged in #52. M1c added: event pruning and the SQLite writer guard, after M1b and before M2 |
 | 2026-10-31 | M1b built: the Skills page (list, Skill, Bots and History tabs, new skill and Clone, import, Export card, deprecate and delete) in #54 |
 | 2026-10-31 | M1b merged (#54) |
-| 2026-10-31 | M1c built in #55: event pruning (`EVENT_RETENTION_DAYS`, `EVENT_PRUNE_INTERVAL_HOURS`), the hub waits for a new notify (no busy loop after a complete prune), one SQLite writer per file in a thread |
+| 2026-10-31 | M1c built in #55: event pruning (`EVENT_RETENTION_DAYS`, `EVENT_PRUNE_INTERVAL_HOURS`), the hub waits for a new notify (no busy loop after a complete prune), one SQLite writer per file in a thread. Cross-review fixes: the gap rule also during a replay, and intervals longer than Node's timer limit |

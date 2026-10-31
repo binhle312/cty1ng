@@ -393,7 +393,9 @@ The `saving` state and the `attempt` key are part of the M6 `run_branches` schem
 (owner, 2026-10-28).
 
 The jobs are idempotent: a second pass finds nothing. Each job has its own timer and catches
-its own errors, so a failed run of one never stops the other. An item can stay up to one interval longer than
+its own errors, so a failed run of one never stops the other. Node runs a timer longer than
+2³¹ − 1 ms (about 24.8 days) after 1 ms, so a longer interval (for example 720 hours) waits in
+steps of at most that length; any positive interval is supported. An item can stay up to one interval longer than
 `trash_days`, never shorter (D62). On a VPS (§10) pg-boss schedules are one possible way to run
 these jobs; that is not agreed.
 

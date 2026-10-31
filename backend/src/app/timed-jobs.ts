@@ -37,12 +37,30 @@ export function startTimedJobs(deps: {
   };
 }
 
+// Node runs a timer longer than this (about 24.8 days) after 1 ms instead, so a longer
+// interval waits in steps.
+const MAX_TIMER_MS = 2 ** 31 - 1;
+
 // Runs `job` now and then every `hours`. `job` catches its own errors.
 function every(hours: number, job: () => Promise<void>): () => void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const wait = (ms: number): void => {
+    timer = setTimeout(
+      () => {
+        if (ms > MAX_TIMER_MS) {
+          wait(ms - MAX_TIMER_MS);
+          return;
+        }
+        void job();
+        wait(hours * 3_600_000);
+      },
+      Math.min(ms, MAX_TIMER_MS),
+    );
+    timer.unref();
+  };
   void job();
-  const timer = setInterval(() => void job(), hours * 3_600_000);
-  timer.unref();
+  wait(hours * 3_600_000);
   return () => {
-    clearInterval(timer);
+    clearTimeout(timer);
   };
 }

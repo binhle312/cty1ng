@@ -61,6 +61,31 @@ describe("startTimedJobs", () => {
     expect(pruneDue).toHaveBeenCalledTimes(2);
   });
 
+  // Node runs a timer longer than 2^31 − 1 ms (about 24.8 days) after 1 ms instead.
+  it.each([
+    ["the event pruning", { eventPruneIntervalHours: 720 }, "pruneDue"],
+    ["the Trash purge", { purgeIntervalHours: 720 }, "purgeDue"],
+  ] as const)(
+    "waits the whole interval for %s when it is longer than Node's timer limit",
+    async (_, hours, job) => {
+      vi.useFakeTimers();
+      const jobs = start(hours);
+      expect(jobs[job]).toHaveBeenCalledTimes(1);
+      // First a short step, so the 1 ms timer fails here at once.
+      await vi.advanceTimersByTimeAsync(10);
+      expect(jobs[job]).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(720 * HOUR - 11);
+      expect(jobs[job]).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(jobs[job]).toHaveBeenCalledTimes(2);
+      await vi.advanceTimersByTimeAsync(720 * HOUR);
+      expect(jobs[job]).toHaveBeenCalledTimes(3);
+      jobs.stop();
+      await vi.advanceTimersByTimeAsync(2 * 720 * HOUR);
+      expect(jobs[job]).toHaveBeenCalledTimes(3);
+    },
+  );
+
   it("logs a failed purge and keeps the timer, and the pruning still runs", async () => {
     vi.useFakeTimers();
     const { purgeDue, pruneDue, stop, lines } = start({
