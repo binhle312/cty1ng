@@ -866,3 +866,34 @@ test("Deprecate and Make active again keep a conflict from another tab", async (
     "## Steps\n1. Saved in the other tab.",
   );
 });
+
+test("a tooltip shows above the History check boxes and times", async ({ page }) => {
+  const skill = unique("Tooltip on top");
+  await createSkill(page, skill, "one");
+  await saveBody(page, "two", 2);
+  await page.getByRole("tab", { name: /History/ }).click();
+  await page.getByRole("button", { name: "Compare" }).click();
+  // The full time of the oldest row opens above it, over the rows' check boxes and times,
+  // which sit at z-10 above each row's click area.
+  // A tooltip opens on keyboard focus, so the focus comes from the keyboard.
+  const time = page.getByRole("main").locator("time").last();
+  await time.focus();
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Tab");
+  await expect(time).toBeFocused();
+  const tip = page.getByText(/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d [+-]\d\d:\d\d$/);
+  await expect(tip).toBeVisible();
+  // At every point of the tooltip, the element on top is the tooltip itself.
+  const covered = await tip.evaluate((popup) => {
+    const box = popup.getBoundingClientRect();
+    const hidden: string[] = [];
+    for (let x = box.left + 2; x < box.right - 1; x += 4) {
+      for (let y = box.top + 2; y < box.bottom - 1; y += 4) {
+        const top = document.elementFromPoint(x, y);
+        if (top !== null && !popup.contains(top)) hidden.push(top.outerHTML.slice(0, 60));
+      }
+    }
+    return [...new Set(hidden)];
+  });
+  expect(covered).toEqual([]);
+});
