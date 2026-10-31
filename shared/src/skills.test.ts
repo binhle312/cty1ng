@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { copyName, copySlug, slugFromName, slugProblem } from "./skills.ts";
+import {
+  copyName,
+  copySlug,
+  skillFieldProblem,
+  slugFieldProblem,
+  slugFromName,
+  slugProblem,
+} from "./skills.ts";
 
 describe("slugFromName (skills-page.md §4)", () => {
   it.each([
@@ -66,5 +73,34 @@ describe("copies (skills-page.md §12)", () => {
     expect(copyName("Notes", 64)).toBe("Notes (copy)");
     expect(copyName("n".repeat(64), 64)).toHaveLength(64);
     expect(copyName("n".repeat(64), 64).endsWith(" (copy)")).toBe(true);
+  });
+});
+
+// One set of messages for the editor and the server (skills-page.md §4, §6).
+describe("skillFieldProblem", () => {
+  const limits = { nameMax: 16, bodyMax: 1000 };
+
+  it("asks for an empty field and names the limit of a long one", () => {
+    expect(skillFieldProblem("name", "  ", limits)).toBe("Type a name.");
+    expect(skillFieldProblem("body_md", "", limits)).toBe("Type the steps.");
+    expect(skillFieldProblem("name", "n".repeat(17), limits)).toBe(
+      "The name has 17 characters. The limit is 16. Make it shorter.",
+    );
+    expect(skillFieldProblem("body_md", "b".repeat(1001), limits)).toBe(
+      "The body has 1,001 characters. The limit is 1,000. Make it shorter.",
+    );
+    expect(skillFieldProblem("description", "d".repeat(1024), limits)).toBeNull();
+  });
+
+  it("gives the slug rule's message for each slug problem", () => {
+    expect(slugFieldProblem("")).toBe("Type a slug.");
+    expect(slugFieldProblem("Bad_Slug")).toBe(
+      "Use lowercase letters, digits and single hyphens, not at the start or end.",
+    );
+    expect(slugFieldProblem("import")).toBe("This slug is reserved. Type a different one.");
+    expect(slugFieldProblem("s".repeat(65))).toBe(
+      "The slug has 65 characters. The limit is 64. Make it shorter.",
+    );
+    expect(skillFieldProblem("slug", "ok-slug", limits)).toBeNull();
   });
 });

@@ -23,6 +23,87 @@ export function slugProblem(slug: string): SlugProblem | null {
   return null;
 }
 
+// The skill fields the editor and the server check the same way (skills-page.md §4, §6). The
+// name and body limits are settings (`skill_name_max`, `skill_body_max`).
+export type SkillTextField = "slug" | "name" | "description" | "body_md";
+
+export interface SkillLimits {
+  nameMax: number;
+  bodyMax: number;
+}
+
+const EMPTY_FIELD: Record<SkillTextField, string> = {
+  slug: "Type a slug.",
+  name: "Type a name.",
+  description: "Type a description.",
+  body_md: "Type the steps.",
+};
+
+const FIELD_NOUN: Record<SkillTextField, string> = {
+  slug: "slug",
+  name: "name",
+  description: "description",
+  body_md: "body",
+};
+
+export function skillFieldMax(field: SkillTextField, limits: SkillLimits): number {
+  switch (field) {
+    case "slug":
+      return SKILL_FORMAT.slugMax;
+    case "name":
+      return limits.nameMax;
+    case "description":
+      return SKILL_FORMAT.descriptionMax;
+    case "body_md":
+      return limits.bodyMax;
+    default: {
+      const _exhaustive: never = field;
+      return _exhaustive;
+    }
+  }
+}
+
+// The editor's message for an empty field, a field over its limit, or a slug that breaks the
+// slug rule; null when the text is fine. The secret check (D39) runs on the server only.
+export function skillFieldProblem(
+  field: SkillTextField,
+  value: string,
+  limits: SkillLimits,
+): string | null {
+  if (field === "slug") return slugFieldProblem(value);
+  if (value.trim() === "") return EMPTY_FIELD[field];
+  return value.length > skillFieldMax(field, limits) ? overLimit(field, value, limits) : null;
+}
+
+export function slugFieldProblem(slug: string): string | null {
+  const problem = slugProblem(slug);
+  switch (problem) {
+    case null:
+      return null;
+    case "empty":
+      return EMPTY_FIELD.slug;
+    case "too_long":
+      return overLimit("slug", slug, { nameMax: 0, bodyMax: 0 });
+    case "pattern":
+      return "Use lowercase letters, digits and single hyphens, not at the start or end.";
+    case "reserved":
+      return "This slug is reserved. Type a different one.";
+    default: {
+      const _exhaustive: never = problem;
+      return _exhaustive;
+    }
+  }
+}
+
+function overLimit(field: SkillTextField, value: string, limits: SkillLimits): string {
+  return `The ${FIELD_NOUN[field]} has ${formatCount(value.length)} characters. The limit is ${formatCount(skillFieldMax(field, limits))}. Make it shorter.`;
+}
+
+// "1,024": counts in messages and counters use a comma for thousands.
+export function formatCount(n: number): string {
+  return n.toLocaleString("en-US");
+}
+
 export const SkillSlug = z
   .string()
   .refine((slug) => slugProblem(slug) === null, { message: "Not a valid skill slug" });
