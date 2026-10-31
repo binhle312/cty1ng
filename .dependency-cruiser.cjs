@@ -15,6 +15,8 @@ const ADAPTER_LIBRARIES = [
   "pino",
   "uuidv7",
   "typeid-js",
+  "yauzl",
+  "yazl",
   "@pydantic/genai-prices",
   "sharp",
 ];

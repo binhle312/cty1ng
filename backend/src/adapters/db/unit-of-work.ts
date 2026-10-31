@@ -2,7 +2,7 @@ import type Database from "better-sqlite3";
 import { sql } from "drizzle-orm";
 import type { Readers, Tx, UnitOfWork } from "../../core/ports/repositories.ts";
 import { toDrizzle } from "./client.ts";
-import { eventsRepository, settingsRepository } from "./repositories.ts";
+import { eventsRepository, settingsRepository, skillsRepository } from "./repositories.ts";
 
 // The unit of work on SQLite (architecture.md §2, §11). SQLite allows one active writer per
 // database, and better-sqlite3 has one connection: an `await` inside a transaction would let
@@ -37,6 +37,7 @@ export function sqliteUnitOfWork(
     const tx: Tx = {
       events: eventsRepository(db),
       settings: settingsRepository(db),
+      skills: skillsRepository(db),
       afterCommit: (callback) => callbacks.push(callback),
     };
     begin();
@@ -80,6 +81,7 @@ export function sqliteReaders(reader: Database.Database): Readers {
   return {
     events: eventsRepository(db),
     settings: settingsRepository(db),
+    skills: skillsRepository(db),
     ping: () => {
       try {
         db.get(sql`SELECT 1`);
