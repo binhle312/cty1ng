@@ -535,3 +535,111 @@ test("a failed background refresh keeps the editor and its unsaved text", async 
       .getByRole("link", { name: new RegExp(`^${skill.name} `) }),
   ).toBeVisible();
 });
+
+// Third review of #54. Each test fails on the code before its fix.
+
+// Opens the Clone of the skill on screen.
+async function openClone(page: Page) {
+  await page.getByRole("button", { name: "Skill actions" }).click();
+  await page.getByRole("menuitem", { name: "Clone" }).click();
+  await expect(page).toHaveURL(/\/skills\/new\?from=skillv_/);
+}
+
+test("a settings change keeps an edited Clone", async ({ page }) => {
+  const skill = unique("Clone limit");
+  await createSkill(page, skill);
+  await openClone(page);
+  await fill(page, "Description", "Edited copy.");
+  const patch = (body: object) =>
+    page.evaluate(async (json) => {
+      const response = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: json,
+      });
+      return response.status;
+    }, JSON.stringify(body));
+  expect(await patch({ skill_name_max: 63 })).toBe(200);
+  try {
+    // The stream brings the new limit to the open editor; the draft stays.
+    await expect(page.getByText(/^\d+ \/ 63$/)).toBeVisible();
+    await expect(page.getByLabel("Description", { exact: true })).toHaveValue("Edited copy.");
+  } finally {
+    expect(await patch({ skill_name_max: 64 })).toBe(200);
+  }
+});
+
+test("a Clone whose source does not load shows the error state with Try again", async ({
+  page,
+}) => {
+  const skill = unique("Clone fails");
+  await createSkill(page, skill);
+  await openClone(page);
+  const skillList = (url: URL) => url.pathname === "/api/skills";
+  await page.route(skillList, (route) =>
+    route.request().method() === "GET"
+      ? route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: JSON.stringify({
+            error: { code: "internal_error", message: "Something failed." },
+          }),
+        })
+      : route.fallback(),
+  );
+  await page.reload();
+  // TanStack Query tries three more times before the error shows.
+  const alert = page
+    .getByRole("alert")
+    .filter({ hasText: "The app could not load the skill to copy." });
+  await expect(alert).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "Page not found" })).toHaveCount(0);
+  await page.unroute(skillList);
+  await alert.getByRole("button", { name: "Try again" }).click();
+  await expect(page.getByLabel("Slug", { exact: true })).toHaveValue(`${skill.slug}-copy`);
+});
+
+test("the fields wait while Create is pending", async ({ page }) => {
+  const skill = unique("Slow create");
+  await page.goto("/skills/new");
+  await fill(page, "Name", skill.name);
+  await fill(page, "Description", "Use it.");
+  await fill(page, "Body", "## Steps");
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(
+    (url) => url.pathname === "/api/skills",
+    async (route) => {
+      if (route.request().method() !== "POST") return route.fallback();
+      await held;
+      await route.continue();
+    },
+  );
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await expect(page.getByLabel("Body", { exact: true })).toBeDisabled();
+  release();
+  await expect(page).toHaveURL(`/skills/${skill.slug}`);
+});
+
+test("a Clone skips a slug that a skill in Trash keeps", async ({ page }) => {
+  const skill = unique("Clone trash");
+  await createSkill(page, skill);
+  // The first copy takes `-copy`, then goes to Trash; its slug stays taken but is not listed.
+  await openClone(page);
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await expect(page).toHaveURL(`/skills/${skill.slug}-copy`);
+  await page.getByRole("button", { name: "Skill actions" }).click();
+  await page.getByRole("menuitem", { name: "Deprecate" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Deprecate" }).click();
+  await page.getByRole("button", { name: "Skill actions" }).click();
+  await page.getByRole("menuitem", { name: "Delete skill" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Delete skill" }).click();
+  await expect(page.getByText(/is in Trash\.$/)).toBeVisible();
+
+  await page.goto(`/skills/${skill.slug}`);
+  await openClone(page);
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await expect(page).toHaveURL(`/skills/${skill.slug}-copy-2`);
+});

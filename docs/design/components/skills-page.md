@@ -385,6 +385,14 @@ The spec did not name these; the build uses them:
   they have, with the unsaved text (second review of #54).
 - Text typed while a Save is pending stays as a change after the Save: only the text the
   request sent counts as saved.
+- A Clone whose source does not load: "The app could not load the skill to copy." and **Try
+  again**; Page not found only when the version does not exist (third review of #54).
+- While Create is pending, the fields are read-only: the page leaves after Create, so text
+  typed meanwhile would be lost. A settings change does not reset an open Clone.
+- A copy's slug and skills in Trash: the list does not show skills in Trash, but they keep
+  their slugs (D49). When Create finds the proposed copy slug taken, the app tries the next
+  suffix (`-copy-2`, `-copy-3` …) until one is free. A slug the owner typed shows the error
+  instead.
 - The skill is deprecated in another place while this tab has unsaved changes: the text stays,
   read-only, leaving asks first, and the save bar says "This skill was deprecated with your
   changes not saved. Deprecated skills are read-only: copy what you need before you leave."
