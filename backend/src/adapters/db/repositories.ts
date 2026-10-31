@@ -10,6 +10,7 @@ import {
   lte,
   max,
   min,
+  notExists,
   sql,
 } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
@@ -106,7 +107,14 @@ export function settingsRepository(db: Db): SettingsWriter {
 export function skillsRepository(db: Db): SkillsWriter {
   // The latest version of a skill is its highest `version` (domain-model.md §3.1).
   const newer = alias(skillVersions, "newer");
-  const isLatest = sql`NOT EXISTS (SELECT 1 FROM ${newer} WHERE ${newer.skillId} = ${skillVersions.skillId} AND ${newer.version} > ${skillVersions.version})`;
+  const isLatest = notExists(
+    db
+      .select({ one: sql`1` })
+      .from(newer)
+      .where(
+        and(eq(newer.skillId, skillVersions.skillId), gt(newer.version, skillVersions.version)),
+      ),
+  );
 
   return {
     list: ({ includeDeprecated }) => {

@@ -10,6 +10,8 @@ immutable versions, Clone, Deprecate, Trash, and import and export of `SKILL.md`
 | `skill.rules.ts` | Pure checks of a skill's name, description and body: limits, slug format, the D39 guard |
 | `skill-md.ts` | Parses and writes `SKILL.md` (front matter `name`, `description`, then the body) |
 | `skill-diff.ts` | The line diff between two versions (`diff` library) |
+| `skills.service.test.ts` | Service tests: versions, Clone, authorship, Trash and purge, the guard on each path, races, invariants 02, 05, 19, 20, 25 |
+| `skill-import.service.test.ts` | Import preview rows and Apply: the recheck, `stale_write`, `preview_expired` |
 | `skill.rules.test.ts` | Tests of `skill.rules.ts` |
 | `skill-md.test.ts` | Tests of `skill-md.ts` |
 
