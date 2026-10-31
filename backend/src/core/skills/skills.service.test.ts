@@ -468,6 +468,18 @@ describe("Deprecate, Trash, restore, purge (D49)", () => {
     expect(await backend.readers.skills.byId(early.id)).toBeNull();
     expect(await backend.readers.skills.byId(late.id)).not.toBeNull();
   });
+
+  // Review of PR #52: the job read trash_days once, so a raise that committed while it ran
+  // still let it delete a skill that was no longer due.
+  it("the purge job rechecks trash_days in each transaction", async () => {
+    const skill = await deprecated("notes");
+    await backend.skills.trash(skill.id, { rowVersion: 2 }, OWNER_ID);
+    clock.advance(31 * DAY);
+    const job = backend.skills.purgeDue(OWNER_ID);
+    await backend.settings.update({ trash_days: 90 });
+    expect(await job).toBe(0);
+    expect(await backend.readers.skills.byId(skill.id)).not.toBeNull();
+  });
 });
 
 describe("invariants 02 and 25", () => {

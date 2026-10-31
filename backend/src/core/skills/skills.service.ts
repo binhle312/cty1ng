@@ -13,6 +13,7 @@ import type { Clock } from "../ports/clock.ts";
 import type { Ids } from "../ports/ids.ts";
 import type {
   Readers,
+  SettingsReader,
   SkillRecord,
   SkillsReader,
   SkillVersionRecord,
@@ -472,14 +473,18 @@ export function createSkillsService(deps: SkillsDeps) {
     // The purge job (architecture.md §6.1): each skill whose `trashed_at + trash_days` is at or
     // before now, one per transaction. Returns how many it purged.
     purgeDue: async (actor: string): Promise<number> => {
-      const settings = await readSettings(readers.settings);
-      const cutoff = new Date(clock.now().getTime() - settings.trash_days * 86_400_000);
+      const now = clock.now();
+      const cutoff = async (reader: SettingsReader): Promise<Date> =>
+        new Date(now.getTime() - (await readSettings(reader)).trash_days * 86_400_000);
       let purged = 0;
-      for (const id of await readers.skills.trashedUntil(cutoff)) {
+      for (const id of await readers.skills.trashedUntil(await cutoff(readers.settings))) {
         const done = await uow.run(async (tx) => {
           const skill = await tx.skills.byId(id);
-          // Restored or purged since the list was read.
-          if (skill?.trashedAt == null || skill.trashedAt > cutoff) return false;
+          // Restored, purged, or no longer due because trash_days went up, since the list was
+          // read.
+          if (skill?.trashedAt == null || skill.trashedAt > (await cutoff(tx.settings))) {
+            return false;
+          }
           await purgeInTx(tx, id, actor);
           return true;
         });
