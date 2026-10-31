@@ -862,7 +862,7 @@ the bot page build the Tools list from it (`design/components/create-bot-page.md
   line: "List, read and write files in the Library (the project's, or Home)."
   off_line: "The bot only talks. View images and Hand off turn off too."
   needs: []                     # tool ids that must be on (view_images and hand_off need files)
-  switch: open                  # open = the switch saves | later = off until its milestone builds it | locked = off, needs a decision (D55)
+  switch: open                  # may the owner turn it on? open = yes, the choice is saved | later = forced off | locked = forced off, needs a decision (D55)
 - id: web_fetch
   label: Web fetch
   kind: provider
@@ -877,11 +877,19 @@ the bot page build the Tools list from it (`design/components/create-bot-page.md
 
 - Internal tools in phase 1: `files`, `view_images`, `skills`, `hand_off`, `memory`.
 - A provider tool is offered to a bot only when the bot's model lists it in `provider_tools`.
-- `switch` (M2 spec gap pass, owner 2026-11-01): `open` for every internal tool (its saved switch
-  waits for the slice that builds it), `later` for every provider tool until the milestone that
-  builds it changes it to `open` (D53, D55), `locked` for the MCP connector until its decision.
-  The page shows `later` as "later milestone" and `locked` as "Needs a decision", both off with no
-  working switch; the server keeps them off (§2 Effective tool settings).
+- `switch` (M2 spec gap pass, owner 2026-11-01) says whether the owner may turn the tool on for
+  a bot. It is a gate, not the choice: the bot's own on or off stays in `bots.tool_settings`.
+  - `open`: the server accepts and saves the owner's choice. This holds even when the tool has
+    no code yet, so in M2 every internal tool is `open` and its saved choice waits for the slice
+    that builds the tool.
+  - `later`: forced off; the page shows "later milestone". Every provider tool until its
+    milestone (D53, D55).
+  - `locked`: forced off; the page shows "Needs a decision". The MCP connector until its
+    decision (D55).
+
+  A `later` or `locked` tool has no working switch on the page, and the server refuses it on
+  and reads it as off (§2 Effective tool settings). Changing `later` to `open` only lifts the
+  gate: the milestone that does it must still build the tool and wire it into runs.
 - Order in the list: internal tools with no provider tool for the same job, then jobs that both
   can do, then provider-only tools; inside each group by `added`, oldest first.
 - Ids and parameters of provider tools change; the agent that builds them checks the provider
