@@ -437,3 +437,101 @@ test("a time's full value opens from the keyboard", async ({ page }) => {
   await expect(time).toBeFocused();
   await expect(page.getByText(/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d [+-]\d\d:\d\d$/)).toBeVisible();
 });
+
+// Second review of #54. Each test fails on the code before its fix.
+
+test("text typed while a save is pending stays as a change", async ({ page }) => {
+  const skill = unique("Slow save");
+  await createSkill(page, skill);
+  // Hold the save request until the test lets it go.
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(/\/api\/skills\/[^/]+\/versions$/, async (route) => {
+    if (route.request().method() !== "POST") return route.fallback();
+    await held;
+    await route.continue();
+  });
+  await page.getByRole("tab", { name: "Write" }).click();
+  await fill(page, "Description", "Sent with the save.");
+  await page.getByRole("button", { name: "Save as v2" }).click();
+  await fill(page, "Body", "Typed while saving.");
+  release();
+  await expect(page.getByText("Saved v2 ✨")).toBeVisible();
+  // The stream's refresh brings v2; the text typed after Save is still a change.
+  await expect(page.getByRole("tab", { name: /History/ })).toHaveText(/History\s*2/);
+  await expect(page.getByLabel("Body", { exact: true })).toHaveValue("Typed while saving.");
+  await expect(page.getByText("1 change not saved")).toBeVisible();
+});
+
+test("a deprecation in another tab keeps the leave question for unsaved text", async ({
+  page,
+  context,
+}) => {
+  const skill = unique("Deprecated elsewhere");
+  await createSkill(page, skill);
+  await page.getByRole("tab", { name: "Write" }).click();
+  await fill(page, "Description", "My unsaved description.");
+
+  const other = await context.newPage();
+  await other.goto(`/skills/${skill.slug}`);
+  await other.getByRole("button", { name: "Skill actions" }).click();
+  await other.getByRole("menuitem", { name: "Deprecate" }).click();
+  await other.getByRole("alertdialog").getByRole("button", { name: "Deprecate" }).click();
+
+  // The stream tells this tab: the skill is read-only now, and the unsaved text stays.
+  await expect(page.getByRole("main").getByText("Deprecated", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Description", { exact: true })).toHaveValue(
+    "My unsaved description.",
+  );
+  await page.getByRole("link", { name: "Create", exact: true }).click();
+  const leave = page.getByRole("alertdialog", { name: "Leave without saving? 👀" });
+  await expect(leave).toBeVisible();
+  await leave.getByRole("button", { name: "Stay on this skill" }).click();
+  await expect(
+    page.getByText(/This skill was deprecated with your changes not saved/),
+  ).toBeVisible();
+});
+
+test("a failed background refresh keeps the editor and its unsaved text", async ({
+  page,
+  context,
+}) => {
+  const skill = unique("Refresh fails");
+  await createSkill(page, skill);
+  await page.getByRole("tab", { name: "Write" }).click();
+  await fill(page, "Description", "My unsaved description.");
+  // From now on the skill list fails for this tab only.
+  let failures = 0;
+  await page.route(
+    (url) => url.pathname === "/api/skills",
+    async (route) => {
+      if (route.request().method() !== "GET") return route.fallback();
+      failures += 1;
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "internal_error", message: "Something failed." } }),
+      });
+    },
+  );
+  // A change in another tab makes this tab refresh the list; the refresh and its retries fail.
+  const other = await context.newPage();
+  await other.goto(`/skills/${skill.slug}`);
+  await other.getByLabel("Name", { exact: true }).fill(`${skill.name} renamed`);
+  await other.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(other.getByText("Saved ✨")).toBeVisible();
+  await expect.poll(() => failures, { timeout: 15_000 }).toBeGreaterThanOrEqual(4);
+  // Give the page time to show the failure; the old page replaced the editor here.
+  await page.waitForTimeout(500);
+  await expect(page.getByText("The app could not load the skills.")).toHaveCount(0);
+  await expect(page.getByLabel("Description", { exact: true })).toHaveValue(
+    "My unsaved description.",
+  );
+  await expect(
+    page
+      .getByRole("navigation", { name: "Skills" })
+      .getByRole("link", { name: new RegExp(`^${skill.name} `) }),
+  ).toBeVisible();
+});

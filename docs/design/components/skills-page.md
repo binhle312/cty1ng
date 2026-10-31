@@ -381,7 +381,13 @@ The spec did not name these; the build uses them:
   changes are kept here. Copy what you need, then Discard to load the new text." Discard loads
   the newest saved text. An editor with no changes takes the new text at once.
 - A list or skill that does not load: "The app could not load the skills." and **Try again**,
-  never Page not found.
+  never Page not found. A failed background refresh keeps the list and the editor on the data
+  they have, with the unsaved text (second review of #54).
+- Text typed while a Save is pending stays as a change after the Save: only the text the
+  request sent counts as saved.
+- The skill is deprecated in another place while this tab has unsaved changes: the text stays,
+  read-only, leaving asks first, and the save bar says "This skill was deprecated with your
+  changes not saved. Deprecated skills are read-only: copy what you need before you leave."
 - Why a button is off (`ui-rules.md` B5): "No changes to save.", "Fill in every field.", "Fix
   the errors first.", "Tick a skill to export.", "Tick a row to apply."
 - Deprecate in M1 (no bots): "No bot uses it." in place of the bot list.
