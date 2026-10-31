@@ -312,7 +312,9 @@ computer (owner, 2026-10-28):
   an approved copy, which the app does: after a `propose_copy` that is pending, rejected or
   cancelled, the destination Library has no new commit and no new file.
 - Avatar: SVG rejected; PNG with a renamed `.jpg` accepted and re-encoded; polyglot file
-  rejected or neutralised; > 2 MB rejected.
+  rejected or neutralised; a file of exactly `AVATAR_MAX_BYTES` passes and one byte more gets
+  413, a request over `AVATAR_MAX_BYTES` + 64 KB gets 413 (tests set the variable); an image over
+  25 million pixels is refused before it is decoded.
 - Zip: entry `../../x` rejected; absolute path rejected; zip bomb (over 20 MB in all) rejected; a `SKILL.md` over 1 MB is an invalid row and is not read; more than 200 entries rejected; a zip of exactly 5 MB in a multipart request passes the import route, a zip of 5 MB + 1 byte gets 413, and a JSON body over 1 MB on a JSON route still gets 413.
 - API responses never contain the value of any `*_API_KEY` (a test sets a sentinel key and
   scans every endpoint's output).
