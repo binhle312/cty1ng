@@ -67,6 +67,13 @@ export function eventsRepository(db: Db): EventsWriter {
         .get();
       return Promise.resolve({ oldest: row?.oldest ?? null, newest: row?.newest ?? null });
     },
+    // AUTOINCREMENT keeps the highest seq in `sqlite_sequence`, also after every row is gone.
+    lastSeq: () => {
+      const row = db.get<{ seq: number } | undefined>(
+        sql`SELECT seq FROM sqlite_sequence WHERE name = ${"events"}`,
+      );
+      return Promise.resolve(row?.seq ?? null);
+    },
   };
 }
 

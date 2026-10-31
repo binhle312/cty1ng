@@ -23,6 +23,8 @@ export interface EventsReader {
   after(seq: number, limit: number): Promise<PersistedEvent[]>;
   // The oldest and newest kept seq; both null when there is no event.
   bounds(): Promise<{ oldest: number | null; newest: number | null }>;
+  // The highest seq ever given, kept or pruned; null before the first event.
+  lastSeq(): Promise<number | null>;
 }
 
 export interface EventsWriter extends EventsReader {

@@ -367,7 +367,7 @@ memory, so each job also runs once at start; that run catches up on any time the
 | Job | When | What it does | Slice |
 | --- | --- | --- | --- |
 | Trash purge (D49, D50, D60, D62) | At start and every `PURGE_INTERVAL_HOURS` (default 24) | Purges each item where `deleted_at + trash_days` is at or before now. One item per transaction, with its event | M1 (skills), M5b (every item) |
-| Event pruning (M1c) | At start and every `EVENT_PRUNE_INTERVAL_HOURS` (default 24) | Deletes the events whose `created_at` is before now − `EVENT_RETENTION_DAYS` (default 30) × 24 h, in one transaction. Writes no event; `seq` never goes back (`AUTOINCREMENT`). A client with an older cursor gets `reset` (`realtime-events.md` §2). Separate from `trash_days` | M1c |
+| Event pruning (M1c) | At start and every `EVENT_PRUNE_INTERVAL_HOURS` (default 24) | Deletes the events whose `created_at` is before now − `EVENT_RETENTION_DAYS` (default 30) × 24 h, in one transaction. Writes no event, but wakes the open streams so they check for lost events; `seq` never goes back (`AUTOINCREMENT`). A client with an older cursor gets `reset` (`realtime-events.md` §2). Separate from `trash_days` | M1c |
 | Unsaved changes discard (D52) | The same job, the same interval | Discards each unsaved run branch at `discard_on`: the run's end `+ trash_days`, or the purge of its conversation or project, whichever comes first. Example: the run fails on Oct 1, the conversation goes to Trash on Oct 20, `trash_days` is 30: the changes go on Oct 31, the conversation on Nov 19 | M6 |
 
 **Discard steps.** Git and SQLite cannot share a transaction, so the discard has two steps:

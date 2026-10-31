@@ -49,14 +49,17 @@ export function compose(
   });
   const appendEvent = createAppendEvent({
     clock,
-    notify: (seq) => {
-      hub.notify(seq);
+    notify: () => {
+      hub.notify();
     },
   });
   const eventPruning = createEventPruning({
     uow,
     clock,
     retentionDays: config.eventRetentionDays,
+    notify: () => {
+      hub.notify();
+    },
   });
   const catalog = buildCatalog({ fakeModel: config.fakeModel });
   const settings = createSettingsService({ uow, readers, appendEvent });

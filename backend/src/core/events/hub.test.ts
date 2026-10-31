@@ -84,4 +84,46 @@ describe("event hub after pruning", () => {
     await append("new 104");
     expect(await next()).toMatchObject({ type: "test.ping", seq: 104 });
   });
+
+  it("sends `ready` and `reset` when every event after the cursor is pruned during a replay", async () => {
+    for (let i = 1; i <= 101; i++) await append(`old ${i}`);
+    clock.advance(31 * DAY);
+
+    const stream = backend.hub.subscribe(0, abort.signal)[Symbol.asyncIterator]();
+    const next = async (): Promise<StreamEvent | undefined> => {
+      const result = await stream.next();
+      return result.done === true ? undefined : result.value;
+    };
+    expect(await next()).toEqual({ type: "ready", data: { max_seq: 101 } });
+    for (let seq = 1; seq <= 100; seq++) expect(await next()).toMatchObject({ seq });
+
+    // Every stored event goes, 101 too, so the next page is empty.
+    expect(await backend.eventPruning.pruneDue()).toBe(101);
+
+    expect(await next()).toEqual({ type: "ready", data: { max_seq: 0 } });
+    expect(await next()).toEqual({ type: "reset", data: {} });
+    await append("new 102");
+    expect(await next()).toMatchObject({ type: "test.ping", seq: 102 });
+  });
+
+  it("wakes a waiting subscriber when a prune removes an event it has not sent", async () => {
+    for (const note of ["a", "b", "c"]) await append(note);
+    const stream = collect(backend.hub.subscribe(3, abort.signal));
+    expect((await stream.waitFor(1)).map((event) => event.type)).toEqual(["ready"]);
+
+    // Another process (a CLI command) stores event 4; this hub gets no notify for it.
+    await backend.uow.run((tx) =>
+      tx.events.append({
+        type: "test.ping",
+        conversationId: null,
+        payload: { note: "from another process" },
+        createdAt: clock.now(),
+      }),
+    );
+    clock.advance(31 * DAY);
+    expect(await backend.eventPruning.pruneDue()).toBe(4);
+
+    const events = await stream.waitFor(3, 500);
+    expect(events.slice(1).map((event) => event.type)).toEqual(["ready", "reset"]);
+  });
 });

@@ -64,15 +64,20 @@ conversation).
   and the client reloads state with GETs. Exactly: with `oldest` the seq of the oldest kept
   event, a cursor below `oldest − 1` gets `reset`; a cursor of `oldest − 1` or later gets the
   replay. When every event was pruned, `max_seq` is 0, so any cursor above 0 gets `reset`.
-  The rule holds during a replay too: seqs have no gaps (the transport contract), so when the
-  next stored event is not the cursor + 1, the job pruned events that the stream had not sent
-  yet. The server then sends `ready` with the newest seq and `reset`, as at the start, and
-  continues after that seq. After a complete prune the first event read sets the cursor, so the
-  one `reset` above is not followed by a second.
+  The rule holds during a replay too: seqs have no gaps (the transport contract), so the job
+  pruned events that the stream had not sent yet when the next stored event is not the
+  cursor + 1, or when no event follows the cursor although a higher seq was given (the
+  last seq stays in `sqlite_sequence` after a prune). The server then sends `ready` with the
+  newest seq and `reset`, as at the start, and continues after that seq. A prune wakes every
+  stream, so a stream that waits for events checks this too. After a complete prune the first
+  event read sets the cursor, so the one `reset` above is not followed by a second.
 - `ready` and `reset` also carry an `id:` line: the cursor the stream continues from (the
-  client's `Last-Event-ID` when it resumes, else the newest seq). So the browser's
-  `Last-Event-ID` is right after a first connection or a reset, even before a persisted event
-  arrives, and a reconnect does not miss events or loop on `reset`.
+  client's `Last-Event-ID` when it resumes, else the newest seq). A later `ready` in the same
+  stream (the gap rule during a replay) keeps the seq of the last event sent; only its `reset`
+  moves the id to the newest seq. So the browser's `Last-Event-ID` is right after a first
+  connection or a reset, even before a persisted event arrives, a drop between that `ready`
+  and its `reset` resumes from the last event sent (and gets the `reset` again), and a
+  reconnect does not miss events or loop on `reset`.
 - A `Last-Event-ID` that is not a sequence number gets 400 `bad_request`.
 - Backpressure: the server reads the next event only when the client has read the one before,
   so a long replay to a slow client holds one page of events in memory, not the whole replay.

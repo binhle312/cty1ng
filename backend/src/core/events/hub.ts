@@ -6,7 +6,8 @@ import type { Transport } from "../ports/transport.ts";
 // never from an in-memory copy, so the live path and the replay path are the same code. The
 // hub only wakes them after a commit (`notify`).
 export interface EventHub extends Transport {
-  notify(seq: number): void;
+  // An event was committed, or events were pruned: every subscriber reads again.
+  notify(): void;
 }
 
 // How many events one read takes. It bounds what a slow subscriber holds in memory.
@@ -66,8 +67,16 @@ export function createEventHub(deps: {
     const stopped = (): boolean => signal.aborted;
     while (!stopped()) {
       const seen = notifies;
-      const page = await deps.readers.events.after(cursor, PAGE_SIZE);
+      let page = await deps.readers.events.after(cursor, PAGE_SIZE);
       let gap = false;
+      if (page.length === 0 && anchored) {
+        // An empty page has no seq to compare, but events after the cursor may have been pruned
+        // unsent. The last given seq is read first, then the page again: an event committed in
+        // between is in the second page, so it is not taken for a gap.
+        const last = await deps.readers.events.lastSeq();
+        page = await deps.readers.events.after(cursor, PAGE_SIZE);
+        gap = page.length === 0 && last !== null && last > cursor;
+      }
       for (const row of page) {
         if (stopped()) return;
         // Seqs have no gaps (the transport contract), so a skipped seq was pruned before this

@@ -7,8 +7,8 @@ in the same transaction as the change (`AGENTS.md` §5 rule 3).
 | --- | --- |
 | `append-event.ts` | `appendEvent(tx, …)`: checks the event's schema, inserts it, wakes the hub after commit |
 | `hub.ts` | The in-process hub, the core side of the transport port: replay, the gap rule, live events |
-| `hub.test.ts` | The hub and pruning: it waits for the next notify after a complete prune, and sends `ready` and `reset` when a prune leaves a gap during a replay |
-| `event-pruning.service.ts` | Deletes the events older than `EVENT_RETENTION_DAYS` (the timed job; writes no event) |
+| `hub.test.ts` | The hub and pruning: it waits for the next notify after a complete prune, and sends `ready` and `reset` when a prune removes unsent events (a gap, an empty page, or while it waits) |
+| `event-pruning.service.ts` | Deletes the events older than `EVENT_RETENTION_DAYS` (the timed job; writes no event, wakes the stream) |
 | `event-pruning.service.test.ts` | The cutoff edge, a complete removal, seq after a prune, no event written |
 | `test-ping.service.ts` | Appends `test.ping` for `POST /api/_test/events` (APP_ENV=test only) |
 
