@@ -10,8 +10,9 @@ the builder agent with the prompt in `workflow.md` §3.
 | Slice | Brief | Delivers | Checkpoint | Depends on |
 | --- | --- | --- | --- | --- |
 | M0 | [M0-skeleton.md](tasks/M0-skeleton.md) | Repo, tooling, CI, app shell, security middleware, event log + SSE skeleton, in three parts: M0a tooling and CI, M0b backend core, M0c frontend shell | **plan** + merge | — |
-| M1 | [M1-skill-hub.md](tasks/M1-skill-hub.md) | Skills: versions, authorship, clone, deprecate, import/export | **plan** (schema) | M0 |
-| M2 | [M2-bots.md](tasks/M2-bots.md) | Model catalog, bots CRUD, clone, avatars, pins, header bar | **plan** (schema, uploads) | M1 |
+| M1 | [M1-skill-hub.md](tasks/M1-skill-hub.md) | Skills: versions, authorship, clone, deprecate, import/export, in two parts: M1a backend, M1b Skills page | **plan** (schema) | M0 |
+| M1c | [M1c-backend-maintenance.md](tasks/M1c-backend-maintenance.md) | Backend maintenance: daily event pruning (30 days by default) and a guard against a second SQLite writer in one process. No UI | **plan** (short) | M1b; before M2 |
+| M2 | [M2-bots.md](tasks/M2-bots.md) | Model catalog, bots CRUD, clone, avatars, pins, header bar | **plan** (schema, uploads) | M1, M1c |
 | M3 | [M3-chat-one-bot.md](tasks/M3-chat-one-bot.md) | Conversations, rail, messages, worker, agent port, streaming, Stop, provenance | **plan** (events, worker) | M2 |
 | M4 | [M4-multi-bot.md](tasks/M4-multi-bot.md) | Drag-to-add, history choice, mentions, routing, branches, conversation menu (Rename; Delete to Trash is M5b) | **plan** (routing) | M3 |
 | M5 | [M5-bot-discussion.md](tasks/M5-bot-discussion.md) | Discussion toggle, turn budget, caps | merge | M4 |
