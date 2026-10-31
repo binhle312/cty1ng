@@ -127,7 +127,8 @@ There is no avatar dialog. Style and colour are fields in **Appearance** on the 
 - **Upload (AV4):** the **Upload image** card opens the file picker. The image then opens in a
   small crop card: drag to move, a zoom slider, a round mask, **Cancel** and **Use**. **Use** puts
   it in the big avatar and in the style card ("Your image" with **Replace**), still not saved.
-  The app re-encodes it (`../../security.md` §2.4). A wrong type or a file over 2 MB shows the
+  The app re-encodes it (`../../security.md` §2.4). A wrong type or a file over the size limit (`AVATAR_MAX_BYTES`, default 2 MB; the page reads it from
+  `GET /avatars/limits`) shows the
   error under the style cards. The colour stays for the band, the spinner and the Flow view.
 - **Back to a style:** a click on Flat, Jelly or Pixel uses that style again; the uploaded image
   is dropped on Save.

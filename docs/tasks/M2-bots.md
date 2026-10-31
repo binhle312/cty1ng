@@ -97,8 +97,8 @@ dialog in M5b).
 
 ## Acceptance criteria
 
-- UI-2.1, 2.2, 2.3, 2.6–2.10; UI-4.1–4.8; UI-5.1–5.8; UI-6.0–6.6 (6.7 and 6.8 show empty
-  states until M3); UI-7.4, UI-7.5a, UI-7.6, UI-7.6a with bots.
+- UI-2.1, 2.2, 2.3, 2.6–2.10; UI-4.1–4.8; UI-5.1–5.8; UI-6.1–6.6 and 6.9 (6.7 and 6.8 show
+  empty states until M3); UI-7.4, UI-7.5a, UI-7.6, UI-7.6a with bots.
 - Invariants 1, 3, 4, 6 (with the clone exception as a server check; the restore exception is
   M5b), 12, 19.
 - PATCH with `model_id` or `effort` → 422, row unchanged.

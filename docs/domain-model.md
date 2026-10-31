@@ -440,7 +440,8 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
   the model does not offer, and turn off View images when the model is not `multimodal`;
   (4) turn off a tool whose `needs` tool is off; (5) where a job has more than one tool on, keep
   the tool that has a stored value on and turn the defaulted one off, so a new internal tool
-  never takes a job that a saved provider choice holds. GET returns the effective settings and
+  never takes a job that a saved provider choice holds; (6) run the `needs` check of step 4
+  again, so a tool whose needed tool step 5 turned off is off too. GET returns the effective settings and
   writes nothing; the stored JSON changes only on a save. `POST /bots` and `PATCH /bots/{id}`
   check the body against the same rules: a tool the model does not offer, or a tool on whose
   `switch` is `later` or `locked`, gets 422 `tool_not_available`, two tools of one job on get 422 `tool_job_conflict`, and a tool on while

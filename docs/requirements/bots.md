@@ -104,14 +104,11 @@ Design: `../design/components/create-bot-page.md` (agreed, round 9).
 
 Design: `../design/components/bot-page.md` (agreed, round 9, except the Memory tab).
 
-- UI-6.0: URLs: `/bots`, `/bots/{slug}?tab=…`, `/bots/new`, `/bots/new?from={bot id}`
-  (`../design/components/bot-page.md` §1, `create-bot-page.md` §7). In M2 the Memory tab is
-  hidden (M5b) and the Usage tab shows its empty state (UI-6.8).
 - UI-6.1: The edit layout: the bot list on the left, the bot page on the right, at
   `/bots/{slug}`. The page top shows the band in the bot colour, the 116 px avatar, name and
   slug, the locked model badge, the status line, Message and ⋯. Tabs: Profile, Skills, Model,
   Memory, Activity, Usage. **Profile** edits Appearance (avatar style, colour by swatch, Custom
-  or Random, or an uploaded PNG/JPEG/WebP ≤ 2 MB with a crop card), Basics (name, description)
+  or Random, or an uploaded PNG/JPEG/WebP up to the avatar size limit (`AVATAR_MAX_BYTES`, default 2 MB, `../security.md` §2.4) with a crop card), Basics (name, description)
   and Persona, with one save bar; a change applies from the next run. The big avatar and the band
   show an avatar change at once ("Not saved"); the rest of the app after Save. A colour change
   recolours the Flat, Jelly and Pixel cards, never an uploaded image
@@ -136,3 +133,6 @@ Design: `../design/components/bot-page.md` (agreed, round 9, except the Memory t
   then three views: Results, Changes (before and after a setup change) and Causes, for the range
   of the time range picker (`time-range-picker.md`, default "Last 7 days") (D21). Every rate shows
   its count. Runs without prices show "cost unknown" (`../design/components/bot-page.md` §9).
+- UI-6.9: URLs: `/bots`, `/bots/{slug}?tab=…`, `/bots/new`, `/bots/new?from={bot id}`
+  (`../design/components/bot-page.md` §1, `create-bot-page.md` §7). In M2 the Memory tab is
+  hidden (M5b) and the Usage tab shows its empty state (UI-6.8).
