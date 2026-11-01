@@ -4,7 +4,7 @@ The composition root (D35): the only place that wires adapters into the core.
 
 | File | What it is for |
 | --- | --- |
-| `main.ts` | Starts the backend: configuration, migrations, then the server; stops on any failure before it listens |
+| `main.ts` | Starts the backend: configuration, migrations, then the server; stops on any failure before it listens. Loads the app only after the settings pass, so a refused start stays small |
 | `compose.ts` | Wires the adapters and the core into the Hono app: the bots and avatar services with the disk avatar store |
 | `config.ts` | Environment variables parsed with Zod (`docs/architecture.md` §8), the loopback check, `DATA_DIR` from the repository root |
 | `catalog-files.ts` | Reads `config/models.yaml` and `config/tools.yaml` into the catalog; checks at start that the model adapter knows each provider and effort |
