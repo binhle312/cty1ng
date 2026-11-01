@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { arrangeFrozen, headerDrop, OTHERS_ZONE, PINNED_ZONE } from "./header-order.ts";
+import { arrangeFrozen, headerDrop, notInView, OTHERS_ZONE, PINNED_ZONE } from "./header-order.ts";
 
 describe("deferred reordering of the others (UI-2.9)", () => {
   it("shows the current order when nothing is frozen", () => {
@@ -41,5 +41,18 @@ describe("a drop in the header (top-header.md §3)", () => {
   it("does nothing for an other dropped among the others, or outside", () => {
     expect(drop("o1", "o2")).toEqual({ kind: "none" });
     expect(drop("o1", null)).toEqual({ kind: "none" });
+  });
+});
+
+describe('the "+N" count (top-header.md §4 A1)', () => {
+  const view = { left: 100, right: 300 };
+  const at = (left: number) => ({ left, right: left + 36 });
+
+  it("counts the avatars cut or hidden on both sides", () => {
+    expect(notInView([at(40), at(90), at(150), at(250), at(290), at(400)], view)).toBe(4);
+  });
+
+  it("counts an avatar that touches an edge as in view", () => {
+    expect(notInView([at(100), at(264), at(264.3)], view)).toBe(0);
   });
 });

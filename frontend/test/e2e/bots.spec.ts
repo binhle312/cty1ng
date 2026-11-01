@@ -198,6 +198,56 @@ test("the header scrolls a long roster and pins a bot by drag", async ({ page })
   expect(await violations()).toEqual([]);
 });
 
+// The "+N" chip (top-header.md §4, UI-2.12): N counts the avatars not fully in view, the list
+// has every bot, and a pick scrolls the header to the avatar and opens its card.
+test('the "+N" chip lists every bot and shows the picked one in the header', async ({ page }) => {
+  const violations = await watchCsp(page);
+  const all = await bots();
+  expect(all.length).toBeGreaterThanOrEqual(14);
+  await page.goto("/skills");
+  const header = page.getByRole("banner", { name: "Bots" });
+  const roster = header.getByTestId("roster");
+  await expect(header.getByTestId("header-bot")).toHaveCount(all.length);
+  const chip = header.getByTestId("all-bots");
+  const notInView = () =>
+    roster.evaluate((el) => {
+      const view = el.getBoundingClientRect();
+      return Array.from(el.querySelectorAll("[data-testid='header-bot']")).filter((avatar) => {
+        const box = avatar.getBoundingClientRect();
+        return box.left < view.left - 0.5 || box.right > view.right + 0.5;
+      }).length;
+    });
+  const hidden = await notInView();
+  expect(hidden).toBeGreaterThan(0);
+  await expect(chip).toHaveText(`+${String(hidden)}`);
+
+  await chip.click();
+  const list = page.getByRole("dialog", { name: "All bots" });
+  const search = list.getByRole("searchbox", { name: "Find a bot" });
+  await expect(search).toBeFocused();
+  await expect(list.getByTestId("all-bots-row")).toHaveCount(all.length);
+
+  // The last avatar is out of view at the start: find it and pick it with Enter.
+  const lastSlug = await header.getByTestId("header-bot").last().getAttribute("data-bot");
+  const last = all.find((bot) => bot.slug === lastSlug);
+  if (last === undefined) throw new Error("The last avatar has no bot.");
+  await search.fill(last.name);
+  await expect(list.getByTestId("all-bots-row")).toHaveCount(1);
+  await page.keyboard.press("Enter");
+  await expect(list).toBeHidden();
+  await expect(page.getByRole("dialog", { name: last.name })).toBeVisible();
+  const inView = await header
+    .locator(`[data-testid="header-bot"][data-bot="${last.slug}"]`)
+    .evaluate((avatar) => {
+      const view = avatar.closest("[data-testid='roster']")?.getBoundingClientRect();
+      const box = avatar.getBoundingClientRect();
+      return view !== undefined && box.left >= view.left - 0.5 && box.right <= view.right + 0.5;
+    });
+  expect(inView).toBe(true);
+  await expect(chip).toHaveText(`+${String(await notInView())}`);
+  expect(await violations()).toEqual([]);
+});
+
 async function dragToPin(page: Page, header: Locator) {
   const avatar = header.getByTestId("header-bot").first();
   const zone = header.getByTestId("pin-zone");

@@ -44,7 +44,8 @@ import {
 } from "../bots/bot-pins.ts";
 import type { BotRow } from "../bots/bot-queries.ts";
 import { HeaderBotCard } from "./header-bot-card.tsx";
-import { arrangeFrozen, headerDrop, OTHERS_ZONE, PINNED_ZONE } from "./header-order.ts";
+import { AllBotsChip } from "./header-bot-list.tsx";
+import { arrangeFrozen, headerDrop, notInView, OTHERS_ZONE, PINNED_ZONE } from "./header-order.ts";
 
 // The others' order freezes while the owner engages with the header (UI-2.9): the pointer or the
 // focus enters it, or its bot card is open. It applies in one step at the next click or key press
@@ -105,16 +106,21 @@ function useDeferredOrder(currentOthers: readonly string[]) {
 }
 
 // The scroll of the roster zone (states 2 and 3): fades on a side with more bots, and ‹ › while
-// the pointer or the focus is in the header.
+// the pointer or the focus is in the header. `hidden` is the "+N" of the all bots chip (§4 A1).
 function useRosterScroll() {
   const ref = useRef<HTMLDivElement>(null);
-  const [more, setMore] = useState({ left: false, right: false });
+  const [more, setMore] = useState({ left: false, right: false, hidden: 0 });
   const measure = useCallback(() => {
     const el = ref.current;
     if (el === null) return;
+    const view = el.getBoundingClientRect();
+    const boxes = Array.from(el.querySelectorAll("[data-testid='header-bot']"), (avatar) =>
+      avatar.getBoundingClientRect(),
+    );
     setMore({
       left: el.scrollLeft > 1,
       right: el.scrollLeft + el.clientWidth < el.scrollWidth - 1,
+      hidden: notInView(boxes, view),
     });
   }, []);
   useEffect(() => {
@@ -379,6 +385,25 @@ export function Roster({ bots }: { bots: readonly BotRow[] }) {
           side="right"
           onClick={() => {
             page("right");
+          }}
+        />
+      )}
+      {(more.left || more.right) && (
+        <AllBotsChip
+          pinned={pinned}
+          others={others}
+          hidden={more.hidden}
+          onOpen={() => {
+            setCardFor(null);
+            deferred.freeze();
+          }}
+          onPick={(bot) => {
+            // A4: the avatar comes into view, then its card opens on it.
+            scrollRef.current
+              ?.querySelector(`[data-bot="${CSS.escape(bot.slug)}"]`)
+              ?.scrollIntoView({ block: "nearest", inline: "center" });
+            measure();
+            setCardFor(bot.id);
           }}
         />
       )}

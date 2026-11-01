@@ -46,3 +46,12 @@ export function headerDrop({
   }
   return { kind: "none" };
 }
+
+// The "+N" chip (top-header.md §4 A1): how many avatars are not fully inside the visible part of
+// the roster, on both sides. Boxes and view are in the same coordinates, in px.
+export type Span = { left: number; right: number };
+
+export function notInView(boxes: readonly Span[], view: Span): number {
+  // Half a pixel for rounding: an avatar that touches the edge is in view.
+  return boxes.filter((box) => box.left < view.left - 0.5 || box.right > view.right + 0.5).length;
+}

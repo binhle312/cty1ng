@@ -50,7 +50,8 @@ written ways of working that the bot follows.
 - **The header**: the bots' avatars at the top of every page, pinned first. Hover an avatar for
   its name and status; click it for the bot card, with Pin and the settings gear. Drag an avatar
   onto the pinned zone to pin it, or out of it to unpin it. With many bots, scroll the header
-  sideways or use ‹ and ›. A red "!" on an avatar means the bot cannot run, for example because
+  sideways or use ‹ and ›; the "+N" chip at the right opens a list of every bot with a search,
+  and a click on a bot there shows it in the header with its card. A red "!" on an avatar means the bot cannot run, for example because
   its model has no API key.
 - **Make a bot** (+ Create on the Bots page, or the "+" in an empty header): four steps, with a
   live preview card on the right. 1 Basics: name, description, avatar (Flat with a colour, or
