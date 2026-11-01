@@ -45,6 +45,29 @@ export function avatarFilesContract(name: string, setup: () => AvatarFilesFixtur
       expect((await files.list()).map((file) => file.name)).toEqual([A]);
     });
 
+    it("two uploads of one image staged before either publishes: one file, the later time", async () => {
+      const first = await files.stage(A, bytes("one"));
+      const second = await files.stage(A, bytes("one"));
+      await files.publish(first, T1);
+      await files.publish(second, T2);
+      expect((await files.list()).map((file) => file.name)).toEqual([A]);
+      expect(await files.read(A)).toEqual(bytes("one"));
+      expect(await files.modifiedAt(A)).toEqual(T2);
+      expect(await files.listStaged()).toEqual([]);
+    });
+
+    it("a publish that fails leaves no published file", async () => {
+      const staged = await files.stage(A, bytes("one"));
+      // The staged file is gone, so the move cannot happen.
+      await files.removeStaged(staged.token);
+      await expect(async () => {
+        await files.publish(staged, T1);
+      }).rejects.toThrow();
+      expect(await files.exists(A)).toBe(false);
+      expect(await files.read(A)).toBeNull();
+      expect(await files.list()).toEqual([]);
+    });
+
     it("discard removes a staged file, and never throws", async () => {
       const staged = await files.stage(B, bytes("two"));
       await files.discard(staged);

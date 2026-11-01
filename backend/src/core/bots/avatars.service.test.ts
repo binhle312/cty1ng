@@ -1,5 +1,5 @@
 import { BotId } from "@cty1ng/shared/ids";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { memoryAvatarFiles, type FakeAvatarFiles } from "../../../test/fakes/avatar-files.ts";
 import { manualClock, testBackend, testIds } from "../../../test/helpers.ts";
 import { DomainError } from "../errors.ts";
@@ -38,6 +38,17 @@ afterEach(() => {
 
 const image = (text: string) => new TextEncoder().encode(text);
 const published = async () => (await files.list()).map((file) => file.name);
+
+// Runs `step` after the cleanup lists the files and before its locked recheck: the window in
+// which an upload or a save can come between them.
+function betweenListAndRecheck(step: () => Promise<unknown>) {
+  const list = files.list.bind(files);
+  vi.spyOn(files, "list").mockImplementationOnce(async () => {
+    const listed = await list();
+    await step();
+    return listed;
+  });
+}
 
 async function botWith(avatarId: string) {
   n += 1;
@@ -87,14 +98,24 @@ describe("cleanup", () => {
     expect(await published()).toEqual([used]);
   });
 
-  it("an upload of the same image refreshes the time, so the cleanup keeps it", async () => {
+  it("an upload of the same image between the list and the recheck keeps the file", async () => {
     const id = (await avatars.upload(image("one"))).avatar_id;
     clock.advance(30 * HOUR);
-    // The cleanup listed the file as expired; before its locked recheck, the same image comes
+    // The cleanup lists the file as expired; before its locked recheck, the same image comes
     // again. The recheck reads the new time and keeps the file.
-    await avatars.upload(image("one"));
+    betweenListAndRecheck(() => avatars.upload(image("one")));
     expect(await avatars.cleanup()).toBe(0);
     expect(await published()).toEqual([id]);
+    expect(await files.modifiedAt(id)).toEqual(clock.now());
+  });
+
+  it("an upload of the same image after the cleanup removed it publishes it again", async () => {
+    const id = (await avatars.upload(image("one"))).avatar_id;
+    clock.advance(30 * HOUR);
+    expect(await avatars.cleanup()).toBe(1);
+    expect((await avatars.upload(image("one"))).avatar_id).toBe(id);
+    expect(await published()).toEqual([id]);
+    expect(await files.modifiedAt(id)).toEqual(clock.now());
   });
 
   it("a file that a tombstone names stays", async () => {
@@ -153,6 +174,31 @@ describe("bot saves", () => {
       bots.update(BotId.parse(bot.id), { row_version: 1, avatar_id: second }),
     ).rejects.toThrow();
     expect((await bots.get(BotId.parse(bot.id))).avatar_id).toBe(first);
+  });
+
+  it("a save that names the file between the cleanup's list and recheck keeps it", async () => {
+    const id = (await avatars.upload(image("one"))).avatar_id;
+    clock.advance(30 * HOUR);
+    let bot: Awaited<ReturnType<typeof botWith>> | undefined;
+    betweenListAndRecheck(async () => {
+      bot = await botWith(id);
+    });
+    expect(await avatars.cleanup()).toBe(0);
+    expect(bot?.avatar_id).toBe(id);
+    expect(await published()).toEqual([id]);
+  });
+
+  it("a save and a cleanup started together never leave a row naming a missing file", async () => {
+    const id = (await avatars.upload(image("one"))).avatar_id;
+    clock.advance(30 * HOUR);
+    const [cleanup, save] = await Promise.allSettled([avatars.cleanup(), botWith(id)]);
+    expect(cleanup.status).toBe("fulfilled");
+    if (save.status === "fulfilled") {
+      expect(await published()).toEqual([id]);
+    } else {
+      expect(save.reason).toMatchObject({ field: "avatar_id" });
+      expect(await published()).toEqual([]);
+    }
   });
 
   it("a save naming a file that the cleanup removed gets 422 on avatar_id", async () => {
