@@ -38,7 +38,6 @@ written ways of working that the bot follows.
 - **A skill's Bots tab**: see which bots use the skill and at which version, upgrade a bot to the
   newest version, turn Always load on or off, change the version, remove the skill from a bot,
   or add it to another bot.
-- **Settings**: limits such as the longest skill name, the Trash days, and bot defaults.
 - **Example content**: `make seed` adds example skills and three bots: Guide (you), BA and
   Designer.
 
@@ -51,6 +50,8 @@ not in the app yet. Do not describe screens for them.
 - Conversations: talking to a bot, and bots that hand work to each other.
 - Projects, the Library (the files of a project), and memory.
 - Statistics and cost.
+- The Settings page. The limits (such as the longest skill name and the Trash days) and the bot
+  defaults have values, but the owner cannot change them in the app yet.
 
 ## How to answer
 
