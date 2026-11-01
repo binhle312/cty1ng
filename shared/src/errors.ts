@@ -119,6 +119,9 @@ export const ApiError = z
         code: ErrorCode,
         message: z.string(),
         field: z.string().optional(),
+        // The current state when a write was stale and the page needs it to show the conflict,
+        // for example the pin of `PUT /bots/{id}/skills/{skill_id}` (api.md §4).
+        current: z.unknown().optional(),
         request_id: z.string().optional(),
       })
       .strict(),

@@ -165,9 +165,7 @@ function toTool(entry: ToolFileEntry): CatalogTool {
 function parseList<T>(
   value: unknown,
   schema: {
-    safeParse: (
-      v: unknown,
-    ) =>
+    safeParse: (v: unknown) =>
       | { success: true; data: T }
       | {
           success: false;

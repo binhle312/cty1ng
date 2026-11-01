@@ -9,11 +9,13 @@ import type { HttpEnv } from "./context.ts";
 export class ApiFailure extends Error {
   readonly code: ErrorCode;
   readonly field: string | undefined;
+  readonly current: unknown;
 
-  constructor(code: ErrorCode, message: string, field?: string) {
+  constructor(code: ErrorCode, message: string, field?: string, current?: unknown) {
     super(message);
     this.code = code;
     this.field = field;
+    this.current = current;
   }
 }
 
@@ -23,6 +25,7 @@ export function errorResponse(c: Context<HttpEnv>, failure: ApiFailure): Respons
       code: failure.code,
       message: failure.message,
       ...(failure.field === undefined ? {} : { field: failure.field }),
+      ...(failure.current === undefined ? {} : { current: failure.current }),
       request_id: c.get("requestId"),
     },
   };
@@ -35,7 +38,7 @@ export function errorResponse(c: Context<HttpEnv>, failure: ApiFailure): Respons
 export function onError(error: Error, c: Context<HttpEnv>): Response {
   if (error instanceof ApiFailure) return errorResponse(c, error);
   if (error instanceof DomainError) {
-    return errorResponse(c, new ApiFailure(error.code, error.message, error.field));
+    return errorResponse(c, new ApiFailure(error.code, error.message, error.field, error.current));
   }
   // Framework rejections (malformed JSON, a missing or wrong Content-Type): api.md §1 has one
   // code for a request that cannot be read.

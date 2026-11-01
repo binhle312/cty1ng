@@ -13,7 +13,7 @@ Code that both the backend and the frontend import: the event schemas, TypeIDs a
 | `src/events/index.ts` | Re-exports the event schemas |
 | `src/events/stream-event.ts` | `StreamEvent`, the union of every event type, and `EVENT_TYPES` |
 | `src/ids.ts` | One branded TypeID schema per table prefix (`BotId`, `MessageId`, …; D36) |
-| `src/bots.ts` | Bot name rules: storage form, the name key, the slug, clone names, field limits and their messages |
+| `src/bots.ts` | Bot name rules (storage form, name key, slug, clone names, field limits and messages) and the bot API shapes (api.md §4) |
 | `src/bots.test.ts` | Name key collisions and stability, slugs, clone names, field messages |
 | `src/case-folding.ts` | Generated (`pnpm gen:case-folding`): the Unicode full case folding table for the name key |
 | `src/catalog.ts` | The catalog file schemas (`config/models.yaml`, `config/tools.yaml`), effort levels, the `GET /models` and `GET /tools` shapes |
