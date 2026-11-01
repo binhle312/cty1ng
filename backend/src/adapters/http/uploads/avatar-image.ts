@@ -70,6 +70,21 @@ function notAccepted(): ApiFailure {
   return new ApiFailure("validation_error", "Use a PNG, JPEG or WebP image.", "file");
 }
 
+function tooManyPixels(): ApiFailure {
+  return new ApiFailure(
+    "validation_error",
+    "The image has too many pixels. Use one under 25 megapixels.",
+    "file",
+  );
+}
+
+// sharp's own refusal of an image over `limitInputPixels`. It comes from the header read, before
+// the check below can run, so the owner would see "could not be read" (review of PR #57). A test
+// pins this text, so a sharp update that changes it fails the build, not the owner.
+function overPixelLimit(error: unknown): boolean {
+  return error instanceof Error && error.message.includes("exceeds pixel limit");
+}
+
 // Decodes, checks and re-encodes one upload. Throws 422 for anything that is not an accepted
 // image; the message never repeats what the file said about itself.
 export async function encodeAvatar(input: Uint8Array): Promise<Uint8Array> {
@@ -91,20 +106,15 @@ async function decode(input: Uint8Array, kind: ImageKind): Promise<Uint8Array> {
     // Layer 3: the header agrees with the magic bytes (metadata reads the header only).
     const metadata = await image.metadata();
     if (metadata.format !== kind) throw notAccepted();
-    if (metadata.width * metadata.height > AVATAR_IMAGE.pixelLimit) {
-      throw new ApiFailure(
-        "validation_error",
-        "The image has too many pixels. Use one under 25 megapixels.",
-        "file",
-      );
-    }
+    if (metadata.width * metadata.height > AVATAR_IMAGE.pixelLimit) throw tooManyPixels();
     output = await image
       .resize(AVATAR_IMAGE.size, AVATAR_IMAGE.size, { fit: "cover", position: "centre" })
       .webp({ quality: 82, effort: 4 })
       .toBuffer();
   } catch (error) {
     if (error instanceof ApiFailure) throw error;
-    // sharp refuses a broken file or one over the pixel limit before it decodes.
+    if (overPixelLimit(error)) throw tooManyPixels();
+    // sharp refuses a broken file before it decodes.
     throw new ApiFailure(
       "validation_error",
       "The image could not be read. Try another file.",

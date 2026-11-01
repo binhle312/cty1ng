@@ -179,7 +179,11 @@ describe("avatars", () => {
     const refused = await upload(target, over);
     expect(refused.status).toBe(422);
     expect(await refused.json()).toMatchObject({
-      error: { code: "validation_error", field: "file" },
+      error: {
+        code: "validation_error",
+        field: "file",
+        message: "The image has too many pixels. Use one under 25 megapixels.",
+      },
     });
     expect((await upload(target, atLimit)).status).toBe(200);
   });
