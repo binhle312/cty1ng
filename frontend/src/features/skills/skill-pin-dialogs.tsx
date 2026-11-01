@@ -10,6 +10,7 @@ import type { ListSkillVersionsResponse } from "../../lib/api/generated/types.ge
 import { cn } from "../../lib/cn.ts";
 import { formatTime } from "../../lib/time-format.ts";
 import { BotPickList } from "../bots/bot-list.tsx";
+import { LoadError } from "./load-error.tsx";
 import type { BotRow } from "../bots/bot-queries.ts";
 import { DiffView } from "./diff-view.tsx";
 import { VersionPill } from "./pills.tsx";
@@ -18,6 +19,23 @@ import { VersionPill } from "./pills.tsx";
 // and (M2b) the Skills tab of a bot: + Add (skills-page.md §2a), Upgrade or Move to a version
 // (bot-page.md §7 SK3) and Change version (SK4).
 export type VersionRow = ListSkillVersionsResponse[number];
+
+// The versions are loaded by the tab that opens a card. When that load failed, the card says so
+// and offers Try again, so it never waits for a list that is not coming.
+export interface VersionsLoad {
+  failed: boolean;
+  retry: () => void;
+}
+
+function VersionsFailed({ load }: { load: VersionsLoad }) {
+  return load.failed ? (
+    <LoadError
+      text="The app could not load the versions."
+      onRetry={load.retry}
+      className="mt-3 px-0 py-0"
+    />
+  ) : null;
+}
 
 const noteOf = (version: VersionRow) =>
   version.changelog ?? (version.version === 1 ? "First version" : "No note");
@@ -28,6 +46,7 @@ export function AddBotsDialog({
   open,
   skillName,
   latest,
+  versionsLoad,
   bots,
   pending,
   error,
@@ -38,6 +57,7 @@ export function AddBotsDialog({
   skillName: string;
   // Null until the versions load.
   latest: VersionRow | undefined;
+  versionsLoad: VersionsLoad;
   bots: BotRow[];
   pending: boolean;
   error: string | null;
@@ -49,6 +69,7 @@ export function AddBotsDialog({
     <Dialog open={open} onClose={onClose} title={`Add ${skillName} to bots`} defaultButton={skip}>
       <AddBody
         latest={latest}
+        versionsLoad={versionsLoad}
         bots={bots}
         pending={pending}
         error={error}
@@ -62,6 +83,7 @@ export function AddBotsDialog({
 
 function AddBody({
   latest,
+  versionsLoad,
   bots,
   pending,
   error,
@@ -70,6 +92,7 @@ function AddBody({
   skip,
 }: {
   latest: VersionRow | undefined;
+  versionsLoad: VersionsLoad;
   bots: BotRow[];
   pending: boolean;
   error: string | null;
@@ -78,7 +101,10 @@ function AddBody({
   skip: RefObject<HTMLButtonElement | null>;
 }) {
   const [ticked, setTicked] = useState<ReadonlySet<string>>(new Set());
-  const n = ticked.size;
+  // A ticked bot can leave the list while the card is open (another tab gave it the skill, or it
+  // went to Trash). Only the ticked bots still in the list count and are sent.
+  const chosen = bots.filter((bot) => ticked.has(bot.id)).map((bot) => bot.id);
+  const n = chosen.length;
   const off = pending || n === 0 || latest === undefined;
   return (
     <>
@@ -100,6 +126,7 @@ function AddBody({
           });
         }}
       />
+      <VersionsFailed load={versionsLoad} />
       {error !== null && <p className="mt-3 text-sm text-danger">{error}</p>}
       <p className="mt-3 text-sm text-on-surface-muted">
         A click outside this card is the same as Skip.
@@ -112,7 +139,7 @@ function AddBody({
           kind="primary"
           aria-disabled={off}
           onClick={() => {
-            if (!off) onConfirm([...ticked]);
+            if (!off) onConfirm(chosen);
           }}
         >
           {n === 0 ? "Add" : `Add ${String(n)}`}
@@ -133,6 +160,7 @@ export function MoveVersionDialog({
   used,
   target,
   versions,
+  versionsLoad,
   pending,
   error,
   onClose,
@@ -146,6 +174,7 @@ export function MoveVersionDialog({
   target: number;
   // Undefined until the versions load.
   versions: VersionRow[] | undefined;
+  versionsLoad: VersionsLoad;
   pending: boolean;
   error: string | null;
   onClose: () => void;
@@ -186,7 +215,12 @@ export function MoveVersionDialog({
       <div className="mt-3">
         <Changes skillId={skillId} from={used} to={target} />
       </div>
-      {versions === undefined && <DialogText>Loading the versions.</DialogText>}
+      {versions === undefined &&
+        (versionsLoad.failed ? (
+          <VersionsFailed load={versionsLoad} />
+        ) : (
+          <DialogText>Loading the versions.</DialogText>
+        ))}
       {error !== null && <p className="mt-3 text-sm text-danger">{error}</p>}
       <DialogButtons>
         <Button onClick={onClose}>Cancel</Button>
@@ -264,6 +298,7 @@ export function ChangeVersionDialog({
   botName,
   used,
   versions,
+  versionsLoad,
   onClose,
   onPick,
 }: {
@@ -271,6 +306,7 @@ export function ChangeVersionDialog({
   botName: string;
   used: number;
   versions: VersionRow[] | undefined;
+  versionsLoad: VersionsLoad;
   onClose: () => void;
   onPick: (version: VersionRow) => void;
 }) {
@@ -279,7 +315,11 @@ export function ChangeVersionDialog({
     <Dialog open={open} onClose={onClose} title="Change version" defaultButton={cancel}>
       <DialogText>Pick the version that {botName} uses.</DialogText>
       {versions === undefined ? (
-        <DialogText>Loading the versions.</DialogText>
+        versionsLoad.failed ? (
+          <VersionsFailed load={versionsLoad} />
+        ) : (
+          <DialogText>Loading the versions.</DialogText>
+        )
       ) : (
         <ol aria-label="Versions" className="mt-3 flex max-h-72 flex-col gap-1 overflow-y-auto">
           {versions.map((version, index) => {

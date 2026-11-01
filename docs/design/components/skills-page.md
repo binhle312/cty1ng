@@ -85,7 +85,12 @@ The skill side of the bot page Skills tab (`bot-page.md` §7), with the same row
   opens the upgrade dialog (`bot-page.md` §7 SK3); the Always load switch (D16); ⋯ with
   **Change version** and **Remove** (`danger` text), as on the bot page.
 - **+ Add** opens the bot list (§7) with no box ticked; the bots that use the skill are not in
-  it. The added bots get the latest version and Always load off.
+  it. The added bots get the latest version and Always load off. A ticked bot that leaves the
+  list while the card is open (another tab added it, or it went to Trash) is not counted in
+  "Add {n}" and is not sent.
+- When the versions do not load, + Add, Upgrade (SK3) and Change version (SK4) say "The app
+  could not load the versions." with **Try again** in place of "Loading the versions.", and
+  their confirm button stays off.
 - No bot uses it: "No bot uses this skill yet." and **+ Add**.
 - No bot exists (M1): the same line, and **+ Add** is disabled with the tooltip "Create a bot
   first."

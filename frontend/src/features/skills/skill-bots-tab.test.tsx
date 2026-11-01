@@ -32,13 +32,30 @@ function open(bots: Bot[], extra: Parameters<typeof fakeApi>[0] = {}) {
     ...extra,
   });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  render(
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <SkillBotsTab skill={makeSkill()} />
       </TooltipProvider>
     </QueryClientProvider>,
   );
+  return queryClient;
+}
+
+const FAILED = {
+  status: 500,
+  body: { error: { code: "internal_error", message: "Something failed." } },
+};
+
+// The versions fail once, then load.
+function versionsFailOnce() {
+  let calls = 0;
+  return {
+    [`GET /api/skills/${SKILL_ID}/versions`]: () => {
+      calls += 1;
+      return calls === 1 ? FAILED : { body: makeVersions(3) };
+    },
+  };
 }
 
 const click = (element: HTMLElement) => {
@@ -117,6 +134,76 @@ describe("the Bots tab of a skill", () => {
       skill_version_id: versionId(3),
       bots: [{ bot_id: qa.id, expected_skill_version_id: null }],
     });
+  });
+
+  it("sends only the ticked bots that are still in the list (another place gave one the skill)", async () => {
+    const dev = makeBot(4, "Dev");
+    let bots = [qa, dev];
+    const queryClient = open([], {
+      "GET /api/bots": () => ({ body: bots }),
+      [`POST /api/skills/${SKILL_ID}/bots`]: () => ({ body: [makeBot(4, "Dev", [makePin()])] }),
+    });
+    click(await screen.findByRole("button", { name: "Add" }));
+    const dialog = await screen.findByRole("dialog");
+    await waitFor(() => {
+      expect(within(dialog).getByText(/They get v3/)).toBeTruthy();
+    });
+    for (const box of within(dialog).getAllByRole("checkbox")) click(box);
+    expect(within(dialog).getByRole("button", { name: "Add 2" })).toBeTruthy();
+    // Another tab adds QA; its row leaves the card.
+    bots = [makeBot(3, "QA", [makePin()]), dev];
+    await act(() => queryClient.invalidateQueries());
+    await waitFor(() => {
+      expect(within(dialog).queryByText("QA")).toBeNull();
+    });
+    click(within(dialog).getByRole("button", { name: "Add 1" }));
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/bots`)).toHaveLength(1);
+    });
+    expect(api?.sent("POST", `/api/skills/${SKILL_ID}/bots`)[0]?.body).toEqual({
+      skill_version_id: versionId(3),
+      bots: [{ bot_id: dev.id, expected_skill_version_id: null }],
+    });
+  });
+
+  it("Change version says when the versions do not load, and Try again loads them", async () => {
+    open([designer], versionsFailOnce());
+    click(await screen.findByRole("button", { name: "Actions for Designer" }));
+    click(await screen.findByRole("menuitem", { name: "Change version" }));
+    const dialog = await screen.findByRole("dialog", { name: "Change version" });
+    const alert = await within(dialog).findByRole("alert");
+    expect(alert.textContent).toContain("The app could not load the versions.");
+    expect(within(dialog).queryByText("Loading the versions.")).toBeNull();
+    click(within(alert).getByRole("button", { name: "Try again" }));
+    expect(await within(dialog).findByRole("list", { name: "Versions" })).toBeTruthy();
+  });
+
+  it("Upgrade and + Add say when the versions do not load, and stay off", async () => {
+    open([designer, qa], {
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => FAILED,
+      [`GET /api/skills/${SKILL_ID}/diff`]: () => ({ body: { description: null, body: [] } }),
+    });
+    click(await screen.findByRole("button", { name: "Upgrade to v3" }));
+    const upgrade = await screen.findByRole("dialog", {
+      name: "Upgrade Write user stories to v3?",
+    });
+    expect((await within(upgrade).findByRole("alert")).textContent).toContain(
+      "The app could not load the versions.",
+    );
+    expect(within(upgrade).queryByText("Loading the versions.")).toBeNull();
+    expect(
+      within(upgrade).getByRole("button", { name: "Upgrade to v3" }).getAttribute("aria-disabled"),
+    ).toBe("true");
+    click(within(upgrade).getByRole("button", { name: "Cancel" }));
+    click(screen.getByRole("button", { name: "Add" }));
+    const add = await screen.findByRole("dialog", { name: "Add Write user stories to bots" });
+    expect((await within(add).findByRole("alert")).textContent).toContain(
+      "The app could not load the versions.",
+    );
+    click(within(add).getByRole("checkbox"));
+    expect(within(add).getByRole("button", { name: "Add 1" }).getAttribute("aria-disabled")).toBe(
+      "true",
+    );
   });
 
   it("asks to create a bot first only when no bot exists", async () => {

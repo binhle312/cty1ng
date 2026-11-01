@@ -44,6 +44,11 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
   const queryClient = useQueryClient();
   const bots = useBotUses(skill.id);
   const versions = useQuery(listSkillVersionsOptions({ path: { id: skill.id } }));
+  // Data from an earlier load stays usable after a failed refetch.
+  const versionsLoad = {
+    failed: versions.isError && versions.data === undefined,
+    retry: () => void versions.refetch(),
+  };
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
 
@@ -215,6 +220,7 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
         open={dialog?.kind === "add"}
         skillName={skill.name}
         latest={latestVersion}
+        versionsLoad={versionsLoad}
         bots={others}
         pending={addPins.isPending}
         error={dialogError}
@@ -253,6 +259,7 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
         botName={dialogBot?.bot.name ?? ""}
         used={dialogBot?.pin.version ?? 0}
         versions={versions.data}
+        versionsLoad={versionsLoad}
         onClose={closeDialog}
         onPick={(version) => {
           if (dialog?.kind === "change") {
@@ -268,6 +275,7 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
         used={dialogBot?.pin.version ?? 0}
         target={dialog?.kind === "move" ? dialog.version : 0}
         versions={versions.data}
+        versionsLoad={versionsLoad}
         pending={setPin.isPending}
         error={dialogError}
         onClose={closeDialog}
