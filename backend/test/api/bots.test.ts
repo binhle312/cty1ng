@@ -74,6 +74,7 @@ describe("POST /bots", () => {
     [{ ...newBot, unknown: 1 }, 422, "unknown"],
     [{ ...newBot, model_id: "nobody:x" }, 422, "model_id"],
     [{ ...newBot, effort: "max" }, 422, "effort"],
+    [{ ...newBot, description: "first\nsecond" }, 422, "description"],
   ])("refuses %j with %d on %s", async (body, status, field) => {
     const { response } = await createBot(body);
     expect(response.status).toBe(status);
@@ -101,6 +102,21 @@ describe("/bots/{id}", () => {
     const now = await json(await send("GET", `/bots/${String(bot.id)}`));
     expect(now).toMatchObject({ model_id: "fake:effort", effort: "medium", row_version: 1 });
     expect(now.conversations).toEqual([]);
+  });
+
+  it("PATCH refuses a description with a line break and leaves the row unchanged", async () => {
+    const { bot } = await createBot();
+    const response = await send("PATCH", `/bots/${String(bot.id)}`, {
+      row_version: 1,
+      description: "first\r\nsecond",
+    });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toMatchObject({
+      code: "validation_error",
+      field: "description",
+    });
+    const now = await json(await send("GET", `/bots/${String(bot.id)}`));
+    expect(now).toMatchObject({ description: newBot.description, row_version: 1 });
   });
 
   it("PATCH saves, and a stale row_version gets 409", async () => {

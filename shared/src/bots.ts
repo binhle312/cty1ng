@@ -97,6 +97,9 @@ const EMPTY_FIELD: Record<BotTextField, string> = {
   persona_md: "Write a persona. The bot needs it to work.",
 };
 
+// CR, LF, NEL and the Unicode line and paragraph separators.
+const LINE_BREAK = /[\r\n\u0085\u2028\u2029]/;
+
 export function botFieldMax(field: BotTextField, limits: BotLimits): number {
   switch (field) {
     case "name":
@@ -121,6 +124,11 @@ export function botFieldProblem(
 ): string | null {
   const text = field === "name" ? normaliseBotName(value) : value;
   if (text.trim() === "") return EMPTY_FIELD[field];
+  // The description is one line: the team directory gives each bot one line (D18). Refused,
+  // not folded, so the owner sees what is wrong and the stored text is what they typed.
+  if (field === "description" && LINE_BREAK.test(text)) {
+    return "Write the description on one line.";
+  }
   const max = botFieldMax(field, limits);
   if (text.length <= max) return null;
   if (field === "persona_md") {

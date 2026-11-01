@@ -131,4 +131,15 @@ describe("botFieldProblem (create-bot-page.md §5)", () => {
       "Too long by 2 characters. Move long procedures into a skill.",
     );
   });
+
+  it("keeps the description on one line (domain-model.md §2, D18)", () => {
+    for (const lineBreak of ["\n", "\r", "\u0085", "\u2028", "\u2029"]) {
+      expect(botFieldProblem("description", `first${lineBreak}second`, limits)).toBe(
+        "Write the description on one line.",
+      );
+    }
+    expect(botFieldProblem("description", "Turns stories\tinto screens", limits)).toBeNull();
+    // The persona is Markdown: line breaks stay allowed.
+    expect(botFieldProblem("persona_md", "# Role\nYou are a BA.", limits)).toBeNull();
+  });
 });
