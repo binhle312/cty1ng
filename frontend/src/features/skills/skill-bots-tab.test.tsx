@@ -64,6 +64,12 @@ const click = (element: HTMLElement) => {
   });
 };
 
+const focus = (element: HTMLElement) => {
+  act(() => {
+    fireEvent.focus(element);
+  });
+};
+
 // skills-page.md §2a, UI-7.5a.
 describe("the Bots tab of a skill", () => {
   it("shows a row for each bot that uses the skill: latest, or the upgrade link", async () => {
@@ -105,8 +111,11 @@ describe("the Bots tab of a skill", () => {
     expect(within(list).queryByText("BA")).toBeNull();
     expect(within(list).queryByText("Designer")).toBeNull();
     expect(within(list).getByRole("checkbox").getAttribute("aria-checked")).toBe("false");
-    // Add is at 40% until a box is ticked.
-    expect(screen.getByRole("button", { name: "Add" }).getAttribute("aria-disabled")).toBe("true");
+    // Add is at 40% until a box is ticked, and its tooltip says why (ui-rules B5).
+    const add = within(screen.getByRole("dialog")).getByRole("button", { name: "Add" });
+    expect(add.getAttribute("aria-disabled")).toBe("true");
+    focus(add);
+    expect(await screen.findByText("Tick a bot first.")).toBeTruthy();
   });
 
   it("gives the added bots the latest version and Always load off", async () => {
@@ -191,9 +200,10 @@ describe("the Bots tab of a skill", () => {
       "The app could not load the versions.",
     );
     expect(within(upgrade).queryByText("Loading the versions.")).toBeNull();
-    expect(
-      within(upgrade).getByRole("button", { name: "Upgrade to v3" }).getAttribute("aria-disabled"),
-    ).toBe("true");
+    const confirm = within(upgrade).getByRole("button", { name: "Upgrade to v3" });
+    expect(confirm.getAttribute("aria-disabled")).toBe("true");
+    focus(confirm);
+    expect(await screen.findByText("The versions did not load. Try again first.")).toBeTruthy();
     click(within(upgrade).getByRole("button", { name: "Cancel" }));
     click(screen.getByRole("button", { name: "Add" }));
     const add = await screen.findByRole("dialog", { name: "Add Write user stories to bots" });
@@ -201,9 +211,10 @@ describe("the Bots tab of a skill", () => {
       "The app could not load the versions.",
     );
     click(within(add).getByRole("checkbox"));
-    expect(within(add).getByRole("button", { name: "Add 1" }).getAttribute("aria-disabled")).toBe(
-      "true",
-    );
+    const addOne = within(add).getByRole("button", { name: "Add 1" });
+    expect(addOne.getAttribute("aria-disabled")).toBe("true");
+    focus(addOne);
+    expect(await screen.findByText("The versions did not load. Try again first.")).toBeTruthy();
   });
 
   it("asks to create a bot first only when no bot exists", async () => {

@@ -508,6 +508,44 @@ test("an unticked bot keeps a deprecated skill until Remove from bots (M2a)", as
   await expect(page.getByRole("button", { name: "Remove from bots" })).toHaveCount(0);
   expect(await pinnedSkillIds(page, bot.name)).not.toContain(skillId);
 });
+
+test("a long diff scrolls inside the upgrade card, and Upgrade and Cancel stay in view (M2a)", async ({
+  page,
+}) => {
+  const skill = unique("Long diff");
+  const bot = unique("Long diff bot");
+  await createSkill(page, skill);
+  await createBotUsing(page, bot.name, skill.slug);
+  const steps = Array.from(
+    { length: 80 },
+    (_, index) => `Step ${String(index + 1)}: Read the source and check the result.`,
+  );
+  await saveBody(page, steps.join("\n"), 2);
+  await page.goto(`/skills/${skill.slug}?tab=bots`);
+
+  // A short window too: then the card itself scrolls, and its buttons stay at its bottom.
+  for (const height of [900, 560]) {
+    await page.setViewportSize({ width: 1440, height });
+    await page.getByRole("button", { name: "Upgrade to v2" }).click();
+    const upgrade = page.getByRole("dialog", { name: `Upgrade ${skill.name} to v2?` });
+    await expect(upgrade.locator('[data-op="add"]').last()).toBeAttached();
+    const box = await upgrade.boundingBox();
+    expect(box !== null && box.y >= 0 && box.y + box.height <= height).toBe(true);
+    await expect(upgrade.getByRole("button", { name: "Cancel" })).toBeInViewport();
+    await expect(upgrade.getByRole("button", { name: "Upgrade to v2" })).toBeInViewport();
+    if (height === 900) {
+      // The diff's scroll area is the open tab panel, which takes focus (axe: scrollable regions).
+      const axe = await new AxeBuilder({ page }).include('[role="dialog"]').analyze();
+      expect(axe.violations).toEqual([]);
+      await upgrade.getByRole("button", { name: "Cancel" }).click();
+      await expect(upgrade).toHaveCount(0);
+    } else {
+      await upgrade.getByRole("button", { name: "Upgrade to v2" }).click();
+    }
+  }
+  await expect(page.getByRole("row", { name: new RegExp(bot.name) })).toContainText("latest");
+});
+
 test("the Skills page has no axe violations", async ({ page }) => {
   const skill = unique("Axe");
   await createSkill(page, skill);

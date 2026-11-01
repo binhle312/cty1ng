@@ -418,7 +418,12 @@ the changes marked "owner, 2026-10-31".
   read-only controls, not disabled ones: they take focus, so the owner can select and copy the
   text from the keyboard (owner, 2026-10-31).
 - Why a button is off (`ui-rules.md` B5): "No changes to save.", "Fill in every field.", "Fix
-  the errors first.", "Tick a skill to export.", "Tick a row to apply."
+  the errors first.", "Tick a skill to export.", "Tick a row to apply." The bot cards (§2a):
+  "Tick a bot first.", "Loading the versions.", "The versions did not load. Try again first.",
+  "Adding the bots.", "Saving the change.", "v{n} no longer exists. Cancel and pick another
+  version."
+- A long diff in the upgrade card (SK3) scrolls inside the card, so Cancel and Upgrade stay in
+  view. A card taller than the window scrolls as a whole, with its buttons kept at its bottom.
 - Deprecate in M1 (no bots): "No bot uses it." in place of the bot list.
 - History: v1 with no changelog says "First version", a later version "No note". A skill with
   one version: "This skill has one version. Each save adds a version here." The latest version

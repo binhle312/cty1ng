@@ -11,6 +11,7 @@ import { cn } from "../../lib/cn.ts";
 import { formatTime } from "../../lib/time-format.ts";
 import { BotPickList } from "../bots/bot-list.tsx";
 import { LoadError } from "./load-error.tsx";
+import { SaveButton } from "./save-bar.tsx";
 import type { BotRow } from "../bots/bot-queries.ts";
 import { DiffView } from "./diff-view.tsx";
 import { VersionPill } from "./pills.tsx";
@@ -36,6 +37,10 @@ function VersionsFailed({ load }: { load: VersionsLoad }) {
     />
   ) : null;
 }
+
+// Why a confirm button that needs the versions is off (ui-rules B5).
+const versionsReason = (load: VersionsLoad) =>
+  load.failed ? "The versions did not load. Try again first." : "Loading the versions.";
 
 const noteOf = (version: VersionRow) =>
   version.changelog ?? (version.version === 1 ? "First version" : "No note");
@@ -105,7 +110,13 @@ function AddBody({
   // went to Trash). Only the ticked bots still in the list count and are sent.
   const chosen = bots.filter((bot) => ticked.has(bot.id)).map((bot) => bot.id);
   const n = chosen.length;
-  const off = pending || n === 0 || latest === undefined;
+  const off = pending
+    ? "Adding the bots."
+    : latest === undefined
+      ? versionsReason(versionsLoad)
+      : n === 0
+        ? "Tick a bot first."
+        : null;
   return (
     <>
       <DialogText>
@@ -135,15 +146,13 @@ function AddBody({
         <Button ref={skip} onClick={onClose}>
           Skip
         </Button>
-        <Button
-          kind="primary"
-          aria-disabled={off}
+        <SaveButton
+          label={n === 0 ? "Add" : `Add ${String(n)}`}
+          disabledReason={off}
           onClick={() => {
-            if (!off) onConfirm(chosen);
+            onConfirm(chosen);
           }}
-        >
-          {n === 0 ? "Add" : `Add ${String(n)}`}
-        </Button>
+        />
       </DialogButtons>
     </>
   );
@@ -184,7 +193,13 @@ export function MoveVersionDialog({
   const upgrade = target > used;
   const to = versions?.find((version) => version.version === target);
   const newer = (versions ?? []).filter((v) => v.version > used && v.version <= target);
-  const off = pending || to === undefined;
+  const off = pending
+    ? "Saving the change."
+    : versions === undefined
+      ? versionsReason(versionsLoad)
+      : to === undefined
+        ? `v${String(target)} no longer exists. Cancel and pick another version.`
+        : null;
   return (
     <Dialog
       open={open}
@@ -224,16 +239,14 @@ export function MoveVersionDialog({
       {error !== null && <p className="mt-3 text-sm text-danger">{error}</p>}
       <DialogButtons>
         <Button onClick={onClose}>Cancel</Button>
-        <Button
+        <SaveButton
           ref={confirm}
-          kind="primary"
-          aria-disabled={off}
+          label={upgrade ? `Upgrade to v${String(target)}` : `Use v${String(target)}`}
+          disabledReason={off}
           onClick={() => {
-            if (!off) onConfirm(to);
+            if (to !== undefined) onConfirm(to);
           }}
-        >
-          {upgrade ? `Upgrade to v${String(target)}` : `Use v${String(target)}`}
-        </Button>
+        />
       </DialogButtons>
     </Dialog>
   );
@@ -266,7 +279,8 @@ function Changes({ skillId, from, to }: { skillId: string; from: number; to: num
         <Tab value="body">Body</Tab>
         <Tab value="description">Description</Tab>
       </TabsList>
-      <TabsPanel value="body" className="mt-3">
+      {/* A long diff scrolls here, so the card's buttons stay in view. */}
+      <TabsPanel value="body" className="mt-3 max-h-80 overflow-y-auto">
         <DiffView lines={diff.data.body} label="Body changes" />
         {descriptionChanged && (
           <p className="mt-2 text-sm text-on-surface-muted">
@@ -274,7 +288,7 @@ function Changes({ skillId, from, to }: { skillId: string; from: number; to: num
           </p>
         )}
       </TabsPanel>
-      <TabsPanel value="description" className="mt-3">
+      <TabsPanel value="description" className="mt-3 max-h-80 overflow-y-auto">
         {diff.data.description === null ? (
           <p className="text-on-surface-muted">The description has no change.</p>
         ) : (

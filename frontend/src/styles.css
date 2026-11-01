@@ -57,6 +57,8 @@
   --spacing-list-column: 300px;
   --spacing-dialog: 440px;
   --spacing-dialog-wide: 480px;
+  /* A dialog is never taller than the window: 32px free above and below. */
+  --spacing-dialog-height: calc(100dvh - 64px);
 }
 
 @utility border-dashed-slot {

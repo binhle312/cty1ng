@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { Button } from "../../components/ui/button.tsx";
 import { Tooltip } from "../../components/ui/tooltip.tsx";
 
@@ -13,20 +13,23 @@ export function SaveBarFrame({ children }: { children: ReactNode }) {
 }
 
 // A button that is off says why in a tooltip (ui-rules B5). It stays focusable, so the
-// tooltip also shows on keyboard focus.
+// tooltip also shows on keyboard focus. The pin cards use it too (skill-pin-dialogs.tsx).
 export function SaveButton({
   label,
   disabledReason,
   onClick,
   kind = "primary",
+  ref,
 }: {
   label: string;
   disabledReason: string | null;
   onClick: () => void;
   kind?: "primary" | "secondary";
+  ref?: Ref<HTMLButtonElement>;
 }) {
   const button = (
     <Button
+      ref={ref}
       kind={kind}
       aria-disabled={disabledReason !== null}
       onClick={() => {

@@ -20,8 +20,10 @@ interface DialogProps {
 }
 
 const BACKDROP = "fixed inset-0 z-40 bg-surface/70";
+// A dialog taller than the window scrolls inside, and its buttons stay at the bottom
+// (DialogButtons is sticky), so no action is ever out of reach.
 const POPUP =
-  "fixed top-1/2 left-1/2 z-50 w-dialog -translate-x-1/2 -translate-y-1/2 rounded-card border border-outline-strong bg-surface-raised p-5 text-on-surface shadow-2xl outline-none";
+  "fixed top-1/2 left-1/2 z-50 max-h-dialog-height w-dialog -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-card border border-outline-strong bg-surface-raised p-5 text-on-surface shadow-2xl outline-none";
 const TITLE = "text-lg font-semibold";
 
 export function Dialog({
@@ -66,7 +68,12 @@ export function DialogText({ children }: { children: ReactNode }) {
   return <p className="mt-2 text-on-surface-muted">{children}</p>;
 }
 
-// The buttons at the bottom right, the primary or danger fill button last (buttons.md §3).
+// The buttons at the bottom right, the primary or danger fill button last (buttons.md §3). They
+// stick to the bottom of a dialog that scrolls; the gaps above and below stay 20px.
 export function DialogButtons({ children }: { children: ReactNode }) {
-  return <div className="mt-5 flex justify-end gap-2">{children}</div>;
+  return (
+    <div className="sticky bottom-0 -mx-5 mt-2 -mb-5 flex justify-end gap-2 bg-surface-raised px-5 pt-3 pb-5">
+      {children}
+    </div>
+  );
 }
