@@ -417,19 +417,25 @@ export function createSkillsService(deps: SkillsDeps) {
         const skill = await liveSkill(tx.skills, id);
         assertAuthor(skill, actor);
         if (skill.rowVersion !== input.rowVersion) throw stale();
-        if (skill.deprecatedAt !== null) return toShape(tx, skill, actor);
         // Every listed bot must use the skill now: a bot that the dialog showed but that no
         // longer has the pin means the page is stale.
         const pinned = new Set((await livePins(tx.bots, id)).map((pin) => pin.botId));
         for (const botId of input.removeBotIds) {
           if (!pinned.has(botId)) throw noSuchBots("remove_bot_ids");
         }
-        const now = clock.now();
-        await tx.skills.updateSkill(id, { deprecatedAt: now, updatedAt: now }, input.rowVersion);
         for (const botId of input.removeBotIds) await tx.bots.deletePin(botId, id);
-        const deprecated = await emitSkill(tx, "skill.deprecated", id, actor);
+        // A skill that is already deprecated stays as it is, but the listed pins still go
+        // (api.md §2): a repeat from a second tab must not answer 200 and keep them.
+        let result: Skill;
+        if (skill.deprecatedAt === null) {
+          const now = clock.now();
+          await tx.skills.updateSkill(id, { deprecatedAt: now, updatedAt: now }, input.rowVersion);
+          result = await emitSkill(tx, "skill.deprecated", id, actor);
+        } else {
+          result = await toShape(tx, skill, actor);
+        }
         await deps.pinsChanged(tx, input.removeBotIds);
-        return deprecated;
+        return result;
       }),
 
     undeprecate: (id: SkillId, input: { rowVersion: number }, actor: string) =>
@@ -489,11 +495,9 @@ export function createSkillsService(deps: SkillsDeps) {
           const bot = await tx.bots.byId(parsed.data);
           if (bot !== null && bot.deletedAt === null) suggestedBotIds.push(bot.id);
         }
-        await tx.skills.updateSkill(id, {
-          trashedAt: null,
-          trashedBotIds: null,
-          updatedAt: clock.now(),
-        });
+        // `trashed_bot_ids` stays until the next delete: the M5b restore rule reads it after
+        // the restore (domain-model.md §3.4).
+        await tx.skills.updateSkill(id, { trashedAt: null, updatedAt: clock.now() });
         const restored = await emitSkill(tx, "skill.restored", id, actor);
         await emitTrashCount(tx);
         return { skill: restored, suggested_bot_ids: suggestedBotIds };

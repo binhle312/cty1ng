@@ -224,4 +224,68 @@ describe("pins", () => {
     const candidates = await send("GET", `/skills/${skill.id}/upgrade-candidates`);
     expect(await candidates.json()).toEqual([]);
   });
+
+  it("GET /skills/{id}/upgrade-candidates lists a live bot on an older version", async () => {
+    const { skill, bot, v1 } = await skillWithBot();
+    const path = `/bots/${String(bot.id)}/skills/${skill.id}`;
+    await send("PUT", path, { skill_version_id: v1, always_load: true, expected: null });
+    await backend.skills.addVersion(
+      skill.id,
+      { baseVersion: 1, description: "Use it.", bodyMd: "## Steps v2" },
+      OWNER_ID,
+    );
+    const candidates = await send("GET", `/skills/${skill.id}/upgrade-candidates`);
+    expect(candidates.status).toBe(200);
+    expect(await candidates.json()).toEqual([
+      { bot_id: bot.id, skill_version_id: v1, version: 1, always_load: true },
+    ]);
+  });
+
+  it("POST /skills/{id}/bots refuses restore_suggestion in M2 and a bot in Trash", async () => {
+    const { skill, bot, v1 } = await skillWithBot();
+    const suggestion = await send("POST", `/skills/${skill.id}/bots`, {
+      skill_version_id: v1,
+      bots: [{ bot_id: bot.id, expected_skill_version_id: null }],
+      restore_suggestion: true,
+    });
+    expect(suggestion.status).toBe(422);
+    expect(await errorOf(suggestion)).toMatchObject({
+      code: "validation_error",
+      field: "restore_suggestion",
+    });
+    expect((await send("DELETE", `/bots/${String(bot.id)}`)).status).toBe(200);
+    const trashed = await send("POST", `/skills/${skill.id}/bots`, {
+      skill_version_id: v1,
+      bots: [{ bot_id: bot.id, expected_skill_version_id: null }],
+    });
+    expect(trashed.status).toBe(409);
+    expect(await errorOf(trashed)).toMatchObject({ code: "place_in_trash" });
+  });
+
+  it("POST /skills/{id}/deprecate removes the listed pins; a bot without the pin gets 422", async () => {
+    const { skill, bot, v1 } = await skillWithBot();
+    const path = `/bots/${String(bot.id)}/skills/${skill.id}`;
+    await send("PUT", path, { skill_version_id: v1, always_load: false, expected: null });
+    const { bot: other } = await createBot(
+      { ...newBot, name: "Other" },
+      "0190a000-0000-7000-8000-000000000002",
+    );
+    const { row_version } = await backend.skills.summary(skill.id, OWNER_ID);
+    const stale = await send("POST", `/skills/${skill.id}/deprecate`, {
+      remove_bot_ids: [other.id],
+      row_version,
+    });
+    expect(stale.status).toBe(422);
+    expect(await errorOf(stale)).toMatchObject({
+      code: "validation_error",
+      field: "remove_bot_ids",
+    });
+    const deprecated = await send("POST", `/skills/${skill.id}/deprecate`, {
+      remove_bot_ids: [bot.id],
+      row_version,
+    });
+    expect(deprecated.status).toBe(200);
+    expect(await deprecated.json()).toMatchObject({ deprecated: true, bots_using: 0 });
+    expect(await json(await send("GET", `/bots/${String(bot.id)}`))).toMatchObject({ pins: [] });
+  });
 });

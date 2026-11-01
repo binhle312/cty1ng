@@ -1,7 +1,7 @@
 import type { CreateBotBody } from "@cty1ng/shared/bots";
 import { BotId, SkillId } from "@cty1ng/shared/ids";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { manualClock, newTestId, testBackend } from "../../../test/helpers.ts";
+import { backendAt, manualClock, newTestId, tempDir, testBackend } from "../../../test/helpers.ts";
 import { DomainError } from "../errors.ts";
 import { OWNER_ID } from "../owner.ts";
 
@@ -341,6 +341,48 @@ describe("update (PATCH /bots/{id})", () => {
       code: "name_taken",
     });
   });
+
+  // M2 brief: a lower limit leaves a saved value as it is; only the fields sent are checked.
+  it("a lowered bot_persona_max and bot_history_max_pct keep the saved values; a rename saves", async () => {
+    const persona = "Write clear user stories. ".repeat(60);
+    const bot = await create({ persona_md: persona, history_share_pct: 80 });
+    const id = BotId.parse(bot.id);
+    await backend.settings.update({ bot_persona_max: 1_000, bot_history_max_pct: 60 });
+    const renamed = await backend.bots.update(id, { row_version: 1, name: "Analyst" });
+    expect(renamed).toMatchObject({ name: "Analyst", persona_md: persona, history_share_pct: 80 });
+    expect(
+      await failure(backend.bots.update(id, { row_version: 2, persona_md: persona })),
+    ).toMatchObject({ code: "validation_error", field: "persona_md" });
+    expect(
+      await failure(backend.bots.update(id, { row_version: 2, history_share_pct: 80 })),
+    ).toMatchObject({ code: "validation_error", field: "history_share_pct" });
+  });
+
+  it("refuses tool_settings when the bot's model left the catalog, and keeps the saved switches", async () => {
+    const dir = tempDir("model-gone");
+    try {
+      const first = backendAt(dir.path, { FAKE_MODEL: "1" });
+      const bot = (
+        await first.bots.create(body({ tool_settings: { memory: false } }), key(), OWNER_ID)
+      ).bot;
+      first.close();
+      // The same data folder without FAKE_MODEL: the fake model is gone from the catalog.
+      const later = backendAt(dir.path);
+      try {
+        const id = BotId.parse(bot.id);
+        expect(
+          await failure(later.bots.update(id, { row_version: 1, tool_settings: { files: false } })),
+        ).toMatchObject({ code: "model_not_available", field: "tool_settings" });
+        expect((await later.readers.bots.byId(id))?.toolSettings).toEqual(bot.tool_settings);
+        const saved = await later.bots.update(id, { row_version: 1, description: "Still saves." });
+        expect(saved.row_version).toBe(2);
+      } finally {
+        later.close();
+      }
+    } finally {
+      dir.remove();
+    }
+  });
 });
 
 describe("pinned order, Trash and restore", () => {
@@ -562,6 +604,56 @@ describe("skills that touch pins (api.md §2)", () => {
     expect((await backend.bots.get(bId)).pins).toEqual([]);
     const restored = await backend.skills.restore(notes, OWNER_ID);
     expect(restored.suggested_bot_ids).toEqual([bId]);
+    // domain-model.md §3.4: restore keeps trashed_bot_ids until the next delete (M5b reads it).
+    const row = await backend.readers.skills.byId(notes);
+    expect(new Set(row?.trashedBotIds)).toEqual(new Set([bId, cId]));
+  });
+
+  it("deprecate and Trash emit bot.updated for each bot whose pin went", async () => {
+    const notes = await skill("notes");
+    const a = await create({ name: "A", pins: [{ skill_id: notes, always_load: false }] });
+    const b = await create({ name: "B", pins: [{ skill_id: notes, always_load: false }] });
+    const before = (await events()).length;
+    let summary = await backend.skills.summary(notes, OWNER_ID);
+    await backend.skills.deprecate(
+      notes,
+      { removeBotIds: [BotId.parse(a.id)], rowVersion: summary.row_version },
+      OWNER_ID,
+    );
+    const afterDeprecate = (await events()).slice(before);
+    expect(afterDeprecate.map(([type]) => type)).toEqual(["skill.deprecated", "bot.updated"]);
+    expect(afterDeprecate[1]?.[1]).toMatchObject({ bot: { id: a.id, pins: [] } });
+    summary = await backend.skills.summary(notes, OWNER_ID);
+    await backend.skills.trash(notes, { rowVersion: summary.row_version }, OWNER_ID);
+    const afterTrash = (await events()).slice(before + afterDeprecate.length);
+    expect(afterTrash.map(([type]) => type)).toEqual([
+      "skill.trashed",
+      "trash.changed",
+      "bot.updated",
+    ]);
+    expect(afterTrash[2]?.[1]).toMatchObject({ bot: { id: b.id, pins: [] } });
+  });
+
+  it("deprecate of a skill that is already deprecated still removes the listed pins", async () => {
+    const notes = await skill("notes");
+    const a = await create({ name: "A", pins: [{ skill_id: notes, always_load: false }] });
+    const aId = BotId.parse(a.id);
+    let summary = await backend.skills.summary(notes, OWNER_ID);
+    await backend.skills.deprecate(
+      notes,
+      { removeBotIds: [], rowVersion: summary.row_version },
+      OWNER_ID,
+    );
+    summary = await backend.skills.summary(notes, OWNER_ID);
+    const before = (await events()).length;
+    const again = await backend.skills.deprecate(
+      notes,
+      { removeBotIds: [aId], rowVersion: summary.row_version },
+      OWNER_ID,
+    );
+    expect(again).toMatchObject({ deprecated: true, bots_using: 0 });
+    expect((await backend.bots.get(aId)).pins).toEqual([]);
+    expect((await events()).slice(before).map(([type]) => type)).toEqual(["bot.updated"]);
   });
 });
 
