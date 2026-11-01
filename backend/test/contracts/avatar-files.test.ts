@@ -1,4 +1,4 @@
-import { fsyncSync, readdirSync, utimesSync, writeSync } from "node:fs";
+import { fsyncSync, readdirSync, renameSync, rmSync, utimesSync, writeSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { diskAvatarFiles, type DiskCalls } from "../../src/adapters/avatars/avatar-files.ts";
@@ -116,6 +116,55 @@ describe("disk failures", () => {
     await expect(disk.files.publish(staged, T1)).rejects.toThrow("injected");
     expect(await disk.files.exists(A)).toBe(false);
     expect((await disk.files.listStaged()).map((file) => file.name)).toEqual([staged.token]);
+    disk.remove();
+  });
+
+  // The folder sync fails, then the move back fails too.
+  function failingRollback(removeFails: boolean) {
+    let fail = false;
+    const disk = diskWith({
+      fsyncSync: (fd) => {
+        if (fail) failing();
+        fsyncSync(fd);
+      },
+      renameSync: (from, to) => {
+        // The publish's rename works; the move back is the one that fails.
+        if (fail && from.endsWith(`${A}.webp`)) failing();
+        renameSync(from, to);
+      },
+      rmSync: (path, options) => {
+        if (fail && removeFails) failing();
+        rmSync(path, options);
+      },
+    });
+    return {
+      disk,
+      arm: () => {
+        fail = true;
+      },
+    };
+  }
+
+  it("a publish whose folder sync and move back both fail removes the published file", async () => {
+    const { disk, arm } = failingRollback(false);
+    const staged = await disk.files.stage(A, image);
+    arm();
+    await expect(disk.files.publish(staged, T1)).rejects.toThrow("injected");
+    expect(await disk.files.exists(A)).toBe(false);
+    expect(readdirSync(disk.folder)).toEqual([]);
+    disk.remove();
+  });
+
+  it("when the disk refuses every step, the file left is complete and only the cleanup's", async () => {
+    // The one case where a failed publish leaves `<id>.webp` (domain-model.md §2 Avatar files):
+    // the rename is atomic, so the file is whole, and no row names it.
+    const { disk, arm } = failingRollback(true);
+    const staged = await disk.files.stage(A, image);
+    arm();
+    await expect(disk.files.publish(staged, T1)).rejects.toThrow("injected");
+    expect(await disk.files.read(A)).toEqual(image);
+    expect(await disk.files.listStaged()).toEqual([]);
+    expect(await disk.files.modifiedAt(A)).toEqual(T1);
     disk.remove();
   });
 });

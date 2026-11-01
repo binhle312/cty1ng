@@ -501,7 +501,11 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
   older than `AVATAR_ORPHAN_HOURS` in the write lock too, so it never removes one between a
   publish's check and its move. That a staged copy this old is abandoned is an **assumption**:
   nothing limits how long an upload takes between staging and publishing. An upload slower than
-  the grace period finds its staged copy gone, gets 500, leaves no file, and is sent again. A bot save that names an
+  the grace period finds its staged copy gone, gets 500, leaves no file, and is sent again. A
+  publish that fails leaves no `<id>.webp`: a failed folder sync moves the file back, and when
+  that move fails too, the file is removed. Only when the disk also refuses the removal does the
+  file stay; it is complete (the rename is atomic), no row names it, and the cleanup removes it
+  after the grace period. A bot save that names an
   `avatar_id` checks, inside its transaction, that the file exists: else 422
   `validation_error` with `field: "avatar_id"` ("Upload the image again."). Limits:
   `security.md` §2.4.

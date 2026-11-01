@@ -42,9 +42,10 @@ export interface DiskCalls {
   fsyncSync(fd: number): void;
   utimesSync(path: string, atime: Date, mtime: Date): void;
   renameSync(from: string, to: string): void;
+  rmSync(path: string, options: { force: boolean }): void;
 }
 
-const NODE_CALLS: DiskCalls = { writeSync, fsyncSync, utimesSync, renameSync };
+const NODE_CALLS: DiskCalls = { writeSync, fsyncSync, utimesSync, renameSync, rmSync };
 
 export function diskAvatarFiles(folder: string, calls: Partial<DiskCalls> = {}): AvatarFiles {
   const fs: DiskCalls = { ...NODE_CALLS, ...calls };
@@ -96,7 +97,7 @@ export function diskAvatarFiles(folder: string, calls: Partial<DiskCalls> = {}):
           fs.fsyncSync(fd);
         } catch (error) {
           closeSync(fd);
-          rmSync(path, { force: true });
+          fs.rmSync(path, { force: true });
           throw error;
         }
         closeSync(fd);
@@ -110,13 +111,14 @@ export function diskAvatarFiles(folder: string, calls: Partial<DiskCalls> = {}):
           // The same image is already published: a fresh time, and the staged copy goes. The
           // folder sync makes the removal durable (M2 plan §4a, `publish`).
           fs.utimesSync(target, now, now);
-          rmSync(source, { force: true });
+          fs.rmSync(source, { force: true });
           syncFolder();
           return;
         }
-        // A failed publish leaves the staged file and no `<id>.webp` (M2 plan §4a, Failures):
-        // the time is set before the rename (a rename keeps it), and a failed folder sync moves
-        // the file back.
+        // A failed publish leaves no `<id>.webp` (M2 plan §4a, Failures): the time is set
+        // before the rename (a rename keeps it), and a failed folder sync moves the file back.
+        // When that move fails too, the final file is removed; the request fails anyway, so the
+        // staged copy is not needed. The lock makes `<id>.webp` ours: the check above found none.
         fs.utimesSync(source, now, now);
         fs.renameSync(source, target);
         try {
@@ -126,8 +128,13 @@ export function diskAvatarFiles(folder: string, calls: Partial<DiskCalls> = {}):
           try {
             fs.renameSync(target, source);
           } catch {
-            // The final file stays: complete, and named by no row, so the cleanup removes it
-            // after the grace period.
+            try {
+              fs.rmSync(target, { force: true });
+            } catch {
+              // Only when the disk refuses all three steps does the final file stay. It is
+              // complete (the rename is atomic) and no row names it, so the cleanup removes it
+              // after the grace period (domain-model.md §2 Avatar files).
+            }
           }
           throw error;
         }
@@ -135,7 +142,7 @@ export function diskAvatarFiles(folder: string, calls: Partial<DiskCalls> = {}):
     discard: (staged) =>
       attempt(() => {
         try {
-          rmSync(stagedPath(staged.token), { force: true });
+          fs.rmSync(stagedPath(staged.token), { force: true });
         } catch {
           // The cleanup removes it later.
         }
@@ -151,11 +158,11 @@ export function diskAvatarFiles(folder: string, calls: Partial<DiskCalls> = {}):
     modifiedAt: (avatarId) => attempt(() => timeOf(finalPath(avatarId))),
     remove: (avatarId) =>
       attempt(() => {
-        rmSync(finalPath(avatarId), { force: true });
+        fs.rmSync(finalPath(avatarId), { force: true });
       }),
     removeStaged: (token) =>
       attempt(() => {
-        rmSync(stagedPath(token), { force: true });
+        fs.rmSync(stagedPath(token), { force: true });
       }),
     read: (avatarId) =>
       attempt(() => {
