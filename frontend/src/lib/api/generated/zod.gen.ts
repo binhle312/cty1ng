@@ -97,7 +97,7 @@ export const zListModelsResponse = z.array(z.object({
     label: z.string(),
     provider: z.string(),
     available: z.boolean(),
-    unavailable_reason: z.enum(['no_api_key']),
+    unavailable_reason: z.enum(['no_api_key']).nullable(),
     api_key_env: z.string().nullable(),
     efforts: z.array(z.enum([
         'minimal',
