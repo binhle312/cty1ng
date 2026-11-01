@@ -18,18 +18,8 @@ export interface BotProblem {
   message: string;
 }
 
-// The limits and the D39 guard on one text field. The name is checked as it is stored.
-export function botTextProblem(
-  field: BotTextField,
-  value: string,
-  settings: Settings,
-): BotProblem | null {
-  const message = botFieldProblem(field, value, {
-    nameMax: settings.bot_name_max,
-    descriptionMax: settings.bot_description_max,
-    personaMax: settings.bot_persona_max,
-  });
-  if (message !== null) return { code: "validation_error", field, message };
+// The D39 guard on one text field (security.md §2.13). The name is checked as it is stored.
+export function botGuardProblem(field: BotTextField, value: string): BotProblem | null {
   const [match] = findSensitive(value);
   if (match === undefined) return null;
   const where =
@@ -39,6 +29,29 @@ export function botTextProblem(
     field,
     message: `${where} looks like ${sensitiveLabel(match.kind)}. The app does not save secrets in bots. Remove it.`,
   };
+}
+
+// The size and format limits of one text field (domain-model.md §10).
+export function botLimitProblem(
+  field: BotTextField,
+  value: string,
+  settings: Settings,
+): BotProblem | null {
+  const message = botFieldProblem(field, value, {
+    nameMax: settings.bot_name_max,
+    descriptionMax: settings.bot_description_max,
+    personaMax: settings.bot_persona_max,
+  });
+  return message === null ? null : { code: "validation_error", field, message };
+}
+
+// Both checks on one text field, the guard first, as in the create order (M2 plan §4).
+export function botTextProblem(
+  field: BotTextField,
+  value: string,
+  settings: Settings,
+): BotProblem | null {
+  return botGuardProblem(field, value) ?? botLimitProblem(field, value, settings);
 }
 
 // The effort of a new bot: the one sent, else the model's default. A model with no efforts takes

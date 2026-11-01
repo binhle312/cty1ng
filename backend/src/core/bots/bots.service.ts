@@ -12,6 +12,7 @@ import {
   type Bot,
   type BotDetail,
   type BotPin,
+  type BotTextField,
   type CloneTemplate,
   type CreateBotBody,
   type PatchBotBody,
@@ -38,7 +39,9 @@ import type {
 import { readSettings } from "../settings/settings.service.ts";
 import {
   advancedProblem,
+  botGuardProblem,
   botHealth,
+  botLimitProblem,
   botTextProblem,
   orderBots,
   resolveEffort,
@@ -303,12 +306,9 @@ export function createBotsService(deps: BotsDeps) {
         }
         return { bot: await shapeOf(tx.bots, earlier), created: false };
       }
-      const settings = await readSettings(tx.settings);
-      const name = normaliseBotName(body.name);
-      fail(botTextProblem("name", name, settings));
-      fail(botTextProblem("description", body.description, settings));
-      fail(botTextProblem("persona_md", body.persona_md, settings));
-      const avatarPath = await avatarFor(body.avatar_style, body.avatar_id, null);
+      // The checks in the order of the M2 plan §4, so an invalid body always reports the same
+      // first error: catalog and key → effort → skills and the clone rule → tool settings →
+      // guard → limits; then the avatar file, the name key and the slug.
       const availability = modelAvailability(catalog, body.model_id);
       const model = catalog.model(body.model_id);
       if (model === undefined || !availability.available) {
@@ -322,14 +322,6 @@ export function createBotsService(deps: BotsDeps) {
       }
       const effort = resolveEffort(model, body.effort);
       if ("code" in effort) fail(effort);
-      const values = {
-        history_share_pct: body.history_share_pct ?? settings.bot_default_history_pct,
-        request_limit: body.request_limit ?? settings.bot_default_request_limit,
-        max_reply_chars: body.max_reply_chars ?? settings.bot_default_max_reply_chars,
-      };
-      for (const field of ADVANCED) fail(advancedProblem(field, values[field], settings));
-      const toolBody = body.tool_settings ?? {};
-      fail(toolSettingsProblem(toolBody, {}, catalog.tools, model));
       if (body.cloned_from_bot_id !== undefined) {
         if ((await tx.bots.byId(body.cloned_from_bot_id)) === null) {
           throw new DomainError(
@@ -340,6 +332,24 @@ export function createBotsService(deps: BotsDeps) {
         }
       }
       const pins = await pinsFor(tx, body);
+      const toolBody = body.tool_settings ?? {};
+      fail(toolSettingsProblem(toolBody, {}, catalog.tools, model));
+      const name = normaliseBotName(body.name);
+      const texts: [BotTextField, string][] = [
+        ["name", name],
+        ["description", body.description],
+        ["persona_md", body.persona_md],
+      ];
+      for (const [field, value] of texts) fail(botGuardProblem(field, value));
+      const settings = await readSettings(tx.settings);
+      for (const [field, value] of texts) fail(botLimitProblem(field, value, settings));
+      const values = {
+        history_share_pct: body.history_share_pct ?? settings.bot_default_history_pct,
+        request_limit: body.request_limit ?? settings.bot_default_request_limit,
+        max_reply_chars: body.max_reply_chars ?? settings.bot_default_max_reply_chars,
+      };
+      for (const field of ADVANCED) fail(advancedProblem(field, values[field], settings));
+      const avatarPath = await avatarFor(body.avatar_style, body.avatar_id, null);
       const nameKey = botNameKey(name);
       await assertNameFree(tx, nameKey, null);
       const now = clock.now();
@@ -501,9 +511,17 @@ export function createBotsService(deps: BotsDeps) {
     });
   }
 
-  // GET /bots/{id}/clone-template (domain-model.md §2 Clone).
+  // GET /bots/{id}/clone-template (domain-model.md §2 Clone). A bot in Trash or purged has no
+  // clone template: both get 422 `bot_deleted`, not the 410 that `liveBot` gives a purged bot.
   async function cloneTemplate(id: BotId): Promise<CloneTemplate> {
-    const bot = await liveBot(readers.bots, id);
+    const bot = await readers.bots.byId(id);
+    if (bot === null) throw new DomainError("not_found", "No such bot.");
+    if (bot.deletedAt !== null || bot.purgedAt !== null) {
+      throw new DomainError(
+        "bot_deleted",
+        "This bot is in Trash or deleted, so it cannot be cloned.",
+      );
+    }
     const settings = await readSettings(readers.settings);
     let n = 1;
     let name = cloneNameCandidate(bot.name, n, settings.bot_name_max);

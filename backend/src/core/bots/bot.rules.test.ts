@@ -12,7 +12,7 @@ const S = SETTING_DEFAULTS;
 const day = (n: number) => new Date(Date.UTC(2026, 10, n));
 
 describe("botTextProblem", () => {
-  it("checks the limit, then the guard", () => {
+  it("checks the guard, then the limit (M2 plan §4)", () => {
     expect(botTextProblem("name", "BA", S)).toBeNull();
     expect(botTextProblem("description", "x".repeat(161), S)).toMatchObject({
       code: "validation_error",
@@ -20,7 +20,11 @@ describe("botTextProblem", () => {
     });
     expect(
       botTextProblem("persona_md", "You are nice.\nkey sk-ant-api03-" + "a".repeat(90), S),
-    ).toMatchObject({ code: "sensitive_data", field: "persona_md" });
+    ).toMatchObject({ code: "sensitive_data", field: "persona_md", message: /^Line 2 / });
+    // A secret in a text that is also too long: the guard speaks first.
+    expect(
+      botTextProblem("description", `sk-ant-api03-${"a".repeat(90)} ${"x".repeat(160)}`, S),
+    ).toMatchObject({ code: "sensitive_data", field: "description" });
   });
 });
 

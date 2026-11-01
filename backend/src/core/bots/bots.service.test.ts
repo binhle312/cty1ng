@@ -172,6 +172,48 @@ describe("create (POST /bots)", () => {
     expect(await events()).toEqual([]);
   });
 
+  it("reports the first error in the order of the M2 plan §4", async () => {
+    await create({ name: "Taken" });
+    const old = await skill("old");
+    const summary = await backend.skills.summary(old, OWNER_ID);
+    await backend.skills.deprecate(
+      old,
+      { removeBotIds: [], rowVersion: summary.row_version },
+      OWNER_ID,
+    );
+    // One body with a fault at every step. Each step fixes one fault, and the next one shows.
+    let sent = body({
+      name: "taken",
+      description: "x".repeat(161),
+      persona_md: `Use key sk-ant-api03-${"a".repeat(90)}`,
+      avatar_style: "upload",
+      avatar_id: "a".repeat(64),
+      model_id: "nobody:model",
+      effort: "max",
+      request_limit: 0,
+      tool_settings: { web_search: true },
+      pins: [{ skill_id: old, always_load: false }],
+    });
+    const steps: [Partial<CreateBotBody>, { code: string; field: string }][] = [
+      [{}, { code: "model_not_available", field: "model_id" }],
+      [{ model_id: "fake:scripted" }, { code: "effort_not_supported", field: "effort" }],
+      [{ effort: undefined }, { code: "skill_deprecated", field: "pins[0]" }],
+      [{ pins: [] }, { code: "tool_not_available", field: "tool_settings.web_search" }],
+      [{ tool_settings: {} }, { code: "sensitive_data", field: "persona_md" }],
+      [{ persona_md: "You are nice." }, { code: "validation_error", field: "description" }],
+      [{ description: "Writes stories." }, { code: "validation_error", field: "request_limit" }],
+      [{ request_limit: 30 }, { code: "validation_error", field: "avatar_id" }],
+      [{ avatar_style: "flat" }, { code: "name_taken", field: "name" }],
+    ];
+    for (const [fix, expected] of steps) {
+      sent = { ...sent, ...fix };
+      expect(await failure(backend.bots.create(sent, key(), OWNER_ID))).toMatchObject(expected);
+    }
+    expect((await backend.bots.create({ ...sent, name: "Free" }, key(), OWNER_ID)).created).toBe(
+      true,
+    );
+  });
+
   it("pins the latest version by default, and refuses a skill in Trash or deprecated", async () => {
     const notes = await skill("notes");
     const bot = await create({ pins: [{ skill_id: notes, always_load: true }] });
@@ -530,6 +572,8 @@ describe("purge (D50)", () => {
     const id = BotId.parse(bot.id);
     await backend.bots.setPinned([id], []);
     await backend.bots.trash(id);
+    // domain-model.md §2 Clone: a bot in Trash or purged has no clone template.
+    expect(await failure(backend.bots.cloneTemplate(id))).toMatchObject({ code: "bot_deleted" });
     clock.advance(29 * DAY);
     expect(await backend.bots.purgeDue()).toBe(0);
     clock.advance(DAY);
@@ -548,6 +592,7 @@ describe("purge (D50)", () => {
     expect(row?.purgedAt).not.toBeNull();
     expect(await backend.readers.bots.pins(id)).toEqual([]);
     expect(await failure(backend.bots.get(id))).toMatchObject({ code: "bot_purged" });
+    expect(await failure(backend.bots.cloneTemplate(id))).toMatchObject({ code: "bot_deleted" });
     expect((await create({ name: "ba" })).slug).toBe("ba-2");
     const last = (await events()).filter(([type]) => type === "bot.purged");
     expect(last).toEqual([["bot.purged", { bot_id: id }]]);

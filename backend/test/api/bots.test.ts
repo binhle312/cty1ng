@@ -143,6 +143,11 @@ describe("/bots/{id}", () => {
     const template = await json(await send("GET", `/bots/${String(bot.id)}/clone-template`));
     expect(template).toMatchObject({ name: "BA (copy)", cloned_from_bot_id: bot.id });
     expect(template).not.toHaveProperty("avatar_colour");
+    // A bot in Trash has no clone template (domain-model.md §2 Clone).
+    await send("DELETE", `/bots/${String(bot.id)}`);
+    const trashed = await send("GET", `/bots/${String(bot.id)}/clone-template`);
+    expect(trashed.status).toBe(422);
+    expect(await errorOf(trashed)).toMatchObject({ code: "bot_deleted" });
   });
 });
 
