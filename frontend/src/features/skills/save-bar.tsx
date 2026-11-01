@@ -24,7 +24,7 @@ export function SaveButton({
   label: string;
   disabledReason: string | null;
   onClick: () => void;
-  kind?: "primary" | "secondary";
+  kind?: "primary" | "secondary" | "danger" | "danger-fill";
   ref?: Ref<HTMLButtonElement>;
 }) {
   const button = (

@@ -1,5 +1,8 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render as renderBare, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import type { ReactElement } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "../../components/ui/tooltip.tsx";
 import { makeBot, makePin, typeId } from "../../../test/fixtures.ts";
 import { DeleteDialog, DeprecateDialog, RemoveFromBotsDialog } from "./skill-dialogs.tsx";
 import type { BotUses } from "./skill-bot-uses.ts";
@@ -16,6 +19,17 @@ const ready = (...bots: (typeof ba)[]): BotUses => ({
 });
 
 const base = { open: true, skillName: "Write user stories", pending: false, error: null };
+
+const render = (ui: ReactElement) => renderBare(<TooltipProvider>{ui}</TooltipProvider>);
+
+// ui-rules B5: an off button says why. The owner reaches it with Tab, so the test does too.
+async function tabToReason(button: HTMLElement, reason: string) {
+  const user = userEvent.setup();
+  for (let step = 0; step < 10 && document.activeElement !== button; step += 1) await user.tab();
+  expect(document.activeElement).toBe(button);
+  expect(button.getAttribute("aria-disabled")).toBe("true");
+  expect(await screen.findByText(reason)).toBeTruthy();
+}
 
 const click = (element: HTMLElement) => {
   act(() => {
@@ -67,7 +81,7 @@ describe("the Deprecate dialog", () => {
     expect(onConfirm).toHaveBeenCalledWith([]);
   });
 
-  it("does not deprecate while the bots are not known", () => {
+  it("does not deprecate while the bots are not known", async () => {
     const onConfirm = vi.fn();
     render(
       <DeprecateDialog
@@ -78,11 +92,13 @@ describe("the Deprecate dialog", () => {
       />,
     );
     expect(screen.queryByText("No bot uses it.")).toBeNull();
-    click(screen.getByRole("button", { name: "Deprecate" }));
+    const button = screen.getByRole("button", { name: "Deprecate" });
+    click(button);
     expect(onConfirm).not.toHaveBeenCalled();
+    await tabToReason(button, "Loading the bots that use it.");
   });
 
-  it("says when the bots did not load", () => {
+  it("says when the bots did not load", async () => {
     render(
       <DeprecateDialog
         {...base}
@@ -92,6 +108,20 @@ describe("the Deprecate dialog", () => {
       />,
     );
     expect(screen.getByRole("alert").textContent).toContain("The app could not load the bots.");
+    await tabToReason(
+      screen.getByRole("button", { name: "Deprecate" }),
+      "The bots did not load. Close this card and try again.",
+    );
+  });
+
+  it("says why it is off while the change saves", async () => {
+    render(
+      <DeprecateDialog {...base} pending bots={ready(ba)} onCancel={vi.fn()} onConfirm={vi.fn()} />,
+    );
+    await tabToReason(
+      screen.getByRole("button", { name: "Deprecate and remove from 1 bot" }),
+      "Deprecating the skill.",
+    );
   });
 });
 
@@ -115,7 +145,7 @@ describe("the Remove from bots dialog", () => {
     expect(onConfirm).toHaveBeenCalledWith([designer.id]);
   });
 
-  it("is off with no tick", () => {
+  it("is off with no tick, and says why on keyboard focus", async () => {
     const onConfirm = vi.fn();
     render(
       <RemoveFromBotsDialog {...base} bots={ready(ba)} onCancel={vi.fn()} onConfirm={onConfirm} />,
@@ -125,6 +155,24 @@ describe("the Remove from bots dialog", () => {
     expect(button.getAttribute("aria-disabled")).toBe("true");
     click(button);
     expect(onConfirm).not.toHaveBeenCalled();
+    await tabToReason(button, "Tick a bot first.");
+  });
+
+  it.each([
+    [{ kind: "loading" } as const, false, "Loading the bots that use it."],
+    [ready(), false, "No bot uses this skill."],
+    [ready(ba), true, "Removing the skill from the bots."],
+  ])("with %j and pending %s, says %j", async (bots, pending, reason) => {
+    render(
+      <RemoveFromBotsDialog
+        {...base}
+        pending={pending}
+        bots={bots}
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+      />,
+    );
+    await tabToReason(screen.getByRole("button", { name: /^Remove from / }), reason);
   });
 });
 
@@ -154,10 +202,17 @@ describe("the Delete dialog", () => {
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
-  it("waits for the bots before it deletes", () => {
+  it("waits for the bots before it deletes, and says so", async () => {
     const onConfirm = vi.fn();
     render(<DeleteDialog {...props} bots={{ kind: "loading" }} onConfirm={onConfirm} />);
-    click(screen.getByRole("button", { name: "Delete skill" }));
+    const button = screen.getByRole("button", { name: "Delete skill" });
+    click(button);
     expect(onConfirm).not.toHaveBeenCalled();
+    await tabToReason(button, "Loading the bots that use it.");
+  });
+
+  it("says why it is off while the delete runs", async () => {
+    render(<DeleteDialog {...props} pending bots={ready(ba)} onConfirm={vi.fn()} />);
+    await tabToReason(screen.getByRole("button", { name: "Delete skill" }), "Deleting the skill.");
   });
 });

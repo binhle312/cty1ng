@@ -251,7 +251,8 @@ shows in two places. No label ends in "…" (`buttons.md`).
 
 The same bot list. Title "Remove {skill} from bots? 🧹", text "Tick the bots that must stop
 using it. They stop on their next run. A run that works now keeps it to the end." Every box
-starts ticked. Buttons: **Skip** and **Remove from {n} bots** (`danger`), disabled with no tick.
+starts ticked. Buttons: **Skip** and **Remove from {n} bots** (`danger`), disabled with no tick,
+with the tooltip "Tick a bot first." (§ Texts added in the M1b build).
 
 ## 11. Delete (D7, D49)
 
@@ -421,7 +422,10 @@ the changes marked "owner, 2026-10-31".
   the errors first.", "Tick a skill to export.", "Tick a row to apply." The bot cards (§2a):
   "Tick a bot first.", "Loading the versions.", "The versions did not load. Try again first.",
   "Adding the bots.", "Saving the change.", "v{n} no longer exists. Cancel and pick another
-  version."
+  version." The Deprecate, Remove from bots and Delete dialogs (§10.1, §10.3, §11): "Loading
+  the bots that use it.", "The bots did not load. Close this card and try again.", "Deprecating
+  the skill.", "Removing the skill from the bots.", "No bot uses this skill.", "Tick a bot
+  first.", "Deleting the skill."
 - A long diff in the upgrade card (SK3) scrolls inside the card, so Cancel and Upgrade stay in
   view. A card taller than the window scrolls as a whole, with its buttons kept at its bottom.
 - Deprecate in M1 (no bots): "No bot uses it." in place of the bot list.

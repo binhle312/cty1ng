@@ -3,6 +3,7 @@ import { Button } from "../../components/ui/button.tsx";
 import { Dialog, DialogButtons, DialogText } from "../../components/ui/dialog.tsx";
 import { BotNameList, BotPickList, type BotListRow } from "../bots/bot-list.tsx";
 import { VersionPill } from "./pills.tsx";
+import { SaveButton } from "./save-bar.tsx";
 import type { BotUse, BotUses } from "./skill-bot-uses.ts";
 
 // The dialogs of a skill's ⋯ menu and of its deprecated banner (skills-page.md §10.1, §10.3,
@@ -50,6 +51,13 @@ function BotsNotReady({ bots }: { bots: BotUses }) {
   );
 }
 
+// Why a confirm button is off while the bots that use the skill are not known (ui-rules B5).
+function botsReason(bots: BotUses): string | null {
+  if (bots.kind === "loading") return "Loading the bots that use it.";
+  if (bots.kind === "error") return "The bots did not load. Close this card and try again.";
+  return null;
+}
+
 // D1, UI-7.6. Cancel is the default: Enter never deprecates. No Undo toast, because Deprecate is
 // not permanent. Every box starts ticked; the ticked bots stop using the skill.
 export function DeprecateDialog(
@@ -83,7 +91,7 @@ function DeprecateBody({
   const uses = bots.kind === "ready" ? bots.uses : [];
   const { ticked, toggle } = useTicks(uses);
   const n = ticked.size;
-  const off = pending || bots.kind !== "ready";
+  const reason = pending ? "Deprecating the skill." : botsReason(bots);
   return (
     <>
       {bots.kind === "ready" && uses.length === 0 && <DialogText>No bot uses it.</DialogText>}
@@ -111,16 +119,14 @@ function DeprecateBody({
         <Button ref={cancel} onClick={onCancel}>
           Cancel
         </Button>
-        <Button
+        <SaveButton
           kind="danger"
-          aria-disabled={off}
+          label={n === 0 ? "Deprecate" : `Deprecate and remove from ${botCount(n)}`}
+          disabledReason={reason}
           onClick={() => {
-            if (!off)
-              onConfirm(uses.filter(({ bot }) => ticked.has(bot.id)).map(({ bot }) => bot.id));
+            onConfirm(uses.filter(({ bot }) => ticked.has(bot.id)).map(({ bot }) => bot.id));
           }}
-        >
-          {n === 0 ? "Deprecate" : `Deprecate and remove from ${botCount(n)}`}
-        </Button>
+        />
       </DialogButtons>
     </>
   );
@@ -158,7 +164,10 @@ function RemoveBody({
   const uses = bots.kind === "ready" ? bots.uses : [];
   const { ticked, toggle } = useTicks(uses);
   const n = ticked.size;
-  const off = pending || n === 0;
+  const reason = pending
+    ? "Removing the skill from the bots."
+    : (botsReason(bots) ??
+      (uses.length === 0 ? "No bot uses this skill." : n === 0 ? "Tick a bot first." : null));
   return (
     <>
       <DialogText>
@@ -180,16 +189,14 @@ function RemoveBody({
         <Button ref={skip} onClick={onCancel}>
           Skip
         </Button>
-        <Button
+        <SaveButton
           kind="danger"
-          aria-disabled={off}
+          label={n === 0 ? "Remove from bots" : `Remove from ${botCount(n)}`}
+          disabledReason={reason}
           onClick={() => {
-            if (!off)
-              onConfirm(uses.filter(({ bot }) => ticked.has(bot.id)).map(({ bot }) => bot.id));
+            onConfirm(uses.filter(({ bot }) => ticked.has(bot.id)).map(({ bot }) => bot.id));
           }}
-        >
-          {n === 0 ? "Remove from bots" : `Remove from ${botCount(n)}`}
-        </Button>
+        />
       </DialogButtons>
     </>
   );
@@ -205,7 +212,7 @@ export function DeleteDialog(
   const { bots } = props;
   const uses = bots.kind === "ready" ? bots.uses : [];
   // The owner sees the bots before the skill leaves them.
-  const off = props.pending || bots.kind !== "ready";
+  const reason = props.pending ? "Deleting the skill." : botsReason(bots);
   return (
     <Dialog
       kind="alert"
@@ -226,15 +233,12 @@ export function DeleteDialog(
         <Button ref={cancel} onClick={props.onCancel}>
           Cancel
         </Button>
-        <Button
+        <SaveButton
           kind="danger-fill"
-          aria-disabled={off}
-          onClick={() => {
-            if (!off) props.onConfirm();
-          }}
-        >
-          Delete skill
-        </Button>
+          label="Delete skill"
+          disabledReason={reason}
+          onClick={props.onConfirm}
+        />
       </DialogButtons>
     </Dialog>
   );
