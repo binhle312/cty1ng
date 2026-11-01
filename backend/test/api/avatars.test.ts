@@ -75,6 +75,24 @@ describe("avatars", () => {
     expect(await codeOf(response)).toBe("validation_error");
   });
 
+  it.each([
+    ["a text field", "note", (): string => "hello"],
+    ["a second file part", "other", (image: Buffer) => new File([new Uint8Array(image)], "b.png")],
+    ["two files named file", "file", (image: Buffer) => new File([new Uint8Array(image)], "b.png")],
+  ])("refuses an upload with %s beside the file with 422", async (_label, name, part) => {
+    const image = await png();
+    const form = new FormData();
+    form.append("file", new File([new Uint8Array(image)], "a.png", { type: "image/png" }));
+    form.append(name, part(image));
+    const response = await start().request("/api/avatars", {
+      method: "POST",
+      headers: { origin: ORIGIN },
+      body: form,
+    });
+    expect(response.status).toBe(422);
+    expect(await codeOf(response)).toBe("validation_error");
+  });
+
   it("refuses a GIF and a TIFF, which sharp could read, with 422", async () => {
     const target = start();
     const gif = await sharp({ create: { width: 4, height: 4, channels: 3, background: "#000" } })

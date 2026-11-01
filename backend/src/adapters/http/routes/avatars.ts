@@ -49,7 +49,7 @@ export function avatarRoutes(deps: { avatars: AvatarsService; maxBytes: number }
         query: NoQuery,
         body: {
           required: true,
-          content: { "multipart/form-data": { schema: z.object({ file: UploadFile }) } },
+          content: { "multipart/form-data": { schema: z.object({ file: UploadFile }).strict() } },
         },
       },
       responses: { 200: json(AvatarUpload, "The stored image: its id and URL") },
