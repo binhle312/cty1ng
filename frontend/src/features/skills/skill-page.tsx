@@ -206,7 +206,6 @@ function SkillView({ skill }: { skill: SkillDetail }) {
           base_version: base.version,
           description: sent.description,
           body_md: sent.body_md,
-          upgrade_bot_ids: [],
           ...(note === "" ? {} : { changelog: note }),
           ...(renamed ? { name: sent.name, row_version: base.rowVersion } : {}),
         },

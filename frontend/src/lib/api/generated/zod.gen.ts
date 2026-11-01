@@ -27,14 +27,42 @@ export const zGetSettingsResponse = z.object({
     trash_days: z.int().gte(1),
     skill_name_max: z.int().gte(16).lte(128),
     skill_body_max: z.int().gte(1000).lte(100000),
-    skill_body_warn_lines: z.int().gte(50).lte(5000)
+    skill_body_warn_lines: z.int().gte(50).lte(5000),
+    bot_name_max: z.int().gte(16).lte(64),
+    bot_description_max: z.int().gte(80).lte(500),
+    bot_persona_max: z.int().gte(1000).lte(32000),
+    bot_history_min_pct: z.int().gte(5).lte(50),
+    bot_history_max_pct: z.int().gte(50).lte(90),
+    bot_default_history_pct: z.int().gte(5).lte(90),
+    bot_default_request_limit: z.int().gte(1).lte(100),
+    bot_default_max_reply_chars: z.int().gte(500).lte(20000),
+    health_recent_runs: z.int().gte(1).lte(50),
+    health_failed_runs: z.int().gte(1).lte(50),
+    health_limit_stops: z.int().gte(1).lte(50),
+    health_limit_window_days: z.int().gte(1).lte(30),
+    bot_order: z.enum(['recent', 'created']),
+    bot_order_direction: z.enum(['desc', 'asc'])
 });
 
 export const zUpdateSettingsBody = z.object({
     trash_days: z.int().gte(1).optional(),
     skill_name_max: z.int().gte(16).lte(128).optional(),
     skill_body_max: z.int().gte(1000).lte(100000).optional(),
-    skill_body_warn_lines: z.int().gte(50).lte(5000).optional()
+    skill_body_warn_lines: z.int().gte(50).lte(5000).optional(),
+    bot_name_max: z.int().gte(16).lte(64).optional(),
+    bot_description_max: z.int().gte(80).lte(500).optional(),
+    bot_persona_max: z.int().gte(1000).lte(32000).optional(),
+    bot_history_min_pct: z.int().gte(5).lte(50).optional(),
+    bot_history_max_pct: z.int().gte(50).lte(90).optional(),
+    bot_default_history_pct: z.int().gte(5).lte(90).optional(),
+    bot_default_request_limit: z.int().gte(1).lte(100).optional(),
+    bot_default_max_reply_chars: z.int().gte(500).lte(20000).optional(),
+    health_recent_runs: z.int().gte(1).lte(50).optional(),
+    health_failed_runs: z.int().gte(1).lte(50).optional(),
+    health_limit_stops: z.int().gte(1).lte(50).optional(),
+    health_limit_window_days: z.int().gte(1).lte(30).optional(),
+    bot_order: z.enum(['recent', 'created']).optional(),
+    bot_order_direction: z.enum(['desc', 'asc']).optional()
 });
 
 /**
@@ -44,8 +72,75 @@ export const zUpdateSettingsResponse = z.object({
     trash_days: z.int().gte(1),
     skill_name_max: z.int().gte(16).lte(128),
     skill_body_max: z.int().gte(1000).lte(100000),
-    skill_body_warn_lines: z.int().gte(50).lte(5000)
+    skill_body_warn_lines: z.int().gte(50).lte(5000),
+    bot_name_max: z.int().gte(16).lte(64),
+    bot_description_max: z.int().gte(80).lte(500),
+    bot_persona_max: z.int().gte(1000).lte(32000),
+    bot_history_min_pct: z.int().gte(5).lte(50),
+    bot_history_max_pct: z.int().gte(50).lte(90),
+    bot_default_history_pct: z.int().gte(5).lte(90),
+    bot_default_request_limit: z.int().gte(1).lte(100),
+    bot_default_max_reply_chars: z.int().gte(500).lte(20000),
+    health_recent_runs: z.int().gte(1).lte(50),
+    health_failed_runs: z.int().gte(1).lte(50),
+    health_limit_stops: z.int().gte(1).lte(50),
+    health_limit_window_days: z.int().gte(1).lte(30),
+    bot_order: z.enum(['recent', 'created']),
+    bot_order_direction: z.enum(['desc', 'asc'])
 });
+
+/**
+ * Every catalog model in catalog order, with `available`
+ */
+export const zListModelsResponse = z.array(z.object({
+    id: z.string(),
+    label: z.string(),
+    provider: z.string(),
+    available: z.boolean(),
+    unavailable_reason: z.enum(['no_api_key']),
+    api_key_env: z.string().nullable(),
+    efforts: z.array(z.enum([
+        'minimal',
+        'low',
+        'medium',
+        'high',
+        'xhigh',
+        'max'
+    ])),
+    default_effort: z.enum([
+        'minimal',
+        'low',
+        'medium',
+        'high',
+        'xhigh',
+        'max'
+    ]).nullable(),
+    multimodal: z.boolean(),
+    context_window: z.int().gt(0),
+    provider_tools: z.array(z.string())
+}));
+
+/**
+ * The tool catalog (domain-model.md §4.1)
+ */
+export const zListToolsResponse = z.array(z.object({
+    id: z.string(),
+    label: z.string(),
+    kind: z.enum(['internal', 'provider']),
+    provider: z.string().nullable(),
+    job: z.string(),
+    added: z.string(),
+    sends_data_out: z.boolean(),
+    web: z.boolean(),
+    line: z.string(),
+    off_line: z.string().nullable(),
+    needs: z.array(z.string()),
+    switch: z.enum([
+        'open',
+        'later',
+        'locked'
+    ])
+}));
 
 export const zExportSkillsQuery = z.object({
     ids: z.string().optional()
@@ -307,7 +402,6 @@ export const zCreateSkillVersionBody = z.object({
     description: z.string(),
     body_md: z.string(),
     changelog: z.string().optional(),
-    upgrade_bot_ids: z.array(z.string()),
     name: z.string().optional(),
     row_version: z.int().gt(0).optional()
 });
@@ -436,14 +530,107 @@ export const zListSkillUpgradeCandidatesPath = z.object({
 });
 
 /**
- * Bots on older versions (M2)
+ * Live bots pinned to an older version
  */
 export const zListSkillUpgradeCandidatesResponse = z.array(z.object({
-    bot_id: z.string()
+    bot_id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    skill_version_id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    version: z.int().gt(0),
+    always_load: z.boolean()
+}));
+
+export const zPinSkillToBotsBody = z.object({
+    skill_version_id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    bots: z.array(z.object({
+        bot_id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        expected_skill_version_id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/).nullable(),
+        always_load: z.boolean().optional()
+    })).min(1)
+});
+
+export const zPinSkillToBotsPath = z.object({
+    id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+/**
+ * The moved bots
+ */
+export const zPinSkillToBotsResponse = z.array(z.object({
+    id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    slug: z.string(),
+    name: z.string(),
+    row_version: z.int().gt(0),
+    description: z.string(),
+    persona_md: z.string(),
+    avatar_style: z.enum([
+        'flat',
+        'jelly',
+        'pixel',
+        'upload'
+    ]),
+    avatar_colour: z.string(),
+    avatar_id: z.string().regex(/^[0-9a-f]{64}$/).nullable(),
+    avatar_url: z.string().nullable(),
+    model_id: z.string(),
+    model_label: z.string().nullable(),
+    effort: z.enum([
+        'minimal',
+        'low',
+        'medium',
+        'high',
+        'xhigh',
+        'max'
+    ]).nullable(),
+    request_limit: z.int(),
+    max_reply_chars: z.int(),
+    history_share_pct: z.int(),
+    tool_settings: z.record(z.string(), z.boolean()),
+    cloned_from_bot_id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/).nullable(),
+    available: z.boolean(),
+    unavailable_reason: z.enum(['no_api_key', 'model_removed']).nullable(),
+    pins: z.array(z.object({
+        skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        skill_slug: z.string(),
+        skill_name: z.string(),
+        description: z.string(),
+        skill_version_id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        version: z.int().gt(0),
+        latest_version: z.int().gt(0),
+        always_load: z.boolean(),
+        deprecated: z.boolean()
+    })),
+    pinned_position: z.int().gt(0).nullable(),
+    last_activity_at: z.string().nullable(),
+    counts: z.object({
+        skills: z.int().gte(0),
+        skill_updates: z.int().gte(0),
+        projects: z.int().gte(0),
+        conversations: z.int().gte(0)
+    }),
+    status: z.object({
+        state: z.enum(['idle'])
+    }),
+    health: z.union([
+        z.object({
+            level: z.enum(['cannot_run']),
+            reason: z.enum(['no_api_key', 'model_removed'])
+        }),
+        z.object({
+            level: z.enum(['needs_attention']),
+            reason: z.enum([
+                'failed_runs',
+                'limit_stops',
+                'deprecated_skill',
+                'history_cut'
+            ])
+        })
+    ]).nullable(),
+    created_at: z.string(),
+    updated_at: z.string()
 }));
 
 export const zDeprecateSkillBody = z.object({
-    remove_bot_ids: z.array(z.string()),
+    remove_bot_ids: z.array(z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/)),
     row_version: z.int().gt(0)
 });
 
@@ -528,7 +715,7 @@ export const zTrashSkillPath = z.object({
  */
 export const zTrashSkillResponse = z.object({
     skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
-    removed_bot_ids: z.array(z.string())
+    removed_bot_ids: z.array(z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/))
 });
 
 export const zRestoreSkillPath = z.object({
@@ -563,8 +750,717 @@ export const zRestoreSkillResponse = z.object({
             version: z.int().gt(0)
         }).nullable()
     }),
-    suggested_bot_ids: z.array(z.string())
+    suggested_bot_ids: z.array(z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/))
 });
+
+/**
+ * The bots not in Trash, in header order
+ */
+export const zListBotsResponse = z.array(z.object({
+    id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    slug: z.string(),
+    name: z.string(),
+    row_version: z.int().gt(0),
+    description: z.string(),
+    persona_md: z.string(),
+    avatar_style: z.enum([
+        'flat',
+        'jelly',
+        'pixel',
+        'upload'
+    ]),
+    avatar_colour: z.string(),
+    avatar_id: z.string().regex(/^[0-9a-f]{64}$/).nullable(),
+    avatar_url: z.string().nullable(),
+    model_id: z.string(),
+    model_label: z.string().nullable(),
+    effort: z.enum([
+        'minimal',
+        'low',
+        'medium',
+        'high',
+        'xhigh',
+        'max'
+    ]).nullable(),
+    request_limit: z.int(),
+    max_reply_chars: z.int(),
+    history_share_pct: z.int(),
+    tool_settings: z.record(z.string(), z.boolean()),
+    cloned_from_bot_id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/).nullable(),
+    available: z.boolean(),
+    unavailable_reason: z.enum(['no_api_key', 'model_removed']).nullable(),
+    pins: z.array(z.object({
+        skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        skill_slug: z.string(),
+        skill_name: z.string(),
+        description: z.string(),
+        skill_version_id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        version: z.int().gt(0),
+        latest_version: z.int().gt(0),
+        always_load: z.boolean(),
+        deprecated: z.boolean()
+    })),
+    pinned_position: z.int().gt(0).nullable(),
+    last_activity_at: z.string().nullable(),
+    counts: z.object({
+        skills: z.int().gte(0),
+        skill_updates: z.int().gte(0),
+        projects: z.int().gte(0),
+        conversations: z.int().gte(0)
+    }),
+    status: z.object({
+        state: z.enum(['idle'])
+    }),
+    health: z.union([
+        z.object({
+            level: z.enum(['cannot_run']),
+            reason: z.enum(['no_api_key', 'model_removed'])
+        }),
+        z.object({
+            level: z.enum(['needs_attention']),
+            reason: z.enum([
+                'failed_runs',
+                'limit_stops',
+                'deprecated_skill',
+                'history_cut'
+            ])
+        })
+    ]).nullable(),
+    created_at: z.string(),
+    updated_at: z.string()
+}));
+
+export const zCreateBotBody = z.object({
+    name: z.string(),
+    description: z.string(),
+    persona_md: z.string(),
+    avatar_style: z.enum([
+        'flat',
+        'jelly',
+        'pixel',
+        'upload'
+    ]),
+    avatar_colour: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+    avatar_id: z.string().regex(/^[0-9a-f]{64}$/).optional(),
+    model_id: z.string(),
+    effort: z.enum([
+        'minimal',
+        'low',
+        'medium',
+        'high',
+        'xhigh',
+        'max'
+    ]).nullish(),
+    history_share_pct: z.int().optional(),
+    request_limit: z.int().optional(),
+    max_reply_chars: z.int().optional(),
+    tool_settings: z.record(z.string(), z.boolean()).optional(),
+    pins: z.array(z.object({
+        skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        skill_version_id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/).optional(),
+        always_load: z.boolean()
+    })),
+    cloned_from_bot_id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/).optional()
+});
+
+export const zCreateBotHeaders = z.object({
+    'idempotency-key': z.uuid()
+});
+
+export const zCreateBotResponse = z.union([
+    z.object({
+        id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        slug: z.string(),
+        name: z.string(),
+        row_version: z.int().gt(0),
+        description: z.string(),
+        persona_md: z.string(),
+        avatar_style: z.enum([
+            'flat',
+            'jelly',
+            'pixel',
+            'upload'
+        ]),
+        avatar_colour: z.string(),
+        avatar_id: z.string().regex(/^[0-9a-f]{64}$/).nullable(),
+        avatar_url: z.string().nullable(),
+        model_id: z.string(),
+        model_label: z.string().nullable(),
+        effort: z.enum([
+            'minimal',
+            'low',
+            'medium',
+            'high',
+            'xhigh',
+            'max'
+        ]).nullable(),
+        request_limit: z.int(),
+        max_reply_chars: z.int(),
+        history_share_pct: z.int(),
+        tool_settings: z.record(z.string(), z.boolean()),
+        cloned_from_bot_id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/).nullable(),
+        available: z.boolean(),
+        unavailable_reason: z.enum(['no_api_key', 'model_removed']).nullable(),
+        pins: z.array(z.object({
+            skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+            skill_slug: z.string(),
+            skill_name: z.string(),
+            description: z.string(),
+            skill_version_id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+            version: z.int().gt(0),
+            latest_version: z.int().gt(0),
+            always_load: z.boolean(),
+            deprecated: z.boolean()
+        })),
+        pinned_position: z.int().gt(0).nullable(),
+        last_activity_at: z.string().nullable(),
+        counts: z.object({
+            skills: z.int().gte(0),
+            skill_updates: z.int().gte(0),
+            projects: z.int().gte(0),
+            conversations: z.int().gte(0)
+        }),
+        status: z.object({
+            state: z.enum(['idle'])
+        }),
+        health: z.union([
+            z.object({
+                level: z.enum(['cannot_run']),
+                reason: z.enum(['no_api_key', 'model_removed'])
+            }),
+            z.object({
+                level: z.enum(['needs_attention']),
+                reason: z.enum([
+                    'failed_runs',
+                    'limit_stops',
+                    'deprecated_skill',
+                    'history_cut'
+                ])
+            })
+        ]).nullable(),
+        created_at: z.string(),
+        updated_at: z.string()
+    }),
+    z.object({
+        id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        slug: z.string(),
+        name: z.string(),
+        row_version: z.int().gt(0),
+        description: z.string(),
+        persona_md: z.string(),
+        avatar_style: z.enum([
+            'flat',
+            'jelly',
+            'pixel',
+            'upload'
+        ]),
+        avatar_colour: z.string(),
+        avatar_id: z.string().regex(/^[0-9a-f]{64}$/).nullable(),
+        avatar_url: z.string().nullable(),
+        model_id: z.string(),
+        model_label: z.string().nullable(),
+        effort: z.enum([
+            'minimal',
+            'low',
+            'medium',
+            'high',
+            'xhigh',
+            'max'
+        ]).nullable(),
+        request_limit: z.int(),
+        max_reply_chars: z.int(),
+        history_share_pct: z.int(),
+        tool_settings: z.record(z.string(), z.boolean()),
+        cloned_from_bot_id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/).nullable(),
+        available: z.boolean(),
+        unavailable_reason: z.enum(['no_api_key', 'model_removed']).nullable(),
+        pins: z.array(z.object({
+            skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+            skill_slug: z.string(),
+            skill_name: z.string(),
+            description: z.string(),
+            skill_version_id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+            version: z.int().gt(0),
+            latest_version: z.int().gt(0),
+            always_load: z.boolean(),
+            deprecated: z.boolean()
+        })),
+        pinned_position: z.int().gt(0).nullable(),
+        last_activity_at: z.string().nullable(),
+        counts: z.object({
+            skills: z.int().gte(0),
+            skill_updates: z.int().gte(0),
+            projects: z.int().gte(0),
+            conversations: z.int().gte(0)
+        }),
+        status: z.object({
+            state: z.enum(['idle'])
+        }),
+        health: z.union([
+            z.object({
+                level: z.enum(['cannot_run']),
+                reason: z.enum(['no_api_key', 'model_removed'])
+            }),
+            z.object({
+                level: z.enum(['needs_attention']),
+                reason: z.enum([
+                    'failed_runs',
+                    'limit_stops',
+                    'deprecated_skill',
+                    'history_cut'
+                ])
+            })
+        ]).nullable(),
+        created_at: z.string(),
+        updated_at: z.string()
+    })
+]);
+
+export const zSetPinnedBotsBody = z.object({
+    bot_ids: z.array(z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/)),
+    expected_bot_ids: z.array(z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/))
+});
+
+/**
+ * The pinned list
+ */
+export const zSetPinnedBotsResponse = z.object({
+    pinned_bot_ids: z.array(z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/))
+});
+
+export const zDeleteBotPath = z.object({
+    id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+/**
+ * The bot, now in Trash
+ */
+export const zDeleteBotResponse = z.object({
+    id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    slug: z.string(),
+    name: z.string(),
+    row_version: z.int().gt(0),
+    description: z.string(),
+    persona_md: z.string(),
+    avatar_style: z.enum([
+        'flat',
+        'jelly',
+        'pixel',
+        'upload'
+    ]),
+    avatar_colour: z.string(),
+    avatar_id: z.string().regex(/^[0-9a-f]{64}$/).nullable(),
+    avatar_url: z.string().nullable(),
+    model_id: z.string(),
+    model_label: z.string().nullable(),
+    effort: z.enum([
+        'minimal',
+        'low',
+        'medium',
+        'high',
+        'xhigh',
+        'max'
+    ]).nullable(),
+    request_limit: z.int(),
+    max_reply_chars: z.int(),
+    history_share_pct: z.int(),
+    tool_settings: z.record(z.string(), z.boolean()),
+    cloned_from_bot_id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/).nullable(),
+    available: z.boolean(),
+    unavailable_reason: z.enum(['no_api_key', 'model_removed']).nullable(),
+    pins: z.array(z.object({
+        skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        skill_slug: z.string(),
+        skill_name: z.string(),
+        description: z.string(),
+        skill_version_id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        version: z.int().gt(0),
+        latest_version: z.int().gt(0),
+        always_load: z.boolean(),
+        deprecated: z.boolean()
+    })),
+    pinned_position: z.int().gt(0).nullable(),
+    last_activity_at: z.string().nullable(),
+    counts: z.object({
+        skills: z.int().gte(0),
+        skill_updates: z.int().gte(0),
+        projects: z.int().gte(0),
+        conversations: z.int().gte(0)
+    }),
+    status: z.object({
+        state: z.enum(['idle'])
+    }),
+    health: z.union([
+        z.object({
+            level: z.enum(['cannot_run']),
+            reason: z.enum(['no_api_key', 'model_removed'])
+        }),
+        z.object({
+            level: z.enum(['needs_attention']),
+            reason: z.enum([
+                'failed_runs',
+                'limit_stops',
+                'deprecated_skill',
+                'history_cut'
+            ])
+        })
+    ]).nullable(),
+    created_at: z.string(),
+    updated_at: z.string()
+});
+
+export const zGetBotPath = z.object({
+    id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+/**
+ * The bot and the conversations it is in
+ */
+export const zGetBotResponse = z.object({
+    id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    slug: z.string(),
+    name: z.string(),
+    row_version: z.int().gt(0),
+    description: z.string(),
+    persona_md: z.string(),
+    avatar_style: z.enum([
+        'flat',
+        'jelly',
+        'pixel',
+        'upload'
+    ]),
+    avatar_colour: z.string(),
+    avatar_id: z.string().regex(/^[0-9a-f]{64}$/).nullable(),
+    avatar_url: z.string().nullable(),
+    model_id: z.string(),
+    model_label: z.string().nullable(),
+    effort: z.enum([
+        'minimal',
+        'low',
+        'medium',
+        'high',
+        'xhigh',
+        'max'
+    ]).nullable(),
+    request_limit: z.int(),
+    max_reply_chars: z.int(),
+    history_share_pct: z.int(),
+    tool_settings: z.record(z.string(), z.boolean()),
+    cloned_from_bot_id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/).nullable(),
+    available: z.boolean(),
+    unavailable_reason: z.enum(['no_api_key', 'model_removed']).nullable(),
+    pins: z.array(z.object({
+        skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        skill_slug: z.string(),
+        skill_name: z.string(),
+        description: z.string(),
+        skill_version_id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        version: z.int().gt(0),
+        latest_version: z.int().gt(0),
+        always_load: z.boolean(),
+        deprecated: z.boolean()
+    })),
+    pinned_position: z.int().gt(0).nullable(),
+    last_activity_at: z.string().nullable(),
+    counts: z.object({
+        skills: z.int().gte(0),
+        skill_updates: z.int().gte(0),
+        projects: z.int().gte(0),
+        conversations: z.int().gte(0)
+    }),
+    status: z.object({
+        state: z.enum(['idle'])
+    }),
+    health: z.union([
+        z.object({
+            level: z.enum(['cannot_run']),
+            reason: z.enum(['no_api_key', 'model_removed'])
+        }),
+        z.object({
+            level: z.enum(['needs_attention']),
+            reason: z.enum([
+                'failed_runs',
+                'limit_stops',
+                'deprecated_skill',
+                'history_cut'
+            ])
+        })
+    ]).nullable(),
+    created_at: z.string(),
+    updated_at: z.string(),
+    conversations: z.array(z.object({
+        id: z.string()
+    })).max(0)
+});
+
+export const zUpdateBotBody = z.object({
+    row_version: z.int().gt(0),
+    name: z.string().optional(),
+    description: z.string().optional(),
+    persona_md: z.string().optional(),
+    avatar_style: z.enum([
+        'flat',
+        'jelly',
+        'pixel',
+        'upload'
+    ]).optional(),
+    avatar_colour: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+    avatar_id: z.string().regex(/^[0-9a-f]{64}$/).optional(),
+    history_share_pct: z.int().optional(),
+    request_limit: z.int().optional(),
+    max_reply_chars: z.int().optional(),
+    tool_settings: z.record(z.string(), z.boolean()).optional()
+});
+
+export const zUpdateBotPath = z.object({
+    id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+/**
+ * The saved bot
+ */
+export const zUpdateBotResponse = z.object({
+    id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    slug: z.string(),
+    name: z.string(),
+    row_version: z.int().gt(0),
+    description: z.string(),
+    persona_md: z.string(),
+    avatar_style: z.enum([
+        'flat',
+        'jelly',
+        'pixel',
+        'upload'
+    ]),
+    avatar_colour: z.string(),
+    avatar_id: z.string().regex(/^[0-9a-f]{64}$/).nullable(),
+    avatar_url: z.string().nullable(),
+    model_id: z.string(),
+    model_label: z.string().nullable(),
+    effort: z.enum([
+        'minimal',
+        'low',
+        'medium',
+        'high',
+        'xhigh',
+        'max'
+    ]).nullable(),
+    request_limit: z.int(),
+    max_reply_chars: z.int(),
+    history_share_pct: z.int(),
+    tool_settings: z.record(z.string(), z.boolean()),
+    cloned_from_bot_id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/).nullable(),
+    available: z.boolean(),
+    unavailable_reason: z.enum(['no_api_key', 'model_removed']).nullable(),
+    pins: z.array(z.object({
+        skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        skill_slug: z.string(),
+        skill_name: z.string(),
+        description: z.string(),
+        skill_version_id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        version: z.int().gt(0),
+        latest_version: z.int().gt(0),
+        always_load: z.boolean(),
+        deprecated: z.boolean()
+    })),
+    pinned_position: z.int().gt(0).nullable(),
+    last_activity_at: z.string().nullable(),
+    counts: z.object({
+        skills: z.int().gte(0),
+        skill_updates: z.int().gte(0),
+        projects: z.int().gte(0),
+        conversations: z.int().gte(0)
+    }),
+    status: z.object({
+        state: z.enum(['idle'])
+    }),
+    health: z.union([
+        z.object({
+            level: z.enum(['cannot_run']),
+            reason: z.enum(['no_api_key', 'model_removed'])
+        }),
+        z.object({
+            level: z.enum(['needs_attention']),
+            reason: z.enum([
+                'failed_runs',
+                'limit_stops',
+                'deprecated_skill',
+                'history_cut'
+            ])
+        })
+    ]).nullable(),
+    created_at: z.string(),
+    updated_at: z.string()
+});
+
+export const zGetBotCloneTemplatePath = z.object({
+    id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+/**
+ * A prefilled create body, without a colour
+ */
+export const zGetBotCloneTemplateResponse = z.object({
+    name: z.string(),
+    description: z.string(),
+    persona_md: z.string(),
+    avatar_style: z.enum([
+        'flat',
+        'jelly',
+        'pixel',
+        'upload'
+    ]),
+    avatar_id: z.string().regex(/^[0-9a-f]{64}$/).optional(),
+    model_id: z.string(),
+    effort: z.enum([
+        'minimal',
+        'low',
+        'medium',
+        'high',
+        'xhigh',
+        'max'
+    ]).nullable(),
+    history_share_pct: z.int(),
+    request_limit: z.int(),
+    max_reply_chars: z.int(),
+    tool_settings: z.record(z.string(), z.boolean()),
+    pins: z.array(z.object({
+        skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        skill_version_id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        always_load: z.boolean()
+    })),
+    cloned_from_bot_id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+export const zRemoveBotSkillPath = z.object({
+    id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+/**
+ * The pin is gone
+ */
+export const zRemoveBotSkillResponse = z.void();
+
+export const zSetBotSkillBody = z.object({
+    skill_version_id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    always_load: z.boolean(),
+    expected: z.object({
+        skill_version_id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        always_load: z.boolean()
+    }).nullable()
+});
+
+export const zSetBotSkillPath = z.object({
+    id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+});
+
+/**
+ * The bot with the pin
+ */
+export const zSetBotSkillResponse = z.object({
+    id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    slug: z.string(),
+    name: z.string(),
+    row_version: z.int().gt(0),
+    description: z.string(),
+    persona_md: z.string(),
+    avatar_style: z.enum([
+        'flat',
+        'jelly',
+        'pixel',
+        'upload'
+    ]),
+    avatar_colour: z.string(),
+    avatar_id: z.string().regex(/^[0-9a-f]{64}$/).nullable(),
+    avatar_url: z.string().nullable(),
+    model_id: z.string(),
+    model_label: z.string().nullable(),
+    effort: z.enum([
+        'minimal',
+        'low',
+        'medium',
+        'high',
+        'xhigh',
+        'max'
+    ]).nullable(),
+    request_limit: z.int(),
+    max_reply_chars: z.int(),
+    history_share_pct: z.int(),
+    tool_settings: z.record(z.string(), z.boolean()),
+    cloned_from_bot_id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/).nullable(),
+    available: z.boolean(),
+    unavailable_reason: z.enum(['no_api_key', 'model_removed']).nullable(),
+    pins: z.array(z.object({
+        skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        skill_slug: z.string(),
+        skill_name: z.string(),
+        description: z.string(),
+        skill_version_id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        version: z.int().gt(0),
+        latest_version: z.int().gt(0),
+        always_load: z.boolean(),
+        deprecated: z.boolean()
+    })),
+    pinned_position: z.int().gt(0).nullable(),
+    last_activity_at: z.string().nullable(),
+    counts: z.object({
+        skills: z.int().gte(0),
+        skill_updates: z.int().gte(0),
+        projects: z.int().gte(0),
+        conversations: z.int().gte(0)
+    }),
+    status: z.object({
+        state: z.enum(['idle'])
+    }),
+    health: z.union([
+        z.object({
+            level: z.enum(['cannot_run']),
+            reason: z.enum(['no_api_key', 'model_removed'])
+        }),
+        z.object({
+            level: z.enum(['needs_attention']),
+            reason: z.enum([
+                'failed_runs',
+                'limit_stops',
+                'deprecated_skill',
+                'history_cut'
+            ])
+        })
+    ]).nullable(),
+    created_at: z.string(),
+    updated_at: z.string()
+});
+
+/**
+ * The size limit and the accepted types
+ */
+export const zGetAvatarLimitsResponse = z.object({
+    max_bytes: z.int().gt(0),
+    accepted_types: z.array(z.string())
+});
+
+export const zUploadAvatarBody = z.object({
+    file: z.instanceof(Blob)
+});
+
+/**
+ * The stored image: its id and URL
+ */
+export const zUploadAvatarResponse = z.object({
+    avatar_id: z.string().regex(/^[0-9a-f]{64}$/),
+    url: z.string()
+});
+
+export const zGetAvatarPath = z.object({
+    file: z.string().regex(/^[0-9a-f]{64}\.webp$/)
+});
+
+/**
+ * The image
+ */
+export const zGetAvatarResponse = z.instanceof(Blob);
 
 export const zGetStreamHeaders = z.object({
     'last-event-id': z.string().optional()

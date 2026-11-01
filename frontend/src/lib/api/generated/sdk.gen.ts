@@ -4,8 +4,8 @@ import * as z from 'zod';
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type ServerSentEventsResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { ApplySkillImportData, ApplySkillImportResponses, CreateSkillData, CreateSkillResponses, CreateSkillVersionData, CreateSkillVersionResponses, DeleteSkillData, DeleteSkillResponses, DeprecateSkillData, DeprecateSkillResponses, ExportSkillsData, ExportSkillsResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetSettingsData, GetSettingsResponses, GetSkillData, GetSkillDiffData, GetSkillDiffResponses, GetSkillResponses, GetSkillVersionData, GetSkillVersionResponses, GetStreamData, GetStreamResponse, GetStreamResponses, ListSkillsData, ListSkillsResponses, ListSkillUpgradeCandidatesData, ListSkillUpgradeCandidatesResponses, ListSkillVersionsData, ListSkillVersionsResponses, PreviewSkillImportData, PreviewSkillImportResponses, RenameSkillData, RenameSkillResponses, RestoreSkillData, RestoreSkillResponses, RestoreSkillVersionData, RestoreSkillVersionResponses, TrashSkillData, TrashSkillResponses, UndeprecateSkillData, UndeprecateSkillResponses, UpdateSettingsData, UpdateSettingsResponses } from './types.gen';
-import { zApplySkillImportBody, zApplySkillImportResponse, zCreateSkillBody, zCreateSkillResponse, zCreateSkillVersionBody, zCreateSkillVersionPath, zCreateSkillVersionResponse, zDeleteSkillPath, zDeleteSkillResponse, zDeprecateSkillBody, zDeprecateSkillPath, zDeprecateSkillResponse, zExportSkillsQuery, zExportSkillsResponse, zGetHealthResponse, zGetSettingsResponse, zGetSkillDiffPath, zGetSkillDiffQuery, zGetSkillDiffResponse, zGetSkillPath, zGetSkillResponse, zGetSkillVersionPath, zGetSkillVersionResponse, zGetStreamHeaders, zGetStreamResponse, zListSkillsQuery, zListSkillsResponse, zListSkillUpgradeCandidatesPath, zListSkillUpgradeCandidatesResponse, zListSkillVersionsPath, zListSkillVersionsResponse, zPreviewSkillImportBody, zPreviewSkillImportResponse, zRenameSkillBody, zRenameSkillPath, zRenameSkillResponse, zRestoreSkillPath, zRestoreSkillResponse, zRestoreSkillVersionBody, zRestoreSkillVersionPath, zRestoreSkillVersionResponse, zTrashSkillBody, zTrashSkillPath, zTrashSkillResponse, zUndeprecateSkillBody, zUndeprecateSkillPath, zUndeprecateSkillResponse, zUpdateSettingsBody, zUpdateSettingsResponse } from './zod.gen';
+import type { ApplySkillImportData, ApplySkillImportResponses, CreateBotData, CreateBotResponses, CreateSkillData, CreateSkillResponses, CreateSkillVersionData, CreateSkillVersionResponses, DeleteBotData, DeleteBotResponses, DeleteSkillData, DeleteSkillResponses, DeprecateSkillData, DeprecateSkillResponses, ExportSkillsData, ExportSkillsResponses, GetAvatarData, GetAvatarLimitsData, GetAvatarLimitsResponses, GetAvatarResponses, GetBotCloneTemplateData, GetBotCloneTemplateResponses, GetBotData, GetBotResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetSettingsData, GetSettingsResponses, GetSkillData, GetSkillDiffData, GetSkillDiffResponses, GetSkillResponses, GetSkillVersionData, GetSkillVersionResponses, GetStreamData, GetStreamResponse, GetStreamResponses, ListBotsData, ListBotsResponses, ListModelsData, ListModelsResponses, ListSkillsData, ListSkillsResponses, ListSkillUpgradeCandidatesData, ListSkillUpgradeCandidatesResponses, ListSkillVersionsData, ListSkillVersionsResponses, ListToolsData, ListToolsResponses, PinSkillToBotsData, PinSkillToBotsResponses, PreviewSkillImportData, PreviewSkillImportResponses, RemoveBotSkillData, RemoveBotSkillResponses, RenameSkillData, RenameSkillResponses, RestoreSkillData, RestoreSkillResponses, RestoreSkillVersionData, RestoreSkillVersionResponses, SetBotSkillData, SetBotSkillResponses, SetPinnedBotsData, SetPinnedBotsResponses, TrashSkillData, TrashSkillResponses, UndeprecateSkillData, UndeprecateSkillResponses, UpdateBotData, UpdateBotResponses, UpdateSettingsData, UpdateSettingsResponses, UploadAvatarData, UploadAvatarResponses } from './types.gen';
+import { zApplySkillImportBody, zApplySkillImportResponse, zCreateBotBody, zCreateBotHeaders, zCreateBotResponse, zCreateSkillBody, zCreateSkillResponse, zCreateSkillVersionBody, zCreateSkillVersionPath, zCreateSkillVersionResponse, zDeleteBotPath, zDeleteBotResponse, zDeleteSkillPath, zDeleteSkillResponse, zDeprecateSkillBody, zDeprecateSkillPath, zDeprecateSkillResponse, zExportSkillsQuery, zExportSkillsResponse, zGetAvatarLimitsResponse, zGetAvatarPath, zGetAvatarResponse, zGetBotCloneTemplatePath, zGetBotCloneTemplateResponse, zGetBotPath, zGetBotResponse, zGetHealthResponse, zGetSettingsResponse, zGetSkillDiffPath, zGetSkillDiffQuery, zGetSkillDiffResponse, zGetSkillPath, zGetSkillResponse, zGetSkillVersionPath, zGetSkillVersionResponse, zGetStreamHeaders, zGetStreamResponse, zListBotsResponse, zListModelsResponse, zListSkillsQuery, zListSkillsResponse, zListSkillUpgradeCandidatesPath, zListSkillUpgradeCandidatesResponse, zListSkillVersionsPath, zListSkillVersionsResponse, zListToolsResponse, zPinSkillToBotsBody, zPinSkillToBotsPath, zPinSkillToBotsResponse, zPreviewSkillImportBody, zPreviewSkillImportResponse, zRemoveBotSkillPath, zRemoveBotSkillResponse, zRenameSkillBody, zRenameSkillPath, zRenameSkillResponse, zRestoreSkillPath, zRestoreSkillResponse, zRestoreSkillVersionBody, zRestoreSkillVersionPath, zRestoreSkillVersionResponse, zSetBotSkillBody, zSetBotSkillPath, zSetBotSkillResponse, zSetPinnedBotsBody, zSetPinnedBotsResponse, zTrashSkillBody, zTrashSkillPath, zTrashSkillResponse, zUndeprecateSkillBody, zUndeprecateSkillPath, zUndeprecateSkillResponse, zUpdateBotBody, zUpdateBotPath, zUpdateBotResponse, zUpdateSettingsBody, zUpdateSettingsResponse, zUploadAvatarBody, zUploadAvatarResponse } from './zod.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -56,6 +56,28 @@ export const updateSettings = <ThrowOnError extends boolean = false>(options: Op
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+export const listModels = <ThrowOnError extends boolean = false>(options?: Options<ListModelsData, ThrowOnError>): RequestResult<ListModelsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListModelsResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: z.never().optional(),
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zListModelsResponse.parseAsync(data),
+    url: '/api/models',
+    ...options
+});
+
+export const listTools = <ThrowOnError extends boolean = false>(options?: Options<ListToolsData, ThrowOnError>): RequestResult<ListToolsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListToolsResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: z.never().optional(),
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zListToolsResponse.parseAsync(data),
+    url: '/api/tools',
+    ...options
 });
 
 export const exportSkills = <ThrowOnError extends boolean = false>(options?: Options<ExportSkillsData, ThrowOnError>): RequestResult<ExportSkillsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ExportSkillsResponses, unknown, ThrowOnError>({
@@ -237,6 +259,21 @@ export const listSkillUpgradeCandidates = <ThrowOnError extends boolean = false>
     ...options
 });
 
+export const pinSkillToBots = <ThrowOnError extends boolean = false>(options: Options<PinSkillToBotsData, ThrowOnError>): RequestResult<PinSkillToBotsResponses, unknown, ThrowOnError> => (options.client ?? client).post<PinSkillToBotsResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zPinSkillToBotsBody,
+        path: zPinSkillToBotsPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zPinSkillToBotsResponse.parseAsync(data),
+    url: '/api/skills/{id}/bots',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
 export const deprecateSkill = <ThrowOnError extends boolean = false>(options: Options<DeprecateSkillData, ThrowOnError>): RequestResult<DeprecateSkillResponses, unknown, ThrowOnError> => (options.client ?? client).post<DeprecateSkillResponses, unknown, ThrowOnError>({
     requestValidator: async (data) => await z.object({
         body: zDeprecateSkillBody,
@@ -290,6 +327,160 @@ export const restoreSkill = <ThrowOnError extends boolean = false>(options: Opti
     }).parseAsync(data),
     responseValidator: async (data) => await zRestoreSkillResponse.parseAsync(data),
     url: '/api/skills/{id}/restore',
+    ...options
+});
+
+export const listBots = <ThrowOnError extends boolean = false>(options?: Options<ListBotsData, ThrowOnError>): RequestResult<ListBotsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListBotsResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: z.never().optional(),
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zListBotsResponse.parseAsync(data),
+    url: '/api/bots',
+    ...options
+});
+
+export const createBot = <ThrowOnError extends boolean = false>(options: Options<CreateBotData, ThrowOnError>): RequestResult<CreateBotResponses, unknown, ThrowOnError> => (options.client ?? client).post<CreateBotResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zCreateBotBody,
+        headers: zCreateBotHeaders,
+        path: z.never().optional(),
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zCreateBotResponse.parseAsync(data),
+    url: '/api/bots',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const setPinnedBots = <ThrowOnError extends boolean = false>(options: Options<SetPinnedBotsData, ThrowOnError>): RequestResult<SetPinnedBotsResponses, unknown, ThrowOnError> => (options.client ?? client).put<SetPinnedBotsResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zSetPinnedBotsBody,
+        path: z.never().optional(),
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zSetPinnedBotsResponse.parseAsync(data),
+    url: '/api/bots/pins',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteBot = <ThrowOnError extends boolean = false>(options: Options<DeleteBotData, ThrowOnError>): RequestResult<DeleteBotResponses, unknown, ThrowOnError> => (options.client ?? client).delete<DeleteBotResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zDeleteBotPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zDeleteBotResponse.parseAsync(data),
+    url: '/api/bots/{id}',
+    ...options
+});
+
+export const getBot = <ThrowOnError extends boolean = false>(options: Options<GetBotData, ThrowOnError>): RequestResult<GetBotResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetBotResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zGetBotPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetBotResponse.parseAsync(data),
+    url: '/api/bots/{id}',
+    ...options
+});
+
+export const updateBot = <ThrowOnError extends boolean = false>(options: Options<UpdateBotData, ThrowOnError>): RequestResult<UpdateBotResponses, unknown, ThrowOnError> => (options.client ?? client).patch<UpdateBotResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zUpdateBotBody,
+        path: zUpdateBotPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zUpdateBotResponse.parseAsync(data),
+    url: '/api/bots/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const getBotCloneTemplate = <ThrowOnError extends boolean = false>(options: Options<GetBotCloneTemplateData, ThrowOnError>): RequestResult<GetBotCloneTemplateResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetBotCloneTemplateResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zGetBotCloneTemplatePath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetBotCloneTemplateResponse.parseAsync(data),
+    url: '/api/bots/{id}/clone-template',
+    ...options
+});
+
+export const removeBotSkill = <ThrowOnError extends boolean = false>(options: Options<RemoveBotSkillData, ThrowOnError>): RequestResult<RemoveBotSkillResponses, unknown, ThrowOnError> => (options.client ?? client).delete<RemoveBotSkillResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zRemoveBotSkillPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zRemoveBotSkillResponse.parseAsync(data),
+    url: '/api/bots/{id}/skills/{skill_id}',
+    ...options
+});
+
+export const setBotSkill = <ThrowOnError extends boolean = false>(options: Options<SetBotSkillData, ThrowOnError>): RequestResult<SetBotSkillResponses, unknown, ThrowOnError> => (options.client ?? client).put<SetBotSkillResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zSetBotSkillBody,
+        path: zSetBotSkillPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zSetBotSkillResponse.parseAsync(data),
+    url: '/api/bots/{id}/skills/{skill_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const getAvatarLimits = <ThrowOnError extends boolean = false>(options?: Options<GetAvatarLimitsData, ThrowOnError>): RequestResult<GetAvatarLimitsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetAvatarLimitsResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: z.never().optional(),
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetAvatarLimitsResponse.parseAsync(data),
+    url: '/api/avatars/limits',
+    ...options
+});
+
+export const uploadAvatar = <ThrowOnError extends boolean = false>(options: Options<UploadAvatarData, ThrowOnError>): RequestResult<UploadAvatarResponses, unknown, ThrowOnError> => (options.client ?? client).post<UploadAvatarResponses, unknown, ThrowOnError>({
+    ...formDataBodySerializer,
+    requestValidator: async (data) => await z.object({
+        body: zUploadAvatarBody,
+        path: z.never().optional(),
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zUploadAvatarResponse.parseAsync(data),
+    url: '/api/avatars',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+export const getAvatar = <ThrowOnError extends boolean = false>(options: Options<GetAvatarData, ThrowOnError>): RequestResult<GetAvatarResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetAvatarResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zGetAvatarPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetAvatarResponse.parseAsync(data),
+    url: '/api/avatars/{file}',
     ...options
 });
 
