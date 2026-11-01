@@ -170,6 +170,17 @@ test("the header scrolls a long roster and pins a bot by drag", async ({ page })
   }));
   expect(pageWidth.scroll).toBeLessThanOrEqual(pageWidth.client);
 
+  // Keyboard only (UI-2.2, UI-2.10, top-header.md state 5): Tab to an avatar shows its name
+  // and the ‹ › buttons, with no pointer in the header.
+  await page.mouse.move(700, 600);
+  const avatars = header.getByTestId("header-bot").getByRole("button");
+  await avatars.first().focus();
+  await page.keyboard.press("Tab");
+  await expect(avatars.nth(1)).toBeFocused();
+  const second = (await bots())[1];
+  await expect(page.getByText(`${second?.name ?? ""} · Idle`, { exact: true })).toBeVisible();
+  await expect(header.getByRole("button", { name: "Scroll bots right" })).toBeVisible();
+
   await roster.hover();
   await header.getByRole("button", { name: "Scroll bots right" }).click();
   await expect.poll(() => roster.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);

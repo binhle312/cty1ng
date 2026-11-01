@@ -126,12 +126,16 @@ function useDeferredOrder(currentOthers: readonly string[]) {
     const onBlur = () => {
       if (engaged.current) thaw();
     };
+    // A click or key press outside, focus that moves out of the header (Tab into the page), or
+    // focus that leaves the window.
     document.addEventListener("pointerdown", outside, true);
     document.addEventListener("keydown", outside, true);
+    document.addEventListener("focusin", outside, true);
     window.addEventListener("blur", onBlur);
     return () => {
       document.removeEventListener("pointerdown", outside, true);
       document.removeEventListener("keydown", outside, true);
+      document.removeEventListener("focusin", outside, true);
       window.removeEventListener("blur", onBlur);
     };
   }, [thaw]);
