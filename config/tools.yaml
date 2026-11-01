@@ -7,8 +7,7 @@
 #         | locked = forced off, needs a decision (D55)
 # needs: tool ids that must be on
 #
-# The lines of Web search, Advisor, Tool search, Google search, URL context and Google code
-# execution are drafts for the owner's review in the M2a PR (M2 plan, #57).
+# The owner approved every line in the M2a PR (#57, 2026-11-01).
 
 # Internal tools (phase 1). Each is `open`: its saved switch waits for the slice that builds it.
 - id: files
