@@ -592,8 +592,10 @@ test("a change in another tab keeps this tab's unsaved edit and shows the confli
 test("leaving an edited Clone for a new skill asks first", async ({ page }) => {
   const skill = unique("Clone leave");
   await createSkill(page, skill);
-  await page.getByRole("button", { name: "Skill actions" }).click();
-  await page.getByRole("menuitem", { name: "Clone" }).click();
+  // Wait for the Clone's form: typed sooner, the text lands in the source skill's editor, and
+  // the leave question opens on the way to the Clone.
+  await openClone(page);
+  await expect(page.getByLabel("Name", { exact: true })).toHaveValue(`${skill.name} (copy)`);
   await fill(page, "Description", "Edited copy.");
   await page.getByRole("link", { name: "Create", exact: true }).click();
   const dialog = page.getByRole("alertdialog", { name: "Leave without saving? 👀" });
