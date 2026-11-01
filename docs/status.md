@@ -73,7 +73,7 @@ that use them, then M0.
 
 ## Next
 
-1. M2a (backend) building on [#57](https://github.com/binhle312/cty1ng/pull/57). The M2 plan was approved on 2026-11-01 (the first comment of #57, decisions 1–15): Anthropic and Google Gemini in the catalog, a Guide seed bot first, split into M2a (backend, with the Skills page fixes it needs), M2b (Bots page, header, Create) and M2c (bot page, upgrade and assign cards).
+1. M2a in review on [#57](https://github.com/binhle312/cty1ng/pull/57): the bots backend (catalog with Gemini and Anthropic, tables, name key, bots and avatar API, purge, CLI, seed with Guide, BA and Designer) and the Skills page changes it needs. **Waiting on the owner:** the review items in the PR (migration 0002, new security-sensitive upload code, the Guide persona and the `using-the-app` skill text, the drafted tool lines). Then M2b (Bots page, header, Create) starts from merged M2a.
 
 ## Waiting on the owner
 
@@ -113,7 +113,7 @@ it in, and the row goes when its PR merges.
 | --- | --- | --- | --- |
 | M0 | merged | [#46](https://github.com/binhle312/cty1ng/pull/46) (M0a), [#48](https://github.com/binhle312/cty1ng/pull/48) (M0b), [#49](https://github.com/binhle312/cty1ng/pull/49) (M0c), [#50](https://github.com/binhle312/cty1ng/pull/50) (Impeccable snapshot) | Three parts (M0a tooling, M0b backend, M0c frontend), all merged 2026-10-30 |
 | M1 | merged | [#51](https://github.com/binhle312/cty1ng/pull/51) (spec gap pass), [#52](https://github.com/binhle312/cty1ng/pull/52) (plan and M1a backend), [#54](https://github.com/binhle312/cty1ng/pull/54) (M1b Skills page), [#55](https://github.com/binhle312/cty1ng/pull/55) (M1c backend maintenance) | Plan approved 2026-10-31, split into M1a (backend), M1b (Skills page) and M1c (event pruning, SQLite writer guard), all merged. Design approved: `design/components/skills-page.md` (round 8); D49 accepted. Round 16 moves the page to the bot page layout (agreed, #38) |
-| M2 | building | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec), [#56](https://github.com/binhle312/cty1ng/pull/56) (spec gap pass), [#57](https://github.com/binhle312/cty1ng/pull/57) (plan, M2a) | Plan approved 2026-11-01 (#57 first comment); M2a building. Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open (M2 shows its empty state). Spec gap pass answered 2026-11-01 |
+| M2 | building | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec), [#56](https://github.com/binhle312/cty1ng/pull/56) (spec gap pass), [#57](https://github.com/binhle312/cty1ng/pull/57) (plan, M2a) | Plan approved 2026-11-01 (#57 first comment); M2a in review on #57. Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open (M2 shows its empty state). Spec gap pass answered 2026-11-01 |
 | M3 | UI design agreed | [#26](https://github.com/binhle312/cty1ng/pull/26) (spec) | Round 10: `design/components/conversation-page.md`, `composer.md`, `conversation-cards.md` |
 | M4 | not started | | |
 | M5 | UI design agreed | [#35](https://github.com/binhle312/cty1ng/pull/35) (spec) | Round 14: `design/components/settings-page.md`, `conversation-page.md` §2.4; key `bot_discussion_enabled` |
