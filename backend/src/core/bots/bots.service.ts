@@ -468,15 +468,6 @@ export function createBotsService(deps: BotsDeps) {
     return shaped;
   }
 
-  // The temporary CLI (api.md §4): by slug.
-  function trashBySlug(slug: string): Promise<Bot> {
-    return uow.run(async (tx) => {
-      const bot = await tx.bots.bySlug(slug);
-      if (bot === null) throw new DomainError("not_found", `No bot has the slug ${slug}.`);
-      return trashInTx(tx, await liveBot(tx.bots, bot.id));
-    });
-  }
-
   // `bots restore <slug>` (D50): out of Trash, not pinned. Always works: the name and the slug
   // stayed taken.
   function restoreBySlug(slug: string): Promise<Bot> {
@@ -694,7 +685,6 @@ export function createBotsService(deps: BotsDeps) {
     create,
     update,
     trash,
-    trashBySlug,
     restoreBySlug,
     setPinned,
     cloneTemplate,

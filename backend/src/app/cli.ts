@@ -11,7 +11,10 @@ const USAGE = `Usage:
   cli skills export <folder> [--slug <slug> ...]
                                    write the latest versions into a new or empty folder
   cli skills trash                 list the skills in Trash (until the Trash page, M5b)
-  cli skills restore <slug>        restore a skill from Trash (until the Trash page, M5b)`;
+  cli skills restore <slug>        restore a skill from Trash (until the Trash page, M5b)
+  cli bots seed <file>             create the example bots of <file> (seed/bots.yaml) that do not exist
+  cli bots trash                   list the bots in Trash (until the Trash page, M5b)
+  cli bots restore <slug>          restore a bot from Trash (until the Trash page, M5b)`;
 
 async function run(args: readonly string[]): Promise<number> {
   const [group, command, ...rest] = args;
@@ -46,6 +49,10 @@ async function run(args: readonly string[]): Promise<number> {
     const code = await skillsCommand(command, rest);
     if (code !== null) return code;
   }
+  if (group === "bots") {
+    const code = await botsCommand(command, rest);
+    if (code !== null) return code;
+  }
   process.stderr.write(`${USAGE}\n`);
   return 2;
 }
@@ -75,6 +82,41 @@ async function skillsCommand(
   const backend = compose(config, createLogger({ level: "error", secrets: config.secrets }));
   try {
     return await commands.reportDomainErrors(() => work(commands, backend, out), out);
+  } finally {
+    backend.close();
+  }
+}
+
+// Null when the arguments match no command.
+async function botsCommand(
+  command: string | undefined,
+  rest: readonly string[],
+): Promise<number | null> {
+  const [arg] = rest;
+  const pick =
+    command === "seed" && arg !== undefined && rest.length === 1
+      ? "seed"
+      : command === "trash" && rest.length === 0
+        ? "trash"
+        : command === "restore" && arg !== undefined && rest.length === 1
+          ? "restore"
+          : null;
+  if (pick === null) return null;
+  const out = (line: string) => process.stdout.write(`${line}\n`);
+  const [{ compose }, { createLogger }, skills, bots] = await Promise.all([
+    import("./compose.ts"),
+    import("../adapters/log/pino-logger.ts"),
+    import("./skill-commands.ts"),
+    import("./bot-commands.ts"),
+  ]);
+  const config = loadConfig(process.env);
+  const backend = compose(config, createLogger({ level: "error", secrets: config.secrets }));
+  try {
+    return await skills.reportDomainErrors(() => {
+      if (pick === "seed") return bots.seedBots(backend, arg ?? "", out);
+      if (pick === "trash") return bots.listBotTrash(backend, out);
+      return bots.restoreBot(backend, arg ?? "", out);
+    }, out);
   } finally {
     backend.close();
   }

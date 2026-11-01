@@ -195,6 +195,8 @@ export interface BotsReader {
   // The pinned bots, by position.
   pinnedIds(): Promise<BotId[]>;
   trashedCount(): Promise<number>;
+  // Bots in Trash, not purged, newest delete first.
+  trashed(): Promise<BotRecord[]>;
   // Bots in Trash, not purged, whose `deleted_at` is at or before `cutoff` (the purge job).
   trashedUntil(cutoff: Date): Promise<BotId[]>;
   // The `avatar_path` values that any row names: live, in Trash or a tombstone.

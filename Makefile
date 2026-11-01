@@ -28,7 +28,8 @@ lint: $(DEPS)
 e2e: $(DEPS)
 	pnpm e2e
 
-# Imports the example skills in seed/ through the import service (seed/README.md). A second run
-# changes nothing. M2 adds the example bots.
+# Imports the example skills in seed/ through the import service, then creates the example bots
+# (seed/README.md). A second run changes nothing.
 seed: $(DEPS)
 	pnpm --filter backend cli skills import $(CURDIR)/seed/skills --apply
+	pnpm --filter backend cli bots seed $(CURDIR)/seed/bots.yaml

@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, isNotNull, isNull, lte, notExists, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, isNotNull, isNull, lte, notExists, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 import { AvatarStyle } from "@cty1ng/shared/bots";
 import { Effort } from "@cty1ng/shared/catalog";
@@ -111,6 +111,16 @@ export function botsRepository(db: Db): BotsWriter {
         .get();
       return Promise.resolve(row?.n ?? 0);
     },
+    trashed: () =>
+      Promise.resolve(
+        db
+          .select()
+          .from(bots)
+          .where(and(isNotNull(bots.deletedAt), isNull(bots.purgedAt)))
+          .orderBy(desc(bots.deletedAt))
+          .all()
+          .map(toBot),
+      ),
     trashedUntil: (cutoff) =>
       Promise.resolve(
         db
