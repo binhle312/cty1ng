@@ -224,7 +224,10 @@ export const Bot = z
 export type Bot = z.infer<typeof Bot>;
 
 // `GET /bots/{id}`: the bot and the conversations it is in (none before M3).
-export const BotDetail = Bot.extend({ conversations: z.array(z.never()) }).strict();
+export const BotDetail = Bot.extend({
+  // Always empty in M2; M3 gives each conversation its shape.
+  conversations: z.array(z.object({ id: z.string() }).strict()).max(0),
+}).strict();
 export type BotDetail = z.infer<typeof BotDetail>;
 
 const Pct = z.number().int();

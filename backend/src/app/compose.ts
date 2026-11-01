@@ -110,6 +110,9 @@ export function compose(
     settings,
     skills,
     skillImport,
+    bots,
+    avatars,
+    avatarMaxBytes: config.avatarMaxBytes,
     openStream: (afterSeq, signal, onError) =>
       sseBody(hub, afterSeq, signal, { ...options.sse, onError }),
     testPing: config.appEnv === "test" ? createTestPingService({ uow, appendEvent }) : null,

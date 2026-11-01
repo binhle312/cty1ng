@@ -135,6 +135,7 @@ export function idleServices() {
     catalog,
     bots,
     avatars: createAvatarsService({ uow, clock: systemClock, files: avatarFiles, orphanHours: 24 }),
+    avatarMaxBytes: 2_097_152,
     settings: createSettingsService({ uow, readers, appendEvent }),
     skills,
     skillImport: createSkillImportService({
