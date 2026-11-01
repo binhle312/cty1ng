@@ -185,7 +185,17 @@ export function createBotsService(deps: BotsDeps) {
     if (!BUILT_AVATAR_STYLES.includes(style)) {
       throw new DomainError("validation_error", "Pick Flat or Upload.", "avatar_style");
     }
-    if (style !== "upload") return null;
+    if (style !== "upload") {
+      // An image with another style would be dropped without a word (review of PR #57).
+      if (avatarId !== undefined) {
+        throw new DomainError(
+          "validation_error",
+          "An image needs the Upload style. Pick Upload, or leave the image out.",
+          "avatar_id",
+        );
+      }
+      return null;
+    }
     if (avatarId === undefined) {
       if (current !== null) return current;
       throw new DomainError("validation_error", "Upload an image first.", "avatar_id");
@@ -231,7 +241,10 @@ export function createBotsService(deps: BotsDeps) {
     for (const [index, pin] of body.pins.entries()) {
       const field = `pins[${String(index)}]`;
       const skill = await tx.skills.byId(pin.skill_id);
-      if (skill === null || skill.trashedAt !== null) {
+      if (skill === null) {
+        throw new DomainError("validation_error", "No such skill. Untick it.", field);
+      }
+      if (skill.trashedAt !== null) {
         throw new DomainError(
           "validation_error",
           "This skill is in Trash. Untick it, or restore the skill first.",
@@ -631,8 +644,14 @@ export function createBotsService(deps: BotsDeps) {
       }
       const now = clock.now();
       const result: Bot[] = [];
+      const seen = new Set<string>();
       for (const [index, change] of changes.entries()) {
         const field = `bots[${String(index)}]`;
+        // A bot listed twice would find its own new pin and fail as stale_write.
+        if (seen.has(change.botId)) {
+          throw new DomainError("validation_error", "This bot is listed twice.", field);
+        }
+        seen.add(change.botId);
         const bot = await tx.bots.byId(change.botId);
         if (bot === null || bot.purgedAt !== null) {
           throw new DomainError("validation_error", "No such bot.", field);

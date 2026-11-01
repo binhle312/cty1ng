@@ -323,13 +323,6 @@ export const SetPinBody = z
   })
   .strict();
 
-// The ranges that apply to every bot's own values (domain-model.md §10): the same as the
-// default settings' ranges. The history share range is a setting.
-export const BOT_VALUE_RANGES = {
-  request_limit: { min: 1, max: 100 },
-  max_reply_chars: { min: 500, max: 20_000 },
-} as const;
-
 // Avatar uploads (security.md §2.4): fixed rules; the size limit comes from AVATAR_MAX_BYTES.
 export const AVATAR_ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
 export const AvatarLimits = z

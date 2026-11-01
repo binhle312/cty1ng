@@ -18,7 +18,7 @@ Code that both the backend and the frontend import: the event schemas, TypeIDs a
 | `src/case-folding.ts` | Generated (`pnpm gen:case-folding`): the Unicode full case folding table for the name key |
 | `src/catalog.ts` | The catalog file schemas (`config/models.yaml`, `config/tools.yaml`), effort levels, the `GET /models` and `GET /tools` shapes |
 | `src/errors.ts` | API error codes with their HTTP status and the error shape (`docs/api.md` §1) |
-| `src/settings.ts` | The settings built so far: Zod schema, defaults and ranges (`docs/domain-model.md` §10) |
+| `src/settings.ts` | The settings built so far: Zod schema, defaults and ranges, and the ranges of a bot's own values (`docs/domain-model.md` §10) |
 | `src/skills.ts` | Skill format rules (slug, description), the slug maker, copy names, the `Skill` and `SkillVersion` API shapes |
 
 Start here: `src/events/stream-event.ts`. Do not: import from `backend/` or `frontend/`, or add

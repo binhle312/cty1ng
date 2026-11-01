@@ -203,7 +203,10 @@ describe("create (POST /bots)", () => {
       [{ persona_md: "You are nice." }, { code: "validation_error", field: "description" }],
       [{ description: "Writes stories." }, { code: "validation_error", field: "request_limit" }],
       [{ request_limit: 30 }, { code: "validation_error", field: "avatar_id" }],
-      [{ avatar_style: "flat" }, { code: "name_taken", field: "name" }],
+      [
+        { avatar_style: "flat", avatar_id: undefined },
+        { code: "name_taken", field: "name" },
+      ],
     ];
     for (const [fix, expected] of steps) {
       sent = { ...sent, ...fix };
@@ -235,6 +238,27 @@ describe("create (POST /bots)", () => {
     expect(
       await failure(create({ name: "B3", pins: [{ skill_id: old, always_load: false }] })),
     ).toMatchObject({ code: "validation_error", field: "pins[0]" });
+    // A skill that never existed is not "in Trash".
+    const unknown = await failure(
+      create({
+        name: "B4",
+        pins: [{ skill_id: SkillId.parse(newTestId("skill")), always_load: false }],
+      }),
+    );
+    expect(unknown).toMatchObject({ code: "validation_error", field: "pins[0]" });
+    expect(unknown.message).toBe("No such skill. Untick it.");
+  });
+
+  it("refuses an avatar_id with a style that is not upload, on create and on PATCH", async () => {
+    const image = "a".repeat(64);
+    expect(await failure(create({ avatar_id: image }))).toMatchObject({
+      code: "validation_error",
+      field: "avatar_id",
+    });
+    const bot = await create();
+    expect(
+      await failure(backend.bots.update(BotId.parse(bot.id), { row_version: 1, avatar_id: image })),
+    ).toMatchObject({ code: "validation_error", field: "avatar_id" });
   });
 
   it("lets a clone keep a deprecated pin of a live source at the same version only", async () => {
@@ -529,6 +553,19 @@ describe("skills that touch pins (api.md §2)", () => {
     ]);
     expect(moved?.pins).toMatchObject([{ version: 2, always_load: true }]);
     expect(await backend.skills.summary(notes, OWNER_ID)).toMatchObject({ bots_outdated: 0 });
+  });
+
+  it("refuses a bot listed twice with 422, not a false stale_write", async () => {
+    const notes = await skill("notes");
+    const bot = await create();
+    const v1 = (await backend.readers.skills.latestVersion(notes))?.id;
+    if (v1 === undefined) throw new Error("v1");
+    const twice = { botId: BotId.parse(bot.id), expectedSkillVersionId: null };
+    expect(await failure(backend.bots.pinSkillToBots(notes, v1, [twice, twice]))).toMatchObject({
+      code: "validation_error",
+      field: "bots[1]",
+    });
+    expect((await backend.bots.get(BotId.parse(bot.id))).pins).toEqual([]);
   });
 
   it("moves no pin and writes no event when a later bot in the batch fails", async () => {

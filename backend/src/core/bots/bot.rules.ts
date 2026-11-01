@@ -1,13 +1,8 @@
-import {
-  BOT_VALUE_RANGES,
-  botFieldProblem,
-  type BotHealth,
-  type BotTextField,
-} from "@cty1ng/shared/bots";
+import { botFieldProblem, type BotHealth, type BotTextField } from "@cty1ng/shared/bots";
 import type { CatalogModel, Effort, UnavailableReason } from "@cty1ng/shared/catalog";
 import type { ErrorCode } from "@cty1ng/shared/errors";
-import type { Settings } from "@cty1ng/shared/settings";
-import { findSensitive, sensitiveLabel } from "../guard/sensitive-data.rules.ts";
+import { BOT_VALUE_RANGES, HISTORY_STEP_PCT, type Settings } from "@cty1ng/shared/settings";
+import { firstSensitive, sensitiveLabel } from "../guard/sensitive-data.rules.ts";
 
 // Pure bot rules (domain-model.md §2, bots.md UI-4.5, UI-4.6): field checks, the effort, the
 // Advanced values, the order and the health line. Pure: no database, no clock.
@@ -20,8 +15,8 @@ export interface BotProblem {
 
 // The D39 guard on one text field (security.md §2.13). The name is checked as it is stored.
 export function botGuardProblem(field: BotTextField, value: string): BotProblem | null {
-  const [match] = findSensitive(value);
-  if (match === undefined) return null;
+  const match = firstSensitive(value);
+  if (match === null) return null;
   const where =
     field === "persona_md" ? `Line ${String(match.line)} of the persona` : `The ${field}`;
   return {
@@ -90,9 +85,9 @@ export function advancedProblem(
     field === "history_share_pct"
       ? { min: settings.bot_history_min_pct, max: settings.bot_history_max_pct }
       : BOT_VALUE_RANGES[field];
-  const stepOk = field !== "history_share_pct" || value % 5 === 0;
+  const stepOk = field !== "history_share_pct" || value % HISTORY_STEP_PCT === 0;
   if (Number.isInteger(value) && value >= range.min && value <= range.max && stepOk) return null;
-  const step = field === "history_share_pct" ? ", in steps of 5" : "";
+  const step = field === "history_share_pct" ? `, in steps of ${String(HISTORY_STEP_PCT)}` : "";
   return {
     code: "validation_error",
     field,

@@ -5,8 +5,19 @@ import { z } from "zod";
 // no row in the `settings` table has its default.
 
 const WholeNumber = z.number().int();
-// The history share settings move in steps of 5 % (domain-model.md §10).
-const Pct = (min: number, max: number) => WholeNumber.min(min).max(max).multipleOf(5);
+// The history share, of a bot and of the settings, moves in steps of 5 % (domain-model.md §10).
+export const HISTORY_STEP_PCT = 5;
+const Pct = (min: number, max: number) =>
+  WholeNumber.min(min).max(max).multipleOf(HISTORY_STEP_PCT);
+
+// The ranges that apply to every bot's own values (domain-model.md §10), and to the default
+// settings of those values: one home, so the two cannot drift. The history share range is a
+// setting.
+export const BOT_VALUE_RANGES = {
+  request_limit: { min: 1, max: 100 },
+  max_reply_chars: { min: 500, max: 20_000 },
+} as const;
+const inRange = ({ min, max }: { min: number; max: number }) => WholeNumber.min(min).max(max);
 
 export const SETTING_SCHEMAS = {
   // Days an item stays in Trash (D49, D62). At least 1, no upper limit.
@@ -22,8 +33,8 @@ export const SETTING_SCHEMAS = {
   bot_history_min_pct: Pct(5, 50),
   bot_history_max_pct: Pct(50, 90),
   bot_default_history_pct: Pct(5, 90),
-  bot_default_request_limit: WholeNumber.min(1).max(100),
-  bot_default_max_reply_chars: WholeNumber.min(500).max(20_000),
+  bot_default_request_limit: inRange(BOT_VALUE_RANGES.request_limit),
+  bot_default_max_reply_chars: inRange(BOT_VALUE_RANGES.max_reply_chars),
   // Health thresholds (bots.md UI-4.6); M2 has no runs, so only the ranges are used yet.
   health_recent_runs: WholeNumber.min(1).max(50),
   health_failed_runs: WholeNumber.min(1).max(50),
