@@ -75,6 +75,40 @@ describe("avatars", () => {
     expect(await codeOf(response)).toBe("validation_error");
   });
 
+  it.each(["jpeg", "png", "webp"] as const)(
+    "removes EXIF, ICC and XMP that a %s upload carries",
+    async (format) => {
+      const xmp =
+        '<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">' +
+        '<rdf:Description xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:creator>Secret Author</dc:creator>' +
+        "</rdf:Description></rdf:RDF></x:xmpmeta>";
+      const input = await sharp({
+        create: { width: 64, height: 48, channels: 3, background: "#3366ff" },
+      })
+        .toFormat(format)
+        .withExif({ IFD0: { Copyright: "Secret Author", Artist: "Secret Author" } })
+        .withIccProfile("p3")
+        .withXmp(xmp)
+        .toBuffer();
+      const before = await sharp(input).metadata();
+      expect(before.exif?.toString("latin1")).toContain("Secret Author");
+      expect(before.icc).toBeDefined();
+      expect(before.xmpAsString).toContain("Secret Author");
+
+      const target = start();
+      const response = await upload(target, input, `a.${format}`);
+      expect(response.status).toBe(200);
+      const { url } = AvatarUpload.parse(await response.json());
+      const output = Buffer.from(await (await target.request(url)).arrayBuffer());
+      const after = await sharp(output).metadata();
+      expect(after).toMatchObject({ format: "webp", width: 256, height: 256 });
+      expect(after.exif).toBeUndefined();
+      expect(after.icc).toBeUndefined();
+      expect(after.xmp).toBeUndefined();
+      expect(output.toString("latin1")).not.toContain("Secret Author");
+    },
+  );
+
   it.each([
     ["a text field", "note", (): string => "hello"],
     ["a second file part", "other", (image: Buffer) => new File([new Uint8Array(image)], "b.png")],
