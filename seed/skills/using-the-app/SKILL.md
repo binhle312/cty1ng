@@ -42,6 +42,27 @@ written ways of working that the bot follows.
 - **A skill's Bots tab**: see which bots use the skill and at which version, upgrade a bot to the
   newest version, turn Always load on or off, change the version, remove the skill from a bot,
   or add it to another bot.
+- **Bots page** (owner menu → Manage bots, or `/bots`): every bot as a card with its model,
+  counts and status. Search by name, description or model. Pin a bot with the pin on its card:
+  pinned bots come first, here and in the header; drag pinned cards to change their order (or
+  Alt+← and Alt+→). Sort the other bots by recent activity or by created time, up or down. The
+  ⋯ menu on a card has Details, Clone and Delete; Delete puts the bot in Trash.
+- **The header**: the bots' avatars at the top of every page, pinned first. Hover an avatar for
+  its name and status; click it for the bot card, with Pin and the settings gear. Drag an avatar
+  onto the pinned zone to pin it, or out of it to unpin it. With many bots, scroll the header
+  sideways or use ‹ and ›. A red "!" on an avatar means the bot cannot run, for example because
+  its model has no API key.
+- **Make a bot** (+ Create on the Bots page, or the "+" in an empty header): four steps, with a
+  live preview card on the right. 1 Basics: name, description, avatar (Flat with a colour, or
+  upload an image and crop it). 2 Persona: who the bot is and how it works. 3 Skills: tick
+  skills, each at its latest version, and set Always load. 4 Model: the model and effort (fixed
+  after Create), the tools, and Advanced (history share, model requests per run, longest
+  reply). Create is on step 4. If the app cannot reach the server, Try again sends the same
+  request, so it never makes two bots.
+- **Clone a bot** (⋯ → Clone on its card): the Create form opens on step 4 with everything
+  copied: persona, skills at the same versions, tools and Advanced. The name gets "(copy)" and
+  the colour is a free one; bot memory starts empty. Change the model or the effort here: this is
+  the way to try a bot on another model.
 - **Example content**: `make seed` adds example skills and three bots: Guide (you), BA and
   Designer.
 
@@ -50,7 +71,7 @@ written ways of working that the bot follows.
 These parts come in later versions of the app. If the owner asks about them, say that they are
 not in the app yet. Do not describe screens for them.
 
-- The Bots page, the bot page, and the form to make or clone a bot (next).
+- The bot page (Profile, Skills, Model, Activity, Usage tabs), so editing a bot (next).
 - Conversations: talking to a bot, and bots that hand work to each other.
 - Projects, the Library (the files of a project), and memory.
 - The Trash page (restore works only from the terminal for now).

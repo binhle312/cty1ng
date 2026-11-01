@@ -217,3 +217,21 @@ that cannot run) opens this page filled from `GET /bots/{id}/clone-template` (UI
 | `/bots/new?from={bot id}` | Clone of that bot (§6). A bot in Trash, purged or unknown shows "The app could not find the bot to copy." with **← Back**; a load failure shows "The app could not load the bot to copy." with **Try again** |
 
 `new` is a reserved slug (`../../domain-model.md` §2 Slug).
+
+## Texts added in the M2b build (2026-11-01, for the owner's review in the M2b PR)
+
+The spec did not name these; the build uses them.
+
+- Step checks: "Upload an image, or pick Flat." (Upload style with no image), "Pick an effort."
+  (a model with efforts and none picked).
+- Why Create is off (its tooltip, `ui-rules.md` B5): "Creating the bot." while sending; "Use Try
+  again above: the app does not know yet if the bot was created." after an unknown outcome;
+  "Fix the problems marked with ! first." while a server error stays; "Pick a model that can
+  run." with no model, or one with no key.
+- Skills step with no skills: "No skills yet. You can add skills later."; with a search that
+  matches none: 'No skills match "{text}".'
+- The crop card (`bot-avatar.md` §6): title "Crop the image", line "Drag the image to move it.
+  Zoom with the slider.", the image area's name for screen readers "Image position. Arrow keys
+  move it.", and "The app could not read the image. Try another file." when the file does not
+  load. A file of another type: "Use a PNG, JPEG or WebP image."; a file over the limit: "The
+  image is {n} MB. The limit is {max} MB."

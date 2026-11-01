@@ -66,7 +66,7 @@ Rules:
 | Primary tint | `primary-tint` (selected tile fill, left bar) | #3A2E12 | set in T2 |
 | Lines | `outline`, `outline-strong` | #23262B, #3A3F46 | #C3C8BB, #73796E |
 | Status | `running`, `waiting`, `danger`, `success` | #7DB8E3, #F5B544, #F2777A, #7FCB8B | #235023, #7A3E14, #B3261E, #2F6B3A |
-| Bots | `bot-1` … `bot-10` (avatar fills and the 10 swatches of the colour row; the palette is frontend only; text on a bot colour is black or white by contrast, `components/bot-avatar.md` §5) | shared palette | shared palette |
+| Bots | `bot-1` … `bot-10` (avatar fills and the 10 swatches of the colour row; the palette is frontend only, in `frontend/src/themes/bot-palette.ts`; text on a bot colour is black or white by contrast, `components/bot-avatar.md` §5) | #6FA8FF, #C98BFF, #6FD6A0, #FFB36B, #5CD6D6, #FF8FB0, #E8D36A, #FF8A80, #B5E36A, #8F9BFF (the first eight from the agreed previews; the last two added in M2b, for the owner's review) | shared palette |
 | Type | `font-sans`, `font-mono`, `text-base` | Geist, Geist Mono, 13 px | Roboto Flex, Roboto Mono, 16 px |
 | Shape | `radius-control`, `radius-card`, `radius-pill` | 6, 8, 999 px | 20, 28, 999 px |
 | Density | `control-height`, `row-padding-y` | 28, 8 px | 40, 12 px |
