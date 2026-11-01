@@ -233,6 +233,26 @@ describe("create (POST /bots)", () => {
   });
 });
 
+describe("name races (domain-model.md §2 Name key)", () => {
+  it("two creates of one name at once: one wins, the other gets name_taken", async () => {
+    const results = await Promise.allSettled([create({ name: "Twin" }), create({ name: "TWIN" })]);
+    expect(results.map((result) => result.status).sort()).toEqual(["fulfilled", "rejected"]);
+    const rejected = results.find((result) => result.status === "rejected");
+    expect(rejected?.status === "rejected" ? rejected.reason : null).toMatchObject({
+      code: "name_taken",
+    });
+  });
+
+  it("a rename to a name held by a bot in Trash gets name_taken", async () => {
+    const held = await create({ name: "Held" });
+    await backend.bots.trash(BotId.parse(held.id));
+    const other = await create({ name: "Other" });
+    expect(
+      await failure(backend.bots.update(BotId.parse(other.id), { row_version: 1, name: "held" })),
+    ).toMatchObject({ code: "name_taken" });
+  });
+});
+
 describe("update (PATCH /bots/{id})", () => {
   it("saves the fields sent, raises row_version, and refuses a stale one", async () => {
     const bot = await create();
