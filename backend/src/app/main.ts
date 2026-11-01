@@ -17,12 +17,23 @@ async function start(): Promise<void> {
     process.exit(1);
   }
 
-  const [{ serve }, { createLogger }, { compose }, { startTimedJobs }] = await Promise.all([
-    import("@hono/node-server"),
-    import("../adapters/log/pino-logger.ts"),
-    import("./compose.ts"),
-    import("./timed-jobs.ts"),
-  ]);
+  let modules;
+  try {
+    modules = await Promise.all([
+      import("@hono/node-server"),
+      import("../adapters/log/pino-logger.ts"),
+      import("./compose.ts"),
+      import("./timed-jobs.ts"),
+    ]);
+  } catch (error) {
+    // Most often a native package built for another Node or platform (sharp, better-sqlite3).
+    const reason = error instanceof Error ? error.message.split("\n")[0] : String(error);
+    process.stderr.write(
+      `cty1ng: the app could not load: ${reason ?? "unknown error"}\nRun pnpm install again, with the Node version in .nvmrc.\n`,
+    );
+    process.exit(1);
+  }
+  const [{ serve }, { createLogger }, { compose }, { startTimedJobs }] = modules;
   const log = createLogger({ level: config.logLevel, secrets: config.secrets });
   let app;
   try {

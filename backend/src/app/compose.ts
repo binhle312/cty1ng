@@ -19,6 +19,7 @@ import { createSkillsService } from "../core/skills/skills.service.ts";
 import { createAvatarsService } from "../core/bots/avatars.service.ts";
 import { createBotsService } from "../core/bots/bots.service.ts";
 import { diskAvatarFiles } from "../adapters/avatars/avatar-files.ts";
+import { lockImageLoaders } from "../adapters/http/uploads/avatar-image.ts";
 import { effortsOf, isModelProvider } from "../adapters/model/ai-sdk/effort.ts";
 import { checkCatalogProviders, loadCatalog } from "./catalog-files.ts";
 import type { Config } from "./config.ts";
@@ -68,6 +69,8 @@ export function compose(
   const catalog = loadCatalog(config);
   checkCatalogProviders(catalog, { isProvider: isModelProvider, efforts: effortsOf });
   const settings = createSettingsService({ uow, readers, appendEvent });
+  // Only the PNG, JPEG and WebP loaders of sharp, for the whole process (security.md §2.4).
+  lockImageLoaders();
   const avatarFiles = diskAvatarFiles(join(config.dataDir, "avatars"));
   const bots = createBotsService({
     uow,

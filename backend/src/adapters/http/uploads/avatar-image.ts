@@ -9,10 +9,35 @@ export const AVATAR_IMAGE = {
   pixelLimit: 25_000_000,
   size: 256,
   multipartOverheadBytes: 64 * 1024,
+  // At most this many uploads decode at once: one decode at the pixel limit holds about 100 MB.
+  maxDecodes: 2,
 } as const;
 
+// Runs at most `max` jobs at once; the others wait, in order of arrival.
+export function concurrencyLimit(max: number) {
+  let active = 0;
+  const waiting: (() => void)[] = [];
+  return async <T>(job: () => Promise<T>): Promise<T> => {
+    while (active >= max) {
+      await new Promise<void>((resolve) => {
+        waiting.push(resolve);
+      });
+    }
+    active += 1;
+    try {
+      return await job();
+    } finally {
+      active -= 1;
+      waiting.shift()?.();
+    }
+  };
+}
+
+const decodeSlot = concurrencyLimit(AVATAR_IMAGE.maxDecodes);
+
 // Layer 1, once per process: only the PNG, JPEG and WebP buffer loaders can run. Every other
-// libvips loader (SVG, GIF, TIFF, HEIF, PDF, …) is blocked before it reads a byte.
+// libvips loader (SVG, GIF, TIFF, HEIF, PDF, …) is blocked before it reads a byte. The app calls
+// it at start (compose), so any later use of sharp has the same lock; the upload calls it too.
 let loadersLocked = false;
 export function lockImageLoaders(): void {
   if (loadersLocked) return;
@@ -51,6 +76,10 @@ export async function encodeAvatar(input: Uint8Array): Promise<Uint8Array> {
   lockImageLoaders();
   const kind = sniff(input);
   if (kind === null) throw notAccepted();
+  return decodeSlot(() => decode(input, kind));
+}
+
+async function decode(input: Uint8Array, kind: ImageKind): Promise<Uint8Array> {
   const image = sharp(input, {
     limitInputPixels: AVATAR_IMAGE.pixelLimit,
     failOn: "error",

@@ -10,6 +10,7 @@ import { tempDir } from "../helpers.ts";
 // keeps the machine busy.
 const MAIN = resolve(import.meta.dirname, "../../src/app/main.ts");
 const RECORDER = resolve(import.meta.dirname, "record-modules.ts");
+const FAILER = resolve(import.meta.dirname, "fail-module.ts");
 // Much longer than a refused start needs (under a second alone); it only stops a hung child.
 const CHILD_LIMIT_MS = 15_000;
 
@@ -51,6 +52,14 @@ describe("startup checks", () => {
 
   it("refuses an invalid value with the variable's name", () => {
     expectRefused(start({ PORT: "eighty" }), "PORT");
+  });
+
+  it("says the app could not load, with no stack, when a module fails to load", () => {
+    const run = start({ FAIL_MODULE: "/src/app/compose.ts" }, ["--import", FAILER]);
+    expectRefused(run, "cty1ng: the app could not load: simulated load failure");
+    expect(run.stderr).toContain("Run pnpm install again");
+    expect(run.stderr).not.toContain("    at ");
+    expect(existsSync(join(dir.path, "app.db"))).toBe(false);
   });
 
   it("refuses before it loads the app, the database or the logger", () => {
