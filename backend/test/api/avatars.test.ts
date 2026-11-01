@@ -1,3 +1,4 @@
+import { crc32, deflateSync } from "node:zlib";
 import sharp from "sharp";
 import { afterEach, describe, expect, it } from "vitest";
 import { z } from "zod";
@@ -23,6 +24,31 @@ const png = (width = 64, height = 48) =>
   sharp({ create: { width, height, channels: 3, background: "#3366ff" } })
     .png()
     .toBuffer();
+
+// A real PNG of any size that stays small: 1-bit grey, every pixel black, so a 25 megapixel
+// image is a few KB and passes AVATAR_MAX_BYTES. Built by hand, because only its pixel count
+// must be over the limit, not its file size.
+function blankPng(width: number, height: number): Buffer {
+  const chunk = (type: string, data: Buffer) => {
+    const body = Buffer.concat([Buffer.from(type, "ascii"), data]);
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(data.length);
+    const crc = Buffer.alloc(4);
+    crc.writeUInt32BE(crc32(body));
+    return Buffer.concat([length, body, crc]);
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header[8] = 1; // bit depth 1; colour type 0 (grey), no interlace
+  const rows = Buffer.alloc((Math.ceil(width / 8) + 1) * height); // filter 0, all black
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk("IHDR", header),
+    chunk("IDAT", deflateSync(rows)),
+    chunk("IEND", Buffer.alloc(0)),
+  ]);
+}
 
 function upload(target: ReturnType<typeof testBackend>, bytes: Uint8Array, name = "a.png") {
   const form = new FormData();
@@ -139,7 +165,26 @@ describe("avatars", () => {
     expect((await upload(target, tiff)).status).toBe(422);
   });
 
-  it("refuses an image over 25 million pixels before it decodes", async () => {
+  // Review of PR #57: the test below alone cannot prove the limit, because its broken file fails
+  // with the limit off too. This one is a real image that decodes with the limit off.
+  it("refuses a real image one row over 25 million pixels, and passes one at the limit", async () => {
+    const over = blankPng(5_001, 5_000);
+    const atLimit = blankPng(5_000, 5_000);
+    expect(5_001 * 5_000).toBeGreaterThan(AVATAR_IMAGE.pixelLimit);
+    expect(5_000 * 5_000).toBe(AVATAR_IMAGE.pixelLimit);
+    // The file is valid: with no pixel limit, sharp decodes it.
+    const decoded = await sharp(over, { limitInputPixels: false }).resize(8, 8).png().toBuffer();
+    expect((await sharp(decoded).metadata()).width).toBe(8);
+    const target = start();
+    const refused = await upload(target, over);
+    expect(refused.status).toBe(422);
+    expect(await refused.json()).toMatchObject({
+      error: { code: "validation_error", field: "file" },
+    });
+    expect((await upload(target, atLimit)).status).toBe(200);
+  });
+
+  it("refuses an image whose header claims over 25 million pixels, before it decodes", async () => {
     const big = await png(1, 1);
     // Rewrite the IHDR size to 100000 × 100000; the header check refuses it.
     const view = new DataView(big.buffer, big.byteOffset, big.byteLength);
