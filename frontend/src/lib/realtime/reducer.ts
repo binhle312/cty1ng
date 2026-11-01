@@ -72,6 +72,16 @@ export function createEventReducer(queryClient: QueryClient) {
         case "trash.changed":
           void queryClient.invalidateQueries({ predicate: SKILL_QUERIES });
           return true;
+        // A bot changed: pins move the skills' bot counts, so the skill queries fetch again too
+        // (the Bots tab of a skill, M2a). The Bots page (M2b) adds its own queries here.
+        case "bot.created":
+        case "bot.updated":
+        case "bot.deleted":
+        case "bot.restored":
+        case "bot.purged":
+        case "bots.reordered":
+          void queryClient.invalidateQueries({ predicate: SKILL_QUERIES });
+          return true;
         case "settings.updated":
           void queryClient.invalidateQueries({ predicate: SETTINGS_QUERIES });
           return true;

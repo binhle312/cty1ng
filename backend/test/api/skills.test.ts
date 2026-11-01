@@ -169,7 +169,7 @@ describe("edits", () => {
 
   it("POST /versions: 201, then 409 stale_write on the same base version", async () => {
     const { id } = await created();
-    const body = { base_version: 1, description: "d", body_md: "b", upgrade_bot_ids: [] };
+    const body = { base_version: 1, description: "d", body_md: "b" };
     const first = await send("POST", `/skills/${id}/versions`, body);
     expect(first.status).toBe(201);
     const second = await send("POST", `/skills/${id}/versions`, body);
@@ -182,7 +182,6 @@ describe("edits", () => {
       base_version: 1,
       description: "d",
       body_md: "b",
-      upgrade_bot_ids: [],
       name: "X",
     });
     expect(response.status).toBe(422);
@@ -194,7 +193,6 @@ describe("edits", () => {
       base_version: 1,
       description: "d2",
       body_md: "b2",
-      upgrade_bot_ids: [],
     });
     const restored = await send("POST", `/skills/${id}/versions/1/restore`, {});
     expect(restored.status).toBe(201);
@@ -228,7 +226,6 @@ describe("edits", () => {
       base_version: 1,
       description: "d",
       body_md: "mine",
-      upgrade_bot_ids: [],
     });
     expect(response.status).toBe(403);
     expect((await errorOf(response)).code).toBe("not_author");
@@ -251,7 +248,6 @@ describe("Deprecate, Trash, restore, delete", () => {
       base_version: 1,
       description: "d",
       body_md: "b",
-      upgrade_bot_ids: [],
     });
     expect((await errorOf(readOnly)).code).toBe("skill_deprecated");
     expect(await (await send("GET", "/skills")).json()).toEqual([]);

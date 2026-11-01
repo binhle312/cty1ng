@@ -1,6 +1,6 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { bodyLimit } from "hono/body-limit";
-import { SkillId, SkillVersionId } from "@cty1ng/shared/ids";
+import { BotId, SkillId, SkillVersionId } from "@cty1ng/shared/ids";
 import {
   DiffLine,
   Skill,
@@ -172,7 +172,6 @@ const routes = {
                 description: z.string(),
                 body_md: z.string(),
                 changelog: Changelog,
-                upgrade_bot_ids: z.array(z.string()),
                 name: z.string().optional(),
                 row_version: RowVersion.optional(),
               })
@@ -263,9 +262,7 @@ const routes = {
         required: true,
         content: {
           "application/json": {
-            schema: z
-              .object({ remove_bot_ids: z.array(z.string()), row_version: RowVersion })
-              .strict(),
+            schema: z.object({ remove_bot_ids: z.array(BotId), row_version: RowVersion }).strict(),
           },
         },
       },
@@ -410,7 +407,6 @@ export function skillRoutes(deps: { skills: SkillsService; skillImport: SkillImp
           description: body.description,
           bodyMd: body.body_md,
           changelog: body.changelog,
-          upgradeBotIds: body.upgrade_bot_ids,
           rename:
             body.name === undefined || body.row_version === undefined
               ? undefined

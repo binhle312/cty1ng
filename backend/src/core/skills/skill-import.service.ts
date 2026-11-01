@@ -332,7 +332,6 @@ export function createSkillImportService(deps: {
                   description: stored.description,
                   bodyMd: stored.bodyMd,
                   changelog,
-                  upgradeBotIds: [],
                 },
                 actor,
               );

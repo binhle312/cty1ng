@@ -16,6 +16,9 @@ import type { Clock } from "../core/ports/clock.ts";
 import { createSettingsService } from "../core/settings/settings.service.ts";
 import { createSkillImportService } from "../core/skills/skill-import.service.ts";
 import { createSkillsService } from "../core/skills/skills.service.ts";
+import { createAvatarsService } from "../core/bots/avatars.service.ts";
+import { createBotsService } from "../core/bots/bots.service.ts";
+import { diskAvatarFiles } from "../adapters/avatars/avatar-files.ts";
 import { effortsOf, isModelProvider } from "../adapters/model/ai-sdk/effort.ts";
 import { checkCatalogProviders, loadCatalog } from "./catalog-files.ts";
 import type { Config } from "./config.ts";
@@ -65,7 +68,30 @@ export function compose(
   const catalog = loadCatalog(config);
   checkCatalogProviders(catalog, { isProvider: isModelProvider, efforts: effortsOf });
   const settings = createSettingsService({ uow, readers, appendEvent });
-  const skills = createSkillsService({ uow, readers, appendEvent, clock, ids: typeIdIds });
+  const avatarFiles = diskAvatarFiles(join(config.dataDir, "avatars"));
+  const bots = createBotsService({
+    uow,
+    readers,
+    appendEvent,
+    clock,
+    ids: typeIdIds,
+    catalog,
+    avatarFiles,
+  });
+  const avatars = createAvatarsService({
+    uow,
+    clock,
+    files: avatarFiles,
+    orphanHours: config.avatarOrphanHours,
+  });
+  const skills = createSkillsService({
+    uow,
+    readers,
+    appendEvent,
+    clock,
+    ids: typeIdIds,
+    pinsChanged: bots.emitPinsChanged,
+  });
   const skillImport = createSkillImportService({
     uow,
     readers,
@@ -101,6 +127,8 @@ export function compose(
     settings,
     skills,
     skillImport,
+    bots,
+    avatars,
     eventPruning,
     close: () => {
       reader.close();

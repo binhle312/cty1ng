@@ -21,6 +21,8 @@ function start(
   const pruneDue = vi.fn(options.pruneDue ?? (() => Promise.resolve(0)));
   const stop = startTimedJobs({
     skills: { purgeDue },
+    bots: { purgeDue: () => Promise.resolve(0) },
+    avatars: { cleanup: () => Promise.resolve(0) },
     eventPruning: { pruneDue },
     log,
     purgeIntervalHours: options.purgeIntervalHours ?? 24,

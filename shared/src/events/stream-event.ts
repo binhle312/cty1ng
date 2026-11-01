@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { SkillId } from "../ids.ts";
+import { Bot } from "../bots.ts";
+import { BotId, SkillId } from "../ids.ts";
 import { Settings } from "../settings.ts";
 import { Skill } from "../skills.ts";
 
@@ -14,9 +15,16 @@ export const ResetData = z.object({}).strict();
 export const TestPingData = z.object({ note: z.string().max(200) }).strict();
 export const SkillData = z.object({ skill: Skill }).strict();
 export const SkillRefData = z.object({ skill_id: SkillId }).strict();
-// One count per Trash kind that exists so far (D62); M1 has only skills.
+export const BotData = z.object({ bot: Bot }).strict();
+export const BotRefData = z.object({ bot_id: BotId }).strict();
+export const BotsReorderedData = z.object({ pinned_bot_ids: z.array(BotId) }).strict();
+// One count per Trash kind that exists so far (D62): skills (M1) and bots (M2).
 export const TrashChangedData = z
-  .object({ counts: z.object({ skill: z.number().int().nonnegative() }).strict() })
+  .object({
+    counts: z
+      .object({ skill: z.number().int().nonnegative(), bot: z.number().int().nonnegative() })
+      .strict(),
+  })
   .strict();
 export const SettingsUpdatedData = z.object({ settings: Settings }).strict();
 
@@ -39,6 +47,14 @@ export const SkillDeprecatedEvent = persisted("skill.deprecated", SkillData);
 export const SkillTrashedEvent = persisted("skill.trashed", SkillRefData);
 export const SkillRestoredEvent = persisted("skill.restored", SkillData);
 export const SkillPurgedEvent = persisted("skill.purged", SkillRefData);
+// Bots (M2). `bot.updated` covers a Profile or Model save and every pin change, also pins that a
+// skill endpoint moves or removes (one event per bot).
+export const BotCreatedEvent = persisted("bot.created", BotData);
+export const BotUpdatedEvent = persisted("bot.updated", BotData);
+export const BotDeletedEvent = persisted("bot.deleted", BotData);
+export const BotRestoredEvent = persisted("bot.restored", BotData);
+export const BotPurgedEvent = persisted("bot.purged", BotRefData);
+export const BotsReorderedEvent = persisted("bots.reordered", BotsReorderedData);
 export const TrashChangedEvent = persisted("trash.changed", TrashChangedData);
 export const SettingsUpdatedEvent = persisted("settings.updated", SettingsUpdatedData);
 
@@ -54,6 +70,12 @@ export const StreamEvent = z.discriminatedUnion("type", [
   SkillTrashedEvent,
   SkillRestoredEvent,
   SkillPurgedEvent,
+  BotCreatedEvent,
+  BotUpdatedEvent,
+  BotDeletedEvent,
+  BotRestoredEvent,
+  BotPurgedEvent,
+  BotsReorderedEvent,
   TrashChangedEvent,
   SettingsUpdatedEvent,
 ]);

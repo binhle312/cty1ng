@@ -57,12 +57,8 @@
           "name": "bot_skills_bot_id_bots_id_fk",
           "tableFrom": "bot_skills",
           "tableTo": "bots",
-          "columnsFrom": [
-            "bot_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["bot_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -70,12 +66,8 @@
           "name": "bot_skills_skill_id_skills_id_fk",
           "tableFrom": "bot_skills",
           "tableTo": "skills",
-          "columnsFrom": [
-            "skill_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["skill_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -83,24 +75,15 @@
           "name": "bot_skills_skill_id_skill_version_id_skill_versions_skill_id_id_fk",
           "tableFrom": "bot_skills",
           "tableTo": "skill_versions",
-          "columnsFrom": [
-            "skill_id",
-            "skill_version_id"
-          ],
-          "columnsTo": [
-            "skill_id",
-            "id"
-          ],
+          "columnsFrom": ["skill_id", "skill_version_id"],
+          "columnsTo": ["skill_id", "id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "bot_skills_bot_id_skill_id_pk": {
-          "columns": [
-            "bot_id",
-            "skill_id"
-          ],
+          "columns": ["bot_id", "skill_id"],
           "name": "bot_skills_bot_id_skill_id_pk"
         }
       },
@@ -291,31 +274,23 @@
       "indexes": {
         "bots_slug_unique": {
           "name": "bots_slug_unique",
-          "columns": [
-            "slug"
-          ],
+          "columns": ["slug"],
           "isUnique": true
         },
         "bots_create_key_unique": {
           "name": "bots_create_key_unique",
-          "columns": [
-            "create_key"
-          ],
+          "columns": ["create_key"],
           "isUnique": true
         },
         "bots_name_kept": {
           "name": "bots_name_kept",
-          "columns": [
-            "name_key"
-          ],
+          "columns": ["name_key"],
           "isUnique": true,
           "where": "\"bots\".\"purged_at\" IS NULL"
         },
         "bots_pinned_position": {
           "name": "bots_pinned_position",
-          "columns": [
-            "pinned_position"
-          ],
+          "columns": ["pinned_position"],
           "isUnique": true,
           "where": "\"bots\".\"pinned_position\" IS NOT NULL"
         }
@@ -325,12 +300,8 @@
           "name": "bots_cloned_from_bot_id_bots_id_fk",
           "tableFrom": "bots",
           "tableTo": "bots",
-          "columnsFrom": [
-            "cloned_from_bot_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["cloned_from_bot_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -488,18 +459,12 @@
       "indexes": {
         "skill_versions_skill_version": {
           "name": "skill_versions_skill_version",
-          "columns": [
-            "skill_id",
-            "version"
-          ],
+          "columns": ["skill_id", "version"],
           "isUnique": true
         },
         "skill_versions_skill_id_id": {
           "name": "skill_versions_skill_id_id",
-          "columns": [
-            "skill_id",
-            "id"
-          ],
+          "columns": ["skill_id", "id"],
           "isUnique": true
         }
       },
@@ -508,12 +473,8 @@
           "name": "skill_versions_skill_id_skills_id_fk",
           "tableFrom": "skill_versions",
           "tableTo": "skills",
-          "columnsFrom": [
-            "skill_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["skill_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -607,9 +568,7 @@
       "indexes": {
         "skills_slug_unique": {
           "name": "skills_slug_unique",
-          "columns": [
-            "slug"
-          ],
+          "columns": ["slug"],
           "isUnique": true
         }
       },
@@ -618,12 +577,8 @@
           "name": "skills_cloned_from_skill_version_id_skill_versions_id_fk",
           "tableFrom": "skills",
           "tableTo": "skill_versions",
-          "columnsFrom": [
-            "cloned_from_skill_version_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["cloned_from_skill_version_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
