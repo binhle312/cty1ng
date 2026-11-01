@@ -354,7 +354,12 @@ function CreateBotView({
             ? "Pick a model that can run."
             : null;
 
+  // A double click, or a second Try again, sends one request (UI-5.6): state alone is not set
+  // until the next render.
+  const inFlight = useRef(false);
   const sendRequest = (request: { key: string; body: CreateBotBody }) => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setSend({ kind: "sending", ...request });
     setGeneralError(null);
     createBot({
@@ -377,6 +382,7 @@ function CreateBotView({
         }
       })
       .catch((error: unknown) => {
+        inFlight.current = false;
         if (!mounted.current) return;
         const api = readApiError(error);
         if (api === null || api.code === "internal_error") {
@@ -535,6 +541,7 @@ function CreateBotView({
         {step === "model" ? (
           <SaveButton
             label={send.kind === "sending" ? "Creating" : "Create"}
+            busy={send.kind === "sending"}
             disabledReason={createOff}
             onClick={create}
           />

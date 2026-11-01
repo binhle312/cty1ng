@@ -84,6 +84,20 @@ describe("Create on the Create bot page", () => {
     expect(await screen.findByText("Created BA ✨")).toBeTruthy();
   });
 
+  it("sends one request for a double click on Create (UI-5.6)", async () => {
+    fake = api([{ status: 201, body: makeBot(1, "BA") }]);
+    await renderApp("/bots/new");
+    await screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+    await fillToModelStep();
+    const create = screen.getByRole("button", { name: "Create" });
+    act(() => {
+      fireEvent.click(create);
+      fireEvent.click(create);
+    });
+    expect(await screen.findByText("Created BA ✨")).toBeTruthy();
+    expect(fake.sent("POST", "/api/bots")).toHaveLength(1);
+  });
+
   it("shows a taken name on Basics and sends the next Create with a new key (E1, E3)", async () => {
     fake = api([
       {
