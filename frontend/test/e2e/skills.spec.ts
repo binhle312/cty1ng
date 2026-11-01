@@ -2,6 +2,8 @@ import { readFile } from "node:fs/promises";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { z } from "zod";
+import { createClient } from "../../src/lib/api/generated/client/index.ts";
+import { createBot } from "../../src/lib/api/generated/sdk.gen.ts";
 import { watchCsp } from "./csp.ts";
 import { readZip } from "./zip.ts";
 
@@ -391,26 +393,25 @@ async function createBotUsing(page: Page, name: string, skillSlug: string): Prom
     .parse(await (await page.request.get("/api/skills?include_deprecated=true")).json());
   const skillId = list.find((item) => item.slug === skillSlug)?.id;
   expect(skillId).toBeDefined();
-  const result = await page.evaluate(
-    async ({ botName, id }) => {
-      const response = await fetch("/api/bots", {
-        method: "POST",
-        headers: { "content-type": "application/json", "Idempotency-Key": crypto.randomUUID() },
-        body: JSON.stringify({
-          name: botName,
-          description: "Writes stories.",
-          persona_md: "You write user stories.",
-          avatar_style: "flat",
-          avatar_colour: "#336699",
-          model_id: "fake:scripted",
-          pins: [{ skill_id: id, always_load: false }],
-        }),
-      });
-      return { status: response.status, text: await response.text() };
+  // The generated client in the test process, with the Origin header a browser would send (the
+  // page has no Create form until M2b). It also proves the client sends the Idempotency-Key
+  // header (review of PR #57: its request check refused every call).
+  const origin = test.info().project.use.baseURL ?? "";
+  const client = createClient({ baseUrl: origin, headers: { origin } });
+  const created = await createBot({
+    client,
+    headers: { "idempotency-key": crypto.randomUUID() },
+    body: {
+      name,
+      description: "Writes stories.",
+      persona_md: "You write user stories.",
+      avatar_style: "flat",
+      avatar_colour: "#336699",
+      model_id: "fake:scripted",
+      pins: [{ skill_id: skillId ?? "", always_load: false }],
     },
-    { botName: name, id: skillId ?? "" },
-  );
-  expect(result.status, result.text).toBe(201);
+  });
+  expect(created.response?.status, JSON.stringify(created.error)).toBe(201);
   return skillId ?? "";
 }
 
