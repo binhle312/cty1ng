@@ -25,7 +25,7 @@ import {
   undeprecateSkillMutation,
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import type { GetSkillResponse } from "../../lib/api/generated/types.gen.ts";
-import { SKILL_OR_BOT_QUERIES } from "../../lib/api/operation-queries.ts";
+import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
 import { LoadError } from "./load-error.tsx";
 import { useExportSkills } from "./export-card.tsx";
 import { useLeaveGuard } from "./leave-guard.tsx";
@@ -266,7 +266,7 @@ function SkillView({ skill }: { skill: SkillDetail }) {
       }
     };
   // A change of pins moves both sides: the bot list and the skill queries fetch again.
-  const refreshPins = () => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES });
+  const refreshPins = () => queryClient.invalidateQueries({ predicate: PIN_QUERIES });
   const deprecate = useMutation(deprecateSkillMutation());
   const deprecateSkill = (removeBotIds: string[]) => {
     const from = fromThisDialog();

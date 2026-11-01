@@ -3,6 +3,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import {
   getSettingsOptions,
+  getSkillDiffOptions,
   listBotsOptions,
   listSkillsOptions,
 } from "../api/generated/@tanstack/react-query.gen.ts";
@@ -110,7 +111,6 @@ describe("event reducer", () => {
     { type: "skill.trashed", data: { skill_id: SKILL_ID } },
     { type: "skill.purged", data: { skill_id: SKILL_ID } },
     { type: "bot.purged", data: { bot_id: BOT_ID } },
-    { type: "bots.reordered", data: { pinned_bot_ids: [BOT_ID] } },
     { type: "trash.changed", data: { counts: { skill: 1, bot: 0 } } },
   ])("$type refreshes the skill queries and the bot queries, not the settings", (input) => {
     const { queryClient, reducer } = setup();
@@ -122,5 +122,29 @@ describe("event reducer", () => {
     expect(queryClient.getQueryState(skills)?.isInvalidated).toBe(true);
     expect(queryClient.getQueryState(bots)?.isInvalidated).toBe(true);
     expect(queryClient.getQueryState(settings)?.isInvalidated).toBe(false);
+  });
+
+  // Review of PR #57: a bot event refetched every skill query, the diffs too.
+  it("a bot event leaves the skill queries that do not count pins", () => {
+    const { queryClient, reducer } = setup();
+    const diff = getSkillDiffOptions({
+      path: { id: SKILL_ID },
+      query: { from: 1, to: 2 },
+    }).queryKey;
+    queryClient.setQueryData(diff, { description: null, body: [] });
+    reducer.apply(StreamEvent.parse({ type: "bot.purged", data: { bot_id: BOT_ID }, seq: 1 }));
+    expect(queryClient.getQueryState(diff)?.isInvalidated).toBe(false);
+  });
+
+  it("bots.reordered refreshes the bot queries only", () => {
+    const { queryClient, reducer } = setup();
+    const skills = listSkillsOptions().queryKey;
+    const bots = listBotsOptions().queryKey;
+    for (const key of [skills, bots]) queryClient.setQueryData(key, []);
+    reducer.apply(
+      StreamEvent.parse({ type: "bots.reordered", data: { pinned_bot_ids: [BOT_ID] }, seq: 1 }),
+    );
+    expect(queryClient.getQueryState(bots)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(skills)?.isInvalidated).toBe(false);
   });
 });

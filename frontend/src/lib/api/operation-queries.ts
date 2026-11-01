@@ -20,6 +20,16 @@ export const SKILL_QUERIES = operationMatches(/Skill/);
 export const BOT_QUERIES = operationMatches(/Bot/);
 export const SETTINGS_QUERIES = operationMatches(/Settings/);
 
-// A pin joins a bot and a skill: both sides show it, and each side's counts move with it.
+// A skill change moves both sides: a bot's pins show the skill's name, latest version and state.
 export const SKILL_OR_BOT_QUERIES = (query: Query): boolean =>
   SKILL_QUERIES(query) || BOT_QUERIES(query);
+
+// The skill queries whose answer counts pins (`bots_using`, `bots_outdated`, the upgrade
+// candidates). A diff, an export or a version's text never changes with a pin.
+const SKILL_PIN_QUERIES = operationMatches(
+  /^(listSkills|getSkill|listSkillVersions|getSkillVersion|listSkillUpgradeCandidates)$/,
+);
+
+// A pin or bot change: the bot queries, and the skill queries that count pins.
+export const PIN_QUERIES = (query: Query): boolean =>
+  BOT_QUERIES(query) || SKILL_PIN_QUERIES(query);

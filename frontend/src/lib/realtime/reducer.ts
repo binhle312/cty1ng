@@ -1,6 +1,11 @@
 import type { StreamEvent } from "@cty1ng/shared/events";
 import type { QueryClient } from "@tanstack/react-query";
-import { SETTINGS_QUERIES, SKILL_OR_BOT_QUERIES } from "../api/operation-queries.ts";
+import {
+  BOT_QUERIES,
+  PIN_QUERIES,
+  SETTINGS_QUERIES,
+  SKILL_OR_BOT_QUERIES,
+} from "../api/operation-queries.ts";
 
 // Test only: the notes of the test.ping events seen, so tests can see what the reducer applied.
 export const TEST_PINGS_KEY = ["realtime", "test-pings"] as const;
@@ -45,9 +50,8 @@ export function createEventReducer(queryClient: QueryClient) {
           queryClient.setQueryData<string[]>(TEST_PINGS_KEY, (notes = []) => [...notes, note]);
           return true;
         }
-        // A skill or a bot changed, or something left or entered Trash. A pin joins a bot and a
-        // skill (its counts, the Bots tab of a skill, the Skills tab of a bot), so the skill
-        // queries and the bot queries all fetch again.
+        // A skill changed, or something left or entered Trash: the skill queries, and the bot
+        // queries (a bot's pins show the skill's name, latest version and state).
         case "skill.created":
         case "skill.updated":
         case "skill.deprecated":
@@ -55,13 +59,19 @@ export function createEventReducer(queryClient: QueryClient) {
         case "skill.restored":
         case "skill.purged":
         case "trash.changed":
+          void queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES });
+          return true;
+        // A bot or its pins changed: the bot queries, and the skill queries that count pins.
         case "bot.created":
         case "bot.updated":
         case "bot.deleted":
         case "bot.restored":
         case "bot.purged":
+          void queryClient.invalidateQueries({ predicate: PIN_QUERIES });
+          return true;
+        // The pinned order is a bot thing only.
         case "bots.reordered":
-          void queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES });
+          void queryClient.invalidateQueries({ predicate: BOT_QUERIES });
           return true;
         case "settings.updated":
           void queryClient.invalidateQueries({ predicate: SETTINGS_QUERIES });

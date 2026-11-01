@@ -27,22 +27,20 @@ export function SaveButton({
   kind?: "primary" | "secondary" | "danger" | "danger-fill";
   ref?: Ref<HTMLButtonElement>;
 }) {
-  const button = (
-    <Button
-      ref={ref}
-      kind={kind}
-      aria-disabled={disabledReason !== null}
-      onClick={() => {
-        if (disabledReason === null) onClick();
-      }}
-    >
-      {label}
-    </Button>
-  );
-  if (disabledReason === null) return button;
+  // Always inside the tooltip, off when there is no reason: a wrapper that came and went would
+  // make React mount a new button, and a focused button (a dialog's default) would lose focus.
   return (
-    <Tooltip label={disabledReason} side="top">
-      {button}
+    <Tooltip label={disabledReason ?? ""} side="top" disabled={disabledReason === null}>
+      <Button
+        ref={ref}
+        kind={kind}
+        aria-disabled={disabledReason !== null}
+        onClick={() => {
+          if (disabledReason === null) onClick();
+        }}
+      >
+        {label}
+      </Button>
     </Tooltip>
   );
 }

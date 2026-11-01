@@ -401,6 +401,35 @@ describe("the Bots tab of a skill", () => {
     expect(within(upgrade).queryByText(/changed in another place/)).toBeNull();
   });
 
+  it("says Loading the versions. in the + Add card until the versions load", async () => {
+    const versions = heldAnswer();
+    open([qa], { [`GET /api/skills/${SKILL_ID}/versions`]: () => versions.promise });
+    expect(await screen.findByText("No bot uses this skill yet.")).toBeTruthy();
+    click(screen.getByRole("button", { name: "Add" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Loading the versions.")).toBeTruthy();
+    await versions.answer({ body: makeVersions(3) });
+    await waitFor(() => {
+      expect(within(dialog).queryByText("Loading the versions.")).toBeNull();
+    });
+  });
+
+  it("offers Try again when the upgrade card's changes do not load, and keeps a loaded diff", async () => {
+    let diffCalls = 0;
+    open([designer], {
+      [`GET /api/skills/${SKILL_ID}/diff`]: () => {
+        diffCalls += 1;
+        return diffCalls === 1 ? FAILED : { body: { description: null, body: [] } };
+      },
+    });
+    click(await screen.findByRole("button", { name: "Upgrade to v3" }));
+    const dialog = await screen.findByRole("dialog", { name: "Upgrade Write user stories to v3?" });
+    const alert = await within(dialog).findByRole("alert");
+    expect(alert.textContent).toContain("The app could not load the changes.");
+    click(within(alert).getByRole("button", { name: "Try again" }));
+    expect(await within(dialog).findByRole("tab", { name: "Body" })).toBeTruthy();
+  });
+
   it("removes a bot from the skill without asking", async () => {
     open([ba], { [`DELETE /api/bots/${ba.id}/skills/${SKILL_ID}`]: () => ({ status: 204 }) });
     click(await screen.findByRole("button", { name: "Actions for BA" }));

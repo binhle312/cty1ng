@@ -22,7 +22,7 @@ import {
   setBotSkillMutation,
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import type { GetSkillResponse } from "../../lib/api/generated/types.gen.ts";
-import { SKILL_OR_BOT_QUERIES } from "../../lib/api/operation-queries.ts";
+import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
 import { BotAvatar } from "../bots/bot-avatar.tsx";
 import { modelLine, type BotRow } from "../bots/bot-queries.ts";
 import { LoadError } from "./load-error.tsx";
@@ -69,7 +69,7 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
   const isShown = (shown: Dialog) => shownDialog.current === shown;
   // A pin changed here changes both sides: the bot list shows it at once, and everything that
   // counts pins (the skill's header and list, the bot page) fetches again.
-  const refresh = () => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES });
+  const refresh = () => queryClient.invalidateQueries({ predicate: PIN_QUERIES });
   const replaceBots = (changed: BotRow[]) => {
     queryClient.setQueryData(listBotsOptions().queryKey, (current) =>
       current?.map((bot) => changed.find((item) => item.id === bot.id) ?? bot),

@@ -137,6 +137,9 @@ function AddBody({
           });
         }}
       />
+      {latest === undefined && !versionsLoad.failed && (
+        <DialogText>Loading the versions.</DialogText>
+      )}
       <VersionsFailed load={versionsLoad} />
       {error !== null && <p className="mt-3 text-sm text-danger">{error}</p>}
       <p className="mt-3 text-sm text-on-surface-muted">
@@ -256,15 +259,22 @@ export function MoveVersionDialog({
 function Changes({ skillId, from, to }: { skillId: string; from: number; to: number }) {
   const diff = useQuery(getSkillDiffOptions({ path: { id: skillId }, query: { from, to } }));
   const [tab, setTab] = useState<"body" | "description">("body");
-  if (diff.isPending) {
+  // A failed background refetch keeps the diff it has (frontend-conventions.md §5).
+  if (diff.data === undefined) {
+    if (diff.isError) {
+      return (
+        <LoadError
+          text="The app could not load the changes."
+          onRetry={() => void diff.refetch()}
+          className="px-0 py-0"
+        />
+      );
+    }
     return (
       <SkeletonArea label="Loading the changes">
         <Skeleton className="h-32" />
       </SkeletonArea>
     );
-  }
-  if (diff.isError) {
-    return <p className="text-on-surface-muted">The app could not load the changes.</p>;
   }
   const bodyChanged = diff.data.body.some((line) => line.op !== "same");
   const descriptionChanged = diff.data.description !== null;

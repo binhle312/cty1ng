@@ -216,3 +216,24 @@ describe("the Delete dialog", () => {
     await tabToReason(screen.getByRole("button", { name: "Delete skill" }), "Deleting the skill.");
   });
 });
+
+// Review of PR #57: SaveButton dropped its tooltip wrapper when the reason went away (and added
+// it back), so React mounted a new button and the keyboard focus left it.
+describe("a confirm button whose reason comes and goes", () => {
+  it("keeps the same button, and the focus on it, when the request starts", () => {
+    const props = { ...base, trashDays: 30, onCancel: vi.fn(), onConfirm: vi.fn() };
+    const view = render(<DeleteDialog {...props} bots={ready(ba)} />);
+    const button = screen.getByRole("button", { name: "Delete skill" });
+    act(() => {
+      button.focus();
+    });
+    view.rerender(
+      <TooltipProvider>
+        <DeleteDialog {...props} pending bots={ready(ba)} />
+      </TooltipProvider>,
+    );
+    expect(screen.getByRole("button", { name: "Delete skill" })).toBe(button);
+    expect(button.getAttribute("aria-disabled")).toBe("true");
+    expect(document.activeElement).toBe(button);
+  });
+});
