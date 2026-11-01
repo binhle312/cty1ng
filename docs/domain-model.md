@@ -447,16 +447,22 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
   `switch` is `later` or `locked`, gets 422 `tool_not_available`, two tools of one job on get 422 `tool_job_conflict`, and a tool on while
   its `needs` tool is off gets 422 `validation_error` with `field: "tool_settings.<id>"`. The
   service then stores the effective result of the body.
-- **Name key (M2 spec gap pass, owner 2026-11-01).** Names compare by `name_key`, made by one
-  pure function `botNameKey()` in `core/`: trim, collapse each run of white space to one space,
-  Unicode NFKC, then Unicode default case folding (full folding, `CaseFolding.txt` statuses C
-  and F, so "ẞ", "ß", "SS" and "ss" all match), then NFKC again. JavaScript has no built-in
-  case folding (upper then lower case maps "ẞ" to "ß" but "ß" to "ss"), so the M2 plan picks how
-  to get it: a table generated from `CaseFolding.txt`, or a library (a new dependency). The stored `name` is trimmed and collapsed too. The partial unique index on `name_key`
+- **Name key (M2 spec gap pass, owner 2026-11-01; M2 plan, decision 5).** Names compare by
+  `name_key`, made by one pure function `botNameKey()` in `shared/src/bots.ts`: trim, collapse
+  each run of white space to one space, Unicode NFKC, then Unicode default case folding (full
+  folding, `CaseFolding.txt` statuses C and F, so "ẞ", "ß", "SS" and "ss" all match), then NFKC
+  again, then trim and collapse once more (the last NFKC can make new white space, so without
+  this step the key of a key could differ from the key). "White space" is Unicode
+  `White_Space` (`\p{White_Space}`) for every trim and collapse; JavaScript `\s` is not used,
+  because it misses U+0085 and counts U+FEFF. JavaScript has no built-in case folding, so the
+  table is generated from `CaseFolding.txt` into `shared/src/case-folding.ts`
+  (`pnpm gen:case-folding`), pinned to the Unicode version of Node's ICU; a test fails when the
+  two differ, and the change that moves Node regenerates the table and recomputes the stored
+  keys in a migration. The stored `name` is trimmed and collapsed too. The partial unique index on `name_key`
   is the final check: a create or rename that loses a race gets 409 `name_taken`. SQLite
   `lower()` folds ASCII only, so it is not used. Tests: "BÁ" and "bá", " BA " and "BA",
-  full-width "ＢＡ" and "ba", "ẞ", "ß" and "SS", two creates at once, a rename to a name held in
-  Trash.
+  full-width "ＢＡ" and "ba", "ẞ", "ß" and "SS", U+0085 and U+FEFF, the key of a key, two
+  creates at once, a rename to a name held in Trash.
 - **Slug (D19, M2 spec gap pass, owner 2026-11-01).** Made from the name at create: Unicode NFKD,
   remove combining marks, "đ" and "Đ" to "d", lower case, each run of characters outside `a–z`
   and `0–9` to one "-", trim "-" at both ends. Empty (for example a name of emoji only) → `bot`.

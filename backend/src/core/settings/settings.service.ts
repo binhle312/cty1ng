@@ -3,8 +3,10 @@ import {
   SETTING_KEYS,
   SETTING_SCHEMAS,
   Settings,
+  settingsCrossFieldProblem,
   type SettingsPatch,
 } from "@cty1ng/shared/settings";
+import { DomainError } from "../errors.ts";
 import type { AppendEvent } from "../events/append-event.ts";
 import type { Readers, SettingsReader, UnitOfWork } from "../ports/repositories.ts";
 
@@ -35,6 +37,11 @@ export function createSettingsService(deps: {
         const keys = SETTING_KEYS.filter((key) => patch[key] !== undefined);
         for (const key of keys) await tx.settings.set(key, patch[key]);
         const settings = await readSettings(tx.settings);
+        // The rules between keys see the saved values merged with the patch; a break rolls the
+        // whole PATCH back (domain-model.md §10).
+        const problem = settingsCrossFieldProblem(settings, keys);
+        if (problem !== null)
+          throw new DomainError("validation_error", problem.message, problem.key);
         if (keys.length > 0) {
           await deps.appendEvent(tx, {
             event: { type: "settings.updated", data: { settings } },

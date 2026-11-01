@@ -19,6 +19,7 @@
     "check:events": "tsx scripts/check-events.ts",
     "check:bundle": "tsx scripts/check-bundle.ts",
     "gen:api": "tsx scripts/gen-api.ts",
+    "gen:case-folding": "tsx scripts/gen-case-folding.ts",
     "db:check": "pnpm --filter @cty1ng/backend db:check",
     "e2e": "playwright test -c frontend/playwright.config.ts",
     "e2e:serve": "tsx scripts/e2e-serve.ts"
