@@ -269,6 +269,27 @@ describe("update (PATCH /bots/{id})", () => {
     ).toMatchObject({ code: "stale_write" });
   });
 
+  it("two PATCHes with one row_version at once: one saves, the other gets stale_write", async () => {
+    const bot = await create();
+    const id = BotId.parse(bot.id);
+    const results = await Promise.allSettled([
+      backend.bots.update(id, { row_version: bot.row_version, description: "From tab one." }),
+      backend.bots.update(id, { row_version: bot.row_version, description: "From tab two." }),
+    ]);
+    expect(results.map((result) => result.status).sort()).toEqual(["fulfilled", "rejected"]);
+    const saved = results.find((result) => result.status === "fulfilled");
+    const rejected = results.find((result) => result.status === "rejected");
+    expect(rejected?.status === "rejected" ? rejected.reason : null).toMatchObject({
+      code: "stale_write",
+    });
+    const stored = await backend.bots.get(id);
+    expect(stored.row_version).toBe(2);
+    expect(stored.description).toBe(
+      saved?.status === "fulfilled" ? saved.value.description : "no save",
+    );
+    expect((await events()).filter(([type]) => type === "bot.updated")).toHaveLength(1);
+  });
+
   it("keeps its own name key free to itself, and refuses another bot's", async () => {
     const a = await create({ name: "Alpha" });
     await create({ name: "Beta" });
@@ -317,6 +338,27 @@ describe("pinned order, Trash and restore", () => {
   });
 });
 
+describe("pinned order races (architecture.md §11)", () => {
+  it("two pinned-order changes from two tabs at once: one wins, the other gets bot_list_changed", async () => {
+    const a = BotId.parse((await create({ name: "A" })).id);
+    const b = BotId.parse((await create({ name: "B" })).id);
+    const results = await Promise.allSettled([
+      backend.bots.setPinned([a, b], []),
+      backend.bots.setPinned([b], []),
+    ]);
+    expect(results.map((result) => result.status).sort()).toEqual(["fulfilled", "rejected"]);
+    const won = results.find((result) => result.status === "fulfilled");
+    const rejected = results.find((result) => result.status === "rejected");
+    expect(rejected?.status === "rejected" ? rejected.reason : null).toMatchObject({
+      code: "bot_list_changed",
+    });
+    expect(await backend.readers.bots.pinnedIds()).toEqual(
+      won?.status === "fulfilled" ? won.value : [],
+    );
+    expect((await events()).filter(([type]) => type === "bots.reordered")).toHaveLength(1);
+  });
+});
+
 describe("pins (PUT and DELETE /bots/{id}/skills/{skill_id})", () => {
   it("assigns, toggles and removes; a stale expected gets the current pin", async () => {
     const notes = await skill("notes");
@@ -350,6 +392,29 @@ describe("pins (PUT and DELETE /bots/{id}/skills/{skill_id})", () => {
   });
 });
 
+describe("skill pin races (architecture.md §11)", () => {
+  it("two pin changes from two tabs at once: one wins, the other gets stale_write and the current pin", async () => {
+    const notes = await skill("notes");
+    const id = BotId.parse((await create()).id);
+    const v1 = (await backend.readers.skills.latestVersion(notes))?.id;
+    if (v1 === undefined) throw new Error("v1");
+    const results = await Promise.allSettled([
+      backend.bots.setPin(id, notes, { skill_version_id: v1, always_load: true, expected: null }),
+      backend.bots.setPin(id, notes, { skill_version_id: v1, always_load: false, expected: null }),
+    ]);
+    expect(results.map((result) => result.status).sort()).toEqual(["fulfilled", "rejected"]);
+    const won = results.find((result) => result.status === "fulfilled");
+    const rejected = results.find((result) => result.status === "rejected");
+    const kept = won?.status === "fulfilled" ? won.value.pins[0]?.always_load : undefined;
+    expect(rejected?.status === "rejected" ? rejected.reason : null).toMatchObject({
+      code: "stale_write",
+      current: { skill_version_id: v1, always_load: kept },
+    });
+    expect((await backend.bots.get(id)).pins).toMatchObject([{ always_load: kept }]);
+    expect((await events()).filter(([type]) => type === "bot.updated")).toHaveLength(1);
+  });
+});
+
 describe("skills that touch pins (api.md §2)", () => {
   it("counts live bots, lists upgrade candidates, and moves pins with POST /skills/{id}/bots", async () => {
     const notes = await skill("notes");
@@ -380,6 +445,36 @@ describe("skills that touch pins (api.md §2)", () => {
     ]);
     expect(moved?.pins).toMatchObject([{ version: 2, always_load: true }]);
     expect(await backend.skills.summary(notes, OWNER_ID)).toMatchObject({ bots_outdated: 0 });
+  });
+
+  it("moves no pin and writes no event when a later bot in the batch fails", async () => {
+    const notes = await skill("notes");
+    const first = await create({ name: "A", pins: [{ skill_id: notes, always_load: false }] });
+    const second = await create({ name: "B", pins: [{ skill_id: notes, always_load: false }] });
+    const v1 = first.pins[0]?.skill_version_id ?? null;
+    await backend.skills.addVersion(
+      notes,
+      { baseVersion: 1, description: "v2", bodyMd: "## v2" },
+      OWNER_ID,
+    );
+    const v2 = (await backend.readers.skills.latestVersion(notes))?.id;
+    if (v1 === null || v2 === undefined) throw new Error("versions");
+    const before = (await events()).length;
+    // The first change is valid and is written before the second one fails its check.
+    const error = await failure(
+      backend.bots.pinSkillToBots(notes, v2, [
+        { botId: BotId.parse(first.id), expectedSkillVersionId: v1, alwaysLoad: true },
+        { botId: BotId.parse(second.id), expectedSkillVersionId: null },
+      ]),
+    );
+    expect(error).toMatchObject({ code: "stale_write", field: "bots[1]" });
+    for (const bot of [first, second]) {
+      expect((await backend.bots.get(BotId.parse(bot.id))).pins).toMatchObject([
+        { skill_version_id: v1, version: 1, always_load: false },
+      ]);
+    }
+    expect((await events()).length).toBe(before);
+    expect(await backend.skills.summary(notes, OWNER_ID)).toMatchObject({ bots_outdated: 2 });
   });
 
   it("deprecate removes the ticked pins; Trash removes the rest; restore suggests live bots", async () => {

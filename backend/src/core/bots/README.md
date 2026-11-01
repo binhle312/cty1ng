@@ -6,7 +6,7 @@ skill versions, the pinned order, Trash, restore and purge.
 | File | What it is for |
 | --- | --- |
 | `bots.service.ts` | Every bot use case: list, get, create (idempotent), update, Trash, CLI restore, pinned order, clone template, pins, skill pin moves, purge |
-| `bots.service.test.ts` | Service tests: name key and slug, idempotency, model and effort, pins and the clone rule, order, Trash, purge, the skill endpoints that move pins |
+| `bots.service.test.ts` | Service tests: name key and slug, idempotency, model and effort, pins and the clone rule, order, Trash, purge, the skill endpoints that move pins; races from two tabs (PATCH, pinned order, pin) and the all-or-nothing batch |
 | `avatars.service.ts` | Avatar uploads (hash, stage, publish under the lock) and the cleanup of unused files; the failure table |
 | `avatars.service.test.ts` | The M2 plan §4a tests: upload vs cleanup, save vs cleanup, publish and touch failures, rollback after publish, staged leftovers |
 | `bot.rules.ts` | Pure: field limits and the guard, the effort, the Advanced ranges, the header order, the health line |
