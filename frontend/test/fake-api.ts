@@ -1,3 +1,4 @@
+import { act } from "@testing-library/react";
 import { client } from "../src/lib/api/client.ts";
 
 // A fake network for component tests (frontend-conventions.md §1, "Real tests": mock only the
@@ -10,7 +11,25 @@ export interface RecordedRequest {
 }
 
 type Answer = { status?: number; body?: unknown } | undefined;
-type Handler = (request: RecordedRequest, search: URLSearchParams) => Answer;
+
+// An answer the test gives later, so a request stays open until the test says.
+export function heldAnswer() {
+  let give: (value: Answer) => void = () => undefined;
+  const promise = new Promise<Answer>((resolve) => {
+    give = resolve;
+  });
+  return {
+    promise,
+    answer: async (value: Answer) => {
+      await act(async () => {
+        give(value);
+        await promise;
+      });
+    },
+  };
+}
+// A handler may answer later (a promise), so a test can hold a request open.
+type Handler = (request: RecordedRequest, search: URLSearchParams) => Answer | Promise<Answer>;
 
 export function fakeApi(routes: Record<string, Handler>) {
   const requests: RecordedRequest[] = [];
@@ -27,7 +46,7 @@ export function fakeApi(routes: Record<string, Handler>) {
       body: text === "" ? undefined : JSON.parse(text),
     };
     requests.push(recorded);
-    const answer = routes[`${input.method} ${url.pathname}`]?.(recorded, url.searchParams);
+    const answer = await routes[`${input.method} ${url.pathname}`]?.(recorded, url.searchParams);
     if (answer === undefined) {
       return Response.json(
         { error: { code: "not_found", message: `No route for ${input.method} ${url.pathname}` } },

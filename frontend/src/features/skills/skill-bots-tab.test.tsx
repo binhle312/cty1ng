@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { fakeApi } from "../../../test/fake-api.ts";
+import { fakeApi, heldAnswer } from "../../../test/fake-api.ts";
 import {
   makeBot,
   makePin,
@@ -11,6 +11,7 @@ import {
   versionId,
   type Bot,
 } from "../../../test/fixtures.ts";
+import { Toaster } from "../../components/ui/toast.tsx";
 import { TooltipProvider } from "../../components/ui/tooltip.tsx";
 import { SkillBotsTab } from "./skill-bots-tab.tsx";
 
@@ -36,6 +37,7 @@ function open(bots: Bot[], extra: Parameters<typeof fakeApi>[0] = {}) {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <SkillBotsTab skill={makeSkill()} />
+        <Toaster />
       </TooltipProvider>
     </QueryClientProvider>,
   );
@@ -57,6 +59,11 @@ function versionsFailOnce() {
     },
   };
 }
+
+const STALE = {
+  status: 409,
+  body: { error: { code: "stale_write", message: "The pin changed.", current: null } },
+};
 
 const click = (element: HTMLElement) => {
   act(() => {
@@ -302,6 +309,96 @@ describe("the Bots tab of a skill", () => {
       always_load: false,
       expected: { skill_version_id: versionId(2), always_load: false },
     });
+  });
+
+  // Review of PR #57: one mutation hook served every row, so a second toggle dropped the first
+  // one's callbacks and its failure went unseen.
+  it("reports a failed toggle of one bot after a toggle of another bot started", async () => {
+    const baAnswer = heldAnswer();
+    open([ba, designer], {
+      [`PUT /api/bots/${ba.id}/skills/${SKILL_ID}`]: () => baAnswer.promise,
+      [`PUT /api/bots/${designer.id}/skills/${SKILL_ID}`]: () => ({
+        body: makeBot(2, "Designer", [
+          makePin({ version: 2, skill_version_id: versionId(2), always_load: true }),
+        ]),
+      }),
+    });
+    const baSwitch = await screen.findByRole("switch", { name: "Always load for BA" });
+    click(baSwitch);
+    click(screen.getByRole("switch", { name: "Always load for Designer" }));
+    await waitFor(() => {
+      expect(api?.sent("PUT", `/api/bots/${designer.id}/skills/${SKILL_ID}`)).toHaveLength(1);
+    });
+    // BA's request is still on its way: its switch keeps the asked value and stays off.
+    expect(baSwitch.getAttribute("aria-checked")).toBe("false");
+    expect(baSwitch.hasAttribute("data-disabled")).toBe(true);
+    await baAnswer.answer(STALE);
+    expect(
+      await screen.findByText("BA changed in another place. Check it and try again."),
+    ).toBeTruthy();
+    await waitFor(() => {
+      expect(baSwitch.hasAttribute("data-disabled")).toBe(false);
+    });
+  });
+
+  // Review of PR #57: a request that ended after its dialog closed closed the next dialog.
+  it("keeps a newer dialog open when an Add from a closed dialog ends", async () => {
+    const addAnswer = heldAnswer();
+    open([designer, qa], {
+      [`POST /api/skills/${SKILL_ID}/bots`]: () => addAnswer.promise,
+      [`GET /api/skills/${SKILL_ID}/diff`]: () => ({ body: { description: null, body: [] } }),
+    });
+    await screen.findByRole("row", { name: /Designer/ });
+    click(screen.getByRole("button", { name: "Add" }));
+    const add = await screen.findByRole("dialog");
+    await waitFor(() => {
+      expect(within(add).getByText(/They get v3/)).toBeTruthy();
+    });
+    click(within(add).getByRole("checkbox"));
+    click(within(add).getByRole("button", { name: "Add 1" }));
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/bots`)).toHaveLength(1);
+    });
+    click(within(add).getByRole("button", { name: "Skip" }));
+    click(await screen.findByRole("button", { name: "Upgrade to v3" }));
+    const upgrade = await screen.findByRole("dialog", {
+      name: "Upgrade Write user stories to v3?",
+    });
+    // The Add request is not the upgrade card's: its button is not pending.
+    expect(
+      within(upgrade).getByRole("button", { name: "Upgrade to v3" }).getAttribute("aria-disabled"),
+    ).not.toBe("true");
+    await addAnswer.answer({ body: [makeBot(3, "QA", [makePin()])] });
+    await waitFor(() => {
+      expect(api?.sent("GET", "/api/bots").length).toBeGreaterThan(1);
+    });
+    expect(screen.getByRole("dialog", { name: "Upgrade Write user stories to v3?" })).toBeTruthy();
+  });
+
+  it("shows a failed Add as a toast when its dialog is closed, not in the next dialog", async () => {
+    const addAnswer = heldAnswer();
+    open([designer, qa], {
+      [`POST /api/skills/${SKILL_ID}/bots`]: () => addAnswer.promise,
+      [`GET /api/skills/${SKILL_ID}/diff`]: () => ({ body: { description: null, body: [] } }),
+    });
+    await screen.findByRole("row", { name: /Designer/ });
+    click(screen.getByRole("button", { name: "Add" }));
+    const add = await screen.findByRole("dialog");
+    await waitFor(() => {
+      expect(within(add).getByText(/They get v3/)).toBeTruthy();
+    });
+    click(within(add).getByRole("checkbox"));
+    click(within(add).getByRole("button", { name: "Add 1" }));
+    click(within(add).getByRole("button", { name: "Skip" }));
+    click(await screen.findByRole("button", { name: "Upgrade to v3" }));
+    const upgrade = await screen.findByRole("dialog", {
+      name: "Upgrade Write user stories to v3?",
+    });
+    await addAnswer.answer(STALE);
+    expect(
+      await screen.findByText("A bot changed in another place. Check the list and try again."),
+    ).toBeTruthy();
+    expect(within(upgrade).queryByText(/changed in another place/)).toBeNull();
   });
 
   it("removes a bot from the skill without asking", async () => {

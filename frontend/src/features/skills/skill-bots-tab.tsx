@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ellipsis, Plus } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "../../components/ui/button.tsx";
 import {
   MenuItem,
@@ -49,13 +49,24 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
     failed: versions.isError && versions.data === undefined,
     retry: () => void versions.refetch(),
   };
-  const [dialog, setDialog] = useState<Dialog | null>(null);
+  const [dialog, setDialogState] = useState<Dialog | null>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
+  // The dialog whose request is on its way. Each open makes a new `Dialog` object, so a request
+  // started in a dialog the owner closed (Skip, Esc) never closes or writes into a newer one.
+  const shownDialog = useRef<Dialog | null>(null);
+  const [busyDialog, setBusyDialog] = useState<Dialog | null>(null);
+  // The Always load value of each toggle on its way, by bot id.
+  const [pendingLoads, setPendingLoads] = useState<ReadonlyMap<string, boolean>>(new Map());
 
-  const closeDialog = () => {
-    setDialog(null);
+  const setDialog = (next: Dialog | null) => {
+    shownDialog.current = next;
+    setDialogState(next);
     setDialogError(null);
   };
+  const closeDialog = () => {
+    setDialog(null);
+  };
+  const isShown = (shown: Dialog) => shownDialog.current === shown;
   // A pin changed here changes both sides: the bot list shows it at once, and everything that
   // counts pins (the skill's header and list, the bot page) fetches again.
   const refresh = () => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES });
@@ -74,35 +85,63 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
     );
   };
 
+  // One hook serves every row, and a second `mutate` on a hook drops the callbacks of the first
+  // (TanStack Query v5). So each request handles its own result through its promise, and the
+  // pending state is kept per bot, not read from the hook.
   const setPin = useMutation(setBotSkillMutation());
   const removePin = useMutation(removeBotSkillMutation());
   const addPins = useMutation(pinSkillToBotsMutation());
 
-  const changePin = (
-    { bot, pin }: BotUse,
-    change: { skill_version_id: string; always_load: boolean },
-    onDone?: () => void,
-  ) => {
-    setPin.mutate(
-      {
+  const toggleLoad = ({ bot, pin }: BotUse, alwaysLoad: boolean) => {
+    setPendingLoads((current) => new Map(current).set(bot.id, alwaysLoad));
+    void setPin
+      .mutateAsync({
         path: { id: bot.id, skill_id: skill.id },
         body: {
-          ...change,
+          skill_version_id: pin.skill_version_id,
+          always_load: alwaysLoad,
           expected: { skill_version_id: pin.skill_version_id, always_load: pin.always_load },
         },
-      },
-      {
-        onSuccess: (changed) => {
-          replaceBots([changed]);
+      })
+      .then((changed) => {
+        replaceBots([changed]);
+        void refresh();
+      }, failed(bot.name))
+      .finally(() => {
+        setPendingLoads((current) => {
+          const next = new Map(current);
+          next.delete(bot.id);
+          return next;
+        });
+      });
+  };
+
+  // A dialog's request: its result goes to that dialog while it is open. After the owner closed
+  // it, a success needs nothing more (the list updates) and a failure shows as a toast.
+  const runInDialog = <T,>(
+    shown: Dialog,
+    request: Promise<T>,
+    done: (result: T) => void,
+    errorText: (error: unknown) => string,
+  ) => {
+    setDialogError(null);
+    setBusyDialog(shown);
+    void request
+      .then(
+        (result) => {
+          done(result);
           void refresh();
-          onDone?.();
+          if (isShown(shown)) closeDialog();
         },
-        onError: (error) => {
-          failed(bot.name)(error);
-          onDone?.();
+        (error: unknown) => {
+          void refresh();
+          if (isShown(shown)) setDialogError(errorText(error));
+          else showToast(errorText(error));
         },
-      },
-    );
+      )
+      .finally(() => {
+        setBusyDialog((current) => (current === shown ? null : current));
+      });
   };
 
   if (bots.kind === "loading") {
@@ -186,13 +225,9 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
                 key={use.bot.id}
                 use={use}
                 skillDeprecated={skill.deprecated}
-                pendingLoad={
-                  setPin.isPending && setPin.variables.path.id === use.bot.id
-                    ? setPin.variables.body.always_load
-                    : null
-                }
-                onToggle={(always_load) => {
-                  changePin(use, { skill_version_id: use.pin.skill_version_id, always_load });
+                pendingLoad={pendingLoads.get(use.bot.id) ?? null}
+                onToggle={(alwaysLoad) => {
+                  toggleLoad(use, alwaysLoad);
                 }}
                 onUpgrade={() => {
                   setDialog({ kind: "move", botId: use.bot.id, version: use.pin.latest_version });
@@ -201,15 +236,11 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
                   setDialog({ kind: "change", botId: use.bot.id });
                 }}
                 onRemove={() => {
-                  removePin.mutate(
-                    { path: { id: use.bot.id, skill_id: skill.id } },
-                    {
-                      onSuccess: () => {
-                        void refresh();
-                      },
-                      onError: failed(use.bot.name),
-                    },
-                  );
+                  void removePin
+                    .mutateAsync({ path: { id: use.bot.id, skill_id: skill.id } })
+                    .then(() => {
+                      void refresh();
+                    }, failed(use.bot.name));
                 }}
               />
             ))}
@@ -222,35 +253,25 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
         latest={latestVersion}
         versionsLoad={versionsLoad}
         bots={others}
-        pending={addPins.isPending}
+        pending={dialog !== null && busyDialog === dialog}
         error={dialogError}
         onClose={closeDialog}
         onConfirm={(botIds) => {
-          if (latestVersion === undefined) return;
-          setDialogError(null);
-          addPins.mutate(
-            {
+          if (latestVersion === undefined || dialog?.kind !== "add") return;
+          runInDialog(
+            dialog,
+            addPins.mutateAsync({
               path: { id: skill.id },
               body: {
                 skill_version_id: latestVersion.id,
                 bots: botIds.map((bot_id) => ({ bot_id, expected_skill_version_id: null })),
               },
-            },
-            {
-              onSuccess: (changed) => {
-                replaceBots(changed);
-                void refresh();
-                closeDialog();
-              },
-              onError: (error) => {
-                void refresh();
-                setDialogError(
-                  readApiError(error)?.code === "stale_write"
-                    ? "A bot changed in another place. Check the list and try again."
-                    : apiErrorText(error),
-                );
-              },
-            },
+            }),
+            replaceBots,
+            (error) =>
+              readApiError(error)?.code === "stale_write"
+                ? "A bot changed in another place. Check the list and try again."
+                : apiErrorText(error),
           );
         }}
       />
@@ -276,39 +297,29 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
         target={dialog?.kind === "move" ? dialog.version : 0}
         versions={versions.data}
         versionsLoad={versionsLoad}
-        pending={setPin.isPending}
+        pending={dialog !== null && busyDialog === dialog}
         error={dialogError}
         onClose={closeDialog}
         onConfirm={(version) => {
-          if (dialogBot === undefined) return;
-          setDialogError(null);
-          setPin.mutate(
-            {
-              path: { id: dialogBot.bot.id, skill_id: skill.id },
+          if (dialogBot === undefined || dialog?.kind !== "move") return;
+          const { bot, pin } = dialogBot;
+          runInDialog(
+            dialog,
+            setPin.mutateAsync({
+              path: { id: bot.id, skill_id: skill.id },
               body: {
                 skill_version_id: version.id,
-                always_load: dialogBot.pin.always_load,
-                expected: {
-                  skill_version_id: dialogBot.pin.skill_version_id,
-                  always_load: dialogBot.pin.always_load,
-                },
+                always_load: pin.always_load,
+                expected: { skill_version_id: pin.skill_version_id, always_load: pin.always_load },
               },
+            }),
+            (changed) => {
+              replaceBots([changed]);
             },
-            {
-              onSuccess: (changed) => {
-                replaceBots([changed]);
-                void refresh();
-                closeDialog();
-              },
-              onError: (error) => {
-                void refresh();
-                setDialogError(
-                  readApiError(error)?.code === "stale_write"
-                    ? `${dialogBot.bot.name} changed in another place. Check it and try again.`
-                    : apiErrorText(error),
-                );
-              },
-            },
+            (error) =>
+              readApiError(error)?.code === "stale_write"
+                ? `${bot.name} changed in another place. Check it and try again.`
+                : apiErrorText(error),
           );
         }}
       />
