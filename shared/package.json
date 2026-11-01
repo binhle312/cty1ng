@@ -11,7 +11,8 @@
     "./events": "./src/events/index.ts",
     "./ids": "./src/ids.ts",
     "./settings": "./src/settings.ts",
-    "./skills": "./src/skills.ts"
+    "./skills": "./src/skills.ts",
+    "./tool-settings": "./src/tool-settings.ts"
   },
   "scripts": {
     "typecheck": "tsc -p ."
