@@ -16,8 +16,11 @@ import type { BotRow } from "./bot-queries.ts";
 // Pin, unpin and reorder (pin.md, bots-page.md §6, top-header.md §3). The server list comes in
 // header order: the pinned bots by position, then the others by the `bot_order` sort.
 
+// The pinned bots by position, whatever the order of the list.
 export function pinnedOf(bots: readonly BotRow[]): BotRow[] {
-  return bots.filter((bot) => bot.pinned_position !== null);
+  return bots
+    .filter((bot) => bot.pinned_position !== null)
+    .sort((a, b) => (a.pinned_position ?? 0) - (b.pinned_position ?? 0));
 }
 
 export function othersOf(bots: readonly BotRow[]): BotRow[] {
