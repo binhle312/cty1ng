@@ -16,6 +16,7 @@ and what changed because of it. Newest first.
 
 | File | Lesson | Source | Status |
 | --- | --- | --- | --- |
+| `review-contract-boundaries.md` | Map each review requirement to its implementation boundary and evidence; judge safety and compliance separately | M2a, PR #57 | applied |
 | `self-review-against-the-spec.md` | Before the PR, check the code against each spec section and test the edge cases | M1b, PR #54 | applied |
 | `prove-the-test-fails-first.md` | See a fix's test fail on the old code | M1b, PR #54 | applied |
 | `full-gate-before-the-report.md` | Run every §4 check before the report, and report only what ran | M1b, PR #54 | applied |
