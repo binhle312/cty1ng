@@ -27,8 +27,11 @@ written ways of working that the bot follows.
 - **Always load**: the skill is in the bot's prompt on every run. When it is off, the bot loads
   the skill only when it needs it.
 - **Deprecated**: a skill that cannot be added to a bot any more. Bots that have it keep it.
-- **Trash**: deleted items wait here for 30 days (a setting), then go for good. The owner can
-  restore them before that.
+- **Trash**: deleted items wait here for 30 days (a setting), then go for good. The app has no
+  Trash page yet. Before the 30 days end, the owner can restore an item from a terminal in the
+  app's folder: `pnpm --filter backend cli skills restore <slug>` for a skill, or
+  `pnpm --filter backend cli bots restore <slug>` for a bot. `cli skills trash` and
+  `cli bots trash` list what is in Trash.
 
 ## What the owner can do now
 
@@ -49,6 +52,7 @@ not in the app yet. Do not describe screens for them.
 - The Bots page, the bot page, and the form to make or clone a bot (next).
 - Conversations: talking to a bot, and bots that hand work to each other.
 - Projects, the Library (the files of a project), and memory.
+- The Trash page (restore works only from the terminal for now).
 - Statistics and cost.
 - The Settings page. The limits (such as the longest skill name and the Trash days) and the bot
   defaults have values, but the owner cannot change them in the app yet.
