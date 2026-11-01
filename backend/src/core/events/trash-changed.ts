@@ -6,7 +6,7 @@ import type { AppendEvent } from "./append-event.ts";
 // transaction.
 export async function appendTrashChanged(tx: Tx, appendEvent: AppendEvent): Promise<void> {
   const counts = {
-    skill: (await tx.skills.trashed()).length,
+    skill: await tx.skills.trashedCount(),
     bot: await tx.bots.trashedCount(),
   };
   await appendEvent(tx, {

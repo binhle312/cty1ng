@@ -1,8 +1,10 @@
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { CatalogModel, CatalogTool } from "@cty1ng/shared/catalog";
 import { loadCatalog, checkCatalogProviders } from "../../src/app/catalog-files.ts";
 import { effortsOf, isModelProvider } from "../../src/adapters/model/ai-sdk/effort.ts";
-import { testBackend, testConfig } from "../helpers.ts";
+import { tempDir, testBackend, testConfig } from "../helpers.ts";
 
 // api.md §3: GET /models and GET /tools, from the checked-in config/ files.
 describe("GET /models", () => {
@@ -86,6 +88,19 @@ describe("the checked-in catalog", () => {
     expect(() => {
       checkCatalogProviders(catalog, { isProvider: isModelProvider, efforts: effortsOf });
     }).not.toThrow();
+  });
+
+  it("names the file of a YAML syntax error", () => {
+    const dir = tempDir("catalog");
+    try {
+      const modelsFile = join(dir.path, "models.yaml");
+      writeFileSync(modelsFile, "- id: [unclosed\n");
+      expect(() => loadCatalog({ ...testConfig(dir.path), modelsFile })).toThrow(
+        /^config\/models\.yaml: /,
+      );
+    } finally {
+      dir.remove();
+    }
   });
 
   it("refuses a provider with no adapter at start", () => {

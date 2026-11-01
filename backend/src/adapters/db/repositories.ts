@@ -160,6 +160,14 @@ export function skillsRepository(db: Db): SkillsWriter {
         .all();
       return Promise.resolve(rows.map(toSkill));
     },
+    trashedCount: () => {
+      const row = db
+        .select({ n: sql<number>`count(*)` })
+        .from(skills)
+        .where(isNotNull(skills.trashedAt))
+        .get();
+      return Promise.resolve(row?.n ?? 0);
+    },
     trashedUntil: (cutoff) => {
       const rows = db
         .select({ id: skills.id })

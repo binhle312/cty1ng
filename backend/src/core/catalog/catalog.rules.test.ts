@@ -90,6 +90,16 @@ describe("buildCatalog (domain-model.md §4, §4.1)", () => {
     ["no default with efforts", { default_effort: undefined }, "default_effort must be one"],
     ["a default with no efforts", { efforts: [] }, "default_effort without efforts"],
     ["an unknown effort level", { efforts: ["turbo"] }, "efforts.0"],
+    [
+      "an effort listed twice",
+      { efforts: ["low", "low"], default_effort: "low" },
+      "each effort once",
+    ],
+    [
+      "efforts out of order",
+      { efforts: ["high", "low"], default_effort: "low" },
+      "least thinking first",
+    ],
     ["a provider tool it does not list", { provider_tools: ["files"] }, "is not a anthropic tool"],
     ["another provider's tool", { id: "google:g" }, "is not a google tool"],
     ["a key variable without _API_KEY", { api_key_env: "SECRET" }, "api_key_env"],

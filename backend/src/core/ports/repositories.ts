@@ -88,6 +88,8 @@ export interface SkillsReader {
   bySlug(slug: string): Promise<SkillRecord | null>;
   // Skills in Trash, newest delete first.
   trashed(): Promise<SkillRecord[]>;
+  // How many skills are in Trash, for `trash.changed`.
+  trashedCount(): Promise<number>;
   // Skills whose `trashed_at` is at or before `cutoff` (the purge job).
   trashedUntil(cutoff: Date): Promise<SkillId[]>;
   latestVersion(skillId: SkillId): Promise<SkillVersionRecord | null>;

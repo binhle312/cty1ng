@@ -9,11 +9,21 @@ export function loadCatalog(
   config: Pick<Config, "modelsFile" | "toolsFile" | "fakeModel" | "keysSet">,
 ): Catalog {
   return buildCatalog({
-    models: parse(readFileSync(config.modelsFile, "utf8")),
-    tools: parse(readFileSync(config.toolsFile, "utf8")),
+    models: readYaml(config.modelsFile, "config/models.yaml"),
+    tools: readYaml(config.toolsFile, "config/tools.yaml"),
     fakeModel: config.fakeModel,
     keySet: (name) => config.keysSet.has(name),
   });
+}
+
+// A YAML syntax error names the file, as every other catalog error does.
+function readYaml(path: string, name: string): unknown {
+  try {
+    return parse(readFileSync(path, "utf8"));
+  } catch (error) {
+    const reason = error instanceof Error ? error.message.split("\n")[0] : String(error);
+    throw new CatalogError(`${name}: ${reason ?? "cannot be read"}`);
+  }
 }
 
 // Every catalog model must be one the model adapter can run, with efforts it can send. Checked

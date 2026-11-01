@@ -1,4 +1,5 @@
 import {
+  EFFORT_LEVELS,
   ModelFileEntry,
   providerOf,
   ToolFileEntry,
@@ -94,6 +95,13 @@ export function buildCatalog(input: {
     ) {
       throw new CatalogError(
         `config/models.yaml: ${entry.id}: default_effort must be one of its efforts`,
+      );
+    }
+    // The effort selector shows the levels in file order, least thinking first, once each.
+    const ranks = entry.efforts.map((effort) => EFFORT_LEVELS.indexOf(effort));
+    if (ranks.some((rank, index) => index > 0 && rank <= (ranks[index - 1] ?? -1))) {
+      throw new CatalogError(
+        `config/models.yaml: ${entry.id}: list each effort once, least thinking first (${EFFORT_LEVELS.join(", ")})`,
       );
     }
     if (entry.efforts.length === 0 && defaultEffort !== null) {

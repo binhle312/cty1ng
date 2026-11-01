@@ -826,7 +826,7 @@ skill_drafts                                              -- TypeID prefix `skil
 - id: anthropic:<model-name>             # "<provider>:<model>", resolved by the model adapter
   label: <Anthropic model label>
   api_key_env: ANTHROPIC_API_KEY
-  efforts: [low, medium, high]            # [] = the model has no effort setting
+  efforts: [low, medium, high]            # [] = the model has no effort setting; each level once, least thinking first (checked at start)
   default_effort: medium
   multimodal: true                        # reads images; View images is off and grey when false
   context_window: 200000
