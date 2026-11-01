@@ -7,6 +7,7 @@ The composition root (D35): the only place that wires adapters into the core.
 | `main.ts` | Starts the backend: configuration, migrations, then the server; stops on any failure before it listens |
 | `compose.ts` | Wires the adapters and the core into the Hono app |
 | `config.ts` | Environment variables parsed with Zod (`docs/architecture.md` §8), the loopback check, `DATA_DIR` from the repository root |
+| `catalog-files.ts` | Reads `config/models.yaml` and `config/tools.yaml` into the catalog; checks at start that the model adapter knows each provider and effort |
 | `database.ts` | Opens the database and applies pending migrations (used at start and by `db migrate`) |
 | `cli.ts` | Owner commands: `ids decode`, `db migrate`, and `skills import`, `export`, `trash`, `restore` |
 | `skill-commands.ts` | The `skills` commands; they call the same services as the API (`trash` and `restore` until M5b) |

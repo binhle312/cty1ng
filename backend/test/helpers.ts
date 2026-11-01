@@ -7,6 +7,7 @@ import Database from "better-sqlite3";
 import { systemClock } from "../src/adapters/clock/system-clock.ts";
 import { sqliteReaders, sqliteUnitOfWork } from "../src/adapters/db/unit-of-work.ts";
 import { typeIdIds } from "../src/adapters/ids/typeid-ids.ts";
+import { buildCatalog, type Catalog } from "../src/core/catalog/catalog.rules.ts";
 import { createAppendEvent } from "../src/core/events/append-event.ts";
 import type { Clock } from "../src/core/ports/clock.ts";
 import { createSettingsService } from "../src/core/settings/settings.service.ts";
@@ -113,6 +114,7 @@ export function idleServices() {
     ids: typeIdIds,
   });
   return {
+    catalog: emptyCatalog(),
     settings: createSettingsService({ uow, readers, appendEvent }),
     skills,
     skillImport: createSkillImportService({
@@ -251,3 +253,8 @@ export function collect<T>(iterable: AsyncIterable<T>) {
 }
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// A catalog with no models and no tools, for apps built by hand in tests.
+export function emptyCatalog(): Catalog {
+  return buildCatalog({ models: [], tools: [], fakeModel: false, keySet: () => false });
+}

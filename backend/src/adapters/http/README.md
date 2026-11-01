@@ -12,6 +12,7 @@ The Hono app (`docs/api.md`). Handlers parse input, call one service and map the
 | `context.ts` | The values every handler reads from the context: request id, logger |
 | `static.ts` | The built frontend in a production build: files, and `index.html` for page paths; never for `/api/*` |
 | `routes/` | One file per route group |
+| `routes/catalog.ts` | `GET /api/models` and `GET /api/tools` |
 | `routes/health.ts` | `GET /api/health` |
 | `routes/settings.ts` | `GET` and `PATCH /api/settings` |
 | `routes/skills.ts` | Every `/api/skills` route (`docs/api.md` §2), the zip upload limit |

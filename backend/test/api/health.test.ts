@@ -3,22 +3,23 @@ import { testBackend } from "../helpers.ts";
 
 // api.md §7: GET /api/health.
 describe("GET /api/health", () => {
-  it("is 200 with the database up, worker not started, and an empty catalog", async () => {
+  // The test config sets no *_API_KEY (testing.md §2), so every catalog model is unavailable.
+  it("is 200 with the database up, worker not started, and no available model", async () => {
     const backend = testBackend();
     const response = await backend.request("/api/health");
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       db: "ok",
       worker: "not_started",
-      catalog: { models: 0, available: 0 },
+      catalog: { models: 6, available: 0 },
     });
     backend.close();
   });
 
-  it("lists fake:scripted when FAKE_MODEL=1", async () => {
+  it("counts fake:scripted and fake:effort as available when FAKE_MODEL=1", async () => {
     const backend = testBackend({ FAKE_MODEL: "1" });
     expect(await (await backend.request("/api/health")).json()).toMatchObject({
-      catalog: { models: 1, available: 1 },
+      catalog: { models: 8, available: 2 },
     });
     backend.close();
   });

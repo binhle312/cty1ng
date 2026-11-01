@@ -1,3 +1,4 @@
+import type { Catalog } from "../../core/catalog/catalog.rules.ts";
 import type { Health } from "../../core/health/health.service.ts";
 import type { createSettingsService } from "../../core/settings/settings.service.ts";
 import type { SkillImportService } from "../../core/skills/skill-import.service.ts";
@@ -15,6 +16,7 @@ import {
 } from "./middleware.ts";
 import { createRouter } from "./router.ts";
 import { apiDocsRoutes } from "./routes/api-docs.ts";
+import { catalogRoutes } from "./routes/catalog.ts";
 import { healthRoutes } from "./routes/health.ts";
 import { settingsRoutes } from "./routes/settings.ts";
 import { SKILL_UPLOAD_PATHS, skillRoutes } from "./routes/skills.ts";
@@ -27,6 +29,7 @@ export interface HttpDeps {
   allowedHosts: readonly string[];
   allowedOrigins: readonly string[];
   health: () => Promise<Health>;
+  catalog: Catalog;
   settings: ReturnType<typeof createSettingsService>;
   skills: SkillsService;
   skillImport: SkillImportService;
@@ -59,6 +62,7 @@ export function createHttpApp(deps: HttpDeps) {
   const api = createRouter()
     .route("/", healthRoutes(deps.health))
     .route("/", settingsRoutes(deps.settings))
+    .route("/", catalogRoutes(deps.catalog))
     .route("/", skillRoutes({ skills: deps.skills, skillImport: deps.skillImport }))
     .route("/", streamRoutes(deps.openStream));
   if (deps.testPing !== null) api.route("/", testEventRoutes(deps.testPing));

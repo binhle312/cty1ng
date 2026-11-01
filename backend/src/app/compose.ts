@@ -7,7 +7,6 @@ import { sqliteReaders, sqliteUnitOfWork } from "../adapters/db/unit-of-work.ts"
 import { createHttpApp } from "../adapters/http/app.ts";
 import { typeIdIds } from "../adapters/ids/typeid-ids.ts";
 import { sseBody, type SseOptions } from "../adapters/sse/sse-stream.ts";
-import { buildCatalog } from "../core/catalog/catalog.ts";
 import { createAppendEvent } from "../core/events/append-event.ts";
 import { createEventPruning } from "../core/events/event-pruning.service.ts";
 import { createEventHub } from "../core/events/hub.ts";
@@ -17,6 +16,8 @@ import type { Clock } from "../core/ports/clock.ts";
 import { createSettingsService } from "../core/settings/settings.service.ts";
 import { createSkillImportService } from "../core/skills/skill-import.service.ts";
 import { createSkillsService } from "../core/skills/skills.service.ts";
+import { effortsOf, isModelProvider } from "../adapters/model/ai-sdk/effort.ts";
+import { checkCatalogProviders, loadCatalog } from "./catalog-files.ts";
 import type { Config } from "./config.ts";
 import { openDatabase } from "./database.ts";
 
@@ -61,7 +62,8 @@ export function compose(
       hub.notify();
     },
   });
-  const catalog = buildCatalog({ fakeModel: config.fakeModel });
+  const catalog = loadCatalog(config);
+  checkCatalogProviders(catalog, { isProvider: isModelProvider, efforts: effortsOf });
   const settings = createSettingsService({ uow, readers, appendEvent });
   const skills = createSkillsService({ uow, readers, appendEvent, clock, ids: typeIdIds });
   const skillImport = createSkillImportService({
@@ -78,6 +80,7 @@ export function compose(
     allowedHosts: config.allowedHosts,
     allowedOrigins: config.allowedOrigins,
     health: createHealthService({ readers, catalog }),
+    catalog,
     settings,
     skills,
     skillImport,
@@ -90,6 +93,7 @@ export function compose(
 
   return {
     app,
+    catalog,
     uow,
     readers,
     hub,
