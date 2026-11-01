@@ -70,6 +70,8 @@ describe("migrate", () => {
     expect(migrate(sqlite, MIGRATIONS_FOLDER)).toBe(0);
     expect(tables(sqlite)).toEqual([
       "__drizzle_migrations",
+      "bot_skills",
+      "bots",
       "events",
       "settings",
       "skill_versions",

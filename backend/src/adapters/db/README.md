@@ -6,7 +6,8 @@ Drizzle on better-sqlite3 (D29, `docs/architecture.md` §11): the persistence po
 | --- | --- |
 | `client.ts` | The writer and reader connections: WAL, `foreign_keys`, `busy_timeout`; one writer per file in a thread |
 | `client.test.ts` | The writer guard: links and other paths, close and a second close, a failed open, `:memory:` |
-| `schema.ts` | The Drizzle tables (M0: `events`, `settings`; M1: `skills`, `skill_versions`) |
+| `schema.ts` | The Drizzle tables (M0: `events`, `settings`; M1: `skills`, `skill_versions`; M2: `bots`, `bot_skills`) |
+| `bots-schema.test.ts` | The database rules of `bots` and `bot_skills` in plain SQL: invariant 3, the name key index, the CHECKs, the pinned order rewrite |
 | `columns.ts` | The TypeID column (TypeID in code, UUID in the database) and the UTC timestamp column |
 | `repositories.ts` | The events, settings and skills repositories, `setIf` compare-and-set included |
 | `unit-of-work.ts` | Write transactions one at a time with `BEGIN IMMEDIATE`; reads on the reader connection |

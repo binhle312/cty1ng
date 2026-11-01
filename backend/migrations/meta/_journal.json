@@ -15,6 +15,13 @@
       "when": 1793412949743,
       "tag": "0001_skills",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793496498254,
+      "tag": "0002_bots",
+      "breakpoints": true
     }
   ]
 }
