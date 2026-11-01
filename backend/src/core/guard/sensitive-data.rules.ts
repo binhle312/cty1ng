@@ -81,19 +81,30 @@ const DETECTORS: readonly Detector[] = [
   },
 ];
 
-export function findSensitive(text: string): SensitiveMatch[] {
-  const matches: SensitiveMatch[] = [];
-  text.split("\n").forEach((line, index) => {
+// Every match, line by line, in detector order. A generator, so a caller that needs only the
+// first match stops there instead of collecting a long line's thousands of candidates.
+function* scan(text: string): Generator<SensitiveMatch> {
+  const lines = text.split("\n");
+  for (const [index, line] of lines.entries()) {
     for (const detector of DETECTORS) {
       if (detector.lineHas !== undefined && !detector.lineHas.test(line)) continue;
       for (const found of line.matchAll(detector.pattern)) {
         const secret = found[detector.group ?? 0] ?? found[0];
         if (detector.accept !== undefined && !detector.accept(secret)) continue;
-        matches.push({ kind: detector.kind, line: index + 1, ending: secret.slice(-4) });
+        yield { kind: detector.kind, line: index + 1, ending: secret.slice(-4) };
       }
     }
-  });
-  return matches;
+  }
+}
+
+export function findSensitive(text: string): SensitiveMatch[] {
+  return [...scan(text)];
+}
+
+// The first match, or null: what every save path reports (D39 names one finding).
+export function firstSensitive(text: string): SensitiveMatch | null {
+  const next = scan(text).next();
+  return next.done === true ? null : next.value;
 }
 
 export function luhn(digits: string): boolean {

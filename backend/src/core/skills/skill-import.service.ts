@@ -7,7 +7,7 @@ import {
   type SkillImportRow,
 } from "@cty1ng/shared/skills";
 import { DomainError } from "../errors.ts";
-import { findSensitive, sensitiveLabel } from "../guard/sensitive-data.rules.ts";
+import { firstSensitive, sensitiveLabel } from "../guard/sensitive-data.rules.ts";
 import type { Clock } from "../ports/clock.ts";
 import type { Readers, SkillRecord, UnitOfWork } from "../ports/repositories.ts";
 import { readSettings } from "../settings/settings.service.ts";
@@ -153,8 +153,8 @@ export function createSkillImportService(deps: {
     });
     if (seen.skillId === null) {
       // Apply saves the slug of a new skill, and the guard reads it there (createInTx).
-      const [secret] = findSensitive(slug);
-      if (secret !== undefined) {
+      const secret = firstSensitive(slug);
+      if (secret !== null) {
         return invalid(
           `The folder name looks like ${sensitiveLabel(secret.kind)}. The app does not save secrets in skills. Rename the folder.`,
         );
@@ -230,8 +230,8 @@ export function createSkillImportService(deps: {
     ): Promise<SkillImportPreview> => {
       // The file name goes into every changelog ("Imported from {file}"), so the guard reads it
       // (security.md §2.13).
-      const [match] = findSensitive(file);
-      if (match !== undefined) {
+      const match = firstSensitive(file);
+      if (match !== null) {
         throw new DomainError(
           "sensitive_data",
           `The file name looks like ${sensitiveLabel(match.kind)}. The app does not save secrets in skills. Rename the file.`,

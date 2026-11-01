@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findSensitive, ibanValid, luhn } from "./sensitive-data.rules.ts";
+import { findSensitive, firstSensitive, ibanValid, luhn } from "./sensitive-data.rules.ts";
 
 describe("findSensitive (D39)", () => {
   it.each([
@@ -48,6 +48,12 @@ describe("findSensitive (D39)", () => {
     expect(findSensitive(line)).toEqual([]);
     expect(findSensitive(`passport ${line}`)).toHaveLength(150_000);
     expect(performance.now() - start).toBeLessThan(1_000);
+    expect(firstSensitive(`passport ${line}`)).toEqual({
+      kind: "passport",
+      line: 1,
+      ending: "C123",
+    });
+    expect(firstSensitive(line)).toBeNull();
   });
 });
 

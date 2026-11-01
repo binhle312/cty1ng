@@ -5,7 +5,7 @@ import {
   type SkillTextField,
 } from "@cty1ng/shared/skills";
 import type { ErrorCode } from "@cty1ng/shared/errors";
-import { findSensitive, sensitiveLabel } from "../guard/sensitive-data.rules.ts";
+import { firstSensitive, sensitiveLabel } from "../guard/sensitive-data.rules.ts";
 
 // Checks on skill text (domain-model.md §3.1, security.md §2.5 and §2.13). Pure: the limits come
 // in from the settings, and the result says what is wrong; the service refuses. The empty, limit
@@ -61,8 +61,8 @@ export function skillTextProblem(text: SkillText, limits: SkillLimits): SkillPro
   ];
   for (const [field, value] of guarded) {
     if (value === undefined) continue;
-    const [match] = findSensitive(value);
-    if (match === undefined) continue;
+    const match = firstSensitive(value);
+    if (match === null) continue;
     const where = field === "body_md" ? `Line ${String(match.line)}` : `The ${NOUN[field]}`;
     return {
       code: "sensitive_data",
