@@ -890,7 +890,7 @@ the bot page build the Tools list from it (`design/components/create-bot-page.md
   sends_data_out: false         # true = amber ⚠ on the row
   web: false                    # true = a web tool under D53
   line: "List, read and write files in the Library (the project's, or Home)."
-  off_line: "The bot only talks. View images and Hand off turn off too."
+  off_line: "The bot cannot list, read or write Library files. View images and Hand off turn off too."
   needs: []                     # tool ids that must be on (view_images and hand_off need files)
   switch: open                  # may the owner turn it on? open = yes, the choice is saved | later = forced off | locked = forced off, needs a decision (D55)
 - id: web_fetch

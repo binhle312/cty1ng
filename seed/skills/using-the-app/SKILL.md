@@ -21,7 +21,8 @@ written ways of working that the bot follows.
 - **Persona**: who the bot is and how it works. The owner can edit it.
 - **Model** and **effort**: the AI model the bot uses, and how hard it thinks. Both are fixed
   when the bot is made. To try another model, clone the bot.
-- **Skill**: a named Markdown playbook. Each save makes a new version: v1, v2, …
+- **Skill**: a named Markdown playbook. Each save of its description or text makes a new
+  version: v1, v2, … A change of the name only does not.
 - **Pin**: the skill version a bot uses. A new skill version never moves a pin by itself. The
   owner upgrades each bot when they want.
 - **Always load**: the skill is in the bot's prompt on every run. When it is off, the bot loads
@@ -35,9 +36,9 @@ written ways of working that the bot follows.
 
 ## What the owner can do now
 
-- **Skills page**: make a skill, edit it (each Save makes a new version), see its history and
-  compare two versions, restore an old version, clone it, deprecate it, and delete a deprecated
-  skill to Trash. Import and export `SKILL.md` folders as a zip.
+- **Skills page**: make a skill, edit it (a Save of the description or text makes a new version;
+  a rename alone does not), see its history and compare two versions, restore an old version,
+  clone it, deprecate it, and delete a deprecated skill to Trash. Import and export `SKILL.md` folders as a zip.
 - **A skill's Bots tab**: see which bots use the skill and at which version, upgrade a bot to the
   newest version, turn Always load on or off, change the version, remove the skill from a bot,
   or add it to another bot.

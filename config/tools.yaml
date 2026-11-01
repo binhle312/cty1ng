@@ -19,7 +19,7 @@
   sends_data_out: false
   web: false
   line: "List, read and write files in the Library (the project's, or Home)."
-  off_line: "The bot only talks. View images and Hand off turn off too."
+  off_line: "The bot cannot list, read or write Library files. View images and Hand off turn off too."
   switch: open
 
 - id: view_images
