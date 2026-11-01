@@ -56,9 +56,9 @@ describe("the header order while the owner uses the header", () => {
       [UX, BA, QA],
     ]);
     await renderApp("/");
-    await waitFor(() => {
-      expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
-    });
+    // The roster is a lazy chunk: its first import in a test run takes a while.
+    await screen.findAllByTestId("header-bot", {}, { timeout: 5000 });
+    expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
     act(() => {
       screen.getAllByTestId("header-bot")[0]?.querySelector("button")?.focus();
     });
@@ -76,9 +76,9 @@ describe("the header order while the owner uses the header", () => {
       [QA, UX, BA],
     ]);
     await renderApp("/");
-    await waitFor(() => {
-      expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
-    });
+    // The roster is a lazy chunk: its first import in a test run takes a while.
+    await screen.findAllByTestId("header-bot", {}, { timeout: 5000 });
+    expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
     act(() => {
       screen.getAllByTestId("header-bot")[1]?.querySelector("button")?.focus();
     });
@@ -99,9 +99,9 @@ describe("the header order while the owner uses the header", () => {
       [UX, QA, BA],
     ]);
     await renderApp("/");
-    await waitFor(() => {
-      expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
-    });
+    // The roster is a lazy chunk: its first import in a test run takes a while.
+    await screen.findAllByTestId("header-bot", {}, { timeout: 5000 });
+    expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
     await refetchBots(fake, 2);
     await waitFor(() => {
       expect(shownOrder()).toEqual(["ux", "qa", "ba"]);
