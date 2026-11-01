@@ -385,7 +385,10 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
   restored. Each slice adds its own table to this step when it creates the table: M2 deletes
   `bot_skills` (the purge job of M1 takes bots in M2), M5b adds the bot memory and
   `memory_history_versions`, M5c the open drafts. The purge emits `bot.purged` and
-  `trash.changed` (`realtime-events.md` §4).
+  `trash.changed` (`realtime-events.md` §4). The purge does not rewrite earlier events: the
+  `bot.*` payloads that hold the whole bot (its persona and description too) stay until the
+  event pruning removes them (`EVENT_RETENTION_DAYS`, default 30) (owner, 2026-11-01, review of
+  PR #57).
 - **Restore (D50).** In M2 only the temporary CLI `bots restore <slug>` restores a bot
   (`api.md` §4); the M5b Trash page replaces it. A restore clears `deleted_at`, raises
   `row_version`, leaves the bot unpinned and emits `bot.restored` and `trash.changed`. It always
