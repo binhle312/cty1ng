@@ -127,6 +127,43 @@ describe("create (POST /bots)", () => {
     ).toMatchObject({ code: "idempotency_key_reused" });
   });
 
+  // M2 plan §5: the key lookup comes before every check of data that can change.
+  it("is idempotent after the model lost its API key", async () => {
+    const dir = tempDir("key-gone");
+    try {
+      const k = key();
+      const sent = body({ model_id: "google:gemini-3.8-flash" });
+      const withKey = backendAt(dir.path, { GEMINI_API_KEY: "test-key-not-real" });
+      const first = await withKey.bots.create(sent, k, OWNER_ID);
+      withKey.close();
+      const noKey = backendAt(dir.path);
+      try {
+        // A new create with that model is refused now; the repeat still answers.
+        expect(await failure(noKey.bots.create(sent, key(), OWNER_ID))).toMatchObject({
+          code: "model_not_available",
+        });
+        const again = await noKey.bots.create(sent, k, OWNER_ID);
+        expect(again).toMatchObject({ created: false, bot: { id: first.bot.id } });
+        expect(again.bot.available).toBe(false);
+      } finally {
+        noKey.close();
+      }
+    } finally {
+      dir.remove();
+    }
+  });
+
+  it("is idempotent after the bot went to Trash: the repeat makes no second bot", async () => {
+    const k = key();
+    const sent = body();
+    const first = await backend.bots.create(sent, k, OWNER_ID);
+    await backend.bots.trash(BotId.parse(first.bot.id));
+    const again = await backend.bots.create(sent, k, OWNER_ID);
+    expect(again).toMatchObject({ created: false, bot: { id: first.bot.id } });
+    expect(await backend.bots.list()).toEqual([]);
+    expect((await events()).filter(([type]) => type === "bot.created")).toHaveLength(1);
+  });
+
   it("refuses a model not in the catalog, or whose key is not set", async () => {
     expect(await failure(create({ model_id: "nobody:model" }))).toMatchObject({
       code: "model_not_available",
@@ -296,6 +333,45 @@ describe("create (POST /bots)", () => {
         }),
       ),
     ).toMatchObject({ code: "skill_deprecated" });
+  });
+
+  // M2 plan §5: the clone exception needs a live source, the same version and the source id.
+  it("refuses a deprecated pin when the source is in Trash, the version differs or the id is left out", async () => {
+    const old = await skill("old");
+    const source = await create({ pins: [{ skill_id: old, always_load: false }] });
+    const sourceId = BotId.parse(source.id);
+    const v1 = source.pins[0]?.skill_version_id;
+    await backend.skills.addVersion(
+      old,
+      { baseVersion: 1, description: "v2", bodyMd: "## v2" },
+      OWNER_ID,
+    );
+    const v2 = (await backend.readers.skills.latestVersion(old))?.id;
+    if (v1 === undefined || v2 === undefined) throw new Error("versions");
+    const summary = await backend.skills.summary(old, OWNER_ID);
+    await backend.skills.deprecate(
+      old,
+      { removeBotIds: [], rowVersion: summary.row_version },
+      OWNER_ID,
+    );
+    const template = await backend.bots.cloneTemplate(sourceId);
+    const clone = (more: Partial<CreateBotBody>) =>
+      failure(
+        backend.bots.create({ ...template, avatar_colour: "#112233", ...more }, key(), OWNER_ID),
+      );
+    const deprecated = { code: "skill_deprecated", field: "pins[0]" };
+    // Another version of the same skill.
+    expect(
+      await clone({ pins: [{ skill_id: old, skill_version_id: v2, always_load: false }] }),
+    ).toMatchObject(deprecated);
+    // No cloned_from_bot_id: the same pin is a new assign.
+    const noSource: CreateBotBody = { ...template, avatar_colour: "#112233" };
+    delete noSource.cloned_from_bot_id;
+    expect(await failure(backend.bots.create(noSource, key(), OWNER_ID))).toMatchObject(deprecated);
+    // The source in Trash.
+    await backend.bots.trash(sourceId);
+    expect(await clone({})).toMatchObject(deprecated);
+    expect((await events()).filter(([type]) => type === "bot.created")).toHaveLength(1);
   });
 });
 
