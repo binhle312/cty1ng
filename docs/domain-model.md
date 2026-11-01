@@ -340,6 +340,8 @@ bots
 
 CHECK (purged_at IS NULL OR deleted_at IS NOT NULL)
 CHECK ((create_key IS NULL) = (create_request_hash IS NULL))
+CHECK (avatar_style IN ('flat', 'jelly', 'pixel', 'upload'))      -- M2 plan, decision 6
+CHECK ((avatar_style = 'upload') = (avatar_path IS NOT NULL))       -- M2 plan, decision 6; the service checks both first
 UNIQUE INDEX bots_name_kept ON bots(name_key) WHERE purged_at IS NULL
 UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position IS NOT NULL
 ```
@@ -835,16 +837,25 @@ skill_drafts                                              -- TypeID prefix `skil
   `model_not_available` (M2 spec gap pass: this replaces "lists only models whose key is set",
   which contradicted the agreed grey rows). In M2 the row has no "Add a key" link; M5 adds it
   with the Settings Models page.
-- **Providers in M2 (owner, 2026-11-01):** Anthropic only, through `ai` and `@ai-sdk/anthropic`.
-  Other providers come when the owner needs them, each as a new dependency for approval.
+- **Providers in M2 (owner, 2026-11-01; M2 plan, decisions 8–11):** Google Gemini and Anthropic,
+  through `ai`, `@ai-sdk/google` and `@ai-sdk/anthropic`. The file order is the catalog order
+  (Gemini 3.8 Flash, then Opus, Sonnet and Haiku 5.5, then Gemini 4 Argon and 3.5 Flash-Lite);
+  the seed bots take the first model that can run. OpenAI and DeepSeek come later, each in its
+  own PR as a new dependency for approval. The start fails with a clear message when the file
+  names a provider that has no adapter, or an effort the provider does not take.
+- **Effort mapping (M2 plan P1, P8):** Anthropic takes `providerOptions.anthropic.effort` (low,
+  medium, high, xhigh, max); Google takes `providerOptions.google.thinkingConfig.thinkingLevel`
+  (minimal, low, medium, high). The top-level `reasoning` option of the SDK is never used. The
+  labels in the UI are Minimal, Low, Medium, High, Extra high and Max; each model's
+  `default_effort` is preselected (decision 4).
 - **Fake models (`testing.md` §2):** with `FAKE_MODEL=1` the catalog is the entries of
   `config/models.yaml` plus two fake entries, both run by the fake adapter and available with no
   key: `fake:scripted` (no efforts, not multimodal) and `fake:effort` (efforts low, medium,
   high; default medium; multimodal). Neither has provider tools.
 - `effort` must be one of the model's `efforts`, or NULL when the list is empty.
 - `adapters/model/ai-sdk/effort.ts` maps effort to each provider's option in one function with a test
-  per provider. Values above are placeholders; the agent implementing M2 must check current model
-  ids and parameters in the provider docs.
+  per provider. The YAML above shows the shape; the real entries are in `config/models.yaml`,
+  checked against the provider docs on 2026-11-01.
 - Removing a model from the catalog makes its bots *unavailable* (J5 in the overview).
 - A model "has a web tool" (D53) when its `provider_tools` list has a tool whose catalog entry has
   `web: true`.

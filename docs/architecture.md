@@ -92,6 +92,7 @@ changes one adapter and nothing else.
 | `model.ts` | Stream a reply with tools; report usage per request | `adapters/model/ai-sdk/`, `adapters/model/fake/` | Direct vendor SDKs |
 | `prices.ts` | Price one request; say where the price came from | `adapters/prices/genai-prices/` + `config/models.yaml` override (D21) | Another price feed |
 | `workspace.ts` | Resolve, read, write, commit, changed-since; open a place's folder in the file manager (`openFolder(place)`, `security.md` §2.15) | `adapters/workspace/local-git/` | Git on the VPS disk. The storage design is an M9 item: D52 needs branches, worktrees and merges, so plain object storage is not enough. A VPS adapter refuses `openFolder` |
+| `avatar-files.ts` | Stage an avatar file, publish it under the write lock, touch, list, remove (M2 plan, decision 1; `domain-model.md` §2 Avatar files). The services decide whether a file is used; the adapter only keeps files and their times | `adapters/avatars/` (files under `DATA_DIR/avatars/`) | Object storage on a VPS |
 | `clock.ts`, `ids.ts` | Now; new id of a given type: UUIDv7 (D22) written as a TypeID (D36) | System clock, `uuidv7` + `typeid-js` | Fixed values in tests |
 
 **Unit of work.** A state change and the event describing it commit together (§5, rule 3 in
@@ -105,7 +106,7 @@ outside the port list, and each is built in the slice that needs it, not in M0:
 
 | Capability | Where it lives | Slice |
 | --- | --- | --- |
-| Avatar check and re-encode with `sharp` (`security.md` §2.4) | `adapters/http/uploads/`. The bots service gets only the stored path | M2 |
+| Avatar check and re-encode with `sharp` (`security.md` §2.4) | `adapters/http/uploads/avatar-image.ts`. The avatars service gets only the re-encoded WebP; the file store is the `avatar-files` port above (M2 plan, decision 1: a test needs a fake that can fail, and the cleanup must read file times inside the write lock) | M2 |
 | Timed jobs (Trash purge) | A timer that `app/` starts; it calls a core service with the time from the clock port (§6.1) | M1, then M5b |
 | Open folder (`security.md` §2.15) | One method on the workspace port; the program starts in the local-git adapter | M6 |
 

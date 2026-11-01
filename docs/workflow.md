@@ -89,6 +89,9 @@ brief ready ──▶ plan ──(owner approves, if checkpointed)──▶ buil
    `self-review-against-the-spec.md`). The builder fills the PR template (§6). Anything new that the build taught (a library pitfall,
    a lint pattern, a test helper) goes into `frontend-conventions.md` §5 or `testing.md` in
    the same PR, so the next slice does not learn it again.
+   **The guide stays current.** A slice that changes something the owner can see updates
+   `seed/skills/using-the-app/SKILL.md` (the Guide bot's knowledge) in the same PR: what works
+   now, what is not built yet, and the names on the screen (M2 plan, decision 14).
 5. **Cross-review.** The other agent reviews (prompt in §4). Findings become PR comments; the
    builder fixes or answers each. A finding says what is wrong, not which text or layout to
    use: when a fix needs a new text, state, flow or layout, the PR lists it under `Needs human
