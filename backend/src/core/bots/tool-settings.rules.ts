@@ -128,7 +128,22 @@ export function toolSettingsProblem(
     }
     jobs.set(tool.job, id);
   }
+  // A PATCH sends only the switches it changes, so a tool it turns on must not share a job with
+  // a tool that stays on in the saved settings; else step 5 would drop one and still answer 200.
   const merged = { ...base, ...body };
+  for (const id of turnedOn) {
+    const tool = offered.get(id);
+    if (tool === undefined) continue;
+    for (const other of offered.values()) {
+      if (other.id === id || other.job !== tool.job || other.switch !== "open") continue;
+      if (merged[other.id] !== true) continue;
+      return {
+        code: "tool_job_conflict",
+        field: `tool_settings.${id}`,
+        message: `${other.label} and ${tool.label} do the same job. Turn one off.`,
+      };
+    }
+  }
   const effective = effectiveToolSettings(merged, tools, model);
   for (const id of turnedOn) {
     const tool = offered.get(id);

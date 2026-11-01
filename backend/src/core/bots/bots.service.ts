@@ -427,12 +427,16 @@ export function createBotsService(deps: BotsDeps) {
       if (patch.request_limit !== undefined) change.requestLimit = patch.request_limit;
       if (patch.max_reply_chars !== undefined) change.maxReplyChars = patch.max_reply_chars;
       if (patch.tool_settings !== undefined) {
-        const model = catalog.model(bot.modelId) ?? {
-          id: bot.modelId,
-          label: bot.modelId,
-          provider_tools: [],
-          multimodal: false,
-        };
+        // With its model gone from the catalog, the bot's tools are unknown: a save would store
+        // every provider tool off and lose the owner's choices if the model comes back.
+        const model = catalog.model(bot.modelId);
+        if (model === undefined) {
+          throw new DomainError(
+            "model_not_available",
+            "This bot's model is no longer in the app, so its tools cannot change. Clone the bot to pick another model.",
+            "tool_settings",
+          );
+        }
         fail(toolSettingsProblem(patch.tool_settings, bot.toolSettings, catalog.tools, model));
         change.toolSettings = effectiveToolSettings(
           { ...bot.toolSettings, ...patch.tool_settings },

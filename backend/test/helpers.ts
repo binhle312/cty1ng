@@ -84,8 +84,8 @@ export function testBackend(env: NodeJS.ProcessEnv = {}, options: { clock?: Cloc
 }
 
 // The backend on a data folder the test owns, so a test can stop it and start it again.
-export function backendAt(dataDir: string) {
-  return compose(testConfig(dataDir), memoryLogger().log);
+export function backendAt(dataDir: string, env: NodeJS.ProcessEnv = {}) {
+  return compose(testConfig(dataDir, env), memoryLogger().log);
 }
 
 // The id adapter, for a core test that builds a service itself (core/ may not import adapters).

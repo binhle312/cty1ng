@@ -133,6 +133,21 @@ describe("toolSettingsProblem (POST and PATCH bodies)", () => {
     });
   });
 
+  it("refuses a tool turned on whose job a saved tool still holds, unless the body turns it off", () => {
+    const tools = [tool("a", { job: "fetch" }), tool("b", { job: "fetch" })];
+    expect(toolSettingsProblem({ b: true }, { a: true, b: false }, tools, MODEL)).toEqual({
+      code: "tool_job_conflict",
+      field: "tool_settings.b",
+      message: "a and b do the same job. Turn one off.",
+    });
+    expect(toolSettingsProblem({ a: false, b: true }, { a: true, b: false }, tools, MODEL)).toBe(
+      null,
+    );
+    // A saved tool that is gated now holds no job.
+    const gated = [tool("a", { job: "fetch", switch: "later" }), tool("b", { job: "fetch" })];
+    expect(toolSettingsProblem({ b: true }, { a: true }, gated, MODEL)).toBe(null);
+  });
+
   it("refuses a tool on while a tool it needs is off, also in the saved settings", () => {
     expect(
       toolSettingsProblem({ files: false, view_images: true }, {}, TOOLS, MODEL),
