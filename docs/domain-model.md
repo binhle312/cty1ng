@@ -496,7 +496,12 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
   file (a bot that changes its image), in that save's write lock. So a file always gets the full
   grace period after it becomes unused; the next purge pass after that deletes it. The upload writes or refreshes
   the file, and the cleanup checks and deletes it, each while it holds the database write lock,
-  so neither can run between the other's check and its write. A bot save that names an
+  so neither can run between the other's check and its write. The upload first writes a
+  **staged** copy outside the lock (the slow part). The cleanup lists and removes staged copies
+  older than `AVATAR_ORPHAN_HOURS` in the write lock too, so it never removes one between a
+  publish's check and its move. That a staged copy this old is abandoned is an **assumption**:
+  nothing limits how long an upload takes between staging and publishing. An upload slower than
+  the grace period finds its staged copy gone, gets 500, leaves no file, and is sent again. A bot save that names an
   `avatar_id` checks, inside its transaction, that the file exists: else 422
   `validation_error` with `field: "avatar_id"` ("Upload the image again."). Limits:
   `security.md` §2.4.

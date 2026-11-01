@@ -136,6 +136,43 @@ describe("cleanup", () => {
     expect(await files.listStaged()).toEqual([]);
   });
 
+  it("removes a staged file only in the write lock, so a publish queued first still succeeds", async () => {
+    const staged = await files.stage("e".repeat(64), image("slow upload"));
+    clock.advance(24 * HOUR);
+    // Another write holds the lock; the publish waits behind it, then the cleanup.
+    let release: () => void = () => undefined;
+    const holder = backend.uow.run(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        }),
+    );
+    const publishing = backend.uow.run(() => files.publish(staged, clock.now()));
+    const cleaning = avatars.cleanup();
+    // Let every step that does not need the lock finish.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    release();
+    await holder;
+    await publishing;
+    expect(await cleaning).toBe(0);
+    expect(await published()).toEqual(["e".repeat(64)]);
+    expect(await files.listStaged()).toEqual([]);
+  });
+
+  it("an upload whose publish comes after the grace period fails and leaves nothing", async () => {
+    // A stage older than the grace period counts as abandoned (avatars.service.ts, cleanup).
+    const stage = files.stage.bind(files);
+    vi.spyOn(files, "stage").mockImplementationOnce(async (avatarId, bytes) => {
+      const staged = await stage(avatarId, bytes);
+      clock.advance(24 * HOUR);
+      expect(await avatars.cleanup()).toBe(1);
+      return staged;
+    });
+    await expect(avatars.upload(image("too slow"))).rejects.toThrow();
+    expect(await published()).toEqual([]);
+    expect(await files.listStaged()).toEqual([]);
+  });
+
   it("a file published in a transaction that rolled back is unused, and goes after the grace period", async () => {
     const staged = await files.stage("d".repeat(64), image("rolled back"));
     await expect(

@@ -63,12 +63,24 @@ export function createAvatarsService(deps: AvatarsDeps) {
         });
         if (done) removed += 1;
       }
-      // A staged file is never named by a row; one older than the grace period is a leftover.
-      for (const file of await files.listStaged()) {
-        if (!expired(file.modifiedAt)) continue;
-        await files.removeStaged(file.name);
-        removed += 1;
-      }
+      // Staged files, listed and removed in the write lock (M2 plan §4a), so a removal never
+      // runs between another upload's check and its publish: a publish queued first finds its
+      // file, and one queued after finds it gone.
+      //
+      // Assumption, not proof: a staged file older than the grace period is abandoned (a crash
+      // or a failed upload). No row names a staged file, and the lock only orders the removal
+      // against a publish; nothing limits how long an upload may take between its stage and
+      // its publish. An upload slower than the grace period loses its staged file: its publish
+      // fails, the request gets 500, no published file is left, and the owner uploads again.
+      removed += await uow.run(async () => {
+        let count = 0;
+        for (const file of await files.listStaged()) {
+          if (!expired(file.modifiedAt)) continue;
+          await files.removeStaged(file.name);
+          count += 1;
+        }
+        return count;
+      });
       return removed;
     },
   };
