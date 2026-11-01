@@ -153,6 +153,8 @@ export const AvatarColour = z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Use a colour 
 // The SHA-256 of the re-encoded file (domain-model.md §2 Avatar files).
 export const AvatarId = z.string().regex(/^[0-9a-f]{64}$/);
 
+// The tool switches by tool id: the API bodies, and the `tool_settings` JSON column when the
+// repository reads it back (frontend-conventions.md §1: every boundary value is parsed).
 export const ToolSettingsBody = z.record(z.string(), z.boolean());
 
 export const BotPin = z

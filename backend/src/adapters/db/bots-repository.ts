@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gt, isNotNull, isNull, lte, notExists, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
-import { AvatarStyle } from "@cty1ng/shared/bots";
+import { AvatarStyle, ToolSettingsBody } from "@cty1ng/shared/bots";
 import { Effort } from "@cty1ng/shared/catalog";
 import { BotId, SkillId, SkillVersionId } from "@cty1ng/shared/ids";
 import type {
@@ -219,12 +219,14 @@ export function botsRepository(db: Db): BotsWriter {
   };
 }
 
-// Parsed at the boundary: the TypeID and text columns give plain strings.
+// Parsed at the boundary: the TypeID and text columns give plain strings, and Drizzle's `$type`
+// on the JSON column is a compile-time type only, so a malformed stored value throws here.
 function toBot(row: typeof bots.$inferSelect): BotRecord {
   return {
     ...row,
     id: BotId.parse(row.id),
     avatarStyle: AvatarStyle.parse(row.avatarStyle),
+    toolSettings: ToolSettingsBody.parse(row.toolSettings),
     effort: row.effort === null ? null : Effort.parse(row.effort),
     clonedFromBotId: row.clonedFromBotId === null ? null : BotId.parse(row.clonedFromBotId),
   };
