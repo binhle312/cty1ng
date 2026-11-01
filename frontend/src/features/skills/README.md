@@ -16,8 +16,10 @@ Export card. Routes: `src/routes/skills.tsx`.
 | `save-bar.tsx` | The save bars: edit, read-only, and the button with a "why off" tooltip |
 | `save-error.ts` | Puts a failed save under its field or in the save bar |
 | `leave-guard.tsx` | Leave without saving: the dialog and the browser's own question |
-| `skill-dialogs.tsx` | The Deprecate and Delete dialogs |
-| `skill-bots-tab.tsx` | The Bots tab (M1: no bots yet) |
+| `skill-dialogs.tsx` | The Deprecate, Remove from bots and Delete dialogs, with the bot lists |
+| `skill-bot-uses.ts` | The bots that use one skill, read from the bot list (loading, error, ready) |
+| `skill-bots-tab.tsx` | The Bots tab: the rows, the Always load switch, ⋯, + Add |
+| `skill-pin-dialogs.tsx` | The cards that move a pin: + Add, Upgrade or Move to a version, Change version |
 | `skill-history.tsx` | The History tab: versions, Compare, Restore |
 | `diff-view.tsx` | A read-only line diff with folded unchanged lines |
 | `diff-fold.ts` | Which unchanged lines the diff folds |

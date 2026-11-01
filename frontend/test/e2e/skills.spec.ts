@@ -293,6 +293,34 @@ test("deprecate, open after a reload, make active, deprecate and delete", async 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Page not found");
 });
 
+test("Delete lists the bots that use the skill and removes it from them (M2a)", async ({
+  page,
+}) => {
+  const skill = unique("Deleted skill");
+  const bot = unique("Losing bot");
+  await createSkill(page, skill);
+  const skillId = await createBotUsing(page, bot.name, skill.slug);
+  await page.goto(`/skills/${skill.slug}`);
+  await page.getByRole("button", { name: "Skill actions" }).click();
+  await page.getByRole("menuitem", { name: "Deprecate" }).click();
+  const deprecate = page.getByRole("alertdialog", { name: `Time for ${skill.name} to rest? 🌙` });
+  await deprecate.getByRole("checkbox").click();
+  await deprecate.getByRole("button", { name: "Deprecate", exact: true }).click();
+  await expect(page.getByText("1 bot still uses it.")).toBeVisible();
+
+  await page.getByRole("button", { name: "Skill actions" }).click();
+  await page.getByRole("menuitem", { name: "Delete skill" }).click();
+  const remove = page.getByRole("alertdialog", { name: `Delete ${skill.name}? 🧹` });
+  await expect(remove).toContainText("These bots stop using it now:");
+  await expect(remove.getByRole("list", { name: "Bots that use this skill" })).toContainText(
+    bot.name,
+  );
+  await expect(remove.getByRole("checkbox")).toHaveCount(0);
+  await remove.getByRole("button", { name: "Delete skill" }).click();
+  await expect(page.getByText(`${skill.name} is in Trash.`)).toBeVisible();
+  expect(await pinnedSkillIds(page, bot.name)).not.toContain(skillId);
+});
+
 test("import a zip: preview, then apply only the ticked rows", async ({ page }) => {
   const violations = await watchCsp(page);
   const skill = unique("Import me");
@@ -342,18 +370,144 @@ test("the Export card ticks every active skill and names the count", async ({ pa
   expect([...files.keys()]).toEqual([`${skill.slug}/SKILL.md`]);
 });
 
-test("the Bots tab shows its M1 empty state (UI-7.5a)", async ({ page }) => {
+test("the Bots tab of a skill that no bot uses shows its empty line (UI-7.5a)", async ({
+  page,
+}) => {
   const skill = unique("Bots tab");
   await createSkill(page, skill);
   await page.getByRole("tab", { name: /Bots/ }).click();
   await expect(page).toHaveURL(`/skills/${skill.slug}?tab=bots`);
   await expect(page.getByText("No bot uses this skill yet.")).toBeVisible();
-  const add = page.getByRole("button", { name: "Add" });
-  await expect(add).toHaveAttribute("aria-disabled", "true");
-  await add.hover();
-  await expect(page.getByText("Create a bot first.")).toBeVisible();
+  // + Add is there. Whether it is on depends on the bots that other tests made: "Create a bot
+  // first." with no bot at all is a component test (skill-bots-tab.test.tsx).
+  await expect(page.getByRole("button", { name: "Add" })).toBeVisible();
 });
 
+// A bot made through the API with the skill pinned (api.md §4, `POST /bots`). The request runs
+// in the page, because a state-changing request must pass the origin check.
+async function createBotUsing(page: Page, name: string, skillSlug: string): Promise<string> {
+  const list = z
+    .array(z.object({ id: z.string(), slug: z.string() }))
+    .parse(await (await page.request.get("/api/skills?include_deprecated=true")).json());
+  const skillId = list.find((item) => item.slug === skillSlug)?.id;
+  expect(skillId).toBeDefined();
+  const result = await page.evaluate(
+    async ({ botName, id }) => {
+      const response = await fetch("/api/bots", {
+        method: "POST",
+        headers: { "content-type": "application/json", "Idempotency-Key": crypto.randomUUID() },
+        body: JSON.stringify({
+          name: botName,
+          description: "Writes stories.",
+          persona_md: "You write user stories.",
+          avatar_style: "flat",
+          avatar_colour: "#336699",
+          model_id: "fake:scripted",
+          pins: [{ skill_id: id, always_load: false }],
+        }),
+      });
+      return { status: response.status, text: await response.text() };
+    },
+    { botName: name, id: skillId ?? "" },
+  );
+  expect(result.status, result.text).toBe(201);
+  return skillId ?? "";
+}
+
+// The pins of a bot, read from the API.
+async function pinnedSkillIds(page: Page, botName: string): Promise<string[]> {
+  const bots = z
+    .array(z.object({ name: z.string(), pins: z.array(z.object({ skill_id: z.string() })) }))
+    .parse(await (await page.request.get("/api/bots")).json());
+  return bots.find((bot) => bot.name === botName)?.pins.map((pin) => pin.skill_id) ?? [];
+}
+
+test("a bot that uses a skill shows on its Bots tab; Deprecate with the bot ticked removes the pin (M2a)", async ({
+  page,
+}) => {
+  const violations = await watchCsp(page);
+  const skill = unique("Used skill");
+  const bot = unique("Pinned bot");
+  await createSkill(page, skill);
+  const skillId = await createBotUsing(page, bot.name, skill.slug);
+  await page.goto(`/skills/${skill.slug}?tab=bots`);
+
+  // The row: the avatar's letter, the name, the model line, the version, and Always load.
+  const row = page.getByRole("row", { name: new RegExp(bot.name) });
+  await expect(row).toBeVisible();
+  await expect(row).toContainText("v1");
+  await expect(row).toContainText("latest");
+  await expect(page.getByRole("tab", { name: /Bots/ })).toContainText("1");
+  const always = row.getByRole("switch", { name: `Always load for ${bot.name}` });
+  await expect(always).toHaveAttribute("aria-checked", "false");
+  await always.click();
+  await expect(always).toHaveAttribute("aria-checked", "true");
+  await page.reload();
+  await expect(
+    page
+      .getByRole("row", { name: new RegExp(bot.name) })
+      .getByRole("switch", { name: `Always load for ${bot.name}` }),
+  ).toHaveAttribute("aria-checked", "true");
+
+  // A new version: the bot keeps v1 and gets the upgrade link; the upgrade card shows the diff.
+  await page.getByRole("tab", { name: "Skill", exact: true }).click();
+  await saveBody(
+    page,
+    "## Steps\n1. Read the brief.\n2. Write one story per goal.",
+    2,
+    "One per goal",
+  );
+  await page.getByRole("tab", { name: /Bots/ }).click();
+  await page.getByRole("button", { name: "Upgrade to v2" }).click();
+  const upgrade = page.getByRole("dialog", { name: `Upgrade ${skill.name} to v2?` });
+  await expect(upgrade).toContainText(`${bot.name} uses v1.`);
+  await expect(upgrade).toContainText("One per goal");
+  await expect(
+    upgrade
+      .getByLabel("Body changes")
+      .locator('[data-op="add"]', { hasText: "one story per goal" }),
+  ).toBeVisible();
+  await upgrade.getByRole("button", { name: "Upgrade to v2" }).click();
+  await expect(page.getByRole("row", { name: new RegExp(bot.name) })).toContainText("latest");
+  await expect(page.getByRole("button", { name: "Upgrade to v2" })).toHaveCount(0);
+
+  // Deprecate: the bot is listed and ticked, so it stops using the skill.
+  await page.getByRole("button", { name: "Skill actions" }).click();
+  await page.getByRole("menuitem", { name: "Deprecate" }).click();
+  const deprecate = page.getByRole("alertdialog", { name: `Time for ${skill.name} to rest? 🌙` });
+  await expect(deprecate.getByRole("checkbox")).toHaveAttribute("aria-checked", "true");
+  await expect(deprecate).toContainText(bot.name);
+  await deprecate.getByRole("button", { name: "Deprecate and remove from 1 bot" }).click();
+  await expect(page.getByText("No bot uses it.")).toBeVisible();
+  await expect(page.getByText("No bot uses this skill yet.")).toBeVisible();
+  expect(await pinnedSkillIds(page, bot.name)).not.toContain(skillId);
+  expect(await violations()).toEqual([]);
+});
+
+test("an unticked bot keeps a deprecated skill until Remove from bots (M2a)", async ({ page }) => {
+  const skill = unique("Kept skill");
+  const bot = unique("Keeping bot");
+  await createSkill(page, skill);
+  const skillId = await createBotUsing(page, bot.name, skill.slug);
+  await page.goto(`/skills/${skill.slug}`);
+
+  await page.getByRole("button", { name: "Skill actions" }).click();
+  await page.getByRole("menuitem", { name: "Deprecate" }).click();
+  const deprecate = page.getByRole("alertdialog", { name: `Time for ${skill.name} to rest? 🌙` });
+  await deprecate.getByRole("checkbox").click();
+  await deprecate.getByRole("button", { name: "Deprecate", exact: true }).click();
+  await expect(page.getByText("1 bot still uses it.")).toBeVisible();
+  expect(await pinnedSkillIds(page, bot.name)).toContain(skillId);
+
+  // Remove from bots: the same list, every box ticked.
+  await page.getByRole("button", { name: "Remove from bots" }).click();
+  const remove = page.getByRole("dialog", { name: `Remove ${skill.name} from bots? 🧹` });
+  await expect(remove.getByRole("checkbox")).toHaveAttribute("aria-checked", "true");
+  await remove.getByRole("button", { name: "Remove from 1 bot" }).click();
+  await expect(page.getByText("No bot uses it.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Remove from bots" })).toHaveCount(0);
+  expect(await pinnedSkillIds(page, bot.name)).not.toContain(skillId);
+});
 test("the Skills page has no axe violations", async ({ page }) => {
   const skill = unique("Axe");
   await createSkill(page, skill);
