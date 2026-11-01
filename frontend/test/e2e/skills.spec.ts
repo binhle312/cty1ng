@@ -440,8 +440,15 @@ test("a bot that uses a skill shows on its Bots tab; Deprecate with the bot tick
   await expect(page.getByRole("tab", { name: /Bots/ })).toContainText("1");
   const always = row.getByRole("switch", { name: `Always load for ${bot.name}` });
   await expect(always).toHaveAttribute("aria-checked", "false");
+  // The switch shows the new value at once; reload only after the server saved it, or the
+  // reload can cut the request off (review of PR #57).
+  const saved = page.waitForResponse(
+    (response) =>
+      response.request().method() === "PUT" && response.url().endsWith(`/skills/${skillId}`),
+  );
   await always.click();
   await expect(always).toHaveAttribute("aria-checked", "true");
+  expect((await saved).status()).toBe(200);
   await page.reload();
   await expect(
     page
