@@ -19,7 +19,28 @@ export function editorPlace(location: { pathname: string; search: unknown }): st
 // + Create asks first, but only when something changed. A tab of the same skill keeps the edit,
 // so it does not ask; a Clone and a new skill are different editors, so a move between them
 // asks. A reload or a closed browser tab asks the browser's own "Leave site?" question (§1).
-export function useLeaveGuard({ dirty, text }: { dirty: boolean; text: string }) {
+// The Create bot page asks its own question (create-bot-page.md E6), so the words can change.
+export interface LeaveWords {
+  title: string;
+  leave: string;
+  stay: string;
+}
+
+const SKILL_WORDS: LeaveWords = {
+  title: "Leave without saving? 👀",
+  leave: "Let them go",
+  stay: "Stay on this skill",
+};
+
+export function useLeaveGuard({
+  dirty,
+  text,
+  words = SKILL_WORDS,
+}: {
+  dirty: boolean;
+  text: string;
+  words?: LeaveWords;
+}) {
   // Set just before the page itself leaves after a Create, Cancel or Delete: nothing is lost.
   const allowRef = useRef(false);
   const blocker = useBlocker({
@@ -35,6 +56,7 @@ export function useLeaveGuard({ dirty, text }: { dirty: boolean; text: string })
     <LeaveDialog
       open={blocker.status === "blocked"}
       text={text}
+      words={words}
       onStay={() => blocker.reset?.()}
       onLeave={() => blocker.proceed?.()}
     />
@@ -45,30 +67,26 @@ export function useLeaveGuard({ dirty, text }: { dirty: boolean; text: string })
 function LeaveDialog({
   open,
   text,
+  words,
   onStay,
   onLeave,
 }: {
   open: boolean;
   text: string;
+  words: LeaveWords;
   onStay: () => void;
   onLeave: () => void;
 }) {
   const stay = useRef<HTMLButtonElement>(null);
   return (
-    <Dialog
-      kind="alert"
-      open={open}
-      onClose={onStay}
-      title="Leave without saving? 👀"
-      defaultButton={stay}
-    >
+    <Dialog kind="alert" open={open} onClose={onStay} title={words.title} defaultButton={stay}>
       <DialogText>{text}</DialogText>
       <DialogButtons>
         <Button kind="danger" onClick={onLeave}>
-          Let them go
+          {words.leave}
         </Button>
         <Button ref={stay} kind="primary" onClick={onStay}>
-          Stay on this skill
+          {words.stay}
         </Button>
       </DialogButtons>
     </Dialog>

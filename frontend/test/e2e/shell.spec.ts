@@ -55,7 +55,7 @@ test.describe("app shell", () => {
 
   for (const [path, title] of [
     ["/bots", "Bots"],
-    ["/bots/new", "Create bot"],
+    ["/bots/new", "New bot"],
     ["/bots/ba", "Bot"],
     ["/skills", "Skills"],
     ["/stats", "Statistics"],

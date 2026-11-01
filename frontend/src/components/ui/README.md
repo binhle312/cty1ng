@@ -17,3 +17,7 @@ them without a decision.
 | `toast.tsx` | Toasts: `showToast(text)` and the one `Toaster` in the shell |
 | `time-text.tsx` | A time with its full time in a tooltip, from hover or keyboard focus |
 | `markdown.tsx` | Safe Markdown: no raw HTML, safe links only, no images loaded (`docs/security.md` §2.2) |
+| `popover.tsx` | A popover card (Base UI Popover; no inline styles) |
+| `slider.tsx` | A slider (Base UI Slider) with an optional track background |
+| `sort-button.tsx` | A 24 px sort button with its direction arrow |
+| `pin-badge.tsx` | The pin badge of a bot card: Pin to top or Unpin |

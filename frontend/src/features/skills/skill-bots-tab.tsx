@@ -24,7 +24,8 @@ import {
 import type { GetSkillResponse } from "../../lib/api/generated/types.gen.ts";
 import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
 import { BotAvatar } from "../bots/bot-avatar.tsx";
-import { modelLine, type BotRow } from "../bots/bot-queries.ts";
+import { modelLine } from "../bots/bot-lines.ts";
+import type { BotRow } from "../bots/bot-queries.ts";
 import { LoadError } from "./load-error.tsx";
 import { VersionPill } from "./pills.tsx";
 import type { BotUse } from "./skill-bot-uses.ts";

@@ -22,11 +22,3 @@ export function botsUsing(bots: BotRow[], skillId: string): { bot: BotRow; pin: 
     return pin === undefined ? [] : [{ bot, pin }];
   });
 }
-
-// "Claude Sonnet · High": the model and the effort of a bot (bot-page.md §2). A model that left
-// the catalog has no label, so its id shows instead.
-export function modelLine(bot: Pick<BotRow, "model_label" | "model_id" | "effort">): string {
-  const model = bot.model_label ?? bot.model_id;
-  if (bot.effort === null) return model;
-  return `${model} · ${bot.effort.charAt(0).toUpperCase()}${bot.effort.slice(1)}`;
-}
