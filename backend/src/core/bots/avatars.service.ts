@@ -7,9 +7,9 @@ import { avatarPathOf } from "./bots.service.ts";
 
 // Avatar files (domain-model.md §2 Avatar files; M2 plan §4a). The image is already decoded and
 // re-encoded by the HTTP adapter (security.md §2.4); this service hashes it, stages it outside
-// the write lock, and publishes it inside the lock. The cleanup checks the rows and the file time
-// again inside the lock, so an upload or a bot save can never run between its check and its
-// delete.
+// the write lock, and publishes it inside the lock. The cleanup lists the files, checks the rows
+// and deletes in one locked transaction, so an upload or a bot save can never run between its
+// check and its delete.
 //
 // What a failure leaves behind, and why it is safe:
 // - stage fails: no file, or a partial staged file; staged files are never served and the
@@ -48,41 +48,34 @@ export function createAvatarsService(deps: AvatarsDeps) {
 
     read: (avatarId: string): Promise<Uint8Array | null> => files.read(avatarId),
 
-    // Part of the purge job. Returns how many files it removed.
-    async cleanup(): Promise<number> {
-      let removed = 0;
-      for (const file of await files.list()) {
-        if (!expired(file.modifiedAt)) continue;
-        const done = await uow.run(async (tx) => {
-          if ((await tx.bots.avatarPaths()).has(avatarPathOf(file.name))) return false;
-          // Read again: an upload of the same image may have refreshed it since the list.
-          const time = await files.modifiedAt(file.name);
-          if (time === null || !expired(time)) return false;
+    // Part of the purge job. Returns how many files it removed. Everything runs in one write
+    // transaction (M2 plan §4a, Cleanup): the list, the rows that name a file and each delete.
+    // So an upload of the same image or a save that names the file comes wholly before the
+    // cleanup (the file has a fresh time or a row names it, and it stays) or wholly after (it
+    // finds the file gone: the upload publishes it again, the save gets 422). A staged file
+    // is removed the same way, so a removal never runs between a publish's check and its move.
+    //
+    // Assumption, not proof: a staged file older than the grace period is abandoned (a crash
+    // or a failed upload). No row names a staged file, and the lock only orders the removal
+    // against a publish; nothing limits how long an upload may take between its stage and
+    // its publish. An upload slower than the grace period loses its staged file: its publish
+    // fails, the request gets 500, no published file is left, and the owner uploads again.
+    cleanup: (): Promise<number> =>
+      uow.run(async (tx) => {
+        const used = await tx.bots.avatarPaths();
+        let removed = 0;
+        for (const file of await files.list()) {
+          if (!expired(file.modifiedAt) || used.has(avatarPathOf(file.name))) continue;
           await files.remove(file.name);
-          return true;
-        });
-        if (done) removed += 1;
-      }
-      // Staged files, listed and removed in the write lock (M2 plan §4a), so a removal never
-      // runs between another upload's check and its publish: a publish queued first finds its
-      // file, and one queued after finds it gone.
-      //
-      // Assumption, not proof: a staged file older than the grace period is abandoned (a crash
-      // or a failed upload). No row names a staged file, and the lock only orders the removal
-      // against a publish; nothing limits how long an upload may take between its stage and
-      // its publish. An upload slower than the grace period loses its staged file: its publish
-      // fails, the request gets 500, no published file is left, and the owner uploads again.
-      removed += await uow.run(async () => {
-        let count = 0;
+          removed += 1;
+        }
         for (const file of await files.listStaged()) {
           if (!expired(file.modifiedAt)) continue;
           await files.removeStaged(file.name);
-          count += 1;
+          removed += 1;
         }
-        return count;
-      });
-      return removed;
-    },
+        return removed;
+      }),
   };
 }
 

@@ -39,16 +39,23 @@ afterEach(() => {
 const image = (text: string) => new TextEncoder().encode(text);
 const published = async () => (await files.list()).map((file) => file.name);
 
-// Runs `step` after the cleanup lists the files and before its locked recheck: the window in
-// which an upload or a save can come between them.
-function betweenListAndRecheck(step: () => Promise<unknown>) {
-  const list = files.list.bind(files);
-  vi.spyOn(files, "list").mockImplementationOnce(async () => {
-    const listed = await list();
-    await step();
-    return listed;
-  });
+// Holds the write lock until the returned function runs, so the steps queued behind it run in
+// the order they were queued once it is released.
+function holdLock() {
+  let release: () => void = () => undefined;
+  const held = backend.uow.run(
+    () =>
+      new Promise<void>((resolve) => {
+        release = resolve;
+      }),
+  );
+  return async () => {
+    release();
+    await held;
+  };
 }
+// Lets every step that does not need the lock run (the fake files resolve at once).
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 async function botWith(avatarId: string) {
   n += 1;
@@ -98,13 +105,32 @@ describe("cleanup", () => {
     expect(await published()).toEqual([used]);
   });
 
-  it("an upload of the same image between the list and the recheck keeps the file", async () => {
+  it("lists the files only once it holds the write lock", async () => {
+    const list = vi.spyOn(files, "list");
+    const listStaged = vi.spyOn(files, "listStaged");
+    const release = holdLock();
+    const cleaning = avatars.cleanup();
+    await settle();
+    expect(list).not.toHaveBeenCalled();
+    expect(listStaged).not.toHaveBeenCalled();
+    await release();
+    await cleaning;
+    expect(list).toHaveBeenCalledOnce();
+    expect(listStaged).toHaveBeenCalledOnce();
+  });
+
+  it("an upload of the same image queued before the cleanup keeps the file", async () => {
     const id = (await avatars.upload(image("one"))).avatar_id;
     clock.advance(30 * HOUR);
-    // The cleanup lists the file as expired; before its locked recheck, the same image comes
-    // again. The recheck reads the new time and keeps the file.
-    betweenListAndRecheck(() => avatars.upload(image("one")));
-    expect(await avatars.cleanup()).toBe(0);
+    // The file is expired; the same image comes again and its publish queues for the lock
+    // before the cleanup. The cleanup lists the refreshed time and keeps the file.
+    const release = holdLock();
+    const uploading = avatars.upload(image("one"));
+    await settle();
+    const cleaning = avatars.cleanup();
+    await release();
+    await uploading;
+    expect(await cleaning).toBe(0);
     expect(await published()).toEqual([id]);
     expect(await files.modifiedAt(id)).toEqual(clock.now());
   });
@@ -140,19 +166,11 @@ describe("cleanup", () => {
     const staged = await files.stage("e".repeat(64), image("slow upload"));
     clock.advance(24 * HOUR);
     // Another write holds the lock; the publish waits behind it, then the cleanup.
-    let release: () => void = () => undefined;
-    const holder = backend.uow.run(
-      () =>
-        new Promise<void>((resolve) => {
-          release = resolve;
-        }),
-    );
+    const release = holdLock();
     const publishing = backend.uow.run(() => files.publish(staged, clock.now()));
     const cleaning = avatars.cleanup();
-    // Let every step that does not need the lock finish.
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    release();
-    await holder;
+    await settle();
+    await release();
     await publishing;
     expect(await cleaning).toBe(0);
     expect(await published()).toEqual(["e".repeat(64)]);
@@ -213,15 +231,16 @@ describe("bot saves", () => {
     expect((await bots.get(BotId.parse(bot.id))).avatar_id).toBe(first);
   });
 
-  it("a save that names the file between the cleanup's list and recheck keeps it", async () => {
+  it("a save that names the file, queued before the cleanup, keeps it", async () => {
     const id = (await avatars.upload(image("one"))).avatar_id;
     clock.advance(30 * HOUR);
-    let bot: Awaited<ReturnType<typeof botWith>> | undefined;
-    betweenListAndRecheck(async () => {
-      bot = await botWith(id);
-    });
-    expect(await avatars.cleanup()).toBe(0);
-    expect(bot?.avatar_id).toBe(id);
+    const release = holdLock();
+    const saving = botWith(id);
+    await settle();
+    const cleaning = avatars.cleanup();
+    await release();
+    expect((await saving).avatar_id).toBe(id);
+    expect(await cleaning).toBe(0);
     expect(await published()).toEqual([id]);
   });
 

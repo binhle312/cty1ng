@@ -36,7 +36,7 @@ export interface AvatarFiles {
   list(): Promise<AvatarFileTime[]>;
   // Staged files that were never published or discarded (a crash): `name` is the token.
   listStaged(): Promise<AvatarFileTime[]>;
-  // The time of one published file read again, or null when it is gone.
+  // The time of one published file, or null when it is gone.
   modifiedAt(avatarId: string): Promise<Date | null>;
   // Delete one file; a file that is already gone is not an error.
   remove(avatarId: string): Promise<void>;

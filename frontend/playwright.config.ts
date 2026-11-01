@@ -12,6 +12,14 @@ const REPO = resolve(import.meta.dirname, "..");
 export const APP_PORT = 8100;
 export const DEV_API_PORT = 8101;
 
+// Fake mode never depends on the developer's keys (testing.md §2): every `*_API_KEY` leaves the
+// environment before any server starts, so the real catalog entries are always unavailable,
+// whatever the shell holds. Playwright and `pnpm e2e:serve` both give the servers
+// `process.env` plus `env` below, so a key removed here reaches neither.
+for (const key of Object.keys(process.env)) {
+  if (key.endsWith("_API_KEY")) Reflect.deleteProperty(process.env, key);
+}
+
 // One fresh data folder per run. Workers load this file again; they reuse the folder of the
 // main process through the environment.
 process.env.E2E_DATA_DIR ??= mkdtempSync(join(tmpdir(), "cty1ng-e2e-"));

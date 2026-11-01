@@ -35,7 +35,19 @@ function attempt<T>(work: () => T): Promise<T> {
   }
 }
 
-export function diskAvatarFiles(folder: string): AvatarFiles {
+// The file system calls that can fail part way. Tests replace them to prove what each failure
+// leaves behind; the app uses node:fs.
+export interface DiskCalls {
+  writeSync(fd: number, buffer: Uint8Array, offset: number, length: number): number;
+  fsyncSync(fd: number): void;
+  utimesSync(path: string, atime: Date, mtime: Date): void;
+  renameSync(from: string, to: string): void;
+}
+
+const NODE_CALLS: DiskCalls = { writeSync, fsyncSync, utimesSync, renameSync };
+
+export function diskAvatarFiles(folder: string, calls: Partial<DiskCalls> = {}): AvatarFiles {
+  const fs: DiskCalls = { ...NODE_CALLS, ...calls };
   mkdirSync(folder, { recursive: true, mode: 0o700 });
   const finalPath = (avatarId: string) => join(folder, `${AvatarId.parse(avatarId)}.webp`);
   const stagedPath = (token: string) => {
@@ -61,31 +73,57 @@ export function diskAvatarFiles(folder: string): AvatarFiles {
       attempt(() => {
         AvatarId.parse(avatarId);
         const token = randomUUID();
-        const fd = openSync(stagedPath(token), "wx", 0o600);
+        const path = stagedPath(token);
+        const fd = openSync(path, "wx", 0o600);
         try {
-          writeSync(fd, bytes);
-          fsyncSync(fd);
-        } finally {
+          // A write may store fewer bytes than asked (a full disk, a file size limit), so write
+          // the rest until every byte is stored. A short file must never be published: its name
+          // is the hash of the whole image, so a later upload of that image would keep it.
+          let offset = 0;
+          while (offset < bytes.length) {
+            const written = fs.writeSync(fd, bytes, offset, bytes.length - offset);
+            if (written <= 0) throw new Error("avatar write stored no bytes");
+            offset += written;
+          }
+          fs.fsyncSync(fd);
+        } catch (error) {
           closeSync(fd);
+          rmSync(path, { force: true });
+          throw error;
         }
+        closeSync(fd);
         return { avatarId, token };
       }),
     publish: (staged, now) =>
       attempt(() => {
         const target = finalPath(staged.avatarId);
-        if (timeOf(target) === null) {
-          renameSync(stagedPath(staged.token), target);
-          utimesSync(target, now, now);
+        const source = stagedPath(staged.token);
+        if (timeOf(target) !== null) {
+          fs.utimesSync(target, now, now);
+          rmSync(source, { force: true });
+          return;
+        }
+        // A failed publish leaves the staged file and no `<id>.webp` (M2 plan §4a, Failures):
+        // the time is set before the rename (a rename keeps it), and a failed folder sync moves
+        // the file back.
+        fs.utimesSync(source, now, now);
+        fs.renameSync(source, target);
+        try {
           // The rename is durable only when the folder is synced too.
           const dir = openSync(folder, "r");
           try {
-            fsyncSync(dir);
+            fs.fsyncSync(dir);
           } finally {
             closeSync(dir);
           }
-        } else {
-          utimesSync(target, now, now);
-          rmSync(stagedPath(staged.token), { force: true });
+        } catch (error) {
+          try {
+            fs.renameSync(target, source);
+          } catch {
+            // The final file stays: complete, and named by no row, so the cleanup removes it
+            // after the grace period.
+          }
+          throw error;
         }
       }),
     discard: (staged) =>
