@@ -85,6 +85,24 @@ describe("disk failures", () => {
     disk.remove();
   });
 
+  it("a publish of an image already published syncs the folder after it removes the staged file", async () => {
+    let syncs = 0;
+    const disk = diskWith({
+      fsyncSync: (fd) => {
+        syncs += 1;
+        fsyncSync(fd);
+      },
+    });
+    await disk.files.publish(await disk.files.stage(A, image), T1);
+    const staged = await disk.files.stage(A, image);
+    syncs = 0;
+    await disk.files.publish(staged, new Date("2026-11-02T00:00:00.000Z"));
+    expect(syncs).toBe(1);
+    expect(await disk.files.listStaged()).toEqual([]);
+    expect(await disk.files.read(A)).toEqual(image);
+    disk.remove();
+  });
+
   it("a publish whose folder sync fails leaves the staged file and no published file", async () => {
     let fail = false;
     const disk = diskWith({

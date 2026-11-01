@@ -61,6 +61,14 @@ export function diskAvatarFiles(folder: string, calls: Partial<DiskCalls> = {}):
       return null;
     }
   };
+  const syncFolder = () => {
+    const dir = openSync(folder, "r");
+    try {
+      fs.fsyncSync(dir);
+    } finally {
+      closeSync(dir);
+    }
+  };
   const listMatching = (pattern: RegExp): AvatarFileTime[] =>
     readdirSync(folder).flatMap((file) => {
       const name = pattern.exec(file)?.[1];
@@ -99,8 +107,11 @@ export function diskAvatarFiles(folder: string, calls: Partial<DiskCalls> = {}):
         const target = finalPath(staged.avatarId);
         const source = stagedPath(staged.token);
         if (timeOf(target) !== null) {
+          // The same image is already published: a fresh time, and the staged copy goes. The
+          // folder sync makes the removal durable (M2 plan §4a, `publish`).
           fs.utimesSync(target, now, now);
           rmSync(source, { force: true });
+          syncFolder();
           return;
         }
         // A failed publish leaves the staged file and no `<id>.webp` (M2 plan §4a, Failures):
@@ -110,12 +121,7 @@ export function diskAvatarFiles(folder: string, calls: Partial<DiskCalls> = {}):
         fs.renameSync(source, target);
         try {
           // The rename is durable only when the folder is synced too.
-          const dir = openSync(folder, "r");
-          try {
-            fs.fsyncSync(dir);
-          } finally {
-            closeSync(dir);
-          }
+          syncFolder();
         } catch (error) {
           try {
             fs.renameSync(target, source);
