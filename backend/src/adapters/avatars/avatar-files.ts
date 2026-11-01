@@ -144,7 +144,7 @@ export function diskAvatarFiles(folder: string, calls: Partial<DiskCalls> = {}):
     touch: (avatarId, now) =>
       attempt(() => {
         const path = finalPath(avatarId);
-        if (timeOf(path) !== null) utimesSync(path, now, now);
+        if (timeOf(path) !== null) fs.utimesSync(path, now, now);
       }),
     list: () => attempt(() => listMatching(PUBLISHED)),
     listStaged: () => attempt(() => listMatching(STAGED)),

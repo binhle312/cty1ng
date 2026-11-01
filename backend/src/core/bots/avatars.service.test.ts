@@ -1,42 +1,42 @@
 import { BotId } from "@cty1ng/shared/ids";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { diskTestAvatarFiles } from "../../../test/disk-avatar-files.ts";
 import { memoryAvatarFiles, type FakeAvatarFiles } from "../../../test/fakes/avatar-files.ts";
 import { manualClock, testBackend, testIds } from "../../../test/helpers.ts";
 import { DomainError } from "../errors.ts";
 import { OWNER_ID } from "../owner.ts";
+import type { AvatarFiles } from "../ports/avatar-files.ts";
 import { createAvatarsService } from "./avatars.service.ts";
 import { createBotsService } from "./bots.service.ts";
 
 // The avatar file contract of the M2 plan §4a: upload and cleanup under one write lock, the
-// grace period, and what each failure leaves behind.
+// grace period, and what each failure leaves behind. Every test runs twice (M2 plan §5): on the
+// memory fake, and on the real disk adapter in a temporary folder, whose failures come from
+// the file system calls (test/disk-avatar-files.ts).
+
+type TestFiles = AvatarFiles & Pick<FakeAvatarFiles, "failNext">;
+const STORES: { name: string; make: (now: () => Date) => TestFiles & { close: () => void } }[] = [
+  { name: "memory", make: (now) => ({ ...memoryAvatarFiles(now), close: () => undefined }) },
+  {
+    name: "disk",
+    make: (now) => {
+      const disk = diskTestAvatarFiles(now);
+      return { ...disk, close: disk.removeFolder };
+    },
+  },
+];
 
 const HOUR = 3_600_000;
 let clock: ReturnType<typeof manualClock>;
 let backend: ReturnType<typeof testBackend>;
-let files: FakeAvatarFiles;
+let files: TestFiles & { close: () => void };
 let avatars: ReturnType<typeof createAvatarsService>;
 let bots: ReturnType<typeof createBotsService>;
 let n = 0;
-beforeEach(() => {
-  clock = manualClock();
-  backend = testBackend({ FAKE_MODEL: "1" }, { clock });
-  files = memoryAvatarFiles(() => clock.now());
-  avatars = createAvatarsService({ uow: backend.uow, clock, files, orphanHours: 24 });
-  bots = createBotsService({
-    uow: backend.uow,
-    readers: backend.readers,
-    appendEvent: backend.appendEvent,
-    clock,
-    ids: testIds,
-    catalog: backend.catalog,
-    avatarFiles: files,
-  });
-});
-afterEach(() => {
-  backend.close();
-});
 
 const image = (text: string) => new TextEncoder().encode(text);
+const eventTypes = async () =>
+  (await backend.readers.events.after(0, 1000)).map((event) => event.type);
 const published = async () => (await files.list()).map((file) => file.name);
 
 // Holds the write lock until the returned function runs, so the steps queued behind it run in
@@ -76,196 +76,272 @@ async function botWith(avatarId: string) {
   return bot;
 }
 
-describe("upload", () => {
-  it("names the file by the SHA-256 of the image and gives its URL", async () => {
-    const result = await avatars.upload(image("one"));
-    expect(result.avatar_id).toMatch(/^[0-9a-f]{64}$/);
-    expect(result.url).toBe(`/api/avatars/${result.avatar_id}.webp`);
-    expect(await published()).toEqual([result.avatar_id]);
-    expect(await files.listStaged()).toEqual([]);
+describe.each(STORES)("on the $name store", ({ make }) => {
+  beforeEach(() => {
+    clock = manualClock();
+    backend = testBackend({ FAKE_MODEL: "1" }, { clock });
+    files = make(() => clock.now());
+    avatars = createAvatarsService({ uow: backend.uow, clock, files, orphanHours: 24 });
+    bots = createBotsService({
+      uow: backend.uow,
+      readers: backend.readers,
+      appendEvent: backend.appendEvent,
+      clock,
+      ids: testIds,
+      catalog: backend.catalog,
+      avatarFiles: files,
+    });
+  });
+  afterEach(() => {
+    backend.close();
+    files.close();
   });
 
-  it("a failed publish leaves no published file and discards the staged one", async () => {
-    files.failNext("publish");
-    await expect(avatars.upload(image("one"))).rejects.toThrow();
-    expect(await published()).toEqual([]);
-    expect(await files.listStaged()).toEqual([]);
-  });
-});
+  describe("upload", () => {
+    it("names the file by the SHA-256 of the image and gives its URL", async () => {
+      const result = await avatars.upload(image("one"));
+      expect(result.avatar_id).toMatch(/^[0-9a-f]{64}$/);
+      expect(result.url).toBe(`/api/avatars/${result.avatar_id}.webp`);
+      expect(await published()).toEqual([result.avatar_id]);
+      expect(await files.listStaged()).toEqual([]);
+    });
 
-describe("cleanup", () => {
-  it("keeps a used file, and removes an unused one only after the grace period", async () => {
-    const used = (await avatars.upload(image("used"))).avatar_id;
-    await avatars.upload(image("unused"));
-    await botWith(used);
-    clock.advance(24 * HOUR - 1);
-    expect(await avatars.cleanup()).toBe(0);
-    clock.advance(1);
-    expect(await avatars.cleanup()).toBe(1);
-    expect(await published()).toEqual([used]);
+    it("a failed publish leaves no published file and discards the staged one", async () => {
+      files.failNext("publish");
+      await expect(avatars.upload(image("one"))).rejects.toThrow();
+      expect(await published()).toEqual([]);
+      expect(await files.listStaged()).toEqual([]);
+    });
   });
 
-  it("lists the files only once it holds the write lock", async () => {
-    const list = vi.spyOn(files, "list");
-    const listStaged = vi.spyOn(files, "listStaged");
-    const release = holdLock();
-    const cleaning = avatars.cleanup();
-    await settle();
-    expect(list).not.toHaveBeenCalled();
-    expect(listStaged).not.toHaveBeenCalled();
-    await release();
-    await cleaning;
-    expect(list).toHaveBeenCalledOnce();
-    expect(listStaged).toHaveBeenCalledOnce();
-  });
+  describe("cleanup", () => {
+    it("keeps a used file, and removes an unused one only after the grace period", async () => {
+      const used = (await avatars.upload(image("used"))).avatar_id;
+      await avatars.upload(image("unused"));
+      await botWith(used);
+      clock.advance(24 * HOUR - 1);
+      expect(await avatars.cleanup()).toBe(0);
+      clock.advance(1);
+      expect(await avatars.cleanup()).toBe(1);
+      expect(await published()).toEqual([used]);
+    });
 
-  it("an upload of the same image queued before the cleanup keeps the file", async () => {
-    const id = (await avatars.upload(image("one"))).avatar_id;
-    clock.advance(30 * HOUR);
-    // The file is expired; the same image comes again and its publish queues for the lock
-    // before the cleanup. The cleanup lists the refreshed time and keeps the file.
-    const release = holdLock();
-    const uploading = avatars.upload(image("one"));
-    await settle();
-    const cleaning = avatars.cleanup();
-    await release();
-    await uploading;
-    expect(await cleaning).toBe(0);
-    expect(await published()).toEqual([id]);
-    expect(await files.modifiedAt(id)).toEqual(clock.now());
-  });
+    it("lists the files only once it holds the write lock", async () => {
+      const list = vi.spyOn(files, "list");
+      const listStaged = vi.spyOn(files, "listStaged");
+      const release = holdLock();
+      const cleaning = avatars.cleanup();
+      await settle();
+      expect(list).not.toHaveBeenCalled();
+      expect(listStaged).not.toHaveBeenCalled();
+      await release();
+      await cleaning;
+      expect(list).toHaveBeenCalledOnce();
+      expect(listStaged).toHaveBeenCalledOnce();
+    });
 
-  it("an upload of the same image after the cleanup removed it publishes it again", async () => {
-    const id = (await avatars.upload(image("one"))).avatar_id;
-    clock.advance(30 * HOUR);
-    expect(await avatars.cleanup()).toBe(1);
-    expect((await avatars.upload(image("one"))).avatar_id).toBe(id);
-    expect(await published()).toEqual([id]);
-    expect(await files.modifiedAt(id)).toEqual(clock.now());
-  });
+    it("an upload of the same image queued before the cleanup keeps the file", async () => {
+      const id = (await avatars.upload(image("one"))).avatar_id;
+      clock.advance(30 * HOUR);
+      // The file is expired; the same image comes again and its publish queues for the lock
+      // before the cleanup. The cleanup lists the refreshed time and keeps the file.
+      const release = holdLock();
+      const uploading = avatars.upload(image("one"));
+      await settle();
+      const cleaning = avatars.cleanup();
+      await release();
+      await uploading;
+      expect(await cleaning).toBe(0);
+      expect(await published()).toEqual([id]);
+      expect(await files.read(id)).toEqual(image("one"));
+      expect(await files.modifiedAt(id)).toEqual(clock.now());
+      expect(await files.listStaged()).toEqual([]);
+    });
 
-  it("a file that a tombstone names stays", async () => {
-    const id = (await avatars.upload(image("one"))).avatar_id;
-    const bot = await botWith(id);
-    await bots.trash(BotId.parse(bot.id));
-    clock.advance(31 * 24 * HOUR);
-    expect(await bots.purgeDue()).toBe(1);
-    expect(await avatars.cleanup()).toBe(0);
-    expect(await published()).toEqual([id]);
-  });
+    it("a cleanup queued before an upload of the same image removes it; the upload publishes it again", async () => {
+      const id = (await avatars.upload(image("one"))).avatar_id;
+      clock.advance(30 * HOUR);
+      // The cleanup queues for the lock first. The upload stages its copy outside the lock (a
+      // young staged file, which the cleanup keeps), then its publish queues behind the cleanup.
+      const release = holdLock();
+      const cleaning = avatars.cleanup();
+      await settle();
+      const uploading = avatars.upload(image("one"));
+      await settle();
+      expect(await files.listStaged()).toHaveLength(1);
+      await release();
+      expect(await cleaning).toBe(1);
+      expect((await uploading).avatar_id).toBe(id);
+      expect(await published()).toEqual([id]);
+      expect(await files.read(id)).toEqual(image("one"));
+      expect(await files.modifiedAt(id)).toEqual(clock.now());
+      expect(await files.listStaged()).toEqual([]);
+    });
 
-  it("removes staged leftovers after the grace period", async () => {
-    await files.stage("c".repeat(64), image("crash"));
-    expect(await avatars.cleanup()).toBe(0);
-    clock.advance(24 * HOUR);
-    expect(await avatars.cleanup()).toBe(1);
-    expect(await files.listStaged()).toEqual([]);
-  });
+    it("an upload of the same image after the cleanup removed it publishes it again", async () => {
+      const id = (await avatars.upload(image("one"))).avatar_id;
+      clock.advance(30 * HOUR);
+      expect(await avatars.cleanup()).toBe(1);
+      expect((await avatars.upload(image("one"))).avatar_id).toBe(id);
+      expect(await published()).toEqual([id]);
+      expect(await files.modifiedAt(id)).toEqual(clock.now());
+    });
 
-  it("removes a staged file only in the write lock, so a publish queued first still succeeds", async () => {
-    const staged = await files.stage("e".repeat(64), image("slow upload"));
-    clock.advance(24 * HOUR);
-    // Another write holds the lock; the publish waits behind it, then the cleanup.
-    const release = holdLock();
-    const publishing = backend.uow.run(() => files.publish(staged, clock.now()));
-    const cleaning = avatars.cleanup();
-    await settle();
-    await release();
-    await publishing;
-    expect(await cleaning).toBe(0);
-    expect(await published()).toEqual(["e".repeat(64)]);
-    expect(await files.listStaged()).toEqual([]);
-  });
+    it("a file that a tombstone names stays", async () => {
+      const id = (await avatars.upload(image("one"))).avatar_id;
+      const bot = await botWith(id);
+      await bots.trash(BotId.parse(bot.id));
+      clock.advance(31 * 24 * HOUR);
+      expect(await bots.purgeDue()).toBe(1);
+      expect(await avatars.cleanup()).toBe(0);
+      expect(await published()).toEqual([id]);
+    });
 
-  it("an upload whose publish comes after the grace period fails and leaves nothing", async () => {
-    // A stage older than the grace period counts as abandoned (avatars.service.ts, cleanup).
-    const stage = files.stage.bind(files);
-    vi.spyOn(files, "stage").mockImplementationOnce(async (avatarId, bytes) => {
-      const staged = await stage(avatarId, bytes);
+    it("removes staged leftovers after the grace period", async () => {
+      await files.stage("c".repeat(64), image("crash"));
+      expect(await avatars.cleanup()).toBe(0);
       clock.advance(24 * HOUR);
       expect(await avatars.cleanup()).toBe(1);
-      return staged;
+      expect(await files.listStaged()).toEqual([]);
     });
-    await expect(avatars.upload(image("too slow"))).rejects.toThrow();
-    expect(await published()).toEqual([]);
-    expect(await files.listStaged()).toEqual([]);
-  });
 
-  it("a file published in a transaction that rolled back is unused, and goes after the grace period", async () => {
-    const staged = await files.stage("d".repeat(64), image("rolled back"));
-    await expect(
-      backend.uow.run(async () => {
-        await files.publish(staged, clock.now());
-        throw new Error("the save failed after publish");
-      }),
-    ).rejects.toThrow();
-    expect(await published()).toEqual(["d".repeat(64)]);
-    clock.advance(24 * HOUR);
-    expect(await avatars.cleanup()).toBe(1);
-    expect(await published()).toEqual([]);
-  });
-});
+    it("removes a staged file only in the write lock, so a publish queued first still succeeds", async () => {
+      const staged = await files.stage("e".repeat(64), image("slow upload"));
+      clock.advance(24 * HOUR);
+      // Another write holds the lock; the publish waits behind it, then the cleanup.
+      const release = holdLock();
+      const publishing = backend.uow.run(() => files.publish(staged, clock.now()));
+      const cleaning = avatars.cleanup();
+      await settle();
+      await release();
+      await publishing;
+      expect(await cleaning).toBe(0);
+      expect(await published()).toEqual(["e".repeat(64)]);
+      expect(await files.listStaged()).toEqual([]);
+    });
 
-describe("bot saves", () => {
-  it("a save that drops the last row naming a file restarts its grace period", async () => {
-    const first = (await avatars.upload(image("first"))).avatar_id;
-    const second = (await avatars.upload(image("second"))).avatar_id;
-    const bot = await botWith(first);
-    clock.advance(48 * HOUR);
-    await bots.update(BotId.parse(bot.id), { row_version: 1, avatar_id: second });
-    // The old file stopped being used just now: it gets the full grace period from here.
-    expect(await avatars.cleanup()).toBe(0);
-    clock.advance(24 * HOUR);
-    expect(await avatars.cleanup()).toBe(1);
-    expect(await published()).toEqual([second]);
-  });
-
-  it("a failed touch rolls the save back, so the old row still names the file", async () => {
-    const first = (await avatars.upload(image("first"))).avatar_id;
-    const second = (await avatars.upload(image("second"))).avatar_id;
-    const bot = await botWith(first);
-    files.failNext("touch");
-    await expect(
-      bots.update(BotId.parse(bot.id), { row_version: 1, avatar_id: second }),
-    ).rejects.toThrow();
-    expect((await bots.get(BotId.parse(bot.id))).avatar_id).toBe(first);
-  });
-
-  it("a save that names the file, queued before the cleanup, keeps it", async () => {
-    const id = (await avatars.upload(image("one"))).avatar_id;
-    clock.advance(30 * HOUR);
-    const release = holdLock();
-    const saving = botWith(id);
-    await settle();
-    const cleaning = avatars.cleanup();
-    await release();
-    expect((await saving).avatar_id).toBe(id);
-    expect(await cleaning).toBe(0);
-    expect(await published()).toEqual([id]);
-  });
-
-  it("a save and a cleanup started together never leave a row naming a missing file", async () => {
-    const id = (await avatars.upload(image("one"))).avatar_id;
-    clock.advance(30 * HOUR);
-    const [cleanup, save] = await Promise.allSettled([avatars.cleanup(), botWith(id)]);
-    expect(cleanup.status).toBe("fulfilled");
-    if (save.status === "fulfilled") {
-      expect(await published()).toEqual([id]);
-    } else {
-      expect(save.reason).toMatchObject({ field: "avatar_id" });
+    it("an upload whose publish comes after the grace period fails and leaves nothing", async () => {
+      // A stage older than the grace period counts as abandoned (avatars.service.ts, cleanup).
+      const stage = files.stage.bind(files);
+      vi.spyOn(files, "stage").mockImplementationOnce(async (avatarId, bytes) => {
+        const staged = await stage(avatarId, bytes);
+        clock.advance(24 * HOUR);
+        expect(await avatars.cleanup()).toBe(1);
+        return staged;
+      });
+      await expect(avatars.upload(image("too slow"))).rejects.toThrow();
       expect(await published()).toEqual([]);
-    }
+      expect(await files.listStaged()).toEqual([]);
+    });
+
+    it("a file published in a transaction that rolled back is unused, and goes after the grace period", async () => {
+      const staged = await files.stage("d".repeat(64), image("rolled back"));
+      await expect(
+        backend.uow.run(async () => {
+          await files.publish(staged, clock.now());
+          throw new Error("the save failed after publish");
+        }),
+      ).rejects.toThrow();
+      expect(await published()).toEqual(["d".repeat(64)]);
+      expect(await files.read("d".repeat(64))).toEqual(image("rolled back"));
+      clock.advance(24 * HOUR - 1);
+      expect(await avatars.cleanup()).toBe(0);
+      clock.advance(1);
+      expect(await avatars.cleanup()).toBe(1);
+      expect(await published()).toEqual([]);
+    });
   });
 
-  it("a save naming a file that the cleanup removed gets 422 on avatar_id", async () => {
-    const id = (await avatars.upload(image("one"))).avatar_id;
-    clock.advance(24 * HOUR);
-    await avatars.cleanup();
-    const error: unknown = await botWith(id).then(
-      () => null,
-      (caught: unknown) => caught,
-    );
-    expect(error).toBeInstanceOf(DomainError);
-    expect(error).toMatchObject({ field: "avatar_id", message: "Upload the image again." });
+  describe("bot saves", () => {
+    it("a save that drops the last row naming a file restarts its grace period", async () => {
+      const first = (await avatars.upload(image("first"))).avatar_id;
+      const second = (await avatars.upload(image("second"))).avatar_id;
+      const bot = await botWith(first);
+      clock.advance(48 * HOUR);
+      await bots.update(BotId.parse(bot.id), { row_version: 1, avatar_id: second });
+      // The old file stopped being used just now: it gets the full grace period from here.
+      expect(await avatars.cleanup()).toBe(0);
+      clock.advance(24 * HOUR);
+      expect(await avatars.cleanup()).toBe(1);
+      expect(await published()).toEqual([second]);
+    });
+
+    it("a failed touch rolls the save back, so the old row still names the file", async () => {
+      const first = (await avatars.upload(image("first"))).avatar_id;
+      const second = (await avatars.upload(image("second"))).avatar_id;
+      const bot = await botWith(first);
+      const before = await eventTypes();
+      clock.advance(HOUR);
+      files.failNext("touch");
+      await expect(
+        bots.update(BotId.parse(bot.id), { row_version: 1, avatar_id: second }),
+      ).rejects.toThrow();
+      expect(await bots.get(BotId.parse(bot.id))).toMatchObject({
+        avatar_id: first,
+        row_version: 1,
+      });
+      expect(await eventTypes()).toEqual(before);
+      // The old file keeps its upload time: the failed save started no grace period.
+      expect(await files.modifiedAt(first)).toEqual(new Date(clock.now().getTime() - HOUR));
+    });
+
+    it("a save that names the file, queued before the cleanup, keeps it", async () => {
+      const id = (await avatars.upload(image("one"))).avatar_id;
+      clock.advance(30 * HOUR);
+      const release = holdLock();
+      const saving = botWith(id);
+      await settle();
+      const cleaning = avatars.cleanup();
+      await release();
+      expect((await saving).avatar_id).toBe(id);
+      expect(await cleaning).toBe(0);
+      expect(await published()).toEqual([id]);
+    });
+
+    it("a cleanup queued before a save that names the file removes it; the save gets 422", async () => {
+      const id = (await avatars.upload(image("one"))).avatar_id;
+      clock.advance(30 * HOUR);
+      const release = holdLock();
+      const cleaning = avatars.cleanup();
+      await settle();
+      const saving = botWith(id).then(
+        () => null,
+        (caught: unknown) => caught,
+      );
+      await settle();
+      await release();
+      expect(await cleaning).toBe(1);
+      const error = await saving;
+      expect(error).toBeInstanceOf(DomainError);
+      expect(error).toMatchObject({ field: "avatar_id", message: "Upload the image again." });
+      expect(await bots.list()).toEqual([]);
+      expect(await eventTypes()).not.toContain("bot.created");
+      expect(await published()).toEqual([]);
+    });
+
+    it("a save and a cleanup started together never leave a row naming a missing file", async () => {
+      const id = (await avatars.upload(image("one"))).avatar_id;
+      clock.advance(30 * HOUR);
+      const [cleanup, save] = await Promise.allSettled([avatars.cleanup(), botWith(id)]);
+      expect(cleanup.status).toBe("fulfilled");
+      if (save.status === "fulfilled") {
+        expect(await published()).toEqual([id]);
+      } else {
+        expect(save.reason).toMatchObject({ field: "avatar_id" });
+        expect(await published()).toEqual([]);
+      }
+    });
+
+    it("a save naming a file that the cleanup removed gets 422 on avatar_id", async () => {
+      const id = (await avatars.upload(image("one"))).avatar_id;
+      clock.advance(24 * HOUR);
+      await avatars.cleanup();
+      const error: unknown = await botWith(id).then(
+        () => null,
+        (caught: unknown) => caught,
+      );
+      expect(error).toBeInstanceOf(DomainError);
+      expect(error).toMatchObject({ field: "avatar_id", message: "Upload the image again." });
+    });
   });
 });
