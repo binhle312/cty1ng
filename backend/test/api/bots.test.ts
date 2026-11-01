@@ -119,6 +119,23 @@ describe("/bots/{id}", () => {
     expect(now).toMatchObject({ description: newBot.description, row_version: 1 });
   });
 
+  it("PATCH refuses a 1 MB description on its length, fast, after the guard scan", async () => {
+    // The guard runs before the limits (M2 plan §4), so the scan must stay linear.
+    const { bot } = await createBot();
+    const start = performance.now();
+    const response = await send("PATCH", `/bots/${String(bot.id)}`, {
+      row_version: 1,
+      // Just under the 1 MB body limit (security.md §2.7).
+      description: "ABC123 ".repeat(140_000),
+    });
+    expect(performance.now() - start).toBeLessThan(2_000);
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toMatchObject({
+      code: "validation_error",
+      field: "description",
+    });
+  });
+
   it("PATCH saves, and a stale row_version gets 409", async () => {
     const { bot } = await createBot();
     const saved = await send("PATCH", `/bots/${String(bot.id)}`, { row_version: 1, name: "Ana" });

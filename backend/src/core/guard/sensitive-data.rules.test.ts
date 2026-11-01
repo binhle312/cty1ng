@@ -38,6 +38,17 @@ describe("findSensitive (D39)", () => {
     const [match] = findSensitive("# Steps\n\nkey sk-proj-abcdefghijklmnop9f2a");
     expect(match).toEqual({ kind: "api_key", line: 3, ending: "9f2a" });
   });
+
+  // Text over a length limit is scanned before the limit check (M2 plan §4), so the scan must
+  // stay linear: each detector reads a line once, not once per candidate. Before the fix, this
+  // line took about 10 s and blocked the server; now it takes a few milliseconds.
+  it("scans a 1 MB line of short code-like words in well under a second", () => {
+    const line = "ABC123 ".repeat(150_000);
+    const start = performance.now();
+    expect(findSensitive(line)).toEqual([]);
+    expect(findSensitive(`passport ${line}`)).toHaveLength(150_000);
+    expect(performance.now() - start).toBeLessThan(1_000);
+  });
 });
 
 describe("checksums", () => {

@@ -32,7 +32,10 @@ interface Detector {
   pattern: RegExp;
   // The part of the match that is the secret (default: the whole match).
   group?: number;
-  accept?: (secret: string, line: string) => boolean;
+  // A word the line must hold for this detector to run. It is tested once per line, never once
+  // per match: a long line has many matches, and a scan per match is quadratic.
+  lineHas?: RegExp;
+  accept?: (secret: string) => boolean;
 }
 
 const DETECTORS: readonly Detector[] = [
@@ -73,7 +76,8 @@ const DETECTORS: readonly Detector[] = [
   {
     kind: "passport",
     pattern: /\b[A-Z0-9]{6,9}\b/g,
-    accept: (secret, line) => /passport/i.test(line) && /\d/.test(secret),
+    lineHas: /passport/i,
+    accept: (secret) => /\d/.test(secret),
   },
 ];
 
@@ -81,9 +85,10 @@ export function findSensitive(text: string): SensitiveMatch[] {
   const matches: SensitiveMatch[] = [];
   text.split("\n").forEach((line, index) => {
     for (const detector of DETECTORS) {
+      if (detector.lineHas !== undefined && !detector.lineHas.test(line)) continue;
       for (const found of line.matchAll(detector.pattern)) {
         const secret = found[detector.group ?? 0] ?? found[0];
-        if (detector.accept !== undefined && !detector.accept(secret, line)) continue;
+        if (detector.accept !== undefined && !detector.accept(secret)) continue;
         matches.push({ kind: detector.kind, line: index + 1, ending: secret.slice(-4) });
       }
     }
