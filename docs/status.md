@@ -99,6 +99,7 @@ it in, and the row goes when its PR merges.
 | Temporary CLI `skills trash` and `skills restore` (M1 spec gap pass, owner 2026-10-30): remove them when the Trash page exists | [#51](https://github.com/binhle312/cty1ng/pull/51) | M5b |
 | The `db_lock_wait_seconds` histogram (`architecture.md` §9, D29 switch trigger 3); there is no metrics output yet | #48 | M3 (the worker brings concurrent writes) |
 | `esbuild` advisory (moderate, dev only, through `drizzle-kit` 0.31.11); no stable fix | #48 | Update `drizzle-kit` when 1.0 is stable (Dependabot) |
+| First-run offer of the Guide bot in the app ("Add Guide" in the empty state, so a new owner needs no `make seed`); needs a design round (owner, 2026-11-01, M2 plan decision 15) | [#57](https://github.com/binhle312/cty1ng/pull/57) | M3 spec gap pass |
 | Reserve the bot slug `new`: `/bots/new` is the Create bot page, so the server must refuse it as a slug. Now in the slug rule (`domain-model.md` §2) and the M2 brief | [#49](https://github.com/binhle312/cty1ng/pull/49) | M2 |
 | Temporary CLI `bots trash` and `bots restore` (M2 spec gap pass, owner 2026-11-01): remove them when the Trash page exists | [#56](https://github.com/binhle312/cty1ng/pull/56) | M5b |
 | Rail and bar 2 list scrolling (fade, ˄/˅ buttons, the list ends 24 px above the user panel, `left-bar.md` §1.3, §2): M0 has no lists yet | [#49](https://github.com/binhle312/cty1ng/pull/49) | M5b (projects) and M3 (conversations) |
