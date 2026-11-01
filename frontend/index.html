@@ -7,6 +7,8 @@
     <!-- Sets the theme before the first paint (design/themes.md §2 rule 5). A file, not inline:
          the CSP blocks inline scripts. -->
     <script src="/theme-init.js"></script>
+    <!-- Zod with no `new Function`, before any module (public/zod-init.js). -->
+    <script src="/zod-init.js"></script>
   </head>
   <body>
     <div id="root"></div>
