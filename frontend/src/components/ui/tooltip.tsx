@@ -13,11 +13,14 @@ interface TooltipProps {
   // The element that gets the tooltip. It must take a ref and the trigger props.
   children: ReactElement;
   side?: "top" | "right" | "bottom" | "left";
+  // Shows nothing while true. A control whose tooltip comes and goes keeps the wrapper and sets
+  // this, so React keeps the same element and the keyboard focus stays on it.
+  disabled?: boolean;
 }
 
-export function Tooltip({ label, children, side = "right" }: TooltipProps) {
+export function Tooltip({ label, children, side = "right", disabled = false }: TooltipProps) {
   return (
-    <BaseTooltip.Root>
+    <BaseTooltip.Root disabled={disabled}>
       <BaseTooltip.Trigger render={children} />
       <BaseTooltip.Portal>
         {/* z-50, as dialogs and toasts: Base UI sets no z-index, and page parts at z-10 (the

@@ -7,7 +7,7 @@
 // Generator: Hey API (M0c plan, decision H). Its TanStack Query plugin makes query and mutation
 // *options* (`getHealthOptions()`) that our code passes to TanStack's own hooks
 // (`useQuery(getHealthOptions())`); it does not make hooks. Its Zod plugin makes the schemas
-// that the SDK uses to check every response.
+// that the SDK uses to check every response; requests are checked by the server only.
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -68,7 +68,11 @@ async function main(): Promise<void> {
                 : undefined,
           },
         },
-        { name: "@hey-api/sdk", validator: true },
+        // Responses only. The SDK checks a request after it has merged the headers into a
+        // `Headers` object, so a required header (the Idempotency-Key of POST /bots) always
+        // reads as missing and the call never leaves. The server checks every request anyway
+        // (review of PR #57, owner 2026-11-01).
+        { name: "@hey-api/sdk", validator: { request: false, response: true } },
         "@tanstack/react-query",
       ],
     });

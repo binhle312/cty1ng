@@ -1,25 +1,14 @@
 import type { StreamEvent } from "@cty1ng/shared/events";
-import type { Query, QueryClient } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
+import {
+  BOT_QUERIES,
+  PIN_QUERIES,
+  SETTINGS_QUERIES,
+  SKILL_OR_BOT_QUERIES,
+} from "../api/operation-queries.ts";
 
 // Test only: the notes of the test.ping events seen, so tests can see what the reducer applied.
 export const TEST_PINGS_KEY = ["realtime", "test-pings"] as const;
-
-// The generated query keys start with `{ _id: <operationId> }` (Hey API). Every skill
-// operation id has "Skill" in it and every settings one "Settings" (api.md §2, §7).
-function operationMatches(pattern: RegExp) {
-  return (query: Query): boolean => {
-    const [first] = query.queryKey;
-    return (
-      typeof first === "object" &&
-      first !== null &&
-      "_id" in first &&
-      typeof first._id === "string" &&
-      pattern.test(first._id)
-    );
-  };
-}
-const SKILL_QUERIES = operationMatches(/Skill/);
-const SETTINGS_QUERIES = operationMatches(/Settings/);
 
 // Applies stream events to the TanStack Query cache (realtime-events.md §3). Applying an event
 // twice has the same result as once: a persisted event with a seq at or below the last
@@ -61,8 +50,8 @@ export function createEventReducer(queryClient: QueryClient) {
           queryClient.setQueryData<string[]>(TEST_PINGS_KEY, (notes = []) => [...notes, note]);
           return true;
         }
-        // A skill changed, or left or entered Trash: its lists and pages fetch again. The Skills
-        // page (M1b) reads these queries.
+        // A skill changed, or something left or entered Trash: the skill queries, and the bot
+        // queries (a bot's pins show the skill's name, latest version and state).
         case "skill.created":
         case "skill.updated":
         case "skill.deprecated":
@@ -70,7 +59,19 @@ export function createEventReducer(queryClient: QueryClient) {
         case "skill.restored":
         case "skill.purged":
         case "trash.changed":
-          void queryClient.invalidateQueries({ predicate: SKILL_QUERIES });
+          void queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES });
+          return true;
+        // A bot or its pins changed: the bot queries, and the skill queries that count pins.
+        case "bot.created":
+        case "bot.updated":
+        case "bot.deleted":
+        case "bot.restored":
+        case "bot.purged":
+          void queryClient.invalidateQueries({ predicate: PIN_QUERIES });
+          return true;
+        // The pinned order is a bot thing only.
+        case "bots.reordered":
+          void queryClient.invalidateQueries({ predicate: BOT_QUERIES });
           return true;
         case "settings.updated":
           void queryClient.invalidateQueries({ predicate: SETTINGS_QUERIES });

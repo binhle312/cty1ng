@@ -1,3 +1,6 @@
+import type { AvatarsService } from "../../core/bots/avatars.service.ts";
+import type { BotsService } from "../../core/bots/bots.service.ts";
+import type { Catalog } from "../../core/catalog/catalog.rules.ts";
 import type { Health } from "../../core/health/health.service.ts";
 import type { createSettingsService } from "../../core/settings/settings.service.ts";
 import type { SkillImportService } from "../../core/skills/skill-import.service.ts";
@@ -15,6 +18,9 @@ import {
 } from "./middleware.ts";
 import { createRouter } from "./router.ts";
 import { apiDocsRoutes } from "./routes/api-docs.ts";
+import { AVATAR_UPLOAD_PATHS, avatarRoutes } from "./routes/avatars.ts";
+import { botRoutes } from "./routes/bots.ts";
+import { catalogRoutes } from "./routes/catalog.ts";
 import { healthRoutes } from "./routes/health.ts";
 import { settingsRoutes } from "./routes/settings.ts";
 import { SKILL_UPLOAD_PATHS, skillRoutes } from "./routes/skills.ts";
@@ -27,9 +33,14 @@ export interface HttpDeps {
   allowedHosts: readonly string[];
   allowedOrigins: readonly string[];
   health: () => Promise<Health>;
+  catalog: Catalog;
   settings: ReturnType<typeof createSettingsService>;
   skills: SkillsService;
   skillImport: SkillImportService;
+  bots: BotsService;
+  avatars: AvatarsService;
+  // AVATAR_MAX_BYTES (security.md §2.4).
+  avatarMaxBytes: number;
   openStream: OpenStream;
   // Only when APP_ENV=test.
   testPing: ((note: string) => Promise<number>) | null;
@@ -52,14 +63,20 @@ export function createHttpApp(deps: HttpDeps) {
   app.use(securityHeaders());
   app.use(corsForAllowedOrigins(deps.allowedOrigins));
   // Upload routes set their own limit (security.md §2.4); every other route keeps 1 MB.
-  app.use(maxBody(SKILL_UPLOAD_PATHS));
+  app.use(maxBody([...SKILL_UPLOAD_PATHS, ...AVATAR_UPLOAD_PATHS]));
   app.onError(onError);
   app.notFound(notFound);
 
   const api = createRouter()
     .route("/", healthRoutes(deps.health))
     .route("/", settingsRoutes(deps.settings))
-    .route("/", skillRoutes({ skills: deps.skills, skillImport: deps.skillImport }))
+    .route("/", catalogRoutes(deps.catalog))
+    .route(
+      "/",
+      skillRoutes({ skills: deps.skills, skillImport: deps.skillImport, bots: deps.bots }),
+    )
+    .route("/", botRoutes(deps.bots))
+    .route("/", avatarRoutes({ avatars: deps.avatars, maxBytes: deps.avatarMaxBytes }))
     .route("/", streamRoutes(deps.openStream));
   if (deps.testPing !== null) api.route("/", testEventRoutes(deps.testPing));
   if (deps.apiDocs) api.route("/", apiDocsRoutes());

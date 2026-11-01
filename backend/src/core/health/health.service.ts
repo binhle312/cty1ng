@@ -1,4 +1,4 @@
-import type { CatalogEntry } from "../catalog/catalog.ts";
+import type { Catalog } from "../catalog/catalog.rules.ts";
 import type { Readers } from "../ports/repositories.ts";
 
 // GET /api/health (api.md §7, architecture.md §9). `worker` is `not_started` until the worker
@@ -9,13 +9,13 @@ export interface Health {
   catalog: { models: number; available: number };
 }
 
-export function createHealthService(deps: { readers: Readers; catalog: readonly CatalogEntry[] }) {
+export function createHealthService(deps: { readers: Readers; catalog: Catalog }) {
   return async (): Promise<Health> => ({
     db: (await deps.readers.ping()) ? "ok" : "error",
     worker: "not_started",
     catalog: {
-      models: deps.catalog.length,
-      available: deps.catalog.filter((entry) => entry.available).length,
+      models: deps.catalog.models.length,
+      available: deps.catalog.models.filter((model) => model.available).length,
     },
   });
 }

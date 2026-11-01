@@ -1,9 +1,10 @@
 # catalog
 
-The model catalog (`docs/architecture.md` §3).
+The model catalog and the tool catalog (`docs/domain-model.md` §4, §4.1; `docs/architecture.md` §3).
 
 | File | What it is for |
 | --- | --- |
-| `catalog.ts` | The catalog entries; M0 has only `fake:scripted` when FAKE_MODEL=1 |
+| `catalog.rules.ts` | Checks the parsed `config/models.yaml` and `config/tools.yaml`, adds the fake models with FAKE_MODEL=1, and says whether a model can run |
+| `catalog.rules.test.ts` | Availability, file order, the fake models, every refused entry |
 
-Start here: `catalog.ts`. Do not: read provider keys here; availability comes from the wiring.
+Start here: `catalog.rules.ts`. Do not: read files or provider keys here; `app/` passes the file contents and which key variables are set.

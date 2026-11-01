@@ -145,6 +145,8 @@ Mark these in the PR description under a heading `Needs human review` with one l
 - New behaviour has tests; bug fixes have a test that failed before the fix.
 - Documentation updated where behaviour changed.
 - `docs/status.md` updated: the slice's state, the PR link, anything now waiting on the owner.
+- A change the owner can see updates `seed/skills/using-the-app/SKILL.md`, the Guide bot's
+  knowledge of the app, in the same PR (M2 plan, decision 14).
 - The PR description has: what changed, why, how it was verified, and `Needs human review`
   items (or "none").
 

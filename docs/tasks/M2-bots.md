@@ -20,8 +20,11 @@ skill and Trash events); `docs/testing.md` §2 (fake models).
 
 ## In scope
 
-- `config/models.yaml` with **Anthropic models only** (owner, 2026-11-01), `core/catalog/`
-  (loader, availability) and the effort mapping in `adapters/model/ai-sdk/`. Check current model
+- `config/models.yaml` with **Google Gemini and Anthropic models** (owner, 2026-11-01; M2 plan,
+  decisions 8–11: Gemini 3.8 Flash first, then Opus, Sonnet and Haiku 5.5, then Gemini 4 Argon
+  and 3.5 Flash-Lite), `config/tools.yaml`, `core/catalog/` (loader, availability) and the
+  effort mapping in `adapters/model/ai-sdk/`. OpenAI and DeepSeek come later, each in its own
+  PR. Check current model
   ids and effort parameters in the provider's documentation and record what you checked in the
   PR. Fake mode: `fake:scripted` and `fake:effort` next to the real entries; the test setup
   clears every `*_API_KEY` (`testing.md` §2).
@@ -81,8 +84,10 @@ skill and Trash events); `docs/testing.md` §2 (fake models).
   delete (`domain-model.md` §2 Purge).
 - Events `bot.created|updated|deleted|restored|purged`, `bots.reordered`, and `bot` in
   `trash.changed`.
-- `make seed` also creates the BA and Designer bots pinned to the seeded skills, with
-  `working-principles` pinned to both with "Always load" (D16). A new seed bot gets the first
+- `make seed` also creates the example bots of `seed/bots.yaml`, in order: **Guide** (M2 plan,
+  decision 12: explains the app; pins the seed skill `using-the-app` with "Always load"), then
+  **BA** and **Designer**, pinned to the seeded skills, with `working-principles` pinned to
+  both with "Always load" (D16). A new seed bot gets the first
   available model in catalog order with its default effort; with no available model the seed
   creates the skills only and prints "Set a key to seed the bots". A second run changes nothing:
   a bot whose name is taken (live, in Trash, any bot with that name key) is left as it is and
@@ -91,7 +96,8 @@ skill and Trash events); `docs/testing.md` §2 (fake models).
 ## Out of scope
 
 Conversations, Message and Add here (M3), drag-to-add (M4), the Memory tab (M5b), the Trash page
-and bot restore in the app (M5b), Jelly and Pixel avatars, providers other than Anthropic, the
+and bot restore in the app (M5b), Jelly and Pixel avatars, providers other than Google and
+Anthropic, the
 restore exception to invariant 6 (`restore_suggestion` and its server check, with the restore
 dialog in M5b).
 
@@ -153,7 +159,8 @@ dialog in M5b).
 - Header with more bots than fit: Tab to an avatar shows its name tooltip and the ‹ › buttons,
   with no pointer in the header; a swipe on touch scrolls the roster (UI-2.2, UI-2.7,
   `top-header.md` states 3 and 5).
-- `make seed` twice → one BA and one Designer; the second run reports them and changes nothing.
+- `make seed` twice → one Guide, one BA and one Designer; the second run reports them and
+  changes nothing.
 
 ## Tests
 

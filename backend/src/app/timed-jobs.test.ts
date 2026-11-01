@@ -11,6 +11,8 @@ const HOUR = 3_600_000;
 function start(
   options: {
     purgeDue?: () => Promise<number>;
+    botsPurgeDue?: () => Promise<number>;
+    cleanup?: () => Promise<number>;
     pruneDue?: () => Promise<number>;
     purgeIntervalHours?: number;
     eventPruneIntervalHours?: number;
@@ -19,14 +21,18 @@ function start(
   const { log, lines } = memoryLogger();
   const purgeDue = vi.fn(options.purgeDue ?? (() => Promise.resolve(0)));
   const pruneDue = vi.fn(options.pruneDue ?? (() => Promise.resolve(0)));
+  const botsPurgeDue = vi.fn(options.botsPurgeDue ?? (() => Promise.resolve(0)));
+  const cleanup = vi.fn(options.cleanup ?? (() => Promise.resolve(0)));
   const stop = startTimedJobs({
     skills: { purgeDue },
+    bots: { purgeDue: botsPurgeDue },
+    avatars: { cleanup },
     eventPruning: { pruneDue },
     log,
     purgeIntervalHours: options.purgeIntervalHours ?? 24,
     eventPruneIntervalHours: options.eventPruneIntervalHours ?? 24,
   });
-  return { purgeDue, pruneDue, stop, lines };
+  return { purgeDue, botsPurgeDue, cleanup, pruneDue, stop, lines };
 }
 
 describe("startTimedJobs", () => {
@@ -97,6 +103,26 @@ describe("startTimedJobs", () => {
     expect(purgeDue).toHaveBeenCalledTimes(2);
     expect(lines.filter((line) => line.includes("trash purge failed"))).toHaveLength(2);
     expect(pruneDue).toHaveBeenCalledTimes(2);
+    stop();
+  });
+
+  // Review of PR #57: the three purge steps shared one try, so a skills purge that failed on
+  // every run stopped the bots purge and the avatar cleanup for good.
+  it("runs the bots purge and the avatar cleanup when the skills purge fails", async () => {
+    vi.useFakeTimers();
+    const { botsPurgeDue, cleanup, stop, lines } = start({
+      purgeDue: () => Promise.reject(new Error("bad row")),
+      botsPurgeDue: () => Promise.resolve(1),
+      cleanup: () => Promise.reject(new Error("disk")),
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(botsPurgeDue).toHaveBeenCalledTimes(1);
+    expect(cleanup).toHaveBeenCalledTimes(1);
+    const failed = lines.filter((line) => line.includes("trash purge failed"));
+    expect(failed).toHaveLength(2);
+    expect(failed[0]).toContain('"step":"skills"');
+    expect(failed[1]).toContain('"step":"avatars"');
+    expect(lines.some((line) => line.includes('"bots":1'))).toBe(true);
     stop();
   });
 

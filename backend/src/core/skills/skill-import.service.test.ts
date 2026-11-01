@@ -289,7 +289,7 @@ describe("apply", () => {
     );
     await backend.skills.addVersion(
       skill.id,
-      { baseVersion: 1, description: "Use it.", bodyMd: "edited in the app", upgradeBotIds: [] },
+      { baseVersion: 1, description: "Use it.", bodyMd: "edited in the app" },
       OWNER_ID,
     );
     const error = await failure(

@@ -1,5 +1,12 @@
+import { StreamEvent } from "@cty1ng/shared/events";
 import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
+import {
+  getSettingsOptions,
+  getSkillDiffOptions,
+  listBotsOptions,
+  listSkillsOptions,
+} from "../api/generated/@tanstack/react-query.gen.ts";
 import { createEventReducer, TEST_PINGS_KEY } from "./reducer.ts";
 
 const ping = (seq: number, note = `n${String(seq)}`) =>
@@ -93,5 +100,51 @@ describe("event reducer", () => {
     expect(reducer.apply(ping(21))).toBe(true);
     expect(reducer.apply(ping(22))).toBe(true);
     expect(notes()).toEqual(["n21", "n22"]);
+  });
+
+  // A pin joins a bot and a skill: a skill event, a bot event and a Trash change each refresh
+  // both sides, and nothing else. Events with a whole skill or bot inside share these branches;
+  // the compiler checks that the reducer handles every type.
+  const SKILL_ID = "skill_01j9z3k4m5n6p7q8r9s0t1v2w3";
+  const BOT_ID = "bot_01j9z3k4m5n6p7q8r9s0t1v2w3";
+  it.each([
+    { type: "skill.trashed", data: { skill_id: SKILL_ID } },
+    { type: "skill.purged", data: { skill_id: SKILL_ID } },
+    { type: "bot.purged", data: { bot_id: BOT_ID } },
+    { type: "trash.changed", data: { counts: { skill: 1, bot: 0 } } },
+  ])("$type refreshes the skill queries and the bot queries, not the settings", (input) => {
+    const { queryClient, reducer } = setup();
+    const skills = listSkillsOptions().queryKey;
+    const bots = listBotsOptions().queryKey;
+    const settings = getSettingsOptions().queryKey;
+    for (const key of [skills, bots, settings]) queryClient.setQueryData(key, []);
+    reducer.apply(StreamEvent.parse({ ...input, seq: 1 }));
+    expect(queryClient.getQueryState(skills)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(bots)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(settings)?.isInvalidated).toBe(false);
+  });
+
+  // Review of PR #57: a bot event refetched every skill query, the diffs too.
+  it("a bot event leaves the skill queries that do not count pins", () => {
+    const { queryClient, reducer } = setup();
+    const diff = getSkillDiffOptions({
+      path: { id: SKILL_ID },
+      query: { from: 1, to: 2 },
+    }).queryKey;
+    queryClient.setQueryData(diff, { description: null, body: [] });
+    reducer.apply(StreamEvent.parse({ type: "bot.purged", data: { bot_id: BOT_ID }, seq: 1 }));
+    expect(queryClient.getQueryState(diff)?.isInvalidated).toBe(false);
+  });
+
+  it("bots.reordered refreshes the bot queries only", () => {
+    const { queryClient, reducer } = setup();
+    const skills = listSkillsOptions().queryKey;
+    const bots = listBotsOptions().queryKey;
+    for (const key of [skills, bots]) queryClient.setQueryData(key, []);
+    reducer.apply(
+      StreamEvent.parse({ type: "bots.reordered", data: { pinned_bot_ids: [BOT_ID] }, seq: 1 }),
+    );
+    expect(queryClient.getQueryState(bots)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(skills)?.isInvalidated).toBe(false);
   });
 });

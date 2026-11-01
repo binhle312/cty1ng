@@ -85,7 +85,12 @@ The skill side of the bot page Skills tab (`bot-page.md` §7), with the same row
   opens the upgrade dialog (`bot-page.md` §7 SK3); the Always load switch (D16); ⋯ with
   **Change version** and **Remove** (`danger` text), as on the bot page.
 - **+ Add** opens the bot list (§7) with no box ticked; the bots that use the skill are not in
-  it. The added bots get the latest version and Always load off.
+  it. The added bots get the latest version and Always load off. A ticked bot that leaves the
+  list while the card is open (another tab added it, or it went to Trash) is not counted in
+  "Add {n}" and is not sent.
+- When the versions do not load, + Add, Upgrade (SK3) and Change version (SK4) say "The app
+  could not load the versions." with **Try again** in place of "Loading the versions.", and
+  their confirm button stays off.
 - No bot uses it: "No bot uses this skill yet." and **+ Add**.
 - No bot exists (M1): the same line, and **+ Add** is disabled with the tooltip "Create a bot
   first."
@@ -246,7 +251,8 @@ shows in two places. No label ends in "…" (`buttons.md`).
 
 The same bot list. Title "Remove {skill} from bots? 🧹", text "Tick the bots that must stop
 using it. They stop on their next run. A run that works now keeps it to the end." Every box
-starts ticked. Buttons: **Skip** and **Remove from {n} bots** (`danger`), disabled with no tick.
+starts ticked. Buttons: **Skip** and **Remove from {n} bots** (`danger`), disabled with no tick,
+with the tooltip "Tick a bot first." (§ Texts added in the M1b build).
 
 ## 11. Delete (D7, D49)
 
@@ -413,7 +419,15 @@ the changes marked "owner, 2026-10-31".
   read-only controls, not disabled ones: they take focus, so the owner can select and copy the
   text from the keyboard (owner, 2026-10-31).
 - Why a button is off (`ui-rules.md` B5): "No changes to save.", "Fill in every field.", "Fix
-  the errors first.", "Tick a skill to export.", "Tick a row to apply."
+  the errors first.", "Tick a skill to export.", "Tick a row to apply." The bot cards (§2a):
+  "Tick a bot first.", "Loading the versions.", "The versions did not load. Try again first.",
+  "Adding the bots.", "Saving the change.", "v{n} no longer exists. Cancel and pick another
+  version." The Deprecate, Remove from bots and Delete dialogs (§10.1, §10.3, §11): "Loading
+  the bots that use it.", "The bots did not load. Close this card and try again.", "Deprecating
+  the skill.", "Removing the skill from the bots.", "No bot uses this skill.", "Tick a bot
+  first.", "Deleting the skill."
+- A long diff in the upgrade card (SK3) scrolls inside the card, so Cancel and Upgrade stay in
+  view. A card taller than the window scrolls as a whole, with its buttons kept at its bottom.
 - Deprecate in M1 (no bots): "No bot uses it." in place of the bot list.
 - History: v1 with no changelog says "First version", a later version "No note". A skill with
   one version: "This skill has one version. Each save adds a version here." The latest version

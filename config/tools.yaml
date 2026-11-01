@@ -1,0 +1,167 @@
+# The tool catalog (docs/domain-model.md §4.1, D55). Checked in. The Create page and the bot
+# page build the Tools list from it (docs/design/components/create-bot-page.md §3).
+#
+# kind: internal = run by this app | provider = run on the provider's servers
+# job: tools with the same job are one row; only one can be on
+# switch: open = the owner's choice is saved | later = forced off until its milestone (D53)
+#         | locked = forced off, needs a decision (D55)
+# needs: tool ids that must be on
+#
+# The owner approved every line in the M2a PR (#57, 2026-11-01).
+
+# Internal tools (phase 1). Each is `open`: its saved switch waits for the slice that builds it.
+- id: files
+  label: Files
+  kind: internal
+  job: files
+  added: 2026-10-24
+  sends_data_out: false
+  web: false
+  line: "List, read and write files in the Library (the project's, or Home)."
+  off_line: "The bot cannot list, read or write Library files. View images and Hand off turn off too."
+  switch: open
+
+- id: view_images
+  label: View images
+  kind: internal
+  job: view_images
+  added: 2026-10-24
+  sends_data_out: false
+  web: false
+  line: "Look at PNG, JPEG and WebP files in the Library."
+  needs: [files]
+  switch: open
+
+- id: skills
+  label: Skills
+  kind: internal
+  job: skills
+  added: 2026-10-24
+  sends_data_out: false
+  web: false
+  line: "Load a skill when it needs one. Draft a new skill for you to approve."
+  off_line: "Only skills set to Always load reach the bot."
+  switch: open
+
+- id: hand_off
+  label: Hand off
+  kind: internal
+  job: hand_off
+  added: 2026-10-24
+  sends_data_out: false
+  web: false
+  line: "Ask you to pass files to another bot."
+  needs: [files]
+  switch: open
+
+- id: memory
+  label: Memory
+  kind: internal
+  job: memory
+  added: 2026-10-24
+  sends_data_out: false
+  web: false
+  line: "Remember and update facts, with Undo."
+  off_line: "The bot still reads memory, but cannot save."
+  switch: open
+
+# Anthropic tools: forced off until the milestone that builds them (D53, D55).
+- id: web_search
+  label: Web search
+  kind: provider
+  provider: anthropic
+  job: web_search
+  added: 2026-10-24
+  sends_data_out: false
+  web: true
+  line: "Search the web at Anthropic and read the result list."
+  switch: later
+
+- id: web_fetch
+  label: Web fetch
+  kind: provider
+  provider: anthropic
+  job: web_fetch
+  added: 2026-10-24
+  sends_data_out: false
+  web: true
+  line: "Open a page from a search result or from your message and read its text."
+  switch: later
+
+- id: code_execution
+  label: Code execution
+  kind: provider
+  provider: anthropic
+  job: code_execution
+  added: 2026-10-24
+  sends_data_out: true
+  web: false
+  line: "Run small Python scripts at Anthropic to analyse data and draw charts. It cannot change your files."
+  switch: later
+
+- id: mcp_connector
+  label: MCP connector
+  kind: provider
+  provider: anthropic
+  job: mcp_connector
+  added: 2026-10-24
+  sends_data_out: true
+  web: false
+  line: "Use tools on an MCP server that you add."
+  switch: locked
+
+- id: advisor
+  label: Advisor
+  kind: provider
+  provider: anthropic
+  job: advisor
+  added: 2026-10-24
+  sends_data_out: false
+  web: false
+  line: "Ask a stronger model for advice on a hard step. Each request costs more."
+  switch: later
+
+- id: tool_search
+  label: Tool search
+  kind: provider
+  provider: anthropic
+  job: tool_search
+  added: 2026-10-24
+  sends_data_out: false
+  web: false
+  line: "Find the right tool in a long tool list, so fewer tool texts go into each request."
+  switch: later
+
+# Google tools: the same jobs as their Anthropic twins (M2 plan, decision 10).
+- id: google_search
+  label: Google search
+  kind: provider
+  provider: google
+  job: web_search
+  added: 2026-11-01
+  sends_data_out: false
+  web: true
+  line: "Search the web with Google and read the result list."
+  switch: later
+
+- id: url_context
+  label: URL context
+  kind: provider
+  provider: google
+  job: web_fetch
+  added: 2026-11-01
+  sends_data_out: false
+  web: true
+  line: "Open a page from your message and read its text."
+  switch: later
+
+- id: google_code_execution
+  label: Code execution
+  kind: provider
+  provider: google
+  job: code_execution
+  added: 2026-11-01
+  sends_data_out: true
+  web: false
+  line: "Run small Python scripts at Google to analyse data and draw charts. It cannot change your files."
+  switch: later

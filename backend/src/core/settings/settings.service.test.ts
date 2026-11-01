@@ -19,6 +19,20 @@ describe("settings", () => {
       skill_name_max: 64,
       skill_body_max: 20_000,
       skill_body_warn_lines: 500,
+      bot_name_max: 32,
+      bot_description_max: 160,
+      bot_persona_max: 8_000,
+      bot_history_min_pct: 10,
+      bot_history_max_pct: 80,
+      bot_default_history_pct: 40,
+      bot_default_request_limit: 30,
+      bot_default_max_reply_chars: 6_000,
+      health_recent_runs: 5,
+      health_failed_runs: 2,
+      health_limit_stops: 3,
+      health_limit_window_days: 7,
+      bot_order: "recent",
+      bot_order_direction: "desc",
     });
     expect(await backend.settings.get()).toEqual(SETTING_DEFAULTS);
   });

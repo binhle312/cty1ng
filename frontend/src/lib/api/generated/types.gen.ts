@@ -54,6 +54,20 @@ export type GetSettingsResponses = {
         skill_name_max: number;
         skill_body_max: number;
         skill_body_warn_lines: number;
+        bot_name_max: number;
+        bot_description_max: number;
+        bot_persona_max: number;
+        bot_history_min_pct: number;
+        bot_history_max_pct: number;
+        bot_default_history_pct: number;
+        bot_default_request_limit: number;
+        bot_default_max_reply_chars: number;
+        health_recent_runs: number;
+        health_failed_runs: number;
+        health_limit_stops: number;
+        health_limit_window_days: number;
+        bot_order: 'recent' | 'created';
+        bot_order_direction: 'desc' | 'asc';
     };
 };
 
@@ -65,6 +79,20 @@ export type UpdateSettingsData = {
         skill_name_max?: number;
         skill_body_max?: number;
         skill_body_warn_lines?: number;
+        bot_name_max?: number;
+        bot_description_max?: number;
+        bot_persona_max?: number;
+        bot_history_min_pct?: number;
+        bot_history_max_pct?: number;
+        bot_default_history_pct?: number;
+        bot_default_request_limit?: number;
+        bot_default_max_reply_chars?: number;
+        health_recent_runs?: number;
+        health_failed_runs?: number;
+        health_limit_stops?: number;
+        health_limit_window_days?: number;
+        bot_order?: 'recent' | 'created';
+        bot_order_direction?: 'desc' | 'asc';
     };
     path?: never;
     query?: never;
@@ -80,10 +108,81 @@ export type UpdateSettingsResponses = {
         skill_name_max: number;
         skill_body_max: number;
         skill_body_warn_lines: number;
+        bot_name_max: number;
+        bot_description_max: number;
+        bot_persona_max: number;
+        bot_history_min_pct: number;
+        bot_history_max_pct: number;
+        bot_default_history_pct: number;
+        bot_default_request_limit: number;
+        bot_default_max_reply_chars: number;
+        health_recent_runs: number;
+        health_failed_runs: number;
+        health_limit_stops: number;
+        health_limit_window_days: number;
+        bot_order: 'recent' | 'created';
+        bot_order_direction: 'desc' | 'asc';
     };
 };
 
 export type UpdateSettingsResponse = UpdateSettingsResponses[keyof UpdateSettingsResponses];
+
+export type ListModelsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/models';
+};
+
+export type ListModelsResponses = {
+    /**
+     * Every catalog model in catalog order, with `available`
+     */
+    200: Array<{
+        id: string;
+        label: string;
+        provider: string;
+        available: boolean;
+        unavailable_reason: 'no_api_key';
+        api_key_env: string | null;
+        efforts: Array<'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max'>;
+        default_effort: 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | null;
+        multimodal: boolean;
+        context_window: number;
+        provider_tools: Array<string>;
+    }>;
+};
+
+export type ListModelsResponse = ListModelsResponses[keyof ListModelsResponses];
+
+export type ListToolsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/tools';
+};
+
+export type ListToolsResponses = {
+    /**
+     * The tool catalog (domain-model.md §4.1)
+     */
+    200: Array<{
+        id: string;
+        label: string;
+        kind: 'internal' | 'provider';
+        provider: string | null;
+        job: string;
+        added: string;
+        sends_data_out: boolean;
+        web: boolean;
+        line: string;
+        off_line: string | null;
+        needs: Array<string>;
+        switch: 'open' | 'later' | 'locked';
+    }>;
+};
+
+export type ListToolsResponse = ListToolsResponses[keyof ListToolsResponses];
 
 export type ExportSkillsData = {
     body?: never;
@@ -411,7 +510,6 @@ export type CreateSkillVersionData = {
         description: string;
         body_md: string;
         changelog?: string;
-        upgrade_bot_ids: Array<string>;
         name?: string;
         row_version?: number;
     };
@@ -567,14 +665,96 @@ export type ListSkillUpgradeCandidatesData = {
 
 export type ListSkillUpgradeCandidatesResponses = {
     /**
-     * Bots on older versions (M2)
+     * Live bots pinned to an older version
      */
     200: Array<{
         bot_id: string;
+        skill_version_id: string;
+        version: number;
+        always_load: boolean;
     }>;
 };
 
 export type ListSkillUpgradeCandidatesResponse = ListSkillUpgradeCandidatesResponses[keyof ListSkillUpgradeCandidatesResponses];
+
+export type PinSkillToBotsData = {
+    body: {
+        skill_version_id: string;
+        bots: Array<{
+            bot_id: string;
+            expected_skill_version_id: string | null;
+            always_load?: boolean;
+        }>;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/skills/{id}/bots';
+};
+
+export type PinSkillToBotsResponses = {
+    /**
+     * The moved bots
+     */
+    200: Array<{
+        id: string;
+        slug: string;
+        name: string;
+        row_version: number;
+        description: string;
+        persona_md: string;
+        avatar_style: 'flat' | 'jelly' | 'pixel' | 'upload';
+        avatar_colour: string;
+        avatar_id: string | null;
+        avatar_url: string | null;
+        model_id: string;
+        model_label: string | null;
+        effort: 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | null;
+        request_limit: number;
+        max_reply_chars: number;
+        history_share_pct: number;
+        tool_settings: {
+            [key: string]: boolean;
+        };
+        cloned_from_bot_id: string | null;
+        available: boolean;
+        unavailable_reason: 'no_api_key' | 'model_removed' | null;
+        pins: Array<{
+            skill_id: string;
+            skill_slug: string;
+            skill_name: string;
+            description: string;
+            skill_version_id: string;
+            version: number;
+            latest_version: number;
+            always_load: boolean;
+            deprecated: boolean;
+        }>;
+        pinned_position: number | null;
+        last_activity_at: string | null;
+        counts: {
+            skills: number;
+            skill_updates: number;
+            projects: number;
+            conversations: number;
+        };
+        status: {
+            state: 'idle';
+        };
+        health: {
+            level: 'cannot_run';
+            reason: 'no_api_key' | 'model_removed';
+        } | {
+            level: 'needs_attention';
+            reason: 'failed_runs' | 'limit_stops' | 'deprecated_skill' | 'history_cut';
+        } | null;
+        created_at: string;
+        updated_at: string;
+    }>;
+};
+
+export type PinSkillToBotsResponse = PinSkillToBotsResponses[keyof PinSkillToBotsResponses];
 
 export type DeprecateSkillData = {
     body: {
@@ -729,6 +909,677 @@ export type RestoreSkillResponses = {
 };
 
 export type RestoreSkillResponse = RestoreSkillResponses[keyof RestoreSkillResponses];
+
+export type ListBotsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/bots';
+};
+
+export type ListBotsResponses = {
+    /**
+     * The bots not in Trash, in header order
+     */
+    200: Array<{
+        id: string;
+        slug: string;
+        name: string;
+        row_version: number;
+        description: string;
+        persona_md: string;
+        avatar_style: 'flat' | 'jelly' | 'pixel' | 'upload';
+        avatar_colour: string;
+        avatar_id: string | null;
+        avatar_url: string | null;
+        model_id: string;
+        model_label: string | null;
+        effort: 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | null;
+        request_limit: number;
+        max_reply_chars: number;
+        history_share_pct: number;
+        tool_settings: {
+            [key: string]: boolean;
+        };
+        cloned_from_bot_id: string | null;
+        available: boolean;
+        unavailable_reason: 'no_api_key' | 'model_removed' | null;
+        pins: Array<{
+            skill_id: string;
+            skill_slug: string;
+            skill_name: string;
+            description: string;
+            skill_version_id: string;
+            version: number;
+            latest_version: number;
+            always_load: boolean;
+            deprecated: boolean;
+        }>;
+        pinned_position: number | null;
+        last_activity_at: string | null;
+        counts: {
+            skills: number;
+            skill_updates: number;
+            projects: number;
+            conversations: number;
+        };
+        status: {
+            state: 'idle';
+        };
+        health: {
+            level: 'cannot_run';
+            reason: 'no_api_key' | 'model_removed';
+        } | {
+            level: 'needs_attention';
+            reason: 'failed_runs' | 'limit_stops' | 'deprecated_skill' | 'history_cut';
+        } | null;
+        created_at: string;
+        updated_at: string;
+    }>;
+};
+
+export type ListBotsResponse = ListBotsResponses[keyof ListBotsResponses];
+
+export type CreateBotData = {
+    body: {
+        name: string;
+        description: string;
+        persona_md: string;
+        avatar_style: 'flat' | 'jelly' | 'pixel' | 'upload';
+        avatar_colour: string;
+        avatar_id?: string;
+        model_id: string;
+        effort?: 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | null;
+        history_share_pct?: number;
+        request_limit?: number;
+        max_reply_chars?: number;
+        tool_settings?: {
+            [key: string]: boolean;
+        };
+        pins: Array<{
+            skill_id: string;
+            skill_version_id?: string;
+            always_load: boolean;
+        }>;
+        cloned_from_bot_id?: string;
+    };
+    headers: {
+        'idempotency-key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/bots';
+};
+
+export type CreateBotResponses = {
+    /**
+     * A repeat of a create that committed: the first bot
+     */
+    200: {
+        id: string;
+        slug: string;
+        name: string;
+        row_version: number;
+        description: string;
+        persona_md: string;
+        avatar_style: 'flat' | 'jelly' | 'pixel' | 'upload';
+        avatar_colour: string;
+        avatar_id: string | null;
+        avatar_url: string | null;
+        model_id: string;
+        model_label: string | null;
+        effort: 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | null;
+        request_limit: number;
+        max_reply_chars: number;
+        history_share_pct: number;
+        tool_settings: {
+            [key: string]: boolean;
+        };
+        cloned_from_bot_id: string | null;
+        available: boolean;
+        unavailable_reason: 'no_api_key' | 'model_removed' | null;
+        pins: Array<{
+            skill_id: string;
+            skill_slug: string;
+            skill_name: string;
+            description: string;
+            skill_version_id: string;
+            version: number;
+            latest_version: number;
+            always_load: boolean;
+            deprecated: boolean;
+        }>;
+        pinned_position: number | null;
+        last_activity_at: string | null;
+        counts: {
+            skills: number;
+            skill_updates: number;
+            projects: number;
+            conversations: number;
+        };
+        status: {
+            state: 'idle';
+        };
+        health: {
+            level: 'cannot_run';
+            reason: 'no_api_key' | 'model_removed';
+        } | {
+            level: 'needs_attention';
+            reason: 'failed_runs' | 'limit_stops' | 'deprecated_skill' | 'history_cut';
+        } | null;
+        created_at: string;
+        updated_at: string;
+    };
+    /**
+     * The new bot
+     */
+    201: {
+        id: string;
+        slug: string;
+        name: string;
+        row_version: number;
+        description: string;
+        persona_md: string;
+        avatar_style: 'flat' | 'jelly' | 'pixel' | 'upload';
+        avatar_colour: string;
+        avatar_id: string | null;
+        avatar_url: string | null;
+        model_id: string;
+        model_label: string | null;
+        effort: 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | null;
+        request_limit: number;
+        max_reply_chars: number;
+        history_share_pct: number;
+        tool_settings: {
+            [key: string]: boolean;
+        };
+        cloned_from_bot_id: string | null;
+        available: boolean;
+        unavailable_reason: 'no_api_key' | 'model_removed' | null;
+        pins: Array<{
+            skill_id: string;
+            skill_slug: string;
+            skill_name: string;
+            description: string;
+            skill_version_id: string;
+            version: number;
+            latest_version: number;
+            always_load: boolean;
+            deprecated: boolean;
+        }>;
+        pinned_position: number | null;
+        last_activity_at: string | null;
+        counts: {
+            skills: number;
+            skill_updates: number;
+            projects: number;
+            conversations: number;
+        };
+        status: {
+            state: 'idle';
+        };
+        health: {
+            level: 'cannot_run';
+            reason: 'no_api_key' | 'model_removed';
+        } | {
+            level: 'needs_attention';
+            reason: 'failed_runs' | 'limit_stops' | 'deprecated_skill' | 'history_cut';
+        } | null;
+        created_at: string;
+        updated_at: string;
+    };
+};
+
+export type CreateBotResponse = CreateBotResponses[keyof CreateBotResponses];
+
+export type SetPinnedBotsData = {
+    body: {
+        bot_ids: Array<string>;
+        expected_bot_ids: Array<string>;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/bots/pins';
+};
+
+export type SetPinnedBotsResponses = {
+    /**
+     * The pinned list
+     */
+    200: {
+        pinned_bot_ids: Array<string>;
+    };
+};
+
+export type SetPinnedBotsResponse = SetPinnedBotsResponses[keyof SetPinnedBotsResponses];
+
+export type DeleteBotData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/bots/{id}';
+};
+
+export type DeleteBotResponses = {
+    /**
+     * The bot, now in Trash
+     */
+    200: {
+        id: string;
+        slug: string;
+        name: string;
+        row_version: number;
+        description: string;
+        persona_md: string;
+        avatar_style: 'flat' | 'jelly' | 'pixel' | 'upload';
+        avatar_colour: string;
+        avatar_id: string | null;
+        avatar_url: string | null;
+        model_id: string;
+        model_label: string | null;
+        effort: 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | null;
+        request_limit: number;
+        max_reply_chars: number;
+        history_share_pct: number;
+        tool_settings: {
+            [key: string]: boolean;
+        };
+        cloned_from_bot_id: string | null;
+        available: boolean;
+        unavailable_reason: 'no_api_key' | 'model_removed' | null;
+        pins: Array<{
+            skill_id: string;
+            skill_slug: string;
+            skill_name: string;
+            description: string;
+            skill_version_id: string;
+            version: number;
+            latest_version: number;
+            always_load: boolean;
+            deprecated: boolean;
+        }>;
+        pinned_position: number | null;
+        last_activity_at: string | null;
+        counts: {
+            skills: number;
+            skill_updates: number;
+            projects: number;
+            conversations: number;
+        };
+        status: {
+            state: 'idle';
+        };
+        health: {
+            level: 'cannot_run';
+            reason: 'no_api_key' | 'model_removed';
+        } | {
+            level: 'needs_attention';
+            reason: 'failed_runs' | 'limit_stops' | 'deprecated_skill' | 'history_cut';
+        } | null;
+        created_at: string;
+        updated_at: string;
+    };
+};
+
+export type DeleteBotResponse = DeleteBotResponses[keyof DeleteBotResponses];
+
+export type GetBotData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/bots/{id}';
+};
+
+export type GetBotResponses = {
+    /**
+     * The bot and the conversations it is in
+     */
+    200: {
+        id: string;
+        slug: string;
+        name: string;
+        row_version: number;
+        description: string;
+        persona_md: string;
+        avatar_style: 'flat' | 'jelly' | 'pixel' | 'upload';
+        avatar_colour: string;
+        avatar_id: string | null;
+        avatar_url: string | null;
+        model_id: string;
+        model_label: string | null;
+        effort: 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | null;
+        request_limit: number;
+        max_reply_chars: number;
+        history_share_pct: number;
+        tool_settings: {
+            [key: string]: boolean;
+        };
+        cloned_from_bot_id: string | null;
+        available: boolean;
+        unavailable_reason: 'no_api_key' | 'model_removed' | null;
+        pins: Array<{
+            skill_id: string;
+            skill_slug: string;
+            skill_name: string;
+            description: string;
+            skill_version_id: string;
+            version: number;
+            latest_version: number;
+            always_load: boolean;
+            deprecated: boolean;
+        }>;
+        pinned_position: number | null;
+        last_activity_at: string | null;
+        counts: {
+            skills: number;
+            skill_updates: number;
+            projects: number;
+            conversations: number;
+        };
+        status: {
+            state: 'idle';
+        };
+        health: {
+            level: 'cannot_run';
+            reason: 'no_api_key' | 'model_removed';
+        } | {
+            level: 'needs_attention';
+            reason: 'failed_runs' | 'limit_stops' | 'deprecated_skill' | 'history_cut';
+        } | null;
+        created_at: string;
+        updated_at: string;
+        conversations: Array<{
+            id: string;
+        }>;
+    };
+};
+
+export type GetBotResponse = GetBotResponses[keyof GetBotResponses];
+
+export type UpdateBotData = {
+    body: {
+        row_version: number;
+        name?: string;
+        description?: string;
+        persona_md?: string;
+        avatar_style?: 'flat' | 'jelly' | 'pixel' | 'upload';
+        avatar_colour?: string;
+        avatar_id?: string;
+        history_share_pct?: number;
+        request_limit?: number;
+        max_reply_chars?: number;
+        tool_settings?: {
+            [key: string]: boolean;
+        };
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/bots/{id}';
+};
+
+export type UpdateBotResponses = {
+    /**
+     * The saved bot
+     */
+    200: {
+        id: string;
+        slug: string;
+        name: string;
+        row_version: number;
+        description: string;
+        persona_md: string;
+        avatar_style: 'flat' | 'jelly' | 'pixel' | 'upload';
+        avatar_colour: string;
+        avatar_id: string | null;
+        avatar_url: string | null;
+        model_id: string;
+        model_label: string | null;
+        effort: 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | null;
+        request_limit: number;
+        max_reply_chars: number;
+        history_share_pct: number;
+        tool_settings: {
+            [key: string]: boolean;
+        };
+        cloned_from_bot_id: string | null;
+        available: boolean;
+        unavailable_reason: 'no_api_key' | 'model_removed' | null;
+        pins: Array<{
+            skill_id: string;
+            skill_slug: string;
+            skill_name: string;
+            description: string;
+            skill_version_id: string;
+            version: number;
+            latest_version: number;
+            always_load: boolean;
+            deprecated: boolean;
+        }>;
+        pinned_position: number | null;
+        last_activity_at: string | null;
+        counts: {
+            skills: number;
+            skill_updates: number;
+            projects: number;
+            conversations: number;
+        };
+        status: {
+            state: 'idle';
+        };
+        health: {
+            level: 'cannot_run';
+            reason: 'no_api_key' | 'model_removed';
+        } | {
+            level: 'needs_attention';
+            reason: 'failed_runs' | 'limit_stops' | 'deprecated_skill' | 'history_cut';
+        } | null;
+        created_at: string;
+        updated_at: string;
+    };
+};
+
+export type UpdateBotResponse = UpdateBotResponses[keyof UpdateBotResponses];
+
+export type GetBotCloneTemplateData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/bots/{id}/clone-template';
+};
+
+export type GetBotCloneTemplateResponses = {
+    /**
+     * A prefilled create body, without a colour
+     */
+    200: {
+        name: string;
+        description: string;
+        persona_md: string;
+        avatar_style: 'flat' | 'jelly' | 'pixel' | 'upload';
+        avatar_id?: string;
+        model_id: string;
+        effort: 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | null;
+        history_share_pct: number;
+        request_limit: number;
+        max_reply_chars: number;
+        tool_settings: {
+            [key: string]: boolean;
+        };
+        pins: Array<{
+            skill_id: string;
+            skill_version_id: string;
+            always_load: boolean;
+        }>;
+        cloned_from_bot_id: string;
+    };
+};
+
+export type GetBotCloneTemplateResponse = GetBotCloneTemplateResponses[keyof GetBotCloneTemplateResponses];
+
+export type RemoveBotSkillData = {
+    body?: never;
+    path: {
+        id: string;
+        skill_id: string;
+    };
+    query?: never;
+    url: '/api/bots/{id}/skills/{skill_id}';
+};
+
+export type RemoveBotSkillResponses = {
+    /**
+     * The pin is gone
+     */
+    204: void;
+};
+
+export type RemoveBotSkillResponse = RemoveBotSkillResponses[keyof RemoveBotSkillResponses];
+
+export type SetBotSkillData = {
+    body: {
+        skill_version_id: string;
+        always_load: boolean;
+        expected: {
+            skill_version_id: string;
+            always_load: boolean;
+        } | null;
+    };
+    path: {
+        id: string;
+        skill_id: string;
+    };
+    query?: never;
+    url: '/api/bots/{id}/skills/{skill_id}';
+};
+
+export type SetBotSkillResponses = {
+    /**
+     * The bot with the pin
+     */
+    200: {
+        id: string;
+        slug: string;
+        name: string;
+        row_version: number;
+        description: string;
+        persona_md: string;
+        avatar_style: 'flat' | 'jelly' | 'pixel' | 'upload';
+        avatar_colour: string;
+        avatar_id: string | null;
+        avatar_url: string | null;
+        model_id: string;
+        model_label: string | null;
+        effort: 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | null;
+        request_limit: number;
+        max_reply_chars: number;
+        history_share_pct: number;
+        tool_settings: {
+            [key: string]: boolean;
+        };
+        cloned_from_bot_id: string | null;
+        available: boolean;
+        unavailable_reason: 'no_api_key' | 'model_removed' | null;
+        pins: Array<{
+            skill_id: string;
+            skill_slug: string;
+            skill_name: string;
+            description: string;
+            skill_version_id: string;
+            version: number;
+            latest_version: number;
+            always_load: boolean;
+            deprecated: boolean;
+        }>;
+        pinned_position: number | null;
+        last_activity_at: string | null;
+        counts: {
+            skills: number;
+            skill_updates: number;
+            projects: number;
+            conversations: number;
+        };
+        status: {
+            state: 'idle';
+        };
+        health: {
+            level: 'cannot_run';
+            reason: 'no_api_key' | 'model_removed';
+        } | {
+            level: 'needs_attention';
+            reason: 'failed_runs' | 'limit_stops' | 'deprecated_skill' | 'history_cut';
+        } | null;
+        created_at: string;
+        updated_at: string;
+    };
+};
+
+export type SetBotSkillResponse = SetBotSkillResponses[keyof SetBotSkillResponses];
+
+export type GetAvatarLimitsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/avatars/limits';
+};
+
+export type GetAvatarLimitsResponses = {
+    /**
+     * The size limit and the accepted types
+     */
+    200: {
+        max_bytes: number;
+        accepted_types: Array<string>;
+    };
+};
+
+export type GetAvatarLimitsResponse = GetAvatarLimitsResponses[keyof GetAvatarLimitsResponses];
+
+export type UploadAvatarData = {
+    body: {
+        file: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/avatars';
+};
+
+export type UploadAvatarResponses = {
+    /**
+     * The stored image: its id and URL
+     */
+    200: {
+        avatar_id: string;
+        url: string;
+    };
+};
+
+export type UploadAvatarResponse = UploadAvatarResponses[keyof UploadAvatarResponses];
+
+export type GetAvatarData = {
+    body?: never;
+    path: {
+        file: string;
+    };
+    query?: never;
+    url: '/api/avatars/{file}';
+};
+
+export type GetAvatarResponses = {
+    /**
+     * The image
+     */
+    200: Blob | File;
+};
+
+export type GetAvatarResponse = GetAvatarResponses[keyof GetAvatarResponses];
 
 export type GetStreamData = {
     body?: never;

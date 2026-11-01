@@ -1,13 +1,13 @@
-import { serve } from "@hono/node-server";
-import { createLogger } from "../adapters/log/pino-logger.ts";
-import { compose } from "./compose.ts";
 import { ConfigError, loadConfig } from "./config.ts";
-import { startTimedJobs } from "./timed-jobs.ts";
 
 // Starts the backend: configuration first, then migrations, then the server and the timed jobs.
 // Any failure before listening stops the process with a clear message and a non-zero exit (M0b
 // plan, decision E).
-function start(): void {
+//
+// Only the settings module is imported up front. The app (the logger, the database, `sharp`,
+// the model SDKs) loads after the settings pass, so a refused start uses about a quarter of the
+// memory and time (startup.test.ts proves that it does not load the app).
+async function start(): Promise<void> {
   let config;
   try {
     config = loadConfig(process.env);
@@ -17,6 +17,23 @@ function start(): void {
     process.exit(1);
   }
 
+  let modules;
+  try {
+    modules = await Promise.all([
+      import("@hono/node-server"),
+      import("../adapters/log/pino-logger.ts"),
+      import("./compose.ts"),
+      import("./timed-jobs.ts"),
+    ]);
+  } catch (error) {
+    // Most often a native package built for another Node or platform (sharp, better-sqlite3).
+    const reason = error instanceof Error ? error.message.split("\n")[0] : String(error);
+    process.stderr.write(
+      `cty1ng: the app could not load: ${reason ?? "unknown error"}\nRun pnpm install again, with the Node version in .nvmrc.\n`,
+    );
+    process.exit(1);
+  }
+  const [{ serve }, { createLogger }, { compose }, { startTimedJobs }] = modules;
   const log = createLogger({ level: config.logLevel, secrets: config.secrets });
   let app;
   try {
@@ -36,6 +53,8 @@ function start(): void {
 
   const stopJobs = startTimedJobs({
     skills: app.skills,
+    bots: app.bots,
+    avatars: app.avatars,
     eventPruning: app.eventPruning,
     log,
     purgeIntervalHours: config.purgeIntervalHours,
@@ -55,4 +74,4 @@ function start(): void {
   process.once("SIGTERM", shutdown);
 }
 
-start();
+await start();

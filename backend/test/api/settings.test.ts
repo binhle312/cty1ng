@@ -46,11 +46,54 @@ describe("settings API", () => {
     [{ skill_body_warn_lines: 49 }, "skill_body_warn_lines"],
     [{ skill_body_warn_lines: 5_001 }, "skill_body_warn_lines"],
     [{ trash_days: 1.5 }, "trash_days"],
+    // Bot keys (domain-model.md §10, M2 spec gap pass).
+    [{ bot_name_max: 15 }, "bot_name_max"],
+    [{ bot_name_max: 65 }, "bot_name_max"],
+    [{ bot_description_max: 79 }, "bot_description_max"],
+    [{ bot_description_max: 501 }, "bot_description_max"],
+    [{ bot_persona_max: 999 }, "bot_persona_max"],
+    [{ bot_persona_max: 32_001 }, "bot_persona_max"],
+    [{ bot_history_min_pct: 0 }, "bot_history_min_pct"],
+    [{ bot_history_min_pct: 12 }, "bot_history_min_pct"],
+    [{ bot_history_max_pct: 95 }, "bot_history_max_pct"],
+    [{ bot_default_history_pct: 42 }, "bot_default_history_pct"],
+    [{ bot_default_request_limit: 0 }, "bot_default_request_limit"],
+    [{ bot_default_request_limit: 101 }, "bot_default_request_limit"],
+    [{ bot_default_max_reply_chars: 499 }, "bot_default_max_reply_chars"],
+    [{ bot_default_max_reply_chars: 20_001 }, "bot_default_max_reply_chars"],
+    [{ health_recent_runs: 51 }, "health_recent_runs"],
+    [{ health_limit_stops: 0 }, "health_limit_stops"],
+    [{ health_limit_window_days: 31 }, "health_limit_window_days"],
+    [{ bot_order: "name" }, "bot_order"],
+    [{ bot_order_direction: "up" }, "bot_order_direction"],
+    // Cross-field checks: 422 with the key the save changed; nothing is saved.
+    [{ bot_history_min_pct: 45 }, "bot_history_min_pct"],
+    [{ bot_history_max_pct: 50, bot_default_history_pct: 55 }, "bot_default_history_pct"],
+    [{ bot_default_history_pct: 85 }, "bot_default_history_pct"],
+    [{ health_failed_runs: 6 }, "health_failed_runs"],
+    [{ health_recent_runs: 1 }, "health_recent_runs"],
   ])("refuses %j with 422 on its key", async (body, field) => {
     const response = await patch(body);
     expect(response.status).toBe(422);
     expect(await response.json()).toMatchObject({ error: { code: "validation_error", field } });
     expect(await backend.readers.events.after(0, 100)).toEqual([]);
+  });
+
+  it("never changes the other key of a broken cross-field rule", async () => {
+    expect((await patch({ health_failed_runs: 6 })).status).toBe(422);
+    expect(await (await backend.request("/api/settings")).json()).toMatchObject({
+      health_failed_runs: 2,
+      health_recent_runs: 5,
+    });
+  });
+
+  it("accepts two keys that only fit together", async () => {
+    const response = await patch({
+      bot_history_min_pct: 50,
+      bot_history_max_pct: 90,
+      bot_default_history_pct: 50,
+    });
+    expect(response.status).toBe(200);
   });
 
   it("refuses an unknown key with 422", async () => {

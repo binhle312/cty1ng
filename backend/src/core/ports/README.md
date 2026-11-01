@@ -7,6 +7,7 @@ slice may change it with the owner's review.
 | File | What it is for |
 | --- | --- |
 | `repositories.ts` | Repositories and the unit of work: `UnitOfWork.run(tx => …)`, `Readers` |
+| `avatar-files.ts` | The avatar store (M2 plan, decision 1): stage, publish under the write lock, touch, list, remove |
 | `transport.ts` | The realtime transport: `subscribe(afterSeq, signal)` (`docs/realtime-events.md` §1a) |
 | `clock.ts` | `now()` |
 | `ids.ts` | `newId(prefix)`: a UUIDv7 as a TypeID (D22, D36) |

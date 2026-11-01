@@ -7,7 +7,6 @@ import { sqliteReaders, sqliteUnitOfWork } from "../adapters/db/unit-of-work.ts"
 import { createHttpApp } from "../adapters/http/app.ts";
 import { typeIdIds } from "../adapters/ids/typeid-ids.ts";
 import { sseBody, type SseOptions } from "../adapters/sse/sse-stream.ts";
-import { buildCatalog } from "../core/catalog/catalog.ts";
 import { createAppendEvent } from "../core/events/append-event.ts";
 import { createEventPruning } from "../core/events/event-pruning.service.ts";
 import { createEventHub } from "../core/events/hub.ts";
@@ -17,6 +16,12 @@ import type { Clock } from "../core/ports/clock.ts";
 import { createSettingsService } from "../core/settings/settings.service.ts";
 import { createSkillImportService } from "../core/skills/skill-import.service.ts";
 import { createSkillsService } from "../core/skills/skills.service.ts";
+import { createAvatarsService } from "../core/bots/avatars.service.ts";
+import { createBotsService } from "../core/bots/bots.service.ts";
+import { diskAvatarFiles } from "../adapters/avatars/avatar-files.ts";
+import { lockImageLoaders } from "../adapters/http/uploads/avatar-image.ts";
+import { effortsOf, isModelProvider } from "../adapters/model/ai-sdk/effort.ts";
+import { checkCatalogProviders, loadCatalog } from "./catalog-files.ts";
 import type { Config } from "./config.ts";
 import { openDatabase } from "./database.ts";
 
@@ -61,9 +66,35 @@ export function compose(
       hub.notify();
     },
   });
-  const catalog = buildCatalog({ fakeModel: config.fakeModel });
+  const catalog = loadCatalog(config);
+  checkCatalogProviders(catalog, { isProvider: isModelProvider, efforts: effortsOf });
   const settings = createSettingsService({ uow, readers, appendEvent });
-  const skills = createSkillsService({ uow, readers, appendEvent, clock, ids: typeIdIds });
+  // Only the PNG, JPEG and WebP loaders of sharp, for the whole process (security.md §2.4).
+  lockImageLoaders();
+  const avatarFiles = diskAvatarFiles(join(config.dataDir, "avatars"));
+  const bots = createBotsService({
+    uow,
+    readers,
+    appendEvent,
+    clock,
+    ids: typeIdIds,
+    catalog,
+    avatarFiles,
+  });
+  const avatars = createAvatarsService({
+    uow,
+    clock,
+    files: avatarFiles,
+    orphanHours: config.avatarOrphanHours,
+  });
+  const skills = createSkillsService({
+    uow,
+    readers,
+    appendEvent,
+    clock,
+    ids: typeIdIds,
+    pinsChanged: bots.emitPinsChanged,
+  });
   const skillImport = createSkillImportService({
     uow,
     readers,
@@ -78,9 +109,13 @@ export function compose(
     allowedHosts: config.allowedHosts,
     allowedOrigins: config.allowedOrigins,
     health: createHealthService({ readers, catalog }),
+    catalog,
     settings,
     skills,
     skillImport,
+    bots,
+    avatars,
+    avatarMaxBytes: config.avatarMaxBytes,
     openStream: (afterSeq, signal, onError) =>
       sseBody(hub, afterSeq, signal, { ...options.sse, onError }),
     testPing: config.appEnv === "test" ? createTestPingService({ uow, appendEvent }) : null,
@@ -90,6 +125,7 @@ export function compose(
 
   return {
     app,
+    catalog,
     uow,
     readers,
     hub,
@@ -97,6 +133,8 @@ export function compose(
     settings,
     skills,
     skillImport,
+    bots,
+    avatars,
     eventPruning,
     close: () => {
       reader.close();

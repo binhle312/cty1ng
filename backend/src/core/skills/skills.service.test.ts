@@ -66,7 +66,7 @@ describe("create and versions", () => {
     const skill = await backend.skills.create(input("notes"), OWNER_ID);
     const saved = await backend.skills.addVersion(
       skill.id,
-      { baseVersion: 1, description: "New.", bodyMd: "## Steps\n\n2.", upgradeBotIds: [] },
+      { baseVersion: 1, description: "New.", bodyMd: "## Steps\n\n2." },
       OWNER_ID,
     );
     expect(saved.latest_version).toMatchObject({ version: 2, description: "New." });
@@ -93,7 +93,6 @@ describe("create and versions", () => {
           baseVersion: 1,
           description: "New.",
           bodyMd: "",
-          upgradeBotIds: [],
           rename: { name: "Renamed", rowVersion: 1 },
         },
         OWNER_ID,
@@ -111,7 +110,6 @@ describe("create and versions", () => {
         baseVersion: 1,
         description: "New.",
         bodyMd: "## Steps",
-        upgradeBotIds: [],
         rename: { name: "Renamed", rowVersion: 1 },
       },
       OWNER_ID,
@@ -129,7 +127,6 @@ describe("create and versions", () => {
           baseVersion: base,
           description: `d${String(base + 1)}`,
           bodyMd: `body ${String(base + 1)}`,
-          upgradeBotIds: [],
         },
         OWNER_ID,
       );
@@ -151,7 +148,6 @@ describe("create and versions", () => {
         baseVersion: 1,
         description: "Use it when you write notes.",
         bodyMd: "a\nc",
-        upgradeBotIds: [],
       },
       OWNER_ID,
     );
@@ -185,7 +181,7 @@ describe("limits come from the settings", () => {
     const save = (rename?: { name: string; rowVersion: number }) =>
       backend.skills.addVersion(
         skill.id,
-        { baseVersion: 1, description: "d", bodyMd: "b", upgradeBotIds: [], rename },
+        { baseVersion: 1, description: "d", bodyMd: "b", rename },
         OWNER_ID,
       );
     expect(await failure(save())).toMatchObject({ code: "validation_error", field: "name" });
@@ -243,7 +239,7 @@ describe("the sensitive data guard on every write path (D39, no override)", () =
     const error = await failure(
       backend.skills.addVersion(
         skill.id,
-        { baseVersion: 1, description: "Use it.", bodyMd: SECRET, upgradeBotIds: [] },
+        { baseVersion: 1, description: "Use it.", bodyMd: SECRET },
         OWNER_ID,
       ),
     );
@@ -261,7 +257,6 @@ describe("the sensitive data guard on every write path (D39, no override)", () =
           description: "Use it.",
           bodyMd: "## Steps",
           changelog: "password: hunter22",
-          upgradeBotIds: [],
         },
         OWNER_ID,
       ),
@@ -306,7 +301,7 @@ describe("Clone", () => {
     const source = await backend.skills.create(input("notes"), OWNER_ID);
     await backend.skills.addVersion(
       source.id,
-      { baseVersion: 1, description: "v2.", bodyMd: "## v2", upgradeBotIds: [] },
+      { baseVersion: 1, description: "v2.", bodyMd: "## v2" },
       OWNER_ID,
     );
     const v2 = await backend.skills.version(source.id, 2);
@@ -328,7 +323,7 @@ describe("authorship (invariant 05)", () => {
       await failure(
         backend.skills.addVersion(
           skill.id,
-          { baseVersion: 1, description: "x", bodyMd: "x", upgradeBotIds: [] },
+          { baseVersion: 1, description: "x", bodyMd: "x" },
           OWNER_ID,
         ),
       ),
@@ -371,7 +366,7 @@ describe("Deprecate, Trash, restore, purge (D49)", () => {
       await failure(
         backend.skills.addVersion(
           skill.id,
-          { baseVersion: 1, description: "x", bodyMd: "x", upgradeBotIds: [] },
+          { baseVersion: 1, description: "x", bodyMd: "x" },
           OWNER_ID,
         ),
       ),
@@ -406,7 +401,7 @@ describe("Deprecate, Trash, restore, purge (D49)", () => {
     const events = await backend.readers.events.after(0, 1000);
     expect(events.slice(-2).map((event) => [event.type, event.payload])).toEqual([
       ["skill.trashed", { skill_id: skill.id }],
-      ["trash.changed", { counts: { skill: 1 } }],
+      ["trash.changed", { counts: { skill: 1, bot: 0 } }],
     ]);
   });
 
@@ -489,7 +484,7 @@ describe("invariants 02 and 25", () => {
     await backend.skills.rename(skill.id, { name: "Renamed", rowVersion: 1 }, OWNER_ID);
     await backend.skills.addVersion(
       skill.id,
-      { baseVersion: 1, description: "v2", bodyMd: "v2", upgradeBotIds: [] },
+      { baseVersion: 1, description: "v2", bodyMd: "v2" },
       OWNER_ID,
     );
     const restored = await backend.skills.restoreVersion(skill.id, 1, "back", OWNER_ID);
@@ -534,7 +529,7 @@ describe("races (architecture.md §11)", () => {
     const save = (body: string) =>
       backend.skills.addVersion(
         skill.id,
-        { baseVersion: 1, description: "d", bodyMd: body, upgradeBotIds: [] },
+        { baseVersion: 1, description: "d", bodyMd: body },
         OWNER_ID,
       );
     const results = await Promise.allSettled([save("a"), save("b")]);

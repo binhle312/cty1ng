@@ -7,11 +7,15 @@ import Database from "better-sqlite3";
 import { systemClock } from "../src/adapters/clock/system-clock.ts";
 import { sqliteReaders, sqliteUnitOfWork } from "../src/adapters/db/unit-of-work.ts";
 import { typeIdIds } from "../src/adapters/ids/typeid-ids.ts";
+import { buildCatalog, type Catalog } from "../src/core/catalog/catalog.rules.ts";
 import { createAppendEvent } from "../src/core/events/append-event.ts";
 import type { Clock } from "../src/core/ports/clock.ts";
 import { createSettingsService } from "../src/core/settings/settings.service.ts";
 import { createSkillImportService } from "../src/core/skills/skill-import.service.ts";
 import { createSkillsService } from "../src/core/skills/skills.service.ts";
+import { createAvatarsService } from "../src/core/bots/avatars.service.ts";
+import { createBotsService } from "../src/core/bots/bots.service.ts";
+import { memoryAvatarFiles } from "./fakes/avatar-files.ts";
 import { createLogger, type Logger } from "../src/adapters/log/pino-logger.ts";
 import { compose } from "../src/app/compose.ts";
 import { loadConfig, type Config } from "../src/app/config.ts";
@@ -80,9 +84,12 @@ export function testBackend(env: NodeJS.ProcessEnv = {}, options: { clock?: Cloc
 }
 
 // The backend on a data folder the test owns, so a test can stop it and start it again.
-export function backendAt(dataDir: string) {
-  return compose(testConfig(dataDir), memoryLogger().log);
+export function backendAt(dataDir: string, env: NodeJS.ProcessEnv = {}) {
+  return compose(testConfig(dataDir, env), memoryLogger().log);
 }
+
+// The id adapter, for a core test that builds a service itself (core/ may not import adapters).
+export const testIds = typeIdIds;
 
 // A new TypeID, for a test that writes a row through a repository.
 export const newTestId = (prefix: string): string => typeIdIds.newId(prefix);
@@ -105,14 +112,30 @@ export function idleServices() {
   const uow = sqliteUnitOfWork(db, () => undefined);
   const readers = sqliteReaders(db);
   const appendEvent = createAppendEvent({ clock: systemClock, notify: () => undefined });
+  const catalog = emptyCatalog();
+  const avatarFiles = memoryAvatarFiles();
+  const bots = createBotsService({
+    uow,
+    readers,
+    appendEvent,
+    clock: systemClock,
+    ids: typeIdIds,
+    catalog,
+    avatarFiles,
+  });
   const skills = createSkillsService({
     uow,
     readers,
     appendEvent,
     clock: systemClock,
     ids: typeIdIds,
+    pinsChanged: bots.emitPinsChanged,
   });
   return {
+    catalog,
+    bots,
+    avatars: createAvatarsService({ uow, clock: systemClock, files: avatarFiles, orphanHours: 24 }),
+    avatarMaxBytes: 2_097_152,
     settings: createSettingsService({ uow, readers, appendEvent }),
     skills,
     skillImport: createSkillImportService({
@@ -251,3 +274,8 @@ export function collect<T>(iterable: AsyncIterable<T>) {
 }
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// A catalog with no models and no tools, for apps built by hand in tests.
+export function emptyCatalog(): Catalog {
+  return buildCatalog({ models: [], tools: [], fakeModel: false, keySet: () => false });
+}

@@ -5,13 +5,15 @@ import type {
   SkillVersion,
   SkillVersionListItem,
 } from "@cty1ng/shared/skills";
-import { SkillId, SkillVersionId } from "@cty1ng/shared/ids";
+import { BotId, SkillId, SkillVersionId } from "@cty1ng/shared/ids";
 import type { Settings } from "@cty1ng/shared/settings";
 import { DomainError } from "../errors.ts";
 import type { AppendEvent } from "../events/append-event.ts";
+import { appendTrashChanged } from "../events/trash-changed.ts";
 import type { Clock } from "../ports/clock.ts";
 import type { Ids } from "../ports/ids.ts";
 import type {
+  BotsReader,
   Readers,
   SettingsReader,
   SkillRecord,
@@ -27,7 +29,8 @@ import { skillTextProblem, type SkillText } from "./skill.rules.ts";
 
 // Skills (domain-model.md §3, api.md §2, D5, D6, D14, D49). Versions are never updated; every
 // write to a `skills` row raises its `row_version`; every change writes its event in the same
-// transaction. Bots and pins come with M2, so the bot lists here are always empty.
+// transaction. A skill endpoint that moves or removes pins emits `bot.updated` for each bot
+// through `pinsChanged` (realtime-events.md §4), which the bots service gives.
 
 export interface SkillsDeps {
   uow: UnitOfWork;
@@ -35,6 +38,14 @@ export interface SkillsDeps {
   appendEvent: AppendEvent;
   clock: Clock;
   ids: Ids;
+  pinsChanged: (tx: Tx, botIds: readonly BotId[]) => Promise<void>;
+}
+
+export interface UpgradeCandidate {
+  bot_id: BotId;
+  skill_version_id: SkillVersionId;
+  version: number;
+  always_load: boolean;
 }
 
 export interface NewSkillInput {
@@ -51,7 +62,6 @@ export interface NewVersionInput {
   description: string;
   bodyMd: string;
   changelog?: string | undefined;
-  upgradeBotIds: readonly string[];
   // A rename in the same Save (spec gap pass #2): both or neither.
   rename?: { name: string; rowVersion: number } | undefined;
 }
@@ -73,19 +83,29 @@ export function createSkillsService(deps: SkillsDeps) {
     return skill;
   }
 
-  async function toShape(reader: SkillsReader, skill: SkillRecord, actor: string): Promise<Skill> {
-    const latest = await reader.latestVersion(skill.id);
+  async function toShape(
+    reader: { skills: SkillsReader; bots: BotsReader },
+    skill: SkillRecord,
+    actor: string,
+  ): Promise<Skill> {
+    const latest = await reader.skills.latestVersion(skill.id);
     // Invariant 25: a committed skill always has a version.
     if (latest === null) throw new Error(`skill ${skill.id} has no version`);
     return shape(reader, skill, latest, actor);
   }
 
+  // The pins of live bots (api.md §2: `bots_using` counts live bots).
+  async function livePins(reader: BotsReader, id: SkillId) {
+    return (await reader.pinsOfSkill(id)).filter((pin) => !pin.botDeleted);
+  }
+
   async function shape(
-    reader: SkillsReader,
+    { skills: reader, bots }: { skills: SkillsReader; bots: BotsReader },
     skill: SkillRecord,
     latest: SkillVersionRecord,
     actor: string,
   ): Promise<Skill> {
+    const pins = await livePins(bots, skill.id);
     let clonedFrom: Skill["cloned_from"] = null;
     if (skill.clonedFromSkillVersionId !== null) {
       const source = await reader.versionById(skill.clonedFromSkillVersionId);
@@ -107,8 +127,8 @@ export function createSkillsService(deps: SkillsDeps) {
         changelog: latest.changelog,
         created_at: latest.createdAt.toISOString(),
       },
-      bots_using: 0,
-      bots_outdated: 0,
+      bots_using: pins.length,
+      bots_outdated: pins.filter((pin) => pin.version < latest.version).length,
       deprecated: skill.deprecatedAt !== null,
       deprecated_at: skill.deprecatedAt?.toISOString() ?? null,
       updated_at: skill.updatedAt.toISOString(),
@@ -124,18 +144,12 @@ export function createSkillsService(deps: SkillsDeps) {
   ): Promise<Skill> {
     const skill = await tx.skills.byId(id);
     if (skill === null) throw new Error(`skill ${id} vanished in its own transaction`);
-    const data = { skill: await toShape(tx.skills, skill, actor) };
+    const data = { skill: await toShape(tx, skill, actor) };
     await deps.appendEvent(tx, { event: { type, data }, conversationId: null });
     return data.skill;
   }
 
-  async function emitTrashCount(tx: Tx): Promise<void> {
-    const skill = (await tx.skills.trashed()).length;
-    await deps.appendEvent(tx, {
-      event: { type: "trash.changed", data: { counts: { skill } } },
-      conversationId: null,
-    });
-  }
+  const emitTrashCount = (tx: Tx) => appendTrashChanged(tx, deps.appendEvent);
 
   function checkText(text: SkillText, settings: Settings): void {
     const problem = skillTextProblem(text, {
@@ -204,7 +218,6 @@ export function createSkillsService(deps: SkillsDeps) {
     const skill = await liveSkill(tx.skills, id);
     assertAuthor(skill, actor);
     assertActive(skill);
-    if (input.upgradeBotIds.length > 0) throw noSuchBots("upgrade_bot_ids");
     const latest = await tx.skills.latestVersion(id);
     if (latest === null || latest.version !== input.baseVersion) throw stale();
     const settings = await readSettings(tx.settings);
@@ -250,23 +263,23 @@ export function createSkillsService(deps: SkillsDeps) {
 
     list: async (options: { includeDeprecated: boolean }, actor: string): Promise<Skill[]> => {
       const rows = await readers.skills.list(options);
-      return Promise.all(rows.map((row) => shape(readers.skills, row.skill, row.latest, actor)));
+      return Promise.all(rows.map((row) => shape(readers, row.skill, row.latest, actor)));
     },
 
     summary: async (id: SkillId, actor: string): Promise<Skill> =>
-      toShape(readers.skills, await liveSkill(readers.skills, id), actor),
+      toShape(readers, await liveSkill(readers.skills, id), actor),
 
     get: async (id: SkillId, actor: string): Promise<SkillDetail> => {
       const skill = await liveSkill(readers.skills, id);
       const latest = await readers.skills.latestVersion(id);
       if (latest === null) throw notFound();
-      return { ...(await shape(readers.skills, skill, latest, actor)), body_md: latest.bodyMd };
+      return { ...(await shape(readers, skill, latest, actor)), body_md: latest.bodyMd };
     },
 
     create: (input: NewSkillInput, actor: string): Promise<Skill> =>
       uow.run(async (tx) => {
         const id = await createInTx(tx, input, actor);
-        return toShape(tx.skills, await liveSkill(tx.skills, id), actor);
+        return toShape(tx, await liveSkill(tx.skills, id), actor);
       }),
 
     // A rename creates no version (spec gap pass #2).
@@ -289,12 +302,15 @@ export function createSkillsService(deps: SkillsDeps) {
     addVersion: (id: SkillId, input: NewVersionInput, actor: string): Promise<Skill> =>
       uow.run(async (tx) => {
         await addVersionInTx(tx, id, input, actor);
-        return toShape(tx.skills, await liveSkill(tx.skills, id), actor);
+        return toShape(tx, await liveSkill(tx.skills, id), actor);
       }),
 
     versions: async (id: SkillId): Promise<SkillVersionListItem[]> => {
       await liveSkill(readers.skills, id);
-      return (await readers.skills.versions(id)).map(versionListItem);
+      const pins = await livePins(readers.bots, id);
+      return (await readers.skills.versions(id)).map((row) =>
+        versionListItem(row, pins.filter((pin) => pin.skillVersionId === row.id).length),
+      );
     },
 
     version: async (id: SkillId, version: number): Promise<SkillVersion> => {
@@ -302,7 +318,8 @@ export function createSkillsService(deps: SkillsDeps) {
       const row = await readers.skills.version(id, version);
       if (row === null)
         throw new DomainError("not_found", `This skill has no v${String(version)}.`);
-      return versionShape(row);
+      const pins = await livePins(readers.bots, id);
+      return versionShape(row, pins.filter((pin) => pin.skillVersionId === row.id).length);
     },
 
     diff: async (
@@ -340,11 +357,10 @@ export function createSkillsService(deps: SkillsDeps) {
             description: source.description,
             bodyMd: source.bodyMd,
             changelog: changelog ?? `Restored v${String(version)}`,
-            upgradeBotIds: [],
           },
           actor,
         );
-        return toShape(tx.skills, await liveSkill(tx.skills, id), actor);
+        return toShape(tx, await liveSkill(tx.skills, id), actor);
       }),
 
     // The latest version of each picked skill as `<slug>/SKILL.md` (D5, UI-7.8); no ids means
@@ -377,25 +393,49 @@ export function createSkillsService(deps: SkillsDeps) {
       return { fileName: `${String(files.length)}-skills-${stamp}.zip`, files };
     },
 
-    upgradeCandidates: async (id: SkillId): Promise<never[]> => {
+    // Live bots pinned to an older version (the upgrade card after a save, api.md §2).
+    upgradeCandidates: async (id: SkillId): Promise<UpgradeCandidate[]> => {
       await liveSkill(readers.skills, id);
-      return [];
+      const latest = await readers.skills.latestVersion(id);
+      if (latest === null) return [];
+      return (await livePins(readers.bots, id))
+        .filter((pin) => pin.version < latest.version)
+        .map((pin) => ({
+          bot_id: pin.botId,
+          skill_version_id: pin.skillVersionId,
+          version: pin.version,
+          always_load: pin.alwaysLoad,
+        }));
     },
 
     deprecate: (
       id: SkillId,
-      input: { removeBotIds: readonly string[]; rowVersion: number },
+      input: { removeBotIds: readonly BotId[]; rowVersion: number },
       actor: string,
     ) =>
       uow.run(async (tx) => {
         const skill = await liveSkill(tx.skills, id);
         assertAuthor(skill, actor);
-        if (input.removeBotIds.length > 0) throw noSuchBots("remove_bot_ids");
         if (skill.rowVersion !== input.rowVersion) throw stale();
-        if (skill.deprecatedAt !== null) return toShape(tx.skills, skill, actor);
-        const now = clock.now();
-        await tx.skills.updateSkill(id, { deprecatedAt: now, updatedAt: now }, input.rowVersion);
-        return emitSkill(tx, "skill.deprecated", id, actor);
+        // Every listed bot must use the skill now: a bot that the dialog showed but that no
+        // longer has the pin means the page is stale.
+        const pinned = new Set((await livePins(tx.bots, id)).map((pin) => pin.botId));
+        for (const botId of input.removeBotIds) {
+          if (!pinned.has(botId)) throw noSuchBots("remove_bot_ids");
+        }
+        for (const botId of input.removeBotIds) await tx.bots.deletePin(botId, id);
+        // A skill that is already deprecated stays as it is, but the listed pins still go
+        // (api.md §2): a repeat from a second tab must not answer 200 and keep them.
+        let result: Skill;
+        if (skill.deprecatedAt === null) {
+          const now = clock.now();
+          await tx.skills.updateSkill(id, { deprecatedAt: now, updatedAt: now }, input.rowVersion);
+          result = await emitSkill(tx, "skill.deprecated", id, actor);
+        } else {
+          result = await toShape(tx, skill, actor);
+        }
+        await deps.pinsChanged(tx, input.removeBotIds);
+        return result;
       }),
 
     undeprecate: (id: SkillId, input: { rowVersion: number }, actor: string) =>
@@ -403,7 +443,7 @@ export function createSkillsService(deps: SkillsDeps) {
         const skill = await liveSkill(tx.skills, id);
         assertAuthor(skill, actor);
         if (skill.rowVersion !== input.rowVersion) throw stale();
-        if (skill.deprecatedAt === null) return toShape(tx.skills, skill, actor);
+        if (skill.deprecatedAt === null) return toShape(tx, skill, actor);
         await tx.skills.updateSkill(
           id,
           { deprecatedAt: null, updatedAt: clock.now() },
@@ -425,8 +465,9 @@ export function createSkillsService(deps: SkillsDeps) {
         }
         if (skill.rowVersion !== input.rowVersion) throw stale();
         const now = clock.now();
-        // No pins exist before M2; M2 deletes them here and keeps their bot ids.
-        const removedBotIds: string[] = [];
+        // Every pin goes, also those of bots in Trash; the bot ids stay for the restore
+        // suggestion (domain-model.md §3.4).
+        const removedBotIds = await tx.bots.deletePinsOfSkill(id);
         await tx.skills.updateSkill(
           id,
           { trashedAt: now, trashedBotIds: removedBotIds, updatedAt: now },
@@ -437,6 +478,7 @@ export function createSkillsService(deps: SkillsDeps) {
           conversationId: null,
         });
         await emitTrashCount(tx);
+        await deps.pinsChanged(tx, removedBotIds);
         return { skill_id: id, removed_bot_ids: removedBotIds };
       }),
 
@@ -445,13 +487,17 @@ export function createSkillsService(deps: SkillsDeps) {
       uow.run(async (tx) => {
         const skill = await trashedSkill(tx.skills, id);
         assertAuthor(skill, actor);
-        // M2 keeps the bots in `trashed_bot_ids` that are not deleted; M1 has none.
-        const suggestedBotIds: string[] = [];
-        await tx.skills.updateSkill(id, {
-          trashedAt: null,
-          trashedBotIds: null,
-          updatedAt: clock.now(),
-        });
+        // The bots in `trashed_bot_ids` that are still live.
+        const suggestedBotIds: BotId[] = [];
+        for (const raw of skill.trashedBotIds ?? []) {
+          const parsed = BotId.safeParse(raw);
+          if (!parsed.success) continue;
+          const bot = await tx.bots.byId(parsed.data);
+          if (bot !== null && bot.deletedAt === null) suggestedBotIds.push(bot.id);
+        }
+        // `trashed_bot_ids` stays until the next delete: the M5b restore rule reads it after
+        // the restore (domain-model.md §3.4).
+        await tx.skills.updateSkill(id, { trashedAt: null, updatedAt: clock.now() });
         const restored = await emitSkill(tx, "skill.restored", id, actor);
         await emitTrashCount(tx);
         return { skill: restored, suggested_bot_ids: suggestedBotIds };
@@ -467,7 +513,7 @@ export function createSkillsService(deps: SkillsDeps) {
 
     trashed: async (actor: string) => {
       const rows = await readers.skills.trashed();
-      return Promise.all(rows.map((skill) => toShape(readers.skills, skill, actor)));
+      return Promise.all(rows.map((skill) => toShape(readers, skill, actor)));
     },
 
     // The purge job (architecture.md §6.1): each skill whose `trashed_at + trash_days` is at or
@@ -517,7 +563,7 @@ function versionRow(
   };
 }
 
-function versionListItem(row: SkillVersionRecord): SkillVersionListItem {
+function versionListItem(row: SkillVersionRecord, botsUsing: number): SkillVersionListItem {
   return {
     id: row.id,
     version: row.version,
@@ -525,12 +571,12 @@ function versionListItem(row: SkillVersionRecord): SkillVersionListItem {
     changelog: row.changelog,
     created_by: row.createdBy,
     created_at: row.createdAt.toISOString(),
-    bots_using: 0,
+    bots_using: botsUsing,
   };
 }
 
-function versionShape(row: SkillVersionRecord): SkillVersion {
-  return { ...versionListItem(row), body_md: row.bodyMd };
+function versionShape(row: SkillVersionRecord, botsUsing: number): SkillVersion {
+  return { ...versionListItem(row, botsUsing), body_md: row.bodyMd };
 }
 
 // The changelog is one line (skills-page.md §5); empty means none.
@@ -556,7 +602,11 @@ function assertActive(skill: SkillRecord): void {
 }
 
 function noSuchBots(field: string): DomainError {
-  return new DomainError("validation_error", "No bot uses this skill.", field);
+  return new DomainError(
+    "validation_error",
+    "A listed bot no longer uses this skill. Reload the page.",
+    field,
+  );
 }
 
 function stale(): DomainError {

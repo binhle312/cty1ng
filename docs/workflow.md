@@ -89,8 +89,11 @@ brief ready ──▶ plan ──(owner approves, if checkpointed)──▶ buil
    `self-review-against-the-spec.md`). The builder fills the PR template (§6). Anything new that the build taught (a library pitfall,
    a lint pattern, a test helper) goes into `frontend-conventions.md` §5 or `testing.md` in
    the same PR, so the next slice does not learn it again.
-5. **Cross-review.** The other agent reviews (prompt in §4). Findings become PR comments; the
-   builder fixes or answers each. A finding says what is wrong, not which text or layout to
+   **The guide stays current.** A slice that changes something the owner can see updates
+   `seed/skills/using-the-app/SKILL.md` (the Guide bot's knowledge) in the same PR: what works
+   now, what is not built yet, and the names on the screen (M2 plan, decision 14).
+5. **Cross-review.** The other agent follows [review-guide.md](review-guide.md) (prompt in §4).
+   Findings become PR comments; the builder fixes or answers each. A finding says what is wrong, not which text or layout to
    use: when a fix needs a new text, state, flow or layout, the PR lists it under `Needs human
    review` (`AGENTS.md` §7; lesson `flag-ui-choices-in-review-fixes.md`).
 6. **Owner review.** Focus on `Needs human review` items, migrations, the evidence table, and
@@ -164,9 +167,13 @@ If the docs and the code disagree, or the brief is ambiguous, stop and ask.
 
 ## 4. Review prompt (reviewer agent)
 
+For every local code review, PR review or review of fixes, follow [review-guide.md](review-guide.md).
+Keep its evidence table with the review record. Use this prompt for a slice PR:
+
 ```
 You are reviewing PR <url> for slice <M#>. You did not write it.
-Read AGENTS.md, docs/tasks/<M#>-<name>.md, and the documents it lists.
+Read AGENTS.md, docs/review-guide.md, docs/tasks/<M#>-<name>.md, and the documents it lists.
+Read the approved plan revision. Follow the guide's evidence table and completion checks.
 Check, in order:
 1. Every acceptance criterion: is it implemented, and does the cited test really prove it?
    Run the tests yourself.

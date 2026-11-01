@@ -1,6 +1,7 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { bodyLimit } from "hono/body-limit";
-import { SkillId, SkillVersionId } from "@cty1ng/shared/ids";
+import { Bot } from "@cty1ng/shared/bots";
+import { BotId, SkillId, SkillVersionId } from "@cty1ng/shared/ids";
 import {
   DiffLine,
   Skill,
@@ -13,6 +14,7 @@ import {
 import { OWNER_ID } from "../../../core/owner.ts";
 import type { SkillImportService } from "../../../core/skills/skill-import.service.ts";
 import type { SkillsService } from "../../../core/skills/skills.service.ts";
+import type { BotsService } from "../../../core/bots/bots.service.ts";
 import { ApiFailure } from "../errors.ts";
 import { createRouter } from "../router.ts";
 import { readSkillZip, SKILL_ZIP, writeSkillZip } from "../uploads/skill-zip.ts";
@@ -172,7 +174,6 @@ const routes = {
                 description: z.string(),
                 body_md: z.string(),
                 changelog: Changelog,
-                upgrade_bot_ids: z.array(z.string()),
                 name: z.string().optional(),
                 row_version: RowVersion.optional(),
               })
@@ -249,8 +250,54 @@ const routes = {
     operationId: "listSkillUpgradeCandidates",
     request: { params: IdParam, query: NoQuery },
     responses: {
-      200: json(z.array(z.object({ bot_id: z.string() })), "Bots on older versions (M2)"),
+      200: json(
+        z.array(
+          z
+            .object({
+              bot_id: BotId,
+              skill_version_id: SkillVersionId,
+              version: z.number().int().positive(),
+              always_load: z.boolean(),
+            })
+            .strict(),
+        ),
+        "Live bots pinned to an older version",
+      ),
     },
+  }),
+  // The upgrade and assign cards (api.md §2). `restore_suggestion` comes with M5b.
+  pinSkillToBots: createRoute({
+    method: "post",
+    path: "/skills/{id}/bots",
+    operationId: "pinSkillToBots",
+    request: {
+      query: NoQuery,
+      params: IdParam,
+      body: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: z
+              .object({
+                skill_version_id: SkillVersionId,
+                bots: z
+                  .array(
+                    z
+                      .object({
+                        bot_id: BotId,
+                        expected_skill_version_id: SkillVersionId.nullable(),
+                        always_load: z.boolean().optional(),
+                      })
+                      .strict(),
+                  )
+                  .min(1),
+              })
+              .strict(),
+          },
+        },
+      },
+    },
+    responses: { 200: json(z.array(Bot), "The moved bots") },
   }),
   deprecateSkill: createRoute({
     method: "post",
@@ -263,9 +310,7 @@ const routes = {
         required: true,
         content: {
           "application/json": {
-            schema: z
-              .object({ remove_bot_ids: z.array(z.string()), row_version: RowVersion })
-              .strict(),
+            schema: z.object({ remove_bot_ids: z.array(BotId), row_version: RowVersion }).strict(),
           },
         },
       },
@@ -304,7 +349,7 @@ const routes = {
     },
     responses: {
       200: json(
-        z.object({ skill_id: SkillId, removed_bot_ids: z.array(z.string()) }),
+        z.object({ skill_id: SkillId, removed_bot_ids: z.array(BotId) }),
         "In Trash; the bots it was removed from",
       ),
     },
@@ -319,7 +364,7 @@ const routes = {
     },
     responses: {
       200: json(
-        z.object({ skill: Skill, suggested_bot_ids: z.array(z.string()) }),
+        z.object({ skill: Skill, suggested_bot_ids: z.array(BotId) }),
         "Out of Trash, still deprecated",
       ),
     },
@@ -336,8 +381,12 @@ const routes = {
   }),
 };
 
-export function skillRoutes(deps: { skills: SkillsService; skillImport: SkillImportService }) {
-  const { skills, skillImport } = deps;
+export function skillRoutes(deps: {
+  skills: SkillsService;
+  skillImport: SkillImportService;
+  bots: BotsService;
+}) {
+  const { skills, skillImport, bots } = deps;
   return createRouter()
     .openapi(routes.exportSkills, async (c) => {
       const raw = c.req.valid("query").ids;
@@ -410,7 +459,6 @@ export function skillRoutes(deps: { skills: SkillsService; skillImport: SkillImp
           description: body.description,
           bodyMd: body.body_md,
           changelog: body.changelog,
-          upgradeBotIds: body.upgrade_bot_ids,
           rename:
             body.name === undefined || body.row_version === undefined
               ? undefined
@@ -444,6 +492,19 @@ export function skillRoutes(deps: { skills: SkillsService; skillImport: SkillImp
     .openapi(routes.listSkillUpgradeCandidates, async (c) =>
       c.json(await skills.upgradeCandidates(c.req.valid("param").id), 200),
     )
+    .openapi(routes.pinSkillToBots, async (c) => {
+      const body = c.req.valid("json");
+      const moved = await bots.pinSkillToBots(
+        c.req.valid("param").id,
+        body.skill_version_id,
+        body.bots.map((bot) => ({
+          botId: bot.bot_id,
+          expectedSkillVersionId: bot.expected_skill_version_id,
+          alwaysLoad: bot.always_load,
+        })),
+      );
+      return c.json(moved, 200);
+    })
     .openapi(routes.deprecateSkill, async (c) => {
       const body = c.req.valid("json");
       const skill = await skills.deprecate(

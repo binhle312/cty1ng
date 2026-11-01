@@ -340,6 +340,8 @@ bots
 
 CHECK (purged_at IS NULL OR deleted_at IS NOT NULL)
 CHECK ((create_key IS NULL) = (create_request_hash IS NULL))
+CHECK (avatar_style IN ('flat', 'jelly', 'pixel', 'upload'))      -- M2 plan, decision 6
+CHECK ((avatar_style = 'upload') = (avatar_path IS NOT NULL))       -- M2 plan, decision 6; the service checks both first
 UNIQUE INDEX bots_name_kept ON bots(name_key) WHERE purged_at IS NULL
 UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position IS NOT NULL
 ```
@@ -383,7 +385,10 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
   restored. Each slice adds its own table to this step when it creates the table: M2 deletes
   `bot_skills` (the purge job of M1 takes bots in M2), M5b adds the bot memory and
   `memory_history_versions`, M5c the open drafts. The purge emits `bot.purged` and
-  `trash.changed` (`realtime-events.md` §4).
+  `trash.changed` (`realtime-events.md` §4). The purge does not rewrite earlier events: the
+  `bot.*` payloads that hold the whole bot (its persona and description too) stay until the
+  event pruning removes them (`EVENT_RETENTION_DAYS`, default 30) (owner, 2026-11-01, review of
+  PR #57).
 - **Restore (D50).** In M2 only the temporary CLI `bots restore <slug>` restores a bot
   (`api.md` §4); the M5b Trash page replaces it. A restore clears `deleted_at`, raises
   `row_version`, leaves the bot unpinned and emits `bot.restored` and `trash.changed`. It always
@@ -447,16 +452,22 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
   `switch` is `later` or `locked`, gets 422 `tool_not_available`, two tools of one job on get 422 `tool_job_conflict`, and a tool on while
   its `needs` tool is off gets 422 `validation_error` with `field: "tool_settings.<id>"`. The
   service then stores the effective result of the body.
-- **Name key (M2 spec gap pass, owner 2026-11-01).** Names compare by `name_key`, made by one
-  pure function `botNameKey()` in `core/`: trim, collapse each run of white space to one space,
-  Unicode NFKC, then Unicode default case folding (full folding, `CaseFolding.txt` statuses C
-  and F, so "ẞ", "ß", "SS" and "ss" all match), then NFKC again. JavaScript has no built-in
-  case folding (upper then lower case maps "ẞ" to "ß" but "ß" to "ss"), so the M2 plan picks how
-  to get it: a table generated from `CaseFolding.txt`, or a library (a new dependency). The stored `name` is trimmed and collapsed too. The partial unique index on `name_key`
+- **Name key (M2 spec gap pass, owner 2026-11-01; M2 plan, decision 5).** Names compare by
+  `name_key`, made by one pure function `botNameKey()` in `shared/src/bots.ts`: trim, collapse
+  each run of white space to one space, Unicode NFKC, then Unicode default case folding (full
+  folding, `CaseFolding.txt` statuses C and F, so "ẞ", "ß", "SS" and "ss" all match), then NFKC
+  again, then trim and collapse once more (the last NFKC can make new white space, so without
+  this step the key of a key could differ from the key). "White space" is Unicode
+  `White_Space` (`\p{White_Space}`) for every trim and collapse; JavaScript `\s` is not used,
+  because it misses U+0085 and counts U+FEFF. JavaScript has no built-in case folding, so the
+  table is generated from `CaseFolding.txt` into `shared/src/case-folding.ts`
+  (`pnpm gen:case-folding`), pinned to the Unicode version of Node's ICU; a test fails when the
+  two differ, and the change that moves Node regenerates the table and recomputes the stored
+  keys in a migration. The stored `name` is trimmed and collapsed too. The partial unique index on `name_key`
   is the final check: a create or rename that loses a race gets 409 `name_taken`. SQLite
   `lower()` folds ASCII only, so it is not used. Tests: "BÁ" and "bá", " BA " and "BA",
-  full-width "ＢＡ" and "ba", "ẞ", "ß" and "SS", two creates at once, a rename to a name held in
-  Trash.
+  full-width "ＢＡ" and "ba", "ẞ", "ß" and "SS", U+0085 and U+FEFF, the key of a key, two
+  creates at once, a rename to a name held in Trash.
 - **Slug (D19, M2 spec gap pass, owner 2026-11-01).** Made from the name at create: Unicode NFKD,
   remove combining marks, "đ" and "Đ" to "d", lower case, each run of characters outside `a–z`
   and `0–9` to one "-", trim "-" at both ends. Empty (for example a name of emoji only) → `bot`.
@@ -488,7 +499,16 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
   file (a bot that changes its image), in that save's write lock. So a file always gets the full
   grace period after it becomes unused; the next purge pass after that deletes it. The upload writes or refreshes
   the file, and the cleanup checks and deletes it, each while it holds the database write lock,
-  so neither can run between the other's check and its write. A bot save that names an
+  so neither can run between the other's check and its write. The upload first writes a
+  **staged** copy outside the lock (the slow part). The cleanup lists and removes staged copies
+  older than `AVATAR_ORPHAN_HOURS` in the write lock too, so it never removes one between a
+  publish's check and its move. That a staged copy this old is abandoned is an **assumption**:
+  nothing limits how long an upload takes between staging and publishing. An upload slower than
+  the grace period finds its staged copy gone, gets 500, leaves no file, and is sent again. A
+  publish that fails leaves no `<id>.webp`: a failed folder sync moves the file back, and when
+  that move fails too, the file is removed. Only when the disk also refuses the removal does the
+  file stay; it is complete (the rename is atomic), no row names it, and the cleanup removes it
+  after the grace period. A bot save that names an
   `avatar_id` checks, inside its transaction, that the file exists: else 422
   `validation_error` with `field: "avatar_id"` ("Upload the image again."). Limits:
   `security.md` §2.4.
@@ -809,7 +829,7 @@ skill_drafts                                              -- TypeID prefix `skil
 - id: anthropic:<model-name>             # "<provider>:<model>", resolved by the model adapter
   label: <Anthropic model label>
   api_key_env: ANTHROPIC_API_KEY
-  efforts: [low, medium, high]            # [] = the model has no effort setting
+  efforts: [low, medium, high]            # [] = the model has no effort setting; each level once, least thinking first (checked at start)
   default_effort: medium
   multimodal: true                        # reads images; View images is off and grey when false
   context_window: 200000
@@ -829,16 +849,25 @@ skill_drafts                                              -- TypeID prefix `skil
   `model_not_available` (M2 spec gap pass: this replaces "lists only models whose key is set",
   which contradicted the agreed grey rows). In M2 the row has no "Add a key" link; M5 adds it
   with the Settings Models page.
-- **Providers in M2 (owner, 2026-11-01):** Anthropic only, through `ai` and `@ai-sdk/anthropic`.
-  Other providers come when the owner needs them, each as a new dependency for approval.
+- **Providers in M2 (owner, 2026-11-01; M2 plan, decisions 8–11):** Google Gemini and Anthropic,
+  through `ai`, `@ai-sdk/google` and `@ai-sdk/anthropic`. The file order is the catalog order
+  (Gemini 3.8 Flash, then Opus, Sonnet and Haiku 5.5, then Gemini 4 Argon and 3.5 Flash-Lite);
+  the seed bots take the first model that can run. OpenAI and DeepSeek come later, each in its
+  own PR as a new dependency for approval. The start fails with a clear message when the file
+  names a provider that has no adapter, or an effort the provider does not take.
+- **Effort mapping (M2 plan P1, P8):** Anthropic takes `providerOptions.anthropic.effort` (low,
+  medium, high, xhigh, max); Google takes `providerOptions.google.thinkingConfig.thinkingLevel`
+  (minimal, low, medium, high). The top-level `reasoning` option of the SDK is never used. The
+  labels in the UI are Minimal, Low, Medium, High, Extra high and Max; each model's
+  `default_effort` is preselected (decision 4).
 - **Fake models (`testing.md` §2):** with `FAKE_MODEL=1` the catalog is the entries of
   `config/models.yaml` plus two fake entries, both run by the fake adapter and available with no
   key: `fake:scripted` (no efforts, not multimodal) and `fake:effort` (efforts low, medium,
   high; default medium; multimodal). Neither has provider tools.
 - `effort` must be one of the model's `efforts`, or NULL when the list is empty.
 - `adapters/model/ai-sdk/effort.ts` maps effort to each provider's option in one function with a test
-  per provider. Values above are placeholders; the agent implementing M2 must check current model
-  ids and parameters in the provider docs.
+  per provider. The YAML above shows the shape; the real entries are in `config/models.yaml`,
+  checked against the provider docs on 2026-11-01.
 - Removing a model from the catalog makes its bots *unavailable* (J5 in the overview).
 - A model "has a web tool" (D53) when its `provider_tools` list has a tool whose catalog entry has
   `web: true`.
@@ -861,7 +890,7 @@ the bot page build the Tools list from it (`design/components/create-bot-page.md
   sends_data_out: false         # true = amber ⚠ on the row
   web: false                    # true = a web tool under D53
   line: "List, read and write files in the Library (the project's, or Home)."
-  off_line: "The bot only talks. View images and Hand off turn off too."
+  off_line: "The bot cannot list, read or write Library files. View images and Hand off turn off too."
   needs: []                     # tool ids that must be on (view_images and hand_off need files)
   switch: open                  # may the owner turn it on? open = yes, the choice is saved | later = forced off | locked = forced off, needs a decision (D55)
 - id: web_fetch

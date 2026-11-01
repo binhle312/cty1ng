@@ -30,6 +30,8 @@ const Env = z.object({
   EVENT_PRUNE_INTERVAL_HOURS: z.coerce.number().int().positive().default(24),
   IMPORT_PREVIEW_MINUTES: z.coerce.number().positive().default(15),
   IMPORT_PREVIEW_MAX: z.coerce.number().int().min(1).default(5),
+  AVATAR_MAX_BYTES: z.coerce.number().int().positive().default(2_097_152),
+  AVATAR_ORPHAN_HOURS: z.coerce.number().int().positive().default(24),
 });
 
 export interface Config {
@@ -56,8 +58,18 @@ export interface Config {
   // Skill import previews kept in memory (domain-model.md §3.5).
   importPreviewMinutes: number;
   importPreviewMax: number;
+  // Avatar uploads (security.md §2.4) and the grace period of an unused avatar file
+  // (domain-model.md §2 Avatar files).
+  avatarMaxBytes: number;
+  avatarOrphanHours: number;
   // Values of every `*_API_KEY` variable, for log redaction only (security.md §2.6).
   secrets: readonly string[];
+  // Names of the `*_API_KEY` variables that are set and not empty: a catalog model is available
+  // when its `api_key_env` is one of them (domain-model.md §4). Never the values.
+  keysSet: ReadonlySet<string>;
+  // The two catalog files (domain-model.md §4, §4.1).
+  modelsFile: string;
+  toolsFile: string;
 }
 
 export class ConfigError extends Error {}
@@ -99,6 +111,10 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     if (!isOrigin(origin)) throw new ConfigError(`ALLOWED_ORIGINS: ${origin} is not an origin`);
   }
 
+  const apiKeys = Object.entries(env).filter(
+    (entry): entry is [string, string] =>
+      entry[0].endsWith("_API_KEY") && entry[1] !== undefined && entry[1] !== "",
+  );
   const dataDir = isAbsolute(e.DATA_DIR) ? e.DATA_DIR : resolve(REPO_ROOT, e.DATA_DIR);
   const ownOrigins = SERVED_HOSTS.map((host) => `http://${host}:${e.PORT}`);
   return {
@@ -117,9 +133,12 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     eventPruneIntervalHours: e.EVENT_PRUNE_INTERVAL_HOURS,
     importPreviewMinutes: e.IMPORT_PREVIEW_MINUTES,
     importPreviewMax: e.IMPORT_PREVIEW_MAX,
-    secrets: Object.entries(env)
-      .filter(([name, value]) => name.endsWith("_API_KEY") && value !== undefined && value !== "")
-      .map(([, value]) => value ?? ""),
+    avatarMaxBytes: e.AVATAR_MAX_BYTES,
+    avatarOrphanHours: e.AVATAR_ORPHAN_HOURS,
+    secrets: apiKeys.map(([, value]) => value),
+    keysSet: new Set(apiKeys.map(([name]) => name)),
+    modelsFile: resolve(REPO_ROOT, "config/models.yaml"),
+    toolsFile: resolve(REPO_ROOT, "config/tools.yaml"),
   };
 }
 

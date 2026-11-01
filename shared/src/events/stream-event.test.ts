@@ -13,6 +13,12 @@ describe("StreamEvent", () => {
       "skill.trashed",
       "skill.restored",
       "skill.purged",
+      "bot.created",
+      "bot.updated",
+      "bot.deleted",
+      "bot.restored",
+      "bot.purged",
+      "bots.reordered",
       "trash.changed",
       "settings.updated",
     ]);

@@ -73,8 +73,7 @@ that use them, then M0.
 
 ## Next
 
-1. M2 spec gap pass: 30 gaps answered by the owner (2026-11-01), written into the owning documents in [#56](https://github.com/binhle312/cty1ng/pull/56).
-2. Then the M2 plan (checkpoint: schema, uploads), probably split like M1 into a backend part and a pages part.
+1. M2a in review on [#57](https://github.com/binhle312/cty1ng/pull/57): the bots backend (catalog with Gemini and Anthropic, tables, name key, bots and avatar API, purge, CLI, seed with Guide, BA and Designer) and the Skills page changes it needs. The owner approved every review item in the PR on 2026-11-01 (migration 0002, the upload code, the Guide persona and the `using-the-app` skill text, the tool lines). **Waiting on the owner:** the merge. Then M2b (Bots page, header, Create) starts from merged M2a.
 
 ## Waiting on the owner
 
@@ -100,6 +99,7 @@ it in, and the row goes when its PR merges.
 | Temporary CLI `skills trash` and `skills restore` (M1 spec gap pass, owner 2026-10-30): remove them when the Trash page exists | [#51](https://github.com/binhle312/cty1ng/pull/51) | M5b |
 | The `db_lock_wait_seconds` histogram (`architecture.md` §9, D29 switch trigger 3); there is no metrics output yet | #48 | M3 (the worker brings concurrent writes) |
 | `esbuild` advisory (moderate, dev only, through `drizzle-kit` 0.31.11); no stable fix | #48 | Update `drizzle-kit` when 1.0 is stable (Dependabot) |
+| First-run offer of the Guide bot in the app ("Add Guide" in the empty state, so a new owner needs no `make seed`); needs a design round (owner, 2026-11-01, M2 plan decision 15) | [#57](https://github.com/binhle312/cty1ng/pull/57) | M3 spec gap pass |
 | Reserve the bot slug `new`: `/bots/new` is the Create bot page, so the server must refuse it as a slug. Now in the slug rule (`domain-model.md` §2) and the M2 brief | [#49](https://github.com/binhle312/cty1ng/pull/49) | M2 |
 | Temporary CLI `bots trash` and `bots restore` (M2 spec gap pass, owner 2026-11-01): remove them when the Trash page exists | [#56](https://github.com/binhle312/cty1ng/pull/56) | M5b |
 | Rail and bar 2 list scrolling (fade, ˄/˅ buttons, the list ends 24 px above the user panel, `left-bar.md` §1.3, §2): M0 has no lists yet | [#49](https://github.com/binhle312/cty1ng/pull/49) | M5b (projects) and M3 (conversations) |
@@ -113,7 +113,7 @@ it in, and the row goes when its PR merges.
 | --- | --- | --- | --- |
 | M0 | merged | [#46](https://github.com/binhle312/cty1ng/pull/46) (M0a), [#48](https://github.com/binhle312/cty1ng/pull/48) (M0b), [#49](https://github.com/binhle312/cty1ng/pull/49) (M0c), [#50](https://github.com/binhle312/cty1ng/pull/50) (Impeccable snapshot) | Three parts (M0a tooling, M0b backend, M0c frontend), all merged 2026-10-30 |
 | M1 | merged | [#51](https://github.com/binhle312/cty1ng/pull/51) (spec gap pass), [#52](https://github.com/binhle312/cty1ng/pull/52) (plan and M1a backend), [#54](https://github.com/binhle312/cty1ng/pull/54) (M1b Skills page), [#55](https://github.com/binhle312/cty1ng/pull/55) (M1c backend maintenance) | Plan approved 2026-10-31, split into M1a (backend), M1b (Skills page) and M1c (event pruning, SQLite writer guard), all merged. Design approved: `design/components/skills-page.md` (round 8); D49 accepted. Round 16 moves the page to the bot page layout (agreed, #38) |
-| M2 | planning | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec), [#56](https://github.com/binhle312/cty1ng/pull/56) (spec gap pass) | Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open (M2 shows its empty state). Spec gap pass answered 2026-11-01 |
+| M2 | building | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec), [#56](https://github.com/binhle312/cty1ng/pull/56) (spec gap pass), [#57](https://github.com/binhle312/cty1ng/pull/57) (plan, M2a) | Plan approved 2026-11-01 (#57 first comment); M2a approved on #57 (2026-11-01), waiting for the merge. Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open (M2 shows its empty state). Spec gap pass answered 2026-11-01 |
 | M3 | UI design agreed | [#26](https://github.com/binhle312/cty1ng/pull/26) (spec) | Round 10: `design/components/conversation-page.md`, `composer.md`, `conversation-cards.md` |
 | M4 | not started | | |
 | M5 | UI design agreed | [#35](https://github.com/binhle312/cty1ng/pull/35) (spec) | Round 14: `design/components/settings-page.md`, `conversation-page.md` §2.4; key `bot_discussion_enabled` |
@@ -152,4 +152,6 @@ A slice can also be `blocked` (say on what in Notes).
 | 2026-10-31 | M1b merged (#54) |
 | 2026-10-31 | M1c built in #55: event pruning (`EVENT_RETENTION_DAYS`, `EVENT_PRUNE_INTERVAL_HOURS`), the hub waits for a new notify (no busy loop after a complete prune), one SQLite writer per file in a thread. Cross-review fixes: the gap rule also during a replay, and intervals longer than Node's timer limit |
 | 2026-11-01 | M1c merged (#55); M1 is complete |
-| 2026-11-01 | M2 spec gap pass: 30 gaps answered (bot `row_version` and `name_key`, the slug rule (D19 amendment), expected-state checks for pins and the pinned order, effective tool settings, avatar limits and cleanup, the guard on bots, clone and restore exceptions to invariant 6, the Create retry snapshot, bot setting ranges, bot restore and purge events, the Skills page with real bots, Anthropic only, two fake models, seed bots, URLs) |
+| 2026-11-01 | M2 plan approved (#57): Gemini joins Anthropic, Guide seed bot, split M2a/M2b/M2c |
+| 2026-11-01 | M2a review items approved (#57): migration 0002, upload code, Guide persona and skill, tool lines |
+| 2026-11-01 | M2 spec gap pass merged (#56): 30 gaps answered (bot `row_version` and `name_key`, the slug rule (D19 amendment), expected-state checks for pins and the pinned order, effective tool settings, avatar limits and cleanup, the guard on bots, clone and restore exceptions to invariant 6, the Create retry snapshot, bot setting ranges, bot restore and purge events, the Skills page with real bots, Anthropic only, two fake models, seed bots, URLs) |

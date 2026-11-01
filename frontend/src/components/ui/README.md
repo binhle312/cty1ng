@@ -12,6 +12,7 @@ them without a decision.
 | `skeleton.tsx` | Loading shapes, after 200 ms, still with reduced motion |
 | `dialog.tsx` | Dialogs: a card that closes on a click outside, or an alert that asks; the default button |
 | `checkbox.tsx` | The check box of `buttons.md` §5, with an optional label |
+| `switch.tsx` | The on/off switch (Always load, D16) |
 | `tabs.tsx` | Tabs with the 2 px `primary` underline |
 | `toast.tsx` | Toasts: `showToast(text)` and the one `Toaster` in the shell |
 | `time-text.tsx` | A time with its full time in a tooltip, from hover or keyboard focus |

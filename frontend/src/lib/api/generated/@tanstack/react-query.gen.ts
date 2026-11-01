@@ -3,8 +3,8 @@
 import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { applySkillImport, createSkill, createSkillVersion, deleteSkill, deprecateSkill, exportSkills, getHealth, getSettings, getSkill, getSkillDiff, getSkillVersion, listSkills, listSkillUpgradeCandidates, listSkillVersions, type Options, previewSkillImport, renameSkill, restoreSkill, restoreSkillVersion, trashSkill, undeprecateSkill, updateSettings } from '../sdk.gen';
-import type { ApplySkillImportData, ApplySkillImportResponse, CreateSkillData, CreateSkillResponse, CreateSkillVersionData, CreateSkillVersionResponse, DeleteSkillData, DeleteSkillResponse, DeprecateSkillData, DeprecateSkillResponse, ExportSkillsData, ExportSkillsResponse, GetHealthData, GetHealthError, GetHealthResponse, GetSettingsData, GetSettingsResponse, GetSkillData, GetSkillDiffData, GetSkillDiffResponse, GetSkillResponse, GetSkillVersionData, GetSkillVersionResponse, ListSkillsData, ListSkillsResponse, ListSkillUpgradeCandidatesData, ListSkillUpgradeCandidatesResponse, ListSkillVersionsData, ListSkillVersionsResponse, PreviewSkillImportData, PreviewSkillImportResponse, RenameSkillData, RenameSkillResponse, RestoreSkillData, RestoreSkillResponse, RestoreSkillVersionData, RestoreSkillVersionResponse, TrashSkillData, TrashSkillResponse, UndeprecateSkillData, UndeprecateSkillResponse, UpdateSettingsData, UpdateSettingsResponse } from '../types.gen';
+import { applySkillImport, createBot, createSkill, createSkillVersion, deleteBot, deleteSkill, deprecateSkill, exportSkills, getAvatar, getAvatarLimits, getBot, getBotCloneTemplate, getHealth, getSettings, getSkill, getSkillDiff, getSkillVersion, listBots, listModels, listSkills, listSkillUpgradeCandidates, listSkillVersions, listTools, type Options, pinSkillToBots, previewSkillImport, removeBotSkill, renameSkill, restoreSkill, restoreSkillVersion, setBotSkill, setPinnedBots, trashSkill, undeprecateSkill, updateBot, updateSettings, uploadAvatar } from '../sdk.gen';
+import type { ApplySkillImportData, ApplySkillImportResponse, CreateBotData, CreateBotResponse, CreateSkillData, CreateSkillResponse, CreateSkillVersionData, CreateSkillVersionResponse, DeleteBotData, DeleteBotResponse, DeleteSkillData, DeleteSkillResponse, DeprecateSkillData, DeprecateSkillResponse, ExportSkillsData, ExportSkillsResponse, GetAvatarData, GetAvatarLimitsData, GetAvatarLimitsResponse, GetAvatarResponse, GetBotCloneTemplateData, GetBotCloneTemplateResponse, GetBotData, GetBotResponse, GetHealthData, GetHealthError, GetHealthResponse, GetSettingsData, GetSettingsResponse, GetSkillData, GetSkillDiffData, GetSkillDiffResponse, GetSkillResponse, GetSkillVersionData, GetSkillVersionResponse, ListBotsData, ListBotsResponse, ListModelsData, ListModelsResponse, ListSkillsData, ListSkillsResponse, ListSkillUpgradeCandidatesData, ListSkillUpgradeCandidatesResponse, ListSkillVersionsData, ListSkillVersionsResponse, ListToolsData, ListToolsResponse, PinSkillToBotsData, PinSkillToBotsResponse, PreviewSkillImportData, PreviewSkillImportResponse, RemoveBotSkillData, RemoveBotSkillResponse, RenameSkillData, RenameSkillResponse, RestoreSkillData, RestoreSkillResponse, RestoreSkillVersionData, RestoreSkillVersionResponse, SetBotSkillData, SetBotSkillResponse, SetPinnedBotsData, SetPinnedBotsResponse, TrashSkillData, TrashSkillResponse, UndeprecateSkillData, UndeprecateSkillResponse, UpdateBotData, UpdateBotResponse, UpdateSettingsData, UpdateSettingsResponse, UploadAvatarData, UploadAvatarResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -82,6 +82,36 @@ export const updateSettingsMutation = (options?: Partial<Options<UpdateSettingsD
     };
     return mutationOptions;
 };
+
+export const listModelsQueryKey = (options?: Options<ListModelsData>) => createQueryKey('listModels', options);
+
+export const listModelsOptions = (options?: Options<ListModelsData>) => queryOptions<ListModelsResponse, DefaultError, ListModelsResponse, ReturnType<typeof listModelsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listModels({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listModelsQueryKey(options)
+});
+
+export const listToolsQueryKey = (options?: Options<ListToolsData>) => createQueryKey('listTools', options);
+
+export const listToolsOptions = (options?: Options<ListToolsData>) => queryOptions<ListToolsResponse, DefaultError, ListToolsResponse, ReturnType<typeof listToolsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listTools({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listToolsQueryKey(options)
+});
 
 export const exportSkillsQueryKey = (options?: Options<ExportSkillsData>) => createQueryKey('exportSkills', options);
 
@@ -286,6 +316,20 @@ export const listSkillUpgradeCandidatesOptions = (options: Options<ListSkillUpgr
     queryKey: listSkillUpgradeCandidatesQueryKey(options)
 });
 
+export const pinSkillToBotsMutation = (options?: Partial<Options<PinSkillToBotsData>>): UseMutationOptions<PinSkillToBotsResponse, DefaultError, Options<PinSkillToBotsData>> => {
+    const mutationOptions: UseMutationOptions<PinSkillToBotsResponse, DefaultError, Options<PinSkillToBotsData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await pinSkillToBots({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
 export const deprecateSkillMutation = (options?: Partial<Options<DeprecateSkillData>>): UseMutationOptions<DeprecateSkillResponse, DefaultError, Options<DeprecateSkillData>> => {
     const mutationOptions: UseMutationOptions<DeprecateSkillResponse, DefaultError, Options<DeprecateSkillData>> = {
         mutationFn: async (fnOptions) => {
@@ -341,3 +385,176 @@ export const restoreSkillMutation = (options?: Partial<Options<RestoreSkillData>
     };
     return mutationOptions;
 };
+
+export const listBotsQueryKey = (options?: Options<ListBotsData>) => createQueryKey('listBots', options);
+
+export const listBotsOptions = (options?: Options<ListBotsData>) => queryOptions<ListBotsResponse, DefaultError, ListBotsResponse, ReturnType<typeof listBotsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listBots({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listBotsQueryKey(options)
+});
+
+export const createBotMutation = (options?: Partial<Options<CreateBotData>>): UseMutationOptions<CreateBotResponse, DefaultError, Options<CreateBotData>> => {
+    const mutationOptions: UseMutationOptions<CreateBotResponse, DefaultError, Options<CreateBotData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createBot({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const setPinnedBotsMutation = (options?: Partial<Options<SetPinnedBotsData>>): UseMutationOptions<SetPinnedBotsResponse, DefaultError, Options<SetPinnedBotsData>> => {
+    const mutationOptions: UseMutationOptions<SetPinnedBotsResponse, DefaultError, Options<SetPinnedBotsData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await setPinnedBots({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const deleteBotMutation = (options?: Partial<Options<DeleteBotData>>): UseMutationOptions<DeleteBotResponse, DefaultError, Options<DeleteBotData>> => {
+    const mutationOptions: UseMutationOptions<DeleteBotResponse, DefaultError, Options<DeleteBotData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deleteBot({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getBotQueryKey = (options: Options<GetBotData>) => createQueryKey('getBot', options);
+
+export const getBotOptions = (options: Options<GetBotData>) => queryOptions<GetBotResponse, DefaultError, GetBotResponse, ReturnType<typeof getBotQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getBot({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getBotQueryKey(options)
+});
+
+export const updateBotMutation = (options?: Partial<Options<UpdateBotData>>): UseMutationOptions<UpdateBotResponse, DefaultError, Options<UpdateBotData>> => {
+    const mutationOptions: UseMutationOptions<UpdateBotResponse, DefaultError, Options<UpdateBotData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateBot({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getBotCloneTemplateQueryKey = (options: Options<GetBotCloneTemplateData>) => createQueryKey('getBotCloneTemplate', options);
+
+export const getBotCloneTemplateOptions = (options: Options<GetBotCloneTemplateData>) => queryOptions<GetBotCloneTemplateResponse, DefaultError, GetBotCloneTemplateResponse, ReturnType<typeof getBotCloneTemplateQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getBotCloneTemplate({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getBotCloneTemplateQueryKey(options)
+});
+
+export const removeBotSkillMutation = (options?: Partial<Options<RemoveBotSkillData>>): UseMutationOptions<RemoveBotSkillResponse, DefaultError, Options<RemoveBotSkillData>> => {
+    const mutationOptions: UseMutationOptions<RemoveBotSkillResponse, DefaultError, Options<RemoveBotSkillData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await removeBotSkill({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const setBotSkillMutation = (options?: Partial<Options<SetBotSkillData>>): UseMutationOptions<SetBotSkillResponse, DefaultError, Options<SetBotSkillData>> => {
+    const mutationOptions: UseMutationOptions<SetBotSkillResponse, DefaultError, Options<SetBotSkillData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await setBotSkill({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getAvatarLimitsQueryKey = (options?: Options<GetAvatarLimitsData>) => createQueryKey('getAvatarLimits', options);
+
+export const getAvatarLimitsOptions = (options?: Options<GetAvatarLimitsData>) => queryOptions<GetAvatarLimitsResponse, DefaultError, GetAvatarLimitsResponse, ReturnType<typeof getAvatarLimitsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getAvatarLimits({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getAvatarLimitsQueryKey(options)
+});
+
+export const uploadAvatarMutation = (options?: Partial<Options<UploadAvatarData>>): UseMutationOptions<UploadAvatarResponse, DefaultError, Options<UploadAvatarData>> => {
+    const mutationOptions: UseMutationOptions<UploadAvatarResponse, DefaultError, Options<UploadAvatarData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await uploadAvatar({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getAvatarQueryKey = (options: Options<GetAvatarData>) => createQueryKey('getAvatar', options);
+
+export const getAvatarOptions = (options: Options<GetAvatarData>) => queryOptions<GetAvatarResponse, DefaultError, GetAvatarResponse, ReturnType<typeof getAvatarQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getAvatar({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getAvatarQueryKey(options)
+});
