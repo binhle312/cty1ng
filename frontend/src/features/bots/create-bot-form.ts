@@ -7,7 +7,7 @@ import {
 import type { CatalogModel, CatalogTool, Effort } from "@cty1ng/shared/catalog";
 import { BOT_VALUE_RANGES, HISTORY_STEP_PCT } from "@cty1ng/shared/settings";
 import { effectiveToolSettings, offeredTools } from "@cty1ng/shared/tool-settings";
-import type { CreateBotData } from "../../lib/api/generated/types.gen.ts";
+import type { CreateBotData, GetSettingsResponse } from "../../lib/api/generated/types.gen.ts";
 
 export type CreateBotBody = CreateBotData["body"];
 
@@ -58,6 +58,22 @@ export interface FormSettings {
   defaultHistory: number;
   defaultRequestLimit: number;
   defaultMaxReplyChars: number;
+}
+
+// The limits, ranges and defaults of the bot forms, from the settings (UI-5.8, bot-page.md §4).
+export function formSettings(settings: GetSettingsResponse): FormSettings {
+  return {
+    limits: {
+      nameMax: settings.bot_name_max,
+      descriptionMax: settings.bot_description_max,
+      personaMax: settings.bot_persona_max,
+    },
+    historyMin: settings.bot_history_min_pct,
+    historyMax: settings.bot_history_max_pct,
+    defaultHistory: settings.bot_default_history_pct,
+    defaultRequestLimit: settings.bot_default_request_limit,
+    defaultMaxReplyChars: settings.bot_default_max_reply_chars,
+  };
 }
 
 export function emptyForm(colour: string, settings: FormSettings): CreateForm {
@@ -131,7 +147,7 @@ function textProblem(field: BotTextField, form: CreateForm, ctx: FormContext): s
   return botFieldProblem(field, form[field], ctx.settings.limits);
 }
 
-function rangeProblem(value: number, min: number, max: number, step = 1): string | null {
+export function rangeProblem(value: number, min: number, max: number, step = 1): string | null {
   if (!Number.isInteger(value) || value < min || value > max || value % step !== 0) {
     const steps = step === 1 ? "" : `, in steps of ${String(step)}`;
     return `Use a whole number from ${String(min)} to ${String(max)}${steps}.`;
@@ -197,6 +213,21 @@ export function stepProblems(step: Step, form: CreateForm, ctx: FormContext): Pr
     }
   }
   return out;
+}
+
+// A size error shows at once, before the owner leaves the field (E1, E2).
+export function isTooLong(form: CreateForm, field: string, settings: FormSettings): boolean {
+  const { limits } = settings;
+  switch (field) {
+    case "name":
+      return form.name.trim().length > limits.nameMax;
+    case "description":
+      return form.description.length > limits.descriptionMax;
+    case "persona_md":
+      return form.persona_md.length > limits.personaMax;
+    default:
+      return false;
+  }
 }
 
 export function hasProblems(problems: Problems): boolean {

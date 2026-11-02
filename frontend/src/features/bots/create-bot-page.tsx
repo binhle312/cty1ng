@@ -36,7 +36,9 @@ import {
   emptyForm,
   type FormContext,
   type FormSettings,
+  formSettings,
   hasInput,
+  isTooLong,
   hasProblems,
   type Problems,
   STEP_LABELS,
@@ -126,21 +128,6 @@ export function CreateBotPage() {
       template={from === undefined ? null : (template.data ?? null)}
     />
   );
-}
-
-function formSettings(settings: GetSettingsResponse): FormSettings {
-  return {
-    limits: {
-      nameMax: settings.bot_name_max,
-      descriptionMax: settings.bot_description_max,
-      personaMax: settings.bot_persona_max,
-    },
-    historyMin: settings.bot_history_min_pct,
-    historyMax: settings.bot_history_max_pct,
-    defaultHistory: settings.bot_default_history_pct,
-    defaultRequestLimit: settings.bot_default_request_limit,
-    defaultMaxReplyChars: settings.bot_default_max_reply_chars,
-  };
 }
 
 // The first form: empty with the first available model, or a Clone (§6).
@@ -614,20 +601,6 @@ function keepUnchanged(problems: Problems, before: CreateForm, after: CreateForm
     if (fieldSnapshot(before, head) === fieldSnapshot(after, head)) kept[field] = message;
   }
   return kept;
-}
-
-function isTooLong(form: CreateForm, field: string, settings: FormSettings): boolean {
-  const { limits } = settings;
-  switch (field) {
-    case "name":
-      return form.name.trim().length > limits.nameMax;
-    case "description":
-      return form.description.length > limits.descriptionMax;
-    case "persona_md":
-      return form.persona_md.length > limits.personaMax;
-    default:
-      return false;
-  }
 }
 
 // A copied pin of a Clone, as the template names it (with its version number).

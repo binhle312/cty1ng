@@ -64,7 +64,9 @@ export function useLeaveGuard({
   return { allowLeave, dialog };
 }
 
-function LeaveDialog({
+// The dialog alone, for a page that asks for more than a route change (the bot page asks on Discard
+// and Esc too, bot-page.md §4.1).
+export function LeaveDialog({
   open,
   text,
   words,
