@@ -135,7 +135,11 @@ there, so it never jumps.
   or the pinned order changed, which never raise it) only refreshes the Skills tab, the counts
   and the header, and never blocks a Profile or Model edit. A tab with no changes takes the new
   values at once. A name taken meanwhile (409 `name_taken`) shows under Name.
-  Text typed while a Save is pending stays as a change after it.
+  Text typed while a Save is pending stays as a change after it, also text typed back to the
+  old value, and also when the `bot.updated` event of that save comes before its answer: the tab
+  waits for the answer before it takes new values. An error from the server (a taken name, a
+  field error) shows only on a field that still has the text that was sent (M2c review,
+  2026-11-02).
 - **Leave with unsaved changes** (Discard, Esc, ← Back, another bot, tab or page) asks first,
   with the dialog of `project-settings-page.md` §5: **Leave without saving? 👀**, a text that
   names the changed fields, **Stay on this page** (`primary`, default) and **Let them go**
@@ -178,7 +182,10 @@ Changes use the save bar (§4.1) and apply from the next run.
 **A pin that changed in another place** (M2 spec gap pass, owner 2026-11-01). Each Skills tab
 change sends the pin as the tab saw it (`../../api.md` §4). When the server refuses it as stale,
 the tab loads the newest pins, keeps no change, and a toast says "{skill} changed in another
-place. Check it and try again." Remove of a skill that is already gone just takes the row away.
+place. Check it and try again." The same toast shows for a skill in **+ Add** that got on the bot in
+another place; when no other skill failed, the card closes. Remove of a skill that is already gone
+just takes the row away. A pin answer never replaces newer bot values that came first (M2c
+review, 2026-11-02).
 
 ## 8. Activity tab (CH1)
 

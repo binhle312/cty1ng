@@ -78,9 +78,13 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
     setDialog(null);
   };
   const refresh = () => queryClient.invalidateQueries({ predicate: PIN_QUERIES });
+  // A pin answer never replaces a newer bot: a Profile or Model save in another place may have
+  // come first (a pin change never raises `row_version`, so the same one is not newer).
   const replaceBot = (changed: BotRow) => {
     queryClient.setQueryData<BotRow[]>(listBotsQueryKey(), (current) =>
-      current?.map((item) => (item.id === changed.id ? changed : item)),
+      current?.map((item) =>
+        item.id === changed.id && changed.row_version >= item.row_version ? changed : item,
+      ),
     );
   };
   const staleText = (skillName: string, error: unknown) =>
@@ -172,20 +176,29 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
   };
 
   // + Add: each ticked skill gets its latest version, read just before the request, with Always
-  // load off. A skill that fails stays in the card, so the owner can try again.
+  // load off. A skill that fails stays in the card, so the owner can try again. A skill that got
+  // on the bot in another place (409 `stale_write`) shows its toast instead (bot-page.md §7).
   const addSkills = async (skillIds: string[]) => {
-    const added = await Promise.allSettled(
+    const outcomes = await Promise.all(
       skillIds.map(async (skillId) => {
-        const list = await queryClient.query(listSkillVersionsOptions({ path: { id: skillId } }));
-        const latest = list[0];
-        if (latest === undefined) throw new Error("no version");
-        return setPin.mutateAsync({
-          path: { id: bot.id, skill_id: skillId },
-          body: { skill_version_id: latest.id, always_load: false, expected: null },
-        });
+        try {
+          const list = await queryClient.query(listSkillVersionsOptions({ path: { id: skillId } }));
+          const latest = list[0];
+          if (latest === undefined) throw new Error("no version");
+          await setPin.mutateAsync({
+            path: { id: bot.id, skill_id: skillId },
+            body: { skill_version_id: latest.id, always_load: false, expected: null },
+          });
+          return "added";
+        } catch (error) {
+          if (readApiError(error)?.code !== "stale_write") return "failed";
+          const name = skills.data?.find((skill) => skill.id === skillId)?.name ?? "A skill";
+          showToast(staleText(name, error));
+          return "stale";
+        }
       }),
     );
-    const failures = added.filter((result) => result.status === "rejected").length;
+    const failures = outcomes.filter((outcome) => outcome === "failed").length;
     if (failures > 0) {
       throw new Error(
         `The app could not add ${String(failures)} ${failures === 1 ? "skill" : "skills"}. Try again.`,

@@ -253,7 +253,11 @@ function AssignCard({
   const bots = useBots();
   const [ticked, setTicked] = useState<ReadonlySet<string>>(new Set());
   const { send, pending, error } = useSendPins(onClose);
-  const all: BotRow[] = bots.data ?? [];
+  // A bot that got the skill in another place leaves the list, so a retry after a conflict
+  // (409 `stale_write`) sends only the bots that still have no pin.
+  const all: BotRow[] = (bots.data ?? []).filter(
+    (bot) => !bot.pins.some((pin) => pin.skill_id === card.skillId),
+  );
   const chosen = all.filter((bot) => ticked.has(bot.id));
   return (
     <Dialog

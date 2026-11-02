@@ -234,6 +234,8 @@ describe("the assign card after Create (C4b)", () => {
   const created = makeSkill({
     latest_version: { ...makeSkill().latest_version, version: 1 },
   });
+  // A skill that was just created is on no bot yet.
+  const fresh = makeBot(1, "BA");
 
   async function create(bots: unknown[], held?: ReturnType<typeof heldAnswer>) {
     api = fakeApi({
@@ -255,7 +257,7 @@ describe("the assign card after Create (C4b)", () => {
   }
 
   it("offers the new skill to the bots with no box ticked, Skip first, and assigns v1", async () => {
-    await create([ba]);
+    await create([fresh]);
     const card = await screen.findByRole("dialog", {
       name: "Created ✨ Add Write user stories to bots?",
     });
@@ -272,7 +274,61 @@ describe("the assign card after Create (C4b)", () => {
     });
     expect(api?.sent("POST", `/api/skills/${SKILL_ID}/bots`)[0]?.body).toEqual({
       skill_version_id: versionId(1),
-      bots: [{ bot_id: ba.id, expected_skill_version_id: null }],
+      bots: [{ bot_id: fresh.id, expected_skill_version_id: null }],
+    });
+  });
+
+  it("drops a bot that got the skill in another place, and a retry sends the others", async () => {
+    const designer = makeBot(2, "Designer");
+    let bots = [fresh, designer];
+    let first = true;
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: [created] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: created }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(1) }),
+      "GET /api/bots": () => ({ body: bots }),
+      "POST /api/skills": () => ({ status: 201, body: created }),
+      [`POST /api/skills/${SKILL_ID}/bots`]: () => {
+        if (!first) return { body: [] };
+        first = false;
+        // Another tab gave BA the skill before this request came.
+        const onV1 = makePin({ version: 1, latest_version: 1, skill_version_id: versionId(1) });
+        bots = [makeBot(1, "BA", [onV1]), designer];
+        return { status: 409, body: { error: { code: "stale_write", message: "Changed." } } };
+      },
+    });
+    await renderApp("/skills/new");
+    await screen.findByLabelText("Name", { exact: true }, { timeout: 5000 });
+    type("Name", "Write user stories");
+    type("Description", "Use this skill when the owner asks for user stories.");
+    type("Body", "## Steps");
+    click(screen.getByRole("button", { name: "Create" }));
+    const card = await screen.findByRole("dialog", { name: /Add Write user stories to bots\?/ });
+    click(within(card).getByRole("checkbox", { name: /BA/ }));
+    click(within(card).getByRole("checkbox", { name: /Designer/ }));
+    click(within(card).getByRole("button", { name: "Assign" }));
+    expect(
+      await within(card).findByText(
+        "A bot changed in another place. Check the list and try again.",
+      ),
+    ).toBeTruthy();
+    // BA has the skill now, so it leaves the list; Designer stays ticked.
+    await waitFor(() => {
+      expect(within(card).queryByRole("checkbox", { name: /BA/ })).toBeNull();
+    });
+    expect(
+      within(card)
+        .getByRole("checkbox", { name: /Designer/ })
+        .getAttribute("aria-checked"),
+    ).toBe("true");
+    click(within(card).getByRole("button", { name: "Assign" }));
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/bots`)).toHaveLength(2);
+    });
+    expect(api.sent("POST", `/api/skills/${SKILL_ID}/bots`)[1]?.body).toEqual({
+      skill_version_id: versionId(1),
+      bots: [{ bot_id: designer.id, expected_skill_version_id: null }],
     });
   });
 
@@ -284,7 +340,7 @@ describe("the assign card after Create (C4b)", () => {
 
   it("shows the toast in place of the card when the owner left the Skills page meanwhile", async () => {
     const held = heldAnswer();
-    const { router } = await create([ba], held);
+    const { router } = await create([fresh], held);
     // The navigation waits for the leave question, so it is not awaited here.
     act(() => {
       void router.navigate({ to: "/" });

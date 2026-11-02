@@ -158,11 +158,22 @@ function BotView({
     profile: changedFields({ tab: "profile", form, saved, effective }),
     model: changedFields({ tab: "model", form, saved, effective }),
   };
+  // The tab whose Save is on its way.
+  const [saving, setSaving] = useState<EditTab | null>(null);
+  // The form as it is now, for an answer that comes after more typing.
+  const latestForm = useRef(form);
+  useEffect(() => {
+    latestForm.current = form;
+  });
   // A newer `row_version` (a save here, another tab, a `bot.updated` event): a tab with no changes
   // takes the new values at once; a tab with changes keeps them and shows the conflict. The check
   // runs on every render, so a tab whose changes go (typed back to the saved text) takes the new
   // values then. A pin or the pinned order never raises `row_version`, so they never block an edit.
-  const behind = EDIT_TABS.filter((t) => base[t] < bot.row_version && changed[t].length === 0);
+  // A tab whose Save is on its way waits for the answer: the event of that save can come first,
+  // and text typed meanwhile is a change against what the save sent, not against the old values.
+  const behind = EDIT_TABS.filter(
+    (t) => t !== saving && base[t] < bot.row_version && changed[t].length === 0,
+  );
   if (behind.length > 0) {
     let nextForm = form;
     let nextSaved = saved;
@@ -183,7 +194,6 @@ function BotView({
   const [left, setLeft] = useState<ReadonlySet<string>>(new Set());
   const [tried, setTried] = useState<ReadonlySet<EditTab>>(new Set());
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [saving, setSaving] = useState<EditTab | null>(null);
 
   const ctx = { settings, otherNames: bots.filter((b) => b.id !== bot.id).map((b) => b.name) };
   const problems: Record<EditTab, Problems> = {
@@ -297,15 +307,18 @@ function BotView({
           void queryClient.invalidateQueries({ predicate: PIN_QUERIES });
           return;
         }
+        // An error is about the value that was sent: a field the owner changed while Save waited
+        // gets no error, so it never blocks the corrected text.
+        const stillSent = (problems: Problems) =>
+          keepUnchanged({ problems, before: sent, after: latestForm.current, effective });
         if (api?.code === "name_taken") {
-          setServerProblems((old) => ({
-            ...old,
-            name: `${sent.name.trim()} is taken by another bot, maybe one in Trash. Pick another name.`,
-          }));
+          const name = `${sent.name.trim()} is taken by another bot, maybe one in Trash. Pick another name.`;
+          setServerProblems((old) => ({ ...old, ...stillSent({ name }) }));
           return;
         }
         if (api?.field !== undefined && tabOfField(api.field) === t) {
-          setServerProblems((old) => ({ ...old, [api.field ?? ""]: api.message }));
+          const problem = { [api.field]: api.message };
+          setServerProblems((old) => ({ ...old, ...stillSent(problem) }));
           return;
         }
         showToast(`Could not save ${bot.name}. Try again.`);

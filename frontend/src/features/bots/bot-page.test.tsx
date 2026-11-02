@@ -1,4 +1,4 @@
-import { focusManager } from "@tanstack/react-query";
+import { focusManager, type QueryClient } from "@tanstack/react-query";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { fakeApi, heldAnswer } from "../../../test/fake-api.ts";
@@ -16,6 +16,7 @@ import {
   versionId,
 } from "../../../test/fixtures.ts";
 import { renderApp } from "../../../test/render-app.tsx";
+import { listBotsQueryKey } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 
 // The bot page (bot-page.md, UI-6): the edit layout, the Profile and Model save bars with their
 // conflicts and the leave question, and the Skills tab.
@@ -93,6 +94,10 @@ const saveBar = () => {
   if (save === undefined) throw new Error("no Save");
   return save.closest("div") ?? save;
 };
+
+// The `row_version` of BA in the bot list cache.
+const cachedRowVersion = (queryClient: QueryClient) =>
+  queryClient.getQueryData<Bot[]>(listBotsQueryKey())?.[0]?.row_version;
 
 const heading = () => screen.findByRole("heading", { name: "BA", level: 1 }, { timeout: 5000 });
 
@@ -269,6 +274,34 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     expect(valueOf("Name")).toBe("Writer");
   });
 
+  it("drops a late name error when the owner changed the name while Save waited", async () => {
+    const held = heldAnswer();
+    await open(
+      { bots: [makeBot(1, "BA")] },
+      {
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+    );
+    await heading();
+    type("Name", "Writer");
+    click(screen.getByRole("button", { name: "Save" }));
+    type("Name", "Author");
+    await held.answer({
+      status: 409,
+      body: { error: { code: "name_taken", message: "Taken.", field: "name" } },
+    });
+    await waitFor(() => {
+      expect(within(saveBar()).getByText("1 change not saved")).toBeTruthy();
+    });
+    expect(screen.queryByText(/is taken by another bot/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Save" }).getAttribute("aria-disabled")).not.toBe(
+      "true",
+    );
+  });
+
   it("shows a toast and keeps the text when the save fails", async () => {
     await open(
       { bots: [makeBot(1, "BA")] },
@@ -371,6 +404,33 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
       expect(screen.getByText("Changed elsewhere.")).toBeTruthy();
     });
     expect(within(saveBar()).getByText("No changes. Edits apply from the next run.")).toBeTruthy();
+  });
+
+  it("keeps text typed back while Save waits, also when the save's event comes first", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA")] };
+    const { queryClient } = await open(state, {
+      [`PATCH /api/bots/${BA_ID}`]: async () => {
+        const answer = await held.promise;
+        return answer;
+      },
+    });
+    await heading();
+    type("Description", "Changed.");
+    click(screen.getByRole("button", { name: "Save" }));
+    // Back to the saved text while the save waits; then the event of the save comes first.
+    type("Description", "BA does its job.");
+    state.bots = [{ ...makeBot(1, "BA"), row_version: 2, description: "Changed." }];
+    refocus();
+    await waitFor(() => {
+      expect(cachedRowVersion(queryClient)).toBe(2);
+    });
+    expect(valueOf("Description")).toBe("BA does its job.");
+    await held.answer({ body: { ...makeBot(1, "BA"), row_version: 2, description: "Changed." } });
+    await waitFor(() => {
+      expect(within(saveBar()).getByText("1 change not saved")).toBeTruthy();
+    });
+    expect(valueOf("Description")).toBe("BA does its job.");
   });
 
   it("keeps a newer list when the answer of its own save comes after it", async () => {
@@ -684,6 +744,73 @@ describe("the Skills tab (bot-page.md §7)", () => {
     ).toBeTruthy();
     await waitFor(() => {
       expect(screen.queryByRole("dialog", { name: "Move Zeta to v1?" })).toBeNull();
+    });
+  });
+
+  it("keeps a newer bot when a late Always load answer comes after it", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA", pins.slice(0, 1))] };
+    let fail = false;
+    const { queryClient } = await open(
+      state,
+      {
+        "GET /api/bots": () =>
+          fail
+            ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+            : { body: state.bots },
+        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+      "/bots/ba?tab=skills",
+    );
+    await heading();
+    click(screen.getByRole("switch", { name: "Always load Zeta" }));
+    // A Profile save in another tab makes v2 while the toggle waits.
+    state.bots = [{ ...makeBot(1, "BA", pins.slice(0, 1)), row_version: 2, description: "Newer." }];
+    refocus();
+    await waitFor(() => {
+      expect(cachedRowVersion(queryClient)).toBe(2);
+    });
+    // The refresh after the answer fails, so only the answer could change the list.
+    fail = true;
+    const toggled = pins.slice(0, 1).map((pin) => ({ ...pin, always_load: true }));
+    await held.answer({ body: makeBot(1, "BA", toggled) });
+    await waitFor(() => {
+      expect(
+        screen.getByRole("switch", { name: "Always load Zeta" }).hasAttribute("disabled"),
+      ).toBe(false);
+    });
+    expect(cachedRowVersion(queryClient)).toBe(2);
+  });
+
+  it("+ Add shows the stale toast for a skill added in another place, and closes", async () => {
+    await open(
+      { bots: [makeBot(1, "BA", [makePin()])] },
+      {
+        "GET /api/skills": () => ({ body: [makeSkill(), writing] }),
+        [`GET /api/skills/${writing.id}/versions`]: () => ({
+          body: makeVersions(2).map((v) => ({ ...v, skill_id: writing.id })),
+        }),
+        [`PUT /api/bots/${BA_ID}/skills/${writing.id}`]: () => ({
+          status: 409,
+          body: { error: { code: "stale_write", message: "Changed.", current: null } },
+        }),
+      },
+      "/bots/ba?tab=skills",
+    );
+    await heading();
+    click(screen.getByRole("button", { name: "Add" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add skills to BA" });
+    const list = await within(dialog).findByRole("list", { name: "Skills to add" });
+    click(await within(list).findByRole("checkbox"));
+    click(within(dialog).getByRole("button", { name: "Add 1" }));
+    expect(
+      await screen.findByText("Writing changed in another place. Check it and try again."),
+    ).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Add skills to BA" })).toBeNull();
     });
   });
 

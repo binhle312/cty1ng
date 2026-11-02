@@ -199,6 +199,9 @@ newer card stays open. A failure that comes later shows as a toast, because its 
 - Text: "Tick the bots that must use this skill. They get v1."
 - No box starts ticked. **Skip** is the default. **Assign** (`primary`) is disabled until a box
   is ticked.
+- A bot that gets the skill in another place while the card is open leaves the list (M2c review,
+  2026-11-02). After a conflict (409 `stale_write`) the list refreshes, so a retry sends only the
+  bots that still do not have the skill.
 
 ### 7.3 After an approved skill draft (D64)
 
