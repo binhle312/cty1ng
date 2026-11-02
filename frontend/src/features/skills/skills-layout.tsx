@@ -1,6 +1,7 @@
 import { Outlet, useNavigate } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
-import { type AfterSaveCard, AfterSaveCardHost } from "./after-save-cards.tsx";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { showToast } from "../../components/ui/toast.tsx";
+import { type AfterSaveCard, AfterSaveCardHost, cardToast } from "./after-save-cards.tsx";
 import { SkillList } from "./skill-list.tsx";
 import { SkillsPageContext, type SkillsPageState } from "./skills-context.tsx";
 
@@ -11,6 +12,14 @@ export function SkillsLayout() {
   const [dirtySlug, setDirtySlug] = useState<string | null>(null);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [botCard, setBotCard] = useState<AfterSaveCard | null>(null);
+  // A card that comes after the owner left the Skills page shows as its toast instead.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const state = useMemo<SkillsPageState>(
@@ -22,7 +31,10 @@ export function SkillsLayout() {
       clearImportFile: () => {
         setImportFile(null);
       },
-      showBotCard: setBotCard,
+      showBotCard: (card: AfterSaveCard) => {
+        if (mounted.current) setBotCard(card);
+        else showToast(cardToast(card));
+      },
     }),
     [dirtySlug, importFile],
   );

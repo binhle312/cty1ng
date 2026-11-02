@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { fakeApi } from "../../../test/fake-api.ts";
+import { fakeApi, heldAnswer } from "../../../test/fake-api.ts";
 import {
   BOT_SETTINGS,
   makeBot,
@@ -108,22 +108,23 @@ describe("the assign card after Create (C4b)", () => {
     latest_version: { ...makeSkill().latest_version, version: 1 },
   });
 
-  async function create(bots: unknown[]) {
+  async function create(bots: unknown[], held?: ReturnType<typeof heldAnswer>) {
     api = fakeApi({
       "GET /api/settings": () => ({ body: BOT_SETTINGS }),
       "GET /api/skills": () => ({ body: [created] }),
       [`GET /api/skills/${SKILL_ID}`]: () => ({ body: created }),
       [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(1) }),
       "GET /api/bots": () => ({ body: bots }),
-      "POST /api/skills": () => ({ status: 201, body: created }),
+      "POST /api/skills": () => held?.promise ?? { status: 201, body: created },
       [`POST /api/skills/${SKILL_ID}/bots`]: () => ({ body: [] }),
     });
-    await renderApp("/skills/new");
+    const view = await renderApp("/skills/new");
     await screen.findByLabelText("Name", { exact: true }, { timeout: 5000 });
     type("Name", "Write user stories");
     type("Description", "Use this skill when the owner asks for user stories.");
     type("Body", "## Steps");
     click(screen.getByRole("button", { name: "Create" }));
+    return view;
   }
 
   it("offers the new skill to the bots with no box ticked, Skip first, and assigns v1", async () => {
@@ -150,6 +151,22 @@ describe("the assign card after Create (C4b)", () => {
 
   it("shows only the toast when no bot exists", async () => {
     await create([]);
+    expect(await screen.findByText("Created Write user stories ✨")).toBeTruthy();
+    expect(screen.queryByRole("dialog", { name: /to bots\?/ })).toBeNull();
+  });
+
+  it("shows the toast in place of the card when the owner left the Skills page meanwhile", async () => {
+    const held = heldAnswer();
+    const { router } = await create([ba], held);
+    // The navigation waits for the leave question, so it is not awaited here.
+    act(() => {
+      void router.navigate({ to: "/" });
+    });
+    click(await screen.findByRole("button", { name: "Let them go" }));
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/");
+    });
+    await held.answer({ status: 201, body: created });
     expect(await screen.findByText("Created Write user stories ✨")).toBeTruthy();
     expect(screen.queryByRole("dialog", { name: /to bots\?/ })).toBeNull();
   });

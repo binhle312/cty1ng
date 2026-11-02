@@ -100,6 +100,14 @@ export async function assignCardAfterCreate(
   }
 }
 
+// The toast that stands for a card when its page is gone (the owner left the Skills page while
+// the save was on its way): the save is not lost, and the Bots tab still offers the change.
+export function cardToast(card: AfterSaveCard): string {
+  return card.kind === "upgrade"
+    ? `Saved v${String(card.version)} ✨`
+    : `Created ${card.skillName} ✨`;
+}
+
 export function AfterSaveCardHost({
   card,
   onClose,
