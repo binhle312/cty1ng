@@ -75,6 +75,12 @@ export function BotPage() {
   // A refresh on its way may bring the bot (a Create or a rename moves here first): "could not
   // find" waits for the newest list, as the skill page does.
   if (bot === undefined && bots.isFetching) return <BotPageSkeleton />;
+  // A refresh that failed is not a missing bot: the list did not load (bot-page.md, URLs).
+  if (bot === undefined && bots.isError) {
+    return (
+      <LoadError text="The app could not load the bots." onRetry={() => void bots.refetch()} />
+    );
+  }
   return (
     <div className="flex h-full min-h-0">
       <BotSideList bots={bots.data} currentId={bot?.id ?? null} />
@@ -152,16 +158,15 @@ function BotView({
     model: changedFields("model", form, saved, effective),
   };
   // A newer `row_version` (a save here, another tab, a `bot.updated` event): a tab with no changes
-  // takes the new values at once; a tab with changes keeps them and shows the conflict. A pin or
-  // the pinned order never raises it, so they never block an edit.
-  const [seen, setSeen] = useState(bot.row_version);
-  if (seen !== bot.row_version) {
-    setSeen(bot.row_version);
+  // takes the new values at once; a tab with changes keeps them and shows the conflict. The check
+  // runs on every render, so a tab whose changes go (typed back to the saved text) takes the new
+  // values then. A pin or the pinned order never raises `row_version`, so they never block an edit.
+  const behind = EDIT_TABS.filter((t) => base[t] < bot.row_version && changed[t].length === 0);
+  if (behind.length > 0) {
     let nextForm = form;
     let nextSaved = saved;
     const nextBase = { ...base };
-    for (const t of EDIT_TABS) {
-      if (changed[t].length > 0) continue;
+    for (const t of behind) {
       nextForm = withTab(nextForm, server, t);
       nextSaved = withTab(nextSaved, server, t);
       nextBase[t] = bot.row_version;
@@ -267,8 +272,11 @@ function BotView({
       body: patchBody(t, sent, fields, sentBase, effective),
     })
       .then((result) => {
+        // A newer list (an event or a refresh) may have come first: the answer never replaces it.
         queryClient.setQueryData<BotRow[]>(listBotsQueryKey(), (old) =>
-          old?.map((b) => (b.id === result.id ? { ...b, ...result } : b)),
+          old?.map((b) =>
+            b.id === result.id && result.row_version > b.row_version ? { ...b, ...result } : b,
+          ),
         );
         setSaved((old) => withTab(old, sent, t));
         // The server took the save at `sentBase`, so nothing else changed in between: every tab
@@ -353,15 +361,16 @@ function BotView({
     },
   });
 
-  const stepProps = (t: EditTab): StepProps => ({
+  const stepProps: StepProps = {
     form,
     update,
-    readOnly: saving === t,
+    // Typing goes on while a Save is pending, and stays a change after it (bot-page.md §4.1).
+    readOnly: false,
     errorOf,
     onLeaveField: (field) => {
       setLeft((old) => new Set(old).add(field));
     },
-  });
+  };
   // Esc asks first, like Discard (bot-page.md §4.1). Only a key pressed on the tab itself: a
   // popover or a dialog closes on its own Esc.
   const escToDiscard = (t: EditTab) => (event: KeyboardEvent<HTMLDivElement>) => {
@@ -445,16 +454,16 @@ function BotView({
                 className="flex flex-col gap-4 rounded-card outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
               >
                 <AppearanceFields
-                  {...stepProps("profile")}
+                  {...stepProps}
                   upload={upload.choose}
                   uploadError={uploadError}
                   colourHint="Pick a colour, mix your own with Custom, or let Random pick any colour."
                 />
               </div>
               <hr className="border-outline" />
-              <NameFields {...stepProps("profile")} limits={settings.limits} />
+              <NameFields {...stepProps} limits={settings.limits} />
               <hr className="border-outline" />
-              <PersonaField {...stepProps("profile")} limits={settings.limits} />
+              <PersonaField {...stepProps} limits={settings.limits} />
             </div>
           </div>
           <BotSaveBar
@@ -478,13 +487,13 @@ function BotView({
           >
             <div className="flex max-w-3xl flex-col gap-4">
               <ToolsSection
-                {...stepProps("model")}
+                {...stepProps}
                 tools={tools}
                 model={model}
                 turnedOff={null}
                 locked={modelGone}
               />
-              <AdvancedSection {...stepProps("model")} settings={settings} model={model} />
+              <AdvancedSection {...stepProps} settings={settings} model={model} />
             </div>
           </div>
           <BotSaveBar

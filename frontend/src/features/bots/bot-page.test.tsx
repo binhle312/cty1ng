@@ -161,6 +161,29 @@ describe("the bot page", () => {
     ).toBeTruthy();
   });
 
+  it("says the list did not load, not that it could not find the bot, when a refresh fails", async () => {
+    // The cached list has no Designer (as just after a Create), and the refresh fails.
+    const state = { bots: [makeBot(1, "BA")] };
+    let fail = false;
+    await open(
+      state,
+      {
+        "GET /api/bots": () =>
+          fail
+            ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+            : { body: state.bots },
+      },
+      "/bots/designer",
+    );
+    await screen.findByText("The app could not find this bot. It may be in Trash.", undefined, {
+      timeout: 5000,
+    });
+    fail = true;
+    refocus();
+    expect(await screen.findByText("The app could not load the bots.")).toBeTruthy();
+    expect(screen.queryByText("The app could not find this bot. It may be in Trash.")).toBeNull();
+  });
+
   it("shows a bot that cannot run with its reason and Clone (UI-6.2)", async () => {
     const ba = makeBot(1, "BA", [], {
       available: false,
@@ -333,6 +356,56 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     ).toBeTruthy();
   });
 
+  it("takes the newest values when the owner types a conflicted tab back to its saved text", async () => {
+    const state = { bots: [makeBot(1, "BA")] };
+    await open(state);
+    await heading();
+    type("Description", "Mine.");
+    state.bots = [{ ...makeBot(1, "BA"), row_version: 2, persona_md: "Changed elsewhere." }];
+    refocus();
+    await screen.findByText(/BA changed in another place\. Your changes are kept here\./);
+    // Back to the text it had: the tab has no changes now, so it shows the newest values.
+    type("Description", "BA does its job.");
+    await waitFor(() => {
+      // A saved persona shows in Preview (PF4).
+      expect(screen.getByText("Changed elsewhere.")).toBeTruthy();
+    });
+    expect(within(saveBar()).getByText("No changes. Edits apply from the next run.")).toBeTruthy();
+  });
+
+  it("keeps a newer list when the answer of its own save comes after it", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA")] };
+    let fail = false;
+    await open(state, {
+      "GET /api/bots": () =>
+        fail
+          ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+          : { body: state.bots },
+      [`PATCH /api/bots/${BA_ID}`]: async () => {
+        const answer = await held.promise;
+        return answer;
+      },
+    });
+    await heading();
+    type("Description", "Mine.");
+    click(screen.getByRole("button", { name: "Save" }));
+    // The save made v2, then another tab made v3; the refresh brings v3 before the v2 answer.
+    state.bots = [
+      { ...makeBot(1, "BA"), row_version: 3, description: "Mine.", persona_md: "Later." },
+    ];
+    refocus();
+    await screen.findByText(/BA changed in another place/);
+    // The refresh after the answer fails, so only the answer could change the list.
+    fail = true;
+    await held.answer({ body: { ...makeBot(1, "BA"), row_version: 2, description: "Mine." } });
+    await waitFor(() => {
+      // A saved persona shows in Preview (PF4).
+      expect(screen.getByText("Later.")).toBeTruthy();
+    });
+    expect(within(saveBar()).getByText("No changes. Edits apply from the next run.")).toBeTruthy();
+  });
+
   it("takes newer values at once on a tab with no changes", async () => {
     const state = { bots: [makeBot(1, "BA")] };
     await open(state);
@@ -371,12 +444,18 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     await heading();
     type("Description", "First.");
     click(screen.getByRole("button", { name: "Save" }));
-    // The fields are read-only while the save is on its way; the persona is on the same tab, so
-    // the owner types after the answer here.
-    await held.answer({ body: { ...makeBot(1, "BA"), row_version: 2, description: "First." } });
-    await screen.findByText("No changes. Edits apply from the next run.");
+    // The owner types while the save is on its way (bot-page.md §4.1).
+    const field = screen.getByLabelText("Description", { exact: true });
+    expect(field.hasAttribute("readonly")).toBe(false);
     type("Description", "Second.");
-    expect(within(saveBar()).getByText("1 change not saved")).toBeTruthy();
+    await held.answer({ body: { ...makeBot(1, "BA"), row_version: 2, description: "First." } });
+    await waitFor(() => {
+      expect(within(saveBar()).getByText("1 change not saved")).toBeTruthy();
+    });
+    expect(valueOf("Description")).toBe("Second.");
+    expect(fake?.sent("PATCH", `/api/bots/${BA_ID}`).map((r) => r.body)).toEqual([
+      { row_version: 1, description: "First." },
+    ]);
   });
 });
 
@@ -574,6 +653,40 @@ describe("the Skills tab (bot-page.md §7)", () => {
     });
   });
 
+  it("closes a stale version move and says so in a toast (bot-page.md §7)", async () => {
+    await open(
+      { bots: [makeBot(1, "BA", pins.slice(0, 1))] },
+      {
+        [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+        [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
+          body: { body: [{ op: "del", text: "New line." }], description: null },
+        }),
+        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => ({
+          status: 409,
+          body: { error: { code: "stale_write", message: "Changed.", current: null } },
+        }),
+      },
+      "/bots/ba?tab=skills",
+    );
+    await heading();
+    click(screen.getByRole("button", { name: "Actions for Zeta" }));
+    click(await screen.findByRole("menuitem", { name: "Change version" }));
+    const versions = await screen.findByRole("list", { name: "Versions" });
+    const older = within(versions)
+      .getAllByRole("button")
+      .find((button) => button.textContent.includes("v1"));
+    if (older === undefined) throw new Error("no v1");
+    click(older);
+    const dialog = await screen.findByRole("dialog", { name: "Move Zeta to v1?" });
+    click(await within(dialog).findByRole("button", { name: "Use v1" }));
+    expect(
+      await screen.findByText("Zeta changed in another place. Check it and try again."),
+    ).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Move Zeta to v1?" })).toBeNull();
+    });
+  });
+
   it("says when a pin changed in another place, and loads the newest pins", async () => {
     await open(
       { bots: [makeBot(1, "BA", pins.slice(0, 1))] },
@@ -622,6 +735,26 @@ describe("the Skills tab (bot-page.md §7)", () => {
       always_load: false,
       expected: null,
     });
+  });
+
+  it("+ Add says it is loading, not that the bot has every skill, before the list comes", async () => {
+    const held = heldAnswer();
+    await open(
+      { bots: [makeBot(1, "BA", [makePin()])] },
+      { "GET /api/skills": async () => held.promise },
+      "/bots/ba?tab=skills",
+    );
+    await heading();
+    click(screen.getByRole("button", { name: "Add" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add skills to BA" });
+    expect(within(dialog).getByText("Loading the skills.")).toBeTruthy();
+    expect(within(dialog).queryByText(/The bot has every active skill/)).toBeNull();
+    await held.answer({ body: [makeSkill(), writing] });
+    const list = await within(dialog).findByRole("list", { name: "Skills to add" });
+    await waitFor(() => {
+      expect(within(list).getAllByRole("checkbox")).toHaveLength(1);
+    });
+    expect(within(dialog).queryByText("Loading the skills.")).toBeNull();
   });
 
   it("removes a skill without asking", async () => {

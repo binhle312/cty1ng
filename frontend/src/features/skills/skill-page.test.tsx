@@ -39,6 +39,40 @@ describe("the skill page when the skill list does not load", () => {
   });
 });
 
+// A cached list without the skill and a refresh that fails: the load failed, so the page says
+// that, never Page not found (bot-page.md has the same rule for the bot page).
+describe("the skill page when a refresh of the list fails", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  it("shows the error state, not Page not found", async () => {
+    let fail = false;
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () =>
+        fail
+          ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+          : { body: [] },
+      "GET /api/bots": () => ({ body: [] }),
+    });
+    const { router, queryClient } = await renderApp("/skills");
+    await waitFor(() => {
+      expect(api?.sent("GET", "/api/skills").length).toBeGreaterThan(0);
+    });
+    fail = true;
+    act(() => {
+      void queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES });
+      void router.navigate({ to: "/skills/$slug", params: { slug: "write-user-stories" } });
+    });
+    const alert = await screen.findByRole("alert", {}, { timeout: 5000 });
+    expect(alert.textContent).toContain("The app could not load the skills.");
+    expect(screen.queryByText("Page not found")).toBeNull();
+  });
+});
+
 // A Create moves to the new skill when the list refresh ends. A live event in that time cancels
 // the refresh again, and TanStack Query joins only one cancelled refresh, so the wait could end on
 // the old list and show Page not found (found by the M2c e2e run). The page waits for the list.

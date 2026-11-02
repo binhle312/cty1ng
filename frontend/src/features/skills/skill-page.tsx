@@ -87,6 +87,12 @@ export function SkillPage() {
   // and a live event in that time can end the wait before the new list comes (TanStack Query
   // joins only one cancelled refresh). Page not found waits for the newest list.
   if (row === undefined && skills.isFetching) return <SkillEditorSkeleton />;
+  // A refresh that failed is not a missing skill either: the list did not load.
+  if (row === undefined && skills.isError) {
+    return (
+      <LoadError text="The app could not load the skills." onRetry={() => void skills.refetch()} />
+    );
+  }
   // The shell's Page not found replaces the whole Skills page (skills-page.md §1).
   // eslint-disable-next-line @typescript-eslint/only-throw-error -- the router's way to show Page not found
   if (row === undefined) throw notFound();

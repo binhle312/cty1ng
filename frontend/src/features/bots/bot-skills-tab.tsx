@@ -135,11 +135,18 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
     );
   };
 
-  const runInDialog = (
-    shown: Dialog,
-    request: Promise<unknown>,
-    failed: (e: unknown) => string,
-  ) => {
+  const runInDialog = ({
+    shown,
+    request,
+    failed,
+    closes = () => false,
+  }: {
+    shown: Dialog;
+    request: Promise<unknown>;
+    failed: (e: unknown) => string;
+    // A failure that closes the dialog and shows as a toast (a stale pin, bot-page.md §7).
+    closes?: (e: unknown) => boolean;
+  }) => {
     setDialogError(null);
     setBusyDialog(shown);
     void request
@@ -150,8 +157,13 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
         },
         (error: unknown) => {
           void refresh();
-          if (shownDialog.current === shown) setDialogError(failed(error));
-          else showToast(failed(error));
+          const open = shownDialog.current === shown;
+          if (open && !closes(error)) {
+            setDialogError(failed(error));
+            return;
+          }
+          if (open) closeDialog();
+          showToast(failed(error));
         },
       )
       .finally(() => {
@@ -185,7 +197,8 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
   const dialogPin =
     dialogSkillId === null ? undefined : bot.pins.find((pin) => pin.skill_id === dialogSkillId);
   const has = new Set(bot.pins.map((pin) => pin.skill_id));
-  const addable = (skills.data ?? []).filter((skill) => !skill.deprecated && !has.has(skill.id));
+  // Undefined until the list comes, so the card says it is loading.
+  const addable = skills.data?.filter((skill) => !skill.deprecated && !has.has(skill.id));
 
   return (
     <div className="px-8 py-5">
@@ -268,9 +281,11 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
         onClose={closeDialog}
         onConfirm={(skillIds) => {
           if (dialog?.kind !== "add") return;
-          runInDialog(dialog, addSkills(skillIds), (error) =>
-            error instanceof Error ? error.message : apiErrorText(error),
-          );
+          runInDialog({
+            shown: dialog,
+            request: addSkills(skillIds),
+            failed: (error) => (error instanceof Error ? error.message : apiErrorText(error)),
+          });
         }}
       />
       <ChangeVersionDialog
@@ -300,9 +315,9 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
         onClose={closeDialog}
         onConfirm={(version) => {
           if (dialogPin === undefined || dialog?.kind !== "move") return;
-          runInDialog(
-            dialog,
-            setPin
+          runInDialog({
+            shown: dialog,
+            request: setPin
               .mutateAsync({
                 path: { id: bot.id, skill_id: dialogPin.skill_id },
                 body: {
@@ -315,8 +330,10 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
                 },
               })
               .then(replaceBot),
-            (error) => staleText(dialogPin.skill_name, error),
-          );
+            failed: (error) => staleText(dialogPin.skill_name, error),
+            // The tab loads the newest pins and keeps no change (bot-page.md §7).
+            closes: (error) => readApiError(error)?.code === "stale_write",
+          });
         }}
       />
     </div>

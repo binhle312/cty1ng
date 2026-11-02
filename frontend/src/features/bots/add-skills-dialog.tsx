@@ -14,7 +14,8 @@ type SkillRow = ListSkillsResponse[number];
 // a search, and the primary button at the far right. The rows are the skills the bot does not
 // have and that are not deprecated, with the name, the description and the latest version. No
 // box starts ticked; the button counts ("Add 2") and is at 40 % with none. Skip, Esc or a click
-// outside closes it. Each added skill gets its latest version and Always load off.
+// outside closes it. Each added skill gets its latest version and Always load off. `skills` is
+// undefined until the list comes, so the card never says "nothing to add" before it knows.
 export function AddSkillsDialog({
   open,
   botName,
@@ -26,7 +27,7 @@ export function AddSkillsDialog({
 }: {
   open: boolean;
   botName: string;
-  skills: SkillRow[];
+  skills: SkillRow[] | undefined;
   pending: boolean;
   error: string | null;
   onClose: () => void;
@@ -55,7 +56,7 @@ function AddBody({
   onConfirm,
   skip,
 }: {
-  skills: SkillRow[];
+  skills: SkillRow[] | undefined;
   pending: boolean;
   error: string | null;
   onClose: () => void;
@@ -64,12 +65,13 @@ function AddBody({
 }) {
   const [query, setQuery] = useState("");
   const [ticked, setTicked] = useState<ReadonlySet<string>>(new Set());
+  const loaded = skills ?? [];
   // A ticked skill can leave the list while the card is open (another tab added it or deprecated
   // it): only the ticked skills still in the list count and are sent.
-  const chosen = skills.filter((skill) => ticked.has(skill.id)).map((skill) => skill.id);
+  const chosen = loaded.filter((skill) => ticked.has(skill.id)).map((skill) => skill.id);
   const n = chosen.length;
   const needle = query.trim().toLocaleLowerCase();
-  const shown = skills.filter(
+  const shown = loaded.filter(
     (skill) =>
       needle === "" ||
       skill.name.toLocaleLowerCase().includes(needle) ||
@@ -97,11 +99,13 @@ function AddBody({
         aria-label="Skills to add"
         className="mt-3 flex max-h-64 flex-col gap-1.5 overflow-y-auto"
       >
-        {shown.length === 0 && (
+        {shown.length === 0 && (skills !== undefined || error === null) && (
           <li className="px-2 py-3 text-on-surface-muted">
-            {skills.length === 0
-              ? "No skills to add. The bot has every active skill."
-              : `No skills match "${query.trim()}".`}
+            {skills === undefined
+              ? "Loading the skills."
+              : skills.length === 0
+                ? "No skills to add. The bot has every active skill."
+                : `No skills match "${query.trim()}".`}
           </li>
         )}
         {shown.map((skill) => {

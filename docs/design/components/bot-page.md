@@ -312,7 +312,7 @@ The design names these parts but not their words. Each follows a pattern that ex
 | Model tab, model removed | Under Tools: "{model id} is no longer offered, so the tools cannot change. Clone the bot to use another model." The switches are off; Advanced still saves (`../../api.md` §4 PATCH) |
 | Skills tab, top line | "Changes save at once. BA uses them from its next run." and **+ Add** |
 | Skills tab, no skills | "BA has no skills yet." |
-| + Add card (SK2) | Title "Add skills to BA", "Tick the skills to add. Each gets its latest version, with Always load off.", Search, the list, "A click outside this card is the same as Skip.", **Skip** and **Add {n}**. With nothing to add: "No skills to add. The bot has every active skill." |
+| + Add card (SK2) | Title "Add skills to BA", "Tick the skills to add. Each gets its latest version, with Always load off.", Search, the list, "A click outside this card is the same as Skip.", **Skip** and **Add {n}**. With nothing to add: "No skills to add. The bot has every active skill." Before the list comes: "Loading the skills." (M2c review, 2026-11-02) |
 | Save off, why (tooltip, ui-rules B5) | "No changes to save.", "Saving.", "Fix the errors first.", "BA changed in another place. Discard first." |
 | Field errors bar | "Fix 1 field to save." for one field |
 | Avatar on the page top | Hover or focus shows **Change**; its name for screen readers is "Change the avatar of BA" |
