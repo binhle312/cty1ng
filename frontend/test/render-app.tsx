@@ -23,5 +23,5 @@ export async function renderApp(path = "/") {
     </QueryClientProvider>,
   );
   await act(() => router.load());
-  return { ...view, router };
+  return { ...view, router, queryClient };
 }

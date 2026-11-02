@@ -1,8 +1,16 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fakeApi, heldAnswer } from "../../../test/fake-api.ts";
-import { makeBot, makePin, makeSkill, makeVersions, SKILL_ID } from "../../../test/fixtures.ts";
+import {
+  BOT_SETTINGS,
+  makeBot,
+  makePin,
+  makeSkill,
+  makeVersions,
+  SKILL_ID,
+} from "../../../test/fixtures.ts";
 import { renderApp } from "../../../test/render-app.tsx";
+import { SKILL_OR_BOT_QUERIES } from "../../lib/api/operation-queries.ts";
 
 // A failed request is not a missing skill (requirements/README.md: every view has an error
 // state): the page says the load failed and offers Try again, never Page not found.
@@ -27,6 +35,73 @@ describe("the skill page when the skill list does not load", () => {
     const alert = await screen.findByRole("alert", {}, { timeout: 5000 });
     expect(alert.textContent).toContain("The app could not load the skills.");
     expect(within(alert).getByRole("button", { name: "Try again" })).toBeTruthy();
+    expect(screen.queryByText("Page not found")).toBeNull();
+  });
+});
+
+// A Create moves to the new skill when the list refresh ends. A live event in that time cancels
+// the refresh again, and TanStack Query joins only one cancelled refresh, so the wait could end on
+// the old list and show Page not found (found by the M2c e2e run). The page waits for the list.
+describe("the skill page after Create while live events refresh the list", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  it("shows the new skill, not Page not found", async () => {
+    const created = makeSkill({ latest_version: { ...makeSkill().latest_version, version: 1 } });
+    const held: ReturnType<typeof heldAnswer>[] = [];
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      // The first list has no skill; each refresh after Create waits.
+      "GET /api/skills": () => {
+        if (api?.sent("GET", "/api/skills").length === 1) return { body: [] };
+        const answer = heldAnswer();
+        held.push(answer);
+        return answer.promise;
+      },
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: created }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(1) }),
+      "GET /api/bots": () => ({ body: [] }),
+      "POST /api/skills": () => ({ status: 201, body: created }),
+    });
+    const { router, queryClient } = await renderApp("/skills/new");
+    await screen.findByLabelText("Name", { exact: true }, { timeout: 5000 });
+    for (const [label, text] of [
+      ["Name", "Write user stories"],
+      ["Description", "Use it."],
+      ["Body", "## Steps"],
+    ] as const) {
+      act(() => {
+        fireEvent.change(screen.getByLabelText(label, { exact: true }), {
+          target: { value: text },
+        });
+      });
+    }
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "Create" }));
+    });
+    await waitFor(() => {
+      expect(held).toHaveLength(1);
+    });
+    // Two live events while the refresh waits.
+    for (const count of [2, 3]) {
+      act(() => {
+        void queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES });
+      });
+      await waitFor(() => {
+        expect(held).toHaveLength(count);
+      });
+    }
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/skills/write-user-stories");
+    });
+    expect(screen.queryByText("Page not found")).toBeNull();
+    for (const answer of held) await answer.answer({ body: [created] });
+    expect(
+      await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 }),
+    ).toBeTruthy();
     expect(screen.queryByText("Page not found")).toBeNull();
   });
 });

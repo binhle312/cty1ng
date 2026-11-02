@@ -72,6 +72,9 @@ export function BotPage() {
     return <BotPageSkeleton />;
   }
   const bot = bots.data.find((b) => b.slug === slug);
+  // A refresh on its way may bring the bot (a Create or a rename moves here first): "could not
+  // find" waits for the newest list, as the skill page does.
+  if (bot === undefined && bots.isFetching) return <BotPageSkeleton />;
   return (
     <div className="flex h-full min-h-0">
       <BotSideList bots={bots.data} currentId={bot?.id ?? null} />

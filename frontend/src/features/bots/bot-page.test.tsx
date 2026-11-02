@@ -44,8 +44,10 @@ function open(state: { bots: Bot[] }, extra: Routes = {}, path = "/bots/ba") {
     [`PATCH /api/bots/${BA_ID}`]: (request) => {
       const ba = state.bots[0];
       if (ba === undefined) return { status: 404 };
-      const body = request.body as Partial<Bot>;
-      const saved = { ...ba, ...body, row_version: ba.row_version + 1 };
+      // The fake server takes the sent fields as they are; the page's checks come first.
+      const saved = Object.assign(structuredClone(ba), request.body, {
+        row_version: ba.row_version + 1,
+      });
       state.bots = [saved, ...state.bots.slice(1)];
       return { body: saved };
     },
@@ -75,6 +77,15 @@ const refocus = () => {
   act(() => {
     focusManager.setFocused(true);
   });
+};
+
+// The text in a field, read without a type assertion.
+const valueOf = (label: string): string => {
+  const field = screen.getByLabelText(label, { exact: true });
+  if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) {
+    throw new Error(`${label} is not a text field`);
+  }
+  return field.value;
 };
 
 const saveBar = () => {
@@ -122,6 +133,31 @@ describe("the bot page", () => {
       await screen.findByText("The app could not find this bot. It may be in Trash.", undefined, {
         timeout: 5000,
       }),
+    ).toBeTruthy();
+  });
+
+  it("waits for a list refresh on its way before it says it could not find the bot", async () => {
+    // The first list has no Designer; the refresh brings it (as after a Create, when a live
+    // event can end the wait for the list early: skill-page.test.tsx).
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA")] };
+    let hold = false;
+    await open(
+      state,
+      { "GET /api/bots": () => (hold ? held.promise : { body: state.bots }) },
+      "/bots/designer",
+    );
+    await screen.findByText("The app could not find this bot. It may be in Trash.", undefined, {
+      timeout: 5000,
+    });
+    hold = true;
+    refocus();
+    await waitFor(() => {
+      expect(screen.queryByText("The app could not find this bot. It may be in Trash.")).toBeNull();
+    });
+    await held.answer({ body: [makeBot(1, "BA"), makeBot(2, "Designer")] });
+    expect(
+      await screen.findByRole("heading", { name: "Designer", level: 1 }, { timeout: 5000 }),
     ).toBeTruthy();
   });
 
@@ -207,9 +243,7 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
         "Writer is taken by another bot, maybe one in Trash. Pick another name.",
       ),
     ).toBeTruthy();
-    expect((screen.getByLabelText("Name", { exact: true }) as HTMLInputElement).value).toBe(
-      "Writer",
-    );
+    expect(valueOf("Name")).toBe("Writer");
   });
 
   it("shows a toast and keeps the text when the save fails", async () => {
@@ -243,7 +277,8 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
   });
 
   it("shows an avatar change on the page top before Save: band, Not saved, the bar's line", async () => {
-    await open({ bots: [makeBot(1, "BA")] });
+    const ba = makeBot(1, "BA");
+    await open({ bots: [ba] });
     await heading();
     expect(screen.queryByText("Not saved")).toBeNull();
     click(screen.getByRole("button", { name: "Colour 2" }));
@@ -252,7 +287,7 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
       screen.getByText("The header and conversations still show the old avatar until you save."),
     ).toBeTruthy();
     const band = document.querySelector("header [data-band]");
-    expect(band?.getAttribute("data-band")).not.toBe("#336699");
+    expect(band?.getAttribute("data-band")).not.toBe(ba.avatar_colour);
   });
 
   it("keeps the edit on a stale save, says so, and Discard loads the new values", async () => {
@@ -275,17 +310,13 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
         "BA changed in another place. Your changes are kept here. Copy what you need, then Discard to load the new values.",
       ),
     ).toBeTruthy();
-    expect(
-      (screen.getByLabelText("Description", { exact: true }) as HTMLTextAreaElement).value,
-    ).toBe("Mine.");
+    expect(valueOf("Description")).toBe("Mine.");
     expect(screen.getByRole("button", { name: "Save" }).getAttribute("aria-disabled")).toBe("true");
     click(screen.getByRole("button", { name: "Discard" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
     click(within(dialog).getByRole("button", { name: "Let them go" }));
     await waitFor(() => {
-      expect(
-        (screen.getByLabelText("Description", { exact: true }) as HTMLTextAreaElement).value,
-      ).toBe("From another tab.");
+      expect(valueOf("Description")).toBe("From another tab.");
     });
     expect(screen.getByText("No changes. Edits apply from the next run.")).toBeTruthy();
   });
@@ -309,9 +340,7 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     state.bots = [{ ...makeBot(1, "BA"), row_version: 2, description: "Newer." }];
     refocus();
     await waitFor(() => {
-      expect(
-        (screen.getByLabelText("Description", { exact: true }) as HTMLTextAreaElement).value,
-      ).toBe("Newer.");
+      expect(valueOf("Description")).toBe("Newer.");
     });
     expect(screen.queryByText(/changed in another place/)).toBeNull();
   });
@@ -368,9 +397,7 @@ describe("leaving the bot page with changes (bot-page.md §4.1)", () => {
     await waitFor(() => {
       expect(screen.queryByRole("alertdialog")).toBeNull();
     });
-    expect((screen.getByLabelText("Name", { exact: true }) as HTMLInputElement).value).toBe(
-      "Analyst",
-    );
+    expect(valueOf("Name")).toBe("Analyst");
   });
 
   it("Let them go drops the changes and opens the other bot", async () => {
@@ -479,12 +506,12 @@ describe("the Skills tab (bot-page.md §7)", () => {
     const rows = screen.getAllByRole("row").slice(1);
     expect(rows.map((row) => row.getAttribute("data-skill"))).toEqual(["alpha", "zeta"]);
     expect(
-      within(rows[1] as HTMLElement).getByRole("button", { name: "v3 available" }),
+      within(rows.at(1) ?? document.body).getByRole("button", { name: "v3 available" }),
     ).toBeTruthy();
   });
 
   it("upgrades from the link after showing the changes, sending the pin as it showed it", async () => {
-    const state = { bots: [makeBot(1, "BA", [pins[0] as (typeof pins)[number]])] };
+    const state = { bots: [makeBot(1, "BA", pins.slice(0, 1))] };
     await open(
       state,
       {
@@ -514,7 +541,7 @@ describe("the Skills tab (bot-page.md §7)", () => {
 
   it("says when a pin changed in another place, and loads the newest pins", async () => {
     await open(
-      { bots: [makeBot(1, "BA", [pins[0] as (typeof pins)[number]])] },
+      { bots: [makeBot(1, "BA", pins.slice(0, 1))] },
       {
         [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => ({
           status: 409,
