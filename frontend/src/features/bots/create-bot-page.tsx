@@ -67,7 +67,8 @@ export function CreateBotPage() {
   const settings = useQuery(getSettingsOptions());
   const models = useQuery(listModelsOptions());
   const tools = useQuery(listToolsOptions());
-  const skills = useQuery(listSkillsOptions());
+  // Deprecated skills too: a Clone keeps the deprecated pins of its source bot (§6).
+  const skills = useQuery(listSkillsOptions({ query: { include_deprecated: "true" } }));
   const bots = useBots();
   const template = useQuery({
     ...getBotCloneTemplateOptions({ path: { id: from ?? "" } }),
@@ -429,7 +430,7 @@ function CreateBotView({
         ? "ready"
         : "not_created";
 
-  const skillChoices = skillChoicesOf({ skills, form: start, source });
+  const skillChoices = skillChoicesOf({ skills, form, source });
 
   const stepProps = {
     form,
@@ -616,8 +617,10 @@ function isTooLong(form: CreateForm, field: string, settings: FormSettings): boo
   }
 }
 
-// The rows of step 3: every skill that is not deprecated, and the ticked ones of a Clone (with
-// the copied version, deprecated or in Trash).
+// The rows of step 3 (§3, §6): every skill that is not deprecated, the copied pins of a Clone
+// (with the copied version, deprecated or in Trash), and every ticked skill, also one that left
+// the list (another tab moved it to Trash), so it can be unticked. The rows do not depend on
+// the ticks of the moment, except for a skill that left: unticked, its row goes.
 function skillChoicesOf({
   skills,
   form,
@@ -628,9 +631,14 @@ function skillChoicesOf({
   source: BotRow | undefined;
 }): SkillChoice[] {
   const copied = new Map((source?.pins ?? []).map((pin) => [pin.skill_id, pin]));
-  const ticked = new Set(form.pins.map((pin) => pin.skill_id));
+  const copiedPin = (skillId: string) => {
+    const from = copied.get(skillId);
+    return from === undefined
+      ? null
+      : { skill_version_id: from.skill_version_id, always_load: from.always_load };
+  };
   const rows: SkillChoice[] = skills
-    .filter((skill) => !skill.deprecated || ticked.has(skill.id))
+    .filter((skill) => !skill.deprecated || copied.has(skill.id))
     .map((skill) => {
       const pin = copied.get(skill.id);
       return {
@@ -639,18 +647,24 @@ function skillChoicesOf({
         description: pin?.description ?? skill.latest_version.description,
         version: pin?.version ?? skill.latest_version.version,
         deprecated: skill.deprecated,
+        copied: copiedPin(skill.id),
       };
     });
-  // A copied skill that is not in the list any more is in Trash.
-  for (const pin of form.pins) {
-    if (rows.some((row) => row.id === pin.skill_id)) continue;
-    const from = copied.get(pin.skill_id);
+  // A skill that is not in the list any more is in Trash.
+  const gone = [
+    ...copied.keys(),
+    ...form.pins.map((pin) => pin.skill_id).filter((id) => !copied.has(id)),
+  ];
+  for (const id of gone) {
+    if (rows.some((row) => row.id === id)) continue;
+    const from = copied.get(id);
     rows.push({
-      id: pin.skill_id,
+      id,
       name: from?.skill_name ?? "A skill in Trash",
       description: from?.description ?? "",
       version: from?.version ?? 1,
       deprecated: from?.deprecated ?? false,
+      copied: copiedPin(id),
     });
   }
   return rows;

@@ -275,6 +275,8 @@ export interface SkillChoice {
   // The version a tick pins: the latest, or the copied one in a Clone.
   version: number;
   deprecated: boolean;
+  // The source bot's pin in a Clone: a tick pins that version again, with its Always load.
+  copied: { skill_version_id: string; always_load: boolean } | null;
 }
 
 export function SkillsStep({
@@ -301,7 +303,14 @@ export function SkillsStep({
     update((f) => ({
       ...f,
       pins: on
-        ? [...f.pins, { skill_id: skill.id, skill_version_id: null, always_load: false }]
+        ? [
+            ...f.pins,
+            {
+              skill_id: skill.id,
+              skill_version_id: skill.copied?.skill_version_id ?? null,
+              always_load: skill.copied?.always_load ?? false,
+            },
+          ]
         : f.pins.filter((pin) => pin.skill_id !== skill.id),
     }));
   };
