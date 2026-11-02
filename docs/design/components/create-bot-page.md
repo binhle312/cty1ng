@@ -65,8 +65,10 @@ Loading: one `GET /skills` returns every skill with name, description and latest
 bodies, no paging). The search filters in the browser. A Clone asks with `include_deprecated=true`,
 because it keeps the source bot's deprecated pins (§6). A copied pin shows the version that
 Create sends: its name, number and description come with the clone template (`copied_pins`,
-read with the pins in one call), never from the bot list, which can already name another version
-(M2b review, owner 2026-11-02). A ticked skill that another tab moved to Trash has no number:
+read from the same rows as the pins), never from the bot list, which can already name another
+version (M2b review, owner 2026-11-02). That pairs them only within one answer: the template
+can come again (focus, another tab changed the source bot), so the page keeps the
+`copied_pins` of the answer its form started from, and Create leaves `copied_pins` out. A ticked skill that another tab moved to Trash has no number:
 its row says "Version number unavailable" and the preview "A skill in Trash (version number
 unavailable)" (owner, 2026-11-02).
 

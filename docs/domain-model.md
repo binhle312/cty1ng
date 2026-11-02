@@ -393,11 +393,11 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
   (`api.md` §4); the M5b Trash page replaces it. A restore clears `deleted_at`, raises
   `row_version`, leaves the bot unpinned and emits `bot.restored` and `trash.changed`. It always
   works, because the name and the slug stay taken while the bot is in Trash.
-- **Clone:** there is no "clone" write endpoint. `GET /bots/{id}/clone-template` returns a
-  prefilled create payload (`name` per the clone name rule below, description, persona, avatar style (no
+- **Clone:** there is no "clone" write endpoint. `GET /bots/{id}/clone-template` returns form
+  defaults plus display data. The defaults are the create fields (`name` per the clone name rule below, description, persona, avatar style (no
   colour: the page picks a free one, `design/components/bot-avatar.md` §5), model, effort, Advanced values, `tool_settings`, pins with their versions and
-  `always_load`), and beside it `copied_pins`, the same pins with their names and version
-  numbers for the page to show (not sent back). The owner edits it in the create form and submits a normal create with
+  `always_load`); the display data is `copied_pins`, the same pins with their names and version
+  numbers for the page to show (never sent back; `api.md` states the compatibility cost). The owner edits the defaults in the create form and submits a normal create with
   `cloned_from_bot_id`. Cancelling creates nothing. Bot memory is not copied. A bot in Trash or
   purged has no clone template (422 `bot_deleted`). With `avatar_style: upload` the template
   also has the `avatar_id`, so the clone uses the same image.

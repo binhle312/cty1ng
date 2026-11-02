@@ -155,13 +155,33 @@ describe("/bots/{id}", () => {
     expect((await errorOf(await send("GET", "/bots/skill_x"))).code).toBe("invalid_id");
   });
 
-  it("GET /bots/{id}/clone-template gives a create body without a colour", async () => {
+  it("GET /bots/{id}/clone-template gives form defaults and display data", async () => {
     const { bot } = await createBot();
     const template = await json(await send("GET", `/bots/${String(bot.id)}/clone-template`));
     expect(template).toMatchObject({ name: "BA (copy)", cloned_from_bot_id: bot.id });
     expect(template).not.toHaveProperty("avatar_colour");
     // The source bot's pins, as GET /bots shows them, for the page to name the copied versions.
     expect(template).toHaveProperty("copied_pins", []);
+    // Not a create body as it is (api.md): with only a colour added, POST /bots refuses it.
+    const asIs = await send(
+      "POST",
+      "/bots",
+      { ...template, avatar_colour: "#112233" },
+      { "idempotency-key": crypto.randomUUID() },
+    );
+    expect(asIs.status).toBe(422);
+    expect(await errorOf(asIs)).toMatchObject({ code: "validation_error" });
+    // Without `copied_pins`, the same body creates the clone.
+    const defaults = Object.fromEntries(
+      Object.entries(template).filter(([field]) => field !== "copied_pins"),
+    );
+    const created = await send(
+      "POST",
+      "/bots",
+      { ...defaults, avatar_colour: "#112233" },
+      { "idempotency-key": crypto.randomUUID() },
+    );
+    expect(created.status).toBe(201);
     // A bot in Trash has no clone template (domain-model.md §2 Clone).
     await send("DELETE", `/bots/${String(bot.id)}`);
     const trashed = await send("GET", `/bots/${String(bot.id)}/clone-template`);

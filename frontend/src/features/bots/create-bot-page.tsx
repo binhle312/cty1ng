@@ -228,9 +228,11 @@ function CreateBotView({
     ),
   });
   const [start] = useState(() => startForm({ template, settings, models, bots }));
-  // The copied pins come with the template, from the same read as the pins Create sends, so the
-  // rows and the preview show the very version that Create sends (§3).
-  const copiedPins = template?.copied_pins ?? [];
+  // The names and numbers of the copied pins (§3). The server reads them with the pins, but that
+  // pairs them only inside one answer: the template can come again (focus, another tab changed
+  // the source bot) while the form keeps the pins of its first answer. So they are kept from
+  // that same answer as `start`, and the rows and the preview name what Create sends.
+  const [copiedPins] = useState(() => template?.copied_pins ?? []);
   const [form, setForm] = useState(start);
   // The model that left the catalog, for the CL2 error.
   const [goneModel] = useState(() =>

@@ -331,10 +331,11 @@ export const PatchBotBody = z
   .strict();
 export type PatchBotBody = z.infer<typeof PatchBotBody>;
 
-// `GET /bots/{id}/clone-template`: a prefilled create body, without a colour (the page picks one).
-// `copied_pins` is not part of that body: it is the source bot's pins as `GET /bots` shows them,
-// read with `pins` in the same call, so the page shows the name and number of the very version
-// it sends (create-bot-page.md §3). The page drops it before Create.
+// `GET /bots/{id}/clone-template`: form defaults plus display data, not a create body as it is.
+// The defaults are the create fields without a colour (the page picks one). `copied_pins` is the
+// display data: the source bot's pins as `GET /bots` shows them, read from the same rows as
+// `pins`, so within one answer each version id comes with its number. Create leaves it out
+// (`CreateBotBody` is strict and refuses it); api.md states the compatibility cost.
 export const CloneTemplate = CreateBotBody.omit({ avatar_colour: true })
   .extend({
     effort: Effort.nullable(),

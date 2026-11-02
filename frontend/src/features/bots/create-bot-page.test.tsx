@@ -242,6 +242,8 @@ describe("skills on the Create bot page", () => {
     expect(fake.sent("POST", "/api/bots")[0]?.body).toMatchObject({
       pins: [{ skill_id: OLD.id, skill_version_id: versionId(1), always_load: true }],
     });
+    // `copied_pins` is display data: Create leaves it out (api.md, clone-template).
+    expect(fake.sent("POST", "/api/bots")[0]?.body).not.toHaveProperty("copied_pins");
   });
 
   it("gives a copied pin back its version when it is unticked and ticked again", async () => {
@@ -324,6 +326,55 @@ describe("skills on the Create bot page", () => {
     expect(screen.getByText(`${OLD.name} v1 (always load)`)).toBeTruthy();
     openStep(/Skills/);
     expect(within(rowOf(OLD.id)).getByText("v1")).toBeTruthy();
+  });
+
+  it("keeps the copied versions with the form when the template comes again (§3)", async () => {
+    // The template answers v1 first; another tab then moves the source bot to v2, so a later
+    // template answer names v2 in both `pins` and `copied_pins`.
+    const atV2 = sourceAtV2();
+    let template: typeof TEMPLATE = TEMPLATE;
+    fake = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/models": () => ({ body: [makeModel(), FAKE_SCRIPTED] }),
+      "GET /api/tools": () => ({ body: [] }),
+      "GET /api/skills": () => ({ body: [OLD, NEW] }),
+      "GET /api/bots": () => ({ body: [SOURCE] }),
+      [`GET /api/bots/${SOURCE.id}/clone-template`]: () => ({ body: template }),
+      "POST /api/bots": () => ({ status: 201, body: makeBot(10, "Source (copy)") }),
+    });
+    await renderApp(`/bots/new?from=${SOURCE.id}`);
+    await screen.findByRole("button", { name: "Create" }, { timeout: 5000 });
+    expect(screen.getByText(`${OLD.name} v1 (always load)`)).toBeTruthy();
+    const before = fake.sent("GET", `/api/bots/${SOURCE.id}/clone-template`).length;
+    template = {
+      ...TEMPLATE,
+      pins: [{ skill_id: OLD.id, skill_version_id: versionId(2), always_load: true }],
+      copied_pins: atV2.pins,
+    };
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitFor(() => {
+      expect(fake?.sent("GET", `/api/bots/${SOURCE.id}/clone-template`).length).toBeGreaterThan(
+        before,
+      );
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    // The form still holds v1, so the page still shows v1 and Create sends v1.
+    expect(screen.getByText(`${OLD.name} v1 (always load)`)).toBeTruthy();
+    openStep(/Skills/);
+    expect(within(rowOf(OLD.id)).getByText("v1")).toBeTruthy();
+    openStep(/Model/);
+    click(screen.getByRole("button", { name: "Create" }));
+    await waitFor(() => {
+      expect(fake?.sent("POST", "/api/bots")).toHaveLength(1);
+    });
+    expect(fake.sent("POST", "/api/bots")[0]?.body).toMatchObject({
+      pins: [{ skill_id: OLD.id, skill_version_id: versionId(1), always_load: true }],
+    });
   });
 
   it("shows each Clone's own copied versions when the page moves to another source", async () => {
