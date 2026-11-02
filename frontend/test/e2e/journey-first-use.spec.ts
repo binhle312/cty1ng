@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { createClient } from "../../src/lib/api/generated/client/index.ts";
 import { listBots } from "../../src/lib/api/generated/sdk.gen.ts";
 import { watchCsp } from "./csp.ts";
+import { skipAssignCard } from "./skill-cards.ts";
 
 // The first-use journey (testing.md §3, J1 in requirements/product-brief.md). Each slice adds
 // its steps; M1 builds the "create skill" part of step 1. The servers can keep one database
@@ -28,6 +29,7 @@ test("J1 step 1: create a skill, then bot BA with it, then a clone with another 
     .getByLabel("Body", { exact: true })
     .fill("## Steps\n1. Read the brief.\n2. Write one story for each goal.");
   await page.getByRole("button", { name: "Create", exact: true }).click();
+  await skipAssignCard(page, skillName);
   await expect(page).toHaveURL(`/skills/write-user-stories-${tag}`);
   await expect(page.getByRole("main").getByRole("heading", { level: 2 }).first()).toHaveText(
     skillName,

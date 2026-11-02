@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createClient } from "../../src/lib/api/generated/client/index.ts";
 import { createBot } from "../../src/lib/api/generated/sdk.gen.ts";
 import { watchCsp } from "./csp.ts";
+import { skipAssignCard, skipUpgradeCard } from "./skill-cards.ts";
 import { readZip } from "./zip.ts";
 
 // The Skills page (M1 brief, skills-page.md, UI-7.1–UI-7.8). The servers keep one database
@@ -39,7 +40,7 @@ async function createSkill(
   await fill(page, "Description", "Use this skill when the owner asks for user stories.");
   await fill(page, "Body", body);
   await page.getByRole("button", { name: "Create", exact: true }).click();
-  await expect(page.getByText(`Created ${skill.name} ✨`)).toBeVisible();
+  await skipAssignCard(page, skill.name);
   await expect(page).toHaveURL(`/skills/${skill.slug}`);
 }
 
@@ -49,7 +50,7 @@ async function saveBody(page: Page, body: string, version: number, changelog?: s
   await fill(page, "Body", body);
   if (changelog !== undefined) await fill(page, "What changed", changelog);
   await page.getByRole("button", { name: `Save as v${String(version)}` }).click();
-  await expect(page.getByText(`Saved v${String(version)} ✨`)).toBeVisible();
+  await skipUpgradeCard(page, version);
 }
 
 // The page top's title: the first level-2 heading in the main area (a Markdown preview can hold
@@ -157,6 +158,7 @@ test("Clone saves nothing until Create, then makes v1 of the copy", async ({ pag
   await page.getByRole("button", { name: "Skill actions" }).click();
   await page.getByRole("menuitem", { name: "Clone" }).click();
   await page.getByRole("button", { name: "Create", exact: true }).click();
+  await skipAssignCard(page, `${skill.name} (copy)`);
   await expect(page).toHaveURL(`/skills/${skill.slug}-copy`);
   await expect(page.getByRole("tab", { name: /History/ })).toHaveText(/History\s*1/);
 });
@@ -627,6 +629,7 @@ test("a second Clone of a skill proposes the next free slug", async ({ page }) =
     await page.getByRole("menuitem", { name: "Clone" }).click();
     await expect(page.getByLabel("Slug", { exact: true })).toHaveValue(slug);
     await page.getByRole("button", { name: "Create", exact: true }).click();
+    await skipAssignCard(page);
     await expect(page).toHaveURL(`/skills/${slug}`);
   }
 });
@@ -846,6 +849,7 @@ test("a Clone skips a slug that a skill in Trash keeps", async ({ page }) => {
   // The first copy takes `-copy`, then goes to Trash; its slug stays taken but is not listed.
   await openClone(page);
   await page.getByRole("button", { name: "Create", exact: true }).click();
+  await skipAssignCard(page);
   await expect(page).toHaveURL(`/skills/${skill.slug}-copy`);
   await page.getByRole("button", { name: "Skill actions" }).click();
   await page.getByRole("menuitem", { name: "Deprecate" }).click();
