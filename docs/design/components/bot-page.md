@@ -300,3 +300,28 @@ and the generated SQL in the slice PR:
 
 Until M3 there are no runs. Empty state: "No runs yet. Usage shows here after BA replies in a
 conversation." The charts reuse the Statistics page parts (M7).
+
+## 10. Texts added in the M2c build (2026-11-02, for the owner's review in the M2c PR)
+
+The design names these parts but not their words. Each follows a pattern that exists.
+
+| Place | Text |
+| --- | --- |
+| Cannot-run banner, no API key | "Cannot run: no API key", then "Set the API key and restart the app, or clone the bot with another model." and **Clone** |
+| Cannot-run banner, model removed | "Cannot run: model removed", then "The model left the catalog. Clone the bot to pick another model." and **Clone** |
+| Model tab, model removed | Under Tools: "{model id} is no longer offered, so the tools cannot change. Clone the bot to use another model." The switches are off; Advanced still saves (`../../api.md` §4 PATCH) |
+| Skills tab, top line | "Changes save at once. BA uses them from its next run." and **+ Add** |
+| Skills tab, no skills | "BA has no skills yet." |
+| + Add card (SK2) | Title "Add skills to BA", "Tick the skills to add. Each gets its latest version, with Always load off.", Search, the list, "A click outside this card is the same as Skip.", **Skip** and **Add {n}**. With nothing to add: "No skills to add. The bot has every active skill." |
+| Save off, why (tooltip, ui-rules B5) | "No changes to save.", "Saving.", "Fix the errors first.", "BA changed in another place. Discard first." |
+| Field errors bar | "Fix 1 field to save." for one field |
+| Avatar on the page top | Hover or focus shows **Change**; its name for screen readers is "Change the avatar of BA" |
+
+**Discard and Esc** ask with the leave dialog of §4.1 even though the owner stays on the page:
+"Let them go" drops the changes of the tab. A field error from the server goes when the owner
+changes that field, as on the Create page (E3).
+
+**Open question for the owner:** §4.1 says an empty Name or Description shows "Required", and the
+M2c build does so on this page. The Create page says what to type instead ("Type a name.",
+`create-bot-page.md` E1). The build keeps both as written; one word for both pages would be
+simpler.

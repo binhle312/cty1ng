@@ -39,6 +39,9 @@ written ways of working that the bot follows.
 - **Skills page**: make a skill, edit it (a Save of the description or text makes a new version;
   a rename alone does not), see its history and compare two versions, restore an old version,
   clone it, deprecate it, and delete a deprecated skill to Trash. Import and export `SKILL.md` folders as a zip.
+- **After a skill save**: "Save as v2" offers to upgrade the bots that use an older version
+  (all ticked; untick a bot to keep its version). Creating a skill offers to add it to bots
+  (none ticked). Skip changes nothing.
 - **A skill's Bots tab**: see which bots use the skill and at which version, upgrade a bot to the
   newest version, turn Always load on or off, change the version, remove the skill from a bot,
   or add it to another bot.
@@ -46,7 +49,22 @@ written ways of working that the bot follows.
   counts and status. Search by name, description or model. Pin a bot with the pin on its card:
   pinned bots come first, here and in the header; drag pinned cards to change their order (or
   Alt+← and Alt+→). Sort the other bots by recent activity or by created time, up or down. The
-  ⋯ menu on a card has Details, Clone and Delete; Delete puts the bot in Trash.
+  ⋯ menu on a card has Details, Clone and Delete; Delete puts the bot in Trash. A click on a
+  card opens the bot page.
+- **The bot page** (`/bots/<slug>`): the list of bots on the left, the bot on the right, with
+  its model and effort under a lock (they never change; Clone picks another). A bot that cannot
+  run shows why, with Clone. Tabs:
+  - **Profile**: the avatar style and colour, the name, the description and the persona. The big
+    avatar and the colour band show a change at once ("Not saved"); Save (or Ctrl+S) applies it
+    from the bot's next run. Discard drops the changes.
+  - **Skills**: the bot's skills, the version each uses and Always load. "v3 available" opens
+    the changes and Upgrade; the ⋯ menu has Change version (any version, also an older one) and
+    Remove; + Add gives the bot more skills at their latest version. Changes save at once.
+  - **Model**: the tools and Advanced (history share, model requests per run, longest reply),
+    with their own Save.
+  - **Activity** and **Usage**: empty until bots can talk (conversations come later).
+  If the same bot changes in another browser tab while you edit, the page keeps your text and
+  says so; copy what you need, then Discard to load the new values.
 - **The header**: the bots' avatars at the top of every page, pinned first. Hover an avatar for
   its name and status; click it for the bot card, with Pin and the settings gear. Drag an avatar
   onto the pinned zone to pin it, or out of it to unpin it. With many bots, scroll the header
@@ -72,7 +90,7 @@ written ways of working that the bot follows.
 These parts come in later versions of the app. If the owner asks about them, say that they are
 not in the app yet. Do not describe screens for them.
 
-- The bot page (Profile, Skills, Model, Activity, Usage tabs), so editing a bot (next).
+- The bot's Memory tab, and the Usage numbers (they need conversations).
 - Conversations: talking to a bot, and bots that hand work to each other.
 - Projects, the Library (the files of a project), and memory.
 - The Trash page (restore works only from the terminal for now).

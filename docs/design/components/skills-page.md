@@ -169,6 +169,10 @@ Skip." is at the bottom.
 exist; later, no bot uses an older version), the card does not open, and only a toast shows:
 "Saved v{n} ✨" after a save, "Created {name} ✨" after Create.
 
+**The owner left the Skills page** before the save answered (M2c build): the card has no page to
+open on, so its toast shows instead. Nothing is lost: the Bots tab still offers "Upgrade to vN"
+and + Add. A Restore of an old version (§13) is not a save from the editor and opens no card.
+
 ### 7.1 Upgrade the bots (C4, UI-7.4)
 
 - Title: "Saved v5 ✨ Also upgrade these bots to v5?"
