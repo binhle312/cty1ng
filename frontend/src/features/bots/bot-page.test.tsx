@@ -539,6 +539,41 @@ describe("the Skills tab (bot-page.md §7)", () => {
     });
   });
 
+  it("moves a skill to an older version from Change version (UI-6.4)", async () => {
+    await open(
+      { bots: [makeBot(1, "BA", pins.slice(0, 1))] },
+      {
+        [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+        [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
+          body: { body: [{ op: "del", text: "New line." }], description: null },
+        }),
+        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => ({
+          body: makeBot(1, "BA", [makePin()]),
+        }),
+      },
+      "/bots/ba?tab=skills",
+    );
+    await heading();
+    click(screen.getByRole("button", { name: "Actions for Zeta" }));
+    click(await screen.findByRole("menuitem", { name: "Change version" }));
+    const versions = await screen.findByRole("list", { name: "Versions" });
+    const older = within(versions)
+      .getAllByRole("button")
+      .find((button) => button.textContent.includes("v1"));
+    if (older === undefined) throw new Error("no v1");
+    click(older);
+    const dialog = await screen.findByRole("dialog", { name: "Move Zeta to v1?" });
+    click(await within(dialog).findByRole("button", { name: "Use v1" }));
+    await waitFor(() => {
+      expect(fake?.sent("PUT", `/api/bots/${BA_ID}/skills/${SKILL_ID}`)).toHaveLength(1);
+    });
+    expect(fake?.sent("PUT", `/api/bots/${BA_ID}/skills/${SKILL_ID}`)[0]?.body).toEqual({
+      skill_version_id: versionId(1),
+      always_load: false,
+      expected: { skill_version_id: versionId(2), always_load: false },
+    });
+  });
+
   it("says when a pin changed in another place, and loads the newest pins", async () => {
     await open(
       { bots: [makeBot(1, "BA", pins.slice(0, 1))] },
