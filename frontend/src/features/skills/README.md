@@ -7,7 +7,7 @@ Export card. Routes: `src/routes/skills.tsx`.
 | File | What it is for |
 | --- | --- |
 | `skills-layout.tsx` | The list column and the page beside it; the import file picker |
-| `skills-context.tsx` | What the list needs from the page: the unsaved skill, the picked zip |
+| `skills-context.tsx` | What the list needs from the page: the unsaved skill, the picked zip; the bot card after a save |
 | `skill-list.tsx` | The list column: Create, search, Show deprecated, Import, Export, rows |
 | `skills-index-page.tsx` | `/skills`: opens the top skill, or the empty state |
 | `skill-page.tsx` | `/skills/{slug}`: page top, ⋯ menu, deprecated banner, tabs, save |
@@ -20,6 +20,7 @@ Export card. Routes: `src/routes/skills.tsx`.
 | `skill-bot-uses.ts` | The bots that use one skill, read from the bot list (loading, error, ready) |
 | `skill-bots-tab.tsx` | The Bots tab: the rows, the Always load switch, ⋯, + Add |
 | `skill-pin-dialogs.tsx` | The cards that move a pin: + Add, Upgrade or Move to a version, Change version |
+| `after-save-cards.tsx` | The bot cards after a save: Upgrade the bots (C4) after Save as vN, Assign (C4b) after Create |
 | `skill-history.tsx` | The History tab: versions, Compare, Restore |
 | `diff-view.tsx` | A read-only line diff with folded unchanged lines |
 | `diff-fold.ts` | Which unchanged lines the diff folds |

@@ -2,7 +2,6 @@ import { copyName, copySlug } from "@cty1ng/shared/skills";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { showToast } from "../../components/ui/toast.tsx";
 import { readApiError } from "../../lib/api/api-error.ts";
 import {
   getSettingsOptions,
@@ -12,6 +11,7 @@ import {
 import { createSkill } from "../../lib/api/generated/sdk.gen.ts";
 import type { CreateSkillData } from "../../lib/api/generated/types.gen.ts";
 import { NotFoundPage } from "../placeholder/not-found-page.tsx";
+import { assignCardAfterCreate } from "./after-save-cards.tsx";
 import { useLeaveGuard } from "./leave-guard.tsx";
 import { LoadError } from "./load-error.tsx";
 import { SaveBarFrame, SaveButton } from "./save-bar.tsx";
@@ -29,6 +29,7 @@ import {
   type SkillFields as Fields,
 } from "./skill-form.ts";
 import { allSkillsOptions, limitsReason, useEditorSettings } from "./skill-queries.ts";
+import { useSkillsPage } from "./skills-context.tsx";
 
 const EMPTY: Fields = { name: "", slug: "", description: "", body_md: "" };
 
@@ -145,6 +146,7 @@ function NewSkillView({ source }: { source: CloneSource | null }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const settings = useEditorSettings();
+  const { showBotCard } = useSkillsPage();
   const [proposedSlug] = useState(() =>
     source === null ? null : copySlug(source.skillSlug, (slug) => source.takenSlugs.has(slug)),
   );
@@ -183,8 +185,10 @@ function NewSkillView({ source }: { source: CloneSource | null }) {
   const create = useMutation({
     mutationFn: (input: Parameters<typeof createWithFreeSlug>) => createWithFreeSlug(...input),
     onSuccess: async (skill) => {
-      // M1 has no bots, so the assign card does not open: only the toast (skills-page.md §7).
-      showToast(`Created ${skill.name} ✨`);
+      // The assign card (§7.2), or only the toast when no bot exists.
+      void assignCardAfterCreate(queryClient, skill).then((card) => {
+        if (card !== null) showBotCard(card);
+      });
       // The skill page finds the skill in the list, so the list must have it first.
       await queryClient.invalidateQueries({ queryKey: allSkillsOptions().queryKey });
       if (closed.current) return;

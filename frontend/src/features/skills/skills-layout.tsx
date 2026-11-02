@@ -1,5 +1,6 @@
 import { Outlet, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
+import { type AfterSaveCard, AfterSaveCardHost } from "./after-save-cards.tsx";
 import { SkillList } from "./skill-list.tsx";
 import { SkillsPageContext, type SkillsPageState } from "./skills-context.tsx";
 
@@ -9,6 +10,7 @@ export function SkillsLayout() {
   const navigate = useNavigate();
   const [dirtySlug, setDirtySlug] = useState<string | null>(null);
   const [importFile, setImportFile] = useState<File | null>(null);
+  const [botCard, setBotCard] = useState<AfterSaveCard | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const state = useMemo<SkillsPageState>(
@@ -20,6 +22,7 @@ export function SkillsLayout() {
       clearImportFile: () => {
         setImportFile(null);
       },
+      showBotCard: setBotCard,
     }),
     [dirtySlug, importFile],
   );
@@ -32,6 +35,12 @@ export function SkillsLayout() {
           <Outlet />
         </section>
       </div>
+      <AfterSaveCardHost
+        card={botCard}
+        onClose={() => {
+          setBotCard(null);
+        }}
+      />
       <input
         ref={fileInput}
         type="file"

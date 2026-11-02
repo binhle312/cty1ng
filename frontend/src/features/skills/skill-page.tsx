@@ -26,6 +26,7 @@ import {
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import type { GetSkillResponse } from "../../lib/api/generated/types.gen.ts";
 import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
+import { upgradeCardAfterSave } from "./after-save-cards.tsx";
 import { LoadError } from "./load-error.tsx";
 import { useExportSkills } from "./export-card.tsx";
 import { useLeaveGuard } from "./leave-guard.tsx";
@@ -97,7 +98,7 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   const navigate = useNavigate({ from: "/skills/$slug" });
   const queryClient = useQueryClient();
   const settings = useEditorSettings();
-  const { setDirtySlug } = useSkillsPage();
+  const { setDirtySlug, showBotCard } = useSkillsPage();
 
   const saved = {
     name: skill.name,
@@ -182,8 +183,11 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   const saveVersion = useMutation({
     ...createSkillVersionMutation(),
     onSuccess: (result) => {
-      // The upgrade card of skills-page.md §7.1 is not built yet: only the toast.
-      showToast(`Saved v${String(result.latest_version.version)} ✨`);
+      // The upgrade card (§7.1), or only the toast when no bot uses an older version. The save
+      // bar does not wait for it.
+      void upgradeCardAfterSave(queryClient, result, result.latest_version.version).then((card) => {
+        if (card !== null) showBotCard(card);
+      });
     },
     onError,
   });
