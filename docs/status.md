@@ -73,7 +73,7 @@ that use them, then M0.
 
 ## Next
 
-1. M2c in review on [#59](https://github.com/binhle312/cty1ng/pull/59): the bot page at `/bots/{slug}` (edit layout, page top with the locked model badge, cannot-run banner, Profile, Skills, Model, Activity and Usage empty states, save bars, conflicts, leave dialog), and the Skills page cards after a save (C4 upgrade, C4b assign). The J4 journey runs in Playwright. **Waiting on the owner:** the J4 wording in the product brief, then merge. The UI items (the new texts in `design/components/bot-page.md` §10, "Required" or "Type a name." for an empty name, the B5 tooltip on the disabled Discard of the bot save bar) wait for the owner's UI review after M3 (owner, 2026-11-02). After M2c, M2 is done; M3 (chat with one bot) is next.
+1. M2c in review on [#59](https://github.com/binhle312/cty1ng/pull/59): the bot page at `/bots/{slug}` (edit layout, page top with the locked model badge, cannot-run banner, Profile, Skills, Model, Activity and Usage empty states, save bars, conflicts, leave dialog), and the Skills page cards after a save (C4 upgrade, C4b assign). The J4 journey runs in Playwright. **Waiting on the owner:** confirm that J4 in the product brief shows the opt-out path (BA starts ticked in the upgrade card, Skip keeps v1; the 2026-10-23 decision), then merge. The UI items (the new texts in `design/components/bot-page.md` §10, "Required" or "Type a name." for an empty name, the B5 tooltip on the disabled Discard of the bot save bar) wait for the owner's UI review after M3 (owner, 2026-11-02). After M2c, M2 is done; M3 (chat with one bot) is next.
 
 ## Waiting on the owner
 

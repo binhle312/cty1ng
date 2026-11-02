@@ -163,10 +163,9 @@ to 4 turns, each told how many remain → a system message says the limit is rea
 **J3. Handoff.** BA calls `propose_handoff(to=Designer, files=[...])` → an approval card appears
 → owner approves → Designer starts with those files.
 
-**J4. Skill upgrade.** Owner edits `write-user-stories` → v2 is created → the save dialog offers
-to upgrade BA (ticked, `design/components/skills-page.md` §7.1) → owner unticks BA and skips →
-BA still uses v1 → later, on BA's detail page, owner sees "v1 → v2 available", reviews the diff,
-clicks Upgrade.
+**J4. Skill upgrade.** Owner edits `write-user-stories` → v2 is created → the save card offers to
+upgrade BA (ticked) → owner clicks Skip → BA still uses v1 → later, on BA's bot page, owner sees
+"v2 available", reviews the diff, clicks Upgrade.
 
 **J5. Model retired.** A provider retires BA's model → BA shows "model unavailable" → owner
 clicks Clone on its banner → the create form opens prefilled → owner picks a new model

@@ -62,7 +62,7 @@ test("J4: a skill save offers the upgrade, the bot keeps v1, and the bot page up
   await expect(assign).toBeHidden();
   await expect(page).toHaveURL(`/skills/${skill.slug}`);
 
-  // Edit → v2. The upgrade card ticks BA; the owner unticks it and skips, so BA keeps v1.
+  // Edit → v2. The upgrade card ticks BA; Skip alone changes nothing, so BA keeps v1 (J4).
   await page.getByRole("tab", { name: "Write" }).click();
   await fill(page, "Body", "## Steps\n1. Read the brief.\n2. Write one story per goal.");
   await fill(page, "What changed", "One story per goal");
@@ -72,11 +72,6 @@ test("J4: a skill save offers the upgrade, the bot keeps v1, and the bot page up
   });
   const box = upgradeCard.getByRole("checkbox", { name: new RegExp(botName) });
   await expect(box).toHaveAttribute("aria-checked", "true");
-  await box.click();
-  await expect(upgradeCard.getByRole("button", { name: "Upgrade" })).toHaveAttribute(
-    "aria-disabled",
-    "true",
-  );
   await upgradeCard.getByRole("button", { name: "Skip" }).click();
   await expect(upgradeCard).toBeHidden();
 
