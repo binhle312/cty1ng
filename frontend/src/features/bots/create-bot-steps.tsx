@@ -272,8 +272,9 @@ export interface SkillChoice {
   id: string;
   name: string;
   description: string;
-  // The version a tick pins: the latest, or the copied one in a Clone.
-  version: number;
+  // The version a tick pins: the latest, or the copied one in a Clone. Null when the page could
+  // not find the copied version's number: the row then shows none.
+  version: number | null;
   deprecated: boolean;
   // The source bot's pin in a Clone: a tick pins that version again, with its Always load.
   copied: { skill_version_id: string; always_load: boolean } | null;
@@ -403,7 +404,7 @@ export function SkillsStep({
                     />
                   </span>
                 )}
-                <VersionPill version={skill.version} />
+                {skill.version !== null && <VersionPill version={skill.version} />}
               </li>
             );
           })}

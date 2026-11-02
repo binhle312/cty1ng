@@ -9,6 +9,7 @@ import {
   makeModel,
   makePin,
   makeSkill,
+  makeVersions,
   typeId,
   versionId,
 } from "../../../test/fixtures.ts";
@@ -199,8 +200,13 @@ const TEMPLATE = {
 
 // GET /skills hides deprecated skills unless the page asks for them, as the server does. The
 // test changes `skills.list` to stand for a change made in another tab.
-function skillsApi(skills = { list: [OLD, NEW] }, source = { bot: SOURCE }) {
+function skillsApi(
+  skills = { list: [OLD, NEW] },
+  source = { bot: SOURCE },
+  versions: { status: number; body: unknown } = { status: 200, body: makeVersions(3) },
+) {
   return fakeApi({
+    [`GET /api/skills/${OLD.id}/versions`]: () => versions,
     "GET /api/settings": () => ({ body: BOT_SETTINGS }),
     "GET /api/models": () => ({ body: [makeModel(), FAKE_SCRIPTED] }),
     "GET /api/tools": () => ({ body: [] }),
@@ -303,6 +309,78 @@ describe("skills on the Create bot page", () => {
     });
   });
 
+  // The source bot at v2, while the template (read a moment before) copied v1.
+  const sourceAtV2 = () =>
+    makeBot(9, "Source", [
+      makePin({
+        skill_id: OLD.id,
+        skill_name: OLD.name,
+        skill_version_id: versionId(2),
+        version: 2,
+        always_load: true,
+        deprecated: true,
+      }),
+    ]);
+
+  it("shows the copied version when the first answers saw different revisions", async () => {
+    fake = skillsApi(undefined, { bot: sourceAtV2() });
+    await renderApp(`/bots/new?from=${SOURCE.id}`);
+    await screen.findByRole("button", { name: "Create" }, { timeout: 5000 });
+    expect(screen.getByText(`${OLD.name} v1 (always load)`)).toBeTruthy();
+    openStep(/Skills/);
+    expect(within(rowOf(OLD.id)).getByText("v1")).toBeTruthy();
+  });
+
+  it("shows no version number when it cannot find the copied one", async () => {
+    fake = skillsApi(
+      undefined,
+      { bot: sourceAtV2() },
+      {
+        status: 500,
+        body: { error: { code: "internal_error", message: "x" } },
+      },
+    );
+    await renderApp(`/bots/new?from=${SOURCE.id}`);
+    await screen.findByRole("button", { name: "Create" }, { timeout: 5000 });
+    expect(screen.getByText(`${OLD.name} (always load)`)).toBeTruthy();
+    click(screen.getByRole("button", { name: "Create" }));
+    await waitFor(() => {
+      expect(fake?.sent("POST", "/api/bots")).toHaveLength(1);
+    });
+    expect(fake.sent("POST", "/api/bots")[0]?.body).toMatchObject({
+      pins: [{ skill_id: OLD.id, skill_version_id: versionId(1), always_load: true }],
+    });
+  });
+
+  it("shows a copied model with no API key as an error at once (§6)", async () => {
+    const noKey = makeModel({
+      id: "anthropic:claude-haiku-5-5",
+      label: "Claude Haiku",
+      available: false,
+      unavailable_reason: "no_api_key",
+      api_key_env: "ANTHROPIC_API_KEY",
+    });
+    fake = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/models": () => ({ body: [noKey, FAKE_SCRIPTED] }),
+      "GET /api/tools": () => ({ body: [] }),
+      "GET /api/skills": () => ({ body: [OLD, NEW] }),
+      "GET /api/bots": () => ({ body: [SOURCE] }),
+      [`GET /api/bots/${SOURCE.id}/clone-template`]: () => ({
+        body: { ...TEMPLATE, model_id: noKey.id },
+      }),
+    });
+    await renderApp(`/bots/new?from=${SOURCE.id}`);
+    expect(
+      await screen.findByText(
+        "API key not set: ANTHROPIC_API_KEY. Set it and restart the app, or pick another model.",
+        { exact: false },
+        { timeout: 5000 },
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Model, has an error/ })).toBeTruthy();
+  });
+
   it("keeps a ticked skill that another tab deleted, so it can be unticked (D49)", async () => {
     const skills = { list: [NEW] };
     fake = skillsApi(skills);
@@ -335,5 +413,47 @@ describe("skills on the Create bot page", () => {
     expect(screen.getByText("0 ticked")).toBeTruthy();
     click(screen.getByRole("button", { name: "Next" }));
     expect(await screen.findByLabelText("Model", { exact: true })).toBeTruthy();
+  });
+});
+
+// An image the browser cannot decode (bot-avatar.md §6, create-bot-page.md "Texts added in the
+// M2b build"): the crop card closes and the page says so, instead of waiting for ever.
+describe("a broken image on the Create bot page", () => {
+  let fake: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    fake?.restore();
+    fake = null;
+  });
+
+  it("closes the crop card and shows the error when the image does not load", async () => {
+    fake = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/models": () => ({ body: [FAKE_SCRIPTED] }),
+      "GET /api/tools": () => ({ body: [] }),
+      "GET /api/skills": () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [] }),
+      "GET /api/avatars/limits": () => ({
+        body: { accepted_types: ["image/png", "image/jpeg", "image/webp"], max_bytes: 2_000_000 },
+      }),
+    });
+    await renderApp("/bots/new");
+    await screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+    const input = screen.getByLabelText("Upload image", { selector: "input" });
+    const file = new File(["not a png"], "broken.png", { type: "image/png" });
+    act(() => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    const crop = await screen.findByRole("dialog", { name: "Crop the image" });
+    const image = crop.querySelector("img");
+    if (image === null) throw new Error("no image");
+    act(() => {
+      fireEvent.error(image);
+    });
+    expect(
+      await screen.findByText("The app could not read the image. Try another file."),
+    ).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Crop the image" })).toBeNull();
+    });
   });
 });

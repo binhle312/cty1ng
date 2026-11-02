@@ -247,6 +247,21 @@ test("an upload that ends after Cancel does not replace the next image", async (
   await expect(page.getByRole("radio", { name: "Your image" })).toHaveCount(0);
 });
 
+// A file with the PNG type that the browser cannot decode (review of #58): the crop card closes
+// with the error, instead of a Use button that stays off.
+test("a broken image closes the crop card with an error", async ({ page }) => {
+  const violations = await watchCsp(page);
+  await page.goto("/bots/new");
+  const chooser = page.waitForEvent("filechooser");
+  await page.getByRole("radio", { name: "Upload image" }).click();
+  await (
+    await chooser
+  ).setFiles({ name: "broken.png", mimeType: "image/png", buffer: Buffer.from("not a png") });
+  await expect(page.getByText("The app could not read the image. Try another file.")).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Crop the image" })).toBeHidden();
+  expect(await violations()).toEqual([]);
+});
+
 // The middle 6 columns hold about 12 avatars (top-header.md state 2). With 14 or more, the
 // roster scrolls inside the header and the page never scrolls sideways.
 test("the header scrolls a long roster and pins a bot by drag", async ({ page }) => {

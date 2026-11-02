@@ -68,7 +68,11 @@ export function CreatePreview({
               .map((pin) => {
                 const skill = skills.find((s) => s.id === pin.skill_id);
                 const name =
-                  skill === undefined ? "A skill" : `${skill.name} v${String(skill.version)}`;
+                  skill === undefined
+                    ? "A skill"
+                    : skill.version === null
+                      ? skill.name
+                      : `${skill.name} v${String(skill.version)}`;
                 return pin.always_load ? `${name} (always load)` : name;
               })
               .join(", ")}

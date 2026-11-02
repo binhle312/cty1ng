@@ -62,7 +62,11 @@ search box. A ticked row moves to the top and shows the **Always load** switch, 
 are not in the list. Each ticked skill gets its latest version.
 
 Loading: one `GET /skills` returns every skill with name, description and latest version (no
-bodies, no paging). The search filters in the browser.
+bodies, no paging). The search filters in the browser. A Clone asks with `include_deprecated=true`,
+because it keeps the source bot's deprecated pins (§6). A copied pin shows the version that
+Create sends, the template's: when the source bot's pin names another version (the bot changed
+between the two first answers), the page reads that skill's `GET /skills/{id}/versions` once; if
+that fails, the row shows no version number rather than a wrong one (M2b review, 2026-11-02).
 
 ### Step 4 · Model (CS4, CS4b, CS4c)
 

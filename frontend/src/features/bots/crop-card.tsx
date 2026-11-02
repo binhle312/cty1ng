@@ -271,6 +271,10 @@ function Cropper({
             src={source}
             alt=""
             draggable={false}
+            // A file with the right type can still be broken: the browser cannot decode it.
+            onError={() => {
+              onError("The app could not read the image. Try another file.");
+            }}
             onLoad={(event) => {
               const { naturalWidth: w, naturalHeight: h } = event.currentTarget;
               const fit = Math.max(VIEW_PX / w, VIEW_PX / h);
