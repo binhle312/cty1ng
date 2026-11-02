@@ -1,22 +1,11 @@
 import {
   type Announcements,
-  closestCenter,
   DndContext,
   type DragEndEvent,
   DragOverlay,
-  KeyboardSensor,
-  PointerSensor,
-  TouchSensor,
   useDroppable,
-  useSensor,
-  useSensors,
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  type SortingStrategy,
-  sortableKeyboardCoordinates,
-  useSortable,
-} from "@dnd-kit/sortable";
+import { SortableContext, type SortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { Popover as BasePopover } from "@base-ui/react/popover";
 import { useRouterState } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, Pin } from "lucide-react";
@@ -46,6 +35,7 @@ import type { BotRow } from "../bots/bot-queries.ts";
 import { HeaderBotCard } from "./header-bot-card.tsx";
 import { AllBotsChip } from "./header-bot-list.tsx";
 import { arrangeFrozen, headerDrop, notInView, OTHERS_ZONE, PINNED_ZONE } from "./header-order.ts";
+import { useClosestInside, useDragSensors } from "../bots/drag-setup.ts";
 
 // The others' order freezes while the owner engages with the header (UI-2.9): the pointer or the
 // focus enters it, or its bot card is open. It applies in one step at the next click or key press
@@ -176,16 +166,10 @@ export function Roster({ bots }: { bots: readonly BotRow[] }) {
     save(bot.pinned_position === null ? withPin(pinnedIds, bot.id) : withoutPin(pinnedIds, bot.id));
   };
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    // A long press starts a drag; a short tap opens the bot card; a swipe scrolls (HD6).
-    useSensor(TouchSensor, { activationConstraint: { delay: 300, tolerance: 5 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-      // Enter opens the bot card, so only Space picks an avatar up and drops it.
-      keyboardCodes: { start: ["Space"], cancel: ["Escape"], end: ["Space"] },
-    }),
-  );
+  // A long press starts a drag; a short tap opens the bot card; a swipe scrolls (HD6). A drop
+  // counts only inside the header (HD5).
+  const sensors = useDragSensors();
+  const collision = useClosestInside(scrollRef, "header");
   const nameOf = (id: string | number) => byId.get(String(id))?.name ?? "";
   const announcements: Announcements = {
     onDragStart: ({ active }) => `Picked up ${nameOf(active.id)}.`,
@@ -313,7 +297,7 @@ export function Roster({ bots }: { bots: readonly BotRow[] }) {
       >
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCenter}
+          collisionDetection={collision}
           autoScroll={false}
           accessibility={{
             announcements,

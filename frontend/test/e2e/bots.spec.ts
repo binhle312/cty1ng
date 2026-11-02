@@ -344,6 +344,81 @@ test('the "+N" chip lists every bot and shows the picked one in the header', asy
   expect(await violations()).toEqual([]);
 });
 
+// A drop outside the header changes no pin (top-header.md HD5, review of #58): the drop place
+// decides, and below the header there is nothing to drop on yet (M3 adds the conversation).
+test("a drop below the header changes no pin", async ({ page }) => {
+  const tag = tagged();
+  await makeBot(`Drop ${tag}`);
+  await page.goto("/skills");
+  const header = page.getByRole("banner", { name: "Bots" });
+  await expect(header.getByTestId("header-bot").first()).toBeVisible();
+  const pinRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().endsWith("/api/bots/pins")) pinRequests.push(request.method());
+  });
+  const from = await header.getByTestId("header-bot").first().boundingBox();
+  const zone = await header.getByTestId("pin-zone").boundingBox();
+  if (from === null || zone === null) throw new Error("The header is not on the screen.");
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(from.x + from.width / 2, from.y + 40, { steps: 4 });
+  // Far below the pin zone: the pin zone is still the nearest drop target there.
+  await page.mouse.move(zone.x + zone.width / 2, 450, { steps: 12 });
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+  expect(pinRequests).toEqual([]);
+  expect((await bots()).filter((bot) => bot.pinned_position !== null)).toEqual([]);
+});
+
+// Touch (top-header.md HD6, review of #58): a long press starts the drag. The touches go
+// through Chrome's own input, as a finger's would.
+test.describe("on a touch screen", () => {
+  test.use({ hasTouch: true });
+
+  test("a short tap on a header avatar opens its bot card", async ({ page }) => {
+    const name = `Tap ${tagged()}`;
+    await makeBot(name);
+    await page.goto("/skills");
+    const header = page.getByRole("banner", { name: "Bots" });
+    await header.getByRole("button", { name, exact: true }).tap();
+    await expect(page.getByRole("dialog", { name })).toBeVisible();
+    expect((await bots()).filter((bot) => bot.pinned_position !== null)).toEqual([]);
+  });
+
+  test("a long press on a header avatar starts a drag that pins it", async ({ page }) => {
+    await makeBot(`Touch ${tagged()}`);
+    await page.goto("/skills");
+    const header = page.getByRole("banner", { name: "Bots" });
+    const avatar = header.getByTestId("header-bot").first();
+    await expect(avatar).toBeVisible();
+    const from = await avatar.boundingBox();
+    const to = await header.getByTestId("pin-zone").boundingBox();
+    if (from === null || to === null) throw new Error("The header is not on the screen.");
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: "touchStart" | "touchMove" | "touchEnd", x: number, y: number) =>
+      cdp.send("Input.dispatchTouchEvent", {
+        type,
+        touchPoints: type === "touchEnd" ? [] : [{ x, y }],
+      });
+    const start = { x: from.x + from.width / 2, y: from.y + from.height / 2 };
+    await touch("touchStart", start.x, start.y);
+    // Longer than the 300 ms long press.
+    await page.waitForTimeout(500);
+    const end = { x: to.x + to.width / 2, y: to.y + to.height / 2 };
+    for (let step = 1; step <= 12; step += 1) {
+      await touch(
+        "touchMove",
+        start.x + ((end.x - start.x) * step) / 12,
+        start.y + ((end.y - start.y) * step) / 12,
+      );
+    }
+    await touch("touchEnd", end.x, end.y);
+    await expect
+      .poll(async () => (await bots()).filter((bot) => bot.pinned_position !== null).length)
+      .toBe(1);
+  });
+});
+
 async function dragToPin(page: Page, header: Locator) {
   const avatar = header.getByTestId("header-bot").first();
   const zone = header.getByTestId("pin-zone");

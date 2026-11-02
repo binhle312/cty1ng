@@ -22,6 +22,7 @@ header, the Skills page and the bot page (M2c) share.
 | `crop-card.tsx` | Choosing an avatar image: type and size checks, the round crop card, the upload |
 | `custom-colour-card.tsx` | The Custom colour card: box, hue bar, R G B and Hex |
 | `delete-bot-dialog.tsx` | Delete a bot to Trash: the dialog and its toast |
+| `drag-setup.ts` | The drag sensors (mouse, long-press touch, Space) and the drop-area check shared by the header and the Pinned group |
 | `tools-list.tsx` | The Tools list of step 4: internal and provider tools, pairs, gates |
 
 Start here: `bots-page.tsx` or `create-bot-page.tsx`. Do not: draw an avatar anywhere else, or

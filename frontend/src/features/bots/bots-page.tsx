@@ -1,23 +1,12 @@
 import {
   type Announcements,
-  closestCenter,
   DndContext,
   type DragEndEvent,
   type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
-  KeyboardSensor,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  type SortingStrategy,
-  sortableKeyboardCoordinates,
-  useSortable,
-} from "@dnd-kit/sortable";
+import { SortableContext, type SortingStrategy, useSortable } from "@dnd-kit/sortable";
 import type { BotOrder } from "@cty1ng/shared/bots";
 import { SETTING_DEFAULTS } from "@cty1ng/shared/settings";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -53,6 +42,7 @@ import {
 } from "./bot-pins.ts";
 import { type BotRow, useBots } from "./bot-queries.ts";
 import { useDeleteBot } from "./delete-bot-dialog.tsx";
+import { useClosestInside, useDragSensors } from "./drag-setup.ts";
 
 // `/bots` (bots-page.md, UI-4): the title row with + Create, the search, the Pinned group in the
 // owner's order, then the Others with the two sort buttons. A click on a card opens the bot.
@@ -209,15 +199,10 @@ function PinnedGrid({
   const [overId, setOverId] = useState<string | null>(null);
   // A click right after a drop must not open the bot.
   const justDropped = useRef(false);
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 300, tolerance: 5 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-      // Enter opens the bot, so only Space picks a card up and drops it.
-      keyboardCodes: { start: ["Space"], cancel: ["Escape"], end: ["Space"] },
-    }),
-  );
+  // A drop counts only inside the Pinned group.
+  const grid = useRef<HTMLUListElement>(null);
+  const sensors = useDragSensors();
+  const collision = useClosestInside(grid);
   const nameOf = (id: string | number) => bots.find((bot) => bot.id === id)?.name ?? "";
   const placeOf = (id: string | number) =>
     `${String(ids.indexOf(String(id)) + 1)} of ${String(ids.length)}`;
@@ -254,7 +239,7 @@ function PinnedGrid({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={collision}
       accessibility={{
         announcements,
         screenReaderInstructions: {
@@ -273,6 +258,7 @@ function PinnedGrid({
     >
       <SortableContext items={ids} strategy={stayInPlace} disabled={dragOff}>
         <ul
+          ref={grid}
           className="mt-3 grid grid-cols-4 gap-5"
           onClickCapture={(event) => {
             if (justDropped.current) event.preventDefault();
