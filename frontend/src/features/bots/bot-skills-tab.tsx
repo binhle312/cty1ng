@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ellipsis, Plus } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "../../components/ui/button.tsx";
 import {
   MenuItem,
@@ -53,6 +53,14 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
   // The dialog whose request is on its way. Each open makes a new object, so a request started
   // in a dialog the owner closed never closes or writes into a newer one.
   const shownDialog = useRef<Dialog | null>(null);
+  // When the tab goes (another tab, another page), no dialog is open any more: an answer that
+  // comes after shows as a toast, not in a dialog that nobody sees.
+  useEffect(
+    () => () => {
+      shownDialog.current = null;
+    },
+    [],
+  );
   const [busyDialog, setBusyDialog] = useState<Dialog | null>(null);
   // The Always load value of each toggle on its way, by skill id.
   const [pendingLoads, setPendingLoads] = useState<ReadonlyMap<string, boolean>>(new Map());
@@ -78,13 +86,20 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
     setDialog(null);
   };
   const refresh = () => queryClient.invalidateQueries({ predicate: PIN_QUERIES });
-  // A pin answer never replaces a newer bot: a Profile or Model save in another place may have
-  // come first (a pin change never raises `row_version`, so the same one is not newer).
-  const replaceBot = (changed: BotRow) => {
+  // A pin answer changes only the pin of its own skill. A pin change never raises `row_version`,
+  // so nothing in the answer tells if the rest of the bot is older than the cache: a Profile save
+  // or a change of another skill may have come first. The refresh after it loads the rest.
+  const replacePin = ({ answer, skillId }: { answer: BotRow; skillId: string }) => {
+    const pin = answer.pins.find((item) => item.skill_id === skillId);
+    if (pin === undefined) return;
     queryClient.setQueryData<BotRow[]>(listBotsQueryKey(), (current) =>
-      current?.map((item) =>
-        item.id === changed.id && changed.row_version >= item.row_version ? changed : item,
-      ),
+      current?.map((item) => {
+        if (item.id !== answer.id) return item;
+        const nextPins = item.pins.map((old) => (old.skill_id === skillId ? pin : old));
+        // The same count as the server's (bots.service.ts).
+        const updates = nextPins.filter((p) => p.version < p.latest_version).length;
+        return { ...item, pins: nextPins, counts: { ...item.counts, skill_updates: updates } };
+      }),
     );
   };
   const staleText = (skillName: string, error: unknown) =>
@@ -109,8 +124,8 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
         },
       })
       .then(
-        (changed) => {
-          replaceBot(changed);
+        (answer) => {
+          replacePin({ answer, skillId: pin.skill_id });
           void refresh();
         },
         (error: unknown) => {
@@ -342,7 +357,9 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
                   },
                 },
               })
-              .then(replaceBot),
+              .then((answer) => {
+                replacePin({ answer, skillId: dialogPin.skill_id });
+              }),
             failed: (error) => staleText(dialogPin.skill_name, error),
             // The tab loads the newest pins and keeps no change (bot-page.md §7).
             closes: (error) => readApiError(error)?.code === "stale_write",

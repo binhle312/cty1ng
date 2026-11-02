@@ -517,6 +517,32 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
       { row_version: 1, description: "First." },
     ]);
   });
+
+  it("shows the saved values, with no change, when the owner discards while Save waits", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA")] };
+    await open(state, {
+      [`PATCH /api/bots/${BA_ID}`]: async () => {
+        const answer = await held.promise;
+        return answer;
+      },
+    });
+    await heading();
+    type("Description", "First.");
+    click(screen.getByRole("button", { name: "Save" }));
+    type("Description", "Second.");
+    click(screen.getByRole("button", { name: "Discard" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
+    click(within(dialog).getByRole("button", { name: "Let them go" }));
+    // The save went through: the server has "First.", and Discard dropped only "Second.".
+    const saved = { ...makeBot(1, "BA"), row_version: 2, description: "First." };
+    state.bots = [saved];
+    await held.answer({ body: saved });
+    await waitFor(() => {
+      expect(valueOf("Description")).toBe("First.");
+    });
+    expect(within(saveBar()).getByText("No changes. Edits apply from the next run.")).toBeTruthy();
+  });
 });
 
 describe("leaving the bot page with changes (bot-page.md §4.1)", () => {
@@ -783,6 +809,83 @@ describe("the Skills tab (bot-page.md §7)", () => {
       ).toBe(false);
     });
     expect(cachedRowVersion(queryClient)).toBe(2);
+  });
+
+  it("keeps a newer pin of another skill when a late Always load answer comes after it", async () => {
+    const held = heldAnswer();
+    const [zeta, alpha] = pins;
+    if (zeta === undefined || alpha === undefined) throw new Error("no pins");
+    const zetaV3 = makePin({ skill_name: "Zeta", skill_slug: "zeta" });
+    const alphaOff = { ...alpha, always_load: false };
+    let fail = false;
+    await open(
+      { bots: [makeBot(1, "BA", pins)] },
+      {
+        "GET /api/bots": () =>
+          fail
+            ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+            : { body: [makeBot(1, "BA", pins)] },
+        [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+        [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
+          body: { body: [{ op: "add", text: "New line." }], description: null },
+        }),
+        [`PUT /api/bots/${BA_ID}/skills/${alpha.skill_id}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+        // The toggle got to the server first, so this answer has both changes.
+        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => ({
+          body: makeBot(1, "BA", [zetaV3, alphaOff]),
+        }),
+      },
+      "/bots/ba?tab=skills",
+    );
+    await heading();
+    // Every refresh fails, so only the answers could change the list.
+    fail = true;
+    click(screen.getByRole("switch", { name: "Always load Alpha" }));
+    click(screen.getByRole("button", { name: "v3 available" }));
+    const dialog = await screen.findByRole("dialog", { name: "Upgrade Zeta to v3?" });
+    click(await within(dialog).findByRole("button", { name: "Upgrade to v3" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "v3 available" })).toBeNull();
+    });
+    // The toggle's answer comes last, with Zeta still on v2.
+    await held.answer({ body: makeBot(1, "BA", [zeta, alphaOff]) });
+    await waitFor(() => {
+      expect(
+        screen.getByRole("switch", { name: "Always load Alpha" }).hasAttribute("disabled"),
+      ).toBe(false);
+    });
+    expect(screen.queryByRole("button", { name: "v3 available" })).toBeNull();
+  });
+
+  it("shows a version move that fails after the owner left the page as a toast", async () => {
+    const held = heldAnswer();
+    const { router } = await open(
+      { bots: [makeBot(1, "BA", pins.slice(0, 1))] },
+      {
+        [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+        [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
+          body: { body: [{ op: "add", text: "New line." }], description: null },
+        }),
+        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+      "/bots/ba?tab=skills",
+    );
+    await heading();
+    click(screen.getByRole("button", { name: "v3 available" }));
+    const dialog = await screen.findByRole("dialog", { name: "Upgrade Zeta to v3?" });
+    click(await within(dialog).findByRole("button", { name: "Upgrade to v3" }));
+    await act(() => router.navigate({ to: "/" }));
+    await held.answer({
+      status: 500,
+      body: { error: { code: "internal_error", message: "The app could not save it." } },
+    });
+    expect(await screen.findByText("The app could not save it.")).toBeTruthy();
   });
 
   it("+ Add shows the stale toast for a skill added in another place, and closes", async () => {

@@ -233,7 +233,11 @@ function BotView({
     onError: setUploadError,
   });
 
+  // How many times each tab was let go (Discard, Esc, leaving): a Save that was on its way then
+  // must not bring back the edit the owner dropped.
+  const letGoCount = useRef<Record<EditTab, number>>({ profile: 0, model: 0 });
   const letGo = (tabs: readonly EditTab[]) => {
+    for (const t of tabs) letGoCount.current[t] += 1;
     let nextForm = form;
     let nextSaved = saved;
     for (const t of tabs) {
@@ -279,6 +283,7 @@ function BotView({
     const sent = form;
     const sentBase = base[t];
     const fields = changed[t];
+    const sentLetGo = letGoCount.current[t];
     setSaving(t);
     mutateAsync({
       path: { id: bot.id },
@@ -291,13 +296,16 @@ function BotView({
             b.id === result.id && result.row_version > b.row_version ? { ...b, ...result } : b,
           ),
         );
-        setSaved((old) => withTab({ into: old, from: sent, tab: t }));
+        // A tab the owner let go while Save waited shows the server's values, not the form it
+        // dropped: it keeps its old base, so it takes the saved values from the list like any
+        // newer `row_version`.
+        const droppedTab = letGoCount.current[t] === sentLetGo ? null : t;
+        if (droppedTab === null) setSaved((old) => withTab({ into: old, from: sent, tab: t }));
         // The server took the save at `sentBase`, so nothing else changed in between: every tab
         // whose edit started there is now based on the new `row_version`.
-        setBase((old) => ({
-          profile: old.profile === sentBase ? result.row_version : old.profile,
-          model: old.model === sentBase ? result.row_version : old.model,
-        }));
+        const moved = (old: Record<EditTab, number>, x: EditTab) =>
+          old[x] === sentBase && x !== droppedTab ? result.row_version : old[x];
+        setBase((old) => ({ profile: moved(old, "profile"), model: moved(old, "model") }));
         void queryClient.invalidateQueries({ predicate: PIN_QUERIES });
       })
       .catch((error: unknown) => {

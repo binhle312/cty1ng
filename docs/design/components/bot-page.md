@@ -139,7 +139,9 @@ there, so it never jumps.
   old value, and also when the `bot.updated` event of that save comes before its answer: the tab
   waits for the answer before it takes new values. An error from the server (a taken name, a
   field error) shows only on a field that still has the text that was sent (M2c review,
-  2026-11-02).
+  2026-11-02). When the owner lets the changes go while a Save is pending and the Save then
+  succeeds, the tab shows the saved values with no change; it never brings back the dropped
+  edit (M2c review, 2026-11-03).
 - **Leave with unsaved changes** (Discard, Esc, ← Back, another bot, tab or page) asks first,
   with the dialog of `project-settings-page.md` §5: **Leave without saving? 👀**, a text that
   names the changed fields, **Stay on this page** (`primary`, default) and **Let them go**
@@ -184,8 +186,10 @@ change sends the pin as the tab saw it (`../../api.md` §4). When the server ref
 the tab loads the newest pins, keeps no change, and a toast says "{skill} changed in another
 place. Check it and try again." The same toast shows for a skill in **+ Add** that got on the bot in
 another place; when no other skill failed, the card closes. Remove of a skill that is already gone
-just takes the row away. A pin answer never replaces newer bot values that came first (M2c
-review, 2026-11-02).
+just takes the row away. A pin answer changes only the pin of its own skill: a pin change does not
+raise `row_version`, so the answer cannot tell if the rest of the bot is newer in the page (M2c
+review, 2026-11-02 and 2026-11-03). An answer that comes after the owner left the tab or the page
+shows as a toast, not in the closed dialog.
 
 ## 8. Activity tab (CH1)
 
