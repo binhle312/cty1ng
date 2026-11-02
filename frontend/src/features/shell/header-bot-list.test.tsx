@@ -5,7 +5,7 @@ import { makeBot } from "../../../test/fixtures.ts";
 import { AllBotsChip } from "./header-bot-list.tsx";
 
 // The "+N" list (top-header.md §4, UI-2.12).
-const BA = makeBot(1, "BA", [], { pinned_position: 0 });
+const BA = makeBot(1, "BA", [], { pinned_position: 1 });
 const QA = makeBot(2, "QA");
 const UX = makeBot(3, "UX", [], {
   description: "Draws screens.",

@@ -1,5 +1,12 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { type KeyboardEvent, type PointerEvent, type RefObject, useRef, useState } from "react";
+import {
+  type KeyboardEvent,
+  type PointerEvent,
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Button } from "../../components/ui/button.tsx";
 import { Dialog, DialogButtons } from "../../components/ui/dialog.tsx";
 import { Slider } from "../../components/ui/slider.tsx";
@@ -151,6 +158,16 @@ function Cropper({
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const drag = useRef<{ x: number; y: number } | null>(null);
   const { mutateAsync, isPending } = useMutation(uploadAvatarMutation());
+  // Cancel (or Esc) closes the card while an upload may still run. Its late answer must not
+  // close the card of the next image or choose this one, so a closed card drops it.
+  const closed = useRef(false);
+  useEffect(() => {
+    // StrictMode mounts twice in development: the second mount opens it again.
+    closed.current = false;
+    return () => {
+      closed.current = true;
+    };
+  }, []);
 
   const base = natural === null ? 1 : Math.max(VIEW_PX / natural.w, VIEW_PX / natural.h);
   const scale = base * zoom;
@@ -211,6 +228,7 @@ function Cropper({
       OUTPUT_PX,
     );
     canvas.toBlob((blob) => {
+      if (closed.current) return;
       if (blob === null) {
         onError("The app could not crop the image. Try another file.");
         return;
@@ -218,10 +236,10 @@ function Cropper({
       const file = new File([blob], "avatar.png", { type: "image/png" });
       mutateAsync({ body: { file } })
         .then((uploaded) => {
-          onUploaded({ id: uploaded.avatar_id, url: uploaded.url });
+          if (!closed.current) onUploaded({ id: uploaded.avatar_id, url: uploaded.url });
         })
         .catch((error: unknown) => {
-          onError(apiErrorText(error));
+          if (!closed.current) onError(apiErrorText(error));
         });
     }, "image/png");
   };

@@ -103,7 +103,12 @@ export function BotsPage() {
           >
             Pinned
           </h2>
-          <PinnedGrid bots={pinned} dragOff={searching} onDelete={remove.ask} />
+          <PinnedGrid
+            bots={pinned}
+            pinnedIds={pinnedOf(all).map((bot) => bot.id)}
+            dragOff={searching}
+            onDelete={remove.ask}
+          />
         </section>
       )}
       {others.length > 0 && (
@@ -185,13 +190,16 @@ function OtherCard({ bot, onDelete }: { bot: BotRow; onDelete: (bot: BotRow) => 
 const stayInPlace: SortingStrategy = () => null;
 
 // The Pinned group: drag inside it, or Alt+← and Alt+→ on a focused card, reorders (pin.md §2).
-// Each drop saves at once. Drag is off while a search is on.
+// Each drop saves at once. Drag is off while a search is on. `bots` are the cards shown, which a
+// search can cut; `pinnedIds` is every pinned bot, the list that a change sends.
 function PinnedGrid({
   bots,
+  pinnedIds,
   dragOff,
   onDelete,
 }: {
   bots: BotRow[];
+  pinnedIds: readonly string[];
   dragOff: boolean;
   onDelete: (bot: BotRow) => void;
 }) {
@@ -237,7 +245,7 @@ function PinnedGrid({
       justDropped.current = false;
     }, 0);
     if (over === null || over.id === active.id) return;
-    setPins(withPinAt(ids, String(active.id), ids.indexOf(String(over.id))));
+    setPins(withPinAt(pinnedIds, String(active.id), pinnedIds.indexOf(String(over.id))));
   };
   const active = bots.find((bot) => bot.id === activeId);
   const activeIndex = activeId === null ? -1 : ids.indexOf(activeId);
@@ -271,7 +279,7 @@ function PinnedGrid({
           }}
         >
           {bots.map((bot, index) => (
-            <li key={bot.id}>
+            <li key={bot.id} className="relative">
               <PinnedCard
                 bot={bot}
                 dropLine={
@@ -282,10 +290,10 @@ function PinnedGrid({
                       : "before"
                 }
                 onUnpin={() => {
-                  setPins(withoutPin(ids, bot.id));
+                  setPins(withoutPin(pinnedIds, bot.id));
                 }}
                 onMove={(by) => {
-                  if (!dragOff) setPins(withPinMoved(ids, bot.id, by));
+                  if (!dragOff) setPins(withPinMoved(pinnedIds, bot.id, by));
                 }}
                 onDelete={() => {
                   onDelete(bot);
@@ -316,7 +324,8 @@ function PinnedCard({
   onDelete,
 }: {
   bot: BotRow;
-  dropLine: CardDrag["dropLine"];
+  // A drop line on this card's left or right edge, in the gap beside it.
+  dropLine: "before" | "after" | null;
   onUnpin: () => void;
   onMove: (by: -1 | 1) => void;
   onDelete: () => void;
@@ -339,9 +348,22 @@ function PinnedCard({
       "aria-describedby": sortable.attributes["aria-describedby"],
     },
     isGap: sortable.isDragging,
-    dropLine,
   };
-  return <BotGridCard bot={bot} onPin={onUnpin} onDelete={onDelete} drag={drag} />;
+  return (
+    <>
+      <BotGridCard bot={bot} onPin={onUnpin} onDelete={onDelete} drag={drag} />
+      {dropLine !== null && (
+        <span
+          aria-hidden
+          data-testid="drop-line"
+          className={cn(
+            "absolute top-2 bottom-2 w-0.5 rounded-pill bg-primary opacity-80",
+            dropLine === "before" ? "-left-2.5" : "-right-2.5",
+          )}
+        />
+      )}
+    </>
+  );
 }
 
 // The two sort buttons beside the Others title (bots-page.md §5, time-format.md §2). One setting

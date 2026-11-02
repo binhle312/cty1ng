@@ -445,7 +445,10 @@ function CreateBotView({
     <div className="mx-auto flex max-w-6xl flex-col px-8 py-6">
       <button
         type="button"
-        onClick={() => void leaveToPrevious()}
+        onClick={() => {
+          // While Create runs or its outcome is not known, the page stays (UI-5.6).
+          if (!readOnly) void leaveToPrevious();
+        }}
         aria-disabled={readOnly}
         className="flex w-fit items-center gap-1 text-on-surface-muted hover:text-on-surface aria-disabled:cursor-not-allowed aria-disabled:opacity-40"
       >

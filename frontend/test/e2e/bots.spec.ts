@@ -71,6 +71,58 @@ test.afterEach(async () => {
   await unpinAll();
 });
 
+// A clipped drop line is in the DOM but not on the screen: check that every ancestor that clips
+// its content holds the whole line.
+async function notClipped(line: Locator): Promise<boolean> {
+  return line.evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    for (let parent = el.parentElement; parent !== null; parent = parent.parentElement) {
+      if (getComputedStyle(parent).overflow === "visible") continue;
+      const clip = parent.getBoundingClientRect();
+      if (box.left < clip.left || box.right > clip.right) return false;
+    }
+    return box.width > 0;
+  });
+}
+
+// The keyboard moves a pinned card (pin.md §2): Space picks it up, an arrow shows the drop line
+// where it lands, and the line is not cut off by the card (review of #58).
+test("the keyboard moves a pinned card and the drop line shows", async ({ page }) => {
+  const tag = tagged();
+  await makeBot(`First ${tag}`);
+  await makeBot(`Second ${tag}`);
+  const all = await bots();
+  const idOf = (name: string) => all.find((bot) => bot.name === name)?.id ?? "";
+  await setPinnedBots({
+    client: apiClient(),
+    body: { bot_ids: [idOf(`First ${tag}`), idOf(`Second ${tag}`)], expected_bot_ids: [] },
+    throwOnError: true,
+  });
+  await page.goto("/bots");
+  const pinned = page.getByRole("region", { name: "Pinned" });
+  const first = pinned.getByRole("link", { name: `First ${tag}` });
+  await first.focus();
+  await page.keyboard.press("Space");
+  await page.keyboard.press("ArrowRight");
+  const line = pinned.getByTestId("drop-line");
+  await expect(line).toHaveCount(1);
+  expect(await notClipped(line)).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(line).toHaveCount(0);
+
+  // Alt+→ moves it one place and saves at once.
+  await first.focus();
+  await page.keyboard.press("Alt+ArrowRight");
+  await expect
+    .poll(async () =>
+      (await bots())
+        .filter((bot) => bot.pinned_position !== null)
+        .sort((a, b) => (a.pinned_position ?? 0) - (b.pinned_position ?? 0))
+        .map((bot) => bot.name),
+    )
+    .toEqual([`Second ${tag}`, `First ${tag}`]);
+});
+
 test("the Bots page searches, pins and deletes a bot to Trash", async ({ page }) => {
   const violations = await watchCsp(page);
   const tag = tagged();
@@ -149,6 +201,50 @@ test("the colour row, the Custom card and the crop card run under the CSP", asyn
     "true",
   );
   expect(await violations()).toEqual([]);
+});
+
+// A late upload after Cancel is dropped (review of #58): upload A, Cancel while it is sent, open
+// image B; when A's answer comes, B's crop card stays open and A is not chosen.
+test("an upload that ends after Cancel does not replace the next image", async ({ page }) => {
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let first = true;
+  await page.route("**/api/avatars", async (route) => {
+    if (route.request().method() === "POST" && first) {
+      first = false;
+      await held;
+    }
+    await route.continue();
+  });
+  await page.goto("/bots/new");
+  const crop = page.getByRole("dialog", { name: "Crop the image" });
+  const pick = async (name: string) => {
+    const chooser = page.waitForEvent("filechooser");
+    await page.getByRole("radio", { name: "Upload image" }).click();
+    await (await chooser).setFiles({ name, mimeType: "image/png", buffer: PNG });
+    await expect(crop).toBeVisible();
+  };
+  await pick("a.png");
+  const sent = page.waitForRequest(
+    (request) => request.method() === "POST" && request.url().endsWith("/api/avatars"),
+  );
+  await crop.getByRole("button", { name: "Use", exact: true }).click();
+  await sent;
+  await crop.getByRole("button", { name: "Cancel" }).click();
+  await expect(crop).toBeHidden();
+
+  await pick("b.png");
+  const answered = page.waitForResponse(
+    (response) => response.request().method() === "POST" && response.url().endsWith("/api/avatars"),
+  );
+  release();
+  await answered;
+  // Give the page a moment to act on the late answer.
+  await page.waitForTimeout(300);
+  await expect(crop).toBeVisible();
+  await expect(page.getByRole("radio", { name: "Your image" })).toHaveCount(0);
 });
 
 // The middle 6 columns hold about 12 avatars (top-header.md state 2). With 14 or more, the

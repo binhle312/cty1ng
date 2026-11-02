@@ -84,6 +84,25 @@ describe("Create on the Create bot page", () => {
     expect(await screen.findByText("Created BA ✨")).toBeTruthy();
   });
 
+  it("keeps the page while the outcome is not known: Back does nothing (UI-5.6)", async () => {
+    fake = api([NETWORK_ERROR]);
+    await renderApp("/bots/new");
+    await screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+    await fillToModelStep();
+    click(screen.getByRole("button", { name: "Create" }));
+    await screen.findByRole("alert");
+    // The Back link at the top of the page (the step buttons have their own Back).
+    const [back] = screen.getAllByRole("button", { name: "Back" });
+    if (back === undefined) throw new Error("no Back");
+    expect(back.getAttribute("aria-disabled")).toBe("true");
+    click(back);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(screen.getByRole("heading", { name: "New bot" })).toBeTruthy();
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
   it("sends one request for a double click on Create (UI-5.6)", async () => {
     fake = api([{ status: 201, body: makeBot(1, "BA") }]);
     await renderApp("/bots/new");

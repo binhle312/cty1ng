@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Ellipsis } from "lucide-react";
-import type { KeyboardEventHandler, Ref } from "react";
+import type { Ref } from "react";
 import {
   MenuItem,
   MenuLinkItem,
@@ -17,16 +17,15 @@ import { BotBand } from "./bot-band.tsx";
 import { countText, healthLine, modelLine } from "./bot-lines.ts";
 import type { BotRow } from "./bot-queries.ts";
 
-// What a drag gives a pinned card (bots-page.md §6): the element refs, the handle props, and
-// where the drop line shows.
+// What a drag gives a pinned card (bots-page.md §6): the element refs and the handle props (with
+// the keyboard: Space picks the card up, Alt+← and Alt+→ move it). The drop line is drawn by the
+// Bots page beside the card: the card clips what is outside it.
 export interface CardDrag {
   setNodeRef: Ref<HTMLElement>;
   setActivatorNodeRef: Ref<HTMLAnchorElement>;
   handleProps: Record<string, unknown>;
   // The card that moves: its place is a gap.
   isGap: boolean;
-  // A drop line on this card's left or right edge.
-  dropLine: "before" | "after" | null;
 }
 
 // One card of the Bots page (bots-page.md §2, V3). The whole card is one link to the bot page;
@@ -35,15 +34,12 @@ export function BotGridCard({
   bot,
   onPin,
   onDelete,
-  onKeyDown,
   drag,
   overlay = false,
 }: {
   bot: BotRow;
   onPin: () => void;
   onDelete: () => void;
-  // Alt+← and Alt+→ on a focused pinned card.
-  onKeyDown?: KeyboardEventHandler<HTMLAnchorElement>;
   drag?: CardDrag;
   // The copy that follows the pointer while a card moves: no controls.
   overlay?: boolean;
@@ -82,7 +78,6 @@ export function BotGridCard({
                 params={{ slug: bot.slug }}
                 ref={drag?.setActivatorNodeRef}
                 {...drag?.handleProps}
-                onKeyDown={onKeyDown}
                 className={cn(
                   "rounded-card outline-none after:absolute after:inset-0 after:rounded-card focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-primary",
                   pinned ? "cursor-grab active:cursor-grabbing" : "cursor-default",
@@ -117,16 +112,6 @@ export function BotGridCard({
             </div>
           )}
         </>
-      )}
-      {drag?.dropLine != null && (
-        <span
-          aria-hidden
-          data-testid="drop-line"
-          className={cn(
-            "absolute top-2 bottom-2 w-0.5 rounded-pill bg-primary opacity-80",
-            drag.dropLine === "before" ? "-left-2.5" : "-right-2.5",
-          )}
-        />
       )}
     </article>
   );
