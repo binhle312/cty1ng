@@ -199,7 +199,7 @@ const TEMPLATE = {
 
 // GET /skills hides deprecated skills unless the page asks for them, as the server does. The
 // test changes `skills.list` to stand for a change made in another tab.
-function skillsApi(skills = { list: [OLD, NEW] }) {
+function skillsApi(skills = { list: [OLD, NEW] }, source = { bot: SOURCE }) {
   return fakeApi({
     "GET /api/settings": () => ({ body: BOT_SETTINGS }),
     "GET /api/models": () => ({ body: [makeModel(), FAKE_SCRIPTED] }),
@@ -208,7 +208,7 @@ function skillsApi(skills = { list: [OLD, NEW] }) {
       const all = search.get("include_deprecated") === "true";
       return { body: skills.list.filter((skill) => all || !skill.deprecated) };
     },
-    "GET /api/bots": () => ({ body: [SOURCE] }),
+    "GET /api/bots": () => ({ body: [source.bot] }),
     [`GET /api/bots/${SOURCE.id}/clone-template`]: () => ({ body: TEMPLATE }),
     "POST /api/bots": () => ({ status: 201, body: makeBot(10, "Source (copy)") }),
   });
@@ -251,6 +251,48 @@ describe("skills on the Create bot page", () => {
     const box = () => within(rowOf(OLD.id)).getByRole("checkbox");
     click(box());
     click(box());
+    openStep(/Model/);
+    click(screen.getByRole("button", { name: "Create" }));
+    await waitFor(() => {
+      expect(fake?.sent("POST", "/api/bots")).toHaveLength(1);
+    });
+    expect(fake.sent("POST", "/api/bots")[0]?.body).toMatchObject({
+      pins: [{ skill_id: OLD.id, skill_version_id: versionId(1), always_load: true }],
+    });
+  });
+
+  it("shows the copied version while another tab upgrades the source bot", async () => {
+    const source = { bot: SOURCE };
+    fake = skillsApi(undefined, source);
+    await renderApp(`/bots/new?from=${SOURCE.id}`);
+    await screen.findByRole("button", { name: "Create" }, { timeout: 5000 });
+    expect(screen.getByText(`${OLD.name} v1 (always load)`)).toBeTruthy();
+    // Another tab moves the source bot to v2; the bot list comes again.
+    const before = fake.sent("GET", "/api/bots").length;
+    source.bot = makeBot(9, "Source", [
+      makePin({
+        skill_id: OLD.id,
+        skill_name: OLD.name,
+        skill_version_id: versionId(2),
+        version: 2,
+        always_load: true,
+        deprecated: true,
+      }),
+    ]);
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(before);
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(screen.getByText(`${OLD.name} v1 (always load)`)).toBeTruthy();
+    expect(screen.queryByText(`${OLD.name} v2 (always load)`)).toBeNull();
+    openStep(/Skills/);
+    expect(within(rowOf(OLD.id)).getByText("v1")).toBeTruthy();
     openStep(/Model/);
     click(screen.getByRole("button", { name: "Create" }));
     await waitFor(() => {

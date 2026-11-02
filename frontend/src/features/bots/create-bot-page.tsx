@@ -220,6 +220,10 @@ function CreateBotView({
   const source =
     template === null ? undefined : bots.find((b) => b.id === template.cloned_from_bot_id);
   const [start] = useState(() => startForm({ template, settings, models, bots }));
+  // The copied pins as the page opened: the template's version and Always load, with the source
+  // bot's names. The source bot can change in another tab while the page is open, but the form
+  // keeps the template's pins, so the rows and the preview keep these too.
+  const [copiedPins] = useState(() => copiedPinsOf(template, source));
   const [form, setForm] = useState(start);
   // The model that left the catalog, for the CL2 error.
   const [goneModel] = useState(() =>
@@ -430,7 +434,7 @@ function CreateBotView({
         ? "ready"
         : "not_created";
 
-  const skillChoices = skillChoicesOf({ skills, form, source });
+  const skillChoices = skillChoicesOf({ skills, form, copiedPins });
 
   const stepProps = {
     form,
@@ -621,16 +625,33 @@ function isTooLong(form: CreateForm, field: string, settings: FormSettings): boo
 // (with the copied version, deprecated or in Trash), and every ticked skill, also one that left
 // the list (another tab moved it to Trash), so it can be unticked. The rows do not depend on
 // the ticks of the moment, except for a skill that left: unticked, its row goes.
+type CopiedPin = BotRow["pins"][number];
+
+// The template's pins, with the names and versions of the source bot's pins. A pin whose version
+// the source bot no longer has (it changed between the two answers) keeps the template's
+// version id; its row then shows the source bot's version number for that skill.
+function copiedPinsOf(
+  template: GetBotCloneTemplateResponse | null,
+  source: BotRow | undefined,
+): CopiedPin[] {
+  if (template === null) return [];
+  return template.pins.flatMap((pin) => {
+    const from = source?.pins.find((p) => p.skill_id === pin.skill_id);
+    if (from === undefined) return [];
+    return [{ ...from, skill_version_id: pin.skill_version_id, always_load: pin.always_load }];
+  });
+}
+
 function skillChoicesOf({
   skills,
   form,
-  source,
+  copiedPins,
 }: {
   skills: ListSkillsResponse;
   form: CreateForm;
-  source: BotRow | undefined;
+  copiedPins: readonly CopiedPin[];
 }): SkillChoice[] {
-  const copied = new Map((source?.pins ?? []).map((pin) => [pin.skill_id, pin]));
+  const copied = new Map(copiedPins.map((pin) => [pin.skill_id, pin]));
   const copiedPin = (skillId: string) => {
     const from = copied.get(skillId);
     return from === undefined
