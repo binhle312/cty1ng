@@ -93,7 +93,7 @@ export function SkillFields({
   );
 }
 
-interface FieldProps {
+export interface FieldProps {
   label: string;
   hint?: string;
   value: string;
@@ -151,7 +151,8 @@ function FieldFrame({
 const BOX =
   "w-full rounded-control border border-outline-strong bg-surface px-2.5 py-1.5 outline-none placeholder:text-on-surface-muted focus:border-primary read-only:bg-surface-raised";
 
-function TextField({
+// The Create bot page uses the same fields (create-bot-page.md §2).
+export function TextField({
   multiline = false,
   mono = false,
   ...props
@@ -193,7 +194,7 @@ function TextField({
 
 // The Body box with Write and Preview on top (§2): it opens in Preview when it has text, and in
 // Write when it is empty or has an error. Preview renders Markdown with raw HTML off.
-function BodyField(props: FieldProps & { warning: string | null }) {
+export function BodyField(props: FieldProps & { warning: string | null }) {
   const id = useId();
   const [tab, setTab] = useState<"write" | "preview">(() =>
     props.value.trim() === "" || props.error !== null ? "write" : "preview",
@@ -202,7 +203,10 @@ function BodyField(props: FieldProps & { warning: string | null }) {
   return (
     <FieldFrame
       {...props}
-      hint="The steps a bot follows for this task. Bots read it only when they load the skill."
+      hint={
+        props.hint ??
+        "The steps a bot follows for this task. Bots read it only when they load the skill."
+      }
       inputId={id}
     >
       <TabsRoot

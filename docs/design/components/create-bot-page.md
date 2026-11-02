@@ -62,7 +62,15 @@ search box. A ticked row moves to the top and shows the **Always load** switch, 
 are not in the list. Each ticked skill gets its latest version.
 
 Loading: one `GET /skills` returns every skill with name, description and latest version (no
-bodies, no paging). The search filters in the browser.
+bodies, no paging). The search filters in the browser. A Clone asks with `include_deprecated=true`,
+because it keeps the source bot's deprecated pins (§6). A copied pin shows the version that
+Create sends: its name, number and description come with the clone template (`copied_pins`,
+read from the same rows as the pins), never from the bot list, which can already name another
+version (M2b review, owner 2026-11-02). That pairs them only within one answer: the template
+can come again (focus, another tab changed the source bot), so the page keeps the
+`copied_pins` of the answer its form started from, and Create leaves `copied_pins` out. A ticked skill that another tab moved to Trash has no number:
+its row says "Version number unavailable" and the preview "A skill in Trash (version number
+unavailable)" (owner, 2026-11-02).
 
 ### Step 4 · Model (CS4, CS4b, CS4c)
 
@@ -165,7 +173,7 @@ job (D55).
 | E2 | Persona over the limit | The owner can keep typing (nothing is cut). "Too long by {n} characters. Move long procedures into a skill." Empty: "Write a persona. The bot needs it to work." after Next |
 | E3 | The server finds problems on Create | Nothing is created and the input stays. Steps with a problem get a red "!" in the stepper; their preview sections get a red (!) icon. A click opens that step, where the message is under the field. Create is off (40 %) until they are fixed |
 | E4 | Sending | Create is off with a spinner and "Creating". Back is off and the form is read-only. The preview card has no current section and no Edit links; its pill says Creating. A double click sends one request |
-| E5 | Create failed (no connection, server error) | A red banner under the stepper: "Could not create the bot. The app could not reach the server. Your input is kept." and Try again. No stack trace and no internal text. Try again sends the same request with the same retry key, so a retry never makes two bots (`../../api.md` §4). Until the outcome is known, the page keeps that request as sent and the form stays read-only: Try again resends it unchanged, so an edit cannot ride on the old key. When the answer comes, a bot that was created opens as after Create; an input error unlocks the form, and the next Create is a new request with a new key (`../../domain-model.md` §2 Idempotency; M2 spec gap pass, owner 2026-11-01) |
+| E5 | Create failed (no connection, server error) | A red banner under the stepper: "Could not confirm whether the bot was created. Your input is kept." and Try again (owner, 2026-11-02: the app does not know if the bot was created, so the banner does not say it failed). No stack trace and no internal text. Try again sends the same request with the same retry key, so a retry never makes two bots (`../../api.md` §4). Until the outcome is known, the page keeps that request as sent and the form stays read-only: Try again resends it unchanged, so an edit cannot ride on the old key. When the answer comes, a bot that was created opens as after Create; an input error unlocks the form, and the next Create is a new request with a new key (`../../domain-model.md` §2 Idempotency; M2 spec gap pass, owner 2026-11-01) |
 | E6 | Leave with input | Cancel, ← Back, the rail or a header bot opens "Leave without creating? {name} is not created. What you typed in the 4 steps is lost." with Stay and **Leave** (`danger`). Esc = Stay. With nothing typed, the owner leaves at once. No draft is saved. The browser's own question covers a closed tab or a reload |
 
 The limits (name 32, description 160, persona 8,000, history 10–80 %) are settings with these
@@ -217,3 +225,22 @@ that cannot run) opens this page filled from `GET /bots/{id}/clone-template` (UI
 | `/bots/new?from={bot id}` | Clone of that bot (§6). A bot in Trash, purged or unknown shows "The app could not find the bot to copy." with **← Back**; a load failure shows "The app could not load the bot to copy." with **Try again** |
 
 `new` is a reserved slug (`../../domain-model.md` §2 Slug).
+
+## Texts added in the M2b build (2026-11-01, for the owner's review in the M2b PR)
+
+The spec did not name these; the build uses them.
+
+- Step checks: "Upload an image, or pick Flat." (Upload style with no image), "Pick an effort."
+  (a model with efforts and none picked).
+- Why Create is off (its tooltip, `ui-rules.md` B5): "Creating the bot." while sending; "Could not
+  confirm whether the bot was created. Try again." after an unknown outcome (owner, 2026-11-02);
+  "Fix the problems marked with ! first." while a server error stays; "Pick a model that can
+  run." with no model, or one with no key.
+- Skills step with no skills: "No skills yet. You can add skills later."; with a search that
+  matches none: 'No skills match "{text}".'
+- The crop card (`bot-avatar.md` §6): title "Crop the image", line "Drag the image to move it.
+  Zoom with the slider.", the image area's name for screen readers "Image position. Arrow keys
+  move it.", and "The app could not read the image. Try another file." when the file does not
+  load. A file of another type: "Use a PNG, JPEG or WebP image."; a file over the limit: "The
+  image is {n} MB. The limit is {max} MB."; the limits cannot load: "The app could not check
+  the image size. Upload the image again." (`bot-avatar.md` §6 AV4)

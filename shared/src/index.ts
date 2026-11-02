@@ -5,3 +5,4 @@ export * from "./events/index.ts";
 export * from "./ids.ts";
 export * from "./settings.ts";
 export * from "./skills.ts";
+export * from "./tool-settings.ts";

@@ -1,54 +1,126 @@
-import type { CSSProperties } from "react";
 import type { ListBotsResponse } from "../../lib/api/generated/types.gen.ts";
 import { cn } from "../../lib/cn.ts";
+import { SLIME_ART } from "../../themes/bot-palette.ts";
 
 type Bot = ListBotsResponse[number];
 
-// What an avatar needs from a bot.
-export type AvatarBot = Pick<Bot, "name" | "avatar_style" | "avatar_colour" | "avatar_url">;
+// What an avatar needs from a bot. The Create page draws one from its form, so this is not the
+// whole bot.
+export type AvatarBot = Pick<Bot, "avatar_style" | "avatar_colour" | "avatar_url">;
 
-// Text on a bot colour is black or white, whichever has the higher contrast, because a custom
-// colour can be light or dark (bot-avatar.md §5). WCAG relative luminance of `#RRGGBB`.
-export function readableOn(colour: string): "black" | "white" {
-  const channel = (start: number) => {
-    const value = Number.parseInt(colour.slice(start, start + 2), 16) / 255;
-    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-  };
-  const luminance = 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
-  // Black beats white when the luminance is above about 0.179 (the point where both contrast
-  // ratios are equal).
-  return luminance > 0.179 ? "black" : "white";
-}
+// The standard sizes (bot-avatar.md §2): the circle and the Flat art box inside it.
+export type AvatarSize = "header" | "list" | "large";
 
-// The first letter of the name, whole even when it is outside the Basic Multilingual Plane.
-function initialOf(name: string): string {
-  const code = name.codePointAt(0);
-  return code === undefined ? "" : String.fromCodePoint(code).toUpperCase();
-}
+const CIRCLE: Record<AvatarSize, string> = {
+  header: "size-avatar",
+  list: "size-avatar-list",
+  large: "size-avatar-large",
+};
+const ART_PX: Record<AvatarSize, number> = { header: 30, list: 56, large: 90 };
+// The badge slot (§3): 16 px at header size, larger with the circle.
+const BADGE: Record<AvatarSize, string> = {
+  header: "size-4 text-badge",
+  list: "size-5 text-xs",
+  large: "size-6 text-sm",
+};
 
-// The smallest avatar the Skills page needs (M2a): the 36 px circle of the lists
-// (bot-avatar.md §2). Flat is the bot colour with the first letter of the name; an uploaded image
-// is shown as it is. Jelly and Pixel are drawn like Flat until the full component (M2b) draws
-// them. The colour comes from data, so it is set with `style` (the CSSOM, which the CSP allows).
-export function BotAvatar({ bot, className }: { bot: AvatarBot; className?: string }) {
-  const circle = cn(
-    "flex size-avatar shrink-0 items-center justify-center overflow-hidden rounded-pill bg-surface-raised",
-    className,
-  );
-  if (bot.avatar_style === "upload" && bot.avatar_url !== null) {
-    return (
-      <span className={circle}>
-        <img src={bot.avatar_url} alt="" className="size-full object-cover" />
-      </span>
-    );
-  }
-  const style: CSSProperties = {
-    backgroundColor: bot.avatar_colour,
-    color: readableOn(bot.avatar_colour),
-  };
+// The one badge M2 has: a bot that cannot run (bot-status.md, "Cannot run"). The run states
+// (queued, running, waiting) come with runs in M3.
+export type AvatarBadge = "cannot_run";
+
+// A bot avatar: the slime in the bot colour, or the uploaded image, in a `surface-raised` circle
+// (bot-avatar.md). Only Flat is drawn (§1: Jelly and Pixel ship later, and the API refuses them),
+// with the Idle face: M2 has no runs. The colour comes from data, so it is an SVG attribute, which
+// the CSP allows. The avatar is decoration: the element around it names the bot.
+export function BotAvatar({
+  bot,
+  size = "header",
+  badge = null,
+  className,
+}: {
+  bot: AvatarBot;
+  size?: AvatarSize;
+  badge?: AvatarBadge | null;
+  className?: string;
+}) {
+  const upload = bot.avatar_style === "upload" && bot.avatar_url !== null;
   return (
-    <span aria-hidden className={cn(circle, "text-base font-semibold")} style={style}>
-      {initialOf(bot.name)}
+    <span aria-hidden className={cn("relative inline-flex shrink-0", CIRCLE[size], className)}>
+      <span className="flex size-full items-center justify-center overflow-hidden rounded-pill bg-surface-raised">
+        {upload ? (
+          <img src={bot.avatar_url ?? undefined} alt="" className="size-full object-cover" />
+        ) : (
+          <FlatSlime colour={bot.avatar_colour} px={ART_PX[size]} />
+        )}
+      </span>
+      {badge === "cannot_run" && (
+        <span
+          data-badge="cannot-run"
+          className={cn(
+            "absolute -top-0.5 -right-0.5 flex items-center justify-center rounded-pill bg-danger leading-none font-bold text-on-primary ring-2 ring-surface",
+            BADGE[size],
+          )}
+        >
+          !
+        </span>
+      )}
     </span>
+  );
+}
+
+// The Flat slime, Idle face (design/assets/avatars/flat-idle.svg): the body at 95 % width, the
+// shine, the blush, plain black eyes and a small smile. The face colours are part of the art.
+const BODY = "M7 37C7 23 15 11 24 11S41 23 41 37C41 41 37 42 24 42S7 41 7 37Z";
+
+export function FlatSlime({ colour, px }: { colour: string; px: number }) {
+  return (
+    <svg viewBox="0 0 48 48" width={px} height={px} aria-hidden data-colour={colour}>
+      <g transform="matrix(0.95 0 0 1 1.2 0)">
+        <path d={BODY} fill={colour} />
+        <path
+          d="M13.8 20a3.2 2 0 1 0 6.4 0a3.2 2 0 1 0 -6.4 0Z"
+          fill={SLIME_ART.shine}
+          opacity="0.5"
+        />
+        <ellipse cx="13.6" cy="33.6" rx="2.5" ry="1.3" fill={SLIME_ART.blush} opacity="0.45" />
+        <ellipse cx="34.4" cy="33.6" rx="2.5" ry="1.3" fill={SLIME_ART.blush} opacity="0.45" />
+      </g>
+      <path
+        d="M15.9 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0ZM26.3 29a2.9 3.7 0 1 0 5.8 0a2.9 3.7 0 1 0 -5.8 0Z"
+        fill={SLIME_ART.face}
+      />
+      <path
+        d="M22 34.8Q24 36.8 26 34.8"
+        stroke={SLIME_ART.face}
+        strokeWidth="1.6"
+        fill="none"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+// The sleepy grey slime of the Bots page empty state (bots-page.md §8): faded, eyes closed.
+export function SleepySlime({ px }: { px: number }) {
+  return (
+    <svg viewBox="0 0 48 48" width={px} height={px} aria-hidden className="opacity-60">
+      <g transform="matrix(0.95 0 0 1 1.2 0)">
+        <path d={BODY} className="fill-outline-strong" />
+      </g>
+      <path
+        d="M16 29.5Q18.8 31.5 21.6 29.5M26.4 29.5Q29.2 31.5 32 29.5"
+        stroke={SLIME_ART.face}
+        strokeWidth="1.6"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <path
+        d="M22.4 35.4H25.6"
+        stroke={SLIME_ART.face}
+        strokeWidth="1.6"
+        fill="none"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

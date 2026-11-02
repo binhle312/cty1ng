@@ -121,3 +121,20 @@ With no bots: a grey, faded slime with the sleepy face between two empty dashed 
 teammate with one role, for example BA or Designer. Make the first one, so this slime has
 company." and the **+ Create** button. Search and the sort buttons are hidden. The header shows
 its empty state (`top-header.md` state 11).
+
+## Texts added in the M2b build (2026-11-01, for the owner's review in the M2b PR)
+
+The spec did not name these; the build uses them.
+
+- The delete dialog: title "Delete {name}? 🧹", text "The bot goes to Trash. After {n} days, the
+  app deletes it permanently. Messages from {name} will stay, greyed.", buttons **Cancel**
+  (default) and **Delete bot** (`danger` fill); the toast "{name} is in Trash." ({n} is the
+  Trash setting, D49; the same pattern as the skill delete, `skills-page.md` §11.)
+- A pin save that fails for another reason than a changed list: the toast "The app could not
+  save the pinned bots. Try again."
+- Health "Needs attention" lines for runs, until M3 sends the run counts (M2 has no runs, so
+  they do not show yet): "Recent runs failed", "Runs stopped at the request limit this week",
+  "Last run cut history to fit the context". M3 changes the first to "{n} of the last {m} runs
+  failed".
+- The header bot card's gear: tooltip "Open the bot's settings in a new tab"
+  (`bot-card.md`).

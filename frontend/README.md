@@ -12,6 +12,7 @@ UI parts. `docs/architecture.md` §4; TypeScript rules in `docs/frontend-convent
 | `playwright.config.ts` | End-to-end tests against the production build that the backend serves |
 | `public/` | Files served as they are |
 | `public/theme-init.js` | Sets the theme on `<html>` before the first paint (`docs/design/themes.md` §2 rule 5) |
+| `public/zod-init.js` | Turns off Zod's `new Function` fast path before any module runs (the CSP blocks it) |
 | `src/` | The source |
 | `src/main.tsx` | Start: Zod settings, fonts, styles, theme, the event stream, the router |
 | `src/router.ts` | The router: lazy pages, preload on hover or focus |

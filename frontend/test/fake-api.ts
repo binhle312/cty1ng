@@ -8,6 +8,7 @@ export interface RecordedRequest {
   method: string;
   path: string;
   body: unknown;
+  headers: Headers;
 }
 
 type Answer = { status?: number; body?: unknown } | undefined;
@@ -28,8 +29,14 @@ export function heldAnswer() {
     },
   };
 }
+// A request that fails on the way, as when the server cannot be reached.
+export const NETWORK_ERROR = Symbol("network error");
+
 // A handler may answer later (a promise), so a test can hold a request open.
-type Handler = (request: RecordedRequest, search: URLSearchParams) => Answer | Promise<Answer>;
+type Handler = (
+  request: RecordedRequest,
+  search: URLSearchParams,
+) => Answer | typeof NETWORK_ERROR | Promise<Answer | typeof NETWORK_ERROR>;
 
 export function fakeApi(routes: Record<string, Handler>) {
   const requests: RecordedRequest[] = [];
@@ -44,9 +51,11 @@ export function fakeApi(routes: Record<string, Handler>) {
       method: input.method,
       path: url.pathname,
       body: text === "" ? undefined : JSON.parse(text),
+      headers: input.headers,
     };
     requests.push(recorded);
     const answer = await routes[`${input.method} ${url.pathname}`]?.(recorded, url.searchParams);
+    if (answer === NETWORK_ERROR) throw new TypeError("Failed to fetch");
     if (answer === undefined) {
       return Response.json(
         { error: { code: "not_found", message: `No route for ${input.method} ${url.pathname}` } },

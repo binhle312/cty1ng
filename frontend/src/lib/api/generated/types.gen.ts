@@ -143,7 +143,7 @@ export type ListModelsResponses = {
         label: string;
         provider: string;
         available: boolean;
-        unavailable_reason: 'no_api_key';
+        unavailable_reason: 'no_api_key' | null;
         api_key_env: string | null;
         efforts: Array<'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max'>;
         default_effort: 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | null;
@@ -1419,6 +1419,17 @@ export type GetBotCloneTemplateResponses = {
             always_load: boolean;
         }>;
         cloned_from_bot_id: string;
+        copied_pins: Array<{
+            skill_id: string;
+            skill_slug: string;
+            skill_name: string;
+            description: string;
+            skill_version_id: string;
+            version: number;
+            latest_version: number;
+            always_load: boolean;
+            deprecated: boolean;
+        }>;
     };
 };
 

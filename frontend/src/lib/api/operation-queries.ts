@@ -20,6 +20,10 @@ export const SKILL_QUERIES = operationMatches(/Skill/);
 export const BOT_QUERIES = operationMatches(/Bot/);
 export const SETTINGS_QUERIES = operationMatches(/Settings/);
 
+// A settings change can move the bot list: its order follows `bot_order` (bots.md UI-4.5).
+export const SETTINGS_OR_BOT_QUERIES = (query: Query): boolean =>
+  SETTINGS_QUERIES(query) || BOT_QUERIES(query);
+
 // A skill change moves both sides: a bot's pins show the skill's name, latest version and state.
 export const SKILL_OR_BOT_QUERIES = (query: Query): boolean =>
   SKILL_QUERIES(query) || BOT_QUERIES(query);

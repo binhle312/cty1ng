@@ -27,6 +27,8 @@
   --font-mono: var(--token-font-mono);
 
   /* App text is 11 px or more (design/ui-rules.md L1). */
+  /* Text inside a 16 px badge (ui-rules L2). */
+  --text-badge: 10px;
   --text-xs: 11px;
   --text-sm: 12px;
   --text-base: var(--token-text-base);
@@ -49,16 +51,31 @@
   --spacing-tile: 40px;
   --spacing-panel: 48px;
   --spacing-avatar: 36px;
+  /* The list and bot page avatar circles (bot-avatar.md §2). */
+  --spacing-avatar-list: 72px;
+  --spacing-avatar-large: 116px;
   --spacing-button: 36px;
   --spacing-button-small: 30px;
   --spacing-control: var(--token-control-height);
   /* The list column of the Skills page and the version list of its History tab
      (skills-page.md §2, §13); dialogs and cards. */
   --spacing-list-column: 300px;
+  /* The live preview card of the Create bot page (create-bot-page.md §1). */
+  --spacing-preview: 320px;
   --spacing-dialog: 440px;
   --spacing-dialog-wide: 480px;
   /* A dialog is never taller than the window: 32px free above and below. */
   --spacing-dialog-height: calc(100dvh - 64px);
+}
+
+/* The round mask of the crop card (bot-avatar.md §6): everything outside the circle is dimmed. */
+@utility crop-mask {
+  box-shadow: 0 0 0 200px color-mix(in srgb, var(--color-surface) 70%, transparent);
+}
+
+/* A list that scrolls sideways with no scroll bar (the header roster, top-header.md state 2). */
+@utility no-scrollbar {
+  scrollbar-width: none;
 }
 
 @utility border-dashed-slot {

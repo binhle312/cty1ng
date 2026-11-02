@@ -101,5 +101,6 @@ cover them.
 | Conflict | Where | Status |
 | --- | --- | --- |
 | Agreed round 10 parts use 28 px buttons (Flow in the conversation header, Retry under a failed reply). B2 allows 30 or 36. The check gives a warning, not an error | `conversation-page.md`, `buttons.md` §2 | For the standardisation thread |
+| The Bots page sort buttons are 24 px icon buttons (`bots-page.md` §5). B2 allows 30 or 36. Built at 24 px in M2b; the owner keeps them for now and reviews the UI at M3 (owner, 2026-11-02) | `bots-page.md` §5, `buttons.md` §2 | Owner review at M3 |
 | "Delete project" on the Project settings page breaks W2 | `project-settings-page.md`, `buttons.md` §1 | For the standardisation thread |
 | Previews made before L1 and L2 still draw some app text under 11 px (badges at 9 px, meta lines at 10.5 px). The shell previews (`user-panel`, `left-bar-rail`, `left-bar`, `top-header`) are fixed; the others keep it until they are next regenerated. The rules win | `previews/command-dark/` | Fix each preview when its slice regenerates it |

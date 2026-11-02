@@ -3,7 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import {
   BOT_QUERIES,
   PIN_QUERIES,
-  SETTINGS_QUERIES,
+  SETTINGS_OR_BOT_QUERIES,
   SKILL_OR_BOT_QUERIES,
 } from "../api/operation-queries.ts";
 
@@ -73,8 +73,9 @@ export function createEventReducer(queryClient: QueryClient) {
         case "bots.reordered":
           void queryClient.invalidateQueries({ predicate: BOT_QUERIES });
           return true;
+        // The bot list too: its order follows the `bot_order` setting (bots.md UI-4.5).
         case "settings.updated":
-          void queryClient.invalidateQueries({ predicate: SETTINGS_QUERIES });
+          void queryClient.invalidateQueries({ predicate: SETTINGS_OR_BOT_QUERIES });
           return true;
         default: {
           const _exhaustive: never = event;

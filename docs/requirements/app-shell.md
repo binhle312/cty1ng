@@ -7,7 +7,7 @@ The frame around every page: the rail of conversations on the left and the bar o
 - **SH-1.** As the owner, I want every conversation as a round icon in a rail with a "+" at the top, so that I can switch and start conversations in one click.  
   Acceptance criteria: UI-1.1 to UI-1.6.
 - **SH-2.** As the owner, I want all my bots visible in a header with name tooltips, so that I always know who is available.  
-  Acceptance criteria: UI-2.1 to UI-2.3, UI-2.6 to UI-2.8.
+  Acceptance criteria: UI-2.1 to UI-2.3, UI-2.6 to UI-2.8, UI-2.12.
 - **SH-3.** As the owner, I want to drag a bot from the header into the conversation, so that adding a bot feels direct.  
   Acceptance criteria: UI-2.4, UI-2.5.
 - **SH-6.** As the owner, I want the header to show my pinned bots first in my order, then the others by recent activity or creation time, and never to shuffle while I am using it, so that I can find a bot without chasing it.  
@@ -97,6 +97,10 @@ Layout sketch: see `../design/screens.md` §1 (not final).
   owner is engaging with the header. The owner's own pin, unpin or drag applies at once.
 - UI-2.10: Keyboard: Tab reaches each avatar in display order, and the focused avatar scrolls
   into view. Arrow-key navigation between avatars is not provided (a later option).
+- UI-2.12: While some bots do not fit, a "+N" chip right of the roster shows how many are not in
+  view. It opens a list of every bot in the header order, with a search field; picking a bot
+  scrolls the header to its avatar and opens its bot card (`../design/components/top-header.md`
+  §4, owner 2026-11-02).
 - UI-2.11: The header is sticky: it stays at the top of the window on every page while the
   content below it scrolls (the conversation, the bot and skill pages, Settings, Statistics).
   Only the content area scrolls; the header and the conversation rail never scroll away.

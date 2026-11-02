@@ -570,6 +570,7 @@ export function createBotsService(deps: BotsDeps) {
         skill_version_id: pin.skillVersionId,
         always_load: pin.alwaysLoad,
       })),
+      copied_pins: pins.map(pinShape),
       cloned_from_bot_id: bot.id,
     };
   }

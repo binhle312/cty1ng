@@ -1,14 +1,23 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { watchCsp } from "./csp.ts";
 
 // Expanded, the trigger is named by the visible name "Sir"; collapsed, by "Sir · Menu".
 const OWNER_MENU = /^Sir( · Menu)?$/;
 
+// The servers keep one database for every test file, and other tests make bots. A test of the
+// first-run header answers the bot list itself: no bots yet.
+async function noBotsYet(page: Page) {
+  await page.route(/\/api\/bots$/, (route) =>
+    route.request().method() === "GET" ? route.fulfill({ json: [] }) : route.fallback(),
+  );
+}
+
 // M0 AC1 and the shell of the M0c plan §2.
 test.describe("app shell", () => {
   test("shows the rail with the New project tile, the empty header and bar 2", async ({ page }) => {
     const violations = await watchCsp(page);
+    await noBotsYet(page);
     await page.goto("/");
     const newProject = page.getByRole("button", { name: "New project" });
     await expect(newProject).toHaveAttribute("aria-disabled", "true");
@@ -55,7 +64,7 @@ test.describe("app shell", () => {
 
   for (const [path, title] of [
     ["/bots", "Bots"],
-    ["/bots/new", "Create bot"],
+    ["/bots/new", "New bot"],
     ["/bots/ba", "Bot"],
     ["/skills", "Skills"],
     ["/stats", "Statistics"],
@@ -91,6 +100,7 @@ test.describe("app shell", () => {
   });
 
   test("marks the add slot active on the Create bot page", async ({ page }) => {
+    await noBotsYet(page);
     await page.goto("/bots/new");
     await expect(page.getByRole("link", { name: /Hey, add your bot here/ })).toBeVisible();
     // The active dashed slot (dashed-slot.md §1): `primary` text.
@@ -108,6 +118,7 @@ test.describe("app shell", () => {
   });
 
   test("looks as agreed (Command dark)", async ({ page }) => {
+    await noBotsYet(page);
     await page.goto("/");
     await page.evaluate(() => document.fonts.ready);
     await expect(page).toHaveScreenshot("shell-command-dark.png");

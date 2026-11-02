@@ -3,7 +3,8 @@
 > **Status: agreed in the M0 UI design review (2026-10-22).** Pinned zone (§3) agreed in the M2
 > Bots review, round 9 (2026-10-23), steps 2c and 2e. Previews:
 > `../previews/command-dark/top-header.png` (and `.html`), `header-pins.png` (HD1–HD6), `bot-card-v3.png` (H1).
-> Focus and touch in states 3 and 5, and §4, from the shell review (2026-10-30). Requirements: `../../requirements/app-shell.md`
+> Focus and touch in states 3 and 5 from the shell review (2026-10-30). §4 (the "+N" list) agreed
+> by the owner on 2026-11-02. Requirements: `../../requirements/app-shell.md`
 > UI-2 (see "Requirement changes" below for items not yet written there).
 
 The header is the **bot roster only**: no navigation links and no Settings in it. It is 52 px tall,
@@ -50,11 +51,19 @@ sticky on every page (UI-2.11), background `surface`, bottom line `outline`.
 
 This replaces the M0 rule "no drag-reorder in the header" for pinned bots only.
 
-## 4. Later: a list of all bots
+## 4. All bots list ("+N")
 
-A "+N" chip at a faded edge that opens a list of every bot with its name and state. Not agreed
-(owner, 2026-10-30): test the header with 12–15 bots when M2 is built, and add the list only if
-finding a bot by its avatar is slow. The Bots page already lists every bot by name.
+Agreed by the owner on 2026-11-02, after M2b tested the header with 14 bots (UI-2.12).
+
+| # | Item | Behaviour |
+| --- | --- | --- |
+| A1 | Chip | One chip right of the zone, after the place of the › button: 28 px tall, `surface-raised`, 1 px `outline-strong`, pill, text "+N" (`on-surface`). It shows only while some bots do not fit (state 2), and it is always visible then, not only on hover. N is the number of bots not fully in view now, on both sides; it changes as the roster scrolls. Tooltip "All bots"; screen readers hear "All 14 bots, 6 not in view". Tab reaches it after the last avatar |
+| A2 | List | A click or Enter opens a popup under the chip, aligned to its right edge: 260 px wide, `surface-raised`, 1 px `outline-strong`, radius `radius-card`, shadow (as the bot card). At the top a search field "Find a bot" that has the focus; it matches the name, slug, description and model, as the Bots page search. Then every bot in the header order: the pinned bots, a 1 px line, the others. The list scrolls inside the popup after 320 px |
+| A3 | Row | 36 px avatar with its badge, the name (cut with "…"), a pin glyph for a pinned bot, and at the right the state word ("Idle", `on-surface-muted`) or, for a bot that cannot run, its short reason in `danger`. Hover: `surface-bubble` |
+| A4 | Pick | A click or Enter on a row closes the list, scrolls the header to that avatar and opens its bot card (`bot-card.md`), as a click on the avatar does |
+| A5 | Keyboard | ↓ from the search field goes to the first row; ↑ and ↓ move between rows; ↑ on the first row goes back to the field. Enter in the field picks the first match. Esc closes the list and the focus goes back to the chip |
+| A6 | No match | 'No bots match "{text}".' (`on-surface-muted`) |
+| A7 | Order | The list is part of the header for deferred reordering (UI-2.9): while it is open, activity moves nothing |
 
 ## Requirement changes
 
