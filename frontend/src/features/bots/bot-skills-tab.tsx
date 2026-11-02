@@ -206,16 +206,17 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
       {pins.length === 0 ? (
         <p className="mt-8 text-center text-on-surface-muted">{bot.name} has no skills yet.</p>
       ) : (
-        <table className="mt-4 w-full text-left">
+        // Fixed columns: the skill column takes the free width, so its description shows (UI-6.3).
+        <table className="mt-4 w-full table-fixed text-left">
           <thead>
             <tr className="border-b border-outline text-xs tracking-wide text-on-surface-muted uppercase">
               <th scope="col" className="py-2 font-medium">
                 Skill
               </th>
-              <th scope="col" className="py-2 font-medium">
+              <th scope="col" className="w-56 py-2 font-medium">
                 Version
               </th>
-              <th scope="col" className="py-2 font-medium">
+              <th scope="col" className="w-32 py-2 font-medium">
                 <Tooltip label={ALWAYS_LOAD_TIP} side="top">
                   <span
                     tabIndex={0}
@@ -342,7 +343,7 @@ function SkillPinRow({
   const outdated = pin.version < pin.latest_version;
   return (
     <tr data-skill={pin.skill_slug} className="border-b border-outline">
-      <td className="max-w-0 py-3 pr-4">
+      <td className="overflow-hidden py-3 pr-4">
         <span className="flex min-w-0 items-baseline gap-2">
           <span className="shrink-0 font-semibold">{pin.skill_name}</span>
           <span className="truncate text-sm text-on-surface-muted">{pin.description}</span>
