@@ -203,10 +203,11 @@ const TEMPLATE = {
 function skillsApi(
   skills = { list: [OLD, NEW] },
   source = { bot: SOURCE },
-  versions: { status: number; body: unknown } = { status: 200, body: makeVersions(3) },
+  versions: Answer | (() => Answer | Promise<Answer>) = { status: 200, body: makeVersions(3) },
 ) {
   return fakeApi({
-    [`GET /api/skills/${OLD.id}/versions`]: () => versions,
+    [`GET /api/skills/${OLD.id}/versions`]: () =>
+      typeof versions === "function" ? versions() : versions,
     "GET /api/settings": () => ({ body: BOT_SETTINGS }),
     "GET /api/models": () => ({ body: [makeModel(), FAKE_SCRIPTED] }),
     "GET /api/tools": () => ({ body: [] }),
@@ -350,6 +351,55 @@ describe("skills on the Create bot page", () => {
     expect(fake.sent("POST", "/api/bots")[0]?.body).toMatchObject({
       pins: [{ skill_id: OLD.id, skill_version_id: versionId(1), always_load: true }],
     });
+  });
+
+  it("keeps the owner's edits when a failed version lookup runs again", async () => {
+    let lookups = 0;
+    // The second lookup waits until the test lets it answer, so its pending state shows.
+    let answer: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      answer = resolve;
+    });
+    fake = skillsApi(undefined, { bot: sourceAtV2() }, async () => {
+      lookups += 1;
+      if (lookups === 1) {
+        return { status: 500, body: { error: { code: "internal_error", message: "x" } } };
+      }
+      await held;
+      return { status: 200, body: makeVersions(3) };
+    });
+    const { queryClient } = await renderApp(`/bots/new?from=${SOURCE.id}`);
+    await screen.findByRole("button", { name: "Create" }, { timeout: 5000 });
+    openStep(/Basics/);
+    type("Name", "My edited clone");
+    const name = () => screen.getByLabelText("Name", { exact: true });
+
+    // The owner comes back from another tab: the lookup does not run again.
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(1);
+    });
+    expect(lookups).toBe(1);
+    expect(name()).toHaveProperty("value", "My edited clone");
+
+    // Even when it runs again (pending, with no data), the form and the edit stay.
+    act(() => {
+      void queryClient.refetchQueries({
+        predicate: (query) => JSON.stringify(query.queryKey).includes("listSkillVersions"),
+      });
+    });
+    await waitFor(() => {
+      expect(lookups).toBe(2);
+    });
+    expect(name()).toHaveProperty("value", "My edited clone");
+    await act(async () => {
+      answer();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(name()).toHaveProperty("value", "My edited clone");
   });
 
   it("shows a copied model with no API key as an error at once (§6)", async () => {

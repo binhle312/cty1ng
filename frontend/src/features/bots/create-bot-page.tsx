@@ -98,9 +98,18 @@ export function CreateBotPage() {
   const versions = useQueries({
     queries: (stale ?? []).map((pin) => ({
       ...listSkillVersionsOptions({ path: { id: pin.skill_id } }),
+      // One look when the page opens: the form keeps what it showed then.
       retry: false,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
     })),
   });
+  // The page waits for the lookups once. A later fetch of a failed one has no data, so it is
+  // pending again; the form must stay, with what the owner typed.
+  const [versionsSettled, setVersionsSettled] = useState(false);
+  if (!versionsSettled && stale !== null && versions.every((q) => !q.isPending)) {
+    setVersionsSettled(true);
+  }
   const queries = [settings, models, tools, skills, bots];
   const failed = queries.find((q) => q.data === undefined && q.isError);
   if (failed !== undefined) {
@@ -138,7 +147,7 @@ export function CreateBotPage() {
     tools.data === undefined ||
     skills.data === undefined ||
     bots.data === undefined ||
-    versions.some((q) => q.isPending)
+    (from !== undefined && !versionsSettled)
   ) {
     return <PageSkeleton />;
   }
