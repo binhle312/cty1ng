@@ -40,8 +40,8 @@ written ways of working that the bot follows.
   a rename alone does not), see its history and compare two versions, restore an old version,
   clone it, deprecate it, and delete a deprecated skill to Trash. Import and export `SKILL.md` folders as a zip.
 - **After a skill save**: "Save as v2" offers to upgrade the bots that use an older version
-  (all ticked; untick a bot to keep its version). Creating a skill offers to add it to bots
-  (none ticked). Skip changes nothing.
+  (all ticked; untick a bot to keep its version). An upgrade keeps each bot's Always load.
+  Creating a skill offers to add it to bots (none ticked). Skip changes nothing.
 - **A skill's Bots tab**: see which bots use the skill and at which version, upgrade a bot to the
   newest version, turn Always load on or off, change the version, remove the skill from a bot,
   or add it to another bot.

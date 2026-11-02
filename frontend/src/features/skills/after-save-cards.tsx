@@ -1,5 +1,5 @@
-import { type QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { type QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "../../components/ui/button.tsx";
 import { Dialog, DialogButtons, DialogText } from "../../components/ui/dialog.tsx";
 import { showToast } from "../../components/ui/toast.tsx";
@@ -113,20 +113,34 @@ export function AfterSaveCardHost({
   onClose,
 }: {
   card: AfterSaveCard | null;
-  onClose: () => void;
+  // Gets the card that asks to close: the host closes it only while it is still the one shown.
+  onClose: (card: AfterSaveCard) => void;
 }) {
   // A new card each time, so its ticks start as the card says.
   if (card === null) return null;
+  const close = () => {
+    onClose(card);
+  };
   return card.kind === "upgrade" ? (
-    <UpgradeCard key={card.versionId} card={card} onClose={onClose} />
+    <UpgradeCard key={card.versionId} card={card} onClose={close} />
   ) : (
-    <AssignCard key={card.versionId} card={card} onClose={onClose} />
+    <AssignCard key={card.versionId} card={card} onClose={close} />
   );
 }
 
+// A request can end after its card closed (Skip, Esc or a newer card while it was on its way):
+// a success then closes nothing, because the host closes only the card that asks, and a failure
+// shows as a toast, because the card that would show it is gone.
 function useSendPins(onDone: () => void) {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
+  const shown = useRef(true);
+  useEffect(() => {
+    shown.current = true;
+    return () => {
+      shown.current = false;
+    };
+  }, []);
   const { mutateAsync, isPending } = useMutation(pinSkillToBotsMutation());
   const send = (...input: Parameters<typeof mutateAsync>) => {
     setError(null);
@@ -135,11 +149,12 @@ function useSendPins(onDone: () => void) {
         onDone();
       })
       .catch((cause: unknown) => {
-        setError(
+        const text =
           readApiError(cause)?.code === "stale_write"
             ? "A bot changed in another place. Check the list and try again."
-            : apiErrorText(cause),
-        );
+            : apiErrorText(cause);
+        if (shown.current) setError(text);
+        else showToast(text);
       })
       .finally(() => void queryClient.invalidateQueries({ predicate: PIN_QUERIES }));
   };
@@ -156,15 +171,20 @@ function UpgradeCard({
 }) {
   const upgrade = useRef<HTMLButtonElement>(null);
   const bots = useBots();
-  const [ticked, setTicked] = useState<ReadonlySet<string>>(
-    () => new Set(card.candidates.map((c) => c.bot_id)),
-  );
+  // The list follows the server while the card is open: after a conflict (409 `stale_write`) the
+  // pin queries refresh, so a retry sends the version each bot uses now, and a bot that is on v{n}
+  // already drops out. The card's own list stands in until the first answer.
+  const live = useQuery(listSkillUpgradeCandidatesOptions({ path: { id: card.skillId } }));
+  const candidates = (live.data ?? card.candidates).filter((c) => c.version < card.version);
+  // The bots the owner unticked: every other row is ticked, also one that comes in a refresh.
+  const [unticked, setUnticked] = useState<ReadonlySet<string>>(new Set());
   const { send, pending, error } = useSendPins(onClose);
   // A bot that left (Trash) while the card is open drops out of the list.
-  const rows = card.candidates.flatMap((candidate) => {
+  const rows = candidates.flatMap((candidate) => {
     const bot = bots.data?.find((b) => b.id === candidate.bot_id);
     return bot === undefined ? [] : [{ bot, candidate }];
   });
+  const ticked = new Set(rows.filter(({ bot }) => !unticked.has(bot.id)).map(({ bot }) => bot.id));
   const chosen = rows.filter(({ bot }) => ticked.has(bot.id));
   const v = String(card.version);
   return (
@@ -186,7 +206,7 @@ function UpgradeCard({
         }))}
         ticked={ticked}
         onToggle={(botId) => {
-          setTicked((current) => toggled(current, botId));
+          setUnticked((current) => toggled(current, botId));
         }}
       />
       {error !== null && <p className="mt-3 text-sm text-danger">{error}</p>}
@@ -207,10 +227,11 @@ function UpgradeCard({
               path: { id: card.skillId },
               body: {
                 skill_version_id: card.versionId,
+                // No `always_load`: the server keeps each bot's own value (§7.3), so a change
+                // made in another place while the card is open is not overwritten.
                 bots: chosen.map(({ candidate }) => ({
                   bot_id: candidate.bot_id,
                   expected_skill_version_id: candidate.skill_version_id,
-                  always_load: candidate.always_load,
                 })),
               },
             });

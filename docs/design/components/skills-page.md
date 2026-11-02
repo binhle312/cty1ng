@@ -173,6 +173,10 @@ exist; later, no bot uses an older version), the card does not open, and only a 
 open on, so its toast shows instead. Nothing is lost: the Bots tab still offers "Upgrade to vN"
 and + Add. A Restore of an old version (§13) is not a save from the editor and opens no card.
 
+**An answer after the card closed** (M2c review, 2026-11-02): Skip, Esc or a click outside closes
+the card also while its request is on its way. A success that comes later closes nothing, so a
+newer card stays open. A failure that comes later shows as a toast, because its card is gone.
+
 ### 7.1 Upgrade the bots (C4, UI-7.4)
 
 - Title: "Saved v5 ✨ Also upgrade these bots to v5?"
@@ -182,6 +186,12 @@ and + Add. A Restore of an old version (§13) is not a save from the editor and 
   keep its version.
 - Buttons: **Skip** and **Upgrade** (`primary`, default). Upgrade is disabled when no box is
   ticked. It moves the ticked bots in one transaction.
+- Upgrade keeps each bot's Always load: the request leaves `always_load` out (`api.md` §2), so a
+  change made in another place while the card is open stays.
+- The list follows the server while the card is open (M2c review, 2026-11-02). After a conflict
+  (409 `stale_write`, "A bot changed in another place. Check the list and try again.") it shows
+  the version each bot uses now, so a retry sends that version. A bot that is on the new version
+  already leaves the list. A bot that the owner did not untick stays ticked.
 
 ### 7.2 Assign a new skill (C4b)
 

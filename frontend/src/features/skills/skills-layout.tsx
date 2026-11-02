@@ -49,8 +49,9 @@ export function SkillsLayout() {
       </div>
       <AfterSaveCardHost
         card={botCard}
-        onClose={() => {
-          setBotCard(null);
+        onClose={(closed) => {
+          // A late answer of an older card never closes a newer one.
+          setBotCard((current) => (current === closed ? null : current));
         }}
       />
       <input
