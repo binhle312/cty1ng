@@ -1419,6 +1419,17 @@ export type GetBotCloneTemplateResponses = {
             always_load: boolean;
         }>;
         cloned_from_bot_id: string;
+        copied_pins: Array<{
+            skill_id: string;
+            skill_slug: string;
+            skill_name: string;
+            description: string;
+            skill_version_id: string;
+            version: number;
+            latest_version: number;
+            always_load: boolean;
+            deprecated: boolean;
+        }>;
     };
 };
 

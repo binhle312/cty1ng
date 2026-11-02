@@ -64,9 +64,9 @@ are not in the list. Each ticked skill gets its latest version.
 Loading: one `GET /skills` returns every skill with name, description and latest version (no
 bodies, no paging). The search filters in the browser. A Clone asks with `include_deprecated=true`,
 because it keeps the source bot's deprecated pins (§6). A copied pin shows the version that
-Create sends, the template's: when the source bot's pin names another version (the bot changed
-between the two first answers), the page reads that skill's `GET /skills/{id}/versions` once; if
-that fails, the row shows no version number rather than a wrong one (M2b review, 2026-11-02).
+Create sends: its name, number and description come with the clone template (`copied_pins`,
+read with the pins in one call), never from the bot list, which can already name another version
+(M2b review, owner 2026-11-02). A ticked skill that another tab moved to Trash shows no number.
 
 ### Step 4 · Model (CS4, CS4b, CS4c)
 
@@ -238,4 +238,5 @@ The spec did not name these; the build uses them.
   Zoom with the slider.", the image area's name for screen readers "Image position. Arrow keys
   move it.", and "The app could not read the image. Try another file." when the file does not
   load. A file of another type: "Use a PNG, JPEG or WebP image."; a file over the limit: "The
-  image is {n} MB. The limit is {max} MB."
+  image is {n} MB. The limit is {max} MB."; the limits cannot load: "The app could not check
+  the image size. Upload the image again." (`bot-avatar.md` §6 AV4)

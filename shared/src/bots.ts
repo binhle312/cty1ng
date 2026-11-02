@@ -332,6 +332,9 @@ export const PatchBotBody = z
 export type PatchBotBody = z.infer<typeof PatchBotBody>;
 
 // `GET /bots/{id}/clone-template`: a prefilled create body, without a colour (the page picks one).
+// `copied_pins` is not part of that body: it is the source bot's pins as `GET /bots` shows them,
+// read with `pins` in the same call, so the page shows the name and number of the very version
+// it sends (create-bot-page.md §3). The page drops it before Create.
 export const CloneTemplate = CreateBotBody.omit({ avatar_colour: true })
   .extend({
     effort: Effort.nullable(),
@@ -340,6 +343,7 @@ export const CloneTemplate = CreateBotBody.omit({ avatar_colour: true })
     max_reply_chars: Limit,
     tool_settings: ToolSettingsBody,
     pins: z.array(CreateBotPin.required()),
+    copied_pins: z.array(BotPin),
     cloned_from_bot_id: BotId,
   })
   .strict();

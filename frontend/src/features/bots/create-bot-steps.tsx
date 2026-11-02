@@ -272,8 +272,8 @@ export interface SkillChoice {
   id: string;
   name: string;
   description: string;
-  // The version a tick pins: the latest, or the copied one in a Clone. Null when the page could
-  // not find the copied version's number: the row then shows none.
+  // The version a tick pins: the latest, or the copied one in a Clone. Null for a ticked skill
+  // that another tab moved to Trash: the page has no number for it, so the row shows none.
   version: number | null;
   deprecated: boolean;
   // The source bot's pin in a Clone: a tick pins that version again, with its Always load.

@@ -129,7 +129,11 @@ There is no avatar dialog. Style and colour are fields in **Appearance** on the 
   it in the big avatar and in the style card ("Your image" with **Replace**), still not saved.
   The app re-encodes it (`../../security.md` §2.4). A wrong type or a file over the size limit (`AVATAR_MAX_BYTES`, default 2 MB; the page reads it from
   `GET /avatars/limits`) shows the
-  error under the style cards. The colour stays for the band, the spinner and the Flow view.
+  error under the style cards. The server gets only the cropped image, so this check is the
+  only one on the chosen file: a file never opens in the crop card without it. Until the limits
+  load, the file waits for them; when they cannot load, the page asks again, and if that fails
+  too it shows "The app could not check the image size. Upload the image again." (the next
+  upload asks again) (M2b review, 2026-11-02). The colour stays for the band, the spinner and the Flow view.
 - **Back to a style:** a click on Flat, Jelly or Pixel uses that style again; the uploaded image
   is dropped on Save.
 

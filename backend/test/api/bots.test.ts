@@ -160,6 +160,8 @@ describe("/bots/{id}", () => {
     const template = await json(await send("GET", `/bots/${String(bot.id)}/clone-template`));
     expect(template).toMatchObject({ name: "BA (copy)", cloned_from_bot_id: bot.id });
     expect(template).not.toHaveProperty("avatar_colour");
+    // The source bot's pins, as GET /bots shows them, for the page to name the copied versions.
+    expect(template).toHaveProperty("copied_pins", []);
     // A bot in Trash has no clone template (domain-model.md §2 Clone).
     await send("DELETE", `/bots/${String(bot.id)}`);
     const trashed = await send("GET", `/bots/${String(bot.id)}/clone-template`);

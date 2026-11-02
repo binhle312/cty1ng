@@ -307,8 +307,11 @@ describe("create (POST /bots)", () => {
       { removeBotIds: [], rowVersion: summary.row_version },
       OWNER_ID,
     );
-    const template = await backend.bots.cloneTemplate(BotId.parse(source.id));
+    const { copied_pins: copied, ...template } = await backend.bots.cloneTemplate(
+      BotId.parse(source.id),
+    );
     expect(template).toMatchObject({ name: "BA (copy)", cloned_from_bot_id: source.id });
+    expect(copied).toMatchObject([{ skill_slug: "old", deprecated: true }]);
     const clone = await backend.bots.create(
       { ...template, avatar_colour: "#112233" },
       key(),
@@ -354,7 +357,13 @@ describe("create (POST /bots)", () => {
       { removeBotIds: [], rowVersion: summary.row_version },
       OWNER_ID,
     );
-    const template = await backend.bots.cloneTemplate(sourceId);
+    const { copied_pins: copied, ...template } = await backend.bots.cloneTemplate(sourceId);
+    // The template names the copied version, v1, with its number: v2 is the latest
+    // (create-bot-page.md §3).
+    expect(template.pins).toEqual([{ skill_id: old, skill_version_id: v1, always_load: false }]);
+    expect(copied).toMatchObject([
+      { skill_id: old, skill_version_id: v1, version: 1, latest_version: 2 },
+    ]);
     const clone = (more: Partial<CreateBotBody>) =>
       failure(
         backend.bots.create({ ...template, avatar_colour: "#112233", ...more }, key(), OWNER_ID),

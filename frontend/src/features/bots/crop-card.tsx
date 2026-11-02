@@ -15,6 +15,7 @@ import {
   getAvatarLimitsOptions,
   uploadAvatarMutation,
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
+import type { GetAvatarLimitsResponse } from "../../lib/api/generated/types.gen.ts";
 import { SaveButton } from "../skills/save-bar.tsx";
 
 // The upload of an avatar image (bot-avatar.md §6 AV4, security.md §2.4): the file picker, the
@@ -53,18 +54,19 @@ export function useAvatarUpload({
 
   const choose = () => {
     onError(null);
+    // The limits failed to load: ask again while the owner picks the file.
+    if (limits.isError && !limits.isFetching) void limits.refetch();
     input.current?.click();
   };
 
-  const onFile = (file: File) => {
-    const accepted = limits.data?.accepted_types ?? ["image/png", "image/jpeg", "image/webp"];
-    if (!accepted.includes(file.type)) {
+  // The type and size check; a file that passes opens in the crop card.
+  const read = (file: File, rules: GetAvatarLimitsResponse) => {
+    if (!rules.accepted_types.includes(file.type)) {
       onError("Use a PNG, JPEG or WebP image.");
       return;
     }
-    const max = limits.data?.max_bytes;
-    if (max !== undefined && file.size > max) {
-      onError(`The image is ${megabytes(file.size)}. The limit is ${megabytes(max)}.`);
+    if (file.size > rules.max_bytes) {
+      onError(`The image is ${megabytes(file.size)}. The limit is ${megabytes(rules.max_bytes)}.`);
       return;
     }
     const reader = new FileReader();
@@ -75,6 +77,28 @@ export function useAvatarUpload({
       onError("The app could not read the image. Try another file.");
     };
     reader.readAsDataURL(file);
+  };
+
+  // The server gets only the cropped square, so it cannot check the size of the file the owner
+  // chose: the page must. Without the limits (still loading, or the load failed) the file waits
+  // for them; a failed load is asked again, and if it fails again the owner chooses the file again.
+  // Only the last chosen file counts: an earlier one that still waits is dropped.
+  const latest = useRef(0);
+  const onFile = (file: File) => {
+    latest.current += 1;
+    const turn = latest.current;
+    if (limits.data !== undefined) {
+      read(file, limits.data);
+      return;
+    }
+    void limits.refetch({ cancelRefetch: false }).then((result) => {
+      if (turn !== latest.current) return;
+      if (result.data === undefined) {
+        onError("The app could not check the image size. Upload the image again.");
+        return;
+      }
+      read(file, result.data);
+    });
   };
 
   const picker = (

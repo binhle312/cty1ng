@@ -396,7 +396,8 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
 - **Clone:** there is no "clone" write endpoint. `GET /bots/{id}/clone-template` returns a
   prefilled create payload (`name` per the clone name rule below, description, persona, avatar style (no
   colour: the page picks a free one, `design/components/bot-avatar.md` §5), model, effort, Advanced values, `tool_settings`, pins with their versions and
-  `always_load`). The owner edits it in the create form and submits a normal create with
+  `always_load`), and beside it `copied_pins`, the same pins with their names and version
+  numbers for the page to show (not sent back). The owner edits it in the create form and submits a normal create with
   `cloned_from_bot_id`. Cancelling creates nothing. Bot memory is not copied. A bot in Trash or
   purged has no clone template (422 `bot_deleted`). With `avatar_style: upload` the template
   also has the `avatar_id`, so the clone uses the same image.

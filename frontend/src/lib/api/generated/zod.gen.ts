@@ -1329,7 +1329,18 @@ export const zGetBotCloneTemplateResponse = z.object({
         skill_version_id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
         always_load: z.boolean()
     })),
-    cloned_from_bot_id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/)
+    cloned_from_bot_id: z.string().regex(/^bot_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+    copied_pins: z.array(z.object({
+        skill_id: z.string().regex(/^skill_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        skill_slug: z.string(),
+        skill_name: z.string(),
+        description: z.string(),
+        skill_version_id: z.string().regex(/^skillv_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
+        version: z.int().gt(0),
+        latest_version: z.int().gt(0),
+        always_load: z.boolean(),
+        deprecated: z.boolean()
+    }))
 });
 
 export const zRemoveBotSkillPath = z.object({

@@ -9,7 +9,6 @@ import {
   makeModel,
   makePin,
   makeSkill,
-  makeVersions,
   typeId,
   versionId,
 } from "../../../test/fixtures.ts";
@@ -195,19 +194,14 @@ const TEMPLATE = {
   max_reply_chars: 8000,
   tool_settings: {},
   pins: [{ skill_id: OLD.id, skill_version_id: versionId(1), always_load: true }],
+  copied_pins: SOURCE.pins,
   cloned_from_bot_id: SOURCE.id,
 };
 
 // GET /skills hides deprecated skills unless the page asks for them, as the server does. The
 // test changes `skills.list` to stand for a change made in another tab.
-function skillsApi(
-  skills = { list: [OLD, NEW] },
-  source = { bot: SOURCE },
-  versions: Answer | (() => Answer | Promise<Answer>) = { status: 200, body: makeVersions(3) },
-) {
+function skillsApi(skills = { list: [OLD, NEW] }, source = { bot: SOURCE }) {
   return fakeApi({
-    [`GET /api/skills/${OLD.id}/versions`]: () =>
-      typeof versions === "function" ? versions() : versions,
     "GET /api/settings": () => ({ body: BOT_SETTINGS }),
     "GET /api/models": () => ({ body: [makeModel(), FAKE_SCRIPTED] }),
     "GET /api/tools": () => ({ body: [] }),
@@ -323,7 +317,7 @@ describe("skills on the Create bot page", () => {
       }),
     ]);
 
-  it("shows the copied version when the first answers saw different revisions", async () => {
+  it("shows the copied version when the bot list already has another one (§3)", async () => {
     fake = skillsApi(undefined, { bot: sourceAtV2() });
     await renderApp(`/bots/new?from=${SOURCE.id}`);
     await screen.findByRole("button", { name: "Create" }, { timeout: 5000 });
@@ -332,74 +326,82 @@ describe("skills on the Create bot page", () => {
     expect(within(rowOf(OLD.id)).getByText("v1")).toBeTruthy();
   });
 
-  it("shows no version number when it cannot find the copied one", async () => {
-    fake = skillsApi(
-      undefined,
-      { bot: sourceAtV2() },
-      {
-        status: 500,
-        body: { error: { code: "internal_error", message: "x" } },
-      },
-    );
-    await renderApp(`/bots/new?from=${SOURCE.id}`);
+  it("shows each Clone's own copied versions when the page moves to another source", async () => {
+    // A second source bot pins the same skill at v2; its template copies v2.
+    const other = makeBot(11, "Other", [
+      makePin({
+        skill_id: OLD.id,
+        skill_name: OLD.name,
+        skill_version_id: versionId(2),
+        version: 2,
+        always_load: false,
+        deprecated: true,
+      }),
+    ]);
+    fake = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/models": () => ({ body: [makeModel(), FAKE_SCRIPTED] }),
+      "GET /api/tools": () => ({ body: [] }),
+      "GET /api/skills": () => ({ body: [OLD, NEW] }),
+      "GET /api/bots": () => ({ body: [SOURCE, other] }),
+      [`GET /api/bots/${SOURCE.id}/clone-template`]: () => ({ body: TEMPLATE }),
+      [`GET /api/bots/${other.id}/clone-template`]: () => ({
+        body: {
+          ...TEMPLATE,
+          name: "Other (copy)",
+          pins: [{ skill_id: OLD.id, skill_version_id: versionId(2), always_load: false }],
+          copied_pins: other.pins,
+          cloned_from_bot_id: other.id,
+        },
+      }),
+      "POST /api/bots": () => ({ status: 201, body: makeBot(10, "Other (copy)") }),
+    });
+    const { router } = await renderApp(`/bots/new?from=${SOURCE.id}`);
     await screen.findByRole("button", { name: "Create" }, { timeout: 5000 });
-    expect(screen.getByText(`${OLD.name} (always load)`)).toBeTruthy();
+    openStep(/Skills/);
+    expect(within(rowOf(OLD.id)).getByText("v1")).toBeTruthy();
+    await act(() => router.navigate({ to: "/bots/new", search: { from: other.id } }));
+    await waitFor(() => {
+      expect(screen.getByText("Step 4 of 4.", { exact: false })).toBeTruthy();
+    });
+    openStep(/Skills/);
+    expect(within(rowOf(OLD.id)).getByText("v2")).toBeTruthy();
+    expect(within(rowOf(OLD.id)).queryByText("v1")).toBeNull();
+    openStep(/Model/);
     click(screen.getByRole("button", { name: "Create" }));
     await waitFor(() => {
       expect(fake?.sent("POST", "/api/bots")).toHaveLength(1);
     });
     expect(fake.sent("POST", "/api/bots")[0]?.body).toMatchObject({
-      pins: [{ skill_id: OLD.id, skill_version_id: versionId(1), always_load: true }],
+      name: "Other (copy)",
+      pins: [{ skill_id: OLD.id, skill_version_id: versionId(2), always_load: false }],
     });
   });
 
-  it("keeps the owner's edits when a failed version lookup runs again", async () => {
-    let lookups = 0;
-    // The second lookup waits until the test lets it answer, so its pending state shows.
-    let answer: () => void = () => undefined;
-    const held = new Promise<void>((resolve) => {
-      answer = resolve;
+  it("goes back from Model when an earlier step has an error, but not forward (§1)", async () => {
+    // The clone name is already taken: Basics has an error while the Clone opens on Model.
+    fake = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/models": () => ({ body: [makeModel(), FAKE_SCRIPTED] }),
+      "GET /api/tools": () => ({ body: [] }),
+      "GET /api/skills": () => ({ body: [OLD, NEW] }),
+      "GET /api/bots": () => ({ body: [SOURCE, makeBot(12, TEMPLATE.name)] }),
+      [`GET /api/bots/${SOURCE.id}/clone-template`]: () => ({ body: TEMPLATE }),
     });
-    fake = skillsApi(undefined, { bot: sourceAtV2() }, async () => {
-      lookups += 1;
-      if (lookups === 1) {
-        return { status: 500, body: { error: { code: "internal_error", message: "x" } } };
-      }
-      await held;
-      return { status: 200, body: makeVersions(3) };
-    });
-    const { queryClient } = await renderApp(`/bots/new?from=${SOURCE.id}`);
+    await renderApp(`/bots/new?from=${SOURCE.id}`);
     await screen.findByRole("button", { name: "Create" }, { timeout: 5000 });
+    // The footer's Back (the page top has ← Back too).
+    const footer = screen.getByText("Step 4 of 4.", { exact: false }).parentElement;
+    if (footer === null) throw new Error("no footer");
+    click(within(footer).getByRole("button", { name: "Back" }));
+    expect(screen.getByText("Step 3 of 4.", { exact: false })).toBeTruthy();
     openStep(/Basics/);
-    type("Name", "My edited clone");
-    const name = () => screen.getByLabelText("Name", { exact: true });
-
-    // The owner comes back from another tab: the lookup does not run again.
-    act(() => {
-      focusManager.setFocused(false);
-      focusManager.setFocused(true);
-    });
-    await waitFor(() => {
-      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(1);
-    });
-    expect(lookups).toBe(1);
-    expect(name()).toHaveProperty("value", "My edited clone");
-
-    // Even when it runs again (pending, with no data), the form and the edit stay.
-    act(() => {
-      void queryClient.refetchQueries({
-        predicate: (query) => JSON.stringify(query.queryKey).includes("listSkillVersions"),
-      });
-    });
-    await waitFor(() => {
-      expect(lookups).toBe(2);
-    });
-    expect(name()).toHaveProperty("value", "My edited clone");
-    await act(async () => {
-      answer();
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    });
-    expect(name()).toHaveProperty("value", "My edited clone");
+    expect(screen.getByText("Step 1 of 4.", { exact: false })).toBeTruthy();
+    // Forward stays closed while Basics has the error.
+    const steps = within(screen.getByRole("list", { name: "Steps" }));
+    expect(steps.getByRole("button", { name: /Model/ }).getAttribute("aria-disabled")).toBe("true");
+    openStep(/Model/);
+    expect(screen.getByText("Step 1 of 4.", { exact: false })).toBeTruthy();
   });
 
   it("shows a copied model with no API key as an error at once (§6)", async () => {
@@ -505,5 +507,86 @@ describe("a broken image on the Create bot page", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog", { name: "Crop the image" })).toBeNull();
     });
+  });
+});
+
+// The page's size check needs `GET /avatars/limits` (bot-avatar.md §6 AV4, security.md §2.4): the
+// server gets only the cropped square, so a file must never pass without the limits.
+describe("the avatar limits on the Create bot page", () => {
+  let fake: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    fake?.restore();
+    fake = null;
+  });
+  const LIMITS = { accepted_types: ["image/png", "image/jpeg", "image/webp"], max_bytes: 10 };
+  const BIG = () => new File(["more than ten bytes"], "big.png", { type: "image/png" });
+  const SMALL = () => new File(["tiny"], "small.png", { type: "image/png" });
+  const pageApi = (limits: () => Answer | Promise<Answer>) =>
+    fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/models": () => ({ body: [FAKE_SCRIPTED] }),
+      "GET /api/tools": () => ({ body: [] }),
+      "GET /api/skills": () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [] }),
+      "GET /api/avatars/limits": limits,
+    });
+  const pick = (file: File) => {
+    act(() => {
+      fireEvent.change(screen.getByLabelText("Upload image", { selector: "input" }), {
+        target: { files: [file] },
+      });
+    });
+  };
+
+  it("holds a file until the limits come, then checks its size", async () => {
+    let answer: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      answer = resolve;
+    });
+    fake = pageApi(async () => {
+      await held;
+      return { status: 200, body: LIMITS };
+    });
+    await renderApp("/bots/new");
+    await screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+    pick(BIG());
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(screen.queryByRole("dialog", { name: "Crop the image" })).toBeNull();
+    await act(async () => {
+      answer();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(await screen.findByText("The image is 0 MB. The limit is 0 MB.")).toBeTruthy();
+    expect(screen.queryByRole("dialog", { name: "Crop the image" })).toBeNull();
+  });
+
+  it("refuses a file while the limits cannot load, and asks again on the next file", async () => {
+    let calls = 0;
+    fake = pageApi(() => {
+      calls += 1;
+      return calls <= 2
+        ? { status: 500, body: { error: { code: "internal_error", message: "x" } } }
+        : { status: 200, body: LIMITS };
+    });
+    await renderApp("/bots/new");
+    await screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+    await waitFor(() => {
+      expect(calls).toBe(1);
+    });
+    // The page asks again (2nd call, fails too): the file does not pass.
+    pick(BIG());
+    expect(
+      await screen.findByText("The app could not check the image size. Upload the image again."),
+    ).toBeTruthy();
+    expect(screen.queryByRole("dialog", { name: "Crop the image" })).toBeNull();
+    // The next file asks again; the limits come and the size check runs.
+    pick(BIG());
+    expect(await screen.findByText("The image is 0 MB. The limit is 0 MB.")).toBeTruthy();
+    expect(calls).toBe(3);
+    expect(screen.queryByRole("dialog", { name: "Crop the image" })).toBeNull();
+    pick(SMALL());
+    expect(await screen.findByRole("dialog", { name: "Crop the image" })).toBeTruthy();
   });
 });

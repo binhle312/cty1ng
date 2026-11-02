@@ -1,6 +1,6 @@
 import type { CatalogModel } from "@cty1ng/shared/catalog";
 import { avatarUrl } from "@cty1ng/shared/bots";
-import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouter, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, Check } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -12,7 +12,6 @@ import {
   getSettingsOptions,
   listModelsOptions,
   listSkillsOptions,
-  listSkillVersionsOptions,
   listToolsOptions,
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import { createBot } from "../../lib/api/generated/sdk.gen.ts";
@@ -20,7 +19,6 @@ import type {
   GetBotCloneTemplateResponse,
   GetSettingsResponse,
   ListSkillsResponse,
-  ListSkillVersionsResponse,
   ListToolsResponse,
 } from "../../lib/api/generated/types.gen.ts";
 import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
@@ -59,9 +57,6 @@ import {
 } from "./create-bot-steps.tsx";
 import { useAvatarUpload } from "./crop-card.tsx";
 
-type ClonePin = GetBotCloneTemplateResponse["pins"][number];
-type SkillVersionRow = ListSkillVersionsResponse[number];
-
 // `/bots/new` and `/bots/new?from={bot id}` (create-bot-page.md, UI-5): four steps and a live
 // preview card. Clone fills the form from `GET /bots/{id}/clone-template` and opens on Model.
 // The page waits for its data once: the settings (limits, defaults), the catalog, the bots and
@@ -80,36 +75,6 @@ export function CreateBotPage() {
     enabled: from !== undefined,
     retry: false,
   });
-  // A copied pin whose version the source bot no longer has (the two answers saw different
-  // revisions): its version number and description come from the skill's versions.
-  // The list is fixed the first time both answers are there, so a later bot list (another tab)
-  // never sends the page back to its skeleton.
-  const [stale, setStale] = useState<readonly ClonePin[] | null>(null);
-  if (stale === null && bots.data !== undefined && template.data !== undefined) {
-    const source = bots.data.find((bot) => bot.id === template.data.cloned_from_bot_id);
-    setStale(
-      template.data.pins.filter(
-        (pin) =>
-          source?.pins.find((p) => p.skill_id === pin.skill_id)?.skill_version_id !==
-          pin.skill_version_id,
-      ),
-    );
-  }
-  const versions = useQueries({
-    queries: (stale ?? []).map((pin) => ({
-      ...listSkillVersionsOptions({ path: { id: pin.skill_id } }),
-      // One look when the page opens: the form keeps what it showed then.
-      retry: false,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-    })),
-  });
-  // The page waits for the lookups once. A later fetch of a failed one has no data, so it is
-  // pending again; the form must stay, with what the owner typed.
-  const [versionsSettled, setVersionsSettled] = useState(false);
-  if (!versionsSettled && stale !== null && versions.every((q) => !q.isPending)) {
-    setVersionsSettled(true);
-  }
   const queries = [settings, models, tools, skills, bots];
   const failed = queries.find((q) => q.data === undefined && q.isError);
   if (failed !== undefined) {
@@ -146,19 +111,10 @@ export function CreateBotPage() {
     models.data === undefined ||
     tools.data === undefined ||
     skills.data === undefined ||
-    bots.data === undefined ||
-    (from !== undefined && !versionsSettled)
+    bots.data === undefined
   ) {
     return <PageSkeleton />;
   }
-  // A failed versions answer leaves that pin with no version number: the row and the preview
-  // then show none rather than a wrong one. Create still sends the copied version.
-  const copiedVersions = new Map(
-    (stale ?? []).flatMap((pin, i) => {
-      const found = versions[i]?.data?.find((v) => v.id === pin.skill_version_id);
-      return found === undefined ? [] : [[pin.skill_version_id, found] as const];
-    }),
-  );
   return (
     <CreateBotView
       key={from ?? "new"}
@@ -168,7 +124,6 @@ export function CreateBotPage() {
       skills={skills.data}
       bots={bots.data}
       template={from === undefined ? null : (template.data ?? null)}
-      copiedVersions={copiedVersions}
     />
   );
 }
@@ -250,7 +205,6 @@ function CreateBotView({
   skills,
   bots,
   template,
-  copiedVersions,
 }: {
   settings: GetSettingsResponse;
   models: readonly CatalogModel[];
@@ -258,8 +212,6 @@ function CreateBotView({
   skills: ListSkillsResponse;
   bots: readonly BotRow[];
   template: GetBotCloneTemplateResponse | null;
-  // The copied versions that the source bot's pins do not name, by version id.
-  copiedVersions: ReadonlyMap<string, SkillVersionRow>;
 }) {
   const settings = formSettings(rawSettings);
   const queryClient = useQueryClient();
@@ -276,10 +228,9 @@ function CreateBotView({
     ),
   });
   const [start] = useState(() => startForm({ template, settings, models, bots }));
-  // The copied pins as the page opened: the template's version and Always load, with the source
-  // bot's names. The source bot can change in another tab while the page is open, but the form
-  // keeps the template's pins, so the rows and the preview keep these too.
-  const [copiedPins] = useState(() => copiedPinsOf({ template, source, skills, copiedVersions }));
+  // The copied pins come with the template, from the same read as the pins Create sends, so the
+  // rows and the preview show the very version that Create sends (§3).
+  const copiedPins = template?.copied_pins ?? [];
   const [form, setForm] = useState(start);
   // The model that left the catalog, for the CL2 error.
   const [goneModel] = useState(() =>
@@ -363,7 +314,10 @@ function CreateBotView({
   });
 
   const index = STEPS.indexOf(step);
-  const canOpen = (target: Step) => STEPS.slice(0, STEPS.indexOf(target)).every(localOk);
+  // The owner can go back to any step; forward only when every step before the target is valid
+  // (§1, Stepper). A Clone opens on Model, so an earlier step can have an error there.
+  const canOpen = (target: Step) =>
+    STEPS.indexOf(target) <= index || STEPS.slice(0, STEPS.indexOf(target)).every(localOk);
   const open = (target: Step) => {
     if (readOnly || !canOpen(target)) return;
     if (step === "model" && target !== "model") setTurnedOff(null);
@@ -674,54 +628,13 @@ function isTooLong(form: CreateForm, field: string, settings: FormSettings): boo
   }
 }
 
+// A copied pin of a Clone, as the template names it (with its version number).
+type CopiedPin = GetBotCloneTemplateResponse["copied_pins"][number];
+
 // The rows of step 3 (§3, §6): every skill that is not deprecated, the copied pins of a Clone
 // (with the copied version, deprecated or in Trash), and every ticked skill, also one that left
 // the list (another tab moved it to Trash), so it can be unticked. The rows do not depend on
 // the ticks of the moment, except for a skill that left: unticked, its row goes.
-// A copied pin as step 3 and the preview show it. `version` is null when the page could not
-// find the copied version's number.
-interface CopiedPin {
-  skill_id: string;
-  skill_name: string;
-  description: string;
-  version: number | null;
-  skill_version_id: string;
-  always_load: boolean;
-  deprecated: boolean;
-}
-
-// The template's pins (the version and Always load that Create sends), named and numbered from
-// the copied version itself: the source bot's pin when it names the same version, else the
-// skill's versions list (`copiedVersions`).
-function copiedPinsOf({
-  template,
-  source,
-  skills,
-  copiedVersions,
-}: {
-  template: GetBotCloneTemplateResponse | null;
-  source: BotRow | undefined;
-  skills: ListSkillsResponse;
-  copiedVersions: ReadonlyMap<string, SkillVersionRow>;
-}): CopiedPin[] {
-  if (template === null) return [];
-  return template.pins.map((pin) => {
-    const from = source?.pins.find((p) => p.skill_id === pin.skill_id);
-    const skill = skills.find((s) => s.id === pin.skill_id);
-    const same = from?.skill_version_id === pin.skill_version_id ? from : undefined;
-    const version = copiedVersions.get(pin.skill_version_id);
-    return {
-      skill_id: pin.skill_id,
-      skill_name: from?.skill_name ?? skill?.name ?? "A skill in Trash",
-      description: same?.description ?? version?.description ?? "",
-      version: same?.version ?? version?.version ?? null,
-      skill_version_id: pin.skill_version_id,
-      always_load: pin.always_load,
-      deprecated: skill?.deprecated ?? from?.deprecated ?? false,
-    };
-  });
-}
-
 function skillChoicesOf({
   skills,
   form,
@@ -745,7 +658,7 @@ function skillChoicesOf({
       return {
         id: skill.id,
         name: skill.name,
-        // A copied pin keeps its own version, also when its number is unknown.
+        // A copied pin shows its own version, not the latest.
         description: pin === undefined ? skill.latest_version.description : pin.description,
         version: pin === undefined ? skill.latest_version.version : pin.version,
         deprecated: skill.deprecated,
