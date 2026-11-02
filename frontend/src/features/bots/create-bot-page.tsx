@@ -359,7 +359,7 @@ function CreateBotView({
     send.kind === "sending"
       ? "Creating the bot."
       : send.kind === "unknown"
-        ? "Use Try again above: the app does not know yet if the bot was created."
+        ? "Could not confirm whether the bot was created. Try again."
         : anyServer
           ? "Fix the problems marked with ! first."
           : !modelReady
@@ -488,7 +488,7 @@ function CreateBotView({
           className="mt-4 flex items-center gap-4 rounded-card border border-danger px-4 py-3"
         >
           <p className="grow text-danger">
-            Could not create the bot. The app could not reach the server. Your input is kept.
+            Could not confirm whether the bot was created. Your input is kept.
           </p>
           <Button
             size="small"

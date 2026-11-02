@@ -77,7 +77,7 @@ describe("Create on the Create bot page", () => {
     click(screen.getByRole("button", { name: "Create" }));
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain(
-      "Could not create the bot. The app could not reach the server. Your input is kept.",
+      "Could not confirm whether the bot was created. Your input is kept.",
     );
     // The form is read-only while the outcome is not known.
     expect(screen.getByRole("button", { name: "Create" }).getAttribute("aria-disabled")).toBe(
@@ -458,6 +458,9 @@ describe("skills on the Create bot page", () => {
     // Next keeps the owner on the step and says why.
     click(screen.getByRole("button", { name: "Next" }));
     expect(await within(rowOf(NEW.id)).findByText(/This skill is in Trash/)).toBeTruthy();
+    // Its version number is gone with it: the row and the preview say so (owner, 2026-11-02).
+    expect(within(rowOf(NEW.id)).getByText("Version number unavailable")).toBeTruthy();
+    expect(screen.getByText("A skill in Trash (version number unavailable)")).toBeTruthy();
     expect(box().getAttribute("aria-checked")).toBe("true");
     click(box());
     // Unticked, a skill in Trash leaves the list, and its problem with it.

@@ -273,7 +273,7 @@ export interface SkillChoice {
   name: string;
   description: string;
   // The version a tick pins: the latest, or the copied one in a Clone. Null for a ticked skill
-  // that another tab moved to Trash: the page has no number for it, so the row shows none.
+  // that another tab moved to Trash: the page has no number for it, so the row says so.
   version: number | null;
   deprecated: boolean;
   // The source bot's pin in a Clone: a tick pins that version again, with its Always load.
@@ -404,7 +404,14 @@ export function SkillsStep({
                     />
                   </span>
                 )}
-                {skill.version !== null && <VersionPill version={skill.version} />}
+                {skill.version === null ? (
+                  // Owner, 2026-11-02: say so rather than hide the number.
+                  <span className="shrink-0 text-sm text-on-surface-muted">
+                    Version number unavailable
+                  </span>
+                ) : (
+                  <VersionPill version={skill.version} />
+                )}
               </li>
             );
           })}

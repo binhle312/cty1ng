@@ -67,13 +67,15 @@ export function CreatePreview({
           : form.pins
               .map((pin) => {
                 const skill = skills.find((s) => s.id === pin.skill_id);
+                if (skill === undefined)
+                  return pin.always_load ? "A skill (always load)" : "A skill";
+                const notes = [
+                  ...(skill.version === null ? ["version number unavailable"] : []),
+                  ...(pin.always_load ? ["always load"] : []),
+                ];
                 const name =
-                  skill === undefined
-                    ? "A skill"
-                    : skill.version === null
-                      ? skill.name
-                      : `${skill.name} v${String(skill.version)}`;
-                return pin.always_load ? `${name} (always load)` : name;
+                  skill.version === null ? skill.name : `${skill.name} v${String(skill.version)}`;
+                return notes.length === 0 ? name : `${name} (${notes.join(", ")})`;
               })
               .join(", ")}
       </Row>
