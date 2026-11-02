@@ -272,7 +272,7 @@ function CreateBotView({
     const next = change(form);
     setForm(next);
     // A server error goes when the owner changes its field (E3).
-    setServerProblems((old) => keepUnchanged(old, form, next));
+    setServerProblems((old) => keepUnchanged({ problems: old, before: form, after: next }));
   };
 
   const errorOf = (field: string): string | null => {
@@ -285,7 +285,7 @@ function CreateBotView({
       return `${goneModel} is no longer offered. Pick another model.`;
     }
     // A size error shows at once; an empty field or a taken name after the owner leaves it.
-    return isTooLong(form, field, settings) || left.has(field) || tried.has(s) ? local : null;
+    return isTooLong({ form, field, settings }) || left.has(field) || tried.has(s) ? local : null;
   };
 
   const upload = useAvatarUpload({
@@ -594,7 +594,15 @@ function fieldSnapshot(form: CreateForm, head: string): string {
   }
 }
 
-function keepUnchanged(problems: Problems, before: CreateForm, after: CreateForm): Problems {
+function keepUnchanged({
+  problems,
+  before,
+  after,
+}: {
+  problems: Problems;
+  before: CreateForm;
+  after: CreateForm;
+}): Problems {
   const kept: Problems = {};
   for (const [field, message] of Object.entries(problems)) {
     const head = field.split(/[.[]/)[0] ?? field;

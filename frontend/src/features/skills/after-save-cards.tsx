@@ -37,8 +37,7 @@ export type AfterSaveCard =
 // The skill's version with that number, read fresh: the card sends its id.
 async function versionIdOf(
   queryClient: QueryClient,
-  skillId: string,
-  version: number,
+  { skillId, version }: { skillId: string; version: number },
 ): Promise<string | undefined> {
   const versions = await queryClient.query({
     ...listSkillVersionsOptions({ path: { id: skillId } }),
@@ -51,9 +50,9 @@ async function versionIdOf(
 // read also ends in the toast: nothing is lost, the Bots tab still offers "Upgrade to vN".
 export async function upgradeCardAfterSave(
   queryClient: QueryClient,
-  skill: { id: string; name: string },
-  version: number,
+  skill: { id: string; name: string; latest_version: { version: number } },
 ): Promise<AfterSaveCard | null> {
+  const version = skill.latest_version.version;
   const toast = () => {
     showToast(`Saved v${String(version)} ✨`);
     return null;
@@ -65,7 +64,7 @@ export async function upgradeCardAfterSave(
     });
     const older = candidates.filter((c) => c.version < version);
     if (older.length === 0) return toast();
-    const versionId = await versionIdOf(queryClient, skill.id, version);
+    const versionId = await versionIdOf(queryClient, { skillId: skill.id, version });
     if (versionId === undefined) return toast();
     return {
       kind: "upgrade",
@@ -92,7 +91,7 @@ export async function assignCardAfterCreate(
   try {
     const bots = await queryClient.query({ ...listBotsOptions(), staleTime: 0 });
     if (bots.length === 0) return toast();
-    const versionId = await versionIdOf(queryClient, skill.id, 1);
+    const versionId = await versionIdOf(queryClient, { skillId: skill.id, version: 1 });
     if (versionId === undefined) return toast();
     return { kind: "assign", skillId: skill.id, skillName: skill.name, versionId };
   } catch {

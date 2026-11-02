@@ -88,24 +88,44 @@ function setupOf(form: CreateForm) {
 }
 
 // `into` with the fields of one tab taken from `from`: Discard, a save, or newer values.
-export function withTab(into: CreateForm, from: CreateForm, tab: EditTab): CreateForm {
+export function withTab({
+  into,
+  from,
+  tab,
+}: {
+  into: CreateForm;
+  from: CreateForm;
+  tab: EditTab;
+}): CreateForm {
   return { ...into, ...(tab === "profile" ? profileOf(from) : setupOf(from)) };
 }
 
 // The tool switches as the server stores them: the effective ones for the bot's model.
 export type EffectiveTools = (form: CreateForm) => Record<string, boolean>;
 
-function sameSwitches(a: Record<string, boolean>, b: Record<string, boolean>): boolean {
-  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
-  return [...keys].every((key) => (a[key] ?? false) === (b[key] ?? false));
+// A switch that one side does not list is off.
+function sameSwitches({
+  now,
+  saved,
+}: {
+  now: Record<string, boolean>;
+  saved: Record<string, boolean>;
+}): boolean {
+  const keys = new Set([...Object.keys(now), ...Object.keys(saved)]);
+  return [...keys].every((key) => (now[key] ?? false) === (saved[key] ?? false));
 }
 
-export function changedFields(
-  tab: EditTab,
-  form: CreateForm,
-  saved: CreateForm,
-  effective: EffectiveTools,
-): EditField[] {
+export function changedFields({
+  tab,
+  form,
+  saved,
+  effective,
+}: {
+  tab: EditTab;
+  form: CreateForm;
+  saved: CreateForm;
+  effective: EffectiveTools;
+}): EditField[] {
   const out: EditField[] = [];
   if (tab === "profile") {
     if (form.avatar_style !== saved.avatar_style) out.push("avatar_style");
@@ -120,7 +140,7 @@ export function changedFields(
     if (form.persona_md !== saved.persona_md) out.push("persona_md");
     return out;
   }
-  if (!sameSwitches(effective(form), effective(saved))) out.push("tool_settings");
+  if (!sameSwitches({ now: effective(form), saved: effective(saved) })) out.push("tool_settings");
   if (form.history_share_pct !== saved.history_share_pct) out.push("history_share_pct");
   if (form.request_limit !== saved.request_limit) out.push("request_limit");
   if (form.max_reply_chars !== saved.max_reply_chars) out.push("max_reply_chars");
@@ -140,12 +160,17 @@ export interface EditContext {
 
 // The problems of the changed fields only: a lower limit never blocks a saved value that the
 // owner does not touch (domain-model.md §10, api.md §4 PATCH).
-export function editProblems(
-  tab: EditTab,
-  form: CreateForm,
-  changed: readonly EditField[],
-  ctx: EditContext,
-): Problems {
+export function editProblems({
+  tab,
+  form,
+  changed,
+  ctx,
+}: {
+  tab: EditTab;
+  form: CreateForm;
+  changed: readonly EditField[];
+  ctx: EditContext;
+}): Problems {
   const out: Problems = {};
   const put = (field: string, problem: string | null) => {
     if (problem !== null) out[field] = problem;
@@ -195,13 +220,19 @@ export function editProblems(
 
 // One save of one tab (api.md §4 PATCH): `row_version` and the changed fields only. An image goes
 // with its style, because the server wants `avatar_id` exactly when the style is `upload`.
-export function patchBody(
-  tab: EditTab,
-  form: CreateForm,
-  changed: readonly EditField[],
-  rowVersion: number,
-  effective: EffectiveTools,
-): UpdateBotBody {
+export function patchBody({
+  tab,
+  form,
+  changed,
+  rowVersion,
+  effective,
+}: {
+  tab: EditTab;
+  form: CreateForm;
+  changed: readonly EditField[];
+  rowVersion: number;
+  effective: EffectiveTools;
+}): UpdateBotBody {
   const body: UpdateBotBody = { row_version: rowVersion };
   const has = (field: EditField) => changed.includes(field);
   if (tab === "profile") {

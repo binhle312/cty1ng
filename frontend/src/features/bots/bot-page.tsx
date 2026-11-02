@@ -24,6 +24,7 @@ import {
   type EditTab,
   editFormOf,
   editProblems,
+  type EffectiveTools,
   leaveText,
   patchBody,
   tabOfField,
@@ -154,8 +155,8 @@ function BotView({
     model: bot.row_version,
   });
   const changed: Record<EditTab, EditField[]> = {
-    profile: changedFields("profile", form, saved, effective),
-    model: changedFields("model", form, saved, effective),
+    profile: changedFields({ tab: "profile", form, saved, effective }),
+    model: changedFields({ tab: "model", form, saved, effective }),
   };
   // A newer `row_version` (a save here, another tab, a `bot.updated` event): a tab with no changes
   // takes the new values at once; a tab with changes keeps them and shows the conflict. The check
@@ -167,8 +168,8 @@ function BotView({
     let nextSaved = saved;
     const nextBase = { ...base };
     for (const t of behind) {
-      nextForm = withTab(nextForm, server, t);
-      nextSaved = withTab(nextSaved, server, t);
+      nextForm = withTab({ into: nextForm, from: server, tab: t });
+      nextSaved = withTab({ into: nextSaved, from: server, tab: t });
       nextBase[t] = bot.row_version;
     }
     setForm(nextForm);
@@ -186,8 +187,8 @@ function BotView({
 
   const ctx = { settings, otherNames: bots.filter((b) => b.id !== bot.id).map((b) => b.name) };
   const problems: Record<EditTab, Problems> = {
-    profile: editProblems("profile", form, changed.profile, ctx),
-    model: editProblems("model", form, changed.model, ctx),
+    profile: editProblems({ tab: "profile", form, changed: changed.profile, ctx }),
+    model: editProblems({ tab: "model", form, changed: changed.model, ctx }),
   };
   const errorOf = (field: string): string | null => {
     const fromServer = serverProblems[field];
@@ -196,7 +197,7 @@ function BotView({
     const local = problems[t][field];
     if (local === undefined) return null;
     // A size error shows at once; an empty field or a taken name after the owner leaves it.
-    return isTooLong(form, field, settings) || left.has(field) || tried.has(t) ? local : null;
+    return isTooLong({ form, field, settings }) || left.has(field) || tried.has(t) ? local : null;
   };
   const shownErrors = (t: EditTab) =>
     new Set(
@@ -209,7 +210,9 @@ function BotView({
     const next = change(form);
     setForm(next);
     // A server error goes when the owner changes its field.
-    setServerProblems((old) => keepUnchanged(old, form, next, effective));
+    setServerProblems((old) =>
+      keepUnchanged({ problems: old, before: form, after: next, effective }),
+    );
   };
 
   const upload = useAvatarUpload({
@@ -224,8 +227,8 @@ function BotView({
     let nextForm = form;
     let nextSaved = saved;
     for (const t of tabs) {
-      nextForm = withTab(nextForm, server, t);
-      nextSaved = withTab(nextSaved, server, t);
+      nextForm = withTab({ into: nextForm, from: server, tab: t });
+      nextSaved = withTab({ into: nextSaved, from: server, tab: t });
     }
     setForm(nextForm);
     setSaved(nextSaved);
@@ -269,7 +272,7 @@ function BotView({
     setSaving(t);
     mutateAsync({
       path: { id: bot.id },
-      body: patchBody(t, sent, fields, sentBase, effective),
+      body: patchBody({ tab: t, form: sent, changed: fields, rowVersion: sentBase, effective }),
     })
       .then((result) => {
         // A newer list (an event or a refresh) may have come first: the answer never replaces it.
@@ -278,7 +281,7 @@ function BotView({
             b.id === result.id && result.row_version > b.row_version ? { ...b, ...result } : b,
           ),
         );
-        setSaved((old) => withTab(old, sent, t));
+        setSaved((old) => withTab({ into: old, from: sent, tab: t }));
         // The server took the save at `sentBase`, so nothing else changed in between: every tab
         // whose edit started there is now based on the new `row_version`.
         setBase((old) => ({
@@ -528,15 +531,20 @@ function BotView({
 }
 
 // A server error stays while its field keeps the value it was about.
-function keepUnchanged(
-  problems: Problems,
-  before: CreateForm,
-  after: CreateForm,
-  effective: (f: CreateForm) => Record<string, boolean>,
-): Problems {
+function keepUnchanged({
+  problems,
+  before,
+  after,
+  effective,
+}: {
+  problems: Problems;
+  before: CreateForm;
+  after: CreateForm;
+  effective: EffectiveTools;
+}): Problems {
   const moved = new Set<string>([
-    ...changedFields("profile", after, before, effective),
-    ...changedFields("model", after, before, effective),
+    ...changedFields({ tab: "profile", form: after, saved: before, effective }),
+    ...changedFields({ tab: "model", form: after, saved: before, effective }),
   ]);
   const apiField = (field: string) => {
     const head = field.split(/[.[]/)[0] ?? field;

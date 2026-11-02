@@ -195,7 +195,7 @@ function SkillView({ skill }: { skill: SkillDetail }) {
     onSuccess: (result) => {
       // The upgrade card (§7.1), or only the toast when no bot uses an older version. The save
       // bar does not wait for it.
-      void upgradeCardAfterSave(queryClient, result, result.latest_version.version).then((card) => {
+      void upgradeCardAfterSave(queryClient, result).then((card) => {
         if (card !== null) showBotCard(card);
       });
     },

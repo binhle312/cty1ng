@@ -29,19 +29,21 @@ const ctx = { settings: SETTINGS, otherNames: ["Designer"] };
 
 describe("the bot page's edit form (bot-page.md §4, §6)", () => {
   it("starts with no change on either tab", () => {
-    expect(changedFields("profile", saved, saved, asIs)).toEqual([]);
-    expect(changedFields("model", saved, saved, asIs)).toEqual([]);
+    expect(changedFields({ tab: "profile", form: saved, saved, effective: asIs })).toEqual([]);
+    expect(changedFields({ tab: "model", form: saved, saved, effective: asIs })).toEqual([]);
   });
 
   it("counts each tab's own fields only", () => {
     const form = { ...saved, name: "Analyst", request_limit: 20 };
-    expect(changedFields("profile", form, saved, asIs)).toEqual(["name"]);
-    expect(changedFields("model", form, saved, asIs)).toEqual(["request_limit"]);
+    expect(changedFields({ tab: "profile", form, saved, effective: asIs })).toEqual(["name"]);
+    expect(changedFields({ tab: "model", form, saved, effective: asIs })).toEqual([
+      "request_limit",
+    ]);
   });
 
   it("reads a colour in another case as the same colour", () => {
     const form = { ...saved, avatar_colour: saved.avatar_colour.toLowerCase() };
-    expect(changedFields("profile", form, saved, asIs)).toEqual([]);
+    expect(changedFields({ tab: "profile", form, saved, effective: asIs })).toEqual([]);
   });
 
   it("marks an avatar change, which the page top shows before Save", () => {
@@ -50,7 +52,7 @@ describe("the bot page's edit form (bot-page.md §4, §6)", () => {
       avatar_style: "upload" as const,
       avatar: { id: "a".repeat(64), url: "/x" },
     };
-    const fields = changedFields("profile", image, saved, asIs);
+    const fields = changedFields({ tab: "profile", form: image, saved, effective: asIs });
     expect(fields).toEqual(["avatar_style", "avatar_image"]);
     expect(avatarChanged(fields)).toBe(true);
     expect(avatarChanged(["name"])).toBe(false);
@@ -58,7 +60,9 @@ describe("the bot page's edit form (bot-page.md §4, §6)", () => {
 
   it("sees a tool switch as one change", () => {
     const form = { ...saved, tool_choices: { read_file: false, web_fetch: true } };
-    expect(changedFields("model", form, saved, asIs)).toEqual(["tool_settings"]);
+    expect(changedFields({ tab: "model", form, saved, effective: asIs })).toEqual([
+      "tool_settings",
+    ]);
   });
 
   it("checks only the fields that changed, so a lower limit keeps a saved persona", () => {
@@ -66,44 +70,65 @@ describe("the bot page's edit form (bot-page.md §4, §6)", () => {
     // Saved with 150 characters when the limit was higher: a rename still saves.
     const renamed = { ...long, name: "Analyst" };
     expect(
-      editProblems("profile", renamed, changedFields("profile", renamed, long, asIs), ctx),
+      editProblems({
+        tab: "profile",
+        form: renamed,
+        changed: changedFields({ tab: "profile", form: renamed, saved: long, effective: asIs }),
+        ctx,
+      }),
     ).toEqual({});
     const edited = { ...long, persona_md: "y".repeat(150) };
     expect(
-      editProblems("profile", edited, changedFields("profile", edited, long, asIs), ctx).persona_md,
+      editProblems({
+        tab: "profile",
+        form: edited,
+        changed: changedFields({ tab: "profile", form: edited, saved: long, effective: asIs }),
+        ctx,
+      }).persona_md,
     ).toBeDefined();
   });
 
   it("says a taken name and an empty name under Name", () => {
     const taken = { ...saved, name: "designer" };
-    expect(editProblems("profile", taken, ["name"], ctx).name).toBe(
+    expect(editProblems({ tab: "profile", form: taken, changed: ["name"], ctx }).name).toBe(
       "designer is taken by another bot. Pick another name.",
     );
     const empty = { ...saved, name: "  " };
-    expect(editProblems("profile", empty, ["name"], ctx).name).toBe("Required");
+    expect(editProblems({ tab: "profile", form: empty, changed: ["name"], ctx }).name).toBe(
+      "Required",
+    );
   });
 
   it("asks for an image when Upload image has none", () => {
     const form = { ...saved, avatar_style: "upload" as const, avatar: null };
-    expect(editProblems("profile", form, ["avatar_style"], ctx).avatar_id).toBe(
+    expect(editProblems({ tab: "profile", form, changed: ["avatar_style"], ctx }).avatar_id).toBe(
       "Upload an image, or pick Flat.",
     );
   });
 
   it("checks the Advanced ranges of the Model tab", () => {
     const form = { ...saved, request_limit: 0, history_share_pct: 33 };
-    const problems = editProblems("model", form, ["request_limit", "history_share_pct"], ctx);
+    const problems = editProblems({
+      tab: "model",
+      form,
+      changed: ["request_limit", "history_share_pct"],
+      ctx,
+    });
     expect(problems.request_limit).toMatch(/^Use a whole number from/);
     expect(problems.history_share_pct).toMatch(/in steps of/);
   });
 
   it("sends row_version and the changed fields only", () => {
     const form = { ...saved, description: "Writes user stories.", request_limit: 20 };
-    expect(patchBody("profile", form, ["description"], 4, asIs)).toEqual({
+    expect(
+      patchBody({ tab: "profile", form, changed: ["description"], rowVersion: 4, effective: asIs }),
+    ).toEqual({
       row_version: 4,
       description: "Writes user stories.",
     });
-    expect(patchBody("model", form, ["request_limit"], 4, asIs)).toEqual({
+    expect(
+      patchBody({ tab: "model", form, changed: ["request_limit"], rowVersion: 4, effective: asIs }),
+    ).toEqual({
       row_version: 4,
       request_limit: 20,
     });
@@ -112,13 +137,29 @@ describe("the bot page's edit form (bot-page.md §4, §6)", () => {
   it("sends an image with its style, and no image with Flat", () => {
     const id = "b".repeat(64);
     const upload = { ...saved, avatar_style: "upload" as const, avatar: { id, url: "/y" } };
-    expect(patchBody("profile", upload, ["avatar_style", "avatar_image"], 1, asIs)).toEqual({
+    expect(
+      patchBody({
+        tab: "profile",
+        form: upload,
+        changed: ["avatar_style", "avatar_image"],
+        rowVersion: 1,
+        effective: asIs,
+      }),
+    ).toEqual({
       row_version: 1,
       avatar_style: "upload",
       avatar_id: id,
     });
     const flat = { ...upload, avatar_style: "flat" as const };
-    expect(patchBody("profile", flat, ["avatar_style"], 1, asIs)).toEqual({
+    expect(
+      patchBody({
+        tab: "profile",
+        form: flat,
+        changed: ["avatar_style"],
+        rowVersion: 1,
+        effective: asIs,
+      }),
+    ).toEqual({
       row_version: 1,
       avatar_style: "flat",
     });
@@ -126,7 +167,9 @@ describe("the bot page's edit form (bot-page.md §4, §6)", () => {
 
   it("sends the whole effective switch map when a tool changed", () => {
     const form = { ...saved, tool_choices: { read_file: false } };
-    expect(patchBody("model", form, ["tool_settings"], 2, asIs)).toEqual({
+    expect(
+      patchBody({ tab: "model", form, changed: ["tool_settings"], rowVersion: 2, effective: asIs }),
+    ).toEqual({
       row_version: 2,
       tool_settings: { read_file: false },
     });
@@ -134,7 +177,7 @@ describe("the bot page's edit form (bot-page.md §4, §6)", () => {
 
   it("copies one tab's fields and leaves the other tab's", () => {
     const form = { ...saved, name: "Analyst", request_limit: 20 };
-    const discarded = withTab(form, saved, "profile");
+    const discarded = withTab({ into: form, from: saved, tab: "profile" });
     expect(discarded.name).toBe("BA");
     expect(discarded.request_limit).toBe(20);
   });

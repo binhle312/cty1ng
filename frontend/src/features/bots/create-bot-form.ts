@@ -216,7 +216,15 @@ export function stepProblems(step: Step, form: CreateForm, ctx: FormContext): Pr
 }
 
 // A size error shows at once, before the owner leaves the field (E1, E2).
-export function isTooLong(form: CreateForm, field: string, settings: FormSettings): boolean {
+export function isTooLong({
+  form,
+  field,
+  settings,
+}: {
+  form: CreateForm;
+  field: string;
+  settings: FormSettings;
+}): boolean {
   const { limits } = settings;
   switch (field) {
     case "name":
