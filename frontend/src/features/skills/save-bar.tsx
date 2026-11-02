@@ -1,3 +1,4 @@
+import { LoaderCircle } from "lucide-react";
 import type { ReactNode, Ref } from "react";
 import { Button } from "../../components/ui/button.tsx";
 import { Tooltip } from "../../components/ui/tooltip.tsx";
@@ -20,12 +21,15 @@ export function SaveButton({
   onClick,
   kind = "primary",
   ref,
+  busy = false,
 }: {
   label: string;
   disabledReason: string | null;
   onClick: () => void;
   kind?: "primary" | "secondary" | "danger" | "danger-fill";
   ref?: Ref<HTMLButtonElement>;
+  // A request is on its way: a spinner before the label ("Creating", create-bot-page.md UI-5.6).
+  busy?: boolean;
 }) {
   // Always inside the tooltip, off when there is no reason: a wrapper that came and went would
   // make React mount a new button, and a focused button (a dialog's default) would lose focus.
@@ -39,6 +43,7 @@ export function SaveButton({
           if (disabledReason === null) onClick();
         }}
       >
+        {busy && <LoaderCircle aria-hidden size={14} className="motion-safe:animate-spin" />}
         {label}
       </Button>
     </Tooltip>

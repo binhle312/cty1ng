@@ -39,7 +39,8 @@ environment, provider-side data handling.
   `Referrer-Policy: no-referrer`.
 - The CSP stays without `'unsafe-inline'` and `'unsafe-eval'`. So the frontend has no inline
   script or style (the no-flash theme script is a file), runs Zod without its `new Function`
-  fast path (`frontend/src/lib/zod-config.ts`), and does not use the Base UI parts that add
+  fast path (`frontend/public/zod-init.js`, a file that runs before any module, and
+  `frontend/src/lib/zod-config.ts`), and does not use the Base UI parts that add
   inline styles (Select, ScrollArea) without a decision. The end-to-end tests run on the
   production build and fail on any CSP violation (M0c).
 

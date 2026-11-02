@@ -69,10 +69,12 @@ export function DialogText({ children }: { children: ReactNode }) {
 }
 
 // The buttons at the bottom right, the primary or danger fill button last (buttons.md §3). They
-// stick to the bottom of a dialog that scrolls; the gaps above and below stay 20px.
+// stick to the bottom of a dialog that scrolls; the gaps above and below stay 20px. A sticky
+// box stops inside the popup's 20 px padding, so `-bottom-5` puts that line at the popup's
+// edge: with `bottom-0` the bar rose by 20 px and hid the last line of text (M2b).
 export function DialogButtons({ children }: { children: ReactNode }) {
   return (
-    <div className="sticky bottom-0 -mx-5 mt-2 -mb-5 flex justify-end gap-2 bg-surface-raised px-5 pt-3 pb-5">
+    <div className="sticky -bottom-5 -mx-5 mt-2 -mb-5 flex justify-end gap-2 bg-surface-raised px-5 pt-3 pb-5">
       {children}
     </div>
   );

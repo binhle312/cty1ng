@@ -76,8 +76,10 @@ export const CatalogModel = z
     label: z.string(),
     provider: z.string(),
     available: z.boolean(),
-    // Set when `available` is false; a catalog model can only miss its key.
-    unavailable_reason: z.literal("no_api_key").nullable(),
+    // Set when `available` is false; a catalog model can only miss its key. An enum, not a
+    // literal: OpenAPI keeps `null` in the enum of a nullable enum only, and the generated
+    // client checks answers against that enum.
+    unavailable_reason: z.enum(["no_api_key"]).nullable(),
     // The variable name for "API key not set: {ENV_NAME}"; null for the fake models.
     api_key_env: z.string().nullable(),
     efforts: z.array(Effort),

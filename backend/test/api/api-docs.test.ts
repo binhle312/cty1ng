@@ -36,3 +36,40 @@ describe("OpenAPI docs page", () => {
     }
   });
 });
+
+// The generated client checks every answer against the OpenAPI document (scripts/gen-api.ts).
+// A nullable enum whose `enum` list leaves out null makes every `null` answer fail in the
+// browser: `z.literal("no_api_key").nullable()` did that to GET /models (M2b). Every nullable
+// enum in the document lists null.
+describe("the OpenAPI document", () => {
+  const backend = testBackend({ APP_ENV: "prod" });
+  afterAll(() => {
+    backend.close();
+  });
+
+  function nullableEnumsWithoutNull(node: unknown, path: string, found: string[]): string[] {
+    if (Array.isArray(node)) {
+      node.forEach((item, index) =>
+        nullableEnumsWithoutNull(item, `${path}[${String(index)}]`, found),
+      );
+      return found;
+    }
+    if (typeof node !== "object" || node === null) return found;
+    const type: unknown = Reflect.get(node, "type");
+    const values: unknown = Reflect.get(node, "enum");
+    const nullable =
+      (Array.isArray(type) && type.includes("null")) || Reflect.get(node, "nullable") === true;
+    if (nullable && Array.isArray(values) && !values.includes(null)) found.push(path);
+    for (const [key, value] of Object.entries(node)) {
+      nullableEnumsWithoutNull(value, `${path}.${key}`, found);
+    }
+    return found;
+  }
+
+  it("lists null in the enum of every nullable enum", async () => {
+    const response = await backend.request("/api/openapi.json");
+    expect(response.status).toBe(200);
+    const document: unknown = await response.json();
+    expect(nullableEnumsWithoutNull(document, "$", [])).toEqual([]);
+  });
+});

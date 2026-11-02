@@ -139,6 +139,46 @@ export function botFieldProblem(
   return `The ${noun} has ${formatCount(text.length)} characters. The limit is ${formatCount(max)}. Make it shorter.`;
 }
 
+// The sort of the bots that are not pinned (bots.md UI-4.5): the `bot_order` and
+// `bot_order_direction` settings.
+export interface BotOrder {
+  bot_order: "recent" | "created";
+  bot_order_direction: "desc" | "asc";
+}
+
+export interface OrderInput {
+  id: string;
+  pinnedPosition: number | null;
+  lastActivityAt: Date | null;
+  createdAt: Date;
+}
+
+// Header order (domain-model.md §2 Order): pinned bots by position, then the others by the
+// setting. With "recent", bots with activity come first, by it; bots with none follow, by
+// `created_at`. Ties break on the id, so the order is stable.
+export function orderBots<T extends OrderInput>(bots: readonly T[], order: BotOrder): T[] {
+  const sign = order.bot_order_direction === "desc" ? -1 : 1;
+  const byTime = (a: Date, b: Date) => sign * (a.getTime() - b.getTime());
+  return [...bots].sort((a, b) => {
+    if (a.pinnedPosition !== null || b.pinnedPosition !== null) {
+      if (a.pinnedPosition === null) return 1;
+      if (b.pinnedPosition === null) return -1;
+      return a.pinnedPosition - b.pinnedPosition;
+    }
+    if (order.bot_order === "recent") {
+      if (a.lastActivityAt !== null && b.lastActivityAt !== null) {
+        const diff = byTime(a.lastActivityAt, b.lastActivityAt);
+        if (diff !== 0) return diff;
+      } else if (a.lastActivityAt !== null) {
+        return -1;
+      } else if (b.lastActivityAt !== null) {
+        return 1;
+      }
+    }
+    return byTime(a.createdAt, b.createdAt) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  });
+}
+
 // --- API shapes (api.md §4) ---------------------------------------------------------------
 
 // Jelly and Pixel are in the schema of the table, but no slice draws them yet: the API refuses
