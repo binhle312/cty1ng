@@ -34,7 +34,11 @@ afterEach(() => {
 type Routes = Parameters<typeof fakeApi>[0];
 
 // `bots` is read on every request, so a test can change the server's bots between two loads.
-function open(state: { bots: Bot[] }, extra: Routes = {}, path = "/bots/ba") {
+// `routes` add to or replace the default fake routes.
+function open(
+  state: { bots: Bot[] },
+  { routes = {}, path = "/bots/ba" }: { routes?: Routes; path?: string } = {},
+) {
   fake = fakeApi({
     "GET /api/settings": () => ({ body: BOT_SETTINGS }),
     "GET /api/models": () => ({ body: [FAKE_SCRIPTED] }),
@@ -52,7 +56,7 @@ function open(state: { bots: Bot[] }, extra: Routes = {}, path = "/bots/ba") {
       state.bots = [saved, ...state.bots.slice(1)];
       return { body: saved };
     },
-    ...extra,
+    ...routes,
   });
   return renderApp(path);
 }
@@ -63,7 +67,7 @@ const click = (element: HTMLElement) => {
   });
 };
 
-const type = (label: string, text: string) => {
+const type = ({ label, text }: { label: string; text: string }) => {
   act(() => {
     fireEvent.change(screen.getByLabelText(label, { exact: true }), { target: { value: text } });
   });
@@ -126,14 +130,14 @@ describe("the bot page", () => {
   });
 
   it("opens the tab of the URL", async () => {
-    await open({ bots: [makeBot(1, "BA")] }, {}, "/bots/ba?tab=model");
+    await open({ bots: [makeBot(1, "BA")] }, { path: "/bots/ba?tab=model" });
     await heading();
     expect(screen.getByRole("tab", { name: /Model/ }).getAttribute("aria-selected")).toBe("true");
     expect(screen.getByLabelText("Model requests per run")).toBeTruthy();
   });
 
   it("says when no live bot has the slug", async () => {
-    await open({ bots: [makeBot(1, "BA")] }, {}, "/bots/gone");
+    await open({ bots: [makeBot(1, "BA")] }, { path: "/bots/gone" });
     expect(
       await screen.findByText("The app could not find this bot. It may be in Trash.", undefined, {
         timeout: 5000,
@@ -147,11 +151,10 @@ describe("the bot page", () => {
     const held = heldAnswer();
     const state = { bots: [makeBot(1, "BA")] };
     let hold = false;
-    await open(
-      state,
-      { "GET /api/bots": () => (hold ? held.promise : { body: state.bots }) },
-      "/bots/designer",
-    );
+    await open(state, {
+      routes: { "GET /api/bots": () => (hold ? held.promise : { body: state.bots }) },
+      path: "/bots/designer",
+    });
     await screen.findByText("The app could not find this bot. It may be in Trash.", undefined, {
       timeout: 5000,
     });
@@ -170,16 +173,15 @@ describe("the bot page", () => {
     // The cached list has no Designer (as just after a Create), and the refresh fails.
     const state = { bots: [makeBot(1, "BA")] };
     let fail = false;
-    await open(
-      state,
-      {
+    await open(state, {
+      routes: {
         "GET /api/bots": () =>
           fail
             ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
             : { body: state.bots },
       },
-      "/bots/designer",
-    );
+      path: "/bots/designer",
+    });
     await screen.findByText("The app could not find this bot. It may be in Trash.", undefined, {
       timeout: 5000,
     });
@@ -212,7 +214,7 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     const state = { bots: [makeBot(1, "BA", [], { row_version: 3 })] };
     await open(state);
     await heading();
-    type("Description", "Writes user stories.");
+    type({ label: "Description", text: "Writes user stories." });
     expect(within(saveBar()).getByText("1 change not saved")).toBeTruthy();
     click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => {
@@ -227,10 +229,10 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     const state = { bots: [makeBot(1, "BA")] };
     await open(state);
     await heading();
-    type("Description", "First.");
+    type({ label: "Description", text: "First." });
     click(screen.getByRole("button", { name: "Save" }));
     await screen.findByText("No changes. Edits apply from the next run.");
-    type("Description", "Second.");
+    type({ label: "Description", text: "Second." });
     click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => {
       expect(fake?.sent("PATCH", `/api/bots/${BA_ID}`)).toHaveLength(2);
@@ -244,7 +246,7 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
   it("saves with Ctrl+S", async () => {
     await open({ bots: [makeBot(1, "BA")] });
     await heading();
-    type("Name", "Analyst");
+    type({ label: "Name", text: "Analyst" });
     act(() => {
       fireEvent.keyDown(window, { key: "s", ctrlKey: true });
     });
@@ -257,14 +259,16 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     await open(
       { bots: [makeBot(1, "BA")] },
       {
-        [`PATCH /api/bots/${BA_ID}`]: () => ({
-          status: 409,
-          body: { error: { code: "name_taken", message: "Taken.", field: "name" } },
-        }),
+        routes: {
+          [`PATCH /api/bots/${BA_ID}`]: () => ({
+            status: 409,
+            body: { error: { code: "name_taken", message: "Taken.", field: "name" } },
+          }),
+        },
       },
     );
     await heading();
-    type("Name", "Writer");
+    type({ label: "Name", text: "Writer" });
     click(screen.getByRole("button", { name: "Save" }));
     expect(
       await screen.findByText(
@@ -279,16 +283,18 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     await open(
       { bots: [makeBot(1, "BA")] },
       {
-        [`PATCH /api/bots/${BA_ID}`]: async () => {
-          const answer = await held.promise;
-          return answer;
+        routes: {
+          [`PATCH /api/bots/${BA_ID}`]: async () => {
+            const answer = await held.promise;
+            return answer;
+          },
         },
       },
     );
     await heading();
-    type("Name", "Writer");
+    type({ label: "Name", text: "Writer" });
     click(screen.getByRole("button", { name: "Save" }));
-    type("Name", "Author");
+    type({ label: "Name", text: "Author" });
     await held.answer({
       status: 409,
       body: { error: { code: "name_taken", message: "Taken.", field: "name" } },
@@ -306,14 +312,16 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     await open(
       { bots: [makeBot(1, "BA")] },
       {
-        [`PATCH /api/bots/${BA_ID}`]: () => ({
-          status: 500,
-          body: { error: { code: "internal_error", message: "Something failed." } },
-        }),
+        routes: {
+          [`PATCH /api/bots/${BA_ID}`]: () => ({
+            status: 500,
+            body: { error: { code: "internal_error", message: "Something failed." } },
+          }),
+        },
       },
     );
     await heading();
-    type("Description", "Writes user stories.");
+    type({ label: "Description", text: "Writes user stories." });
     click(screen.getByRole("button", { name: "Save" }));
     expect(await screen.findByText("Could not save BA. Try again.")).toBeTruthy();
     expect(within(saveBar()).getByText("1 change not saved")).toBeTruthy();
@@ -322,7 +330,7 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
   it("says Fix 1 field and keeps Save off for an empty name", async () => {
     await open({ bots: [makeBot(1, "BA")] });
     await heading();
-    type("Name", "");
+    type({ label: "Name", text: "" });
     act(() => {
       fireEvent.blur(screen.getByLabelText("Name", { exact: true }));
     });
@@ -349,17 +357,19 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
   it("keeps the edit on a stale save, says so, and Discard loads the new values", async () => {
     const state = { bots: [makeBot(1, "BA")] };
     await open(state, {
-      [`PATCH /api/bots/${BA_ID}`]: () => {
-        // Another tab saved first.
-        state.bots = [{ ...makeBot(1, "BA"), row_version: 2, description: "From another tab." }];
-        return {
-          status: 409,
-          body: { error: { code: "stale_write", message: "The bot changed." } },
-        };
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: () => {
+          // Another tab saved first.
+          state.bots = [{ ...makeBot(1, "BA"), row_version: 2, description: "From another tab." }];
+          return {
+            status: 409,
+            body: { error: { code: "stale_write", message: "The bot changed." } },
+          };
+        },
       },
     });
     await heading();
-    type("Description", "Mine.");
+    type({ label: "Description", text: "Mine." });
     click(screen.getByRole("button", { name: "Save" }));
     expect(
       await screen.findByText(
@@ -381,7 +391,7 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     const state = { bots: [makeBot(1, "BA")] };
     await open(state);
     await heading();
-    type("Description", "Mine.");
+    type({ label: "Description", text: "Mine." });
     state.bots = [{ ...makeBot(1, "BA"), row_version: 2, persona_md: "Changed elsewhere." }];
     refocus();
     expect(
@@ -393,12 +403,12 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     const state = { bots: [makeBot(1, "BA")] };
     await open(state);
     await heading();
-    type("Description", "Mine.");
+    type({ label: "Description", text: "Mine." });
     state.bots = [{ ...makeBot(1, "BA"), row_version: 2, persona_md: "Changed elsewhere." }];
     refocus();
     await screen.findByText(/BA changed in another place\. Your changes are kept here\./);
     // Back to the text it had: the tab has no changes now, so it shows the newest values.
-    type("Description", "BA does its job.");
+    type({ label: "Description", text: "BA does its job." });
     await waitFor(() => {
       // A saved persona shows in Preview (PF4).
       expect(screen.getByText("Changed elsewhere.")).toBeTruthy();
@@ -410,16 +420,18 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     const held = heldAnswer();
     const state = { bots: [makeBot(1, "BA")] };
     const { queryClient } = await open(state, {
-      [`PATCH /api/bots/${BA_ID}`]: async () => {
-        const answer = await held.promise;
-        return answer;
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
       },
     });
     await heading();
-    type("Description", "Changed.");
+    type({ label: "Description", text: "Changed." });
     click(screen.getByRole("button", { name: "Save" }));
     // Back to the saved text while the save waits; then the event of the save comes first.
-    type("Description", "BA does its job.");
+    type({ label: "Description", text: "BA does its job." });
     state.bots = [{ ...makeBot(1, "BA"), row_version: 2, description: "Changed." }];
     refocus();
     await waitFor(() => {
@@ -438,17 +450,19 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     const state = { bots: [makeBot(1, "BA")] };
     let fail = false;
     await open(state, {
-      "GET /api/bots": () =>
-        fail
-          ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
-          : { body: state.bots },
-      [`PATCH /api/bots/${BA_ID}`]: async () => {
-        const answer = await held.promise;
-        return answer;
+      routes: {
+        "GET /api/bots": () =>
+          fail
+            ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+            : { body: state.bots },
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
       },
     });
     await heading();
-    type("Description", "Mine.");
+    type({ label: "Description", text: "Mine." });
     click(screen.getByRole("button", { name: "Save" }));
     // The save made v2, then another tab made v3; the refresh brings v3 before the v2 answer.
     state.bots = [
@@ -482,7 +496,7 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     const state = { bots: [makeBot(1, "BA")] };
     await open(state);
     await heading();
-    type("Description", "Mine.");
+    type({ label: "Description", text: "Mine." });
     state.bots = [makeBot(1, "BA", [makePin()])];
     refocus();
     await waitFor(() => {
@@ -496,18 +510,20 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     const held = heldAnswer();
     const state = { bots: [makeBot(1, "BA")] };
     await open(state, {
-      [`PATCH /api/bots/${BA_ID}`]: async () => {
-        const answer = await held.promise;
-        return answer;
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
       },
     });
     await heading();
-    type("Description", "First.");
+    type({ label: "Description", text: "First." });
     click(screen.getByRole("button", { name: "Save" }));
     // The owner types while the save is on its way (bot-page.md §4.1).
     const field = screen.getByLabelText("Description", { exact: true });
     expect(field.hasAttribute("readonly")).toBe(false);
-    type("Description", "Second.");
+    type({ label: "Description", text: "Second." });
     await held.answer({ body: { ...makeBot(1, "BA"), row_version: 2, description: "First." } });
     await waitFor(() => {
       expect(within(saveBar()).getByText("1 change not saved")).toBeTruthy();
@@ -522,15 +538,17 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     const held = heldAnswer();
     const state = { bots: [makeBot(1, "BA")] };
     await open(state, {
-      [`PATCH /api/bots/${BA_ID}`]: async () => {
-        const answer = await held.promise;
-        return answer;
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
       },
     });
     await heading();
-    type("Description", "First.");
+    type({ label: "Description", text: "First." });
     click(screen.getByRole("button", { name: "Save" }));
-    type("Description", "Second.");
+    type({ label: "Description", text: "Second." });
     click(screen.getByRole("button", { name: "Discard" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
     click(within(dialog).getByRole("button", { name: "Let them go" }));
@@ -548,13 +566,15 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     const held = heldAnswer();
     const state = { bots: [makeBot(1, "BA")] };
     await open(state, {
-      [`PATCH /api/bots/${BA_ID}`]: async () => {
-        const answer = await held.promise;
-        return answer;
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
       },
     });
     await heading();
-    type("Description", "First.");
+    type({ label: "Description", text: "First." });
     click(screen.getByRole("button", { name: "Save" }));
     // The save made v2; then another tab made v3, and the page loaded it before the answer.
     const newer = { ...makeBot(1, "BA"), row_version: 3, description: "From another tab." };
@@ -582,26 +602,28 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     const state = { bots: [makeBot(1, "BA")] };
     let saves = 0;
     await open(state, {
-      [`PATCH /api/bots/${BA_ID}`]: async () => {
-        saves += 1;
-        if (saves > 1) {
-          return {
-            body: { ...makeBot(1, "BA"), row_version: 3, name: "Analyst", description: "First." },
-          };
-        }
-        const answer = await held.promise;
-        return answer;
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          saves += 1;
+          if (saves > 1) {
+            return {
+              body: { ...makeBot(1, "BA"), row_version: 3, name: "Analyst", description: "First." },
+            };
+          }
+          const answer = await held.promise;
+          return answer;
+        },
       },
     });
     await heading();
-    type("Description", "First.");
+    type({ label: "Description", text: "First." });
     click(screen.getByRole("button", { name: "Save" }));
-    type("Description", "Second.");
+    type({ label: "Description", text: "Second." });
     click(screen.getByRole("button", { name: "Discard" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
     click(within(dialog).getByRole("button", { name: "Let them go" }));
     // The owner types again before the answer comes.
-    type("Name", "Analyst");
+    type({ label: "Name", text: "Analyst" });
     const saved = { ...makeBot(1, "BA"), row_version: 2, description: "First." };
     state.bots = [saved];
     await held.answer({ body: saved });
@@ -626,10 +648,10 @@ describe("leaving the bot page with changes (bot-page.md §4.1)", () => {
   it("asks before another tab, names the changed fields, and Stay keeps them", async () => {
     await open({ bots: [makeBot(1, "BA")] });
     await heading();
-    type("Name", "Analyst");
+    type({ label: "Name", text: "Analyst" });
     // A saved persona opens in Preview (PF4).
     click(screen.getByRole("tab", { name: "Write" }));
-    type("Persona", "You are the analyst.");
+    type({ label: "Persona", text: "You are the analyst." });
     click(screen.getByRole("tab", { name: /Skills/ }));
     const dialog = await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
     expect(dialog.textContent).toContain(
@@ -645,7 +667,7 @@ describe("leaving the bot page with changes (bot-page.md §4.1)", () => {
   it("Let them go drops the changes and opens the other bot", async () => {
     const { router } = await open({ bots: [makeBot(1, "BA"), makeBot(2, "Designer")] });
     await heading();
-    type("Name", "Analyst");
+    type({ label: "Name", text: "Analyst" });
     const list = screen.getByRole("navigation", { name: "Bots" });
     click(within(list).getByRole("link", { name: "Designer" }));
     const dialog = await screen.findByRole("alertdialog");
@@ -659,7 +681,7 @@ describe("leaving the bot page with changes (bot-page.md §4.1)", () => {
   it("asks on Esc in a changed field", async () => {
     await open({ bots: [makeBot(1, "BA")] });
     await heading();
-    type("Name", "Analyst");
+    type({ label: "Name", text: "Analyst" });
     act(() => {
       fireEvent.keyDown(screen.getByLabelText("Name", { exact: true }), { key: "Escape" });
     });
@@ -682,10 +704,10 @@ describe("leaving the bot page with changes (bot-page.md §4.1)", () => {
 describe("the Model tab (bot-page.md §6)", () => {
   it("saves an Advanced value and a tool switch, with no model field", async () => {
     const ba = makeBot(1, "BA", [], { tool_settings: { read_file: true } });
-    await open({ bots: [ba] }, {}, "/bots/ba?tab=model");
+    await open({ bots: [ba] }, { path: "/bots/ba?tab=model" });
     await heading();
     expect(screen.queryByRole("combobox", { name: "Model" })).toBeNull();
-    type("Model requests per run", "20");
+    type({ label: "Model requests per run", text: "20" });
     click(screen.getByRole("switch", { name: /Read files/ }));
     expect(within(saveBar()).getByText("2 changes not saved")).toBeTruthy();
     click(screen.getByRole("button", { name: "Save" }));
@@ -706,7 +728,7 @@ describe("the Model tab (bot-page.md §6)", () => {
       available: false,
       unavailable_reason: "model_removed",
     });
-    await open({ bots: [ba] }, {}, "/bots/ba?tab=model");
+    await open({ bots: [ba] }, { path: "/bots/ba?tab=model" });
     await heading();
     expect(
       screen.getByText(
@@ -740,8 +762,7 @@ describe("the Skills tab (bot-page.md §7)", () => {
           }),
         ],
       },
-      {},
-      "/bots/ba?tab=skills",
+      { path: "/bots/ba?tab=skills" },
     );
     await heading();
     expect(screen.getByRole("tab", { name: /Skills/ }).textContent).toContain("↑1");
@@ -754,9 +775,8 @@ describe("the Skills tab (bot-page.md §7)", () => {
 
   it("upgrades from the link after showing the changes, sending the pin as it showed it", async () => {
     const state = { bots: [makeBot(1, "BA", pins.slice(0, 1))] };
-    await open(
-      state,
-      {
+    await open(state, {
+      routes: {
         [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
         [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
           body: { body: [{ op: "add", text: "New line." }], description: null },
@@ -765,8 +785,8 @@ describe("the Skills tab (bot-page.md §7)", () => {
           body: makeBot(1, "BA", [makePin()]),
         }),
       },
-      "/bots/ba?tab=skills",
-    );
+      path: "/bots/ba?tab=skills",
+    });
     await heading();
     click(screen.getByRole("button", { name: "v3 available" }));
     const dialog = await screen.findByRole("dialog", { name: "Upgrade Zeta to v3?" });
@@ -785,15 +805,17 @@ describe("the Skills tab (bot-page.md §7)", () => {
     await open(
       { bots: [makeBot(1, "BA", pins.slice(0, 1))] },
       {
-        [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
-        [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
-          body: { body: [{ op: "del", text: "New line." }], description: null },
-        }),
-        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => ({
-          body: makeBot(1, "BA", [makePin()]),
-        }),
+        routes: {
+          [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+          [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
+            body: { body: [{ op: "del", text: "New line." }], description: null },
+          }),
+          [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => ({
+            body: makeBot(1, "BA", [makePin()]),
+          }),
+        },
+        path: "/bots/ba?tab=skills",
       },
-      "/bots/ba?tab=skills",
     );
     await heading();
     click(screen.getByRole("button", { name: "Actions for Zeta" }));
@@ -820,16 +842,18 @@ describe("the Skills tab (bot-page.md §7)", () => {
     await open(
       { bots: [makeBot(1, "BA", pins.slice(0, 1))] },
       {
-        [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
-        [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
-          body: { body: [{ op: "del", text: "New line." }], description: null },
-        }),
-        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => ({
-          status: 409,
-          body: { error: { code: "stale_write", message: "Changed.", current: null } },
-        }),
+        routes: {
+          [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+          [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
+            body: { body: [{ op: "del", text: "New line." }], description: null },
+          }),
+          [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => ({
+            status: 409,
+            body: { error: { code: "stale_write", message: "Changed.", current: null } },
+          }),
+        },
+        path: "/bots/ba?tab=skills",
       },
-      "/bots/ba?tab=skills",
     );
     await heading();
     click(screen.getByRole("button", { name: "Actions for Zeta" }));
@@ -854,9 +878,8 @@ describe("the Skills tab (bot-page.md §7)", () => {
     const held = heldAnswer();
     const state = { bots: [makeBot(1, "BA", pins.slice(0, 1))] };
     let fail = false;
-    const { queryClient } = await open(
-      state,
-      {
+    const { queryClient } = await open(state, {
+      routes: {
         "GET /api/bots": () =>
           fail
             ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
@@ -866,8 +889,8 @@ describe("the Skills tab (bot-page.md §7)", () => {
           return answer;
         },
       },
-      "/bots/ba?tab=skills",
-    );
+      path: "/bots/ba?tab=skills",
+    });
     await heading();
     click(screen.getByRole("switch", { name: "Always load Zeta" }));
     // A Profile save in another tab makes v2 while the toggle waits.
@@ -898,24 +921,26 @@ describe("the Skills tab (bot-page.md §7)", () => {
     await open(
       { bots: [makeBot(1, "BA", pins)] },
       {
-        "GET /api/bots": () =>
-          fail
-            ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
-            : { body: [makeBot(1, "BA", pins)] },
-        [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
-        [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
-          body: { body: [{ op: "add", text: "New line." }], description: null },
-        }),
-        [`PUT /api/bots/${BA_ID}/skills/${alpha.skill_id}`]: async () => {
-          const answer = await held.promise;
-          return answer;
+        routes: {
+          "GET /api/bots": () =>
+            fail
+              ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+              : { body: [makeBot(1, "BA", pins)] },
+          [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+          [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
+            body: { body: [{ op: "add", text: "New line." }], description: null },
+          }),
+          [`PUT /api/bots/${BA_ID}/skills/${alpha.skill_id}`]: async () => {
+            const answer = await held.promise;
+            return answer;
+          },
+          // The toggle got to the server first, so this answer has both changes.
+          [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => ({
+            body: makeBot(1, "BA", [zetaV3, alphaOff]),
+          }),
         },
-        // The toggle got to the server first, so this answer has both changes.
-        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => ({
-          body: makeBot(1, "BA", [zetaV3, alphaOff]),
-        }),
+        path: "/bots/ba?tab=skills",
       },
-      "/bots/ba?tab=skills",
     );
     await heading();
     // Every refresh fails, so only the answers could change the list.
@@ -943,9 +968,8 @@ describe("the Skills tab (bot-page.md §7)", () => {
     if (zeta === undefined) throw new Error("no pins");
     const state = { bots: [makeBot(1, "BA", [zeta])] };
     let fail = false;
-    await open(
-      state,
-      {
+    await open(state, {
+      routes: {
         "GET /api/bots": () =>
           fail
             ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
@@ -955,8 +979,8 @@ describe("the Skills tab (bot-page.md §7)", () => {
           return answer;
         },
       },
-      "/bots/ba?tab=skills",
-    );
+      path: "/bots/ba?tab=skills",
+    });
     await heading();
     click(screen.getByRole("switch", { name: "Always load Zeta" }));
     // The toggle got to the server first; then another tab moved Zeta to v3, and the page
@@ -985,9 +1009,8 @@ describe("the Skills tab (bot-page.md §7)", () => {
     if (zeta === undefined) throw new Error("no pins");
     const state = { bots: [makeBot(1, "BA", [zeta])] };
     let fail = false;
-    const { queryClient } = await open(
-      state,
-      {
+    const { queryClient } = await open(state, {
+      routes: {
         "GET /api/bots": () =>
           fail
             ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
@@ -997,8 +1020,8 @@ describe("the Skills tab (bot-page.md §7)", () => {
           return answer;
         },
       },
-      "/bots/ba?tab=skills",
-    );
+      path: "/bots/ba?tab=skills",
+    });
     await heading();
     click(screen.getByRole("switch", { name: "Always load Zeta" }));
     // The toggle got to the server first (on); then another tab turned it off again, and the
@@ -1028,9 +1051,8 @@ describe("the Skills tab (bot-page.md §7)", () => {
   it("shows an Upgrade that fails after the skill left the bot in another place as a toast", async () => {
     const held = heldAnswer();
     const state = { bots: [makeBot(1, "BA", pins.slice(0, 1))] };
-    await open(
-      state,
-      {
+    await open(state, {
+      routes: {
         [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
         [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
           body: { body: [{ op: "add", text: "New line." }], description: null },
@@ -1040,8 +1062,8 @@ describe("the Skills tab (bot-page.md §7)", () => {
           return answer;
         },
       },
-      "/bots/ba?tab=skills",
-    );
+      path: "/bots/ba?tab=skills",
+    });
     await heading();
     click(screen.getByRole("button", { name: "v3 available" }));
     const dialog = await screen.findByRole("dialog", { name: "Upgrade Zeta to v3?" });
@@ -1062,16 +1084,18 @@ describe("the Skills tab (bot-page.md §7)", () => {
     const { router } = await open(
       { bots: [makeBot(1, "BA", pins.slice(0, 1))] },
       {
-        [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
-        [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
-          body: { body: [{ op: "add", text: "New line." }], description: null },
-        }),
-        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => {
-          const answer = await held.promise;
-          return answer;
+        routes: {
+          [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+          [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
+            body: { body: [{ op: "add", text: "New line." }], description: null },
+          }),
+          [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => {
+            const answer = await held.promise;
+            return answer;
+          },
         },
+        path: "/bots/ba?tab=skills",
       },
-      "/bots/ba?tab=skills",
     );
     await heading();
     click(screen.getByRole("button", { name: "v3 available" }));
@@ -1089,16 +1113,18 @@ describe("the Skills tab (bot-page.md §7)", () => {
     await open(
       { bots: [makeBot(1, "BA", [makePin()])] },
       {
-        "GET /api/skills": () => ({ body: [makeSkill(), writing] }),
-        [`GET /api/skills/${writing.id}/versions`]: () => ({
-          body: makeVersions(2).map((v) => ({ ...v, skill_id: writing.id })),
-        }),
-        [`PUT /api/bots/${BA_ID}/skills/${writing.id}`]: () => ({
-          status: 409,
-          body: { error: { code: "stale_write", message: "Changed.", current: null } },
-        }),
+        routes: {
+          "GET /api/skills": () => ({ body: [makeSkill(), writing] }),
+          [`GET /api/skills/${writing.id}/versions`]: () => ({
+            body: makeVersions(2).map((v) => ({ ...v, skill_id: writing.id })),
+          }),
+          [`PUT /api/bots/${BA_ID}/skills/${writing.id}`]: () => ({
+            status: 409,
+            body: { error: { code: "stale_write", message: "Changed.", current: null } },
+          }),
+        },
+        path: "/bots/ba?tab=skills",
       },
-      "/bots/ba?tab=skills",
     );
     await heading();
     click(screen.getByRole("button", { name: "Add" }));
@@ -1118,12 +1144,14 @@ describe("the Skills tab (bot-page.md §7)", () => {
     await open(
       { bots: [makeBot(1, "BA", pins.slice(0, 1))] },
       {
-        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => ({
-          status: 409,
-          body: { error: { code: "stale_write", message: "Changed.", current: null } },
-        }),
+        routes: {
+          [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => ({
+            status: 409,
+            body: { error: { code: "stale_write", message: "Changed.", current: null } },
+          }),
+        },
+        path: "/bots/ba?tab=skills",
       },
-      "/bots/ba?tab=skills",
     );
     await heading();
     click(screen.getByRole("switch", { name: "Always load Zeta" }));
@@ -1137,15 +1165,17 @@ describe("the Skills tab (bot-page.md §7)", () => {
     await open(
       { bots: [makeBot(1, "BA", [makePin()])] },
       {
-        "GET /api/skills": () => ({ body: [makeSkill(), writing, deprecated] }),
-        [`GET /api/skills/${writing.id}/versions`]: () => ({
-          body: makeVersions(2).map((v) => ({ ...v, skill_id: writing.id })),
-        }),
-        [`PUT /api/bots/${BA_ID}/skills/${writing.id}`]: () => ({
-          body: makeBot(1, "BA", [makePin()]),
-        }),
+        routes: {
+          "GET /api/skills": () => ({ body: [makeSkill(), writing, deprecated] }),
+          [`GET /api/skills/${writing.id}/versions`]: () => ({
+            body: makeVersions(2).map((v) => ({ ...v, skill_id: writing.id })),
+          }),
+          [`PUT /api/bots/${BA_ID}/skills/${writing.id}`]: () => ({
+            body: makeBot(1, "BA", [makePin()]),
+          }),
+        },
+        path: "/bots/ba?tab=skills",
       },
-      "/bots/ba?tab=skills",
     );
     await heading();
     click(screen.getByRole("button", { name: "Add" }));
@@ -1168,8 +1198,7 @@ describe("the Skills tab (bot-page.md §7)", () => {
     const held = heldAnswer();
     await open(
       { bots: [makeBot(1, "BA", [makePin()])] },
-      { "GET /api/skills": async () => held.promise },
-      "/bots/ba?tab=skills",
+      { routes: { "GET /api/skills": async () => held.promise }, path: "/bots/ba?tab=skills" },
     );
     await heading();
     click(screen.getByRole("button", { name: "Add" }));
@@ -1187,8 +1216,10 @@ describe("the Skills tab (bot-page.md §7)", () => {
   it("removes a skill without asking", async () => {
     await open(
       { bots: [makeBot(1, "BA", [makePin()])] },
-      { [`DELETE /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => ({ status: 204 }) },
-      "/bots/ba?tab=skills",
+      {
+        routes: { [`DELETE /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => ({ status: 204 }) },
+        path: "/bots/ba?tab=skills",
+      },
     );
     await heading();
     click(screen.getByRole("button", { name: /Actions for/ }));
@@ -1202,8 +1233,7 @@ describe("the Skills tab (bot-page.md §7)", () => {
   it("marks a deprecated skill with its tooltip and no upgrade link (UI-6.5)", async () => {
     await open(
       { bots: [makeBot(1, "BA", [makePin({ deprecated: true, version: 2 })])] },
-      {},
-      "/bots/ba?tab=skills",
+      { path: "/bots/ba?tab=skills" },
     );
     await heading();
     expect(screen.getByText("Deprecated")).toBeTruthy();

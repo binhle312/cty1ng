@@ -35,7 +35,7 @@ async function makeBot(name: string): Promise<{ id: string; slug: string }> {
   return created.data;
 }
 
-async function fill(page: Page, label: string, text: string) {
+async function fill(page: Page, { label, text }: { label: string; text: string }) {
   await page.getByLabel(label, { exact: true }).fill(text);
 }
 
@@ -50,9 +50,12 @@ test("J4: a skill save offers the upgrade, the bot keeps v1, and the bot page up
 
   // Create the skill, and give it to BA in the assign card (C4b): no box starts ticked.
   await page.goto("/skills/new");
-  await fill(page, "Name", skill.name);
-  await fill(page, "Description", "Use this skill when the owner asks for user stories.");
-  await fill(page, "Body", "## Steps\n1. Read the brief.\n2. Write the stories.");
+  await fill(page, { label: "Name", text: skill.name });
+  await fill(page, {
+    label: "Description",
+    text: "Use this skill when the owner asks for user stories.",
+  });
+  await fill(page, { label: "Body", text: "## Steps\n1. Read the brief.\n2. Write the stories." });
   await page.getByRole("button", { name: "Create", exact: true }).click();
   const assign = page.getByRole("dialog", { name: `Created ✨ Add ${skill.name} to bots?` });
   const baBox = assign.getByRole("checkbox", { name: new RegExp(botName) });
@@ -64,8 +67,11 @@ test("J4: a skill save offers the upgrade, the bot keeps v1, and the bot page up
 
   // Edit → v2. The upgrade card ticks BA; Skip alone changes nothing, so BA keeps v1 (J4).
   await page.getByRole("tab", { name: "Write" }).click();
-  await fill(page, "Body", "## Steps\n1. Read the brief.\n2. Write one story per goal.");
-  await fill(page, "What changed", "One story per goal");
+  await fill(page, {
+    label: "Body",
+    text: "## Steps\n1. Read the brief.\n2. Write one story per goal.",
+  });
+  await fill(page, { label: "What changed", text: "One story per goal" });
   await page.getByRole("button", { name: "Save as v2" }).click();
   const upgradeCard = page.getByRole("dialog", {
     name: "Saved v2 ✨ Also upgrade these bots to v2?",
@@ -115,8 +121,8 @@ test("a Profile save shows in another tab at once, and an edit there keeps its t
   }
 
   // The second tab has an unsaved edit; the first tab saves a new description.
-  await fill(second, "Name", `Editor ${tag}`);
-  await fill(first, "Description", "Writes the release notes.");
+  await fill(second, { label: "Name", text: `Editor ${tag}` });
+  await fill(first, { label: "Description", text: "Writes the release notes." });
   await first.getByRole("button", { name: "Save" }).click();
   await expect(first.getByText("No changes. Edits apply from the next run.")).toBeVisible();
 

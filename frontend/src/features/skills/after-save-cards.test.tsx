@@ -40,7 +40,7 @@ const click = (element: HTMLElement) => {
   });
 };
 
-const type = (label: string, text: string) => {
+const type = ({ label, text }: { label: string; text: string }) => {
   act(() => {
     fireEvent.change(screen.getByLabelText(label, { exact: true }), { target: { value: text } });
   });
@@ -67,7 +67,7 @@ async function saveV4(candidates: unknown[]) {
   await renderApp("/skills/write-user-stories");
   await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 });
   click(screen.getByRole("tab", { name: "Write" }));
-  type("Body", "## Steps\n1. Read the brief.\n2. Ask.");
+  type({ label: "Body", text: "## Steps\n1. Read the brief.\n2. Ask." });
   click(screen.getByRole("button", { name: "Save as v4" }));
 }
 
@@ -151,7 +151,7 @@ function savesTwice(state: Server) {
 
 async function saveAs(version: number, body: string) {
   click(await screen.findByRole("tab", { name: "Write" }));
-  type("Body", body);
+  type({ label: "Body", text: body });
   click(await screen.findByRole("button", { name: `Save as v${String(version)}` }));
   return screen.findByRole("dialog", {
     name: `Saved v${String(version)} ✨ Also upgrade these bots to v${String(version)}?`,
@@ -249,9 +249,9 @@ describe("the assign card after Create (C4b)", () => {
     });
     const view = await renderApp("/skills/new");
     await screen.findByLabelText("Name", { exact: true }, { timeout: 5000 });
-    type("Name", "Write user stories");
-    type("Description", "Use this skill when the owner asks for user stories.");
-    type("Body", "## Steps");
+    type({ label: "Name", text: "Write user stories" });
+    type({ label: "Description", text: "Use this skill when the owner asks for user stories." });
+    type({ label: "Body", text: "## Steps" });
     click(screen.getByRole("button", { name: "Create" }));
     return view;
   }
@@ -300,9 +300,9 @@ describe("the assign card after Create (C4b)", () => {
     });
     await renderApp("/skills/new");
     await screen.findByLabelText("Name", { exact: true }, { timeout: 5000 });
-    type("Name", "Write user stories");
-    type("Description", "Use this skill when the owner asks for user stories.");
-    type("Body", "## Steps");
+    type({ label: "Name", text: "Write user stories" });
+    type({ label: "Description", text: "Use this skill when the owner asks for user stories." });
+    type({ label: "Body", text: "## Steps" });
     click(screen.getByRole("button", { name: "Create" }));
     const card = await screen.findByRole("dialog", { name: /Add Write user stories to bots\?/ });
     click(within(card).getByRole("checkbox", { name: /BA/ }));

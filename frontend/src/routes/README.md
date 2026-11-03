@@ -10,8 +10,8 @@ a lazy route: `<name>.tsx` holds the route, `<name>.lazy.tsx` the page, in its o
 | `root.tsx` | The shell around every page, and Page not found |
 | `home.tsx` | `/` |
 | `conversation.tsx` | `/c/conv_…`; any other id is Page not found |
-| `bots.tsx` | `/bots`, `/bots/new` (lazy), `/bots/{slug}`, and their search params |
-| `bots.lazy.tsx` | The Create bot page, in its own chunk |
+| `bots.tsx` | The lazy routes `/bots`, `/bots/new`, `/bots/{slug}`, and their search params |
+| `bots.lazy.tsx` | The Bots page, the Create bot page and the bot page, in their own chunk |
 | `skills.tsx` | `/skills`, `/skills/new`, `/skills/import`, `/skills/{slug}`, and their search params |
 | `skills.lazy.tsx` | The Skills page, in its own chunk |
 | `stats.tsx` | The lazy route `/stats` |
