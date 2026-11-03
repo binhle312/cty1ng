@@ -387,6 +387,51 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     expect(screen.getByText("No changes. Edits apply from the next run.")).toBeTruthy();
   });
 
+  it("keeps a stale save's conflict and Save off when the refresh after it fails", async () => {
+    const state = { bots: [makeBot(1, "BA")] };
+    let fail = false;
+    await open(state, {
+      routes: {
+        "GET /api/bots": () =>
+          fail
+            ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+            : { body: state.bots },
+        [`PATCH /api/bots/${BA_ID}`]: () => {
+          // Another tab saved first, and the refresh after the answer fails.
+          fail = true;
+          return {
+            status: 409,
+            body: { error: { code: "stale_write", message: "The bot changed." } },
+          };
+        },
+      },
+    });
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    const loads = fake?.sent("GET", "/api/bots").length ?? 0;
+    click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(loads);
+    });
+    expect(
+      await screen.findByText(
+        "BA changed in another place. Your changes are kept here. Copy what you need, then Discard to load the new values.",
+      ),
+    ).toBeTruthy();
+    expect(valueOf("Description")).toBe("Mine.");
+    expect(screen.getByRole("button", { name: "Save" }).getAttribute("aria-disabled")).toBe("true");
+    // Discard ends the conflict and tries to load the newest values again.
+    const beforeDiscard = fake?.sent("GET", "/api/bots").length ?? 0;
+    click(screen.getByRole("button", { name: "Discard" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
+    click(within(dialog).getByRole("button", { name: "Let them go" }));
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(beforeDiscard);
+    });
+    expect(valueOf("Description")).toBe("BA does its job.");
+    expect(screen.getByText("No changes. Edits apply from the next run.")).toBeTruthy();
+  });
+
   it("shows the conflict when a newer row_version arrives while the tab has changes", async () => {
     const state = { bots: [makeBot(1, "BA")] };
     await open(state);

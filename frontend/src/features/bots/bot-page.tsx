@@ -192,7 +192,15 @@ function BotView({
     setSaved(nextSaved);
     setBase(nextBase);
   }
-  const conflict = (t: EditTab) => changed[t].length > 0 && bot.row_version > base[t];
+  // The `row_version` that a save of the tab was refused at (409 `stale_write`): the server is
+  // newer than the page even when the refresh after it fails, so the conflict shows at once and
+  // stays until Discard.
+  const [staleAt, setStaleAt] = useState<Record<EditTab, number | null>>({
+    profile: null,
+    model: null,
+  });
+  const conflict = (t: EditTab) =>
+    changed[t].length > 0 && (bot.row_version > base[t] || staleAt[t] === base[t]);
 
   const [serverProblems, setServerProblems] = useState<Problems>({});
   // Fields the owner left, and tabs where Save was pressed with errors: their errors show.
@@ -263,6 +271,16 @@ function BotView({
     );
     setTried((old) => new Set([...old].filter((t) => !tabs.includes(t))));
     setUploadError(null);
+    // A tab refused as stale loads the newest values again: the refresh after the refusal may
+    // have failed.
+    if (tabs.some((t) => staleAt[t] !== null)) {
+      void queryClient.invalidateQueries({ predicate: PIN_QUERIES });
+    }
+    setStaleAt((old) => {
+      const next = { ...old };
+      for (const t of tabs) next[t] = null;
+      return next;
+    });
   };
 
   const dirtyFields = [...changed.profile, ...changed.model];
@@ -345,7 +363,8 @@ function BotView({
       .catch((error: unknown) => {
         const api = readApiError(error);
         if (api?.code === "stale_write") {
-          // Load the newest values now: the edit stays, and the conflict shows.
+          // The conflict shows at once; load the newest values now, and the edit stays.
+          setStaleAt((old) => ({ ...old, [t]: sentBase }));
           void queryClient.invalidateQueries({ predicate: PIN_QUERIES });
           return;
         }

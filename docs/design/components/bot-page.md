@@ -129,7 +129,9 @@ there, so it never jumps.
   (`skills-page.md`, "Texts added in the M1b build"). A save that the server refuses as stale
   (409 `stale_write`): the page loads the newest values at once, keeps the owner's edits, and
   the save bar says "BA changed in another place. Your changes are kept here. Copy what you
-  need, then Discard to load the new values." Save is off until Discard. The same text shows
+  need, then Discard to load the new values." Save is off until Discard, also when the refresh
+  after the refusal fails; Discard then tries to load the newest values again (M2c review,
+  2026-11-03). The same text shows
   when a `bot.updated` event carries a `row_version` above the one this tab's edit started
   from, while this tab has unsaved changes. An event with the same `row_version` (a skill pin
   or the pinned order changed, which never raise it) only refreshes the Skills tab, the counts
