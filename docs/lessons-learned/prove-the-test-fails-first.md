@@ -18,4 +18,10 @@ isolated checkout instead. The first worktree run then passed against the old co
 servers left from the main checkout were still on ports 8100 and 8101, and Playwright reused
 them, so the run tested the new code. Hence the rule to stop other servers first.
 
-**Rule now in.** `../workflow.md` §2 step 3; `../testing.md` §5 "Evidence in PRs".
+**Later (2026-11-03, PR #59).** An acceptance criterion had the same problem. The test named
+for "text typed while a Save is pending stays" typed only after the answer, and its comment said
+the fields were read-only; the code comment quoted the rule while the code did the opposite.
+Each criterion's evidence now names the assertion that proves it, and its test was seen to fail
+without the behaviour.
+
+**Rule now in.** `../workflow.md` §2 steps 3 and 4; `../testing.md` §5 "Evidence in PRs".

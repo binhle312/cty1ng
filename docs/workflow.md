@@ -39,7 +39,10 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    **Slice size.** Keep UI work and infrastructure in separate slices or PRs. Static serving,
    docs pages, code generation, CI jobs and launch scripts are one PR; the screens that use
    them are another. Smaller PRs mean shorter builds, smaller reviews and fewer full gate runs
-   (§8, "Slice too big").
+   (§8, "Slice too big"). A screen with saves under a lock, live events or requests that can
+   answer after the owner moved on is its own part, and so is a set of dialogs or cards with
+   their own requests. A plan that touches more than about 30 files is a sign to split (lesson
+   `state-table-before-stateful-code.md`).
 2. **Plan.** The builder reads the brief and the documents it lists, then writes a short plan
    (files to touch, migrations, tests to add, risks) as the first comment of a draft PR.
    **Risk probes first.** Before the builder writes the plan, it runs short checks on every
@@ -78,6 +81,17 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    the order and timing cases (an answer that comes late, a change in another tab, a Discard
    while a request waits, a value that changes and changes back). Most review findings are
    these cases; a test planned before the code finds them before the review does.
+   **State table for stateful screens.** When a screen saves under a lock (`row_version`, an
+   `expected` value), takes live events, or sends requests that can answer after the owner
+   moved on, the plan has a state table before any code (owner, 2026-11-03). Rows are the
+   states (no changes, changes, Save on its way, conflict, refused as stale, …); columns are the
+   events (typing, Save sent, its answer, 409, an event with a newer `row_version`, a refresh
+   that fails, Discard, leaving, a request from another tab or dialog, …). Each cell says what
+   the page shows and keeps. A cell the spec does not answer is an open question for the owner.
+   After approval, the table goes into the screen's spec, the code keeps it in one pure state
+   module, and the test strategy has one test per cell (`frontend-conventions.md` §1,
+   `testing.md` §3). Write the plan, the table and the strategy at `xhigh` effort; the build
+   can run at `high` (lesson `state-table-before-stateful-code.md`).
 3. **Build.** Small commits, test first: for each behaviour in the test strategy, write its
    test, see it fail for the right reason, then write the code that makes it pass (red, green,
    refactor). A case found during the build goes into the strategy and gets its test first too. While fixing, run only the
@@ -95,7 +109,10 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    **Spec walk.** Before the PR, the builder reads each section of the slice's spec against the
    code, not only the acceptance criteria, and tests the edge cases in `testing.md` §3 ("Edge
    cases each slice tests"). The PR lists the sections checked (lesson
-   `self-review-against-the-spec.md`). The builder fills the PR template (§6). Anything new that the build taught (a library pitfall,
+   `self-review-against-the-spec.md`).
+   **Proof by assertion.** For each acceptance criterion, the PR names the assertion that
+   proves it, not only the test name, and the builder has seen that test fail without the
+   behaviour (`testing.md` §5). A code comment or a test name that states the rule is not proof. The builder fills the PR template (§6). Anything new that the build taught (a library pitfall,
    a lint pattern, a test helper) goes into `frontend-conventions.md` §5 or `testing.md` in
    the same PR, so the next slice does not learn it again.
    **The guide stays current.** A slice that changes something the owner can see updates
@@ -105,6 +122,12 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    Findings become PR comments; the builder fixes or answers each. A finding says what is wrong, not which text or layout to
    use: when a fix needs a new text, state, flow or layout, the PR lists it under `Needs human
    review` (`AGENTS.md` §7; lesson `flag-ui-choices-in-review-fixes.md`).
+   **Fix the cause, not only the finding.** For each finding, the builder names the rule that
+   the code broke (for example "a late answer writes a field it does not own"), searches the
+   code for every other place with the same cause, and fixes the rule once: a shared helper, an
+   allowlist, a cell of the state table. Each place gets a test. The review-fix table in the PR
+   has a column "Same cause checked in" (§6). A later finding with the same cause means the
+   first fix was too narrow (lesson `fix-the-cause-not-the-finding.md`).
 6. **Owner review.** Focus on `Needs human review` items, migrations, the evidence table, and
    one run of the app. Merge when satisfied.
 7. **Docs.** If something diverged from the docs, the PR already updated them. If a decision
@@ -169,6 +192,8 @@ You are the builder for slice <M#> of this repository.
    end the plan with every open question in one list. Then write the test strategy
    (§2 step 2, "Test strategy before code"). Open a draft PR with the plan and the strategy.
    Stop and wait for my approval if the brief says "checkpoint: plan".
+   If a screen has saves under a lock, live events or late answers, the plan has its state
+   table (§2 step 2, "State table for stateful screens").
 3. Build the slice on branch <m#-name>, test first. Keep to the brief's scope; list anything else you
    notice under "Follow-ups" in the PR instead of doing it.
 4. Run every check in AGENTS.md §4 and fill the PR description per docs/workflow.md §6.
@@ -222,8 +247,8 @@ Link to the brief and decisions.
 ## Acceptance criteria
 | AC | Evidence |
 | --- | --- |
-| UI-2.4 | `e2e/header-drag.spec.ts` "drop adds bot" + screenshot |
-| conversation-rules §1 table | `decide-runs.rules.test.ts` "human message: …" rows |
+| UI-2.4 | `e2e/header-drag.spec.ts` "drop adds bot": expects the bot chip in the header after the drop; + screenshot |
+| conversation-rules §1 table | `decide-runs.rules.test.ts` "human message: …" rows: one row per table line |
 
 ## Needs human review
 - Migration `0003_skill_versions` (new tables, no data change)
@@ -235,6 +260,11 @@ Link to the brief and decisions.
 ## Folder indexes
 - README.md tables updated for every added, removed, renamed or repurposed file, and the
   descriptions still match what the files do (or "no file changes")
+
+## Review fixes (when a review found something)
+| Finding | Cause (the rule broken) | Same cause checked in | Fix | Test |
+| --- | --- | --- | --- | --- |
+| A late Profile answer brings back an old pin | An answer writes fields it does not own | Save answers, pin answers, dialog answers | Answers write an allowlist | `bot-edit-form.test` "takes from a save answer only …" |
 
 ## Follow-ups (not done here)
 - ...

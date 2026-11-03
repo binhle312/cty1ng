@@ -51,6 +51,9 @@ For a race, identify the order the test forces and the state it checks afterward
 Sequential calls prove one order; they do not prove an overlap between two operations.
 Use controlled pauses or hooks when the requirement depends on a specific overlap.
 Check both relevant outcomes and the invariant that must hold in either outcome.
+For a screen with a state table ([workflow.md §2](workflow.md#2-lifecycle-of-a-slice) step 2),
+check that each cell has a test on the pure state module, and look for an event the table does
+not have.
 
 For file failures, distinguish failure before publication from failure after a rename or time update.
 A fake can prove service recovery. A real adapter test proves only the adapter paths it exercises.
@@ -85,6 +88,9 @@ A reviewer's recommendation is not approval of that change.
 
 For each earlier finding, report **fixed**, **partial**, **open**, or **withdrawn**, with the supporting evidence.
 Check the fix and the paths it affects. A new commit or a passing test alone does not close the finding.
+A fix closes a finding only when it fixes the cause. Read the builder's "Same cause checked in"
+column, then search for one more place with the same cause yourself. Report a place it missed
+as a new finding with the same cause, so the builder widens the rule, not the list of cases.
 If a finding was wrong, name the source or evidence that corrects it.
 
 The final report states the reviewed scope, findings, test results and remaining limits.

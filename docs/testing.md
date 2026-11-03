@@ -193,6 +193,14 @@ a slice tests these cases where they apply. The test strategy names them before 
 | An answer comes late | A save or toggle answer that comes after a newer change, a Discard or leaving the page does not undo it |
 | A value changes and changes back | On, then off in another tab: the page cannot tell from the value alone that it changed |
 
+**State table cells.** A screen with a state table (`workflow.md` §2 step 2) tests its pure
+state module (`frontend-conventions.md` §1): one unit test per cell of the table. It also runs
+every order of a small set of events on the module (for example Save sent, its answer, an
+event with a newer `row_version`, Discard, typing) and checks the same invariants after each
+order: an edit the owner dropped never comes back, an older answer never replaces a newer
+value, and Save is off while a conflict shows. These tests are fast, so every order is cheap;
+the component tests then cover the wiring and a few chosen orders.
+
 ### Fast loop while building
 
 A full gate run is slow, mostly because Playwright starts two backends and builds the frontend.
@@ -258,3 +266,10 @@ A PR description maps each acceptance criterion of its task to the test that pro
 screenshot for purely visual criteria (Playwright can save screenshots:
 `frontend/test/e2e/__screenshots__/`). "Tested manually" alone is not evidence. For a bug fix, the PR also says that its test failed
 on the code before the fix (`workflow.md` §2 step 3).
+
+The evidence names what the test checks: the assertion, or the state it expects, not only the
+test name. The builder has seen the test fail without the behaviour (test first does this; for
+a test written later, remove the behaviour in an isolated checkout and run it). A test whose
+name matches the criterion but whose steps never reach it is not evidence: in #59 the test for
+"text typed while a Save is pending stays" typed only after the answer (lesson
+`prove-the-test-fails-first.md`).

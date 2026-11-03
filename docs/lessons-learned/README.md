@@ -16,6 +16,8 @@ and what changed because of it. Newest first.
 
 | File | Lesson | Source | Status |
 | --- | --- | --- | --- |
+| `state-table-before-stateful-code.md` | Write the state table of a screen with locks, live events or late answers before its code, and keep its rules in one pure module | M2c, PR #59 | open (bot page state module) |
+| `fix-the-cause-not-the-finding.md` | Name the rule a finding broke and fix every place with that cause, not only the one found | M2c, PR #59 | applied |
 | `review-contract-boundaries.md` | Map each review requirement to its implementation boundary and evidence; judge safety and compliance separately | M2a, PR #57 | applied |
 | `self-review-against-the-spec.md` | Before the PR, check the code against each spec section and test the edge cases | M1b, PR #54 | applied |
 | `prove-the-test-fails-first.md` | See a fix's test fail on the old code | M1b, PR #54 | applied |
