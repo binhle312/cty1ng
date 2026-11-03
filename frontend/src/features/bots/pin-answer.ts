@@ -81,24 +81,50 @@ function withPins(bot: BotRow, pins: BotPin[]): BotRow {
   };
 }
 
+// What the page knew when a pin request went out: the bot list loads so far, and the Removes of
+// each pin (`removesOf`). Read it just before the request.
+export interface PinSent {
+  loads: number;
+  removes: ReadonlyMap<string, Readonly<PinRemoves>>;
+}
+
+export function markPinSend(queryClient: QueryClient): PinSent {
+  const removes = new Map<string, Readonly<PinRemoves>>();
+  for (const [key, value] of removesOf(queryClient)) removes.set(key, { ...value });
+  return { loads: botListLoads(queryClient), removes };
+}
+
 // Writes the answer's pin into the bot list, unless the list loaded after the request went out.
-// `loadsAtSend` is `botListLoads` read just before the request.
 export function writePinAnswer({
   queryClient,
   answer,
   skillId,
   expected,
-  loadsAtSend,
+  sent,
 }: {
   queryClient: QueryClient;
   answer: BotRow;
   skillId: string;
   expected: PinExpected;
-  loadsAtSend: number;
+  sent: PinSent;
 }): void {
-  // The owner's own add of a pin that a Remove on its way hides: the pin shows again.
-  removesOnTheirWay.get(queryClient)?.get(pinKey({ botId: answer.id, skillId }))?.();
-  if (botListLoads(queryClient) !== loadsAtSend) return;
+  const key = pinKey({ botId: answer.id, skillId });
+  const now = removesOf(queryClient).get(key);
+  const then = sent.removes.get(key);
+  const removesSince = (now?.started ?? 0) - (then?.started ?? 0);
+  if (removesSince > 0) {
+    // Sent before a Remove of its pin (an Always load change or a Move): the answer is about the
+    // pin before that Remove, so it never shows it again. The server took it before the Remove,
+    // so a Remove that still waits, and was the only one since, puts back this pin if it fails.
+    const pin = answer.pins.find((item) => item.skill_id === skillId);
+    if (pin !== undefined && removesSince === 1) now?.waiting?.keep(pin);
+    return;
+  }
+  // The owner's own add of a pin that a Remove on its way hides: the add ends the Remove and its
+  // pin shows, also after a list load, which the Remove's hold kept hidden.
+  const addedBack = then?.waiting != null && then.waiting === now?.waiting;
+  if (addedBack) now.waiting?.end();
+  if (!addedBack && botListLoads(queryClient) !== sent.loads) return;
   queryClient.setQueryData<BotRow[]>(listBotsQueryKey(), (current) =>
     current?.map((bot) =>
       bot.id === answer.id ? withPinAnswer({ bot, answer, skillId, expected }) : bot,
@@ -165,7 +191,7 @@ export async function sendPinChange({
   refresh,
 }: {
   queryClient: QueryClient;
-  // Sends the change; called after the load count is read.
+  // Sends the change; called after `markPinSend`.
   request: () => Promise<BotRow>;
   botId: string;
   skillId: string;
@@ -179,10 +205,10 @@ export async function sendPinChange({
   const key = pinKey({ botId, skillId });
   const mine = { alwaysLoad };
   setLoads(store, new Map(store.values).set(key, mine));
-  const loadsAtSend = botListLoads(queryClient);
+  const sent = markPinSend(queryClient);
   try {
     const answer = await request();
-    writePinAnswer({ queryClient, answer, skillId, expected, loadsAtSend });
+    writePinAnswer({ queryClient, answer, skillId, expected, sent });
   } catch (error) {
     onFailed(error);
   }
@@ -197,9 +223,28 @@ export async function sendPinChange({
   }
 }
 
-// The end of each Remove on its way, by bot and skill. A pin has no id of its own, so the hold
-// cannot tell a pin added again from the one it removed; the add ends the hold (`writePinAnswer`).
-const removesOnTheirWay = new WeakMap<QueryClient, Map<string, () => void>>();
+// The Removes of each pin, by bot and skill, for as long as the query client lives: how many
+// started, and the one on its way. A pin has no id of its own, so a request tells its pin from
+// a pin added again by the count of Removes since it went out (`writePinAnswer`).
+interface WaitingRemove {
+  // The owner added the pin again: the Remove ends, and the added pin stays.
+  end: () => void;
+  // A newer pin the server has (an older change saved first): a failed Remove puts it back.
+  keep: (pin: BotPin) => void;
+}
+interface PinRemoves {
+  started: number;
+  waiting: WaitingRemove | null;
+}
+const removesByClient = new WeakMap<QueryClient, Map<string, PinRemoves>>();
+
+function removesOf(queryClient: QueryClient): Map<string, PinRemoves> {
+  const known = removesByClient.get(queryClient);
+  if (known !== undefined) return known;
+  const removes = new Map<string, PinRemoves>();
+  removesByClient.set(queryClient, removes);
+  return removes;
+}
 
 // Remove of a skill from a bot (bot-page.md §7, skills-page.md §2a): the row goes at once, also
 // over a load that lands before the answer (`lib/api/optimistic.ts`). A failure brings the row
@@ -219,7 +264,7 @@ export function sendPinRemove({
   onFailed: (error: unknown) => void;
   refresh: () => Promise<unknown>;
 }): void {
-  const removed = queryClient
+  let removed = queryClient
     .getQueryData<BotRow[]>(listBotsQueryKey())
     ?.find((bot) => bot.id === botId)
     ?.pins.find((pin) => pin.skill_id === skillId);
@@ -246,26 +291,30 @@ export function sendPinRemove({
           : bot,
       ),
   });
-  const removes = removesOnTheirWay.get(queryClient) ?? new Map<string, () => void>();
-  removesOnTheirWay.set(queryClient, removes);
   const key = pinKey({ botId, skillId });
-  const stopHolding = () => {
-    if (removes.get(key) === stopHolding) removes.delete(key);
+  const removes = removesOf(queryClient);
+  const mine: WaitingRemove = {
+    end: () => {
+      stopWaiting();
+      held.answered();
+    },
+    keep: (pin) => {
+      removed = pin;
+    },
   };
-  // The owner's own add of the pin ends the hold, and the added pin stays.
-  const added = () => {
-    stopHolding();
-    held.answered();
+  const stopWaiting = () => {
+    const now = removes.get(key);
+    if (now?.waiting === mine) removes.set(key, { ...now, waiting: null });
   };
-  removes.set(key, added);
+  removes.set(key, { started: (removes.get(key)?.started ?? 0) + 1, waiting: mine });
   void request()
     .then(
       () => {
-        stopHolding();
+        stopWaiting();
         held.answered();
       },
       (error: unknown) => {
-        stopHolding();
+        stopWaiting();
         held.refused();
         onFailed(error);
       },

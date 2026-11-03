@@ -55,14 +55,18 @@ const v4 = makeSkill({
   row_version: 2,
 });
 
-// `bots` are the server's bots; BA alone unless a test gives more.
-async function saveV4(candidates: unknown[], bots = [ba]) {
+// `bots` are the server's bots, BA alone unless a test gives more, or a route that answers the
+// bot list.
+async function saveV4(
+  candidates: unknown[],
+  bots: unknown[] | Parameters<typeof fakeApi>[0][string] = [ba],
+) {
   api = fakeApi({
     "GET /api/settings": () => ({ body: BOT_SETTINGS }),
     "GET /api/skills": () => ({ body: [makeSkill()] }),
     [`GET /api/skills/${SKILL_ID}`]: () => ({ body: makeSkill() }),
     [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(4) }),
-    "GET /api/bots": () => ({ body: bots }),
+    "GET /api/bots": typeof bots === "function" ? bots : () => ({ body: bots }),
     [`POST /api/skills/${SKILL_ID}/versions`]: () => ({ status: 201, body: v4 }),
     [`GET /api/skills/${SKILL_ID}/upgrade-candidates`]: () => ({ body: candidates }),
     [`POST /api/skills/${SKILL_ID}/bots`]: () => ({ body: [] }),
@@ -97,6 +101,49 @@ describe("the upgrade card after a save (C4, UI-7.4)", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog", { name: /Also upgrade/ })).toBeNull();
     });
+  });
+
+  // Review of 571375a: a failed bot list showed an empty card with Upgrade off and no Try again.
+  it("says the bots did not load, and shows them after Try again", async () => {
+    let botsFail = true;
+    await saveV4(
+      [{ bot_id: ba.id, skill_version_id: versionId(3), version: 3, always_load: true }],
+      () =>
+        botsFail
+          ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+          : { body: [ba] },
+    );
+    const card = await screen.findByRole("dialog", {
+      name: "Saved v4 ✨ Also upgrade these bots to v4?",
+    });
+    expect(await within(card).findByText("The app could not load the bots.")).toBeTruthy();
+    const upgrade = within(card).getByRole("button", { name: "Upgrade" });
+    expect(upgrade.getAttribute("aria-disabled")).toBe("true");
+    botsFail = false;
+    click(within(card).getByRole("button", { name: "Try again" }));
+    const box = await within(card).findByRole("checkbox", { name: /BA/ });
+    expect(box.getAttribute("aria-checked")).toBe("true");
+    expect(within(card).queryByText("The app could not load the bots.")).toBeNull();
+  });
+
+  it("shows loading shapes, not an empty list, while the bots load", async () => {
+    const held = heldAnswer();
+    await saveV4(
+      [{ bot_id: ba.id, skill_version_id: versionId(3), version: 3, always_load: true }],
+      async () => {
+        const answer = await held.promise;
+        return answer;
+      },
+    );
+    const card = await screen.findByRole("dialog", {
+      name: "Saved v4 ✨ Also upgrade these bots to v4?",
+    });
+    expect(within(card).getByRole("status", { name: "Loading the bots" })).toBeTruthy();
+    expect(
+      within(card).getByRole("status", { name: "Loading the bots" }).getAttribute("aria-busy"),
+    ).toBe("true");
+    await held.answer({ body: [ba] });
+    expect(await within(card).findByRole("checkbox", { name: /BA/ })).toBeTruthy();
   });
 
   it("upgrades only the ticked bots (M2-bots.md Acceptance)", async () => {

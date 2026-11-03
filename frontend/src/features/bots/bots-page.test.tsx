@@ -290,6 +290,44 @@ describe("pin changes that answer out of order", () => {
     expect(await screen.findByRole("button", { name: "Unpin BA" })).toBeTruthy();
   });
 
+  // Review of 571375a: the newer change's undo went back only to the older change's value.
+  it("shows the server's pins when two pin changes fail and the refreshes fail too", async () => {
+    const heldUnpin = heldAnswer();
+    const heldPin = heldAnswer();
+    const failed = {
+      status: 500,
+      body: { error: { code: "internal_error", message: "Failed." } },
+    };
+    let fail = false;
+    fake = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/bots": () => (fail ? failed : { body: [BA, QA, UX] }),
+      "PUT /api/bots/pins": async (request) => {
+        const held = JSON.stringify(request.body).includes(UX.id) ? heldPin : heldUnpin;
+        const answer = await held.promise;
+        return answer;
+      },
+    });
+    await renderApp("/bots");
+    await screen.findByRole("link", { name: "BA" }, { timeout: 5000 });
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "Unpin BA" }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "Pin UX to top" }));
+    });
+    await waitFor(() => {
+      expect(fake?.sent("PUT", "/api/bots/pins")).toHaveLength(2);
+    });
+    fail = true;
+    await heldUnpin.answer(failed);
+    await heldPin.answer(failed);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Unpin BA" })).toBeTruthy();
+    });
+    expect(screen.getByRole("button", { name: "Pin UX to top" })).toBeTruthy();
+  });
+
   it("shows the old sort again when a sort fails and the refresh fails too", async () => {
     let fail = false;
     const settings = { ...BOT_SETTINGS, bot_order: "recent", bot_order_direction: "desc" };

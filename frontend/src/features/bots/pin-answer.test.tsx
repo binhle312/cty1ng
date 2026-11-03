@@ -5,7 +5,9 @@ import { type Bot, makeBot, makePin, SKILL_ID, versionId } from "../../../test/f
 import { listBotsQueryKey } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import {
   botListLoads,
+  markPinSend,
   sendPinChange,
+  sendPinRemove,
   useAlwaysLoadsOnTheirWay,
   withPinAnswer,
   writePinAnswer,
@@ -86,14 +88,14 @@ describe("a pin answer", () => {
     const queryClient = new QueryClient();
     const shown: Bot[] = [makeBot(1, "BA", [v2])];
     queryClient.setQueryData(listBotsQueryKey(), shown);
-    const loadsAtSend = botListLoads(queryClient);
+    const sent = markPinSend(queryClient);
     await queryClient.query({ queryKey: listBotsQueryKey(), queryFn: () => shown });
     writePinAnswer({
       queryClient,
       answer: makeBot(1, "BA", [v3]),
       skillId: SKILL_ID,
       expected: { skill_version_id: versionId(2), always_load: false },
-      loadsAtSend,
+      sent,
     });
     expect(queryClient.getQueryData<Bot[]>(listBotsQueryKey())?.[0]?.pins).toEqual([v2]);
   });
@@ -180,5 +182,106 @@ describe("a pin answer", () => {
     await act(() => done);
     seen.push(result.current({ botId: makeBot(1, "BA").id, skillId: SKILL_ID }));
     expect(seen).toEqual([true, null]);
+  });
+});
+
+// A request can be sent before a Remove of its pin and answer after it (review of the 571375a
+// fixes). Its answer is about the pin before the Remove: it never shows that pin again, but a
+// Remove that fails puts back the newest pin the server has.
+describe("a pin answer and a Remove of its pin", () => {
+  function deferred<T>() {
+    let resolve: (value: T) => void = () => undefined;
+    let reject: (error: unknown) => void = () => undefined;
+    const promise = new Promise<T>((yes, no) => {
+      resolve = yes;
+      reject = no;
+    });
+    return { promise, resolve, reject };
+  }
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+  const pinsOf = (queryClient: QueryClient) =>
+    queryClient.getQueryData<Bot[]>(listBotsQueryKey())?.[0]?.pins;
+  const off = makePin({ always_load: false });
+  const on = makePin({ always_load: true });
+  const expectedOff = { skill_version_id: off.skill_version_id, always_load: false };
+
+  function start() {
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(listBotsQueryKey(), [makeBot(1, "BA", [off])]);
+    const toggle = deferred<Bot>();
+    const remove = deferred<unknown>();
+    void sendPinChange({
+      queryClient,
+      request: () => toggle.promise,
+      botId: makeBot(1, "BA").id,
+      skillId: SKILL_ID,
+      alwaysLoad: true,
+      expected: expectedOff,
+      onFailed: () => undefined,
+      refresh: () => Promise.resolve(),
+    });
+    sendPinRemove({
+      queryClient,
+      request: () => remove.promise,
+      botId: makeBot(1, "BA").id,
+      skillId: SKILL_ID,
+      onFailed: () => undefined,
+      // The refresh after the Remove fails: the page keeps its data.
+      refresh: () => Promise.resolve(),
+    });
+    expect(pinsOf(queryClient)).toEqual([]);
+    return { queryClient, toggle, remove };
+  }
+
+  it("puts back the pin of an older change that the server saved when the Remove fails", async () => {
+    const { queryClient, toggle, remove } = start();
+    toggle.resolve(makeBot(1, "BA", [on]));
+    await settle();
+    expect(pinsOf(queryClient)).toEqual([]);
+    remove.reject(new Error("500"));
+    await settle();
+    expect(pinsOf(queryClient)).toEqual([on]);
+  });
+
+  it("keeps the pin an add put back when an older change answers after it", async () => {
+    const { queryClient, toggle, remove } = start();
+    // The server: the toggle (on), the Remove, then the add (off). The add answers first.
+    const sent = markPinSend(queryClient);
+    writePinAnswer({
+      queryClient,
+      answer: makeBot(1, "BA", [off]),
+      skillId: SKILL_ID,
+      expected: null,
+      sent,
+    });
+    expect(pinsOf(queryClient)).toEqual([off]);
+    toggle.resolve(makeBot(1, "BA", [on]));
+    await settle();
+    remove.resolve(undefined);
+    await settle();
+    expect(pinsOf(queryClient)).toEqual([off]);
+  });
+
+  it("shows the added pin when a list load landed while the add and the Remove waited", async () => {
+    const { queryClient, remove } = start();
+    const sent = markPinSend(queryClient);
+    // A load with the added pin lands; the Remove's hold hides it.
+    await queryClient.query({
+      queryKey: listBotsQueryKey(),
+      queryFn: () => [makeBot(1, "BA", [off])],
+      staleTime: 0,
+    });
+    expect(pinsOf(queryClient)).toEqual([]);
+    writePinAnswer({
+      queryClient,
+      answer: makeBot(1, "BA", [off]),
+      skillId: SKILL_ID,
+      expected: null,
+      sent,
+    });
+    expect(pinsOf(queryClient)).toEqual([off]);
+    remove.resolve(undefined);
+    await settle();
+    expect(pinsOf(queryClient)).toEqual([off]);
   });
 });

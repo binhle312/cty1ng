@@ -1,7 +1,8 @@
 import { type QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Button } from "../../components/ui/button.tsx";
 import { Dialog, DialogButtons, DialogText } from "../../components/ui/dialog.tsx";
+import { Skeleton, SkeletonArea } from "../../components/ui/skeleton.tsx";
 import { showToast } from "../../components/ui/toast.tsx";
 import {
   listBotsOptions,
@@ -17,6 +18,7 @@ import type {
 import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
 import { BotPickList } from "../bots/bot-list.tsx";
 import { type BotRow, pinErrorText, useBots } from "../bots/bot-queries.ts";
+import { LoadError } from "./load-error.tsx";
 import { VersionPill } from "./pills.tsx";
 import { SaveButton } from "./save-bar.tsx";
 import { toggled } from "../../lib/sets.ts";
@@ -163,6 +165,37 @@ function useSendPins(onDone: () => void) {
   return { send, pending: isPending, error };
 }
 
+// The bot list of a card has the list states (requirements/README.md): loading shapes while the
+// first load waits, and the error with Try again when it failed, so a failed load never shows as
+// "no bots". A load that fails after one that came keeps the bots shown.
+type BotsLoad = ReturnType<typeof useBots>;
+
+function BotsOfCard({ bots, children }: { bots: BotsLoad; children: ReactNode }) {
+  if (bots.data !== undefined) return children;
+  if (bots.isError) {
+    return (
+      <LoadError
+        text="The app could not load the bots."
+        onRetry={() => void bots.refetch()}
+        className="mt-3 px-0 py-2"
+      />
+    );
+  }
+  return (
+    <SkeletonArea label="Loading the bots">
+      {[0, 1].map((key) => (
+        <Skeleton key={key} className="mt-1.5 h-12" />
+      ))}
+    </SkeletonArea>
+  );
+}
+
+// Why the card's button is off while its bots are not there.
+function botsOffReason(bots: BotsLoad): string | null {
+  if (bots.data !== undefined) return null;
+  return bots.isError ? "The bots did not load. Try again first." : "Loading the bots.";
+}
+
 // C4 (UI-7.4): every box starts ticked, so one click upgrades every bot (owner, 2026-10-23).
 function UpgradeCard({
   card,
@@ -200,17 +233,19 @@ function UpgradeCard({
         These bots use an older version. They keep it until you upgrade them. Tick the bots to move
         to v{versionText}.
       </DialogText>
-      <BotPickList
-        label="Bots that use an older version"
-        rows={rows.map(({ bot, candidate }) => ({
-          bot,
-          detail: <VersionPill version={candidate.version} />,
-        }))}
-        ticked={ticked}
-        onToggle={(botId) => {
-          setUnticked((current) => toggled(current, botId));
-        }}
-      />
+      <BotsOfCard bots={bots}>
+        <BotPickList
+          label="Bots that use an older version"
+          rows={rows.map(({ bot, candidate }) => ({
+            bot,
+            detail: <VersionPill version={candidate.version} />,
+          }))}
+          ticked={ticked}
+          onToggle={(botId) => {
+            setUnticked((current) => toggled(current, botId));
+          }}
+        />
+      </BotsOfCard>
       {error !== null && <p className="mt-3 text-sm text-danger">{error}</p>}
       <p className="mt-3 text-sm text-on-surface-muted">
         A click outside this card is the same as Skip.
@@ -222,7 +257,9 @@ function UpgradeCard({
           label="Upgrade"
           busy={pending}
           disabledReason={
-            pending ? "Upgrading the bots." : chosen.length === 0 ? "Tick a bot first." : null
+            pending
+              ? "Upgrading the bots."
+              : (botsOffReason(bots) ?? (chosen.length === 0 ? "Tick a bot first." : null))
           }
           onClick={() => {
             send({
@@ -270,14 +307,16 @@ function AssignCard({
       defaultButton={skip}
     >
       <DialogText>Tick the bots that must use this skill. They get v1.</DialogText>
-      <BotPickList
-        label="Bots"
-        rows={all.map((bot) => ({ bot }))}
-        ticked={ticked}
-        onToggle={(botId) => {
-          setTicked((current) => toggled(current, botId));
-        }}
-      />
+      <BotsOfCard bots={bots}>
+        <BotPickList
+          label="Bots"
+          rows={all.map((bot) => ({ bot }))}
+          ticked={ticked}
+          onToggle={(botId) => {
+            setTicked((current) => toggled(current, botId));
+          }}
+        />
+      </BotsOfCard>
       {error !== null && <p className="mt-3 text-sm text-danger">{error}</p>}
       <p className="mt-3 text-sm text-on-surface-muted">
         A click outside this card is the same as Skip.
@@ -290,7 +329,9 @@ function AssignCard({
           label="Assign"
           busy={pending}
           disabledReason={
-            pending ? "Assigning the skill." : chosen.length === 0 ? "Tick a bot first." : null
+            pending
+              ? "Assigning the skill."
+              : (botsOffReason(bots) ?? (chosen.length === 0 ? "Tick a bot first." : null))
           }
           onClick={() => {
             send({

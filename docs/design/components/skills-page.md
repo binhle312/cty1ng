@@ -88,9 +88,10 @@ The skill side of the bot page Skills tab (`bot-page.md` §7), with the same row
   it. The added bots get the latest version and Always load off. A ticked bot that leaves the
   list while the card is open (another tab added it, or it went to Trash) is not counted in
   "Add {n}" and is not sent.
-- When the versions do not load, + Add, Upgrade (SK3) and Change version (SK4) say "The app
-  could not load the versions." with **Try again** in place of "Loading the versions.", and
-  their confirm button stays off.
+- Until the versions come, + Add, Upgrade (SK3) and Change version (SK4) show loading shapes
+  ("Loading the versions", `aria-busy`). When the versions do not load, they say "The app
+  could not load the versions." with **Try again** in their place, and their confirm button
+  stays off.
 - A dialog's answer that comes after the owner closed the dialog or left the tab shows as a
   toast, not in a dialog that nobody sees, as on the bot page (M2c review, 2026-11-03).
 - A pin answer (Always load, a version move, + Add) changes only the pin of this skill, by the
@@ -192,12 +193,18 @@ skill or another one) asked for its card while an older card was still being rea
 card shows as its toast ("Saved v{n} ✨" or "Created {name} ✨") and never replaces the newer
 card. Nothing is lost: the Bots tab still offers the change.
 
+**The bot list of a card** (review of 571375a, 2026-11-03): until the bots come, the card shows
+loading shapes ("Loading the bots", `aria-busy`), never an empty list. When they do not load, it
+says "The app could not load the bots." with **Try again**, and Upgrade or Assign stays off
+("Loading the bots." / "The bots did not load. Try again first."). A later load that fails keeps
+the bots shown.
+
 **The cards against the five order questions** (M2c audit, 2026-11-03; `../../workflow.md` §2
 step 4). Tests are in `after-save-cards.test.tsx`.
 
 | Request | Late answer | The Skills page is gone | A newer request of the same kind | A load or event in between | The refresh fails or is slow |
 | --- | --- | --- | --- | --- | --- |
-| The read for the card after a save | An older card shows as its toast ("keeps the newer card when the candidates of an older save answer after it") | The card shows as its toast ("shows the toast in place of the card when the owner left …") | As in the first column | The card's bot list follows the server while it is open | A failed read gives the toast ("shows only the toast when no bot …") |
+| The read for the card after a save | An older card shows as its toast ("keeps the newer card when the candidates of an older save answer after it") | The card shows as its toast ("shows the toast in place of the card when the owner left …") | As in the first column | The card's bot list follows the server while it is open | A failed read gives the toast ("shows only the toast when no bot …"); a failed or slow bot list in the open card shows its state ("says the bots did not load, and shows them after Try again", "shows loading shapes, not an empty list, while the bots load") |
 | Upgrade, Assign | Closes only its own card ("does not close a newer card …") | A failure is a toast ("shows the failure of a skipped card as a toast") | A retry sends the versions the bots use now ("sends the newest version of each bot on a retry …", "drops a bot that got the skill …") | As before | The card closes at the answer; the lists refresh after it |
 
 ### 7.1 Upgrade the bots (C4, UI-7.4)

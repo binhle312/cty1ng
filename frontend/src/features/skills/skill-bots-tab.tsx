@@ -24,7 +24,8 @@ import { BotAvatar } from "../bots/bot-avatar.tsx";
 import { modelLine } from "../bots/bot-lines.ts";
 import { type BotRow, pinErrorText } from "../bots/bot-queries.ts";
 import {
-  botListLoads,
+  markPinSend,
+  type PinSent,
   type PinExpected,
   sendPinChange,
   sendPinRemove,
@@ -75,14 +76,14 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
   const writeAnswers = ({
     answers,
     expected,
-    loadsAtSend,
+    sent,
   }: {
     answers: readonly BotRow[];
     expected: PinExpected;
-    loadsAtSend: number;
+    sent: PinSent;
   }) => {
     for (const answer of answers) {
-      writePinAnswer({ queryClient, answer, skillId: skill.id, expected, loadsAtSend });
+      writePinAnswer({ queryClient, answer, skillId: skill.id, expected, sent });
     }
   };
   // One hook serves every row, and a second `mutate` on a hook drops the callbacks of the first
@@ -234,7 +235,7 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
         onClose={closeDialog}
         onConfirm={(botIds) => {
           if (latestVersion === undefined || dialog?.kind !== "add") return;
-          const loadsAtSend = botListLoads(queryClient);
+          const sent = markPinSend(queryClient);
           runInDialog({
             dialog,
             request: addPins.mutateAsync({
@@ -245,7 +246,7 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
               },
             }),
             done: (answers) => {
-              writeAnswers({ answers, expected: null, loadsAtSend });
+              writeAnswers({ answers, expected: null, sent });
             },
             failed: (error) => pinErrorText({ error, changed: null }),
           });
@@ -280,7 +281,7 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
           if (dialogBot === undefined || dialog?.kind !== "move") return;
           const { bot, pin } = dialogBot;
           const expected = { skill_version_id: pin.skill_version_id, always_load: pin.always_load };
-          const loadsAtSend = botListLoads(queryClient);
+          const sent = markPinSend(queryClient);
           runInDialog({
             dialog,
             request: setPin.mutateAsync({
@@ -288,7 +289,7 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
               body: { skill_version_id: version.id, always_load: pin.always_load, expected },
             }),
             done: (changed) => {
-              writeAnswers({ answers: [changed], expected, loadsAtSend });
+              writeAnswers({ answers: [changed], expected, sent });
             },
             failed: (error) => pinErrorText({ error, changed: bot.name }),
           });

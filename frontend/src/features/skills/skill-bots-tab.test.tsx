@@ -198,7 +198,7 @@ describe("the Bots tab of a skill", () => {
     const dialog = await screen.findByRole("dialog", { name: "Change version" });
     const alert = await within(dialog).findByRole("alert");
     expect(alert.textContent).toContain("The app could not load the versions.");
-    expect(within(dialog).queryByText("Loading the versions.")).toBeNull();
+    expect(within(dialog).queryByRole("status", { name: "Loading the versions" })).toBeNull();
     click(within(alert).getByRole("button", { name: "Try again" }));
     expect(await within(dialog).findByRole("list", { name: "Versions" })).toBeTruthy();
   });
@@ -215,7 +215,7 @@ describe("the Bots tab of a skill", () => {
     expect((await within(upgrade).findByRole("alert")).textContent).toContain(
       "The app could not load the versions.",
     );
-    expect(within(upgrade).queryByText("Loading the versions.")).toBeNull();
+    expect(within(upgrade).queryByRole("status", { name: "Loading the versions" })).toBeNull();
     const confirm = within(upgrade).getByRole("button", { name: "Upgrade to v3" });
     expect(confirm.getAttribute("aria-disabled")).toBe("true");
     focus(confirm);
@@ -536,16 +536,18 @@ describe("the Bots tab of a skill", () => {
     expect(within(upgrade).queryByText(/changed in another place/)).toBeNull();
   });
 
-  it("says Loading the versions. in the + Add card until the versions load", async () => {
+  it("shows loading shapes in the + Add card until the versions load", async () => {
     const versions = heldAnswer();
     open([qa], { [`GET /api/skills/${SKILL_ID}/versions`]: () => versions.promise });
     expect(await screen.findByText("No bot uses this skill yet.")).toBeTruthy();
     click(screen.getByRole("button", { name: "Add" }));
     const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByText("Loading the versions.")).toBeTruthy();
+    const loading = within(dialog).getByRole("status", { name: "Loading the versions" });
+    expect(loading.getAttribute("aria-busy")).toBe("true");
+    expect(within(dialog).queryByText(/Loading/)).toBeNull();
     await versions.answer({ body: makeVersions(3) });
     await waitFor(() => {
-      expect(within(dialog).queryByText("Loading the versions.")).toBeNull();
+      expect(within(dialog).queryByRole("status", { name: "Loading the versions" })).toBeNull();
     });
   });
 
@@ -631,6 +633,47 @@ describe("the Bots tab of a skill", () => {
     click(within(dialog).getByRole("button", { name: "Add 1" }));
     expect(await screen.findByRole("button", { name: "Actions for QA" })).toBeTruthy();
     await held.answer({ status: 204 });
+  });
+
+  // Review of 571375a: the answer of an Always load change sent before a Remove ended the Remove.
+  it("keeps the row away when an older Always load change answers", async () => {
+    const heldToggle = heldAnswer();
+    const heldRemove = heldAnswer();
+    let fail = false;
+    let bots: Bot[] = [ba];
+    open([ba], {
+      "GET /api/bots": () => (fail ? FAILED : { body: bots }),
+      [`PUT /api/bots/${ba.id}/skills/${SKILL_ID}`]: async () => {
+        const answer = await heldToggle.promise;
+        return answer;
+      },
+      [`DELETE /api/bots/${ba.id}/skills/${SKILL_ID}`]: async () => {
+        const answer = await heldRemove.promise;
+        return answer;
+      },
+    });
+    click(await screen.findByRole("switch", { name: "Always load for BA" }));
+    click(screen.getByRole("button", { name: "Actions for BA" }));
+    click(await screen.findByRole("menuitem", { name: "Remove" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Actions for BA" })).toBeNull();
+    });
+    // The toggle answers, and the refresh after it lands while the Remove waits.
+    const sentLoads = () => api?.sent("GET", "/api/bots").length ?? 0;
+    const loads = sentLoads();
+    const toggled = makeBot(1, "BA", [makePin({ always_load: false })], { effort: "high" });
+    bots = [toggled];
+    await heldToggle.answer({ body: toggled });
+    await waitFor(() => {
+      expect(sentLoads()).toBeGreaterThan(loads);
+    });
+    await act(() => Promise.resolve());
+    expect(screen.queryByRole("button", { name: "Actions for BA" })).toBeNull();
+    // The Remove fails and the refresh after it fails too: the row comes back.
+    fail = true;
+    await heldRemove.answer(FAILED);
+    expect(await screen.findByText("Something failed.")).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Actions for BA" })).toBeTruthy();
   });
 
   // Review of d7c4cd7: a failed Remove whose refresh also failed kept the row hidden.

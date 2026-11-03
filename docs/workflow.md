@@ -111,12 +111,18 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    cases each slice tests"). The PR lists the sections checked (lesson
    `self-review-against-the-spec.md`).
    **Order check.** Before the push, for every request on a screen with saves under a lock,
-   live events or late answers (not only those near a finding), the builder answers five
+   live events or late answers (not only those near a finding), the builder answers six
    questions, each with a test that holds the answer: (1) the answer comes late: does it write
    only what it owns? (2) the component that sent it is gone (the owner left the tab or page):
    do its checks still hold? (3) a newer request of the same kind started: does the older answer
    stay out of its way? (4) a list load or an event came in between: is the answer still right
    to apply? (5) the refresh after it fails or is slow: does each control still show the truth?
+   (6) another request of the same screen waits too (an older one of another kind on the same
+   thing, or a second one of the same kind): does each answer end only what its own request
+   started, and do two refusals, in either order, leave the server's value on the page?
+   **List states.** Every query read on a changed screen has its loading, error and empty
+   states (`requirements/README.md`), each with a test that holds the load or fails it; a
+   `data ?? []` never turns a failed load into "nothing" (lesson `two-of-my-requests-at-once.md`).
    Then a fresh reviewer agent, given the code and not the builder's conclusions, tries to
    break the screen with forced orders (`review-guide.md` §3; lesson
    `check-every-order-before-the-push.md`).

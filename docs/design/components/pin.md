@@ -44,9 +44,12 @@ A pin change shows at once and stays while its request is on its way, also when 
 (another request's, an event's, focus) lands before its answer. At the answer the page takes the
 server's order again with the refresh after it; a refused change goes back at once, so a refresh
 that also fails does not leave it on the page. A newer pin change replaces an older one on the
-page, so an older request that answers last never brings its order back. The same holds for the
+page, so an older request that answers last never brings its order back. When two changes wait
+and one is refused, the page goes back to the last order the server has, or to the older change
+that still waits: unpin BA, then pin UX, and both fail, shows BA pinned again (review of
+571375a). The same holds for the
 sort of the others; the pinned order on its way keeps the sort the page shows, also after a sort
-that failed (M2c audit, 2026-11-03; `frontend/src/lib/api/optimistic.ts`).
+that failed, and while a sort waits when the settings load after the list (M2c audit, 2026-11-03; `frontend/src/lib/api/optimistic.ts`).
 
 A pinned item shows the grab cursor (closed hand while it moves). An unpinned item shows the
 normal arrow. A click opens the item in both cases.

@@ -1,6 +1,7 @@
 import { useRef, useState, type RefObject } from "react";
 import { Button } from "../../components/ui/button.tsx";
 import { Dialog, DialogButtons, DialogText } from "../../components/ui/dialog.tsx";
+import { Skeleton, SkeletonArea } from "../../components/ui/skeleton.tsx";
 import { BotNameList, BotPickList, type BotListRow } from "../bots/bot-list.tsx";
 import { VersionPill } from "./pills.tsx";
 import { SaveButton } from "./save-bar.tsx";
@@ -39,7 +40,11 @@ function useTicks(uses: BotUse[]) {
 function BotsNotReady({ bots }: { bots: BotUses }) {
   if (bots.kind === "ready") return null;
   return bots.kind === "loading" ? (
-    <DialogText>Loading the bots.</DialogText>
+    <SkeletonArea label="Loading the bots">
+      {[0, 1].map((key) => (
+        <Skeleton key={key} className="mt-2 h-12" />
+      ))}
+    </SkeletonArea>
   ) : (
     <p role="alert" className="mt-2 text-danger">
       The app could not load the bots. Close this card and try again.

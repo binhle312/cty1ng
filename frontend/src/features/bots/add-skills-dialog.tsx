@@ -3,8 +3,10 @@ import { type RefObject, useRef, useState } from "react";
 import { Button } from "../../components/ui/button.tsx";
 import { Checkbox } from "../../components/ui/checkbox.tsx";
 import { Dialog, DialogButtons, DialogText } from "../../components/ui/dialog.tsx";
+import { Skeleton, SkeletonArea } from "../../components/ui/skeleton.tsx";
 import type { ListSkillsResponse } from "../../lib/api/generated/types.gen.ts";
 import { cn } from "../../lib/cn.ts";
+import { LoadError } from "../skills/load-error.tsx";
 import { VersionPill } from "../skills/pills.tsx";
 import { SaveButton } from "../skills/save-bar.tsx";
 import { toggled } from "../../lib/sets.ts";
@@ -16,11 +18,18 @@ type SkillRow = ListSkillsResponse[number];
 // have and that are not deprecated, with the name, the description and the latest version. No
 // box starts ticked; the button counts ("Add 2") and is at 40 % with none. Skip, Esc or a click
 // outside closes it. Each added skill gets its latest version and Always load off. `skills` is
-// undefined until the list comes, so the card never says "nothing to add" before it knows.
+// undefined until the list comes, so the card never says "nothing to add" before it knows: it
+// shows loading shapes, or the error with Try again when the load failed (`skillsLoad`).
+export interface SkillsLoad {
+  failed: boolean;
+  retry: () => void;
+}
+
 export function AddSkillsDialog({
   open,
   botName,
   skills,
+  skillsLoad,
   pending,
   error,
   onClose,
@@ -29,6 +38,7 @@ export function AddSkillsDialog({
   open: boolean;
   botName: string;
   skills: SkillRow[] | undefined;
+  skillsLoad: SkillsLoad;
   pending: boolean;
   error: string | null;
   onClose: () => void;
@@ -39,6 +49,7 @@ export function AddSkillsDialog({
     <Dialog open={open} onClose={onClose} title={`Add skills to ${botName}`} defaultButton={skip}>
       <AddBody
         skills={skills}
+        skillsLoad={skillsLoad}
         pending={pending}
         error={error}
         onClose={onClose}
@@ -51,6 +62,7 @@ export function AddSkillsDialog({
 
 function AddBody({
   skills,
+  skillsLoad,
   pending,
   error,
   onClose,
@@ -58,6 +70,7 @@ function AddBody({
   skip,
 }: {
   skills: SkillRow[] | undefined;
+  skillsLoad: SkillsLoad;
   pending: boolean;
   error: string | null;
   onClose: () => void;
@@ -96,17 +109,29 @@ function AddBody({
           className="min-w-0 grow bg-transparent outline-none placeholder:text-on-surface-muted"
         />
       </label>
+      {skills === undefined &&
+        (skillsLoad.failed ? (
+          <LoadError
+            text="The app could not load the skills."
+            onRetry={skillsLoad.retry}
+            className="mt-3 px-0 py-2"
+          />
+        ) : (
+          <SkeletonArea label="Loading the skills">
+            {[0, 1, 2].map((key) => (
+              <Skeleton key={key} className="mt-1.5 h-14" />
+            ))}
+          </SkeletonArea>
+        ))}
       <ul
         aria-label="Skills to add"
         className="mt-3 flex max-h-64 flex-col gap-1.5 overflow-y-auto"
       >
-        {shown.length === 0 && (skills !== undefined || error === null) && (
+        {skills !== undefined && shown.length === 0 && (
           <li className="px-2 py-3 text-on-surface-muted">
-            {skills === undefined
-              ? "Loading the skills."
-              : skills.length === 0
-                ? "No skills to add. The bot has every active skill."
-                : `No skills match "${query.trim()}".`}
+            {skills.length === 0
+              ? "No skills to add. The bot has every active skill."
+              : `No skills match "${query.trim()}".`}
           </li>
         )}
         {shown.map((skill) => {

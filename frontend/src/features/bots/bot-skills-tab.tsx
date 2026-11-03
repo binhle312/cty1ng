@@ -25,7 +25,7 @@ import { useDialogRequests } from "../skills/dialog-requests.ts";
 import { AddSkillsDialog } from "./add-skills-dialog.tsx";
 import { type BotPin, type BotRow, pinErrorText } from "./bot-queries.ts";
 import {
-  botListLoads,
+  markPinSend,
   sendPinChange,
   sendPinRemove,
   useAlwaysLoadsOnTheirWay,
@@ -135,12 +135,12 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
           const list = await queryClient.query(listSkillVersionsOptions({ path: { id: skillId } }));
           const latest = list[0];
           if (latest === undefined) throw new Error("no version");
-          const loadsAtSend = botListLoads(queryClient);
+          const sent = markPinSend(queryClient);
           const answer = await setPin.mutateAsync({
             path: { id: bot.id, skill_id: skillId },
             body: { skill_version_id: latest.id, always_load: false, expected: null },
           });
-          writePinAnswer({ queryClient, answer, skillId, expected: null, loadsAtSend });
+          writePinAnswer({ queryClient, answer, skillId, expected: null, sent });
           return "added";
         } catch (error) {
           if (readApiError(error)?.code !== "stale_write") return "failed";
@@ -239,13 +239,12 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
         open={dialog?.kind === "add"}
         botName={bot.name}
         skills={addable}
+        skillsLoad={{
+          failed: skills.isError && skills.data === undefined,
+          retry: () => void skills.refetch(),
+        }}
         pending={dialogPending}
-        error={
-          dialogError ??
-          (skills.isError && skills.data === undefined
-            ? "The app could not load the skills."
-            : null)
-        }
+        error={dialogError}
         onClose={closeDialog}
         onConfirm={(skillIds) => {
           if (dialog?.kind !== "add") return;
@@ -287,7 +286,7 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
             skill_version_id: dialogPin.skill_version_id,
             always_load: dialogPin.always_load,
           };
-          const loadsAtSend = botListLoads(queryClient);
+          const sent = markPinSend(queryClient);
           runInDialog({
             dialog,
             request: setPin
@@ -305,7 +304,7 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
                   answer,
                   skillId: dialogPin.skill_id,
                   expected,
-                  loadsAtSend,
+                  sent,
                 });
               }),
             failed: (error) => staleText(dialogPin.skill_name, error),

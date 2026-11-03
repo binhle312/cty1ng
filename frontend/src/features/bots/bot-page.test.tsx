@@ -1942,7 +1942,7 @@ describe("the Skills tab (bot-page.md §7)", () => {
     });
   });
 
-  it("+ Add says it is loading, not that the bot has every skill, before the list comes", async () => {
+  it("+ Add shows loading shapes, not that the bot has every skill, before the list comes", async () => {
     const held = heldAnswer();
     await open(
       { bots: [makeBot(1, "BA", [makePin()])] },
@@ -1951,14 +1951,42 @@ describe("the Skills tab (bot-page.md §7)", () => {
     await heading();
     click(screen.getByRole("button", { name: "Add" }));
     const dialog = await screen.findByRole("dialog", { name: "Add skills to BA" });
-    expect(within(dialog).getByText("Loading the skills.")).toBeTruthy();
+    // Review of 571375a: the list states use shapes marked aria-busy, not a loading line.
+    const loading = within(dialog).getByRole("status", { name: "Loading the skills" });
+    expect(loading.getAttribute("aria-busy")).toBe("true");
+    expect(within(dialog).queryByText(/Loading/)).toBeNull();
     expect(within(dialog).queryByText(/The bot has every active skill/)).toBeNull();
     await held.answer({ body: [makeSkill(), writing] });
     const list = await within(dialog).findByRole("list", { name: "Skills to add" });
     await waitFor(() => {
       expect(within(list).getAllByRole("checkbox")).toHaveLength(1);
     });
-    expect(within(dialog).queryByText("Loading the skills.")).toBeNull();
+    expect(within(dialog).queryByRole("status", { name: "Loading the skills" })).toBeNull();
+  });
+
+  // Review of 571375a: a failed skill list in + Add had no Try again.
+  it("+ Add says when the skills do not load, and Try again loads them", async () => {
+    let fail = true;
+    await open(
+      { bots: [makeBot(1, "BA", [makePin()])] },
+      {
+        routes: {
+          "GET /api/skills": () => (fail ? FAILED_ANSWER : { body: [makeSkill(), writing] }),
+        },
+        path: "/bots/ba?tab=skills",
+      },
+    );
+    await heading();
+    click(screen.getByRole("button", { name: "Add" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add skills to BA" });
+    const alert = await within(dialog).findByRole("alert");
+    expect(alert.textContent).toContain("The app could not load the skills.");
+    expect(within(dialog).queryByText(/No skills to add/)).toBeNull();
+    fail = false;
+    click(within(alert).getByRole("button", { name: "Try again" }));
+    const list = await within(dialog).findByRole("list", { name: "Skills to add" });
+    expect(await within(list).findByRole("checkbox")).toBeTruthy();
+    expect(within(dialog).queryByRole("alert")).toBeNull();
   });
 
   // Fresh review of the audit: the switch forgot its change on its way when the tab came back.
@@ -2069,6 +2097,80 @@ describe("the Skills tab (bot-page.md §7)", () => {
     });
     expect(await screen.findByRole("switch", { name: /Always load/ })).toBeTruthy();
     await held.answer({ status: 204 });
+  });
+
+  // Review of 571375a: the answer of an Always load change sent before a Remove ended the Remove.
+  it("keeps a removed skill's row away when an older Always load change answers", async () => {
+    const heldToggle = heldAnswer();
+    const heldRemove = heldAnswer();
+    let fail = false;
+    const state = { bots: [makeBot(1, "BA", [makePin()])] };
+    await open(state, {
+      routes: {
+        "GET /api/bots": () => (fail ? FAILED_ANSWER : { body: state.bots }),
+        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => {
+          const answer = await heldToggle.promise;
+          return answer;
+        },
+        [`DELETE /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => {
+          const answer = await heldRemove.promise;
+          return answer;
+        },
+      },
+      path: "/bots/ba?tab=skills",
+    });
+    await heading();
+    click(screen.getByRole("switch", { name: /Always load/ }));
+    click(screen.getByRole("button", { name: /Actions for/ }));
+    click(await screen.findByRole("menuitem", { name: "Remove" }));
+    await screen.findByText("BA has no skills yet.");
+    await waitFor(() => {
+      expect(fake?.sent("DELETE", `/api/bots/${BA_ID}/skills/${SKILL_ID}`)).toHaveLength(1);
+    });
+    // The toggle answers, and the refresh after it lands while the Remove waits.
+    const loads = fake?.sent("GET", "/api/bots").length ?? 0;
+    state.bots = [makeBot(1, "BA", [makePin({ always_load: true })])];
+    await heldToggle.answer({ body: state.bots[0] });
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(loads);
+    });
+    await act(() => Promise.resolve());
+    expect(screen.queryByRole("switch", { name: /Always load/ })).toBeNull();
+    // The Remove fails and the refresh after it fails too: the row comes back.
+    fail = true;
+    await heldRemove.answer(FAILED_ANSWER);
+    expect(await screen.findByText("Failed.")).toBeTruthy();
+    expect(await screen.findByRole("switch", { name: /Always load/ })).toBeTruthy();
+  });
+
+  it("keeps a removed skill's row away when an older Always load change answers after the Remove", async () => {
+    const heldToggle = heldAnswer();
+    const state = { bots: [makeBot(1, "BA", [makePin()])] };
+    await open(state, {
+      routes: {
+        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => {
+          const answer = await heldToggle.promise;
+          return answer;
+        },
+        [`DELETE /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => {
+          state.bots = [makeBot(1, "BA")];
+          return { status: 204 };
+        },
+      },
+      path: "/bots/ba?tab=skills",
+    });
+    await heading();
+    click(screen.getByRole("switch", { name: /Always load/ }));
+    click(screen.getByRole("button", { name: /Actions for/ }));
+    click(await screen.findByRole("menuitem", { name: "Remove" }));
+    await screen.findByText("BA has no skills yet.");
+    await waitFor(() => {
+      expect(fake?.sent("DELETE", `/api/bots/${BA_ID}/skills/${SKILL_ID}`)).toHaveLength(1);
+    });
+    await heldToggle.answer({ body: makeBot(1, "BA", [makePin({ always_load: true })]) });
+    await act(() => Promise.resolve());
+    expect(screen.queryByRole("switch", { name: /Always load/ })).toBeNull();
+    expect(screen.getByText("BA has no skills yet.")).toBeTruthy();
   });
 
   // Review of d7c4cd7: a failed Remove whose refresh also failed kept the row hidden.
