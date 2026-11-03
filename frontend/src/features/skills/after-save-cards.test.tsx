@@ -53,13 +53,14 @@ const v4 = makeSkill({
   row_version: 2,
 });
 
-async function saveV4(candidates: unknown[]) {
+// `bots` are the server's bots; BA alone unless a test gives more.
+async function saveV4(candidates: unknown[], bots = [ba]) {
   api = fakeApi({
     "GET /api/settings": () => ({ body: BOT_SETTINGS }),
     "GET /api/skills": () => ({ body: [makeSkill()] }),
     [`GET /api/skills/${SKILL_ID}`]: () => ({ body: makeSkill() }),
     [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(4) }),
-    "GET /api/bots": () => ({ body: [ba] }),
+    "GET /api/bots": () => ({ body: bots }),
     [`POST /api/skills/${SKILL_ID}/versions`]: () => ({ status: 201, body: v4 }),
     [`GET /api/skills/${SKILL_ID}/upgrade-candidates`]: () => ({ body: candidates }),
     [`POST /api/skills/${SKILL_ID}/bots`]: () => ({ body: [] }),
@@ -93,6 +94,32 @@ describe("the upgrade card after a save (C4, UI-7.4)", () => {
     });
     await waitFor(() => {
       expect(screen.queryByRole("dialog", { name: /Also upgrade/ })).toBeNull();
+    });
+  });
+
+  it("upgrades only the ticked bots (M2-bots.md Acceptance)", async () => {
+    const qa = makeBot(2, "QA", [makePin({ skill_version_id: versionId(2), version: 2 })]);
+    await saveV4(
+      [
+        { bot_id: ba.id, skill_version_id: versionId(3), version: 3, always_load: true },
+        { bot_id: qa.id, skill_version_id: versionId(2), version: 2, always_load: false },
+      ],
+      [ba, qa],
+    );
+    const card = await screen.findByRole("dialog", {
+      name: "Saved v4 ✨ Also upgrade these bots to v4?",
+    });
+    const qaBox = within(card).getByRole("checkbox", { name: /QA/ });
+    expect(qaBox.getAttribute("aria-checked")).toBe("true");
+    click(qaBox);
+    expect(qaBox.getAttribute("aria-checked")).toBe("false");
+    click(within(card).getByRole("button", { name: "Upgrade" }));
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/bots`)).toHaveLength(1);
+    });
+    expect(api?.sent("POST", `/api/skills/${SKILL_ID}/bots`)[0]?.body).toEqual({
+      skill_version_id: versionId(4),
+      bots: [{ bot_id: ba.id, expected_skill_version_id: versionId(3) }],
     });
   });
 
