@@ -163,6 +163,10 @@ Lessons from an earlier prototype. Each needs a named test in the slice that bui
 8. delete BA → its messages are grey;
 9. reload the page → identical state.
 
+Until conversations exist (M3), the run does step 1 without the conversation, then a Clone of BA
+with the other fake model, then the J4 upgrade: edit the skill → v2 → Skip on the upgrade card →
+BA's Skills tab shows "v2 available" → Upgrade (M2-bots.md Tests).
+
 `e2e/first-open.spec.ts`: a fresh database with no key shows the Get started checklist with
 the key step open; with the fake model's key it ticks; "Load the examples" ticks two steps and
 is safe to press twice. `e2e/reopen.spec.ts`: open a conversation, type a draft, reload at `/`
