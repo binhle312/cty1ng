@@ -20,32 +20,6 @@ export type EditTab = "profile" | "model";
 
 export type UpdateBotBody = UpdateBotData["body"];
 
-// One changed field, as the save bar counts it and the leave question names it.
-export type EditField =
-  | "avatar_style"
-  | "avatar_image"
-  | "avatar_colour"
-  | "name"
-  | "description"
-  | "persona_md"
-  | "tool_settings"
-  | "history_share_pct"
-  | "request_limit"
-  | "max_reply_chars";
-
-const FIELD_WORDS: Record<EditField, string> = {
-  avatar_style: "avatar style",
-  avatar_image: "image",
-  avatar_colour: "colour",
-  name: "name",
-  description: "description",
-  persona_md: "persona",
-  tool_settings: "tools",
-  history_share_pct: "history share",
-  request_limit: "model requests per run",
-  max_reply_chars: "longest reply",
-};
-
 // The bot as the form shows it. M2 has only Flat and Upload image (bot-avatar.md §1).
 export function editFormOf(bot: BotRow, settings: FormSettings): CreateForm {
   return {
@@ -67,24 +41,220 @@ export function editFormOf(bot: BotRow, settings: FormSettings): CreateForm {
   };
 }
 
-function profileOf(form: CreateForm) {
-  return {
-    avatar_style: form.avatar_style,
-    avatar: form.avatar,
-    avatar_colour: form.avatar_colour,
-    name: form.name,
-    description: form.description,
-    persona_md: form.persona_md,
-  };
+// The tool switches as the server stores them: the effective ones for the bot's model.
+export type EffectiveTools = (form: CreateForm) => Record<string, boolean>;
+
+export interface EditContext {
+  settings: FormSettings;
+  // The names of the other bots, for the taken-name hint. The server also checks Trash (D50).
+  otherNames: readonly string[];
 }
 
-function setupOf(form: CreateForm) {
-  return {
-    tool_choices: form.tool_choices,
-    history_share_pct: form.history_share_pct,
-    request_limit: form.request_limit,
-    max_reply_chars: form.max_reply_chars,
-  };
+interface Sides {
+  form: CreateForm;
+  saved: CreateForm;
+  effective: EffectiveTools;
+}
+
+// What one changed field needs, so a new field of the Profile or Model tab is one entry in
+// `FIELD_RULES`.
+interface FieldRule {
+  // The changed field, as the save bar counts it and the leave question names it.
+  field: string;
+  tab: EditTab;
+  // The field in the leave question.
+  words: string;
+  // The form keys behind the field. The style and the image go together: an image kept without
+  // its style (or a style without its image) is not the avatar the owner picked.
+  keys: readonly (keyof CreateForm)[];
+  // A change that the big avatar and the band show before Save ("Not saved", bot-page.md §2).
+  avatar: boolean;
+  changed: (sides: Sides) => boolean;
+  // Checked only when the field changed, under the field's own name.
+  problem: ((input: { form: CreateForm; ctx: EditContext }) => string | null) | null;
+  // Puts the field in the PATCH body (api.md §4).
+  write: (input: { body: UpdateBotBody; form: CreateForm; effective: EffectiveTools }) => void;
+}
+
+// An empty Name or Description says "Required" on this page (bot-page.md §4.1); the Create page's
+// words say what to type (create-bot-page.md E1).
+function textProblem({
+  field,
+  form,
+  ctx,
+}: {
+  field: "name" | "description" | "persona_md";
+  form: CreateForm;
+  ctx: EditContext;
+}): string | null {
+  return field !== "persona_md" && form[field].trim() === ""
+    ? "Required"
+    : botFieldProblem(field, form[field], ctx.settings.limits);
+}
+
+// The server wants `avatar_id` exactly when the style is `upload`, so an image goes with its style.
+function writeAvatar({ body, form }: { body: UpdateBotBody; form: CreateForm }) {
+  body.avatar_style = form.avatar_style;
+  if (form.avatar_style === "upload" && form.avatar !== null) body.avatar_id = form.avatar.id;
+}
+
+// A switch that one side does not list is off.
+function sameSwitches({
+  now,
+  saved,
+}: {
+  now: Record<string, boolean>;
+  saved: Record<string, boolean>;
+}): boolean {
+  const keys = new Set([...Object.keys(now), ...Object.keys(saved)]);
+  return [...keys].every((key) => (now[key] ?? false) === (saved[key] ?? false));
+}
+
+// In the order that the save bar and the leave question name them.
+const FIELD_RULES = [
+  {
+    field: "avatar_style",
+    tab: "profile",
+    words: "avatar style",
+    keys: ["avatar_style", "avatar"],
+    avatar: true,
+    changed: ({ form, saved }) => form.avatar_style !== saved.avatar_style,
+    problem: null,
+    write: writeAvatar,
+  },
+  {
+    field: "avatar_image",
+    tab: "profile",
+    words: "image",
+    keys: ["avatar_style", "avatar"],
+    avatar: true,
+    changed: ({ form, saved }) =>
+      form.avatar_style === "upload" && form.avatar?.id !== saved.avatar?.id,
+    problem: null,
+    write: writeAvatar,
+  },
+  {
+    field: "avatar_colour",
+    tab: "profile",
+    words: "colour",
+    keys: ["avatar_colour"],
+    avatar: true,
+    changed: ({ form, saved }) =>
+      form.avatar_colour.toUpperCase() !== saved.avatar_colour.toUpperCase(),
+    problem: null,
+    write: ({ body, form }) => {
+      body.avatar_colour = form.avatar_colour;
+    },
+  },
+  {
+    field: "name",
+    tab: "profile",
+    words: "name",
+    keys: ["name"],
+    avatar: false,
+    changed: ({ form, saved }) => form.name !== saved.name,
+    problem: ({ form, ctx }) =>
+      textProblem({ field: "name", form, ctx }) ??
+      (nameTaken(form.name, ctx.otherNames)
+        ? `${form.name.trim()} is taken by another bot. Pick another name.`
+        : null),
+    write: ({ body, form }) => {
+      body.name = form.name;
+    },
+  },
+  {
+    field: "description",
+    tab: "profile",
+    words: "description",
+    keys: ["description"],
+    avatar: false,
+    changed: ({ form, saved }) => form.description !== saved.description,
+    problem: ({ form, ctx }) => textProblem({ field: "description", form, ctx }),
+    write: ({ body, form }) => {
+      body.description = form.description;
+    },
+  },
+  {
+    field: "persona_md",
+    tab: "profile",
+    words: "persona",
+    keys: ["persona_md"],
+    avatar: false,
+    changed: ({ form, saved }) => form.persona_md !== saved.persona_md,
+    problem: ({ form, ctx }) => textProblem({ field: "persona_md", form, ctx }),
+    write: ({ body, form }) => {
+      body.persona_md = form.persona_md;
+    },
+  },
+  {
+    field: "tool_settings",
+    tab: "model",
+    words: "tools",
+    keys: ["tool_choices"],
+    avatar: false,
+    changed: ({ form, saved, effective }) =>
+      !sameSwitches({ now: effective(form), saved: effective(saved) }),
+    problem: null,
+    // The whole effective switch map, as the server stores it.
+    write: ({ body, form, effective }) => {
+      body.tool_settings = effective(form);
+    },
+  },
+  {
+    field: "history_share_pct",
+    tab: "model",
+    words: "history share",
+    keys: ["history_share_pct"],
+    avatar: false,
+    changed: ({ form, saved }) => form.history_share_pct !== saved.history_share_pct,
+    problem: ({ form, ctx }) =>
+      rangeProblem(
+        form.history_share_pct,
+        ctx.settings.historyMin,
+        ctx.settings.historyMax,
+        HISTORY_STEP_PCT,
+      ),
+    write: ({ body, form }) => {
+      body.history_share_pct = form.history_share_pct;
+    },
+  },
+  {
+    field: "request_limit",
+    tab: "model",
+    words: "model requests per run",
+    keys: ["request_limit"],
+    avatar: false,
+    changed: ({ form, saved }) => form.request_limit !== saved.request_limit,
+    problem: ({ form }) => {
+      const range = BOT_VALUE_RANGES.request_limit;
+      return rangeProblem(form.request_limit, range.min, range.max);
+    },
+    write: ({ body, form }) => {
+      body.request_limit = form.request_limit;
+    },
+  },
+  {
+    field: "max_reply_chars",
+    tab: "model",
+    words: "longest reply",
+    keys: ["max_reply_chars"],
+    avatar: false,
+    changed: ({ form, saved }) => form.max_reply_chars !== saved.max_reply_chars,
+    problem: ({ form }) => {
+      const range = BOT_VALUE_RANGES.max_reply_chars;
+      return rangeProblem(form.max_reply_chars, range.min, range.max);
+    },
+    write: ({ body, form }) => {
+      body.max_reply_chars = form.max_reply_chars;
+    },
+  },
+] as const satisfies readonly FieldRule[];
+
+export type EditField = (typeof FIELD_RULES)[number]["field"];
+
+// The form keys of some fields, each once.
+function formKeys(rules: readonly FieldRule[]): (keyof CreateForm)[] {
+  return [...new Set(rules.flatMap((rule) => rule.keys))];
 }
 
 // `into` with the fields of one tab taken from `from`: Discard, a save, or newer values.
@@ -97,23 +267,9 @@ export function withTab({
   from: CreateForm;
   tab: EditTab;
 }): CreateForm {
-  return { ...into, ...(tab === "profile" ? profileOf(from) : setupOf(from)) };
+  const keys = formKeys(FIELD_RULES.filter((rule) => rule.tab === tab));
+  return { ...into, ...Object.fromEntries(keys.map((key) => [key, from[key]])) };
 }
-
-// The form keys behind each changed field. The style and the image go together: an image kept
-// without its style (or a style without its image) is not the avatar the owner picked.
-const FORM_KEYS = {
-  avatar_style: ["avatar_style", "avatar"],
-  avatar_image: ["avatar_style", "avatar"],
-  avatar_colour: ["avatar_colour"],
-  name: ["name"],
-  description: ["description"],
-  persona_md: ["persona_md"],
-  tool_settings: ["tool_choices"],
-  history_share_pct: ["history_share_pct"],
-  request_limit: ["request_limit"],
-  max_reply_chars: ["max_reply_chars"],
-} as const satisfies Record<EditField, readonly (keyof CreateForm)[]>;
 
 // One tab of `mine` with the values of `theirs`, except the fields the owner changed since
 // `base`: those keep the owner's text. A Save that succeeds after the owner let the tab go.
@@ -131,26 +287,11 @@ export function mergeTab({
   effective: EffectiveTools;
 }): CreateForm {
   const kept = changedFields({ tab, form: mine, saved: base, effective });
-  const keys = kept.flatMap((field) => FORM_KEYS[field]);
+  const keys = formKeys(FIELD_RULES.filter((rule) => kept.includes(rule.field)));
   return {
     ...withTab({ into: mine, from: theirs, tab }),
     ...Object.fromEntries(keys.map((key) => [key, mine[key]])),
   };
-}
-
-// The tool switches as the server stores them: the effective ones for the bot's model.
-export type EffectiveTools = (form: CreateForm) => Record<string, boolean>;
-
-// A switch that one side does not list is off.
-function sameSwitches({
-  now,
-  saved,
-}: {
-  now: Record<string, boolean>;
-  saved: Record<string, boolean>;
-}): boolean {
-  const keys = new Set([...Object.keys(now), ...Object.keys(saved)]);
-  return [...keys].every((key) => (now[key] ?? false) === (saved[key] ?? false));
 }
 
 export function changedFields({
@@ -164,36 +305,14 @@ export function changedFields({
   saved: CreateForm;
   effective: EffectiveTools;
 }): EditField[] {
-  const out: EditField[] = [];
-  if (tab === "profile") {
-    if (form.avatar_style !== saved.avatar_style) out.push("avatar_style");
-    if (form.avatar_style === "upload" && form.avatar?.id !== saved.avatar?.id) {
-      out.push("avatar_image");
-    }
-    if (form.avatar_colour.toUpperCase() !== saved.avatar_colour.toUpperCase()) {
-      out.push("avatar_colour");
-    }
-    if (form.name !== saved.name) out.push("name");
-    if (form.description !== saved.description) out.push("description");
-    if (form.persona_md !== saved.persona_md) out.push("persona_md");
-    return out;
-  }
-  if (!sameSwitches({ now: effective(form), saved: effective(saved) })) out.push("tool_settings");
-  if (form.history_share_pct !== saved.history_share_pct) out.push("history_share_pct");
-  if (form.request_limit !== saved.request_limit) out.push("request_limit");
-  if (form.max_reply_chars !== saved.max_reply_chars) out.push("max_reply_chars");
-  return out;
+  return FIELD_RULES.filter(
+    (rule) => rule.tab === tab && rule.changed({ form, saved, effective }),
+  ).map((rule) => rule.field);
 }
 
 // A change that the big avatar and the band show before Save ("Not saved", bot-page.md §2).
 export function avatarChanged(fields: readonly EditField[]): boolean {
-  return fields.some((f) => f === "avatar_style" || f === "avatar_image" || f === "avatar_colour");
-}
-
-export interface EditContext {
-  settings: FormSettings;
-  // The names of the other bots, for the taken-name hint. The server also checks Trash (D50).
-  otherNames: readonly string[];
+  return FIELD_RULES.some((rule) => rule.avatar && fields.includes(rule.field));
 }
 
 // The problems of the changed fields only: a lower limit never blocks a saved value that the
@@ -210,54 +329,19 @@ export function editProblems({
   ctx: EditContext;
 }): Problems {
   const out: Problems = {};
-  const put = (field: string, problem: string | null) => {
-    if (problem !== null) out[field] = problem;
-  };
-  const limits = ctx.settings.limits;
-  // An empty Name or Description says "Required" on this page (bot-page.md §4.1); the Create
-  // page's words say what to type (create-bot-page.md E1).
-  const text = (field: "name" | "description" | "persona_md") =>
-    field !== "persona_md" && form[field].trim() === ""
-      ? "Required"
-      : botFieldProblem(field, form[field], limits);
-  if (tab === "profile") {
-    if (changed.includes("name")) {
-      put("name", text("name"));
-      if (out.name === undefined && nameTaken(form.name, ctx.otherNames)) {
-        out.name = `${form.name.trim()} is taken by another bot. Pick another name.`;
-      }
-    }
-    if (changed.includes("description")) {
-      put("description", text("description"));
-    }
-    if (changed.includes("persona_md")) {
-      put("persona_md", text("persona_md"));
-    }
-    if (form.avatar_style === "upload" && form.avatar === null) {
-      out.avatar_id = "Upload an image, or pick Flat.";
-    }
-    return out;
+  for (const rule of FIELD_RULES) {
+    if (rule.tab !== tab || rule.problem === null || !changed.includes(rule.field)) continue;
+    const problem = rule.problem({ form, ctx });
+    if (problem !== null) out[rule.field] = problem;
   }
-  const s = ctx.settings;
-  if (changed.includes("history_share_pct")) {
-    put(
-      "history_share_pct",
-      rangeProblem(form.history_share_pct, s.historyMin, s.historyMax, HISTORY_STEP_PCT),
-    );
-  }
-  if (changed.includes("request_limit")) {
-    const range = BOT_VALUE_RANGES.request_limit;
-    put("request_limit", rangeProblem(form.request_limit, range.min, range.max));
-  }
-  if (changed.includes("max_reply_chars")) {
-    const range = BOT_VALUE_RANGES.max_reply_chars;
-    put("max_reply_chars", rangeProblem(form.max_reply_chars, range.min, range.max));
+  // About the style and the image together, so it is no one field's rule.
+  if (tab === "profile" && form.avatar_style === "upload" && form.avatar === null) {
+    out.avatar_id = "Upload an image, or pick Flat.";
   }
   return out;
 }
 
-// One save of one tab (api.md §4 PATCH): `row_version` and the changed fields only. An image goes
-// with its style, because the server wants `avatar_id` exactly when the style is `upload`.
+// One save of one tab (api.md §4 PATCH): `row_version` and the changed fields only.
 export function patchBody({
   tab,
   form,
@@ -272,31 +356,19 @@ export function patchBody({
   effective: EffectiveTools;
 }): UpdateBotBody {
   const body: UpdateBotBody = { row_version: rowVersion };
-  const has = (field: EditField) => changed.includes(field);
-  if (tab === "profile") {
-    if (has("avatar_style") || has("avatar_image")) {
-      body.avatar_style = form.avatar_style;
-      if (form.avatar_style === "upload" && form.avatar !== null) body.avatar_id = form.avatar.id;
-    }
-    if (has("avatar_colour")) body.avatar_colour = form.avatar_colour;
-    if (has("name")) body.name = form.name;
-    if (has("description")) body.description = form.description;
-    if (has("persona_md")) body.persona_md = form.persona_md;
-    return body;
+  for (const rule of FIELD_RULES) {
+    if (rule.tab === tab && changed.includes(rule.field)) rule.write({ body, form, effective });
   }
-  if (has("tool_settings")) body.tool_settings = effective(form);
-  if (has("history_share_pct")) body.history_share_pct = form.history_share_pct;
-  if (has("request_limit")) body.request_limit = form.request_limit;
-  if (has("max_reply_chars")) body.max_reply_chars = form.max_reply_chars;
   return body;
 }
 
-// The tab of a field that the server named, so its error shows under it.
+// The tab of a field that the server named, so its error shows under it. A field with no rule
+// (`avatar_id`) is on the Profile tab.
+const TAB_OF_FIELD = new Map<string, EditTab>(FIELD_RULES.map((rule) => [rule.field, rule.tab]));
+
 export function tabOfField(field: string): EditTab {
   const head = field.split(/[.[]/)[0] ?? field;
-  return ["tool_settings", "history_share_pct", "request_limit", "max_reply_chars"].includes(head)
-    ? "model"
-    : "profile";
+  return TAB_OF_FIELD.get(head) ?? "profile";
 }
 
 function joinWords(words: readonly string[]): string {
@@ -307,7 +379,7 @@ function joinWords(words: readonly string[]): string {
 
 // The leave question names the changed fields (project-settings-page.md §5).
 export function leaveText(fields: readonly EditField[]): string {
-  const words = [...new Set(fields.map((f) => FIELD_WORDS[f]))];
+  const words = FIELD_RULES.filter((rule) => fields.includes(rule.field)).map((rule) => rule.words);
   const it = words.length === 1 ? "it" : "them";
   return `You changed ${joinWords(words)}. The app has not saved ${it} yet. Stay and save, or let ${it} go.`;
 }
