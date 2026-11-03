@@ -1048,6 +1048,62 @@ describe("the Skills tab (bot-page.md §7)", () => {
     ).toBe("false");
   });
 
+  it("keeps a newer Always load toggle when a late Profile answer comes after it (UI-6.3)", async () => {
+    const held = heldAnswer();
+    const [zeta] = pins;
+    if (zeta === undefined) throw new Error("no pins");
+    const state = { bots: [makeBot(1, "BA", [zeta])] };
+    let fail = false;
+    await open(state, {
+      routes: {
+        "GET /api/bots": () =>
+          fail
+            ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+            : { body: state.bots },
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => ({
+          body: { ...makeBot(1, "BA", [{ ...zeta, always_load: true }]), row_version: 2 },
+        }),
+      },
+    });
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    click(screen.getByRole("button", { name: "Save" }));
+    // The owner goes to Skills while Save waits, and lets the edit go.
+    click(screen.getByRole("tab", { name: /Skills/ }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
+    click(within(dialog).getByRole("button", { name: "Let them go" }));
+    const toggle = await screen.findByRole("switch", { name: "Always load Zeta" });
+    // Every refresh fails, so only the answers could change the list.
+    fail = true;
+    const loadsBefore = fake?.sent("GET", "/api/bots").length ?? 0;
+    click(toggle);
+    // The toggle's answer came, and the refresh after it failed.
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(loadsBefore);
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByRole("switch", { name: "Always load Zeta" }).getAttribute("aria-checked"),
+      ).toBe("true");
+    });
+    // The Profile save got to the server before the toggle: its answer has the pin as it was.
+    const loads = fake?.sent("GET", "/api/bots").length ?? 0;
+    await held.answer({
+      body: { ...makeBot(1, "BA", [zeta]), row_version: 2, description: "Mine." },
+    });
+    await waitFor(() => {
+      // The answer was handled: a successful save refreshes the list.
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(loads);
+    });
+    expect(
+      screen.getByRole("switch", { name: "Always load Zeta" }).getAttribute("aria-checked"),
+    ).toBe("true");
+  });
+
   it("shows an Upgrade that fails after the skill left the bot in another place as a toast", async () => {
     const held = heldAnswer();
     const state = { bots: [makeBot(1, "BA", pins.slice(0, 1))] };

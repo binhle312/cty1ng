@@ -195,7 +195,10 @@ changes that pin only while the page still shows the pin the request expected; a
 is this change or a newer one. When the page loaded the bot list after the request went out, the
 answer changes no pin, because a newer change may have the expected value again (on, then off in
 another tab); the refresh after the answer shows the pin, and the switch keeps the value on its
-way until then (M2c review, 2026-11-02 and 2026-11-03). An answer that comes after the owner left the tab or the page
+way until then (M2c review, 2026-11-02 and 2026-11-03). The reverse also holds: a Profile or
+Model save never changes a pin, so its answer, even with a newer `row_version`, keeps the pins
+and the skill counts that the page shows; a toggle made while that Save was on its way stays (M2c
+review, 2026-11-03). An answer that comes after the owner left the tab or the page
 shows as a toast, not in the closed dialog. A dialog whose skill left the bot in another place
 closes, and its answer also shows as a toast.
 

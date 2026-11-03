@@ -296,9 +296,23 @@ function BotView({
     })
       .then((result) => {
         // A newer list (an event or a refresh) may have come first: the answer never replaces it.
+        // A Profile or Model save never changes a pin, and a pin change never raises
+        // `row_version`, so the answer's pins may be older than the page's (an Always load
+        // toggle after the save went out): the pins, and the counts made from them, stay.
         queryClient.setQueryData<BotRow[]>(listBotsQueryKey(), (old) =>
           old?.map((b) =>
-            b.id === result.id && result.row_version > b.row_version ? { ...b, ...result } : b,
+            b.id === result.id && result.row_version > b.row_version
+              ? {
+                  ...b,
+                  ...result,
+                  pins: b.pins,
+                  counts: {
+                    ...result.counts,
+                    skills: b.counts.skills,
+                    skill_updates: b.counts.skill_updates,
+                  },
+                }
+              : b,
           ),
         );
         // The answer sets the tab's values only while the tab is still based on `sentBase`. A
