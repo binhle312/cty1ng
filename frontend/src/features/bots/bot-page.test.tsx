@@ -737,6 +737,50 @@ describe("the side list (bot-page.md E2, pin.md §2)", () => {
       ]);
     });
   });
+
+  it("keeps a newer unpin when a late Profile answer comes after it", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA", [], { pinned_position: 1 }), makeBot(2, "QA")] };
+    let fail = false;
+    await open(state, {
+      routes: {
+        "GET /api/bots": () =>
+          fail
+            ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+            : { body: state.bots },
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+        "PUT /api/bots/pins": () => ({ body: { bot_ids: [] } }),
+      },
+    });
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    click(screen.getByRole("button", { name: "Save" }));
+    // Every refresh fails, so only the answers could change the list.
+    fail = true;
+    const loadsBefore = fake?.sent("GET", "/api/bots").length ?? 0;
+    click(screen.getByRole("button", { name: "Unpin BA" }));
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(loadsBefore);
+    });
+    expect(screen.queryByRole("button", { name: "Unpin BA" })).toBeNull();
+    // The Profile save got to the server before the unpin: its answer has the old position.
+    const loads = fake?.sent("GET", "/api/bots").length ?? 0;
+    await held.answer({
+      body: {
+        ...makeBot(1, "BA", [], { pinned_position: 1 }),
+        row_version: 2,
+        description: "Mine.",
+      },
+    });
+    await waitFor(() => {
+      // The answer was handled: a successful save refreshes the list.
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(loads);
+    });
+    expect(screen.queryByRole("button", { name: "Unpin BA" })).toBeNull();
+  });
 });
 
 describe("leaving the bot page with changes (bot-page.md §4.1)", () => {
@@ -1197,6 +1241,57 @@ describe("the Skills tab (bot-page.md §7)", () => {
     expect(
       screen.getByRole("switch", { name: "Always load Zeta" }).getAttribute("aria-checked"),
     ).toBe("true");
+  });
+
+  it("keeps a newer health when a late Profile answer comes after it", async () => {
+    const held = heldAnswer();
+    const [zeta] = pins;
+    if (zeta === undefined) throw new Error("no pins");
+    const deprecated = { ...zeta, deprecated: true };
+    const attention = { level: "needs_attention", reason: "deprecated_skill" } as const;
+    const state: { bots: Bot[] } = {
+      bots: [{ ...makeBot(1, "BA", [deprecated]), health: attention }],
+    };
+    let fail = false;
+    const { queryClient } = await open(state, {
+      routes: {
+        "GET /api/bots": () =>
+          fail
+            ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+            : { body: state.bots },
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+    });
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    click(screen.getByRole("button", { name: "Save" }));
+    // The deprecated pin leaves the bot in another place while Save waits: no row_version.
+    state.bots = [makeBot(1, "BA")];
+    refocus();
+    await waitFor(() => {
+      expect(queryClient.getQueryData<Bot[]>(listBotsQueryKey())?.[0]?.health).toBeNull();
+    });
+    // Every refresh fails, so only the answer could change the list.
+    fail = true;
+    const loads = fake?.sent("GET", "/api/bots").length ?? 0;
+    // The Profile save got to the server first: its answer has the old pin and health.
+    await held.answer({
+      body: {
+        ...makeBot(1, "BA", [deprecated]),
+        health: attention,
+        row_version: 2,
+        description: "Mine.",
+      },
+    });
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(loads);
+    });
+    const cached = queryClient.getQueryData<Bot[]>(listBotsQueryKey())?.[0];
+    expect(cached?.row_version).toBe(2);
+    expect(cached?.health).toBeNull();
   });
 
   it("shows an Upgrade that fails after the skill left the bot in another place as a toast", async () => {

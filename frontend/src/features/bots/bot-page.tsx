@@ -314,7 +314,8 @@ function BotView({
         // A newer list (an event or a refresh) may have come first: the answer never replaces it.
         // A Profile or Model save never changes a pin, and a pin change never raises
         // `row_version`, so the answer's pins may be older than the page's (an Always load
-        // toggle after the save went out): the pins, and the counts made from them, stay.
+        // toggle, or an unpin in the side list, after the save went out): the skill pins, the
+        // pinned position, and the counts and health made from them, stay.
         queryClient.setQueryData<BotRow[]>(listBotsQueryKey(), (old) =>
           old?.map((b) =>
             b.id === result.id && result.row_version > b.row_version
@@ -322,6 +323,8 @@ function BotView({
                   ...b,
                   ...result,
                   pins: b.pins,
+                  pinned_position: b.pinned_position,
+                  health: b.health,
                   counts: {
                     ...result.counts,
                     skills: b.counts.skills,
