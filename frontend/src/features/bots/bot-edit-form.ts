@@ -208,12 +208,12 @@ const FIELD_RULES = [
     avatar: false,
     changed: ({ form, saved }) => form.history_share_pct !== saved.history_share_pct,
     problem: ({ form, ctx }) =>
-      rangeProblem(
-        form.history_share_pct,
-        ctx.settings.historyMin,
-        ctx.settings.historyMax,
-        HISTORY_STEP_PCT,
-      ),
+      rangeProblem({
+        value: form.history_share_pct,
+        min: ctx.settings.historyMin,
+        max: ctx.settings.historyMax,
+        step: HISTORY_STEP_PCT,
+      }),
     write: ({ body, form }) => {
       body.history_share_pct = form.history_share_pct;
     },
@@ -227,7 +227,7 @@ const FIELD_RULES = [
     changed: ({ form, saved }) => form.request_limit !== saved.request_limit,
     problem: ({ form }) => {
       const range = BOT_VALUE_RANGES.request_limit;
-      return rangeProblem(form.request_limit, range.min, range.max);
+      return rangeProblem({ value: form.request_limit, min: range.min, max: range.max });
     },
     write: ({ body, form }) => {
       body.request_limit = form.request_limit;
@@ -242,7 +242,7 @@ const FIELD_RULES = [
     changed: ({ form, saved }) => form.max_reply_chars !== saved.max_reply_chars,
     problem: ({ form }) => {
       const range = BOT_VALUE_RANGES.max_reply_chars;
-      return rangeProblem(form.max_reply_chars, range.min, range.max);
+      return rangeProblem({ value: form.max_reply_chars, min: range.min, max: range.max });
     },
     write: ({ body, form }) => {
       body.max_reply_chars = form.max_reply_chars;

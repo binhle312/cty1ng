@@ -147,7 +147,17 @@ function textProblem(field: BotTextField, form: CreateForm, ctx: FormContext): s
   return botFieldProblem(field, form[field], ctx.settings.limits);
 }
 
-export function rangeProblem(value: number, min: number, max: number, step = 1): string | null {
+export function rangeProblem({
+  value,
+  min,
+  max,
+  step = 1,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+}): string | null {
   if (!Number.isInteger(value) || value < min || value > max || value % step !== 0) {
     const steps = step === 1 ? "" : `, in steps of ${String(step)}`;
     return `Use a whole number from ${String(min)} to ${String(max)}${steps}.`;
@@ -199,12 +209,20 @@ export function stepProblems(step: Step, form: CreateForm, ctx: FormContext): Pr
       const s = ctx.settings;
       put(
         "history_share_pct",
-        rangeProblem(form.history_share_pct, s.historyMin, s.historyMax, HISTORY_STEP_PCT),
+        rangeProblem({
+          value: form.history_share_pct,
+          min: s.historyMin,
+          max: s.historyMax,
+          step: HISTORY_STEP_PCT,
+        }),
       );
       const req = BOT_VALUE_RANGES.request_limit;
-      put("request_limit", rangeProblem(form.request_limit, req.min, req.max));
+      put("request_limit", rangeProblem({ value: form.request_limit, min: req.min, max: req.max }));
       const reply = BOT_VALUE_RANGES.max_reply_chars;
-      put("max_reply_chars", rangeProblem(form.max_reply_chars, reply.min, reply.max));
+      put(
+        "max_reply_chars",
+        rangeProblem({ value: form.max_reply_chars, min: reply.min, max: reply.max }),
+      );
       break;
     }
     default: {
