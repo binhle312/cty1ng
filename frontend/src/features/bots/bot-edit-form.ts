@@ -10,6 +10,7 @@ import {
   nameTaken,
   type Problems,
   rangeProblem,
+  takenNameText,
 } from "./create-bot-form.ts";
 
 // The rules of the bot page's two save bars without React (bot-page.md §4, §6): which fields
@@ -157,7 +158,7 @@ const FIELD_RULES = [
     problem: ({ form, ctx }) =>
       textProblem({ field: "name", form, ctx }) ??
       (nameTaken(form.name, ctx.otherNames)
-        ? `${form.name.trim()} is taken by another bot. Pick another name.`
+        ? takenNameText({ name: form.name, byServer: false })
         : null),
     write: ({ body, form }) => {
       body.name = form.name;

@@ -24,7 +24,7 @@ import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
 import { Pill, VersionPill } from "../skills/pills.tsx";
 import { ChangeVersionDialog, MoveVersionDialog } from "../skills/skill-pin-dialogs.tsx";
 import { AddSkillsDialog } from "./add-skills-dialog.tsx";
-import type { BotPin, BotRow } from "./bot-queries.ts";
+import { type BotPin, type BotRow, pinErrorText } from "./bot-queries.ts";
 
 // The Skills tab of a bot (bot-page.md §7, SK1–SK4, UI-6.3–6.6): the skills the bot has, the
 // version it uses, the Always load switch and a ⋯ menu. Changes save at once and apply from the
@@ -140,9 +140,7 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
     );
   };
   const staleText = (skillName: string, error: unknown) =>
-    readApiError(error)?.code === "stale_write"
-      ? `${skillName} changed in another place. Check it and try again.`
-      : apiErrorText(error);
+    pinErrorText({ error, changed: skillName });
 
   // One hook serves every row, and a second `mutate` on a hook drops the callbacks of the first
   // (TanStack Query v5), so each request handles its own result through its promise.

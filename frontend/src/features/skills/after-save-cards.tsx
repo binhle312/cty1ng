@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "../../components/ui/button.tsx";
 import { Dialog, DialogButtons, DialogText } from "../../components/ui/dialog.tsx";
 import { showToast } from "../../components/ui/toast.tsx";
-import { apiErrorText, readApiError } from "../../lib/api/api-error.ts";
 import {
   listBotsOptions,
   listSkillUpgradeCandidatesOptions,
@@ -17,7 +16,7 @@ import type {
 } from "../../lib/api/generated/types.gen.ts";
 import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
 import { BotPickList } from "../bots/bot-list.tsx";
-import { type BotRow, useBots } from "../bots/bot-queries.ts";
+import { type BotRow, pinErrorText, useBots } from "../bots/bot-queries.ts";
 import { VersionPill } from "./pills.tsx";
 import { SaveButton } from "./save-bar.tsx";
 import { toggled } from "../../lib/sets.ts";
@@ -155,10 +154,7 @@ function useSendPins(onDone: () => void) {
         onDone();
       })
       .catch((cause: unknown) => {
-        const text =
-          readApiError(cause)?.code === "stale_write"
-            ? "A bot changed in another place. Check the list and try again."
-            : apiErrorText(cause);
+        const text = pinErrorText({ error: cause, changed: null });
         if (shown.current) setError(text);
         else showToast(text);
       })

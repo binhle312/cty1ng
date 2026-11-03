@@ -43,6 +43,7 @@ import {
   isTooLong,
   keepUnchanged,
   type Problems,
+  takenNameText,
 } from "./create-bot-form.ts";
 import {
   AdvancedSection,
@@ -371,7 +372,7 @@ function BotView({
         const stillSent = (problems: Problems) =>
           keepUnchanged({ problems, before: sent, after: latestForm.current });
         if (api?.code === "name_taken") {
-          const name = `${sent.name.trim()} is taken by another bot, maybe one in Trash. Pick another name.`;
+          const name = takenNameText({ name: sent.name, byServer: true });
           setServerProblems((old) => ({ ...old, ...stillSent({ name }) }));
           return;
         }

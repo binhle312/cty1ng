@@ -47,6 +47,7 @@ import {
   type Step,
   stepOfField,
   stepProblems,
+  takenNameText,
   toolsTurnedOff,
   withModel,
 } from "./create-bot-form.ts";
@@ -400,7 +401,7 @@ function CreateBotView({
         }
         const message =
           api.code === "name_taken"
-            ? `${form.name.trim()} is taken by another bot, maybe one in Trash. Pick another name.`
+            ? takenNameText({ name: form.name, byServer: true })
             : api.message;
         setServerProblems({ [api.field]: message });
       });

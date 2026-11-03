@@ -196,6 +196,14 @@ export interface FormContext {
   missingSkillIds: ReadonlySet<string>;
 }
 
+// The taken-name line (E1). The page's own check knows only the live bots; the server also
+// checks Trash (D50), so its refusal says so.
+export function takenNameText({ name, byServer }: { name: string; byServer: boolean }): string {
+  return byServer
+    ? `${name.trim()} is taken by another bot, maybe one in Trash. Pick another name.`
+    : `${name.trim()} is taken by another bot. Pick another name.`;
+}
+
 export function nameTaken(name: string, botNames: readonly string[]): boolean {
   const key = botNameKey(name);
   return key !== "" && botNames.some((other) => botNameKey(other) === key);
@@ -233,7 +241,7 @@ export function stepProblems(step: Step, form: CreateForm, ctx: FormContext): Pr
     case "basics":
       put("name", textProblem("name", form, ctx));
       if (out.name === undefined && nameTaken(form.name, ctx.botNames)) {
-        out.name = `${form.name.trim()} is taken by another bot. Pick another name.`;
+        out.name = takenNameText({ name: form.name, byServer: false });
       }
       put("description", textProblem("description", form, ctx));
       if (form.avatar_style === "upload" && form.avatar === null) {

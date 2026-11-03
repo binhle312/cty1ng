@@ -13,7 +13,6 @@ import { Skeleton, SkeletonArea } from "../../components/ui/skeleton.tsx";
 import { Switch } from "../../components/ui/switch.tsx";
 import { showToast } from "../../components/ui/toast.tsx";
 import { Tooltip } from "../../components/ui/tooltip.tsx";
-import { apiErrorText, readApiError } from "../../lib/api/api-error.ts";
 import {
   listBotsOptions,
   listSkillVersionsOptions,
@@ -25,7 +24,7 @@ import type { GetSkillResponse } from "../../lib/api/generated/types.gen.ts";
 import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
 import { BotAvatar } from "../bots/bot-avatar.tsx";
 import { modelLine } from "../bots/bot-lines.ts";
-import type { BotRow } from "../bots/bot-queries.ts";
+import { type BotRow, pinErrorText } from "../bots/bot-queries.ts";
 import { LoadError } from "./load-error.tsx";
 import { VersionPill } from "./pills.tsx";
 import type { BotUse } from "./skill-bot-uses.ts";
@@ -79,11 +78,7 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
   // A stale pin: load the newest and say so; the change is not made.
   const failed = (botName: string) => (error: unknown) => {
     void refresh();
-    showToast(
-      readApiError(error)?.code === "stale_write"
-        ? `${botName} changed in another place. Check it and try again.`
-        : apiErrorText(error),
-    );
+    showToast(pinErrorText({ error, changed: botName }));
   };
 
   // One hook serves every row, and a second `mutate` on a hook drops the callbacks of the first
@@ -269,10 +264,7 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
               },
             }),
             replaceBots,
-            (error) =>
-              readApiError(error)?.code === "stale_write"
-                ? "A bot changed in another place. Check the list and try again."
-                : apiErrorText(error),
+            (error) => pinErrorText({ error, changed: null }),
           );
         }}
       />
@@ -317,10 +309,7 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
             (changed) => {
               replaceBots([changed]);
             },
-            (error) =>
-              readApiError(error)?.code === "stale_write"
-                ? `${bot.name} changed in another place. Check it and try again.`
-                : apiErrorText(error),
+            (error) => pinErrorText({ error, changed: bot.name }),
           );
         }}
       />
