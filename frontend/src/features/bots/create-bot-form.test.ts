@@ -220,6 +220,9 @@ describe("the history label (D32)", () => {
 });
 
 describe("server errors after the owner changes a field", () => {
+  // A palette colour with letters, so its case can change.
+  const COLOUR = BOT_PALETTE.find((hex) => /[a-f]/i.test(hex)) ?? BOT_PALETTE[0];
+
   it("names the top field of an API field path", () => {
     expect(fieldHead("pins[2].skill_version_id")).toBe("pins");
     expect(fieldHead("tool_settings.web_fetch")).toBe("tool_settings");
@@ -238,10 +241,18 @@ describe("server errors after the owner changes a field", () => {
   });
 
   it("keeps an error when the colour changes only its case, and drops an image error with the style", () => {
-    const before = filled({ avatar_colour: "#6fa8ff", avatar_style: "upload", avatar: null });
+    const before = filled({
+      avatar_colour: COLOUR.toLowerCase(),
+      avatar_style: "upload",
+      avatar: null,
+    });
     const problems = { avatar_colour: "Bad colour.", avatar_id: "Upload an image." };
     expect(
-      keepUnchanged({ problems, before, after: { ...before, avatar_colour: "#6FA8FF" } }),
+      keepUnchanged({
+        problems,
+        before,
+        after: { ...before, avatar_colour: COLOUR.toUpperCase() },
+      }),
     ).toEqual(problems);
     expect(keepUnchanged({ problems, before, after: { ...before, avatar_style: "flat" } })).toEqual(
       { avatar_colour: "Bad colour." },
