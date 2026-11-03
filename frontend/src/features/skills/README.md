@@ -15,7 +15,7 @@ Export card. Routes: `src/routes/skills.tsx`.
 | `skill-form.ts` | The editor's rules without React: changes, save kind, errors, leave text |
 | `save-bar.tsx` | The save bars: edit, read-only, and the button with a "why off" tooltip |
 | `save-error.ts` | Puts a failed save under its field or in the save bar |
-| `leave-guard.tsx` | Leave without saving: the dialog and the browser's own question |
+| `leave-guard.tsx` | Leave without saving: the dialog and the browser's own question; the bot page and Create bot use it with their own place and words |
 | `skill-dialogs.tsx` | The Deprecate, Remove from bots and Delete dialogs, with the bot lists |
 | `skill-bot-uses.ts` | The bots that use one skill, read from the bot list (loading, error, ready) |
 | `skill-bots-tab.tsx` | The Bots tab: the rows, the Always load switch, ⋯, + Add |
