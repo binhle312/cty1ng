@@ -23,6 +23,7 @@ import {
 import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
 import { Pill, VersionPill } from "../skills/pills.tsx";
 import { ChangeVersionDialog, MoveVersionDialog } from "../skills/skill-pin-dialogs.tsx";
+import { useDialogRequests } from "../skills/dialog-requests.ts";
 import { AddSkillsDialog } from "./add-skills-dialog.tsx";
 import { type BotPin, type BotRow, pinErrorText } from "./bot-queries.ts";
 
@@ -48,20 +49,16 @@ function sortedPins(pins: readonly BotPin[]): BotPin[] {
 
 export function BotSkillsTab({ bot }: { bot: BotRow }) {
   const queryClient = useQueryClient();
-  const [dialog, setDialogState] = useState<Dialog | null>(null);
-  const [dialogError, setDialogError] = useState<string | null>(null);
-  // The dialog whose request is on its way. Each open makes a new object, so a request started
-  // in a dialog the owner closed never closes or writes into a newer one.
-  const shownDialog = useRef<Dialog | null>(null);
-  // When the tab goes (another tab, another page), no dialog is open any more: an answer that
-  // comes after shows as a toast, not in a dialog that nobody sees.
-  useEffect(
-    () => () => {
-      shownDialog.current = null;
-    },
-    [],
-  );
-  const [busyDialog, setBusyDialog] = useState<Dialog | null>(null);
+  const refresh = () => queryClient.invalidateQueries({ predicate: PIN_QUERIES });
+  const {
+    dialog,
+    open: setDialog,
+    close: closeDialog,
+    closeNow: closeDialogNow,
+    error: dialogError,
+    pending: dialogPending,
+    run: runInDialog,
+  } = useDialogRequests<Dialog>({ refresh });
   // The Always load value of each toggle on its way, by skill id.
   const [pendingLoads, setPendingLoads] = useState<ReadonlyMap<string, boolean>>(new Map());
 
@@ -77,15 +74,6 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
   // The skills + Add offers: not deprecated (the default list), and not on the bot yet.
   const skills = useQuery({ ...listSkillsOptions(), enabled: dialog?.kind === "add" });
 
-  const setDialog = (next: Dialog | null) => {
-    shownDialog.current = next;
-    setDialogState(next);
-    setDialogError(null);
-  };
-  const closeDialog = () => {
-    setDialog(null);
-  };
-  const refresh = () => queryClient.invalidateQueries({ predicate: PIN_QUERIES });
   // The bot list loads from the server since the tab opened. A write from an answer
   // (`setQueryData`) is not a load and does not count.
   const listLoads = useRef(0);
@@ -189,42 +177,6 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
     );
   };
 
-  const runInDialog = ({
-    shown,
-    request,
-    failed,
-    closes = () => false,
-  }: {
-    shown: Dialog;
-    request: Promise<unknown>;
-    failed: (e: unknown) => string;
-    // A failure that closes the dialog and shows as a toast (a stale pin, bot-page.md §7).
-    closes?: (e: unknown) => boolean;
-  }) => {
-    setDialogError(null);
-    setBusyDialog(shown);
-    void request
-      .then(
-        () => {
-          void refresh();
-          if (shownDialog.current === shown) closeDialog();
-        },
-        (error: unknown) => {
-          void refresh();
-          const open = shownDialog.current === shown;
-          if (open && !closes(error)) {
-            setDialogError(failed(error));
-            return;
-          }
-          if (open) closeDialog();
-          showToast(failed(error));
-        },
-      )
-      .finally(() => {
-        setBusyDialog((current) => (current === shown ? null : current));
-      });
-  };
-
   // + Add: each ticked skill gets its latest version, read just before the request, with Always
   // load off. A skill that fails stays in the card, so the owner can try again. A skill that got
   // on the bot in another place (409 `stale_write`) shows its toast instead (bot-page.md §7).
@@ -261,14 +213,7 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
     dialogSkillId === null ? undefined : bot.pins.find((pin) => pin.skill_id === dialogSkillId);
   // The skill of the open dialog left the bot (removed in another place): the dialog closes, so
   // an answer that comes after shows as a toast, not in a dialog that nobody sees.
-  if (dialogSkillId !== null && dialogPin === undefined) {
-    setDialogState(null);
-    setDialogError(null);
-  }
-  // The dialog request checks this ref; it follows the dialog on screen, also after the close above.
-  useEffect(() => {
-    shownDialog.current = dialog;
-  }, [dialog]);
+  if (dialogSkillId !== null && dialogPin === undefined) closeDialogNow();
   const has = new Set(bot.pins.map((pin) => pin.skill_id));
   // Undefined until the list comes, so the card says it is loading.
   const addable = skills.data?.filter((skill) => !skill.deprecated && !has.has(skill.id));
@@ -344,7 +289,7 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
         open={dialog?.kind === "add"}
         botName={bot.name}
         skills={addable}
-        pending={dialog !== null && busyDialog === dialog}
+        pending={dialogPending}
         error={
           dialogError ??
           (skills.isError && skills.data === undefined
@@ -355,7 +300,7 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
         onConfirm={(skillIds) => {
           if (dialog?.kind !== "add") return;
           runInDialog({
-            shown: dialog,
+            dialog,
             request: addSkills(skillIds),
             failed: (error) => (error instanceof Error ? error.message : apiErrorText(error)),
           });
@@ -383,7 +328,7 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
         target={dialog?.kind === "move" ? dialog.version : 0}
         versions={versions.data}
         versionsLoad={versionsLoad}
-        pending={dialog !== null && busyDialog === dialog}
+        pending={dialogPending}
         error={dialogError}
         onClose={closeDialog}
         onConfirm={(version) => {
@@ -394,7 +339,7 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
           };
           const loadsAtSend = listLoads.current;
           runInDialog({
-            shown: dialog,
+            dialog,
             request: setPin
               .mutateAsync({
                 path: { id: bot.id, skill_id: dialogPin.skill_id },

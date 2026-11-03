@@ -19,6 +19,7 @@ Export card. Routes: `src/routes/skills.tsx`.
 | `skill-dialogs.tsx` | The Deprecate, Remove from bots and Delete dialogs, with the bot lists |
 | `skill-bot-uses.ts` | The bots that use one skill, read from the bot list (loading, error, ready) |
 | `skill-bots-tab.tsx` | The Bots tab: the rows, the Always load switch, ⋯, + Add |
+| `dialog-requests.ts` | The pin dialogs' requests, shared with the bot page: a late answer goes to its own dialog, or to a toast |
 | `skill-pin-dialogs.tsx` | The cards that move a pin: + Add, Upgrade or Move to a version, Change version |
 | `after-save-cards.tsx` | The bot cards after a save: Upgrade the bots (C4) after Save as vN, Assign (C4b) after Create |
 | `skill-history.tsx` | The History tab: versions, Compare, Restore |

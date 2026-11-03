@@ -33,15 +33,20 @@ function open(bots: Bot[], extra: Parameters<typeof fakeApi>[0] = {}) {
     ...extra,
   });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
+  const page = (tab: boolean) => (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <SkillBotsTab skill={makeSkill()} />
+        {tab && <SkillBotsTab skill={makeSkill()} />}
         <Toaster />
       </TooltipProvider>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
-  return queryClient;
+  const view = render(page(true));
+  // The owner leaves the tab; the toasts stay.
+  const leave = () => {
+    view.rerender(page(false));
+  };
+  return { queryClient, leave };
 }
 
 const FAILED = {
@@ -155,7 +160,7 @@ describe("the Bots tab of a skill", () => {
   it("sends only the ticked bots that are still in the list (another place gave one the skill)", async () => {
     const dev = makeBot(4, "Dev");
     let bots = [qa, dev];
-    const queryClient = open([], {
+    const { queryClient } = open([], {
       "GET /api/bots": () => ({ body: bots }),
       [`POST /api/skills/${SKILL_ID}/bots`]: () => ({ body: [makeBot(4, "Dev", [makePin()])] }),
     });
@@ -313,6 +318,23 @@ describe("the Bots tab of a skill", () => {
 
   // Review of PR #57: one mutation hook served every row, so a second toggle dropped the first
   // one's callbacks and its failure went unseen.
+  it("shows a version move that fails after the owner left the tab as a toast", async () => {
+    const held = heldAnswer();
+    const { leave } = open([designer], {
+      [`GET /api/skills/${SKILL_ID}/diff`]: () => ({ body: { description: null, body: [] } }),
+      [`PUT /api/bots/${designer.id}/skills/${SKILL_ID}`]: async () => {
+        const answer = await held.promise;
+        return answer;
+      },
+    });
+    click(await screen.findByRole("button", { name: "Upgrade to v3" }));
+    const dialog = await screen.findByRole("dialog", { name: "Upgrade Write user stories to v3?" });
+    click(within(dialog).getByRole("button", { name: "Upgrade to v3" }));
+    act(leave);
+    await held.answer(FAILED);
+    expect(await screen.findByText("Something failed.")).toBeTruthy();
+  });
+
   it("reports a failed toggle of one bot after a toggle of another bot started", async () => {
     const baAnswer = heldAnswer();
     open([ba, designer], {
