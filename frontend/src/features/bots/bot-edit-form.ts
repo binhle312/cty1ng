@@ -5,6 +5,7 @@ import type { BotRow } from "./bot-queries.ts";
 import {
   type CreateForm,
   emptyForm,
+  fieldHead,
   type FormSettings,
   nameTaken,
   type Problems,
@@ -367,8 +368,7 @@ export function patchBody({
 const TAB_OF_FIELD = new Map<string, EditTab>(FIELD_RULES.map((rule) => [rule.field, rule.tab]));
 
 export function tabOfField(field: string): EditTab {
-  const head = field.split(/[.[]/)[0] ?? field;
-  return TAB_OF_FIELD.get(head) ?? "profile";
+  return TAB_OF_FIELD.get(fieldHead(field)) ?? "profile";
 }
 
 function joinWords(words: readonly string[]): string {

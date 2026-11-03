@@ -24,7 +24,7 @@ the parts that the header and the Skills page share.
 | `bot-sort-buttons.tsx` | The Recent activity and Created time sort buttons of the Others group |
 | `bots-page.tsx` | `/bots`: Pinned (drag to reorder) and Others (sort), search, empty state |
 | `colour-row.tsx` | The colour row: 10 swatches, Custom and Random |
-| `create-bot-form.ts` | The Create form: its state, per-step checks, tool rows and the request body (pure) |
+| `create-bot-form.ts` | The Create form: its state, per-step checks, tool rows and the request body (pure); the server-error rules the bot page shares |
 | `create-bot-page.tsx` | `/bots/new` and Clone: the stepper, sending with the Idempotency-Key, Try again |
 | `create-bot-preview.tsx` | The live preview card of the Create page |
 | `create-bot-steps.tsx` | The four steps, and their field groups that the bot page shares (Name, Appearance, Persona, Tools, Advanced) |

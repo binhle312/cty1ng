@@ -24,7 +24,6 @@ import {
   type EditTab,
   editFormOf,
   editProblems,
-  type EffectiveTools,
   leaveText,
   mergeTab,
   patchBody,
@@ -42,6 +41,7 @@ import {
   effectiveTools,
   formSettings,
   isTooLong,
+  keepUnchanged,
   type Problems,
 } from "./create-bot-form.ts";
 import {
@@ -233,9 +233,7 @@ function BotView({
     const next = change(form);
     setForm(next);
     // A server error goes when the owner changes its field.
-    setServerProblems((old) =>
-      keepUnchanged({ problems: old, before: form, after: next, effective }),
-    );
+    setServerProblems((old) => keepUnchanged({ problems: old, before: form, after: next }));
   };
 
   const upload = useAvatarUpload({
@@ -371,7 +369,7 @@ function BotView({
         // An error is about the value that was sent: a field the owner changed while Save waited
         // gets no error, so it never blocks the corrected text.
         const stillSent = (problems: Problems) =>
-          keepUnchanged({ problems, before: sent, after: latestForm.current, effective });
+          keepUnchanged({ problems, before: sent, after: latestForm.current });
         if (api?.code === "name_taken") {
           const name = `${sent.name.trim()} is taken by another bot, maybe one in Trash. Pick another name.`;
           setServerProblems((old) => ({ ...old, ...stillSent({ name }) }));
@@ -601,34 +599,6 @@ function BotView({
       {remove.dialog}
       {leave.dialog}
     </>
-  );
-}
-
-// A server error stays while its field keeps the value it was about.
-function keepUnchanged({
-  problems,
-  before,
-  after,
-  effective,
-}: {
-  problems: Problems;
-  before: CreateForm;
-  after: CreateForm;
-  effective: EffectiveTools;
-}): Problems {
-  const moved = new Set<string>([
-    ...changedFields({ tab: "profile", form: after, saved: before, effective }),
-    ...changedFields({ tab: "model", form: after, saved: before, effective }),
-  ]);
-  const apiField = (field: string) => {
-    const head = field.split(/[.[]/)[0] ?? field;
-    return head === "avatar_id" ? "avatar_image" : head;
-  };
-  return Object.fromEntries(
-    Object.entries(problems).filter(
-      ([field]) =>
-        !moved.has(apiField(field)) && !(field === "avatar_id" && moved.has("avatar_style")),
-    ),
   );
 }
 

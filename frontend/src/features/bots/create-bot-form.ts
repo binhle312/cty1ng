@@ -123,10 +123,68 @@ export const FIELD_STEP: Record<string, Step> = {
   max_reply_chars: "model",
 };
 
+// The top field of an API field path: `pins[2]` is `pins`, `tool_settings.web_fetch` is
+// `tool_settings`.
+export function fieldHead(field: string): string {
+  return field.split(/[.[]/)[0] ?? field;
+}
+
 // The step of an API field: `pins[2]` is on Skills, `tool_settings.web_fetch` on Model.
 export function stepOfField(field: string): Step {
-  const head = field.split(/[.[]/)[0] ?? field;
-  return FIELD_STEP[head] ?? "basics";
+  return FIELD_STEP[fieldHead(field)] ?? "basics";
+}
+
+// What a server error's field depends on, to drop the error when it changes. A colour in another
+// case is the same colour.
+function fieldSnapshot(form: CreateForm, head: string): string {
+  switch (head) {
+    case "name":
+      return form.name;
+    case "description":
+      return form.description;
+    case "persona_md":
+      return form.persona_md;
+    case "avatar_colour":
+      return form.avatar_colour.toUpperCase();
+    case "avatar_id":
+    case "avatar_style":
+      return JSON.stringify([form.avatar_style, form.avatar]);
+    case "pins":
+      return JSON.stringify(form.pins);
+    case "model_id":
+    case "effort":
+      return JSON.stringify([form.model_id, form.effort]);
+    case "tool_settings":
+      return JSON.stringify([form.model_id, form.tool_choices]);
+    case "history_share_pct":
+      return String(form.history_share_pct);
+    case "request_limit":
+      return String(form.request_limit);
+    case "max_reply_chars":
+      return String(form.max_reply_chars);
+    default:
+      return JSON.stringify(form);
+  }
+}
+
+// The server errors whose field did not change from `before` to `after`: an error is about the
+// value that was sent, so it goes when the owner changes its field, and never blocks the
+// corrected text. The Create page and the bot page share it.
+export function keepUnchanged({
+  problems,
+  before,
+  after,
+}: {
+  problems: Problems;
+  before: CreateForm;
+  after: CreateForm;
+}): Problems {
+  const kept: Problems = {};
+  for (const [field, message] of Object.entries(problems)) {
+    const head = fieldHead(field);
+    if (fieldSnapshot(before, head) === fieldSnapshot(after, head)) kept[field] = message;
+  }
+  return kept;
 }
 
 export interface FormContext {
