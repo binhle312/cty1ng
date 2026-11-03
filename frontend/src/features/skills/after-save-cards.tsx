@@ -10,7 +10,11 @@ import {
   listSkillVersionsOptions,
   pinSkillToBotsMutation,
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
-import type { ListSkillUpgradeCandidatesResponse } from "../../lib/api/generated/types.gen.ts";
+import type {
+  CreateSkillResponse,
+  CreateSkillVersionResponse,
+  ListSkillUpgradeCandidatesResponse,
+} from "../../lib/api/generated/types.gen.ts";
 import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
 import { BotPickList } from "../bots/bot-list.tsx";
 import { type BotRow, useBots } from "../bots/bot-queries.ts";
@@ -50,7 +54,7 @@ async function versionIdOf(
 // read also ends in the toast: nothing is lost, the Bots tab still offers "Upgrade to vN".
 export async function upgradeCardAfterSave(
   queryClient: QueryClient,
-  skill: { id: string; name: string; latest_version: { version: number } },
+  skill: Pick<CreateSkillVersionResponse, "id" | "name" | "latest_version">,
 ): Promise<AfterSaveCard | null> {
   const version = skill.latest_version.version;
   const toast = () => {
@@ -82,7 +86,7 @@ export async function upgradeCardAfterSave(
 // After Create: the assign card, or the toast when no bot exists.
 export async function assignCardAfterCreate(
   queryClient: QueryClient,
-  skill: { id: string; name: string },
+  skill: Pick<CreateSkillResponse, "id" | "name">,
 ): Promise<AfterSaveCard | null> {
   const toast = () => {
     showToast(`Created ${skill.name} ✨`);
