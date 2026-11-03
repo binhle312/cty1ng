@@ -51,7 +51,7 @@ async function versionIdOf(
     ...listSkillVersionsOptions({ path: { id: skillId } }),
     staleTime: 0,
   });
-  return versions.find((v) => v.version === version)?.id;
+  return versions.find((item) => item.version === version)?.id;
 }
 
 // After "Save as vN": the upgrade card, or the toast when no bot uses an older version. A failed
@@ -188,17 +188,17 @@ function UpgradeCard({
   });
   const ticked = new Set(rows.filter(({ bot }) => !unticked.has(bot.id)).map(({ bot }) => bot.id));
   const chosen = rows.filter(({ bot }) => ticked.has(bot.id));
-  const v = String(card.version);
+  const versionText = String(card.version);
   return (
     <Dialog
       open
       onClose={onClose}
-      title={`Saved v${v} ✨ Also upgrade these bots to v${v}?`}
+      title={`Saved v${versionText} ✨ Also upgrade these bots to v${versionText}?`}
       defaultButton={upgrade}
     >
       <DialogText>
         These bots use an older version. They keep it until you upgrade them. Tick the bots to move
-        to v{v}.
+        to v{versionText}.
       </DialogText>
       <BotPickList
         label="Bots that use an older version"

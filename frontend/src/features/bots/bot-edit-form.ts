@@ -72,8 +72,8 @@ interface FieldRule {
   // A change that the big avatar and the band show before Save ("Not saved", bot-page.md §2).
   avatar: boolean;
   changed: (sides: Sides) => boolean;
-  // Checked only when the field changed, under the field's own name.
-  problem: ((input: { form: CreateForm; ctx: EditContext }) => string | null) | null;
+  // Checked only when the field changed, keyed by the field the error shows under.
+  problem: ((input: { form: CreateForm; ctx: EditContext }) => Problems) | null;
   // Puts the field in the PATCH body (api.md §4).
   write: (input: { body: UpdateBotBody; form: CreateForm; effective: EffectiveTools }) => void;
 }
@@ -92,6 +92,21 @@ function textProblem({
   return field !== "persona_md" && form[field].trim() === ""
     ? "Required"
     : botFieldProblem(field, form[field], ctx.settings.limits);
+}
+
+// One problem under `field`, or none.
+function only(field: string, problem: string | null): Problems {
+  return problem === null ? {} : { [field]: problem };
+}
+
+// About the style and the image together, so both avatar fields check it, under `avatar_id`.
+function avatarProblem({ form }: { form: CreateForm }): Problems {
+  return only(
+    "avatar_id",
+    form.avatar_style === "upload" && form.avatar === null
+      ? "Upload an image, or pick Flat."
+      : null,
+  );
 }
 
 // The server wants `avatar_id` exactly when the style is `upload`, so an image goes with its style.
@@ -121,7 +136,7 @@ const FIELD_RULES = [
     keys: ["avatar_style", "avatar"],
     avatar: true,
     changed: ({ form, saved }) => form.avatar_style !== saved.avatar_style,
-    problem: null,
+    problem: avatarProblem,
     write: writeAvatar,
   },
   {
@@ -132,7 +147,7 @@ const FIELD_RULES = [
     avatar: true,
     changed: ({ form, saved }) =>
       form.avatar_style === "upload" && form.avatar?.id !== saved.avatar?.id,
-    problem: null,
+    problem: avatarProblem,
     write: writeAvatar,
   },
   {
@@ -156,10 +171,13 @@ const FIELD_RULES = [
     avatar: false,
     changed: ({ form, saved }) => form.name !== saved.name,
     problem: ({ form, ctx }) =>
-      textProblem({ field: "name", form, ctx }) ??
-      (nameTaken(form.name, ctx.otherNames)
-        ? takenNameText({ name: form.name, byServer: false })
-        : null),
+      only(
+        "name",
+        textProblem({ field: "name", form, ctx }) ??
+          (nameTaken(form.name, ctx.otherNames)
+            ? takenNameText({ name: form.name, byServer: false })
+            : null),
+      ),
     write: ({ body, form }) => {
       body.name = form.name;
     },
@@ -171,7 +189,8 @@ const FIELD_RULES = [
     keys: ["description"],
     avatar: false,
     changed: ({ form, saved }) => form.description !== saved.description,
-    problem: ({ form, ctx }) => textProblem({ field: "description", form, ctx }),
+    problem: ({ form, ctx }) =>
+      only("description", textProblem({ field: "description", form, ctx })),
     write: ({ body, form }) => {
       body.description = form.description;
     },
@@ -183,7 +202,7 @@ const FIELD_RULES = [
     keys: ["persona_md"],
     avatar: false,
     changed: ({ form, saved }) => form.persona_md !== saved.persona_md,
-    problem: ({ form, ctx }) => textProblem({ field: "persona_md", form, ctx }),
+    problem: ({ form, ctx }) => only("persona_md", textProblem({ field: "persona_md", form, ctx })),
     write: ({ body, form }) => {
       body.persona_md = form.persona_md;
     },
@@ -210,12 +229,15 @@ const FIELD_RULES = [
     avatar: false,
     changed: ({ form, saved }) => form.history_share_pct !== saved.history_share_pct,
     problem: ({ form, ctx }) =>
-      rangeProblem({
-        value: form.history_share_pct,
-        min: ctx.settings.historyMin,
-        max: ctx.settings.historyMax,
-        step: HISTORY_STEP_PCT,
-      }),
+      only(
+        "history_share_pct",
+        rangeProblem({
+          value: form.history_share_pct,
+          min: ctx.settings.historyMin,
+          max: ctx.settings.historyMax,
+          step: HISTORY_STEP_PCT,
+        }),
+      ),
     write: ({ body, form }) => {
       body.history_share_pct = form.history_share_pct;
     },
@@ -229,7 +251,10 @@ const FIELD_RULES = [
     changed: ({ form, saved }) => form.request_limit !== saved.request_limit,
     problem: ({ form }) => {
       const range = BOT_VALUE_RANGES.request_limit;
-      return rangeProblem({ value: form.request_limit, min: range.min, max: range.max });
+      return only(
+        "request_limit",
+        rangeProblem({ value: form.request_limit, min: range.min, max: range.max }),
+      );
     },
     write: ({ body, form }) => {
       body.request_limit = form.request_limit;
@@ -244,7 +269,10 @@ const FIELD_RULES = [
     changed: ({ form, saved }) => form.max_reply_chars !== saved.max_reply_chars,
     problem: ({ form }) => {
       const range = BOT_VALUE_RANGES.max_reply_chars;
-      return rangeProblem({ value: form.max_reply_chars, min: range.min, max: range.max });
+      return only(
+        "max_reply_chars",
+        rangeProblem({ value: form.max_reply_chars, min: range.min, max: range.max }),
+      );
     },
     write: ({ body, form }) => {
       body.max_reply_chars = form.max_reply_chars;
@@ -333,12 +361,7 @@ export function editProblems({
   const out: Problems = {};
   for (const rule of FIELD_RULES) {
     if (rule.tab !== tab || rule.problem === null || !changed.includes(rule.field)) continue;
-    const problem = rule.problem({ form, ctx });
-    if (problem !== null) out[rule.field] = problem;
-  }
-  // About the style and the image together, so it is no one field's rule.
-  if (tab === "profile" && form.avatar_style === "upload" && form.avatar === null) {
-    out.avatar_id = "Upload an image, or pick Flat.";
+    Object.assign(out, rule.problem({ form, ctx }));
   }
   return out;
 }

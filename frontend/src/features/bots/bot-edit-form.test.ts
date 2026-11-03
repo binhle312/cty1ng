@@ -100,11 +100,16 @@ describe("the bot page's edit form (bot-page.md §4, §6)", () => {
     );
   });
 
-  it("asks for an image when Upload image has none", () => {
+  it("asks for an image when Upload image has none: a new style, or an image taken away", () => {
     const form = { ...saved, avatar_style: "upload" as const, avatar: null };
     expect(editProblems({ tab: "profile", form, changed: ["avatar_style"], ctx }).avatar_id).toBe(
       "Upload an image, or pick Flat.",
     );
+    expect(editProblems({ tab: "profile", form, changed: ["avatar_image"], ctx }).avatar_id).toBe(
+      "Upload an image, or pick Flat.",
+    );
+    // The Model tab does not check the avatar.
+    expect(editProblems({ tab: "model", form, changed: [], ctx })).toEqual({});
   });
 
   it("checks the Advanced ranges of the Model tab", () => {
