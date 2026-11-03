@@ -100,10 +100,11 @@ export function withTab({
   return { ...into, ...(tab === "profile" ? profileOf(from) : setupOf(from)) };
 }
 
-// The form keys behind each changed field.
+// The form keys behind each changed field. The style and the image go together: an image kept
+// without its style (or a style without its image) is not the avatar the owner picked.
 const FORM_KEYS = {
-  avatar_style: ["avatar_style"],
-  avatar_image: ["avatar"],
+  avatar_style: ["avatar_style", "avatar"],
+  avatar_image: ["avatar_style", "avatar"],
   avatar_colour: ["avatar_colour"],
   name: ["name"],
   description: ["description"],

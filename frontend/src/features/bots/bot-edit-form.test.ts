@@ -193,6 +193,31 @@ describe("the bot page's edit form (bot-page.md §4, §6)", () => {
     expect(merged.request_limit).toBe(saved.request_limit);
   });
 
+  it("keeps the style with a new image: an upload after a Discard while a Flat save waits", () => {
+    const a = { id: "avatar-a", url: "/a.png" };
+    const b = { id: "avatar-b", url: "/b.png" };
+    const base = { ...saved, avatar_style: "upload" as const, avatar: a };
+    const mine = { ...base, avatar: b };
+    const theirs = { ...base, avatar_style: "flat" as const };
+    const merged = mergeTab({ tab: "profile", base, mine, theirs, effective: asIs });
+    expect(merged.avatar_style).toBe("upload");
+    expect(merged.avatar).toEqual(b);
+    expect(changedFields({ tab: "profile", form: merged, saved: theirs, effective: asIs })).toEqual(
+      ["avatar_style", "avatar_image"],
+    );
+  });
+
+  it("keeps the image with a new style: Upload of the remembered image while a save waits", () => {
+    const a = { id: "avatar-a", url: "/a.png" };
+    const c = { id: "avatar-c", url: "/c.png" };
+    const base = { ...saved, avatar_style: "flat" as const, avatar: a };
+    const mine = { ...base, avatar_style: "upload" as const };
+    const theirs = { ...base, avatar: c };
+    const merged = mergeTab({ tab: "profile", base, mine, theirs, effective: asIs });
+    expect(merged.avatar_style).toBe("upload");
+    expect(merged.avatar).toEqual(a);
+  });
+
   it("finds the tab of a field the server named", () => {
     expect(tabOfField("name")).toBe("profile");
     expect(tabOfField("avatar_id")).toBe("profile");

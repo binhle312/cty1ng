@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { hashKey, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ellipsis, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../../components/ui/button.tsx";
@@ -86,23 +86,44 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
     setDialog(null);
   };
   const refresh = () => queryClient.invalidateQueries({ predicate: PIN_QUERIES });
+  // The bot list loads from the server since the tab opened. A write from an answer
+  // (`setQueryData`) is not a load and does not count.
+  const listLoads = useRef(0);
+  useEffect(() => {
+    const listHash = hashKey(listBotsQueryKey());
+    return queryClient.getQueryCache().subscribe((event) => {
+      if (
+        event.type === "updated" &&
+        event.action.type === "success" &&
+        event.action.manual !== true &&
+        event.query.queryHash === listHash
+      ) {
+        listLoads.current += 1;
+      }
+    });
+  }, [queryClient]);
   // A pin answer changes only the pin of its own skill. A pin change never raises `row_version`,
   // so nothing in the answer tells if the rest of the bot is older than the cache: a Profile save
   // or a change of another skill may have come first. The refresh after it loads the rest.
   // The pin itself changes only while the page still shows the pin the request expected: the
   // server refused any change made before this one (409), so a different pin in the page is this
   // change or a newer one, and the answer would take it back.
+  // A list load after the request went out may show a newer change with the expected value (on,
+  // then off in another tab): the same value tells nothing, so the answer changes no pin then,
+  // and the refresh after it shows the server's pin.
   const replacePin = ({
     answer,
     skillId,
     expected,
+    loadsAtSend,
   }: {
     answer: BotRow;
     skillId: string;
     expected: { skill_version_id: string; always_load: boolean };
+    loadsAtSend: number;
   }) => {
     const pin = answer.pins.find((item) => item.skill_id === skillId);
-    if (pin === undefined) return;
+    if (pin === undefined || listLoads.current !== loadsAtSend) return;
     const asExpected = (old: BotPin) =>
       old.skill_version_id === expected.skill_version_id &&
       old.always_load === expected.always_load;
@@ -131,6 +152,9 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
   const toggleLoad = (pin: BotPin, alwaysLoad: boolean) => {
     setPendingLoads((current) => new Map(current).set(pin.skill_id, alwaysLoad));
     const expected = { skill_version_id: pin.skill_version_id, always_load: pin.always_load };
+    const loadsAtSend = listLoads.current;
+    // The switch shows the value on its way until the refresh after the answer, so a skipped
+    // answer (see `replacePin`) does not show an older value for a moment.
     void setPin
       .mutateAsync({
         path: { id: bot.id, skill_id: pin.skill_id },
@@ -138,12 +162,12 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
       })
       .then(
         (answer) => {
-          replacePin({ answer, skillId: pin.skill_id, expected });
-          void refresh();
+          replacePin({ answer, skillId: pin.skill_id, expected, loadsAtSend });
+          return refresh();
         },
         (error: unknown) => {
-          void refresh();
           showToast(staleText(pin.skill_name, error));
+          return refresh();
         },
       )
       .finally(() => {
@@ -370,6 +394,7 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
             skill_version_id: dialogPin.skill_version_id,
             always_load: dialogPin.always_load,
           };
+          const loadsAtSend = listLoads.current;
           runInDialog({
             shown: dialog,
             request: setPin
@@ -382,7 +407,7 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
                 },
               })
               .then((answer) => {
-                replacePin({ answer, skillId: dialogPin.skill_id, expected });
+                replacePin({ answer, skillId: dialogPin.skill_id, expected, loadsAtSend });
               }),
             failed: (error) => staleText(dialogPin.skill_name, error),
             // The tab loads the newest pins and keeps no change (bot-page.md §7).

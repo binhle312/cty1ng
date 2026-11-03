@@ -979,6 +979,52 @@ describe("the Skills tab (bot-page.md §7)", () => {
     expect(screen.queryByRole("button", { name: "v3 available" })).toBeNull();
   });
 
+  it("keeps a newer opposite toggle from another tab when the late Always load answer comes after it", async () => {
+    const held = heldAnswer();
+    const [zeta] = pins;
+    if (zeta === undefined) throw new Error("no pins");
+    const state = { bots: [makeBot(1, "BA", [zeta])] };
+    let fail = false;
+    const { queryClient } = await open(
+      state,
+      {
+        "GET /api/bots": () =>
+          fail
+            ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+            : { body: state.bots },
+        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+      "/bots/ba?tab=skills",
+    );
+    await heading();
+    click(screen.getByRole("switch", { name: "Always load Zeta" }));
+    // The toggle got to the server first (on); then another tab turned it off again, and the
+    // page loaded that (off, the same value the toggle expected) before the toggle's answer came.
+    const loadsBefore = queryClient.getQueryState(listBotsQueryKey())?.dataUpdateCount ?? 0;
+    refocus();
+    await waitFor(() => {
+      expect(queryClient.getQueryState(listBotsQueryKey())?.dataUpdateCount).toBeGreaterThan(
+        loadsBefore,
+      );
+    });
+    // The refresh after the answer fails, so only the answer could change the list.
+    fail = true;
+    await held.answer({ body: makeBot(1, "BA", [{ ...zeta, always_load: true }]) });
+    await waitFor(() => {
+      expect(
+        screen.getByRole("switch", { name: "Always load Zeta" }).hasAttribute("disabled"),
+      ).toBe(false);
+    });
+    const cached = queryClient.getQueryData<Bot[]>(listBotsQueryKey())?.[0]?.pins[0];
+    expect(cached?.always_load).toBe(false);
+    expect(
+      screen.getByRole("switch", { name: "Always load Zeta" }).getAttribute("aria-checked"),
+    ).toBe("false");
+  });
+
   it("shows an Upgrade that fails after the skill left the bot in another place as a toast", async () => {
     const held = heldAnswer();
     const state = { bots: [makeBot(1, "BA", pins.slice(0, 1))] };
