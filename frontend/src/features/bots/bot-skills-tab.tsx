@@ -89,13 +89,29 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
   // A pin answer changes only the pin of its own skill. A pin change never raises `row_version`,
   // so nothing in the answer tells if the rest of the bot is older than the cache: a Profile save
   // or a change of another skill may have come first. The refresh after it loads the rest.
-  const replacePin = ({ answer, skillId }: { answer: BotRow; skillId: string }) => {
+  // The pin itself changes only while the page still shows the pin the request expected: the
+  // server refused any change made before this one (409), so a different pin in the page is this
+  // change or a newer one, and the answer would take it back.
+  const replacePin = ({
+    answer,
+    skillId,
+    expected,
+  }: {
+    answer: BotRow;
+    skillId: string;
+    expected: { skill_version_id: string; always_load: boolean };
+  }) => {
     const pin = answer.pins.find((item) => item.skill_id === skillId);
     if (pin === undefined) return;
+    const asExpected = (old: BotPin) =>
+      old.skill_version_id === expected.skill_version_id &&
+      old.always_load === expected.always_load;
     queryClient.setQueryData<BotRow[]>(listBotsQueryKey(), (current) =>
       current?.map((item) => {
         if (item.id !== answer.id) return item;
-        const nextPins = item.pins.map((old) => (old.skill_id === skillId ? pin : old));
+        const nextPins = item.pins.map((old) =>
+          old.skill_id === skillId && asExpected(old) ? pin : old,
+        );
         // The same count as the server's (bots.service.ts).
         const updates = nextPins.filter((p) => p.version < p.latest_version).length;
         return { ...item, pins: nextPins, counts: { ...item.counts, skill_updates: updates } };
@@ -114,18 +130,15 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
 
   const toggleLoad = (pin: BotPin, alwaysLoad: boolean) => {
     setPendingLoads((current) => new Map(current).set(pin.skill_id, alwaysLoad));
+    const expected = { skill_version_id: pin.skill_version_id, always_load: pin.always_load };
     void setPin
       .mutateAsync({
         path: { id: bot.id, skill_id: pin.skill_id },
-        body: {
-          skill_version_id: pin.skill_version_id,
-          always_load: alwaysLoad,
-          expected: { skill_version_id: pin.skill_version_id, always_load: pin.always_load },
-        },
+        body: { skill_version_id: pin.skill_version_id, always_load: alwaysLoad, expected },
       })
       .then(
         (answer) => {
-          replacePin({ answer, skillId: pin.skill_id });
+          replacePin({ answer, skillId: pin.skill_id, expected });
           void refresh();
         },
         (error: unknown) => {
@@ -343,6 +356,10 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
         onClose={closeDialog}
         onConfirm={(version) => {
           if (dialogPin === undefined || dialog?.kind !== "move") return;
+          const expected = {
+            skill_version_id: dialogPin.skill_version_id,
+            always_load: dialogPin.always_load,
+          };
           runInDialog({
             shown: dialog,
             request: setPin
@@ -351,14 +368,11 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
                 body: {
                   skill_version_id: version.id,
                   always_load: dialogPin.always_load,
-                  expected: {
-                    skill_version_id: dialogPin.skill_version_id,
-                    always_load: dialogPin.always_load,
-                  },
+                  expected,
                 },
               })
               .then((answer) => {
-                replacePin({ answer, skillId: dialogPin.skill_id });
+                replacePin({ answer, skillId: dialogPin.skill_id, expected });
               }),
             failed: (error) => staleText(dialogPin.skill_name, error),
             // The tab loads the newest pins and keeps no change (bot-page.md §7).

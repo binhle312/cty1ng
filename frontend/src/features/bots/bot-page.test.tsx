@@ -543,6 +543,50 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     });
     expect(within(saveBar()).getByText("No changes. Edits apply from the next run.")).toBeTruthy();
   });
+
+  it("keeps text typed after a Discard while Save waits, with no conflict for its own save", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA")] };
+    let saves = 0;
+    await open(state, {
+      [`PATCH /api/bots/${BA_ID}`]: async () => {
+        saves += 1;
+        if (saves > 1) {
+          return {
+            body: { ...makeBot(1, "BA"), row_version: 3, name: "Analyst", description: "First." },
+          };
+        }
+        const answer = await held.promise;
+        return answer;
+      },
+    });
+    await heading();
+    type("Description", "First.");
+    click(screen.getByRole("button", { name: "Save" }));
+    type("Description", "Second.");
+    click(screen.getByRole("button", { name: "Discard" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
+    click(within(dialog).getByRole("button", { name: "Let them go" }));
+    // The owner types again before the answer comes.
+    type("Name", "Analyst");
+    const saved = { ...makeBot(1, "BA"), row_version: 2, description: "First." };
+    state.bots = [saved];
+    await held.answer({ body: saved });
+    await waitFor(() => {
+      expect(valueOf("Description")).toBe("First.");
+    });
+    expect(valueOf("Name")).toBe("Analyst");
+    expect(screen.queryByText(/BA changed in another place/)).toBeNull();
+    expect(within(saveBar()).getByText("1 change not saved")).toBeTruthy();
+    click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(fake?.sent("PATCH", `/api/bots/${BA_ID}`)).toHaveLength(2);
+    });
+    expect(fake?.sent("PATCH", `/api/bots/${BA_ID}`)[1]?.body).toEqual({
+      row_version: 2,
+      name: "Analyst",
+    });
+  });
 });
 
 describe("leaving the bot page with changes (bot-page.md §4.1)", () => {
@@ -855,6 +899,48 @@ describe("the Skills tab (bot-page.md §7)", () => {
     await waitFor(() => {
       expect(
         screen.getByRole("switch", { name: "Always load Alpha" }).hasAttribute("disabled"),
+      ).toBe(false);
+    });
+    expect(screen.queryByRole("button", { name: "v3 available" })).toBeNull();
+  });
+
+  it("keeps a newer version of the same skill when a late Always load answer comes after it", async () => {
+    const held = heldAnswer();
+    const [zeta] = pins;
+    if (zeta === undefined) throw new Error("no pins");
+    const state = { bots: [makeBot(1, "BA", [zeta])] };
+    let fail = false;
+    await open(
+      state,
+      {
+        "GET /api/bots": () =>
+          fail
+            ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+            : { body: state.bots },
+        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+      "/bots/ba?tab=skills",
+    );
+    await heading();
+    click(screen.getByRole("switch", { name: "Always load Zeta" }));
+    // The toggle got to the server first; then another tab moved Zeta to v3, and the page
+    // loaded that before the toggle's answer came.
+    state.bots = [
+      makeBot(1, "BA", [makePin({ skill_name: "Zeta", skill_slug: "zeta", always_load: true })]),
+    ];
+    refocus();
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "v3 available" })).toBeNull();
+    });
+    // The refresh after the answer fails, so only the answer could change the list.
+    fail = true;
+    await held.answer({ body: makeBot(1, "BA", [{ ...zeta, always_load: true }]) });
+    await waitFor(() => {
+      expect(
+        screen.getByRole("switch", { name: "Always load Zeta" }).hasAttribute("disabled"),
       ).toBe(false);
     });
     expect(screen.queryByRole("button", { name: "v3 available" })).toBeNull();

@@ -7,6 +7,7 @@ import {
   editProblems,
   type EffectiveTools,
   leaveText,
+  mergeTab,
   patchBody,
   tabOfField,
   withTab,
@@ -180,6 +181,16 @@ describe("the bot page's edit form (bot-page.md §4, §6)", () => {
     const discarded = withTab({ into: form, from: saved, tab: "profile" });
     expect(discarded.name).toBe("BA");
     expect(discarded.request_limit).toBe(20);
+  });
+
+  it("takes the other side's values on one tab, except the fields the owner changed", () => {
+    const theirs = { ...saved, description: "Saved.", name: "Saved name", request_limit: 99 };
+    const mine = { ...saved, name: "Analyst" };
+    const merged = mergeTab({ tab: "profile", base: saved, mine, theirs, effective: asIs });
+    expect(merged.description).toBe("Saved.");
+    expect(merged.name).toBe("Analyst");
+    // The other tab stays as it is.
+    expect(merged.request_limit).toBe(saved.request_limit);
   });
 
   it("finds the tab of a field the server named", () => {

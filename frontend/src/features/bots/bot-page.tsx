@@ -26,6 +26,7 @@ import {
   editProblems,
   type EffectiveTools,
   leaveText,
+  mergeTab,
   patchBody,
   tabOfField,
   withTab,
@@ -162,8 +163,10 @@ function BotView({
   const [saving, setSaving] = useState<EditTab | null>(null);
   // The form as it is now, for an answer that comes after more typing.
   const latestForm = useRef(form);
+  const latestSaved = useRef(saved);
   useEffect(() => {
     latestForm.current = form;
+    latestSaved.current = saved;
   });
   // A newer `row_version` (a save here, another tab, a `bot.updated` event): a tab with no changes
   // takes the new values at once; a tab with changes keeps them and shows the conflict. The check
@@ -296,16 +299,26 @@ function BotView({
             b.id === result.id && result.row_version > b.row_version ? { ...b, ...result } : b,
           ),
         );
-        // A tab the owner let go while Save waited shows the server's values, not the form it
-        // dropped: it keeps its old base, so it takes the saved values from the list like any
-        // newer `row_version`.
-        const droppedTab = letGoCount.current[t] === sentLetGo ? null : t;
-        if (droppedTab === null) setSaved((old) => withTab({ into: old, from: sent, tab: t }));
+        // A tab the owner let go while Save waited shows the saved values, not the edit it
+        // dropped; a field typed in after the Discard keeps its text, as a change.
+        if (letGoCount.current[t] !== sentLetGo) {
+          setForm(
+            mergeTab({
+              tab: t,
+              base: latestSaved.current,
+              mine: latestForm.current,
+              theirs: sent,
+              effective,
+            }),
+          );
+        }
+        setSaved((old) => withTab({ into: old, from: sent, tab: t }));
         // The server took the save at `sentBase`, so nothing else changed in between: every tab
         // whose edit started there is now based on the new `row_version`.
-        const moved = (old: Record<EditTab, number>, x: EditTab) =>
-          old[x] === sentBase && x !== droppedTab ? result.row_version : old[x];
-        setBase((old) => ({ profile: moved(old, "profile"), model: moved(old, "model") }));
+        setBase((old) => ({
+          profile: old.profile === sentBase ? result.row_version : old.profile,
+          model: old.model === sentBase ? result.row_version : old.model,
+        }));
         void queryClient.invalidateQueries({ predicate: PIN_QUERIES });
       })
       .catch((error: unknown) => {

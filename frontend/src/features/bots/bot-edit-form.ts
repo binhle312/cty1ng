@@ -100,6 +100,43 @@ export function withTab({
   return { ...into, ...(tab === "profile" ? profileOf(from) : setupOf(from)) };
 }
 
+// The form keys behind each changed field.
+const FORM_KEYS = {
+  avatar_style: ["avatar_style"],
+  avatar_image: ["avatar"],
+  avatar_colour: ["avatar_colour"],
+  name: ["name"],
+  description: ["description"],
+  persona_md: ["persona_md"],
+  tool_settings: ["tool_choices"],
+  history_share_pct: ["history_share_pct"],
+  request_limit: ["request_limit"],
+  max_reply_chars: ["max_reply_chars"],
+} as const satisfies Record<EditField, readonly (keyof CreateForm)[]>;
+
+// One tab of `mine` with the values of `theirs`, except the fields the owner changed since
+// `base`: those keep the owner's text. A Save that succeeds after the owner let the tab go.
+export function mergeTab({
+  tab,
+  base,
+  mine,
+  theirs,
+  effective,
+}: {
+  tab: EditTab;
+  base: CreateForm;
+  mine: CreateForm;
+  theirs: CreateForm;
+  effective: EffectiveTools;
+}): CreateForm {
+  const kept = changedFields({ tab, form: mine, saved: base, effective });
+  const keys = kept.flatMap((field) => FORM_KEYS[field]);
+  return {
+    ...withTab({ into: mine, from: theirs, tab }),
+    ...Object.fromEntries(keys.map((key) => [key, mine[key]])),
+  };
+}
+
 // The tool switches as the server stores them: the effective ones for the bot's model.
 export type EffectiveTools = (form: CreateForm) => Record<string, boolean>;
 
