@@ -142,7 +142,8 @@ there, so it never jumps.
   2026-11-02). When the owner lets the changes go while a Save is pending and the Save then
   succeeds, the tab shows the saved values; it never brings back the dropped edit. A field typed
   in after the Discard keeps its text as a change, and the Save shows no conflict, because it
-  is the tab's own (M2c review, 2026-11-03).
+  is the tab's own. When the Discard loaded values newer than the Save (another tab saved after
+  it), the tab keeps the newer values (M2c review, 2026-11-03).
 - **Leave with unsaved changes** (Discard, Esc, ← Back, another bot, tab or page) asks first,
   with the dialog of `project-settings-page.md` §5: **Leave without saving? 👀**, a text that
   names the changed fields, **Stay on this page** (`primary`, default) and **Let them go**
@@ -191,7 +192,8 @@ just takes the row away. A pin answer changes only the pin of its own skill: a p
 raise `row_version`, so the answer cannot tell if the rest of the bot is newer in the page. It
 changes that pin only while the page still shows the pin the request expected; a different pin
 is this change or a newer one (M2c review, 2026-11-02 and 2026-11-03). An answer that comes after the owner left the tab or the page
-shows as a toast, not in the closed dialog.
+shows as a toast, not in the closed dialog. A dialog whose skill left the bot in another place
+closes, and its answer also shows as a toast.
 
 ## 8. Activity tab (CH1)
 

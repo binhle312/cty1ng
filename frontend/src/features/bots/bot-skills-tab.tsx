@@ -237,6 +237,16 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
   const pins = sortedPins(bot.pins);
   const dialogPin =
     dialogSkillId === null ? undefined : bot.pins.find((pin) => pin.skill_id === dialogSkillId);
+  // The skill of the open dialog left the bot (removed in another place): the dialog closes, so
+  // an answer that comes after shows as a toast, not in a dialog that nobody sees.
+  if (dialogSkillId !== null && dialogPin === undefined) {
+    setDialogState(null);
+    setDialogError(null);
+  }
+  // The dialog request checks this ref; it follows the dialog on screen, also after the close above.
+  useEffect(() => {
+    shownDialog.current = dialog;
+  }, [dialog]);
   const has = new Set(bot.pins.map((pin) => pin.skill_id));
   // Undefined until the list comes, so the card says it is loading.
   const addable = skills.data?.filter((skill) => !skill.deprecated && !has.has(skill.id));

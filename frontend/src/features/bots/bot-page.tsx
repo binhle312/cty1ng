@@ -164,9 +164,11 @@ function BotView({
   // The form as it is now, for an answer that comes after more typing.
   const latestForm = useRef(form);
   const latestSaved = useRef(saved);
+  const latestBase = useRef(base);
   useEffect(() => {
     latestForm.current = form;
     latestSaved.current = saved;
+    latestBase.current = base;
   });
   // A newer `row_version` (a save here, another tab, a `bot.updated` event): a tab with no changes
   // takes the new values at once; a tab with changes keeps them and shows the conflict. The check
@@ -299,20 +301,25 @@ function BotView({
             b.id === result.id && result.row_version > b.row_version ? { ...b, ...result } : b,
           ),
         );
-        // A tab the owner let go while Save waited shows the saved values, not the edit it
-        // dropped; a field typed in after the Discard keeps its text, as a change.
-        if (letGoCount.current[t] !== sentLetGo) {
-          setForm(
-            mergeTab({
-              tab: t,
-              base: latestSaved.current,
-              mine: latestForm.current,
-              theirs: sent,
-              effective,
-            }),
-          );
+        // The answer sets the tab's values only while the tab is still based on `sentBase`. A
+        // Discard that loaded a newer `row_version` (another tab saved after this save) already
+        // shows values newer than the answer; they stay.
+        if (latestBase.current[t] === sentBase) {
+          // A tab the owner let go while Save waited shows the saved values, not the edit it
+          // dropped; a field typed in after the Discard keeps its text, as a change.
+          if (letGoCount.current[t] !== sentLetGo) {
+            setForm(
+              mergeTab({
+                tab: t,
+                base: latestSaved.current,
+                mine: latestForm.current,
+                theirs: sent,
+                effective,
+              }),
+            );
+          }
+          setSaved((old) => withTab({ into: old, from: sent, tab: t }));
         }
-        setSaved((old) => withTab({ into: old, from: sent, tab: t }));
         // The server took the save at `sentBase`, so nothing else changed in between: every tab
         // whose edit started there is now based on the new `row_version`.
         setBase((old) => ({

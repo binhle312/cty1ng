@@ -544,6 +544,39 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     expect(within(saveBar()).getByText("No changes. Edits apply from the next run.")).toBeTruthy();
   });
 
+  it("keeps newer values from another tab when Save answers after a Discard loaded them", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA")] };
+    await open(state, {
+      [`PATCH /api/bots/${BA_ID}`]: async () => {
+        const answer = await held.promise;
+        return answer;
+      },
+    });
+    await heading();
+    type("Description", "First.");
+    click(screen.getByRole("button", { name: "Save" }));
+    // The save made v2; then another tab made v3, and the page loaded it before the answer.
+    const newer = { ...makeBot(1, "BA"), row_version: 3, description: "From another tab." };
+    state.bots = [newer];
+    refocus();
+    await screen.findByText(/BA changed in another place/);
+    click(screen.getByRole("button", { name: "Discard" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
+    click(within(dialog).getByRole("button", { name: "Let them go" }));
+    await waitFor(() => {
+      expect(valueOf("Description")).toBe("From another tab.");
+    });
+    const loads = fake?.sent("GET", "/api/bots").length ?? 0;
+    await held.answer({ body: { ...makeBot(1, "BA"), row_version: 2, description: "First." } });
+    // The answer was handled: a successful save refreshes the list.
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(loads);
+    });
+    expect(valueOf("Description")).toBe("From another tab.");
+    expect(within(saveBar()).getByText("No changes. Edits apply from the next run.")).toBeTruthy();
+  });
+
   it("keeps text typed after a Discard while Save waits, with no conflict for its own save", async () => {
     const held = heldAnswer();
     const state = { bots: [makeBot(1, "BA")] };
@@ -944,6 +977,38 @@ describe("the Skills tab (bot-page.md §7)", () => {
       ).toBe(false);
     });
     expect(screen.queryByRole("button", { name: "v3 available" })).toBeNull();
+  });
+
+  it("shows an Upgrade that fails after the skill left the bot in another place as a toast", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA", pins.slice(0, 1))] };
+    await open(
+      state,
+      {
+        [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+        [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
+          body: { body: [{ op: "add", text: "New line." }], description: null },
+        }),
+        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+      "/bots/ba?tab=skills",
+    );
+    await heading();
+    click(screen.getByRole("button", { name: "v3 available" }));
+    const dialog = await screen.findByRole("dialog", { name: "Upgrade Zeta to v3?" });
+    click(await within(dialog).findByRole("button", { name: "Upgrade to v3" }));
+    // Another tab removes Zeta while the Upgrade waits; the page loads that.
+    state.bots = [makeBot(1, "BA", [])];
+    refocus();
+    await screen.findByText("BA has no skills yet.");
+    await held.answer({
+      status: 500,
+      body: { error: { code: "internal_error", message: "The app could not save it." } },
+    });
+    expect(await screen.findByText("The app could not save it.")).toBeTruthy();
   });
 
   it("shows a version move that fails after the owner left the page as a toast", async () => {
