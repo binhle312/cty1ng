@@ -33,6 +33,7 @@ the parts that the header and the Skills page share.
 | `custom-colour-card.tsx` | The Custom colour card: box, hue bar, R G B and Hex |
 | `delete-bot-dialog.tsx` | Delete a bot to Trash: the dialog and its toast |
 | `drag-setup.ts` | The drag sensors (mouse, long-press touch, Space) and the drop-area check shared by the header and the Pinned group |
+| `pin-answer.ts` | A skill pin answer on the bot page and the Skills page: it writes only its own pin, with the bot list load count that outlives a tab |
 | `pinned-sort.tsx` | Reordering the pinned bots (pin.md §2): drag and Alt+← / Alt+→, for the Bots grid and the side list |
 | `tools-list.tsx` | The Tools list of step 4: internal and provider tools, pairs, gates |
 

@@ -139,14 +139,17 @@ there, so it never jumps.
   values at once. A name taken meanwhile (409 `name_taken`) shows under Name.
   Text typed while a Save is pending stays as a change after it, also text typed back to the
   old value, and also when the `bot.updated` event of that save comes before its answer: the tab
-  waits for the answer before it takes new values. An error from the server (a taken name, a
+  waits for the answer before it takes new values. While the Save waits, the save bar, Discard,
+  Esc and the leave question count that text as a change too (M2c review, 2026-11-03). An error from the server (a taken name, a
   field error) shows only on a field that still has the text that was sent (M2c review,
   2026-11-02). When the owner lets the changes go while a Save is pending and the Save then
   succeeds, the tab shows the saved values; it never brings back the dropped edit. A field typed
   in after the Discard keeps its text as a change, and the Save shows no conflict, because it
   is the tab's own. When the Discard loaded values newer than the Save (another tab saved after
   it), the tab keeps the newer values. The avatar style and the image count as one choice: a new
-  image kept after the Discard keeps its style too (M2c review, 2026-11-03).
+  image kept after the Discard keeps its style too (M2c review, 2026-11-03). An image upload
+  that answers after the tab took newer values (another tab renamed the bot) changes only the
+  avatar style and the image; the other fields keep the newer values (M2c review, 2026-11-03).
 - **Leave with unsaved changes** (Discard, Esc, ← Back, another bot, tab or page) asks first,
   with the dialog of `project-settings-page.md` §5: **Leave without saving? 👀**, a text that
   names the changed fields, **Stay on this page** (`primary`, default) and **Let them go**
@@ -197,7 +200,9 @@ changes that pin only while the page still shows the pin the request expected; a
 is this change or a newer one. When the page loaded the bot list after the request went out, the
 answer changes no pin, because a newer change may have the expected value again (on, then off in
 another tab); the refresh after the answer shows the pin, and the switch keeps the value on its
-way until then (M2c review, 2026-11-02 and 2026-11-03). The reverse also holds: a Profile or
+way until then (M2c review, 2026-11-02 and 2026-11-03). This holds also when the answer comes
+after the owner left the tab: the page counts the loads for as long as the app runs (M2c review,
+2026-11-03). The reverse also holds: a Profile or
 Model save never changes a pin, so its answer, even with a newer `row_version`, keeps the pins
 and the skill counts that the page shows; a toggle made while that Save was on its way stays (M2c
 review, 2026-11-03). An answer that comes after the owner left the tab or the page

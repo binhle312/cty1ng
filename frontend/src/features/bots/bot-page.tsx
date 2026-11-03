@@ -162,6 +162,20 @@ function BotView({
   };
   // The tab whose Save is on its way.
   const [saving, setSaving] = useState<EditTab | null>(null);
+  // What that Save sent, until its answer or until the owner lets the tab go. Text that differs
+  // from it is a change after the Save, also text typed back to the old value (bot-page.md §4.1):
+  // the leave question, Esc, Discard and the save bar count it. A Discard drops it: nothing of the
+  // owner's is unsaved then.
+  const [pending, setPending] = useState<{ tab: EditTab; sent: CreateForm } | null>(null);
+  const unsavedOf = (t: EditTab): EditField[] => {
+    if (pending?.tab !== t) return changed[t];
+    const sinceSent = changedFields({ tab: t, form, saved: pending.sent, effective });
+    return [...new Set([...changed[t], ...sinceSent])];
+  };
+  const unsaved: Record<EditTab, EditField[]> = {
+    profile: unsavedOf("profile"),
+    model: unsavedOf("model"),
+  };
   // The form as it is now, for an answer that comes after more typing.
   const latestForm = useRef(form);
   const latestSaved = useRef(saved);
@@ -269,6 +283,7 @@ function BotView({
       ),
     );
     setTried((old) => new Set([...old].filter((t) => !tabs.includes(t))));
+    setPending((old) => (old !== null && tabs.includes(old.tab) ? null : old));
     setUploadError(null);
     // A tab refused as stale loads the newest values again: the refresh after the refusal may
     // have failed.
@@ -282,7 +297,7 @@ function BotView({
     });
   };
 
-  const dirtyFields = [...changed.profile, ...changed.model];
+  const dirtyFields = [...unsaved.profile, ...unsaved.model];
   const leave = useBotLeaveGuard({
     dirty: dirtyFields.length > 0,
     text: leaveText(dirtyFields),
@@ -307,6 +322,7 @@ function BotView({
     const fields = changed[t];
     const sentLetGo = letGoCount.current[t];
     setSaving(t);
+    setPending({ tab: t, sent });
     mutateAsync({
       path: { id: bot.id },
       body: patchBody({ tab: t, form: sent, changed: fields, rowVersion: sentBase, effective }),
@@ -370,6 +386,7 @@ function BotView({
       })
       .finally(() => {
         setSaving(null);
+        setPending(null);
       });
   };
 
@@ -377,11 +394,11 @@ function BotView({
     if (conflict(t)) return { kind: "conflict" };
     const errors = shownErrors(t);
     if (errors > 0) return { kind: "errors", count: errors };
-    if (changed[t].length === 0) return { kind: "clean" };
+    if (unsaved[t].length === 0) return { kind: "clean" };
     return {
       kind: "changes",
-      count: changed[t].length,
-      avatar: t === "profile" && avatarChanged(changed.profile),
+      count: unsaved[t].length,
+      avatar: t === "profile" && avatarChanged(unsaved.profile),
     };
   };
 
@@ -437,7 +454,7 @@ function BotView({
   const escToDiscard = (t: EditTab) => (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== "Escape" || event.defaultPrevented) return;
     if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target)) return;
-    if (changed[t].length === 0) return;
+    if (unsaved[t].length === 0) return;
     leave.ask(() => undefined);
   };
   const discard = () => {

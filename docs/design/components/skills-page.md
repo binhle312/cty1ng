@@ -93,6 +93,10 @@ The skill side of the bot page Skills tab (`bot-page.md` §7), with the same row
   their confirm button stays off.
 - A dialog's answer that comes after the owner closed the dialog or left the tab shows as a
   toast, not in a dialog that nobody sees, as on the bot page (M2c review, 2026-11-03).
+- A pin answer (Always load, a version move, + Add) changes only the pin of this skill, by the
+  same rules as the bot page's Skills tab (`bot-page.md` §7): only while the page shows the pin
+  the request expected, and not when the bot list loaded after the request went out. The other
+  fields of the bot stay as the page shows them (M2c review, 2026-11-03).
 - No bot uses it: "No bot uses this skill yet." and **+ Add**.
 - No bot exists (M1): the same line, and **+ Add** is disabled with the tooltip "Create a bot
   first."

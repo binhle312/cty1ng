@@ -105,6 +105,29 @@ const cachedRowVersion = (queryClient: QueryClient) =>
 
 const heading = () => screen.findByRole("heading", { name: "BA", level: 1 }, { timeout: 5000 });
 
+// jsdom has no canvas: a 2D context that draws nothing, and a blob for each crop. It returns
+// the function that puts the jsdom methods back.
+function fakeCanvas(): () => void {
+  const proto = HTMLCanvasElement.prototype;
+  const names = ["getContext", "toBlob"] as const;
+  const saved = names.map((name) => [name, Object.getOwnPropertyDescriptor(proto, name)] as const);
+  Object.defineProperty(proto, "getContext", {
+    configurable: true,
+    value: () => ({ drawImage: () => undefined }),
+  });
+  Object.defineProperty(proto, "toBlob", {
+    configurable: true,
+    value: (done: BlobCallback) => {
+      done(new Blob(["image"], { type: "image/png" }));
+    },
+  });
+  return () => {
+    for (const [name, descriptor] of saved) {
+      if (descriptor !== undefined) Object.defineProperty(proto, name, descriptor);
+    }
+  };
+}
+
 describe("the bot page", () => {
   it("opens the bot of the slug in the edit layout, with M2's empty tabs (UI-6.1)", async () => {
     await open({ bots: [makeBot(1, "BA"), makeBot(2, "Designer")] });
@@ -687,6 +710,133 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
       name: "Analyst",
     });
   });
+
+  // PR #59 review: the upload answer wrote the whole form from the render that started it.
+  it("keeps a newer name when an avatar upload answers after it", async () => {
+    const upload = heldAnswer();
+    const state = { bots: [makeBot(1, "BA")] };
+    await open(state, {
+      routes: {
+        "GET /api/avatars/limits": () => ({
+          body: { accepted_types: ["image/png"], max_bytes: 2_000_000 },
+        }),
+        "POST /api/avatars": async () => {
+          const answer = await upload.promise;
+          return answer;
+        },
+      },
+    });
+    await heading();
+    const restoreCanvas = fakeCanvas();
+    try {
+      act(() => {
+        fireEvent.change(screen.getByLabelText("Upload image", { selector: "input" }), {
+          target: { files: [new File(["image"], "image.png", { type: "image/png" })] },
+        });
+      });
+      const crop = await screen.findByRole("dialog", { name: "Crop the image" });
+      const image = crop.querySelector("img");
+      if (image === null) throw new Error("no image");
+      Object.defineProperties(image, {
+        naturalWidth: { value: 100 },
+        naturalHeight: { value: 100 },
+      });
+      act(() => {
+        fireEvent.load(image);
+      });
+      click(within(crop).getByRole("button", { name: "Use" }));
+      await waitFor(() => {
+        expect(fake?.sent("POST", "/api/avatars")).toHaveLength(1);
+      });
+      // Another tab renames the bot while the upload is on its way; the tab has no changes.
+      state.bots = [{ ...makeBot(1, "BA"), row_version: 2, name: "New BA" }];
+      refocus();
+      await waitFor(() => {
+        expect(valueOf("Name")).toBe("New BA");
+      });
+      const avatarId = "a".repeat(64);
+      await upload.answer({ body: { avatar_id: avatarId, url: `/api/avatars/${avatarId}.webp` } });
+      await waitFor(() => {
+        expect(screen.queryByRole("dialog", { name: "Crop the image" })).toBeNull();
+      });
+      expect(valueOf("Name")).toBe("New BA");
+      click(screen.getByRole("button", { name: "Save" }));
+      await waitFor(() => {
+        expect(fake?.sent("PATCH", `/api/bots/${BA_ID}`)).toHaveLength(1);
+      });
+      expect(fake?.sent("PATCH", `/api/bots/${BA_ID}`)[0]?.body).toEqual({
+        row_version: 2,
+        avatar_style: "upload",
+        avatar_id: avatarId,
+      });
+    } finally {
+      restoreCanvas();
+    }
+  });
+
+  // PR #59 review: changes counted only against the values from before the Save.
+  it("asks before leaving when text typed back while Save waits differs from what it sent", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA"), makeBot(2, "Designer")] };
+    await open(state, {
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+    });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    click(screen.getByRole("button", { name: "Save" }));
+    // Back to the old name while the save of "Analyst" waits: it is a change after the save.
+    type({ label: "Name", text: "BA" });
+    expect(within(saveBar()).getByText("1 change not saved")).toBeTruthy();
+    click(
+      within(screen.getByRole("navigation", { name: "Bots" })).getByRole("link", {
+        name: "Designer",
+      }),
+    );
+    const dialog = await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
+    expect(dialog.textContent).toContain("You changed the name.");
+    click(within(dialog).getByRole("button", { name: "Stay on this page" }));
+    await held.answer({ body: { ...makeBot(1, "BA"), row_version: 2, name: "Analyst" } });
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(1);
+    });
+    expect(valueOf("Name")).toBe("BA");
+    expect(within(saveBar()).getByText("1 change not saved")).toBeTruthy();
+  });
+
+  it("leaves at once after a Discard while Save waits: nothing of the owner's is unsaved", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA"), makeBot(2, "Designer")] };
+    const { router } = await open(state, {
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+    });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    click(screen.getByRole("button", { name: "Save" }));
+    type({ label: "Name", text: "BA" });
+    click(screen.getByRole("button", { name: "Discard" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
+    click(within(dialog).getByRole("button", { name: "Let them go" }));
+    click(
+      within(screen.getByRole("navigation", { name: "Bots" })).getByRole("link", {
+        name: "Designer",
+      }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/bots/designer");
+    });
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    await held.answer({ body: { ...makeBot(1, "BA"), row_version: 2, name: "Analyst" } });
+  });
 });
 
 describe("the side list (bot-page.md E2, pin.md §2)", () => {
@@ -1185,6 +1335,53 @@ describe("the Skills tab (bot-page.md §7)", () => {
     expect(
       screen.getByRole("switch", { name: "Always load Zeta" }).getAttribute("aria-checked"),
     ).toBe("false");
+  });
+
+  // PR #59 review: the tab's load counter stopped when the tab closed, but its request went on.
+  it("keeps a newer opposite toggle when the late Always load answer comes after the owner left the tab", async () => {
+    const held = heldAnswer();
+    const [zeta] = pins;
+    if (zeta === undefined) throw new Error("no pins");
+    const state = { bots: [makeBot(1, "BA", [zeta])] };
+    let fail = false;
+    const { queryClient, router } = await open(state, {
+      routes: {
+        "GET /api/bots": () =>
+          fail
+            ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+            : { body: state.bots },
+        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+      path: "/bots/ba?tab=skills",
+    });
+    await heading();
+    click(screen.getByRole("switch", { name: "Always load Zeta" }));
+    await waitFor(() => {
+      expect(fake?.sent("PUT", `/api/bots/${BA_ID}/skills/${SKILL_ID}`)).toHaveLength(1);
+    });
+    await act(() => router.navigate({ to: "/bots/$slug", params: { slug: "ba" }, search: {} }));
+    // The toggle got to the server first (on); then another tab turned it off again, and the
+    // page loaded that (off, the same value the toggle expected) before the toggle's answer came.
+    const loadsBefore = queryClient.getQueryState(listBotsQueryKey())?.dataUpdateCount ?? 0;
+    refocus();
+    await waitFor(() => {
+      expect(queryClient.getQueryState(listBotsQueryKey())?.dataUpdateCount).toBeGreaterThan(
+        loadsBefore,
+      );
+    });
+    // The refresh after the answer fails, so only the answer could change the list.
+    fail = true;
+    const loads = fake?.sent("GET", "/api/bots").length ?? 0;
+    await held.answer({ body: makeBot(1, "BA", [{ ...zeta, always_load: true }]) });
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(loads);
+    });
+    expect(queryClient.getQueryData<Bot[]>(listBotsQueryKey())?.[0]?.pins[0]?.always_load).toBe(
+      false,
+    );
   });
 
   it("keeps a newer Always load toggle when a late Profile answer comes after it (UI-6.3)", async () => {

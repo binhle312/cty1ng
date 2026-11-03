@@ -12,6 +12,7 @@ import {
   type Bot,
 } from "../../../test/fixtures.ts";
 import { Toaster } from "../../components/ui/toast.tsx";
+import { listBotsQueryKey } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import { TooltipProvider } from "../../components/ui/tooltip.tsx";
 import { SkillBotsTab } from "./skill-bots-tab.tsx";
 
@@ -269,6 +270,76 @@ describe("the Bots tab of a skill", () => {
       always_load: true,
       expected: { skill_version_id: versionId(2), always_load: false },
     });
+  });
+
+  // PR #59 review: a pin answer replaced the whole bot row, also the fields a pin does not own.
+  it("keeps a newer Profile save when a late Always load answer comes after it", async () => {
+    const held = heldAnswer();
+    const state = { bots: [designer], fail: false };
+    const { queryClient } = open([designer], {
+      "GET /api/bots": () => (state.fail ? FAILED : { body: state.bots }),
+      [`PUT /api/bots/${designer.id}/skills/${SKILL_ID}`]: async () => {
+        const answer = await held.promise;
+        return answer;
+      },
+    });
+    click(await screen.findByRole("switch", { name: "Always load for Designer" }));
+    await waitFor(() => {
+      expect(api?.sent("PUT", `/api/bots/${designer.id}/skills/${SKILL_ID}`)).toHaveLength(1);
+    });
+    // The answer of a Profile save on the bot page comes first: a write, not a load.
+    const key = listBotsQueryKey();
+    act(() => {
+      queryClient.setQueryData<Bot[]>(key, (old) =>
+        old?.map((bot) => ({ ...bot, row_version: 2, description: "Newer." })),
+      );
+    });
+    state.fail = true;
+    await held.answer({
+      body: makeBot(2, "Designer", [
+        makePin({ version: 2, skill_version_id: versionId(2), always_load: true }),
+      ]),
+    });
+    await waitFor(() => {
+      expect(
+        screen
+          .getByRole("switch", { name: "Always load for Designer" })
+          .getAttribute("aria-checked"),
+      ).toBe("true");
+    });
+    const cached = queryClient.getQueryData<Bot[]>(key)?.[0];
+    expect(cached?.row_version).toBe(2);
+    expect(cached?.description).toBe("Newer.");
+  });
+
+  // PR #59 review: an answer after the owner left the tab still wrote over a newer load.
+  it("keeps a newer opposite toggle when a late Always load answer comes after the owner left", async () => {
+    const held = heldAnswer();
+    const state = { fail: false };
+    const { queryClient, leave } = open([designer], {
+      "GET /api/bots": () => (state.fail ? FAILED : { body: [designer] }),
+      [`PUT /api/bots/${designer.id}/skills/${SKILL_ID}`]: async () => {
+        const answer = await held.promise;
+        return answer;
+      },
+    });
+    click(await screen.findByRole("switch", { name: "Always load for Designer" }));
+    await waitFor(() => {
+      expect(api?.sent("PUT", `/api/bots/${designer.id}/skills/${SKILL_ID}`)).toHaveLength(1);
+    });
+    act(leave);
+    // The toggle got to the server first (on); then another tab turned it off again, and the
+    // app loaded that (off, the value the toggle expected) before the answer came.
+    const key = listBotsQueryKey();
+    await act(() => queryClient.refetchQueries({ queryKey: key }));
+    state.fail = true;
+    await held.answer({
+      body: makeBot(2, "Designer", [
+        makePin({ version: 2, skill_version_id: versionId(2), always_load: true }),
+      ]),
+    });
+    await act(() => Promise.resolve());
+    expect(queryClient.getQueryData<Bot[]>(key)?.[0]?.pins[0]?.always_load).toBe(false);
   });
 
   it("loads the newest pins when the server refuses a change as stale (409)", async () => {

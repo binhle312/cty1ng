@@ -50,7 +50,13 @@ export function fakeApi(routes: Record<string, Handler>) {
     const recorded: RecordedRequest = {
       method: input.method,
       path: url.pathname,
-      body: text === "" ? undefined : JSON.parse(text),
+      // A file upload (multipart) is kept as its text; every other body is JSON.
+      body:
+        text === ""
+          ? undefined
+          : input.headers.get("content-type")?.includes("json") === true
+            ? JSON.parse(text)
+            : text,
       headers: input.headers,
     };
     requests.push(recorded);
