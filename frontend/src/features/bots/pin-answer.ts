@@ -197,13 +197,13 @@ export async function sendPinChange({
   }
 }
 
-// Remove of a skill from a bot (bot-page.md §7, skills-page.md §2a): the row goes at once, also
-// over a load that lands before the answer (`lib/api/optimistic.ts`). A failure brings the row
-// back with the refresh after it, and goes to `onFailed`.
 // The end of each Remove on its way, by bot and skill. A pin has no id of its own, so the hold
 // cannot tell a pin added again from the one it removed; the add ends the hold (`writePinAnswer`).
 const removesOnTheirWay = new WeakMap<QueryClient, Map<string, () => void>>();
 
+// Remove of a skill from a bot (bot-page.md §7, skills-page.md §2a): the row goes at once, also
+// over a load that lands before the answer (`lib/api/optimistic.ts`). A failure brings the row
+// back at once, also when the refresh after it fails, and goes to `onFailed`.
 export function sendPinRemove({
   queryClient,
   request,
@@ -219,7 +219,11 @@ export function sendPinRemove({
   onFailed: (error: unknown) => void;
   refresh: () => Promise<unknown>;
 }): void {
-  const release = showUntilAnswered<BotRow[]>({
+  const removed = queryClient
+    .getQueryData<BotRow[]>(listBotsQueryKey())
+    ?.find((bot) => bot.id === botId)
+    ?.pins.find((pin) => pin.skill_id === skillId);
+  const held = showUntilAnswered<BotRow[]>({
     queryClient,
     queryKey: listBotsQueryKey(),
     kind: `remove ${pinKey({ botId, skillId })}`,
@@ -232,19 +236,39 @@ export function sendPinRemove({
             )
           : bot,
       ),
+    // A failed Remove puts the pin back, unless the bot has a pin of the skill again.
+    undo: (list) =>
+      list.map((bot) =>
+        bot.id === botId &&
+        removed !== undefined &&
+        !bot.pins.some((pin) => pin.skill_id === skillId)
+          ? withPins(bot, [...bot.pins, removed])
+          : bot,
+      ),
   });
   const removes = removesOnTheirWay.get(queryClient) ?? new Map<string, () => void>();
   removesOnTheirWay.set(queryClient, removes);
   const key = pinKey({ botId, skillId });
-  const end = () => {
-    release();
-    if (removes.get(key) === end) removes.delete(key);
+  const stopHolding = () => {
+    if (removes.get(key) === stopHolding) removes.delete(key);
   };
-  removes.set(key, end);
+  // The owner's own add of the pin ends the hold, and the added pin stays.
+  const added = () => {
+    stopHolding();
+    held.answered();
+  };
+  removes.set(key, added);
   void request()
-    .then(end, (error: unknown) => {
-      end();
-      onFailed(error);
-    })
+    .then(
+      () => {
+        stopHolding();
+        held.answered();
+      },
+      (error: unknown) => {
+        stopHolding();
+        held.refused();
+        onFailed(error);
+      },
+    )
     .finally(() => void refresh());
 }

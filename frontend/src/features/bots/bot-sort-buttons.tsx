@@ -37,12 +37,13 @@ export function SortButtons() {
         : { bot_order: sort, bot_order_direction: "desc" };
     // The new sort shows until the answer, also over a load that lands before it, and a newer
     // sort replaces it (`lib/api/optimistic.ts`).
-    const releases = [
+    const held = [
       showUntilAnswered<GetSettingsResponse>({
         queryClient,
         queryKey: getSettingsQueryKey(),
         kind: "sort",
         change: (old) => ({ ...old, ...next }),
+        undo: (old) => ({ ...old, ...order }),
       }),
       showUntilAnswered<BotRow[]>({
         queryClient,
@@ -54,16 +55,24 @@ export function SortButtons() {
             pinnedOf(old).map((bot) => bot.id),
             next,
           ),
+        undo: (old) =>
+          reorderedBots(
+            old,
+            pinnedOf(old).map((bot) => bot.id),
+            order,
+          ),
       }),
     ];
-    const release = () => {
-      for (const end of releases) end();
-    };
     mutateAsync({ body: next })
-      .then(release, () => {
-        release();
-        showToast("The app could not save the sort. Try again.");
-      })
+      .then(
+        () => {
+          for (const change of held) change.answered();
+        },
+        () => {
+          for (const change of held) change.refused();
+          showToast("The app could not save the sort. Try again.");
+        },
+      )
       .finally(() => {
         void queryClient.invalidateQueries({ predicate: SETTINGS_OR_BOT_QUERIES });
       });

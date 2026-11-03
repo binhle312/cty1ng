@@ -128,6 +128,11 @@ function fakeCanvas(): () => void {
   };
 }
 
+const FAILED_ANSWER = {
+  status: 500,
+  body: { error: { code: "internal_error", message: "Failed." } },
+};
+
 describe("the bot page", () => {
   it("opens the bot of the slug in the edit layout, with M2's empty tabs (UI-6.1)", async () => {
     await open({ bots: [makeBot(1, "BA"), makeBot(2, "Designer")] });
@@ -2064,6 +2069,28 @@ describe("the Skills tab (bot-page.md §7)", () => {
     });
     expect(await screen.findByRole("switch", { name: /Always load/ })).toBeTruthy();
     await held.answer({ status: 204 });
+  });
+
+  // Review of d7c4cd7: a failed Remove whose refresh also failed kept the row hidden.
+  it("brings a removed skill's row back when Remove fails and the refresh fails too", async () => {
+    let fail = false;
+    const state = { bots: [makeBot(1, "BA", [makePin()])] };
+    await open(state, {
+      routes: {
+        "GET /api/bots": () => (fail ? FAILED_ANSWER : { body: state.bots }),
+        [`DELETE /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => {
+          fail = true;
+          return FAILED_ANSWER;
+        },
+      },
+      path: "/bots/ba?tab=skills",
+    });
+    await heading();
+    click(screen.getByRole("button", { name: /Actions for/ }));
+    click(await screen.findByRole("menuitem", { name: "Remove" }));
+    expect(await screen.findByText("Failed.")).toBeTruthy();
+    expect(await screen.findByRole("switch", { name: /Always load/ })).toBeTruthy();
+    expect(screen.queryByText("BA has no skills yet.")).toBeNull();
   });
 
   it("brings a removed skill's row back with a toast when Remove fails", async () => {

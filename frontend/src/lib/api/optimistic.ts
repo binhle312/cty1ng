@@ -8,7 +8,8 @@ import { hashKey, type QueryClient, type QueryKey } from "@tanstack/react-query"
 //
 // The caller ends the change at the answer, before the refresh after it: the server has the
 // change then (or refused it), so that refresh shows the truth, also a newer change from another
-// place. A change holds the whole value the owner wants now, made from the page with the older
+// place. A refused change also takes itself back at once (`undo`), because that refresh can fail
+// too, and a failed refresh keeps the last data. A change holds the whole value the owner wants now, made from the page with the older
 // changes in it, so a newer change of the same kind replaces the older ones: an older request
 // that answers last never puts its value back.
 
@@ -39,23 +40,34 @@ function changesOf(queryClient: QueryClient): { changes: Held[] } {
   return store;
 }
 
-// Shows `change` on the query's data now and over every server load of it until the returned
-// function is called, or until a newer change of the same `kind` on the same query starts.
-// `alsoAfter` names other queries the change reads (the pinned order reads the sort shown): a
-// server load of one of them puts the change again too.
+// What the caller does with a change at its answer.
+export interface HeldChange {
+  // The server took it: stop putting it again.
+  answered: () => void;
+  // The server refused it: stop, and take it back from the data, unless a newer change of the
+  // same kind replaced it (that one holds the whole value the owner wants).
+  refused: () => void;
+}
+
+// Shows `change` on the query's data now and over every server load of it until its answer, or
+// until a newer change of the same `kind` on the same query starts. `undo` takes it back from
+// the data the page shows. `alsoAfter` names other queries the change reads (the pinned order
+// reads the sort shown): a server load of one of them puts the change again too.
 export function showUntilAnswered<T>({
   queryClient,
   queryKey,
   kind,
   change,
+  undo,
   alsoAfter = [],
 }: {
   queryClient: QueryClient;
   queryKey: QueryKey;
   kind: string;
   change: (data: T) => T;
+  undo: (data: T) => T;
   alsoAfter?: readonly QueryKey[];
-}): () => void {
+}): HeldChange {
   const target = hashKey(queryKey);
   const mine: Held = {
     kind,
@@ -71,7 +83,17 @@ export function showUntilAnswered<T>({
     ...store.changes.filter((other) => other.kind !== kind || other.target !== target),
     mine,
   ];
-  return () => {
+  const answered = () => {
     store.changes = store.changes.filter((other) => other !== mine);
+  };
+  return {
+    answered,
+    refused: () => {
+      const newest = store.changes.includes(mine);
+      answered();
+      if (newest) {
+        queryClient.setQueryData<T>(queryKey, (old) => (old === undefined ? old : undo(old)));
+      }
+    },
   };
 }

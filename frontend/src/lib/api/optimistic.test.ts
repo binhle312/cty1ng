@@ -14,16 +14,17 @@ describe("a change on its way", () => {
   it("shows over a server load until it is ended", async () => {
     const queryClient = new QueryClient();
     queryClient.setQueryData(KEY, ["a"]);
-    const end = showUntilAnswered<string[]>({
+    const held = showUntilAnswered<string[]>({
       queryClient,
       queryKey: KEY,
       kind: "pins",
       change: (list) => [...list, "mine"],
+      undo: (list) => list.filter((item) => item !== "mine"),
     });
     expect(queryClient.getQueryData(KEY)).toEqual(["a", "mine"]);
     await serverLoad(queryClient, ["b"]);
     expect(queryClient.getQueryData(KEY)).toEqual(["b", "mine"]);
-    end();
+    held.answered();
     await serverLoad(queryClient, ["c"]);
     expect(queryClient.getQueryData(KEY)).toEqual(["c"]);
   });
@@ -31,21 +32,24 @@ describe("a change on its way", () => {
   it("is replaced by a newer change of the same kind, and an end of the older one does nothing", async () => {
     const queryClient = new QueryClient();
     queryClient.setQueryData(KEY, ["a"]);
-    const endOlder = showUntilAnswered<string[]>({
+    const older = showUntilAnswered<string[]>({
       queryClient,
       queryKey: KEY,
       kind: "pins",
       change: () => ["older"],
+      undo: () => ["before older"],
     });
-    const endNewer = showUntilAnswered<string[]>({
+    const newer = showUntilAnswered<string[]>({
       queryClient,
       queryKey: KEY,
       kind: "pins",
       change: () => ["newer"],
+      undo: () => ["before newer"],
     });
-    endNewer();
+    newer.answered();
     await serverLoad(queryClient, ["server"]);
-    endOlder();
+    // The older one was replaced: its refusal takes nothing back.
+    older.refused();
     expect(queryClient.getQueryData(KEY)).toEqual(["server"]);
   });
 
@@ -57,12 +61,14 @@ describe("a change on its way", () => {
       queryKey: KEY,
       kind: "pins",
       change: (list) => [...list, "pin"],
+      undo: (list) => list,
     });
     showUntilAnswered<string[]>({
       queryClient,
       queryKey: KEY,
       kind: "sort",
       change: (list) => [...list].reverse(),
+      undo: (list) => list,
     });
     await serverLoad(queryClient, ["b"]);
     expect(queryClient.getQueryData(KEY)).toEqual(["pin", "b"]);
@@ -80,10 +86,26 @@ describe("a change on its way", () => {
         [...list].sort((x, y) =>
           queryClient.getQueryData(["order"]) === "asc" ? x.localeCompare(y) : y.localeCompare(x),
         ),
+      undo: (list) => list,
       alsoAfter: [["order"]],
     });
     expect(queryClient.getQueryData(KEY)).toEqual(["a", "b"]);
     await queryClient.query({ queryKey: ["order"], queryFn: () => "desc", staleTime: 0 });
     expect(queryClient.getQueryData(KEY)).toEqual(["b", "a"]);
+  });
+
+  it("takes a refused change back at once, with no server load after it", () => {
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(KEY, ["a", "b"]);
+    const held = showUntilAnswered<string[]>({
+      queryClient,
+      queryKey: KEY,
+      kind: "remove b",
+      change: (list) => list.filter((item) => item !== "b"),
+      undo: (list) => (list.includes("b") ? list : [...list, "b"]),
+    });
+    expect(queryClient.getQueryData(KEY)).toEqual(["a"]);
+    held.refused();
+    expect(queryClient.getQueryData(KEY)).toEqual(["a", "b"]);
   });
 });

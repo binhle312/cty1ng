@@ -633,6 +633,22 @@ describe("the Bots tab of a skill", () => {
     await held.answer({ status: 204 });
   });
 
+  // Review of d7c4cd7: a failed Remove whose refresh also failed kept the row hidden.
+  it("brings the row back when Remove fails and the refresh fails too", async () => {
+    let fail = false;
+    open([ba], {
+      "GET /api/bots": () => (fail ? FAILED : { body: [ba] }),
+      [`DELETE /api/bots/${ba.id}/skills/${SKILL_ID}`]: () => {
+        fail = true;
+        return FAILED;
+      },
+    });
+    click(await screen.findByRole("button", { name: "Actions for BA" }));
+    click(await screen.findByRole("menuitem", { name: "Remove" }));
+    expect(await screen.findByText("Something failed.")).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Actions for BA" })).toBeTruthy();
+  });
+
   it("removes a bot from the skill without asking", async () => {
     open([ba], { [`DELETE /api/bots/${ba.id}/skills/${SKILL_ID}`]: () => ({ status: 204 }) });
     click(await screen.findByRole("button", { name: "Actions for BA" }));

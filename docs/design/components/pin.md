@@ -42,7 +42,8 @@ Rule: a pin badge is never on a bot avatar.
 
 A pin change shows at once and stays while its request is on its way, also when a refresh
 (another request's, an event's, focus) lands before its answer. At the answer the page takes the
-server's order again with the refresh after it. A newer pin change replaces an older one on the
+server's order again with the refresh after it; a refused change goes back at once, so a refresh
+that also fails does not leave it on the page. A newer pin change replaces an older one on the
 page, so an older request that answers last never brings its order back. The same holds for the
 sort of the others; the pinned order on its way keeps the sort the page shows, also after a sort
 that failed (M2c audit, 2026-11-03; `frontend/src/lib/api/optimistic.ts`).

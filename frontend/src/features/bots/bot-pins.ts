@@ -108,17 +108,18 @@ export function useSetPins() {
       // The new order shows until the answer, also over a load that lands before it, and a newer
       // pin change replaces it (`lib/api/optimistic.ts`). The others take the sort shown now,
       // which may be a sort on its way.
-      const release = showUntilAnswered<BotRow[]>({
+      const held = showUntilAnswered<BotRow[]>({
         queryClient,
         queryKey: key,
         kind: "pins",
         change: (list) => reorderedBots(list, nextIds, shownOrder(queryClient)),
+        undo: (list) => reorderedBots(list, expected, shownOrder(queryClient)),
         // A settings load (after a failed sort) changes the sort shown.
         alsoAfter: [getSettingsQueryKey()],
       });
       mutateAsync({ body: { bot_ids: [...nextIds], expected_bot_ids: expected } })
-        .then(release, (error: unknown) => {
-          release();
+        .then(held.answered, (error: unknown) => {
+          held.refused();
           showToast(
             readApiError(error)?.code === "bot_list_changed"
               ? "The bot list changed. Try again."

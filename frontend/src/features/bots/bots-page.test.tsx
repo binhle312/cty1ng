@@ -264,4 +264,63 @@ describe("pin changes that answer out of order", () => {
     });
     await heldPin.answer({ body: { pinned_bot_ids: [BA.id, UX.id] } });
   });
+
+  // Review of d7c4cd7: the same cause for pins: a failed change whose refresh failed stayed.
+  it("shows the old pins again when a pin change fails and the refresh fails too", async () => {
+    let fail = false;
+    fake = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/bots": () =>
+        fail
+          ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+          : { body: [BA, QA, UX] },
+      "PUT /api/bots/pins": () => {
+        fail = true;
+        return { status: 500, body: { error: { code: "internal_error", message: "Failed." } } };
+      },
+    });
+    await renderApp("/bots");
+    await screen.findByRole("link", { name: "BA" }, { timeout: 5000 });
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "Unpin BA" }));
+    });
+    expect(
+      await screen.findByText("The app could not save the pinned bots. Try again."),
+    ).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Unpin BA" })).toBeTruthy();
+  });
+
+  it("shows the old sort again when a sort fails and the refresh fails too", async () => {
+    let fail = false;
+    const settings = { ...BOT_SETTINGS, bot_order: "recent", bot_order_direction: "desc" };
+    fake = fakeApi({
+      "GET /api/settings": () =>
+        fail
+          ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+          : { body: settings },
+      "GET /api/bots": () =>
+        fail
+          ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+          : { body: [BA, QA, UX] },
+      "PATCH /api/settings": () => {
+        fail = true;
+        return { status: 500, body: { error: { code: "internal_error", message: "Failed." } } };
+      },
+    });
+    await renderApp("/bots");
+    await screen.findByRole(
+      "button",
+      { name: "Sort by recent activity, newest first" },
+      {
+        timeout: 5000,
+      },
+    );
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "Sort by created time" }));
+    });
+    expect(await screen.findByText("The app could not save the sort. Try again.")).toBeTruthy();
+    expect(
+      await screen.findByRole("button", { name: "Sort by recent activity, newest first" }),
+    ).toBeTruthy();
+  });
 });
