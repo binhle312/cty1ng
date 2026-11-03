@@ -174,7 +174,9 @@ Each slice's brief lists which of these steps must pass by its end.
 ### Edge cases each slice tests
 
 The normal path of an acceptance criterion is not enough. For each screen or flow it builds,
-a slice tests these cases where they apply (`workflow.md` §2 step 4, "Spec walk"):
+a slice tests these cases where they apply. The test strategy names them before the code
+(`workflow.md` §2 step 2, "Test strategy before code"), and the spec walk checks them again
+(`workflow.md` §2 step 4):
 
 | Case | Example |
 | --- | --- |
@@ -184,6 +186,8 @@ a slice tests these cases where they apply (`workflow.md` §2 step 4, "Spec walk
 | Keyboard only | Every tooltip, menu and dialog opens and closes from the keyboard |
 | Leaving with unsaved work | Every way out asks first, including moves inside one path |
 | Moving through the app, not only reloads | A test that reloads can hide a cache bug |
+| An answer comes late | A save or toggle answer that comes after a newer change, a Discard or leaving the page does not undo it |
+| A value changes and changes back | On, then off in another tab: the page cannot tell from the value alone that it changed |
 
 ### Fast loop while building
 

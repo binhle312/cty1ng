@@ -23,9 +23,9 @@ and inconsistent patterns. Use parallelism only for clearly independent work (§
 ## 2. Lifecycle of a slice
 
 ```
-brief ready ──▶ plan ──(owner approves, if checkpointed)──▶ build ──▶ self-check ──▶ PR
-   ▲                                                                                 │
-   │                                         merge ◀── owner review ◀── cross-review ◀┘
+brief ready ──▶ plan + test strategy ──(owner approves, if checkpointed)──▶ build ──▶ self-check ──▶ PR
+   ▲                                                                                               │
+   │                                                       merge ◀── owner review ◀── cross-review ◀┘
    └──────────── next slice ◀────────────────┘
 ```
 
@@ -71,7 +71,16 @@ brief ready ──▶ plan ──(owner approves, if checkpointed)──▶ buil
    `docs/` wins where they differ, and whoever changes the owning document updates the
    snapshot. `pnpm check:index` fails when a snapshot colour differs from
    `frontend/src/themes/command.css` (owner, 2026-10-30).
-3. **Build.** Small commits. Tests alongside code, not at the end. While fixing, run only the
+   **Test strategy before code.** After the plan, and before any code, the builder writes the
+   test strategy as a section of the draft PR (owner, 2026-11-03). For each acceptance
+   criterion it lists the behaviour, the test level (unit, component, API, contract, end to
+   end) and the cases beyond the normal path: the edge cases in `testing.md` §3, and above all
+   the order and timing cases (an answer that comes late, a change in another tab, a Discard
+   while a request waits, a value that changes and changes back). Most review findings are
+   these cases; a test planned before the code finds them before the review does.
+3. **Build.** Small commits, test first: for each behaviour in the test strategy, write its
+   test, see it fail for the right reason, then write the code that makes it pass (red, green,
+   refactor). A case found during the build goes into the strategy and gets its test first too. While fixing, run only the
    affected tests (`testing.md` §3, "Fast loop while building"); keep the end-to-end servers
    running with `pnpm e2e:serve`. A bug fix's test is written first and seen to fail; if it was
    written after the fix, run it against the old code in an isolated checkout (a `git
@@ -157,9 +166,10 @@ You are the builder for slice <M#> of this repository.
 1. Read AGENTS.md, docs/README.md, and docs/tasks/<M#>-<name>.md, then every document the
    brief lists under "Read first".
 2. Write a plan as described in docs/workflow.md §2 step 2: run the risk probes first, and
-   end the plan with every open question in one list. Open a draft PR with the plan.
+   end the plan with every open question in one list. Then write the test strategy
+   (§2 step 2, "Test strategy before code"). Open a draft PR with the plan and the strategy.
    Stop and wait for my approval if the brief says "checkpoint: plan".
-3. Build the slice on branch <m#-name>. Keep to the brief's scope; list anything else you
+3. Build the slice on branch <m#-name>, test first. Keep to the brief's scope; list anything else you
    notice under "Follow-ups" in the PR instead of doing it.
 4. Run every check in AGENTS.md §4 and fill the PR description per docs/workflow.md §6.
 If the docs and the code disagree, or the brief is ambiguous, stop and ask.
