@@ -21,6 +21,7 @@ the parts that the header and the Skills page share.
 | `bot-save-bar.tsx` | The save bar of the Profile and Model tabs: no changes, changes, errors, conflict |
 | `bot-side-list.tsx` | The list of the edit layout: Back, Create, Search, Pinned (reorder) and Others, rows with the pin badge |
 | `bot-skills-tab.tsx` | A bot's Skills tab: rows, Always load, upgrade link, Change version, Remove, + Add |
+| `bot-tabs.ts` | The bot page's tab list, for the route's `?tab=`, the page and the leave question |
 | `bot-sort-buttons.tsx` | The Recent activity and Created time sort buttons of the Others group |
 | `bots-page.tsx` | `/bots`: Pinned (drag to reorder) and Others (sort), search, empty state |
 | `colour-row.tsx` | The colour row: 10 swatches, Custom and Random |

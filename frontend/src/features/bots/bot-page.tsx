@@ -35,6 +35,7 @@ import { BotNotFound, BotPageTop } from "./bot-page-top.tsx";
 import { type BotRow, useBots } from "./bot-queries.ts";
 import { BotSaveBar, type BotSaveBarState } from "./bot-save-bar.tsx";
 import { BotSideList } from "./bot-side-list.tsx";
+import { BOT_TABS, type BotTab } from "./bot-tabs.ts";
 import { BotSkillsTab } from "./bot-skills-tab.tsx";
 import {
   type CreateForm,
@@ -56,8 +57,6 @@ import {
 import { useAvatarUpload } from "./crop-card.tsx";
 import { useDeleteBot } from "./delete-bot-dialog.tsx";
 
-type TabName = "profile" | "skills" | "model" | "activity" | "usage";
-const TAB_NAMES: readonly TabName[] = ["profile", "skills", "model", "activity", "usage"];
 const EDIT_TABS: readonly EditTab[] = ["profile", "model"];
 
 // `/bots/{slug}` (bot-page.md, UI-6): the edit layout, with the bot list on the left and the bot
@@ -143,7 +142,7 @@ function BotView({
   const queryClient = useQueryClient();
   const navigate = useNavigate({ from: "/bots/$slug" });
   const search = useSearch({ from: "/bots/$slug" });
-  const tab: TabName = search.tab ?? "profile";
+  const tab: BotTab = search.tab ?? "profile";
 
   const server = editFormOf(bot, settings);
   const effective = (f: CreateForm) => effectiveTools(f, tools, model);
@@ -419,7 +418,7 @@ function BotView({
     };
   }, [tab]);
 
-  const setTab = (next: TabName) => {
+  const setTab = (next: BotTab) => {
     void navigate({ search: { tab: next === "profile" ? undefined : next } });
   };
   const appearance = useRef<HTMLDivElement>(null);
@@ -481,7 +480,7 @@ function BotView({
       <TabsRoot
         value={tab}
         onValueChange={(value) => {
-          setTab(TAB_NAMES.find((name) => name === value) ?? "profile");
+          setTab(BOT_TABS.find((name) => name === value) ?? "profile");
         }}
         className="flex min-h-0 grow flex-col"
       >

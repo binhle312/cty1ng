@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { type LeaveWords, useLeaveGuard } from "../skills/leave-guard.tsx";
+import { BOT_TABS } from "./bot-tabs.ts";
 
 // Leave with unsaved changes on the bot page (bot-page.md §4.1, project-settings-page.md §5):
 // Discard, Esc, ← Back, another bot, another tab or another page asks first, but only when
@@ -12,7 +13,7 @@ const WORDS: LeaveWords = {
 };
 
 // The place on the bot page: the bot and the tab. The Usage view and range are not part of it.
-const PageSearch = z.object({ tab: z.string().optional().catch(undefined) });
+const PageSearch = z.object({ tab: z.enum(BOT_TABS).optional().catch(undefined) });
 
 function botPlace(location: { pathname: string; search: unknown }): string {
   const parsed = PageSearch.safeParse(location.search);

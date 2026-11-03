@@ -1,5 +1,6 @@
 import { createRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import { BOT_TABS } from "../features/bots/bot-tabs.ts";
 import { PageSkeleton } from "../features/placeholder/page-skeleton.tsx";
 import { rootRoute } from "./root.tsx";
 
@@ -28,7 +29,7 @@ export const createBotRoute = createRoute({
 
 // `?tab=profile` … (bot-page.md §1): a reload keeps the tab. Profile has no `tab`.
 const BotSearch = z.object({
-  tab: z.enum(["profile", "skills", "model", "activity", "usage"]).optional().catch(undefined),
+  tab: z.enum(BOT_TABS).optional().catch(undefined),
 });
 
 export const botRoute = createRoute({
