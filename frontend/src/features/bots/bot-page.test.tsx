@@ -711,6 +711,59 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     });
   });
 
+  // PR #59 review of 340ca02: Save on the other tab looked on, but a click sent nothing.
+  it("turns Save off on the other tab while a Save is on its way, then saves it after", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA")] };
+    await open(state, {
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          if (fake?.sent("PATCH", `/api/bots/${BA_ID}`).length === 1) {
+            const answer = await held.promise;
+            return answer;
+          }
+          return {
+            body: { ...makeBot(1, "BA"), row_version: 3, description: "Mine.", request_limit: 20 },
+          };
+        },
+      },
+    });
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    click(screen.getByRole("button", { name: "Save" }));
+    // The owner lets the Profile edit go to change tabs; its Save is still on its way.
+    click(screen.getByRole("tab", { name: /Model/ }));
+    const leave = await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
+    click(within(leave).getByRole("button", { name: "Let them go" }));
+    await waitFor(() => {
+      expect(screen.getByLabelText("Model requests per run", { exact: true })).toBeTruthy();
+    });
+    type({ label: "Model requests per run", text: "20" });
+    const modelSave = () => within(saveBar()).getByRole("button", { name: "Save" });
+    expect(within(saveBar()).getByText("1 change not saved")).toBeTruthy();
+    expect(modelSave().getAttribute("aria-disabled")).toBe("true");
+    act(() => {
+      fireEvent.focus(modelSave());
+    });
+    expect(await screen.findByText("Wait until the Profile tab is saved.")).toBeTruthy();
+    click(modelSave());
+    expect(fake?.sent("PATCH", `/api/bots/${BA_ID}`)).toHaveLength(1);
+    const saved = { ...makeBot(1, "BA"), row_version: 2, description: "Mine." };
+    state.bots = [saved];
+    await held.answer({ body: saved });
+    await waitFor(() => {
+      expect(modelSave().getAttribute("aria-disabled")).toBe("false");
+    });
+    click(modelSave());
+    await waitFor(() => {
+      expect(fake?.sent("PATCH", `/api/bots/${BA_ID}`)).toHaveLength(2);
+    });
+    expect(fake?.sent("PATCH", `/api/bots/${BA_ID}`)[1]?.body).toEqual({
+      row_version: 2,
+      request_limit: 20,
+    });
+  });
+
   // PR #59 review: the upload answer wrote the whole form from the render that started it.
   it("keeps a newer name when an avatar upload answers after it", async () => {
     const upload = heldAnswer();
@@ -1194,7 +1247,7 @@ describe("the Skills tab (bot-page.md §7)", () => {
     await held.answer({ body: makeBot(1, "BA", toggled) });
     await waitFor(() => {
       expect(
-        screen.getByRole("switch", { name: "Always load Zeta" }).hasAttribute("disabled"),
+        screen.getByRole("switch", { name: "Always load Zeta" }).hasAttribute("data-disabled"),
       ).toBe(false);
     });
     expect(cachedRowVersion(queryClient)).toBe(2);
@@ -1245,7 +1298,7 @@ describe("the Skills tab (bot-page.md §7)", () => {
     await held.answer({ body: makeBot(1, "BA", [zeta, alphaOff]) });
     await waitFor(() => {
       expect(
-        screen.getByRole("switch", { name: "Always load Alpha" }).hasAttribute("disabled"),
+        screen.getByRole("switch", { name: "Always load Alpha" }).hasAttribute("data-disabled"),
       ).toBe(false);
     });
     expect(screen.queryByRole("button", { name: "v3 available" })).toBeNull();
@@ -1286,7 +1339,7 @@ describe("the Skills tab (bot-page.md §7)", () => {
     await held.answer({ body: makeBot(1, "BA", [{ ...zeta, always_load: true }]) });
     await waitFor(() => {
       expect(
-        screen.getByRole("switch", { name: "Always load Zeta" }).hasAttribute("disabled"),
+        screen.getByRole("switch", { name: "Always load Zeta" }).hasAttribute("data-disabled"),
       ).toBe(false);
     });
     expect(screen.queryByRole("button", { name: "v3 available" })).toBeNull();
@@ -1327,7 +1380,7 @@ describe("the Skills tab (bot-page.md §7)", () => {
     await held.answer({ body: makeBot(1, "BA", [{ ...zeta, always_load: true }]) });
     await waitFor(() => {
       expect(
-        screen.getByRole("switch", { name: "Always load Zeta" }).hasAttribute("disabled"),
+        screen.getByRole("switch", { name: "Always load Zeta" }).hasAttribute("data-disabled"),
       ).toBe(false);
     });
     const cached = queryClient.getQueryData<Bot[]>(listBotsQueryKey())?.[0]?.pins[0];

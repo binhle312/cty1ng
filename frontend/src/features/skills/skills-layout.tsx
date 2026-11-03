@@ -13,6 +13,10 @@ export function SkillsLayout() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [botCard, setBotCard] = useState<AfterSaveCard | null>(null);
   // A card that comes after the owner left the Skills page shows as its toast instead.
+  // Each save asks for its card in turn, when the save answers. A card that comes after a newer
+  // save asked for its own also shows as its toast: an older answer never replaces a newer card,
+  // nor comes after the toast that stood for it (skills-page.md §7).
+  const asked = useRef(0);
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -31,9 +35,14 @@ export function SkillsLayout() {
       clearImportFile: () => {
         setImportFile(null);
       },
-      showBotCard: (card: AfterSaveCard) => {
-        if (mounted.current) setBotCard(card);
-        else showToast(cardToast(card));
+      showBotCard: (coming: Promise<AfterSaveCard | null>) => {
+        asked.current += 1;
+        const turn = asked.current;
+        void coming.then((card) => {
+          if (card === null) return;
+          if (mounted.current && turn === asked.current) setBotCard(card);
+          else showToast(cardToast(card));
+        });
       },
     }),
     [dirtySlug, importFile],

@@ -24,7 +24,12 @@ import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
 import { BotAvatar } from "../bots/bot-avatar.tsx";
 import { modelLine } from "../bots/bot-lines.ts";
 import { type BotRow, pinErrorText } from "../bots/bot-queries.ts";
-import { botListLoads, type PinExpected, writePinAnswer } from "../bots/pin-answer.ts";
+import {
+  botListLoads,
+  type PinExpected,
+  sendPinChange,
+  writePinAnswer,
+} from "../bots/pin-answer.ts";
 import { LoadError } from "./load-error.tsx";
 import { VersionPill } from "./pills.tsx";
 import type { BotUse } from "./skill-bot-uses.ts";
@@ -95,23 +100,27 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
   const toggleLoad = ({ bot, pin }: BotUse, alwaysLoad: boolean) => {
     setPendingLoads((current) => new Map(current).set(bot.id, alwaysLoad));
     const expected = { skill_version_id: pin.skill_version_id, always_load: pin.always_load };
-    const loadsAtSend = botListLoads(queryClient);
-    void setPin
-      .mutateAsync({
-        path: { id: bot.id, skill_id: skill.id },
-        body: { skill_version_id: pin.skill_version_id, always_load: alwaysLoad, expected },
-      })
-      .then((changed) => {
-        writeAnswers({ answers: [changed], expected, loadsAtSend });
-        void refresh();
-      }, failed(bot.name))
-      .finally(() => {
-        setPendingLoads((current) => {
-          const next = new Map(current);
-          next.delete(bot.id);
-          return next;
-        });
+    // The switch shows the value on its way until the refresh after the answer (`pin-answer.ts`).
+    void sendPinChange({
+      queryClient,
+      request: () =>
+        setPin.mutateAsync({
+          path: { id: bot.id, skill_id: skill.id },
+          body: { skill_version_id: pin.skill_version_id, always_load: alwaysLoad, expected },
+        }),
+      skillId: skill.id,
+      expected,
+      onFailed: (error) => {
+        showToast(pinErrorText({ error, changed: bot.name }));
+      },
+      refresh,
+    }).finally(() => {
+      setPendingLoads((current) => {
+        const next = new Map(current);
+        next.delete(bot.id);
+        return next;
       });
+    });
   };
 
   if (bots.kind === "loading") {

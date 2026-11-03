@@ -13,12 +13,16 @@ export function BotSaveBar({
   botName,
   state,
   saving,
+  waitFor,
   onDiscard,
   onSave,
 }: {
   botName: string;
   state: BotSaveBarState;
   saving: boolean;
+  // The other tab whose Save is on its way, or null. One Save at a time: both tabs send the same
+  // `row_version`, so the second would be refused as stale. Save is off until the answer.
+  waitFor: string | null;
   onDiscard: () => void;
   onSave: () => void;
 }) {
@@ -61,7 +65,13 @@ export function BotSaveBar({
           <SaveButton
             label="Save"
             busy={saving}
-            disabledReason={saving ? "Saving." : null}
+            disabledReason={
+              saving
+                ? "Saving."
+                : waitFor === null
+                  ? null
+                  : `Wait until the ${waitFor} tab is saved.`
+            }
             onClick={onSave}
           />
         </SaveBarFrame>

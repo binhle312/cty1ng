@@ -272,6 +272,45 @@ describe("the Bots tab of a skill", () => {
     });
   });
 
+  // PR #59 review of 340ca02: the switch showed the old value again before the refresh ended.
+  it("keeps the switch on the value on its way until the refresh after the answer ends", async () => {
+    const held = heldAnswer();
+    const refresh = heldAnswer();
+    const state = { answered: false, bots: [designer] };
+    const { queryClient } = open([designer], {
+      "GET /api/bots": async () => {
+        if (!state.answered) return { body: state.bots };
+        const answer = await refresh.promise;
+        return answer;
+      },
+      [`PUT /api/bots/${designer.id}/skills/${SKILL_ID}`]: async () => {
+        const answer = await held.promise;
+        return answer;
+      },
+    });
+    const toggle = await screen.findByRole("switch", { name: "Always load for Designer" });
+    click(toggle);
+    await waitFor(() => {
+      expect(api?.sent("PUT", `/api/bots/${designer.id}/skills/${SKILL_ID}`)).toHaveLength(1);
+    });
+    // A list load while the PUT is on its way: the answer then writes no pin (pin-answer.ts).
+    await act(() => queryClient.refetchQueries({ queryKey: listBotsQueryKey() }));
+    state.answered = true;
+    const on = makeBot(2, "Designer", [
+      makePin({ version: 2, skill_version_id: versionId(2), always_load: true }),
+    ]);
+    await held.answer({ body: on });
+    const shown = () => screen.getByRole("switch", { name: "Always load for Designer" });
+    // The refresh after the answer is on its way: the switch still shows the value it sent.
+    expect(shown().getAttribute("aria-checked")).toBe("true");
+    expect(shown().hasAttribute("data-disabled")).toBe(true);
+    await refresh.answer({ body: [on] });
+    await waitFor(() => {
+      expect(shown().hasAttribute("data-disabled")).toBe(false);
+    });
+    expect(shown().getAttribute("aria-checked")).toBe("true");
+  });
+
   // PR #59 review: a pin answer replaced the whole bot row, also the fields a pin does not own.
   it("keeps a newer Profile save when a late Always load answer comes after it", async () => {
     const held = heldAnswer();

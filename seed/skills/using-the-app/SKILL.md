@@ -62,7 +62,8 @@ written ways of working that the bot follows.
     the changes and Upgrade; the ⋯ menu has Change version (any version, also an older one) and
     Remove; + Add gives the bot more skills at their latest version. Changes save at once.
   - **Model**: the tools and Advanced (history share, model requests per run, longest reply),
-    with their own Save.
+    with their own Save. One tab saves at a time: while the Profile save is on its way, the
+    Model Save is off ("Wait until the Profile tab is saved."), and the other way round.
   - **Activity** and **Usage**: empty until bots can talk (conversations come later).
   If the same bot changes in another browser tab while you edit, the page keeps your text and
   says so; copy what you need, then Discard to load the new values.

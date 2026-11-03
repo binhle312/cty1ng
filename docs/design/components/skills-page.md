@@ -183,6 +183,12 @@ and + Add. A Restore of an old version (§13) is not a save from the editor and 
 the card also while its request is on its way. A success that comes later closes nothing, so a
 newer card stays open. A failure that comes later shows as a toast, because its card is gone.
 
+**A card that comes after a newer save** (M2c review, 2026-11-03): each save asks for its card
+when it answers, and the card opens when the app has read the bots. When a newer save (of this
+skill or another one) asked for its card while an older card was still being read, the older
+card shows as its toast ("Saved v{n} ✨" or "Created {name} ✨") and never replaces the newer
+card. Nothing is lost: the Bots tab still offers the change.
+
 ### 7.1 Upgrade the bots (C4, UI-7.4)
 
 - Title: "Saved v5 ✨ Also upgrade these bots to v5?"

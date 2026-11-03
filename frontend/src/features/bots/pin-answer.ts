@@ -1,5 +1,6 @@
 import { hashKey, type QueryClient } from "@tanstack/react-query";
 import { listBotsQueryKey } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
+import type { SetBotSkillData } from "../../lib/api/generated/types.gen.ts";
 import type { BotPin, BotRow } from "./bot-queries.ts";
 
 // The answer of a skill pin change (bot-page.md §7, skills-page.md §2a), on the bot page and on
@@ -13,7 +14,7 @@ import type { BotPin, BotRow } from "./bot-queries.ts";
 // value tells nothing, so the answer then writes nothing, and the refresh shows the server's pin.
 
 // The pin the request sent as `expected`; null for a new pin (the bot had none of the skill).
-export type PinExpected = { skill_version_id: string; always_load: boolean } | null;
+export type PinExpected = SetBotSkillData["body"]["expected"];
 
 // The server loads of the bot list, counted for as long as the query client lives, not as long
 // as a tab: a request can answer after the owner left the tab that sent it. A write from an
@@ -95,4 +96,35 @@ export function writePinAnswer({
       bot.id === answer.id ? withPinAnswer({ bot, answer, skillId, expected }) : bot,
     ),
   );
+}
+
+// One pin change of a control that shows the value on its way (the Always load switch on the
+// bot page and on the Skills page): it sends the change, writes the answer, and ends only after
+// the refresh that follows. An answer that writes nothing (the list loaded while it was on its
+// way) leaves the old pin in the list until that refresh, so the control keeps the value on its
+// way until this resolves. A failure goes to `onFailed` at once, and the refresh still follows.
+export async function sendPinChange({
+  queryClient,
+  request,
+  skillId,
+  expected,
+  onFailed,
+  refresh,
+}: {
+  queryClient: QueryClient;
+  // Sends the change; called after the load count is read.
+  request: () => Promise<BotRow>;
+  skillId: string;
+  expected: PinExpected;
+  onFailed: (error: unknown) => void;
+  refresh: () => Promise<unknown>;
+}): Promise<void> {
+  const loadsAtSend = botListLoads(queryClient);
+  try {
+    const answer = await request();
+    writePinAnswer({ queryClient, answer, skillId, expected, loadsAtSend });
+  } catch (error) {
+    onFailed(error);
+  }
+  await refresh();
 }

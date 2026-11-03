@@ -150,6 +150,10 @@ there, so it never jumps.
   image kept after the Discard keeps its style too (M2c review, 2026-11-03). An image upload
   that answers after the tab took newer values (another tab renamed the bot) changes only the
   avatar style and the image; the other fields keep the newer values (M2c review, 2026-11-03).
+- **One Save at a time** (M2c review, 2026-11-03): both tabs send the same `row_version`, so a
+  second Save would be refused as stale. While one tab's Save is on its way, the other tab's
+  Save is off, and its tooltip says "Wait until the Profile tab is saved." (or Model). It turns
+  on with the answer, at the new `row_version`.
 - **Leave with unsaved changes** (Discard, Esc, ← Back, another bot, tab or page) asks first,
   with the dialog of `project-settings-page.md` §5: **Leave without saving? 👀**, a text that
   names the changed fields, **Stay on this page** (`primary`, default) and **Let them go**
@@ -342,7 +346,7 @@ The design names these parts but not their words. Each follows a pattern that ex
 | Skills tab, top line | "Changes save at once. BA uses them from its next run." and **+ Add** |
 | Skills tab, no skills | "BA has no skills yet." |
 | + Add card (SK2) | Title "Add skills to BA", "Tick the skills to add. Each gets its latest version, with Always load off.", Search, the list, "A click outside this card is the same as Skip.", **Skip** and **Add {n}**. With nothing to add: "No skills to add. The bot has every active skill." Before the list comes: "Loading the skills." (M2c review, 2026-11-02) |
-| Save off, why (tooltip, ui-rules B5) | "No changes to save.", "Saving.", "Fix the errors first.", "BA changed in another place. Discard first." |
+| Save off, why (tooltip, ui-rules B5) | "No changes to save.", "Saving.", "Fix the errors first.", "BA changed in another place. Discard first.", "Wait until the Profile tab is saved." (or Model; M2c review, 2026-11-03) |
 | Field errors bar | "Fix 1 field to save." for one field |
 | Avatar on the page top | Hover or focus shows **Change**; its name for screen readers is "Change the avatar of BA" |
 

@@ -14,7 +14,8 @@ export interface SkillsPageState {
   chooseImportFile: () => void;
   // After Apply or Cancel, so a later visit to the import page starts with no file.
   clearImportFile: () => void;
-  showBotCard: (card: AfterSaveCard) => void;
+  // The card a save asks for, while it is still being read (null: the read showed a toast).
+  showBotCard: (card: Promise<AfterSaveCard | null>) => void;
 }
 
 export const SkillsPageContext = createContext<SkillsPageState | null>(null);

@@ -25,7 +25,7 @@ import { ChangeVersionDialog, MoveVersionDialog } from "../skills/skill-pin-dial
 import { useDialogRequests } from "../skills/dialog-requests.ts";
 import { AddSkillsDialog } from "./add-skills-dialog.tsx";
 import { type BotPin, type BotRow, pinErrorText } from "./bot-queries.ts";
-import { botListLoads, writePinAnswer } from "./pin-answer.ts";
+import { botListLoads, sendPinChange, writePinAnswer } from "./pin-answer.ts";
 
 // The Skills tab of a bot (bot-page.md §7, SK1–SK4, UI-6.3–6.6): the skills the bot has, the
 // version it uses, the Always load switch and a ⋯ menu. Changes save at once and apply from the
@@ -87,31 +87,27 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
   const toggleLoad = (pin: BotPin, alwaysLoad: boolean) => {
     setPendingLoads((current) => new Map(current).set(pin.skill_id, alwaysLoad));
     const expected = { skill_version_id: pin.skill_version_id, always_load: pin.always_load };
-    const loadsAtSend = botListLoads(queryClient);
-    // The switch shows the value on its way until the refresh after the answer, so a skipped
-    // answer (see `pin-answer.ts`) does not show an older value for a moment.
-    void setPin
-      .mutateAsync({
-        path: { id: bot.id, skill_id: pin.skill_id },
-        body: { skill_version_id: pin.skill_version_id, always_load: alwaysLoad, expected },
-      })
-      .then(
-        (answer) => {
-          writePinAnswer({ queryClient, answer, skillId: pin.skill_id, expected, loadsAtSend });
-          return refresh();
-        },
-        (error: unknown) => {
-          showToast(staleText(pin.skill_name, error));
-          return refresh();
-        },
-      )
-      .finally(() => {
-        setPendingLoads((current) => {
-          const next = new Map(current);
-          next.delete(pin.skill_id);
-          return next;
-        });
+    // The switch shows the value on its way until the refresh after the answer (`pin-answer.ts`).
+    void sendPinChange({
+      queryClient,
+      request: () =>
+        setPin.mutateAsync({
+          path: { id: bot.id, skill_id: pin.skill_id },
+          body: { skill_version_id: pin.skill_version_id, always_load: alwaysLoad, expected },
+        }),
+      skillId: pin.skill_id,
+      expected,
+      onFailed: (error) => {
+        showToast(staleText(pin.skill_name, error));
+      },
+      refresh,
+    }).finally(() => {
+      setPendingLoads((current) => {
+        const next = new Map(current);
+        next.delete(pin.skill_id);
+        return next;
       });
+    });
   };
 
   // Remove asks nothing and has no Undo: it deletes nothing (SK1). A pin that is already gone

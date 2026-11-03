@@ -186,9 +186,7 @@ function NewSkillView({ source }: { source: CloneSource | null }) {
     mutationFn: (input: Parameters<typeof createWithFreeSlug>) => createWithFreeSlug(...input),
     onSuccess: async (skill) => {
       // The assign card (§7.2), or only the toast when no bot exists.
-      void assignCardAfterCreate(queryClient, skill).then((card) => {
-        if (card !== null) showBotCard(card);
-      });
+      showBotCard(assignCardAfterCreate(queryClient, skill));
       // The skill page finds the skill in the list, so the list must have it first.
       await queryClient.invalidateQueries({ queryKey: allSkillsOptions().queryKey });
       if (closed.current) return;

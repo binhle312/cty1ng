@@ -402,6 +402,12 @@ function BotView({
     };
   };
 
+  // The other tab whose Save is on its way: this tab's Save waits for its answer (one Save at a
+  // time, `bot-save-bar.tsx`), and its bar says so.
+  const TAB_NAMES: Record<EditTab, string> = { profile: "Profile", model: "Model" };
+  const waitingFor = (t: EditTab): string | null =>
+    saving !== null && saving !== t ? TAB_NAMES[saving] : null;
+
   // Ctrl+S or ⌘S saves the tab on screen (bot-page.md §4.1).
   const saveRef = useRef(save);
   useEffect(() => {
@@ -548,6 +554,7 @@ function BotView({
             botName={bot.name}
             state={barState("profile")}
             saving={saving === "profile"}
+            waitFor={waitingFor("profile")}
             onDiscard={discard}
             onSave={() => {
               save("profile");
@@ -578,6 +585,7 @@ function BotView({
             botName={bot.name}
             state={barState("model")}
             saving={saving === "model"}
+            waitFor={waitingFor("model")}
             onDiscard={discard}
             onSave={() => {
               save("model");

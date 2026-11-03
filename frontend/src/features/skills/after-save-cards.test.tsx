@@ -9,6 +9,8 @@ import {
   makeSkill,
   makeVersions,
   SKILL_ID,
+  type Skill,
+  typeId,
   versionId,
 } from "../../../test/fixtures.ts";
 import { renderApp } from "../../../test/render-app.tsx";
@@ -201,6 +203,57 @@ describe("the upgrade card when answers come late or stale", () => {
     await saveAs(5, "## Steps\n1. Read.\n2. Ask.");
     await held.answer({ body: [] });
     expect(screen.getByRole("dialog", { name: /Also upgrade these bots to v5/ })).toBeTruthy();
+  });
+
+  // PR #59 review of 340ca02: the card of an older save replaced the newer card.
+  it("keeps the newer card when the candidates of an older save answer after it", async () => {
+    const held = heldAnswer();
+    // Skill A is at v3 and its save makes v4; skill B is at v5 and its save makes v6.
+    const atVersion = (skill: Skill, version: number) => ({
+      ...skill,
+      latest_version: { ...skill.latest_version, version },
+    });
+    const a = makeSkill();
+    const b = makeSkill({ id: typeId("skill", 2), slug: "writing", name: "Writing" });
+    const skills = [a, atVersion(b, 5)];
+    const routes: Parameters<typeof fakeApi>[0] = {
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: skills }),
+      "GET /api/bots": () => ({ body: [ba] }),
+      [`GET /api/skills/${a.id}/upgrade-candidates`]: async () => {
+        const answer = await held.promise;
+        return answer;
+      },
+      [`GET /api/skills/${b.id}/upgrade-candidates`]: () => ({ body: [onV3] }),
+    };
+    for (const [skill, from] of [
+      [a, 3],
+      [b, 5],
+    ] as const) {
+      routes[`GET /api/skills/${skill.id}`] = () => ({ body: atVersion(skill, from) });
+      routes[`GET /api/skills/${skill.id}/versions`] = () => ({ body: makeVersions(from + 1) });
+      routes[`POST /api/skills/${skill.id}/versions`] = () => ({
+        status: 201,
+        body: atVersion(skill, from + 1),
+      });
+    }
+    api = fakeApi(routes);
+    const { router } = await renderApp("/skills/write-user-stories");
+    await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 });
+    click(screen.getByRole("tab", { name: "Write" }));
+    type({ label: "Body", text: "## Steps\n1. Read." });
+    click(screen.getByRole("button", { name: "Save as v4" }));
+    await waitFor(() => {
+      expect(api?.sent("GET", `/api/skills/${a.id}/upgrade-candidates`)).toHaveLength(1);
+    });
+    await act(() => router.navigate({ to: "/skills/$slug", params: { slug: "writing" } }));
+    await screen.findByRole("heading", { name: "Writing" }, { timeout: 5000 });
+    await saveAs(6, "## Steps\n1. Write.");
+    await held.answer({ body: [onV3] });
+    // The card of A's save comes too late: it shows as its toast, and B's card stays.
+    expect(await screen.findByText("Saved v4 ✨")).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: /Also upgrade these bots to v6/ })).toBeTruthy();
+    expect(screen.queryByRole("dialog", { name: /Also upgrade these bots to v4/ })).toBeNull();
   });
 
   it("shows the failure of a skipped card as a toast", async () => {
