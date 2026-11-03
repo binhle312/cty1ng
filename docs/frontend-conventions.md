@@ -18,7 +18,9 @@ skill (Lauren Tan), changed where it conflicts with this project.
 | **No `as`** | No type assertions, except `as const`. Use `satisfies` to check a literal without widening it. A cast is allowed only right after a schema parse, with a comment. |
 | **Branded ids** | `BotId`, `MessageId`, `ConversationId`, `RunId`, `SkillId` are branded TypeID strings from `shared/src/ids.ts` (D36: `bot_…`, `msg_…`; the schema checks the prefix), so one cannot be passed where another is expected. Brands come from a schema parse, never from `as`. |
 | **Simplest total type** | Keep `T[]` while every use is total. Strengthen (for example to a non-empty tuple) only where the loose type forces `!`, a cast or a "should never happen" throw. |
-| **Object arguments** | Functions with more than two parameters, or two of the same type, take one object. Not on hot paths (render loops, the Flow renderer's per-frame code). |
+| **Object arguments** | Functions with more than two parameters, or two of the same type, take one object. Not on hot paths (render loops, the Flow renderer's per-frame code). Lint checks the count (§3); two of the same type is the reviewer's check. |
+| **One pure module for a stateful screen** | A screen that saves under a lock, takes live events or gets late answers keeps its state rules in one pure module next to it (`<screen>-state.ts`): a reducer from the state and an event to the next state, with no React, fetch or clock. The component sends events and renders the state; it holds no extra flags or refs that change the rules. The module follows the screen's state table (`workflow.md` §2 step 2) and has one test per cell (`testing.md` §3). |
+| **Answers write only what their request owns** | A request remembers what it was sent from (the `row_version`, the `expected` pin, the tab's base) and which fields it writes. Its answer writes only those fields, and only while the page still shows what the request was sent from. Write the fields as an allowlist typed with `Pick`, so a new field fails to compile until someone decides; never spread the answer and then put back the fields to keep. Example: `withSaveAnswer` in `features/bots/bot-edit-form.ts`. |
 | **Real tests** | Test with the real store, router and reducer; mock only the network and the clock. Matches `testing.md`. |
 | **No `console`** | Use the small logger in `frontend/src/lib/log.ts`; it is silent in production builds and never logs message or file contents (`security.md` §2.10). The backend logs through Pino (`architecture.md` §9). |
 
@@ -91,6 +93,7 @@ ESLint (typescript-eslint, type-aware):
 | `@typescript-eslint/no-non-null-assertion` | error |
 | `@typescript-eslint/no-unsafe-*` (assignment, member-access, call, return, argument) | error |
 | `no-console` | error |
+| `@typescript-eslint/max-params` | `{ max: 2 }` (owner, 2026-11-03). The functions that broke it before are in `eslint-suppressions.json`; new code may not add to it. After you fix one, run `pnpm exec eslint . --prune-suppressions` |
 
 A new rule exception needs a comment saying why, and shows up in review.
 

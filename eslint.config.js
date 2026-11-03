@@ -90,6 +90,10 @@ export default tseslint.config(
       "@typescript-eslint/no-unsafe-argument": "error",
       "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
       "no-console": "error",
+      // frontend-conventions.md §1, "Object arguments". The calls that broke it before this rule
+      // are listed in eslint-suppressions.json; fixing one and running
+      // `eslint . --prune-suppressions` takes it off the list.
+      "@typescript-eslint/max-params": ["error", { max: 2 }],
       "no-restricted-syntax": ["error", ...SQL_RULES],
       "drizzle/enforce-delete-with-where": ["error", { drizzleObjectName: ["db", "tx"] }],
       "drizzle/enforce-update-with-where": ["error", { drizzleObjectName: ["db", "tx"] }],
