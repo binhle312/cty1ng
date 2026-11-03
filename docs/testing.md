@@ -230,6 +230,7 @@ killed.
 | Helper | File | Use |
 | --- | --- | --- |
 | `renderApp(path)` | `frontend/test/render-app.tsx` | Component tests on the real app: routes, shell and providers on an in-memory address. Returns the Testing Library view and the router. Queries do not retry, so a failed request shows its error state at once. |
+| `fakeApi(routes)`, `heldAnswer()` | `frontend/test/fake-api.ts` | Component tests: the fake network. A route is `"METHOD /path"` and answers a status and a body; `heldAnswer()` keeps a request open until the test answers it, for order cases. A success answer that the generated response schema refuses fails the test at `restore()`, so a wrong shape never turns a success test into a test of the failure path (lesson `fake-answers-match-the-api.md`). |
 | `watchCsp(page)` | `frontend/test/e2e/csp.ts` | End-to-end tests: collects every CSP violation of a page; assert that the list is empty. |
 | `readZip(buffer)` | `frontend/test/e2e/zip.ts` | End-to-end tests: the files of a downloaded zip (the skill export), by name. |
 

@@ -1,6 +1,6 @@
 # Check every request against the orders reviews find, before the push
 
-Date: 2026-11-03 · Source: M2c, PR #59 · Status: done (the audit is in #59)
+Date: 2026-11-03 · Source: M2c, PR #59 · Status: applied
 
 **Observed.** After the lessons `state-table-before-stateful-code.md` and
 `fix-the-cause-not-the-finding.md` were in, three more review rounds of #59 found 1, 3 and 3 P2
