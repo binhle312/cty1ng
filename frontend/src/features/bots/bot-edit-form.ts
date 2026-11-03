@@ -407,3 +407,35 @@ export function leaveText(fields: readonly EditField[]): string {
   const it = words.length === 1 ? "it" : "them";
   return `You changed ${joinWords(words)}. The app has not saved ${it} yet. Stay and save, or let ${it} go.`;
 }
+
+// What a Profile or Model save writes (frontend-conventions.md §1, "Answers write only what
+// their request owns"): the PATCH fields, the avatar URL the server makes from `avatar_id`, and
+// `row_version` with `updated_at`. A new PATCH field fails to compile until it is here.
+type SavedFields = Pick<
+  BotRow,
+  Exclude<keyof UpdateBotBody, "row_version"> | "avatar_url" | "row_version" | "updated_at"
+>;
+
+// The page's bot after the answer of its own save. Everything else on the row (pins, the pinned
+// position, health, counts, activity) does not raise `row_version`, so the page's copy may be
+// newer than the answer and stays. An answer that is not newer than the page's bot changes
+// nothing: an event or a refresh came first.
+export function withSaveAnswer({ bot, answer }: { bot: BotRow; answer: BotRow }): BotRow {
+  if (answer.id !== bot.id || answer.row_version <= bot.row_version) return bot;
+  const saved: SavedFields = {
+    name: answer.name,
+    description: answer.description,
+    persona_md: answer.persona_md,
+    avatar_style: answer.avatar_style,
+    avatar_colour: answer.avatar_colour,
+    avatar_id: answer.avatar_id,
+    avatar_url: answer.avatar_url,
+    history_share_pct: answer.history_share_pct,
+    request_limit: answer.request_limit,
+    max_reply_chars: answer.max_reply_chars,
+    tool_settings: answer.tool_settings,
+    row_version: answer.row_version,
+    updated_at: answer.updated_at,
+  };
+  return { ...bot, ...saved };
+}

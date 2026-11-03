@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BOT_SETTINGS, makeBot } from "../../../test/fixtures.ts";
+import { BOT_SETTINGS, makeBot, makePin } from "../../../test/fixtures.ts";
 import {
   avatarChanged,
   changedFields,
@@ -10,6 +10,7 @@ import {
   mergeTab,
   patchBody,
   tabOfField,
+  withSaveAnswer,
   withTab,
 } from "./bot-edit-form.ts";
 import type { FormSettings } from "./create-bot-form.ts";
@@ -186,6 +187,41 @@ describe("the bot page's edit form (bot-page.md §4, §6)", () => {
     const discarded = withTab({ into: form, from: saved, tab: "profile" });
     expect(discarded.name).toBe("BA");
     expect(discarded.request_limit).toBe(20);
+  });
+
+  it("takes from a save answer only the fields a save writes, so pins and counts stay", () => {
+    const pin = makePin({ always_load: true });
+    const page = makeBot(1, "BA", [pin], {
+      row_version: 4,
+      pinned_position: 2,
+      last_activity_at: "2026-11-03T09:00:00.000Z",
+      health: { level: "needs_attention", reason: "deprecated_skill" },
+      counts: { skills: 1, skill_updates: 1, projects: 2, conversations: 7 },
+    });
+    // The answer was made before the newer pin, unpin and counts that the page has now.
+    const answer = makeBot(1, "BA", [], {
+      row_version: 5,
+      name: "Analyst",
+      persona_md: "You write stories.",
+      avatar_url: "/api/avatars/new.png",
+      request_limit: 20,
+      updated_at: "2026-11-03T10:00:00.000Z",
+    });
+    expect(withSaveAnswer({ bot: page, answer })).toEqual({
+      ...page,
+      row_version: 5,
+      name: "Analyst",
+      persona_md: "You write stories.",
+      avatar_url: "/api/avatars/new.png",
+      request_limit: 20,
+      updated_at: "2026-11-03T10:00:00.000Z",
+    });
+  });
+
+  it("keeps the page's bot when a save answer is not newer than it", () => {
+    const page = makeBot(1, "BA", [], { row_version: 6, name: "Newer" });
+    const answer = makeBot(1, "BA", [], { row_version: 5, name: "Older" });
+    expect(withSaveAnswer({ bot: page, answer })).toBe(page);
   });
 
   it("takes the other side's values on one tab, except the fields the owner changed", () => {

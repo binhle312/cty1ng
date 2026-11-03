@@ -28,6 +28,7 @@ import {
   mergeTab,
   patchBody,
   tabOfField,
+  withSaveAnswer,
   withTab,
 } from "./bot-edit-form.ts";
 import { useBotLeaveGuard } from "./bot-leave-guard.tsx";
@@ -311,28 +312,10 @@ function BotView({
       body: patchBody({ tab: t, form: sent, changed: fields, rowVersion: sentBase, effective }),
     })
       .then((result) => {
-        // A newer list (an event or a refresh) may have come first: the answer never replaces it.
-        // A Profile or Model save never changes a pin, and a pin change never raises
-        // `row_version`, so the answer's pins may be older than the page's (an Always load
-        // toggle, or an unpin in the side list, after the save went out): the skill pins, the
-        // pinned position, and the counts and health made from them, stay.
+        // A newer list (an event or a refresh) may have come first, and a pin change never raises
+        // `row_version`: the answer writes only the fields a save owns.
         queryClient.setQueryData<BotRow[]>(listBotsQueryKey(), (old) =>
-          old?.map((b) =>
-            b.id === result.id && result.row_version > b.row_version
-              ? {
-                  ...b,
-                  ...result,
-                  pins: b.pins,
-                  pinned_position: b.pinned_position,
-                  health: b.health,
-                  counts: {
-                    ...result.counts,
-                    skills: b.counts.skills,
-                    skill_updates: b.counts.skill_updates,
-                  },
-                }
-              : b,
-          ),
+          old?.map((b) => withSaveAnswer({ bot: b, answer: result })),
         );
         // The answer sets the tab's values only while the tab is still based on `sentBase`. A
         // Discard that loaded a newer `row_version` (another tab saved after this save) already
