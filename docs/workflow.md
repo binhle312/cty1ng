@@ -110,6 +110,16 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    code, not only the acceptance criteria, and tests the edge cases in `testing.md` §3 ("Edge
    cases each slice tests"). The PR lists the sections checked (lesson
    `self-review-against-the-spec.md`).
+   **Order check.** Before the push, for every request on a screen with saves under a lock,
+   live events or late answers (not only those near a finding), the builder answers five
+   questions, each with a test that holds the answer: (1) the answer comes late: does it write
+   only what it owns? (2) the component that sent it is gone (the owner left the tab or page):
+   do its checks still hold? (3) a newer request of the same kind started: does the older answer
+   stay out of its way? (4) a list load or an event came in between: is the answer still right
+   to apply? (5) the refresh after it fails or is slow: does each control still show the truth?
+   Then a fresh reviewer agent, given the code and not the builder's conclusions, tries to
+   break the screen with forced orders (`review-guide.md` §3; lesson
+   `check-every-order-before-the-push.md`).
    **Proof by assertion.** For each acceptance criterion, the PR names the assertion that
    proves it, not only the test name, and the builder has seen that test fail without the
    behaviour (`testing.md` §5). A code comment or a test name that states the rule is not proof. The builder fills the PR template (§6). Anything new that the build taught (a library pitfall,
@@ -127,7 +137,12 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    code for every other place with the same cause, and fixes the rule once: a shared helper, an
    allowlist, a cell of the state table. Each place gets a test. The review-fix table in the PR
    has a column "Same cause checked in" (§6). A later finding with the same cause means the
-   first fix was too narrow (lesson `fix-the-cause-not-the-finding.md`).
+   first fix was too narrow (lesson `fix-the-cause-not-the-finding.md`). Search for the
+   property the code broke ("a late result does not know if it is still the newest"), not only
+   the mechanism of the finding ("pin answers"). A rule that a fix copies to another place takes
+   the rules it works with (skip a late answer, and keep the control pending until the
+   refresh), and two copies of one flow become one shared flow (lesson
+   `check-every-order-before-the-push.md`).
 6. **Owner review.** Focus on `Needs human review` items, migrations, the evidence table, and
    one run of the app. Merge when satisfied.
 7. **Docs.** If something diverged from the docs, the PR already updated them. If a decision

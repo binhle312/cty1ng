@@ -47,7 +47,10 @@ function open(bots: Bot[], extra: Parameters<typeof fakeApi>[0] = {}) {
   const leave = () => {
     view.rerender(page(false));
   };
-  return { queryClient, leave };
+  const back = () => {
+    view.rerender(page(true));
+  };
+  return { queryClient, leave, back };
 }
 
 const FAILED = {
@@ -560,6 +563,74 @@ describe("the Bots tab of a skill", () => {
     expect(alert.textContent).toContain("The app could not load the changes.");
     click(within(alert).getByRole("button", { name: "Try again" }));
     expect(await within(dialog).findByRole("tab", { name: "Body" })).toBeTruthy();
+  });
+
+  // Fresh review of the audit: the switch forgot its change on its way when the tab came back.
+  it("keeps the Always load value on its way when the owner leaves the tab and comes back", async () => {
+    const held = heldAnswer();
+    const { leave, back } = open([designer], {
+      [`PUT /api/bots/${designer.id}/skills/${SKILL_ID}`]: async () => {
+        const answer = await held.promise;
+        return answer;
+      },
+    });
+    click(await screen.findByRole("switch", { name: "Always load for Designer" }));
+    await waitFor(() => {
+      expect(api?.sent("PUT", `/api/bots/${designer.id}/skills/${SKILL_ID}`)).toHaveLength(1);
+    });
+    leave();
+    back();
+    const shown = await screen.findByRole("switch", { name: "Always load for Designer" });
+    expect(shown.getAttribute("aria-checked")).toBe("true");
+    expect(shown.hasAttribute("data-disabled")).toBe(true);
+    await held.answer({ body: designer });
+  });
+
+  // Owner, 2026-11-03 (Q2): the row goes at once, and comes back with a toast if Remove fails.
+  it("takes the row away at once, and brings it back with a toast when Remove fails", async () => {
+    const held = heldAnswer();
+    open([ba], {
+      [`DELETE /api/bots/${ba.id}/skills/${SKILL_ID}`]: async () => {
+        const answer = await held.promise;
+        return answer;
+      },
+    });
+    click(await screen.findByRole("button", { name: "Actions for BA" }));
+    click(await screen.findByRole("menuitem", { name: "Remove" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Actions for BA" })).toBeNull();
+    });
+    await held.answer(FAILED);
+    expect(await screen.findByText("Something failed.")).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Actions for BA" })).toBeTruthy();
+  });
+
+  // Second fresh review: a bot added back while its Remove waited stayed hidden.
+  it("shows a bot the owner adds back while its Remove is on its way", async () => {
+    const held = heldAnswer();
+    const pinned = makeBot(3, "QA", [makePin()]);
+    let bots: Bot[] = [pinned];
+    open([pinned], {
+      "GET /api/bots": () => ({ body: bots }),
+      [`DELETE /api/bots/${qa.id}/skills/${SKILL_ID}`]: async () => {
+        bots = [qa];
+        const answer = await held.promise;
+        return answer;
+      },
+      [`POST /api/skills/${SKILL_ID}/bots`]: () => {
+        bots = [pinned];
+        return { body: [pinned] };
+      },
+    });
+    click(await screen.findByRole("button", { name: "Actions for QA" }));
+    click(await screen.findByRole("menuitem", { name: "Remove" }));
+    expect(await screen.findByText("No bot uses this skill yet.")).toBeTruthy();
+    click(screen.getByRole("button", { name: "Add" }));
+    const dialog = await screen.findByRole("dialog");
+    click(await within(dialog).findByRole("checkbox"));
+    click(within(dialog).getByRole("button", { name: "Add 1" }));
+    expect(await screen.findByRole("button", { name: "Actions for QA" })).toBeTruthy();
+    await held.answer({ status: 204 });
   });
 
   it("removes a bot from the skill without asking", async () => {

@@ -25,6 +25,7 @@ import {
   editFormOf,
   editProblems,
   leaveText,
+  lostSaveText,
   mergeTab,
   patchBody,
   tabOfField,
@@ -214,8 +215,12 @@ function BotView({
     profile: null,
     model: null,
   });
+  // While a Save of the page waits, a newer `row_version` is often that Save's own event, so it
+  // shows no conflict: the answer decides. A success moves every tab of the same `row_version` on,
+  // and a newer one left after that is a change from another place (owner, 2026-11-03, Q1).
   const conflict = (t: EditTab) =>
-    changed[t].length > 0 && (bot.row_version > base[t] || staleAt[t] === base[t]);
+    changed[t].length > 0 &&
+    ((saving === null && bot.row_version > base[t]) || staleAt[t] === base[t]);
 
   const [serverProblems, setServerProblems] = useState<Problems>({});
   // Fields the owner left, and tabs where Save was pressed with errors: their errors show.
@@ -262,6 +267,14 @@ function BotView({
   // How many times each tab was let go (Discard, Esc, leaving): a Save that was on its way then
   // must not bring back the edit the owner dropped.
   const letGoCount = useRef<Record<EditTab, number>>({ profile: 0, model: 0 });
+  // The page is gone (the owner left for another bot or page) while a Save was on its way.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const letGo = (tabs: readonly EditTab[]) => {
     for (const t of tabs) letGoCount.current[t] += 1;
     let nextForm = form;
@@ -362,6 +375,15 @@ function BotView({
       })
       .catch((error: unknown) => {
         const api = readApiError(error);
+        // The owner let the tab go or left the page while Save waited: no field or bar shows the
+        // failure any more, so a toast says it (bot-page.md §4.1).
+        if (!mounted.current || letGoCount.current[t] !== sentLetGo) {
+          showToast(lostSaveText({ botName: bot.name, sentName: sent.name, error: api }));
+          if (api?.code === "stale_write") {
+            void queryClient.invalidateQueries({ predicate: PIN_QUERIES });
+          }
+          return;
+        }
         if (api?.code === "stale_write") {
           // The conflict shows at once; load the newest values now, and the edit stays.
           setStaleAt((old) => ({ ...old, [t]: sentBase }));
@@ -461,10 +483,10 @@ function BotView({
     if (event.key !== "Escape" || event.defaultPrevented) return;
     if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target)) return;
     if (unsaved[t].length === 0) return;
-    leave.ask(() => undefined);
+    leave.ask();
   };
   const discard = () => {
-    leave.ask(() => undefined);
+    leave.ask();
   };
 
   const modelGone =

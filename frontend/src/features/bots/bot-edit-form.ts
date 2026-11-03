@@ -408,6 +408,29 @@ export function leaveText(fields: readonly EditField[]): string {
   return `You changed ${joinWords(words)}. The app has not saved ${it} yet. Stay and save, or let ${it} go.`;
 }
 
+// The toast for a Save that failed after the owner let its tab go or left the page
+// (bot-page.md §4.1): nothing on the page shows the failure then.
+export function lostSaveText({
+  botName,
+  sentName,
+  error,
+}: {
+  botName: string;
+  sentName: string;
+  error: { code: string; message: string; field?: string | undefined } | null;
+}): string {
+  if (error?.code === "stale_write") {
+    return `${botName} changed in another place, so the app did not save your change.`;
+  }
+  if (error?.code === "name_taken") {
+    return `Could not save ${botName}: ${sentName.trim()} is taken by another bot, maybe one in Trash.`;
+  }
+  if (error?.field !== undefined) {
+    return `Could not save ${botName}: ${error.message}`;
+  }
+  return `Could not save ${botName}. Try again.`;
+}
+
 // What a Profile or Model save writes (frontend-conventions.md §1, "Answers write only what
 // their request owns"): the PATCH fields, the avatar URL the server makes from `avatar_id`, and
 // `row_version` with `updated_at`. A new PATCH field fails to compile until it is here.

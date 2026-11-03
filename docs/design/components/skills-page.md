@@ -96,7 +96,10 @@ The skill side of the bot page Skills tab (`bot-page.md` §7), with the same row
 - A pin answer (Always load, a version move, + Add) changes only the pin of this skill, by the
   same rules as the bot page's Skills tab (`bot-page.md` §7): only while the page shows the pin
   the request expected, and not when the bot list loaded after the request went out. The other
-  fields of the bot stay as the page shows them (M2c review, 2026-11-03).
+  fields of the bot stay as the page shows them (M2c review, 2026-11-03). The Always load value
+  on its way outlives the tab, and **Remove** takes the row away at once (a bot added back
+  while it waits shows again), as on the bot page
+  (`bot-page.md` §7, §7.1; M2c audit, 2026-11-03).
 - No bot uses it: "No bot uses this skill yet." and **+ Add**.
 - No bot exists (M1): the same line, and **+ Add** is disabled with the tooltip "Create a bot
   first."
@@ -188,6 +191,14 @@ when it answers, and the card opens when the app has read the bots. When a newer
 skill or another one) asked for its card while an older card was still being read, the older
 card shows as its toast ("Saved v{n} ✨" or "Created {name} ✨") and never replaces the newer
 card. Nothing is lost: the Bots tab still offers the change.
+
+**The cards against the five order questions** (M2c audit, 2026-11-03; `../../workflow.md` §2
+step 4). Tests are in `after-save-cards.test.tsx`.
+
+| Request | Late answer | The Skills page is gone | A newer request of the same kind | A load or event in between | The refresh fails or is slow |
+| --- | --- | --- | --- | --- | --- |
+| The read for the card after a save | An older card shows as its toast ("keeps the newer card when the candidates of an older save answer after it") | The card shows as its toast ("shows the toast in place of the card when the owner left …") | As in the first column | The card's bot list follows the server while it is open | A failed read gives the toast ("shows only the toast when no bot …") |
+| Upgrade, Assign | Closes only its own card ("does not close a newer card …") | A failure is a toast ("shows the failure of a skipped card as a toast") | A retry sends the versions the bots use now ("sends the newest version of each bot on a retry …", "drops a bot that got the skill …") | As before | The card closes at the answer; the lists refresh after it |
 
 ### 7.1 Upgrade the bots (C4, UI-7.4)
 
@@ -330,6 +341,9 @@ A click on another skill, the rail or + Create asks first, but only if something
 Title **Leave without saving? 👀**, text "You changed the description and the body of {skill}.
 The app has not saved them yet. Stay and save, or let them go." The text names the changed
 fields. Buttons: **Let them go** (`danger`) and **Stay on this skill** (`primary`, default).
+When the changes go while the question is open (the Save answered, and nothing typed after it is
+unsaved), nothing would be lost, so the page goes where the owner asked at once (M2c audit,
+2026-11-03; the bot page shares the rule).
 
 ## 15. Import (D3, D4, UI-7.7)
 

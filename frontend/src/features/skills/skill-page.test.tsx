@@ -235,3 +235,58 @@ describe("Remove from bots on a deprecated skill", () => {
     expect(screen.getByRole("alertdialog")).toBe(second);
   });
 });
+
+// State table audit (D3): the leave question stayed open, and named no change, after the Save
+// it waited for answered.
+describe("leaving the skill editor while its Save is on its way", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  it("leaves at once when the Save answers while the leave question is open", async () => {
+    const held = heldAnswer();
+    const v4 = makeSkill({
+      latest_version: { ...makeSkill().latest_version, version: 4 },
+      row_version: 2,
+      body_md: "## Steps\n1. Read the brief.\n2. Ask.",
+    });
+    let latest = makeSkill();
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: [latest] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: latest }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      [`GET /api/skills/${SKILL_ID}/upgrade-candidates`]: () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [] }),
+      [`POST /api/skills/${SKILL_ID}/versions`]: async () => {
+        const answer = await held.promise;
+        latest = v4;
+        return answer;
+      },
+    });
+    const { router } = await renderApp("/skills/write-user-stories");
+    await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 });
+    act(() => {
+      fireEvent.click(screen.getByRole("tab", { name: "Write" }));
+    });
+    act(() => {
+      fireEvent.change(screen.getByLabelText("Body", { exact: true }), {
+        target: { value: "## Steps\n1. Read the brief.\n2. Ask." },
+      });
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "Save as v4" }));
+    });
+    act(() => {
+      void router.navigate({ to: "/bots" });
+    });
+    await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
+    await held.answer({ status: 201, body: v4 });
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/bots");
+    });
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+});

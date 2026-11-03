@@ -168,6 +168,18 @@ describe("the bot page", () => {
     ).toBeTruthy();
   });
 
+  // State table audit: the bot leaves the list (Trash, another tab) while the owner edits it.
+  it("says it could not find the bot when it leaves the list during an edit", async () => {
+    const state = { bots: [makeBot(1, "BA"), makeBot(2, "Designer")] };
+    await open(state);
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    state.bots = [makeBot(2, "Designer")];
+    refocus();
+    expect(await screen.findByText(/The app could not find this bot/)).toBeTruthy();
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+
   it("waits for a list refresh on its way before it says it could not find the bot", async () => {
     // The first list has no Designer; the refresh brings it (as after a Create, when a live
     // event can end the wait for the list early: skill-page.test.tsx).
@@ -536,8 +548,14 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     state.bots = [
       { ...makeBot(1, "BA"), row_version: 3, description: "Mine.", persona_md: "Later." },
     ];
+    const loads = fake?.sent("GET", "/api/bots").length ?? 0;
     refocus();
-    await screen.findByText(/BA changed in another place/);
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(loads);
+    });
+    await act(() => Promise.resolve());
+    // Owner, 2026-11-03 (Q1): while the tab's own Save waits, the answer decides.
+    expect(screen.queryByText(/changed in another place/)).toBeNull();
     // The refresh after the answer fails, so only the answer could change the list.
     fail = true;
     await held.answer({ body: { ...makeBot(1, "BA"), row_version: 2, description: "Mine." } });
@@ -647,8 +665,12 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     // The save made v2; then another tab made v3, and the page loaded it before the answer.
     const newer = { ...makeBot(1, "BA"), row_version: 3, description: "From another tab." };
     state.bots = [newer];
+    const before = fake?.sent("GET", "/api/bots").length ?? 0;
     refocus();
-    await screen.findByText(/BA changed in another place/);
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(before);
+    });
+    await act(() => Promise.resolve());
     click(screen.getByRole("button", { name: "Discard" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
     click(within(dialog).getByRole("button", { name: "Let them go" }));
@@ -712,6 +734,76 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
   });
 
   // PR #59 review of 340ca02: Save on the other tab looked on, but a click sent nothing.
+  // Fresh review of the audit: the event of a Profile save showed a conflict on the Model tab.
+  it("shows no conflict on the other tab when the event of a Save comes before its answer", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA")] };
+    await open(state, {
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+    });
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    click(screen.getByRole("button", { name: "Save" }));
+    click(screen.getByRole("tab", { name: /Model/ }));
+    const leave = await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
+    click(within(leave).getByRole("button", { name: "Let them go" }));
+    await waitFor(() => {
+      expect(screen.getByLabelText("Model requests per run", { exact: true })).toBeTruthy();
+    });
+    type({ label: "Model requests per run", text: "20" });
+    // The save's own event: the server has v2 before the page has the answer.
+    const saved = { ...makeBot(1, "BA"), row_version: 2, description: "Mine." };
+    state.bots = [saved];
+    const loads = fake?.sent("GET", "/api/bots").length ?? 0;
+    refocus();
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(loads);
+    });
+    await act(() => Promise.resolve());
+    expect(screen.queryByText(/changed in another place/)).toBeNull();
+    await held.answer({ body: saved });
+    await waitFor(() => {
+      expect(
+        within(saveBar()).getByRole("button", { name: "Save" }).getAttribute("aria-disabled"),
+      ).toBe("false");
+    });
+    expect(within(saveBar()).getByText("1 change not saved")).toBeTruthy();
+    expect(screen.queryByText(/changed in another place/)).toBeNull();
+  });
+
+  it("shows the conflict after a Save answers when another place changed the bot meanwhile", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA")] };
+    await open(state, {
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+    });
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    click(screen.getByRole("button", { name: "Save" }));
+    click(screen.getByRole("tab", { name: /Model/ }));
+    const leave = await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
+    click(within(leave).getByRole("button", { name: "Let them go" }));
+    await waitFor(() => {
+      expect(screen.getByLabelText("Model requests per run", { exact: true })).toBeTruthy();
+    });
+    type({ label: "Model requests per run", text: "20" });
+    // The save made v2; another tab then made v3.
+    state.bots = [{ ...makeBot(1, "BA"), row_version: 3, description: "Mine.", request_limit: 5 }];
+    refocus();
+    await held.answer({ body: { ...makeBot(1, "BA"), row_version: 2, description: "Mine." } });
+    expect(await screen.findByText(/BA changed in another place/)).toBeTruthy();
+  });
+
   it("turns Save off on the other tab while a Save is on its way, then saves it after", async () => {
     const held = heldAnswer();
     const state = { bots: [makeBot(1, "BA")] };
@@ -762,6 +854,128 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
       row_version: 2,
       request_limit: 20,
     });
+  });
+
+  // State table audit (D1): a Save that fails after its tab was let go said nothing.
+  it("says in a toast when a Save fails after the owner let its tab go", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA")] };
+    await open(state, {
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+    });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    click(screen.getByRole("button", { name: "Save" }));
+    click(screen.getByRole("button", { name: "Discard" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
+    click(within(dialog).getByRole("button", { name: "Let them go" }));
+    await held.answer({
+      status: 409,
+      body: {
+        error: { code: "name_taken", message: "This name or slug is taken.", field: "name" },
+      },
+    });
+    expect(
+      await screen.findByText(
+        "Could not save BA: Analyst is taken by another bot, maybe one in Trash.",
+      ),
+    ).toBeTruthy();
+    expect(valueOf("Name")).toBe("BA");
+  });
+
+  it("says in a toast when a Save fails as stale after the owner left for another bot", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA"), makeBot(2, "Designer")] };
+    await open(state, {
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+    });
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    click(screen.getByRole("button", { name: "Save" }));
+    click(
+      within(screen.getByRole("navigation", { name: "Bots" })).getByRole("link", {
+        name: "Designer",
+      }),
+    );
+    const dialog = await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
+    click(within(dialog).getByRole("button", { name: "Let them go" }));
+    await screen.findByRole("heading", { name: "Designer", level: 1 });
+    await held.answer({
+      status: 409,
+      body: { error: { code: "stale_write", message: "The bot changed.", current: null } },
+    });
+    expect(
+      await screen.findByText("BA changed in another place, so the app did not save your change."),
+    ).toBeTruthy();
+  });
+
+  // State table audit (D3): the leave question said "You changed ." after its Save answered.
+  it("leaves at once when the Save answers while the leave question is open", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA"), makeBot(2, "Designer")] };
+    const { router } = await open(state, {
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+    });
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    click(screen.getByRole("button", { name: "Save" }));
+    click(
+      within(screen.getByRole("navigation", { name: "Bots" })).getByRole("link", {
+        name: "Designer",
+      }),
+    );
+    await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
+    // Nothing is unsaved after the answer: the question has no reason any more.
+    await held.answer({ body: { ...makeBot(1, "BA"), row_version: 2, description: "Mine." } });
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/bots/designer");
+    });
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+
+  it("keeps the leave question, with its words, when text typed during the Save is still unsaved", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA"), makeBot(2, "Designer")] };
+    await open(state, {
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+    });
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    click(screen.getByRole("button", { name: "Save" }));
+    type({ label: "Description", text: "Mine, later." });
+    click(
+      within(screen.getByRole("navigation", { name: "Bots" })).getByRole("link", {
+        name: "Designer",
+      }),
+    );
+    await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
+    await held.answer({ body: { ...makeBot(1, "BA"), row_version: 2, description: "Mine." } });
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(1);
+    });
+    expect(
+      screen.getByRole("alertdialog", { name: "Leave without saving? 👀" }).textContent,
+    ).toContain("You changed the description.");
   });
 
   // PR #59 review: the upload answer wrote the whole form from the render that started it.
@@ -898,7 +1112,7 @@ describe("the side list (bot-page.md E2, pin.md §2)", () => {
     makeBot(2, "QA", [], { pinned_position: 2 }),
     makeBot(3, "UX"),
   ];
-  const pinsRoute = { "PUT /api/bots/pins": () => ({ body: { bot_ids: [] } }) };
+  const pinsRoute = { "PUT /api/bots/pins": () => ({ body: { pinned_bot_ids: [] } }) };
   const sideLink = (name: string) =>
     within(screen.getByRole("navigation", { name: "Bots" })).getByRole("link", { name });
 
@@ -941,6 +1155,39 @@ describe("the side list (bot-page.md E2, pin.md §2)", () => {
     });
   });
 
+  // State table audit (D2): a refresh before the answer showed the bot pinned again.
+  it("keeps an unpin on its way when a refresh lands before its answer", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA", [], { pinned_position: 1 }), makeBot(2, "QA")] };
+    await open(state, {
+      routes: {
+        "PUT /api/bots/pins": async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+    });
+    await heading();
+    click(screen.getByRole("button", { name: "Unpin BA" }));
+    await waitFor(() => {
+      expect(fake?.sent("PUT", "/api/bots/pins")).toHaveLength(1);
+    });
+    // Another refresh (focus, an event) brings the server's list from before the unpin.
+    const loads = fake?.sent("GET", "/api/bots").length ?? 0;
+    refocus();
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(loads);
+    });
+    await act(() => Promise.resolve());
+    expect(screen.queryAllByRole("button", { name: "Unpin BA" })).toHaveLength(0);
+    state.bots = [makeBot(1, "BA"), makeBot(2, "QA")];
+    await held.answer({ body: { pinned_bot_ids: [] } });
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(loads + 1);
+    });
+    expect(screen.queryAllByRole("button", { name: "Unpin BA" })).toHaveLength(0);
+  });
+
   it("keeps a newer unpin when a late Profile answer comes after it", async () => {
     const held = heldAnswer();
     const state = { bots: [makeBot(1, "BA", [], { pinned_position: 1 }), makeBot(2, "QA")] };
@@ -955,7 +1202,7 @@ describe("the side list (bot-page.md E2, pin.md §2)", () => {
           const answer = await held.promise;
           return answer;
         },
-        "PUT /api/bots/pins": () => ({ body: { bot_ids: [] } }),
+        "PUT /api/bots/pins": () => ({ body: { pinned_bot_ids: [] } }),
       },
     });
     await heading();
@@ -1707,6 +1954,142 @@ describe("the Skills tab (bot-page.md §7)", () => {
       expect(within(list).getAllByRole("checkbox")).toHaveLength(1);
     });
     expect(within(dialog).queryByText("Loading the skills.")).toBeNull();
+  });
+
+  // Fresh review of the audit: the switch forgot its change on its way when the tab came back.
+  it("keeps the Always load value on its way when the owner leaves the tab and comes back", async () => {
+    const held = heldAnswer();
+    const [zeta] = pins;
+    if (zeta === undefined) throw new Error("no pins");
+    const state = { bots: [makeBot(1, "BA", [zeta])] };
+    const { router } = await open(state, {
+      routes: {
+        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+      path: "/bots/ba?tab=skills",
+    });
+    await heading();
+    click(screen.getByRole("switch", { name: "Always load Zeta" }));
+    await waitFor(() => {
+      expect(fake?.sent("PUT", `/api/bots/${BA_ID}/skills/${SKILL_ID}`)).toHaveLength(1);
+    });
+    await act(() => router.navigate({ to: "/bots/$slug", params: { slug: "ba" }, search: {} }));
+    await act(() =>
+      router.navigate({ to: "/bots/$slug", params: { slug: "ba" }, search: { tab: "skills" } }),
+    );
+    const back = await screen.findByRole("switch", { name: "Always load Zeta" });
+    expect(back.getAttribute("aria-checked")).toBe("true");
+    expect(back.hasAttribute("data-disabled")).toBe(true);
+    state.bots = [makeBot(1, "BA", [{ ...zeta, always_load: true }])];
+    await held.answer({ body: makeBot(1, "BA", [{ ...zeta, always_load: true }]) });
+    await waitFor(() => {
+      expect(
+        screen.getByRole("switch", { name: "Always load Zeta" }).hasAttribute("data-disabled"),
+      ).toBe(false);
+    });
+    expect(
+      screen.getByRole("switch", { name: "Always load Zeta" }).getAttribute("aria-checked"),
+    ).toBe("true");
+  });
+
+  // Owner, 2026-11-03 (Q2): the row goes at once, and comes back with a toast if Remove fails.
+  it("takes a removed skill's row away at once, also over a refresh before the answer", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA", [makePin()])] };
+    await open(state, {
+      routes: {
+        [`DELETE /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+      path: "/bots/ba?tab=skills",
+    });
+    await heading();
+    click(screen.getByRole("button", { name: /Actions for/ }));
+    click(await screen.findByRole("menuitem", { name: "Remove" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("switch", { name: /Always load/ })).toBeNull();
+    });
+    const loads = fake?.sent("GET", "/api/bots").length ?? 0;
+    refocus();
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(loads);
+    });
+    await act(() => Promise.resolve());
+    expect(screen.queryByRole("switch", { name: /Always load/ })).toBeNull();
+    state.bots = [makeBot(1, "BA")];
+    await held.answer({ status: 204 });
+    expect(await screen.findByText("BA has no skills yet.")).toBeTruthy();
+  });
+
+  // Second fresh review: a skill added back while its Remove waited stayed hidden.
+  it("shows a skill the owner adds back while its Remove is on its way", async () => {
+    const held = heldAnswer();
+    const pin = makePin();
+    const state = { bots: [makeBot(1, "BA", [pin])] };
+    await open(state, {
+      routes: {
+        "GET /api/skills": () => ({ body: [makeSkill()] }),
+        [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+        [`DELETE /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => {
+          state.bots = [makeBot(1, "BA")];
+          const answer = await held.promise;
+          return answer;
+        },
+        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => {
+          state.bots = [makeBot(1, "BA", [pin])];
+          return { body: makeBot(1, "BA", [pin]) };
+        },
+      },
+      path: "/bots/ba?tab=skills",
+    });
+    await heading();
+    click(screen.getByRole("button", { name: /Actions for/ }));
+    click(await screen.findByRole("menuitem", { name: "Remove" }));
+    await screen.findByText("BA has no skills yet.");
+    await waitFor(() => {
+      expect(fake?.sent("DELETE", `/api/bots/${BA_ID}/skills/${SKILL_ID}`)).toHaveLength(1);
+    });
+    click(screen.getByRole("button", { name: "Add" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add skills to BA" });
+    const list = await within(dialog).findByRole("list", { name: "Skills to add" });
+    click(await within(list).findByRole("checkbox"));
+    click(within(dialog).getByRole("button", { name: "Add 1" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Add skills to BA" })).toBeNull();
+    });
+    expect(await screen.findByRole("switch", { name: /Always load/ })).toBeTruthy();
+    await held.answer({ status: 204 });
+  });
+
+  it("brings a removed skill's row back with a toast when Remove fails", async () => {
+    const held = heldAnswer();
+    const state = { bots: [makeBot(1, "BA", [makePin()])] };
+    await open(state, {
+      routes: {
+        [`DELETE /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+      path: "/bots/ba?tab=skills",
+    });
+    await heading();
+    click(screen.getByRole("button", { name: /Actions for/ }));
+    click(await screen.findByRole("menuitem", { name: "Remove" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("switch", { name: /Always load/ })).toBeNull();
+    });
+    await held.answer({
+      status: 500,
+      body: { error: { code: "internal_error", message: "Something failed." } },
+    });
+    expect(await screen.findByText("Something failed.")).toBeTruthy();
+    expect(await screen.findByRole("switch", { name: /Always load/ })).toBeTruthy();
   });
 
   it("removes a skill without asking", async () => {

@@ -1,6 +1,6 @@
 import { orderBots, type BotOrder } from "@cty1ng/shared/bots";
 import { SETTING_DEFAULTS } from "@cty1ng/shared/settings";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { showToast } from "../../components/ui/toast.tsx";
 import { readApiError } from "../../lib/api/api-error.ts";
@@ -11,6 +11,7 @@ import {
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import type { GetSettingsResponse } from "../../lib/api/generated/types.gen.ts";
 import { BOT_QUERIES } from "../../lib/api/operation-queries.ts";
+import { showUntilAnswered } from "../../lib/api/optimistic.ts";
 import type { BotRow } from "./bot-queries.ts";
 
 // Pin, unpin and reorder (pin.md, bots-page.md §6, top-header.md §3). The server list comes in
@@ -76,6 +77,15 @@ export function reorderedBots(
   });
 }
 
+// The sort of the others that the page shows now.
+function shownOrder(queryClient: QueryClient): BotOrder {
+  const settings = queryClient.getQueryData<GetSettingsResponse>(getSettingsQueryKey());
+  return {
+    bot_order: settings?.bot_order ?? SETTING_DEFAULTS.bot_order,
+    bot_order_direction: settings?.bot_order_direction ?? SETTING_DEFAULTS.bot_order_direction,
+  };
+}
+
 function sameIds(a: readonly string[], b: readonly string[]): boolean {
   return a.length === b.length && a.every((id, i) => id === b[i]);
 }
@@ -95,15 +105,20 @@ export function useSetPins() {
       if (bots === undefined) return;
       const expected = pinnedOf(bots).map((bot) => bot.id);
       if (sameIds(expected, nextIds)) return;
-      const settings = queryClient.getQueryData<GetSettingsResponse>(getSettingsQueryKey());
-      const order: BotOrder = {
-        bot_order: settings?.bot_order ?? SETTING_DEFAULTS.bot_order,
-        bot_order_direction: settings?.bot_order_direction ?? SETTING_DEFAULTS.bot_order_direction,
-      };
-      void queryClient.cancelQueries({ queryKey: key });
-      queryClient.setQueryData<BotRow[]>(key, reorderedBots(bots, nextIds, order));
+      // The new order shows until the answer, also over a load that lands before it, and a newer
+      // pin change replaces it (`lib/api/optimistic.ts`). The others take the sort shown now,
+      // which may be a sort on its way.
+      const release = showUntilAnswered<BotRow[]>({
+        queryClient,
+        queryKey: key,
+        kind: "pins",
+        change: (list) => reorderedBots(list, nextIds, shownOrder(queryClient)),
+        // A settings load (after a failed sort) changes the sort shown.
+        alsoAfter: [getSettingsQueryKey()],
+      });
       mutateAsync({ body: { bot_ids: [...nextIds], expected_bot_ids: expected } })
-        .catch((error: unknown) => {
+        .then(release, (error: unknown) => {
+          release();
           showToast(
             readApiError(error)?.code === "bot_list_changed"
               ? "The bot list changed. Try again."

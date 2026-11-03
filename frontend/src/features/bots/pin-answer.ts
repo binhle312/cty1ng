@@ -1,5 +1,7 @@
-import { hashKey, type QueryClient } from "@tanstack/react-query";
+import { hashKey, type QueryClient, useQueryClient } from "@tanstack/react-query";
+import { useSyncExternalStore } from "react";
 import { listBotsQueryKey } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
+import { showUntilAnswered } from "../../lib/api/optimistic.ts";
 import type { SetBotSkillData } from "../../lib/api/generated/types.gen.ts";
 import type { BotPin, BotRow } from "./bot-queries.ts";
 
@@ -66,7 +68,11 @@ export function withPinAnswer({
     shown === undefined
       ? [...bot.pins, pin]
       : bot.pins.map((item) => (item === shown ? pin : item));
-  // The same counts as the server's (bots.service.ts).
+  return withPins(bot, pins);
+}
+
+// The bot with these pins, and the same counts as the server's (bots.service.ts).
+function withPins(bot: BotRow, pins: BotPin[]): BotRow {
   const updates = pins.filter((item) => item.version < item.latest_version).length;
   return {
     ...bot,
@@ -90,12 +96,57 @@ export function writePinAnswer({
   expected: PinExpected;
   loadsAtSend: number;
 }): void {
+  // The owner's own add of a pin that a Remove on its way hides: the pin shows again.
+  removesOnTheirWay.get(queryClient)?.get(pinKey({ botId: answer.id, skillId }))?.();
   if (botListLoads(queryClient) !== loadsAtSend) return;
   queryClient.setQueryData<BotRow[]>(listBotsQueryKey(), (current) =>
     current?.map((bot) =>
       bot.id === answer.id ? withPinAnswer({ bot, answer, skillId, expected }) : bot,
     ),
   );
+}
+
+// The Always load values on their way, by bot and skill, for as long as the query client lives:
+// the owner may leave the tab and come back, or open the other page of the same pin, before the
+// refresh after the answer (bot-page.md §7.1). Each value is its own object, so a change ends
+// only its own value.
+interface LoadsStore {
+  values: ReadonlyMap<string, { alwaysLoad: boolean }>;
+  listeners: Set<() => void>;
+}
+const loadsOnTheirWay = new WeakMap<QueryClient, LoadsStore>();
+
+function loadsStore(queryClient: QueryClient): LoadsStore {
+  const known = loadsOnTheirWay.get(queryClient);
+  if (known !== undefined) return known;
+  const store: LoadsStore = { values: new Map(), listeners: new Set() };
+  loadsOnTheirWay.set(queryClient, store);
+  return store;
+}
+
+function setLoads(store: LoadsStore, values: ReadonlyMap<string, { alwaysLoad: boolean }>) {
+  store.values = values;
+  for (const listener of store.listeners) listener();
+}
+
+const pinKey = ({ botId, skillId }: { botId: string; skillId: string }) => `${botId}:${skillId}`;
+
+// The Always load value on its way for a bot and a skill, or null.
+export function useAlwaysLoadsOnTheirWay(): (pin: {
+  botId: string;
+  skillId: string;
+}) => boolean | null {
+  const store = loadsStore(useQueryClient());
+  const values = useSyncExternalStore(
+    (listener) => {
+      store.listeners.add(listener);
+      return () => {
+        store.listeners.delete(listener);
+      };
+    },
+    () => store.values,
+  );
+  return (pin) => values.get(pinKey(pin))?.alwaysLoad ?? null;
 }
 
 // One pin change of a control that shows the value on its way (the Always load switch on the
@@ -106,7 +157,9 @@ export function writePinAnswer({
 export async function sendPinChange({
   queryClient,
   request,
+  botId,
   skillId,
+  alwaysLoad,
   expected,
   onFailed,
   refresh,
@@ -114,11 +167,18 @@ export async function sendPinChange({
   queryClient: QueryClient;
   // Sends the change; called after the load count is read.
   request: () => Promise<BotRow>;
+  botId: string;
   skillId: string;
+  // The value on its way, for `useAlwaysLoadsOnTheirWay`.
+  alwaysLoad: boolean;
   expected: PinExpected;
   onFailed: (error: unknown) => void;
   refresh: () => Promise<unknown>;
 }): Promise<void> {
+  const store = loadsStore(queryClient);
+  const key = pinKey({ botId, skillId });
+  const mine = { alwaysLoad };
+  setLoads(store, new Map(store.values).set(key, mine));
   const loadsAtSend = botListLoads(queryClient);
   try {
     const answer = await request();
@@ -126,5 +186,65 @@ export async function sendPinChange({
   } catch (error) {
     onFailed(error);
   }
-  await refresh();
+  try {
+    await refresh();
+  } finally {
+    if (store.values.get(key) === mine) {
+      const next = new Map(store.values);
+      next.delete(key);
+      setLoads(store, next);
+    }
+  }
+}
+
+// Remove of a skill from a bot (bot-page.md §7, skills-page.md §2a): the row goes at once, also
+// over a load that lands before the answer (`lib/api/optimistic.ts`). A failure brings the row
+// back with the refresh after it, and goes to `onFailed`.
+// The end of each Remove on its way, by bot and skill. A pin has no id of its own, so the hold
+// cannot tell a pin added again from the one it removed; the add ends the hold (`writePinAnswer`).
+const removesOnTheirWay = new WeakMap<QueryClient, Map<string, () => void>>();
+
+export function sendPinRemove({
+  queryClient,
+  request,
+  botId,
+  skillId,
+  onFailed,
+  refresh,
+}: {
+  queryClient: QueryClient;
+  request: () => Promise<unknown>;
+  botId: string;
+  skillId: string;
+  onFailed: (error: unknown) => void;
+  refresh: () => Promise<unknown>;
+}): void {
+  const release = showUntilAnswered<BotRow[]>({
+    queryClient,
+    queryKey: listBotsQueryKey(),
+    kind: `remove ${pinKey({ botId, skillId })}`,
+    change: (list) =>
+      list.map((bot) =>
+        bot.id === botId
+          ? withPins(
+              bot,
+              bot.pins.filter((pin) => pin.skill_id !== skillId),
+            )
+          : bot,
+      ),
+  });
+  const removes = removesOnTheirWay.get(queryClient) ?? new Map<string, () => void>();
+  removesOnTheirWay.set(queryClient, removes);
+  const key = pinKey({ botId, skillId });
+  const end = () => {
+    release();
+    if (removes.get(key) === end) removes.delete(key);
+  };
+  removes.set(key, end);
+  void request()
+    .then(end, (error: unknown) => {
+      end();
+      onFailed(error);
+    })
+    .finally(() => void refresh());
 }

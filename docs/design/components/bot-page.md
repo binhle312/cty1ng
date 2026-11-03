@@ -133,7 +133,8 @@ there, so it never jumps.
   after the refusal fails; Discard then tries to load the newest values again (M2c review,
   2026-11-03). The same text shows
   when a `bot.updated` event carries a `row_version` above the one this tab's edit started
-  from, while this tab has unsaved changes. An event with the same `row_version` (a skill pin
+  from, while this tab has unsaved changes and no Save of the page waits; while a Save waits,
+  its answer decides (§4.2, Q1). An event with the same `row_version` (a skill pin
   or the pinned order changed, which never raise it) only refreshes the Skills tab, the counts
   and the header, and never blocks a Profile or Model edit. A tab with no changes takes the new
   values at once. A name taken meanwhile (409 `name_taken`) shows under Name.
@@ -157,7 +158,56 @@ there, so it never jumps.
 - **Leave with unsaved changes** (Discard, Esc, ← Back, another bot, tab or page) asks first,
   with the dialog of `project-settings-page.md` §5: **Leave without saving? 👀**, a text that
   names the changed fields, **Stay on this page** (`primary`, default) and **Let them go**
-  (`danger` text).
+  (`danger` text). When the changes go while the question is open (its Save answered, and
+  nothing typed after it is unsaved), nothing would be lost, so the page does what the owner
+  asked at once (M2c audit, 2026-11-03).
+- **A Save the owner let go** (Discard, Esc or leaving while it waits) that then fails shows a
+  toast, because no field or bar shows it any more: "BA changed in another place, so the app did
+  not save your change." for a stale save, "Could not save BA: {name} is taken by another bot,
+  maybe one in Trash." for a taken name, "Could not save BA: {server text}" for a field error,
+  and "Could not save BA. Try again." for the rest (M2c audit, 2026-11-03).
+
+### 4.2 Edit states and events (M2c audit, 2026-11-03)
+
+One table for each edit tab (Profile, Model), from the rules above. A row is an event; a column
+is the state of the tab when it comes. "Changes" includes field errors. The last column names
+the tests in `frontend/src/features/bots/bot-page.test.tsx` that hold the row. Q1–Q3 are below
+the table. The rules move into one pure module before M3
+(`../../status.md`).
+
+| Event | No changes | Changes | This tab's Save on its way | Conflict, or refused as stale | Tests |
+| --- | --- | --- | --- | --- | --- |
+| Type a value | Changes | Changes; a server error on that field goes | A change after the Save (counted against what it sent) | Kept; the conflict stays | "saves only the changed fields …", "keeps text typed while a save is pending …", "drops a late name error …" |
+| Type back to the saved value | — | No changes; takes newer values if there are any | Still a change: it differs from what the Save sent | No changes; takes the newest values | "takes the newest values when the owner types a conflicted tab back …", "keeps text typed back while Save waits …", "asks before leaving when text typed back …" |
+| Save (button, Ctrl+S) | Off: "No changes to save." | Sends the changed fields with the tab's `row_version`; with errors, focuses the first and says "Fix {n} fields" | Off: "Saving." | Off: "BA changed in another place. Discard first." | "saves only …", "saves with Ctrl+S", "says Fix 1 field …" |
+| Save while the other tab's Save is on its way | Off | Off: "Wait until the Profile tab is saved."; on after the answer, at the new `row_version` | — | Off | "turns Save off on the other tab …" |
+| The Save answers | — | — | Saved values = what it sent; every tab based on the same `row_version` moves to the new one; text typed after it stays a change; a let-go tab shows the saved values; a tab that a Discard moved to a newer `row_version` keeps it. The answer writes only the fields a save owns | — | "saves twice in a row …", "keeps a newer list when the answer of its own save comes after it", "shows the saved values … when the owner discards while Save waits", "keeps newer values from another tab …", "keeps text typed after a Discard …", "keeps a newer Always load toggle …", "keeps a newer unpin …", "keeps a newer health …" |
+| The Save is refused as stale (409) | — | — | Conflict at once; Save off until Discard, also when the refresh fails; the text stays. Let go or left: the toast | Stays | "keeps the edit on a stale save …", "keeps a stale save's conflict …", "says in a toast when a Save fails as stale after the owner left …" |
+| The Save gets `name_taken` or a field error | — | — | The error under the field, if it still has the sent text. Let go or left: the toast | — | "keeps the text when the server refuses the name …", "drops a late name error …", "says in a toast when a Save fails after the owner let its tab go" |
+| The Save fails another way | — | — | Toast "Could not save BA. Try again."; the text stays | — | "shows a toast and keeps the text when the save fails" |
+| A newer `row_version` (event, refresh, another tab) | Takes the new values | Conflict, but not while a Save of either tab waits (Q1): the answer decides | No conflict; waits for the answer before it takes new values (Q1) | Stays | "takes newer values at once …", "shows the conflict when a newer row_version arrives …", "keeps text typed back while Save waits, also when the save's event comes first", "keeps a newer list when the answer of its own save comes after it", "shows no conflict on the other tab when the event of a Save comes before its answer", "shows the conflict after a Save answers when another place changed the bot meanwhile" |
+| The same `row_version` (a pin, the pinned order) | Skills tab, counts and header update; never blocks an edit | Same | Same | Same | "does not block an edit when only a pin changed …" |
+| A refresh fails | Keeps the last list | Same | Same | A refused tab keeps its conflict | "says the list did not load …", "keeps a stale save's conflict …" |
+| Discard or Esc | Off (Esc does nothing) | Asks; Let them go drops both tabs' changes and shows the newest values | Asks; Let them go drops the change; the Save goes on | Asks; Let them go loads the newest values again | "asks on Esc …", "shows the saved values …", "leaves at once after a Discard while Save waits …", "keeps the edit on a stale save, … Discard loads …" |
+| Leave (another tab, bot or page; ← Back) | Leaves | Asks; Stay keeps; Let them go drops and goes | Asks; when the Save answers and nothing is unsaved, leaves | Asks | "asks before another tab …", "Let them go drops the changes …", "moves between tabs without asking …", "leaves at once when the Save answers while the leave question is open", "keeps the leave question … when text typed during the Save is still unsaved" |
+| An avatar upload answers | Style and image change on the form as it is now | Same | Same | Same | "keeps a newer name when an avatar upload answers after it" |
+| The bot leaves the list (Trash, another tab) | "The app could not find this bot …" (URLs) | Same; the edit goes with the page | Same; a failed Save shows its toast | Same | "says when no live bot has the slug", "says it could not find the bot when it leaves the list during an edit" |
+
+**Decided (owner, 2026-11-03):**
+
+- **Q1.** While a Save of the page waits, a newer `row_version` shows no conflict on either tab:
+  it is often that Save's own event. The answer decides: a success moves every tab of the same
+  `row_version` on, and a newer one left after that shows the conflict; a 409 shows it at once.
+- **Q2.** Remove on the Skills tab takes the row away at once; it comes back with a toast when
+  Remove fails (§7).
+
+**Open question (owner):**
+
+- **Q3.** A version dialog (Upgrade, Change version) can open again for a pin whose move is still
+  on its way, and a second confirm sends the old pin as `expected`, so the server refuses it with
+  the "changed in another place" toast for the owner's own change. Proposed: the ⋯ menu and the
+  "v{n} available" link of a row are off while a change of that row is on its way, as the switch
+  is.
 
 ## 5. The band follows the colour (HB, approved 2026-10-24)
 
@@ -197,8 +247,9 @@ Changes use the save bar (§4.1) and apply from the next run.
 change sends the pin as the tab saw it (`../../api.md` §4). When the server refuses it as stale,
 the tab loads the newest pins, keeps no change, and a toast says "{skill} changed in another
 place. Check it and try again." The same toast shows for a skill in **+ Add** that got on the bot in
-another place; when no other skill failed, the card closes. Remove of a skill that is already gone
-just takes the row away. A pin answer changes only the pin of its own skill: a pin change does not
+another place; when no other skill failed, the card closes. **Remove** takes the row away at
+once, also over a refresh that lands before its answer; when it fails, the row comes back with a
+toast (owner, 2026-11-03). Remove of a skill that is already gone just keeps the row away. A pin answer changes only the pin of its own skill: a pin change does not
 raise `row_version`, so the answer cannot tell if the rest of the bot is newer in the page. It
 changes that pin only while the page still shows the pin the request expected; a different pin
 is this change or a newer one. When the page loaded the bot list after the request went out, the
@@ -212,6 +263,19 @@ and the skill counts that the page shows; a toggle made while that Save was on i
 review, 2026-11-03). An answer that comes after the owner left the tab or the page
 shows as a toast, not in the closed dialog. A dialog whose skill left the bot in another place
 closes, and its answer also shows as a toast.
+
+### 7.1 Requests and late answers (M2c audit, 2026-11-03)
+
+Each request of the tab against the five order questions (`../../workflow.md` §2 step 4). The
+Skills page's Bots tab follows the same rules (`skills-page.md` §2a) through one module (`frontend/src/features/bots/pin-answer.ts`). Tests are in
+`bot-page.test.tsx`, `skill-bots-tab.test.tsx` and `pin-answer.test.tsx`.
+
+| Request | Late answer | The tab is gone | A newer request of the same kind | A load or event in between | The refresh fails or is slow |
+| --- | --- | --- | --- | --- | --- |
+| Always load | Writes only its own pin, only while the page shows the pin it expected ("keeps a newer bot …", "keeps a newer pin of another skill …", "keeps a newer version of the same skill …") | The load count and the value on its way outlive the tab: back on the tab, the switch shows the value on its way and stays off ("… after the owner left the tab", "keeps the Always load value on its way when the owner leaves the tab and comes back") | The switch is off while its change is on its way; other skills are independent | Writes no pin; the refresh shows it ("keeps a newer opposite toggle from another tab …") | The switch keeps the value on its way until the refresh ends ("keeps the switch on the value on its way …", `pin-answer.test` "ends a pin change only after the refresh …"). A failed refresh keeps the last list, as everywhere on the page (§4.2); the next load shows the server's pin |
+| Upgrade, Change version (dialog) | Writes only its own pin (`writePinAnswer`) | A failure is a toast ("shows a version move that fails after the owner left the page as a toast") | Never closes or writes into a newer dialog (`useDialogRequests`). **Q3:** a second move of the same pin while the first waits | Writes no pin; the refresh shows it | The dialog closes at the answer; the row shows its version from the refresh. A stale move closes with a toast ("closes a stale version move …") |
+| + Add | Writes its new pin only when the page has none and the list did not load meanwhile; the refresh shows the rest | A failure is a toast (`useDialogRequests`) | As above; a skill added elsewhere gives its stale toast ("+ Add shows the stale toast …") | — | The card closes at the answer |
+| Remove | The row went at once; the answer ends that, and the refresh after it shows the server's pins (Q2). The owner's own + Add of the same skill ends it at once, because a pin has no id that tells the new pin from the removed one ("shows a skill the owner adds back while its Remove is on its way") | A failure is a toast; the refresh brings the row back | A second Remove of a gone pin is 204 | The row stays away ("takes a removed skill's row away at once, also over a refresh before the answer") | A failure brings the row back with a toast ("brings a removed skill's row back with a toast when Remove fails") |
 
 ## 8. Activity tab (CH1)
 

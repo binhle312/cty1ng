@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ellipsis, Plus } from "lucide-react";
-import { useState } from "react";
 import { Button } from "../../components/ui/button.tsx";
 import {
   MenuItem,
@@ -28,6 +27,8 @@ import {
   botListLoads,
   type PinExpected,
   sendPinChange,
+  sendPinRemove,
+  useAlwaysLoadsOnTheirWay,
   writePinAnswer,
 } from "../bots/pin-answer.ts";
 import { LoadError } from "./load-error.tsx";
@@ -55,8 +56,8 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
     failed: versions.isError && versions.data === undefined,
     retry: () => void versions.refetch(),
   };
-  // The Always load value of each toggle on its way, by bot id.
-  const [pendingLoads, setPendingLoads] = useState<ReadonlyMap<string, boolean>>(new Map());
+  // The Always load value of each toggle on its way; it outlives the tab (`pin-answer.ts`).
+  const loadOnItsWay = useAlwaysLoadsOnTheirWay();
 
   // A pin changed here changes both sides: the bot list shows it at once, and everything that
   // counts pins (the skill's header and list, the bot page) fetches again.
@@ -84,12 +85,6 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
       writePinAnswer({ queryClient, answer, skillId: skill.id, expected, loadsAtSend });
     }
   };
-  // A stale pin: load the newest and say so; the change is not made.
-  const failed = (botName: string) => (error: unknown) => {
-    void refresh();
-    showToast(pinErrorText({ error, changed: botName }));
-  };
-
   // One hook serves every row, and a second `mutate` on a hook drops the callbacks of the first
   // (TanStack Query v5). So each request handles its own result through its promise, and the
   // pending state is kept per bot, not read from the hook.
@@ -98,7 +93,6 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
   const addPins = useMutation(pinSkillToBotsMutation());
 
   const toggleLoad = ({ bot, pin }: BotUse, alwaysLoad: boolean) => {
-    setPendingLoads((current) => new Map(current).set(bot.id, alwaysLoad));
     const expected = { skill_version_id: pin.skill_version_id, always_load: pin.always_load };
     // The switch shows the value on its way until the refresh after the answer (`pin-answer.ts`).
     void sendPinChange({
@@ -108,18 +102,14 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
           path: { id: bot.id, skill_id: skill.id },
           body: { skill_version_id: pin.skill_version_id, always_load: alwaysLoad, expected },
         }),
+      botId: bot.id,
       skillId: skill.id,
+      alwaysLoad,
       expected,
       onFailed: (error) => {
         showToast(pinErrorText({ error, changed: bot.name }));
       },
       refresh,
-    }).finally(() => {
-      setPendingLoads((current) => {
-        const next = new Map(current);
-        next.delete(bot.id);
-        return next;
-      });
     });
   };
 
@@ -204,7 +194,7 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
                 key={use.bot.id}
                 use={use}
                 skillDeprecated={skill.deprecated}
-                pendingLoad={pendingLoads.get(use.bot.id) ?? null}
+                pendingLoad={loadOnItsWay({ botId: use.bot.id, skillId: skill.id })}
                 onToggle={(alwaysLoad) => {
                   toggleLoad(use, alwaysLoad);
                 }}
@@ -215,11 +205,18 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
                   setDialog({ kind: "change", botId: use.bot.id });
                 }}
                 onRemove={() => {
-                  void removePin
-                    .mutateAsync({ path: { id: use.bot.id, skill_id: skill.id } })
-                    .then(() => {
-                      void refresh();
-                    }, failed(use.bot.name));
+                  // The row goes at once; a failure brings it back with a toast (`pin-answer.ts`).
+                  sendPinRemove({
+                    queryClient,
+                    request: () =>
+                      removePin.mutateAsync({ path: { id: use.bot.id, skill_id: skill.id } }),
+                    botId: use.bot.id,
+                    skillId: skill.id,
+                    onFailed: (error) => {
+                      showToast(pinErrorText({ error, changed: use.bot.name }));
+                    },
+                    refresh,
+                  });
                 }}
               />
             ))}

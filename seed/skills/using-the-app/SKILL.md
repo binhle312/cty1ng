@@ -60,13 +60,15 @@ written ways of working that the bot follows.
     from the bot's next run. Discard drops the changes.
   - **Skills**: the bot's skills, the version each uses and Always load. "v3 available" opens
     the changes and Upgrade; the ⋯ menu has Change version (any version, also an older one) and
-    Remove; + Add gives the bot more skills at their latest version. Changes save at once.
+    Remove; + Add gives the bot more skills at their latest version. Changes save at once:
+    a removed skill goes from the list at once and comes back with a message if Remove fails.
   - **Model**: the tools and Advanced (history share, model requests per run, longest reply),
     with their own Save. One tab saves at a time: while the Profile save is on its way, the
     Model Save is off ("Wait until the Profile tab is saved."), and the other way round.
   - **Activity** and **Usage**: empty until bots can talk (conversations come later).
   If the same bot changes in another browser tab while you edit, the page keeps your text and
-  says so; copy what you need, then Discard to load the new values.
+  says so; copy what you need, then Discard to load the new values. If you Discard or leave
+  while a Save is on its way and that Save fails, a message says so.
 - **The header**: the bots' avatars at the top of every page, pinned first. Hover an avatar for
   its name and status; click it for the bot card, with Pin and the settings gear. Drag an avatar
   onto the pinned zone to pin it, or out of it to unpin it. With many bots, scroll the header

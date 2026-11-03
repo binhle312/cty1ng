@@ -1,5 +1,5 @@
 import { useBlocker } from "@tanstack/react-router";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { Button } from "../../components/ui/button.tsx";
 import { Dialog, DialogButtons, DialogText } from "../../components/ui/dialog.tsx";
@@ -51,37 +51,43 @@ export function useLeaveGuard({
 }) {
   // Set just before the page itself leaves after a Create, Cancel or Delete: nothing is lost.
   const allowRef = useRef(false);
-  // An action the owner asked for on the page (the bot page's Discard and Esc), waiting for the
-  // answer.
-  const [asked, setAsked] = useState<{ then: () => void } | null>(null);
+  // The owner asked to drop the changes on the page (the bot page's Discard and Esc), and the
+  // question waits for the answer. "Let them go" drops them through `onLetGo`.
+  const [asked, setAsked] = useState(false);
   const blocker = useBlocker({
     shouldBlockFn: ({ current, next }) =>
       dirty && !allowRef.current && place(current) !== place(next),
     enableBeforeUnload: () => dirty && !allowRef.current,
     withResolver: true,
   });
+  // The changes went while the question was open (a Save answered, and nothing typed after it
+  // is unsaved): nothing would be lost now, so the page does what the owner asked, as it does
+  // when nothing changed (bot-page.md §4.1). A Discard then has nothing to drop.
+  if (!dirty && asked) setAsked(false);
+  const { status, proceed } = blocker;
+  useEffect(() => {
+    if (!dirty && status === "blocked") proceed();
+  }, [dirty, status, proceed]);
   const allowLeave = useCallback(() => {
     allowRef.current = true;
   }, []);
-  // Asks first when something changed, else does it at once.
-  const ask = (then: () => void) => {
-    if (dirty) setAsked({ then });
-    else then();
+  // Asks first when something changed; with nothing changed there is nothing to drop.
+  const ask = () => {
+    if (dirty) setAsked(true);
   };
   const dialog = (
     <LeaveDialog
-      open={blocker.status === "blocked" || asked !== null}
+      open={blocker.status === "blocked" || asked}
       text={text}
       words={words}
       onStay={() => {
-        setAsked(null);
+        setAsked(false);
         blocker.reset?.();
       }}
       onLeave={() => {
         onLetGo?.();
-        setAsked(null);
+        setAsked(false);
         if (blocker.status === "blocked") blocker.proceed();
-        else asked?.then();
       }}
     />
   );

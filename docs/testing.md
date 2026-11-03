@@ -272,4 +272,7 @@ test name. The builder has seen the test fail without the behaviour (test first 
 a test written later, remove the behaviour in an isolated checkout and run it). A test whose
 name matches the criterion but whose steps never reach it is not evidence: in #59 the test for
 "text typed while a Save is pending stays" typed only after the answer (lesson
-`prove-the-test-fails-first.md`).
+`prove-the-test-fails-first.md`). A wait (`waitFor`) is proof only if it fails without the
+behaviour: wait on what the component sets. In #59 four tests waited for a `disabled`
+attribute that Base UI's Switch never sets, so the wait ended at once (lesson
+`check-every-order-before-the-push.md`).

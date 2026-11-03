@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ellipsis, Plus } from "lucide-react";
-import { useState } from "react";
 import { Button } from "../../components/ui/button.tsx";
 import {
   MenuItem,
@@ -25,7 +24,13 @@ import { ChangeVersionDialog, MoveVersionDialog } from "../skills/skill-pin-dial
 import { useDialogRequests } from "../skills/dialog-requests.ts";
 import { AddSkillsDialog } from "./add-skills-dialog.tsx";
 import { type BotPin, type BotRow, pinErrorText } from "./bot-queries.ts";
-import { botListLoads, sendPinChange, writePinAnswer } from "./pin-answer.ts";
+import {
+  botListLoads,
+  sendPinChange,
+  sendPinRemove,
+  useAlwaysLoadsOnTheirWay,
+  writePinAnswer,
+} from "./pin-answer.ts";
 
 // The Skills tab of a bot (bot-page.md §7, SK1–SK4, UI-6.3–6.6): the skills the bot has, the
 // version it uses, the Always load switch and a ⋯ menu. Changes save at once and apply from the
@@ -59,8 +64,8 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
     pending: dialogPending,
     run: runInDialog,
   } = useDialogRequests<Dialog>({ refresh });
-  // The Always load value of each toggle on its way, by skill id.
-  const [pendingLoads, setPendingLoads] = useState<ReadonlyMap<string, boolean>>(new Map());
+  // The Always load value of each toggle on its way; it outlives the tab (`pin-answer.ts`).
+  const loadOnItsWay = useAlwaysLoadsOnTheirWay();
 
   const dialogSkillId = dialog !== null && dialog.kind !== "add" ? dialog.skillId : null;
   const versions = useQuery({
@@ -85,7 +90,6 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
   const removePin = useMutation(removeBotSkillMutation());
 
   const toggleLoad = (pin: BotPin, alwaysLoad: boolean) => {
-    setPendingLoads((current) => new Map(current).set(pin.skill_id, alwaysLoad));
     const expected = { skill_version_id: pin.skill_version_id, always_load: pin.always_load };
     // The switch shows the value on its way until the refresh after the answer (`pin-answer.ts`).
     void sendPinChange({
@@ -95,31 +99,30 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
           path: { id: bot.id, skill_id: pin.skill_id },
           body: { skill_version_id: pin.skill_version_id, always_load: alwaysLoad, expected },
         }),
+      botId: bot.id,
       skillId: pin.skill_id,
+      alwaysLoad,
       expected,
       onFailed: (error) => {
         showToast(staleText(pin.skill_name, error));
       },
       refresh,
-    }).finally(() => {
-      setPendingLoads((current) => {
-        const next = new Map(current);
-        next.delete(pin.skill_id);
-        return next;
-      });
     });
   };
 
-  // Remove asks nothing and has no Undo: it deletes nothing (SK1). A pin that is already gone
-  // just takes the row away (204).
+  // Remove asks nothing and has no Undo: it deletes nothing (SK1). The row goes at once; a pin
+  // that is already gone just stays away (204), and a failure brings it back with a toast.
   const remove = (pin: BotPin) => {
-    void removePin.mutateAsync({ path: { id: bot.id, skill_id: pin.skill_id } }).then(
-      () => void refresh(),
-      (error: unknown) => {
-        void refresh();
+    sendPinRemove({
+      queryClient,
+      request: () => removePin.mutateAsync({ path: { id: bot.id, skill_id: pin.skill_id } }),
+      botId: bot.id,
+      skillId: pin.skill_id,
+      onFailed: (error) => {
         showToast(apiErrorText(error));
       },
-    );
+      refresh,
+    });
   };
 
   // + Add: each ticked skill gets its latest version, read just before the request, with Always
@@ -132,10 +135,12 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
           const list = await queryClient.query(listSkillVersionsOptions({ path: { id: skillId } }));
           const latest = list[0];
           if (latest === undefined) throw new Error("no version");
-          await setPin.mutateAsync({
+          const loadsAtSend = botListLoads(queryClient);
+          const answer = await setPin.mutateAsync({
             path: { id: bot.id, skill_id: skillId },
             body: { skill_version_id: latest.id, always_load: false, expected: null },
           });
+          writePinAnswer({ queryClient, answer, skillId, expected: null, loadsAtSend });
           return "added";
         } catch (error) {
           if (readApiError(error)?.code !== "stale_write") return "failed";
@@ -212,7 +217,7 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
               <SkillPinRow
                 key={pin.skill_id}
                 pin={pin}
-                pendingLoad={pendingLoads.get(pin.skill_id) ?? null}
+                pendingLoad={loadOnItsWay({ botId: bot.id, skillId: pin.skill_id })}
                 onToggle={(alwaysLoad) => {
                   toggleLoad(pin, alwaysLoad);
                 }}
