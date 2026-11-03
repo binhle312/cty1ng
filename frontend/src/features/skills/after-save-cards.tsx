@@ -20,6 +20,7 @@ import { BotPickList } from "../bots/bot-list.tsx";
 import { type BotRow, useBots } from "../bots/bot-queries.ts";
 import { VersionPill } from "./pills.tsx";
 import { SaveButton } from "./save-bar.tsx";
+import { toggled } from "../../lib/sets.ts";
 
 // The bot cards after a save (skills-page.md §7): C4 offers the new version to the bots that use
 // an older one, every box ticked; C4b offers a new skill to the bots, no box ticked. When no bot
@@ -37,6 +38,10 @@ export type AfterSaveCard =
       candidates: Candidate[];
     }
   | { kind: "assign"; skillId: string; skillName: string; versionId: string };
+
+// The toasts that stand for a card: when no bot fits, or when the card's page is gone.
+const savedToast = (version: number) => `Saved v${String(version)} ✨`;
+const createdToast = (skillName: string) => `Created ${skillName} ✨`;
 
 // The skill's version with that number, read fresh: the card sends its id.
 async function versionIdOf(
@@ -58,7 +63,7 @@ export async function upgradeCardAfterSave(
 ): Promise<AfterSaveCard | null> {
   const version = skill.latest_version.version;
   const toast = () => {
-    showToast(`Saved v${String(version)} ✨`);
+    showToast(savedToast(version));
     return null;
   };
   try {
@@ -89,7 +94,7 @@ export async function assignCardAfterCreate(
   skill: Pick<CreateSkillResponse, "id" | "name">,
 ): Promise<AfterSaveCard | null> {
   const toast = () => {
-    showToast(`Created ${skill.name} ✨`);
+    showToast(createdToast(skill.name));
     return null;
   };
   try {
@@ -106,9 +111,7 @@ export async function assignCardAfterCreate(
 // The toast that stands for a card when its page is gone (the owner left the Skills page while
 // the save was on its way): the save is not lost, and the Bots tab still offers the change.
 export function cardToast(card: AfterSaveCard): string {
-  return card.kind === "upgrade"
-    ? `Saved v${String(card.version)} ✨`
-    : `Created ${card.skillName} ✨`;
+  return card.kind === "upgrade" ? savedToast(card.version) : createdToast(card.skillName);
 }
 
 export function AfterSaveCardHost({
@@ -306,11 +309,4 @@ function AssignCard({
       </DialogButtons>
     </Dialog>
   );
-}
-
-function toggled(current: ReadonlySet<string>, id: string): ReadonlySet<string> {
-  const next = new Set(current);
-  if (next.has(id)) next.delete(id);
-  else next.add(id);
-  return next;
 }

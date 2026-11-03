@@ -7,6 +7,7 @@ import type { ListSkillsResponse } from "../../lib/api/generated/types.gen.ts";
 import { cn } from "../../lib/cn.ts";
 import { VersionPill } from "../skills/pills.tsx";
 import { SaveButton } from "../skills/save-bar.tsx";
+import { toggled } from "../../lib/sets.ts";
 
 type SkillRow = ListSkillsResponse[number];
 
@@ -115,12 +116,7 @@ function AddBody({
               <Checkbox
                 checked={on}
                 onChange={() => {
-                  setTicked((current) => {
-                    const next = new Set(current);
-                    if (next.has(skill.id)) next.delete(skill.id);
-                    else next.add(skill.id);
-                    return next;
-                  });
+                  setTicked((current) => toggled(current, skill.id));
                 }}
                 className={cn(
                   "rounded-card border px-3 py-2",

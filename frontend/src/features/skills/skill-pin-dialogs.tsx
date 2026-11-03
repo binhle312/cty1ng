@@ -15,6 +15,7 @@ import { SaveButton } from "./save-bar.tsx";
 import type { BotRow } from "../bots/bot-queries.ts";
 import { DiffView } from "./diff-view.tsx";
 import { VersionPill } from "./pills.tsx";
+import { toggled } from "../../lib/sets.ts";
 
 // The cards that change which version of a skill a bot uses, shared by the Bots tab of a skill
 // and (M2b) the Skills tab of a bot: + Add (skills-page.md §2a), Upgrade or Move to a version
@@ -129,12 +130,7 @@ function AddBody({
         rows={bots.map((bot) => ({ bot }))}
         ticked={ticked}
         onToggle={(botId) => {
-          setTicked((current) => {
-            const next = new Set(current);
-            if (next.has(botId)) next.delete(botId);
-            else next.add(botId);
-            return next;
-          });
+          setTicked((current) => toggled(current, botId));
         }}
       />
       {latest === undefined && !versionsLoad.failed && (

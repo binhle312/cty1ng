@@ -5,6 +5,7 @@ import { BotNameList, BotPickList, type BotListRow } from "../bots/bot-list.tsx"
 import { VersionPill } from "./pills.tsx";
 import { SaveButton } from "./save-bar.tsx";
 import type { BotUse, BotUses } from "./skill-bot-uses.ts";
+import { toggled } from "../../lib/sets.ts";
 
 // The dialogs of a skill's ⋯ menu and of its deprecated banner (skills-page.md §10.1, §10.3,
 // §11). They list the bots that use the skill, read from the bot list.
@@ -29,12 +30,7 @@ function useTicks(uses: BotUse[]) {
   const [cleared, setCleared] = useState<ReadonlySet<string>>(new Set());
   const ticked = new Set(uses.filter(({ bot }) => !cleared.has(bot.id)).map(({ bot }) => bot.id));
   const toggle = (botId: string) => {
-    setCleared((current) => {
-      const next = new Set(current);
-      if (next.has(botId)) next.delete(botId);
-      else next.add(botId);
-      return next;
-    });
+    setCleared((current) => toggled(current, botId));
   };
   return { ticked, toggle };
 }
