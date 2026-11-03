@@ -689,6 +689,56 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
   });
 });
 
+describe("the side list (bot-page.md E2, pin.md §2)", () => {
+  const pinned = [
+    makeBot(1, "BA", [], { pinned_position: 1 }),
+    makeBot(2, "QA", [], { pinned_position: 2 }),
+    makeBot(3, "UX"),
+  ];
+  const pinsRoute = { "PUT /api/bots/pins": () => ({ body: { bot_ids: [] } }) };
+  const sideLink = (name: string) =>
+    within(screen.getByRole("navigation", { name: "Bots" })).getByRole("link", { name });
+
+  it("moves a focused pinned bot one place with Alt+←, and saves at once", async () => {
+    await open({ bots: pinned }, { routes: pinsRoute });
+    await heading();
+    act(() => {
+      sideLink("QA").focus();
+      fireEvent.keyDown(sideLink("QA"), { key: "ArrowLeft", altKey: true });
+    });
+    await waitFor(() => {
+      expect(fake?.sent("PUT", "/api/bots/pins").map((r) => r.body)).toEqual([
+        {
+          bot_ids: [pinned[1]?.id, pinned[0]?.id],
+          expected_bot_ids: [pinned[0]?.id, pinned[1]?.id],
+        },
+      ]);
+    });
+  });
+
+  it("does not move a pinned bot while a search is on", async () => {
+    await open({ bots: pinned }, { routes: pinsRoute });
+    await heading();
+    act(() => {
+      fireEvent.change(screen.getByRole("searchbox", { name: "Search bots" }), {
+        target: { value: "A" },
+      });
+    });
+    act(() => {
+      fireEvent.keyDown(sideLink("BA"), { key: "ArrowRight", altKey: true });
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "Unpin QA" }));
+    });
+    // The unpin is the only request: the move sent nothing.
+    await waitFor(() => {
+      expect(fake?.sent("PUT", "/api/bots/pins").map((r) => r.body)).toEqual([
+        { bot_ids: [pinned[0]?.id], expected_bot_ids: [pinned[0]?.id, pinned[1]?.id] },
+      ]);
+    });
+  });
+});
+
 describe("leaving the bot page with changes (bot-page.md §4.1)", () => {
   it("asks before another tab, names the changed fields, and Stay keeps them", async () => {
     await open({ bots: [makeBot(1, "BA")] });

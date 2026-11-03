@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Plus, Search } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { buttonVariants } from "../../components/ui/button.tsx";
 import { PinBadge } from "../../components/ui/pin-badge.tsx";
 import { cn } from "../../lib/cn.ts";
@@ -8,16 +8,21 @@ import { BotAvatar } from "./bot-avatar.tsx";
 import { matchesSearch, statusText } from "./bot-lines.ts";
 import { othersOf, pinnedOf, useSetPins, withPin, withoutPin } from "./bot-pins.ts";
 import type { BotRow } from "./bot-queries.ts";
+import type { CardDrag } from "./bot-grid-card.tsx";
+import { type DropLine, PinnedSort, usePinnedItem } from "./pinned-sort.tsx";
 import { SortButtons } from "./bot-sort-buttons.tsx";
 
 // The list of the edit layout (bot-page.md §1, E1–E2): ← Back and + Create, Search, then Pinned
-// in the owner's order and Others with the two sort buttons, as on the grid. A row is the 36 px
+// in the owner's order and Others with the two sort buttons, as on the grid. Pin works as
+// everywhere (pin.md §2): drag inside Pinned, or Alt+← and Alt+→, reorders; not during a search. A row is the 36 px
 // avatar with its state badge, the name and the status line; the pin badge sits on the row's
 // top-right corner, never on the avatar. The list stays mounted while the owner moves between
 // bots, so it keeps its scroll place.
 export function BotSideList({ bots, currentId }: { bots: BotRow[]; currentId: string | null }) {
   const [query, setQuery] = useState("");
   const setPins = useSetPins();
+  const pinnedList = useRef<HTMLUListElement>(null);
+  const dragOff = query.trim() !== "";
   const pinnedIds = pinnedOf(bots).map((bot) => bot.id);
   const pinned = pinnedOf(bots).filter((bot) => matchesSearch(bot, query));
   const others = othersOf(bots).filter((bot) => matchesSearch(bot, query));
@@ -29,9 +34,7 @@ export function BotSideList({ bots, currentId }: { bots: BotRow[]; currentId: st
       current={bot.id === currentId}
       status={statusText(bot, now)}
       onPin={() => {
-        setPins(
-          bot.pinned_position === null ? withPin(pinnedIds, bot.id) : withoutPin(pinnedIds, bot.id),
-        );
+        setPins(withPin(pinnedIds, bot.id));
       }}
     />
   );
@@ -75,7 +78,34 @@ export function BotSideList({ bots, currentId }: { bots: BotRow[]; currentId: st
             <h2 id="side-pinned" className={GROUP_TITLE}>
               Pinned
             </h2>
-            <ul>{pinned.map(row)}</ul>
+            <PinnedSort
+              bots={pinned}
+              pinnedIds={pinnedIds}
+              dragOff={dragOff}
+              area={pinnedList}
+              overlay={(bot) => (
+                <BotSideRow bot={bot} current={false} status={statusText(bot, now)} overlay />
+              )}
+            >
+              {({ dropLine }) => (
+                <ul ref={pinnedList}>
+                  {pinned.map((bot, index) => (
+                    <PinnedSideRow
+                      key={bot.id}
+                      bot={bot}
+                      current={bot.id === currentId}
+                      status={statusText(bot, now)}
+                      pinnedIds={pinnedIds}
+                      dragOff={dragOff}
+                      dropLine={dropLine(index)}
+                      onUnpin={() => {
+                        setPins(withoutPin(pinnedIds, bot.id));
+                      }}
+                    />
+                  ))}
+                </ul>
+              )}
+            </PinnedSort>
           </section>
         )}
         {others.length > 0 && (
@@ -102,48 +132,100 @@ export function BotSideList({ bots, currentId }: { bots: BotRow[]; currentId: st
 const GROUP_TITLE =
   "px-2 py-1.5 text-xs font-semibold tracking-wide text-on-surface-muted uppercase";
 
+function PinnedSideRow({
+  pinnedIds,
+  dragOff,
+  onUnpin,
+  ...row
+}: {
+  bot: BotRow;
+  current: boolean;
+  status: string;
+  pinnedIds: readonly string[];
+  dragOff: boolean;
+  dropLine: DropLine | null;
+  onUnpin: () => void;
+}) {
+  const drag = usePinnedItem({ botId: row.bot.id, pinnedIds, dragOff });
+  return <BotSideRow {...row} drag={drag} onPin={onUnpin} />;
+}
+
+// One row. A pinned row shows the grab cursor; while it moves, its place is a gap, and the drop
+// line shows on its top or bottom edge. The copy that follows the pointer has no controls.
 function BotSideRow({
   bot,
   current,
   status,
   onPin,
+  drag,
+  dropLine = null,
+  overlay = false,
 }: {
   bot: BotRow;
   current: boolean;
   status: string;
-  onPin: () => void;
+  onPin?: () => void;
+  drag?: CardDrag;
+  dropLine?: DropLine | null;
+  overlay?: boolean;
 }) {
+  const gap = drag?.isGap === true;
   return (
     <li
+      ref={drag?.setNodeRef}
       data-testid="bot-row"
       data-bot={bot.slug}
       className={cn(
         "group relative flex items-center gap-3 rounded-card px-2 py-2 hover:bg-surface-raised",
         current && "bg-primary-tint",
+        gap && "border-dashed-slot border-outline bg-transparent hover:bg-transparent",
+        overlay && "cursor-grabbing list-none bg-surface-raised shadow-2xl",
       )}
     >
       <BotAvatar
         bot={bot}
         size="header"
         badge={bot.health?.level === "cannot_run" ? "cannot_run" : null}
+        className={cn(gap && "invisible")}
       />
-      <span className="min-w-0 grow">
-        <Link
-          to="/bots/$slug"
-          params={{ slug: bot.slug }}
-          aria-current={current ? "page" : undefined}
-          className="block truncate font-semibold outline-none after:absolute after:inset-0 after:rounded-card focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-primary"
-        >
-          {bot.name}
-        </Link>
+      <span className={cn("min-w-0 grow", gap && "invisible")}>
+        {overlay ? (
+          <span className="block truncate font-semibold">{bot.name}</span>
+        ) : (
+          <Link
+            to="/bots/$slug"
+            params={{ slug: bot.slug }}
+            aria-current={current ? "page" : undefined}
+            ref={drag?.setActivatorNodeRef}
+            {...drag?.handleProps}
+            className={cn(
+              "block truncate font-semibold outline-none after:absolute after:inset-0 after:rounded-card focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-primary",
+              drag !== undefined && "cursor-grab active:cursor-grabbing",
+            )}
+          >
+            {bot.name}
+          </Link>
+        )}
         <span className="block truncate text-sm text-on-surface-muted">{status}</span>
       </span>
-      <PinBadge
-        pinned={bot.pinned_position !== null}
-        name={bot.name}
-        onClick={onPin}
-        className="absolute top-1 right-1 z-10"
-      />
+      {onPin !== undefined && !gap && (
+        <PinBadge
+          pinned={bot.pinned_position !== null}
+          name={bot.name}
+          onClick={onPin}
+          className="absolute top-1 right-1 z-10"
+        />
+      )}
+      {dropLine !== null && (
+        <span
+          aria-hidden
+          data-testid="drop-line"
+          className={cn(
+            "absolute right-2 left-2 h-0.5 rounded-pill bg-primary opacity-80",
+            dropLine === "before" ? "-top-px" : "-bottom-px",
+          )}
+        />
+      )}
     </li>
   );
 }

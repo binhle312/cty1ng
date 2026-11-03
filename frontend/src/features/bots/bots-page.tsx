@@ -1,35 +1,18 @@
-import {
-  type Announcements,
-  DndContext,
-  type DragEndEvent,
-  type DragOverEvent,
-  DragOverlay,
-  type DragStartEvent,
-} from "@dnd-kit/core";
-import { SortableContext, type SortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { Link } from "@tanstack/react-router";
 import { Plus, Search } from "lucide-react";
-import { type KeyboardEvent, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { buttonVariants } from "../../components/ui/button.tsx";
 import { Skeleton, SkeletonArea } from "../../components/ui/skeleton.tsx";
 import { cn } from "../../lib/cn.ts";
 import { LoadError } from "../skills/load-error.tsx";
 import { SleepySlime } from "./bot-avatar.tsx";
-import { BotGridCard, type CardDrag } from "./bot-grid-card.tsx";
+import { BotGridCard } from "./bot-grid-card.tsx";
 import { SortButtons } from "./bot-sort-buttons.tsx";
 import { matchesSearch } from "./bot-lines.ts";
-import {
-  othersOf,
-  pinnedOf,
-  useSetPins,
-  withPin,
-  withPinAt,
-  withPinMoved,
-  withoutPin,
-} from "./bot-pins.ts";
+import { othersOf, pinnedOf, useSetPins, withPin, withoutPin } from "./bot-pins.ts";
 import { type BotRow, useBots } from "./bot-queries.ts";
 import { useDeleteBot } from "./delete-bot-dialog.tsx";
-import { useClosestInside, useDragSensors } from "./drag-setup.ts";
+import { type DropLine, PinnedSort, usePinnedItem } from "./pinned-sort.tsx";
 
 // `/bots` (bots-page.md, UI-4): the title row with + Create, the search, the Pinned group in the
 // owner's order, then the Others with the two sort buttons. A click on a card opens the bot.
@@ -162,13 +145,8 @@ function OtherCard({ bot, onDelete }: { bot: BotRow; onDelete: (bot: BotRow) => 
   );
 }
 
-// The sortable strategy that moves nothing: the old place stays a gap and a drop line shows where
-// the card lands (dashed-slot.md §3), instead of the cards making room.
-const stayInPlace: SortingStrategy = () => null;
-
 // The Pinned group: drag inside it, or Alt+← and Alt+→ on a focused card, reorders (pin.md §2).
-// Each drop saves at once. Drag is off while a search is on. `bots` are the cards shown, which a
-// search can cut; `pinnedIds` is every pinned bot, the list that a change sends.
+// `bots` are the cards shown, which a search can cut; `pinnedIds` is every pinned bot.
 function PinnedGrid({
   bots,
   pinnedIds,
@@ -181,92 +159,26 @@ function PinnedGrid({
   onDelete: (bot: BotRow) => void;
 }) {
   const setPins = useSetPins();
-  const ids = bots.map((bot) => bot.id);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [overId, setOverId] = useState<string | null>(null);
-  // A click right after a drop must not open the bot.
-  const justDropped = useRef(false);
-  // A drop counts only inside the Pinned group.
   const grid = useRef<HTMLUListElement>(null);
-  const sensors = useDragSensors();
-  const collision = useClosestInside(grid);
-  const nameOf = (id: string | number) => bots.find((bot) => bot.id === id)?.name ?? "";
-  const placeOf = (id: string | number) =>
-    `${String(ids.indexOf(String(id)) + 1)} of ${String(ids.length)}`;
-  const announcements: Announcements = {
-    onDragStart: ({ active }) => `Picked up ${nameOf(active.id)}, pinned, ${placeOf(active.id)}.`,
-    onDragOver: ({ active, over }) =>
-      over === null
-        ? `${nameOf(active.id)} is outside the pinned bots.`
-        : `${nameOf(active.id)} moves to place ${placeOf(over.id)}.`,
-    onDragEnd: ({ active, over }) =>
-      over === null
-        ? `${nameOf(active.id)} did not move.`
-        : `${nameOf(active.id)} dropped at place ${placeOf(over.id)}.`,
-    onDragCancel: ({ active }) => `Moving ${nameOf(active.id)} is cancelled.`,
-  };
-
-  const end = () => {
-    setActiveId(null);
-    setOverId(null);
-  };
-  const onDragEnd = ({ active, over }: DragEndEvent) => {
-    end();
-    justDropped.current = true;
-    setTimeout(() => {
-      justDropped.current = false;
-    }, 0);
-    if (over === null || over.id === active.id) return;
-    setPins(withPinAt(pinnedIds, String(active.id), pinnedIds.indexOf(String(over.id))));
-  };
-  const active = bots.find((bot) => bot.id === activeId);
-  const activeIndex = activeId === null ? -1 : ids.indexOf(activeId);
-  const overIndex = overId === null ? -1 : ids.indexOf(overId);
-
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={collision}
-      accessibility={{
-        announcements,
-        screenReaderInstructions: {
-          draggable:
-            "To move a pinned bot, press Space, use the arrow keys, then press Space to drop it. Esc cancels. Alt and the Left or Right arrow move it one place.",
-        },
-      }}
-      onDragStart={({ active: start }: DragStartEvent) => {
-        setActiveId(String(start.id));
-      }}
-      onDragOver={({ over }: DragOverEvent) => {
-        setOverId(over === null ? null : String(over.id));
-      }}
-      onDragEnd={onDragEnd}
-      onDragCancel={end}
+    <PinnedSort
+      bots={bots}
+      pinnedIds={pinnedIds}
+      dragOff={dragOff}
+      area={grid}
+      overlay={(bot) => <BotGridCard bot={bot} overlay onPin={noop} onDelete={noop} />}
     >
-      <SortableContext items={ids} strategy={stayInPlace} disabled={dragOff}>
-        <ul
-          ref={grid}
-          className="mt-3 grid grid-cols-4 gap-5"
-          onClickCapture={(event) => {
-            if (justDropped.current) event.preventDefault();
-          }}
-        >
+      {({ dropLine }) => (
+        <ul ref={grid} className="mt-3 grid grid-cols-4 gap-5">
           {bots.map((bot, index) => (
             <li key={bot.id} className="relative">
               <PinnedCard
                 bot={bot}
-                dropLine={
-                  overIndex === -1 || overIndex !== index || overIndex === activeIndex
-                    ? null
-                    : activeIndex < overIndex
-                      ? "after"
-                      : "before"
-                }
+                pinnedIds={pinnedIds}
+                dragOff={dragOff}
+                dropLine={dropLine(index)}
                 onUnpin={() => {
                   setPins(withoutPin(pinnedIds, bot.id));
-                }}
-                onMove={(by) => {
-                  if (!dragOff) setPins(withPinMoved(pinnedIds, bot.id, by));
                 }}
                 onDelete={() => {
                   onDelete(bot);
@@ -275,13 +187,8 @@ function PinnedGrid({
             </li>
           ))}
         </ul>
-      </SortableContext>
-      <DragOverlay>
-        {active === undefined ? null : (
-          <BotGridCard bot={active} overlay onPin={noop} onDelete={noop} />
-        )}
-      </DragOverlay>
-    </DndContext>
+      )}
+    </PinnedSort>
   );
 }
 
@@ -291,37 +198,21 @@ function noop(): void {
 
 function PinnedCard({
   bot,
+  pinnedIds,
+  dragOff,
   dropLine,
   onUnpin,
-  onMove,
   onDelete,
 }: {
   bot: BotRow;
+  pinnedIds: readonly string[];
+  dragOff: boolean;
   // A drop line on this card's left or right edge, in the gap beside it.
-  dropLine: "before" | "after" | null;
+  dropLine: DropLine | null;
   onUnpin: () => void;
-  onMove: (by: -1 | 1) => void;
   onDelete: () => void;
 }) {
-  const sortable = useSortable({ id: bot.id });
-  const onKeyDown = (event: KeyboardEvent<HTMLAnchorElement>) => {
-    if (event.altKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
-      event.preventDefault();
-      onMove(event.key === "ArrowLeft" ? -1 : 1);
-      return;
-    }
-    sortable.listeners?.onKeyDown?.(event);
-  };
-  const drag: CardDrag = {
-    setNodeRef: sortable.setNodeRef,
-    setActivatorNodeRef: sortable.setActivatorNodeRef,
-    handleProps: {
-      ...sortable.listeners,
-      onKeyDown,
-      "aria-describedby": sortable.attributes["aria-describedby"],
-    },
-    isGap: sortable.isDragging,
-  };
+  const drag = usePinnedItem({ botId: bot.id, pinnedIds, dragOff });
   return (
     <>
       <BotGridCard bot={bot} onPin={onUnpin} onDelete={onDelete} drag={drag} />

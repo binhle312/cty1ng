@@ -51,8 +51,9 @@ written ways of working that the bot follows.
   Alt+← and Alt+→). Sort the other bots by recent activity or by created time, up or down. The
   ⋯ menu on a card has Details, Clone and Delete; Delete puts the bot in Trash. A click on a
   card opens the bot page.
-- **The bot page** (`/bots/<slug>`): the list of bots on the left, the bot on the right, with
-  its model and effort under a lock (they never change; Clone picks another). A bot that cannot
+- **The bot page** (`/bots/<slug>`): the list of bots on the left (pin, unpin and reorder the
+  pinned bots there as on the Bots page), the bot on the right, with its model and effort under
+  a lock (they never change; Clone picks another). A bot that cannot
   run shows why, with Clone. Tabs:
   - **Profile**: the avatar style and colour, the name, the description and the persona. The big
     avatar and the colour band show a change at once ("Not saved"); Save (or Ctrl+S) applies it

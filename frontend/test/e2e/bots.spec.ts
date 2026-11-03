@@ -72,7 +72,7 @@ test.afterEach(async () => {
 });
 
 // A clipped drop line is in the DOM but not on the screen: check that every ancestor that clips
-// its content holds the whole line.
+// its content holds the whole line, across and down.
 async function notClipped(line: Locator): Promise<boolean> {
   return line.evaluate((el) => {
     const box = el.getBoundingClientRect();
@@ -80,6 +80,7 @@ async function notClipped(line: Locator): Promise<boolean> {
       if (getComputedStyle(parent).overflow === "visible") continue;
       const clip = parent.getBoundingClientRect();
       if (box.left < clip.left || box.right > clip.right) return false;
+      if (box.top < clip.top || box.bottom > clip.bottom) return false;
     }
     return box.width > 0;
   });
@@ -121,6 +122,50 @@ test("the keyboard moves a pinned card and the drop line shows", async ({ page }
         .map((bot) => bot.name),
     )
     .toEqual([`Second ${tag}`, `First ${tag}`]);
+});
+
+// The side list of the bot page reorders as everywhere (bot-page.md E2, pin.md §2): a drag
+// inside Pinned shows the drop line, which the scrolling list does not cut off, and the drop
+// saves the new order at once.
+test("the bot page's side list reorders the pinned bots by drag", async ({ page }) => {
+  const tag = tagged();
+  await makeBot(`First ${tag}`);
+  await makeBot(`Second ${tag}`);
+  const all = await bots();
+  const idOf = (name: string) => all.find((bot) => bot.name === name)?.id ?? "";
+  await setPinnedBots({
+    client: apiClient(),
+    body: { bot_ids: [idOf(`First ${tag}`), idOf(`Second ${tag}`)], expected_bot_ids: [] },
+    throwOnError: true,
+  });
+  const slug = all.find((bot) => bot.name === `First ${tag}`)?.slug ?? "";
+  await page.goto(`/bots/${slug}`);
+  const pinned = page.getByRole("navigation", { name: "Bots" }).getByRole("region", {
+    name: "Pinned",
+  });
+  const from = await pinned.getByRole("link", { name: `First ${tag}` }).boundingBox();
+  const to = await pinned.getByRole("link", { name: `Second ${tag}` }).boundingBox();
+  if (from === null || to === null) throw new Error("The side list is not on the screen.");
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  // Past the 5 px start distance, then in steps, so dnd-kit sees the moves.
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2 + 10, { steps: 3 });
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2 + 4, { steps: 12 });
+  const line = pinned.getByTestId("drop-line");
+  await expect(line).toHaveCount(1);
+  expect(await notClipped(line)).toBe(true);
+  await page.mouse.up();
+  await expect(line).toHaveCount(0);
+  await expect
+    .poll(async () =>
+      (await bots())
+        .filter((bot) => bot.pinned_position !== null)
+        .sort((a, b) => (a.pinned_position ?? 0) - (b.pinned_position ?? 0))
+        .map((bot) => bot.name),
+    )
+    .toEqual([`Second ${tag}`, `First ${tag}`]);
+  // The drop did not open the bot it was dropped on.
+  await expect(page).toHaveURL(`/bots/${slug}`);
 });
 
 test("the Bots page searches, pins and deletes a bot to Trash", async ({ page }) => {

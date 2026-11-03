@@ -19,7 +19,7 @@ the parts that the header and the Skills page share.
 | `bot-pins.ts` | Pinned and other bots, pin list changes, and `useSetPins` (optimistic, with the 409 retry text) |
 | `bot-queries.ts` | The bot list query and helpers: the pin of a skill, the bots that use it |
 | `bot-save-bar.tsx` | The save bar of the Profile and Model tabs: no changes, changes, errors, conflict |
-| `bot-side-list.tsx` | The list of the edit layout: Back, Create, Search, Pinned and Others, rows with the pin badge |
+| `bot-side-list.tsx` | The list of the edit layout: Back, Create, Search, Pinned (reorder) and Others, rows with the pin badge |
 | `bot-skills-tab.tsx` | A bot's Skills tab: rows, Always load, upgrade link, Change version, Remove, + Add |
 | `bot-sort-buttons.tsx` | The Recent activity and Created time sort buttons of the Others group |
 | `bots-page.tsx` | `/bots`: Pinned (drag to reorder) and Others (sort), search, empty state |
@@ -32,6 +32,7 @@ the parts that the header and the Skills page share.
 | `custom-colour-card.tsx` | The Custom colour card: box, hue bar, R G B and Hex |
 | `delete-bot-dialog.tsx` | Delete a bot to Trash: the dialog and its toast |
 | `drag-setup.ts` | The drag sensors (mouse, long-press touch, Space) and the drop-area check shared by the header and the Pinned group |
+| `pinned-sort.tsx` | Reordering the pinned bots (pin.md §2): drag and Alt+← / Alt+→, for the Bots grid and the side list |
 | `tools-list.tsx` | The Tools list of step 4: internal and provider tools, pairs, gates |
 
 Start here: `bots-page.tsx`, `create-bot-page.tsx` or `bot-page.tsx`. Do not: draw an avatar anywhere else, or

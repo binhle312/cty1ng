@@ -10,8 +10,8 @@ import {
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { type RefObject, useCallback } from "react";
 
-// The drag setup of the header roster and the Pinned group of the Bots page (top-header.md HD5,
-// HD6; pin.md §2).
+// The drag setup of the header roster and of the pinned bots on the Bots page and the bot page's
+// side list (top-header.md HD5, HD6; pin.md §2).
 //
 // The mouse sensor, not the pointer sensor: the pointer sensor also takes touch, claims the
 // press at once, and then the touch sensor never sees it, so a long press started no drag. With
