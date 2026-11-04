@@ -320,10 +320,10 @@ describe("import and export", () => {
 
   // security.md §2.9: the multipart body is strict too, as on POST /avatars.
   it.each([
-    ["a text field", "note", (): string => "hello"],
-    ["a second file part", "other", () => new File(["x"], "b.zip")],
-    ["two files named file", "file", () => new File(["x"], "b.zip")],
-  ])("an upload with %s beside the file gives 422", async (_label, name, part) => {
+    { label: "a text field", name: "note", part: (): string => "hello" },
+    { label: "a second file part", name: "other", part: () => new File(["x"], "b.zip") },
+    { label: "two files named file", name: "file", part: () => new File(["x"], "b.zip") },
+  ])("an upload with $label beside the file gives 422", async ({ name, part }) => {
     const zip = await zipOf([{ path: "fresh/SKILL.md", data: Buffer.from(skillMdText("fresh")) }]);
     const form = new FormData();
     form.append("file", new File([new Uint8Array(zip)], "skills.zip"));
