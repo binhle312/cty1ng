@@ -127,4 +127,4 @@ A slice can also be `blocked` (say on what in Notes).
 | 2026-11-04 | M2c merged (#59); M2 is complete |
 | 2026-11-04 | Every plan now has a file in `docs/plans/` (owner); the plans up to M2 are copied from their PRs |
 | 2026-11-04 | Docs audit ([#61](https://github.com/binhle312/cty1ng/pull/61)): docs matched to the built code and to the current decisions; open questions and code gaps moved to the tables above |
-| 2026-11-04 | Docs audit answers: the owner answered all the questions; the specs, decisions and tokens match them, and no feature is built |
+| 2026-11-04 | Docs audit answers ([#65](https://github.com/binhle312/cty1ng/pull/65)): the owner answered all the questions; the specs, decisions and tokens match them, and no feature is built |
