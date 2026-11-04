@@ -13,6 +13,8 @@ const route = createRoute({
   method: "get",
   path: "/health",
   operationId: "getHealth",
+  // A route that takes no query string still refuses one (security.md §2.9).
+  request: { query: z.object({}).strict() },
   responses: {
     200: {
       description: "The database works",

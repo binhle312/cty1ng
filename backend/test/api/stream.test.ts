@@ -28,6 +28,15 @@ async function connect(lastEventId?: string) {
   return { response, frames: collect(readFrames(response.body)) };
 }
 
+// security.md §2.9: a route that takes no query string still refuses one.
+it("refuses an unknown query key with 422 on that key", async () => {
+  const response = await fetch(`${server.url}/api/stream?after=5`, { signal: abort.signal });
+  expect(response.status).toBe(422);
+  expect(await response.json()).toMatchObject({
+    error: { code: "validation_error", field: "after" },
+  });
+});
+
 const events = (frames: SseFrame[]) =>
   frames
     .filter((frame) => frame.event !== undefined)

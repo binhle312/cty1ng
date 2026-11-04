@@ -252,6 +252,9 @@ old code in a `git worktree` (`workflow.md` §2 step 3), ports 8100 and 8101 mus
 database until you stop the script, so a test that needs a fresh database fails on the second
 run: restart the script. The backend serves the frontend build from disk, so after a frontend
 change run `pnpm build` before `pnpm e2e`; after a backend change, restart the script.
+Each `pnpm e2e` and `pnpm e2e:serve` makes its data folder in the system temp folder (`cty1ng-e2e-*`)
+and removes it when it ends, after its servers have stopped, also after a failed run. A hard kill
+(SIGKILL) leaves the folder behind.
 Each server runs as its own process group. When you stop the script (Ctrl+C or SIGTERM), it
 stops every process in each group and waits until they have stopped, so no old server stays on
 the ports. A group that is still running after `E2E_SERVE_STOP_MS` (default 10000 ms) is

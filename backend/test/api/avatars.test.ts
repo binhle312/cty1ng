@@ -101,6 +101,62 @@ describe("avatars", () => {
     expect(await codeOf(response)).toBe("validation_error");
   });
 
+  // security.md §3: the file's name and stated type decide nothing; its bytes do.
+  it("accepts a PNG renamed .jpg and re-encodes it", async () => {
+    const target = start();
+    const form = new FormData();
+    form.append(
+      "file",
+      new File([new Uint8Array(await png())], "photo.jpg", { type: "image/jpeg" }),
+    );
+    const response = await target.request("/api/avatars", {
+      method: "POST",
+      headers: { origin: ORIGIN },
+      body: form,
+    });
+    expect(response.status).toBe(200);
+    const { url } = AvatarUpload.parse(await response.json());
+    const output = Buffer.from(await (await target.request(url)).arrayBuffer());
+    expect(await sharp(output).metadata()).toMatchObject({
+      format: "webp",
+      width: 256,
+      height: 256,
+    });
+  });
+
+  // A polyglot reads as an image and as something else (security.md §3). A synthetic marker
+  // stands for the other file's content; the stored image must not carry it.
+  describe("a polyglot file", () => {
+    const MARKER = "POLYGLOT_MARKER_NOT_AN_IMAGE";
+    const script = Buffer.from(`<script>alert("${MARKER}")</script>`);
+
+    it.each([
+      ["a script after the image's end", async () => Buffer.concat([await png(), script])],
+      [
+        "a zip after the image's end",
+        async () => Buffer.concat([await png(), Buffer.from(`PK\x03\x04${MARKER}`)]),
+      ],
+    ])("is neutralised when it is %s", async (_label, build) => {
+      const target = start();
+      const input = await build();
+      expect(input.toString("latin1")).toContain(MARKER);
+      const response = await upload(target, input);
+      expect(response.status).toBe(200);
+      const { url } = AvatarUpload.parse(await response.json());
+      const served = await target.request(url);
+      expect(served.headers.get("content-type")).toBe("image/webp");
+      const output = Buffer.from(await served.arrayBuffer());
+      expect(output.toString("latin1")).not.toContain(MARKER);
+      expect(await sharp(output).metadata()).toMatchObject({ format: "webp", width: 256 });
+    });
+
+    it("is refused when the script comes first", async () => {
+      const response = await upload(start(), Buffer.concat([script, await png()]));
+      expect(response.status).toBe(422);
+      expect(await codeOf(response)).toBe("validation_error");
+    });
+  });
+
   it.each(["jpeg", "png", "webp"] as const)(
     "removes EXIF, ICC and XMP that a %s upload carries",
     async (format) => {
