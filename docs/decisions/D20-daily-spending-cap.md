@@ -11,3 +11,4 @@ Consequences: It is an estimate, not an invoice. The owner should also set spend
 provider's console; the app's cap is the fast local guard.
 Why: The turn budget and runs-per-hour cap bound one conversation, not the total across many.
 Implemented in: `../conversation-rules.md` §2 (if accepted), task M5.
+Amended 2026-11-04 (owner): Implemented in is `../requirements/settings.md` UI-8.3, `../domain-model.md` §13, `../conversation-rules.md` §8, task M5.

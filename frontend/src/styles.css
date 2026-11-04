@@ -10,8 +10,11 @@
   --color-surface-container: var(--token-surface-container);
   --color-surface-raised: var(--token-surface-raised);
   --color-surface-bubble: var(--token-surface-bubble);
+  --color-surface-selected: var(--token-surface-selected);
   --color-on-surface: var(--token-on-surface);
   --color-on-surface-muted: var(--token-on-surface-muted);
+  --color-on-surface-soft: var(--token-on-surface-soft);
+  --color-on-surface-faint: var(--token-on-surface-faint);
   --color-primary: var(--token-primary);
   --color-on-primary: var(--token-on-primary);
   --color-primary-container: var(--token-primary-container);

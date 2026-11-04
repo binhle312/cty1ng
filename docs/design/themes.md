@@ -61,6 +61,8 @@ Rules:
 | --- | --- | --- | --- |
 | Surface | `surface`, `surface-container`, `surface-raised` | #0E0F11, #16181B, #1E2125 | #F8FAF0, #ECEFE4, #FFFFFF |
 | Text | `on-surface`, `on-surface-muted` | #E7E8EA, #9BA1AB | #191D17, #43483F |
+| Text levels | `on-surface-soft`, `on-surface-faint` (`components/trash-page.md`, `memory-page.md`, `library-page.md`, `plan-card.md`) | #C4C8CE, #8B919A | set in T2 |
+| Selected row | `surface-selected` (`components/settings-page.md`) | #23272C | set in T2 |
 | Primary | `primary`, `on-primary`, `primary-container` | #F5B544, #0E0F11, #1B170D | #3B6939, #FFFFFF, #BCF0B4 |
 | Bubble | `surface-bubble` (owner message box, one step lighter than `surface-raised`, `components/conversation-page.md` §9) | #262A30 | set in T2 |
 | Primary tint | `primary-tint` (selected tile fill, left bar) | #3A2E12 | set in T2 |

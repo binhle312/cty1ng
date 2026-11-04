@@ -116,11 +116,13 @@ If a command in this list does not exist yet (early slices), creating it is part
 
 - New or changed **database migrations**.
 - Changes to **security-sensitive code**: `adapters/workspace/`, upload handling, origin/host checks,
-  Markdown rendering, anything touching secrets.
+  Markdown rendering, the sensitive data guard (`core/guard/`), anything touching secrets.
 - **New dependencies** (backend or frontend), including major version bumps.
 - Changes to `docs/decisions/`, to this file, or to the public API shape.
 - The **UI design** of any new or changed screen: propose it in the plan and wait for approval
   before writing UI code. Sketches and mockups in `docs/design/` are not specs.
+- The **code design** when a slice adds shared state, a module boundary or a flow across several
+  screens: a one-page design in the plan, before any code (`docs/workflow.md` §2).
 - Anything outside the current task's scope.
 
 Mark these in the PR description under a heading `Needs human review` with one line each.
@@ -148,6 +150,8 @@ Mark these in the PR description under a heading `Needs human review` with one l
 - New behaviour has tests; bug fixes have a test that failed before the fix.
 - Documentation updated where behaviour changed.
 - `docs/status.md` updated: the slice's state, the PR link, anything now waiting on the owner.
+- For a PR in a milestone, `docs/delivery-quality.md` is updated as its §7 says: the PR in the
+  register, one row per review round, and each issue with its state and verification evidence.
 - A change the owner can see updates `seed/skills/using-the-app/SKILL.md`, the Guide bot's
   knowledge of the app, in the same PR (M2 plan, decision 14).
 - The PR description has: what changed, why, how it was verified, and `Needs human review`
@@ -170,3 +174,5 @@ Mark these in the PR description under a heading `Needs human review` with one l
   stay fixed in code: they are rules, not settings.
 - Commits: small, imperative subject line (`Add skill version pinning`), body explains why.
 - One task slice per branch: `m1-skill-hub`, `m3-chat-one-bot`, …
+- Open every PR as a draft, and leave it a draft. The owner marks it Ready right before the merge,
+  and that starts the security review, which costs money (owner, 2026-11-04).

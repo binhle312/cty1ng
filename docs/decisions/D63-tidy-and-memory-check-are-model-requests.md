@@ -64,6 +64,13 @@ Rejected:
 - **A fixed upkeep model in Settings.** The owner already chose a model per bot; a second model
   setting is one more thing to keep current.
 
+Amended 2026-11-04 (owner): a save of the instructions while a check is in flight stops that
+request and starts a new one, because a check now starts straight after a save; the stopped request's
+cost so far still counts. With no memory items, a save starts no check. With items and no bot that
+last ran and can still run (a bot in Trash or one that cannot run counts as none), nothing runs until
+the owner picks an available bot in "Check memory with" (`../api.md` §5a,
+`../design/components/project-settings-page.md` §4).
+
 Consequences: `model_requests.purpose` gets two values and `conversation_id` is NULL for them.
 D43's "check run" is a check request; its card (`../design/components/memory-pane.md` §4) is
 unchanged. A failed check shows "Memory check failed" with **Check again**, as D43 says.

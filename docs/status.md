@@ -17,14 +17,14 @@ M2c adds the bot page and the Skills page's upgrade and assign cards.
 Its evidence and remaining limits are in [delivery-quality.md](delivery-quality.md), DQ-011–DQ-021.
 The plans of each slice are in [plans/](plans/README.md).
 
-[#60](https://github.com/binhle312/cty1ng/pull/60) (e2e server guard) and [#61](https://github.com/binhle312/cty1ng/pull/61) (docs audit, after #59) are also open, outside the Slices table.
+[#60](https://github.com/binhle312/cty1ng/pull/60) (e2e server guard) is also open, outside the Slices table.
 
 The [Slices table](#slices) records delivery state and PRs.
 The [design index](design/README.md) identifies agreed designs and open design work.
 
 ## Next
 
-1. Close M2. The P3 follow-ups with target M2 close are fixed or dropped in [#66](https://github.com/binhle312/cty1ng/pull/66).
+1. Close M2. The P3 follow-ups with target M2 close are fixed or dropped in [#66](https://github.com/binhle312/cty1ng/pull/66), except the rows from the [#60](https://github.com/binhle312/cty1ng/pull/60) review, which the owner has not decided yet.
    The PR population is confirmed. Exact totals are not possible: three PRs are unmeasured and 11 of the 16 issue rows are `partial` or `unknown` (`delivery-quality.md` §2).
 2. Prepare the [M3 part briefs and specification work](development-plan.md#specification-work-before-m3a).
    M3 follows M2c and has seven delivery parts. Resolve the open schema, Usage and Guide questions before dependent code.
@@ -34,7 +34,7 @@ The [design index](design/README.md) identifies agreed designs and open design w
 
 | Item | Needed by |
 | --- | --- |
-| **UI review after M3** (owner, 2026-11-02): the owner reviews the whole UI once M3 is done; UI texts and UI standardisation wait until then. Open so far: the M2c texts (`design/components/bot-page.md` §10); "Required" (bot page) or "Type a name." (Create page) for an empty name; the disabled Discard of the bot save bar has no tooltip (ui-rules B5, found in the #59 review); the Always load switch of the bot's Skills tab is plainly disabled, with no tooltip and no focus, while its change is on its way (ui-rules B5, #59 review, 2026-11-03) | End of M3 |
+| **UI review after M3** (owner, 2026-11-02): the owner reviews the whole UI once M3 is done; UI texts and UI standardisation wait until then. Open so far: the M2c texts (`design/components/bot-page.md` §10); "Required" (bot page) or "Type a name." (Create page) for an empty name; the disabled Discard of the bot save bar has no tooltip (ui-rules B5, found in the #59 review); the Always load switch of the bot's Skills tab is plainly disabled, with no tooltip and no focus, while its change is on its way (ui-rules B5, #59 review, 2026-11-03); the "+N" tile of the conversation icon: "+12" does not fit a 14 px cell at the 10 px minimum, so consider a +9 cap | End of M3 |
 | Suggestions from the 2026-11-03 UI review, not approved rules: prefer "Type a name."; consider Up/Down instead of Alt+←/→ in vertical lists; use discard-specific dialog text when the owner stays on the page | UI review after M3 |
 | D52 accepted (each run writes on its own branch and saves to the Library). An agent finishes the documents still missing: the M6 brief (its last open list), `domain-model.md` (`run_branches` and invariants), `architecture.md` (workspace operations, save queue, file claims), `security.md` §2.3, `realtime-events.md` (`library.*`), `conversation-rules.md` (run end). The owner approves the `run_branches` schema design (initial schema for M6). The generated SQL is approved in the slice PR | M6 plan |
 | D54 accepted (the approved plan covers deletes and moves; run-end plan check): add the plan lists and `runs.plan_check` to `domain-model.md`, and approve the schema design. The generated SQL is approved in the slice PR | Spec pass of the first plan consumer (`development-plan.md`, Shared plan approvals) |
@@ -44,7 +44,6 @@ The [design index](design/README.md) identifies agreed designs and open design w
 | Approve the M3 schema design for D46 (auto title) before it is written. The generated SQL is approved in the slice PR | M3 plan |
 | Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a schema design approval (initial schema for M3 and M7). The generated SQL is approved in the slice PR | M3 and M7 plans |
 | Approve the M5b schema design: `projects.instructions_md`, `instructions_version`, `colour`, `pinned_position`, goal ≤ 500 chars, `memory_items.seen_at`, `memory_proposals` and the `model_requests` change (D63) (initial schema for M5b, `domain-model.md` §14). Claude Code stops for this approval before it writes them. The generated SQL is approved in the M5b PR | M5b plan |
-| Docs audit questions (2026-11-04), where the docs or the code cannot settle the answer. **Behaviour:** does deleting a bot set its membership to `removed` (D50 against UI-1.3); does a second memory check wait or replace (`api.md` §5a, D63); how a memory check started by a save picks a model when no bot has run (D63); the version count control in the Memory pane (UI-13.9 against `memory-pane.md`); does a new project start with a conversation (`new-project-page.md`); what the first-run button opens (`left-bar.md` §3); where the Bot animations setting lives (`bot-avatar.md`); the Settings row that shows Get started again (UI-1.8); which slice builds the Jelly and Pixel avatars; the name and place of the D58 reading slice in the plan. **Security and API:** the zip total is checked per entry, not before the first open (`security.md` §2.4); `invalid_id` for ids in a JSON body (`api.md` §1, D36); the unused `invalid_skill_file` code. **Design:** values of the tokens `surface-selected`, `on-surface-faint`, `on-surface-soft`; the status of `ui-rules.md` and the location of its board kit. **Rules:** add the code design and `delivery-quality.md` upkeep to `AGENTS.md` §7 and §9; stories for UI-3.27 to UI-3.31. **Decision files:** D20, D61 and D17 "Implemented in" links, D22's missing link, D43 and D57 amendments in the index, the D65 example against its rule | M3 plan, unless a slice plan takes one first |
 
 ## Follow-ups
 
@@ -53,6 +52,9 @@ it in, and the row goes when its PR merges.
 
 | Item | Found in | Target |
 | --- | --- | --- |
+| `pnpm e2e:serve` can die and leave its servers on the ports: a closed stdout (`EPIPE`) or SIGHUP stops the script without stopping them, and the marker stays. It fails safe, but its message says to stop a script that no longer runs, and no doc says to delete `.e2e-serve`. Stop the servers on those exits, and correct the message | [#60](https://github.com/binhle312/cty1ng/pull/60) review | M2 close |
+| No test runs `scripts/e2e-serve.ts` itself, so its guard and signal wiring have only manual evidence | [#60](https://github.com/binhle312/cty1ng/pull/60) review | M2 close |
+| The fresh data folder of each `pnpm e2e` run stays in the system temp folder (`cty1ng-e2e-*`, about 1 MB each): nothing removes it. Remove it when the run ends | The `pnpm e2e` server guard | M2 close |
 | Temporary CLI `skills trash` and `skills restore` (M1 spec gap pass, owner 2026-10-30): remove them when the Trash page exists | [#51](https://github.com/binhle312/cty1ng/pull/51) | M5b |
 | P3 (`review-guide.md` §6): late-answer rules still in refs: `create-bot-page.tsx` (`mounted`, `inFlight`), `crop-card.tsx` (`closed`, `lastFile`), `new-skill-page.tsx` (`closed`), and `skill-page.tsx` (`onPage`, added for DQ-020). They are not card or dialog rules, so the owner left them out of the 2026-11-04 design; check them against `frontend-conventions.md` §1 | [#59](https://github.com/binhle312/cty1ng/pull/59) review of `ec8faa7` | When those files next change (owner, 2026-11-04) |
 | The `db_lock_wait_seconds` histogram (`architecture.md` §9, D29 switch trigger 3); there is no metrics output yet | #48 | M3 (the worker brings concurrent writes) |
@@ -64,7 +66,6 @@ it in, and the row goes when its PR merges.
 | Copy slug on the server: today the Clone page tries `-copy-2`, `-copy-3` … after a confirmed `slug_taken` (a skill in Trash keeps its slug). If many collisions make it slow, the server picks the suffix, for example a flag on `POST /skills`; `POST /skill-drafts/{id}/decision` already picks the next free suffix for a bot's slug (`api.md` §2a) (an API change; owner, 2026-10-31; `design/components/skills-page.md`, "Texts added in the M1b build") | [#54](https://github.com/binhle312/cty1ng/pull/54) | When collisions get slow; not planned before M5b |
 | Object arguments in the code from before the `max-params` lint rule (104 places in `eslint-suppressions.json`, 2026-11-04): fix them when their module changes, then prune the list | [#59](https://github.com/binhle312/cty1ng/pull/59) | Each slice, for the modules it touches |
 | `uuid` advisory GHSA-w5hq-g745-h8pq (moderate, through `typeid-js` 1.2.0, which needs `uuid` ^10). **Accepted risk** (owner, 2026-10-30): the flaw is in v3/v5/v6 with a caller buffer; `typeid-js` uses only `stringify` and `v7`, and our code never calls `uuid`. No override | #48 | Update `typeid-js` when a version allows `uuid` ≥ 11.1.1 |
-| The automated security review does not run: the repository has no `ANTHROPIC_API_KEY` secret, so the job skips with a notice and shows as success (checked 2026-11-04). The owner decides whether to add the key. Its paths: [#62](https://github.com/binhle312/cty1ng/pull/62) adds the Markdown renderer; `backend/src/adapters/log/**` (key redaction) and `backend/src/adapters/avatars/**` are not on the list. Security-sensitive, so the owner approves the change | Docs audit 2026-11-04 | M2 close |
 | Bar 2 on Home keeps its M0 state: `bar-two.tsx` always says "No bots yet" and shows the first-run button, also with bots (`left-bar.md` §3) | Docs audit 2026-11-04 | M3d |
 | Test names: invariants 4, 6, 7 and 12 have no `invariant NN:` test (`testing.md`), and no schema test checks every primary key column (`domain-model.md` §1) | Docs audit 2026-11-04 | M3 plan |
 | Small built-UI differences: the empty-state slime at 96 px (`bot-avatar.md` sizes), "⚠" on the card health line (`bots-page.md`), header arrows only over the roster (UI-2.9), Create errors on leaving a field, not after Next (`create-bot-page.md` E1, E2) | Docs audit 2026-11-04 | UI review after M3 |
@@ -124,4 +125,6 @@ A slice can also be `blocked` (say on what in Notes).
 | 2026-11-04 | M2c merged (#59); M2 is complete |
 | 2026-11-04 | Every plan now has a file in `docs/plans/` (owner); the plans up to M2 are copied from their PRs |
 | 2026-11-04 | Docs audit ([#61](https://github.com/binhle312/cty1ng/pull/61)): docs matched to the built code and to the current decisions; open questions and code gaps moved to the tables above |
+| 2026-11-04 | Automated security review on: the owner added the `ANTHROPIC_API_KEY` secret, and the review also watches the log, avatar and sensitive data guard code. It runs when the owner marks a PR Ready, on Haiku 5.5; PRs open as drafts |
+| 2026-11-04 | Docs audit answers ([#65](https://github.com/binhle312/cty1ng/pull/65)): the owner answered all the questions; the specs, decisions and tokens match them, and no feature is built |
 | 2026-11-04 | M2 close fixes ([#66](https://github.com/binhle312/cty1ng/pull/66)): strict `/health`, `/stream` and import upload, the missing security tests, three helpers, DQ-020. The owner dropped DQ-018, DQ-019 and DQ-021's remaining gaps |

@@ -60,6 +60,8 @@ then calls `propose_skill(skill="design-review", …)`. The owner approves the d
 card "Saved v3 ✨ Also upgrade these bots to v3?" shows Designer ticked. BA is not in the list,
 because BA does not have the skill.
 
+Amended 2026-11-04 (owner): the last sentence of the example is wrong. BA is in the group **Does not have it**, not ticked, with an Always load switch (off) when ticked. The rule above stands.
+
 Why: The owner wants a simple M5c. A draft "for" another bot adds a second bot to every rule
 (who is a member, who is in Trash) for a case that the float card already covers: the owner can
 give any skill to any bot after Approve. The owner may also want one bot to improve a skill

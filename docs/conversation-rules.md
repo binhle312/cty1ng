@@ -135,7 +135,11 @@ added ──▶ pending_history ──owner chooses──▶ active ──remove
   your choice").
 - Removing sets `removed`, posts "Designer left". Its messages stay normal.
 - Deleted bots (D12) and unavailable bots cannot be added.
-- Deleting a bot cancels its queued runs and stops its running run first (D50).
+- Deleting a bot cancels its queued runs and stops its running run first (D50). In the same
+  transaction, each of its `active` or `pending_history` memberships becomes `removed`, with
+  `removed_at` = the bot's `deleted_at` and no "left" line. Its old messages stay, in grey (D12).
+  A restore does not add the bot to any conversation and does not suggest any: the owner adds it
+  by hand, as any bot (owner, 2026-11-04).
 
 ## 4. What a bot sees
 

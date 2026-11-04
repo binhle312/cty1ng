@@ -32,7 +32,8 @@ in `docs/design/components/conversation-page.md`, `composer.md` and `conversatio
 - Tool results, empty results and tool errors (`conversation-rules.md` §4, "Tool results"):
   every tool returns errors as `{error, message}` and never ends the run; the prompt line about
   errors and no data; `force` in the fake model script (`testing.md` §2).
-- Streaming via `message.delta`, partial saves, retry reuses the message.
+- Streaming via `message.delta`, partial saves, retry reuses the message. A delta appends to the
+  message directly, and only persisted events refresh queries (`realtime-events.md`).
 - Run status reactions on the trigger message while a run is queued (UI-3.18, 3.19): avatar +
   clock line icon, hover shows the time and × Cancel, gone when the run starts.
 - Send states for human messages with idempotent `client_id` (UI-3.20), message disposition

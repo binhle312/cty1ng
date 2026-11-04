@@ -26,11 +26,19 @@ function contrast(foreground: string, background: string): number {
   return ((hi ?? 0) + 0.05) / ((lo ?? 0) + 0.05);
 }
 
-const SURFACES = ["surface", "surface-container", "surface-raised", "surface-bubble"];
+const SURFACES = [
+  "surface",
+  "surface-container",
+  "surface-raised",
+  "surface-bubble",
+  "surface-selected",
+];
 // Text and icons drawn on the surfaces (WCAG AA 4.5:1; ui-rules L3).
 const TEXT_ON_SURFACES = [
   "on-surface",
   "on-surface-muted",
+  "on-surface-soft",
+  "on-surface-faint",
   "primary",
   "running",
   "waiting",

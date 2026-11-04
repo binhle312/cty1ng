@@ -57,13 +57,16 @@ The line under Instructions has these states:
 | --- | --- |
 | No check yet, or no conflicts | ✓ "Memory check: no conflicts with project memory · {time}" |
 | Instructions changed, not saved | i "When you save, the app compares project memory with the new instructions." |
+| Pick a bot | "Check memory with ▾": one row per available bot. Shown when memory items exist and no bot that last ran in the project can still run. No request runs and nothing is charged until the owner picks (D63 amendment 2026-11-04) |
 | Check runs | spinner, "The app compares project memory with the new instructions…" |
 | Items disagree | "{n} memory items disagree with the new instructions." and the link **Review in Memory**, which opens the Memory pane with the check card (`memory-pane.md` §4) |
 | Check failed | `danger`, "Memory check failed. {cause}. The instructions are saved." and **Check again**. Example cause: "The daily cap stopped it" |
 
 - The save completes first, and the new instructions apply at once. The check runs after it, as
   one model request with cost tracking and the daily caps (D63). The owner can leave the page.
-- A new save of the instructions replaces a check that has not started.
+- A project with no memory items has nothing to compare, so a save starts no check.
+- A new save of the instructions stops a check in flight and replaces it. The stopped request's
+  cost so far still counts (D63 amendment 2026-11-04).
 
 ## 5. Leave with unsaved changes
 

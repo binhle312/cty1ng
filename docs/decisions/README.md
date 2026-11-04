@@ -61,12 +61,12 @@ Implemented in: links.
 | D14 | [Skill authorship and cloning](D14-skill-authorship-and-cloning.md) | accepted |  |
 | D15 | [Skill provenance from server records](D15-skill-provenance-from-server-records.md) | accepted |  |
 | D16 | ["Always load" per pinned skill](D16-always-load-per-pinned-skill.md) | accepted |  |
-| D17 | [New repository; agent instructions in AGENTS.md](D17-new-repository-agent-instructions-in-agents-md.md) | accepted |  |
+| D17 | [New repository; agent instructions in AGENTS.md](D17-new-repository-agent-instructions-in-agents-md.md) | accepted | own amendment 2026-11-04 |
 | D18 | [Handoff targets and who decides the workflow](D18-handoff-targets-and-who-decides-the-workflow.md) | accepted | own amendment 2026-10-25 |
 | D19 | [Bot slug fixed at creation](D19-bot-slug-fixed-at-creation.md) | accepted | D38, D52 (amendment 2026-10-27), own amendment 2026-11-01 |
-| D20 | [Daily spending cap](D20-daily-spending-cap.md) | accepted | D40, D42 |
+| D20 | [Daily spending cap](D20-daily-spending-cap.md) | accepted | D40, D42, own amendment 2026-11-04 |
 | D21 | [Token and cost tracking](D21-token-and-cost-tracking.md) | accepted |  |
-| D22 | [Use UUIDv7 instead of ULID for ids](D22-use-uuidv7-instead-of-ulid-for-ids.md) | accepted (shown as TypeIDs, D36) |  |
+| D22 | [Use UUIDv7 instead of ULID for ids](D22-use-uuidv7-instead-of-ulid-for-ids.md) | accepted (shown as TypeIDs, D36) | own amendment 2026-11-04 |
 | D23 | [Bots working on an external project folder](D23-bots-working-on-an-external-project-folder.md) | accepted in principle | D52 |
 | D24 | [Statistics page](D24-statistics-page.md) | accepted |  |
 | D25 | [One Grafana-style time range picker](D25-one-grafana-style-time-range-picker.md) | accepted |  |
@@ -80,33 +80,33 @@ Implemented in: links.
 | D33 | [Zod for runtime validation in the frontend](D33-zod-for-frontend-runtime-validation.md) | accepted |  |
 | D34 | [TypeScript on the backend and the frontend](D34-typescript-full-stack.md) | accepted |  |
 | D35 | [Ports and adapters at the edges, not "switch anything"](D35-ports-and-adapters-at-the-edges.md) | accepted |  |
-| D36 | [Ids are TypeIDs everywhere outside the database](D36-typeid-outside-the-database.md) | accepted | own amendment 2026-10-30 |
+| D36 | [Ids are TypeIDs everywhere outside the database](D36-typeid-outside-the-database.md) | accepted | own amendments 2026-10-30, 2026-11-04 |
 | D37 | [Projects group conversations](D37-projects-group-conversations.md) | accepted | D45, D47, D52 |
 | D38 | [Bot, project and conversation memory](D38-bot-memory-and-project-memory.md) | accepted | D43, D48, D53, D56, D61, D62, D63, own amendment 2026-10-26 |
 | D39 | [Sensitive-data guard before anything reaches a model or memory](D39-sensitive-data-guard.md) | accepted |  |
 | D40 | [Cost alerts at 75% and 90% of the daily cap](D40-cost-alerts-at-75-and-90.md) | accepted |  |
-| D41 | [Bots draft skills; the owner approves and is the author](D41-bots-draft-skills-the-owner-approves.md) | accepted | D48, D64, D65; own amendment 2026-10-23 |
+| D41 | [Bots draft skills; the owner approves and is the author](D41-bots-draft-skills-the-owner-approves.md) | accepted | D48, D64, D65; own amendments 2026-10-23, 2026-10-27 |
 | D42 | [Optional daily caps per provider, under the total cap](D42-per-provider-daily-caps.md) | accepted | own amendment 2026-10-27 |
-| D43 | [Project memory beats bot memory; the bot asks about a conflict before it acts](D43-project-memory-beats-bot-memory.md) | accepted | D47, D48, D63 |
+| D43 | [Project memory beats bot memory; the bot asks about a conflict before it acts](D43-project-memory-beats-bot-memory.md) | accepted | D47, D48, D63, own amendment 2026-10-26 |
 | D44 | [The side pane holds Flow or Memory, one at a time](D44-right-pane-holds-flow-or-memory.md) | accepted |  |
 | D45 | [Every run reads the project's goal and instructions](D45-project-goal-and-instructions.md) | accepted |  |
 | D46 | [The app writes a short title from the first message, one time only](D46-auto-title-from-the-first-message.md) | accepted | own amendment 2026-10-25 |
 | D47 | [Delete sends the whole project to Trash; the owner picks what wins in a memory check](D47-delete-project-to-trash-and-memory-check-choices.md) | accepted | D49, D61 |
 | D48 | [Bots plan first and wait for approval before they change anything](D48-bots-plan-before-they-change-anything.md) | accepted | D54, D56, D57; own amendment 2026-10-27 |
 | D49 | [Deleted skills go to Trash, Trash keeps items for a set number of days, and only a permanent delete has Undo](D49-skills-go-to-trash-and-trash-days-setting.md) | accepted | D62 |
-| D50 | [Deleted bots go to Trash and can be restored](D50-deleted-bots-go-to-trash.md) | accepted |  |
+| D50 | [Deleted bots go to Trash and can be restored](D50-deleted-bots-go-to-trash.md) | accepted | own amendment 2026-11-04 |
 | D51 | [Bots improve their skills from the owner's feedback, and the owner approves each change](D51-bots-improve-their-skills-from-owner-feedback.md) | accepted | own amendments 2026-10-23, 2026-10-24, 2026-10-27 |
 | D52 | [Each run writes on its own branch and saves to the Library when it ends](D52-each-run-writes-on-its-own-branch.md) | accepted | D54, D56, D59, own amendment 2026-10-25, D61, own amendment 2026-10-28 |
 | D53 | [Bots read the web only through the provider's web tools, with rules for runs that read it](D53-web-access-through-provider-web-tools.md) | accepted | D55 |
 | D54 | [The approved plan covers deletes and moves, and the app checks the run against the plan](D54-approved-plan-covers-the-run.md) | accepted | D57 |
 | D55 | [Provider tools first, one switch per tool, and one tool per job](D55-provider-tools-first-and-tool-switches.md) | accepted |  |
 | D56 | [Memory in action runs: items not in the plan, and runs that fail](D56-memory-in-action-runs-and-failed-runs.md) | accepted | |
-| D57 | [The plan card shows the progress of the action run](D57-plan-card-shows-run-progress.md) | accepted | own amendment 2026-10-28 |
+| D57 | [The plan card shows the progress of the action run](D57-plan-card-shows-run-progress.md) | accepted | own amendments 2026-10-26, 2026-10-28 |
 | D58 | [Bots read other conversations of the project on request, and the owner shares information between them](D58-read-and-share-across-project-conversations.md) | accepted | own amendment 2026-10-25 |
 | D59 | [A save shows a notice when project memory changed after the plan was approved](D59-save-notice-when-project-memory-changed.md) | accepted | |
 | D60 | [Deleted conversations go to Trash and can be restored](D60-deleted-conversations-go-to-trash.md) | accepted | D62 |
-| D61 | [Projects are closed: files cross between places only by an approved copy](D61-files-cross-places-only-by-approved-copy.md) | accepted | |
+| D61 | [Projects are closed: files cross between places only by an approved copy](D61-files-cross-places-only-by-approved-copy.md) | accepted | own amendment 2026-11-04 |
 | D62 | [One Trash page for every deleted item, memory items included](D62-one-trash-page-for-every-deleted-item.md) | accepted | |
-| D63 | [Tidy memory and the memory check are model requests, not runs](D63-tidy-and-memory-check-are-model-requests.md) | accepted | |
-| D64 | [The skill draft card is for the skill only; bot actions follow on a float card](D64-skill-draft-card-is-for-the-skill-only.md) | accepted | D65 |
-| D65 | [Bots draft skills only when the owner asks; only the owner assigns them](D65-bots-draft-skills-only-when-asked.md) | accepted | |
+| D63 | [Tidy memory and the memory check are model requests, not runs](D63-tidy-and-memory-check-are-model-requests.md) | accepted | own amendment 2026-11-04 |
+| D64 | [The skill draft card is for the skill only; bot actions follow on a float card](D64-skill-draft-card-is-for-the-skill-only.md) | accepted | D65, own amendment 2026-10-27 |
+| D65 | [Bots draft skills only when the owner asks; only the owner assigns them](D65-bots-draft-skills-only-when-asked.md) | accepted | own amendment 2026-11-04 |

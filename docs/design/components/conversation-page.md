@@ -40,7 +40,7 @@ pass the 4.5:1 contrast test (`../themes.md` §5) (T1).
 
 The round 6.1 conversation header, height 52 px, `outline` line under it:
 
-1. Left: the conversation icon and the title. A click on the title renames it (UI-3.15).
+1. Left: the conversation icon (28 px round, UI-1.2) and the title. A click on the title renames it (UI-3.15).
 2. Right, in this order: the **add slot**, the member avatars, **Flow**, and **⋯**.
 
 | Part | Rule |
