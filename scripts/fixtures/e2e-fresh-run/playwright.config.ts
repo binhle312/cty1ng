@@ -1,9 +1,11 @@
 import { join } from "node:path";
 import { defineConfig } from "@playwright/test";
+import { e2eDataDir } from "../../lib/e2e-data-dir.ts";
 import { serverReadyCheck } from "../../lib/e2e-server-ready.ts";
 
 // A fresh local run on a free port, with the same ready check as frontend/playwright.config.ts.
 const port = Number(process.env.FIXTURE_PORT);
+e2eDataDir();
 
 export default defineConfig({
   testDir: import.meta.dirname,
