@@ -53,5 +53,7 @@ jobs:
         if: env.HAS_KEY == 'true'
         with:
           claude-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # The action's default is an old model (owner, 2026-11-04).
+          claude-model: claude-haiku-5-5
           comment-pr: true
           exclude-directories: docs,.agents,mockups
