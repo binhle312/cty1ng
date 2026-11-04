@@ -93,6 +93,7 @@ async function expectOthersIntact() {
   expect(skill.status).toBe(200);
   expect(await skill.json()).toMatchObject({
     name: "Bystander",
+    latest_version: { description: "Bystander" },
     body_md: "Bystander",
     row_version: otherSkill.row_version,
   });
@@ -100,6 +101,7 @@ async function expectOthersIntact() {
   expect(bot.status).toBe(200);
   expect(await bot.json()).toMatchObject({
     name: "Bystander",
+    description: "Bystander",
     persona_md: "Bystander",
     row_version: otherBot.row_version,
   });
@@ -132,7 +134,11 @@ describe.each(INJECTIONS)("the text %s", (text) => {
   it("is stored literally in a new skill", async () => {
     const { id } = await createSkill({ slug: "target", text });
     const read = await send({ method: "GET", path: `/skills/${id}` });
-    expect(await read.json()).toMatchObject({ name: text, body_md: text });
+    expect(await read.json()).toMatchObject({
+      name: text,
+      latest_version: { description: text },
+      body_md: text,
+    });
     await expectOthersIntact();
   });
 
@@ -151,7 +157,11 @@ describe.each(INJECTIONS)("the text %s", (text) => {
     });
     expect(saved.status).toBe(201);
     const read = await send({ method: "GET", path: `/skills/${skill.id}` });
-    expect(await read.json()).toMatchObject({ name: text, body_md: text });
+    expect(await read.json()).toMatchObject({
+      name: text,
+      latest_version: { description: text },
+      body_md: text,
+    });
     const versions = await send({ method: "GET", path: `/skills/${skill.id}/versions` });
     expect(await versions.json()).toMatchObject([{ version: 2, changelog: text }, { version: 1 }]);
     await expectOthersIntact();
@@ -173,7 +183,11 @@ describe.each(INJECTIONS)("the text %s", (text) => {
     });
     expect(patched.status).toBe(200);
     const read = await send({ method: "GET", path: `/bots/${bot.id}` });
-    expect(await read.json()).toMatchObject({ name: other, persona_md: other });
+    expect(await read.json()).toMatchObject({
+      name: other,
+      description: other,
+      persona_md: other,
+    });
     await expectOthersIntact();
   });
 
@@ -239,14 +253,16 @@ describe.each(INJECTIONS)("the text %s", (text) => {
       path: "/skills/import/apply",
       body: { preview_id: text, slugs: ["fresh"] },
     });
-    expect(unknownPreview.status).toBeGreaterThanOrEqual(400);
-    expect(unknownPreview.status).toBeLessThan(500);
+    expect(unknownPreview.status).toBe(409);
+    expect(ErrorBody.parse(await unknownPreview.json()).error.code).toBe("preview_expired");
     const unknownSlug = await send({
       method: "POST",
       path: "/skills/import/apply",
       body: { preview_id: preview.preview_id, slugs: [text] },
     });
-    expect(unknownSlug.status).toBeLessThan(500);
+    await expectRefused({ response: unknownSlug, code: "validation_error", field: "slugs" });
+    const skills = await send({ method: "GET", path: "/skills" });
+    expect(await skills.json()).toMatchObject([{ slug: "bystander" }]);
     await expectOthersIntact();
   });
 });

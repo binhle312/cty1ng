@@ -25,7 +25,7 @@ The [design index](design/README.md) identifies agreed designs and open design w
 ## Next
 
 1. Close M2. The P3 follow-ups with target M2 close are fixed or dropped in [#66](https://github.com/binhle312/cty1ng/pull/66), except the rows from the [#60](https://github.com/binhle312/cty1ng/pull/60) review, which the owner has not decided yet.
-   The PR population is confirmed. Exact totals are not possible: three PRs are unmeasured and 11 of the 16 issue rows are `partial` or `unknown` (`delivery-quality.md` §2).
+   The PR population is confirmed. Exact totals are not possible: three PRs are unmeasured and 11 of the 17 issue rows are `partial` or `unknown` (`delivery-quality.md` §2).
 2. Prepare the [M3 part briefs and specification work](development-plan.md#specification-work-before-m3a).
    M3 follows M2c and has seven delivery parts. Resolve the open schema, Usage and Guide questions before dependent code.
 3. Complete the owner's whole-UI review after M3. The deferred items remain in the table below.

@@ -44,7 +44,7 @@ Reconcile the population when a milestone closes or another PR is assigned to it
 | --- | --- | --- | --- | --- | --- | --- |
 | M0 | #46, #48, #49, #50 | 6 lessons for #49; other PRs unmeasured | 1 itemized; total unknown | unknown | unknown | unknown |
 | M1 | #51, #52, #53, #54, #55 | 5 lessons for #54; other PRs unmeasured | 6 itemized; total unknown | unknown | unknown | unknown |
-| M2 | #20, #56, #57, #58, #59, #66 | 1 lesson for #57; 5 for #59; other PRs unmeasured | 16 itemized; total unknown | 6 known (`partial`); 5 rows `unknown`; total unknown | 0 in the 11 rows that record it; 5 rows `unknown`; total unknown | 5 logged; total unknown |
+| M2 | #20, #56, #57, #58, #59, #66 | 1 lesson for #57; 5 for #59; other PRs unmeasured | 17 itemized; total unknown | 6 known (`partial`); 5 rows `unknown`; total unknown | 0 in the 12 rows that record it; 5 rows `unknown`; total unknown | 7 logged; total unknown |
 
 For a milestone total, count each issue ID assigned to that milestone once.
 Count review rounds by distinct PR and round ID.
@@ -53,7 +53,7 @@ Add a row for each later milestone when its first PR enters the record.
 
 **M2 close check (2026-11-04).** Population: all five baseline PRs are merged, and #66 is the sixth.
 #60, #61, #62, #63 and #64 have no milestone in the slice register, so they are outside it.
-M2 has 16 issue IDs, DQ-006 to DQ-021: 5 `unknown` (DQ-006 to DQ-010), 6 `partial` (DQ-011 to DQ-013, DQ-015 to DQ-017), 2 `fixed` (DQ-014, DQ-020) and 3 `dropped` (DQ-018, DQ-019, DQ-021).
+M2 has 17 issue IDs, DQ-006 to DQ-021 and DQ-024: 5 `unknown` (DQ-006 to DQ-010), 6 `partial` (DQ-011 to DQ-013, DQ-015 to DQ-017), 3 `fixed` (DQ-014, DQ-020, DQ-024) and 3 `dropped` (DQ-018, DQ-019, DQ-021).
 The exact totals stay `unknown`: #20, #56 and #58 are unmeasured, #57 and #59 are partial, the 5 `unknown` rows have no closure evidence, and S4 to S7 are not reconciled.
 The numbers in the M2 row are known subtotals. This check did not change the state of a row without new evidence.
 
@@ -78,7 +78,7 @@ The historical snapshot column gives evidence for a specific review period.
 | [#57](https://github.com/binhle312/cty1ng/pull/57) | M2 / M2a and plan | Partial | 1 itemized; total unknown | unknown | unknown | unknown | S3: one documented compliance omission; total unknown |
 | [#58](https://github.com/binhle312/cty1ng/pull/58) | M2 / M2b | Unmeasured | unknown | unknown | unknown | unknown | — |
 | [#59](https://github.com/binhle312/cty1ng/pull/59) | M2 / M2c | Partial | 15 itemized; total unknown | unknown | unknown | unknown | S4: about 32 problems in 7 rounds; S5–S7 overlap is unresolved |
-| [#66](https://github.com/binhle312/cty1ng/pull/66) | M2 / close fixes | Partial | unknown; no independent review yet | unknown | unknown | 1 builder round | — |
+| [#66](https://github.com/binhle312/cty1ng/pull/66) | M2 / close fixes | Partial | 1 itemized (DQ-024); total unknown | 0 known; total unknown | unknown | 2 builder rounds, 1 owner-pasted review of `30fa61f` | — |
 
 ## 4. Historical evidence snapshots
 
@@ -128,6 +128,7 @@ Do not infer issue severity or closure from a lesson's `applied` status.
 | DQ-021 | M2 / #59 | 2026-11-04 / #59 / review of `query-reads.ts` | Test gap and contract difference / P3 | No test caught a leaked cache listener in `loadsEnded`; most callers hold no two-cut test; two comments said more than the code does | [Principle](../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md) | dropped | Reviewer agent report, 2026-11-04 | Comments corrected; `query-reads.test` "leaves no listener on the cache after it ends", seen failing with `stop()` removed. Two-cut tests for the other callers: Dropped by the owner on 2026-11-04 as rare and recoverable. Not added | DQ-017 / no / yes |
 | DQ-022 | M0 / #48 and M1 / #52 | 2026-11-04 / #61 / docs audit | Contract difference / P3 | `/health` and `/stream` had no query schema, and the multipart body of `POST /skills/import/preview` was not strict, so unknown keys passed silently (`security.md` §2.9) | [Principle](../.agents/skills/principle-review-contracts-with-evidence/SKILL.md) | fixed | `status.md` Follow-ups, docs audit 2026-11-04 | Fixed in #66. `health.test`, `stream.test` "refuses an unknown query key …" and `skills.test` "an upload with $label beside the file gives 422" failed first (`expected 200 to be 422`), pass now | none known / yes / no |
 | DQ-023 | unknown / unknown | 2026-11-04 / #61 / docs audit | Test gap / P3 | Tests that `security.md` §2.8 and §3 ask for were missing: SQL injection strings, XSS with event handlers and SVG, a renamed PNG and a polyglot avatar | [Principle](../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md) | fixed | `status.md` Follow-ups, docs audit 2026-11-04 | Added in #66: `sql-injection.test`, `markdown.test` "keeps %s inert", `avatars.test` renamed PNG and polyglot. They passed at once, so each protection was broken once: raw HTML, the link check, the re-encode, a string-built SQL write and the `ids` check. Each break made tests fail; each was restored. No real bug found | none known / unknown / no |
+| DQ-024 | M2 / #66 | 2026-11-04 / #66 / `30fa61f` | Test gap / P3 | The new SQL injection tests did not check saved descriptions, and the import test allowed a wrong success answer. All 18 still passed when a temporary probe corrupted stored skill descriptions | [Principle](../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md) | fixed | Owner-pasted review, 2026-11-04 | The tests now check saved descriptions and the bystanders' descriptions, the exact refusals of an unknown preview and an unknown slug, and that no new skill appears. Six temporary probes (wrong saved text, changed bystanders, an applied unknown slug, a wrong refusal): the old tests passed all 18 under each, and the new tests failed under each | DQ-023 / no / no |
 
 States: `open`, `partial`, `fixed`, `dropped`, `withdrawn`; use `unknown` for historical rows without reconciled closure evidence.
 Unknown states prevent an exact open-issue count. The S7 source reports fixes and failing tests, but lacks per-issue verification references.
@@ -150,6 +151,8 @@ The builder records later fix and verification evidence on the issue rows.
 | #59 / final gate | 2026-11-04 | `ec8faa7` / uncommitted working tree | The fixes above / `pnpm e2e` | DQ-017 | DQ-011 | none | none | `pnpm e2e`: 70 passed, 1 failed (J4) |
 | #59 / `query-reads.ts` | 2026-11-04 | `ec8faa7` / uncommitted working tree | The helper and its callers / reviewer agent report in the session | DQ-018, DQ-019, DQ-020, DQ-021 | none | none | none | Reviewer: all 516 frontend tests passed; real-library probes and 2,800 seeded runs. No P1 or P2. No whole-repo lint, typecheck or e2e |
 | #66 / builder checks | 2026-11-04 | `88a3676` / `94f363b`, then this record | The whole PR / the builder's own checks, not an independent review | none | none | DQ-014, DQ-020, DQ-022, DQ-023 | none | `pnpm e2e` on `b32d4c6`: 71 passed, with both ports' listeners in this PR's worktree in every 10 s sample. `pnpm test`: 1299 passed. `pnpm lint`, `typecheck`, `check:index`, `check:events`, `build`, `check:bundle`, `gen:api` (no change), `db:check`: pass |
+| #66 / `30fa61f` review | 2026-11-04 | unknown / `30fa61f` | Spec and tests / owner-pasted review in the session | DQ-024 | none | none | none | Reviewer's probe: all 18 SQL tests passed with corrupted stored skill descriptions. No P1 or P2 |
+| #66 / fix of DQ-024 | 2026-11-04 | `298015d` / this record | `sql-injection.test` / the builder's own probes, not an independent review | none | none | DQ-024 | none | `pnpm test`, `lint`, `typecheck`, `check:index`, `check:events`: pass. `pnpm e2e` ran on `298015d`, and only this test and records changed after it |
 
 Use a local review artifact or an authorized PR comment as the source.
 If the head changes after review, the row still describes the original reviewed revision.
