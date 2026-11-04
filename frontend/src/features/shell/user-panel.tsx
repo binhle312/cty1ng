@@ -25,7 +25,7 @@ const PAGES = [
   { to: "/stats", label: "Statistics" },
 ] as const;
 
-function isUnder(pathname: string, to: string): boolean {
+function isUnder({ pathname, to }: { pathname: string; to: string }): boolean {
   return pathname === to || pathname.startsWith(`${to}/`);
 }
 
@@ -45,7 +45,7 @@ function Avatar() {
 // a header (UI-1.21).
 export function UserPanel({ collapsed }: { collapsed: boolean }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const onSettings = isUnder(pathname, "/settings");
+  const onSettings = isUnder({ pathname, to: "/settings" });
 
   const trigger = collapsed ? (
     <MenuTrigger
@@ -88,7 +88,7 @@ export function UserPanel({ collapsed }: { collapsed: boolean }) {
           {PAGES.map((page) => (
             <MenuLinkItem
               key={page.to}
-              current={isUnder(pathname, page.to)}
+              current={isUnder({ pathname, to: page.to })}
               render={<Link to={page.to} />}
             >
               {page.label}

@@ -7,7 +7,7 @@ import { z } from "zod";
 const WholeNumber = z.number().int();
 // The history share, of a bot and of the settings, moves in steps of 5 % (domain-model.md §10).
 export const HISTORY_STEP_PCT = 5;
-const Pct = (min: number, max: number) =>
+const Pct = ({ min, max }: { min: number; max: number }) =>
   WholeNumber.min(min).max(max).multipleOf(HISTORY_STEP_PCT);
 
 // The ranges that apply to every bot's own values (domain-model.md §10), and to the default
@@ -30,9 +30,9 @@ export const SETTING_SCHEMAS = {
   bot_name_max: WholeNumber.min(16).max(64),
   bot_description_max: WholeNumber.min(80).max(500),
   bot_persona_max: WholeNumber.min(1_000).max(32_000),
-  bot_history_min_pct: Pct(5, 50),
-  bot_history_max_pct: Pct(50, 90),
-  bot_default_history_pct: Pct(5, 90),
+  bot_history_min_pct: Pct({ min: 5, max: 50 }),
+  bot_history_max_pct: Pct({ min: 50, max: 90 }),
+  bot_default_history_pct: Pct({ min: 5, max: 90 }),
   bot_default_request_limit: inRange(BOT_VALUE_RANGES.request_limit),
   bot_default_max_reply_chars: inRange(BOT_VALUE_RANGES.max_reply_chars),
   // Health thresholds (bots.md UI-4.6); M2 has no runs, so only the ranges are used yet.

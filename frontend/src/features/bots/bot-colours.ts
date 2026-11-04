@@ -17,12 +17,12 @@ export function isHexColour(value: string): boolean {
   return HEX.test(value);
 }
 
-function sameColour(a: string, b: string): boolean {
+function sameColour({ a, b }: { a: string; b: string }): boolean {
   return a.toUpperCase() === b.toUpperCase();
 }
 
 export function isPaletteColour(colour: string): boolean {
-  return BOT_PALETTE.some((swatch) => sameColour(swatch, colour));
+  return BOT_PALETTE.some((swatch) => sameColour({ a: swatch, b: colour }));
 }
 
 // `random` returns a number in [0, 1), as Math.random does; tests pass their own.
@@ -36,7 +36,7 @@ function pickOne<T>(items: readonly T[], random: Random): T | undefined {
 // when all are used (bot-avatar.md §5).
 export function defaultBotColour(usedColours: readonly string[], random: Random): string {
   const free = BOT_PALETTE.filter(
-    (swatch) => !usedColours.some((used) => sameColour(used, swatch)),
+    (swatch) => !usedColours.some((used) => sameColour({ a: used, b: swatch })),
   );
   return pickOne(free, random) ?? pickOne(BOT_PALETTE, random) ?? BOT_PALETTE[0];
 }
