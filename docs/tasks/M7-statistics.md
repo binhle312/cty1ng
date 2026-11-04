@@ -66,4 +66,4 @@ Index migration; the chart dependency.
 
 ## Open questions
 
-None.
+- Resolve the bot Usage data and Group by requirements (`design/components/bot-page.md` §9.6) before M7-2.

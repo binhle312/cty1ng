@@ -16,7 +16,7 @@ can move into a project and take its conversation memory with it.
 
 ## Read first
 
-- Decisions: D37, D38, D43, D44, D45, D47, D49, D50, D56, D60, D61, D62, D63 (and their
+- Decisions: D37, D38, D43, D44, D45, D47, D48, D49, D50, D54, D56, D57, D60, D61, D62, D63 (and their
   "Changed by" entries in `docs/decisions/README.md`).
 - `docs/requirements/projects-and-memory.md` (UI-13), `docs/requirements/app-shell.md`
   (UI-1.6, UI-1.14 to UI-1.19), `docs/requirements/settings.md` (UI-8.6, UI-8.9, UI-9.5, UI-9.6).
@@ -60,12 +60,13 @@ can move into a project and take its conversation memory with it.
 ## Out of scope
 
 - The file part of Move to project and Copy to (M6, D61).
-- Cross-conversation reading and Send to conversation (D58): the next slice (owner 2026-10-26).
+- Cross-conversation reading (D58): the next slice (owner 2026-10-26). Send to conversation (D58):
+  the Project inbox, after M6.
 - A relevance filter for memory in the prompt (owner 2026-10-26 13:28: only with data, later).
 
 ## Acceptance criteria
 
-- UI-13.1 to UI-13.21.
+- UI-13.1 to UI-13.17, UI-13.19 to UI-13.21 (UI-13.18 is M6-4, D56).
 - UI-1.6, UI-1.14 to UI-1.19.
 - UI-8.6, UI-8.9, UI-9.5, UI-9.6.
 - Invariants from `domain-model.md` §14: a project memory item is never in the prompt of a run
@@ -129,7 +130,10 @@ adds, so a later relevance filter can be decided on data (owner 2026-10-26 13:28
 
 ## Open questions
 
-None. Decided in the PR #37 review (owner, 2026-10-26 14:34):
+If M5b is the first plan consumer, its spec pass delivers Plans-1 and Plans-2 and resolves the
+D57/D54 boundary (`development-plan.md`, Shared plan approvals).
+
+Decided in the PR #37 review (owner, 2026-10-26 14:34):
 
 - D58 (cross-conversation reading, FTS5 search entries) is the next slice after M5b, to keep M5b
   smaller.

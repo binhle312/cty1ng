@@ -187,7 +187,7 @@ After a successful Create, the bot page opens on the Profile tab with a toast.
 that cannot run) opens this page filled from `GET /bots/{id}/clone-template` (UI-4.4).
 
 - **CL1, normal clone.** The page opens on **step 4, Model**, because a change of model is the
-  usual reason to clone (BT-3). Every step shows ✓, so **Create** works at once. A banner under
+  usual reason to clone (BT-3). The other steps show ✓, so **Create** works at once. A banner under
   the stepper says **Cloning {name}**, "Everything is copied, with the same skill versions and
   tools. Two things are new: bot memory starts empty, and the colour is a free one.", and the
   link **Open {name}** (UI-5.4).

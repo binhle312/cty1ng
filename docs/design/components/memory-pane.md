@@ -71,10 +71,10 @@ with a card at the top:
 - Buttons: **Apply {n} choices** (`primary`) and **Not now**. Not now is Decide later for every
   item.
 - A change to the instructions from this card does not start a new check. Only the owner's own
-  save of the instructions starts one, and a project has at most one queued check.
+  save of the instructions starts one, and a project has at most one check request in flight.
 
 **Open conflicts.** An item from Decide later keeps a `primary` mark in the pane and on the Memory
-page: "Disagrees with instructions, line {n}" and **Decide**, which opens the three choices for
+page: "Disagrees with instructions, line {n}" and **Decide**, which opens the choices for
 that item. The app gives each run in the project the list of open conflicts. When a task touches
 one, the bot asks about it in its plan (`plan-card.md` §2). Until the owner decides, runs follow
 the instructions.
@@ -84,4 +84,4 @@ the instructions.
 - D43 (memory precedence and the conflict question) in `conversation-rules.md`.
 - `flow-view.md` and UI-12: the right pane is shared with Memory (D44).
 - D47: the check card choices, Decide later and the open conflicts list. Tests: the check card
-  never queues a check run, and no bot tool queues one.
+  never starts a check request, and no bot tool starts one.

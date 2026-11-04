@@ -35,7 +35,7 @@ The whole card is one link to the bot page. Top to bottom:
 | Band | A plain fade of the bot colour across the top of the card (`bot-page.md` §5) |
 | Avatar | 72 px (`bot-avatar.md` §2) with the state badge in its top-right slot (`bot-status.md`) |
 | Name | Semibold, one line |
-| Model badge | "{model label} · {effort}", for example "Claude Sonnet · high" (no effort part when the model has none) |
+| Model badge | "{model label} · {effort}", for example "Claude Sonnet · High" (no effort part when the model has none) |
 | Description | 2 lines, cut with "…" |
 | Numbers | "{n} skills", with "↑{n}" in `primary` when skill updates exist, "{n} projects", "{n} conversations" |
 | Health line | Only when needed (§4), just above the status |

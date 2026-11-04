@@ -12,7 +12,7 @@ see what each bot is doing, how it works, and whether it is doing the work well.
 one machine for one human; later phases may run on a VPS for several humans.
 
 Each bot has a persona, a model, and a set of skills (written playbooks). In a conversation the
-human mentions bots to ask for work; bots reply, write files into the conversation's workspace,
+human mentions bots to ask for work; bots reply, write files into the Library of the conversation's place,
 and hand work to each other only through the human's approval.
 
 ## Problem
@@ -73,11 +73,11 @@ given the order. Nothing runs while the laptop sleeps or the app is closed; that
 3. **Bot detail**: assign and remove skills (each pinned to a version), upgrade skill versions,
    toggle "always load", change avatar, edit name and persona.
 4. **Header**: every bot as a round avatar with a name tooltip, draggable into a conversation.
-5. **Conversation rail**: round icons with title tooltips; "+" at the top creates a conversation.
+5. **Left bar**: a rail of projects, and bar 2 with the conversations of the selected place; "+" above the list creates a conversation.
 6. **Conversation**: one or more bots per conversation, `@mention` limited to members, streaming
    replies, skill provenance chips, message editing with branches.
 7. **Bot discussion**: optional, bounded by a turn budget the bots are told about.
-8. **Parity with the earlier prototype**: a workspace with files (one per project, D37), attachments,
+8. **Files and handoffs**: a Library of files (one per project and one Home Library, D52), attachments,
    approval handoffs.
 9. **Statistics**: charts of usage by model, bot and skill (D24).
 10. **Flow view**: an animated Timeline map beside the conversation (D26, D27); a Team map comes back when bots work together without the owner.
@@ -123,13 +123,13 @@ Confirmed by the owner (2026-10-21).
 | A permanent activity log (who changed what, before and after, for every change) | One owner: conversation lines, memory item fields, run steps and git history cover tracing (D38) | M9, with multiple users |
 | Payments and bookings | The trip planner proposes; a human pays. Never automatic, never stores card details | Later, if ever |
 | A "lead" bot that routes un-mentioned messages | Hides who decided what; extra cost (D2) | Maybe never |
-| Conversation search, archive, folders | Rail works for a few dozen conversations | Later |
+| Conversation search, archive, folders | Bar 2 works for a few dozen conversations | Later |
 | History summarisation | Old messages are trimmed instead (`../conversation-rules.md`). When it comes: show it as a state and a system line, and let the owner start it by hand (`../research/chat-client-patterns.md` P10) | Later |
 | Structured question cards from bots (choices instead of free text) | Handoff cards cover the formal step for now (research P11) | Later |
 | Reply to a specific message | Mentions plus D31 cover it; needs a schema and API change (research P4) | After M5 |
 | Bots working on another project folder on the machine (following its AGENTS.md and skills) | Needs a secrets deny-list, review branches and approval rules (D23) | Later milestone |
 | Executable skills (scripts) | Would need a real sandbox | Later, if ever |
-| Custom conversation icon upload | 10 presets cover it for now | Later |
+| Custom conversation icon upload | The icon comes from the bot avatars (UI-1.3) | Later |
 | "Regenerate" a bot reply | Editing human messages covers the main need | Later |
 | Files map in the Flow view; pixel-art Flow renderer | Timeline first (Team map parked, D26 amendment); renderer is swappable (D27) | Later |
 | Branching the workspace with message branches | Complex; edits warn instead | Later, if needed |
@@ -153,8 +153,8 @@ journey 1 (see `../testing.md`).
 
 **J1. First use.** Owner opens the app → creates a skill `write-user-stories` → creates bot
 "BA" with a model and that skill → clicks "+" to create a conversation → drags BA from the header
-into the conversation → chooses "Full history" → types "Write stories for a login page" → BA streams a
-reply, shows the chip `write-user-stories v1`, and writes `user-stories/login.md`.
+into the conversation → chooses "Full history" → types "Write stories for a login page" → BA shows a
+plan → the owner approves it (D48) → BA streams a reply, shows the chip `write-user-stories v1`, and writes `user-stories/login.md`.
 
 **J2. Team discussion.** Owner adds "Designer" to the same conversation → enables bot
 discussion with limit 4 → asks "@BA @Designer agree on the login screens" → the bots exchange up
@@ -189,7 +189,7 @@ Use these words, with these meanings, in code, database, API, UI and docs.
 | **Pin** | The skill version a bot uses (`bot_skills.skill_version_id`). Changes only by upgrade or downgrade. |
 | **Always load** | Per pin flag: the skill body is in the bot's prompt on every run instead of loaded on demand. |
 | **Author** | The user who created a skill. Only the author can create new versions or deprecate it. |
-| **Deprecated** | A skill hidden from new assignment; pinned bots keep working. Replaces delete. |
+| **Deprecated** | A skill hidden from new assignment; pinned bots keep working. Only a deprecated skill can be deleted, through Trash (D49). |
 | **Skill draft** | A skill or skill version a bot proposed when the owner asked. Nothing changes until the owner approves it; the owner is then its author (D41). |
 | **Model catalog** | `config/models.yaml`: the models a bot can be created with. |
 | **Effort** | A model's reasoning-effort setting, if the model has one. |
@@ -211,7 +211,7 @@ Use these words, with these meanings, in code, database, API, UI and docs.
 | **Daily cap** | Owner-level limit on today's estimated spend; alerts at 75% and 90%, and new runs are refused once reached (D40). |
 | **Project** | A named group of conversations with a shared project memory (and, later, an attached folder, D23). A conversation may sit outside any project (D37). |
 | **Bot memory** | What a bot has learned about how the owner likes it to work, from 1:1 conversations outside projects. Used by that bot everywhere (D38). |
-| **Library** | The project's workspace files as the UI names them: a row in the left bar that opens the files page (`../design/components/left-bar.md`). |
+| **Library** | The workspace files of a project or of Home, as the UI names them: a row in the left bar that opens the files page (`../design/components/left-bar.md`). |
 | **Project memory** | Facts about the work, learned in a project's conversations and shared by every bot in that project, never outside it (D38). |
 | **Conversation memory** | Facts learned in a multi-bot conversation outside any project, shared by the bots in that conversation only; offered for merging into a project when the conversation moves into one (D38). |
 | **Memory item** | One remembered statement. Earlier versions are kept when memory history is on: off by default for a bot, on for a project or conversation, 5 versions when on (D38). |

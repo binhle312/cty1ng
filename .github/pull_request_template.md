@@ -12,6 +12,12 @@ Link to the brief and decisions.
 | --- | --- |
 | | |
 
+## Review fixes (when a review found something)
+
+| Finding | Cause (the rule broken) | Same cause checked in | Fix | Test |
+| --- | --- | --- | --- | --- |
+| | | | | |
+
 ## Needs human review
 
 - (or "none")

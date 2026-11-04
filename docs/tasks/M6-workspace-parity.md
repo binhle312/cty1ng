@@ -6,14 +6,14 @@ Complete the specification gaps below and write each part's brief before impleme
 
 ## Goal
 
-Everything an earlier prototype could do with files works in the app: bots write to the
+Bots work with files in the app: bots write to the
 Library of their run (D52; no per-bot write folders), the owner attaches files and browses the
 workspace, and handoffs with approval cards move work between bots.
 
 ## Read first
 
 `docs/security.md` §2.2–2.4; `docs/testing.md` §3 (run and handoff behaviour); `docs/conversation-rules.md` §5;
-`docs/decisions/` D18, D19, D52, D54, D61; `docs/domain-model.md` §9, §11; `docs/api.md` §5 (attachments), §5d (Library), §6; `docs/requirements/conversation.md` (UI-3.3 cards, 3.13, 3.16); the round 17 UI design:
+`docs/decisions/` D18, D19, D52, D54, D56, D57, D59, D60, D61; `docs/domain-model.md` §9, §11; `docs/api.md` §5 (attachments), §5d (Library), §6; `docs/requirements/conversation.md` (UI-3.3 cards, 3.13, 3.16); the round 17 UI design:
 `docs/design/components/library-page.md` and `library-cards.md`.
 
 ## In scope
@@ -43,11 +43,13 @@ workspace, and handoffs with approval cards move work between bots.
   changes nothing; a failed try and its Retry keep two separate unsaved rows, and discarding one
   leaves the other.
 - `openFolder(place)` on the workspace port (`security.md` §2.15); the contract suite covers it.
+- The save notice when project memory changed after approval (D59): the notice data at save, and
+  the notice card.
 
 ## Acceptance criteria
 
 - Journey J3 passes in Playwright.
-- UI-3.3 (handoff cards), 3.13, 3.16.
+- UI-3.3 (handoff cards), 3.13, 3.16; UI-13.18 (D56).
 - Every behaviour in `testing.md` §3 "Run and handoff behaviour" that M6 touches has a test.
 - Security tests in `security.md` §3 for the workspace, attachments and file viewer pass.
 - Isolation (D61, invariant 23), each with a test: a run in Project A cannot list, read or write
@@ -68,7 +70,7 @@ workspace, and handoffs with approval cards move work between bots.
 
 ## Tests
 
-Ported workspace, attachment and orchestrator tests; new API tests for files and handoffs;
+Workspace, attachment and run tests; new API tests for files and handoffs;
 Playwright for J3 and for attaching a file.
 
 ## Needs human review
@@ -76,7 +78,7 @@ Playwright for J3 and for attaching a file.
 The UI design in the plan (layout, components, states), approved before UI code is written
 (`docs/workflow.md` §2; sketches in `docs/design/` are not specs).
 
-The sandbox port, file-serving headers, upload handling.
+The workspace port, file-serving headers, upload handling.
 
 ## Open questions
 
@@ -106,7 +108,7 @@ For the D61 copy work (agreed; the source of each item is in brackets):
   (round 15 board; `api.md` §5, PR #41 review).
 
 Parked for this brief (owner, 2026-10-24; notes in the agent checklist, pstack and handoff
-reviews). Each needs the owner's choice before the plan starts:
+reviews). Items marked decided are closed; each other item needs the owner's choice before the plan starts:
 
 - **The approved plan covers the run (D54, accepted 2026-10-25).** The plan lists deletes and
   moves, and Approve covers them; the D52 card shows only operations outside the plan. At run end
