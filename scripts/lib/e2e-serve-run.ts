@@ -30,17 +30,17 @@ export function serveServers(
     command: string;
     cwd?: string | undefined;
     env?: Record<string, string> | undefined;
-    url?: string | undefined;
     timeout?: number | undefined;
   }[],
 ): ServeServer[] {
   return webServers.map((server) => {
-    if (server.url === undefined) throw new Error(`no url for ${server.command}`);
+    const port = Number(server.env?.PORT);
+    if (!Number.isInteger(port)) throw new Error(`no PORT for ${server.command}`);
     return {
       command: server.command,
       cwd: server.cwd,
       env: { ...process.env, ...server.env, LOG_LEVEL: "info" },
-      port: Number(new URL(server.url).port),
+      port,
       // Playwright's default when the config sets none.
       timeoutMs: server.timeout ?? 60_000,
     };

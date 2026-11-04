@@ -69,12 +69,16 @@ it("finds no serve after the marker is removed, and removing it twice is fine", 
   expect(serveIsRunning(path)).toBe(false);
 });
 
-async function reuseFlags(): Promise<boolean[]> {
+async function configServers() {
   vi.resetModules();
   process.env.E2E_DATA_DIR = folder;
   process.env.E2E_SERVE_MARKER = path;
   const { default: config } = await import("../frontend/playwright.config.ts");
-  return [config.webServer ?? []].flat().map((server) => server.reuseExistingServer === true);
+  return [config.webServer ?? []].flat();
+}
+
+async function reuseFlags(): Promise<boolean[]> {
+  return (await configServers()).map((server) => server.reuseExistingServer === true);
 }
 
 it("reuses no server when no serve runs: anything on the ports is not ours", async () => {
@@ -98,4 +102,39 @@ it("reuses no server in CI, also with a marker", async () => {
   process.env.CI = "1";
   writeServeMarker({ path, pid: process.pid });
   expect(await reuseFlags()).toEqual([false, false]);
+});
+
+function listeningLogLine(port: number): string {
+  return JSON.stringify({ level: 30, host: "127.0.0.1", port, app_env: "prod", msg: "listening" });
+}
+
+const HEALTH_URLS = ["http://127.0.0.1:8100/api/health", "http://127.0.0.1:8101/api/health"];
+
+it("waits for each server's own line in a fresh local run, never for any answer", async () => {
+  Reflect.deleteProperty(process.env, "CI");
+  const servers = await configServers();
+  expect(servers.map((server) => server.url)).toEqual([undefined, undefined]);
+  expect(servers.map((server) => server.env?.LOG_LEVEL)).toEqual(["info", "info"]);
+  const [app, dev] = servers.map((server) => server.wait?.stdout);
+  expect(app?.test(listeningLogLine(8100))).toBe(true);
+  expect(app?.test(listeningLogLine(8101))).toBe(false);
+  expect(app?.test(listeningLogLine(81000))).toBe(false);
+  expect(dev?.test(listeningLogLine(8101))).toBe(true);
+  expect(dev?.test(listeningLogLine(8100))).toBe(false);
+});
+
+it("checks the url when it reuses the servers: they have no stdout here", async () => {
+  Reflect.deleteProperty(process.env, "CI");
+  writeServeMarker({ path, pid: process.pid });
+  const servers = await configServers();
+  expect(servers.map((server) => server.url)).toEqual(HEALTH_URLS);
+  expect(servers.map((server) => server.wait)).toEqual([undefined, undefined]);
+});
+
+it("keeps the url and the quiet log level in CI", async () => {
+  process.env.CI = "1";
+  const servers = await configServers();
+  expect(servers.map((server) => server.url)).toEqual(HEALTH_URLS);
+  expect(servers.map((server) => server.wait)).toEqual([undefined, undefined]);
+  expect(servers.map((server) => server.env?.LOG_LEVEL)).toEqual(["warn", "warn"]);
 });

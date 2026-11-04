@@ -241,10 +241,14 @@ that still runs: the script writes its process id to `.e2e-serve`, and the Playw
 checks it. The script writes that file only after each of its own servers has printed its
 `listening` line, which comes after the bind, and removes it first when it stops. So wait for
 `e2e:serve: ready` before you run `pnpm e2e`. A server that does not get its port or does not
-report in time (the config's `timeout`) stops the script. Any other server on ports 8100 or 8101
-(one left by an old run, another checkout's, or the real app) stops the run with Playwright's
-"already used" error, and no test runs. Stop that server, then run again. So before you test old
-code in a `git worktree` (`workflow.md` §2 step 3), ports 8100 and 8101 must be free. The servers keep one
+report in time (the config's `timeout`) stops the script. Without that file, `pnpm e2e` starts its
+own servers and waits for each one's `listening` line, at `LOG_LEVEL=info`
+(`scripts/lib/e2e-server-ready.ts`). It does not wait for an answer on the port, because Playwright
+takes any answer as "up" and does not notice when its own server then fails. So any other server on
+ports 8100 or 8101 (one left by an old run, another checkout's, or the real app) makes its own
+server fail with `EADDRINUSE`, and Playwright stops with "was not able to start": no test runs. For
+port 8100 this comes after the frontend build. Stop that server, then run again. So before you test
+old code in a `git worktree` (`workflow.md` §2 step 3), ports 8100 and 8101 must be free. The servers keep one
 database until you stop the script, so a test that needs a fresh database fails on the second
 run: restart the script. The backend serves the frontend build from disk, so after a frontend
 change run `pnpm build` before `pnpm e2e`; after a backend change, restart the script.

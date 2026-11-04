@@ -6,6 +6,7 @@ import { setTimeout as sleep } from "node:timers/promises";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { serveIsRunning, writeServeMarker } from "./e2e-serve-marker.ts";
 import { listeningPort, serveServers, startServers, type ServeServer } from "./e2e-serve-run.ts";
+import { listeningLine } from "./e2e-server-ready.ts";
 import { groupAlive } from "./process-group.ts";
 
 // The marker means one thing: this script's own servers hold the ports. `pnpm e2e` writes test data
@@ -271,6 +272,8 @@ describe("the real servers", () => {
     ]);
     await waitUntil(() => serveIsRunning(markerPath), 25_000);
     expect(await answers(port)).toBe(true);
+    // The line a fresh `pnpm e2e` waits for (./e2e-server-ready.ts).
+    expect(printed.some((line) => listeningLine(port).test(line))).toBe(true);
     await serve.stop("SIGTERM", 143);
     expect(serveIsRunning(markerPath)).toBe(false);
   });
