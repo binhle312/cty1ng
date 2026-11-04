@@ -50,6 +50,9 @@ const backend = (port: number, env: Record<string, string>) => ({
 export default defineConfig({
   testDir: "test/e2e",
   fullyParallel: true,
+  // More local workers do not finish sooner, and they make each test slower (testing.md §3, "Fast
+  // loop while building"). CI keeps Playwright's default.
+  workers: inCi ? "50%" : 4,
   forbidOnly: process.env.CI !== undefined,
   retries: process.env.CI === undefined ? 0 : 1,
   reporter: process.env.CI === undefined ? "list" : [["list"], ["html", { open: "never" }]],
