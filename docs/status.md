@@ -129,6 +129,6 @@ A slice can also be `blocked` (say on what in Notes).
 | 2026-11-04 | M2c merged (#59); M2 is complete |
 | 2026-11-04 | Every plan now has a file in `docs/plans/` (owner); the plans up to M2 are copied from their PRs |
 | 2026-11-04 | Docs audit ([#61](https://github.com/binhle312/cty1ng/pull/61)): docs matched to the built code and to the current decisions; open questions and code gaps moved to the tables above |
-| 2026-11-04 | The `typescript-best-practices` skill is vendored as a project skill ([#68](https://github.com/binhle312/cty1ng/pull/68), owner); `frontend-conventions.md` wins where they differ |
+| 2026-11-04 | The `typescript-best-practices` skill is vendored as a project skill ([#68](https://github.com/binhle312/cty1ng/pull/68), owner); `frontend-conventions.md` wins where they differ. The invariant principle also takes the diagnosis steps of `principle-fix-root-causes` |
 | 2026-11-04 | Automated security review on: the owner added the `ANTHROPIC_API_KEY` secret, and the review also watches the log, avatar and sensitive data guard code. It runs when the owner marks a PR Ready, on Haiku 5.5; PRs open as drafts |
 | 2026-11-04 | Docs audit answers ([#65](https://github.com/binhle312/cty1ng/pull/65)): the owner answered all the questions; the specs, decisions and tokens match them, and no feature is built |
