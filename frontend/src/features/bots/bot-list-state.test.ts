@@ -259,14 +259,52 @@ describe("a pin change (Always load, Move, + Add)", () => {
     expect(ended.requests).toEqual([]);
   });
 
-  // Q3 (bot-page.md §4.2): the row's actions are off while any change of the row waits.
-  it("says a change of the row is on its way: a move until its answer", () => {
+  // Q3 (bot-page.md §4.2): the row's actions are off while any change of the row waits, until the
+  // refresh after it ends. Its answer alone can leave the page on the old pin (below).
+  it("says a change of the row is on its way: a move until the refresh after it ends", () => {
     const m = move();
     const state = run(start([off]), m.event);
     expect(pinChangeOnItsWay(state, pinOfBa)).toBe(true);
     expect(pinChangeOnItsWay(state, { botId: BA, skillId: typeId("skill", 2) })).toBe(false);
-    expect(pinChangeOnItsWay(run(state, answered(m.id, [v2])), pinOfBa)).toBe(false);
-    expect(pinChangeOnItsWay(run(state, refused(m.id)), pinOfBa)).toBe(false);
+    const saved = run(state, answered(m.id, [v2]));
+    expect(pinChangeOnItsWay(saved, pinOfBa)).toBe(true);
+    expect(pinChangeOnItsWay(run(saved, refreshEnded(m.id)), pinOfBa)).toBe(false);
+    const refusal = run(state, refused(m.id));
+    expect(pinChangeOnItsWay(refusal, pinOfBa)).toBe(true);
+    expect(pinChangeOnItsWay(run(refusal, refreshEnded(m.id)), pinOfBa)).toBe(false);
+  });
+
+  it("says a change of the row is on its way: + Add until the refresh after it ends", () => {
+    const a = add();
+    const saved = run(start([]), a.event, answered(a.id, [off]));
+    expect(pinChangeOnItsWay(saved, pinOfBa)).toBe(true);
+    expect(pinChangeOnItsWay(run(saved, refreshEnded(a.id)), pinOfBa)).toBe(false);
+  });
+
+  // The answer of a move goes in only when no list load landed since it went out. Without the
+  // rule above, the row would turn on showing the old pin, and its next change would send that
+  // pin as `expected` and get a false conflict.
+  it("keeps the row off over a load before the answer, until the refresh brings the new pin", () => {
+    const m = move();
+    const answeredOverLoad = run(start([off]), m.event, listLoaded([off]), answered(m.id, [v2]));
+    expect(shownBots(answeredOverLoad)?.[0]?.pins).toEqual([off]);
+    expect(pinChangeOnItsWay(answeredOverLoad, pinOfBa)).toBe(true);
+    const refreshed = run(answeredOverLoad, listLoaded([v2]));
+    expect(pinChangeOnItsWay(refreshed, pinOfBa)).toBe(true);
+    const ended = run(refreshed, refreshEnded(m.id));
+    expect(pinChangeOnItsWay(ended, pinOfBa)).toBe(false);
+    expect(shownBots(ended)?.[0]?.pins).toEqual([v2]);
+    expect(ended.requests).toEqual([]);
+  });
+
+  it("keeps the row off when a newer change is saved, until the newer change's refresh ends", () => {
+    const first = move();
+    const second = move();
+    const saved = run(start([off]), first.event, second.event, answered(second.id, [v2]));
+    expect(saved.requests.map((request) => request.id)).toEqual([second.id]);
+    expect(pinChangeOnItsWay(run(saved, answered(first.id, [on])), pinOfBa)).toBe(true);
+    expect(pinChangeOnItsWay(run(saved, refreshEnded(first.id)), pinOfBa)).toBe(true);
+    expect(pinChangeOnItsWay(run(saved, refreshEnded(second.id)), pinOfBa)).toBe(false);
   });
 
   it("says a change of the row is on its way: Always load until the refresh after it ends", () => {

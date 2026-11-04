@@ -19,50 +19,24 @@ skill (Lauren Tan), changed where it conflicts with this project.
 | **Branded ids** | `BotId`, `MessageId`, `ConversationId`, `RunId`, `SkillId` are branded TypeID strings from `shared/src/ids.ts` (D36: `bot_…`, `msg_…`; the schema checks the prefix), so one cannot be passed where another is expected. Brands come from a schema parse, never from `as`. |
 | **Simplest total type** | Keep `T[]` while every use is total. Strengthen (for example to a non-empty tuple) only where the loose type forces `!`, a cast or a "should never happen" throw. |
 | **Object arguments** | Functions with more than two parameters, or two of the same type, take one object. Not on hot paths (render loops, the Flow renderer's per-frame code). Lint checks the count (§3); two of the same type is the reviewer's check. |
-| **One pure module for a stateful screen** | A screen that saves under a lock, takes live events or gets late answers keeps its state rules in one pure module next to it (`<screen>-state.ts`): a reducer from the state and an event to the next state, with no React, fetch or clock. The component sends events and renders the state; it holds no extra flags or refs that change the rules. The module follows the screen's state table (`workflow.md` §2 step 2) and has one test per cell (`testing.md` §3). The bot list and the settings sort of every page have one: `features/bots/bot-list-state.ts`; so do the bot page's Profile and Model tabs: `features/bots/bot-edit-state.ts`. Write them only through `bot-list-store.ts`, never with `setQueryData` (lint checks it), or the next load or answer drops the write. |
+| **One pure module for a stateful screen** | A screen that saves under a lock, takes live events or gets late answers keeps its state rules in one pure module next to it (`<screen>-state.ts`): a reducer from the state and an event to the next state, with no React, fetch or clock. The component sends events and renders the state; it holds no extra flags or refs that change the rules. The module follows the screen's state table (`workflow.md` §2 step 2) and has one test per cell (`testing.md` §3). The bot list and the settings sort of every page have one: `features/bots/bot-list-state.ts`; so do the bot page's Profile and Model tabs: `features/bots/bot-edit-state.ts`, the card after a save: `features/skills/after-save-card-state.ts`, and every dialog that sends one request: `features/skills/dialog-request-state.ts`. |
+| **Bot-list cache writes** | Write the bot list and its settings sort only through `features/bots/bot-list-store.ts`, never with `setQueryData` (lint checks it). A direct cache write bypasses pending requests and can disappear on the next load or answer. |
 | **Answers write only what their request owns** | A request remembers what it was sent from (the `row_version`, the `expected` pin, the tab's base) and which fields it writes. Its answer writes only those fields, and only while the page still shows what the request was sent from. Write the fields as an allowlist typed with `Pick`, so a new field fails to compile until someone decides; never spread the answer and then put back the fields to keep. What the answer checks lives as long as the request, not as long as the component that sent it (a counter in a component stops when the owner leaves the tab), and the answer changes the state as it is now, not a copy from the render that sent it (call the newest callback). Examples: `withSaveAnswer` in `features/bots/bot-edit-form.ts`, the pin answers in `features/bots/bot-list-state.ts`, `useAvatarUpload` in `features/bots/crop-card.tsx`. |
 | **Real tests** | Test with the real store, router and reducer; mock only the network and the clock. Matches `testing.md`. |
 | **No `console`** | Use the small logger in `frontend/src/lib/log.ts`; it is silent in production builds and never logs message or file contents (`security.md` §2.10). The backend logs through Pino (`architecture.md` §9). |
 
-**Not adopted:** the source suggests modelling a time range as start plus duration. Our time
-ranges are relative expressions (`now-7d` to `now`) shared with the backend
-(`requirements/time-range-picker.md`), so they stay `{ from, to }`.
+**Not adopted:** the source suggests modelling a time range as start plus duration.
+The frontend and URL keep the unresolved `{ from, to }` expressions, such as `now-7d` to `now`.
+The frontend resolves them to absolute ISO-8601 instants before each API call
+([time range contract](requirements/time-range-picker.md#contract-with-the-backend-and-the-url)).
 
 ## 2. Examples
 
-SSE event handling, parsed at the boundary and switched exhaustively:
-
-```ts
-const RunStartedEvent = z.object({ type: z.literal("run.started"), run: RunSchema });
-const MessageDeltaEvent = z.object({
-  type: z.literal("message.delta"),
-  message_id: MessageId,
-  offset: z.number().int().nonnegative(),
-  text: z.string(),
-});
-const StreamEvent = z.discriminatedUnion("type", [RunStartedEvent, MessageDeltaEvent /* … */]);
-type StreamEvent = z.infer<typeof StreamEvent>;
-
-function apply(event: StreamEvent): void {
-  switch (event.type) {
-    case "run.started":
-      /* … */
-      break;
-    case "message.delta":
-      /* … */
-      break;
-    default: {
-      const _exhaustive: never = event;
-      void _exhaustive;
-    }
-  }
-}
-
-// at the boundary only: the SSE event name becomes the discriminant
-const parsed = StreamEvent.safeParse({ type: raw.type, ...JSON.parse(raw.data) });
-if (!parsed.success) return log.warn("stream.unknown_event", { seq: raw.lastEventId });
-apply(parsed.data);
-```
+SSE events use the shared schema in [stream-event.ts](../shared/src/events/stream-event.ts).
+Persisted events carry `{ type, seq, data }`; control events carry `{ type, data }`.
+[parseFrame](../frontend/src/lib/realtime/sse.ts) parses the frame at the boundary.
+The [reducer](../frontend/src/lib/realtime/reducer.ts) handles the parsed union with an exhaustive switch.
+Use these implementations as the example; do not define a second event schema in the frontend.
 
 UI state as a union instead of flags:
 
@@ -128,6 +102,7 @@ step 2), and add to it when a build finds a new one.
 | Tests: `act()` | When the callback returns a value (for example `act(() => fireEvent.click(x))`), `act()` returns a promise, and `no-floating-promises` fails. | Give the callback braces so it returns nothing, and call `act()` as a statement: `act(() => { fireEvent.click(x); });`. Use `await act(() => promise)` only for async work. |
 | Arrow functions | `no-confusing-void-expression` fails when an arrow function returns the value of a call that returns nothing. | Put the body in braces: `() => { doIt(); }`. |
 | TanStack Query | `fetchQuery` is deprecated, and `no-deprecated` fails. | Use `queryClient.query({ … })`. |
+| Code that waits for a list while live events start newer loads | TanStack Query gives a cut load's promise to the newer load only once. After a second cut, `queryClient.query()` fails with a `CancelledError`, and `invalidateQueries()` ends with the old list still in place. A card then shows as its toast, and a row's actions turn on too early | A read that acts on its answer, and a refresh that ends a row's lock, use `readNewest` and `refreshQueries` (`lib/api/query-reads.ts`). A refresh before a page opens stays plain: the page shows its skeleton while the list loads, and it must open even if live events keep the list loading. A test of a cut load runs the real library, with two cuts, not one |
 | A page that finds its item in a list | The skill page finds its skill in the cached list. Opened right after a Create, the list is still old, the page throws `notFound()`, and the router keeps Page not found. | Refetch the list (`await queryClient.invalidateQueries(…)`) before you navigate to the new item. |
 | Base UI toast | `Toast.Title` renders an `<h2>`, so a toast adds a heading to the page. | In tests, look for page headings inside `main`. |
 | Base UI tabs | `onValueChange` gives the value as `any`, and `no-unsafe-argument` fails. | Map it to a literal: `value === "bots" ? "bots" : "skill"`. |
@@ -137,7 +112,7 @@ step 2), and add to it when a build finds a new one.
 | Settings in a query key | A query key that holds a setting starts a new query when the setting changes; the page shows its skeleton again and the editor under it, with its draft, is thrown away. | Keep settings out of the keys of queries that hold an editor's source; apply the setting when the editor opens (`features/skills/new-skill-page.tsx`). |
 | Waiting on a query that keeps failing | A query with no data goes back to `isPending` on every new try. A page that shows a skeleton while `isPending` unmounts its content, the content's own observer starts a new try on mount, and the page loops. | Wait only for the first answer (keep a "settled" flag), then show the content or the error state (`features/skills/new-skill-page.tsx`). |
 | One mutation hook for many rows | In TanStack Query v5 a second `mutate` on a hook drops the `onSuccess`/`onError` passed to the first call, and `isPending`/`variables` follow only the newest call. A failure of the first request goes unseen, and its row looks done while it is still on its way. | Handle each request's result through its own `mutateAsync` promise, and keep the pending state per row or per dialog in local state (`features/skills/skill-bots-tab.tsx`, `removeFromBots` in `features/skills/skill-page.tsx`). |
-| A dialog request that ends after its dialog closed | The owner can close a dialog (Skip, Cancel, Esc) while its request is on its way. A late result then closes or writes its error into the dialog opened since. | Tie the result to the dialog that sent it: a new dialog object or an open counter. While that dialog is open the result goes there; after, a success does nothing more and a failure shows as a toast (`features/skills/skill-bots-tab.tsx`, `features/skills/skill-page.tsx`). |
+| A dialog request that ends after its dialog closed | The owner can close a dialog (Skip, Cancel, Esc) while its request is on its way. A late result then closes or writes its error into the dialog opened since. | Send it through `useDialogRequests` (`features/skills/dialog-requests.ts`): each open makes a new dialog object, and the rules are in one pure module (`dialog-request-state.ts`). While that dialog is open the result goes there; after, a success does nothing more and a failure shows as a toast, also after the page went. |
 | A mutation that ends after its page closed | The `onSuccess` set on `useMutation` still runs after the component unmounts, so a late `navigate` moves the page the owner went to. | Turn the way out off while the request is pending, and skip the navigation when the component has closed (`features/skills/new-skill-page.tsx`). |
 | Read-only fields | A `disabled` input takes no focus, so its text cannot be selected or copied from the keyboard. | A field the owner may not change but may read uses `readOnly` (`features/skills/skill-fields.tsx`); keep `disabled` for controls that do nothing. |
 | Layers (z-index) | Base UI sets no z-index on tooltips and menus, so a page part with `relative z-10` (a check box, a History time, the user panel) shows through them. | The scale: page parts that must sit above a covering click area use `z-10`; dialog backdrops `z-40`; dialogs, toasts, tooltips and menus `z-50` (`components/ui/`). A new popup gets `z-50`. |

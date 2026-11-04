@@ -220,6 +220,35 @@ describe("the bot page", () => {
     expect(valueOf("Description")).toBe("Mine.");
   });
 
+  // Q4 with a name the server normalises: the list has "New BA", the field the text that was sent.
+  it("shows no conflict after a lost Save of a name the server stores in another form", async () => {
+    const state = { bots: [makeBot(1, "BA"), makeBot(2, "Designer")] };
+    await open(state, {
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: () => {
+          const ba = state.bots[0];
+          if (ba === undefined) return { status: 404 };
+          state.bots = [
+            { ...ba, name: "New BA", row_version: ba.row_version + 1 },
+            ...state.bots.slice(1),
+          ];
+          return NETWORK_ERROR;
+        },
+      },
+    });
+    await heading();
+    type({ label: "Name", text: "  New   BA  " });
+    click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("Could not save BA. Try again.")).toBeTruthy();
+    expect(
+      await screen.findByText("No changes. Edits apply from the next run.", undefined, {
+        timeout: 5000,
+      }),
+    ).toBeTruthy();
+    expect(screen.queryByText(/changed in another place/)).toBeNull();
+    expect(valueOf("Name")).toBe("New BA");
+  });
+
   // State table (bot-page.md §4.2), "The bot leaves the list" × "This tab's Save on its way".
   it("shows the toast of a Save that fails after the bot left the list", async () => {
     const save = heldAnswer();
@@ -1983,6 +2012,39 @@ describe("the Skills tab (bot-page.md §7)", () => {
     });
   });
 
+  // A failed read of a skill's versions comes before any pin change; the skill may have left
+  // (Trash), so the card's list loads again, or Try again would fail the same way.
+  it("+ Add loads the lists again when a skill's versions do not load", async () => {
+    await open(
+      { bots: [makeBot(1, "BA", [makePin()])] },
+      {
+        routes: {
+          "GET /api/skills": () => ({ body: [makeSkill(), writing] }),
+          [`GET /api/skills/${writing.id}/versions`]: () => ({
+            status: 404,
+            body: { error: { code: "not_found", message: "Gone." } },
+          }),
+        },
+        path: "/bots/ba?tab=skills",
+      },
+    );
+    await heading();
+    click(screen.getByRole("button", { name: "Add" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add skills to BA" });
+    const list = await within(dialog).findByRole("list", { name: "Skills to add" });
+    click(await within(list).findByRole("checkbox"));
+    const bots = fake?.sent("GET", "/api/bots").length ?? 0;
+    const skills = fake?.sent("GET", "/api/skills").length ?? 0;
+    click(within(dialog).getByRole("button", { name: "Add 1" }));
+    expect(
+      await within(dialog).findByText("The app could not add 1 skill. Try again."),
+    ).toBeTruthy();
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(bots);
+      expect(fake?.sent("GET", "/api/skills").length).toBeGreaterThan(skills);
+    });
+  });
+
   it("says when a pin changed in another place, and loads the newest pins", async () => {
     await open(
       { bots: [makeBot(1, "BA", pins.slice(0, 1))] },
@@ -2223,6 +2285,106 @@ describe("the Skills tab (bot-page.md §7)", () => {
     click(screen.getByRole("button", { name: /Actions for/ }));
     click(await screen.findByRole("menuitem", { name: "Remove" }));
     expect(await screen.findByText("BA has no skills yet.")).toBeTruthy();
+  });
+
+  // Review of PR #59: a list load landed while the Upgrade waited, so its answer wrote no pin. The
+  // row turned on at the answer with the old version, and its next change got a false conflict.
+  it("keeps the row's actions off after a move's answer, until the refresh brings the new version", async () => {
+    const held = heldAnswer();
+    const refreshed = heldAnswer();
+    const [zeta] = pins;
+    if (zeta === undefined) throw new Error("no pins");
+    const zetaV3 = { ...zeta, version: 3, skill_version_id: versionId(3), latest_version: 3 };
+    const state = { bots: [makeBot(1, "BA", [zeta])] };
+    let holdList = false;
+    await open(state, {
+      routes: {
+        [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+        [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
+          body: { body: [{ op: "add", text: "New line." }], description: null },
+        }),
+        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => held.promise,
+        "GET /api/bots": async () => (holdList ? refreshed.promise : { body: state.bots }),
+      },
+      path: "/bots/ba?tab=skills",
+    });
+    await heading();
+    click(screen.getByRole("button", { name: "v3 available" }));
+    const dialog = await screen.findByRole("dialog", { name: "Upgrade Zeta to v3?" });
+    click(await within(dialog).findByRole("button", { name: "Upgrade to v3" }));
+    await waitFor(() => {
+      expect(fake?.sent("PUT", `/api/bots/${BA_ID}/skills/${SKILL_ID}`)).toHaveLength(1);
+    });
+    const loads = fake?.sent("GET", "/api/bots").length ?? 0;
+    refocus();
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(loads);
+    });
+    await act(() => Promise.resolve());
+    holdList = true;
+    state.bots = [makeBot(1, "BA", [zetaV3])];
+    await held.answer({ body: makeBot(1, "BA", [zetaV3]) });
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+    // The page still shows v2, because that answer wrote no pin: the row must stay off.
+    expect(isOff(screen.getByRole("button", { name: "v3 available" }))).toBe(true);
+    expect(isOff(screen.getByRole("button", { name: "Actions for Zeta" }))).toBe(true);
+    expect(isOff(screen.getByRole("switch", { name: "Always load Zeta" }))).toBe(true);
+    await refreshed.answer({ body: state.bots });
+    await waitFor(() => {
+      expect(isOff(screen.getByRole("button", { name: "Actions for Zeta" }))).toBe(false);
+    });
+    expect(screen.queryByRole("button", { name: "v3 available" })).toBeNull();
+    expect(isOff(screen.getByRole("switch", { name: "Always load Zeta" }))).toBe(false);
+  });
+
+  // Live events can cut the refresh after a move short again and again. TanStack Query ends an
+  // `invalidateQueries` that was cut twice, with the old list still in place.
+  it("keeps the row's actions off when two newer loads cut the refresh short", async () => {
+    const refreshed = heldAnswer();
+    const [zeta] = pins;
+    if (zeta === undefined) throw new Error("no pins");
+    const zetaV3 = { ...zeta, version: 3, skill_version_id: versionId(3), latest_version: 3 };
+    const state = { bots: [makeBot(1, "BA", [zeta])] };
+    let holdList = false;
+    const { queryClient } = await open(state, {
+      routes: {
+        [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+        [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
+          body: { body: [{ op: "add", text: "New line." }], description: null },
+        }),
+        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => {
+          holdList = true;
+          state.bots = [makeBot(1, "BA", [zetaV3])];
+          return { body: makeBot(1, "BA", [zetaV3]) };
+        },
+        "GET /api/bots": async () => (holdList ? refreshed.promise : { body: state.bots }),
+      },
+      path: "/bots/ba?tab=skills",
+    });
+    await heading();
+    click(screen.getByRole("button", { name: "v3 available" }));
+    const dialog = await screen.findByRole("dialog", { name: "Upgrade Zeta to v3?" });
+    click(await within(dialog).findByRole("button", { name: "Upgrade to v3" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+    const loads = fake?.sent("GET", "/api/bots").length ?? 0;
+    expect(loads).toBeGreaterThan(0);
+    for (const cut of [1, 2]) {
+      await act(async () => {
+        void queryClient.invalidateQueries({ queryKey: listBotsQueryKey() });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      expect(fake?.sent("GET", "/api/bots").length).toBe(loads + cut);
+    }
+    // The upgrade's answer wrote the pin, so the list shows v3; the refresh has not ended.
+    expect(isOff(screen.getByRole("button", { name: "Actions for Zeta" }))).toBe(true);
+    await refreshed.answer({ body: state.bots });
+    await waitFor(() => {
+      expect(isOff(screen.getByRole("button", { name: "Actions for Zeta" }))).toBe(false);
+    });
   });
 
   it("turns the Always load switch off while a version move of its row waits", async () => {

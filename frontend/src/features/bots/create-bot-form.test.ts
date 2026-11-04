@@ -75,8 +75,8 @@ describe("the defaults of a new form", () => {
 
   it("count as no input, so leaving asks nothing", () => {
     const start = emptyForm(BOT_PALETTE[0], SETTINGS);
-    expect(hasInput(start, start)).toBe(false);
-    expect(hasInput({ ...start, name: "B" }, start)).toBe(true);
+    expect(hasInput({ form: start, start })).toBe(false);
+    expect(hasInput({ form: { ...start, name: "B" }, start })).toBe(true);
   });
 });
 

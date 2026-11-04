@@ -299,7 +299,7 @@ function CreateBotView({
 
   const nameText = form.name.trim() === "" ? "The bot" : form.name.trim();
   const leave = useLeaveGuard({
-    dirty: hasInput(form, start),
+    dirty: hasInput({ form, start }),
     text: `${nameText} is not created. What you typed in the 4 steps is lost.`,
     words: LEAVE_WORDS,
   });
@@ -372,8 +372,9 @@ function CreateBotView({
     })
       .then(async ({ data: bot }) => {
         leave.allowLeave();
-        // The bot page finds the bot in the list, so the list is fresh before it opens
-        // (frontend-conventions.md §5).
+        // The bot page finds the bot in the list, so the list is refreshed before it opens
+        // (frontend-conventions.md §5). Live events can end this wait early; the page then shows
+        // its skeleton until the newest list comes.
         await queryClient.invalidateQueries({ predicate: PIN_QUERIES });
         showToast(`Created ${bot.name} ✨`);
         if (mounted.current) {

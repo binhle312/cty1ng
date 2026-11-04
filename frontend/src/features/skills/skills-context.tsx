@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { AfterSaveCard } from "./after-save-cards.tsx";
+import type { AfterSaveCard } from "./after-save-card-state.ts";
 
 // What the list column needs to know about the page beside it (skills-page.md §2, §4, §15):
 // which skill has unsaved changes (the `primary` dot after its name), and the zip that Import

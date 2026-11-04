@@ -1,7 +1,8 @@
+import { normaliseBotName } from "@cty1ng/shared/bots";
 import { describe, expect, it } from "vitest";
 import { BOT_SETTINGS, makeBot } from "../../../test/fixtures.ts";
 import { everyOrder, type Model, randomOrders, type Step } from "../../../test/sequences.ts";
-import { type EditTab, editFormOf } from "./bot-edit-form.ts";
+import { type EditTab, editFormOf, storedForm } from "./bot-edit-form.ts";
 import {
   EDIT_TABS,
   type EditEvent,
@@ -127,7 +128,7 @@ function saveOnServer(world: EditWorld, flight: InFlight) {
     return;
   }
   const next: ServerBot = { ...world.server, rowVersion: world.server.rowVersion + 1, by: "page" };
-  if (sent.fields.includes("name")) next.name = sent.form.name;
+  if (sent.fields.includes("name")) next.name = normaliseBotName(sent.form.name);
   if (sent.fields.includes("request_limit")) next.limit = sent.form.request_limit;
   newVersion(world, next);
   flight.result = { ok: true, rowVersion: next.rowVersion };
@@ -212,7 +213,7 @@ function answerStep(world: EditWorld, flight: InFlight): Step {
           for (const key of TAB_KEYS[sent.tab]) {
             if (key === "description" || world.typedSince[key].size > 0) continue;
             expect(valueOf(world.state.form, key), `${key} after a let-go`).toBe(
-              valueOf(sent.form, key),
+              valueOf(storedForm(sent.form), key),
             );
           }
         }
@@ -467,7 +468,12 @@ function editModel({
           // A tab with no changes shows the server's values.
           expect(state.base[tab]).toBe(server.rowVersion);
           for (const key of TAB_KEYS[tab]) {
-            expect(valueOf(state.form, key), `${tab} ${key}`).toBe(server[key]);
+            // White space typed in a name is no change, and the field may keep it.
+            const shown = valueOf(state.form, key);
+            expect(
+              typeof shown === "string" && key === "name" ? normaliseBotName(shown) : shown,
+              `${tab} ${key}`,
+            ).toBe(server[key]);
           }
         } else {
           // A tab with changes is at the server's row_version, or shows the conflict. A conflict
@@ -501,6 +507,15 @@ describe("Profile and Model edit sequences", { timeout: 30_000 }, () => {
     const paths = everyOrder(
       editModel({ saves: 1, others: 1, names: ["BA", "X", TAKEN], limits: [] }),
       6,
+    );
+    expect(paths).toBeGreaterThan(1000);
+  });
+
+  // The server stores the name trimmed and collapsed, so its name is not the text that was sent.
+  it("every order of a Save of a name the server stores in another form", () => {
+    const paths = everyOrder(
+      editModel({ saves: 1, others: 1, names: ["BA", " X  "], limits: [] }),
+      7,
     );
     expect(paths).toBeGreaterThan(1000);
   });

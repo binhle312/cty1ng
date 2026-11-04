@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { Button } from "../../components/ui/button.tsx";
 import { Dialog, DialogButtons, DialogText } from "../../components/ui/dialog.tsx";
 import { showToast } from "../../components/ui/toast.tsx";
@@ -9,6 +9,7 @@ import {
   getSettingsOptions,
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
+import { useDialogRequests } from "../skills/dialog-requests.ts";
 import { SaveButton } from "../skills/save-bar.tsx";
 import type { BotRow } from "./bot-queries.ts";
 
@@ -19,44 +20,28 @@ export function useDeleteBot({ onDeleted }: { onDeleted?: (bot: BotRow) => void 
   const queryClient = useQueryClient();
   const settings = useQuery(getSettingsOptions());
   // A new object each time the dialog opens, so a late answer never writes into a newer dialog
-  // (frontend-conventions.md §5).
-  const [asked, setAsked] = useState<{ bot: BotRow } | null>(null);
-  const shown = useRef<{ bot: BotRow } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
+  // (`dialog-request-state.ts`).
+  const { dialog: asked, open, close, error, waiting, run } = useDialogRequests<{ bot: BotRow }>();
   const { mutateAsync } = useMutation(deleteBotMutation());
 
-  const close = () => {
-    shown.current = null;
-    setAsked(null);
-    setError(null);
-  };
-
   const confirm = () => {
-    const request = asked;
-    if (request === null) return;
-    setPending(true);
-    mutateAsync({ path: { id: request.bot.id } })
-      .then(() => {
+    if (asked === null) return;
+    const { bot } = asked;
+    run({
+      dialog: asked,
+      request: mutateAsync({ path: { id: bot.id } }),
+      done: () => {
         void queryClient.invalidateQueries({ predicate: PIN_QUERIES });
-        showToast(`${request.bot.name} is in Trash.`);
-        if (shown.current === request) close();
-        onDeleted?.(request.bot);
-      })
-      .catch((cause: unknown) => {
-        if (shown.current === request) setError(apiErrorText(cause));
-        else showToast(`${request.bot.name} was not deleted. ${apiErrorText(cause)}`);
-      })
-      .finally(() => {
-        setPending(false);
-      });
+        showToast(`${bot.name} is in Trash.`);
+        onDeleted?.(bot);
+      },
+      failed: apiErrorText,
+      lateText: (cause) => `${bot.name} was not deleted. ${apiErrorText(cause)}`,
+    });
   };
 
   const ask = (bot: BotRow) => {
-    const request = { bot };
-    shown.current = request;
-    setError(null);
-    setAsked(request);
+    open({ bot });
   };
 
   const trashDays = settings.data?.trash_days;
@@ -64,7 +49,7 @@ export function useDeleteBot({ onDeleted }: { onDeleted?: (bot: BotRow) => void 
     <DeleteBotDialog
       bot={asked?.bot ?? null}
       trashDays={trashDays}
-      pending={pending}
+      pending={waiting}
       error={error}
       onCancel={close}
       onConfirm={confirm}

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ellipsis, Plus } from "lucide-react";
+import { useLayoutEffect } from "react";
 import { Button } from "../../components/ui/button.tsx";
 import {
   MenuItem,
@@ -19,16 +20,16 @@ import {
   setBotSkillMutation,
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
+import { readNewest, refreshQueries } from "../../lib/api/query-reads.ts";
 import { Pill, VersionPill } from "../skills/pills.tsx";
 import { ChangeVersionDialog, MoveVersionDialog } from "../skills/skill-pin-dialogs.tsx";
 import { useDialogRequests } from "../skills/dialog-requests.ts";
 import { AddSkillsDialog } from "./add-skills-dialog.tsx";
 import { type BotPin, type BotRow, pinErrorText } from "./bot-queries.ts";
 import {
-  answeredBy,
   sendPinChange,
+  sendPinChanges,
   sendPinRemove,
-  startPinChange,
   useAlwaysLoadsOnTheirWay,
   usePinChangesOnTheirWay,
 } from "./bot-list-store.ts";
@@ -55,16 +56,15 @@ function sortedPins(pins: readonly BotPin[]): BotPin[] {
 
 export function BotSkillsTab({ bot }: { bot: BotRow }) {
   const queryClient = useQueryClient();
-  const refresh = () => queryClient.invalidateQueries({ predicate: PIN_QUERIES });
+  const refresh = () => refreshQueries(queryClient, { predicate: PIN_QUERIES });
   const {
     dialog,
     open: setDialog,
     close: closeDialog,
-    closeNow: closeDialogNow,
     error: dialogError,
     pending: dialogPending,
     run: runInDialog,
-  } = useDialogRequests<Dialog>({ refresh });
+  } = useDialogRequests<Dialog>();
   // The Always load value of each toggle on its way; it outlives the tab (`bot-list-store.ts`).
   const loadOnItsWay = useAlwaysLoadsOnTheirWay();
   // A row whose change is on its way has its actions off (bot-page.md §4.2, Q3).
@@ -135,17 +135,22 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
     const outcomes = await Promise.all(
       skillIds.map(async (skillId) => {
         try {
-          const list = await queryClient.query(listSkillVersionsOptions({ path: { id: skillId } }));
+          const list = await readNewest(() =>
+            queryClient.query(listSkillVersionsOptions({ path: { id: skillId } })),
+          );
           const latest = list[0];
           if (latest === undefined) throw new Error("no version");
-          const change = startPinChange(queryClient, { botId: bot.id, skillId, expected: null });
-          await answeredBy(
-            change,
-            setPin.mutateAsync({
-              path: { id: bot.id, skill_id: skillId },
-              body: { skill_version_id: latest.id, always_load: false, expected: null },
-            }),
-          );
+          await sendPinChanges({
+            queryClient,
+            pins: [{ botId: bot.id, skillId, expected: null }],
+            request: () =>
+              setPin.mutateAsync({
+                path: { id: bot.id, skill_id: skillId },
+                body: { skill_version_id: latest.id, always_load: false, expected: null },
+              }),
+            botsOf: (answer) => [answer],
+            refresh,
+          });
           return "added";
         } catch (error) {
           if (readApiError(error)?.code !== "stale_write") return "failed";
@@ -157,6 +162,9 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
     );
     const failures = outcomes.filter((outcome) => outcome === "failed").length;
     if (failures > 0) {
+      // A read of the versions fails before any pin change: the skill may have left, so the
+      // card's list loads again.
+      void refresh();
       throw new Error(
         `The app could not add ${String(failures)} ${failures === 1 ? "skill" : "skills"}. Try again.`,
       );
@@ -168,7 +176,10 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
     dialogSkillId === null ? undefined : bot.pins.find((pin) => pin.skill_id === dialogSkillId);
   // The skill of the open dialog left the bot (removed in another place): the dialog closes, so
   // an answer that comes after shows as a toast, not in a dialog that nobody sees.
-  if (dialogSkillId !== null && dialogPin === undefined) closeDialogNow();
+  const dialogPinGone = dialogSkillId !== null && dialogPin === undefined;
+  useLayoutEffect(() => {
+    if (dialogPinGone) closeDialog();
+  }, [dialogPinGone, closeDialog]);
   const has = new Set(bot.pins.map((pin) => pin.skill_id));
   // Undefined until the list comes, so the card says it is loading.
   const addable = skills.data?.filter((skill) => !skill.deprecated && !has.has(skill.id));
@@ -292,24 +303,23 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
             skill_version_id: dialogPin.skill_version_id,
             always_load: dialogPin.always_load,
           };
-          const change = startPinChange(queryClient, {
-            botId: bot.id,
-            skillId: dialogPin.skill_id,
-            expected,
-          });
           runInDialog({
             dialog,
-            request: answeredBy(
-              change,
-              setPin.mutateAsync({
-                path: { id: bot.id, skill_id: dialogPin.skill_id },
-                body: {
-                  skill_version_id: version.id,
-                  always_load: dialogPin.always_load,
-                  expected,
-                },
-              }),
-            ),
+            request: sendPinChanges({
+              queryClient,
+              pins: [{ botId: bot.id, skillId: dialogPin.skill_id, expected }],
+              request: () =>
+                setPin.mutateAsync({
+                  path: { id: bot.id, skill_id: dialogPin.skill_id },
+                  body: {
+                    skill_version_id: version.id,
+                    always_load: dialogPin.always_load,
+                    expected,
+                  },
+                }),
+              botsOf: (answer) => [answer],
+              refresh,
+            }),
             failed: (error) => staleText(dialogPin.skill_name, error),
             // The tab loads the newest pins and keeps no change (bot-page.md §7).
             closes: (error) => readApiError(error)?.code === "stale_write",

@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, QueryObserver } from "@tanstack/react-query";
+import { refreshQueries } from "../../lib/api/query-reads.ts";
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import {
@@ -15,11 +16,13 @@ import {
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import type { GetSettingsResponse } from "../../lib/api/generated/types.gen.ts";
 import {
+  type PinChange,
   sendPinChange,
+  sendPinChanges,
   sendPinRemove,
   startOrderChange,
-  startPinChange,
   useAlwaysLoadsOnTheirWay,
+  usePinChangesOnTheirWay,
   writeSaveAnswer,
 } from "./bot-list-store.ts";
 
@@ -45,6 +48,33 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+// A pin change whose answer the test gives: `settle` after it, so the store has it.
+function heldPinChange(queryClient: QueryClient, pin: PinChange) {
+  const request = deferred<Bot>();
+  const refresh = deferred<undefined>();
+  void sendPinChanges({
+    queryClient,
+    pins: [pin],
+    request: () => request.promise,
+    botsOf: (bot) => [bot],
+    refresh: () => refresh.promise,
+  }).catch(() => undefined);
+  return {
+    answered: async (bot: Bot) => {
+      request.resolve(bot);
+      await settle();
+    },
+    refused: async () => {
+      request.reject(new Error("no"));
+      await settle();
+    },
+    refreshEnds: async () => {
+      refresh.resolve(undefined);
+      await settle();
+    },
+  };
+}
 
 function withList(pins: Bot["pins"]): QueryClient {
   const queryClient = new QueryClient();
@@ -86,7 +116,7 @@ describe("the bot list store", () => {
 
   it("does not count its own writes as loads", async () => {
     const queryClient = withList([v2]);
-    const change = startPinChange(queryClient, {
+    const change = heldPinChange(queryClient, {
       botId: BA,
       skillId: SKILL_ID,
       expected: expectedV2,
@@ -101,27 +131,27 @@ describe("the bot list store", () => {
       refresh: () => Promise.resolve(),
     });
     await settle();
-    change.answered(makeBot(1, "BA", [v3]));
+    await change.answered(makeBot(1, "BA", [v3]));
     expect(pinsOf(queryClient)).toEqual([v3]);
   });
 
   it("writes no pin after a list load that came after the request went out", async () => {
     const queryClient = withList([v2]);
-    const change = startPinChange(queryClient, {
+    const change = heldPinChange(queryClient, {
       botId: BA,
       skillId: SKILL_ID,
       expected: expectedV2,
     });
     await load(queryClient, [v2]);
-    change.answered(makeBot(1, "BA", [v3]));
+    await change.answered(makeBot(1, "BA", [v3]));
     expect(pinsOf(queryClient)).toEqual([v2]);
   });
 
   it("takes the list again when the query was dropped and loads again", async () => {
     const queryClient = withList([off]);
-    const change = startPinChange(queryClient, { botId: BA, skillId: SKILL_ID, expected: null });
+    const change = heldPinChange(queryClient, { botId: BA, skillId: SKILL_ID, expected: null });
     queryClient.removeQueries({ queryKey: listBotsQueryKey() });
-    change.refused();
+    await change.refused();
     // A dropped query is not written: it would look fresh.
     expect(queryClient.getQueryData(listBotsQueryKey())).toBeUndefined();
     await load(queryClient, [on]);
@@ -287,6 +317,157 @@ describe("an Always load change", () => {
   });
 });
 
+// Finding of the PR #59 review: an answer alone can leave the page on the old pin, so the row
+// stays off until the list has come (bot-page.md §4.2, Q3).
+describe("a row's actions after its change", () => {
+  const key = { botId: BA, skillId: SKILL_ID };
+  function rowBusy(queryClient: QueryClient) {
+    const { result } = renderHook(() => usePinChangesOnTheirWay(), {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      ),
+    });
+    return () => result.current(key);
+  }
+
+  it("stay off from the request until the refresh after its answer ends", async () => {
+    const queryClient = withList([v2]);
+    const busy = rowBusy(queryClient);
+    const change = heldPinChange(queryClient, { ...key, expected: expectedV2 });
+    await act(settle);
+    expect(busy()).toBe(true);
+    await act(() => change.answered(makeBot(1, "BA", [v3])));
+    expect(busy()).toBe(true);
+    await act(() => change.refreshEnds());
+    expect(busy()).toBe(false);
+  });
+
+  it("stay off after a refusal until the refresh after it ends", async () => {
+    const queryClient = withList([v2]);
+    const busy = rowBusy(queryClient);
+    const change = heldPinChange(queryClient, { ...key, expected: expectedV2 });
+    await act(() => change.refused());
+    expect(busy()).toBe(true);
+    await act(() => change.refreshEnds());
+    expect(busy()).toBe(false);
+  });
+
+  it("turn on after a refresh that fails", async () => {
+    const queryClient = withList([v2]);
+    const busy = rowBusy(queryClient);
+    await act(async () => {
+      await sendPinChanges({
+        queryClient,
+        pins: [{ ...key, expected: expectedV2 }],
+        request: () => Promise.resolve(makeBot(1, "BA", [v3])),
+        botsOf: (bot) => [bot],
+        refresh: () => Promise.reject(new Error("no")),
+      });
+      await settle();
+    });
+    expect(busy()).toBe(false);
+  });
+
+  it("gives the caller the answer at the answer, not after the refresh", async () => {
+    const queryClient = withList([v2]);
+    const answer = makeBot(1, "BA", [v3]);
+    const refresh = deferred<undefined>();
+    const result = await sendPinChanges({
+      queryClient,
+      pins: [{ ...key, expected: expectedV2 }],
+      request: () => Promise.resolve(answer),
+      botsOf: (bot) => [bot],
+      refresh: () => refresh.promise,
+    });
+    expect(result).toBe(answer);
+    refresh.resolve(undefined);
+    await settle();
+  });
+
+  it("change the pin of each bot in one request, and end each one", async () => {
+    const other = makeBot(2, "UX").id;
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(listBotsQueryKey(), [makeBot(1, "BA", [v2]), makeBot(2, "UX", [v2])]);
+    const refresh = deferred<undefined>();
+    const { result } = renderHook(() => usePinChangesOnTheirWay(), {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      ),
+    });
+    await act(async () => {
+      await sendPinChanges({
+        queryClient,
+        pins: [
+          { ...key, expected: expectedV2 },
+          { botId: other, skillId: SKILL_ID, expected: expectedV2 },
+        ],
+        request: () => Promise.resolve([makeBot(1, "BA", [v3])]),
+        botsOf: (bots) => bots,
+        refresh: () => refresh.promise,
+      });
+    });
+    const bots = queryClient.getQueryData<Bot[]>(listBotsQueryKey());
+    expect(bots?.[0]?.pins).toEqual([v3]);
+    expect(bots?.[1]?.pins).toEqual([v2]);
+    expect(result.current(key)).toBe(true);
+    expect(result.current({ botId: other, skillId: SKILL_ID })).toBe(true);
+    await act(async () => {
+      refresh.resolve(undefined);
+      await settle();
+    });
+    expect(result.current(key)).toBe(false);
+    expect(result.current({ botId: other, skillId: SKILL_ID })).toBe(false);
+  });
+
+  // `invalidateQueries` cuts a load on its way short, and a second cut ends the older refresh
+  // (lib/api/query-reads.ts). The row depends on `refreshQueries`, so this holds it.
+  it.each([1, 2])(
+    "stay off when %i newer refreshes cut the refresh short, until the newest list comes",
+    async (cuts) => {
+      const queryClient = withList([v2]);
+      const lists: ReturnType<typeof deferred<Bot[]>>[] = [];
+      const list = new QueryObserver(queryClient, {
+        queryKey: listBotsQueryKey(),
+        queryFn: () => {
+          const answer = deferred<Bot[]>();
+          lists.push(answer);
+          return answer.promise;
+        },
+        staleTime: Infinity,
+      });
+      const stop = list.subscribe(() => undefined);
+      const refresh = () => refreshQueries(queryClient, { queryKey: listBotsQueryKey() });
+      const busy = rowBusy(queryClient);
+      await act(async () => {
+        await sendPinChanges({
+          queryClient,
+          pins: [{ ...key, expected: expectedV2 }],
+          request: () => Promise.resolve(makeBot(1, "BA", [v3])),
+          botsOf: (bot) => [bot],
+          refresh,
+        });
+        await settle();
+      });
+      expect(lists).toHaveLength(1);
+      for (let cut = 0; cut < cuts; cut += 1) {
+        await act(async () => {
+          // Another change's refresh, while this one's list is on its way.
+          void refresh();
+          await settle();
+        });
+      }
+      expect(lists).toHaveLength(cuts + 1);
+      expect(busy()).toBe(true);
+      await act(async () => {
+        lists.at(-1)?.resolve([makeBot(1, "BA", [v3])]);
+        await settle();
+      });
+      expect(busy()).toBe(false);
+      stop();
+    },
+  );
+});
+
 // A request can be sent before a Remove of its pin and answer after it (review of the 571375a
 // fixes). Its answer is about the pin before the Remove: it never shows that pin again, but a
 // Remove that fails shows the newest pin the server has.
@@ -331,7 +512,7 @@ describe("a pin answer and a Remove of its pin", () => {
   it("keeps the pin an add put back when an older change answers after it", async () => {
     const { queryClient, toggle, remove } = start();
     // The server: the toggle (on), the Remove, then the add (off). The add answers first.
-    startPinChange(queryClient, { botId: BA, skillId: SKILL_ID, expected: null }).answered(
+    await heldPinChange(queryClient, { botId: BA, skillId: SKILL_ID, expected: null }).answered(
       makeBot(1, "BA", [off]),
     );
     expect(pinsOf(queryClient)).toEqual([off]);
@@ -344,11 +525,11 @@ describe("a pin answer and a Remove of its pin", () => {
 
   it("shows the added pin when a list load landed while the add and the Remove waited", async () => {
     const { queryClient, remove } = start();
-    const add = startPinChange(queryClient, { botId: BA, skillId: SKILL_ID, expected: null });
+    const add = heldPinChange(queryClient, { botId: BA, skillId: SKILL_ID, expected: null });
     // A load with the added pin lands; the Remove hides it.
     await load(queryClient, [off]);
     expect(pinsOf(queryClient)).toEqual([]);
-    add.answered(makeBot(1, "BA", [off]));
+    await add.answered(makeBot(1, "BA", [off]));
     expect(pinsOf(queryClient)).toEqual([off]);
     remove.resolve(undefined);
     await settle();

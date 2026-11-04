@@ -19,9 +19,12 @@ Export card. Routes: `src/routes/skills.tsx`.
 | `skill-dialogs.tsx` | The Deprecate, Remove from bots and Delete dialogs, with the bot lists |
 | `skill-bot-uses.ts` | The bots that use one skill, read from the bot list (loading, error, ready) |
 | `skill-bots-tab.tsx` | The Bots tab: the rows, the Always load switch, ⋯, + Add |
-| `dialog-requests.ts` | The pin dialogs' requests, shared with the bot page: a late answer goes to its own dialog, or to a toast |
+| `dialog-request-state.ts` | A dialog that sends one request (pure): a late answer goes to its own dialog, or to a toast |
+| `dialog-requests.ts` | The hook for `dialog-request-state.ts`, for the pin dialogs, the skill page, the delete dialog and the cards after a save |
+| `toast-store.ts` | A pure state module's state outside React: a late answer changes it, also after the page went, and its toast shows at once |
 | `skill-pin-dialogs.tsx` | The cards that move a pin: + Add, Upgrade or Move to a version, Change version |
-| `after-save-cards.tsx` | The bot cards after a save: Upgrade the bots (C4) after Save as vN, Assign (C4b) after Create |
+| `after-save-card-state.ts` | The bot card after a save (pure): which save's card shows, and when a card is its toast |
+| `after-save-cards.tsx` | The bot cards after a save: Upgrade the bots (C4) after Save as vN, Assign (C4b) after Create; the hook for `after-save-card-state.ts` |
 | `skill-history.tsx` | The History tab: versions, Compare, Restore |
 | `diff-view.tsx` | A read-only line diff with folded unchanged lines |
 | `diff-fold.ts` | Which unchanged lines the diff folds |

@@ -20,18 +20,17 @@ import {
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import type { GetSkillResponse } from "../../lib/api/generated/types.gen.ts";
 import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
+import { refreshQueries } from "../../lib/api/query-reads.ts";
 import { BotAvatar } from "../bots/bot-avatar.tsx";
 import { modelLine } from "../bots/bot-lines.ts";
 import {
-  answeredBy,
-  type ChangeOnItsWay,
   sendPinChange,
+  sendPinChanges,
   sendPinRemove,
-  startPinChange,
   useAlwaysLoadsOnTheirWay,
   usePinChangesOnTheirWay,
 } from "../bots/bot-list-store.ts";
-import { type BotRow, pinErrorText } from "../bots/bot-queries.ts";
+import { pinErrorText } from "../bots/bot-queries.ts";
 import { LoadError } from "./load-error.tsx";
 import { VersionPill } from "./pills.tsx";
 import type { BotUse } from "./skill-bot-uses.ts";
@@ -64,7 +63,7 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
 
   // A pin changed here changes both sides: the bot list shows it at once, and everything that
   // counts pins (the skill's header and list, the bot page) fetches again.
-  const refresh = () => queryClient.invalidateQueries({ predicate: PIN_QUERIES });
+  const refresh = () => refreshQueries(queryClient, { predicate: PIN_QUERIES });
   const {
     dialog,
     open: setDialog,
@@ -72,26 +71,7 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
     error: dialogError,
     pending: dialogPending,
     run: runInDialog,
-  } = useDialogRequests<Dialog>({ refresh });
-  // An answer writes only the pin of this skill, and only when the page still shows the pin the
-  // request expected and the list did not load since it went out (`bot-list-state.ts`). One
-  // request adds the skill to many bots: each bot's pin is a change of its own.
-  const addedTo = (botIds: readonly string[]): ChangeOnItsWay<readonly BotRow[]> => {
-    const changes = botIds.map((botId) => ({
-      botId,
-      change: startPinChange(queryClient, { botId, skillId: skill.id, expected: null }),
-    }));
-    return {
-      answered: (answers) => {
-        for (const { botId, change } of changes) {
-          change.answered(answers.find((answer) => answer.id === botId));
-        }
-      },
-      refused: () => {
-        for (const { change } of changes) change.refused();
-      },
-    };
-  };
+  } = useDialogRequests<Dialog>();
   // One hook serves every row, and a second `mutate` on a hook drops the callbacks of the first
   // (TanStack Query v5). So each request handles its own result through its promise, and the
   // pending state is kept per bot, not read from the hook.
@@ -244,16 +224,21 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
           if (latestVersion === undefined || dialog?.kind !== "add") return;
           runInDialog({
             dialog,
-            request: answeredBy(
-              addedTo(botIds),
-              addPins.mutateAsync({
-                path: { id: skill.id },
-                body: {
-                  skill_version_id: latestVersion.id,
-                  bots: botIds.map((bot_id) => ({ bot_id, expected_skill_version_id: null })),
-                },
-              }),
-            ),
+            // One request adds the skill to many bots: each bot's pin is a change of its own.
+            request: sendPinChanges({
+              queryClient,
+              pins: botIds.map((botId) => ({ botId, skillId: skill.id, expected: null })),
+              request: () =>
+                addPins.mutateAsync({
+                  path: { id: skill.id },
+                  body: {
+                    skill_version_id: latestVersion.id,
+                    bots: botIds.map((bot_id) => ({ bot_id, expected_skill_version_id: null })),
+                  },
+                }),
+              botsOf: (answers) => answers,
+              refresh,
+            }),
             failed: (error) => pinErrorText({ error, changed: null }),
           });
         }}
@@ -287,20 +272,19 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
           if (dialogBot === undefined || dialog?.kind !== "move") return;
           const { bot, pin } = dialogBot;
           const expected = { skill_version_id: pin.skill_version_id, always_load: pin.always_load };
-          const change = startPinChange(queryClient, {
-            botId: bot.id,
-            skillId: skill.id,
-            expected,
-          });
           runInDialog({
             dialog,
-            request: answeredBy(
-              change,
-              setPin.mutateAsync({
-                path: { id: bot.id, skill_id: skill.id },
-                body: { skill_version_id: version.id, always_load: pin.always_load, expected },
-              }),
-            ),
+            request: sendPinChanges({
+              queryClient,
+              pins: [{ botId: bot.id, skillId: skill.id, expected }],
+              request: () =>
+                setPin.mutateAsync({
+                  path: { id: bot.id, skill_id: skill.id },
+                  body: { skill_version_id: version.id, always_load: pin.always_load, expected },
+                }),
+              botsOf: (answer) => [answer],
+              refresh,
+            }),
             failed: (error) => pinErrorText({ error, changed: bot.name }),
           });
         }}

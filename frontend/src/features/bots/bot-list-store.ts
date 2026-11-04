@@ -110,39 +110,54 @@ function start(queryClient: QueryClient, request: BotListRequest) {
   };
 }
 
-// A Move (Upgrade, Change version) or + Add of a skill pin: the answer bot, or undefined when
-// the bot is not in the answer.
-export function startPinChange(
-  queryClient: QueryClient,
-  { botId, skillId, expected }: PinKey & { expected: PinExpected },
-): ChangeOnItsWay<BotRow | undefined> {
-  const { id, send } = start(queryClient, {
-    kind: "pin",
-    botId,
-    skillId,
-    expected,
-    alwaysLoad: null,
-  });
-  return {
-    answered: (answer) => {
-      send(answer === undefined ? { type: "answered", id } : { type: "answered", id, answer });
-    },
-    refused: () => {
-      send({ type: "refused", id });
-    },
-  };
-}
+// A pin one request changes, with the pin it expects (null for a new pin).
+export type PinChange = PinKey & { expected: PinExpected };
 
-// The request's answer goes to the change, and a failure refuses it; the promise keeps both.
-export async function answeredBy<T>(change: ChangeOnItsWay<T>, request: Promise<T>): Promise<T> {
-  try {
-    const answer = await request;
-    change.answered(answer);
-    return answer;
-  } catch (error) {
-    change.refused();
-    throw error;
-  }
+// One request that changes the pins of some bots: Move (Upgrade, Change version), + Add, the
+// cards after a save, Remove from bots, Deprecate. Each row's actions are off until the refresh
+// after the answer ends (bot-page.md §4.2, Q3). The promise is the request's own, so the caller
+// handles its result at the answer. `botsOf` gives the bots in the answer: each one's pin goes
+// in under the rules of `bot-list-state.ts`; a pin with no bot in the answer only ends.
+export function sendPinChanges<A>({
+  queryClient,
+  pins,
+  request,
+  botsOf,
+  refresh,
+}: {
+  queryClient: QueryClient;
+  pins: readonly PinChange[];
+  request: () => Promise<A>;
+  botsOf: (answer: A) => readonly BotRow[];
+  refresh: () => Promise<unknown>;
+}): Promise<A> {
+  const changes = pins.map((pin) => ({
+    botId: pin.botId,
+    ...start(queryClient, { kind: "pin", ...pin, alwaysLoad: null }),
+  }));
+  const result = request().then(
+    (answer) => {
+      const bots = botsOf(answer);
+      for (const { botId, id, send } of changes) {
+        const bot = bots.find((item) => item.id === botId);
+        send(bot === undefined ? { type: "answered", id } : { type: "answered", id, answer: bot });
+      }
+      return answer;
+    },
+    (error: unknown) => {
+      for (const { id, send } of changes) send({ type: "refused", id });
+      throw error;
+    },
+  );
+  const ended = () => {
+    for (const { id, send } of changes) send({ type: "refreshEnded", id });
+  };
+  void result
+    .catch(() => undefined)
+    .then(() => refresh())
+    .catch(() => undefined)
+    .finally(ended);
+  return result;
 }
 
 // A new pinned list (pin.md §2) or a new sort of the others (bots-page.md §5).

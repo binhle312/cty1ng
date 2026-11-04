@@ -11,7 +11,7 @@ import { startOrderChange } from "./bot-list-store.ts";
 import { pinnedOf } from "./bot-order.ts";
 import type { BotRow } from "./bot-queries.ts";
 
-function sameIds(a: readonly string[], b: readonly string[]): boolean {
+function sameIds({ a, b }: { a: readonly string[]; b: readonly string[] }): boolean {
   return a.length === b.length && a.every((id, i) => id === b[i]);
 }
 
@@ -29,7 +29,7 @@ export function useSetPins() {
       const bots = queryClient.getQueryData<BotRow[]>(key);
       if (bots === undefined) return;
       const expected = pinnedOf(bots).map((bot) => bot.id);
-      if (sameIds(expected, nextIds)) return;
+      if (sameIds({ a: expected, b: nextIds })) return;
       // The new order shows until the answer, also over a load that lands before it, and a newer
       // pin change replaces it; the others keep the sort shown, which may be a sort on its way
       // (`bot-list-state.ts`).

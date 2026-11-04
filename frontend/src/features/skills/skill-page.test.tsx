@@ -197,6 +197,170 @@ describe("Remove from bots on a deprecated skill", () => {
     });
   });
 
+  // Review of PR #59: a row whose pin the page just changed turns on only when the list has come.
+  it("keeps the rows of the removed bots off until the refresh after the removal", async () => {
+    const ba = makeBot(1, "BA", [makePin()]);
+    const skill = makeSkill({
+      deprecated: true,
+      deprecated_at: "2026-10-21T10:00:00.000Z",
+      bots_using: 1,
+    });
+    const refreshed = heldAnswer();
+    let holdList = false;
+    const path = `/api/bots/${ba.id}/skills/${SKILL_ID}`;
+    api = fakeApi({
+      "GET /api/skills": () => ({ body: [skill] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: skill }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      "GET /api/bots": async () => (holdList ? refreshed.promise : { body: [ba] }),
+      [`DELETE ${path}`]: () => {
+        holdList = true;
+        return { status: 204 };
+      },
+    });
+    await renderApp("/skills/write-user-stories?tab=bots");
+    const click = (element: HTMLElement) => {
+      act(() => {
+        fireEvent.click(element);
+      });
+    };
+    click(await screen.findByRole("button", { name: "Remove from bots" }, { timeout: 5000 }));
+    const dialog = await screen.findByRole("dialog");
+    click(await within(dialog).findByRole("button", { name: "Remove from 1 bot" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+    const actions = screen.getByRole("button", { name: "Actions for BA" });
+    expect(actions.hasAttribute("data-disabled")).toBe(true);
+    await refreshed.answer({ body: [makeBot(1, "BA", [])] });
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Actions for BA" })).toBeNull();
+    });
+  });
+
+  // A removal that fails changed nothing on the server, so it must not end an older change of the
+  // pin: that change still waits, and the row stays off with the value on its way.
+  it("keeps an older Always load change on its way when the removal of its bot fails", async () => {
+    const ba = makeBot(1, "BA", [makePin({ always_load: false })]);
+    const skill = makeSkill({
+      deprecated: true,
+      deprecated_at: "2026-10-21T10:00:00.000Z",
+      bots_using: 1,
+    });
+    const toggle = heldAnswer();
+    const path = `/api/bots/${ba.id}/skills/${SKILL_ID}`;
+    api = fakeApi({
+      "GET /api/skills": () => ({ body: [skill] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: skill }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      "GET /api/bots": () => ({ body: [ba] }),
+      [`PUT ${path}`]: () => toggle.promise,
+      [`DELETE ${path}`]: () => ({
+        status: 500,
+        body: { error: { code: "internal_error", message: "Something failed." } },
+      }),
+    });
+    await renderApp("/skills/write-user-stories?tab=bots");
+    const click = (element: HTMLElement) => {
+      act(() => {
+        fireEvent.click(element);
+      });
+    };
+    const load = () => screen.getByRole("switch", { name: "Always load for BA" });
+    click(await screen.findByRole("switch", { name: "Always load for BA" }, { timeout: 5000 }));
+    expect(load().getAttribute("aria-checked")).toBe("true");
+    const loads = api.sent("GET", "/api/bots").length;
+    click(screen.getByRole("button", { name: "Remove from bots" }));
+    const dialog = await screen.findByRole("dialog");
+    click(await within(dialog).findByRole("button", { name: "Remove from 1 bot" }));
+    expect(await within(dialog).findByText(/could not remove/)).toBeTruthy();
+    click(within(dialog).getByRole("button", { name: "Skip" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(api?.sent("GET", "/api/bots").length).toBeGreaterThan(loads);
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    // The removal's refresh ended; the older change still waits.
+    expect(load().getAttribute("aria-checked")).toBe("true");
+    expect(load().hasAttribute("disabled") || load().hasAttribute("data-disabled")).toBe(true);
+    await toggle.answer({ body: makeBot(1, "BA", [makePin({ always_load: true })]) });
+    await waitFor(() => {
+      expect(load().hasAttribute("disabled") || load().hasAttribute("data-disabled")).toBe(false);
+    });
+  });
+
+  it("keeps the rows of the bots a Deprecate removes off until the refresh after it", async () => {
+    const ba = makeBot(1, "BA", [makePin()]);
+    const skill = makeSkill({ bots_using: 1 });
+    const refreshed = heldAnswer();
+    let holdList = false;
+    api = fakeApi({
+      "GET /api/skills": () => ({ body: [skill] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: skill }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      "GET /api/bots": async () => (holdList ? refreshed.promise : { body: [ba] }),
+      [`POST /api/skills/${SKILL_ID}/deprecate`]: () => {
+        holdList = true;
+        return { body: skill };
+      },
+    });
+    await renderApp("/skills/write-user-stories?tab=bots");
+    const click = (element: HTMLElement) => {
+      act(() => {
+        fireEvent.click(element);
+      });
+    };
+    click(await screen.findByRole("button", { name: "Skill actions" }, { timeout: 5000 }));
+    click(await screen.findByRole("menuitem", { name: "Deprecate" }));
+    const dialog = await screen.findByRole("alertdialog");
+    await within(dialog).findByRole("checkbox", { name: /BA/ });
+    click(within(dialog).getByRole("button", { name: "Deprecate and remove from 1 bot" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+    });
+    const actions = screen.getByRole("button", { name: "Actions for BA" });
+    expect(actions.hasAttribute("data-disabled")).toBe(true);
+    await refreshed.answer({ body: [makeBot(1, "BA", [])] });
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Actions for BA" })).toBeNull();
+    });
+  });
+
+  // A dialog request's failure had no place to show once the owner left the skill's page.
+  it("shows a Deprecate that fails after the owner left the skill as a toast", async () => {
+    const skill = makeSkill();
+    const deprecation = heldAnswer();
+    api = fakeApi({
+      "GET /api/skills": () => ({ body: [skill] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: skill }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      "GET /api/bots": () => ({ body: [] }),
+      [`POST /api/skills/${SKILL_ID}/deprecate`]: () => deprecation.promise,
+    });
+    const { router } = await renderApp("/skills/write-user-stories");
+    const click = (element: HTMLElement) => {
+      act(() => {
+        fireEvent.click(element);
+      });
+    };
+    click(await screen.findByRole("button", { name: "Skill actions" }, { timeout: 5000 }));
+    click(await screen.findByRole("menuitem", { name: "Deprecate" }));
+    const dialog = await screen.findByRole("alertdialog");
+    click(await within(dialog).findByRole("button", { name: "Deprecate" }));
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/deprecate`)).toHaveLength(1);
+    });
+    // The dialog is still open when the page goes (the browser's Back, say).
+    await act(() => router.navigate({ to: "/bots" }));
+    await deprecation.answer({
+      status: 500,
+      body: { error: { code: "internal_error", message: "Something failed." } },
+    });
+    expect(await screen.findByText("Something failed.")).toBeTruthy();
+  });
+
   // Review of PR #57: a request that ended after its dialog closed wrote into the next dialog.
   it("shows a Deprecate that fails after its dialog closed as a toast, not in the next dialog", async () => {
     const skill = makeSkill();

@@ -460,6 +460,66 @@ describe("the Bots tab of a skill", () => {
     expect(isOff(screen.getByRole("switch", { name: "Always load for Designer" }))).toBe(false);
   });
 
+  // Review of PR #59: the same rule as on the bot page, for the skill's side of the row.
+  it("keeps the row's actions off after a move's answer, until the refresh brings the new version", async () => {
+    const held = heldAnswer();
+    const refreshed = heldAnswer();
+    const moved = makeBot(2, "Designer", [makePin()]);
+    let holdList = false;
+    const { queryClient } = open([designer], {
+      [`GET /api/skills/${SKILL_ID}/diff`]: () => ({ body: { description: null, body: [] } }),
+      [`PUT /api/bots/${designer.id}/skills/${SKILL_ID}`]: async () => held.promise,
+      "GET /api/bots": async () => (holdList ? refreshed.promise : { body: [designer] }),
+    });
+    click(await screen.findByRole("button", { name: "Upgrade to v3" }));
+    const dialog = await screen.findByRole("dialog", { name: "Upgrade Write user stories to v3?" });
+    click(within(dialog).getByRole("button", { name: "Upgrade to v3" }));
+    await waitFor(() => {
+      expect(api?.sent("PUT", `/api/bots/${designer.id}/skills/${SKILL_ID}`)).toHaveLength(1);
+    });
+    // A list load lands while the move waits, so its answer writes no pin.
+    await act(() => queryClient.refetchQueries({ queryKey: listBotsQueryKey() }));
+    holdList = true;
+    await held.answer({ body: moved });
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+    expect(isOff(screen.getByRole("button", { name: "Upgrade to v3" }))).toBe(true);
+    expect(isOff(screen.getByRole("button", { name: "Actions for Designer" }))).toBe(true);
+    expect(isOff(screen.getByRole("switch", { name: "Always load for Designer" }))).toBe(true);
+    await refreshed.answer({ body: [moved] });
+    await waitFor(() => {
+      expect(isOff(screen.getByRole("button", { name: "Actions for Designer" }))).toBe(false);
+    });
+    expect(screen.queryByRole("button", { name: "Upgrade to v3" })).toBeNull();
+    expect(isOff(screen.getByRole("switch", { name: "Always load for Designer" }))).toBe(false);
+  });
+
+  it("keeps the row of a bot + Add added off until the refresh after its answer", async () => {
+    const refreshed = heldAnswer();
+    const added = makeBot(3, "QA", [makePin()]);
+    let holdList = false;
+    open([qa], {
+      [`POST /api/skills/${SKILL_ID}/bots`]: () => {
+        holdList = true;
+        return { body: [added] };
+      },
+      "GET /api/bots": async () => (holdList ? refreshed.promise : { body: [qa] }),
+    });
+    click(await screen.findByRole("button", { name: "Add" }));
+    const dialog = await screen.findByRole("dialog");
+    click(await within(dialog).findByRole("checkbox", { name: /QA/ }));
+    click(within(dialog).getByRole("button", { name: "Add 1" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+    expect(isOff(screen.getByRole("button", { name: "Actions for QA" }))).toBe(true);
+    await refreshed.answer({ body: [added] });
+    await waitFor(() => {
+      expect(isOff(screen.getByRole("button", { name: "Actions for QA" }))).toBe(false);
+    });
+  });
+
   // Review of PR #57: one mutation hook served every row, so a second toggle dropped the first
   // one's callbacks and its failure went unseen.
   it("shows a version move that fails after the owner left the tab as a toast", async () => {

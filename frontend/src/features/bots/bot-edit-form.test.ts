@@ -35,6 +35,17 @@ describe("the bot page's edit form (bot-page.md §4, §6)", () => {
     expect(changedFields({ tab: "model", form: saved, saved, effective: asIs })).toEqual([]);
   });
 
+  // The server stores `normaliseBotName(name)` (bots.service.ts), so a name that differs only in
+  // white space is the name the bot has: nothing to save (bot-page.md §4.2, Q4).
+  it("counts a name as the server stores it: white space is no change, case is", () => {
+    const fields = (name: string) =>
+      changedFields({ tab: "profile", form: { ...saved, name }, saved, effective: asIs });
+    expect(fields("  BA\u00a0 ")).toEqual([]);
+    expect(fields("ba")).toEqual(["name"]);
+    expect(fields("B A")).toEqual(["name"]);
+    expect(fields("   ")).toEqual(["name"]);
+  });
+
   it("counts each tab's own fields only", () => {
     const form = { ...saved, name: "Analyst", request_limit: 20 };
     expect(changedFields({ tab: "profile", form, saved, effective: asIs })).toEqual(["name"]);

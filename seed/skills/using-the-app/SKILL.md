@@ -63,7 +63,7 @@ written ways of working that the bot follows.
     Remove; + Add gives the bot more skills at their latest version. Changes save at once:
     a removed skill goes from the list at once and comes back with a message if Remove fails.
     While a change of a skill is on its way, the switch, the link and the ⋯ menu of that row are
-    off for a moment; the same holds on a skill's Bots tab.
+    off for a moment, until the list shows the change; the same holds on a skill's Bots tab.
   - **Model**: the tools and Advanced (history share, model requests per run, longest reply),
     with their own Save. One tab saves at a time: while the Profile save is on its way, the
     Model Save is off ("Wait until the Profile tab is saved."), and the other way round.

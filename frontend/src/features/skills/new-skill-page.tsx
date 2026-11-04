@@ -10,6 +10,7 @@ import {
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import { createSkill } from "../../lib/api/generated/sdk.gen.ts";
 import type { CreateSkillData } from "../../lib/api/generated/types.gen.ts";
+import { readNewest } from "../../lib/api/query-reads.ts";
 import { NotFoundPage } from "../placeholder/not-found-page.tsx";
 import { assignCardAfterCreate } from "./after-save-cards.tsx";
 import { useLeaveGuard } from "./leave-guard.tsx";
@@ -90,16 +91,20 @@ function useCloneSource(versionId: string | undefined) {
     gcTime: 0,
     refetchOnWindowFocus: false,
     queryFn: async (): Promise<CloneSource | null> => {
-      const skills = await queryClient.query({ ...allSkillsOptions(), staleTime: 0 });
+      const skills = await readNewest(() =>
+        queryClient.query({ ...allSkillsOptions(), staleTime: 0 }),
+      );
       const slugs = new Set(skills.map((skill) => skill.slug));
       for (const skill of skills) {
-        const versions = await queryClient.query(
-          listSkillVersionsOptions({ path: { id: skill.id } }),
+        const versions = await readNewest(() =>
+          queryClient.query(listSkillVersionsOptions({ path: { id: skill.id } })),
         );
         const match = versions.find((version) => version.id === versionId);
         if (match === undefined) continue;
-        const version = await queryClient.query(
-          getSkillVersionOptions({ path: { id: skill.id, version: match.version } }),
+        const version = await readNewest(() =>
+          queryClient.query(
+            getSkillVersionOptions({ path: { id: skill.id, version: match.version } }),
+          ),
         );
         return {
           skillName: skill.name,

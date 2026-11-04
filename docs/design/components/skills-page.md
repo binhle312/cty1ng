@@ -101,8 +101,10 @@ The skill side of the bot page Skills tab (`bot-page.md` §7), with the same row
   on its way outlives the tab, and **Remove** takes the row away at once (a bot added back
   while it waits shows again), as on the bot page
   (`bot-page.md` §7, §7.1; M2c audit, 2026-11-03).
-- While a change of a row is on its way, the row's ⋯ menu, its "Upgrade to v{n}" link and its
-  Always load switch are off, as on the bot page (`bot-page.md` §7, §4.2 Q3; owner, 2026-11-04).
+- While a change of a row is on its way, until the refresh after its answer or refusal ends, the
+  row's ⋯ menu, its "Upgrade to v{n}" link and its Always load switch are off, as on the bot page
+  (`bot-page.md` §7, §4.2 Q3; owner, 2026-11-04). This counts every request that changes the
+  row's pin: also the cards after a save (§7), Remove from bots (§10.3) and Deprecate (§10.1).
 - No bot uses it: "No bot uses this skill yet." and **+ Add**.
 - No bot exists (M1): the same line, and **+ Add** is disabled with the tooltip "Create a bot
   first."
@@ -202,12 +204,14 @@ says "The app could not load the bots." with **Try again**, and Upgrade or Assig
 the bots shown.
 
 **The cards against the five order questions** (M2c audit, 2026-11-03; `../../workflow.md` §2
-step 4). Tests are in `after-save-cards.test.tsx`.
+step 4). Tests are in `after-save-cards.test.tsx`. The rules are in two pure modules:
+`after-save-card-state.ts` (which card shows) and `dialog-request-state.ts` (a card's request),
+each with one test per cell and every order of two requests.
 
 | Request | Late answer | The Skills page is gone | A newer request of the same kind | A load or event in between | The refresh fails or is slow |
 | --- | --- | --- | --- | --- | --- |
 | The read for the card after a save | An older card shows as its toast ("keeps the newer card when the candidates of an older save answer after it") | The card shows as its toast ("shows the toast in place of the card when the owner left …") | As in the first column | The card's bot list follows the server while it is open | A failed read gives the toast ("shows only the toast when no bot …"); a failed or slow bot list in the open card shows its state ("says the bots did not load, and shows them after Try again", "shows loading shapes, not an empty list, while the bots load") |
-| Upgrade, Assign | Closes only its own card ("does not close a newer card …") | A failure is a toast ("shows the failure of a skipped card as a toast") | A retry sends the versions the bots use now ("sends the newest version of each bot on a retry …", "drops a bot that got the skill …") | As before | The card closes at the answer; the lists refresh after it |
+| Upgrade, Assign | Closes only its own card ("does not close a newer card …") | A failure is a toast ("shows the failure of a skipped card as a toast") | A retry sends the versions the bots use now ("sends the newest version of each bot on a retry …", "drops a bot that got the skill …") | As before | The card closes at the answer; the lists refresh after it, and the rows of the bots it changed stay off until then ("keeps the row of an upgraded bot off …") |
 
 ### 7.1 Upgrade the bots (C4, UI-7.4)
 

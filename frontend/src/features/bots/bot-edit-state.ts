@@ -8,6 +8,7 @@ import {
   editProblems,
   type EffectiveTools,
   mergeTab,
+  storedForm,
   tabOfField,
   withTab,
 } from "./bot-edit-form.ts";
@@ -252,6 +253,7 @@ function answered(
   // A Discard that loaded a newer `row_version` (another tab saved after this save) already shows
   // values newer than the answer; they stay.
   if (state.base[tab] === sent.base) {
+    const stored = storedForm(sent.form);
     // A tab the owner let go shows the saved values, not the edit it dropped; a field typed in
     // after the let-go keeps its text, as a change.
     if (state.letGo[tab] !== sent.letGoAtSend) {
@@ -259,11 +261,13 @@ function answered(
         tab,
         base: saved,
         mine: form,
-        theirs: sent.form,
+        theirs: stored,
         effective: rules.effective,
       });
     }
-    saved = withTab({ into: saved, from: sent.form, tab });
+    saved = withTab({ into: saved, from: stored, tab });
+    // A name nobody typed over shows as the server stores it.
+    if (tab === "profile" && form.name === sent.form.name) form = { ...form, name: stored.name };
   }
   // The server took the save at `sent.base`, so nothing else changed in between: every tab whose
   // edit started there is now at the new `row_version`.

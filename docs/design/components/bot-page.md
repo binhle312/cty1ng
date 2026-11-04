@@ -199,7 +199,10 @@ column names the tests in `bot-page.test.tsx` that hold the row on the page.
   still on its way, and a second confirm sent the old pin as `expected`, so the server refused
   it with the "changed in another place" toast for the owner's own change. Decided: the ⋯ menu,
   the "v{n} available" link and the Always load switch of a row are off while any change of
-  that row is on its way (a move, or an Always load change until the refresh after it ends). The
+  that row is on its way, until the refresh after its answer or refusal ends (owner, 2026-11-04,
+  review of `ec8faa7`: a list load before the answer keeps the answer out of the list, so the
+  answer alone can leave the row on the old pin). Every request that changes pins counts: a
+  move, + Add, Always load, the cards after a save, Remove from bots and Deprecate. The
   same rule holds for the rows of the Skills page's Bots tab (`skills-page.md` §2a). They are
   plainly off, with no tooltip; the tooltip waits for the UI review after M3 (B5).
 - **Q4** (review of the edit state module). The server can take a Save whose answer is then
@@ -209,6 +212,9 @@ column names the tests in `bot-page.test.tsx` that hold the row on the page.
   changed already has the server's value, the tab takes the new values with no conflict; nothing
   of the owner's is lost. A Save that fails on the way also loads the bot again, so a Save the
   server took shows at once. The toast text for this case waits for the UI review after M3.
+  A name counts as the server stores it (`normaliseBotName`, review of `ec8faa7`): white space
+  alone is no change, so a lost Save of "  New   BA  " shows no conflict when the server's
+  "New BA" comes. After a Save answers, a name nobody typed over shows as the server stores it.
 
 ## 5. The band follows the colour (HB, approved 2026-10-24)
 
@@ -263,10 +269,9 @@ Model save never changes a pin, so its answer, even with a newer `row_version`, 
 and the skill counts that the page shows; a toggle made while that Save was on its way stays (M2c
 review, 2026-11-03). An answer that comes after the owner left the tab or the page
 shows as a toast, not in the closed dialog. A dialog whose skill left the bot in another place
-closes, and its answer also shows as a toast. While a change of a row is on its way (a version move,
-or an Always load change until the refresh after it ends), the row's ⋯ menu, its "v{n}
-available" link and its switch are off, so the owner cannot send a second change with an old
-`expected` pin (§4.2, Q3).
+closes, and its answer also shows as a toast. While a change of a row is on its way, until the
+refresh after its answer or refusal ends, the row's ⋯ menu, its "v{n} available" link and its
+switch are off, so the owner cannot send a second change with an old `expected` pin (§4.2, Q3).
 
 ### 7.1 Requests and late answers (M2c audit, 2026-11-03)
 
@@ -283,8 +288,8 @@ after the answer shows the server's pin.
 | Request | Late answer | The tab is gone | A newer request of the same kind | A load or event in between | The refresh fails or is slow |
 | --- | --- | --- | --- | --- | --- |
 | Always load | Writes only its own pin, only while the page shows the pin it expected ("keeps a newer bot …", "keeps a newer pin of another skill …", "keeps a newer version of the same skill …") | The load count and the value on its way outlive the tab: back on the tab, the switch shows the value on its way and stays off ("… after the owner left the tab", "keeps the Always load value on its way when the owner leaves the tab and comes back") | The whole row (switch, ⋯, link) is off while its change is on its way, until the refresh after it ends (Q3; "turns Remove off while an Always load change of the row waits …"); other skills are independent | Writes no pin; the refresh shows it ("keeps a newer opposite toggle from another tab …") | The switch keeps the value on its way until the refresh ends ("keeps the switch on the value on its way …", `bot-list-store.test` "ends only after the refresh that follows its answer"). A failed refresh keeps the last list, as everywhere on the page (§4.2); the next load shows the server's pin |
-| Upgrade, Change version (dialog) | Writes only its own pin (`bot-list-state.ts`) | A failure is a toast ("shows a version move that fails after the owner left the page as a toast") | Never closes or writes into a newer dialog (`useDialogRequests`). A second change of the same row cannot start: its ⋯, link and switch are off while the move waits, also after the dialog closes (Q3; "turns the row's actions off while its version move waits …", "turns the Always load switch off while a version move of its row waits") | Writes no pin; the refresh shows it | The dialog closes at the answer; the row shows its version from the refresh. A stale move closes with a toast ("closes a stale version move …") |
-| + Add | Writes its new pin only when the page has none and the list did not load meanwhile; the refresh shows the rest | A failure is a toast (`useDialogRequests`) | As above; a skill added elsewhere gives its stale toast ("+ Add shows the stale toast …") | — | The card closes at the answer |
+| Upgrade, Change version (dialog) | Writes only its own pin (`bot-list-state.ts`) | A failure is a toast ("shows a version move that fails after the owner left the page as a toast") | Never closes or writes into a newer dialog (`useDialogRequests`). A second change of the same row cannot start: its ⋯, link and switch are off while the move waits, also after the dialog closes (Q3; "turns the row's actions off while its version move waits …", "turns the Always load switch off while a version move of its row waits") | Writes no pin; the refresh shows it, and the row stays off until then ("keeps the row's actions off after a move's answer …") | The dialog closes at the answer; the row shows its version from the refresh, and its actions are off until that refresh ends. A failed refresh turns them on with the last list; the server then refuses an old pin as stale. A stale move closes with a toast ("closes a stale version move …") |
+| + Add | Writes its new pin only when the page has none and the list did not load meanwhile; the refresh shows the rest, and the new row's actions are off until that refresh ends | A failure is a toast (`useDialogRequests`) | As above; a skill added elsewhere gives its stale toast ("+ Add shows the stale toast …") | — | The card closes at the answer |
 | Remove | The row went at once; the answer ends that, and the refresh after it shows the server's pins (Q2). The owner's own + Add of the same skill ends it at once, because a pin has no id that tells the new pin from the removed one ("shows a skill the owner adds back while its Remove is on its way"). Only a request sent while the Remove waits ends it: the answer of an Always load change or a Move sent before it does not (`bot-list-state.test` "keeps the row away when an older Always load change answers", "ends an older change of its pin when it is saved …"). On this page, Remove is off while a change of its row waits (Q3), so such an order comes only from another place. Such an older answer never shows its pin again, also after an add put the pin back, but a Remove that fails puts back that newer pin, which the server took first (`bot-list-state.test` "puts back the pin of an older change …", "keeps the pin an add put back …"). An add during a Remove shows its pin also when a list load landed while both waited ("shows the added pin when a list load landed …"), and also when the Remove answered first (`bot-list-state.test` "shows the added pin when the Remove answers before the add and a load landed", found by the sequence test, 2026-11-04) | A failure is a toast; the refresh brings the row back | A second Remove of a gone pin is 204 | The row stays away ("takes a removed skill's row away at once, also over a refresh before the answer") | A failure brings the row back at once with a toast, also when the refresh after it fails ("brings a removed skill's row back with a toast when Remove fails", "… when Remove fails and the refresh fails too") |
 
 ## 8. Activity tab (CH1)

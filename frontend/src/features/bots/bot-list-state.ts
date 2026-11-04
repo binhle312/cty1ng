@@ -27,8 +27,10 @@ import type { BotPin, BotRow } from "./bot-queries.ts";
 //   (on, then off in another tab), and the refresh after the answer shows it. An add sent
 //   while a Remove of its pin waited goes in also after a load: the Remove kept that load
 //   hidden, or answered before the add, and the server took the add after it.
-// - An Always load change stays, after its answer, until the refresh after it ends: the switch
-//   keeps the value on its way until then.
+// - A pin change stays, after its answer or refusal, until the refresh after it ends: the row's
+//   actions stay off and the switch keeps the value on its way until then. The answer alone can
+//   leave the page on the old pin (see above), and the next change would send that pin as
+//   `expected` and get a false conflict.
 
 // The pin a pin change sent as `expected`; null for a new pin.
 export type PinExpected = SetBotSkillData["body"]["expected"];
@@ -39,8 +41,9 @@ export interface PinKey {
 }
 
 export type BotListRequest =
-  // Always load (`alwaysLoad` is the value on its way), Move (Upgrade, Change version) or + Add
-  // (`expected` null); `alwaysLoad` is null for the last two.
+  // Always load (`alwaysLoad` is the value on its way), Move (Upgrade, Change version), + Add
+  // (`expected` null), or a request that changes pins in another way (Remove from bots,
+  // Deprecate); `alwaysLoad` is null for all but the first.
   | {
       kind: "pin";
       botId: string;
@@ -60,7 +63,7 @@ interface Waiting {
   loadsAtSend: number;
   // Sent while a Remove of the same pin waited: the page showed no pin then.
   afterRemove: boolean;
-  // Answered or refused; only an Always load change stays then, until its refresh ends.
+  // Answered or refused; only a pin change stays then, until its refresh ends.
   answered: boolean;
 }
 
@@ -110,7 +113,7 @@ export function botListReducer(state: BotListState, event: BotListEvent): BotLis
               (other) =>
                 !other.answered &&
                 other.request.kind === "remove" &&
-                samePin(other.request, event.request),
+                samePin({ a: other.request, b: event.request }),
             ),
             answered: false,
           },
@@ -151,25 +154,25 @@ function waitingOf(state: BotListState, id: number): Waiting | undefined {
   return state.requests.find((other) => other.id === id && !other.answered);
 }
 
-// At its answer, an Always load change stays until its refresh ends; every other request leaves.
+// At its answer, a pin change stays until its refresh ends; every other request leaves.
 function endOrKeep(state: BotListState, mine: Waiting): BotListState {
-  const keep = mine.request.kind === "pin" && mine.request.alwaysLoad !== null;
   return {
     ...state,
-    requests: keep
-      ? state.requests.map((other) => (other === mine ? { ...other, answered: true } : other))
-      : state.requests.filter((other) => other !== mine),
+    requests:
+      mine.request.kind === "pin"
+        ? state.requests.map((other) => (other === mine ? { ...other, answered: true } : other))
+        : state.requests.filter((other) => other !== mine),
   };
 }
 
-const samePin = (a: BotListRequest, b: BotListRequest): boolean =>
+const samePin = ({ a, b }: { a: BotListRequest; b: BotListRequest }): boolean =>
   (a.kind === "pin" || a.kind === "remove") &&
   (b.kind === "pin" || b.kind === "remove") &&
   a.botId === b.botId &&
   a.skillId === b.skillId;
 
-const sameThing = (a: BotListRequest, b: BotListRequest): boolean =>
-  samePin(a, b) || (a.kind === b.kind && (a.kind === "pinned" || a.kind === "sort"));
+const sameThing = ({ a, b }: { a: BotListRequest; b: BotListRequest }): boolean =>
+  samePin({ a, b }) || (a.kind === b.kind && (a.kind === "pinned" || a.kind === "sort"));
 
 function answered(
   state: BotListState,
@@ -181,7 +184,7 @@ function answered(
   // The older requests of the same thing that wait: the server has a newer value now.
   const older = state.requests
     .slice(0, at)
-    .filter((other) => !other.answered && sameThing(other.request, mine.request));
+    .filter((other) => !other.answered && sameThing({ a: other.request, b: mine.request }));
   const server = savedInto(state, { mine, answer });
   const ended = new Set(older);
   return endOrKeep(
@@ -334,9 +337,8 @@ export function alwaysLoadOnItsWay(state: BotListState, key: PinKey): boolean | 
   return null;
 }
 
-// A change of this pin is on its way: a move or + Add until its answer, an Always load change
-// until the refresh after it ends. The row's actions are off then, so no second change goes out
-// with an old `expected` pin (bot-page.md §4.2, Q3).
+// A change of this pin is on its way, until the refresh after its answer ends. The row's actions
+// are off then, so no second change goes out with an old `expected` pin (bot-page.md §4.2, Q3).
 export function pinChangeOnItsWay(state: BotListState, key: PinKey): boolean {
   return state.requests.some(
     ({ request }) =>

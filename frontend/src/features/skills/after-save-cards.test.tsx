@@ -14,6 +14,7 @@ import {
   versionId,
 } from "../../../test/fixtures.ts";
 import { renderApp } from "../../../test/render-app.tsx";
+import { listBotsQueryKey } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 
 // The bot cards after a save (skills-page.md §7): C4 after "Save as vN", C4b after Create. When
 // no bot fits, only the toast shows.
@@ -100,6 +101,31 @@ describe("the upgrade card after a save (C4, UI-7.4)", () => {
     });
     await waitFor(() => {
       expect(screen.queryByRole("dialog", { name: /Also upgrade/ })).toBeNull();
+    });
+  });
+
+  // Review of PR #59: the card's Upgrade moves pins like a row's own, so the row of a moved bot
+  // stays off until the list has come; its next change would send the old pin as `expected`.
+  it("keeps the row of an upgraded bot off until the refresh after the answer", async () => {
+    const refreshed = heldAnswer();
+    let holdList = false;
+    await saveV4(
+      [{ bot_id: ba.id, skill_version_id: versionId(3), version: 3, always_load: true }],
+      async () => (holdList ? refreshed.promise : { body: [ba] }),
+    );
+    const card = await screen.findByRole("dialog", { name: /Also upgrade/ });
+    holdList = true;
+    click(await within(card).findByRole("button", { name: "Upgrade" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: /Also upgrade/ })).toBeNull();
+    });
+    click(screen.getByRole("tab", { name: /Bots/ }));
+    const actions = () => screen.getByRole("button", { name: "Actions for BA" });
+    await screen.findByRole("button", { name: "Actions for BA" });
+    expect(actions().hasAttribute("data-disabled")).toBe(true);
+    await refreshed.answer({ body: [ba] });
+    await waitFor(() => {
+      expect(actions().hasAttribute("data-disabled")).toBe(false);
     });
   });
 
@@ -383,6 +409,23 @@ describe("the assign card after Create (C4b)", () => {
     return view;
   }
 
+  // The Create form, filled and not sent, with `routes` over the usual answers.
+  async function renderCreate(routes: Parameters<typeof fakeApi>[0]) {
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: [created] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: created }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(1) }),
+      ...routes,
+    });
+    const view = await renderApp("/skills/new");
+    await screen.findByLabelText("Name", { exact: true }, { timeout: 5000 });
+    type({ label: "Name", text: "Write user stories" });
+    type({ label: "Description", text: "Use this skill when the owner asks for user stories." });
+    type({ label: "Body", text: "## Steps" });
+    return view;
+  }
+
   it("offers the new skill to the bots with no box ticked, Skip first, and assigns v1", async () => {
     await create([fresh]);
     const card = await screen.findByRole("dialog", {
@@ -403,6 +446,46 @@ describe("the assign card after Create (C4b)", () => {
       skill_version_id: versionId(1),
       bots: [{ bot_id: fresh.id, expected_skill_version_id: null }],
     });
+  });
+
+  // On a busy server live events can cut the card's read of the bots short again and again. Only a
+  // read that fails ends in the toast (e2e J4 found this).
+  it("opens the card when two newer loads cut its read of the bots short", async () => {
+    const list = heldAnswer();
+    let holdList = false;
+    const { queryClient } = await renderCreate({
+      "GET /api/bots": async () => (holdList ? list.promise : { body: [fresh] }),
+      "POST /api/skills": () => {
+        holdList = true;
+        return { status: 201, body: created };
+      },
+    });
+    click(screen.getByRole("button", { name: "Create" }));
+    await waitFor(() => {
+      expect(api?.sent("POST", "/api/skills")).toHaveLength(1);
+      expect(holdList).toBe(true);
+    });
+    const loads = async (count: number) => {
+      await waitFor(() => {
+        expect(api?.sent("GET", "/api/bots").length).toBe(count);
+      });
+    };
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const reading = api?.sent("GET", "/api/bots").length ?? 0;
+    for (const cut of [1, 2]) {
+      await act(async () => {
+        void queryClient.invalidateQueries({ queryKey: listBotsQueryKey() });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      await loads(reading + cut);
+    }
+    await list.answer({ body: [fresh] });
+    expect(
+      await screen.findByRole("dialog", { name: "Created ✨ Add Write user stories to bots?" }),
+    ).toBeTruthy();
+    expect(screen.queryByText("Created Write user stories ✨")).toBeNull();
   });
 
   it("drops a bot that got the skill in another place, and a retry sends the others", async () => {

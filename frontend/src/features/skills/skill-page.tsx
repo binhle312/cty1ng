@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { notFound, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { Bot, Ellipsis, FileText, History } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   MenuItem,
   MenuPopup,
@@ -26,7 +26,10 @@ import {
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import type { GetSkillResponse } from "../../lib/api/generated/types.gen.ts";
 import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
+import { readNewest, refreshQueries } from "../../lib/api/query-reads.ts";
+import { sendPinChanges } from "../bots/bot-list-store.ts";
 import { upgradeCardAfterSave } from "./after-save-cards.tsx";
+import { useDialogRequests } from "./dialog-requests.ts";
 import { LoadError } from "./load-error.tsx";
 import { useExportSkills } from "./export-card.tsx";
 import { useLeaveGuard } from "./leave-guard.tsx";
@@ -145,12 +148,16 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   };
   const [changelog, setChangelog] = useState("");
   const [saveError, setSaveError] = useState<SaveError | null>(null);
-  const [dialog, setDialogState] = useState<"deprecate" | "delete" | "remove" | null>(null);
-  // Each open or close counts up, so a request that ends after its dialog closed (Cancel, Esc)
-  // never closes or writes into a newer dialog; its failure shows as a toast instead.
-  const dialogTurn = useRef(0);
+  // A request that ends after its dialog closed (Cancel, Esc) never closes or writes into a newer
+  // dialog; its failure shows as a toast instead (`dialog-request-state.ts`).
+  const {
+    dialog,
+    open: openDialog,
+    close: closeDialog,
+    error: dialogError,
+    run: runInDialog,
+  } = useDialogRequests<{ kind: "deprecate" | "delete" | "remove" }>();
   const bots = useBotUses(skill.id);
-  const [dialogError, setDialogError] = useState<string | null>(null);
 
   const readOnly = skill.deprecated || !skill.is_author;
   const changes = changedFields(form);
@@ -240,34 +247,14 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   const exportSkill = useExportSkills();
   const clone = async () => {
     // Clone takes the version on screen, the latest (§12).
-    const versions = await queryClient.query(listSkillVersionsOptions({ path: { id: skill.id } }));
+    const versions = await readNewest(() =>
+      queryClient.query(listSkillVersionsOptions({ path: { id: skill.id } })),
+    );
     const version = versions.find((item) => item.version === latest);
     if (version === undefined) return;
     void navigate({ to: "/skills/new", search: { from: version.id } });
   };
 
-  const setDialog = (next: "deprecate" | "delete" | "remove" | null) => {
-    dialogTurn.current += 1;
-    setDialogState(next);
-    setDialogError(null);
-  };
-  const closeDialog = () => {
-    setDialog(null);
-  };
-  // The result of a request goes to the dialog that sent it, while that dialog is open.
-  const fromThisDialog = () => {
-    const turn = dialogTurn.current;
-    const shown = () => dialogTurn.current === turn;
-    return {
-      done: () => {
-        if (shown()) closeDialog();
-      },
-      failed: (text: string) => {
-        if (shown()) setDialogError(text);
-        else showToast(text);
-      },
-    };
-  };
   // Deprecate and Make active again change the skill here, so they move the base too, but
   // only when the edit was based on the newest data when the action started. Otherwise the
   // move would hide a change made in another place, and Save would overwrite it.
@@ -278,52 +265,64 @@ function SkillView({ skill }: { skill: SkillDetail }) {
       }
     };
   // A change of pins moves both sides: the bot list and the skill queries fetch again.
-  const refreshPins = () => queryClient.invalidateQueries({ predicate: PIN_QUERIES });
+  const refreshPins = () => refreshQueries(queryClient, { predicate: PIN_QUERIES });
   const deprecate = useMutation(deprecateSkillMutation());
   const deprecateSkill = (removeBotIds: string[]) => {
-    const from = fromThisDialog();
+    if (dialog === null) return;
     const inSync = !conflict;
-    setDialogError(null);
-    void deprecate
-      .mutateAsync({
-        path: { id: skill.id },
-        body: { remove_bot_ids: removeBotIds, row_version: skill.row_version },
-      })
-      .then(
-        (result) => {
-          moveBase(inSync)(result);
-          from.done();
-        },
-        (error: unknown) => {
-          from.failed(apiErrorText(error));
-        },
-      )
-      // Also after a failure: a 422 on remove_bot_ids means the bot list here is stale.
-      .finally(() => void refreshPins());
+    runInDialog({
+      dialog,
+      // Also after a failure, the lists refresh: a 422 on remove_bot_ids means the bot list here
+      // is stale. The rows of the removed bots stay off until then.
+      request: sendPinChanges({
+        queryClient,
+        pins: removeBotIds.map((botId) => ({ botId, skillId: skill.id, expected: null })),
+        request: () =>
+          deprecate.mutateAsync({
+            path: { id: skill.id },
+            body: { remove_bot_ids: removeBotIds, row_version: skill.row_version },
+          }),
+        botsOf: () => [],
+        refresh: refreshPins,
+      }),
+      done: moveBase(inSync),
+      failed: apiErrorText,
+    });
   };
   // Remove from bots: one request for each ticked bot. A bot that fails stays in the list, so
-  // the owner can try again; a pin that is already gone counts as removed (api.md §4). The
-  // requests share one hook, whose `isPending` follows only the last one, so the dialog keeps
-  // its own flag until every request has ended.
+  // the owner can try again; a pin that is already gone counts as removed (api.md §4). Each bot's
+  // removal is a pin change of its own, so one that fails ends nothing of that pin. The requests
+  // share one hook, whose `isPending` follows only the last one, so the whole group is a mutation
+  // of its own.
   const removePin = useMutation(removeBotSkillMutation());
-  const [removing, setRemoving] = useState(false);
-  const removeFromBots = async (botIds: string[]) => {
-    const from = fromThisDialog();
-    setDialogError(null);
-    setRemoving(true);
-    const results = await Promise.allSettled(
-      botIds.map((id) => removePin.mutateAsync({ path: { id, skill_id: skill.id } })),
-    );
-    setRemoving(false);
-    void refreshPins();
-    const failures = results.filter((result) => result.status === "rejected").length;
-    if (failures === 0) {
-      from.done();
-      return;
-    }
-    from.failed(
-      `The app could not remove ${skill.name} from ${String(failures)} ${failures === 1 ? "bot" : "bots"}. Try again.`,
-    );
+  const removeFromBots = useMutation({
+    mutationFn: (botIds: string[]) =>
+      Promise.allSettled(
+        botIds.map((botId) =>
+          sendPinChanges({
+            queryClient,
+            pins: [{ botId, skillId: skill.id, expected: null }],
+            request: () => removePin.mutateAsync({ path: { id: botId, skill_id: skill.id } }),
+            botsOf: () => [],
+            refresh: refreshPins,
+          }),
+        ),
+      ),
+  });
+  const removeSkillFromBots = (botIds: string[]) => {
+    if (dialog === null) return;
+    runInDialog({
+      dialog,
+      request: removeFromBots.mutateAsync(botIds).then((results) => {
+        const failures = results.filter((result) => result.status === "rejected").length;
+        if (failures > 0) {
+          throw new Error(
+            `The app could not remove ${skill.name} from ${String(failures)} ${failures === 1 ? "bot" : "bots"}. Try again.`,
+          );
+        }
+      }),
+      failed: (error) => (error instanceof Error ? error.message : apiErrorText(error)),
+    });
   };
   const undeprecate = useMutation({
     ...undeprecateSkillMutation(),
@@ -333,24 +332,24 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   });
   const trash = useMutation(trashSkillMutation());
   const trashSkill = () => {
-    const from = fromThisDialog();
-    setDialogError(null);
-    void trash
-      .mutateAsync({ path: { id: skill.id }, body: { row_version: skill.row_version } })
-      .then(
-        () => {
-          void refreshPins();
-          // The Trash page comes in M5b; until then "Trash" is plain text, not a link (§11).
-          // The skill is gone, so the page leaves it even when the dialog was closed meanwhile.
-          showToast(`${skill.name} is in Trash.`);
-          closeDialog();
-          allowLeave();
-          void navigate({ to: "/skills", replace: true });
-        },
-        (error: unknown) => {
-          from.failed(apiErrorText(error));
-        },
-      );
+    if (dialog === null) return;
+    runInDialog({
+      dialog,
+      request: trash.mutateAsync({
+        path: { id: skill.id },
+        body: { row_version: skill.row_version },
+      }),
+      done: () => {
+        void refreshPins();
+        // The Trash page comes in M5b; until then "Trash" is plain text, not a link (§11).
+        // The skill is gone, so the page leaves it even when the dialog was closed meanwhile.
+        showToast(`${skill.name} is in Trash.`);
+        closeDialog();
+        allowLeave();
+        void navigate({ to: "/skills", replace: true });
+      },
+      failed: apiErrorText,
+    });
   };
 
   const tab: TabName = search.tab ?? "skill";
@@ -383,10 +382,10 @@ function SkillView({ skill }: { skill: SkillDetail }) {
               exportSkill.mutate([skill.id]);
             }}
             onDeprecate={() => {
-              setDialog("deprecate");
+              openDialog({ kind: "deprecate" });
             }}
             onDelete={() => {
-              setDialog("delete");
+              openDialog({ kind: "delete" });
             }}
           />
         </div>
@@ -400,7 +399,7 @@ function SkillView({ skill }: { skill: SkillDetail }) {
           skill={skill}
           pending={undeprecate.isPending}
           onRemoveFromBots={() => {
-            setDialog("remove");
+            openDialog({ kind: "remove" });
           }}
           onActivate={() => {
             undeprecate.mutate(
@@ -510,7 +509,7 @@ function SkillView({ skill }: { skill: SkillDetail }) {
         </TabsPanel>
       </TabsRoot>
       <DeprecateDialog
-        open={dialog === "deprecate"}
+        open={dialog?.kind === "deprecate"}
         skillName={skill.name}
         bots={bots}
         pending={deprecate.isPending}
@@ -522,19 +521,19 @@ function SkillView({ skill }: { skill: SkillDetail }) {
         }}
       />
       <RemoveFromBotsDialog
-        open={dialog === "remove"}
+        open={dialog?.kind === "remove"}
         skillName={skill.name}
         bots={bots}
-        pending={removing}
+        pending={removeFromBots.isPending}
         error={dialogError}
         onCancel={closeDialog}
         onConfirm={(botIds) => {
-          if (removing) return;
-          void removeFromBots(botIds);
+          if (removeFromBots.isPending) return;
+          removeSkillFromBots(botIds);
         }}
       />
       <DeleteDialog
-        open={dialog === "delete"}
+        open={dialog?.kind === "delete"}
         skillName={skill.name}
         trashDays={settings.trashDays}
         bots={bots}

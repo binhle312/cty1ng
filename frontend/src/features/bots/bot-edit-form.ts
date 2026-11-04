@@ -1,4 +1,4 @@
-import { botFieldProblem } from "@cty1ng/shared/bots";
+import { botFieldProblem, normaliseBotName } from "@cty1ng/shared/bots";
 import { BOT_VALUE_RANGES, HISTORY_STEP_PCT } from "@cty1ng/shared/settings";
 import type { UpdateBotData } from "../../lib/api/generated/types.gen.ts";
 import type { BotRow } from "./bot-queries.ts";
@@ -169,7 +169,8 @@ const FIELD_RULES = [
     words: "name",
     keys: ["name"],
     avatar: false,
-    changed: ({ form, saved }) => form.name !== saved.name,
+    // As the server stores it: white space alone is nothing to save (`storedForm`).
+    changed: ({ form, saved }) => normaliseBotName(form.name) !== normaliseBotName(saved.name),
     problem: ({ form, ctx }) =>
       only(
         "name",
@@ -285,6 +286,12 @@ export type EditField = (typeof FIELD_RULES)[number]["field"];
 // The form keys of some fields, each once.
 function formKeys(rules: readonly FieldRule[]): (keyof CreateForm)[] {
   return [...new Set(rules.flatMap((rule) => rule.keys))];
+}
+
+// The form as the server stores what it sent: the name is the only field the server changes
+// (`normaliseBotName`, bots.service.ts).
+export function storedForm(form: CreateForm): CreateForm {
+  return { ...form, name: normaliseBotName(form.name) };
 }
 
 // `into` with the fields of one tab taken from `from`: Discard, a save, or newer values.

@@ -1,5 +1,5 @@
 import { type QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "../../components/ui/button.tsx";
 import { Dialog, DialogButtons, DialogText } from "../../components/ui/dialog.tsx";
 import { Skeleton, SkeletonArea } from "../../components/ui/skeleton.tsx";
@@ -13,46 +13,44 @@ import {
 import type {
   CreateSkillResponse,
   CreateSkillVersionResponse,
-  ListSkillUpgradeCandidatesResponse,
+  PinSkillToBotsData,
 } from "../../lib/api/generated/types.gen.ts";
 import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
+import { readNewest, refreshQueries } from "../../lib/api/query-reads.ts";
 import { BotPickList } from "../bots/bot-list.tsx";
+import { type PinChange, sendPinChanges } from "../bots/bot-list-store.ts";
 import { type BotRow, pinErrorText, useBots } from "../bots/bot-queries.ts";
+import {
+  type AfterSaveCard,
+  type AfterSaveCardEvent,
+  afterSaveCardReducer,
+  type AfterSaveCardState,
+  createdToast,
+  initialAfterSaveCardState,
+  savedToast,
+} from "./after-save-card-state.ts";
+import { useDialogRequests } from "./dialog-requests.ts";
 import { LoadError } from "./load-error.tsx";
 import { VersionPill } from "./pills.tsx";
 import { SaveButton } from "./save-bar.tsx";
+import { createToastStore } from "./toast-store.ts";
 import { toggled } from "../../lib/sets.ts";
 
 // The bot cards after a save (skills-page.md §7): C4 offers the new version to the bots that use
 // an older one, every box ticked; C4b offers a new skill to the bots, no box ticked. When no bot
 // fits, the card does not open and only the toast shows. The card lives in the Skills layout,
 // because a Create moves from `/skills/new` to the new skill's page while the card is open.
-type Candidate = ListSkillUpgradeCandidatesResponse[number];
-
-export type AfterSaveCard =
-  | {
-      kind: "upgrade";
-      skillId: string;
-      skillName: string;
-      version: number;
-      versionId: string;
-      candidates: Candidate[];
-    }
-  | { kind: "assign"; skillId: string; skillName: string; versionId: string };
-
-// The toasts that stand for a card: when no bot fits, or when the card's page is gone.
-const savedToast = (version: number) => `Saved v${String(version)} ✨`;
-const createdToast = (skillName: string) => `Created ${skillName} ✨`;
-
 // The skill's version with that number, read fresh: the card sends its id.
 async function versionIdOf(
   queryClient: QueryClient,
   { skillId, version }: { skillId: string; version: number },
 ): Promise<string | undefined> {
-  const versions = await queryClient.query({
-    ...listSkillVersionsOptions({ path: { id: skillId } }),
-    staleTime: 0,
-  });
+  const versions = await readNewest(() =>
+    queryClient.query({
+      ...listSkillVersionsOptions({ path: { id: skillId } }),
+      staleTime: 0,
+    }),
+  );
   return versions.find((item) => item.version === version)?.id;
 }
 
@@ -68,10 +66,12 @@ export async function upgradeCardAfterSave(
     return null;
   };
   try {
-    const candidates = await queryClient.query({
-      ...listSkillUpgradeCandidatesOptions({ path: { id: skill.id } }),
-      staleTime: 0,
-    });
+    const candidates = await readNewest(() =>
+      queryClient.query({
+        ...listSkillUpgradeCandidatesOptions({ path: { id: skill.id } }),
+        staleTime: 0,
+      }),
+    );
     const older = candidates.filter((c) => c.version < version);
     if (older.length === 0) return toast();
     const versionId = await versionIdOf(queryClient, { skillId: skill.id, version });
@@ -99,7 +99,7 @@ export async function assignCardAfterCreate(
     return null;
   };
   try {
-    const bots = await queryClient.query({ ...listBotsOptions(), staleTime: 0 });
+    const bots = await readNewest(() => queryClient.query({ ...listBotsOptions(), staleTime: 0 }));
     if (bots.length === 0) return toast();
     const versionId = await versionIdOf(queryClient, { skillId: skill.id, version: 1 });
     if (versionId === undefined) return toast();
@@ -109,10 +109,36 @@ export async function assignCardAfterCreate(
   }
 }
 
-// The toast that stands for a card when its page is gone (the owner left the Skills page while
-// the save was on its way): the save is not lost, and the Bots tab still offers the change.
-export function cardToast(card: AfterSaveCard): string {
-  return card.kind === "upgrade" ? savedToast(card.version) : createdToast(card.skillName);
+// The card of the Skills layout: the rules are in `after-save-card-state.ts`. The state lives
+// outside React, so a card read after the owner left the page still shows its toast.
+export function useAfterSaveCard() {
+  const [{ store, actions }] = useState(() => {
+    const store = createToastStore<AfterSaveCardState, AfterSaveCardEvent>({
+      initial: initialAfterSaveCardState(),
+      reduce: afterSaveCardReducer,
+    });
+    const actions = {
+      showBotCard: (coming: Promise<AfterSaveCard | null>) => {
+        const { asked: turn } = store.dispatch({ type: "asked" });
+        void coming.then((card) => {
+          if (card !== null) store.dispatch({ type: "cardRead", turn, card });
+        });
+      },
+      closeCard: (card: AfterSaveCard) => {
+        store.dispatch({ type: "closed", card });
+      },
+    };
+    return { store, actions };
+  });
+  const state = useSyncExternalStore(store.subscribe, store.get);
+  // A layout cleanup runs in the commit that removes the page, so no read lands in between.
+  useLayoutEffect(() => {
+    store.dispatch({ type: "pageEntered" });
+    return () => {
+      store.dispatch({ type: "pageLeft" });
+    };
+  }, [store]);
+  return { card: state.card, ...actions };
 }
 
 export function AfterSaveCardHost({
@@ -135,34 +161,35 @@ export function AfterSaveCardHost({
   );
 }
 
-// A request can end after its card closed (Skip, Esc or a newer card while it was on its way):
-// a success then closes nothing, because the host closes only the card that asks, and a failure
-// shows as a toast, because the card that would show it is gone.
-function useSendPins(onDone: () => void) {
+// The request of a card (`dialog-request-state.ts`): it can end after the card closed (Skip, Esc
+// or a newer card while it was on its way). A success then closes nothing, because the host closes
+// only the card that asks, and a failure shows as a toast, because the card that would show it is
+// gone. The rows of the Bots tab stay off until the refresh after the answer (bot-page.md §4.2, Q3).
+function useSendPins({ card, onDone }: { card: AfterSaveCard; onDone: () => void }) {
   const queryClient = useQueryClient();
-  const [error, setError] = useState<string | null>(null);
-  const shown = useRef(true);
-  useEffect(() => {
-    shown.current = true;
-    return () => {
-      shown.current = false;
-    };
-  }, []);
-  const { mutateAsync, isPending } = useMutation(pinSkillToBotsMutation());
-  const send = (...input: Parameters<typeof mutateAsync>) => {
-    setError(null);
-    mutateAsync(...input)
-      .then(() => {
-        onDone();
-      })
-      .catch((cause: unknown) => {
-        const text = pinErrorText({ error: cause, changed: null });
-        if (shown.current) setError(text);
-        else showToast(text);
-      })
-      .finally(() => void queryClient.invalidateQueries({ predicate: PIN_QUERIES }));
+  const { run, pending, error } = useDialogRequests<AfterSaveCard>({ initial: card });
+  const { mutateAsync } = useMutation(pinSkillToBotsMutation());
+  const send = ({
+    pins,
+    body,
+  }: {
+    pins: readonly PinChange[];
+    body: PinSkillToBotsData["body"];
+  }) => {
+    run({
+      dialog: card,
+      request: sendPinChanges({
+        queryClient,
+        pins,
+        request: () => mutateAsync({ path: { id: card.skillId }, body }),
+        botsOf: (bots) => bots,
+        refresh: () => refreshQueries(queryClient, { predicate: PIN_QUERIES }),
+      }),
+      done: onDone,
+      failed: (cause) => pinErrorText({ error: cause, changed: null }),
+    });
   };
-  return { send, pending: isPending, error };
+  return { send, pending, error };
 }
 
 // The bot list of a card has the list states (requirements/README.md): loading shapes while the
@@ -213,7 +240,7 @@ function UpgradeCard({
   const candidates = (live.data ?? card.candidates).filter((c) => c.version < card.version);
   // The bots the owner unticked: every other row is ticked, also one that comes in a refresh.
   const [unticked, setUnticked] = useState<ReadonlySet<string>>(new Set());
-  const { send, pending, error } = useSendPins(onClose);
+  const { send, pending, error } = useSendPins({ card, onDone: onClose });
   // A bot that left (Trash) while the card is open drops out of the list.
   const rows = candidates.flatMap((candidate) => {
     const bot = bots.data?.find((b) => b.id === candidate.bot_id);
@@ -263,7 +290,14 @@ function UpgradeCard({
           }
           onClick={() => {
             send({
-              path: { id: card.skillId },
+              pins: chosen.map(({ candidate }) => ({
+                botId: candidate.bot_id,
+                skillId: card.skillId,
+                expected: {
+                  skill_version_id: candidate.skill_version_id,
+                  always_load: candidate.always_load,
+                },
+              })),
               body: {
                 skill_version_id: card.versionId,
                 // No `always_load`: the server keeps each bot's own value (§7.3), so a change
@@ -292,7 +326,7 @@ function AssignCard({
   const skip = useRef<HTMLButtonElement>(null);
   const bots = useBots();
   const [ticked, setTicked] = useState<ReadonlySet<string>>(new Set());
-  const { send, pending, error } = useSendPins(onClose);
+  const { send, pending, error } = useSendPins({ card, onDone: onClose });
   // A bot that got the skill in another place leaves the list, so a retry after a conflict
   // (409 `stale_write`) sends only the bots that still have no pin.
   const all: BotRow[] = (bots.data ?? []).filter(
@@ -335,7 +369,11 @@ function AssignCard({
           }
           onClick={() => {
             send({
-              path: { id: card.skillId },
+              pins: chosen.map((bot) => ({
+                botId: bot.id,
+                skillId: card.skillId,
+                expected: null,
+              })),
               body: {
                 skill_version_id: card.versionId,
                 bots: chosen.map((bot) => ({ bot_id: bot.id, expected_skill_version_id: null })),

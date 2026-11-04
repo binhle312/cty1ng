@@ -399,6 +399,34 @@ describe("A newer row_version (event, refresh, another tab)", () => {
     expect(state.base).toEqual({ profile: 2, model: 2 });
   });
 
+  // The server stores the name trimmed and collapsed, so the name it loads is not the text sent.
+  it("a Save of a name with extra white space whose answer was lost: no conflict (Q4)", () => {
+    let state = run(send(run(start(), name("  New   BA  "))), failed(null));
+    state = run(state, server(2, { name: "New BA" }));
+    expect(view(state).conflict("profile")).toBe(false);
+    expect(view(state).dirtyFields).toEqual([]);
+    expect(state.form.name).toBe("New BA");
+    expect(state.base.profile).toBe(2);
+  });
+
+  it("a Save of a name with extra white space that answers: the field shows the stored name", () => {
+    const state = run(send(run(start(), name("  New   BA  "))), answered(2));
+    expect(state.form.name).toBe("New BA");
+    expect(view(state).dirtyFields).toEqual([]);
+  });
+
+  it("a Save of a name with extra white space that answers: text typed since it went stays", () => {
+    const state = run(send(run(start(), name("  New   BA  "))), name("New BA two"), answered(2));
+    expect(state.form.name).toBe("New BA two");
+    expect(view(state).changed.profile).toEqual(["name"]);
+  });
+
+  it("Changes that differ from the server's name in more than white space: conflict (Q4)", () => {
+    const state = run(start(), name("  New   BA  "), server(2, { name: "New BB" }));
+    expect(view(state).conflict("profile")).toBe(true);
+    expect(state.form.name).toBe("  New   BA  ");
+  });
+
   it("Changes while the other tab's Save waits: no conflict; the answer decides (Q1)", () => {
     let state = send(run(start(), name("BA two"), limit(20)));
     state = run(state, server(2, { name: "BA two" }));

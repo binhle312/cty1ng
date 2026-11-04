@@ -97,7 +97,7 @@ export function emptyForm(colour: string, settings: FormSettings): CreateForm {
 
 // "With input" for the leave question (E6): anything the owner typed or picked. The colour the
 // page picked and the defaults do not count.
-export function hasInput(form: CreateForm, start: CreateForm): boolean {
+export function hasInput({ form, start }: { form: CreateForm; start: CreateForm }): boolean {
   return JSON.stringify(form) !== JSON.stringify(start);
 }
 

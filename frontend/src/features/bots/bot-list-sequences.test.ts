@@ -15,6 +15,7 @@ import {
   type BotListState,
   botListReducer,
   initialBotListState,
+  pinChangeOnItsWay,
   shownBots,
   shownSettings,
 } from "./bot-list-state.ts";
@@ -95,7 +96,7 @@ interface PinWorld extends World<PinServer> {
   sent: PinRequest[];
   // The requests whose answer has not come yet.
   open: PinRequest[];
-  // Always load changes whose refresh has not ended.
+  // The requests whose answer came and whose refresh has not ended.
   refreshing: number[];
   // The server after each change, oldest first; a load holds the index of its snapshot.
   history: PinServer[];
@@ -255,8 +256,13 @@ function pinModel({
     } else {
       dispatch(world, { type: "refused", id: request.id });
     }
-    if (request.kind === "toggle" && !request.ended) world.refreshing.push(request.id);
+    // The refresh starts with the answer, and it cuts short a load on its way.
+    if (world.loadsLand) world.load = null;
+    if (!request.ended) world.refreshing.push(request.id);
   }
+
+  const skillOf = (world: PinWorld, id: number) =>
+    world.sent.find((request) => request.id === id)?.skillId;
 
   const steps = (world: PinWorld): Step[] => {
     const out: Step[] = [];
@@ -344,13 +350,34 @@ function pinModel({
       }
     }
     for (const id of world.refreshing) {
-      out.push({
-        label: `refresh after #${String(id)} ends`,
-        run: () => {
-          world.refreshing = world.refreshing.filter((other) => other !== id);
-          dispatch(world, { type: "refreshEnded", id });
+      const ended = () => {
+        world.refreshing = world.refreshing.filter((other) => other !== id);
+        dispatch(world, { type: "refreshEnded", id });
+      };
+      if (!world.loadsLand) {
+        out.push({ label: `refresh after #${String(id)} ends`, run: ended });
+        continue;
+      }
+      out.push(
+        {
+          label: `refresh after #${String(id)} brings the list`,
+          run: () => {
+            world.load = null;
+            world.loadedAt = world.history.length - 1;
+            world.blind = [];
+            dispatch(world, { type: "listLoaded", bots: [botOf(world.server)] });
+            ended();
+          },
         },
-      });
+        {
+          label: `refresh after #${String(id)} fails`,
+          run: () => {
+            const skillId = skillOf(world, id);
+            if (skillId !== undefined) world.unknown.push(skillId);
+            ended();
+          },
+        },
+      );
     }
     if (world.loadsLand) {
       out.push({
@@ -413,6 +440,36 @@ function pinModel({
     }
   };
 
+  // The row's actions are off from the moment a change of the pin goes out until the refresh
+  // after its answer ends; a Remove hides its row instead. And a row whose actions are on shows
+  // the server's pin, so its next change never sends an old pin as `expected` (Q3). A failed
+  // refresh or a lost answer can leave an old pin: the server refuses that change as stale.
+  const checkRowActions = (world: PinWorld) => {
+    for (const skillId of skills) {
+      const key = { botId: BOT, skillId };
+      const live = world.sent.some(
+        (request) =>
+          request.kind !== "remove" &&
+          request.skillId === skillId &&
+          ((world.open.includes(request) && !request.ended) ||
+            world.refreshing.includes(request.id)),
+      );
+      if (pinChangeOnItsWay(world.state, key) !== live) {
+        throw new Error(`the ${skillId} row's actions are ${live ? "on" : "off"} with no reason`);
+      }
+      if (world.otherTab || !world.loadsLand) continue;
+      if (live || world.unknown.includes(skillId)) continue;
+      if (world.open.some((request) => request.skillId === skillId)) continue;
+      if (world.refreshing.some((id) => skillOf(world, id) === skillId)) continue;
+      const shown = shownPin(world, skillId);
+      if (!samePin(shown, pinIn(world.server, skillId))) {
+        throw new Error(
+          `the ${skillId} row's actions are on with ${JSON.stringify(shown)}, the server has ${JSON.stringify(pinIn(world.server, skillId))}`,
+        );
+      }
+    }
+  };
+
   // With loads: a pin with no request on its way shows a value the server had at or after the
   // snapshot of the last load that landed (with another tab, except after a blind answer). An older answer never puts back a
   // value that a newer load replaced.
@@ -461,6 +518,7 @@ function pinModel({
       }
     }
     checkSwitch(world);
+    checkRowActions(world);
     checkSinceLoad(world);
   };
 
