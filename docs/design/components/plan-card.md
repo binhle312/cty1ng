@@ -76,8 +76,8 @@ line for each text (owner, 2026-10-24):
   does too. Esc or **Cancel** closes the box and brings the buttons back.
 - A normal message that the owner sends while the plan waits counts as a change request for that
   plan.
-- After Send, the old plan folds to one line: **Plan**, the pill **Changes requested**, "Show
-  ›", and the note rendered as Markdown. A folded line never repeats the word in its pill
+- After Send, the old plan folds to one line: **Plan**, the pill **Changes requested**, "Show",
+  and the note rendered as Markdown. A folded line never repeats the word in its pill
   (`conversation-cards.md` §3). The bot makes a new plan, still with read-only tools,
   with the next version number. Only the newest version can be approved. Each version is one more
   model call.

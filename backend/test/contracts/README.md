@@ -1,7 +1,7 @@
 # contracts
 
 One contract suite per port (D35). A new adapter must pass its port's suite
-(`docs/architecture.md` §4.1).
+(`docs/architecture.md` §2).
 
 | File | What it is for |
 | --- | --- |

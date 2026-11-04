@@ -5,7 +5,7 @@ Creating, cloning, deleting and configuring bots, including skill pins and avata
 ## Stories
 
 - **BT-1.** As the owner, I want a list of my bots with model, skills, status and health, so that I can manage them at a glance.  
-  Acceptance criteria: UI-4.1 to UI-4.3, UI-4.6 to UI-4.8.
+  Acceptance criteria: UI-4.1 to UI-4.3, UI-4.6 to UI-4.8, UI-6.9.
 - **BT-2.** As the owner, I want to create a bot with a fixed model and effort, so that its behaviour stays stable.  
   Acceptance criteria: UI-5.1 to UI-5.3, UI-5.5 to UI-5.8.
 - **BT-3.** As the owner, I want to clone a bot into a prefilled form I can change, so that I can try another model or retire an old one.  
@@ -19,7 +19,7 @@ Creating, cloning, deleting and configuring bots, including skill pins and avata
 
 ## Acceptance criteria
 
-Shared rules for every story: `README.md` §Applies to every story. Layouts referenced below are sketches in `../design/`, not final designs.
+Shared rules for every story: `README.md` §Applies to every story. Agreed designs are in `../design/components/`; other layouts in `../design/` are sketches.
 
 ## Bots page (UI-4)
 
@@ -37,7 +37,7 @@ Design: `../design/components/bots-page.md` (agreed, round 9).
 - UI-4.4: Clone opens the Create page prefilled from `clone-template`: name "<name> (copy)",
   description, persona, avatar style, model, effort, Advanced values, tool
   switches, and pins (with versions and always-load). All editable before saving. Cancel creates
-  nothing. The page opens on step 4, Model, with every step ✓ (`../design/components/create-bot-page.md` §6).
+  nothing. The page opens on step 4, Model, with the other steps ✓ (`../design/components/create-bot-page.md` §6).
   The suggested name fits the name limit and is free ("(copy 2)" when "(copy)" is taken). A model
   change turns off copied tools the new model does not have and says which ones (§3.0 there).
 - UI-4.5: **Order.** Pinned bots come first, in the owner's order; the others follow by the

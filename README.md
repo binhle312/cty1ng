@@ -22,8 +22,8 @@ Other commands:
 
 ```bash
 make start                    # the production build on http://127.0.0.1:8000 (pnpm start)
-cp .env.example .env          # settings; provider API keys from M3
-make seed                     # optional: BA and Designer bots with their skills (M1)
+cp .env.example .env          # settings; a provider API key makes its models available
+make seed                     # optional: example skills and the bots Guide, BA and Designer (the bots need a provider key)
 pnpm lint && pnpm typecheck && pnpm test && pnpm check:index && pnpm check:events
 pnpm e2e                      # Playwright; first run: pnpm exec playwright install chromium
 pnpm gen:api                  # regenerate the API client after an API change

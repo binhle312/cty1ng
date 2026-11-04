@@ -18,7 +18,7 @@ At handoff, reconcile the PR's issues, review rounds, and verification evidence 
 | --- | --- | --- |
 | **Owner (human)** | Chooses the next slice; approves plans for checkpointed slices; reviews `Needs human review` items; merges; accepts or rejects proposed decisions | Write most of the code |
 | **Builder agent** (Claude Code or Codex) | Plans the slice, implements, runs every check, writes the PR description with evidence, updates docs | Merge; change accepted decisions; widen scope |
-| **Reviewer agent** (the *other* one) | Reviews the PR against the brief and the docs; checks evidence; tries to break it | Push to the builder's branch (it comments; the builder fixes) |
+| **Reviewer agent** (the *other* one) | Reviews the PR against the brief and the docs; checks evidence; tries to break it | Push to the builder's branch (it reports findings; the builder fixes) |
 
 **Why two different agents.** Different models make different mistakes, so cross-review catches
 more than self-review, and it is cheap. Alternate who builds (for example Claude Code builds
@@ -51,8 +51,11 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    answer after the owner moved on is its own part, and so is a set of dialogs or cards with
    their own requests. A plan that touches more than about 30 files is a sign to split (lesson
    `state-table-before-stateful-code.md`).
-2. **Plan.** The builder reads the brief and the documents it lists, then writes a short plan
-   (files to touch, migrations, tests to add, risks) as the first comment of a draft PR.
+2. **Plan.** Every slice has a plan before its code, checkpointed or not (owner, 2026-11-04).
+   The builder reads the brief and the documents it lists, then writes a short plan (files to
+   touch, migrations, tests to add, risks) in `docs/plans/<slice>-<name>.md`. The file goes in a
+   draft PR, so the owner reviews it there and the repository keeps it for reference. The rules
+   for the file are in [plans/README.md](plans/README.md).
    **Risk probes first.** Before the builder writes the plan, it runs short checks on every
    part that it has not used in this repository yet, and puts the results in the plan as
    evidence. For example: does the library work under our CSP (no `new Function`, no inline
@@ -83,7 +86,7 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    snapshot. `pnpm check:index` fails when a snapshot colour differs from
    `frontend/src/themes/command.css` (owner, 2026-10-30).
    **Test strategy before code.** After the plan, and before any code, the builder writes the
-   test strategy as a section of the draft PR (owner, 2026-11-03). For each acceptance
+   test strategy as a section of the plan file (owner, 2026-11-03). For each acceptance
    criterion it lists the behaviour, the test level (unit, component, API, contract, end to
    end) and the cases beyond the normal path: the edge cases in `testing.md` §3, and above all
    the order and timing cases (an answer that comes late, a change in another tab, a Discard
@@ -200,7 +203,8 @@ You are the builder for slice <M#> of this repository.
    brief lists under "Read first".
 2. Write a plan as described in docs/workflow.md §2 step 2: run the risk probes first, and
    end the plan with every open question in one list. Then write the test strategy
-   (§2 step 2, "Test strategy before code"). Open a draft PR with the plan and the strategy.
+   (§2 step 2, "Test strategy before code"). Commit both to docs/plans/<slice>-<name>.md, and
+   open a draft PR with that file.
    Stop and wait for my approval if the brief says "checkpoint: plan".
    If a screen has saves under a lock, live events or late answers, the plan has its state
    table (§2 step 2, "State table for stateful screens").
@@ -223,7 +227,7 @@ Check, in order:
 1. Every acceptance criterion: is it implemented, and does the cited test really prove it?
    Run the tests yourself.
 2. Architecture rules in AGENTS.md §5 (domain purity, events in the same transaction,
-   generated client only, immutability rules, sandbox use, Markdown rendering).
+   generated client only, immutability rules, workspace port use, Markdown rendering).
 3. Security: anything touching docs/security.md controls.
 4. Invariants in docs/domain-model.md §12 that this slice touches.
 5. Docs: does the PR update the owning document for every behaviour change? For a changed
@@ -287,10 +291,12 @@ The owner approves, in every slice:
 
 - the plan, for slices marked *checkpoint: plan*;
 - the UI design, for any slice that adds or changes a screen;
+- the code design, when a slice adds shared state, a module boundary or a flow across screens;
 - every database migration;
 - security-sensitive code (`security.md` areas);
 - new dependencies;
 - new or changed decisions;
+- the public API shape, changes to `AGENTS.md`, and anything outside the task's scope;
 - the merge.
 
 The agents may, without asking: implement inside the brief, write and run tests, refactor

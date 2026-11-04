@@ -7,6 +7,9 @@
 
 ## §1. App shell, rail and header
 
+> **Replaced** by the agreed design in `components/left-bar.md`, `top-header.md` and
+> `user-panel.md`. The sketch below is kept for history only.
+
 ```
 ┌────┬──────────────────────────────────────────────────────────────────┐
 │ ＋ │  (BA)(Des)(QA) …   bot avatars, draggable        Bots  Skills  ⚙ │  header

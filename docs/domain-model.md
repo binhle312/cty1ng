@@ -16,7 +16,7 @@ design in this document first, then the generated SQL in the slice PR (`../AGENT
   implemented with the `uuidv7` package.
 - Timestamps are UTC, stored as ISO-8601 `TEXT` (with `Z`) through one Drizzle column helper, so
   Postgres can map it to `timestamptz` later.
-- Soft deletion uses `deleted_at` (bots) or `deprecated_at` (skills). Nothing that a message or
+- Trash uses `deleted_at` (bots, projects, conversations, memory items) or `trashed_at` (skills, only after `deprecated_at`). Nothing that a message or
   run refers to is ever hard-deleted, with one exception: the Trash purge of a skill (D49, §3.4).
   Runs keep a copy of the skill's slug and version for this case (§3.7).
 - Actor columns (`author_id`, `created_by`) hold the owner's user id. In phase 1 this is the
@@ -449,8 +449,8 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
   never takes a job that a saved provider choice holds; (6) run the `needs` check of step 4
   again, so a tool whose needed tool step 5 turned off is off too. GET returns the effective settings and
   writes nothing; the stored JSON changes only on a save. `POST /bots` and `PATCH /bots/{id}`
-  check the body against the same rules: a tool the model does not offer, or a tool on whose
-  `switch` is `later` or `locked`, gets 422 `tool_not_available`, two tools of one job on get 422 `tool_job_conflict`, and a tool on while
+  check the body against the same rules: a tool turned on that the model does not offer, or whose
+  `switch` is `later` or `locked`, gets 422 `tool_not_available` (the same tool turned off is ignored), two tools of one job on get 422 `tool_job_conflict`, and a tool on while
   its `needs` tool is off gets 422 `validation_error` with `field: "tool_settings.<id>"`. The
   service then stores the effective result of the body.
 - **Name key (M2 spec gap pass, owner 2026-11-01; M2 plan, decision 5).** Names compare by
@@ -472,7 +472,7 @@ UNIQUE INDEX bots_pinned_position ON bots(pinned_position) WHERE pinned_position
 - **Slug (D19, M2 spec gap pass, owner 2026-11-01).** Made from the name at create: Unicode NFKD,
   remove combining marks, "đ" and "Đ" to "d", lower case, each run of characters outside `a–z`
   and `0–9` to one "-", trim "-" at both ends. Empty (for example a name of emoji only) → `bot`.
-  At most `BOT_SLUG_MAX` (40, a fixed format rule) characters **with** its suffix: the base is
+  At most `BOT_FORMAT.slugMax` (40, a fixed format rule) characters **with** its suffix: the base is
   cut, with no "-" at its end, so that "-2", "-3", … still fits. `new` is reserved (the Create
   page URL) and counts as taken. A slug held by any row (live, Trash or tombstone) is taken
   forever. The create transaction picks the suffix: one writer at a time (`BEGIN IMMEDIATE`)
@@ -535,6 +535,7 @@ skills
   deprecated_at                  TIMESTAMP NULL
   trashed_at                     TIMESTAMP NULL           -- in Trash (D49); set only when deprecated_at is set
   trashed_bot_ids                JSON NULL                -- bots that used it at delete time, for the restore suggestion
+  CHECK (trashed_at IS NULL OR deprecated_at IS NOT NULL)
 
 skill_versions                                            -- no UPDATE; DELETE only by the Trash purge (D49)
   id            TEXT PK
@@ -661,7 +662,7 @@ Why integers and not semver: compatibility of prose cannot be checked by a machi
 
 ### 3.5 Import and export (D5)
 
-Folder layout (also the zip layout):
+Folder layout. In a zip, the `<slug>/` folders are at the root. The CLI takes the parent folder (`skills/` here):
 
 ```
 skills/
@@ -669,9 +670,7 @@ skills/
   interview-stakeholder/SKILL.md
 ```
 
-Import (UI: upload a zip or choose a folder; CLI: `app skills import <folder>`):
-
-The UI takes a zip; only the CLI reads a folder.
+Import (UI: upload a zip; CLI: `pnpm --filter backend cli skills import <folder>`):
 
 1. **Preview** (no writes): for each `<slug>/SKILL.md` → `new`, `changed` (with a diff against
    the latest version), `unchanged`, or `invalid` (with the reason: bad frontmatter, slug
@@ -679,9 +678,10 @@ The UI takes a zip; only the CLI reads a folder.
    likely secret (D39, `security.md` §2.13)). Skills authored by someone else are
    `conflict: not author`. A slug of a skill in Trash is `conflict: in Trash`. A slug of a
    deprecated skill is `conflict: deprecated` ("Deprecated. Make it active again to import.").
-   Files other than `SKILL.md` are listed as skipped and never read (bots cannot run code).
+   Other files in a skill folder are listed as skipped and never read (bots cannot run code).
+   Files outside a skill folder are ignored and not listed.
 2. **Apply** (after confirmation): for the rows the owner ticked (all by default), `new` →
-   create skill v1; `changed` → new version; others skipped. All in one transaction. Skills absent from the folder are untouched (one-way,
+   create skill v1; `changed` → new version. An empty list, or a slug that is not `new` or `changed`, gets 422 `validation_error` with `field: "slugs"`, and nothing is written. All in one transaction. Skills absent from the folder are untouched (one-way,
    additive).
 
 **Names and changelog on import.** A new skill gets its slug as its display name; the owner can
@@ -1205,7 +1205,7 @@ limit with its error only when the owner edits it.
 ```
 data/
   app.db                                    SQLite database (+ -wal, -shm)
-  avatars/<sha256>.webp                     re-encoded uploads, content-addressed; unused files leave after AVATAR_ORPHAN_HOURS (§2 Avatar files)
+  avatars/<sha256>.webp                     re-encoded uploads, content-addressed; unused files leave after AVATAR_ORPHAN_HOURS (§2 Avatar files); `.staged-<uuid>.webp` in this folder are uploads in progress
   libraries/<project_id>/                   a project's Library: one git repo, main checked out, shared by its conversations (D37, D52)
   libraries/home/                           the Home Library: one git repo for all conversations outside projects (D52 amendment 2026-10-25)
       attachments/<yyyy-mm-dd>-<conversation-slug>/<file>   owner uploads (bots: read-only, D52)
@@ -1222,7 +1222,7 @@ Backup = copy `data/` while the app is stopped (or use `sqlite3 .backup` for the
 2. `skill_versions` rows are never updated; only the Trash purge deletes them, with their skill (D49).
 3. `bot_skills.skill_version_id` belongs to `bot_skills.skill_id`. The composite foreign key
    enforces it; the test proves that the database refuses a pin to another skill's version.
-4. Editing a skill does not change any `bot_skills` row unless the author checked that bot.
+4. Saving a skill version changes no `bot_skills` row; only a separate `POST /skills/{id}/bots` moves pins.
 5. Only the author can create versions, deprecate, delete or restore a skill.
 6. A deprecated skill cannot be newly assigned, with two narrow exceptions that the server
    checks inside the transaction: a clone that copies a live source bot's pin to that same skill
@@ -1296,7 +1296,7 @@ the bot's model has no known price → `failed` with `price_unknown`, D42 amendm
 then the bot's provider cap, if set
 (today's spend on that provider ≥ its cap → `failed` with `provider_cap_reached`), then the total
 (today's spend ≥ cap → `failed` with `daily_cap_reached`); either way a system notice names the
-cap that was hit. Crossing 75% and 90% of any cap (D40) emits a `spend.threshold_crossed` event
+cap that was hit. Crossing 75%, 90% and 100% of any cap (D40, D42) emits a `spend.threshold_crossed` event
 once per threshold per cap per day (the day it fired is stored in `settings`), shown as a banner,
 a toast and a system line.
 
@@ -1304,7 +1304,7 @@ a toast and a system line.
 
 | Metric | Definition |
 | --- | --- |
-| Cost | Sum of `model_requests.estimated_cost_usd`, title requests included (D46); requests with NULL cost counted separately |
+| Cost | Sum of `model_requests.estimated_cost_usd`, title requests (D46) and memory upkeep requests (D63) included; requests with NULL cost counted separately |
 | Tokens | input + output (cache-read and cache-write shown separately, not added twice) |
 | Requests | Rows in `model_requests` |
 | Runs | Rows in `runs` with status `done`, `failed` or `stopped` |
@@ -1466,8 +1466,9 @@ UNIQUE INDEX memory_proposals_one_open ON memory_proposals(kind, scope, coalesce
   `item_row_versions` and checks each item's current `scope`, place id and `row_version`
   against the card (owner, 2026-10-29); a change whose item has moved to another place or
   has a newer `row_version` is skipped as stale and returned. A
-  check change also stores `instructions_version`; Decide and Apply refuse it with 409
-  `instructions_changed` when the project's version moved on. A
+  check change also stores `instructions_version`; Decide refuses it with 409
+  `instructions_changed` when the project's version moved on. Apply skips that change with the
+  reason `instructions_changed` and applies the others (D63). A
   merge updates the first item and moves the others to Trash. `check` proposals keep a change
   with `decision = 'later'` as an open conflict (`design/components/memory-pane.md` §4). At
   start, the app sets every `requested` proposal to `failed`.

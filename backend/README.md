@@ -12,7 +12,7 @@ The Node backend: Hono over HTTP, Drizzle on SQLite, ports and adapters (D35,
 | `src/` | The source |
 | `src/app/` | The composition root, configuration and the CLI |
 | `src/core/` | Business logic and the ports; never imports an adapter |
-| `src/adapters/` | One folder per outside system (`http`, `sse`, `db`, `log`, `ids`, `clock`, `model`) |
+| `src/adapters/` | One folder per outside system (`http`, `sse`, `db`, `log`, `ids`, `clock`, `avatars`, `model`) |
 | `test/` | Tests that are not next to their code |
 | `test/helpers.ts` | A test backend on a temporary database, an in-memory logger, SSE frame readers |
 | `test/contracts/` | One contract suite per port, run by every adapter |

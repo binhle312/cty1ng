@@ -86,7 +86,7 @@ changes one adapter and nothing else.
 
 | Port (`core/ports/`) | What the core asks for | Phase-1 adapter | Later or alternative |
 | --- | --- | --- | --- |
-| `transport.ts` | `subscribe(afterSeq) → AsyncIterable<Event>` turned into frames | `adapters/sse/` | WebSocket (`realtime-events.md` §1a) |
+| `transport.ts` | `subscribe(afterSeq, signal) → AsyncIterable<Event>` turned into frames | `adapters/sse/` | WebSocket (`realtime-events.md` §1a) |
 | `repositories.ts` | One repository per aggregate, plus `UnitOfWork.run(tx => …)` | `adapters/db/` (Drizzle, SQLite) | Drizzle on Postgres (D29) |
 | `queue.ts` | Enqueue, claim with lease, finish, fail | `adapters/queue/in-process/` (rows in `runs`) | `adapters/queue/pg-boss/` |
 | `model.ts` | Stream a reply with tools; report usage per request | `adapters/model/ai-sdk/`, `adapters/model/fake/` | Direct vendor SDKs |
@@ -107,14 +107,15 @@ outside the port list, and each is built in the slice that needs it, not in M0:
 | Capability | Where it lives | Slice |
 | --- | --- | --- |
 | Avatar check and re-encode with `sharp` (`security.md` §2.4) | `adapters/http/uploads/avatar-image.ts`. The avatars service gets only the re-encoded WebP; the file store is the `avatar-files` port above (M2 plan, decision 1: a test needs a fake that can fail, and the cleanup must read file times inside the write lock) | M2 |
-| Timed jobs (Trash purge) | A timer that `app/` starts; it calls a core service with the time from the clock port (§6.1) | M1, then M5b |
+| Timed jobs (Trash purge) | A timer that `app/` starts; it calls a core service with the time from the clock port (§6.1) | M1, M2, then M5b |
 | Open folder (`security.md` §2.15) | One method on the workspace port; the program starts in the local-git adapter | M6 |
 
 The unit of work is the guarantee that matters most: a state change and its event commit
 together.
 
 **Contract tests.** Each port has one suite in `backend/test/contracts/<port>.contract.ts`.
-Every adapter runs it (the SSE adapter and the fake model from M0). A new adapter is done when
+Every adapter runs it (the SSE adapter and the Drizzle unit of work from M0, the avatar store
+from M2, the model adapters from M3). A new adapter is done when
 it passes the suite.
 
 **Not abstracted:** TypeScript, React, Zod and SQL beyond what Drizzle covers for SQLite and
@@ -127,12 +128,12 @@ Postgres. D35 explains why.
 | `adapters/http/` | Hono routes (Zod schemas via `@hono/zod-openapi`), status codes, error mapping, middleware (Host/Origin, `secureHeaders`, `bodyLimit`, CORS in dev, Pino logging), avatar upload checks with `sharp` in `uploads/` | Contain business rules or SQL. A handler parses, calls one service, maps the result |
 | `core/<feature>/*.service.ts` | Use cases: transactions through the unit of work, calling rules, appending events | Import Hono, Drizzle, `ai`, pg-boss or any adapter |
 | `core/<feature>/*.rules.ts` | Decisions as pure functions (`decideRuns`, `budgetAfter`, `visibleHistory`, `parseMentions`) | Import ports, services, adapters or `Date.now()`; time comes in as an argument |
-| `core/events/` | `appendEvent(tx, type, data)`; the hub that wakes subscribers after commit | Be called outside a unit of work that also changes state |
+| `core/events/` | `appendEvent(tx, { event, conversationId })`; the hub that wakes subscribers after commit | Be called outside a unit of work that also changes state |
 | `core/runs/` | The worker loop: claim through the queue port, leases, retries, cancellation, building the prompt, the bot's tools, writing the bot message | Decide who runs (that is `decideRuns`); touch files except through the workspace port |
 | `core/catalog/` | The model catalog from `config/models.yaml`, availability (key present), effort per model | Store keys anywhere |
 | `adapters/workspace/local-git/` | `resolve()` and the path sandbox, git commits, run branches, `openFolder` with `execFile` | Know about bots or conversations beyond ids and the Library root of the run |
 | `adapters/db/` | Drizzle table definitions, repositories, the unit of work | Business logic |
-| `app/` | `main.ts` (wiring, starts the timed jobs of §6.1), `config.ts` (env parsed with Zod), `cli.ts` | Logic of its own beyond wiring |
+| `app/` | `main.ts` (start, the timed jobs of §6.1), `compose.ts` (wiring), `config.ts` (env parsed with Zod), `cli.ts` | Logic of its own beyond wiring |
 
 **Why the rules are pure.** Routing ("who runs next?") is where bugs hide: mentions, budgets,
 pending members, deleted bots, branches. As a pure function it can be tested with hundreds of
@@ -156,11 +157,13 @@ A pnpm workspace with three packages. Each folder marked † has a `README.md` i
 ├─ pnpm-workspace.yaml
 ├─ .dependency-cruiser.cjs   import rules (§4.1)
 ├─ config/
-│  └─ models.yaml            model catalog and price overrides
+│  ├─ models.yaml            model catalog and price overrides
+│  └─ tools.yaml             tool catalog (D55)
 ├─ docs/                     this specification
 ├─ seed/                     example skills and bots for `make seed` (seed/README.md)
 ├─ scripts/                  repository scripts: checks (check:index, check:events, check:bundle,
-│                            lint:imports, db:check), gen:api, start (the production build),
+│                            lint:imports, db:check), gen:api, gen:case-folding, start (the
+│                            production build),
 │                            e2e:serve (the e2e servers, kept running)
 ├─ shared/ †                 code both sides import
 │  └─ src/
@@ -173,15 +176,18 @@ A pnpm workspace with three packages. Each folder marked † has a `README.md` i
 │  ├─ migrations/            SQL generated by drizzle-kit, reviewed like code
 │  ├─ src/
 │  │  ├─ app/ †              main.ts, compose.ts, config.ts, database.ts, cli.ts (`ids decode`,
-│  │  │                      `db migrate`; `skills import|export <folder>` from M1)
+│  │  │                      `db migrate`, `skills import|export|trash|restore`,
+│  │  │                      `bots seed|trash|restore`)
 │  │  ├─ core/
 │  │  │  ├─ ports/ †         one file per port (§2)
 │  │  │  └─ <feature>/ †     bots, skills, conversations, messages, runs, handoffs, events,
-│  │  │                      catalog, stats, projects (D37), memory (D38), library (D52, D61),
+│  │  │                      catalog, guard, health, stats, projects (D37), memory (D38),
+│  │  │                      library (D52, D61),
 │  │  │                      trash (D62), settings, plans (D48, D54, D57), attachments,
 │  │  │                      improve (D51): *.service.ts, *.rules.ts, *.test.ts
 │  │  └─ adapters/
-│  │     └─ <system>/ †      http, sse, db, log, ids, model, queue, prices, workspace, clock
+│  │     └─ <system>/ †      http, sse, db, log, ids, avatars, model, queue, prices,
+│  │                         workspace, clock
 │  └─ test/
 │     ├─ contracts/ †        one suite per port, run by every adapter
 │     ├─ api/                HTTP tests against the Hono app
@@ -191,16 +197,17 @@ A pnpm workspace with three packages. Each folder marked † has a `README.md` i
 │  ├─ package.json
 │  ├─ src/
 │  │  ├─ routes/ †           TanStack Router route tree (D28)
-│  │  ├─ features/<feature>/ † conversation, bots, skills, settings, flow (flow-view.md), stats:
+│  │  ├─ features/<feature>/ † shell, placeholder, conversation, bots, skills, settings,
+│  │  │                      flow (flow-view.md), stats:
 │  │  │                      components, hooks over the generated client, view state
-│  │  ├─ components/ui/      shadcn/ui on Base UI (copied in, owned by us)
+│  │  ├─ components/ui/      shadcn/ui on Base UI (copied in, owned by us), the sanitised
+│  │  │                      Markdown renderer
 │  │  ├─ lib/api/ †          generated/ (never edit) and the client setup
 │  │  ├─ lib/realtime/ †     transport.ts, sse.ts, event reducer (realtime-events.md §1a)
-│  │  ├─ lib/ †              markdown renderer (sanitised), log.ts, timerange/, formatting
+│  │  ├─ lib/ †              log.ts, storage, class names, time format, timerange/ (later)
 │  │  └─ themes/ †           token files per theme, variants.ts (D30, design/themes.md)
 │  └─ test/
-│     ├─ e2e/                Playwright
-│     └─ security/
+│     └─ e2e/                Playwright
 └─ data/                     runtime data (git-ignored)
 ```
 
@@ -231,7 +238,7 @@ flowchart TB
       aq["queue (in-process)"]
       ap["prices (genai-prices)"]
       aw["workspace (local-git)"]
-      ac["clock, ids"]
+      ac["clock, ids, log, avatars"]
     end
     subgraph CORE["core/"]
       svc["feature services<br/>*.service.ts"]
@@ -265,7 +272,8 @@ flowchart TB
 - `frontend/` may import `shared/`, never `backend/`. It talks to the backend only through
   `lib/api/generated/`.
 
-dependency-cruiser checks these in `pnpm lint`; a violation fails CI.
+dependency-cruiser checks the import rules in `pnpm lint`; a violation fails CI. The rule
+against hand-written API calls is a review item.
 
 ### 4.2 Folder indexes for agents
 
@@ -302,7 +310,8 @@ Start here: `worker.service.ts`. Do not: call the model except through the model
   - every `Amends:` and `Supersedes:` line in `docs/decisions/` names decisions that exist, and
     the "Changed by" column of `docs/decisions/README.md` lists exactly those entries;
   - every decision file has one index row, and every row links to a file that exists;
-  - `docs/lessons-learned/README.md` lists every lesson file, like a folder index.
+  - `docs/lessons-learned/README.md` and `docs/plans/README.md` list every file in their
+    folder, like a folder index.
   Whether two decisions agree in meaning is not checkable; the reviewer checks it
   (`workflow.md` §4).
 - Leaves only: the root `README.md` and this section link to the package indexes; there is no
@@ -367,7 +376,7 @@ memory, so each job also runs once at start; that run catches up on any time the
 
 | Job | When | What it does | Slice |
 | --- | --- | --- | --- |
-| Trash purge (D49, D50, D60, D62) | At start and every `PURGE_INTERVAL_HOURS` (default 24) | Purges each item where `deleted_at + trash_days` is at or before now. One item per transaction, with its event | M1 (skills), M5b (every item) |
+| Trash purge (D49, D50, D60, D62) | At start and every `PURGE_INTERVAL_HOURS` (default 24) | Purges each item where `deleted_at + trash_days` is at or before now. One item per transaction, with its event | M1 (skills), M2 (bots, unused avatar files), M5b (every item) |
 | Event pruning (M1c) | At start and every `EVENT_PRUNE_INTERVAL_HOURS` (default 24) | Deletes the events whose `created_at` is before now − `EVENT_RETENTION_DAYS` (default 30) × 24 h, in one transaction. Writes no event, but wakes the open streams so they check for lost events; `seq` never goes back (`AUTOINCREMENT`). A client with an older cursor gets `reset` (`realtime-events.md` §2). Separate from `trash_days` | M1c |
 | Unsaved changes discard (D52) | The same job, the same interval | Discards each unsaved run branch at `discard_on`: the run's end `+ trash_days`, or the purge of its conversation or project, whichever comes first. Example: the run fails on Oct 1, the conversation goes to Trash on Oct 20, `trash_days` is 30: the changes go on Oct 31, the conversation on Nov 19 | M6 |
 
@@ -402,6 +411,8 @@ these jobs; that is not agreed.
 
 ## 7. Example flow: the owner sends "@BA write login stories"
 
+A task that changes something starts with a planning run (D48). This example shows one run.
+
 1. Browser `POST /api/conversations/{id}/messages` with text and the mention token for BA.
 2. The Hono route parses the body with its Zod schema and calls the messages service, which
    opens a unit of work:
@@ -426,7 +437,7 @@ these jobs; that is not agreed.
 
 All configuration comes from environment variables (`.env` in development), parsed once at
 startup by a Zod schema in `app/config.ts` (the process exits with a clear message if one is
-invalid), plus `config/models.yaml`.
+invalid), plus `config/models.yaml` and `config/tools.yaml`.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
@@ -537,7 +548,7 @@ error) and handles it.
 | Bot turn counter at the limit (D4) | `UPDATE conversations SET bot_turns_used = bot_turns_used + 1 WHERE id = ? AND bot_turns_used < ?` | 0 rows: no run is queued; the "limit reached" notice is posted |
 | Two tabs edit the same bot, skill metadata or conversation settings | **Optimistic locking**: the row has `row_version`; the PATCH sends the version it read; `UPDATE … SET …, row_version = row_version + 1 WHERE id = ? AND row_version = ?` | 0 rows: 409 `stale_write`; the UI reloads the row and shows what changed |
 | Two saves create skill version N+1 | `UNIQUE (skill_id, version)` plus `base_version` in the request (`api.md` §2) | 409 `stale_write` |
-| Two bots created with the same name or slug | Unique indexes on slug and on live name | 409 `slug_taken` / `name_taken` |
+| Two bots created with the same name | Unique index on the live name key; the create transaction picks a free slug suffix (`domain-model.md` §2) | 409 `name_taken` |
 
 **State change and event together.** Every rule above runs inside the unit of work (§2), and
 the event for the change is inserted in the same transaction (rule 3 in `AGENTS.md`), so a

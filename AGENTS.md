@@ -48,6 +48,7 @@ Start with `docs/README.md` for the reading order.
 | Uploads, file tools, rendering bot output, request checks | `docs/security.md` |
 | Tests | `docs/testing.md` |
 | How to work, branch, review | `docs/workflow.md` |
+| Writing or finding a slice's plan | `docs/workflow.md` §2 step 2, `docs/plans/README.md` |
 | Apply or maintain engineering principles | `.agents/skills/README.md` |
 | Finding a file in the code | The folder's `README.md` index (`docs/architecture.md` §4.2) |
 | Ports, adapters, import rules | `docs/architecture.md` §2, §4.1 (D35) |
@@ -63,6 +64,7 @@ pnpm typecheck                  # tsc across all packages
 pnpm test                       # Vitest: unit, service, API and contract tests
 pnpm check:index                # every indexed folder's README.md lists its files (§5 rule 9)
 pnpm check:events               # the event table in docs/realtime-events.md §4 matches shared/
+pnpm build && pnpm check:bundle # the production build stays inside the bundle budget
 pnpm gen:api                    # regenerate the typed API client from the backend's OpenAPI
 pnpm e2e                        # Playwright, uses the fake model
 pnpm e2e:serve                  # while building: keep the e2e servers running (testing.md §3)

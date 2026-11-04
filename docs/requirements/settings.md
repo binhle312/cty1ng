@@ -6,7 +6,7 @@ settings page).
 ## Stories
 
 - **ST-1.** As the owner, I want global defaults for bot discussion, limits and timezone, so that new conversations behave the way I expect.  
-  Acceptance criteria: UI-8.1, UI-8.4.
+  Acceptance criteria: UI-8.0, UI-8.1, UI-8.4, UI-8.6 to UI-8.10.
 - **ST-2.** As the owner, I want a daily spending cap with warnings, so that a runaway discussion cannot surprise me with a bill.  
   Acceptance criteria: UI-8.2, UI-8.3.
 - **ST-3.** As the owner, I want to change a conversation's title, discussion settings, members and memory where I see them, so that each conversation fits its purpose without a separate settings page.  
@@ -16,7 +16,7 @@ settings page).
 
 ## Acceptance criteria
 
-Shared rules for every story: `README.md` §Applies to every story. Layouts referenced below are sketches in `../design/`, not final designs.
+Shared rules for every story: `README.md` §Applies to every story. Agreed designs are in `../design/components/`; other layouts in `../design/` are sketches.
 
 ## Settings page (UI-8)
 
@@ -52,7 +52,8 @@ Design: `../design/components/settings-page.md` (round 14).
   Timeline / Board; Board appears with M8b), and "Always reduce motion" (the Flow pane Animations switch, UI-12.7, shows the same value). Changes apply instantly without reload,
   are saved in this browser, and the page never flashes the wrong theme on load
   (`../design/themes.md` §1, §2).
-- UI-8.6 *(D38)*: Memory: a global switch. When off, no bot reads or saves memory anywhere;
+- UI-8.6 *(D38)*: Memory: a global switch, `memory_item_max_chars` (100–1,000, default 300) and
+  `memory_items_max` (10–200, default 50). When the switch is off, no bot reads or saves memory anywhere;
   saved items are kept and return when it is turned back on. A link opens the Memory page.
 - UI-8.7: Profile: the owner's display name (`display_name`, default "Sir"). After the app
   trims spaces, it must have 1 to `display_name_max` characters (default 32); an empty or too
@@ -62,7 +63,7 @@ Design: `../design/components/settings-page.md` (round 14).
   `bot_default_request_limit`, `bot_default_max_reply_chars`, UI-5.8). A change does not change
   existing bots.
 - UI-8.9 *(D49)* (M5b): Trash: `trash_days`, a whole number of days, at least 1 (0 would delete at once, with no restore), no upper limit, default 30.
-- UI-8.10 *(D51)* (M5d): Skill improvement: the five `improve_*` settings.
+- UI-8.10 *(D51)* (M5d): Skill improvement: the five `improve_*` settings and `skill_test_cases_max`.
 
 ## Conversation settings (UI-9)
 

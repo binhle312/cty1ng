@@ -5,7 +5,7 @@
 > `../previews/command-dark/top-header.png` (and `.html`), `header-pins.png` (HD1–HD6), `bot-card-v3.png` (H1).
 > Focus and touch in states 3 and 5 from the shell review (2026-10-30). §4 (the "+N" list) agreed
 > by the owner on 2026-11-02. Requirements: `../../requirements/app-shell.md`
-> UI-2 (see "Requirement changes" below for items not yet written there).
+> UI-2.
 
 The header is the **bot roster only**: no navigation links and no Settings in it. It is 52 px tall,
 sticky on every page (UI-2.11), background `surface`, bottom line `outline`.

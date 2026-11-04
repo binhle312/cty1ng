@@ -12,7 +12,7 @@ saw and catches up. This is the same idea as a Kafka consumer committing an offs
 ```
 action (POST)  ──▶  service transaction: change rows + INSERT events(seq=812)  ──▶ commit
                                                                                  │
-                     event hub (in process) ◀── notify(812) ─────────────────────┘
+                     event hub (in process) ◀── notify() ────────────────────────┘
                           │
        SSE subscribers ◀──┘  each reads events with seq > its cursor from the DB and sends them
 ```
@@ -25,11 +25,11 @@ and the replay path are the same code.
 SSE is one adapter, not part of the event model, so WebSocket or another transport can be added
 later without touching services, the log or the reducer.
 
-- **Envelope.** Every event is `{seq, type, data}` as plain JSON. Nothing in it depends on SSE
+- **Envelope.** Every persisted event is `{seq, type, data}` as plain JSON; an event that is not persisted is `{type, data}`. Nothing in it depends on SSE
   (the SSE `id:` and `event:` lines are just how the SSE adapter writes `seq` and `type`). The
   envelope and every event type are Zod schemas in `shared/src/events/`, imported by both sides.
 - **Backend.** Services only append events. `core/events/hub.ts` exposes
-  `subscribe(afterSeq): AsyncIterable<Event>` (the transport port, D35); `adapters/sse/` turns
+  `subscribe(afterSeq, signal): AsyncIterable<Event>` (the transport port, D35); `adapters/sse/` turns
   that iterator into SSE frames (ids, heartbeat, `reset`). A WebSocket adapter would be a second
   adapter (`adapters/websocket/`) over the same iterator, with the same Host/Origin checks
   (`security.md` §2.1).
@@ -51,7 +51,7 @@ conversation).
   ```
   id: 812
   event: message.created
-  data: {"conversation_id":"01J…","message":{…}}
+  data: {"conversation_id":"conv_01j…","message":{…}}
 
   ```
 
@@ -99,7 +99,7 @@ once per second), and later deltas continue from there. Each delta carries the f
 offset so the client can ignore duplicates:
 
 ```json
-{"message_id":"01J…","offset":1532,"text":"next chunk"}
+{"message_id":"msg_01j…","offset":1532,"text":"next chunk"}
 ```
 
 The client appends `text` only if `offset` equals its current length.
@@ -109,8 +109,8 @@ The client appends `text` only if `offset` equals its current length.
 `frontend/src/lib/realtime/`:
 
 - One `EventSource` for the app, opened at startup.
-- A reducer applies each event to the TanStack Query cache (`queryClient.setQueryData`) so
-  pages update without refetching.
+- A reducer turns each event into a refresh of the TanStack Query queries it touches
+  (`invalidateQueries`), so pages update with no action from the owner.
 - The last applied `seq` is kept in memory; `EventSource` handles `Last-Event-ID` itself.
   The first `ready` sets it to `max_seq`; a later `ready` (a reconnect) leaves it, so the
   replay that follows is applied. A `reset` sets it to the `max_seq` of the `ready` just
@@ -155,8 +155,8 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `bot.created` / `bot.updated` / `bot.deleted` | yes | `{bot}` | bot CRUD, avatar, skill pins (also pins that a skill endpoint moves or removes: the upgrade and assign cards, deprecate, skill Trash; one event per bot); `bot.deleted` is the move to Trash (D50) |
 | `bot.restored` | yes | `{bot}` | the bot came back from Trash, not pinned (D50; the temporary CLI in M2, the Trash page from M5b) |
 | `bot.purged` | yes | `{bot_id}` | the purge turned the bot into a tombstone (D50); it leaves the Trash list |
-| `bots.reordered` | yes | `{pinned_bot_ids}` | pinned list saved: pin, unpin or reorder (`PUT /bots/pins`); the header and the Bots page follow at once |
-| `skill.created` / `skill.updated` / `skill.deprecated` | yes | `{skill}` | skill CRUD: create (also a clone and an import), rename, new version, version restore, undeprecate (`skill.updated`), deprecate |
+| `bots.reordered` | yes | `{pinned_bot_ids}` | pinned list saved: pin, unpin or reorder (`PUT /bots/pins`), and when a pinned bot moves to Trash; the header and the Bots page follow at once |
+| `skill.created` / `skill.updated` / `skill.deprecated` | yes | `{skill}` | skill CRUD: create (also a clone and an import), rename, new version, version restore, undeprecate (`skill.updated`), deprecate. A purge also emits `skill.updated` for each clone of the purged skill |
 | `skill.trashed` / `skill.purged` | yes | `{skill_id}` | the skill went to Trash, or was purged from it (D49); the skill leaves every list |
 | `skill.restored` | yes | `{skill}` | the skill came back from Trash, still deprecated (D49). On any `skill.*` event the client also refreshes the bot list, because bot data comes from skills: the skill count, "↑n" and the "Uses a deprecated skill" health line (M2 spec gap pass, owner 2026-11-01) |
 | `settings.updated` | yes | `{settings}` | global settings changed |
@@ -169,8 +169,9 @@ use the same schemas as the REST API (`api.md`), so the client has one type per 
 | `trash.changed` | yes | `{counts: {[kind]: number}}`, one count per Trash kind that exists (M1: `{skill: n}`; M2 adds `bot`) | an item went into Trash or left it (restore, Delete, purge), next to the item's own event (`skill.restored`, `conversation.updated`, `memory.restored`, …) (D62); drives the user panel Trash count and the Trash page |
 | `test.ping` | yes | `{note}` | **test only**: `POST /api/_test/events`, mounted only when `APP_ENV=test` and left out of the OpenAPI schema, so the generated client never has it |
 
-Adding an event type: add it here first, then to the backend `EventType` enum and the frontend
-reducer. A test asserts the three lists match. Until every type is built,
+Adding an event type: add it here first, then to `shared/src/events/stream-event.ts` and the
+frontend reducer. `pnpm check:events` checks this table against `shared/`, and the reducer's
+exhaustive switch fails to compile on a new type. Until every type is built,
 `scripts/check-events.ts` keeps an explicit `PENDING` list of the types in this table that are
 not yet in `shared/`: the table must equal the `shared/` types plus `PENDING`, the two must not
 overlap, and each slice moves its types out of `PENDING` when it adds them. The list only gets

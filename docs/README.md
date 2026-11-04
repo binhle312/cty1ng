@@ -44,6 +44,7 @@ New to the project (human or agent), read in this order:
 | [delivery-quality.md](delivery-quality.md) | Quality by milestone and PR: issue counts, review rounds, evidence limits, and prevention actions |
 | [development-plan.md](development-plan.md) | Slices M0–M9 in order, dependencies, checkpoints |
 | [tasks/](tasks/) | Existing milestone and part briefs; `development-plan.md` defines delivery parts and the briefs still needed |
+| [plans/](plans/README.md) | The plan of each slice: a record of what the owner and the builder agreed before the build. Not spec |
 
 ## Rules for keeping docs healthy
 
@@ -52,8 +53,8 @@ New to the project (human or agent), read in this order:
   other with a link.
 - **Change docs with code.** A PR that changes behaviour updates the owning document in the
   same PR.
-- **Decisions are append-only.** Do not rewrite an accepted decision; add a new one that
-  supersedes it and mark the old one `superseded by Dnn`.
+- **Decisions change by rule.** A new entry amends or supersedes an accepted decision, or the
+  owner approves a dated amendment (`decisions/README.md`). Do not rewrite an accepted decision.
 - **Explain why.** A rule without its reason gets deleted by the next person who finds it
   inconvenient. Every non-obvious rule says why it exists.
 - **Prefer tables and examples** over long prose. Agents and humans both scan.

@@ -11,7 +11,7 @@ One Grafana-style picker for every time range in the app (D25).
 
 ## Acceptance criteria
 
-Shared rules for every story: `README.md` §Applies to every story. Layouts referenced below are sketches in `../design/`, not final designs.
+Shared rules for every story: `README.md` §Applies to every story. Agreed designs are in `../design/components/`; other layouts in `../design/` are sketches.
 
 ## Shared component: time range picker (D25) (UI-11)
 

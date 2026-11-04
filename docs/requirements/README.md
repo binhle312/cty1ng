@@ -2,7 +2,7 @@
 
 This folder is the product requirements document, split by area so agents load only what a
 slice needs. What the app must do, written as user stories with testable acceptance criteria. This folder
-owns **behaviour**; how a screen looks lives in `../design/` and is not final; how it is built
+owns **behaviour**; how a screen looks lives in `../design/` (agreed specs in `components/`, the other sketches are not final); how it is built
 lives in the technical documents one level up.
 
 ## Files

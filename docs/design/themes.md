@@ -3,7 +3,7 @@
 > **Status: accepted (D30), from the owner's picks in round 2 (concepts 2, 11, 13).** Command
 > ships first (M0); Material follows as its own small slice (T2). Canvas page
 > "Deep dive: 2 · 11 · 13" shows bot detail, skill hub, statistics, the Board view and the
-> Appearance settings in both themes. Visual details remain open until the M0 UI design review.
+> Appearance settings in both themes. The agreed look is in `components/`.
 
 ## 1. Four separate settings
 

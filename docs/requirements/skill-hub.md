@@ -12,12 +12,12 @@ Writing, versioning, cloning, deprecating, importing and exporting skills.
   Acceptance criteria: UI-7.6, UI-7.6a.
 - **SK-4.** As the owner, I want to import and export SKILL.md folders, so that I can write skills in my editor or with an AI agent.  
   Acceptance criteria: UI-7.7, UI-7.8.
-- **SK-5.** As the owner, I want to ask a bot to turn its work into a skill for itself or another bot, and approve it before it is used, so that good ways of working are kept without the bots changing on their own (D41).  
+- **SK-5.** As the owner, I want to ask a bot to turn its work into a skill, and approve it before it is used, so that good ways of working are kept without the bots changing on their own (D41).  
   Acceptance criteria: UI-7.9 to UI-7.15.
 
 ## Acceptance criteria
 
-Shared rules for every story: `README.md` §Applies to every story. Layouts referenced below are sketches in `../design/`, not final designs.
+Shared rules for every story: `README.md` §Applies to every story. Agreed designs are in `../design/components/`; other layouts in `../design/` are sketches.
 
 ## Skill hub and editor (UI-7)
 

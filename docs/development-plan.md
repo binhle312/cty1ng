@@ -13,13 +13,13 @@ Write a brief for each implementation part before code starts; hand it to the bu
 | M0 | [M0-skeleton.md](tasks/M0-skeleton.md) | Repo, tooling, CI, app shell, security middleware, event log + SSE skeleton, in three parts: M0a tooling and CI, M0b backend core, M0c frontend shell | **plan** + merge | — |
 | M1 | [M1-skill-hub.md](tasks/M1-skill-hub.md) | Skills: versions, authorship, clone, deprecate, import/export, in two parts: M1a backend, M1b Skills page | **plan** (schema) | M0 |
 | M1c | [M1c-backend-maintenance.md](tasks/M1c-backend-maintenance.md) | Backend maintenance: daily event pruning (30 days by default) and a guard against a second SQLite writer in one process. No UI | **plan** (short) | M1b; before M2 |
-| M2 | [M2-bots.md](tasks/M2-bots.md) | Model catalog, bots CRUD, clone, avatars, pins, header bar | **plan** (schema, uploads) | M1, M1c |
+| M2 | [M2-bots.md](tasks/M2-bots.md) | Model catalog, bots CRUD, clone, avatars, pins, header bar, in three parts: M2a backend, M2b Bots page, header and Create, M2c bot page and Skills page cards | **plan** (schema, uploads) | M1, M1c |
 | M3 | [M3-chat-one-bot.md](tasks/M3-chat-one-bot.md) | Chat with one bot, in seven parts: M3a–M3g ([breakdown below](#m3-delivery-parts)) | **plan** per part (schema, events, worker, UI) | M2 |
 | M4 | [M4-multi-bot.md](tasks/M4-multi-bot.md) | Multi-bot routing, membership and branches, in [four parts](#m4-multi-bot-conversations) | **plan** per part (routing, branches, UI) | M3 |
 | M5 | [M5-bot-discussion.md](tasks/M5-bot-discussion.md) | Discussion, caps and Settings, in [five parts](#m5-discussion-caps-and-settings) | **plan** per part (claim rules, shared state, UI) | M4 |
 | M5b | [M5b-projects-and-memory.md](tasks/M5b-projects-and-memory.md) | Projects, memory, Trash and Move to project without files, in [nine parts](#m5b-projects-memory-and-trash) | **plan** per part (schema, memory isolation, UI) | M5; shared plan approvals before action tools |
 | M5c | not written | Owner-requested skill drafts and explicit assignment, in [three parts](#m5c-skill-drafts) | **plan** per part (schema, tools, UI) | M3 and shared plan approvals |
-| M5d | not written | Skill improvement, blind probes and saved test cases, in [five parts](#m5d-skill-improvement) | **plan** per part (schema, UI, cost) | M5, M5c and shared plan approvals; probes also need project and Library support |
+| M5d | not written | Skill improvement, blind probes and saved test cases, in [five parts](#m5d-skill-improvement) | **plan** per part (schema, UI, cost) | M5, M5c and shared plan approvals; M5d-3 also needs M5b-2 and M6-1 |
 | M6 | [M6-workspace-parity.md](tasks/M6-workspace-parity.md) | Libraries, file tools, attachments, copies and handoffs, in [ten parts](#m6-libraries-files-and-handoffs) | **plan** per part (security, recovery, UI) | M5b and shared plan approvals |
 | Inbox | not written | Project inbox (D58, D59; `requirements/project-inbox.md`): states, waits, notices, Send to conversation. No model calls | **plan** (schema, UI design) | M6 (needs D48 cards and D52 notices) |
 | M7 | [M7-statistics.md](tasks/M7-statistics.md) | Statistics API, shared time range picker and Statistics page, in [three parts](#m7-statistics) | **plan** per part (metrics, shared state, UI, dependency) | M5; integrates with M3 bot Usage |
@@ -36,15 +36,14 @@ Write a brief for each implementation part before code starts; hand it to the bu
 approval (`workflow.md` §2). Every slice also needs the owner's review of migrations and
 `Needs human review` items before merge.
 
-Every slice with a screen (M0–M5, M6 file panel, M7, M8, M8b, T2) also has a **UI design checkpoint**:
+Every slice with a screen (M0–M5d, M6, Inbox, M7, M8, M8b, M8c, T2) also has a **UI design checkpoint**:
 the plan proposes the actual UI and the owner approves it before UI code is written. Sketches
 and mockups in `docs/design/` are starting points for that discussion, never specs.
 
 ## M3 delivery parts
 
 M3 follows M2c. Keep M3 as the milestone and deliver M3a–M3g as separate PRs in the order below.
-This breakdown replaces the optional two-part split in the current
-[M3 brief](tasks/M3-chat-one-bot.md). The milestone scope and acceptance criteria still apply.
+The [M3 brief](tasks/M3-chat-one-bot.md) follows this breakdown. The milestone scope and acceptance criteria still apply.
 Write the part briefs before implementation. This table defines the delivery boundaries;
 each part still needs its implementation plan.
 
@@ -219,7 +218,6 @@ then separate the security boundary, durable save lifecycle and each approval fl
 | M6-9 — Handoff backend | Handoff tool, decisions, stale checks, target/member handling and rolling limit | No run before approval; one decision winner; stale files; unavailable target; all statuses count toward the limit | M6-2, Plans-1, Plans-2 |
 | M6-10 — Handoff cards | Approve/reject, Add bot and start, stale states and links | J3; simultaneous decisions; target changes while card waits; full M6 integration and security suite | M6-8, M6-9 |
 
-The spec pass must correct the stale question about D18: the owner accepted it and later amended its limit.
 It must assign D52/D54/D57/D59 schemas, events and recovery cases to the parts above.
 Typed handoff briefs and forked handoffs remain open choices in the current M6 brief; resolve them
 before the handoff plan. Read-only helpers, automatic approval and a second-model judge stay outside M6.
