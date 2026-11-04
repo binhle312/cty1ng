@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { notFound, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { Bot, Ellipsis, FileText, History } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   MenuItem,
   MenuPopup,
@@ -245,13 +245,23 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   };
 
   const exportSkill = useExportSkills();
+  // Only whether this page is still there (DQ-020). A layout cleanup runs in the commit that
+  // removes the page, so no answer lands in between. A later visit is a new page: the click
+  // belonged to the old one, so it moves nothing either.
+  const onPage = useRef(true);
+  useLayoutEffect(() => {
+    onPage.current = true;
+    return () => {
+      onPage.current = false;
+    };
+  }, []);
   const clone = async () => {
     // Clone takes the version on screen, the latest (§12).
     const versions = await readNewest(() =>
       queryClient.query(listSkillVersionsOptions({ path: { id: skill.id } })),
     );
     const version = versions.find((item) => item.version === latest);
-    if (version === undefined) return;
+    if (version === undefined || !onPage.current) return;
     void navigate({ to: "/skills/new", search: { from: version.id } });
   };
 

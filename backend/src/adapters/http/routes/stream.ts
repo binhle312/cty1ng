@@ -8,6 +8,8 @@ const route = createRoute({
   operationId: "getStream",
   description: "The app's one event stream (realtime-events.md §2), as server-sent events.",
   request: {
+    // A route that takes no query string still refuses one (security.md §2.9).
+    query: z.object({}).strict(),
     headers: z.object({ "last-event-id": z.string().optional() }),
   },
   responses: {

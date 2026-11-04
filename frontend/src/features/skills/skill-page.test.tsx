@@ -8,6 +8,7 @@ import {
   makeSkill,
   makeVersions,
   SKILL_ID,
+  typeId,
 } from "../../../test/fixtures.ts";
 import { renderApp } from "../../../test/render-app.tsx";
 import { SKILL_OR_BOT_QUERIES } from "../../lib/api/operation-queries.ts";
@@ -452,5 +453,89 @@ describe("leaving the skill editor while its Save is on its way", () => {
       expect(router.state.location.pathname).toBe("/bots");
     });
     expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+});
+
+// DQ-020: Clone reads the versions first. A read that answers after the owner left the page moves
+// nothing (docs/delivery-quality.md).
+describe("Clone while its read of the versions is on its way", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  const OTHER_ID = typeId("skill", 2);
+
+  async function clickClone() {
+    const held = heldAnswer();
+    const skill = makeSkill();
+    const other = makeSkill({ id: OTHER_ID, slug: "other-skill", name: "Other skill" });
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: [skill, other] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: skill }),
+      [`GET /api/skills/${OTHER_ID}`]: () => ({ body: other }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => held.promise,
+      [`GET /api/skills/${OTHER_ID}/versions`]: () => ({ body: makeVersions(1) }),
+      "GET /api/bots": () => ({ body: [] }),
+    });
+    const { router } = await renderApp("/skills/write-user-stories");
+    const click = (element: HTMLElement) => {
+      act(() => {
+        fireEvent.click(element);
+      });
+    };
+    click(await screen.findByRole("button", { name: "Skill actions" }, { timeout: 5000 }));
+    click(await screen.findByRole("menuitem", { name: "Clone" }));
+    await waitFor(() => {
+      expect(api?.sent("GET", `/api/skills/${SKILL_ID}/versions`)).toHaveLength(1);
+    });
+    const answer = () => held.answer({ body: makeVersions(3) });
+    return { router, answer };
+  }
+
+  // Time for a late move to happen, when a test expects none.
+  const settle = () =>
+    act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+
+  it("moves to the Clone page while the owner stays, and a leave after that is a normal leave", async () => {
+    const { router, answer } = await clickClone();
+    await answer();
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/skills/new");
+    });
+    await act(() => router.navigate({ to: "/bots" }));
+    expect(router.state.location.pathname).toBe("/bots");
+  });
+
+  it("stays where the owner went when the read answers after the owner left", async () => {
+    const { router, answer } = await clickClone();
+    await act(() => router.navigate({ to: "/bots" }));
+    await answer();
+    await settle();
+    expect(router.state.location.pathname).toBe("/bots");
+  });
+
+  it("stays on another skill when the read answers after the owner moved to it", async () => {
+    const { router, answer } = await clickClone();
+    await act(() => router.navigate({ to: "/skills/$slug", params: { slug: "other-skill" } }));
+    await answer();
+    await settle();
+    expect(router.state.location.pathname).toBe("/skills/other-skill");
+  });
+
+  it("stays on the page when the owner left and came back before the read answered", async () => {
+    const { router, answer } = await clickClone();
+    await act(() => router.navigate({ to: "/bots" }));
+    await act(() =>
+      router.navigate({ to: "/skills/$slug", params: { slug: "write-user-stories" } }),
+    );
+    await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 });
+    await answer();
+    await settle();
+    expect(router.state.location.pathname).toBe("/skills/write-user-stories");
   });
 });
