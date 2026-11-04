@@ -51,8 +51,11 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    answer after the owner moved on is its own part, and so is a set of dialogs or cards with
    their own requests. A plan that touches more than about 30 files is a sign to split (lesson
    `state-table-before-stateful-code.md`).
-2. **Plan.** The builder reads the brief and the documents it lists, then writes a short plan
-   (files to touch, migrations, tests to add, risks) as the first comment of a draft PR.
+2. **Plan.** Every slice has a plan before its code, checkpointed or not (owner, 2026-11-04).
+   The builder reads the brief and the documents it lists, then writes a short plan (files to
+   touch, migrations, tests to add, risks) in `docs/plans/<slice>-<name>.md`. The file goes in a
+   draft PR, so the owner reviews it there and the repository keeps it for reference. The rules
+   for the file are in [plans/README.md](plans/README.md).
    **Risk probes first.** Before the builder writes the plan, it runs short checks on every
    part that it has not used in this repository yet, and puts the results in the plan as
    evidence. For example: does the library work under our CSP (no `new Function`, no inline
@@ -83,7 +86,7 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    snapshot. `pnpm check:index` fails when a snapshot colour differs from
    `frontend/src/themes/command.css` (owner, 2026-10-30).
    **Test strategy before code.** After the plan, and before any code, the builder writes the
-   test strategy as a section of the draft PR (owner, 2026-11-03). For each acceptance
+   test strategy as a section of the plan file (owner, 2026-11-03). For each acceptance
    criterion it lists the behaviour, the test level (unit, component, API, contract, end to
    end) and the cases beyond the normal path: the edge cases in `testing.md` §3, and above all
    the order and timing cases (an answer that comes late, a change in another tab, a Discard
@@ -200,7 +203,8 @@ You are the builder for slice <M#> of this repository.
    brief lists under "Read first".
 2. Write a plan as described in docs/workflow.md §2 step 2: run the risk probes first, and
    end the plan with every open question in one list. Then write the test strategy
-   (§2 step 2, "Test strategy before code"). Open a draft PR with the plan and the strategy.
+   (§2 step 2, "Test strategy before code"). Commit both to docs/plans/<slice>-<name>.md, and
+   open a draft PR with that file.
    Stop and wait for my approval if the brief says "checkpoint: plan".
    If a screen has saves under a lock, live events or late answers, the plan has its state
    table (§2 step 2, "State table for stateful screens").
