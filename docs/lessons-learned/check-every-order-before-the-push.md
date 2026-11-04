@@ -36,6 +36,6 @@ while a pin change waited, and a skill added back while its Remove waited stayed
 eight have a test that failed first. The fresh reviewer earned its place: five of the eight came
 from it, so it runs again after its own fixes.
 
-**Reusable principles.** [Model state and event order before implementation](../../.agents/skills/principle-model-state-and-order/SKILL.md), [Fix the broken invariant at its owner](../../.agents/skills/principle-fix-invariants-at-the-owner/SKILL.md), [Prove that tests detect the intended behaviour](../../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md).
+**Reusable principles.** [Model state and event order before implementation](../../.agents/skills/principle-model-state-and-order/SKILL.md), [Fix the root cause](../../.agents/skills/principle-fix-root-cause/SKILL.md), [Prove that tests detect the intended behaviour](../../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md).
 
 **Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [testing §5](../testing.md#5-evidence-in-prs), [frontend conventions](../frontend-conventions.md).

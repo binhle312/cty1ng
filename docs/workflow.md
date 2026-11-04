@@ -138,7 +138,7 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    review` (`AGENTS.md` §7; lesson `flag-ui-choices-in-review-fixes.md`).
    **Merge bar.** Each finding has a severity. Only P1 and P2 block the merge; a P3 goes to
    the follow-ups in `status.md` (`review-guide.md` §6).
-   **Fix the cause.** Apply the [invariant repair principle](../.agents/skills/principle-fix-invariants-at-the-owner/SKILL.md).
+   **Fix the cause.** Apply the [root cause principle](../.agents/skills/principle-fix-root-cause/SKILL.md).
    Record the search scope in the PR's "Same cause checked in" column (§6).
    The reviewer verifies the repair through [review-guide.md §5](review-guide.md#5-close-findings-with-evidence).
 6. **Owner review.** Focus on `Needs human review` items, migrations, the evidence table, and

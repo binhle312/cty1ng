@@ -14,6 +14,6 @@ it. A list of fields to keep grows by one each time a review finds the next fiel
 **Project response.** The review-fix table gained a "Same cause checked in" column. The review guide added a further-path check.
 The later state-module incident records the allowlist implementation.
 
-**Reusable principles.** [Fix the broken invariant at its owner](../../.agents/skills/principle-fix-invariants-at-the-owner/SKILL.md).
+**Reusable principles.** [Fix the root cause](../../.agents/skills/principle-fix-root-cause/SKILL.md).
 
 **Project guidance.** [workflow §6](../workflow.md#6-pr-description-template), [review guide §5](../review-guide.md#5-close-findings-with-evidence), [state-module incident](state-table-before-stateful-code.md).

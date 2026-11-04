@@ -2,7 +2,7 @@
 
 The `principle-*` skills are project-owned. Their content stays generic for reuse in other projects.
 Each skill has one source here and a relative symlink in `../../.claude/skills/`.
-`principle-fix-invariants-at-the-owner` takes its diagnosis steps from the MIT-licensed
+`principle-fix-root-cause` takes its diagnosis steps from the MIT-licensed
 [`principle-fix-root-causes`](https://github.com/cursor/plugins/blob/e5136d82418d2db3165ea1050d17577cd618cc05/pstack/skills/principle-fix-root-causes/SKILL.md) (Lauren Tan), in our words.
 `ui-ux-pro-max` and `typescript-best-practices` are vendored; follow their source rules:
 [ui-ux-pro-max](ui-ux-pro-max/SOURCE.md), [typescript-best-practices](typescript-best-practices/SOURCE.md).
@@ -35,7 +35,7 @@ Read the matching skill before its phase of work.
 | `principle-bound-change-scope/` | Split a plan when independent concerns or separate approval needs make it hard to review or recover. |
 | `principle-set-review-exit/` | Set the merge bar and failure scope before a build, or when each review round still finds issues. |
 | `principle-model-state-and-order/` | Model transitions when requests overlap, replies arrive late, or state survives navigation, locks, retries, or live events. |
-| `principle-fix-invariants-at-the-owner/` | Trace a failure to its first wrong decision, or repair a shared cause when review fixes repeat or several paths enforce one rule. |
+| `principle-fix-root-cause/` | Trace a failure to its first wrong decision, or repair a shared cause when review fixes repeat or several paths enforce one rule. |
 | `principle-prove-tests-detect-the-behaviour/` | Verify tests used as evidence for acceptance, bug fixes, concurrency, or mocked integrations. |
 | `principle-review-contracts-with-evidence/` | Review code or fixes against each requirement, approved plan promise, and implementation boundary. |
 | `principle-verify-delivery-and-report-evidence/` | Verify the final revision before handoff and report the scope and result of each check. |

@@ -1,9 +1,9 @@
 ---
-name: principle-fix-invariants-at-the-owner
+name: principle-fix-root-cause
 description: Trace a failure to its first wrong decision, or repair a shared cause when review fixes repeat or several paths enforce one rule.
 ---
 
-# Fix the broken invariant
+# Fix the root cause
 
 A symptom shows where a wrong state became visible. Find the first wrong decision, then repair the mechanism that owns the rule.
 
