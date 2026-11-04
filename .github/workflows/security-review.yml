@@ -7,10 +7,14 @@
 #   untrusted PR content and is not hardened against prompt injection.
 # - The action is pinned to a commit; Dependabot proposes updates.
 # - Without the ANTHROPIC_API_KEY repository secret the job skips with a notice.
+#
+# When it runs (owner, 2026-11-04): each run costs money, so only when the owner marks a PR Ready,
+# right before the merge. A push does not start it, and a PR opened as Ready does not either.
 name: Security review
 
 on:
   pull_request:
+    types: [ready_for_review]
     branches: [main]
     paths:
       # The security-sensitive paths of AGENTS.md §7.
@@ -55,5 +59,8 @@ jobs:
           claude-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           # The action's default is an old model (owner, 2026-11-04).
           claude-model: claude-haiku-5-5
+          # Without this the action scans once per PR and later runs skip, still green. The trigger
+          # above keeps the cost down, so each Ready scans the PR as it is now.
+          run-every-commit: true
           comment-pr: true
           exclude-directories: docs,.agents,mockups
