@@ -128,8 +128,8 @@ that turns discussion on in its header (owner question 2026-10-26).
 | Handoffs per 24 hours | M6 | At the cap, bots cannot hand work to other bots in that conversation. You can still mention bots. | 1 to 50. Default: 5 |
 | Skill drafts per run | M5c | A bot can propose this many skill drafts in one run. Each draft is a card that you review. | 1 to 10. Default: 3 |
 | Skill drafts waiting | M5c | When this many drafts wait for your decision, bots cannot propose more until you decide. | 1 to 50. Default: 10 |
-| Shares per 24 hours | M5b | Bot proposals to send information to another conversation. At the cap, the bot tells you that it cannot send more. | 1 to 50. Default: 5 |
-| Search hits | M5b | Results that one search in other conversations of the project gives a bot. More hits give the bot more context and make the run cost more. | 1 to 50. Default: 10 |
+| Shares per 24 hours | Inbox | Bot proposals to send information to another conversation. At the cap, the bot tells you that it cannot send more. | 1 to 50. Default: 5 |
+| Search hits | After M5b (D58) | Results that one search in other conversations of the project gives a bot. More hits give the bot more context and make the run cost more. | 1 to 50. Default: 10 |
 | Copy proposals per 24 hours | M6 | Bot proposals to copy files to another Library. At the cap, the bot tells you. You can still copy files. | 1 to 50. Default: 5 |
 | Plan mark reminders | Plan card | Before an action run ends, the app reminds the bot to mark the plan steps that it did not mark. 0 = no reminder. | 0 to 3. Default: 1 |
 
@@ -240,7 +240,7 @@ The new row is part of the M5d UI design checkpoint.
 | --- | --- |
 | `bot_order`, `bot_order_direction` | The sort buttons on the Bots page (`bots-page.md` §5) |
 | Form limits (`display_name_max`, `skill_name_max`, `skill_body_max`, `skill_body_warn_lines`, `bot_name_max`, `bot_description_max`, `bot_persona_max`, `bot_history_min_pct`, `bot_history_max_pct`) and health thresholds (`health_*`) | `PATCH /settings` only. They are close to security size checks or rarely changed |
-| Memory history versions (UI-13.9) | Project settings and the bot page (per project, per bot) |
+| Memory history versions (UI-13.9) | Project settings, the bot page, and the Memory pane of a multi-bot Home conversation |
 | "Don't use memory" for one conversation (UI-9.6) | The Memory pane |
 | Discussion for one conversation (UI-9.3) | The discussion status in the conversation header (§9) |
 | `undo_seconds` (D62) | `PATCH /settings` only. The time an Undo toast of a permanent delete stays |

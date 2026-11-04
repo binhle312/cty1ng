@@ -18,7 +18,7 @@ At handoff, reconcile the PR's issues, review rounds, and verification evidence 
 | --- | --- | --- |
 | **Owner (human)** | Chooses the next slice; approves plans for checkpointed slices; reviews `Needs human review` items; merges; accepts or rejects proposed decisions | Write most of the code |
 | **Builder agent** (Claude Code or Codex) | Plans the slice, implements, runs every check, writes the PR description with evidence, updates docs | Merge; change accepted decisions; widen scope |
-| **Reviewer agent** (the *other* one) | Reviews the PR against the brief and the docs; checks evidence; tries to break it | Push to the builder's branch (it comments; the builder fixes) |
+| **Reviewer agent** (the *other* one) | Reviews the PR against the brief and the docs; checks evidence; tries to break it | Push to the builder's branch (it reports findings; the builder fixes) |
 
 **Why two different agents.** Different models make different mistakes, so cross-review catches
 more than self-review, and it is cheap. Alternate who builds (for example Claude Code builds
@@ -227,7 +227,7 @@ Check, in order:
 1. Every acceptance criterion: is it implemented, and does the cited test really prove it?
    Run the tests yourself.
 2. Architecture rules in AGENTS.md §5 (domain purity, events in the same transaction,
-   generated client only, immutability rules, sandbox use, Markdown rendering).
+   generated client only, immutability rules, workspace port use, Markdown rendering).
 3. Security: anything touching docs/security.md controls.
 4. Invariants in docs/domain-model.md §12 that this slice touches.
 5. Docs: does the PR update the owning document for every behaviour change? For a changed
@@ -291,10 +291,12 @@ The owner approves, in every slice:
 
 - the plan, for slices marked *checkpoint: plan*;
 - the UI design, for any slice that adds or changes a screen;
+- the code design, when a slice adds shared state, a module boundary or a flow across screens;
 - every database migration;
 - security-sensitive code (`security.md` areas);
 - new dependencies;
 - new or changed decisions;
+- the public API shape, changes to `AGENTS.md`, and anything outside the task's scope;
 - the merge.
 
 The agents may, without asking: implement inside the brief, write and run tests, refactor

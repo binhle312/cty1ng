@@ -42,9 +42,9 @@ differ, the decision wins; fix the table. In every row that saves, the conversat
 
 ## Acceptance criteria (UI-13)
 
-- UI-13.1: The rail groups conversations by project, with conversations outside any project
-  in their own group. "+" offers "New conversation" in the current project or outside one.
-- UI-13.2: The owner can create a project (name, one-line description), rename it, and move a
+- UI-13.1: The rail lists the projects, and bar 2 lists the conversations of the selected project
+  or of Home. The "+" of the Conversations label starts a new conversation in that place.
+- UI-13.2: The owner can create a project (name, goal ≤ 500 characters, instructions ≤ 3000 characters, colour; D45, `../design/components/new-project-page.md`), rename it, and move a
   Home conversation into a project from the conversation's menu. A project conversation never
   leaves its project (D61). The move dialog lists the conversation's saved files with ticked
   boxes and the pinned version of each, and shows which memory and Library the bots will use

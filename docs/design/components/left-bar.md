@@ -131,7 +131,7 @@ after M8b. Hooks that earlier slices add so it fits without breaking anything:
   reorder. **Schema change (initial schema for M5b), needs approval.**
 - `projects.description` becomes the goal, ≤ 500 chars (was "one line").
 - New token `primary-tint` in `../themes.md` §3 (Command dark #3A2E12; Material value set in T2).
-- Glossary: **Library** = the project's workspace files, as shown in the UI.
+- Glossary: **Library** = the workspace files of a project or of Home, as shown in the UI.
 - App shell: the two bars, Ctrl+B, the Home and first-run states.
 - Spec gaps found: the Flow pane has no first-load or "load earlier" endpoint; `StepKind` in
   `../../flow-view.md` lacks the D38 memory kinds and the D41 `propose_skill` kind.

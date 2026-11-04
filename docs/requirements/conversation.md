@@ -1,6 +1,6 @@
 # Conversation
 
-Chatting with one or more bots: messages, streaming, mentions, edits and branches, skill chips, attachments and the files panel. Behaviour rules (who replies, budgets, history) are in `../conversation-rules.md`.
+Chatting with one or more bots: messages, streaming, mentions, edits and branches, skill chips, attachments and the Library page. Behaviour rules (who replies, budgets, history) are in `../conversation-rules.md`.
 
 ## Stories
 
@@ -12,7 +12,7 @@ Chatting with one or more bots: messages, streaming, mentions, edits and branche
   Acceptance criteria: UI-3.8, UI-3.9.
 - **CV-4.** As the owner, I want @mention to offer only bots in this conversation, so that I never address someone who cannot answer.  
   Acceptance criteria: UI-3.11, UI-3.12, UI-3.14, UI-3.14b.
-- **CV-5.** As the owner, I want to attach files and browse the conversation's workspace, so that bots and I work on the same documents.  
+- **CV-5.** As the owner, I want to attach files and browse the Library of the conversation's place, so that bots and I work on the same documents.  
   Acceptance criteria: UI-3.13, UI-3.16.
 - **CV-6.** As the owner, I want a conversation header with the members, a way to add a bot and the discussion status, and a Stop button in the composer, so that I stay in control.  
   Acceptance criteria: UI-3.15.
@@ -29,7 +29,7 @@ Chatting with one or more bots: messages, streaming, mentions, edits and branche
 
 ## Acceptance criteria
 
-Shared rules for every story: `README.md` §Applies to every story. Layouts referenced below are sketches in `../design/`, not final designs.
+Shared rules for every story: `README.md` §Applies to every story. Agreed designs are in `../design/components/`; other layouts in `../design/` are sketches.
 
 ## Conversation page (UI-3)
 
@@ -140,7 +140,7 @@ Title (D46, rules in `../conversation-rules.md` §8)
   model for a short title (the model is asked for 2 to 6 words; the app keeps 60 characters or
   less). The app needs an available active bot for this, because it uses that bot's model. A
   first message stored with no such bot gets no title (`../conversation-rules.md` §8 rule 3). The title shows in the
-  header, the rail tooltip and the conversation lists when `conversation.updated` arrives. The send
+  header, the bar 2 row and the conversation lists when `conversation.updated` arrives. The send
   and the bot reply do not wait for it. The app makes this request one time per conversation.
   Later messages and edits do not change the title.
 - UI-3.25: A title that the owner sets (rename in the header or the conversation menu) always wins. The app never replaces it, also when the rename happens during the

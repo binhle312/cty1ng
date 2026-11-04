@@ -1,13 +1,13 @@
-# App shell, conversation rail and bot header
+# App shell, left bar and bot header
 
-The frame around every page: the rail of conversations on the left and the bar of bots at the top.
+The frame around every page: the left bar (the rail of projects and bar 2 with the conversations) and the bar of bots at the top.
 
 ## Stories
 
-- **SH-1.** As the owner, I want every conversation as a round icon in a rail with a "+" at the top, so that I can switch and start conversations in one click.  
-  Acceptance criteria: UI-1.1 to UI-1.6.
+- **SH-1.** As the owner, I want every conversation as a row with a round icon in bar 2 of the left bar, with a "+" above the list, so that I can switch and start conversations in one click.  
+  Acceptance criteria: UI-1.1 to UI-1.6, UI-1.13.
 - **SH-2.** As the owner, I want all my bots visible in a header with name tooltips, so that I always know who is available.  
-  Acceptance criteria: UI-2.1 to UI-2.3, UI-2.6 to UI-2.8, UI-2.12.
+  Acceptance criteria: UI-2.1 to UI-2.3, UI-2.6 to UI-2.8, UI-2.11, UI-2.12.
 - **SH-3.** As the owner, I want to drag a bot from the header into the conversation, so that adding a bot feels direct.  
   Acceptance criteria: UI-2.4, UI-2.5.
 - **SH-6.** As the owner, I want the header to show my pinned bots first in my order, then the others by recent activity or creation time, and never to shuffle while I am using it, so that I can find a bot without chasing it.  
@@ -25,22 +25,24 @@ The frame around every page: the rail of conversations on the left and the bar o
 
 ## Acceptance criteria
 
-Shared rules for every story: `README.md` §Applies to every story. Layouts referenced below are sketches in `../design/`, not final designs.
+Shared rules for every story: `README.md` §Applies to every story. Agreed designs are in `../design/components/`; other layouts in `../design/` are sketches.
 
-## App shell and conversation rail (UI-1)
+## App shell and left bar (UI-1)
 
-Layout sketch: see `../design/screens.md` §1 (not final).
+Design: `../design/components/left-bar.md`, `top-header.md` and `user-panel.md` (agreed).
 
-- UI-1.1: The rail is always visible. The top item is a round "+" button; clicking it creates a
-  conversation titled "New conversation" and opens it. After the first message, the app can
+- UI-1.1: The left bar has the rail (Home and the projects) and bar 2 (what is inside the
+  selected place). The rail is always visible; bar 2 can be hidden
+  (`../design/components/left-bar.md` §4). The "+" of the Conversations label in bar 2 creates a
+  conversation titled "New conversation" in that place and opens it. After the first message, the app can
   give it a short title one time (UI-3.24, D46).
-- UI-1.2: Each conversation is a 48 px round icon with a tooltip showing its title.
+- UI-1.2: Each conversation is a row in bar 2, with a round icon and its title.
 - UI-1.3: Icon content, from **active** members' avatars:
   0 bots → title initials on a neutral background; 1 → that avatar; 2 → two halves side by
   side; 3–4 → 2×2 grid; 5+ → three avatars and a "+N" tile. Removed bots are left out; deleted
   bots are drawn grey. Pending members are left out until the owner chooses their history. There
   are no preset icons (round 12).
-- UI-1.4: The open conversation has an active indicator (a pill on the left edge).
+- UI-1.4: The row of the open conversation shows as selected.
   Conversations with unread messages show a dot.
 - UI-1.5: Sorted by last activity, newest first.
 - UI-1.6: Right-click or ⋯ on a conversation row: the conversation menu (UI-9.7). **Delete**
@@ -103,11 +105,11 @@ Layout sketch: see `../design/screens.md` §1 (not final).
   §4, owner 2026-11-02).
 - UI-2.11: The header is sticky: it stays at the top of the window on every page while the
   content below it scrolls (the conversation, the bot and skill pages, Settings, Statistics).
-  Only the content area scrolls; the header and the conversation rail never scroll away.
-- UI-1.13: The left navigation bar is sticky too: it fills the window height on every page and
-  never scrolls with the content. When its list of projects and conversations is longer than
-  the window, only that list scrolls inside the bar; the "+" button at the top and the user
-  panel at the bottom stay in place. (A sticky bottom bar may come later; not specified.)
+  Only the content area scrolls; the header and the left bar never scroll away.
+- UI-1.13: The left bar is sticky too: it fills the window height on every page and never
+  scrolls with the content. When the projects in the rail or the conversations in bar 2 are longer
+  than the window, only that list scrolls; the other parts of the bar and the user panel stay in
+  place (`../design/components/left-bar.md` §1.3, §2). (A sticky bottom bar may come later; not specified.)
 
 ## First open and reopening (UI-1, continued)
 
@@ -145,7 +147,7 @@ Where the reopen state lives in phase 1:
 | Last open conversation | Opened at `/`; a link URL wins | Browser (`localStorage`) |
 | Scroll position | "New" divider if unread, else bottom | Server (`last_read_seq`) |
 | Draft text | Kept per conversation until sent | Browser (`localStorage`) |
-| Flow pane (open, side, width, tab) | As left | Browser (`../flow-view.md` §2) |
+| Side pane: Flow or Memory (open, side, width, tab; one saved side, D44) | As left | Browser (`../flow-view.md` §2) |
 | Theme, mode, density | As set | Browser (UI-8.5) |
 | Bar 2 hidden (Ctrl+B or its ⋯ menu) | Visible until the owner hides it; a page that hides bar 2 by itself (New project) does not change it | Browser (`localStorage`) |
 

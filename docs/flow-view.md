@@ -40,10 +40,13 @@ Sketch only (not final; see `design/README.md`):
                               ↑ draggable divider (double-click resets to 50/50)
 ```
 
-- Exactly two panes: chat and Flow. No arbitrary splitting.
+- Exactly two panes: chat and the side pane. The side pane shows Flow or Memory, never both
+  (D44). No arbitrary splitting.
 - Divider drag with min widths (chat 360 px, Flow 320 px); keyboard resizable (arrow keys on the
   focused divider); double-click resets.
-- ⇄ swaps sides; ✕ closes Flow; a "Flow" button in the conversation header opens it.
+- ⇄ swaps sides; ✕ closes the pane; a "Flow" button in the conversation header opens Flow, and
+  the Memory row in the left bar opens Memory. When one opens, the other closes. The two use one
+  saved side.
 - Pane state (open, side, width, active map) is a per-browser convenience in `localStorage`,
   wrapped in try/catch; the page works without it.
 - Below 960 px wide, the panes become tabs (Conversation | Flow).
@@ -115,6 +118,8 @@ type StepKind =
   | "load_skill" | "list_files" | "read_file" | "view_file" | "write_file" | "propose_handoff"
   | "remember" | "update_memory" | "forget" | "restore_memory"   // D38
   | "propose_skill"                                              // D41
+  | "propose_memory_tidy"                                        // D63
+  | "read_skill_base"                                            // D65
   | "mark_step"                                                  // D57
   | "unknown_tool";
 interface RunStep { kind: StepKind; target: string; status: "ok" | "error"; startedAt: string; finishedAt: string }

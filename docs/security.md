@@ -54,7 +54,7 @@ environment, provider-side data handling.
 - Workspace file viewer: text shown as text; HTML files shown as source, never rendered;
   images and PDFs served with `Content-Disposition: inline`, correct type, `nosniff`, and a
   sandboxing CSP (`sandbox`) on the file response.
-- Conversation titles are plain text everywhere (header, rail, lists). The auto
+- Conversation titles are plain text everywhere (header, bar 2, lists). The auto
   title (D46) is model output, so the app never renders it as Markdown or HTML.
 
 ### 2.3 Bot tools and the workspace sandbox
@@ -86,7 +86,7 @@ environment, provider-side data handling.
 | --- | --- | --- |
 | Avatar | PNG, JPEG, WebP; the file ≤ `AVATAR_MAX_BYTES` (default 2 MB), the whole multipart request ≤ `AVATAR_MAX_BYTES` + 64 KB for the part headers and boundaries; either one over gets 413 `too_large` (M2 spec gap pass, owner 2026-11-01) | Detect type from content (`sharp`), reject others incl. SVG; refuse an image over 25 million pixels before it is decoded (`limitInputPixels`, fixed), with 422 "The image has too many pixels. Use one under 25 megapixels."; at most two uploads decode at once, the others wait (fixed: one decode at the pixel limit holds about 100 MB); strip metadata; re-encode to 256×256 WebP; store by SHA-256. The size limit is an environment variable (`architecture.md` §8) and `GET /avatars/limits` gives it to the page; the accepted types, the pixel limit and the output size are fixed security rules. Unused files: `domain-model.md` §2 Avatar files |
 | Attachment | Text (`.md .txt .csv .json .yaml .html .css .js .ts .py .sql .xml .svg`), images, PDF; 10 files × 10 MB | Sanitised file name; saved under `attachments/<yyyy-mm-dd>-<conversation-slug>/` (D52); SVG and HTML are only ever shown as text |
-| Skill zip | `.zip` ≤ 5 MB, ≤ 200 entries, ≤ 20 MB uncompressed (every entry, by the size its header states), a `SKILL.md` ≤ 1 MB uncompressed | `POST /skills/import/preview` has its own two limits in place of the 1 MB JSON limit (§2.7): the zip file part ≤ 5 MB, and the whole multipart request ≤ 5 MB + 64 KB for the part headers and boundaries; either one over gets 413. Every other route keeps its own limit (1 MB JSON, and the avatar and attachment limits in this table). Reject entries with absolute paths or `..` (zip slip); only `<slug>/SKILL.md` read, every other file is listed as skipped and never opened; the total is checked from the entry headers before any entry is opened, a `SKILL.md` over 1 MB is not read and its row is invalid, and the reader stops an entry that grows past the size its header states, so a zip bomb is never fully unpacked (M1 plan, decision 2: this replaces a 100:1 ratio limit, which refused valid repetitive Markdown); UTF-8 only; YAML parsed with the `yaml` package's default core schema (no custom tags); frontmatter validated by a Zod schema |
+| Skill zip | `.zip` ≤ 5 MB, ≤ 200 entries, ≤ 20 MB uncompressed (every entry, by the size its header states), a `SKILL.md` ≤ 1 MB uncompressed | `POST /skills/import/preview` has its own two limits in place of the 1 MB JSON limit (§2.7): the zip file part ≤ 5 MB, and the whole multipart request ≤ 5 MB + 64 KB for the part headers and boundaries; either one over gets 413. Every other route keeps its own limit (1 MB JSON, and the avatar and attachment limits in this table). Reject entries with absolute paths or `..` (zip slip); only `<slug>/SKILL.md` read, every other file in a skill folder is listed as skipped and never opened, and a file at the top of the zip is ignored; the total is checked from the entry headers before any entry is opened, a `SKILL.md` over 1 MB is not read and its row is invalid, and the reader stops an entry that grows past the size its header states, so a zip bomb is never fully unpacked (M1 plan, decision 2: this replaces a 100:1 ratio limit, which refused valid repetitive Markdown); UTF-8 only; YAML parsed with the `yaml` package's default core schema (no custom tags); frontmatter validated by a Zod schema |
 
 ### 2.5 Skills, personas and prompt injection
 
@@ -127,7 +127,7 @@ environment, provider-side data handling.
 - Bots may draft skills but never save them (D41). A skill reaches every run that loads it, so
   injected text in a skill would persist; only an owner-approved, owner-authored version is
   ever written. Drafts are text only (no files, no tool permissions), pass the sensitive-data
-  guard with no override, and the tool is offered only in runs the owner's message started.
+  guard with no override, and the tool is offered only in an action run whose approved plan lists the draft (D65).
 
 ### 2.6 Secrets
 
@@ -176,7 +176,7 @@ environment, provider-side data handling.
 - Every request body and query string is a Zod schema with `.strict()` (unknown keys rejected), length
   limits and enums; the server validates even what the form already checked. Form validation
   in the browser is for usability only.
-- IDs are parsed as UUIDs before they reach a query.
+- IDs are parsed with their TypeID schema (`shared/src/ids.ts`, D36) before they reach a query.
 
 ### 2.10 Errors, debugging and logs
 
@@ -193,7 +193,7 @@ environment, provider-side data handling.
 
 - Lockfile committed (`pnpm-lock.yaml`); CI installs with `--frozen-lockfile`. pnpm runs
   dependency install scripts only for packages set to `true` under `allowBuilds` in
-  `pnpm-workspace.yaml` (native ones such as `better-sqlite3` and `sharp`); every other package
+  `pnpm-workspace.yaml` (native ones; today `better-sqlite3`); every other package
   with a script is listed as `false`, and install fails on a package that is in neither list.
 - CI runs `pnpm audit --audit-level high`; Dependabot opens weekly update
   PRs. New dependencies need the owner's approval (`AGENTS.md` §7).
@@ -201,15 +201,16 @@ environment, provider-side data handling.
   `.gitignore` excludes `.env*` (except `.env.example`), `data/`, and local databases. Test
   code holds no real-looking credentials either (`testing.md` §3, "Fake secrets").
 - **CodeQL** code scanning (`.github/workflows/codeql.yml`, advanced setup, `security-extended`
-  queries) runs on every PR, on `main` and weekly. It scans the workflows now and the TypeScript
-  code from M0 on. Vendored skills (`.agents/skills/`) and `docs/` are excluded
+  queries) runs on every PR, on `main` and weekly. It scans the workflows and the TypeScript
+  code. Vendored skills (`.agents/skills/`) and `docs/` are excluded
   (`.github/codeql/codeql-config.yml`). GitHub's default CodeQL setup stays off, because it
   conflicts with the advanced one.
 - PRs that touch the paths in `AGENTS.md` §7 (security-sensitive code) also get an automated
   security review (the `anthropics/claude-code-security-review` GitHub Action, run only on
   the owner's branches, since it reads untrusted PR content and needs an API key secret).
   It assists the human review; it does not replace it.
-- **Vendored agent skills** (`.agents/skills/`) are third-party code that agents run with the
+- **Vendored agent skills** (today `ui-ux-pro-max` in `.agents/skills/`; the `principle-*` skills
+  there are project-owned) are third-party code that agents run with the
   owner's permissions. Each one keeps its licence and a `SOURCE.md` with the upstream commit
   and the review date. Before adding or updating one, review its scripts: no network calls,
   no subprocesses, no reading of `.env` or API keys, no package installs. Skills that fail

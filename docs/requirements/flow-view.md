@@ -8,6 +8,9 @@ written with that brief. The **Team** map is parked until bots work together wit
 (one orchestrator bot with helper bots). FL-2 and UI-12.4 stay here for that time; they are not
 in M8.
 
+The side pane holds Flow or the Memory pane, one at a time (D44). The resize, swap and close
+rules below apply to both, and they use one saved side. When one opens, the other closes.
+
 ## Stories
 
 - **FL-1.** As the owner, I want a Flow pane beside the conversation that I can resize, swap and close, so that I can watch the work without losing the conversation.  
@@ -21,7 +24,7 @@ in M8.
 
 ## Acceptance criteria
 
-Shared rules for every story: `README.md` §Applies to every story. Layouts referenced below are sketches in `../design/`, not final designs.
+Shared rules for every story: `README.md` §Applies to every story. Agreed designs are in `../design/components/`; other layouts in `../design/` are sketches.
 
 ## Flow view (D26, D27) (UI-12)
 

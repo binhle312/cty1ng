@@ -12,7 +12,7 @@ without a human clicking around, and that a human reviewer can trust the proof.
 | API | Vitest + Hono's `app.request()` (no network) | `backend/test/api/` | Status codes, error codes, schemas, origin checks | fast |
 | Agent | Vitest + the fake model adapter (AI SDK mock model) | `backend/src/core/runs/` | Prompt assembly, tools, provenance, streaming, cancellation | fast |
 | Port contracts | Vitest, one suite per port run against every adapter (D35) | `backend/test/contracts/` | Each adapter honours its port: replay and ordering (transport), transactions (unit of work), lease and retry (queue), streaming and usage (model) | fast |
-| Security | Vitest | `backend/test/security/`, `frontend/test/security/` | `security.md` §3 | fast |
+| Security | Vitest | `backend/test/security/`, and next to the code they check (upload tests, `frontend/src/components/ui/markdown.test.tsx`) | `security.md` §3 | fast |
 | Frontend unit | Vitest + Testing Library | next to the code in `frontend/src/` | Components, reducer, mention autocomplete, icon composition | fast |
 | End to end | Playwright, fake model | `frontend/test/e2e/` | User journeys across the real backend | slower |
 | Repository checks | CI scripts | — | Generated client up to date; event type lists match; import rules; folder indexes complete | fast |
@@ -23,12 +23,13 @@ Tests never call real providers (`AGENTS.md` §8).
 
 - The backend accepts `FAKE_MODEL=1`; the catalog then exposes `fake:scripted` and
   `fake:effort` (both available with no key, `domain-model.md` §4) next to the entries of
-  `config/models.yaml`, and `app/main.ts` wires `adapters/model/fake/` instead of the AI SDK
+  `config/models.yaml`, and `app/compose.ts` wires `adapters/model/fake/` instead of the AI SDK
   adapter for both. It builds on the AI SDK's mock language model, so streaming and usage have
   the real shapes. `fake:effort` has efforts, so the Create page's effort menu and a clone to
   another model can be tested end to end.
 - **Fake mode does not depend on the developer's keys** (M2 spec gap pass, owner 2026-11-01).
-  The test setup (Vitest and the Playwright servers) clears every `*_API_KEY` variable, so the
+  The Playwright servers clear every `*_API_KEY` variable, and Vitest's test config passes an
+  environment with none, so the
   real catalog entries are always unavailable and grey in tests, whatever `.env` holds.
   Provider tools are tested in service tests with a test catalog, not end to end.
 - The fake reads a **script** keyed by bot slug from `backend/test/fixtures/fake-scripts/*.yaml`:
@@ -153,8 +154,8 @@ Lessons from an earlier prototype. Each needs a named test in the slice that bui
 
 1. create skill → create bot BA with it → create conversation;
 2. drag BA from the header into the chat → choose "Full history";
-3. `@` shows only BA → send → reply streams → chip `write-user-stories v1` visible → the rail
-   tooltip shows the fake auto title (D46);
+3. `@` shows only BA → send → reply streams → chip `write-user-stories v1` visible → the bar 2
+   row shows the fake auto title (D46);
 4. add Designer with the add slot (+) in the conversation header → enable discussion with limit 2 → bots stop after 2 turns with
    the notice;
 5. Stop button during a run → message shows "Stopped";
@@ -277,7 +278,8 @@ theme-switch leak test.
 All must be green to merge: ESLint (including the security rules in `security.md` §2.8),
 Prettier, `tsc`, dependency-cruiser import rules (D35), Vitest, `db:check` (Drizzle schema
 matches the migrations), Playwright, generated-client freshness, event-type list match,
-`check:index` (folder indexes complete, `architecture.md` §4.2), `pnpm audit --audit-level
+`check:index` (folder indexes complete, `architecture.md` §4.2), the bundle budget
+(`pnpm build`, then `pnpm check:bundle`), `pnpm audit --audit-level
 high`, CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also run the automated security review
 (`security.md` §2.11).
 
@@ -285,7 +287,7 @@ high`, CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also
 
 Apply the [test evidence principle](../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md).
 The PR maps each acceptance criterion to a test and its observable assertion or expected state.
-Use a screenshot for purely visual criteria; Playwright stores these in `frontend/test/e2e/__screenshots__/`.
+Use a screenshot for purely visual criteria; Playwright stores these in `frontend/test/e2e/<spec>.spec.ts-snapshots/`.
 "Tested manually" alone is not evidence.
 
 Record the tested revision, expected failure and result. Test first normally supplies the failure evidence.

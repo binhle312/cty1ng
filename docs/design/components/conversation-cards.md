@@ -18,7 +18,7 @@ Every system line has one look: a small pill in the centre of the column.
 | --- | --- |
 | Pill | Padding 6 × 12 px, radius 999 px, 1 px `outline` border, `surface-container` fill, 12 px text, a line icon at the left |
 | Colour | `on-surface-muted`. `danger` only for a problem: a run that a cap refused, a run that cannot start |
-| Link | An action in the pill is a text link in `on-surface` with an underline ("Open Limits", "Undo") |
+| Link | An action in the pill is a text link in `on-surface` with an underline ("Open Spending", "Undo") |
 
 Examples:
 
@@ -62,8 +62,8 @@ indented like the text.
 It carries the `run_id` of the run that made it. The page shows a card message under the bot
 reply with the same `run_id`, so the place is the same after a reload, an event replay or a
 branch switch. No new column or migration is needed. The plan card follows the same rule. Its
-data contract (message kind and card fields) comes with the plan card slice (D48, the D57
-proposal), not with this design.
+data contract (message kind and card fields) comes with the plan card slice (D48, D57),
+not with this design.
 
 | Part | Rule |
 | --- | --- |

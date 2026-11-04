@@ -39,7 +39,7 @@ problem). The row shows the state in the open conversation.
 | Running | Spinner in the bot colour | Running (`on-surface`) | Opens the conversation it is working in |
 | Waiting for you | Amber "?" | Waiting for you (`primary`) | Opens the conversation at the question it asked |
 | Waiting on another bot | Hourglass | Waiting for BA (`on-surface-muted`) | Opens the conversation where it waits |
-| Paused at the cap | Red square | Paused · daily cap (`danger`) | Opens Settings → Limits |
+| Paused at the cap | Red square | Paused · daily cap (`danger`) | Opens Settings → Spending |
 | Last run failed | Red "!" | Last run failed (`danger`) | Opens the conversation at the message that explains the failure |
 | Not in this conversation | Dashed circle | Not in this conversation (`on-surface-muted`) | Nothing; Add here is enabled |
 

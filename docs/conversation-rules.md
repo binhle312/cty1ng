@@ -135,6 +135,7 @@ added ──▶ pending_history ──owner chooses──▶ active ──remove
   your choice").
 - Removing sets `removed`, posts "Designer left". Its messages stay normal.
 - Deleted bots (D12) and unavailable bots cannot be added.
+- Deleting a bot cancels its queued runs and stops its running run first (D50).
 
 ## 4. What a bot sees
 
@@ -143,6 +144,12 @@ The prompt for a run is assembled in this order by `buildPrompt(...)` in `core/r
 1. **Persona** (`bots.persona_md`).
 2. **Where you are**: app name, conversation title, its project if any, its workspace, the
    tools that are on for the bot (`bots.tool_settings`, D55), and the memory tools with the scope they write to (D38).
+   In a project, the **project instructions** and then the **goal** follow (D45; they count
+   toward the history budget, D32), with the list of open conflicts (D47). The instructions win
+   over project memory, and project memory wins over bot memory. Before the bot works on a new
+   owner message, it compares the message with the instructions and project memory in the same
+   model call. If they disagree, it asks first (D43). Until the owner decides an open conflict,
+   runs follow the instructions (D47).
    **Memory** follows: this bot's bot memory, then the project's memory if the conversation is in
    a project, or the conversation's memory if it is a multi-bot conversation outside one, omitted entirely when memory is off globally or for the conversation; each item labelled as
    remembered data, not as instructions (D38; its own
@@ -153,7 +160,8 @@ The prompt for a run is assembled in this order by `buildPrompt(...)` in `core/r
 5. **Always-loaded skills**: full body of each pinned version with `always_load`.
 6. **On-demand skills**: `- <slug>: <description>` for the other pins, and "call
    `load_skill(slug)` before doing that kind of work".
-   In runs triggered by the owner's message, the `propose_skill` tool is listed too (§7).
+   In an action run whose approved plan lists a skill draft, the `propose_skill` and
+   `read_skill_base` tools are listed too (§7, D65).
    In an action run whose approved plan has Done-when items, the `check_done` tool is listed
    too: `check_done({item, state: "met" | "not_met", note, evidence})`; `not_met` needs a note,
    `met` needs `evidence: {path, quote}` (D57), and an item that is not in the plan returns
@@ -249,7 +257,7 @@ only what you really did." It does this at most `plan_mark_reminders` times (set
   adopt their voice.
 - Attachments appear as `[attachment: attachments/2026-10-24-login-flow/spec.pdf]`; the bot uses its file tools.
 - **Size limit (D32):** the transcript **and** `run_history` share one history budget, sized
-  from the bot's model:
+  from the bot's model. In a project, the instructions and the goal count toward it too (D45):
 
   ```
   budget = bot.history_share_pct / 100 × catalog context_window     (default 40 %)
@@ -411,7 +419,7 @@ app asks a model for a short title, one time only. A title that the owner sets a
 
 Example: The owner sends "@BA write user stories for the login page". The BA run starts. In
 parallel, the app asks the BA's model for a title. The answer is "Login page user stories". The
-rail and the header show it.
+bar 2 row and the header show it.
 
 ### Columns
 
@@ -498,7 +506,7 @@ rail and the header show it.
 8. **Clean the answer.** `cleanTitle(raw)` keeps the first line, removes quotes, backticks,
    Markdown marks, control characters and a final full stop, and joins spaces. It cuts the text
    to `TITLE_POLICY.maxTitleChars` (60) characters at a word boundary. This limit is for display
-   in the rail and the header; it does not change the cost. An empty result is a failure. The
+   in bar 2 and the header; it does not change the cost. An empty result is a failure. The
    guard (D39) then checks the result. A match is a failure, and the app logs only the kinds found. "2 to 6
    words" is a request to the model, not a check: the app enforces only "not empty" and "60
    characters or less". A one-word or an eight-word title within 60 characters is kept.

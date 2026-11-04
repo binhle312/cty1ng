@@ -6,7 +6,7 @@ and write each part's brief before implementation. The scope and acceptance crit
 
 ## Goal
 
-The owner creates conversations from the rail, adds one bot (with the add slot (+) in the
+The owner creates conversations from bar 2, adds one bot (with the add slot (+) in the
 conversation header; drag-to-add comes in M4),
 chats with it, sees replies stream in with skill provenance chips, and can stop a run. The
 event log keeps the UI exact across reloads.
@@ -27,8 +27,8 @@ in `docs/design/components/conversation-page.md`, `composer.md` and `conversatio
 - Worker with leases, attempts, one running run per conversation, `MAX_CONCURRENT_RUNS`, Stop.
 - Agent port: prompt builder (`conversation-rules.md` §4, without the discussion rules block
   values beyond "OFF"), tools `load_skill` (pinned version, records `run_skills`) and
-  `list_files`/`read_file` against an empty workspace folder (the full sandbox port is M6, but
-  all paths must already go through the ported `Workspace.resolve()`).
+  `list_files`/`read_file` against an empty workspace folder (the full workspace port is M6, but
+  all paths must already go through `Workspace.resolve()`).
 - Tool results, empty results and tool errors (`conversation-rules.md` §4, "Tool results"):
   every tool returns errors as `{error, message}` and never ends the run; the prompt line about
   errors and no data; `force` in the fake model script (`testing.md` §2).
@@ -40,7 +40,7 @@ in `docs/design/components/conversation-page.md`, `composer.md` and `conversatio
   3.5), the stall timeout (`architecture.md` §6), clearing live indicators on disconnect
   (`realtime-events.md` §3), and `last_read_seq` with the "New" divider (UI-3.10).
 - `decideRuns` for the one-bot rows; `visibleHistory` with full history.
-- Rail (UI-1.1–1.6 except presets), conversation page (UI-3.1–3.7, 3.10, 3.14–3.15 without
+- Bar 2 conversation list (UI-1.1–1.5), conversation page (UI-3.1–3.7, 3.10, 3.14–3.15 without
   discussion controls, 3.17), the add slot (+) in the header that adds with full history
   directly (the history card arrives in M4), Stop in the composer (`composer.md` §4).
 - Unread dots and `POST /read`.
@@ -70,13 +70,13 @@ in `docs/design/components/conversation-page.md`, `composer.md` and `conversatio
 
 ## Out of scope
 
-Drag-to-add, history card, mentions autocomplete (M4); discussion (M5); attachments, file
-panel, handoffs (M6); editing and branches (M4).
+Drag-to-add, history card, mentions autocomplete (M4); discussion (M5); attachments, Library
+page, handoffs (M6); editing and branches (M4).
 
 ## Acceptance criteria
 
 - Journey J1 steps 1–3 pass in Playwright with the fake model (adding with the add slot).
-- UI-1.1–1.6 (icons from avatars), UI-3.1–3.7, 3.10, 3.14, 3.14b, 3.15 (partial), 3.17.
+- UI-1.1–1.5 (icons from avatars), UI-3.1–3.7, 3.10, 3.14, 3.14b, 3.15 (partial), 3.17.
 - Invariants 7, 8, 9, 11, 14, 15, 17, 18, 22, 26.
 - Killing the backend mid-stream and restarting: the run is retried after the lease, no
   duplicate message, the UI recovers on reconnect.
@@ -89,7 +89,7 @@ panel, handoffs (M6); editing and branches (M4).
 - Every race in `architecture.md` §11 that M3 touches has a parallel test with exactly one
   winner (invariants 8 and 15).
 - Auto title (D46), each with a named test (`UI-3.24: …`):
-  - The first sent message gives the fake title. The header and the rail tooltip show it after
+  - The first sent message gives the fake title. The header and the bar 2 row show it after
     one `conversation.updated` event. `title_source` is `auto`.
   - The send returns 201 before the title call ends, and the bot run starts without a wait
     for it (fake title with `delay_ms`).
@@ -132,8 +132,8 @@ panel, handoffs (M6); editing and branches (M4).
     its cost. Today's spend and the conversation total include it. The bot usage panel (UI-6.8)
     does not. `GET /usage?group_by=bot` shows it as "Conversation titles".
   - A title such as `<img src=x onerror=alert(1)>` or `**bold**` renders as literal text in the
-    header and the rail tooltip (Vitest).
-  - Journey J1 step 3 in Playwright: after the send, the rail tooltip shows the fake title.
+    header and the bar 2 row (Vitest).
+  - Journey J1 step 3 in Playwright: after the send, the bar 2 row shows the fake title.
 
 - Reply feedback (D51), each with a named test: a rating on a complete bot message is stored
   with the message's `run_id` and `bot_id` and emits `message.feedback`; a second PUT replaces

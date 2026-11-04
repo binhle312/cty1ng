@@ -30,7 +30,7 @@ does not load shows "The app could not load the bots." with **Try again**, never
 ┌ List (300 px) ──────────┐┌ Bot page ─────────────────────────────────────────────┐
 │ ← Back        + Create  ││ band (bot colour)                                     │
 │ Search                  ││ (avatar 116)  BA  ba  [Not saved]      Message  ⋯     │
-│ PINNED                  ││               🔒 Claude Sonnet · high                 │
+│ PINNED                  ││               🔒 Claude Sonnet · High                 │
 │  BA     Running · …     ││               ◌ Running · Login flow                  │
 │  Writer Idle · …        ││ Profile · Skills 4 ↑1 · Model · Memory · Activity 5 · │
 │ OTHERS        [⏱][📅]   ││ Usage                                                 │
@@ -55,7 +55,7 @@ does not load shows "The app could not load the bots." with **Try again**, never
 | --- | --- |
 | Band | 72 px strip, a plain fade of the **bot colour**. The style does not change it (§5) |
 | Avatar | 116 px (`bot-avatar.md` §2) with the state badge. Hover shows **Change**; a click moves focus to Appearance on the Profile tab |
-| Row 1 | Name, slug in `text-muted` (fixed at create, D19), and the "Not saved" pill while the Profile tab has a change to the avatar |
+| Row 1 | Name, slug in `on-surface-muted` (fixed at create, D19), and the "Not saved" pill while the Profile tab has a change to the avatar |
 | Row 2 | Model badge with a lock: "{model label} · {effort}". Model and effort never change (D7); Clone picks another model |
 | Row 3 | Status line (`bot-status.md`). A click opens the Activity tab |
 | Actions | **Message** (opens the owner's 1:1 conversation with the bot) and ⋯: Message, Clone, Delete (`danger`), as on the grid (`bots-page.md` §3), without Details |

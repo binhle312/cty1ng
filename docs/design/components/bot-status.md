@@ -19,7 +19,7 @@
 | --- | --- | --- | --- | --- |
 | Waiting for you | Waiting for you · {conversation} | Amber "?" | `primary` | The conversation at the question |
 | Last run failed | Last run failed · {conversation} | Red "!" | `danger` | The message that explains the failure |
-| Paused at the cap | Paused · daily cap | Red square | `danger` | Settings → Limits (D20, D40) |
+| Paused at the cap | Paused · daily cap | Red square | `danger` | Settings → Spending (D20, D40) |
 | Running | Running · {conversation} | Spinner, bot colour | `on-surface` | The conversation |
 | Queued | Queued · {conversation} | Clock | `on-surface-muted` | The conversation (D11) |
 | Waiting for a bot | Waiting for {bot} · {conversation} | Hourglass | `on-surface-muted` | The conversation where it waits for the handoff answer |
