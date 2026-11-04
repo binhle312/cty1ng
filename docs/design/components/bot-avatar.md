@@ -59,7 +59,8 @@ Rules:
 
 ## 4. Animation setting
 
-One owner setting, **Bot animations**, for all bots: **Off** (default) / Reduced / Normal.
+One owner setting, **Bot animations**, for all bots: **Off** (default) / Reduced / Normal. It is on
+Settings › Appearance and is saved in the browser (`settings-page.md` §5, UI-8.5).
 
 | Value | Slime | Badge |
 | --- | --- | --- |
@@ -67,7 +68,7 @@ One owner setting, **Bot animations**, for all bots: **Off** (default) / Reduced
 | Reduced | Still | Spinner turns, "?" pulses |
 | Normal | Moves as in §3 | Moves |
 
-The OS "reduce motion" setting caps it at Off. Only the header and the bot page preview animate;
+The OS "reduce motion" setting and **Always reduce motion** cap it at Off. Only the header and the bot page preview animate;
 messages and the left bar stay still. Separate from the Flow view's motion setting.
 
 ## 5. Colour

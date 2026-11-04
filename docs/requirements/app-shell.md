@@ -126,8 +126,9 @@ Design: `../design/components/left-bar.md`, `top-header.md` and `user-panel.md` 
 - UI-1.8: Each step ticks itself off from server state (a key is available, a skill exists, a
   bot exists, a conversation exists), not from clicks, so it is right after a reload or when
   the work was done elsewhere. When all four are done, the checklist is replaced by the
-  normal empty state ("Pick a conversation or press +"). "Hide" dismisses it early, and Settings
-  can show it again.
+  normal empty state ("Pick a conversation or press +"). "Hide" dismisses it early, and Settings › Appearance
+  can show it again. The hidden state is a browser flag. Hide ships in M3 and that row in M5, so
+  until then Hide has no way back (owner, 2026-11-04).
 - UI-1.9: "Load the examples" is safe to press twice: existing example skills or bots are left
   as they are and reported ("BA already exists").
 - UI-1.10: Opening the app at `/` opens the last conversation the owner had open in this
@@ -148,7 +149,8 @@ Where the reopen state lives in phase 1:
 | Scroll position | "New" divider if unread, else bottom | Server (`last_read_seq`) |
 | Draft text | Kept per conversation until sent | Browser (`localStorage`) |
 | Side pane: Flow or Memory (open, side, width, tab; one saved side, D44) | As left | Browser (`../flow-view.md` §2) |
-| Theme, mode, density | As set | Browser (UI-8.5) |
+| Theme, mode, density, Bot animations | As set | Browser (UI-8.5) |
+| Get started hidden | Stays hidden until the owner shows it again (UI-1.8) | Browser (`localStorage`) |
 | Bar 2 hidden (Ctrl+B or its ⋯ menu) | Visible until the owner hides it; a page that hides bar 2 by itself (New project) does not change it | Browser (`localStorage`) |
 
 Browser storage is wrapped in try/catch, parsed with Zod on read (`../frontend-conventions.md`),
