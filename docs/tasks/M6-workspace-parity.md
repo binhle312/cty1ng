@@ -1,6 +1,8 @@
 # M6: Workspace parity
 
-Checkpoint: **plan** (security).
+Checkpoint: **plan per part** (security, schema, Library and handoff UI).
+This milestone brief follows the [M6 delivery breakdown](../development-plan.md#m6-libraries-files-and-handoffs).
+Complete the specification gaps below and write each part's brief before implementation.
 
 ## Goal
 
@@ -24,7 +26,7 @@ workspace, and handoffs with approval cards move work between bots.
 - The Library page and its viewer with safe headers (`design/components/library-page.md`; it
   replaces the Files side panel, UI-3.16), and the Library parts in a conversation
   (`design/components/library-cards.md`).
-- Handoffs: table, `propose_handoff` tool (D18 if accepted; otherwise ask), cards, decisions,
+- Handoffs: table, `propose_handoff` tool (D18, accepted), cards, decisions,
   stale detection, "Add <bot> and start", 24-hour limit.
 - Conversation delete (D60): saved files stay in the Library; unsaved changes go to Trash with the
   conversation and are discarded at purge. Test: a delete and a restore leave the Library unchanged.
@@ -78,7 +80,8 @@ The sandbox port, file-serving headers, upload handling.
 
 ## Open questions
 
-Is D18 (implicit workflow, handoff to any bot, team directory) accepted? Decide before starting.
+D18 is accepted: implicit workflow, handoff to any available bot, and the team directory.
+Use its amended configurable limit (`conversation-rules.md` §5, §9).
 
 D52 is accepted (each run writes on its own branch and saves to the Library when it ends).
 The UI design is agreed in round 17 (2026-10-27): the overlap notice, the unsaved changes card,

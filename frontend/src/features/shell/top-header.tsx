@@ -3,7 +3,7 @@ import { Pin, Plus } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { cn } from "../../lib/cn.ts";
 import { BotAvatar } from "../bots/bot-avatar.tsx";
-import { othersOf, pinnedOf } from "../bots/bot-pins.ts";
+import { othersOf, pinnedOf } from "../bots/bot-order.ts";
 import { type BotRow, useBots } from "../bots/bot-queries.ts";
 
 // The interactive roster loads in its own chunk, so @dnd-kit is not in the first load

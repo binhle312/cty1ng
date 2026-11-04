@@ -13,7 +13,8 @@ New to the project (human or agent), read in this order:
    re-arguing them.
 3. [architecture.md](architecture.md): the moving parts and the rules between them.
 4. The document for the area you are working on (table below).
-5. [workflow.md](workflow.md): how work is planned, built, reviewed and merged.
+5. [Principle skills](../.agents/skills/README.md): select the skill for the current phase of work.
+6. [workflow.md](workflow.md): how this project applies them during planning, building, review, and merge.
 
 ## Map
 
@@ -31,16 +32,18 @@ New to the project (human or agent), read in this order:
 | [api.md](api.md) | HTTP endpoints, request and response shapes, errors |
 | [research/](research/) | Notes from studying other products (behaviour only, no copied code). Inputs, not spec |
 | [ideas/](ideas/README.md) | Future ideas the owner wants to keep. Not decisions, not spec; nobody builds from them |
-| [design/](design/README.md) | Screen sketches and mockups. **Not final**: the UI is agreed with the owner in each slice plan |
+| [design/](design/README.md) | Agreed UI specs, shared standards and exploratory sketches; the design index identifies their status |
 | [flow-view.md](flow-view.md) | Flow pane: scene and cue model, swappable renderer, animation, performance and memory budgets |
-| [frontend-conventions.md](frontend-conventions.md) | TypeScript rules for the frontend and the lint settings that enforce them |
+| [frontend-conventions.md](frontend-conventions.md) | TypeScript rules across packages, frontend state rules and lint enforcement |
 | [security.md](security.md) | Threat model and the controls that must exist |
 | [testing.md](testing.md) | Test layers, fake model, what each slice must prove |
 | [workflow.md](workflow.md) | Using Claude Code and Codex together, branches, reviews, human checkpoints |
 | [review-guide.md](review-guide.md) | Local code and PR reviews: requirement-to-code-to-test evidence, separate safety and compliance conclusions, follow-up checks |
-| [lessons-learned/](lessons-learned/README.md) | One file per lesson: what went wrong in how we build, why, and which rule changed |
+| [Principle skills](../.agents/skills/README.md) | Select a principle skill, and the rules to maintain them |
+| [lessons-learned/](lessons-learned/README.md) | Project incidents, causes, responses, and their mapping to reusable principles |
+| [delivery-quality.md](delivery-quality.md) | Quality by milestone and PR: issue counts, review rounds, evidence limits, and prevention actions |
 | [development-plan.md](development-plan.md) | Slices M0–M9 in order, dependencies, checkpoints |
-| [tasks/](tasks/) | One brief per slice, ready to hand to an agent |
+| [tasks/](tasks/) | Existing milestone and part briefs; `development-plan.md` defines delivery parts and the briefs still needed |
 
 ## Rules for keeping docs healthy
 

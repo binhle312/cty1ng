@@ -1,4 +1,4 @@
-# Keep UI work and infrastructure apart
+# M0c combined shell and infrastructure work
 
 Date: 2026-10-30 · Source: M0c build, PR #49 · Status: applied
 
@@ -8,7 +8,8 @@ Date: 2026-10-30 · Source: M0c build, PR #49 · Status: applied
 **Cause.** The slice mixed UI and infrastructure, so the build was long, the review was large,
 and every fix needed a full gate run.
 
-**Change.** UI work and infrastructure go in separate slices or PRs. Two smaller PRs mean
-shorter builds, smaller reviews and fewer full gate runs each.
+**Project response.** The project workflow separates UI and infrastructure slices. It names static serving, API docs, generation, CI, and launch work as infrastructure.
 
-**Rule now in.** `../workflow.md` §2 step 1 "Slice size" and §8 "Slice too big".
+**Reusable principles.** [Keep each change independently reviewable](../../.agents/skills/principle-bound-change-scope/SKILL.md).
+
+**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [workflow §8](../workflow.md#8-when-things-go-wrong).

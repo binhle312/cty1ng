@@ -11,7 +11,7 @@ import {
   rgbToHex,
   rgbToHsv,
 } from "./bot-colours.ts";
-import { othersOf, pinnedOf, withoutPin, withPin, withPinAt, withPinMoved } from "./bot-pins.ts";
+import { othersOf, pinnedOf, withoutPin, withPin, withPinAt, withPinMoved } from "./bot-order.ts";
 
 // A fixed sequence for `random`, so a test knows what it picks.
 function sequence(...values: number[]) {
@@ -65,9 +65,9 @@ describe("the pinned list", () => {
     expect(withPin(["a", "b"], "c")).toEqual(["a", "b", "c"]);
     expect(withPin(["a", "b"], "a")).toEqual(["a", "b"]);
     expect(withoutPin(["a", "b"], "a")).toEqual(["b"]);
-    expect(withPinAt(["a", "b", "c"], "c", 0)).toEqual(["c", "a", "b"]);
-    expect(withPinAt(["a", "b"], "x", 1)).toEqual(["a", "x", "b"]);
-    expect(withPinMoved(["a", "b", "c"], "b", 1)).toEqual(["a", "c", "b"]);
-    expect(withPinMoved(["a", "b", "c"], "a", -1)).toEqual(["a", "b", "c"]);
+    expect(withPinAt(["a", "b", "c"], { id: "c", index: 0 })).toEqual(["c", "a", "b"]);
+    expect(withPinAt(["a", "b"], { id: "x", index: 1 })).toEqual(["a", "x", "b"]);
+    expect(withPinMoved(["a", "b", "c"], { id: "b", by: 1 })).toEqual(["a", "c", "b"]);
+    expect(withPinMoved(["a", "b", "c"], { id: "a", by: -1 })).toEqual(["a", "b", "c"]);
   });
 });

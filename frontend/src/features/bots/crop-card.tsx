@@ -41,13 +41,23 @@ function megabytes(bytes: number): string {
   return `${String(Number((bytes / 1_048_576).toFixed(1)))} MB`;
 }
 
-export function useAvatarUpload({
-  onUploaded,
-  onError,
-}: {
+export function useAvatarUpload(callbacks: {
   onUploaded: (avatar: UploadedAvatar) => void;
   onError: (message: string | null) => void;
 }) {
+  // An upload answers after the page rendered again (a newer bot loaded meanwhile): it calls the
+  // page's callbacks of now, never the ones of the render that sent it, so a choice changes only
+  // its own fields of the form as it is now.
+  const latest = useRef(callbacks);
+  useEffect(() => {
+    latest.current = callbacks;
+  });
+  const onUploaded = (avatar: UploadedAvatar) => {
+    latest.current.onUploaded(avatar);
+  };
+  const onError = (message: string | null) => {
+    latest.current.onError(message);
+  };
   const limits = useQuery(getAvatarLimitsOptions());
   const input = useRef<HTMLInputElement>(null);
   const [source, setSource] = useState<string | null>(null);
@@ -83,16 +93,16 @@ export function useAvatarUpload({
   // chose: the page must. Without the limits (still loading, or the load failed) the file waits
   // for them; a failed load is asked again, and if it fails again the owner chooses the file again.
   // Only the last chosen file counts: an earlier one that still waits is dropped.
-  const latest = useRef(0);
+  const lastFile = useRef(0);
   const onFile = (file: File) => {
-    latest.current += 1;
-    const turn = latest.current;
+    lastFile.current += 1;
+    const turn = lastFile.current;
     if (limits.data !== undefined) {
       read(file, limits.data);
       return;
     }
     void limits.refetch({ cancelRefetch: false }).then((result) => {
-      if (turn !== latest.current) return;
+      if (turn !== lastFile.current) return;
       if (result.data === undefined) {
         onError("The app could not check the image size. Upload the image again.");
         return;

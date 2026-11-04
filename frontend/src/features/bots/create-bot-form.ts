@@ -7,7 +7,7 @@ import {
 import type { CatalogModel, CatalogTool, Effort } from "@cty1ng/shared/catalog";
 import { BOT_VALUE_RANGES, HISTORY_STEP_PCT } from "@cty1ng/shared/settings";
 import { effectiveToolSettings, offeredTools } from "@cty1ng/shared/tool-settings";
-import type { CreateBotData } from "../../lib/api/generated/types.gen.ts";
+import type { CreateBotData, GetSettingsResponse } from "../../lib/api/generated/types.gen.ts";
 
 export type CreateBotBody = CreateBotData["body"];
 
@@ -60,6 +60,22 @@ export interface FormSettings {
   defaultMaxReplyChars: number;
 }
 
+// The limits, ranges and defaults of the bot forms, from the settings (UI-5.8, bot-page.md §4).
+export function formSettings(settings: GetSettingsResponse): FormSettings {
+  return {
+    limits: {
+      nameMax: settings.bot_name_max,
+      descriptionMax: settings.bot_description_max,
+      personaMax: settings.bot_persona_max,
+    },
+    historyMin: settings.bot_history_min_pct,
+    historyMax: settings.bot_history_max_pct,
+    defaultHistory: settings.bot_default_history_pct,
+    defaultRequestLimit: settings.bot_default_request_limit,
+    defaultMaxReplyChars: settings.bot_default_max_reply_chars,
+  };
+}
+
 export function emptyForm(colour: string, settings: FormSettings): CreateForm {
   return {
     name: "",
@@ -81,7 +97,7 @@ export function emptyForm(colour: string, settings: FormSettings): CreateForm {
 
 // "With input" for the leave question (E6): anything the owner typed or picked. The colour the
 // page picked and the defaults do not count.
-export function hasInput(form: CreateForm, start: CreateForm): boolean {
+export function hasInput({ form, start }: { form: CreateForm; start: CreateForm }): boolean {
   return JSON.stringify(form) !== JSON.stringify(start);
 }
 
@@ -107,10 +123,68 @@ export const FIELD_STEP: Record<string, Step> = {
   max_reply_chars: "model",
 };
 
+// The top field of an API field path: `pins[2]` is `pins`, `tool_settings.web_fetch` is
+// `tool_settings`.
+export function fieldHead(field: string): string {
+  return field.split(/[.[]/)[0] ?? field;
+}
+
 // The step of an API field: `pins[2]` is on Skills, `tool_settings.web_fetch` on Model.
 export function stepOfField(field: string): Step {
-  const head = field.split(/[.[]/)[0] ?? field;
-  return FIELD_STEP[head] ?? "basics";
+  return FIELD_STEP[fieldHead(field)] ?? "basics";
+}
+
+// What a server error's field depends on, to drop the error when it changes. A colour in another
+// case is the same colour.
+function fieldSnapshot(form: CreateForm, head: string): string {
+  switch (head) {
+    case "name":
+      return form.name;
+    case "description":
+      return form.description;
+    case "persona_md":
+      return form.persona_md;
+    case "avatar_colour":
+      return form.avatar_colour.toUpperCase();
+    case "avatar_id":
+    case "avatar_style":
+      return JSON.stringify([form.avatar_style, form.avatar]);
+    case "pins":
+      return JSON.stringify(form.pins);
+    case "model_id":
+    case "effort":
+      return JSON.stringify([form.model_id, form.effort]);
+    case "tool_settings":
+      return JSON.stringify([form.model_id, form.tool_choices]);
+    case "history_share_pct":
+      return String(form.history_share_pct);
+    case "request_limit":
+      return String(form.request_limit);
+    case "max_reply_chars":
+      return String(form.max_reply_chars);
+    default:
+      return JSON.stringify(form);
+  }
+}
+
+// The server errors whose field did not change from `before` to `after`: an error is about the
+// value that was sent, so it goes when the owner changes its field, and never blocks the
+// corrected text. The Create page and the bot page share it.
+export function keepUnchanged({
+  problems,
+  before,
+  after,
+}: {
+  problems: Problems;
+  before: CreateForm;
+  after: CreateForm;
+}): Problems {
+  const kept: Problems = {};
+  for (const [field, message] of Object.entries(problems)) {
+    const head = fieldHead(field);
+    if (fieldSnapshot(before, head) === fieldSnapshot(after, head)) kept[field] = message;
+  }
+  return kept;
 }
 
 export interface FormContext {
@@ -122,6 +196,14 @@ export interface FormContext {
   missingSkillIds: ReadonlySet<string>;
 }
 
+// The taken-name line (E1). The page's own check knows only the live bots; the server also
+// checks Trash (D50), so its refusal says so.
+export function takenNameText({ name, byServer }: { name: string; byServer: boolean }): string {
+  return byServer
+    ? `${name.trim()} is taken by another bot, maybe one in Trash. Pick another name.`
+    : `${name.trim()} is taken by another bot. Pick another name.`;
+}
+
 export function nameTaken(name: string, botNames: readonly string[]): boolean {
   const key = botNameKey(name);
   return key !== "" && botNames.some((other) => botNameKey(other) === key);
@@ -131,7 +213,17 @@ function textProblem(field: BotTextField, form: CreateForm, ctx: FormContext): s
   return botFieldProblem(field, form[field], ctx.settings.limits);
 }
 
-function rangeProblem(value: number, min: number, max: number, step = 1): string | null {
+export function rangeProblem({
+  value,
+  min,
+  max,
+  step = 1,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+}): string | null {
   if (!Number.isInteger(value) || value < min || value > max || value % step !== 0) {
     const steps = step === 1 ? "" : `, in steps of ${String(step)}`;
     return `Use a whole number from ${String(min)} to ${String(max)}${steps}.`;
@@ -149,7 +241,7 @@ export function stepProblems(step: Step, form: CreateForm, ctx: FormContext): Pr
     case "basics":
       put("name", textProblem("name", form, ctx));
       if (out.name === undefined && nameTaken(form.name, ctx.botNames)) {
-        out.name = `${form.name.trim()} is taken by another bot. Pick another name.`;
+        out.name = takenNameText({ name: form.name, byServer: false });
       }
       put("description", textProblem("description", form, ctx));
       if (form.avatar_style === "upload" && form.avatar === null) {
@@ -183,12 +275,20 @@ export function stepProblems(step: Step, form: CreateForm, ctx: FormContext): Pr
       const s = ctx.settings;
       put(
         "history_share_pct",
-        rangeProblem(form.history_share_pct, s.historyMin, s.historyMax, HISTORY_STEP_PCT),
+        rangeProblem({
+          value: form.history_share_pct,
+          min: s.historyMin,
+          max: s.historyMax,
+          step: HISTORY_STEP_PCT,
+        }),
       );
       const req = BOT_VALUE_RANGES.request_limit;
-      put("request_limit", rangeProblem(form.request_limit, req.min, req.max));
+      put("request_limit", rangeProblem({ value: form.request_limit, min: req.min, max: req.max }));
       const reply = BOT_VALUE_RANGES.max_reply_chars;
-      put("max_reply_chars", rangeProblem(form.max_reply_chars, reply.min, reply.max));
+      put(
+        "max_reply_chars",
+        rangeProblem({ value: form.max_reply_chars, min: reply.min, max: reply.max }),
+      );
       break;
     }
     default: {
@@ -197,6 +297,29 @@ export function stepProblems(step: Step, form: CreateForm, ctx: FormContext): Pr
     }
   }
   return out;
+}
+
+// A size error shows at once, before the owner leaves the field (E1, E2).
+export function isTooLong({
+  form,
+  field,
+  settings,
+}: {
+  form: CreateForm;
+  field: string;
+  settings: FormSettings;
+}): boolean {
+  const { limits } = settings;
+  switch (field) {
+    case "name":
+      return form.name.trim().length > limits.nameMax;
+    case "description":
+      return form.description.length > limits.descriptionMax;
+    case "persona_md":
+      return form.persona_md.length > limits.personaMax;
+    default:
+      return false;
+  }
 }
 
 export function hasProblems(problems: Problems): boolean {

@@ -1,4 +1,4 @@
-# Run the full gate before the report, and report only what ran
+# M1b incomplete checks missed a Compare regression
 
 Date: 2026-10-31 · Source: M1b review fixes, PR #54 · Status: applied
 
@@ -12,9 +12,9 @@ only at the end.
 **Cause.** The builder ran only the tests for the changed code and treated that as the gate.
 The regression was in a screen that no new test touched.
 
-**Change.** "Done" and "checked" mean that every command in `AGENTS.md` §4 passed, including
-the full `pnpm e2e`, after the last code change and before the push. A report names each check
-and its result, and says which checks did not run. Nobody reports the state of a run that has
-not finished.
+**Project response.** The workflow made final-gate timing and per-command results explicit. The full end-to-end run exposed the Compare regression.
+The incident records a reporting failure as well as missing checks.
 
-**Rule now in.** `../workflow.md` §2 step 4 "Self-check".
+**Reusable principles.** [Verify the delivered revision and report evidence](../../.agents/skills/principle-verify-delivery-and-report-evidence/SKILL.md).
+
+**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [testing](../testing.md).

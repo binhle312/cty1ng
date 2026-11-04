@@ -1,0 +1,171 @@
+# Delivery quality
+
+This record tracks delivery defects, review effort, and prevention evidence.
+[status.md](status.md) owns milestone state, next work, and owner decisions.
+This file owns quality measures; it does not repeat delivery status.
+
+Baseline recorded: 2026-11-04. Sources: all 17 [project lessons](lessons-learned/README.md)
+and the local [slice register](status.md#slices). Historical figures are document reports,
+not a fresh audit of GitHub review threads. Later entries must name their source and revision.
+
+## 1. Counting rules
+
+| Measure | Definition |
+| --- | --- |
+| Issue | A confirmed actionable defect, contract difference, test gap, or process failure. Keep its type explicit. Suggestions and new feature requests are separate. |
+| Unique issues | Count distinct issue IDs after duplicate reports are reconciled. The same defect in several comments or review rounds counts once. |
+| New occurrence | A different affected path or a defect introduced by a repair gets a new issue ID. Link its shared cause and, when known, the repair that introduced it. |
+| Reopened issue | Reuse the original ID when its repair did not resolve the same defect. Record a reopen event; do not count another unique issue. |
+| Severity | Copy the recorded priority, such as P1 or P2, and its source. Use `unknown` when the source does not assign it. |
+| Review round | One completed review of a stated revision and scope. Multiple comments in that review are one round. A follow-up review is another round. |
+| First-review findings | Unique confirmed issues first found in the first completed independent review. Later discoveries remain separate. |
+| Escaped issue | An issue first found after the introducing PR merged. Attribute it to that PR only with evidence; name the discovery PR separately. |
+| Fix-induced issue | A new defect caused by a prior repair, supported by a source or reproduction. Link the parent issue or repair. |
+| Open issues | Confirmed unique issues whose state is `open` or `partial` at the recorded cutoff. |
+| Closed issue | State `fixed` with verification evidence, or `withdrawn` with a reason. A commit, merged PR, or applied lesson alone does not prove closure. |
+| Unknown | Evidence is absent or incomplete. It is never zero. |
+| Zero | A complete review or reconciled ledger explicitly supports no occurrences in the stated scope. |
+
+A lesson can describe several issues; several lessons can describe the same issue.
+Lesson counts are source coverage, not defect counts.
+Keep estimates and partial review snapshots separate from exact unique totals.
+An itemized count is a known subset; it is not the total for a PR or milestone.
+Do not add snapshots with uncertain overlap.
+
+## 2. Milestone view
+
+The PR population below comes from the local slice register at baseline.
+It includes documentation PRs because they can also have quality findings.
+Reconcile the population when a milestone closes or another PR is assigned to it.
+`unknown` means the complete issue ledger has not been reconstructed.
+
+| Milestone | PRs in baseline population | Lesson source coverage | Unique issues | Open issues | Escaped issues | Review rounds |
+| --- | --- | --- | --- | --- | --- | --- |
+| M0 | #46, #48, #49, #50 | 6 lessons for #49; other PRs unmeasured | unknown | unknown | unknown | unknown |
+| M1 | #51, #52, #54, #55 | 5 lessons for #54; other PRs unmeasured | 5 itemized; total unknown | unknown | unknown | unknown |
+| M2 | #20, #56, #57, #58, #59 | 1 lesson for #57; 5 for #59; other PRs unmeasured | 16 itemized; total unknown | unknown | unknown | unknown |
+
+For a milestone total, count each issue ID assigned to that milestone once.
+Count review rounds by distinct PR and round ID.
+If any PR lacks full coverage, show the known subtotal with its coverage, or keep the total `unknown`.
+Add a row for each later milestone when its first PR enters the record.
+
+## 3. PR register
+
+`Partial` means there is local source evidence but no complete, reconciled issue ledger.
+`Unmeasured` means no review counts were backfilled for that PR.
+The historical snapshot column gives evidence for a specific review period.
+
+| PR | Milestone / slice | Coverage | Unique issues | Open issues | Escaped issues | Review rounds | Historical snapshot |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| [#46](https://github.com/binhle312/cty1ng/pull/46) | M0 / M0a | Unmeasured | unknown | unknown | unknown | unknown | — |
+| [#48](https://github.com/binhle312/cty1ng/pull/48) | M0 / M0b | Unmeasured | unknown | unknown | unknown | unknown | — |
+| [#49](https://github.com/binhle312/cty1ng/pull/49) | M0 / M0c | Partial | unknown | unknown | unknown | unknown | Six process lessons; startup delay remains open in S1 |
+| [#50](https://github.com/binhle312/cty1ng/pull/50) | M0 / design snapshot | Unmeasured | unknown | unknown | unknown | unknown | — |
+| [#51](https://github.com/binhle312/cty1ng/pull/51) | M1 / spec gaps | Unmeasured | unknown | unknown | unknown | unknown | — |
+| [#52](https://github.com/binhle312/cty1ng/pull/52) | M1 / M1a and plan | Unmeasured | unknown | unknown | unknown | unknown | — |
+| [#54](https://github.com/binhle312/cty1ng/pull/54) | M1 / M1b | Partial | 5 itemized; total unknown | unknown | unknown | unknown | S2: one cross-review found 5 bugs: 1 P1, 4 P2 |
+| [#55](https://github.com/binhle312/cty1ng/pull/55) | M1 / M1c | Unmeasured | unknown | unknown | unknown | unknown | — |
+| [#20](https://github.com/binhle312/cty1ng/pull/20) | M2 / spec | Unmeasured | unknown | unknown | unknown | unknown | — |
+| [#56](https://github.com/binhle312/cty1ng/pull/56) | M2 / spec gaps | Unmeasured | unknown | unknown | unknown | unknown | — |
+| [#57](https://github.com/binhle312/cty1ng/pull/57) | M2 / M2a and plan | Partial | 1 itemized; total unknown | unknown | unknown | unknown | S3: one documented compliance omission; total unknown |
+| [#58](https://github.com/binhle312/cty1ng/pull/58) | M2 / M2b | Unmeasured | unknown | unknown | unknown | unknown | — |
+| [#59](https://github.com/binhle312/cty1ng/pull/59) | M2 / M2c | Partial | 15 itemized; total unknown | unknown | unknown | unknown | S4: about 32 problems in 7 rounds; S5–S7 overlap is unresolved |
+
+## 4. Historical evidence snapshots
+
+These rows preserve the scope and precision of the source.
+They do not add issues to the live ledger.
+Source dates refer to the incident record, unless a reviewed revision is given.
+
+| ID | PR / source date or revision | Reported evidence | Counting limit | Source |
+| --- | --- | --- | --- | --- |
+| S1 | #49 / 2026-10-30 | Build exceeded one hour; about 4 minutes before the first e2e test; about 2 minutes per closed-port probe | Reported timing, not a benchmark; sandbox delay remains open | [Startup delay](lessons-learned/e2e-server-reuse.md) |
+| S2 | #54 / 2026-10-31 | One cross-review: 5 bugs, comprising 1 P1 and 4 P2 | Exact for this review; later fixes and process issues are outside this count | [Spec omissions](lessons-learned/self-review-against-the-spec.md) |
+| S3 | #57 / `0eb6b42` | Review missed the staged-cleanup contract difference; owner raised it | One documented omission; no source total or severity | [Contract review](lessons-learned/review-contract-boundaries.md) |
+| S4 | #59 / 2026-11-03 | About 32 problems in 7 rounds; about 18 order/timing cases; 5 further spec contradictions; PR reached 59 files | Approximate snapshot; categories and later rounds are not an additive total | [State complexity](lessons-learned/state-table-before-stateful-code.md) |
+| S5 | #59 / 2026-11-03 | Three more review rounds reported 1, 3, and 3 P2 findings | Round IDs and overlap with S4 are not reconciled | [Order checks, Observed](lessons-learned/check-every-order-before-the-push.md) |
+| S6 | #59 / audit recorded 2026-11-03 | Audit found 8 defects: 3 from tables, then 3 and 2 from fresh review passes; source reports failing tests first | May overlap S4, S5, or S7; not a separate lifetime total | [Order checks, Audit result](lessons-learned/check-every-order-before-the-push.md) |
+| S7 | #59 / `571375a` | 3 P2 and 1 P3: overlapping requests and missing list states | Exact for this review; relationship to other snapshots unresolved | [Overlapping requests](lessons-learned/two-of-my-requests-at-once.md) |
+
+## 5. Live issue ledger
+
+Add one row per confirmed issue. Keep stable IDs such as `DQ-001`.
+The baseline itemizes ten distinct issues from S2, S3, and S7. These are a partial historical subset.
+Their symptoms identify separate defects within each selected source. The other snapshots remain unreconciled.
+Do not infer issue severity or closure from a lesson's `applied` status.
+
+| Issue ID | Milestone / introducing PR | Found date / discovery PR / round | Type / severity | Symptom and cause | Principle | State | Source | Fix and verification | Related issue / escaped / fix-induced |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| DQ-001 | M1 / #54 | 2026-10-31 / #54 / unknown | Defect / unknown | Another tab saves and resets an unsaved edit | [Principle](../.agents/skills/principle-model-state-and-order/SKILL.md) | unknown | S2: [Spec omissions](lessons-learned/self-review-against-the-spec.md) | Historical source only; closure not reconciled | unknown / unknown / unknown |
+| DQ-002 | M1 / #54 | 2026-10-31 / #54 / unknown | Defect / unknown | Create leaves an edited Clone without confirmation | [Principle](../.agents/skills/principle-review-contracts-with-evidence/SKILL.md) | unknown | S2: [Spec omissions](lessons-learned/self-review-against-the-spec.md) | Historical source only; closure not reconciled | unknown / unknown / unknown |
+| DQ-003 | M1 / #54 | 2026-10-31 / #54 / unknown | Defect / unknown | A second Clone proposes a taken slug | [Principle](../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md) | unknown | S2: [Spec omissions](lessons-learned/self-review-against-the-spec.md) | Historical source only; closure not reconciled | unknown / unknown / unknown |
+| DQ-004 | M1 / #54 | 2026-10-31 / #54 / unknown | Defect / unknown | A failed request shows Page not found | [Principle](../.agents/skills/principle-model-state-and-order/SKILL.md) | unknown | S2: [Spec omissions](lessons-learned/self-review-against-the-spec.md) | Historical source only; closure not reconciled | unknown / unknown / unknown |
+| DQ-005 | M1 / #54 | 2026-10-31 / #54 / unknown | Defect / unknown | Time tooltips do not open from the keyboard | [Principle](../.agents/skills/principle-review-contracts-with-evidence/SKILL.md) | unknown | S2: [Spec omissions](lessons-learned/self-review-against-the-spec.md) | Historical source only; closure not reconciled | unknown / unknown / unknown |
+| DQ-006 | M2 / #57 | 2026-11-01 / #57 / `0eb6b42` | Contract difference / unknown | Staged cleanup runs outside the promised write lock; review omitted this path | [Principle](../.agents/skills/principle-review-contracts-with-evidence/SKILL.md) | unknown | S3: [Contract review](lessons-learned/review-contract-boundaries.md) | Historical source only; closure not reconciled | unknown / unknown / unknown |
+| DQ-007 | M2 / #59 | 2026-11-03 / #59 / `571375a` | Defect / unknown | An older Always load answer ends a pending Remove | [Principle](../.agents/skills/principle-model-state-and-order/SKILL.md) | unknown | S7: [Overlapping requests](lessons-learned/two-of-my-requests-at-once.md) | Historical source only; closure not reconciled | unknown / unknown / unknown |
+| DQ-008 | M2 / #59 | 2026-11-03 / #59 / `571375a` | Defect / unknown | Two failed pin changes leave a rejected value visible | [Principle](../.agents/skills/principle-model-state-and-order/SKILL.md) | unknown | S7: [Overlapping requests](lessons-learned/two-of-my-requests-at-once.md) | Historical source only; closure not reconciled | unknown / unknown / unknown |
+| DQ-009 | M2 / #59 | 2026-11-03 / #59 / `571375a` | Contract difference / unknown | A failed bot list appears empty in the upgrade card | [Principle](../.agents/skills/principle-model-state-and-order/SKILL.md) | unknown | S7: [Overlapping requests](lessons-learned/two-of-my-requests-at-once.md) | Historical source only; closure not reconciled | unknown / unknown / unknown |
+| DQ-010 | M2 / #59 | 2026-11-03 / #59 / `571375a` | Contract difference / unknown | Add shows a loading line instead of the required shapes | [Principle](../.agents/skills/principle-model-state-and-order/SKILL.md) | unknown | S7: [Overlapping requests](lessons-learned/two-of-my-requests-at-once.md) | Historical source only; closure not reconciled | unknown / unknown / unknown |
+| DQ-011 | M2 / #59 | 2026-11-04 / #59 / `ec8faa7` | Defect / P2 | A version change unlocks its row before the list has the new pin, so the next change gets a false conflict. Cause: the lock ended at the answer, and four other pin requests had no lock | [Principle](../.agents/skills/principle-fix-invariants-at-the-owner/SKILL.md) | partial | Owner-pasted review, 2026-11-04 | `sendPinChanges`; `bot-list-state.test` "keeps the row off over a load …"; page tests "keeps the row's actions off after a move's answer …", "keeps the row of an upgraded bot off …", "keeps the rows of the removed bots off …", "keeps the rows of the bots a Deprecate removes off …". Failed at `ec8faa7`, pass now. | none known / no / unknown |
+| DQ-012 | M2 / #59 | 2026-11-04 / #59 / `ec8faa7` | Defect / P2 | A lost Save of a name the server normalises shows a conflict and turns Save off. Cause: the comparison used the raw text; the sequence model's server did not normalise | [Principle](../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md) | partial | Owner-pasted review, 2026-11-04 | `FIELD_RULES.name`, `storedForm`; `bot-page.test` "shows no conflict after a lost Save of a name …". Failed at `ec8faa7`, passes now. The model's server now normalises, which found the raw name after a Save that answers. | Q4 fix / no / yes (`ec8faa7`) |
+| DQ-013 | M2 / #59 | 2026-11-04 / #59 / `ec8faa7` | Contract difference / P2 | Card and dialog late-answer rules sat in React refs, with no pure state module. A failed dialog request was lost when the page left with the dialog open | [Principle](../.agents/skills/principle-model-state-and-order/SKILL.md) | partial | Owner-pasted review, 2026-11-04 | `after-save-card-state.ts`, `dialog-request-state.ts`, with one test per cell and every order; `skill-page.test` "shows a Deprecate that fails after the owner left the skill as a toast" failed at `ec8faa7`, passes now. | none known / no / no |
+| DQ-014 | M2 / #59 | 2026-11-04 / #59 / `ec8faa7` | Contract difference / P3 | `samePin` and `sameThing` take two parameters of the same type. A scan by type found `sameIds` and `hasInput` too | [Principle](../.agents/skills/principle-encode-repeatable-checks/SKILL.md) | partial | Owner-pasted review, 2026-11-04 | All four take one object now; `sameColour`, `isUnder` and `Pct` are in the `status.md` follow-ups. | none known / no / no |
+| DQ-015 | M2 / #59 | 2026-11-04 / #59 / review of the DQ-011 to DQ-014 fixes | Defect / P3 | + Add showed "could not add" and loaded nothing when a skill's versions failed to load: the refresh moved out of `run`, and this failure comes before any pin change | [Principle](../.agents/skills/principle-fix-invariants-at-the-owner/SKILL.md) | partial | Reviewer agent report, 2026-11-04 | `bot-skills-tab.tsx` refreshes on a failure; `bot-page.test` "+ Add loads the lists again …" seen failing first. | DQ-011 / no / yes (DQ-011 repair) |
+| DQ-016 | M2 / #59 | 2026-11-04 / #59 / review of the DQ-011 to DQ-014 fixes | Defect / P3 | A Remove from bots that failed for a bot ended an older change of that pin, so the row turned on while that change waited. Cause: one `allSettled` request answered every bot | [Principle](../.agents/skills/principle-model-state-and-order/SKILL.md) | partial | Reviewer agent report, 2026-11-04 | Each bot's removal is its own pin change; `skill-page.test` "keeps an older Always load change on its way …" seen failing first. | DQ-011 / no / yes (DQ-011 repair) |
+| DQ-017 | M2 / #59 | 2026-11-04 / #59 / final e2e run of the working tree | Defect / P2 | A load cut short by two newer loads makes a waiting `query()` fail and a waiting `invalidateQueries()` end with the old list. So a bot card showed as its toast (J4), and the row lock of DQ-011 could end early. Cause: the fix was checked with one cut, and a guard against a second cut was removed as dead code | [Principle](../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md) | partial | `pnpm e2e` J4 failed once; real-library probe | `lib/api/query-reads.ts`, used by 8 reads and the 4 refreshes that end a row lock; `query-reads.test.ts` with 0 to 3 cuts, and two page tests, seen failing first. | DQ-011 repair for the row lock; the card read is older / yes, DQ-011 / yes |
+| DQ-018 | M2 / #59 | 2026-11-04 / #59 / review of `query-reads.ts` | Defect / P3 | `readNewest` returns the old list with no error when it started the load and the query's last observer leaves during it. So `versionIdOf` can give a toast in place of the upgrade card | [Principle](../.agents/skills/principle-model-state-and-order/SKILL.md) | partial | Reviewer agent report, 2026-11-04 | Open, `status.md` Follow-ups. Real-library probe printed the old list after one load. Saved data stays correct; the Bots tab still offers Upgrade | DQ-017 / no / yes |
+| DQ-019 | M2 / #59 | 2026-11-04 / #59 / review of `query-reads.ts` | Defect / P3 | A load that pauses in a hidden tab ends `refreshQueries` after two cuts, so a row can turn on before the newest list; a false conflict toast may follow | [Principle](../.agents/skills/principle-model-state-and-order/SKILL.md) | partial | Reviewer agent report, 2026-11-04 | Open, `status.md` Follow-ups. Probe shows the row on with the old version; the conflict itself was not driven. Before the helper the refresh ended at the second cut anyway | DQ-011 / no / no |
+| DQ-020 | M2 / #59 | 2026-11-04 / #59 / review of `query-reads.ts` | Defect / P3 | Clone moves to `/skills/new` when its read answers after the owner left the skill page. The move is older; `readNewest` makes it happen also after two cuts | [Principle](../.agents/skills/principle-model-state-and-order/SKILL.md) | partial | Reviewer agent report, 2026-11-04 | Open, `status.md` Follow-ups. Probe printed `/bots`, then `/skills/new` | none known / no / partly |
+| DQ-021 | M2 / #59 | 2026-11-04 / #59 / review of `query-reads.ts` | Test gap and contract difference / P3 | No test caught a leaked cache listener in `loadsEnded`; most callers hold no two-cut test; two comments said more than the code does | [Principle](../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md) | partial | Reviewer agent report, 2026-11-04 | Comments corrected; `query-reads.test` "leaves no listener on the cache after it ends", seen failing with `stop()` removed. Caller tests are open in `status.md` Follow-ups | DQ-017 / no / yes |
+
+States: `open`, `partial`, `fixed`, `withdrawn`; use `unknown` for historical rows without reconciled closure evidence.
+Unknown states prevent an exact open-issue count. The S7 source reports fixes and failing tests, but lacks per-issue verification references.
+Severity totals belong to S2 and S7; the sources do not assign each priority to an individual issue.
+Record reopen events in the round log with the original issue ID.
+For duplicate reports, keep one issue row and link each source.
+When backfilling other snapshots, match their reports against these IDs before adding issues.
+Keep withdrawn rows for history; exclude them from confirmed issue totals.
+Use `unknown` when the introducing PR or related cause is not established.
+
+## 6. Review round log
+
+The reviewer records one row after each completed review. This includes reviews with no findings.
+The builder records later fix and verification evidence on the issue rows.
+
+| PR / round ID | Date | Base / head and local changes | Scope / source | New issue IDs | Reopened IDs | Fixed IDs | Withdrawn IDs | Required checks and results |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| #59 / `ec8faa7` Spec and Standards | 2026-11-04 | `ab75d66` / `ec8faa7`; unrelated local edits excluded | The PR's code / owner-pasted review in the session | DQ-011, DQ-012, DQ-013, DQ-014 | none | none yet | none | Not reported by the reviewer |
+| #59 / fixes of DQ-011 to DQ-014 | 2026-11-04 | `ec8faa7` / uncommitted working tree | Those fixes / reviewer agent report in the session | DQ-015, DQ-016 | none | none | none | Reviewer ran its two new state test files (passed) and probes; no gate |
+| #59 / final gate | 2026-11-04 | `ec8faa7` / uncommitted working tree | The fixes above / `pnpm e2e` | DQ-017 | DQ-011 | none | none | `pnpm e2e`: 70 passed, 1 failed (J4) |
+| #59 / `query-reads.ts` | 2026-11-04 | `ec8faa7` / uncommitted working tree | The helper and its callers / reviewer agent report in the session | DQ-018, DQ-019, DQ-020, DQ-021 | none | none | none | Reviewer: all 516 frontend tests passed; real-library probes and 2,800 seeded runs. No P1 or P2. No whole-repo lint, typecheck or e2e |
+
+Use a local review artifact or an authorized PR comment as the source.
+If the head changes after review, the row still describes the original reviewed revision.
+
+## 7. Update and assess
+
+1. At PR creation, add its milestone and source coverage to the register.
+2. After each review, add the round and reconcile its findings with existing issue IDs.
+3. After a fix, add the verification result and change the issue state only when evidence supports it.
+4. After a new discovery, check whether it escaped a merge, repeats a cause, or came from a repair.
+5. At PR handoff, reconcile the register with the issue ledger and round log.
+6. At milestone close, confirm the PR population and calculate the totals from distinct IDs.
+7. Record one prevention action for a recurring cause, with an owner and verification evidence.
+
+The builder maintains this file in the delivery change. The reviewer checks its sources and counts.
+Quality changes must preserve the scope of existing approvals.
+
+### Prevention actions
+
+| Cause / linked issues | Action and owner | Enforcement or review step | Verification | State |
+| --- | --- | --- | --- | --- |
+| Closed-port delay in S1 | Owner: investigate the machine sandbox or firewall when next diagnosed | Local server reuse is the recorded workaround | No evidence that the underlying delay is resolved | open |
+
+For comparable PRs, inspect first-review findings, repeated causes, fix-induced issues, escaped issues, and review rounds together.
+Record the scope and coverage beside any trend. Fewer reported issues can also mean less review.
+Do not rank agents or claim improvement from raw counts alone.
+
+A first-review acceptance rate needs a complete denominator: PRs with a completed first independent review.
+Its numerator is those PRs with zero confirmed actionable findings in that review.
+Show numerator, denominator, period, and missing coverage; leave the rate unknown until the evidence is complete.

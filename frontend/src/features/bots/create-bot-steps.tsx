@@ -78,6 +78,22 @@ export function BasicsStep({
   upload: () => void;
   uploadError: string | null;
 }) {
+  return (
+    <StepCard title="Basics" line="Who the bot is and how it looks.">
+      <NameFields limits={limits} {...props} />
+      <AppearanceFields
+        upload={upload}
+        uploadError={uploadError}
+        colourHint="The band, the spinner and the Flow view use it, also with an uploaded image."
+        {...props}
+      />
+    </StepCard>
+  );
+}
+
+// Name and Description with their hints and counters (create-bot-page.md §2). The bot page's
+// Profile tab uses them too (bot-page.md §4).
+export function NameFields({ limits, ...props }: StepProps & { limits: BotLimits }) {
   const { form, update, readOnly, errorOf, onLeaveField } = props;
   const field = (name: "name" | "description", max: number) => ({
     value: form[name],
@@ -91,14 +107,8 @@ export function BasicsStep({
       onLeaveField(name);
     },
   });
-  const flat = {
-    avatar_style: "flat" as const,
-    avatar_colour: form.avatar_colour,
-    avatar_url: null,
-  };
-  const styleError = uploadError ?? errorOf("avatar_id") ?? errorOf("avatar_style");
   return (
-    <StepCard title="Basics" line="Who the bot is and how it looks.">
+    <>
       <TextField
         label="Name"
         hint="A short role name. You see it in the header, in mentions and in the status."
@@ -110,6 +120,31 @@ export function BasicsStep({
         multiline
         {...field("description", limits.descriptionMax)}
       />
+    </>
+  );
+}
+
+// The avatar style cards and the colour row (bot-avatar.md §5, §6). The hint under "Colour"
+// differs: Create explains where the colour shows, the bot page how to pick one.
+export function AppearanceFields({
+  upload,
+  uploadError,
+  colourHint,
+  ...props
+}: StepProps & {
+  upload: () => void;
+  uploadError: string | null;
+  colourHint: string;
+}) {
+  const { form, update, readOnly, errorOf } = props;
+  const flat = {
+    avatar_style: "flat" as const,
+    avatar_colour: form.avatar_colour,
+    avatar_url: null,
+  };
+  const styleError = uploadError ?? errorOf("avatar_id") ?? errorOf("avatar_style");
+  return (
+    <>
       <div>
         <p className="font-semibold">Avatar style</p>
         <div className="mt-1.5 grid grid-cols-4 gap-3" role="radiogroup" aria-label="Avatar style">
@@ -162,9 +197,7 @@ export function BasicsStep({
       </div>
       <div>
         <p className="font-semibold">Colour</p>
-        <p className="text-sm text-on-surface-muted">
-          The band, the spinner and the Flow view use it, also with an uploaded image.
-        </p>
+        <p className="text-sm text-on-surface-muted">{colourHint}</p>
         <div className="mt-2">
           <ColourRow
             colour={form.avatar_colour}
@@ -176,7 +209,7 @@ export function BasicsStep({
         </div>
         <FieldError text={errorOf("avatar_colour")} />
       </div>
-    </StepCard>
+    </>
   );
 }
 
@@ -243,26 +276,34 @@ User stories with acceptance criteria, in Markdown.
 As a shopper, I want to save my cart, so that I can buy later.`;
 
 export function PersonaStep({ limits, ...props }: StepProps & { limits: BotLimits }) {
-  const { form, update, readOnly, errorOf, onLeaveField } = props;
   return (
     <StepCard title="Persona" line="How the bot thinks and works. It reads this in every run.">
-      <BodyField
-        label="Persona"
-        hint="Who the bot is, its goal, how it works and its rules. The bot reads it in every run. Put long procedures in skills."
-        value={form.persona_md}
-        error={errorOf("persona_md")}
-        counter={counter(form.persona_md, limits.personaMax)}
-        readOnly={readOnly}
-        placeholder={PERSONA_TEMPLATE}
-        warning={null}
-        onChange={(value) => {
-          update((f) => ({ ...f, persona_md: value }));
-        }}
-        onLeave={() => {
-          onLeaveField("persona_md");
-        }}
-      />
+      <PersonaField limits={limits} {...props} />
     </StepCard>
+  );
+}
+
+// The persona box with Write and Preview (PF4): it opens in Preview, or in Write when it is empty,
+// with the template as the placeholder.
+export function PersonaField({ limits, ...props }: StepProps & { limits: BotLimits }) {
+  const { form, update, readOnly, errorOf, onLeaveField } = props;
+  return (
+    <BodyField
+      label="Persona"
+      hint="Who the bot is, its goal, how it works and its rules. The bot reads it in every run. Put long procedures in skills."
+      value={form.persona_md}
+      error={errorOf("persona_md")}
+      counter={counter(form.persona_md, limits.personaMax)}
+      readOnly={readOnly}
+      placeholder={PERSONA_TEMPLATE}
+      warning={null}
+      onChange={(value) => {
+        update((f) => ({ ...f, persona_md: value }));
+      }}
+      onLeave={() => {
+        onLeaveField("persona_md");
+      }}
+    />
   );
 }
 
@@ -447,8 +488,6 @@ export function ModelStep({
   const effortId = useId();
   const model = models.find((m) => m.id === form.model_id);
   const providers = [...new Set(models.map((m) => m.provider))];
-  const effective = effectiveTools(form, tools, model);
-  const history = historyLabel(form.history_share_pct, model?.context_window);
   return (
     <StepCard title="Model" line="Model and effort are fixed after Create. Advanced has defaults.">
       <div className="grid grid-cols-2 gap-4">
@@ -513,103 +552,141 @@ export function ModelStep({
         You cannot change the model or the effort after you create the bot. To use another one
         later, clone the bot.
       </p>
-      <div className="rounded-card border border-outline p-4">
-        <p className="font-semibold">Tools</p>
-        {turnedOff !== null && turnedOff.tools.length > 0 && (
-          <p role="status" className="mt-1 text-sm text-on-surface-muted">
-            Turned off because {turnedOff.model} does not have them: {turnedOff.tools.join(", ")}.
-          </p>
-        )}
-        <ToolsList
-          rows={toolRows(tools, model)}
-          effective={effective}
-          modelPicked={model !== undefined}
-          multimodal={model?.multimodal ?? true}
-          readOnly={readOnly}
-          problems={{ ...toolProblems(errorOf, tools) }}
-          onToggle={(toolId, on) => {
-            update((f) => ({ ...f, tool_choices: { ...f.tool_choices, [toolId]: on } }));
-          }}
-          onPair={(row, choice) => {
-            update((f) => withPairChoice(f, row, choice));
-          }}
-        />
-        <FieldError text={errorOf("tool_settings")} />
-      </div>
-      <div className="rounded-card border border-outline p-4">
-        <p className="font-semibold">Advanced</p>
-        <div className="mt-3">
-          <p className="font-semibold">History: {form.history_share_pct} % of context</p>
-          <p className="text-sm text-on-surface-muted">
-            How much of the conversation the bot reads before each reply. More history leaves less
-            room for files and tools.
-          </p>
-          <div className="mt-2 flex items-center gap-4">
-            <Slider
-              label="History share"
-              value={form.history_share_pct}
-              min={settings.historyMin}
-              max={settings.historyMax}
-              step={HISTORY_STEP_PCT}
-              disabled={readOnly}
-              valueText={(v) => `${String(v)} %`}
-              onChange={(v) => {
-                update((f) => ({ ...f, history_share_pct: v }));
-              }}
-            />
-            <NumberBox
-              label="History share in percent"
-              unit="%"
-              value={form.history_share_pct}
-              readOnly={readOnly}
-              onChange={(v) => {
-                update((f) => ({ ...f, history_share_pct: v }));
-              }}
-              className="w-20"
-            />
-          </div>
-          {history !== null && <p className="mt-1 text-sm text-on-surface-muted">{history}</p>}
-          <FieldError text={errorOf("history_share_pct")} />
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          <div>
-            <p className="font-semibold">Model requests per run</p>
-            <p className="text-sm text-on-surface-muted">
-              A run stops at this number of model calls.
-            </p>
-            <NumberBox
-              label="Model requests per run"
-              value={form.request_limit}
-              min={BOT_VALUE_RANGES.request_limit.min}
-              max={BOT_VALUE_RANGES.request_limit.max}
-              readOnly={readOnly}
-              onChange={(v) => {
-                update((f) => ({ ...f, request_limit: v }));
-              }}
-              className="mt-1.5"
-            />
-            <FieldError text={errorOf("request_limit")} />
-          </div>
-          <div>
-            <p className="font-semibold">Longest reply</p>
-            <p className="text-sm text-on-surface-muted">In characters. A longer reply is cut.</p>
-            <NumberBox
-              label="Longest reply in characters"
-              unit="characters"
-              value={form.max_reply_chars}
-              min={BOT_VALUE_RANGES.max_reply_chars.min}
-              max={BOT_VALUE_RANGES.max_reply_chars.max}
-              readOnly={readOnly}
-              onChange={(v) => {
-                update((f) => ({ ...f, max_reply_chars: v }));
-              }}
-              className="mt-1.5"
-            />
-            <FieldError text={errorOf("max_reply_chars")} />
-          </div>
-        </div>
-      </div>
+      <ToolsSection tools={tools} model={model} turnedOff={turnedOff} {...props} />
+      <AdvancedSection settings={settings} model={model} {...props} />
     </StepCard>
+  );
+}
+
+// The Tools list (create-bot-page.md §3). The bot page's Model tab uses it with no legend line
+// (bot-page.md §6): tool switches can change after Create.
+export function ToolsSection({
+  tools,
+  model,
+  turnedOff,
+  locked = null,
+  ...props
+}: StepProps & {
+  tools: readonly CatalogTool[];
+  // Undefined before a model is picked, or for a bot whose model left the catalog.
+  model: CatalogModel | undefined;
+  turnedOff: { model: string; tools: string[] } | null;
+  // Why the switches cannot change (a bot whose model left the catalog), or null.
+  locked?: string | null;
+}) {
+  const { form, update, readOnly, errorOf } = props;
+  const effective = effectiveTools(form, tools, model);
+  return (
+    <div className="rounded-card border border-outline p-4">
+      <p className="font-semibold">Tools</p>
+      {turnedOff !== null && turnedOff.tools.length > 0 && (
+        <p role="status" className="mt-1 text-sm text-on-surface-muted">
+          Turned off because {turnedOff.model} does not have them: {turnedOff.tools.join(", ")}.
+        </p>
+      )}
+      {locked !== null && <p className="mt-1 text-sm text-on-surface-muted">{locked}</p>}
+      <ToolsList
+        rows={toolRows(tools, model)}
+        effective={effective}
+        modelPicked={model !== undefined}
+        multimodal={model?.multimodal ?? true}
+        readOnly={readOnly || locked !== null}
+        problems={{ ...toolProblems(errorOf, tools) }}
+        onToggle={(toolId, on) => {
+          update((f) => ({ ...f, tool_choices: { ...f.tool_choices, [toolId]: on } }));
+        }}
+        onPair={(row, choice) => {
+          update((f) => withPairChoice(f, row, choice));
+        }}
+      />
+      <FieldError text={errorOf("tool_settings")} />
+    </div>
+  );
+}
+
+// Advanced (create-bot-page.md §3, bot-page.md §6): History share, Model requests per run and
+// Longest reply, with the defaults and ranges from the settings.
+export function AdvancedSection({
+  settings,
+  model,
+  ...props
+}: StepProps & { settings: FormSettings; model: CatalogModel | undefined }) {
+  const { form, update, readOnly, errorOf } = props;
+  const history = historyLabel(form.history_share_pct, model?.context_window);
+  return (
+    <div className="rounded-card border border-outline p-4">
+      <p className="font-semibold">Advanced</p>
+      <div className="mt-3">
+        <p className="font-semibold">History: {form.history_share_pct} % of context</p>
+        <p className="text-sm text-on-surface-muted">
+          How much of the conversation the bot reads before each reply. More history leaves less
+          room for files and tools.
+        </p>
+        <div className="mt-2 flex items-center gap-4">
+          <Slider
+            label="History share"
+            value={form.history_share_pct}
+            min={settings.historyMin}
+            max={settings.historyMax}
+            step={HISTORY_STEP_PCT}
+            disabled={readOnly}
+            valueText={(v) => `${String(v)} %`}
+            onChange={(v) => {
+              update((f) => ({ ...f, history_share_pct: v }));
+            }}
+          />
+          <NumberBox
+            label="History share in percent"
+            unit="%"
+            value={form.history_share_pct}
+            readOnly={readOnly}
+            onChange={(v) => {
+              update((f) => ({ ...f, history_share_pct: v }));
+            }}
+            className="w-20"
+          />
+        </div>
+        {history !== null && <p className="mt-1 text-sm text-on-surface-muted">{history}</p>}
+        <FieldError text={errorOf("history_share_pct")} />
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-4">
+        <div>
+          <p className="font-semibold">Model requests per run</p>
+          <p className="text-sm text-on-surface-muted">
+            A run stops at this number of model calls.
+          </p>
+          <NumberBox
+            label="Model requests per run"
+            value={form.request_limit}
+            min={BOT_VALUE_RANGES.request_limit.min}
+            max={BOT_VALUE_RANGES.request_limit.max}
+            readOnly={readOnly}
+            onChange={(v) => {
+              update((f) => ({ ...f, request_limit: v }));
+            }}
+            className="mt-1.5"
+          />
+          <FieldError text={errorOf("request_limit")} />
+        </div>
+        <div>
+          <p className="font-semibold">Longest reply</p>
+          <p className="text-sm text-on-surface-muted">In characters. A longer reply is cut.</p>
+          <NumberBox
+            label="Longest reply in characters"
+            unit="characters"
+            value={form.max_reply_chars}
+            min={BOT_VALUE_RANGES.max_reply_chars.min}
+            max={BOT_VALUE_RANGES.max_reply_chars.max}
+            readOnly={readOnly}
+            onChange={(v) => {
+              update((f) => ({ ...f, max_reply_chars: v }));
+            }}
+            className="mt-1.5"
+          />
+          <FieldError text={errorOf("max_reply_chars")} />
+        </div>
+      </div>
+    </div>
   );
 }
 

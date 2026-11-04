@@ -1,9 +1,12 @@
 import { act } from "@testing-library/react";
+import { z } from "zod";
 import { client } from "../src/lib/api/client.ts";
 
 // A fake network for component tests (frontend-conventions.md §1, "Real tests": mock only the
 // network). A route is a method and a path; its answer is a status and a body. Every request is
-// recorded, so a test can check what the page sent.
+// recorded, so a test can check what the page sent. A success answer that the client's response
+// schema refuses fails the test at `restore()`: the page would take it as a failed request, and the
+// test would only check the failure path (lesson `fake-answers-match-the-api.md`).
 export interface RecordedRequest {
   method: string;
   path: string;
@@ -50,7 +53,13 @@ export function fakeApi(routes: Record<string, Handler>) {
     const recorded: RecordedRequest = {
       method: input.method,
       path: url.pathname,
-      body: text === "" ? undefined : JSON.parse(text),
+      // A file upload (multipart) is kept as its text; every other body is JSON.
+      body:
+        text === ""
+          ? undefined
+          : input.headers.get("content-type")?.includes("json") === true
+            ? JSON.parse(text)
+            : text,
       headers: input.headers,
     };
     requests.push(recorded);
@@ -67,16 +76,30 @@ export function fakeApi(routes: Record<string, Handler>) {
     return Response.json(answer.body, { status });
   };
   client.setConfig({ fetch: fetchFake });
+  // A 2xx answer that the generated response schema refused.
+  const refused: string[] = [];
+  // The interceptor shape is the client's own, so its arguments come as one rest list.
+  const watch = client.interceptors.error.use((error, ...[response, request]) => {
+    if (response?.ok === true && request !== undefined && error instanceof z.ZodError) {
+      const url = new URL(request.url);
+      refused.push(`${request.method} ${url.pathname}: ${error.message}`);
+    }
+    return error;
+  });
   return {
     requests,
     sent: (method: string, path: string) =>
       requests.filter((request) => request.method === method && request.path === path),
     restore: () => {
+      client.interceptors.error.eject(watch);
       // The client calls the global fetch when it has none of its own.
       client.setConfig({
         baseUrl: original.baseUrl ?? "",
         fetch: (info, init) => globalThis.fetch(info, init),
       });
+      if (refused.length > 0) {
+        throw new Error(`A fake answer does not match the API:\n${refused.join("\n")}`);
+      }
     },
   };
 }

@@ -1,10 +1,12 @@
 import { useRef, useState, type RefObject } from "react";
 import { Button } from "../../components/ui/button.tsx";
 import { Dialog, DialogButtons, DialogText } from "../../components/ui/dialog.tsx";
+import { Skeleton, SkeletonArea } from "../../components/ui/skeleton.tsx";
 import { BotNameList, BotPickList, type BotListRow } from "../bots/bot-list.tsx";
 import { VersionPill } from "./pills.tsx";
 import { SaveButton } from "./save-bar.tsx";
 import type { BotUse, BotUses } from "./skill-bot-uses.ts";
+import { toggled } from "../../lib/sets.ts";
 
 // The dialogs of a skill's ⋯ menu and of its deprecated banner (skills-page.md §10.1, §10.3,
 // §11). They list the bots that use the skill, read from the bot list.
@@ -29,12 +31,7 @@ function useTicks(uses: BotUse[]) {
   const [cleared, setCleared] = useState<ReadonlySet<string>>(new Set());
   const ticked = new Set(uses.filter(({ bot }) => !cleared.has(bot.id)).map(({ bot }) => bot.id));
   const toggle = (botId: string) => {
-    setCleared((current) => {
-      const next = new Set(current);
-      if (next.has(botId)) next.delete(botId);
-      else next.add(botId);
-      return next;
-    });
+    setCleared((current) => toggled(current, botId));
   };
   return { ticked, toggle };
 }
@@ -43,7 +40,11 @@ function useTicks(uses: BotUse[]) {
 function BotsNotReady({ bots }: { bots: BotUses }) {
   if (bots.kind === "ready") return null;
   return bots.kind === "loading" ? (
-    <DialogText>Loading the bots.</DialogText>
+    <SkeletonArea label="Loading the bots">
+      {[0, 1].map((key) => (
+        <Skeleton key={key} className="mt-2 h-12" />
+      ))}
+    </SkeletonArea>
   ) : (
     <p role="alert" className="mt-2 text-danger">
       The app could not load the bots. Close this card and try again.

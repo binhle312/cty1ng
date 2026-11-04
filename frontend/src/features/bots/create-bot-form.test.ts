@@ -11,10 +11,12 @@ import {
   type CreateForm,
   createBody,
   emptyForm,
+  fieldHead,
   type FormContext,
   type FormSettings,
   hasInput,
   historyLabel,
+  keepUnchanged,
   stepOfField,
   stepProblems,
   toolsTurnedOff,
@@ -73,8 +75,8 @@ describe("the defaults of a new form", () => {
 
   it("count as no input, so leaving asks nothing", () => {
     const start = emptyForm(BOT_PALETTE[0], SETTINGS);
-    expect(hasInput(start, start)).toBe(false);
-    expect(hasInput({ ...start, name: "B" }, start)).toBe(true);
+    expect(hasInput({ form: start, start })).toBe(false);
+    expect(hasInput({ form: { ...start, name: "B" }, start })).toBe(true);
   });
 });
 
@@ -214,5 +216,46 @@ describe("the history label (D32)", () => {
     expect(historyLabel(40, 1_000_000)).toBe("≈ 400k tokens of 1M. 600k are left for work.");
     expect(historyLabel(25, 200_000)).toBe("≈ 50k tokens of 200k. 150k are left for work.");
     expect(historyLabel(40, undefined)).toBeNull();
+  });
+});
+
+describe("server errors after the owner changes a field", () => {
+  // A palette colour with letters, so its case can change.
+  const COLOUR = BOT_PALETTE.find((hex) => /[a-f]/i.test(hex)) ?? BOT_PALETTE[0];
+
+  it("names the top field of an API field path", () => {
+    expect(fieldHead("pins[2].skill_version_id")).toBe("pins");
+    expect(fieldHead("tool_settings.web_fetch")).toBe("tool_settings");
+    expect(fieldHead("name")).toBe("name");
+  });
+
+  it("drops only the errors of the fields that changed", () => {
+    const before = filled({ request_limit: 20 });
+    const problems = {
+      name: "Taken.",
+      request_limit: "Too high.",
+      "tool_settings.web_fetch": "Off.",
+    };
+    const after = { ...before, name: "Analyst", tool_choices: { web_fetch: true } };
+    expect(keepUnchanged({ problems, before, after })).toEqual({ request_limit: "Too high." });
+  });
+
+  it("keeps an error when the colour changes only its case, and drops an image error with the style", () => {
+    const before = filled({
+      avatar_colour: COLOUR.toLowerCase(),
+      avatar_style: "upload",
+      avatar: null,
+    });
+    const problems = { avatar_colour: "Bad colour.", avatar_id: "Upload an image." };
+    expect(
+      keepUnchanged({
+        problems,
+        before,
+        after: { ...before, avatar_colour: COLOUR.toUpperCase() },
+      }),
+    ).toEqual(problems);
+    expect(keepUnchanged({ problems, before, after: { ...before, avatar_style: "flat" } })).toEqual(
+      { avatar_colour: "Bad colour." },
+    );
   });
 });

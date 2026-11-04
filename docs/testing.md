@@ -163,6 +163,10 @@ Lessons from an earlier prototype. Each needs a named test in the slice that bui
 8. delete BA → its messages are grey;
 9. reload the page → identical state.
 
+Until conversations exist (M3), the run does step 1 without the conversation, then a Clone of BA
+with the other fake model, then the J4 upgrade: edit the skill → v2 → Skip on the upgrade card →
+BA's Skills tab shows "v2 available" → Upgrade (M2-bots.md Tests).
+
 `e2e/first-open.spec.ts`: a fresh database with no key shows the Get started checklist with
 the key step open; with the fake model's key it ticks; "Load the examples" ticks two steps and
 is safe to press twice. `e2e/reopen.spec.ts`: open a conversation, type a draft, reload at `/`
@@ -174,7 +178,9 @@ Each slice's brief lists which of these steps must pass by its end.
 ### Edge cases each slice tests
 
 The normal path of an acceptance criterion is not enough. For each screen or flow it builds,
-a slice tests these cases where they apply (`workflow.md` §2 step 4, "Spec walk"):
+a slice tests these cases where they apply. The test strategy names them before the code
+(`workflow.md` §2 step 2, "Test strategy before code"), and the spec walk checks them again
+(`workflow.md` §2 step 4):
 
 | Case | Example |
 | --- | --- |
@@ -184,6 +190,36 @@ a slice tests these cases where they apply (`workflow.md` §2 step 4, "Spec walk
 | Keyboard only | Every tooltip, menu and dialog opens and closes from the keyboard |
 | Leaving with unsaved work | Every way out asks first, including moves inside one path |
 | Moving through the app, not only reloads | A test that reloads can hide a cache bug |
+| An answer comes late | A save or toggle answer that comes after a newer change, a Discard or leaving the page does not undo it |
+| A value changes and changes back | On, then off in another tab: the page cannot tell from the value alone that it changed |
+
+**State table cells.** A screen with a state table (`workflow.md` §2 step 2) tests its pure
+state module (`frontend-conventions.md` §1): one unit test per cell of the table. It also runs
+every order of a small set of events on the module (for example Save sent, its answer, an
+event with a newer `row_version`, Discard, typing) and checks the same invariants after each
+order: an edit the owner dropped never comes back, an older answer never replaces a newer
+value, and Save is off while a conflict shows. These tests are fast, so every order is cheap;
+the component tests then cover the wiring and a few chosen orders.
+
+### Request order and list states
+
+For every request on a changed screen with locks, live events or late answers, test these six cases.
+Hold and release answers to force the order, including requests away from a reported finding.
+Apply the failure scope in `review-guide.md` §6 and the
+[state and order principle](../.agents/skills/principle-model-state-and-order/SKILL.md).
+
+| Case | Required check |
+| --- | --- |
+| The answer arrives late | It writes only the fields its request owns |
+| The caller left the tab or page | The request's checks still hold after the component is gone |
+| A newer request of the same kind starts | The older answer cannot undo the newer work |
+| A list load or live event arrives between request and answer | The answer still applies only to valid state |
+| The refresh after a change is slow or fails | Controls show the true pending or error state |
+| Another request on the same screen also waits | Each answer ends only its own work; two refusals in either order restore the server value |
+
+Every query read on a changed screen needs tests for loading, error and empty states
+(`requirements/README.md`). Hold the load or fail it to reach these states.
+A `data ?? []` fallback must not turn a failed load into an empty result.
 
 ### Fast loop while building
 
@@ -214,6 +250,7 @@ killed.
 | Helper | File | Use |
 | --- | --- | --- |
 | `renderApp(path)` | `frontend/test/render-app.tsx` | Component tests on the real app: routes, shell and providers on an in-memory address. Returns the Testing Library view and the router. Queries do not retry, so a failed request shows its error state at once. |
+| `fakeApi(routes)`, `heldAnswer()` | `frontend/test/fake-api.ts` | Component tests: the fake network. A route is `"METHOD /path"` and answers a status and a body; `heldAnswer()` keeps a request open until the test answers it, for order cases. A success answer that the generated response schema refuses fails the test at `restore()`, so a wrong shape never turns a success test into a test of the failure path (lesson `fake-answers-match-the-api.md`). |
 | `watchCsp(page)` | `frontend/test/e2e/csp.ts` | End-to-end tests: collects every CSP violation of a page; assert that the list is empty. |
 | `readZip(buffer)` | `frontend/test/e2e/zip.ts` | End-to-end tests: the files of a downloaded zip (the skill export), by name. |
 
@@ -246,7 +283,18 @@ high`, CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also
 
 ## 5. Evidence in PRs
 
-A PR description maps each acceptance criterion of its task to the test that proves it, or to a
-screenshot for purely visual criteria (Playwright can save screenshots:
-`frontend/test/e2e/__screenshots__/`). "Tested manually" alone is not evidence. For a bug fix, the PR also says that its test failed
-on the code before the fix (`workflow.md` §2 step 3).
+Apply the [test evidence principle](../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md).
+The PR maps each acceptance criterion to a test and its observable assertion or expected state.
+Use a screenshot for purely visual criteria; Playwright stores these in `frontend/test/e2e/__screenshots__/`.
+"Tested manually" alone is not evidence.
+
+Record the tested revision, expected failure and result. Test first normally supplies the failure evidence.
+If a bug-fix test was written later, copy it into an isolated checkout of the code before the fix.
+Use a `git worktree`; do not stash the fix (owner, 2026-10-31).
+For other late tests, remove the required behaviour in the isolated checkout.
+Stop every other end-to-end server first and check ports 8100 and 8101, as described in
+[the fast loop](#fast-loop-while-building). Observe failure for the expected reason.
+
+The incidents behind these rules remain in
+[prove-the-test-fails-first.md](lessons-learned/prove-the-test-fails-first.md) and
+[check-every-order-before-the-push.md](lessons-learned/check-every-order-before-the-push.md).

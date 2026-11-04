@@ -15,6 +15,7 @@ import { SaveButton } from "./save-bar.tsx";
 import type { BotRow } from "../bots/bot-queries.ts";
 import { DiffView } from "./diff-view.tsx";
 import { VersionPill } from "./pills.tsx";
+import { toggled } from "../../lib/sets.ts";
 
 // The cards that change which version of a skill a bot uses, shared by the Bots tab of a skill
 // and (M2b) the Skills tab of a bot: + Add (skills-page.md §2a), Upgrade or Move to a version
@@ -36,6 +37,17 @@ function VersionsFailed({ load }: { load: VersionsLoad }) {
       className="mt-3 px-0 py-0"
     />
   ) : null;
+}
+
+// The versions while their first load waits: shapes, not a line (requirements/README.md).
+function VersionsLoading() {
+  return (
+    <SkeletonArea label="Loading the versions">
+      {[0, 1].map((key) => (
+        <Skeleton key={key} className="mt-3 h-10" />
+      ))}
+    </SkeletonArea>
+  );
 }
 
 // Why a confirm button that needs the versions is off (ui-rules B5).
@@ -129,17 +141,10 @@ function AddBody({
         rows={bots.map((bot) => ({ bot }))}
         ticked={ticked}
         onToggle={(botId) => {
-          setTicked((current) => {
-            const next = new Set(current);
-            if (next.has(botId)) next.delete(botId);
-            else next.add(botId);
-            return next;
-          });
+          setTicked((current) => toggled(current, botId));
         }}
       />
-      {latest === undefined && !versionsLoad.failed && (
-        <DialogText>Loading the versions.</DialogText>
-      )}
+      {latest === undefined && !versionsLoad.failed && <VersionsLoading />}
       <VersionsFailed load={versionsLoad} />
       {error !== null && <p className="mt-3 text-sm text-danger">{error}</p>}
       <p className="mt-3 text-sm text-on-surface-muted">
@@ -234,11 +239,7 @@ export function MoveVersionDialog({
         <Changes skillId={skillId} from={used} to={target} />
       </div>
       {versions === undefined &&
-        (versionsLoad.failed ? (
-          <VersionsFailed load={versionsLoad} />
-        ) : (
-          <DialogText>Loading the versions.</DialogText>
-        ))}
+        (versionsLoad.failed ? <VersionsFailed load={versionsLoad} /> : <VersionsLoading />)}
       {error !== null && <p className="mt-3 text-sm text-danger">{error}</p>}
       <DialogButtons>
         <Button onClick={onClose}>Cancel</Button>
@@ -342,7 +343,7 @@ export function ChangeVersionDialog({
         versionsLoad.failed ? (
           <VersionsFailed load={versionsLoad} />
         ) : (
-          <DialogText>Loading the versions.</DialogText>
+          <VersionsLoading />
         )
       ) : (
         <ol aria-label="Versions" className="mt-3 flex max-h-72 flex-col gap-1 overflow-y-auto">

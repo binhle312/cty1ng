@@ -88,9 +88,23 @@ The skill side of the bot page Skills tab (`bot-page.md` §7), with the same row
   it. The added bots get the latest version and Always load off. A ticked bot that leaves the
   list while the card is open (another tab added it, or it went to Trash) is not counted in
   "Add {n}" and is not sent.
-- When the versions do not load, + Add, Upgrade (SK3) and Change version (SK4) say "The app
-  could not load the versions." with **Try again** in place of "Loading the versions.", and
-  their confirm button stays off.
+- Until the versions come, + Add, Upgrade (SK3) and Change version (SK4) show loading shapes
+  ("Loading the versions", `aria-busy`). When the versions do not load, they say "The app
+  could not load the versions." with **Try again** in their place, and their confirm button
+  stays off.
+- A dialog's answer that comes after the owner closed the dialog or left the tab shows as a
+  toast, not in a dialog that nobody sees, as on the bot page (M2c review, 2026-11-03).
+- A pin answer (Always load, a version move, + Add) changes only the pin of this skill, by the
+  same rules as the bot page's Skills tab (`bot-page.md` §7): only while the page shows the pin
+  the request expected, and not when the bot list loaded after the request went out. The other
+  fields of the bot stay as the page shows them (M2c review, 2026-11-03). The Always load value
+  on its way outlives the tab, and **Remove** takes the row away at once (a bot added back
+  while it waits shows again), as on the bot page
+  (`bot-page.md` §7, §7.1; M2c audit, 2026-11-03).
+- While a change of a row is on its way, until the refresh after its answer or refusal ends, the
+  row's ⋯ menu, its "Upgrade to v{n}" link and its Always load switch are off, as on the bot page
+  (`bot-page.md` §7, §4.2 Q3; owner, 2026-11-04). This counts every request that changes the
+  row's pin: also the cards after a save (§7), Remove from bots (§10.3) and Deprecate (§10.1).
 - No bot uses it: "No bot uses this skill yet." and **+ Add**.
 - No bot exists (M1): the same line, and **+ Add** is disabled with the tooltip "Create a bot
   first."
@@ -169,6 +183,36 @@ Skip." is at the bottom.
 exist; later, no bot uses an older version), the card does not open, and only a toast shows:
 "Saved v{n} ✨" after a save, "Created {name} ✨" after Create.
 
+**The owner left the Skills page** before the save answered (M2c build): the card has no page to
+open on, so its toast shows instead. Nothing is lost: the Bots tab still offers "Upgrade to vN"
+and + Add. A Restore of an old version (§13) is not a save from the editor and opens no card.
+
+**An answer after the card closed** (M2c review, 2026-11-02): Skip, Esc or a click outside closes
+the card also while its request is on its way. A success that comes later closes nothing, so a
+newer card stays open. A failure that comes later shows as a toast, because its card is gone.
+
+**A card that comes after a newer save** (M2c review, 2026-11-03): each save asks for its card
+when it answers, and the card opens when the app has read the bots. When a newer save (of this
+skill or another one) asked for its card while an older card was still being read, the older
+card shows as its toast ("Saved v{n} ✨" or "Created {name} ✨") and never replaces the newer
+card. Nothing is lost: the Bots tab still offers the change.
+
+**The bot list of a card** (review of 571375a, 2026-11-03): until the bots come, the card shows
+loading shapes ("Loading the bots", `aria-busy`), never an empty list. When they do not load, it
+says "The app could not load the bots." with **Try again**, and Upgrade or Assign stays off
+("Loading the bots." / "The bots did not load. Try again first."). A later load that fails keeps
+the bots shown.
+
+**The cards against the five order questions** (M2c audit, 2026-11-03; `../../workflow.md` §2
+step 4). Tests are in `after-save-cards.test.tsx`. The rules are in two pure modules:
+`after-save-card-state.ts` (which card shows) and `dialog-request-state.ts` (a card's request),
+each with one test per cell and every order of two requests.
+
+| Request | Late answer | The Skills page is gone | A newer request of the same kind | A load or event in between | The refresh fails or is slow |
+| --- | --- | --- | --- | --- | --- |
+| The read for the card after a save | An older card shows as its toast ("keeps the newer card when the candidates of an older save answer after it") | The card shows as its toast ("shows the toast in place of the card when the owner left …") | As in the first column | The card's bot list follows the server while it is open | A failed read gives the toast ("shows only the toast when no bot …"); a failed or slow bot list in the open card shows its state ("says the bots did not load, and shows them after Try again", "shows loading shapes, not an empty list, while the bots load") |
+| Upgrade, Assign | Closes only its own card ("does not close a newer card …") | A failure is a toast ("shows the failure of a skipped card as a toast") | A retry sends the versions the bots use now ("sends the newest version of each bot on a retry …", "drops a bot that got the skill …") | As before | The card closes at the answer; the lists refresh after it, and the rows of the bots it changed stay off until then ("keeps the row of an upgraded bot off …") |
+
 ### 7.1 Upgrade the bots (C4, UI-7.4)
 
 - Title: "Saved v5 ✨ Also upgrade these bots to v5?"
@@ -178,6 +222,12 @@ exist; later, no bot uses an older version), the card does not open, and only a 
   keep its version.
 - Buttons: **Skip** and **Upgrade** (`primary`, default). Upgrade is disabled when no box is
   ticked. It moves the ticked bots in one transaction.
+- Upgrade keeps each bot's Always load: the request leaves `always_load` out (`api.md` §2), so a
+  change made in another place while the card is open stays.
+- The list follows the server while the card is open (M2c review, 2026-11-02). After a conflict
+  (409 `stale_write`, "A bot changed in another place. Check the list and try again.") it shows
+  the version each bot uses now, so a retry sends that version. A bot that is on the new version
+  already leaves the list. A bot that the owner did not untick stays ticked.
 
 ### 7.2 Assign a new skill (C4b)
 
@@ -185,6 +235,9 @@ exist; later, no bot uses an older version), the card does not open, and only a 
 - Text: "Tick the bots that must use this skill. They get v1."
 - No box starts ticked. **Skip** is the default. **Assign** (`primary`) is disabled until a box
   is ticked.
+- A bot that gets the skill in another place while the card is open leaves the list (M2c review,
+  2026-11-02). After a conflict (409 `stale_write`) the list refreshes, so a retry sends only the
+  bots that still do not have the skill.
 
 ### 7.3 After an approved skill draft (D64)
 
@@ -301,6 +354,9 @@ A click on another skill, the rail or + Create asks first, but only if something
 Title **Leave without saving? 👀**, text "You changed the description and the body of {skill}.
 The app has not saved them yet. Stay and save, or let them go." The text names the changed
 fields. Buttons: **Let them go** (`danger`) and **Stay on this skill** (`primary`, default).
+When the changes go while the question is open (the Save answered, and nothing typed after it is
+unsaved), nothing would be lost, so the page goes where the owner asked at once (M2c audit,
+2026-11-03; the bot page shares the rule).
 
 ## 15. Import (D3, D4, UI-7.7)
 

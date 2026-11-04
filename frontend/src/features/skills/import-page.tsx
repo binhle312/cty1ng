@@ -16,6 +16,7 @@ import { DiffView } from "./diff-view.tsx";
 import { Pill } from "./pills.tsx";
 import { SaveBarFrame, SaveButton } from "./save-bar.tsx";
 import { useSkillsPage } from "./skills-context.tsx";
+import { withItem } from "../../lib/sets.ts";
 
 type Preview = PreviewSkillImportResponse;
 type ImportRow = Preview["rows"][number];
@@ -167,12 +168,7 @@ function ImportPreview({
                       row={row}
                       picked={picked.has(row.slug)}
                       onPick={(on) => {
-                        setPicked((current) => {
-                          const next = new Set(current);
-                          if (on) next.add(row.slug);
-                          else next.delete(row.slug);
-                          return next;
-                        });
+                        setPicked((current) => withItem({ set: current, item: row.slug, on }));
                       }}
                     />
                   ))}
