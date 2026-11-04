@@ -1460,7 +1460,9 @@ UNIQUE INDEX memory_proposals_one_open ON memory_proposals(kind, scope, coalesce
   nothing.
 - **Proposals (D63).** `memory_proposals` holds the Tidy cards and the memory check cards.
   One open card per place and kind (the unique index): a new request sets the open card of the
-  same kind to `replaced`. Every merge or rewrite text passes the sensitive-data guard and
+  same kind to `replaced`. A request in flight is stopped first, and its reservation is released;
+  a late answer does not change a `replaced` row. A check with no usable bot stores no row until
+  the owner picks one (D63 amendment 2026-11-04). Every merge or rewrite text passes the sensitive-data guard and
   `memory_item_max_chars` when the card is stored (a failing change gets `invalid_reason`) and
   again at Apply; a failing change is never saved. Apply reads each change's
   `item_row_versions` and checks each item's current `scope`, place id and `row_version`

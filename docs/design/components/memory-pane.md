@@ -71,7 +71,8 @@ with a card at the top:
 - Buttons: **Apply {n} choices** (`primary`) and **Not now**. Not now is Decide later for every
   item.
 - A change to the instructions from this card does not start a new check. Only the owner's own
-  save of the instructions starts one, and a project has at most one check request in flight.
+  save of the instructions starts one, and a project has at most one check request in flight: a new
+  save stops the one in flight (D63 amendment 2026-11-04).
 
 **Open conflicts.** An item from Decide later keeps a `primary` mark in the pane and on the Memory
 page: "Disagrees with instructions, line {n}" and **Decide**, which opens the choices for

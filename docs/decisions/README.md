@@ -107,6 +107,6 @@ Implemented in: links.
 | D60 | [Deleted conversations go to Trash and can be restored](D60-deleted-conversations-go-to-trash.md) | accepted | D62 |
 | D61 | [Projects are closed: files cross between places only by an approved copy](D61-files-cross-places-only-by-approved-copy.md) | accepted | |
 | D62 | [One Trash page for every deleted item, memory items included](D62-one-trash-page-for-every-deleted-item.md) | accepted | |
-| D63 | [Tidy memory and the memory check are model requests, not runs](D63-tidy-and-memory-check-are-model-requests.md) | accepted | |
+| D63 | [Tidy memory and the memory check are model requests, not runs](D63-tidy-and-memory-check-are-model-requests.md) | accepted | own amendment 2026-11-04 |
 | D64 | [The skill draft card is for the skill only; bot actions follow on a float card](D64-skill-draft-card-is-for-the-skill-only.md) | accepted | D65 |
 | D65 | [Bots draft skills only when the owner asks; only the owner assigns them](D65-bots-draft-skills-only-when-asked.md) | accepted | |
