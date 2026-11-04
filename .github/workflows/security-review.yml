@@ -17,7 +17,7 @@ on:
       - "backend/src/adapters/workspace/**"
       - "backend/src/adapters/http/**"
       - "backend/src/app/config.ts"
-      - "frontend/src/lib/markdown/**"
+      - "frontend/src/components/ui/markdown*"
       - ".env.example"
       - ".github/workflows/**"
 
