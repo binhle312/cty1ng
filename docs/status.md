@@ -24,7 +24,7 @@ The [design index](design/README.md) identifies agreed designs and open design w
 
 ## Next
 
-1. Close M2. The P3 follow-ups with target M2 close are fixed or dropped in [#PRNUM](https://github.com/binhle312/cty1ng/pull/PRNUM).
+1. Close M2. The P3 follow-ups with target M2 close are fixed or dropped in [#66](https://github.com/binhle312/cty1ng/pull/66).
    The PR population is confirmed. Exact totals are not possible: three PRs are unmeasured and 11 of the 16 issue rows are `partial` or `unknown` (`delivery-quality.md` §2).
 2. Prepare the [M3 part briefs and specification work](development-plan.md#specification-work-before-m3a).
    M3 follows M2c and has seven delivery parts. Resolve the open schema, Usage and Guide questions before dependent code.
@@ -124,4 +124,4 @@ A slice can also be `blocked` (say on what in Notes).
 | 2026-11-04 | M2c merged (#59); M2 is complete |
 | 2026-11-04 | Every plan now has a file in `docs/plans/` (owner); the plans up to M2 are copied from their PRs |
 | 2026-11-04 | Docs audit ([#61](https://github.com/binhle312/cty1ng/pull/61)): docs matched to the built code and to the current decisions; open questions and code gaps moved to the tables above |
-| 2026-11-04 | M2 close fixes ([#PRNUM](https://github.com/binhle312/cty1ng/pull/PRNUM)): strict `/health`, `/stream` and import upload, the missing security tests, three helpers, DQ-020. The owner dropped DQ-018, DQ-019 and DQ-021's remaining gaps |
+| 2026-11-04 | M2 close fixes ([#66](https://github.com/binhle312/cty1ng/pull/66)): strict `/health`, `/stream` and import upload, the missing security tests, three helpers, DQ-020. The owner dropped DQ-018, DQ-019 and DQ-021's remaining gaps |
