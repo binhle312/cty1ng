@@ -18,7 +18,7 @@ M2c adds the bot page and the Skills page's upgrade and assign cards.
 The fixes after the review of `ec8faa7` are on the branch.
 Their evidence and remaining limits are in [delivery-quality.md](delivery-quality.md), DQ-011–DQ-021.
 
-[#60](https://github.com/binhle312/cty1ng/pull/60) (e2e server guard, outside the Slices table) is also open.
+[#60](https://github.com/binhle312/cty1ng/pull/60) (e2e server guard) and [#61](https://github.com/binhle312/cty1ng/pull/61) (docs audit, after #59) are also open, outside the Slices table.
 
 The [Slices table](#slices) records delivery state and PRs.
 The [design index](design/README.md) identifies agreed designs and open design work.
@@ -126,4 +126,4 @@ A slice can also be `blocked` (say on what in Notes).
 | 2026-11-01 | M2 spec gap pass merged (#56): 30 gaps answered (bot `row_version` and `name_key`, the slug rule (D19 amendment), expected-state checks for pins and the pinned order, effective tool settings, avatar limits and cleanup, the guard on bots, clone and restore exceptions to invariant 6, the Create retry snapshot, bot setting ranges, bot restore and purge events, the Skills page with real bots, Anthropic only, two fake models, seed bots, URLs) |
 | 2026-11-01 | M2a merged (#57): bots backend |
 | 2026-11-02 | M2b merged (#58): Bots page, header roster, Create bot with Clone |
-| 2026-11-04 | Docs audit: docs matched to the built code and to the current decisions; open questions and code gaps moved to the tables above |
+| 2026-11-04 | Docs audit ([#61](https://github.com/binhle312/cty1ng/pull/61)): docs matched to the built code and to the current decisions; open questions and code gaps moved to the tables above |
