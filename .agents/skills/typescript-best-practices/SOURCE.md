@@ -1,6 +1,6 @@
 # Source
 
-Third-party skill, vendored unchanged except for this file and `LICENSE`.
+Third-party skill, vendored unchanged except for this file, `LICENSE` and one frontmatter line (below).
 
 | | |
 | --- | --- |
@@ -9,8 +9,8 @@ Third-party skill, vendored unchanged except for this file and `LICENSE`.
 | Licence | MIT (Lauren Tan), copied from `pstack/LICENSE` to `LICENSE` |
 | Reviewed | 2026-11-04: two Markdown files; no scripts, network calls, subprocesses, key access or package installs. |
 
-To update: copy the folder from a newer upstream commit, review the diff, and update this table
-in the same PR. Do not edit the skill in place.
+To update: copy the folder from a newer upstream commit, review the diff, remove the frontmatter line again,
+and update this table in the same PR. Do not edit the skill in place in any other way.
 
 ## Project rules win
 
@@ -28,6 +28,7 @@ in the same PR. Do not edit the skill in place.
 The skill also names the `type-system-discipline` and `boundary-discipline` principle skills.
 They are not in this project.
 
-Its frontmatter has `disable-model-invocation: true`, so an agent does not load it by itself in
-Claude Code. Open it with `/typescript-best-practices`, or read `SKILL.md` as
-[the skills index](../README.md) says.
+## Local edit
+
+The owner removed `disable-model-invocation: true` from the frontmatter (2026-11-04), so that
+agents can load the skill by themselves. `paths` still limits that to `.ts` and `.tsx` files.
