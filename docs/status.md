@@ -17,7 +17,7 @@ M2c adds the bot page and the Skills page's upgrade and assign cards.
 Its evidence and remaining limits are in [delivery-quality.md](delivery-quality.md), DQ-011–DQ-021.
 The plans of each slice are in [plans/](plans/README.md).
 
-[#60](https://github.com/binhle312/cty1ng/pull/60) (e2e server guard) and [#61](https://github.com/binhle312/cty1ng/pull/61) (docs audit, after #59) are also open, outside the Slices table.
+[#60](https://github.com/binhle312/cty1ng/pull/60) (e2e server guard) is also open, outside the Slices table.
 
 The [Slices table](#slices) records delivery state and PRs.
 The [design index](design/README.md) identifies agreed designs and open design work.
@@ -53,6 +53,9 @@ it in, and the row goes when its PR merges.
 
 | Item | Found in | Target |
 | --- | --- | --- |
+| `pnpm e2e:serve` can die and leave its servers on the ports: a closed stdout (`EPIPE`) or SIGHUP stops the script without stopping them, and the marker stays. It fails safe, but its message says to stop a script that no longer runs, and no doc says to delete `.e2e-serve`. Stop the servers on those exits, and correct the message | [#60](https://github.com/binhle312/cty1ng/pull/60) review | M2 close |
+| No test runs `scripts/e2e-serve.ts` itself, so its guard and signal wiring have only manual evidence | [#60](https://github.com/binhle312/cty1ng/pull/60) review | M2 close |
+| The fresh data folder of each `pnpm e2e` run stays in the system temp folder (`cty1ng-e2e-*`, about 1 MB each): nothing removes it. Remove it when the run ends | The `pnpm e2e` server guard | M2 close |
 | Temporary CLI `skills trash` and `skills restore` (M1 spec gap pass, owner 2026-10-30): remove them when the Trash page exists | [#51](https://github.com/binhle312/cty1ng/pull/51) | M5b |
 | P3 (`review-guide.md` §6), `lib/api/query-reads.ts`: a read that started a load gets the old list when the query's last observer leaves during the load (`versionIdOf`: a toast in place of the upgrade card); a load that paused in a hidden tab ends `refreshQueries`, so a row's lock can end before the newest list; Clone still moves to `/skills/new` after the owner left the skill page (`skill-page.tsx`, older than the helper); only the helper's tests and the assign card and bot page Move hold two cuts, not the other callers. DQ-018 to DQ-021 | [#59](https://github.com/binhle312/cty1ng/pull/59) review of `query-reads.ts` | M2 close |
 | P3 (`review-guide.md` §6): late-answer rules still in refs: `create-bot-page.tsx` (`mounted`, `inFlight`), `crop-card.tsx` (`closed`, `lastFile`), `new-skill-page.tsx` (`closed`). They are not card or dialog rules, so the owner left them out of the 2026-11-04 design; check them against `frontend-conventions.md` §1 | [#59](https://github.com/binhle312/cty1ng/pull/59) review of `ec8faa7` | M2 close |

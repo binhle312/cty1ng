@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# The mark of a running `pnpm e2e:serve`
+.e2e-serve
+
 # Runtime data (databases, workspaces, avatars)
 data/
 *.db

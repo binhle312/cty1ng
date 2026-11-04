@@ -2,6 +2,8 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
+import { SERVE_MARKER_PATH, serveIsRunning } from "../scripts/lib/e2e-serve-marker.ts";
+import { serverReadyCheck } from "../scripts/lib/e2e-server-ready.ts";
 
 // End-to-end tests (testing.md §3). They run against the production build that the backend
 // serves, so the real CSP applies (M0c plan, decision B). APP_ENV=test cannot run with
@@ -25,18 +27,24 @@ for (const key of Object.keys(process.env)) {
 process.env.E2E_DATA_DIR ??= mkdtempSync(join(tmpdir(), "cty1ng-e2e-"));
 const dataDir = process.env.E2E_DATA_DIR;
 
+// Locally, `pnpm e2e:serve` keeps the servers running between runs; CI always starts fresh ones.
+// Any other server on the ports is not ours, and the tests would write into it: a fresh local run
+// waits for the "listening" lines of its own servers, and a server that cannot get its port stops
+// the run (testing.md §3).
+const inCi = process.env.CI !== undefined;
+const reuse = !inCi && serveIsRunning(SERVE_MARKER_PATH);
+
 const backend = (port: number, env: Record<string, string>) => ({
   command: "node src/app/main.ts",
   cwd: join(REPO, "backend"),
-  url: `http://127.0.0.1:${String(port)}/api/health`,
-  // Locally, `pnpm e2e:serve` keeps the servers running between runs; CI always starts fresh ones.
-  reuseExistingServer: process.env.CI === undefined,
+  ...serverReadyCheck({ port, ownLine: !inCi && !reuse }),
+  reuseExistingServer: reuse,
   timeout: 60_000,
   env: {
     PORT: String(port),
     DATA_DIR: join(dataDir, String(port)),
     FAKE_MODEL: "1",
-    LOG_LEVEL: "warn",
+    LOG_LEVEL: inCi ? "warn" : "info",
     ...env,
   },
 });
