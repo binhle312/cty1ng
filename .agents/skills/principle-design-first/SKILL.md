@@ -1,11 +1,11 @@
 ---
 name: principle-design-first
-description: Decide and review the code design before a change adds shared state, a module boundary, or a flow across several screens.
+description: Decide and review the code design before a change adds shared state, a module boundary, a multi-screen flow, or a requirement that changes a design.
 ---
 
 # Design first
 
-Choose the structure while it is cheap to change. Skip this for a change that stays inside one module.
+Choose the structure while it is cheap to change. Skip this for a change that stays inside one module, unless a new requirement changes a design.
 
 1. Read all affected files and the current design.
 2. Write the design on one page: state owner, modules, data flow, and failure paths.
