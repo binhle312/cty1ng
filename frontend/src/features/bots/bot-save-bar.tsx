@@ -1,13 +1,10 @@
 import { Button } from "../../components/ui/button.tsx";
 import { SaveBarFrame, SaveButton } from "../skills/save-bar.tsx";
+import type { SaveBarState } from "./bot-edit-state.ts";
 
 // The save bar of the Profile and Model tabs (bot-page.md §4.1, PF2, PF3). It is always there, so
-// it never jumps. M2 has no runs, so the "is running" line comes with M3.
-export type BotSaveBarState =
-  | { kind: "clean" }
-  | { kind: "changes"; count: number; avatar: boolean }
-  | { kind: "errors"; count: number }
-  | { kind: "conflict" };
+// it never jumps. M2 has no runs, so the "is running" line comes with M3. `editView` in
+// `bot-edit-state.ts` gives its state.
 
 export function BotSaveBar({
   botName,
@@ -18,7 +15,7 @@ export function BotSaveBar({
   onSave,
 }: {
   botName: string;
-  state: BotSaveBarState;
+  state: SaveBarState;
   saving: boolean;
   // The other tab whose Save is on its way, or null. One Save at a time: both tabs send the same
   // `row_version`, so the second would be refused as stale. Save is off until the answer.

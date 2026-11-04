@@ -19,7 +19,7 @@ and what changed because of it. Newest first.
 | `two-of-my-requests-at-once.md` | Ask what a second request of the same screen does to the first, and check every list state before the push | M2c, PR #59 | applied |
 | `fake-answers-match-the-api.md` | A fake answer that the API's schema refuses fails the test, so a success test never runs only the failure path | M2c, PR #59 | applied |
 | `check-every-order-before-the-push.md` | Ask five order questions of every request before the push, search for the property a finding broke, and keep a rule with its companion rules | M2c, PR #59 | applied |
-| `state-table-before-stateful-code.md` | Write the state table of a screen with locks, live events or late answers before its code, and keep its rules in one pure module | M2c, PR #59 | open (bot page state module) |
+| `state-table-before-stateful-code.md` | Write the state table of a screen with locks, live events or late answers before its code, and keep its rules in one pure module | M2c, PR #59 | applied |
 | `fix-the-cause-not-the-finding.md` | Name the rule a finding broke and fix every place with that cause, not only the one found | M2c, PR #59 | applied |
 | `review-contract-boundaries.md` | Map each review requirement to its implementation boundary and evidence; judge safety and compliance separately | M2a, PR #57 | applied |
 | `self-review-against-the-spec.md` | Before the PR, check the code against each spec section and test the edge cases | M1b, PR #54 | applied |

@@ -2,10 +2,9 @@ import type { CatalogModel } from "@cty1ng/shared/catalog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { Activity, ChartColumn, Cpu, Puzzle, UserRound } from "lucide-react";
-import { type KeyboardEvent, useEffect, useRef, useState } from "react";
+import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Skeleton, SkeletonArea } from "../../components/ui/skeleton.tsx";
 import { Tab, TabsList, TabsPanel, TabsRoot } from "../../components/ui/tabs.tsx";
-import { showToast } from "../../components/ui/toast.tsx";
 import { readApiError } from "../../lib/api/api-error.ts";
 import {
   getSettingsOptions,
@@ -16,37 +15,18 @@ import {
 import type { GetSettingsResponse, ListToolsResponse } from "../../lib/api/generated/types.gen.ts";
 import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
 import { LoadError } from "../skills/load-error.tsx";
-import {
-  avatarChanged,
-  changedFields,
-  type EditField,
-  type EditTab,
-  editFormOf,
-  editProblems,
-  leaveText,
-  lostSaveText,
-  mergeTab,
-  patchBody,
-  tabOfField,
-  withTab,
-} from "./bot-edit-form.ts";
+import { avatarChanged, type EditTab, editFormOf, leaveText, patchBody } from "./bot-edit-form.ts";
+import { EDIT_TABS, editView } from "./bot-edit-state.ts";
+import { useEditStore } from "./bot-edit-store.ts";
 import { writeSaveAnswer } from "./bot-list-store.ts";
 import { useBotLeaveGuard } from "./bot-leave-guard.tsx";
 import { BotNotFound, BotPageTop } from "./bot-page-top.tsx";
 import { type BotRow, useBots } from "./bot-queries.ts";
-import { BotSaveBar, type BotSaveBarState } from "./bot-save-bar.tsx";
+import { BotSaveBar } from "./bot-save-bar.tsx";
 import { BotSideList } from "./bot-side-list.tsx";
 import { BOT_TABS, type BotTab } from "./bot-tabs.ts";
 import { BotSkillsTab } from "./bot-skills-tab.tsx";
-import {
-  type CreateForm,
-  effectiveTools,
-  formSettings,
-  isTooLong,
-  keepUnchanged,
-  type Problems,
-  takenNameText,
-} from "./create-bot-form.ts";
+import { type CreateForm, effectiveTools, formSettings } from "./create-bot-form.ts";
 import {
   AdvancedSection,
   AppearanceFields,
@@ -57,8 +37,6 @@ import {
 } from "./create-bot-steps.tsx";
 import { useAvatarUpload } from "./crop-card.tsx";
 import { useDeleteBot } from "./delete-bot-dialog.tsx";
-
-const EDIT_TABS: readonly EditTab[] = ["profile", "model"];
 
 // `/bots/{slug}` (bot-page.md, UI-6): the edit layout, with the bot list on the left and the bot
 // page on the right. The page finds the bot id from the slug in `GET /bots`; a slug that no live
@@ -146,113 +124,19 @@ function BotView({
   const tab: BotTab = search.tab ?? "profile";
 
   const server = editFormOf(bot, settings);
-  const effective = (f: CreateForm) => effectiveTools(f, tools, model);
-  // One form for both tabs; each tab has its own save bar, so each keeps the `row_version` its
-  // edit started from. A save sends it, and the server refuses a save over a change made in
-  // another place (409 `stale_write`) instead of overwriting it.
-  const [form, setForm] = useState(server);
-  const [saved, setSaved] = useState(server);
-  const [base, setBase] = useState<Record<EditTab, number>>({
-    profile: bot.row_version,
-    model: bot.row_version,
-  });
-  const changed: Record<EditTab, EditField[]> = {
-    profile: changedFields({ tab: "profile", form, saved, effective }),
-    model: changedFields({ tab: "model", form, saved, effective }),
-  };
-  // The tab whose Save is on its way.
-  const [saving, setSaving] = useState<EditTab | null>(null);
-  // What that Save sent, until its answer or until the owner lets the tab go. Text that differs
-  // from it is a change after the Save, also text typed back to the old value (bot-page.md §4.1):
-  // the leave question, Esc, Discard and the save bar count it. A Discard drops it: nothing of the
-  // owner's is unsaved then.
-  const [pending, setPending] = useState<{ tab: EditTab; sent: CreateForm } | null>(null);
-  const unsavedOf = (t: EditTab): EditField[] => {
-    if (pending?.tab !== t) return changed[t];
-    const sinceSent = changedFields({ tab: t, form, saved: pending.sent, effective });
-    return [...new Set([...changed[t], ...sinceSent])];
-  };
-  const unsaved: Record<EditTab, EditField[]> = {
-    profile: unsavedOf("profile"),
-    model: unsavedOf("model"),
-  };
-  // The form as it is now, for an answer that comes after more typing.
-  const latestForm = useRef(form);
-  const latestSaved = useRef(saved);
-  const latestBase = useRef(base);
-  useEffect(() => {
-    latestForm.current = form;
-    latestSaved.current = saved;
-    latestBase.current = base;
-  });
-  // A newer `row_version` (a save here, another tab, a `bot.updated` event): a tab with no changes
-  // takes the new values at once; a tab with changes keeps them and shows the conflict. The check
-  // runs on every render, so a tab whose changes go (typed back to the saved text) takes the new
-  // values then. A pin or the pinned order never raises `row_version`, so they never block an edit.
-  // A tab whose Save is on its way waits for the answer: the event of that save can come first,
-  // and text typed meanwhile is a change against what the save sent, not against the old values.
-  const behind = EDIT_TABS.filter(
-    (t) => t !== saving && base[t] < bot.row_version && changed[t].length === 0,
+  // The edit rules of the Profile and Model tabs live in `bot-edit-state.ts` (bot-page.md §4.2).
+  const rules = useMemo(
+    () => ({ effective: (f: CreateForm) => effectiveTools(f, tools, model) }),
+    [tools, model],
   );
-  if (behind.length > 0) {
-    let nextForm = form;
-    let nextSaved = saved;
-    const nextBase = { ...base };
-    for (const t of behind) {
-      nextForm = withTab({ into: nextForm, from: server, tab: t });
-      nextSaved = withTab({ into: nextSaved, from: server, tab: t });
-      nextBase[t] = bot.row_version;
-    }
-    setForm(nextForm);
-    setSaved(nextSaved);
-    setBase(nextBase);
-  }
-  // The `row_version` that a save of the tab was refused at (409 `stale_write`): the server is
-  // newer than the page even when the refresh after it fails, so the conflict shows at once and
-  // stays until Discard.
-  const [staleAt, setStaleAt] = useState<Record<EditTab, number | null>>({
-    profile: null,
-    model: null,
-  });
-  // While a Save of the page waits, a newer `row_version` is often that Save's own event, so it
-  // shows no conflict: the answer decides. A success moves every tab of the same `row_version` on,
-  // and a newer one left after that is a change from another place (owner, 2026-11-03, Q1).
-  const conflict = (t: EditTab) =>
-    changed[t].length > 0 &&
-    ((saving === null && bot.row_version > base[t]) || staleAt[t] === base[t]);
-
-  const [serverProblems, setServerProblems] = useState<Problems>({});
-  // Fields the owner left, and tabs where Save was pressed with errors: their errors show.
-  const [left, setLeft] = useState<ReadonlySet<string>>(new Set());
-  const [tried, setTried] = useState<ReadonlySet<EditTab>>(new Set());
+  const { state, store } = useEditStore({ rules, form: server, rowVersion: bot.row_version });
+  const { form } = state;
+  const ctx = { settings, otherNames: bots.filter((b) => b.id !== bot.id).map((b) => b.name) };
+  const view = editView(state, { rules, ctx });
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const ctx = { settings, otherNames: bots.filter((b) => b.id !== bot.id).map((b) => b.name) };
-  const problems: Record<EditTab, Problems> = {
-    profile: editProblems({ tab: "profile", form, changed: changed.profile, ctx }),
-    model: editProblems({ tab: "model", form, changed: changed.model, ctx }),
-  };
-  const errorOf = (field: string): string | null => {
-    const fromServer = serverProblems[field];
-    if (fromServer !== undefined) return fromServer;
-    const t = tabOfField(field);
-    const local = problems[t][field];
-    if (local === undefined) return null;
-    // A size error shows at once; an empty field or a taken name after the owner leaves it.
-    return isTooLong({ form, field, settings }) || left.has(field) || tried.has(t) ? local : null;
-  };
-  const shownErrors = (t: EditTab) =>
-    new Set(
-      [...Object.keys(problems[t]), ...Object.keys(serverProblems)].filter(
-        (field) => tabOfField(field) === t && errorOf(field) !== null,
-      ),
-    ).size;
-
   const update = (change: (f: CreateForm) => CreateForm) => {
-    const next = change(form);
-    setForm(next);
-    // A server error goes when the owner changes its field.
-    setServerProblems((old) => keepUnchanged({ problems: old, before: form, after: next }));
+    store.dispatch({ type: "typed", change });
   };
 
   const upload = useAvatarUpload({
@@ -263,56 +147,19 @@ function BotView({
     onError: setUploadError,
   });
 
-  // How many times each tab was let go (Discard, Esc, leaving): a Save that was on its way then
-  // must not bring back the edit the owner dropped.
-  const letGoCount = useRef<Record<EditTab, number>>({ profile: 0, model: 0 });
-  // The page is gone (the owner left for another bot or page) while a Save was on its way.
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
   const letGo = (tabs: readonly EditTab[]) => {
-    for (const t of tabs) letGoCount.current[t] += 1;
-    let nextForm = form;
-    let nextSaved = saved;
-    for (const t of tabs) {
-      nextForm = withTab({ into: nextForm, from: server, tab: t });
-      nextSaved = withTab({ into: nextSaved, from: server, tab: t });
-    }
-    setForm(nextForm);
-    setSaved(nextSaved);
-    setBase((old) => {
-      const next = { ...old };
-      for (const t of tabs) next[t] = bot.row_version;
-      return next;
-    });
-    setServerProblems((old) =>
-      Object.fromEntries(
-        Object.entries(old).filter(([field]) => !tabs.includes(tabOfField(field))),
-      ),
-    );
-    setTried((old) => new Set([...old].filter((t) => !tabs.includes(t))));
-    setPending((old) => (old !== null && tabs.includes(old.tab) ? null : old));
-    setUploadError(null);
     // A tab refused as stale loads the newest values again: the refresh after the refusal may
     // have failed.
-    if (tabs.some((t) => staleAt[t] !== null)) {
+    if (tabs.some((t) => store.get().staleAt[t] !== null)) {
       void queryClient.invalidateQueries({ predicate: PIN_QUERIES });
     }
-    setStaleAt((old) => {
-      const next = { ...old };
-      for (const t of tabs) next[t] = null;
-      return next;
-    });
+    store.dispatch({ type: "letGo", tabs });
+    setUploadError(null);
   };
 
-  const dirtyFields = [...unsaved.profile, ...unsaved.model];
   const leave = useBotLeaveGuard({
-    dirty: dirtyFields.length > 0,
-    text: leaveText(dirtyFields),
+    dirty: view.dirtyFields.length > 0,
+    text: leaveText(view.dirtyFields),
     onLetGo: () => {
       letGo(EDIT_TABS);
     },
@@ -320,112 +167,62 @@ function BotView({
 
   const { mutateAsync } = useMutation(updateBotMutation());
   const save = (t: EditTab) => {
-    if (saving !== null || changed[t].length === 0 || conflict(t)) return;
-    if (Object.keys(problems[t]).length > 0 || shownErrors(t) > 0) {
-      setTried((old) => new Set(old).add(t));
+    // The state now, not the one of this render: a second Ctrl+S before the next render sends
+    // nothing.
+    const now = store.get();
+    const nowView = editView(now, { rules, ctx });
+    const check = nowView.saveCheck(t);
+    if (check === "off") return;
+    if (check === "errors") {
+      store.dispatch({ type: "saveTried", tab: t });
       requestAnimationFrame(() => {
         document.querySelector<HTMLElement>("#bot-edit [aria-invalid='true']")?.focus();
       });
       return;
     }
     // What this request sends; typing goes on while it is pending and stays a change after it.
-    const sent = form;
-    const sentBase = base[t];
-    const fields = changed[t];
-    const sentLetGo = letGoCount.current[t];
-    setSaving(t);
-    setPending({ tab: t, sent });
+    const sent = { tab: t, form: now.form, base: now.base[t], fields: nowView.changed[t] };
+    const id = now.nextSave;
+    if (store.dispatch({ type: "saveSent", ...sent }).onItsWay?.id !== id) return;
     mutateAsync({
       path: { id: bot.id },
-      body: patchBody({ tab: t, form: sent, changed: fields, rowVersion: sentBase, effective }),
+      body: patchBody({
+        tab: t,
+        form: sent.form,
+        changed: sent.fields,
+        rowVersion: sent.base,
+        effective: rules.effective,
+      }),
     })
       .then((result) => {
         // A newer list (an event or a refresh) may have come first, and a pin change never raises
         // `row_version`: the answer writes only the fields a save owns.
         writeSaveAnswer(queryClient, result);
-        // The answer sets the tab's values only while the tab is still based on `sentBase`. A
-        // Discard that loaded a newer `row_version` (another tab saved after this save) already
-        // shows values newer than the answer; they stay.
-        if (latestBase.current[t] === sentBase) {
-          // A tab the owner let go while Save waited shows the saved values, not the edit it
-          // dropped; a field typed in after the Discard keeps its text, as a change.
-          if (letGoCount.current[t] !== sentLetGo) {
-            setForm(
-              mergeTab({
-                tab: t,
-                base: latestSaved.current,
-                mine: latestForm.current,
-                theirs: sent,
-                effective,
-              }),
-            );
-          }
-          setSaved((old) => withTab({ into: old, from: sent, tab: t }));
-        }
-        // The server took the save at `sentBase`, so nothing else changed in between: every tab
-        // whose edit started there is now based on the new `row_version`.
-        setBase((old) => ({
-          profile: old.profile === sentBase ? result.row_version : old.profile,
-          model: old.model === sentBase ? result.row_version : old.model,
-        }));
         void queryClient.invalidateQueries({ predicate: PIN_QUERIES });
+        store.dispatch({
+          type: "saveAnswered",
+          id,
+          rowVersion: result.row_version,
+          form: editFormOf(result, settings),
+        });
       })
       .catch((error: unknown) => {
         const api = readApiError(error);
-        // The owner let the tab go or left the page while Save waited: no field or bar shows the
-        // failure any more, so a toast says it (bot-page.md §4.1).
-        if (!mounted.current || letGoCount.current[t] !== sentLetGo) {
-          showToast(lostSaveText({ botName: bot.name, sentName: sent.name, error: api }));
-          if (api?.code === "stale_write") {
-            void queryClient.invalidateQueries({ predicate: PIN_QUERIES });
-          }
-          return;
-        }
+        // A stale save loads the newest values now; the edit stays.
         if (api?.code === "stale_write") {
-          // The conflict shows at once; load the newest values now, and the edit stays.
-          setStaleAt((old) => ({ ...old, [t]: sentBase }));
           void queryClient.invalidateQueries({ predicate: PIN_QUERIES });
-          return;
         }
-        // An error is about the value that was sent: a field the owner changed while Save waited
-        // gets no error, so it never blocks the corrected text.
-        const stillSent = (problems: Problems) =>
-          keepUnchanged({ problems, before: sent, after: latestForm.current });
-        if (api?.code === "name_taken") {
-          const name = takenNameText({ name: sent.name, byServer: true });
-          setServerProblems((old) => ({ ...old, ...stillSent({ name }) }));
-          return;
-        }
-        if (api?.field !== undefined && tabOfField(api.field) === t) {
-          const problem = { [api.field]: api.message };
-          setServerProblems((old) => ({ ...old, ...stillSent(problem) }));
-          return;
-        }
-        showToast(`Could not save ${bot.name}. Try again.`);
-      })
-      .finally(() => {
-        setSaving(null);
-        setPending(null);
+        store.dispatch({ type: "saveFailed", id, error: api });
       });
-  };
-
-  const barState = (t: EditTab): BotSaveBarState => {
-    if (conflict(t)) return { kind: "conflict" };
-    const errors = shownErrors(t);
-    if (errors > 0) return { kind: "errors", count: errors };
-    if (unsaved[t].length === 0) return { kind: "clean" };
-    return {
-      kind: "changes",
-      count: unsaved[t].length,
-      avatar: t === "profile" && avatarChanged(unsaved.profile),
-    };
   };
 
   // The other tab whose Save is on its way: this tab's Save waits for its answer (one Save at a
   // time, `bot-save-bar.tsx`), and its bar says so.
   const TAB_NAMES: Record<EditTab, string> = { profile: "Profile", model: "Model" };
-  const waitingFor = (t: EditTab): string | null =>
-    saving !== null && saving !== t ? TAB_NAMES[saving] : null;
+  const waitingFor = (t: EditTab): string | null => {
+    const other = view.waitingFor(t);
+    return other === null ? null : TAB_NAMES[other];
+  };
 
   // Ctrl+S or ⌘S saves the tab on screen (bot-page.md §4.1).
   const saveRef = useRef(save);
@@ -469,9 +266,9 @@ function BotView({
     update,
     // Typing goes on while a Save is pending, and stays a change after it (bot-page.md §4.1).
     readOnly: false,
-    errorOf,
+    errorOf: view.errorOf,
     onLeaveField: (field) => {
-      setLeft((old) => new Set(old).add(field));
+      store.dispatch({ type: "fieldLeft", field });
     },
   };
   // Esc asks first, like Discard (bot-page.md §4.1). Only a key pressed on the tab itself: a
@@ -479,7 +276,7 @@ function BotView({
   const escToDiscard = (t: EditTab) => (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== "Escape" || event.defaultPrevented) return;
     if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target)) return;
-    if (unsaved[t].length === 0) return;
+    if (view.unsaved[t].length === 0) return;
     leave.ask();
   };
   const discard = () => {
@@ -496,7 +293,7 @@ function BotView({
       <BotPageTop
         bot={bot}
         form={form}
-        avatarUnsaved={avatarChanged(changed.profile)}
+        avatarUnsaved={avatarChanged(view.changed.profile)}
         onChangeAvatar={toAppearance}
         onStatus={() => {
           setTab("activity");
@@ -571,8 +368,8 @@ function BotView({
           </div>
           <BotSaveBar
             botName={bot.name}
-            state={barState("profile")}
-            saving={saving === "profile"}
+            state={view.barState("profile")}
+            saving={view.saving === "profile"}
             waitFor={waitingFor("profile")}
             onDiscard={discard}
             onSave={() => {
@@ -602,8 +399,8 @@ function BotView({
           </div>
           <BotSaveBar
             botName={bot.name}
-            state={barState("model")}
-            saving={saving === "model"}
+            state={view.barState("model")}
+            saving={view.saving === "model"}
             waitFor={waitingFor("model")}
             onDiscard={discard}
             onSave={() => {

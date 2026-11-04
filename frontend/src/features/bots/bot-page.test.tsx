@@ -185,6 +185,29 @@ describe("the bot page", () => {
     expect(screen.queryByRole("alertdialog")).toBeNull();
   });
 
+  // State table (bot-page.md §4.2), "The bot leaves the list" × "This tab's Save on its way".
+  it("shows the toast of a Save that fails after the bot left the list", async () => {
+    const save = heldAnswer();
+    const list = heldAnswer();
+    const state = { bots: [makeBot(1, "BA"), makeBot(2, "Designer")] };
+    let holdList = false;
+    await open(state, {
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: async () => save.promise,
+        "GET /api/bots": () => (holdList ? list.promise : { body: state.bots }),
+      },
+    });
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    click(screen.getByRole("button", { name: "Save" }));
+    holdList = true;
+    refocus();
+    await list.answer({ body: [makeBot(2, "Designer")] });
+    expect(await screen.findByText(/The app could not find this bot/)).toBeTruthy();
+    await save.answer(FAILED_ANSWER);
+    expect(await screen.findByText("Could not save BA. Try again.")).toBeTruthy();
+  });
+
   it("waits for a list refresh on its way before it says it could not find the bot", async () => {
     // The first list has no Designer; the refresh brings it (as after a Create, when a live
     // event can end the wait for the list early: skill-page.test.tsx).

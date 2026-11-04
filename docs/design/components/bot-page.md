@@ -126,31 +126,18 @@ there, so it never jumps.
 - A save that fails on the server keeps the text, and a toast says "Could not save BA. Try
   again."
 - **Conflicts (M2 spec gap pass, owner 2026-11-01), as on the Skills page**
-  (`skills-page.md`, "Texts added in the M1b build"). A save that the server refuses as stale
-  (409 `stale_write`): the page loads the newest values at once, keeps the owner's edits, and
-  the save bar says "BA changed in another place. Your changes are kept here. Copy what you
-  need, then Discard to load the new values." Save is off until Discard, also when the refresh
-  after the refusal fails; Discard then tries to load the newest values again (M2c review,
-  2026-11-03). The same text shows
-  when a `bot.updated` event carries a `row_version` above the one this tab's edit started
-  from, while this tab has unsaved changes and no Save of the page waits; while a Save waits,
-  its answer decides (§4.2, Q1). An event with the same `row_version` (a skill pin
-  or the pinned order changed, which never raise it) only refreshes the Skills tab, the counts
-  and the header, and never blocks a Profile or Model edit. A tab with no changes takes the new
-  values at once. A name taken meanwhile (409 `name_taken`) shows under Name.
-  Text typed while a Save is pending stays as a change after it, also text typed back to the
-  old value, and also when the `bot.updated` event of that save comes before its answer: the tab
-  waits for the answer before it takes new values. While the Save waits, the save bar, Discard,
-  Esc and the leave question count that text as a change too (M2c review, 2026-11-03). An error from the server (a taken name, a
-  field error) shows only on a field that still has the text that was sent (M2c review,
-  2026-11-02). When the owner lets the changes go while a Save is pending and the Save then
-  succeeds, the tab shows the saved values; it never brings back the dropped edit. A field typed
-  in after the Discard keeps its text as a change, and the Save shows no conflict, because it
-  is the tab's own. When the Discard loaded values newer than the Save (another tab saved after
-  it), the tab keeps the newer values. The avatar style and the image count as one choice: a new
-  image kept after the Discard keeps its style too (M2c review, 2026-11-03). An image upload
-  that answers after the tab took newer values (another tab renamed the bot) changes only the
-  avatar style and the image; the other fields keep the newer values (M2c review, 2026-11-03).
+  (`skills-page.md`, "Texts added in the M1b build"). The save bar says "BA changed in another
+  place. Your changes are kept here. Copy what you need, then Discard to load the new values."
+  Save is off until Discard. The conflict shows when the server refuses a save as stale (409
+  `stale_write`): the page then loads the newest values and keeps the owner's edits. It also
+  shows when a newer `row_version` comes while the tab has changes and no Save of the page
+  waits (§4.2, Q1). A name taken meanwhile (409 `name_taken`) shows under Name. The table in
+  §4.2 gives the rule for each event in each state, also for late answers, text typed while a
+  Save waits, a Discard while a Save waits, and an event with the same `row_version` (M2c
+  reviews, 2026-11-02 and 2026-11-03). Two more rules: a field typed after a Discard is the
+  tab's own change, so the Save that was on its way shows no conflict for it; and the avatar
+  style and the image count as one choice, so a new image kept after the Discard keeps its
+  style too.
 - **One Save at a time** (M2c review, 2026-11-03): both tabs send the same `row_version`, so a
   second Save would be refused as stale. While one tab's Save is on its way, the other tab's
   Save is off, and its tooltip says "Wait until the Profile tab is saved." (or Model). It turns
@@ -170,19 +157,24 @@ there, so it never jumps.
 ### 4.2 Edit states and events (M2c audit, 2026-11-03)
 
 One table for each edit tab (Profile, Model), from the rules above. A row is an event; a column
-is the state of the tab when it comes. "Changes" includes field errors. The last column names
-the tests in `frontend/src/features/bots/bot-page.test.tsx` that hold the row. Q1–Q3 are below
-the table. The rules move into one pure module before M3
-(`../../status.md`).
+is the state of the tab when it comes. "Changes" includes field errors. Q1–Q3 are below the
+table.
 
-| Event | No changes | Changes | This tab's Save on its way | Conflict, or refused as stale | Tests |
+The rules live in one pure module, `frontend/src/features/bots/bot-edit-state.ts`
+(`../../frontend-conventions.md` §1). Its tests in `bot-edit-state.test.ts` have one `describe`
+for each row, with the name of the row, and one test for each cell, named by its column.
+`bot-edit-sequences.test.ts` runs every order and random orders of the events against a model
+of the server, and checks the invariants of `../../testing.md` §3 after each step. The last
+column names the tests in `bot-page.test.tsx` that hold the row on the page.
+
+| Event | No changes | Changes | This tab's Save on its way | Conflict, or refused as stale | Page tests |
 | --- | --- | --- | --- | --- | --- |
 | Type a value | Changes | Changes; a server error on that field goes | A change after the Save (counted against what it sent) | Kept; the conflict stays | "saves only the changed fields …", "keeps text typed while a save is pending …", "drops a late name error …" |
 | Type back to the saved value | — | No changes; takes newer values if there are any | Still a change: it differs from what the Save sent | No changes; takes the newest values | "takes the newest values when the owner types a conflicted tab back …", "keeps text typed back while Save waits …", "asks before leaving when text typed back …" |
 | Save (button, Ctrl+S) | Off: "No changes to save." | Sends the changed fields with the tab's `row_version`; with errors, focuses the first and says "Fix {n} fields" | Off: "Saving." | Off: "BA changed in another place. Discard first." | "saves only …", "saves with Ctrl+S", "says Fix 1 field …" |
 | Save while the other tab's Save is on its way | Off | Off: "Wait until the Profile tab is saved."; on after the answer, at the new `row_version` | — | Off | "turns Save off on the other tab …" |
 | The Save answers | — | — | Saved values = what it sent; every tab based on the same `row_version` moves to the new one; text typed after it stays a change; a let-go tab shows the saved values; a tab that a Discard moved to a newer `row_version` keeps it. The answer writes only the fields a save owns | — | "saves twice in a row …", "keeps a newer list when the answer of its own save comes after it", "shows the saved values … when the owner discards while Save waits", "keeps newer values from another tab …", "keeps text typed after a Discard …", "keeps a newer Always load toggle …", "keeps a newer unpin …", "keeps a newer health …" |
-| The Save is refused as stale (409) | — | — | Conflict at once; Save off until Discard, also when the refresh fails; the text stays. Let go or left: the toast | Stays | "keeps the edit on a stale save …", "keeps a stale save's conflict …", "says in a toast when a Save fails as stale after the owner left …" |
+| The Save is refused as stale (409) | — | — | Conflict at once; Save off until Discard, also when the refresh fails; the text stays. A tab at the same `row_version` (the other tab, or a tab let go meanwhile) is in conflict too while it has changes, also changes typed later, until a newer bot moves it. Let go or left: the toast | Stays | "keeps the edit on a stale save …", "keeps a stale save's conflict …", "says in a toast when a Save fails as stale after the owner left …" |
 | The Save gets `name_taken` or a field error | — | — | The error under the field, if it still has the sent text. Let go or left: the toast | — | "keeps the text when the server refuses the name …", "drops a late name error …", "says in a toast when a Save fails after the owner let its tab go" |
 | The Save fails another way | — | — | Toast "Could not save BA. Try again."; the text stays | — | "shows a toast and keeps the text when the save fails" |
 | A newer `row_version` (event, refresh, another tab) | Takes the new values | Conflict, but not while a Save of either tab waits (Q1): the answer decides | No conflict; waits for the answer before it takes new values (Q1) | Stays | "takes newer values at once …", "shows the conflict when a newer row_version arrives …", "keeps text typed back while Save waits, also when the save's event comes first", "keeps a newer list when the answer of its own save comes after it", "shows no conflict on the other tab when the event of a Save comes before its answer", "shows the conflict after a Save answers when another place changed the bot meanwhile" |
@@ -201,13 +193,19 @@ the table. The rules move into one pure module before M3
 - **Q2.** Remove on the Skills tab takes the row away at once; it comes back with a toast when
   Remove fails (§7).
 
-**Open question (owner):**
+**Open questions (owner):**
 
 - **Q3.** A version dialog (Upgrade, Change version) can open again for a pin whose move is still
   on its way, and a second confirm sends the old pin as `expected`, so the server refuses it with
   the "changed in another place" toast for the owner's own change. Proposed: the ⋯ menu and the
   "v{n} available" link of a row are off while a change of that row is on its way, as the switch
   is.
+- **Q4** (review of the edit state module, 2026-11-04). The server can take a Save whose answer
+  is then lost on the way (the network fails). The page says "Could not save BA. Try again.",
+  and when the save's own `bot.updated` event comes, the tab shows "BA changed in another place"
+  for the owner's own change; Save stays off until Discard. The old code did the same. Proposed:
+  when a newer `row_version` comes and the tab's changed fields already have the server's values,
+  the tab takes the new values with no conflict, because nothing of the owner's would be lost.
 
 ## 5. The band follows the colour (HB, approved 2026-10-24)
 

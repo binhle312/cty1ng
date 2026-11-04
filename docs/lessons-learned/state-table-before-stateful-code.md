@@ -1,6 +1,6 @@
 # Write the state table before the code of a stateful screen
 
-Date: 2026-11-03 · Source: M2c, PR #59 · Status: open (the bot page's state module)
+Date: 2026-11-03 · Source: M2c, PR #59 · Status: applied (2026-11-04)
 
 **Observed.** Seven review rounds of #59 found about 32 problems. About 18 were order and
 timing cases: a late pin answer replaced a newer pin, a Save answer after a Discard brought the
@@ -31,10 +31,11 @@ the spec walk were spread thin.
   (`../workflow.md` §2 step 1).
 - Lint now checks the object-argument rule (`max-params`), which the reviews found by hand.
 
-**Still open.** The bot page's edit state (Profile and Model) does not have a state module yet.
-The follow-up in `../status.md` moves the rules of the table in `design/components/bot-page.md`
-§4.2 out of `BotView`. The bot list's own state is in one pure module now
-(`frontend/src/features/bots/bot-list-state.ts`, 2026-11-04).
+**Closed (2026-11-04).** Both screens of #59 have their state module now: the bot list
+(`frontend/src/features/bots/bot-list-state.ts`) and the Profile and Model edit state
+(`frontend/src/features/bots/bot-edit-state.ts`), which follows the table in
+`../design/components/bot-page.md` §4.2. `BotView` keeps no edit flags or refs that change the
+rules.
 
 **Rule now in.** `../workflow.md` §2 steps 1, 2 and 4; `../frontend-conventions.md` §1, §3;
 `../testing.md` §3, §5; `../review-guide.md` §3.

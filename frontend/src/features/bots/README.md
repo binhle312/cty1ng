@@ -10,11 +10,13 @@ the parts that the header and the Skills page share.
 | `bot-band.tsx` | The colour band at the top of a bot card |
 | `bot-colours.ts` | Bot colour rules: the default unused swatch, Random, hex, RGB and HSV |
 | `bot-edit-form.ts` | The bot page's Profile and Model edits (pure): changed fields, problems, the PATCH body, the leave text |
+| `bot-edit-state.ts` | The edit state of the Profile and Model tabs (pure): a reducer of the table in `bot-page.md` §4.2 (the form, the Save on its way, conflicts, errors, toasts) and what the page shows |
+| `bot-edit-store.ts` | The edit state of one bot page outside React: late answers change the state as it is now, toasts show at once, leaving lets every tab go |
 | `bot-grid-card.tsx` | One card of the Bots page grid, with its pin badge and ⋯ menu |
 | `bot-leave-guard.tsx` | Leave the bot page with unsaved changes: Discard, Esc, another tab, bot or page asks first |
 | `bot-lines.ts` | Words about a bot: effort labels, health and status lines, the model line, search |
 | `bot-list.tsx` | The bot list of the cards: rows with check boxes, or plain rows (`skills-page.md` §7) |
-| `bot-page.tsx` | `/bots/{slug}`: the edit layout, the tabs, the two save bars, conflicts with another place |
+| `bot-page.tsx` | `/bots/{slug}`: the edit layout, the tabs and the two save bars; sends the edit events of `bot-edit-state.ts` and the Save |
 | `bot-page-top.tsx` | The bot page top: band, 116 px avatar, name, locked model badge, status, ⋯; the cannot-run banner |
 | `bot-list-state.ts` | The bot list and the sort (pure): the server value and the requests that wait, in send order; what the page shows, the answers that go in, the Always load value on its way |
 | `bot-list-store.ts` | The bot list state of a query client: sends it the loads, writes what the page shows into the cache; the Always load, Remove, pin, pinned order, sort and save answer sends |
