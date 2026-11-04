@@ -17,7 +17,7 @@ M2c adds the bot page and the Skills page's upgrade and assign cards.
 Its evidence and remaining limits are in [delivery-quality.md](delivery-quality.md), DQ-011–DQ-021.
 The plans of each slice are in [plans/](plans/README.md).
 
-[#60](https://github.com/binhle312/cty1ng/pull/60) (e2e server guard) and [#61](https://github.com/binhle312/cty1ng/pull/61) (docs audit, after #59) are also open, outside the Slices table.
+[#60](https://github.com/binhle312/cty1ng/pull/60) (e2e server guard) is also open, outside the Slices table.
 
 The [Slices table](#slices) records delivery state and PRs.
 The [design index](design/README.md) identifies agreed designs and open design work.
