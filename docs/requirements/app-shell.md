@@ -36,7 +36,7 @@ Design: `../design/components/left-bar.md`, `top-header.md` and `user-panel.md` 
   (`../design/components/left-bar.md` §4). The "+" of the Conversations label in bar 2 creates a
   conversation titled "New conversation" in that place and opens it. After the first message, the app can
   give it a short title one time (UI-3.24, D46).
-- UI-1.2: Each conversation is a row in bar 2, with a round icon and its title.
+- UI-1.2: Each conversation is a row in bar 2, with a 28 px round icon and its title.
 - UI-1.3: Icon content, from **active** members' avatars:
   0 bots → title initials on a neutral background; 1 → that avatar; 2 → two halves side by
   side; 3–4 → 2×2 grid; 5+ → three avatars and a "+N" tile. Removed bots are left out, and deleting

@@ -79,7 +79,7 @@ Top to bottom:
    workspace files).
 5. **Conversations** section label with a "+" icon button aligned right (tooltip "New conversation"). The label
    has no fold arrow, and its icon lines up with the Memory and Library icons. Then the
-   conversations, newest activity first. Only the conversation list scrolls: the header, Board, Memory, Library
+   conversations, newest activity first, each a row with a 28 px round icon and its title (UI-1.2). Only the conversation list scrolls: the header, Board, Memory, Library
    and the Conversations label stay in place. It scrolls as the rail does (§1.3): the mouse wheel or a
    drag, a fade at the cut edge, and ˄/˅ buttons on hover. The list ends 24 px above the
    floating user panel. No folding, no separate 1:1 and group sections, no Bots section

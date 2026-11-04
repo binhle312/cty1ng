@@ -109,8 +109,10 @@ The client appends `text` only if `offset` equals its current length.
 `frontend/src/lib/realtime/`:
 
 - One `EventSource` for the app, opened at startup.
-- A reducer turns each event into a refresh of the TanStack Query queries it touches
-  (`invalidateQueries`), so pages update with no action from the owner.
+- A reducer turns each persisted event into a refresh of the TanStack Query queries it touches
+  (`invalidateQueries`), so pages update with no action from the owner. A `message.delta` is not a
+  refresh: its text appends to the message directly, by `offset`, because a refetch for each token
+  would not keep up.
 - The last applied `seq` is kept in memory; `EventSource` handles `Last-Event-ID` itself.
   The first `ready` sets it to `max_seq`; a later `ready` (a reconnect) leaves it, so the
   replay that follows is applied. A `reset` sets it to the `max_seq` of the `ready` just
