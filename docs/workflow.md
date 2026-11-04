@@ -76,8 +76,8 @@ brief ready ──▶ plan ──(owner approves, if checkpointed)──▶ buil
    running with `pnpm e2e:serve`. A bug fix's test is written first and seen to fail; if it was
    written after the fix, run it against the old code in an isolated checkout (a `git
    worktree` of the commit before the fix, with the new test copied in), not by stashing the
-   fix (owner, 2026-10-31). Stop every other end-to-end server first: Playwright reuses a
-   server that runs on its port, which would test the other checkout (`testing.md` §3). See
+   fix (owner, 2026-10-31). Stop every other end-to-end server first: `pnpm e2e` stops with
+   "already used" while another server is on its ports (`testing.md` §3). See
    it fail there (lesson `prove-the-test-fails-first.md`).
 4. **Self-check.** Every command in `AGENTS.md` §4 passes, run once in full at the end:
    after the last code change, before the push, and with the full `pnpm e2e`. A report names

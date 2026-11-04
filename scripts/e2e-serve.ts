@@ -4,11 +4,26 @@
 // again for a fresh one, and after a backend change. CI does not use it.
 //
 // Each server runs as its own process group. On a stop, the script stops every process of each
-// group and waits for them, so no old server is left for Playwright to reuse.
+// group and waits for them, so no old server is left on the ports.
+//
+// `pnpm e2e` reuses the servers only while this script runs (./lib/e2e-serve-marker.ts).
 import config from "../frontend/playwright.config.ts";
+import {
+  removeServeMarker,
+  SERVE_MARKER_PATH,
+  serveIsRunning,
+  writeServeMarker,
+} from "./lib/e2e-serve-marker.ts";
 import { spawnGroup, stopGroup } from "./lib/process-group.ts";
 
 const STOP_TIMEOUT_MS = Number(process.env.E2E_SERVE_STOP_MS ?? "10000");
+
+// A second serve would fail on the ports, and its stop would take the first one's marker away.
+if (serveIsRunning(SERVE_MARKER_PATH)) {
+  console.error("e2e:serve: it already runs for this checkout; stop it first.");
+  process.exit(1);
+}
+writeServeMarker({ path: SERVE_MARKER_PATH, pid: process.pid });
 
 const servers = [config.webServer ?? []].flat();
 const children = servers.map((server) =>
@@ -22,6 +37,7 @@ async function shutdown(signal: NodeJS.Signals, code: number): Promise<void> {
   stopping = true;
   const pids = children.flatMap((child) => (child.pid === undefined ? [] : [child.pid]));
   await Promise.all(pids.map((pid) => stopGroup(pid, { signal, timeoutMs: STOP_TIMEOUT_MS })));
+  removeServeMarker(SERVE_MARKER_PATH);
   process.exit(code);
 }
 

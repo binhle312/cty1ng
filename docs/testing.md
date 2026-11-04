@@ -198,15 +198,19 @@ While fixing, run only what the change touches, and run the full suite once at t
 | The end-to-end servers, kept running | `pnpm e2e:serve` in a second terminal |
 
 When `pnpm e2e:serve` runs, `pnpm e2e` reuses its servers instead of starting new ones
-(`reuseExistingServer`, local only; CI always starts fresh servers). It reuses any server on
-its ports, also one from another checkout: before you test old code in a `git worktree`
-(`workflow.md` §2 step 3), check that ports 8100 and 8101 are free. The servers keep one
+(`reuseExistingServer`, local only; CI always starts fresh servers). The tests write into the
+server they use, so `pnpm e2e` reuses only the servers of a `pnpm e2e:serve` of the same checkout
+that still runs: the script writes its process id to `.e2e-serve`, and the Playwright config
+checks it. Any other server on ports 8100 or 8101 (one left by an old run, another checkout's, or
+the real app) stops the run with Playwright's "already used" error, and no test runs. Stop that
+server, then run again. So before you test old code in a `git worktree` (`workflow.md` §2 step 3),
+ports 8100 and 8101 must be free. The servers keep one
 database until you stop the script, so a test that needs a fresh database fails on the second
 run: restart the script. The backend serves the frontend build from disk, so after a frontend
 change run `pnpm build` before `pnpm e2e`; after a backend change, restart the script.
 Each server runs as its own process group. When you stop the script (Ctrl+C or SIGTERM), it
-stops every process in each group and waits until they have stopped, so Playwright never reuses
-an old server. A group that is still running after `E2E_SERVE_STOP_MS` (default 10000 ms) is
+stops every process in each group and waits until they have stopped, so no old server stays on
+the ports. A group that is still running after `E2E_SERVE_STOP_MS` (default 10000 ms) is
 killed.
 
 ### Test helpers

@@ -2,6 +2,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
+import { SERVE_MARKER_PATH, serveIsRunning } from "../scripts/lib/e2e-serve-marker.ts";
 
 // End-to-end tests (testing.md §3). They run against the production build that the backend
 // serves, so the real CSP applies (M0c plan, decision B). APP_ENV=test cannot run with
@@ -30,7 +31,9 @@ const backend = (port: number, env: Record<string, string>) => ({
   cwd: join(REPO, "backend"),
   url: `http://127.0.0.1:${String(port)}/api/health`,
   // Locally, `pnpm e2e:serve` keeps the servers running between runs; CI always starts fresh ones.
-  reuseExistingServer: process.env.CI === undefined,
+  // Any other server on the port is not ours, and the tests would write into it: Playwright stops
+  // with "already used" instead (testing.md §3).
+  reuseExistingServer: process.env.CI === undefined && serveIsRunning(SERVE_MARKER_PATH),
   timeout: 60_000,
   env: {
     PORT: String(port),

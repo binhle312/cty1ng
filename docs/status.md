@@ -95,6 +95,7 @@ it in, and the row goes when its PR merges.
 
 | Item | Found in | Target |
 | --- | --- | --- |
+| The fresh data folder of each `pnpm e2e` run stays in the system temp folder (`cty1ng-e2e-*`, about 1 MB each): nothing removes it. Remove it when the run ends | The `pnpm e2e` server guard | M2 close |
 | Temporary CLI `skills trash` and `skills restore` (M1 spec gap pass, owner 2026-10-30): remove them when the Trash page exists | [#51](https://github.com/binhle312/cty1ng/pull/51) | M5b |
 | The `db_lock_wait_seconds` histogram (`architecture.md` §9, D29 switch trigger 3); there is no metrics output yet | #48 | M3 (the worker brings concurrent writes) |
 | `esbuild` advisory (moderate, dev only, through `drizzle-kit` 0.31.11); no stable fix | #48 | Update `drizzle-kit` when 1.0 is stable (Dependabot) |
