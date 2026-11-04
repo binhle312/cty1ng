@@ -40,12 +40,11 @@ pass the 4.5:1 contrast test (`../themes.md` §5) (T1).
 
 The round 6.1 conversation header, height 52 px, `outline` line under it:
 
-1. Left: the conversation icon and the title. A click on the title renames it (UI-3.15).
+1. Left: the conversation icon (28 px round, UI-1.2) and the title. A click on the title renames it (UI-3.15).
 2. Right, in this order: the **add slot**, the member avatars, **Flow**, and **⋯**.
 
 | Part | Rule |
 | --- | --- |
-| Conversation icon | 28 px round (UI-1.2) |
 | Add slot (+) | A 24 px circle, dashed slot standard (`dashed-slot.md`): rest = dashed `outline-strong`, a "+" in `on-surface-muted`. It is **always first**, before the member avatars, also when the conversation has no bots. A click opens the picker of bots that are not members (not deleted, available), in header order (§2.2). While a bot is dragged from the top header, the slot is active (dashed `primary`, `primary-tint` fill). A drop on the slot or on the conversation area adds the bot (`top-header.md` row 8). Tooltip and `aria-label` "Add bot" |
 | Member avatars | 24 px, 4 px apart, in join order. State badges follow `bot-status.md` and scale with the avatar (a 16 px badge at 36 px is 44 %, so about 11 px at 24 px). A pending member is grey until the owner chooses its history (`conversation-cards.md` §2) |
 | Members menu | A click on any member avatar opens one menu with a row per member: avatar, name, model · effort (11 px, `on-surface-muted`) under the name, and **Remove** at the right of the row. The menu has no "Add bot" item: a bot is added only with the add slot, a drag or **Add here** on the bot card. Remove rules in §2.2 |
