@@ -96,7 +96,8 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    across several screens, the plan has a one-page code design before any code (owner,
    2026-11-04; `principle-design-first`). The design names the state owner, the
    modules, the data flow and the failure paths, and it compares at least two options with their
-   costs. A reviewer who did not write it tries to break it. The owner approves it in every such
+   costs. For a new requirement in an existing design, one option builds as if the requirement
+   always existed. A reviewer who did not write it tries to break it. The owner approves it in every such
    slice, checkpointed or not, from a short form (see "Human review: visual first"). The state
    table below is part of this design. A slice that stays inside one module skips this step.
    **State table for stateful screens.** If a screen saves under a lock, takes live events or
