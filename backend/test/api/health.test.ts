@@ -24,6 +24,17 @@ describe("GET /api/health", () => {
     backend.close();
   });
 
+  // security.md §2.9: a route that takes no query string still refuses one.
+  it("refuses an unknown query key with 422 on that key", async () => {
+    const backend = testBackend();
+    const response = await backend.request("/api/health?verbose=1");
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({
+      error: { code: "validation_error", field: "verbose" },
+    });
+    backend.close();
+  });
+
   it("is 503 when the database does not answer", async () => {
     const backend = testBackend();
     backend.close(); // closes the connections; the app object stays

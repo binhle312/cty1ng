@@ -73,7 +73,7 @@ const routes = {
       query: NoQuery,
       body: {
         required: true,
-        content: { "multipart/form-data": { schema: z.object({ file: ImportFile }) } },
+        content: { "multipart/form-data": { schema: z.object({ file: ImportFile }).strict() } },
       },
     },
     responses: { 200: json(SkillImportPreview, "What Apply would change; nothing is written") },

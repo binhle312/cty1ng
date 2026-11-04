@@ -318,6 +318,25 @@ describe("import and export", () => {
     expect(response.status).toBe(413);
   });
 
+  // security.md §2.9: the multipart body is strict too, as on POST /avatars.
+  it.each([
+    ["a text field", "note", (): string => "hello"],
+    ["a second file part", "other", () => new File(["x"], "b.zip")],
+    ["two files named file", "file", () => new File(["x"], "b.zip")],
+  ])("an upload with %s beside the file gives 422", async (_label, name, part) => {
+    const zip = await zipOf([{ path: "fresh/SKILL.md", data: Buffer.from(skillMdText("fresh")) }]);
+    const form = new FormData();
+    form.append("file", new File([new Uint8Array(zip)], "skills.zip"));
+    form.append(name, part());
+    const response = await backend.request("/api/skills/import/preview", {
+      method: "POST",
+      headers: { origin: ORIGIN },
+      body: form,
+    });
+    expect(response.status).toBe(422);
+    expect((await errorOf(response)).code).toBe("validation_error");
+  });
+
   it("a text part where the file belongs gives 422", async () => {
     const form = new FormData();
     form.set("file", "not a file");
