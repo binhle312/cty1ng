@@ -46,7 +46,7 @@ skill and Trash events); `docs/testing.md` §2 (fake models).
 - Avatar upload pipeline: `sharp`, the file and request limits from `AVATAR_MAX_BYTES`,
   `GET /avatars/limits`, the pixel limit, re-encoding, the crop card, and the cleanup of unused
   files after `AVATAR_ORPHAN_HOURS` (`domain-model.md` §2 Avatar files). Avatar styles **Flat and
-  Upload image only**: Jelly and Pixel wait for a later slice (`bot-avatar.md` §1), and the API
+  Upload image only**: Jelly and Pixel wait for a later slice (Avatars, `../development-plan.md`) (`bot-avatar.md` §1), and the API
   refuses them. The colour row with Custom and Random; the default colour is a random swatch no
   other bot uses (`bot-avatar.md` §5, §6).
 - Pages: bots list, create (with clone mode, `create-bot-page.md` §6), bot page (`bot-page.md`:
