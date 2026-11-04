@@ -24,8 +24,8 @@ The [design index](design/README.md) identifies agreed designs and open design w
 
 ## Next
 
-1. Close M2. The owner fixes or drops each P3 follow-up with target M2 close (`review-guide.md` §6).
-   The builder confirms the PR population and calculates the totals (`delivery-quality.md` §7 step 6).
+1. Close M2. The P3 follow-ups with target M2 close are fixed or dropped in [#PRNUM](https://github.com/binhle312/cty1ng/pull/PRNUM).
+   The PR population is confirmed. Exact totals are not possible: three PRs are unmeasured and 11 of the 16 issue rows are `partial` or `unknown` (`delivery-quality.md` §2).
 2. Prepare the [M3 part briefs and specification work](development-plan.md#specification-work-before-m3a).
    M3 follows M2c and has seven delivery parts. Resolve the open schema, Usage and Guide questions before dependent code.
 3. Complete the owner's whole-UI review after M3. The deferred items remain in the table below.
@@ -54,9 +54,7 @@ it in, and the row goes when its PR merges.
 | Item | Found in | Target |
 | --- | --- | --- |
 | Temporary CLI `skills trash` and `skills restore` (M1 spec gap pass, owner 2026-10-30): remove them when the Trash page exists | [#51](https://github.com/binhle312/cty1ng/pull/51) | M5b |
-| P3 (`review-guide.md` §6), `lib/api/query-reads.ts`: a read that started a load gets the old list when the query's last observer leaves during the load (`versionIdOf`: a toast in place of the upgrade card); a load that paused in a hidden tab ends `refreshQueries`, so a row's lock can end before the newest list; Clone still moves to `/skills/new` after the owner left the skill page (`skill-page.tsx`, older than the helper); only the helper's tests and the assign card and bot page Move hold two cuts, not the other callers. DQ-018 to DQ-021 | [#59](https://github.com/binhle312/cty1ng/pull/59) review of `query-reads.ts` | M2 close |
-| P3 (`review-guide.md` §6): late-answer rules still in refs: `create-bot-page.tsx` (`mounted`, `inFlight`), `crop-card.tsx` (`closed`, `lastFile`), `new-skill-page.tsx` (`closed`). They are not card or dialog rules, so the owner left them out of the 2026-11-04 design; check them against `frontend-conventions.md` §1 | [#59](https://github.com/binhle312/cty1ng/pull/59) review of `ec8faa7` | M2 close |
-| P3: helpers with two parameters of the same type, older than #59 and outside its files: `sameColour` (`bot-colours.ts`), `isUnder` (`user-panel.tsx`), `Pct` (`shared/src/settings.ts`). `frontend-conventions.md` §1 wants one object | [#59](https://github.com/binhle312/cty1ng/pull/59) review of `ec8faa7` | M2 close |
+| P3 (`review-guide.md` §6): late-answer rules still in refs: `create-bot-page.tsx` (`mounted`, `inFlight`), `crop-card.tsx` (`closed`, `lastFile`), `new-skill-page.tsx` (`closed`), and `skill-page.tsx` (`onPage`, added for DQ-020). They are not card or dialog rules, so the owner left them out of the 2026-11-04 design; check them against `frontend-conventions.md` §1 | [#59](https://github.com/binhle312/cty1ng/pull/59) review of `ec8faa7` | When those files next change (owner, 2026-11-04) |
 | The `db_lock_wait_seconds` histogram (`architecture.md` §9, D29 switch trigger 3); there is no metrics output yet | #48 | M3 (the worker brings concurrent writes) |
 | `esbuild` advisory (moderate, dev only, through `drizzle-kit` 0.31.11); no stable fix | #48 | Update `drizzle-kit` when 1.0 is stable (Dependabot) |
 | First-run offer of the Guide bot in the app ("Add Guide" in the empty state, so a new owner needs no `make seed`); needs a design round (owner, 2026-11-01, M2 plan decision 15) | [#57](https://github.com/binhle312/cty1ng/pull/57) | M3 spec gap pass |
@@ -67,8 +65,6 @@ it in, and the row goes when its PR merges.
 | Object arguments in the code from before the `max-params` lint rule (104 places in `eslint-suppressions.json`, 2026-11-04): fix them when their module changes, then prune the list | [#59](https://github.com/binhle312/cty1ng/pull/59) | Each slice, for the modules it touches |
 | `uuid` advisory GHSA-w5hq-g745-h8pq (moderate, through `typeid-js` 1.2.0, which needs `uuid` ^10). **Accepted risk** (owner, 2026-10-30): the flaw is in v3/v5/v6 with a caller buffer; `typeid-js` uses only `stringify` and `v7`, and our code never calls `uuid`. No override | #48 | Update `typeid-js` when a version allows `uuid` ≥ 11.1.1 |
 | The automated security review does not run: the repository has no `ANTHROPIC_API_KEY` secret, so the job skips with a notice and shows as success (checked 2026-11-04). The owner decides whether to add the key. Its paths: [#62](https://github.com/binhle312/cty1ng/pull/62) adds the Markdown renderer; `backend/src/adapters/log/**` (key redaction) and `backend/src/adapters/avatars/**` are not on the list. Security-sensitive, so the owner approves the change | Docs audit 2026-11-04 | M2 close |
-| Security tests that `security.md` §2.8 and §3 ask for are missing: SQL injection strings, XSS with event handlers and SVG, a renamed PNG and a polyglot avatar | Docs audit 2026-11-04 | M2 close |
-| `.strict()` gaps against `security.md` §2.8: the multipart body of `POST /skills/import/preview`, and no query schema on `/health` and `/stream` | Docs audit 2026-11-04 | M2 close |
 | Bar 2 on Home keeps its M0 state: `bar-two.tsx` always says "No bots yet" and shows the first-run button, also with bots (`left-bar.md` §3) | Docs audit 2026-11-04 | M3d |
 | Test names: invariants 4, 6, 7 and 12 have no `invariant NN:` test (`testing.md`), and no schema test checks every primary key column (`domain-model.md` §1) | Docs audit 2026-11-04 | M3 plan |
 | Small built-UI differences: the empty-state slime at 96 px (`bot-avatar.md` sizes), "⚠" on the card health line (`bots-page.md`), header arrows only over the roster (UI-2.9), Create errors on leaving a field, not after Next (`create-bot-page.md` E1, E2) | Docs audit 2026-11-04 | UI review after M3 |
@@ -128,3 +124,4 @@ A slice can also be `blocked` (say on what in Notes).
 | 2026-11-04 | M2c merged (#59); M2 is complete |
 | 2026-11-04 | Every plan now has a file in `docs/plans/` (owner); the plans up to M2 are copied from their PRs |
 | 2026-11-04 | Docs audit ([#61](https://github.com/binhle312/cty1ng/pull/61)): docs matched to the built code and to the current decisions; open questions and code gaps moved to the tables above |
+| 2026-11-04 | M2 close fixes ([#PRNUM](https://github.com/binhle312/cty1ng/pull/PRNUM)): strict `/health`, `/stream` and import upload, the missing security tests, three helpers, DQ-020. The owner dropped DQ-018, DQ-019 and DQ-021's remaining gaps |

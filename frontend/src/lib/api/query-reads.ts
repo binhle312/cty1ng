@@ -16,7 +16,7 @@ import {
 // The answer of the newest load: a cut read reads again, and joins the load on its way. A load
 // that fails still fails. A read cut by a `CancelledError` reads again until the cuts stop. One case
 // has no error, so it gets the old list: this read started the load, and the last observer of the
-// query left while the load was on its way (query.ts, "revert"; docs/status.md, Follow-ups).
+// query left while the load was on its way (query.ts, "revert"; DQ-018 in docs/delivery-quality.md).
 export async function readNewest<T>(read: () => Promise<T>): Promise<T> {
   for (;;) {
     try {
@@ -41,7 +41,7 @@ function loadsEnded(queryClient: QueryClient, filters: InvalidateQueryFilters): 
 
 // Marks the queries stale, and ends when no load of them is on its way. A failed load ends it too:
 // the list stays as it was, and the caller goes on as after any failed refresh. A load that paused
-// counts as ended (docs/status.md, Follow-ups).
+// counts as ended (DQ-019 in docs/delivery-quality.md).
 export async function refreshQueries(
   queryClient: QueryClient,
   filters: InvalidateQueryFilters,
