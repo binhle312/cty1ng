@@ -100,6 +100,7 @@ step 2), and add to it when a build finds a new one.
 | Base UI tooltip | A tooltip has no `tooltip` role. | In tests, find the tooltip by its text, not with `getByRole("tooltip")`. |
 | Base UI Switch | A disabled Switch has `data-disabled`, not a `disabled` attribute, so `hasAttribute("disabled")` is always false. | In tests, check `data-disabled` (lesson `check-every-order-before-the-push.md`). |
 | Base UI menu | A link item stays open after a click. | Give `Menu.LinkItem` `closeOnClick` (see `frontend/src/components/ui/menu.tsx`). |
+| Tests: a key press after a click | `click()` can return before a menu opens, and `keyboard.press` waits for nothing. Under load the key arrives first, then the menu opens and stays open. | Wait for the target before the key press: `await expect(menu).toBeFocused()` (`frontend/test/e2e/csp.spec.ts`). |
 | Tests: `act()` | When the callback returns a value (for example `act(() => fireEvent.click(x))`), `act()` returns a promise, and `no-floating-promises` fails. | Give the callback braces so it returns nothing, and call `act()` as a statement: `act(() => { fireEvent.click(x); });`. Use `await act(() => promise)` only for async work. |
 | Arrow functions | `no-confusing-void-expression` fails when an arrow function returns the value of a call that returns nothing. | Put the body in braces: `() => { doIt(); }`. |
 | TanStack Query | `fetchQuery` is deprecated, and `no-deprecated` fails. | Use `queryClient.query({ … })`. |
