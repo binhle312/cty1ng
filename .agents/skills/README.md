@@ -2,7 +2,8 @@
 
 The `principle-*` skills are project-owned. Their content stays generic for reuse in other projects.
 Each skill has one source here and a relative symlink in `../../.claude/skills/`.
-`ui-ux-pro-max` is vendored; follow its [source rules](ui-ux-pro-max/SOURCE.md).
+`ui-ux-pro-max` and `typescript-best-practices` are vendored; follow their source rules:
+[ui-ux-pro-max](ui-ux-pro-max/SOURCE.md), [typescript-best-practices](typescript-best-practices/SOURCE.md).
 
 ## Maintain principles
 
@@ -40,3 +41,4 @@ Read the matching skill before its phase of work.
 | `principle-encode-repeatable-checks/` | Replace repeated corrections with enforcement, or put judgment rules in one authoritative place. |
 | `principle-use-safe-test-data/` | Create synthetic fixtures when tests or examples need values that resemble credentials or private data. |
 | `ui-ux-pro-max/` | Work on interface design; follow the project design rules. |
+| `typescript-best-practices/` | Write or review TypeScript; `docs/frontend-conventions.md` wins where they differ (see its `SOURCE.md`). |

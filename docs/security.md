@@ -212,7 +212,7 @@ environment, provider-side data handling.
   (owner, 2026-11-04); a push after that needs Draft and Ready again. Without the secret the job
   skips and still shows as success, so a green check alone does not prove a review ran. It assists
   the human review; it does not replace it.
-- **Vendored agent skills** (today `ui-ux-pro-max` in `.agents/skills/`; the `principle-*` skills
+- **Vendored agent skills** (today `ui-ux-pro-max` and `typescript-best-practices` in `.agents/skills/`; the `principle-*` skills
   there are project-owned) are third-party code that agents run with the
   owner's permissions. Each one keeps its licence and a `SOURCE.md` with the upstream commit
   and the review date. Before adding or updating one, review its scripts: no network calls,
