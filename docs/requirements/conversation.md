@@ -26,6 +26,10 @@ Chatting with one or more bots: messages, streaming, mentions, edits and branche
   Acceptance criteria: UI-3.22, UI-3.23.
 - **CV-11.** *(D46.)* As the owner, I want each new conversation to get a short title from my first message, so that I can find it again without the work of a rename.  
   Acceptance criteria: UI-3.24 to UI-3.26.
+- **CV-12.** *(D51.)* As the owner, I want to rate a bot reply as good or bad, with an optional note, so that the bot can improve its skills from my feedback.  
+  Acceptance criteria: UI-3.27, UI-3.28.
+- **CV-13.** *(D57.)* As the owner, I want the plan card to show the progress of the approved run step by step, so that I can see what is done, what runs now and what the app checked.  
+  Acceptance criteria: UI-3.29, UI-3.29b, UI-3.30, UI-3.30b, UI-3.31.
 
 ## Acceptance criteria
 
