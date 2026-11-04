@@ -1,8 +1,16 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fakeApi, heldAnswer } from "../../../test/fake-api.ts";
-import { makeBot, makePin, makeSkill, makeVersions, SKILL_ID } from "../../../test/fixtures.ts";
+import {
+  BOT_SETTINGS,
+  makeBot,
+  makePin,
+  makeSkill,
+  makeVersions,
+  SKILL_ID,
+} from "../../../test/fixtures.ts";
 import { renderApp } from "../../../test/render-app.tsx";
+import { SKILL_OR_BOT_QUERIES } from "../../lib/api/operation-queries.ts";
 
 // A failed request is not a missing skill (requirements/README.md: every view has an error
 // state): the page says the load failed and offers Try again, never Page not found.
@@ -27,6 +35,107 @@ describe("the skill page when the skill list does not load", () => {
     const alert = await screen.findByRole("alert", {}, { timeout: 5000 });
     expect(alert.textContent).toContain("The app could not load the skills.");
     expect(within(alert).getByRole("button", { name: "Try again" })).toBeTruthy();
+    expect(screen.queryByText("Page not found")).toBeNull();
+  });
+});
+
+// A cached list without the skill and a refresh that fails: the load failed, so the page says
+// that, never Page not found (bot-page.md has the same rule for the bot page).
+describe("the skill page when a refresh of the list fails", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  it("shows the error state, not Page not found", async () => {
+    let fail = false;
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () =>
+        fail
+          ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+          : { body: [] },
+      "GET /api/bots": () => ({ body: [] }),
+    });
+    const { router, queryClient } = await renderApp("/skills");
+    await waitFor(() => {
+      expect(api?.sent("GET", "/api/skills").length).toBeGreaterThan(0);
+    });
+    fail = true;
+    act(() => {
+      void queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES });
+      void router.navigate({ to: "/skills/$slug", params: { slug: "write-user-stories" } });
+    });
+    const alert = await screen.findByRole("alert", {}, { timeout: 5000 });
+    expect(alert.textContent).toContain("The app could not load the skills.");
+    expect(screen.queryByText("Page not found")).toBeNull();
+  });
+});
+
+// A Create moves to the new skill when the list refresh ends. A live event in that time cancels
+// the refresh again, and TanStack Query joins only one cancelled refresh, so the wait could end on
+// the old list and show Page not found (found by the M2c e2e run). The page waits for the list.
+describe("the skill page after Create while live events refresh the list", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  it("shows the new skill, not Page not found", async () => {
+    const created = makeSkill({ latest_version: { ...makeSkill().latest_version, version: 1 } });
+    const held: ReturnType<typeof heldAnswer>[] = [];
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      // The first list has no skill; each refresh after Create waits.
+      "GET /api/skills": () => {
+        if (api?.sent("GET", "/api/skills").length === 1) return { body: [] };
+        const answer = heldAnswer();
+        held.push(answer);
+        return answer.promise;
+      },
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: created }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(1) }),
+      "GET /api/bots": () => ({ body: [] }),
+      "POST /api/skills": () => ({ status: 201, body: created }),
+    });
+    const { router, queryClient } = await renderApp("/skills/new");
+    await screen.findByLabelText("Name", { exact: true }, { timeout: 5000 });
+    for (const [label, text] of [
+      ["Name", "Write user stories"],
+      ["Description", "Use it."],
+      ["Body", "## Steps"],
+    ] as const) {
+      act(() => {
+        fireEvent.change(screen.getByLabelText(label, { exact: true }), {
+          target: { value: text },
+        });
+      });
+    }
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "Create" }));
+    });
+    await waitFor(() => {
+      expect(held).toHaveLength(1);
+    });
+    // Two live events while the refresh waits.
+    for (const count of [2, 3]) {
+      act(() => {
+        void queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES });
+      });
+      await waitFor(() => {
+        expect(held).toHaveLength(count);
+      });
+    }
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/skills/write-user-stories");
+    });
+    expect(screen.queryByText("Page not found")).toBeNull();
+    for (const answer of held) await answer.answer({ body: [created] });
+    expect(
+      await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 }),
+    ).toBeTruthy();
     expect(screen.queryByText("Page not found")).toBeNull();
   });
 });
@@ -88,6 +197,170 @@ describe("Remove from bots on a deprecated skill", () => {
     });
   });
 
+  // Review of PR #59: a row whose pin the page just changed turns on only when the list has come.
+  it("keeps the rows of the removed bots off until the refresh after the removal", async () => {
+    const ba = makeBot(1, "BA", [makePin()]);
+    const skill = makeSkill({
+      deprecated: true,
+      deprecated_at: "2026-10-21T10:00:00.000Z",
+      bots_using: 1,
+    });
+    const refreshed = heldAnswer();
+    let holdList = false;
+    const path = `/api/bots/${ba.id}/skills/${SKILL_ID}`;
+    api = fakeApi({
+      "GET /api/skills": () => ({ body: [skill] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: skill }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      "GET /api/bots": async () => (holdList ? refreshed.promise : { body: [ba] }),
+      [`DELETE ${path}`]: () => {
+        holdList = true;
+        return { status: 204 };
+      },
+    });
+    await renderApp("/skills/write-user-stories?tab=bots");
+    const click = (element: HTMLElement) => {
+      act(() => {
+        fireEvent.click(element);
+      });
+    };
+    click(await screen.findByRole("button", { name: "Remove from bots" }, { timeout: 5000 }));
+    const dialog = await screen.findByRole("dialog");
+    click(await within(dialog).findByRole("button", { name: "Remove from 1 bot" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+    const actions = screen.getByRole("button", { name: "Actions for BA" });
+    expect(actions.hasAttribute("data-disabled")).toBe(true);
+    await refreshed.answer({ body: [makeBot(1, "BA", [])] });
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Actions for BA" })).toBeNull();
+    });
+  });
+
+  // A removal that fails changed nothing on the server, so it must not end an older change of the
+  // pin: that change still waits, and the row stays off with the value on its way.
+  it("keeps an older Always load change on its way when the removal of its bot fails", async () => {
+    const ba = makeBot(1, "BA", [makePin({ always_load: false })]);
+    const skill = makeSkill({
+      deprecated: true,
+      deprecated_at: "2026-10-21T10:00:00.000Z",
+      bots_using: 1,
+    });
+    const toggle = heldAnswer();
+    const path = `/api/bots/${ba.id}/skills/${SKILL_ID}`;
+    api = fakeApi({
+      "GET /api/skills": () => ({ body: [skill] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: skill }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      "GET /api/bots": () => ({ body: [ba] }),
+      [`PUT ${path}`]: () => toggle.promise,
+      [`DELETE ${path}`]: () => ({
+        status: 500,
+        body: { error: { code: "internal_error", message: "Something failed." } },
+      }),
+    });
+    await renderApp("/skills/write-user-stories?tab=bots");
+    const click = (element: HTMLElement) => {
+      act(() => {
+        fireEvent.click(element);
+      });
+    };
+    const load = () => screen.getByRole("switch", { name: "Always load for BA" });
+    click(await screen.findByRole("switch", { name: "Always load for BA" }, { timeout: 5000 }));
+    expect(load().getAttribute("aria-checked")).toBe("true");
+    const loads = api.sent("GET", "/api/bots").length;
+    click(screen.getByRole("button", { name: "Remove from bots" }));
+    const dialog = await screen.findByRole("dialog");
+    click(await within(dialog).findByRole("button", { name: "Remove from 1 bot" }));
+    expect(await within(dialog).findByText(/could not remove/)).toBeTruthy();
+    click(within(dialog).getByRole("button", { name: "Skip" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(api?.sent("GET", "/api/bots").length).toBeGreaterThan(loads);
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    // The removal's refresh ended; the older change still waits.
+    expect(load().getAttribute("aria-checked")).toBe("true");
+    expect(load().hasAttribute("disabled") || load().hasAttribute("data-disabled")).toBe(true);
+    await toggle.answer({ body: makeBot(1, "BA", [makePin({ always_load: true })]) });
+    await waitFor(() => {
+      expect(load().hasAttribute("disabled") || load().hasAttribute("data-disabled")).toBe(false);
+    });
+  });
+
+  it("keeps the rows of the bots a Deprecate removes off until the refresh after it", async () => {
+    const ba = makeBot(1, "BA", [makePin()]);
+    const skill = makeSkill({ bots_using: 1 });
+    const refreshed = heldAnswer();
+    let holdList = false;
+    api = fakeApi({
+      "GET /api/skills": () => ({ body: [skill] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: skill }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      "GET /api/bots": async () => (holdList ? refreshed.promise : { body: [ba] }),
+      [`POST /api/skills/${SKILL_ID}/deprecate`]: () => {
+        holdList = true;
+        return { body: skill };
+      },
+    });
+    await renderApp("/skills/write-user-stories?tab=bots");
+    const click = (element: HTMLElement) => {
+      act(() => {
+        fireEvent.click(element);
+      });
+    };
+    click(await screen.findByRole("button", { name: "Skill actions" }, { timeout: 5000 }));
+    click(await screen.findByRole("menuitem", { name: "Deprecate" }));
+    const dialog = await screen.findByRole("alertdialog");
+    await within(dialog).findByRole("checkbox", { name: /BA/ });
+    click(within(dialog).getByRole("button", { name: "Deprecate and remove from 1 bot" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+    });
+    const actions = screen.getByRole("button", { name: "Actions for BA" });
+    expect(actions.hasAttribute("data-disabled")).toBe(true);
+    await refreshed.answer({ body: [makeBot(1, "BA", [])] });
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Actions for BA" })).toBeNull();
+    });
+  });
+
+  // A dialog request's failure had no place to show once the owner left the skill's page.
+  it("shows a Deprecate that fails after the owner left the skill as a toast", async () => {
+    const skill = makeSkill();
+    const deprecation = heldAnswer();
+    api = fakeApi({
+      "GET /api/skills": () => ({ body: [skill] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: skill }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      "GET /api/bots": () => ({ body: [] }),
+      [`POST /api/skills/${SKILL_ID}/deprecate`]: () => deprecation.promise,
+    });
+    const { router } = await renderApp("/skills/write-user-stories");
+    const click = (element: HTMLElement) => {
+      act(() => {
+        fireEvent.click(element);
+      });
+    };
+    click(await screen.findByRole("button", { name: "Skill actions" }, { timeout: 5000 }));
+    click(await screen.findByRole("menuitem", { name: "Deprecate" }));
+    const dialog = await screen.findByRole("alertdialog");
+    click(await within(dialog).findByRole("button", { name: "Deprecate" }));
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/deprecate`)).toHaveLength(1);
+    });
+    // The dialog is still open when the page goes (the browser's Back, say).
+    await act(() => router.navigate({ to: "/bots" }));
+    await deprecation.answer({
+      status: 500,
+      body: { error: { code: "internal_error", message: "Something failed." } },
+    });
+    expect(await screen.findByText("Something failed.")).toBeTruthy();
+  });
+
   // Review of PR #57: a request that ended after its dialog closed wrote into the next dialog.
   it("shows a Deprecate that fails after its dialog closed as a toast, not in the next dialog", async () => {
     const skill = makeSkill();
@@ -124,5 +397,60 @@ describe("Remove from bots on a deprecated skill", () => {
     expect(await screen.findByText("Something failed.")).toBeTruthy();
     expect(within(second).queryByText("Something failed.")).toBeNull();
     expect(screen.getByRole("alertdialog")).toBe(second);
+  });
+});
+
+// State table audit (D3): the leave question stayed open, and named no change, after the Save
+// it waited for answered.
+describe("leaving the skill editor while its Save is on its way", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  it("leaves at once when the Save answers while the leave question is open", async () => {
+    const held = heldAnswer();
+    const v4 = makeSkill({
+      latest_version: { ...makeSkill().latest_version, version: 4 },
+      row_version: 2,
+      body_md: "## Steps\n1. Read the brief.\n2. Ask.",
+    });
+    let latest = makeSkill();
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: [latest] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: latest }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      [`GET /api/skills/${SKILL_ID}/upgrade-candidates`]: () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [] }),
+      [`POST /api/skills/${SKILL_ID}/versions`]: async () => {
+        const answer = await held.promise;
+        latest = v4;
+        return answer;
+      },
+    });
+    const { router } = await renderApp("/skills/write-user-stories");
+    await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 });
+    act(() => {
+      fireEvent.click(screen.getByRole("tab", { name: "Write" }));
+    });
+    act(() => {
+      fireEvent.change(screen.getByLabelText("Body", { exact: true }), {
+        target: { value: "## Steps\n1. Read the brief.\n2. Ask." },
+      });
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "Save as v4" }));
+    });
+    act(() => {
+      void router.navigate({ to: "/bots" });
+    });
+    await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" });
+    await held.answer({ status: 201, body: v4 });
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/bots");
+    });
+    expect(screen.queryByRole("alertdialog")).toBeNull();
   });
 });

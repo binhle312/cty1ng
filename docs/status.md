@@ -1,87 +1,43 @@
 # Status
 
-Where the project is right now. This is the only file that tracks progress; the plan
-([development-plan.md](development-plan.md)) says what and in which order, and never carries
-status.
+Where the project is right now. This file owns delivery state, next work, and owner decisions.
+[delivery-quality.md](delivery-quality.md) tracks issue counts, review rounds, and prevention evidence.
+The plan ([development-plan.md](development-plan.md)) says what and in which order, and never carries status.
 
 **Who updates it:** the builder agent, in the same PR that finishes a step (part of the
 definition of done in `AGENTS.md` §9). The owner updates it for owner-only steps (reviews,
 approvals). Keep it short: link to PRs and briefs instead of describing work.
 
-Last updated: 2026-11-01
+Last updated: 2026-11-04
 
 ## Now
 
-Specification in the repository, now for a TypeScript stack: Hono, Drizzle, Vercel AI SDK,
-React + Vite (D34, replaces D10), with libraries behind ports (D35) and a `README.md` index per
-code folder for agents (`architecture.md` §4.2). Ids are UUIDv7 stored, TypeIDs outside the
-database (D22, D36). Themes accepted (D30): Command ships in M0, Material later (T2), and the
-Board is the Flow pane's next map (M8b). Loading rules, first open and reopening specified (app-shell.md SH-4, SH-5). Product brief
-expanded after the owner's interview (use cases, phases, non-goals, trust
-failures); D37–D40 accepted (projects, memory, sensitive-data guard, cost alerts); D42 adds optional per-provider caps under the total cap. D41
-accepted: bots draft skills when asked, the owner approves and is the author (slice M5c).
-UI design review in progress: header bot order (Recent activity / Custom, deferred
-reordering) specified for M2. Agreed so far and saved in `design/components/` with previews: bot
-avatar (Flat, Jelly, Pixel; Flat only until the final product), top header, bot card, user
-panel, left bar (rail and bar 2), Memory pane, New project page (layout A), Project settings page
-with the memory check card and Delete project, plan card, Skills page (round 8) and the button
-and check box standard (`buttons.md`). D43–D45 accepted
-(memory precedence, right pane holds Flow or Memory, project goal and instructions). D47 (delete
-sends the whole project to Trash; memory check choices) and D48 (bots plan first) accepted. Still
-in review: Trash page (with the Remember button and the "changed in another tab" cards). Flow pane: M8 ships only the Timeline (D26 amendment 2026-10-25, Timeline in
-`design/components/flow-timeline.md`); the Team map is parked until bots work together without
-the owner. D46 accepted: a one-time auto title from the first message (M3).
-The M3 schema design (D46) waits for the owner's approval. Project Board is a later slice (M8c).
-D49 accepted: deleted skills go to Trash, a `trash_days` setting (default 30), Undo only for a
-permanent delete. D51 accepted: bots improve their skills from the owner's feedback (slice
-M5d, after M5c); M3 starts to store reply ratings. M2 Bots design round 9: the Bots page grid,
-the Create bot page and the standards for pin, bot status, dashed slot, time format and sort are
-agreed and saved in `design/components/`. The bot page (`bot-page.md`: edit layout, Profile,
-Skills and Activity tabs, colour band), Clone and the avatar colour rules (any colour, Custom,
-Random, upload with crop) are agreed too. The Usage tab design is agreed; its data (task verdict, setup change
-record, targets) is not specified yet. The Memory tab comes with M5b. D50 (bots to Trash) and D55 (provider tools first, tool switches; code execution only for small
-analysis scripts in the provider's sandbox; MCP locked) are accepted, and the owner approved the M2
-migration and API changes in PR #20 (2026-10-24). M3 conversation design round 10 is agreed and
-saved in `design/components/` (`conversation-page.md`, `composer.md`, `conversation-cards.md`):
-the add slot (+) first in the header, Stop in the composer, reactions only while a run is queued,
-cards inside the reply that fold after a decision, and the requirement edits that follow. M5 global settings design round 14 is agreed and saved in
-`design/components/settings-page.md` and `conversation-page.md` §2.4: one short page per Settings
-item, one setting row that says what the owner notices, the discussion popover, and the ranges of
-every setting in `domain-model.md` §10. M5b design round 15 is agreed and saved in
-`design/components/memory-page.md`, `trash-page.md` and `conversation-page.md` §2.1a: the Memory
-page with Tidy, one Trash page for every deleted item with multi-select, and the Move to project
-dialog. D62 (one Trash page, memory items included) and D63 (Tidy and the memory check are model
-requests) are accepted, and the memory limits are settings (D38 amendment). D58 moves to the
-next slice after M5b. The M5b brief is written. M5c design round 16 (skill draft card) is
-agreed: `design/components/skill-draft-card.md` and the Skills page in the bot page layout
-(`skills-page.md`, Skill, Bots and History tabs). D64 and D65 are accepted (bots draft skills
-only when the owner asks; only the owner assigns them), and the owner approved the API changes and
-the Skills page layout change in PR #38 (2026-10-27). M5c now depends on M3, not M4. M6 design round 17 (Library) is agreed:
-`design/components/library-page.md` (Files, History and Unsaved changes tabs, Copy to, Add from
-Home Library) and `library-cards.md` (overlap notice, unsaved changes card, save card, plan card
-mark, copy card), with the owner's review in PR #41 (2026-10-28). Pre-coding diagram gate,
-step 1 (system context, the process, component map, VPS topology) is agreed: `architecture.md`
-§1, §4.1, §6.1, §10 and the index `diagrams.md`. No new ports (owner, 2026-10-28). Step 2
-(ERDs by domain, `domain-model.md` §1a) is in review, with its schema fixes: no latest-version
-pointer, composite keys inside a conversation, `run_attempts`, memory foreign keys, the project
-purge. Shell review (2026-10-30, design critique of the agreed shell): the rail gets a required
-keyboard reorder and a tile menu (`left-bar.md` §1.2), the header shows the name tooltip and ‹ ›
-on keyboard focus (`top-header.md`), the collapsed user panel gets a "Sir · Menu" tooltip and the
-budget in its menu header, the battery takes keyboard focus (`user-panel.md`), and the text size
-rules L1–L3 are in `design/ui-rules.md`. Next: the state and sequence diagrams before the slices
-that use them, then M0.
+M0 and M1 are merged. M2a and M2b are merged; M2c is in review on
+[#59](https://github.com/binhle312/cty1ng/pull/59).
+M2c adds the bot page and the Skills page's upgrade and assign cards.
+The fixes after the review of `ec8faa7` are on the branch.
+Their evidence and remaining limits are in [delivery-quality.md](delivery-quality.md), DQ-011–DQ-021.
+
+The [Slices table](#slices) records delivery state and PRs.
+The [design index](design/README.md) identifies agreed designs and open design work.
 
 ## Next
 
-1. M2b in review on [#58](https://github.com/binhle312/cty1ng/pull/58): the Bots page, the header roster (pins, drag, deferred order, scroll, bot card) and the Create page with Clone, with the avatar parts (colour row, Custom card, crop card). Review items answered (owner, 2026-11-02): accepted, with the Create tooltip after an unknown outcome now "Could not confirm whether the bot was created. Try again." and "Version number unavailable" in place of a hidden number. The avatar approval waited for the missing-limits fix (done: a file waits for `GET /avatars/limits`). The E5 banner says the same: "Could not confirm whether the bot was created. Your input is kept." The ten palette colours stay as they are: colour 10 `#8F9BFF` is the nearest to colour 1 `#6FA8FF` (ΔE 9.1), and no other colour was clearly better. The clone template gains `copied_pins` (accepted, owner 2026-11-02): `api.md` describes it as form defaults plus display data, with the compatibility cost (a script that posts the template with only a colour added now gets 422). **Waiting on the owner:** merge. Then M2c (the bot page).
+1. Complete the review of #59, including its `Needs human review` items.
+   The owner merges when satisfied. That completes M2.
+2. Prepare the [M3 part briefs and specification work](development-plan.md#specification-work-before-m3a).
+   M3 follows M2c and has seven delivery parts. Resolve the open schema, Usage and Guide questions before dependent code.
+3. Complete the owner's whole-UI review after M3. The deferred items remain in the table below.
 
 ## Waiting on the owner
 
 | Item | Needed by |
 | --- | --- |
+| **UI review after M3** (owner, 2026-11-02): the owner reviews the whole UI once M3 is done; UI texts and UI standardisation wait until then. Open so far: the M2c texts (`design/components/bot-page.md` §10); "Required" (bot page) or "Type a name." (Create page) for an empty name; the disabled Discard of the bot save bar has no tooltip (ui-rules B5, found in the #59 review); the Always load switch of the bot's Skills tab is plainly disabled, with no tooltip and no focus, while its change is on its way (ui-rules B5, #59 review, 2026-11-03) | End of M3 |
+| Suggestions from the 2026-11-03 UI review, not approved rules: prefer "Type a name."; consider Up/Down instead of Alt+←/→ in vertical lists; use discard-specific dialog text when the owner stays on the page | UI review after M3 |
 | D52 accepted (each run writes on its own branch and saves to the Library): update the M6 brief and the documents D52 lists; approve the `run_branches` schema design (initial schema for M6). The generated SQL is approved in the slice PR | M6 plan |
 | D54 accepted (the approved plan covers deletes and moves; run-end plan check): add the plan lists and `runs.plan_check` to `domain-model.md`, the `check_done` tool, and approve the schema design (initial schema for M6). The generated SQL is approved in the slice PR | M6 plan |
-| D57 accepted (the plan card shows the run's progress; `mark_step`, one reminder, mark sources, `check_done` evidence): build it with the plan card | Plan card slice (M5b, M5c or M6) |
+| D57 accepted (the plan card shows the run's progress; `mark_step`, configurable reminders, mark sources, `check_done` evidence): build it with the plan card | Plan card slice (M5b, M5c or M6) |
 | D58 and D59 accepted (cross-conversation reading on request, Send to conversation, save notice when project memory changed): approve the FTS5 schema design (initial schema for the slice after M5b, owner 2026-10-26), and the instructions/goal change time and D59 snapshot schema design (initial schema for M6). The generated SQL is approved in each slice PR; UI design of the inbox, information card and memory notice in the slice plans | Next slice plan, M6 plan, Inbox plan |
 | D53 accepted (web through provider web tools): check the default limits and approve the schema design for the bot setting and the run flag (initial schema for that milestone). The generated SQL is approved in the slice PR | Web access milestone plan |
 | Approve the M3 schema design for D46 (auto title) before it is written. The generated SQL is approved in the slice PR | M3 plan |
@@ -97,6 +53,9 @@ it in, and the row goes when its PR merges.
 | --- | --- | --- |
 | The fresh data folder of each `pnpm e2e` run stays in the system temp folder (`cty1ng-e2e-*`, about 1 MB each): nothing removes it. Remove it when the run ends | The `pnpm e2e` server guard | M2 close |
 | Temporary CLI `skills trash` and `skills restore` (M1 spec gap pass, owner 2026-10-30): remove them when the Trash page exists | [#51](https://github.com/binhle312/cty1ng/pull/51) | M5b |
+| P3 (`review-guide.md` §6), `lib/api/query-reads.ts`: a read that started a load gets the old list when the query's last observer leaves during the load (`versionIdOf`: a toast in place of the upgrade card); a load that paused in a hidden tab ends `refreshQueries`, so a row's lock can end before the newest list; Clone still moves to `/skills/new` after the owner left the skill page (`skill-page.tsx`, older than the helper); only the helper's tests and the assign card and bot page Move hold two cuts, not the other callers. DQ-018 to DQ-021 | [#59](https://github.com/binhle312/cty1ng/pull/59) review of `query-reads.ts` | M2 close |
+| P3 (`review-guide.md` §6): late-answer rules still in refs: `create-bot-page.tsx` (`mounted`, `inFlight`), `crop-card.tsx` (`closed`, `lastFile`), `new-skill-page.tsx` (`closed`). They are not card or dialog rules, so the owner left them out of the 2026-11-04 design; check them against `frontend-conventions.md` §1 | [#59](https://github.com/binhle312/cty1ng/pull/59) review of `ec8faa7` | M2 close |
+| P3: helpers with two parameters of the same type, older than #59 and outside its files: `sameColour` (`bot-colours.ts`), `isUnder` (`user-panel.tsx`), `Pct` (`shared/src/settings.ts`). `frontend-conventions.md` §1 wants one object | [#59](https://github.com/binhle312/cty1ng/pull/59) review of `ec8faa7` | M2 close |
 | The `db_lock_wait_seconds` histogram (`architecture.md` §9, D29 switch trigger 3); there is no metrics output yet | #48 | M3 (the worker brings concurrent writes) |
 | `esbuild` advisory (moderate, dev only, through `drizzle-kit` 0.31.11); no stable fix | #48 | Update `drizzle-kit` when 1.0 is stable (Dependabot) |
 | First-run offer of the Guide bot in the app ("Add Guide" in the empty state, so a new owner needs no `make seed`); needs a design round (owner, 2026-11-01, M2 plan decision 15) | [#57](https://github.com/binhle312/cty1ng/pull/57) | M3 spec gap pass |
@@ -104,6 +63,7 @@ it in, and the row goes when its PR merges.
 | Rail and bar 2 list scrolling (fade, ˄/˅ buttons, the list ends 24 px above the user panel, `left-bar.md` §1.3, §2): M0 has no lists yet | [#49](https://github.com/binhle312/cty1ng/pull/49) | M5b (projects) and M3 (conversations) |
 | More visual snapshots: `themes.md` §5 asks for 8 key screens × 2 themes × 2 modes; M0 has one screen in Command dark | [#49](https://github.com/binhle312/cty1ng/pull/49) | Each slice adds its screens; light and Material with their values |
 | Copy slug on the server: today the Clone page tries `-copy-2`, `-copy-3` … after a confirmed `slug_taken` (a skill in Trash keeps its slug). If many collisions make it slow, the server picks the suffix, for example an `auto_suffix` flag on `POST /skills` as `/skill-drafts/{id}/decision` does (an API change; owner, 2026-10-31; `design/components/skills-page.md`, "Texts added in the M1b build") | [#54](https://github.com/binhle312/cty1ng/pull/54) | When collisions get slow; not planned before M5b |
+| Object arguments in the code from before the `max-params` lint rule (104 places in `eslint-suppressions.json`, 2026-11-04): fix them when their module changes, then prune the list | [#59](https://github.com/binhle312/cty1ng/pull/59) | Each slice, for the modules it touches |
 | `uuid` advisory GHSA-w5hq-g745-h8pq (moderate, through `typeid-js` 1.2.0, which needs `uuid` ^10). **Accepted risk** (owner, 2026-10-30): the flaw is in v3/v5/v6 with a caller buffer; `typeid-js` uses only `stringify` and `v7`, and our code never calls `uuid`. No override | #48 | Update `typeid-js` when a version allows `uuid` ≥ 11.1.1 |
 
 ## Slices
@@ -112,7 +72,7 @@ it in, and the row goes when its PR merges.
 | --- | --- | --- | --- |
 | M0 | merged | [#46](https://github.com/binhle312/cty1ng/pull/46) (M0a), [#48](https://github.com/binhle312/cty1ng/pull/48) (M0b), [#49](https://github.com/binhle312/cty1ng/pull/49) (M0c), [#50](https://github.com/binhle312/cty1ng/pull/50) (Impeccable snapshot) | Three parts (M0a tooling, M0b backend, M0c frontend), all merged 2026-10-30 |
 | M1 | merged | [#51](https://github.com/binhle312/cty1ng/pull/51) (spec gap pass), [#52](https://github.com/binhle312/cty1ng/pull/52) (plan and M1a backend), [#54](https://github.com/binhle312/cty1ng/pull/54) (M1b Skills page), [#55](https://github.com/binhle312/cty1ng/pull/55) (M1c backend maintenance) | Plan approved 2026-10-31, split into M1a (backend), M1b (Skills page) and M1c (event pruning, SQLite writer guard), all merged. Design approved: `design/components/skills-page.md` (round 8); D49 accepted. Round 16 moves the page to the bot page layout (agreed, #38) |
-| M2 | building | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec), [#56](https://github.com/binhle312/cty1ng/pull/56) (spec gap pass), [#57](https://github.com/binhle312/cty1ng/pull/57) (plan, M2a), [#58](https://github.com/binhle312/cty1ng/pull/58) (M2b) | Plan approved 2026-11-01 (#57 first comment); M2a merged 2026-11-01. M2b (Bots page, header, Create with Clone) in review; M2c (bot page) next. Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open (M2 shows its empty state). Spec gap pass answered 2026-11-01 |
+| M2 | building | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec), [#56](https://github.com/binhle312/cty1ng/pull/56) (spec gap pass), [#57](https://github.com/binhle312/cty1ng/pull/57) (plan, M2a), [#58](https://github.com/binhle312/cty1ng/pull/58) (M2b), [#59](https://github.com/binhle312/cty1ng/pull/59) (M2c) | Plan approved 2026-11-01 (#57 first comment); M2a merged 2026-11-01; M2b merged 2026-11-02. M2c (bot page, upgrade and assign cards) in review. Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open (M2 shows its empty state). Spec gap pass answered 2026-11-01 |
 | M3 | UI design agreed | [#26](https://github.com/binhle312/cty1ng/pull/26) (spec) | Round 10: `design/components/conversation-page.md`, `composer.md`, `conversation-cards.md` |
 | M4 | not started | | |
 | M5 | UI design agreed | [#35](https://github.com/binhle312/cty1ng/pull/35) (spec) | Round 14: `design/components/settings-page.md`, `conversation-page.md` §2.4; key `bot_discussion_enabled` |

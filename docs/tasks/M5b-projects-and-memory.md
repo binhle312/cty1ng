@@ -1,8 +1,11 @@
 # M5b: Projects, memory and Trash
 
-Checkpoint: **plan** (schema, UI design). The UI design is agreed (round 12 for the
+Checkpoint: **plan per part** (schema, memory isolation, UI). The UI design is agreed (round 12 for the
 conversation menu and the project pages, round 15 for the Memory page, Trash page, Move dialog
 and Tidy). The schema design and the generated SQL need the owner's approval (`AGENTS.md` §7).
+
+This milestone brief follows the [M5b delivery breakdown](../development-plan.md#m5b-projects-memory-and-trash).
+Write each part's brief before implementation.
 
 ## Goal
 

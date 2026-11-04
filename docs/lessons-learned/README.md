@@ -1,30 +1,38 @@
-# Lessons learned
+# Project incidents and lessons
 
-One file per lesson: what the owner saw go wrong in how the project is built, why it happened,
-and what changed because of it. Newest first.
+This folder keeps project-specific evidence: what happened, the cause, the response,
+and any remaining constraint. Reusable instructions live in the [principle skills](../../.agents/skills/README.md).
+The existing file paths stay stable so earlier review records still resolve.
 
-**Rules**
+## Maintenance
 
-- A lesson keeps the story. The rule itself lives in its owning document, and the lesson links
-  to it ("One fact, one place", `../README.md`). When a lesson changes a rule, the same PR
-  changes the owning document.
-- Who writes it: the agent that the owner asks to fix the process, in the same PR as the fix
-  (`../workflow.md` §8).
-- Each file has a metadata line: `Date`, `Source` (the slice or PR where it was seen) and
-  `Status`: `applied`, or `open` while part of the fix still waits.
-- File names are kebab-case and say the lesson, not the date.
+- Keep incident dates, source PRs, concrete symptoms, and verification limits.
+- Link the applicable principle and the project document or check that applies it.
+- Record new general guidance in its principle; record local commands and exceptions in the owning project document.
+- Use `applied` for the recorded process response, or `open` when part still waits.
+- `applied` does not establish that every defect is closed or that a PR merged.
+- Update [delivery quality](../delivery-quality.md) when a review adds or resolves an issue.
 
-| File | Lesson | Source | Status |
-| --- | --- | --- | --- |
-| `review-contract-boundaries.md` | Map each review requirement to its implementation boundary and evidence; judge safety and compliance separately | M2a, PR #57 | applied |
-| `self-review-against-the-spec.md` | Before the PR, check the code against each spec section and test the edge cases | M1b, PR #54 | applied |
-| `prove-the-test-fails-first.md` | See a fix's test fail on the old code | M1b, PR #54 | applied |
-| `full-gate-before-the-report.md` | Run every §4 check before the report, and report only what ran | M1b, PR #54 | applied |
-| `no-real-looking-secrets-in-tests.md` | No real-looking secrets in test code | M1b, PR #54 | applied |
-| `flag-ui-choices-in-review-fixes.md` | List the UI choices made in review fixes for the owner | M1b, PR #54 | applied |
-| `e2e-server-reuse.md` | Keep the end-to-end servers running between local runs; run only the affected tests while fixing | M0c, PR #49 | open (sandbox hang) |
-| `risk-probes-before-plan.md` | Try new libraries and parts in short probes before writing the plan | M0c, PR #49 | applied |
-| `one-round-of-questions.md` | Put every open question in the plan, so the owner answers once | M0c, PR #49 | applied |
-| `spec-gap-pass.md` | Before a slice starts, find what it needs that the specs do not say | M0c, PR #49 | applied |
-| `split-ui-and-infrastructure.md` | Keep UI work and infrastructure in separate slices or PRs | M0c, PR #49 | applied |
-| `write-down-pitfalls.md` | Write down library and lint pitfalls and test helpers, so they are not learned twice | M0c, PR #49 | applied |
+All 17 source lessons remain because each contains project evidence.
+Their repeated general instructions now point to principles. The table maps every source lesson.
+Historical observations keep their original text; later entries can supersede an earlier project state.
+
+| File | Project evidence | Reusable principles | Source | Response status |
+| --- | --- | --- | --- | --- |
+| `two-of-my-requests-at-once.md` | M2c overlapping local requests and missing list states | [Model state and event order before implementation](../../.agents/skills/principle-model-state-and-order/SKILL.md), [Fix the broken invariant at its owner](../../.agents/skills/principle-fix-invariants-at-the-owner/SKILL.md) | M2c, PR #59 | applied |
+| `fake-answers-match-the-api.md` | M2c fake pin responses bypassed the success path | [Prove that tests detect the intended behaviour](../../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md), [Encode repeatable checks and keep one source of guidance](../../.agents/skills/principle-encode-repeatable-checks/SKILL.md) | M2c, PR #59 | applied |
+| `check-every-order-before-the-push.md` | M2c repeated request-order defects | [Model state and event order before implementation](../../.agents/skills/principle-model-state-and-order/SKILL.md), [Fix the broken invariant at its owner](../../.agents/skills/principle-fix-invariants-at-the-owner/SKILL.md), [Prove that tests detect the intended behaviour](../../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md) | M2c, PR #59 | applied |
+| `state-table-before-stateful-code.md` | M2c state complexity caused repeated review findings | [Model state and event order before implementation](../../.agents/skills/principle-model-state-and-order/SKILL.md), [Keep each change independently reviewable](../../.agents/skills/principle-bound-change-scope/SKILL.md), [Encode repeatable checks and keep one source of guidance](../../.agents/skills/principle-encode-repeatable-checks/SKILL.md) | M2c, PR #59 | applied (2026-11-04) |
+| `fix-the-cause-not-the-finding.md` | M2c repeated fixes for fields in late responses | [Fix the broken invariant at its owner](../../.agents/skills/principle-fix-invariants-at-the-owner/SKILL.md) | M2c review fixes, PR #59 | applied |
+| `review-contract-boundaries.md` | M2a review missed a cleanup contract difference | [Review each contract with explicit evidence](../../.agents/skills/principle-review-contracts-with-evidence/SKILL.md) | M2a review, PR #57 | applied |
+| `self-review-against-the-spec.md` | M1b green tests missed five specified behaviours | [Review each contract with explicit evidence](../../.agents/skills/principle-review-contracts-with-evidence/SKILL.md), [Prove that tests detect the intended behaviour](../../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md) | M1b build, PR #54 | applied |
+| `prove-the-test-fails-first.md` | M1b regression test exercised the wrong state and server | [Prove that tests detect the intended behaviour](../../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md), [Verify the delivered revision and report evidence](../../.agents/skills/principle-verify-delivery-and-report-evidence/SKILL.md) | M1b review fixes, PR #54 | applied |
+| `full-gate-before-the-report.md` | M1b incomplete checks missed a Compare regression | [Verify the delivered revision and report evidence](../../.agents/skills/principle-verify-delivery-and-report-evidence/SKILL.md) | M1b review fixes, PR #54 | applied |
+| `no-real-looking-secrets-in-tests.md` | M1b synthetic key triggered a secret alert | [Use safe, purpose-built test data](../../.agents/skills/principle-use-safe-test-data/SKILL.md) | M1b build, PR #54 | applied |
+| `flag-ui-choices-in-review-fixes.md` | M1b review fixes introduced unlisted UI choices | [Preserve approval boundaries during fixes](../../.agents/skills/principle-preserve-approval-boundaries/SKILL.md) | M1b review fixes, PR #54 | applied |
+| `e2e-server-reuse.md` | M0c end-to-end startup delays | [Verify the delivered revision and report evidence](../../.agents/skills/principle-verify-delivery-and-report-evidence/SKILL.md) | M0c build, PR #49 | open (the sandbox hang) |
+| `risk-probes-before-plan.md` | M0c libraries failed under project constraints | [Resolve uncertainty before the build](../../.agents/skills/principle-resolve-uncertainty-before-build/SKILL.md) | M0c build, PR #49 | applied |
+| `one-round-of-questions.md` | M0c planning questions arrived in separate rounds | [Resolve uncertainty before the build](../../.agents/skills/principle-resolve-uncertainty-before-build/SKILL.md) | M0c build, PR #49 | applied |
+| `spec-gap-pass.md` | M0c unresolved shell rules reached the build | [Resolve uncertainty before the build](../../.agents/skills/principle-resolve-uncertainty-before-build/SKILL.md) | M0c build, PR #49 | applied |
+| `split-ui-and-infrastructure.md` | M0c combined shell and infrastructure work | [Keep each change independently reviewable](../../.agents/skills/principle-bound-change-scope/SKILL.md) | M0c build, PR #49 | applied |
+| `write-down-pitfalls.md` | M0c build knowledge remained in PR conversation | [Encode repeatable checks and keep one source of guidance](../../.agents/skills/principle-encode-repeatable-checks/SKILL.md) | M0c build, PR #49 | applied |

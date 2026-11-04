@@ -1,4 +1,4 @@
-# Try new parts in short probes before writing the plan
+# M0c libraries failed under project constraints
 
 Date: 2026-10-30 · Source: M0c build, PR #49 · Status: applied
 
@@ -10,8 +10,8 @@ link items that stay open).
 **Cause.** The plan was written from the docs only. Libraries new to the repository were first
 tried during the build, so each surprise stopped the build.
 
-**Change.** Before writing the plan, the builder runs short probes on every part not used in
-the repository yet, and puts the results in the plan as evidence. It checks the known
-pitfalls first.
+**Project response.** The workflow added pre-plan probes. The conventions document keeps the CSP, generated-client, and Base UI pitfalls.
 
-**Rule now in.** `../workflow.md` §2 step 2 "Risk probes first"; `../frontend-conventions.md` §5.
+**Reusable principles.** [Resolve uncertainty before the build](../../.agents/skills/principle-resolve-uncertainty-before-build/SKILL.md).
+
+**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [frontend conventions §5](../frontend-conventions.md#5-known-pitfalls).

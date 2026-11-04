@@ -1,4 +1,4 @@
-# Find the spec gaps before the slice starts
+# M0c unresolved shell rules reached the build
 
 Date: 2026-10-30 · Source: M0c build, PR #49 · Status: applied
 
@@ -9,7 +9,8 @@ controls.
 **Cause.** Nobody asked what the slice needed that the specs did not say until the code needed
 it.
 
-**Change.** Before each slice, an agent does a short spec gap pass. The owner answers in one
-round, and the answers go into the owning documents in a docs-only PR.
+**Project response.** The workflow added a spec gap pass before each slice, with owner answers in the owning documents.
 
-**Rule now in.** `../workflow.md` §2 step 1 "Spec gap pass".
+**Reusable principles.** [Resolve uncertainty before the build](../../.agents/skills/principle-resolve-uncertainty-before-build/SKILL.md).
+
+**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice).

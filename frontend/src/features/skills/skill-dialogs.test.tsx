@@ -92,6 +92,10 @@ describe("the Deprecate dialog", () => {
       />,
     );
     expect(screen.queryByText("No bot uses it.")).toBeNull();
+    // The list states use shapes marked aria-busy, not a loading line.
+    expect(screen.getByRole("status", { name: "Loading the bots" }).getAttribute("aria-busy")).toBe(
+      "true",
+    );
     const button = screen.getByRole("button", { name: "Deprecate" });
     click(button);
     expect(onConfirm).not.toHaveBeenCalled();

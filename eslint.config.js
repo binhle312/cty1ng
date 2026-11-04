@@ -43,6 +43,17 @@ const RAW_COLOUR_RULES = [
   },
 ];
 
+// The bot list and the settings: only the bot list store writes them (frontend-conventions.md
+// §1); a write from elsewhere is dropped by the next load or answer.
+const BOT_LIST_WRITE_RULES = [
+  {
+    selector:
+      "CallExpression[callee.property.name=/^(setQueryData|setQueriesData)$/] > CallExpression.arguments[callee.name=/^(listBotsQueryKey|getSettingsQueryKey)$/]",
+    message:
+      "Write the bot list and the settings only through features/bots/bot-list-store.ts (frontend-conventions.md §1).",
+  },
+];
+
 export default tseslint.config(
   {
     ignores: [
@@ -90,6 +101,10 @@ export default tseslint.config(
       "@typescript-eslint/no-unsafe-argument": "error",
       "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
       "no-console": "error",
+      // frontend-conventions.md §1, "Object arguments". The calls that broke it before this rule
+      // are listed in eslint-suppressions.json; fixing one and running
+      // `eslint . --prune-suppressions` takes it off the list.
+      "@typescript-eslint/max-params": ["error", { max: 2 }],
       "no-restricted-syntax": ["error", ...SQL_RULES],
       "drizzle/enforce-delete-with-where": ["error", { drizzleObjectName: ["db", "tx"] }],
       "drizzle/enforce-update-with-where": ["error", { drizzleObjectName: ["db", "tx"] }],
@@ -103,6 +118,14 @@ export default tseslint.config(
     files: ["frontend/src/components/**/*.{ts,tsx}", "frontend/src/features/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-syntax": ["error", ...SQL_RULES, ...RAW_COLOUR_RULES],
+    },
+  },
+  {
+    files: ["frontend/src/components/**/*.{ts,tsx}", "frontend/src/features/**/*.{ts,tsx}"],
+    // Tests set the cache up before the store exists; the store itself writes it.
+    ignores: ["**/*.test.{ts,tsx}", "frontend/src/features/bots/bot-list-store.ts"],
+    rules: {
+      "no-restricted-syntax": ["error", ...SQL_RULES, ...RAW_COLOUR_RULES, ...BOT_LIST_WRITE_RULES],
     },
   },
   {

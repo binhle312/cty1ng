@@ -121,7 +121,8 @@ Design: `../design/components/bot-page.md` (agreed, round 9, except the Memory t
   or another model is picked (`../design/components/create-bot-page.md` §6).
 - UI-6.3: Skills table: name, description, pinned version, always-load toggle, Remove.
   Changes save immediately and apply to the next run.
-- UI-6.4: When a newer version exists, the row shows "v3 → v5 available"; clicking opens a diff
+- UI-6.4: When a newer version exists, the row shows its pinned version and the link "v5
+  available" (`../design/components/bot-page.md` SK1, M2c review 2026-11-03); clicking opens a diff
   (body and description) with changelogs of the versions in between, and "Upgrade to v5". A
   version menu allows choosing any version (downgrade).
 - UI-6.5: Deprecated skills show a badge and tooltip "Deprecated by its author; keeps working".

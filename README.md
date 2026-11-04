@@ -1,11 +1,8 @@
 # cty1ng
 
-A local-first application where I add skills, assign them to bots, create bots and tell them
-what to do through a chat interface. Similar to GBots, but local and for one person.
-
-In short: a local-first chat app where you work with AI role bots (BA, Designer, …). Bots have personas,
-versioned skills and a shared file workspace per conversation; they discuss within a turn budget
-you set and hand work to each other only with your approval.
+A local-first chat app for one person to work with AI role bots (BA, Designer, …).
+The planned app gives bots personas, versioned skills, a Library per project and one Home Library.
+Bots discuss within a turn budget you set and hand work to each other with your approval.
 
 > Status: see [docs/status.md](docs/status.md) for the current step, what is done and what is left.
 

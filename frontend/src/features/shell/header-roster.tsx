@@ -25,12 +25,12 @@ import { unavailableText } from "../bots/bot-lines.ts";
 import {
   othersOf,
   pinnedOf,
-  useSetPins,
   withPin,
   withPinAt,
   withPinMoved,
   withoutPin,
-} from "../bots/bot-pins.ts";
+} from "../bots/bot-order.ts";
+import { useSetPins } from "../bots/bot-pins.ts";
 import type { BotRow } from "../bots/bot-queries.ts";
 import { HeaderBotCard } from "./header-bot-card.tsx";
 import { AllBotsChip } from "./header-bot-list.tsx";
@@ -201,7 +201,7 @@ export function Roster({ bots }: { bots: readonly BotRow[] }) {
     });
     switch (drop.kind) {
       case "pin_at":
-        save(withPinAt(pinnedIds, String(active.id), drop.index));
+        save(withPinAt(pinnedIds, { id: String(active.id), index: drop.index }));
         break;
       case "pin_end":
         save(withPin(pinnedIds, String(active.id)));
@@ -329,7 +329,7 @@ export function Roster({ bots }: { bots: readonly BotRow[] }) {
                     {...avatarProps(bot, { pinned: true, index })}
                     dropLine={lineAt(bot.id)}
                     onMove={(by) => {
-                      save(withPinMoved(pinnedIds, bot.id, by));
+                      save(withPinMoved(pinnedIds, { id: bot.id, by }));
                     }}
                   />
                 ))}

@@ -1,6 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Ellipsis } from "lucide-react";
-import type { Ref } from "react";
 import {
   MenuItem,
   MenuLinkItem,
@@ -21,8 +20,9 @@ import type { BotRow } from "./bot-queries.ts";
 // the keyboard: Space picks the card up, Alt+← and Alt+→ move it). The drop line is drawn by the
 // Bots page beside the card: the card clips what is outside it.
 export interface CardDrag {
-  setNodeRef: Ref<HTMLElement>;
-  setActivatorNodeRef: Ref<HTMLAnchorElement>;
+  // dnd-kit's setters: a function that takes any element fits the ref of any element.
+  setNodeRef: (node: HTMLElement | null) => void;
+  setActivatorNodeRef: (node: HTMLElement | null) => void;
   handleProps: Record<string, unknown>;
   // The card that moves: its place is a gap.
   isGap: boolean;

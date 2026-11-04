@@ -1,4 +1,4 @@
-# Do not put real-looking secrets in test code
+# M1b synthetic key triggered a secret alert
 
 Date: 2026-10-31 · Source: M1b build, PR #54 · Status: applied
 
@@ -10,9 +10,9 @@ string stays in the branch history.
 **Cause.** The builder wrote a new fake key and did not reuse the short fake keys that the
 backend tests already used.
 
-**Change.** Test code never holds text with the full shape of a real credential. A test that
-needs one builds it at run time from parts, or uses a value that the guard catches but a
-scanner does not report.
+**Project response.** The test-helper guidance now uses existing short fake keys or synthetic values built at runtime.
+The security document records the scanner concern; the original alert and branch history remain part of this incident.
 
-**Rule now in.** `../testing.md` §3 "Test helpers" (fake secrets); `../security.md` §2.11
-(secret scanning).
+**Reusable principles.** [Use safe, purpose-built test data](../../.agents/skills/principle-use-safe-test-data/SKILL.md).
+
+**Project guidance.** [testing](../testing.md), [security](../security.md).

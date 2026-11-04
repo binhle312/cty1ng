@@ -7,7 +7,7 @@ Export card. Routes: `src/routes/skills.tsx`.
 | File | What it is for |
 | --- | --- |
 | `skills-layout.tsx` | The list column and the page beside it; the import file picker |
-| `skills-context.tsx` | What the list needs from the page: the unsaved skill, the picked zip |
+| `skills-context.tsx` | What the list needs from the page: the unsaved skill, the picked zip; the bot card after a save |
 | `skill-list.tsx` | The list column: Create, search, Show deprecated, Import, Export, rows |
 | `skills-index-page.tsx` | `/skills`: opens the top skill, or the empty state |
 | `skill-page.tsx` | `/skills/{slug}`: page top, ⋯ menu, deprecated banner, tabs, save |
@@ -15,11 +15,16 @@ Export card. Routes: `src/routes/skills.tsx`.
 | `skill-form.ts` | The editor's rules without React: changes, save kind, errors, leave text |
 | `save-bar.tsx` | The save bars: edit, read-only, and the button with a "why off" tooltip |
 | `save-error.ts` | Puts a failed save under its field or in the save bar |
-| `leave-guard.tsx` | Leave without saving: the dialog and the browser's own question |
+| `leave-guard.tsx` | Leave without saving: the dialog and the browser's own question; the bot page and Create bot use it with their own place and words |
 | `skill-dialogs.tsx` | The Deprecate, Remove from bots and Delete dialogs, with the bot lists |
 | `skill-bot-uses.ts` | The bots that use one skill, read from the bot list (loading, error, ready) |
 | `skill-bots-tab.tsx` | The Bots tab: the rows, the Always load switch, ⋯, + Add |
+| `dialog-request-state.ts` | A dialog that sends one request (pure): a late answer goes to its own dialog, or to a toast |
+| `dialog-requests.ts` | The hook for `dialog-request-state.ts`, for the pin dialogs, the skill page, the delete dialog and the cards after a save |
+| `toast-store.ts` | A pure state module's state outside React: a late answer changes it, also after the page went, and its toast shows at once |
 | `skill-pin-dialogs.tsx` | The cards that move a pin: + Add, Upgrade or Move to a version, Change version |
+| `after-save-card-state.ts` | The bot card after a save (pure): which save's card shows, and when a card is its toast |
+| `after-save-cards.tsx` | The bot cards after a save: Upgrade the bots (C4) after Save as vN, Assign (C4b) after Create; the hook for `after-save-card-state.ts` |
 | `skill-history.tsx` | The History tab: versions, Compare, Restore |
 | `diff-view.tsx` | A read-only line diff with folded unchanged lines |
 | `diff-fold.ts` | Which unchanged lines the diff folds |

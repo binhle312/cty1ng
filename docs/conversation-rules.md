@@ -289,7 +289,7 @@ Example:
 4. If BA changed the file after proposing, Approve marks the handoff `stale`.
 
 - A bot calls `propose_handoff(to, files, summary)`. `to` is a bot name or slug, or `human`.
-- Target rules (D18, proposed): any non-deleted, available bot, or `human`. If the target is
+- Target rules (D18, accepted): any non-deleted, available bot, or `human`. If the target is
   not an active member, the card offers "Add <bot> and start" (the bot joins with full history,
   since the files are the point).
 - Files must exist and be inside the workspace; they are committed and the commit sha pinned.

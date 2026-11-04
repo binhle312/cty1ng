@@ -1,4 +1,4 @@
-# Review each contract boundary, even when the code appears safe
+# M2a review missed a cleanup contract difference
 
 Date: 2026-11-01 · Source: M2a review, PR #57 · Status: applied
 
@@ -12,8 +12,9 @@ The report covered the published-file safety rule but omitted the staged path's 
 The review had no operation-by-operation evidence table to expose that omission before its final conclusion.
 No runtime defect was needed to report the contract difference.
 
-**Change.** The project now has a reviewer guide with an evidence table and explicit completion checks.
-The workflow routes local code reviews, PR reviews and follow-up reviews through that guide.
-The table requires separate compliance and safety conclusions, including the limits of the test evidence.
+**Project response.** The project added a review guide with operation-by-operation evidence and separate compliance and safety conclusions.
+The workflow routes local reviews, PR reviews, and follow-up reviews through it.
 
-**Rule now in.** [review-guide.md](../review-guide.md), reached from [workflow.md §4](../workflow.md#4-review-prompt-reviewer-agent).
+**Reusable principles.** [Review each contract with explicit evidence](../../.agents/skills/principle-review-contracts-with-evidence/SKILL.md).
+
+**Project guidance.** [review guide](../review-guide.md), [workflow §4](../workflow.md#4-review-prompt-reviewer-agent).

@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ellipsis, Plus } from "lucide-react";
-import { useRef, useState } from "react";
 import { Button } from "../../components/ui/button.tsx";
 import {
   MenuItem,
@@ -13,9 +12,7 @@ import { Skeleton, SkeletonArea } from "../../components/ui/skeleton.tsx";
 import { Switch } from "../../components/ui/switch.tsx";
 import { showToast } from "../../components/ui/toast.tsx";
 import { Tooltip } from "../../components/ui/tooltip.tsx";
-import { apiErrorText, readApiError } from "../../lib/api/api-error.ts";
 import {
-  listBotsOptions,
   listSkillVersionsOptions,
   pinSkillToBotsMutation,
   removeBotSkillMutation,
@@ -23,13 +20,22 @@ import {
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import type { GetSkillResponse } from "../../lib/api/generated/types.gen.ts";
 import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
+import { refreshQueries } from "../../lib/api/query-reads.ts";
 import { BotAvatar } from "../bots/bot-avatar.tsx";
 import { modelLine } from "../bots/bot-lines.ts";
-import type { BotRow } from "../bots/bot-queries.ts";
+import {
+  sendPinChange,
+  sendPinChanges,
+  sendPinRemove,
+  useAlwaysLoadsOnTheirWay,
+  usePinChangesOnTheirWay,
+} from "../bots/bot-list-store.ts";
+import { pinErrorText } from "../bots/bot-queries.ts";
 import { LoadError } from "./load-error.tsx";
 import { VersionPill } from "./pills.tsx";
 import type { BotUse } from "./skill-bot-uses.ts";
 import { useBotUses } from "./skill-bot-uses.ts";
+import { useDialogRequests } from "./dialog-requests.ts";
 import { AddBotsDialog, ChangeVersionDialog, MoveVersionDialog } from "./skill-pin-dialogs.tsx";
 
 // The Bots tab (skills-page.md §2a, UI-7.5a): the bots that use the skill, with the version, the
@@ -50,42 +56,22 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
     failed: versions.isError && versions.data === undefined,
     retry: () => void versions.refetch(),
   };
-  const [dialog, setDialogState] = useState<Dialog | null>(null);
-  const [dialogError, setDialogError] = useState<string | null>(null);
-  // The dialog whose request is on its way. Each open makes a new `Dialog` object, so a request
-  // started in a dialog the owner closed (Skip, Esc) never closes or writes into a newer one.
-  const shownDialog = useRef<Dialog | null>(null);
-  const [busyDialog, setBusyDialog] = useState<Dialog | null>(null);
-  // The Always load value of each toggle on its way, by bot id.
-  const [pendingLoads, setPendingLoads] = useState<ReadonlyMap<string, boolean>>(new Map());
+  // The Always load value of each toggle on its way; it outlives the tab (`bot-list-store.ts`).
+  const loadOnItsWay = useAlwaysLoadsOnTheirWay();
+  // A row whose change is on its way has its actions off (bot-page.md §4.2, Q3).
+  const changeOnItsWay = usePinChangesOnTheirWay();
 
-  const setDialog = (next: Dialog | null) => {
-    shownDialog.current = next;
-    setDialogState(next);
-    setDialogError(null);
-  };
-  const closeDialog = () => {
-    setDialog(null);
-  };
-  const isShown = (shown: Dialog) => shownDialog.current === shown;
   // A pin changed here changes both sides: the bot list shows it at once, and everything that
   // counts pins (the skill's header and list, the bot page) fetches again.
-  const refresh = () => queryClient.invalidateQueries({ predicate: PIN_QUERIES });
-  const replaceBots = (changed: BotRow[]) => {
-    queryClient.setQueryData(listBotsOptions().queryKey, (current) =>
-      current?.map((bot) => changed.find((item) => item.id === bot.id) ?? bot),
-    );
-  };
-  // A stale pin: load the newest and say so; the change is not made.
-  const failed = (botName: string) => (error: unknown) => {
-    void refresh();
-    showToast(
-      readApiError(error)?.code === "stale_write"
-        ? `${botName} changed in another place. Check it and try again.`
-        : apiErrorText(error),
-    );
-  };
-
+  const refresh = () => refreshQueries(queryClient, { predicate: PIN_QUERIES });
+  const {
+    dialog,
+    open: setDialog,
+    close: closeDialog,
+    error: dialogError,
+    pending: dialogPending,
+    run: runInDialog,
+  } = useDialogRequests<Dialog>();
   // One hook serves every row, and a second `mutate` on a hook drops the callbacks of the first
   // (TanStack Query v5). So each request handles its own result through its promise, and the
   // pending state is kept per bot, not read from the hook.
@@ -94,55 +80,24 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
   const addPins = useMutation(pinSkillToBotsMutation());
 
   const toggleLoad = ({ bot, pin }: BotUse, alwaysLoad: boolean) => {
-    setPendingLoads((current) => new Map(current).set(bot.id, alwaysLoad));
-    void setPin
-      .mutateAsync({
-        path: { id: bot.id, skill_id: skill.id },
-        body: {
-          skill_version_id: pin.skill_version_id,
-          always_load: alwaysLoad,
-          expected: { skill_version_id: pin.skill_version_id, always_load: pin.always_load },
-        },
-      })
-      .then((changed) => {
-        replaceBots([changed]);
-        void refresh();
-      }, failed(bot.name))
-      .finally(() => {
-        setPendingLoads((current) => {
-          const next = new Map(current);
-          next.delete(bot.id);
-          return next;
-        });
-      });
-  };
-
-  // A dialog's request: its result goes to that dialog while it is open. After the owner closed
-  // it, a success needs nothing more (the list updates) and a failure shows as a toast.
-  const runInDialog = <T,>(
-    shown: Dialog,
-    request: Promise<T>,
-    done: (result: T) => void,
-    errorText: (error: unknown) => string,
-  ) => {
-    setDialogError(null);
-    setBusyDialog(shown);
-    void request
-      .then(
-        (result) => {
-          done(result);
-          void refresh();
-          if (isShown(shown)) closeDialog();
-        },
-        (error: unknown) => {
-          void refresh();
-          if (isShown(shown)) setDialogError(errorText(error));
-          else showToast(errorText(error));
-        },
-      )
-      .finally(() => {
-        setBusyDialog((current) => (current === shown ? null : current));
-      });
+    const expected = { skill_version_id: pin.skill_version_id, always_load: pin.always_load };
+    // The switch shows the value on its way until the refresh after the answer (`bot-list-state.ts`).
+    void sendPinChange({
+      queryClient,
+      request: () =>
+        setPin.mutateAsync({
+          path: { id: bot.id, skill_id: skill.id },
+          body: { skill_version_id: pin.skill_version_id, always_load: alwaysLoad, expected },
+        }),
+      botId: bot.id,
+      skillId: skill.id,
+      alwaysLoad,
+      expected,
+      onFailed: (error) => {
+        showToast(pinErrorText({ error, changed: bot.name }));
+      },
+      refresh,
+    });
   };
 
   if (bots.kind === "loading") {
@@ -226,7 +181,8 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
                 key={use.bot.id}
                 use={use}
                 skillDeprecated={skill.deprecated}
-                pendingLoad={pendingLoads.get(use.bot.id) ?? null}
+                pendingLoad={loadOnItsWay({ botId: use.bot.id, skillId: skill.id })}
+                busy={changeOnItsWay({ botId: use.bot.id, skillId: skill.id })}
                 onToggle={(alwaysLoad) => {
                   toggleLoad(use, alwaysLoad);
                 }}
@@ -237,11 +193,18 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
                   setDialog({ kind: "change", botId: use.bot.id });
                 }}
                 onRemove={() => {
-                  void removePin
-                    .mutateAsync({ path: { id: use.bot.id, skill_id: skill.id } })
-                    .then(() => {
-                      void refresh();
-                    }, failed(use.bot.name));
+                  // The row goes at once; a failure brings it back with a toast (`bot-list-state.ts`).
+                  sendPinRemove({
+                    queryClient,
+                    request: () =>
+                      removePin.mutateAsync({ path: { id: use.bot.id, skill_id: skill.id } }),
+                    botId: use.bot.id,
+                    skillId: skill.id,
+                    onFailed: (error) => {
+                      showToast(pinErrorText({ error, changed: use.bot.name }));
+                    },
+                    refresh,
+                  });
                 }}
               />
             ))}
@@ -254,26 +217,30 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
         latest={latestVersion}
         versionsLoad={versionsLoad}
         bots={others}
-        pending={dialog !== null && busyDialog === dialog}
+        pending={dialogPending}
         error={dialogError}
         onClose={closeDialog}
         onConfirm={(botIds) => {
           if (latestVersion === undefined || dialog?.kind !== "add") return;
-          runInDialog(
+          runInDialog({
             dialog,
-            addPins.mutateAsync({
-              path: { id: skill.id },
-              body: {
-                skill_version_id: latestVersion.id,
-                bots: botIds.map((bot_id) => ({ bot_id, expected_skill_version_id: null })),
-              },
+            // One request adds the skill to many bots: each bot's pin is a change of its own.
+            request: sendPinChanges({
+              queryClient,
+              pins: botIds.map((botId) => ({ botId, skillId: skill.id, expected: null })),
+              request: () =>
+                addPins.mutateAsync({
+                  path: { id: skill.id },
+                  body: {
+                    skill_version_id: latestVersion.id,
+                    bots: botIds.map((bot_id) => ({ bot_id, expected_skill_version_id: null })),
+                  },
+                }),
+              botsOf: (answers) => answers,
+              refresh,
             }),
-            replaceBots,
-            (error) =>
-              readApiError(error)?.code === "stale_write"
-                ? "A bot changed in another place. Check the list and try again."
-                : apiErrorText(error),
-          );
+            failed: (error) => pinErrorText({ error, changed: null }),
+          });
         }}
       />
       <ChangeVersionDialog
@@ -298,30 +265,28 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
         target={dialog?.kind === "move" ? dialog.version : 0}
         versions={versions.data}
         versionsLoad={versionsLoad}
-        pending={dialog !== null && busyDialog === dialog}
+        pending={dialogPending}
         error={dialogError}
         onClose={closeDialog}
         onConfirm={(version) => {
           if (dialogBot === undefined || dialog?.kind !== "move") return;
           const { bot, pin } = dialogBot;
-          runInDialog(
+          const expected = { skill_version_id: pin.skill_version_id, always_load: pin.always_load };
+          runInDialog({
             dialog,
-            setPin.mutateAsync({
-              path: { id: bot.id, skill_id: skill.id },
-              body: {
-                skill_version_id: version.id,
-                always_load: pin.always_load,
-                expected: { skill_version_id: pin.skill_version_id, always_load: pin.always_load },
-              },
+            request: sendPinChanges({
+              queryClient,
+              pins: [{ botId: bot.id, skillId: skill.id, expected }],
+              request: () =>
+                setPin.mutateAsync({
+                  path: { id: bot.id, skill_id: skill.id },
+                  body: { skill_version_id: version.id, always_load: pin.always_load, expected },
+                }),
+              botsOf: (answer) => [answer],
+              refresh,
             }),
-            (changed) => {
-              replaceBots([changed]);
-            },
-            (error) =>
-              readApiError(error)?.code === "stale_write"
-                ? `${bot.name} changed in another place. Check it and try again.`
-                : apiErrorText(error),
-          );
+            failed: (error) => pinErrorText({ error, changed: bot.name }),
+          });
         }}
       />
     </div>
@@ -332,6 +297,7 @@ function BotPinRow({
   use: { bot, pin },
   skillDeprecated,
   pendingLoad,
+  busy,
   onToggle,
   onUpgrade,
   onChangeVersion,
@@ -341,6 +307,9 @@ function BotPinRow({
   skillDeprecated: boolean;
   // The Always load value of a change that is on its way, or null.
   pendingLoad: boolean | null;
+  // A change of this row is on its way: the switch, the link and ⋯ are off, so no second change
+  // goes out with an old `expected` pin (bot-page.md §4.2, Q3).
+  busy: boolean;
   onToggle: (alwaysLoad: boolean) => void;
   onUpgrade: () => void;
   onChangeVersion: () => void;
@@ -368,7 +337,8 @@ function BotPinRow({
           ) : skillDeprecated ? null : (
             <button
               type="button"
-              className="rounded-xs text-sm text-primary underline focus-visible:outline-2 focus-visible:outline-primary"
+              className="rounded-xs text-sm text-primary underline focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={busy}
               onClick={onUpgrade}
             >
               Upgrade to v{pin.latest_version}
@@ -380,7 +350,7 @@ function BotPinRow({
         <Switch
           checked={alwaysLoad}
           label={`Always load for ${bot.name}`}
-          disabled={pendingLoad !== null}
+          disabled={busy}
           onChange={onToggle}
         />
       </td>
@@ -388,7 +358,8 @@ function BotPinRow({
         <MenuRoot>
           <MenuTrigger
             aria-label={`Actions for ${bot.name}`}
-            className="inline-flex size-button-small items-center justify-center rounded-card hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-primary"
+            disabled={busy}
+            className="inline-flex size-button-small items-center justify-center rounded-card hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-primary data-disabled:cursor-not-allowed data-disabled:opacity-40"
           >
             <Ellipsis aria-hidden className="size-4" />
           </MenuTrigger>

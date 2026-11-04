@@ -1,0 +1,277 @@
+{
+  "backend/src/adapters/db/bots-repository.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/src/adapters/db/bots-schema.test.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/src/adapters/db/repositories.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 2
+    }
+  },
+  "backend/src/adapters/http/errors.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/src/adapters/http/routes/stream.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/src/adapters/sse/sse-stream.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/src/app/bot-commands.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 2
+    }
+  },
+  "backend/src/app/cli.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 5
+    }
+  },
+  "backend/src/app/compose.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 2
+    }
+  },
+  "backend/src/app/skill-commands.test.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/src/app/skill-commands.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 3
+    }
+  },
+  "backend/src/app/timed-jobs.test.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/src/core/bots/bot.rules.test.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 2
+    }
+  },
+  "backend/src/core/bots/bot.rules.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 3
+    }
+  },
+  "backend/src/core/bots/bots.service.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 7
+    }
+  },
+  "backend/src/core/catalog/catalog.rules.test.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/src/core/catalog/catalog.rules.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/src/core/errors.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/src/core/skills/skill-import.service.test.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/src/core/skills/skill-import.service.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 3
+    }
+  },
+  "backend/src/core/skills/skill-md.test.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/src/core/skills/skill.rules.test.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/src/core/skills/skills.service.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 14
+    }
+  },
+  "backend/test/api/api-docs.test.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/test/api/avatars.test.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 2
+    }
+  },
+  "backend/test/api/bots.test.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 2
+    }
+  },
+  "backend/test/api/skills.test.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/test/contracts/avatar-files.test.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 2
+    }
+  },
+  "backend/test/contracts/transport.test.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/test/contracts/unit-of-work.test.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/test/disk-avatar-files.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/test/fakes/avatar-files.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/test/security/errors-and-limits.test.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/test/security/fail-module.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "backend/test/security/record-modules.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "frontend/src/features/bots/bot-lines.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "frontend/src/features/bots/create-bot-form.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 6
+    }
+  },
+  "frontend/src/features/bots/crop-card.tsx": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "frontend/src/features/skills/skill-dialogs.test.tsx": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "frontend/src/features/skills/skill-form.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 2
+    }
+  },
+  "frontend/src/features/skills/skill-history.tsx": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "frontend/src/features/skills/skill-page.tsx": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "frontend/src/lib/log.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "frontend/src/lib/realtime/sse.test.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "frontend/src/lib/realtime/sse.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "frontend/src/lib/storage.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "frontend/test/e2e/bots.spec.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "frontend/test/e2e/skills.spec.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 5
+    }
+  },
+  "frontend/test/fixtures.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "scripts/import-rules.test.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "scripts/lib/check-events.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "scripts/lib/report.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    }
+  },
+  "shared/src/bots.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 2
+    }
+  },
+  "shared/src/skills.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 2
+    }
+  },
+  "shared/src/tool-settings.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 2
+    }
+  }
+}

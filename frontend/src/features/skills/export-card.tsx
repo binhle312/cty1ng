@@ -11,6 +11,7 @@ import { cn } from "../../lib/cn.ts";
 import { fileNameFrom, saveFile } from "./download.ts";
 import { VersionPill } from "./pills.tsx";
 import type { SkillRow } from "./skill-queries.ts";
+import { withItem } from "../../lib/sets.ts";
 
 // Download a zip of the picked skills, each with its latest version (UI-7.8). The name is the
 // server's `<n>-skills-<UTC timestamp>.zip`.
@@ -73,12 +74,7 @@ function ExportCardBody({
   const count = picked.size;
   const allPicked = count === skills.length && count > 0;
   const toggle = (id: string, on: boolean) => {
-    setPicked((current) => {
-      const next = new Set(current);
-      if (on) next.add(id);
-      else next.delete(id);
-      return next;
-    });
+    setPicked((current) => withItem({ set: current, item: id, on }));
   };
   const label = `Export ${count === 1 ? "1 skill" : `${String(count)} skills`}`;
   const exportButton = (

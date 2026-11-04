@@ -4,6 +4,14 @@ This document describes how the owner and two coding agents build the app togeth
 the simplest process that keeps quality high: one agent builds, a different agent reviews, the
 owner approves the decisions that matter.
 
+Use [principle skills](../.agents/skills/README.md) for reusable engineering guidance. Read the matching skill
+before planning, implementation, review, or handoff. This workflow owns project-specific commands,
+roles, thresholds, and approval gates. [Project incidents](lessons-learned/README.md) explain their origin.
+
+After each review and fix, update [delivery quality](delivery-quality.md#7-update-and-assess).
+At handoff, reconcile the PR's issues, review rounds, and verification evidence there.
+[status.md](status.md) continues to own milestone state and next work.
+
 ## 1. Roles
 
 | Who | Does | Does not |
@@ -23,9 +31,9 @@ and inconsistent patterns. Use parallelism only for clearly independent work (§
 ## 2. Lifecycle of a slice
 
 ```
-brief ready ──▶ plan ──(owner approves, if checkpointed)──▶ build ──▶ self-check ──▶ PR
-   ▲                                                                                 │
-   │                                         merge ◀── owner review ◀── cross-review ◀┘
+brief ready ──▶ plan + test strategy ──(owner approves, if checkpointed)──▶ build ──▶ self-check ──▶ PR
+   ▲                                                                                               │
+   │                                                       merge ◀── owner review ◀── cross-review ◀┘
    └──────────── next slice ◀────────────────┘
 ```
 
@@ -39,7 +47,10 @@ brief ready ──▶ plan ──(owner approves, if checkpointed)──▶ buil
    **Slice size.** Keep UI work and infrastructure in separate slices or PRs. Static serving,
    docs pages, code generation, CI jobs and launch scripts are one PR; the screens that use
    them are another. Smaller PRs mean shorter builds, smaller reviews and fewer full gate runs
-   (§8, "Slice too big").
+   (§8, "Slice too big"). A screen with saves under a lock, live events or requests that can
+   answer after the owner moved on is its own part, and so is a set of dialogs or cards with
+   their own requests. A plan that touches more than about 30 files is a sign to split (lesson
+   `state-table-before-stateful-code.md`).
 2. **Plan.** The builder reads the brief and the documents it lists, then writes a short plan
    (files to touch, migrations, tests to add, risks) as the first comment of a draft PR.
    **Risk probes first.** Before the builder writes the plan, it runs short checks on every
@@ -71,14 +82,32 @@ brief ready ──▶ plan ──(owner approves, if checkpointed)──▶ buil
    `docs/` wins where they differ, and whoever changes the owning document updates the
    snapshot. `pnpm check:index` fails when a snapshot colour differs from
    `frontend/src/themes/command.css` (owner, 2026-10-30).
-3. **Build.** Small commits. Tests alongside code, not at the end. While fixing, run only the
-   affected tests (`testing.md` §3, "Fast loop while building"); keep the end-to-end servers
-   running with `pnpm e2e:serve`. A bug fix's test is written first and seen to fail; if it was
-   written after the fix, run it against the old code in an isolated checkout (a `git
-   worktree` of the commit before the fix, with the new test copied in), not by stashing the
-   fix (owner, 2026-10-31). Stop every other end-to-end server first: `pnpm e2e` stops with
-   "already used" while another server is on its ports (`testing.md` §3). See
-   it fail there (lesson `prove-the-test-fails-first.md`).
+   **Test strategy before code.** After the plan, and before any code, the builder writes the
+   test strategy as a section of the draft PR (owner, 2026-11-03). For each acceptance
+   criterion it lists the behaviour, the test level (unit, component, API, contract, end to
+   end) and the cases beyond the normal path: the edge cases in `testing.md` §3, and above all
+   the order and timing cases (an answer that comes late, a change in another tab, a Discard
+   while a request waits, a value that changes and changes back). Most review findings are
+   these cases; a test planned before the code finds them before the review does.
+   **Code design checkpoint.** If the slice adds shared state, a new module boundary or a flow
+   across several screens, the plan has a one-page code design before any code (owner,
+   2026-11-04; `principle-decide-design-before-build`). The design names the state owner, the
+   modules, the data flow and the failure paths, and it compares at least two options with their
+   costs. A reviewer who did not write it tries to break it. The owner approves it in every such
+   slice, checkpointed or not, from a short form (see "Human review: visual first"). The state
+   table below is part of this design. A slice that stays inside one module skips this step.
+   **State table for stateful screens.** If a screen saves under a lock, takes live events or
+   gets late answers, apply the [state and order principle](../.agents/skills/principle-model-state-and-order/SKILL.md)
+   before code. Use the failure scope in `review-guide.md` §6. Resolve unspecified cells with the owner.
+   After approval, put the table in the screen's spec. Follow `frontend-conventions.md` §1 for
+   its state owner and `testing.md` §3 for cell and sequence tests.
+   Write the plan, table and test strategy at `xhigh` effort; the build can run at `high`
+   (owner, 2026-11-03; lesson `state-table-before-stateful-code.md`).
+3. **Build.** Make small commits and test first. For each behaviour in the strategy, observe
+   the expected test failure before you write the code, then refactor with tests green.
+   Add cases found during the build to the strategy and test them first too.
+   Follow [the fast test loop](testing.md#fast-loop-while-building) while fixing.
+   Use [the evidence rules](testing.md#5-evidence-in-prs) for a test written after its fix.
 4. **Self-check.** Every command in `AGENTS.md` §4 passes, run once in full at the end:
    after the last code change, before the push, and with the full `pnpm e2e`. A report names
    each check and its result and says which checks did not run; nobody reports a run that has
@@ -86,16 +115,29 @@ brief ready ──▶ plan ──(owner approves, if checkpointed)──▶ buil
    **Spec walk.** Before the PR, the builder reads each section of the slice's spec against the
    code, not only the acceptance criteria, and tests the edge cases in `testing.md` §3 ("Edge
    cases each slice tests"). The PR lists the sections checked (lesson
-   `self-review-against-the-spec.md`). The builder fills the PR template (§6). Anything new that the build taught (a library pitfall,
-   a lint pattern, a test helper) goes into `frontend-conventions.md` §5 or `testing.md` in
-   the same PR, so the next slice does not learn it again.
+   `self-review-against-the-spec.md`).
+   **Order and list-state checks.** Before the push, check every request on each changed
+   screen with locks, live events or late answers. Cover all six cases in
+   [Request order and list states](testing.md#request-order-and-list-states), including requests away from the reported finding.
+   Then a fresh reviewer agent, given the code and not the builder's conclusions, tries to
+   break the screen with forced orders (`review-guide.md` §3; lesson
+   `check-every-order-before-the-push.md`).
+   **Evidence.** Fill the PR template (§6) using [testing.md §5](testing.md#5-evidence-in-prs).
+   Add new library pitfalls, lint patterns or test-helper guidance to their owning document:
+   `frontend-conventions.md` §5 or `testing.md`.
    **The guide stays current.** A slice that changes something the owner can see updates
    `seed/skills/using-the-app/SKILL.md` (the Guide bot's knowledge) in the same PR: what works
    now, what is not built yet, and the names on the screen (M2 plan, decision 14).
 5. **Cross-review.** The other agent follows [review-guide.md](review-guide.md) (prompt in §4).
-   Findings become PR comments; the builder fixes or answers each. A finding says what is wrong, not which text or layout to
+   Put findings in the requested review destination; publish PR comments only when the session authorizes it.
+   The builder fixes or answers each. A finding says what is wrong, not which text or layout to
    use: when a fix needs a new text, state, flow or layout, the PR lists it under `Needs human
    review` (`AGENTS.md` §7; lesson `flag-ui-choices-in-review-fixes.md`).
+   **Merge bar.** Each finding has a severity. Only P1 and P2 block the merge; a P3 goes to
+   the follow-ups in `status.md` (`review-guide.md` §6).
+   **Fix the cause.** Apply the [invariant repair principle](../.agents/skills/principle-fix-invariants-at-the-owner/SKILL.md).
+   Record the search scope in the PR's "Same cause checked in" column (§6).
+   The reviewer verifies the repair through [review-guide.md §5](review-guide.md#5-close-findings-with-evidence).
 6. **Owner review.** Focus on `Needs human review` items, migrations, the evidence table, and
    one run of the app. Merge when satisfied.
 7. **Docs.** If something diverged from the docs, the PR already updated them. If a decision
@@ -157,9 +199,12 @@ You are the builder for slice <M#> of this repository.
 1. Read AGENTS.md, docs/README.md, and docs/tasks/<M#>-<name>.md, then every document the
    brief lists under "Read first".
 2. Write a plan as described in docs/workflow.md §2 step 2: run the risk probes first, and
-   end the plan with every open question in one list. Open a draft PR with the plan.
+   end the plan with every open question in one list. Then write the test strategy
+   (§2 step 2, "Test strategy before code"). Open a draft PR with the plan and the strategy.
    Stop and wait for my approval if the brief says "checkpoint: plan".
-3. Build the slice on branch <m#-name>. Keep to the brief's scope; list anything else you
+   If a screen has saves under a lock, live events or late answers, the plan has its state
+   table (§2 step 2, "State table for stateful screens").
+3. Build the slice on branch <m#-name>, test first. Keep to the brief's scope; list anything else you
    notice under "Follow-ups" in the PR instead of doing it.
 4. Run every check in AGENTS.md §4 and fill the PR description per docs/workflow.md §6.
 If the docs and the code disagree, or the brief is ambiguous, stop and ask.
@@ -185,8 +230,9 @@ Check, in order:
    rule, does it still agree in meaning with each decision in its "Changed by" column
    (`decisions/README.md`) and with every summary table that cites it?
 6. Simplicity: code that could be removed or made plainer.
-Report findings as PR comments, most severe first, each with the file, line, and why it
-matters. Do not push commits. Say explicitly if you found nothing serious.
+Report findings in the requested destination, most severe first, each with the file, line,
+why it matters, and severity (docs/review-guide.md §6). Publish PR comments only when the
+session authorizes it. Do not push commits. State the evidence limits if no defect was found.
 ```
 
 ## 5. Parallel work (only when independent)
@@ -212,8 +258,8 @@ Link to the brief and decisions.
 ## Acceptance criteria
 | AC | Evidence |
 | --- | --- |
-| UI-2.4 | `e2e/header-drag.spec.ts` "drop adds bot" + screenshot |
-| conversation-rules §1 table | `decide-runs.rules.test.ts` "human message: …" rows |
+| UI-2.4 | `e2e/header-drag.spec.ts` "drop adds bot": expects the bot chip in the header after the drop; + screenshot |
+| conversation-rules §1 table | `decide-runs.rules.test.ts` "human message: …" rows: one row per table line |
 
 ## Needs human review
 - Migration `0003_skill_versions` (new tables, no data change)
@@ -225,6 +271,11 @@ Link to the brief and decisions.
 ## Folder indexes
 - README.md tables updated for every added, removed, renamed or repurposed file, and the
   descriptions still match what the files do (or "no file changes")
+
+## Review fixes (when a review found something)
+| Finding | Cause (the rule broken) | Same cause checked in | Fix | Test |
+| --- | --- | --- | --- | --- |
+| A late Profile answer brings back an old pin | An answer writes fields it does not own | Save answers, pin answers, dialog answers | Answers write an allowlist | `bot-edit-form.test` "takes from a save answer only …" |
 
 ## Follow-ups (not done here)
 - ...
@@ -253,6 +304,6 @@ inside a module, update docs to match code, and fix review findings.
 | Brief is ambiguous | Builder asks; owner answers in the brief (so the answer is kept) |
 | CI red on main | Fix main first; no slice merges onto a red main |
 | Agents disagree in review | Owner decides; if it is a design question, record it in `decisions/` |
-| Owner sees a problem in how a slice was built (slow, too many questions, surprises) | Change the owning rule and add a lesson to `lessons-learned/`, in one PR |
+| Owner sees a problem in how a slice was built (slow, too many questions, surprises) | Record project evidence in `lessons-learned/` and quality evidence in `delivery-quality.md`; link or update the reusable principle and its project application |
 | Slice too big | Split the brief into parts (M3a, M3b), each mergeable; UI and infrastructure go in different parts (§2 step 1) |
 | Docs drift found later | Fix the doc or code in a small PR; note it in the next slice's plan |

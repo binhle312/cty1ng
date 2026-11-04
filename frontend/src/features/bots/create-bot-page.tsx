@@ -36,14 +36,18 @@ import {
   emptyForm,
   type FormContext,
   type FormSettings,
+  formSettings,
   hasInput,
+  isTooLong,
   hasProblems,
+  keepUnchanged,
   type Problems,
   STEP_LABELS,
   STEPS,
   type Step,
   stepOfField,
   stepProblems,
+  takenNameText,
   toolsTurnedOff,
   withModel,
 } from "./create-bot-form.ts";
@@ -126,21 +130,6 @@ export function CreateBotPage() {
       template={from === undefined ? null : (template.data ?? null)}
     />
   );
-}
-
-function formSettings(settings: GetSettingsResponse): FormSettings {
-  return {
-    limits: {
-      nameMax: settings.bot_name_max,
-      descriptionMax: settings.bot_description_max,
-      personaMax: settings.bot_persona_max,
-    },
-    historyMin: settings.bot_history_min_pct,
-    historyMax: settings.bot_history_max_pct,
-    defaultHistory: settings.bot_default_history_pct,
-    defaultRequestLimit: settings.bot_default_request_limit,
-    defaultMaxReplyChars: settings.bot_default_max_reply_chars,
-  };
 }
 
 // The first form: empty with the first available model, or a Clone (§6).
@@ -285,7 +274,7 @@ function CreateBotView({
     const next = change(form);
     setForm(next);
     // A server error goes when the owner changes its field (E3).
-    setServerProblems((old) => keepUnchanged(old, form, next));
+    setServerProblems((old) => keepUnchanged({ problems: old, before: form, after: next }));
   };
 
   const errorOf = (field: string): string | null => {
@@ -298,7 +287,7 @@ function CreateBotView({
       return `${goneModel} is no longer offered. Pick another model.`;
     }
     // A size error shows at once; an empty field or a taken name after the owner leaves it.
-    return isTooLong(form, field, settings) || left.has(field) || tried.has(s) ? local : null;
+    return isTooLong({ form, field, settings }) || left.has(field) || tried.has(s) ? local : null;
   };
 
   const upload = useAvatarUpload({
@@ -310,7 +299,7 @@ function CreateBotView({
 
   const nameText = form.name.trim() === "" ? "The bot" : form.name.trim();
   const leave = useLeaveGuard({
-    dirty: hasInput(form, start),
+    dirty: hasInput({ form, start }),
     text: `${nameText} is not created. What you typed in the 4 steps is lost.`,
     words: LEAVE_WORDS,
   });
@@ -383,8 +372,9 @@ function CreateBotView({
     })
       .then(async ({ data: bot }) => {
         leave.allowLeave();
-        // The bot page finds the bot in the list, so the list is fresh before it opens
-        // (frontend-conventions.md §5).
+        // The bot page finds the bot in the list, so the list is refreshed before it opens
+        // (frontend-conventions.md §5). Live events can end this wait early; the page then shows
+        // its skeleton until the newest list comes.
         await queryClient.invalidateQueries({ predicate: PIN_QUERIES });
         showToast(`Created ${bot.name} ✨`);
         if (mounted.current) {
@@ -412,7 +402,7 @@ function CreateBotView({
         }
         const message =
           api.code === "name_taken"
-            ? `${form.name.trim()} is taken by another bot, maybe one in Trash. Pick another name.`
+            ? takenNameText({ name: form.name, byServer: true })
             : api.message;
         setServerProblems({ [api.field]: message });
       });
@@ -573,61 +563,6 @@ function CreateBotView({
       {leave.dialog}
     </div>
   );
-}
-
-// What a server error's field depends on, to drop the error when it changes.
-function fieldSnapshot(form: CreateForm, head: string): string {
-  switch (head) {
-    case "name":
-      return form.name;
-    case "description":
-      return form.description;
-    case "persona_md":
-      return form.persona_md;
-    case "avatar_colour":
-      return form.avatar_colour;
-    case "avatar_id":
-    case "avatar_style":
-      return JSON.stringify([form.avatar_style, form.avatar]);
-    case "pins":
-      return JSON.stringify(form.pins);
-    case "model_id":
-    case "effort":
-      return JSON.stringify([form.model_id, form.effort]);
-    case "tool_settings":
-      return JSON.stringify([form.model_id, form.tool_choices]);
-    case "history_share_pct":
-      return String(form.history_share_pct);
-    case "request_limit":
-      return String(form.request_limit);
-    case "max_reply_chars":
-      return String(form.max_reply_chars);
-    default:
-      return JSON.stringify(form);
-  }
-}
-
-function keepUnchanged(problems: Problems, before: CreateForm, after: CreateForm): Problems {
-  const kept: Problems = {};
-  for (const [field, message] of Object.entries(problems)) {
-    const head = field.split(/[.[]/)[0] ?? field;
-    if (fieldSnapshot(before, head) === fieldSnapshot(after, head)) kept[field] = message;
-  }
-  return kept;
-}
-
-function isTooLong(form: CreateForm, field: string, settings: FormSettings): boolean {
-  const { limits } = settings;
-  switch (field) {
-    case "name":
-      return form.name.trim().length > limits.nameMax;
-    case "description":
-      return form.description.length > limits.descriptionMax;
-    case "persona_md":
-      return form.persona_md.length > limits.personaMax;
-    default:
-      return false;
-  }
 }
 
 // A copied pin of a Clone, as the template names it (with its version number).

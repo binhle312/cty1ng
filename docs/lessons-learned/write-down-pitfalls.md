@@ -1,4 +1,4 @@
-# Write down what a build learned
+# M0c build knowledge remained in PR conversation
 
 Date: 2026-10-30 · Source: M0c build, PR #49 · Status: applied
 
@@ -7,8 +7,9 @@ but they were only in the PR conversation. The next slice could learn them again
 
 **Cause.** No document owned these lessons, and the definition of done did not ask for them.
 
-**Change.** The pitfalls (CSP, Base UI, lint patterns in tests) and the test helpers
-(`renderApp`, `watchCsp`) are written down. Each PR adds what its build learned.
+**Project response.** The project recorded CSP, Base UI, lint patterns, `renderApp`, and `watchCsp` in the conventions and testing guides.
+The workflow now routes new build knowledge to those owning documents.
 
-**Rule now in.** `../frontend-conventions.md` §5 "Known pitfalls"; `../testing.md` §3 "Test
-helpers"; `../workflow.md` §2 step 4.
+**Reusable principles.** [Encode repeatable checks and keep one source of guidance](../../.agents/skills/principle-encode-repeatable-checks/SKILL.md).
+
+**Project guidance.** [frontend conventions §5](../frontend-conventions.md#5-known-pitfalls), [testing](../testing.md), [workflow §2](../workflow.md#2-lifecycle-of-a-slice).

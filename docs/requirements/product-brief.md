@@ -124,7 +124,7 @@ Confirmed by the owner (2026-10-21).
 | Payments and bookings | The trip planner proposes; a human pays. Never automatic, never stores card details | Later, if ever |
 | A "lead" bot that routes un-mentioned messages | Hides who decided what; extra cost (D2) | Maybe never |
 | Conversation search, archive, folders | Rail works for a few dozen conversations | Later |
-| History summarisation | Old messages are trimmed instead (`../conversation-rules.md`). When it comes: show it as a state and a system line, and let the owner start it by hand (`../research/conversation-client-patterns.md` P10) | Later |
+| History summarisation | Old messages are trimmed instead (`../conversation-rules.md`). When it comes: show it as a state and a system line, and let the owner start it by hand (`../research/chat-client-patterns.md` P10) | Later |
 | Structured question cards from bots (choices instead of free text) | Handoff cards cover the formal step for now (research P11) | Later |
 | Reply to a specific message | Mentions plus D31 cover it; needs a schema and API change (research P4) | After M5 |
 | Bots working on another project folder on the machine (following its AGENTS.md and skills) | Needs a secrets deny-list, review branches and approval rules (D23) | Later milestone |
@@ -163,9 +163,9 @@ to 4 turns, each told how many remain → a system message says the limit is rea
 **J3. Handoff.** BA calls `propose_handoff(to=Designer, files=[...])` → an approval card appears
 → owner approves → Designer starts with those files.
 
-**J4. Skill upgrade.** Owner edits `write-user-stories` → v2 is created → the save dialog offers
-to upgrade BA (unchecked) → owner leaves it → BA still uses v1 → later, on BA's detail page,
-owner sees "v1 → v2 available", reviews the diff, clicks Upgrade.
+**J4. Skill upgrade.** Owner edits `write-user-stories` → v2 is created → the save card offers to
+upgrade BA (ticked) → owner clicks Skip → BA still uses v1 → later, on BA's bot page, owner sees
+"v2 available", reviews the diff, clicks Upgrade.
 
 **J5. Model retired.** A provider retires BA's model → BA shows "model unavailable" → owner
 clicks Clone on its banner → the create form opens prefilled → owner picks a new model

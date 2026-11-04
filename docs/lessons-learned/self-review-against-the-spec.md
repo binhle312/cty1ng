@@ -1,4 +1,4 @@
-# Check the code against the spec before the PR
+# M1b green tests missed five specified behaviours
 
 Date: 2026-10-31 · Source: M1b build, PR #54 · Status: applied
 
@@ -13,8 +13,9 @@ tests passed. Nobody read the spec sections one by one against the code before t
 edge cases that break these rules (two tabs, the same action twice, a failed request, keyboard
 only) had no tests.
 
-**Change.** Before the PR, the builder checks each section of the slice's spec against the code
-and tests these edge cases on purpose. The PR description lists the sections checked.
+**Project response.** The workflow added a section-by-section spec walk. The testing guide added deliberate edge cases.
+The source reports one P1 and four P2 findings in this review, not a lifetime PR total.
 
-**Rule now in.** `../workflow.md` §2 step 4 "Spec walk"; `../testing.md` §3 "Edge cases each
-slice tests".
+**Reusable principles.** [Review each contract with explicit evidence](../../.agents/skills/principle-review-contracts-with-evidence/SKILL.md), [Prove that tests detect the intended behaviour](../../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md).
+
+**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [testing](../testing.md).
