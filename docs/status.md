@@ -17,7 +17,7 @@ M2c adds the bot page and the Skills page's upgrade and assign cards.
 Its evidence and remaining limits are in [delivery-quality.md](delivery-quality.md), DQ-011–DQ-021.
 The plans of each slice are in [plans/](plans/README.md).
 
-[#60](https://github.com/binhle312/cty1ng/pull/60) (e2e server guard) and [#61](https://github.com/binhle312/cty1ng/pull/61) (docs audit, after #59) are also open, outside the Slices table.
+[#60](https://github.com/binhle312/cty1ng/pull/60) (e2e server guard) is also open, outside the Slices table.
 
 The [Slices table](#slices) records delivery state and PRs.
 The [design index](design/README.md) identifies agreed designs and open design work.
@@ -52,6 +52,9 @@ it in, and the row goes when its PR merges.
 
 | Item | Found in | Target |
 | --- | --- | --- |
+| `pnpm e2e:serve` can die and leave its servers on the ports: a closed stdout (`EPIPE`) or SIGHUP stops the script without stopping them, and the marker stays. It fails safe, but its message says to stop a script that no longer runs, and no doc says to delete `.e2e-serve`. Stop the servers on those exits, and correct the message | [#60](https://github.com/binhle312/cty1ng/pull/60) review | M2 close |
+| No test runs `scripts/e2e-serve.ts` itself, so its guard and signal wiring have only manual evidence | [#60](https://github.com/binhle312/cty1ng/pull/60) review | M2 close |
+| The fresh data folder of each `pnpm e2e` run stays in the system temp folder (`cty1ng-e2e-*`, about 1 MB each): nothing removes it. Remove it when the run ends | The `pnpm e2e` server guard | M2 close |
 | Temporary CLI `skills trash` and `skills restore` (M1 spec gap pass, owner 2026-10-30): remove them when the Trash page exists | [#51](https://github.com/binhle312/cty1ng/pull/51) | M5b |
 | P3 (`review-guide.md` §6), `lib/api/query-reads.ts`: a read that started a load gets the old list when the query's last observer leaves during the load (`versionIdOf`: a toast in place of the upgrade card); a load that paused in a hidden tab ends `refreshQueries`, so a row's lock can end before the newest list; Clone still moves to `/skills/new` after the owner left the skill page (`skill-page.tsx`, older than the helper); only the helper's tests and the assign card and bot page Move hold two cuts, not the other callers. DQ-018 to DQ-021 | [#59](https://github.com/binhle312/cty1ng/pull/59) review of `query-reads.ts` | M2 close |
 | P3 (`review-guide.md` §6): late-answer rules still in refs: `create-bot-page.tsx` (`mounted`, `inFlight`), `crop-card.tsx` (`closed`, `lastFile`), `new-skill-page.tsx` (`closed`). They are not card or dialog rules, so the owner left them out of the 2026-11-04 design; check them against `frontend-conventions.md` §1 | [#59](https://github.com/binhle312/cty1ng/pull/59) review of `ec8faa7` | M2 close |
@@ -65,7 +68,6 @@ it in, and the row goes when its PR merges.
 | Copy slug on the server: today the Clone page tries `-copy-2`, `-copy-3` … after a confirmed `slug_taken` (a skill in Trash keeps its slug). If many collisions make it slow, the server picks the suffix, for example a flag on `POST /skills`; `POST /skill-drafts/{id}/decision` already picks the next free suffix for a bot's slug (`api.md` §2a) (an API change; owner, 2026-10-31; `design/components/skills-page.md`, "Texts added in the M1b build") | [#54](https://github.com/binhle312/cty1ng/pull/54) | When collisions get slow; not planned before M5b |
 | Object arguments in the code from before the `max-params` lint rule (104 places in `eslint-suppressions.json`, 2026-11-04): fix them when their module changes, then prune the list | [#59](https://github.com/binhle312/cty1ng/pull/59) | Each slice, for the modules it touches |
 | `uuid` advisory GHSA-w5hq-g745-h8pq (moderate, through `typeid-js` 1.2.0, which needs `uuid` ^10). **Accepted risk** (owner, 2026-10-30): the flaw is in v3/v5/v6 with a caller buffer; `typeid-js` uses only `stringify` and `v7`, and our code never calls `uuid`. No override | #48 | Update `typeid-js` when a version allows `uuid` ≥ 11.1.1 |
-| The automated security review does not run: the repository has no `ANTHROPIC_API_KEY` secret, so the job skips with a notice and shows as success (checked 2026-11-04). The owner decides whether to add the key. Its paths: [#62](https://github.com/binhle312/cty1ng/pull/62) adds the Markdown renderer; `backend/src/adapters/log/**` (key redaction) and `backend/src/adapters/avatars/**` are not on the list. Security-sensitive, so the owner approves the change | Docs audit 2026-11-04 | M2 close |
 | Security tests that `security.md` §2.8 and §3 ask for are missing: SQL injection strings, XSS with event handlers and SVG, a renamed PNG and a polyglot avatar | Docs audit 2026-11-04 | M2 close |
 | `.strict()` gaps against `security.md` §2.8: the multipart body of `POST /skills/import/preview`, and no query schema on `/health` and `/stream` | Docs audit 2026-11-04 | M2 close |
 | Bar 2 on Home keeps its M0 state: `bar-two.tsx` always says "No bots yet" and shows the first-run button, also with bots (`left-bar.md` §3) | Docs audit 2026-11-04 | M3d |
@@ -127,4 +129,5 @@ A slice can also be `blocked` (say on what in Notes).
 | 2026-11-04 | M2c merged (#59); M2 is complete |
 | 2026-11-04 | Every plan now has a file in `docs/plans/` (owner); the plans up to M2 are copied from their PRs |
 | 2026-11-04 | Docs audit ([#61](https://github.com/binhle312/cty1ng/pull/61)): docs matched to the built code and to the current decisions; open questions and code gaps moved to the tables above |
+| 2026-11-04 | Automated security review on: the owner added the `ANTHROPIC_API_KEY` secret, and the review also watches the log, avatar and sensitive data guard code. It runs when the owner marks a PR Ready, on Haiku 5.5; PRs open as drafts |
 | 2026-11-04 | Docs audit answers ([#65](https://github.com/binhle312/cty1ng/pull/65)): the owner answered all the questions; the specs, decisions and tokens match them, and no feature is built |
