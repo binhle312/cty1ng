@@ -8,7 +8,8 @@ import {
 import { SortableContext, type SortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { type KeyboardEvent, type ReactNode, type RefObject, useRef, useState } from "react";
 import type { CardDrag } from "./bot-grid-card.tsx";
-import { useSetPins, withPinAt, withPinMoved } from "./bot-pins.ts";
+import { withPinAt, withPinMoved } from "./bot-order.ts";
+import { useSetPins } from "./bot-pins.ts";
 import type { BotRow } from "./bot-queries.ts";
 import { useClosestInside, useDragSensors } from "./drag-setup.ts";
 
@@ -79,7 +80,12 @@ export function PinnedSort({
       justDropped.current = false;
     }, 0);
     if (over === null || over.id === active.id) return;
-    setPins(withPinAt(pinnedIds, String(active.id), pinnedIds.indexOf(String(over.id))));
+    setPins(
+      withPinAt(pinnedIds, {
+        id: String(active.id),
+        index: pinnedIds.indexOf(String(over.id)),
+      }),
+    );
   };
   const active = bots.find((bot) => bot.id === activeId);
   const activeIndex = activeId === null ? -1 : ids.indexOf(activeId);
@@ -136,7 +142,8 @@ export function usePinnedItem({
   const onKeyDown = (event: KeyboardEvent<HTMLAnchorElement>) => {
     if (event.altKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
       event.preventDefault();
-      if (!dragOff) setPins(withPinMoved(pinnedIds, botId, event.key === "ArrowLeft" ? -1 : 1));
+      if (!dragOff)
+        setPins(withPinMoved(pinnedIds, { id: botId, by: event.key === "ArrowLeft" ? -1 : 1 }));
       return;
     }
     sortable.listeners?.onKeyDown?.(event);

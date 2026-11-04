@@ -49,7 +49,12 @@ and one is refused, the page goes back to the last order the server has, or to t
 that still waits: unpin BA, then pin UX, and both fail, shows BA pinned again (review of
 571375a). The same holds for the
 sort of the others; the pinned order on its way keeps the sort the page shows, also after a sort
-that failed, and while a sort waits when the settings load after the list (M2c audit, 2026-11-03; `frontend/src/lib/api/optimistic.ts`).
+that failed, and while a sort waits when the settings load after the list (M2c audit,
+2026-11-03). A refused sort goes back to the last sort the server sent, also one another tab
+saved. The page computes what it shows from the server value and the changes that wait
+(`frontend/src/features/bots/bot-list-state.ts`). A pinned list and a sort have no version: when
+the server takes an older change after a newer one (two requests that overtake each other), only
+the refresh after the answer shows it.
 
 A pinned item shows the grab cursor (closed hand while it moves). An unpinned item shows the
 normal arrow. A click opens the item in both cases.

@@ -14,6 +14,7 @@ import {
 import { Toaster } from "../../components/ui/toast.tsx";
 import { listBotsQueryKey } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import { TooltipProvider } from "../../components/ui/tooltip.tsx";
+import { writeSaveAnswer } from "../bots/bot-list-store.ts";
 import { SkillBotsTab } from "./skill-bots-tab.tsx";
 
 let api: ReturnType<typeof fakeApi> | null = null;
@@ -296,7 +297,7 @@ describe("the Bots tab of a skill", () => {
     await waitFor(() => {
       expect(api?.sent("PUT", `/api/bots/${designer.id}/skills/${SKILL_ID}`)).toHaveLength(1);
     });
-    // A list load while the PUT is on its way: the answer then writes no pin (pin-answer.ts).
+    // A list load while the PUT is on its way: the answer then writes no pin (bot-list-state.ts).
     await act(() => queryClient.refetchQueries({ queryKey: listBotsQueryKey() }));
     state.answered = true;
     const on = makeBot(2, "Designer", [
@@ -329,12 +330,11 @@ describe("the Bots tab of a skill", () => {
     await waitFor(() => {
       expect(api?.sent("PUT", `/api/bots/${designer.id}/skills/${SKILL_ID}`)).toHaveLength(1);
     });
-    // The answer of a Profile save on the bot page comes first: a write, not a load.
+    // The answer of a Profile save on the bot page comes first: a write, not a load. The bot
+    // page writes it through the bot list store, as here.
     const key = listBotsQueryKey();
     act(() => {
-      queryClient.setQueryData<Bot[]>(key, (old) =>
-        old?.map((bot) => ({ ...bot, row_version: 2, description: "Newer." })),
-      );
+      writeSaveAnswer(queryClient, { ...designer, row_version: 2, description: "Newer." });
     });
     state.fail = true;
     await held.answer({

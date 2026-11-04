@@ -179,11 +179,6 @@
       "count": 1
     }
   },
-  "frontend/src/features/bots/bot-pins.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 3
-    }
-  },
   "frontend/src/features/bots/create-bot-form.ts": {
     "@typescript-eslint/max-params": {
       "count": 6

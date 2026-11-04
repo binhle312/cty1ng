@@ -16,7 +16,10 @@ the parts that the header and the Skills page share.
 | `bot-list.tsx` | The bot list of the cards: rows with check boxes, or plain rows (`skills-page.md` §7) |
 | `bot-page.tsx` | `/bots/{slug}`: the edit layout, the tabs, the two save bars, conflicts with another place |
 | `bot-page-top.tsx` | The bot page top: band, 116 px avatar, name, locked model badge, status, ⋯; the cannot-run banner |
-| `bot-pins.ts` | Pinned and other bots, pin list changes, and `useSetPins` (optimistic, with the 409 retry text) |
+| `bot-list-state.ts` | The bot list and the sort (pure): the server value and the requests that wait, in send order; what the page shows, the answers that go in, the Always load value on its way |
+| `bot-list-store.ts` | The bot list state of a query client: sends it the loads, writes what the page shows into the cache; the Always load, Remove, pin, pinned order, sort and save answer sends |
+| `bot-order.ts` | Pinned and other bots, pin list changes, and the header order (pure) |
+| `bot-pins.ts` | `useSetPins`: saves a new pinned list at once, with the 409 retry text |
 | `bot-queries.ts` | The bot list query and helpers: the pin of a skill, the bots that use it |
 | `bot-save-bar.tsx` | The save bar of the Profile and Model tabs: no changes, changes, errors, conflict |
 | `bot-side-list.tsx` | The list of the edit layout: Back, Create, Search, Pinned (reorder) and Others, rows with the pin badge |
@@ -33,7 +36,6 @@ the parts that the header and the Skills page share.
 | `custom-colour-card.tsx` | The Custom colour card: box, hue bar, R G B and Hex |
 | `delete-bot-dialog.tsx` | Delete a bot to Trash: the dialog and its toast |
 | `drag-setup.ts` | The drag sensors (mouse, long-press touch, Space) and the drop-area check shared by the header and the Pinned group |
-| `pin-answer.ts` | A skill pin change on the bot page and the Skills page: the Always load send that ends after its refresh, the answer that writes only its own pin, and the bot list load count that outlives a tab |
 | `pinned-sort.tsx` | Reordering the pinned bots (pin.md §2): drag and Alt+← / Alt+→, for the Bots grid and the side list |
 | `tools-list.tsx` | The Tools list of step 4: internal and provider tools, pairs, gates |
 

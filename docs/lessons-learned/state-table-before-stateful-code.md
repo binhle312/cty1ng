@@ -31,9 +31,10 @@ the spec walk were spread thin.
   (`../workflow.md` §2 step 1).
 - Lint now checks the object-argument rule (`max-params`), which the reviews found by hand.
 
-**Still open.** The bot page itself does not have a state module yet. The follow-up in
-`../status.md` writes its table into `design/components/bot-page.md` §4.1 and moves the rules
-out of `BotView`.
+**Still open.** The bot page's edit state (Profile and Model) does not have a state module yet.
+The follow-up in `../status.md` moves the rules of the table in `design/components/bot-page.md`
+§4.2 out of `BotView`. The bot list's own state is in one pure module now
+(`frontend/src/features/bots/bot-list-state.ts`, 2026-11-04).
 
 **Rule now in.** `../workflow.md` §2 steps 1, 2 and 4; `../frontend-conventions.md` §1, §3;
 `../testing.md` §3, §5; `../review-guide.md` §3.

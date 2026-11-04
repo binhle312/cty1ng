@@ -16,7 +16,7 @@ and what changed because of it. Newest first.
 
 | File | Lesson | Source | Status |
 | --- | --- | --- | --- |
-| `two-of-my-requests-at-once.md` | Ask what a second request of the same screen does to the first, and check every list state before the push | M2c, PR #59 | open (bot page state module) |
+| `two-of-my-requests-at-once.md` | Ask what a second request of the same screen does to the first, and check every list state before the push | M2c, PR #59 | applied |
 | `fake-answers-match-the-api.md` | A fake answer that the API's schema refuses fails the test, so a success test never runs only the failure path | M2c, PR #59 | applied |
 | `check-every-order-before-the-push.md` | Ask five order questions of every request before the push, search for the property a finding broke, and keep a rule with its companion rules | M2c, PR #59 | applied |
 | `state-table-before-stateful-code.md` | Write the state table of a screen with locks, live events or late answers before its code, and keep its rules in one pure module | M2c, PR #59 | open (bot page state module) |

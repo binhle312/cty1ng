@@ -1,6 +1,6 @@
 # Check two of the screen's own requests that wait at once, and every list state
 
-Date: 2026-11-03 · Source: M2c, PR #59 · Status: open (bot page state module)
+Date: 2026-11-03 · Source: M2c, PR #59 · Status: applied
 
 **Observed.** The review of `571375a` found three P2 problems and one P3, after the five order
 questions (`check-every-order-before-the-push.md`) were in. Two came from two requests of the
@@ -39,3 +39,16 @@ each round still finds new problems.
 Each has a test that failed first.
 
 **Rule now in.** `../workflow.md` §2 step 4.
+
+**Applied (2026-11-04).** The four module maps (the load count, the Always load values, the
+Removes, the held changes of `lib/api/optimistic.ts`) became one pure reducer,
+`frontend/src/features/bots/bot-list-state.ts`, with the bot list store beside it. The page
+computes what it shows from the server value and the requests that wait; a refused request
+leaves, and a saved one ends the older ones of the same thing. `bot-list-sequences.test.ts` runs
+every order of two requests of a pin, and random orders against a model of the server with
+loads, failures, lost answers and another tab. It found one bug that the old code had too: an
+add sent during a Remove stayed hidden when the Remove answered first and a load had landed.
+Broken on purpose in five ways, the reducer fails the sequence test or a unit test each time; a
+fresh reviewer agent's check of the first version found the invariants too weak (a late answer
+after a newer load), and they now check that a pin shows a value the server had since the last
+load. Only the bot list store writes the bot list and the settings (lint rule).

@@ -6,15 +6,10 @@ import { SortButton } from "../../components/ui/sort-button.tsx";
 import { showToast } from "../../components/ui/toast.tsx";
 import {
   getSettingsOptions,
-  getSettingsQueryKey,
-  listBotsQueryKey,
   updateSettingsMutation,
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
-import type { GetSettingsResponse } from "../../lib/api/generated/types.gen.ts";
 import { SETTINGS_OR_BOT_QUERIES } from "../../lib/api/operation-queries.ts";
-import { showUntilAnswered } from "../../lib/api/optimistic.ts";
-import { pinnedOf, reorderedBots } from "./bot-pins.ts";
-import type { BotRow } from "./bot-queries.ts";
+import { startOrderChange } from "./bot-list-store.ts";
 
 // The two sort buttons beside the Others title (bots-page.md §5, time-format.md §2), on the Bots
 // page and in the bot page list (bot-page.md §1). One setting holds the sort for both and the
@@ -35,41 +30,16 @@ export function SortButtons() {
             bot_order_direction: order.bot_order_direction === "desc" ? "asc" : "desc",
           }
         : { bot_order: sort, bot_order_direction: "desc" };
-    // The new sort shows until the answer, also over a load that lands before it, and a newer
-    // sort replaces it (`lib/api/optimistic.ts`).
-    const held = [
-      showUntilAnswered<GetSettingsResponse>({
-        queryClient,
-        queryKey: getSettingsQueryKey(),
-        kind: "sort",
-        change: (old) => ({ ...old, ...next }),
-        undo: (old) => ({ ...old, ...order }),
-      }),
-      showUntilAnswered<BotRow[]>({
-        queryClient,
-        queryKey: listBotsQueryKey(),
-        kind: "sort",
-        change: (old) =>
-          reorderedBots(
-            old,
-            pinnedOf(old).map((bot) => bot.id),
-            next,
-          ),
-        undo: (old) =>
-          reorderedBots(
-            old,
-            pinnedOf(old).map((bot) => bot.id),
-            order,
-          ),
-      }),
-    ];
+    // The new sort shows on the buttons and the list until the answer, also over a load that
+    // lands before it, and a newer sort replaces it (`bot-list-state.ts`).
+    const held = startOrderChange(queryClient, { kind: "sort", order: next });
     mutateAsync({ body: next })
       .then(
         () => {
-          for (const change of held) change.answered();
+          held.answered();
         },
         () => {
-          for (const change of held) change.refused();
+          held.refused();
           showToast("The app could not save the sort. Try again.");
         },
       )

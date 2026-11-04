@@ -25,12 +25,12 @@ import { useDialogRequests } from "../skills/dialog-requests.ts";
 import { AddSkillsDialog } from "./add-skills-dialog.tsx";
 import { type BotPin, type BotRow, pinErrorText } from "./bot-queries.ts";
 import {
-  markPinSend,
+  answeredBy,
   sendPinChange,
   sendPinRemove,
+  startPinChange,
   useAlwaysLoadsOnTheirWay,
-  writePinAnswer,
-} from "./pin-answer.ts";
+} from "./bot-list-store.ts";
 
 // The Skills tab of a bot (bot-page.md §7, SK1–SK4, UI-6.3–6.6): the skills the bot has, the
 // version it uses, the Always load switch and a ⋯ menu. Changes save at once and apply from the
@@ -64,7 +64,7 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
     pending: dialogPending,
     run: runInDialog,
   } = useDialogRequests<Dialog>({ refresh });
-  // The Always load value of each toggle on its way; it outlives the tab (`pin-answer.ts`).
+  // The Always load value of each toggle on its way; it outlives the tab (`bot-list-store.ts`).
   const loadOnItsWay = useAlwaysLoadsOnTheirWay();
 
   const dialogSkillId = dialog !== null && dialog.kind !== "add" ? dialog.skillId : null;
@@ -80,7 +80,7 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
   const skills = useQuery({ ...listSkillsOptions(), enabled: dialog?.kind === "add" });
 
   // A pin answer writes only its own pin, and only when the page still shows the expected pin
-  // and the list did not load since the request went out (`pin-answer.ts`).
+  // and the list did not load since the request went out (`bot-list-state.ts`).
   const staleText = (skillName: string, error: unknown) =>
     pinErrorText({ error, changed: skillName });
 
@@ -91,7 +91,7 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
 
   const toggleLoad = (pin: BotPin, alwaysLoad: boolean) => {
     const expected = { skill_version_id: pin.skill_version_id, always_load: pin.always_load };
-    // The switch shows the value on its way until the refresh after the answer (`pin-answer.ts`).
+    // The switch shows the value on its way until the refresh after the answer (`bot-list-state.ts`).
     void sendPinChange({
       queryClient,
       request: () =>
@@ -135,12 +135,14 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
           const list = await queryClient.query(listSkillVersionsOptions({ path: { id: skillId } }));
           const latest = list[0];
           if (latest === undefined) throw new Error("no version");
-          const sent = markPinSend(queryClient);
-          const answer = await setPin.mutateAsync({
-            path: { id: bot.id, skill_id: skillId },
-            body: { skill_version_id: latest.id, always_load: false, expected: null },
-          });
-          writePinAnswer({ queryClient, answer, skillId, expected: null, sent });
+          const change = startPinChange(queryClient, { botId: bot.id, skillId, expected: null });
+          await answeredBy(
+            change,
+            setPin.mutateAsync({
+              path: { id: bot.id, skill_id: skillId },
+              body: { skill_version_id: latest.id, always_load: false, expected: null },
+            }),
+          );
           return "added";
         } catch (error) {
           if (readApiError(error)?.code !== "stale_write") return "failed";
@@ -286,27 +288,24 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
             skill_version_id: dialogPin.skill_version_id,
             always_load: dialogPin.always_load,
           };
-          const sent = markPinSend(queryClient);
+          const change = startPinChange(queryClient, {
+            botId: bot.id,
+            skillId: dialogPin.skill_id,
+            expected,
+          });
           runInDialog({
             dialog,
-            request: setPin
-              .mutateAsync({
+            request: answeredBy(
+              change,
+              setPin.mutateAsync({
                 path: { id: bot.id, skill_id: dialogPin.skill_id },
                 body: {
                   skill_version_id: version.id,
                   always_load: dialogPin.always_load,
                   expected,
                 },
-              })
-              .then((answer) => {
-                writePinAnswer({
-                  queryClient,
-                  answer,
-                  skillId: dialogPin.skill_id,
-                  expected,
-                  sent,
-                });
               }),
+            ),
             failed: (error) => staleText(dialogPin.skill_name, error),
             // The tab loads the newest pins and keeps no change (bot-page.md §7).
             closes: (error) => readApiError(error)?.code === "stale_write",

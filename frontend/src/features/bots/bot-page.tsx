@@ -9,7 +9,6 @@ import { showToast } from "../../components/ui/toast.tsx";
 import { readApiError } from "../../lib/api/api-error.ts";
 import {
   getSettingsOptions,
-  listBotsQueryKey,
   listModelsOptions,
   listToolsOptions,
   updateBotMutation,
@@ -29,9 +28,9 @@ import {
   mergeTab,
   patchBody,
   tabOfField,
-  withSaveAnswer,
   withTab,
 } from "./bot-edit-form.ts";
+import { writeSaveAnswer } from "./bot-list-store.ts";
 import { useBotLeaveGuard } from "./bot-leave-guard.tsx";
 import { BotNotFound, BotPageTop } from "./bot-page-top.tsx";
 import { type BotRow, useBots } from "./bot-queries.ts";
@@ -343,9 +342,7 @@ function BotView({
       .then((result) => {
         // A newer list (an event or a refresh) may have come first, and a pin change never raises
         // `row_version`: the answer writes only the fields a save owns.
-        queryClient.setQueryData<BotRow[]>(listBotsQueryKey(), (old) =>
-          old?.map((b) => withSaveAnswer({ bot: b, answer: result })),
-        );
+        writeSaveAnswer(queryClient, result);
         // The answer sets the tab's values only while the tab is still based on `sentBase`. A
         // Discard that loaded a newer `row_version` (another tab saved after this save) already
         // shows values newer than the answer; they stay.
