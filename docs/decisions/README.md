@@ -94,7 +94,7 @@ Implemented in: links.
 | D47 | [Delete sends the whole project to Trash; the owner picks what wins in a memory check](D47-delete-project-to-trash-and-memory-check-choices.md) | accepted | D49, D61 |
 | D48 | [Bots plan first and wait for approval before they change anything](D48-bots-plan-before-they-change-anything.md) | accepted | D54, D56, D57; own amendment 2026-10-27 |
 | D49 | [Deleted skills go to Trash, Trash keeps items for a set number of days, and only a permanent delete has Undo](D49-skills-go-to-trash-and-trash-days-setting.md) | accepted | D62 |
-| D50 | [Deleted bots go to Trash and can be restored](D50-deleted-bots-go-to-trash.md) | accepted |  |
+| D50 | [Deleted bots go to Trash and can be restored](D50-deleted-bots-go-to-trash.md) | accepted | own amendment 2026-11-04 |
 | D51 | [Bots improve their skills from the owner's feedback, and the owner approves each change](D51-bots-improve-their-skills-from-owner-feedback.md) | accepted | own amendments 2026-10-23, 2026-10-24, 2026-10-27 |
 | D52 | [Each run writes on its own branch and saves to the Library when it ends](D52-each-run-writes-on-its-own-branch.md) | accepted | D54, D56, D59, own amendment 2026-10-25, D61, own amendment 2026-10-28 |
 | D53 | [Bots read the web only through the provider's web tools, with rules for runs that read it](D53-web-access-through-provider-web-tools.md) | accepted | D55 |

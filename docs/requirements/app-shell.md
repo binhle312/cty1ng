@@ -39,8 +39,8 @@ Design: `../design/components/left-bar.md`, `top-header.md` and `user-panel.md` 
 - UI-1.2: Each conversation is a row in bar 2, with a round icon and its title.
 - UI-1.3: Icon content, from **active** members' avatars:
   0 bots → title initials on a neutral background; 1 → that avatar; 2 → two halves side by
-  side; 3–4 → 2×2 grid; 5+ → three avatars and a "+N" tile. Removed bots are left out; deleted
-  bots are drawn grey. Pending members are left out until the owner chooses their history. There
+  side; 3–4 → 2×2 grid; 5+ → three avatars and a "+N" tile. Removed bots are left out, and deleting
+  a bot removes it (`../conversation-rules.md` §3). Pending members are left out until the owner chooses their history. There
   are no preset icons (round 12).
 - UI-1.4: The row of the open conversation shows as selected.
   Conversations with unread messages show a dot.
