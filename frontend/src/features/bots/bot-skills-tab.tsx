@@ -30,6 +30,7 @@ import {
   sendPinRemove,
   startPinChange,
   useAlwaysLoadsOnTheirWay,
+  usePinChangesOnTheirWay,
 } from "./bot-list-store.ts";
 
 // The Skills tab of a bot (bot-page.md §7, SK1–SK4, UI-6.3–6.6): the skills the bot has, the
@@ -66,6 +67,8 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
   } = useDialogRequests<Dialog>({ refresh });
   // The Always load value of each toggle on its way; it outlives the tab (`bot-list-store.ts`).
   const loadOnItsWay = useAlwaysLoadsOnTheirWay();
+  // A row whose change is on its way has its actions off (bot-page.md §4.2, Q3).
+  const changeOnItsWay = usePinChangesOnTheirWay();
 
   const dialogSkillId = dialog !== null && dialog.kind !== "add" ? dialog.skillId : null;
   const versions = useQuery({
@@ -220,6 +223,7 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
                 key={pin.skill_id}
                 pin={pin}
                 pendingLoad={loadOnItsWay({ botId: bot.id, skillId: pin.skill_id })}
+                busy={changeOnItsWay({ botId: bot.id, skillId: pin.skill_id })}
                 onToggle={(alwaysLoad) => {
                   toggleLoad(pin, alwaysLoad);
                 }}
@@ -319,6 +323,7 @@ export function BotSkillsTab({ bot }: { bot: BotRow }) {
 function SkillPinRow({
   pin,
   pendingLoad,
+  busy,
   onToggle,
   onUpgrade,
   onChangeVersion,
@@ -327,6 +332,9 @@ function SkillPinRow({
   pin: BotPin;
   // The Always load value of a change that is on its way, or null.
   pendingLoad: boolean | null;
+  // A change of this row is on its way: the switch, the link and ⋯ are off, so no second change
+  // goes out with an old `expected` pin (bot-page.md §4.2, Q3).
+  busy: boolean;
   onToggle: (alwaysLoad: boolean) => void;
   onUpgrade: () => void;
   onChangeVersion: () => void;
@@ -358,7 +366,8 @@ function SkillPinRow({
           ) : outdated ? (
             <button
               type="button"
-              className="rounded-xs text-sm text-primary underline focus-visible:outline-2 focus-visible:outline-primary"
+              className="rounded-xs text-sm text-primary underline focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={busy}
               onClick={onUpgrade}
             >
               v{pin.latest_version} available
@@ -370,7 +379,7 @@ function SkillPinRow({
         <Switch
           checked={alwaysLoad}
           label={`Always load ${pin.skill_name}`}
-          disabled={pendingLoad !== null}
+          disabled={busy}
           onChange={onToggle}
         />
       </td>
@@ -378,7 +387,8 @@ function SkillPinRow({
         <MenuRoot>
           <MenuTrigger
             aria-label={`Actions for ${pin.skill_name}`}
-            className="inline-flex size-button-small items-center justify-center rounded-card hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-primary"
+            disabled={busy}
+            className="inline-flex size-button-small items-center justify-center rounded-card hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-primary data-disabled:cursor-not-allowed data-disabled:opacity-40"
           >
             <Ellipsis aria-hidden className="size-4" />
           </MenuTrigger>

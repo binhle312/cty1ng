@@ -29,6 +29,7 @@ import {
   sendPinRemove,
   startPinChange,
   useAlwaysLoadsOnTheirWay,
+  usePinChangesOnTheirWay,
 } from "../bots/bot-list-store.ts";
 import { type BotRow, pinErrorText } from "../bots/bot-queries.ts";
 import { LoadError } from "./load-error.tsx";
@@ -58,6 +59,8 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
   };
   // The Always load value of each toggle on its way; it outlives the tab (`bot-list-store.ts`).
   const loadOnItsWay = useAlwaysLoadsOnTheirWay();
+  // A row whose change is on its way has its actions off (bot-page.md §4.2, Q3).
+  const changeOnItsWay = usePinChangesOnTheirWay();
 
   // A pin changed here changes both sides: the bot list shows it at once, and everything that
   // counts pins (the skill's header and list, the bot page) fetches again.
@@ -199,6 +202,7 @@ export function SkillBotsTab({ skill }: { skill: GetSkillResponse }) {
                 use={use}
                 skillDeprecated={skill.deprecated}
                 pendingLoad={loadOnItsWay({ botId: use.bot.id, skillId: skill.id })}
+                busy={changeOnItsWay({ botId: use.bot.id, skillId: skill.id })}
                 onToggle={(alwaysLoad) => {
                   toggleLoad(use, alwaysLoad);
                 }}
@@ -309,6 +313,7 @@ function BotPinRow({
   use: { bot, pin },
   skillDeprecated,
   pendingLoad,
+  busy,
   onToggle,
   onUpgrade,
   onChangeVersion,
@@ -318,6 +323,9 @@ function BotPinRow({
   skillDeprecated: boolean;
   // The Always load value of a change that is on its way, or null.
   pendingLoad: boolean | null;
+  // A change of this row is on its way: the switch, the link and ⋯ are off, so no second change
+  // goes out with an old `expected` pin (bot-page.md §4.2, Q3).
+  busy: boolean;
   onToggle: (alwaysLoad: boolean) => void;
   onUpgrade: () => void;
   onChangeVersion: () => void;
@@ -345,7 +353,8 @@ function BotPinRow({
           ) : skillDeprecated ? null : (
             <button
               type="button"
-              className="rounded-xs text-sm text-primary underline focus-visible:outline-2 focus-visible:outline-primary"
+              className="rounded-xs text-sm text-primary underline focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={busy}
               onClick={onUpgrade}
             >
               Upgrade to v{pin.latest_version}
@@ -357,7 +366,7 @@ function BotPinRow({
         <Switch
           checked={alwaysLoad}
           label={`Always load for ${bot.name}`}
-          disabled={pendingLoad !== null}
+          disabled={busy}
           onChange={onToggle}
         />
       </td>
@@ -365,7 +374,8 @@ function BotPinRow({
         <MenuRoot>
           <MenuTrigger
             aria-label={`Actions for ${bot.name}`}
-            className="inline-flex size-button-small items-center justify-center rounded-card hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-primary"
+            disabled={busy}
+            className="inline-flex size-button-small items-center justify-center rounded-card hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-primary data-disabled:cursor-not-allowed data-disabled:opacity-40"
           >
             <Ellipsis aria-hidden className="size-4" />
           </MenuTrigger>

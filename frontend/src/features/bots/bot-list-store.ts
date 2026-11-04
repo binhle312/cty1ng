@@ -14,6 +14,7 @@ import {
   initialBotListState,
   type PinExpected,
   type PinKey,
+  pinChangeOnItsWay,
   shownBots,
   shownSettings,
 } from "./bot-list-state.ts";
@@ -230,10 +231,10 @@ export function sendPinRemove({
     .finally(() => void refresh());
 }
 
-// The Always load value on its way for a bot and a skill, or null.
-export function useAlwaysLoadsOnTheirWay(): (pin: PinKey) => boolean | null {
+// The bot list state of this query client, for the selectors below.
+function useBotListState(): BotListState {
   const store = storeOf(useQueryClient());
-  const state = useSyncExternalStore(
+  return useSyncExternalStore(
     (listener) => {
       store.listeners.add(listener);
       return () => {
@@ -242,5 +243,16 @@ export function useAlwaysLoadsOnTheirWay(): (pin: PinKey) => boolean | null {
     },
     () => store.state,
   );
+}
+
+// The Always load value on its way for a bot and a skill, or null.
+export function useAlwaysLoadsOnTheirWay(): (pin: PinKey) => boolean | null {
+  const state = useBotListState();
   return (pin) => alwaysLoadOnItsWay(state, pin);
+}
+
+// A change of a pin is on its way, so its row's actions are off (bot-page.md §4.2, Q3).
+export function usePinChangesOnTheirWay(): (pin: PinKey) => boolean {
+  const state = useBotListState();
+  return (pin) => pinChangeOnItsWay(state, pin);
 }

@@ -81,6 +81,12 @@ const click = (element: HTMLElement) => {
   });
 };
 
+// A control that is off: disabled, or marked so by its component.
+const isOff = (element: HTMLElement) =>
+  element.hasAttribute("disabled") ||
+  element.hasAttribute("data-disabled") ||
+  element.getAttribute("aria-disabled") === "true";
+
 const focus = (element: HTMLElement) => {
   act(() => {
     fireEvent.focus(element);
@@ -429,6 +435,31 @@ describe("the Bots tab of a skill", () => {
     });
   });
 
+  // Q3 (bot-page.md §4.2, owner 2026-11-04): a second change of a row whose move waits would
+  // send the old pin as `expected` and get the "changed in another place" toast.
+  it("turns the row's actions off while its version move waits, also after the dialog closes", async () => {
+    const held = heldAnswer();
+    open([designer], {
+      [`GET /api/skills/${SKILL_ID}/diff`]: () => ({ body: { description: null, body: [] } }),
+      [`PUT /api/bots/${designer.id}/skills/${SKILL_ID}`]: async () => held.promise,
+    });
+    click(await screen.findByRole("button", { name: "Upgrade to v3" }));
+    const dialog = await screen.findByRole("dialog", { name: "Upgrade Write user stories to v3?" });
+    click(within(dialog).getByRole("button", { name: "Upgrade to v3" }));
+    click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+    expect(isOff(screen.getByRole("button", { name: "Upgrade to v3" }))).toBe(true);
+    expect(isOff(screen.getByRole("button", { name: "Actions for Designer" }))).toBe(true);
+    expect(isOff(screen.getByRole("switch", { name: "Always load for Designer" }))).toBe(true);
+    await held.answer({ body: makeBot(2, "Designer", [makePin()]) });
+    await waitFor(() => {
+      expect(isOff(screen.getByRole("button", { name: "Actions for Designer" }))).toBe(false);
+    });
+    expect(isOff(screen.getByRole("switch", { name: "Always load for Designer" }))).toBe(false);
+  });
+
   // Review of PR #57: one mutation hook served every row, so a second toggle dropped the first
   // one's callbacks and its failure went unseen.
   it("shows a version move that fails after the owner left the tab as a toast", async () => {
@@ -636,44 +667,34 @@ describe("the Bots tab of a skill", () => {
   });
 
   // Review of 571375a: the answer of an Always load change sent before a Remove ended the Remove.
-  it("keeps the row away when an older Always load change answers", async () => {
+  // Q3 (owner, 2026-11-04): the whole row is off while a change of it waits, so Remove cannot
+  // go out while an Always load change of the same pin waits. The reducer still keeps the row
+  // away when an older change answers after a Remove (`bot-list-state.test.ts`, "Remove of a
+  // skill"), for a Remove from another place.
+  it("turns Remove off while an Always load change of the row waits, and on after its refresh", async () => {
     const heldToggle = heldAnswer();
-    const heldRemove = heldAnswer();
-    let fail = false;
     let bots: Bot[] = [ba];
     open([ba], {
-      "GET /api/bots": () => (fail ? FAILED : { body: bots }),
-      [`PUT /api/bots/${ba.id}/skills/${SKILL_ID}`]: async () => {
-        const answer = await heldToggle.promise;
-        return answer;
-      },
-      [`DELETE /api/bots/${ba.id}/skills/${SKILL_ID}`]: async () => {
-        const answer = await heldRemove.promise;
-        return answer;
+      "GET /api/bots": () => ({ body: bots }),
+      [`PUT /api/bots/${ba.id}/skills/${SKILL_ID}`]: async () => heldToggle.promise,
+      [`DELETE /api/bots/${ba.id}/skills/${SKILL_ID}`]: () => {
+        bots = [makeBot(1, "BA", [], { effort: "high" })];
+        return { status: 204 };
       },
     });
     click(await screen.findByRole("switch", { name: "Always load for BA" }));
+    expect(isOff(screen.getByRole("button", { name: "Actions for BA" }))).toBe(true);
+    const toggled = makeBot(1, "BA", [makePin({ always_load: false })], { effort: "high" });
+    bots = [toggled];
+    await heldToggle.answer({ body: toggled });
+    await waitFor(() => {
+      expect(isOff(screen.getByRole("button", { name: "Actions for BA" }))).toBe(false);
+    });
     click(screen.getByRole("button", { name: "Actions for BA" }));
     click(await screen.findByRole("menuitem", { name: "Remove" }));
     await waitFor(() => {
       expect(screen.queryByRole("button", { name: "Actions for BA" })).toBeNull();
     });
-    // The toggle answers, and the refresh after it lands while the Remove waits.
-    const sentLoads = () => api?.sent("GET", "/api/bots").length ?? 0;
-    const loads = sentLoads();
-    const toggled = makeBot(1, "BA", [makePin({ always_load: false })], { effort: "high" });
-    bots = [toggled];
-    await heldToggle.answer({ body: toggled });
-    await waitFor(() => {
-      expect(sentLoads()).toBeGreaterThan(loads);
-    });
-    await act(() => Promise.resolve());
-    expect(screen.queryByRole("button", { name: "Actions for BA" })).toBeNull();
-    // The Remove fails and the refresh after it fails too: the row comes back.
-    fail = true;
-    await heldRemove.answer(FAILED);
-    expect(await screen.findByText("Something failed.")).toBeTruthy();
-    expect(await screen.findByRole("button", { name: "Actions for BA" })).toBeTruthy();
   });
 
   // Review of d7c4cd7: a failed Remove whose refresh also failed kept the row hidden.

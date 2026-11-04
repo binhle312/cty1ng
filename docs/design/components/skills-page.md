@@ -101,6 +101,8 @@ The skill side of the bot page Skills tab (`bot-page.md` §7), with the same row
   on its way outlives the tab, and **Remove** takes the row away at once (a bot added back
   while it waits shows again), as on the bot page
   (`bot-page.md` §7, §7.1; M2c audit, 2026-11-03).
+- While a change of a row is on its way, the row's ⋯ menu, its "Upgrade to v{n}" link and its
+  Always load switch are off, as on the bot page (`bot-page.md` §7, §4.2 Q3; owner, 2026-11-04).
 - No bot uses it: "No bot uses this skill yet." and **+ Add**.
 - No bot exists (M1): the same line, and **+ Add** is disabled with the tooltip "Create a bot
   first."

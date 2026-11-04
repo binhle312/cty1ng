@@ -333,3 +333,13 @@ export function alwaysLoadOnItsWay(state: BotListState, key: PinKey): boolean | 
   }
   return null;
 }
+
+// A change of this pin is on its way: a move or + Add until its answer, an Always load change
+// until the refresh after it ends. The row's actions are off then, so no second change goes out
+// with an old `expected` pin (bot-page.md §4.2, Q3).
+export function pinChangeOnItsWay(state: BotListState, key: PinKey): boolean {
+  return state.requests.some(
+    ({ request }) =>
+      request.kind === "pin" && request.botId === key.botId && request.skillId === key.skillId,
+  );
+}

@@ -10,6 +10,7 @@ import {
 } from "../../../test/fixtures.ts";
 import {
   alwaysLoadOnItsWay,
+  pinChangeOnItsWay,
   type BotListEvent,
   type BotListRequest,
   type BotListState,
@@ -256,6 +257,23 @@ describe("a pin change (Always load, Move, + Add)", () => {
     const ended = run(failed, refreshEnded(t.id));
     expect(alwaysLoadOnItsWay(ended, pinOfBa)).toBeNull();
     expect(ended.requests).toEqual([]);
+  });
+
+  // Q3 (bot-page.md §4.2): the row's actions are off while any change of the row waits.
+  it("says a change of the row is on its way: a move until its answer", () => {
+    const m = move();
+    const state = run(start([off]), m.event);
+    expect(pinChangeOnItsWay(state, pinOfBa)).toBe(true);
+    expect(pinChangeOnItsWay(state, { botId: BA, skillId: typeId("skill", 2) })).toBe(false);
+    expect(pinChangeOnItsWay(run(state, answered(m.id, [v2])), pinOfBa)).toBe(false);
+    expect(pinChangeOnItsWay(run(state, refused(m.id)), pinOfBa)).toBe(false);
+  });
+
+  it("says a change of the row is on its way: Always load until the refresh after it ends", () => {
+    const t = toggle();
+    const saved = run(start([off]), t.event, answered(t.id, [on]));
+    expect(pinChangeOnItsWay(saved, pinOfBa)).toBe(true);
+    expect(pinChangeOnItsWay(run(saved, refreshEnded(t.id)), pinOfBa)).toBe(false);
   });
 
   it("does nothing for an answer that comes after its request ended", () => {
