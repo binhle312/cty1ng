@@ -66,7 +66,7 @@ it in, and the row goes when its PR merges.
 | Rail and bar 2 list scrolling (fade, ˄/˅ buttons, the list ends 24 px above the user panel, `left-bar.md` §1.3, §2): M0 has no lists yet | [#49](https://github.com/binhle312/cty1ng/pull/49) | M5b (projects) and M3 (conversations) |
 | More visual snapshots: `themes.md` §5 asks for 8 key screens × 2 themes × 2 modes; M0 has one screen in Command dark | [#49](https://github.com/binhle312/cty1ng/pull/49) | Each slice adds its screens; light and Material with their values |
 | Copy slug on the server: today the Clone page tries `-copy-2`, `-copy-3` … after a confirmed `slug_taken` (a skill in Trash keeps its slug). If many collisions make it slow, the server picks the suffix, for example a flag on `POST /skills`; `POST /skill-drafts/{id}/decision` already picks the next free suffix for a bot's slug (`api.md` §2a) (an API change; owner, 2026-10-31; `design/components/skills-page.md`, "Texts added in the M1b build") | [#54](https://github.com/binhle312/cty1ng/pull/54) | When collisions get slow; not planned before M5b |
-| Object arguments in the code from before the `max-params` lint rule (104 places in `eslint-suppressions.json`, 2026-11-04): fix them when their module changes, then prune the list | [#59](https://github.com/binhle312/cty1ng/pull/59) | Each slice, for the modules it touches |
+| Object arguments in the code from before the `max-params` lint rule (104 places in `eslint-suppressions.json`, 2026-11-04): fix one only when that function changes for another reason (`AGENTS.md` §10), then prune the list | [#59](https://github.com/binhle312/cty1ng/pull/59) | Each slice, for the functions it changes |
 | `uuid` advisory GHSA-w5hq-g745-h8pq (moderate, through `typeid-js` 1.2.0, which needs `uuid` ^10). **Accepted risk** (owner, 2026-10-30): the flaw is in v3/v5/v6 with a caller buffer; `typeid-js` uses only `stringify` and `v7`, and our code never calls `uuid`. No override | #48 | Update `typeid-js` when a version allows `uuid` ≥ 11.1.1 |
 | Security tests that `security.md` §2.8 and §3 ask for are missing: SQL injection strings, XSS with event handlers and SVG, a renamed PNG and a polyglot avatar | Docs audit 2026-11-04 | M2 close |
 | `.strict()` gaps against `security.md` §2.8: the multipart body of `POST /skills/import/preview`, and no query schema on `/health` and `/stream` | Docs audit 2026-11-04 | M2 close |
@@ -127,6 +127,7 @@ A slice can also be `blocked` (say on what in Notes).
 | 2026-11-01 | M2a merged (#57): bots backend |
 | 2026-11-02 | M2b merged (#58): Bots page, header roster, Create bot with Clone |
 | 2026-11-04 | M2c merged (#59); M2 is complete |
+| 2026-11-04 | Two new rules (owner): leave working code alone, and two parameters may stay positional when their order does not change the result |
 | 2026-11-04 | Every plan now has a file in `docs/plans/` (owner); the plans up to M2 are copied from their PRs |
 | 2026-11-04 | Docs audit ([#61](https://github.com/binhle312/cty1ng/pull/61)): docs matched to the built code and to the current decisions; open questions and code gaps moved to the tables above |
 | 2026-11-04 | Automated security review on: the owner added the `ANTHROPIC_API_KEY` secret, and the review also watches the log, avatar and sensitive data guard code. It runs when the owner marks a PR Ready, on Haiku 5.5; PRs open as drafts |

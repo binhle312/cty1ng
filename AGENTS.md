@@ -109,7 +109,7 @@ If a command in this list does not exist yet (early slices), creating it is part
 
 - Implement work inside an approved task brief (`docs/tasks/`).
 - Write and run tests; fix failing tests caused by your change.
-- Refactor inside one module when it keeps behaviour and tests green.
+- Refactor inside one module when the task needs it and it keeps behaviour and tests green.
 - Update documentation to match your change.
 
 ## 7. What needs the human's approval (stop and ask, or flag it clearly in the PR)
@@ -166,6 +166,9 @@ Mark these in the PR description under a heading `Needs human review` with one l
   unless a task says so.
 - Names: the same concept has the same name in docs, database, API and UI (see the glossary in
   `docs/requirements/product-brief.md`).
+- **Leave working code alone** (owner, 2026-11-04). New code follows the conventions. Do not
+  change working code only to match a convention; change its style only when that function
+  changes for another reason. A style-only finding on old code is dropped, not a P3.
 - **No hardcoded values** (owner, 2026-10-23). A number, threshold, limit, time or default that
   the owner may want to change (caps, Improve thresholds, Trash days, size limits, timeouts) has
   one home: the `settings` table if the owner changes it in the app, otherwise an environment

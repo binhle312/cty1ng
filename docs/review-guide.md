@@ -122,6 +122,7 @@ Harm is small and recoverable when all of these are true:
 - The app's own refresh or the owner's next action shows the truth.
 
 At each milestone close, the owner reviews the P3 follow-ups, and either fixes or drops each item.
+A style-only finding on old code, with no wrong result, is dropped and does not become a P3 (`AGENTS.md` §10).
 
 The scope is one human on `127.0.0.1`, until the VPS phase (M9).
 
