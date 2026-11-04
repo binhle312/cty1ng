@@ -1,7 +1,7 @@
 import { focusManager, type QueryClient } from "@tanstack/react-query";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { fakeApi, heldAnswer } from "../../../test/fake-api.ts";
+import { fakeApi, heldAnswer, NETWORK_ERROR } from "../../../test/fake-api.ts";
 import {
   BOT_SETTINGS,
   type Bot,
@@ -93,6 +93,12 @@ const valueOf = (label: string): string => {
   return field.value;
 };
 
+// A control that is off: disabled, or marked so by its component.
+const isOff = (element: HTMLElement) =>
+  element.hasAttribute("disabled") ||
+  element.hasAttribute("data-disabled") ||
+  element.getAttribute("aria-disabled") === "true";
+
 const saveBar = () => {
   const save = screen.getAllByRole("button", { name: "Save" }).at(-1);
   if (save === undefined) throw new Error("no Save");
@@ -183,6 +189,35 @@ describe("the bot page", () => {
     refocus();
     expect(await screen.findByText(/The app could not find this bot/)).toBeTruthy();
     expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+
+  // Q4 (bot-page.md §4.2, owner 2026-11-04): the server took the Save, but the answer was lost.
+  it("loads the bot after a Save that failed on the way, and shows a save the server took", async () => {
+    const state = { bots: [makeBot(1, "BA"), makeBot(2, "Designer")] };
+    await open(state, {
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: () => {
+          const ba = state.bots[0];
+          if (ba === undefined) return { status: 404 };
+          state.bots = [
+            { ...ba, description: "Mine.", row_version: ba.row_version + 1 },
+            ...state.bots.slice(1),
+          ];
+          return NETWORK_ERROR;
+        },
+      },
+    });
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("Could not save BA. Try again.")).toBeTruthy();
+    expect(
+      await screen.findByText("No changes. Edits apply from the next run.", undefined, {
+        timeout: 5000,
+      }),
+    ).toBeTruthy();
+    expect(screen.queryByText(/changed in another place/)).toBeNull();
+    expect(valueOf("Description")).toBe("Mine.");
   });
 
   // State table (bot-page.md §4.2), "The bot leaves the list" × "This tab's Save on its way".
@@ -1850,6 +1885,43 @@ describe("the Skills tab (bot-page.md §7)", () => {
     expect(await screen.findByText("The app could not save it.")).toBeTruthy();
   });
 
+  // Q3 (bot-page.md §4.2, owner 2026-11-04): a second change of a row whose move waits would
+  // send the old pin as `expected` and get the "changed in another place" toast.
+  it("turns the row's actions off while its version move waits, also after the dialog closes", async () => {
+    const held = heldAnswer();
+    const [zeta] = pins;
+    if (zeta === undefined) throw new Error("no pins");
+    const state = { bots: [makeBot(1, "BA", [zeta])] };
+    await open(state, {
+      routes: {
+        [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+        [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
+          body: { body: [{ op: "add", text: "New line." }], description: null },
+        }),
+        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => held.promise,
+      },
+      path: "/bots/ba?tab=skills",
+    });
+    await heading();
+    click(screen.getByRole("button", { name: "v3 available" }));
+    const dialog = await screen.findByRole("dialog", { name: "Upgrade Zeta to v3?" });
+    click(await within(dialog).findByRole("button", { name: "Upgrade to v3" }));
+    click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+    expect(isOff(screen.getByRole("button", { name: "v3 available" }))).toBe(true);
+    expect(isOff(screen.getByRole("button", { name: "Actions for Zeta" }))).toBe(true);
+    expect(isOff(screen.getByRole("switch", { name: "Always load Zeta" }))).toBe(true);
+    const zetaV3 = { ...zeta, version: 3, skill_version_id: versionId(3), latest_version: 3 };
+    state.bots = [makeBot(1, "BA", [zetaV3])];
+    await held.answer({ body: makeBot(1, "BA", [zetaV3]) });
+    await waitFor(() => {
+      expect(isOff(screen.getByRole("button", { name: "Actions for Zeta" }))).toBe(false);
+    });
+    expect(isOff(screen.getByRole("switch", { name: "Always load Zeta" }))).toBe(false);
+  });
+
   it("shows a version move that fails after the owner left the page as a toast", async () => {
     const held = heldAnswer();
     const { router } = await open(
@@ -2123,58 +2195,16 @@ describe("the Skills tab (bot-page.md §7)", () => {
   });
 
   // Review of 571375a: the answer of an Always load change sent before a Remove ended the Remove.
-  it("keeps a removed skill's row away when an older Always load change answers", async () => {
-    const heldToggle = heldAnswer();
-    const heldRemove = heldAnswer();
-    let fail = false;
-    const state = { bots: [makeBot(1, "BA", [makePin()])] };
-    await open(state, {
-      routes: {
-        "GET /api/bots": () => (fail ? FAILED_ANSWER : { body: state.bots }),
-        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => {
-          const answer = await heldToggle.promise;
-          return answer;
-        },
-        [`DELETE /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => {
-          const answer = await heldRemove.promise;
-          return answer;
-        },
-      },
-      path: "/bots/ba?tab=skills",
-    });
-    await heading();
-    click(screen.getByRole("switch", { name: /Always load/ }));
-    click(screen.getByRole("button", { name: /Actions for/ }));
-    click(await screen.findByRole("menuitem", { name: "Remove" }));
-    await screen.findByText("BA has no skills yet.");
-    await waitFor(() => {
-      expect(fake?.sent("DELETE", `/api/bots/${BA_ID}/skills/${SKILL_ID}`)).toHaveLength(1);
-    });
-    // The toggle answers, and the refresh after it lands while the Remove waits.
-    const loads = fake?.sent("GET", "/api/bots").length ?? 0;
-    state.bots = [makeBot(1, "BA", [makePin({ always_load: true })])];
-    await heldToggle.answer({ body: state.bots[0] });
-    await waitFor(() => {
-      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(loads);
-    });
-    await act(() => Promise.resolve());
-    expect(screen.queryByRole("switch", { name: /Always load/ })).toBeNull();
-    // The Remove fails and the refresh after it fails too: the row comes back.
-    fail = true;
-    await heldRemove.answer(FAILED_ANSWER);
-    expect(await screen.findByText("Failed.")).toBeTruthy();
-    expect(await screen.findByRole("switch", { name: /Always load/ })).toBeTruthy();
-  });
-
-  it("keeps a removed skill's row away when an older Always load change answers after the Remove", async () => {
+  // Q3 (owner, 2026-11-04): the whole row is off while a change of it waits, so Remove cannot
+  // go out while an Always load change of the same pin waits. The reducer still keeps the row
+  // away when an older change answers after a Remove (`bot-list-state.test.ts`, "Remove of a
+  // skill"), for a Remove from another place.
+  it("turns Remove off while an Always load change of the row waits, and on after its refresh", async () => {
     const heldToggle = heldAnswer();
     const state = { bots: [makeBot(1, "BA", [makePin()])] };
     await open(state, {
       routes: {
-        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => {
-          const answer = await heldToggle.promise;
-          return answer;
-        },
+        [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => heldToggle.promise,
         [`DELETE /api/bots/${BA_ID}/skills/${SKILL_ID}`]: () => {
           state.bots = [makeBot(1, "BA")];
           return { status: 204 };
@@ -2184,16 +2214,50 @@ describe("the Skills tab (bot-page.md §7)", () => {
     });
     await heading();
     click(screen.getByRole("switch", { name: /Always load/ }));
+    expect(isOff(screen.getByRole("button", { name: /Actions for/ }))).toBe(true);
+    state.bots = [makeBot(1, "BA", [makePin({ always_load: true })])];
+    await heldToggle.answer({ body: state.bots[0] });
+    await waitFor(() => {
+      expect(isOff(screen.getByRole("button", { name: /Actions for/ }))).toBe(false);
+    });
     click(screen.getByRole("button", { name: /Actions for/ }));
     click(await screen.findByRole("menuitem", { name: "Remove" }));
-    await screen.findByText("BA has no skills yet.");
+    expect(await screen.findByText("BA has no skills yet.")).toBeTruthy();
+  });
+
+  it("turns the Always load switch off while a version move of its row waits", async () => {
+    const held = heldAnswer();
+    const [zeta] = pins;
+    if (zeta === undefined) throw new Error("no pins");
+    await open(
+      { bots: [makeBot(1, "BA", [zeta])] },
+      {
+        routes: {
+          [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+          [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
+            body: { body: [{ op: "add", text: "New line." }], description: null },
+          }),
+          [`PUT /api/bots/${BA_ID}/skills/${SKILL_ID}`]: async () => held.promise,
+        },
+        path: "/bots/ba?tab=skills",
+      },
+    );
+    await heading();
+    expect(isOff(screen.getByRole("switch", { name: "Always load Zeta" }))).toBe(false);
+    click(screen.getByRole("button", { name: "v3 available" }));
+    const dialog = await screen.findByRole("dialog", { name: "Upgrade Zeta to v3?" });
+    click(await within(dialog).findByRole("button", { name: "Upgrade to v3" }));
+    // The open dialog hides the page from role queries.
     await waitFor(() => {
-      expect(fake?.sent("DELETE", `/api/bots/${BA_ID}/skills/${SKILL_ID}`)).toHaveLength(1);
+      expect(isOff(screen.getByRole("switch", { name: "Always load Zeta", hidden: true }))).toBe(
+        true,
+      );
     });
-    await heldToggle.answer({ body: makeBot(1, "BA", [makePin({ always_load: true })]) });
-    await act(() => Promise.resolve());
-    expect(screen.queryByRole("switch", { name: /Always load/ })).toBeNull();
-    expect(screen.getByText("BA has no skills yet.")).toBeTruthy();
+    const zetaV3 = { ...zeta, version: 3, skill_version_id: versionId(3), latest_version: 3 };
+    await held.answer({ body: makeBot(1, "BA", [zetaV3]) });
+    await waitFor(() => {
+      expect(isOff(screen.getByRole("switch", { name: "Always load Zeta" }))).toBe(false);
+    });
   });
 
   // Review of d7c4cd7: a failed Remove whose refresh also failed kept the row hidden.

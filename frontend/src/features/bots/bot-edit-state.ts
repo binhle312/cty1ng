@@ -31,7 +31,8 @@ import {
 // The rules:
 // - Both tabs share one form; each tab has its own save bar and its own `row_version` (base).
 // - A newer `row_version` from the server: a tab with no changes takes the new values at once,
-//   also later when its changes go (typed back). A tab whose Save is on its way waits for the
+//   also later when its changes go (typed back), and so does a tab whose changed fields already
+//   have the server's values (Q4). A tab whose Save is on its way waits for the
 //   answer: the event of that save can come first.
 // - Conflict: a tab with changes whose base is older than the server, while no Save of the page
 //   waits (Q1), or whose Save was refused as stale at its base. Save is off until Discard.
@@ -214,14 +215,22 @@ function newerServer(
 const changedOf = (state: EditState, { tab, rules }: { tab: EditTab; rules: EditRules }) =>
   changedFields({ tab, form: state.form, saved: state.saved, effective: rules.effective });
 
-// A tab with no changes and an older base takes the server's values, unless its Save waits.
+// A tab with an older base takes the server's values, unless its Save waits, when nothing of the
+// owner's would be lost: it has no changes, or every field the owner changed already has the
+// server's value (a Save whose answer was lost, or the same change in another place; Q4).
 function takeNewer(state: EditState, rules: EditRules): EditState {
   const { rowVersion } = state.server;
+  const nothingLost = (tab: EditTab) => {
+    const toServer = changedFields({
+      tab,
+      form: state.form,
+      saved: state.server.form,
+      effective: rules.effective,
+    });
+    return changedOf(state, { tab, rules }).every((field) => !toServer.includes(field));
+  };
   const behind = EDIT_TABS.filter(
-    (tab) =>
-      tab !== state.onItsWay?.tab &&
-      state.base[tab] < rowVersion &&
-      changedOf(state, { tab, rules }).length === 0,
+    (tab) => tab !== state.onItsWay?.tab && state.base[tab] < rowVersion && nothingLost(tab),
   );
   if (behind.length === 0) return state;
   let { form, saved } = state;

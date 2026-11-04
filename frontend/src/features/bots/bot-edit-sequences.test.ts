@@ -19,9 +19,7 @@ import { type CreateForm, formSettings } from "./create-bot-form.ts";
 // or fail; another place saves the bot. Two drivers run the same model: every order of a small set
 // of steps, and random orders from a seed. After each step the invariants of `check` hold; after
 // the last, every answer and load lands and the page must agree with the server.
-//
-// Not in the model: a Save that the server takes but whose answer is lost on the way. The page
-// then shows its own change as a conflict; bot-page.md §4.2, Q4, asks the owner for a rule.
+// The server can also take a Save whose answer is lost on the way (bot-page.md §4.2, Q4).
 
 const settings = formSettings(BOT_SETTINGS);
 const ctx = { settings, otherNames: ["Designer"] };
@@ -35,8 +33,9 @@ interface ServerBot {
   name: string;
   description: string;
   limit: number;
-  // Who made this version.
-  by: "start" | "page" | "other";
+  // Who made this version: the page (and its answer came, or was lost on the way), or another
+  // place.
+  by: "start" | "page" | "lost" | "other";
 }
 
 const TAKEN = "Taken";
@@ -59,6 +58,7 @@ const TAB_KEYS: Record<EditTab, readonly Key[]> = {
   model: ["limit"],
 };
 const valueOf = (form: CreateForm, key: Key) => (key === "limit" ? form.request_limit : form[key]);
+const KEYS: readonly Key[] = ["name", "description", "limit"];
 // The changed field of each key, as the save bar counts it.
 const FIELD_OF: Record<Key, string> = {
   name: "name",
@@ -140,9 +140,12 @@ function savedForm(world: EditWorld, rowVersion: number): CreateForm {
   return formOf(bot);
 }
 
-// Another place changed the bot after this `row_version`.
+// Another place changed the bot after this `row_version`, or the page saved it and the answer
+// was lost: the page cannot tell the two apart.
 const otherAfter = (world: EditWorld, rowVersion: number) =>
-  [...world.history.values()].some((bot) => bot.by === "other" && bot.rowVersion > rowVersion);
+  [...world.history.values()].some(
+    (bot) => (bot.by === "other" || bot.by === "lost") && bot.rowVersion > rowVersion,
+  );
 
 // What another place changes, in turn: the description, the name, the limit.
 function otherChange(world: EditWorld): ServerBot {
@@ -236,7 +239,8 @@ function answerStep(world: EditWorld, flight: InFlight): Step {
         expect(view.errorOf("name") !== null, "the name error").toBe(still);
       }
       dispatch(world, { type: "toastsShown", upTo: world.state.nextToast - 1 });
-      if (code === "stale_write") world.loads.push(world.server);
+      // The refresh after a stale save, and after a Save that failed on the way (Q4).
+      if (code === "stale_write" || code === null) world.loads.push(world.server);
     },
   };
 }
@@ -317,6 +321,17 @@ function editModel({
             flight.result = { ok: false, error: null };
           },
         });
+        steps.push({
+          label: "server takes the save, the answer is lost",
+          run: () => {
+            saveOnServer(world, flight);
+            const taken = world.history.get(world.server.rowVersion);
+            if (flight.result?.ok === true && taken !== undefined) {
+              world.history.set(taken.rowVersion, { ...taken, by: "lost" });
+            }
+            flight.result = { ok: false, error: null };
+          },
+        });
       }
       if (flight !== null && flight.result !== null) steps.push(answerStep(world, flight));
       if (world.budget.others > 0) {
@@ -379,7 +394,8 @@ function editModel({
             expect(valueOf(state.saved, key), `${tab} saved ${key}`).toBe(atBase[key]);
           }
         }
-        // A conflict shows only when another place changed the bot after the tab's base.
+        // A conflict shows only when another place changed the bot after the tab's base (or a
+        // Save's answer was lost).
         if (view.conflict(tab)) {
           expect(otherAfter(world, state.base[tab]), `${tab} conflict with no other change`).toBe(
             true,
@@ -454,22 +470,37 @@ function editModel({
             expect(valueOf(state.form, key), `${tab} ${key}`).toBe(server[key]);
           }
         } else {
-          // A tab with changes shows the conflict exactly when another place changed the bot
-          // after its base; otherwise it is at the server's row_version.
-          const other = otherAfter(world, state.base[tab]);
-          expect(view.conflict(tab), `${tab} conflict`).toBe(other);
-          if (!other) expect(state.base[tab], `${tab} base`).toBe(server.rowVersion);
+          // A tab with changes is at the server's row_version, or shows the conflict. A conflict
+          // has a cause, and some changed field differs from the server: when the server has
+          // every change already, nothing would be lost and the tab takes the values (Q4).
+          const behind = state.base[tab] < server.rowVersion;
+          expect(view.conflict(tab), `${tab} conflict`).toBe(behind);
+          if (behind) {
+            expect(otherAfter(world, state.base[tab]), `${tab} conflict cause`).toBe(true);
+            const differs = view.changed[tab].some((field) => {
+              const key = KEYS.find((k) => FIELD_OF[k] === field);
+              return key !== undefined && valueOf(state.form, key) !== server[key];
+            });
+            expect(differs, `${tab} conflict with the server's own values`).toBe(true);
+          }
         }
       }
     },
   };
 }
 
-describe("Profile and Model edit sequences", () => {
+// Every order is a tree of thousands of paths; under a full parallel run it needs more than the
+// default 5 seconds.
+describe("Profile and Model edit sequences", { timeout: 30_000 }, () => {
   it("every order of a Save, its answer, another place, loads, Discard and typing", () => {
+    const paths = everyOrder(editModel({ saves: 1, others: 1, names: ["BA", "X"], limits: [] }), 7);
+    expect(paths).toBeGreaterThan(1000);
+  });
+
+  it("every order of a Save of a name that another bot has", () => {
     const paths = everyOrder(
       editModel({ saves: 1, others: 1, names: ["BA", "X", TAKEN], limits: [] }),
-      7,
+      6,
     );
     expect(paths).toBeGreaterThan(1000);
   });

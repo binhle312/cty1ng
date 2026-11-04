@@ -208,8 +208,9 @@ function BotView({
       })
       .catch((error: unknown) => {
         const api = readApiError(error);
-        // A stale save loads the newest values now; the edit stays.
-        if (api?.code === "stale_write") {
+        // A stale save loads the newest values now; the edit stays. A Save that failed on the way
+        // may have reached the server, so the page loads the bot too (bot-page.md §4.2, Q4).
+        if (api === null || api.code === "stale_write") {
           void queryClient.invalidateQueries({ predicate: PIN_QUERIES });
         }
         store.dispatch({ type: "saveFailed", id, error: api });

@@ -371,6 +371,34 @@ describe("A newer row_version (event, refresh, another tab)", () => {
     expect(state.base.model).toBe(2);
   });
 
+  // Q4 (owner, 2026-11-04): nothing of the owner's would be lost, so there is nothing to ask.
+  it("Changes the server already has: takes the new values, with no conflict (Q4)", () => {
+    const state = run(start(), name("BA two"), server(2, { name: "BA two", description: "New." }));
+    expect(view(state).conflict("profile")).toBe(false);
+    expect(view(state).changed.profile).toEqual([]);
+    expect(state.base.profile).toBe(2);
+    expect(state.form.description).toBe("New.");
+  });
+
+  it("Changes the server has only in part: conflict (Q4)", () => {
+    const state = run(
+      start(),
+      name("BA two"),
+      typed({ persona_md: "Mine." }),
+      server(2, { name: "BA two" }),
+    );
+    expect(view(state).conflict("profile")).toBe(true);
+    expect(state.form.persona_md).toBe("Mine.");
+  });
+
+  it("a Save the server took whose answer was lost: its event shows no conflict (Q4)", () => {
+    let state = run(send(run(start(), name("BA two"))), failed(null));
+    state = run(state, server(2, { name: "BA two" }));
+    expect(view(state).conflict("profile")).toBe(false);
+    expect(view(state).dirtyFields).toEqual([]);
+    expect(state.base).toEqual({ profile: 2, model: 2 });
+  });
+
   it("Changes while the other tab's Save waits: no conflict; the answer decides (Q1)", () => {
     let state = send(run(start(), name("BA two"), limit(20)));
     state = run(state, server(2, { name: "BA two" }));
