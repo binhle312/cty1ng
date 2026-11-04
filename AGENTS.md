@@ -121,8 +121,9 @@ If a command in this list does not exist yet (early slices), creating it is part
 - Changes to `docs/decisions/`, to this file, or to the public API shape.
 - The **UI design** of any new or changed screen: propose it in the plan and wait for approval
   before writing UI code. Sketches and mockups in `docs/design/` are not specs.
-- The **code design** when a slice adds shared state, a module boundary or a flow across several
-  screens: a one-page design in the plan, before any code (`docs/workflow.md` §2).
+- The **code design** when a slice adds shared state, a module boundary, a flow across several
+  screens or a new requirement that changes an existing design: a one-page design in the plan,
+  before any code (`docs/workflow.md` §2).
 - Anything outside the current task's scope.
 
 Mark these in the PR description under a heading `Needs human review` with one line each.

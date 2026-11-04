@@ -46,6 +46,6 @@ fresh reviewer agent's check of the first version found the invariants too weak 
 after a newer load), and they now check that a pin shows a value the server had since the last
 load. Only the bot list store writes the bot list and the settings (lint rule).
 
-**Reusable principles.** [Model state and event order before implementation](../../.agents/skills/principle-model-state-and-order/SKILL.md), [Fix the broken invariant at its owner](../../.agents/skills/principle-fix-invariants-at-the-owner/SKILL.md).
+**Reusable principles.** [Model state and order](../../.agents/skills/principle-state-and-order/SKILL.md), [Fix the root cause](../../.agents/skills/principle-fix-root-cause/SKILL.md).
 
 **Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [requirements shared states](../requirements/README.md#applies-to-every-story).

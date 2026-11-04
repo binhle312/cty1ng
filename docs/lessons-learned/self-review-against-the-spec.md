@@ -16,6 +16,6 @@ only) had no tests.
 **Project response.** The workflow added a section-by-section spec walk. The testing guide added deliberate edge cases.
 The source reports one P1 and four P2 findings in this review, not a lifetime PR total.
 
-**Reusable principles.** [Review each contract with explicit evidence](../../.agents/skills/principle-review-contracts-with-evidence/SKILL.md), [Prove that tests detect the intended behaviour](../../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md).
+**Reusable principles.** [Review with evidence](../../.agents/skills/principle-review-with-evidence/SKILL.md), [Prove that tests work](../../.agents/skills/principle-prove-tests-work/SKILL.md).
 
 **Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [testing](../testing.md).

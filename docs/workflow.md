@@ -92,15 +92,17 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    the order and timing cases (an answer that comes late, a change in another tab, a Discard
    while a request waits, a value that changes and changes back). Most review findings are
    these cases; a test planned before the code finds them before the review does.
-   **Code design checkpoint.** If the slice adds shared state, a new module boundary or a flow
-   across several screens, the plan has a one-page code design before any code (owner,
-   2026-11-04; `principle-decide-design-before-build`). The design names the state owner, the
-   modules, the data flow and the failure paths, and it compares at least two options with their
-   costs. A reviewer who did not write it tries to break it. The owner approves it in every such
-   slice, checkpointed or not, from a short form (see "Human review: visual first"). The state
-   table below is part of this design. A slice that stays inside one module skips this step.
+   **Code design checkpoint.** If the slice adds shared state, a new module boundary, a flow
+   across several screens or a new requirement that changes an existing design, the plan has a
+   one-page code design before any code (owner, 2026-11-04; `principle-design-first`). The design
+   names the state owner, the modules, the data flow and the failure paths, and it compares at
+   least two options with their costs. For a new requirement in an existing design, one option
+   builds as if the requirement always existed. A reviewer who did not write it tries to break
+   it. The owner approves it in every such slice, checkpointed or not, from a short form (see
+   "Human review: visual first"). The state table below is part of this design. A slice that
+   stays inside one module skips this step, unless a new requirement changes its design.
    **State table for stateful screens.** If a screen saves under a lock, takes live events or
-   gets late answers, apply the [state and order principle](../.agents/skills/principle-model-state-and-order/SKILL.md)
+   gets late answers, apply the [state and order principle](../.agents/skills/principle-state-and-order/SKILL.md)
    before code. Use the failure scope in `review-guide.md` §6. Resolve unspecified cells with the owner.
    After approval, put the table in the screen's spec. Follow `frontend-conventions.md` §1 for
    its state owner and `testing.md` §3 for cell and sequence tests.
@@ -138,7 +140,7 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    review` (`AGENTS.md` §7; lesson `flag-ui-choices-in-review-fixes.md`).
    **Merge bar.** Each finding has a severity. Only P1 and P2 block the merge; a P3 goes to
    the follow-ups in `status.md` (`review-guide.md` §6).
-   **Fix the cause.** Apply the [invariant repair principle](../.agents/skills/principle-fix-invariants-at-the-owner/SKILL.md).
+   **Fix the cause.** Apply the [root cause principle](../.agents/skills/principle-fix-root-cause/SKILL.md).
    Record the search scope in the PR's "Same cause checked in" column (§6).
    The reviewer verifies the repair through [review-guide.md §5](review-guide.md#5-close-findings-with-evidence).
 6. **Owner review.** Focus on `Needs human review` items, migrations, the evidence table, and
@@ -291,7 +293,8 @@ The owner approves, in every slice:
 
 - the plan, for slices marked *checkpoint: plan*;
 - the UI design, for any slice that adds or changes a screen;
-- the code design, when a slice adds shared state, a module boundary or a flow across screens;
+- the code design, when a slice adds shared state, a module boundary, a flow across screens or a
+  new requirement that changes an existing design;
 - every database migration;
 - security-sensitive code (`security.md` areas);
 - new dependencies;

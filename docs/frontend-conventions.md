@@ -4,7 +4,8 @@ How TypeScript code is typed. Since D34 these rules apply to `backend/` and `sha
 rows about React, the generated client or UI state apply to the frontend only. Most rules are enforced by `tsc` and ESLint (§3), so a reviewer
 does not have to remember them. Adapted from the MIT-licensed
 [typescript-best-practices](https://github.com/cursor/plugins/tree/main/pstack/skills/typescript-best-practices)
-skill (Lauren Tan), changed where it conflicts with this project.
+skill (Lauren Tan), changed where it conflicts with this project. The skill itself is vendored in
+`.agents/skills/typescript-best-practices/`; this file wins where they differ (its `SOURCE.md` lists the differences).
 
 ## 1. Rules
 

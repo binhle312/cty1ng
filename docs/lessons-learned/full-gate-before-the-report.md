@@ -15,6 +15,6 @@ The regression was in a screen that no new test touched.
 **Project response.** The workflow made final-gate timing and per-command results explicit. The full end-to-end run exposed the Compare regression.
 The incident records a reporting failure as well as missing checks.
 
-**Reusable principles.** [Verify the delivered revision and report evidence](../../.agents/skills/principle-verify-delivery-and-report-evidence/SKILL.md).
+**Reusable principles.** [Verify delivery](../../.agents/skills/principle-verify-delivery/SKILL.md).
 
 **Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [testing](../testing.md).

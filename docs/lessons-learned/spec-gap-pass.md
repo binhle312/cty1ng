@@ -11,6 +11,6 @@ it.
 
 **Project response.** The workflow added a spec gap pass before each slice, with owner answers in the owning documents.
 
-**Reusable principles.** [Resolve uncertainty before the build](../../.agents/skills/principle-resolve-uncertainty-before-build/SKILL.md).
+**Reusable principles.** [Resolve unknowns before the build](../../.agents/skills/principle-resolve-unknowns/SKILL.md).
 
 **Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice).

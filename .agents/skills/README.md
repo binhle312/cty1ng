@@ -2,7 +2,14 @@
 
 The `principle-*` skills are project-owned. Their content stays generic for reuse in other projects.
 Each skill has one source here and a relative symlink in `../../.claude/skills/`.
-`ui-ux-pro-max` is vendored; follow its [source rules](ui-ux-pro-max/SOURCE.md).
+`principle-fix-root-cause` takes its diagnosis steps from the MIT-licensed
+[`principle-fix-root-causes`](https://github.com/cursor/plugins/blob/e5136d82418d2db3165ea1050d17577cd618cc05/pstack/skills/principle-fix-root-causes/SKILL.md) (Lauren Tan), in our words.
+`principle-remove-first`, `principle-script-the-work`, and the new-requirement steps of `principle-design-first` take their rules from the MIT-licensed
+[`principle-subtract-before-you-add`](https://github.com/cursor/plugins/blob/e5136d82418d2db3165ea1050d17577cd618cc05/pstack/skills/principle-subtract-before-you-add/SKILL.md),
+[`principle-build-the-lever`](https://github.com/cursor/plugins/blob/e5136d82418d2db3165ea1050d17577cd618cc05/pstack/skills/principle-build-the-lever/SKILL.md), and
+[`principle-redesign-from-first-principles`](https://github.com/cursor/plugins/blob/e5136d82418d2db3165ea1050d17577cd618cc05/pstack/skills/principle-redesign-from-first-principles/SKILL.md) (Lauren Tan), in our words.
+`ui-ux-pro-max` and `typescript-best-practices` are vendored; follow their source rules:
+[ui-ux-pro-max](ui-ux-pro-max/SOURCE.md), [typescript-best-practices](typescript-best-practices/SOURCE.md).
 
 ## Maintain principles
 
@@ -27,16 +34,19 @@ Read the matching skill before its phase of work.
 
 | Folder | Read when |
 | --- | --- |
-| `principle-resolve-uncertainty-before-build/` | Resolve unclear requirements and test unfamiliar dependencies before the implementation depends on them. |
-| `principle-decide-design-before-build/` | Decide and review the code design before a change adds shared state, a module boundary, or a flow across several screens. |
-| `principle-bound-change-scope/` | Split a plan when independent concerns or separate approval needs make it hard to review or recover. |
-| `principle-set-review-exit/` | Set the merge bar and failure scope before a build, or when each review round still finds issues. |
-| `principle-model-state-and-order/` | Model transitions when requests overlap, replies arrive late, or state survives navigation, locks, retries, or live events. |
-| `principle-fix-invariants-at-the-owner/` | Repair a shared cause when review fixes repeat or several paths enforce the same rule. |
-| `principle-prove-tests-detect-the-behaviour/` | Verify tests used as evidence for acceptance, bug fixes, concurrency, or mocked integrations. |
-| `principle-review-contracts-with-evidence/` | Review code or fixes against each requirement, approved plan promise, and implementation boundary. |
-| `principle-verify-delivery-and-report-evidence/` | Verify the final revision before handoff and report the scope and result of each check. |
-| `principle-preserve-approval-boundaries/` | Check authority when a fix changes approved behaviour, scope, contracts, or protected operations. |
-| `principle-encode-repeatable-checks/` | Replace repeated corrections with enforcement, or put judgment rules in one authoritative place. |
-| `principle-use-safe-test-data/` | Create synthetic fixtures when tests or examples need values that resemble credentials or private data. |
+| `principle-resolve-unknowns/` | Resolve unclear requirements and test unfamiliar dependencies before the implementation depends on them. |
+| `principle-design-first/` | Decide and review the code design before a change adds shared state, a module boundary, a multi-screen flow, or a requirement that changes a design. |
+| `principle-remove-first/` | Remove unused code, checks, and text before you add a feature, refactor, or rewrite, then build on the simpler base. |
+| `principle-split-changes/` | Split a plan when independent concerns or separate approval needs make it hard to review or recover. |
+| `principle-when-review-ends/` | Set the merge bar and failure scope before a build, or when each review round still finds issues. |
+| `principle-state-and-order/` | Model transitions when requests overlap, replies arrive late, or state survives navigation, locks, retries, or live events. |
+| `principle-fix-root-cause/` | Trace a failure to its first wrong decision, or repair a shared cause when review fixes repeat or several paths enforce one rule. |
+| `principle-prove-tests-work/` | Verify tests used as evidence for acceptance, bug fixes, concurrency, or mocked integrations. |
+| `principle-review-with-evidence/` | Review code or fixes against each requirement, approved plan promise, and implementation boundary. |
+| `principle-verify-delivery/` | Verify the final revision before handoff and report the scope and result of each check. |
+| `principle-check-approval/` | Check authority when a fix changes approved behaviour, scope, contracts, or protected operations. |
+| `principle-automate-checks/` | Replace repeated corrections with enforcement, or put judgment rules in one authoritative place. |
+| `principle-script-the-work/` | Write a script that does or proves non-trivial edits, analyses, or checks, so that a reviewer can rerun the work. |
+| `principle-safe-test-data/` | Create synthetic fixtures when tests or examples need values that resemble credentials or private data. |
 | `ui-ux-pro-max/` | Work on interface design; follow the project design rules. |
+| `typescript-best-practices/` | Write or review TypeScript; `docs/frontend-conventions.md` wins where they differ (see its `SOURCE.md`). |

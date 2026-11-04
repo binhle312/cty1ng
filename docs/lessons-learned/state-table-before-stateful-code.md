@@ -29,6 +29,6 @@ The local workflow keeps the `xhigh` planning effort and the approximate 30-file
 `../design/components/bot-page.md` §4.2. `BotView` keeps no edit flags or refs that change the
 rules.
 
-**Reusable principles.** [Model state and event order before implementation](../../.agents/skills/principle-model-state-and-order/SKILL.md), [Keep each change independently reviewable](../../.agents/skills/principle-bound-change-scope/SKILL.md), [Encode repeatable checks and keep one source of guidance](../../.agents/skills/principle-encode-repeatable-checks/SKILL.md).
+**Reusable principles.** [Model state and order](../../.agents/skills/principle-state-and-order/SKILL.md), [Split changes](../../.agents/skills/principle-split-changes/SKILL.md), [Automate repeated checks](../../.agents/skills/principle-automate-checks/SKILL.md).
 
 **Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [frontend conventions](../frontend-conventions.md), [testing](../testing.md), [review guide](../review-guide.md).

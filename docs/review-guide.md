@@ -88,7 +88,7 @@ A reviewer's recommendation is not approval of that change.
 
 For each earlier finding, report **fixed**, **partial**, **open**, or **withdrawn**, with the supporting evidence.
 Check the fix and the paths it affects. A new commit or a passing test alone does not close the finding.
-Apply the [invariant repair principle](../.agents/skills/principle-fix-invariants-at-the-owner/SKILL.md)
+Apply the [root cause principle](../.agents/skills/principle-fix-root-cause/SKILL.md)
 to the builder's "Same cause checked in" column. Independently check one further plausible path.
 Report a missed path as a new finding with the same cause.
 If a finding was wrong, name the source or evidence that corrects it.
@@ -104,7 +104,7 @@ Give the builder one round row for `delivery-quality.md` §6, or write it when t
 ## 6. Apply the merge bar
 
 Only P1 and P2 findings block a merge (owner, 2026-11-04). Give each finding one severity and one reason.
-This bar applies the [review exit principle](../.agents/skills/principle-set-review-exit/SKILL.md).
+This bar applies the [when review ends principle](../.agents/skills/principle-when-review-ends/SKILL.md).
 
 Read the table from the top, and use the first row that fits.
 

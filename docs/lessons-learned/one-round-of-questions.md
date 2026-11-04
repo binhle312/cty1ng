@@ -10,6 +10,6 @@ Hey API and docs page questions.
 **Project response.** The plan format and builder prompt gained one "Open questions" list.
 The workflow records later questions as missed probes or spec gaps.
 
-**Reusable principles.** [Resolve uncertainty before the build](../../.agents/skills/principle-resolve-uncertainty-before-build/SKILL.md).
+**Reusable principles.** [Resolve unknowns before the build](../../.agents/skills/principle-resolve-unknowns/SKILL.md).
 
 **Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [builder prompt](../workflow.md#3-starting-a-session-builder-prompt).

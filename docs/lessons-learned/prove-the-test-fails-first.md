@@ -23,6 +23,6 @@ the fields were read-only; the code comment quoted the rule while the code did t
 Each criterion's evidence now names the assertion that proves it, and its test was seen to fail
 without the behaviour.
 
-**Reusable principles.** [Prove that tests detect the intended behaviour](../../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md), [Verify the delivered revision and report evidence](../../.agents/skills/principle-verify-delivery-and-report-evidence/SKILL.md).
+**Reusable principles.** [Prove that tests work](../../.agents/skills/principle-prove-tests-work/SKILL.md), [Verify delivery](../../.agents/skills/principle-verify-delivery/SKILL.md).
 
 **Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [testing §5](../testing.md#5-evidence-in-prs).
