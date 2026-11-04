@@ -234,6 +234,10 @@ While fixing, run only what the change touches, and run the full suite once at t
 | Some end-to-end tests | `pnpm e2e -g "<test title>"` |
 | The end-to-end servers, kept running | `pnpm e2e:serve` in a second terminal |
 
+A local `pnpm e2e` uses 4 workers (`frontend/playwright.config.ts`); `--workers=<n>` changes it for
+one run. CI uses half of its cores. On a 16-thread laptop, 8 workers finished no sooner than 4 and
+made J1 take twice as long, so J1 passed its 30 s limit when the machine was busy.
+
 When `pnpm e2e:serve` runs, `pnpm e2e` reuses its servers instead of starting new ones
 (`reuseExistingServer`, local only; CI always starts fresh servers). The tests write into the
 server they use, so `pnpm e2e` reuses only the servers of a `pnpm e2e:serve` of the same checkout
