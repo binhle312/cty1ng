@@ -1,7 +1,6 @@
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
+import { e2eDataDir } from "../scripts/lib/e2e-data-dir.ts";
 import { SERVE_MARKER_PATH, serveIsRunning } from "../scripts/lib/e2e-serve-marker.ts";
 import { serverReadyCheck } from "../scripts/lib/e2e-server-ready.ts";
 
@@ -22,10 +21,9 @@ for (const key of Object.keys(process.env)) {
   if (key.endsWith("_API_KEY")) Reflect.deleteProperty(process.env, key);
 }
 
-// One fresh data folder per run. Workers load this file again; they reuse the folder of the
-// main process through the environment.
-process.env.E2E_DATA_DIR ??= mkdtempSync(join(tmpdir(), "cty1ng-e2e-"));
-const dataDir = process.env.E2E_DATA_DIR;
+// One fresh data folder per run, removed when the run ends. Workers load this file again; they
+// reuse the folder of the main process through the environment.
+const dataDir = e2eDataDir();
 
 // Locally, `pnpm e2e:serve` keeps the servers running between runs; CI always starts fresh ones.
 // Any other server on the ports is not ours, and the tests would write into it: a fresh local run
