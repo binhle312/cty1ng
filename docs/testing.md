@@ -201,6 +201,26 @@ order: an edit the owner dropped never comes back, an older answer never replace
 value, and Save is off while a conflict shows. These tests are fast, so every order is cheap;
 the component tests then cover the wiring and a few chosen orders.
 
+### Request order and list states
+
+For every request on a changed screen with locks, live events or late answers, test these six cases.
+Hold and release answers to force the order, including requests away from a reported finding.
+Apply the failure scope in `review-guide.md` §6 and the
+[state and order principle](../.agents/skills/principle-model-state-and-order/SKILL.md).
+
+| Case | Required check |
+| --- | --- |
+| The answer arrives late | It writes only the fields its request owns |
+| The caller left the tab or page | The request's checks still hold after the component is gone |
+| A newer request of the same kind starts | The older answer cannot undo the newer work |
+| A list load or live event arrives between request and answer | The answer still applies only to valid state |
+| The refresh after a change is slow or fails | Controls show the true pending or error state |
+| Another request on the same screen also waits | Each answer ends only its own work; two refusals in either order restore the server value |
+
+Every query read on a changed screen needs tests for loading, error and empty states
+(`requirements/README.md`). Hold the load or fail it to reach these states.
+A `data ?? []` fallback must not turn a failed load into an empty result.
+
 ### Fast loop while building
 
 A full gate run is slow, mostly because Playwright starts two backends and builds the frontend.
@@ -263,17 +283,18 @@ high`, CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also
 
 ## 5. Evidence in PRs
 
-A PR description maps each acceptance criterion of its task to the test that proves it, or to a
-screenshot for purely visual criteria (Playwright can save screenshots:
-`frontend/test/e2e/__screenshots__/`). "Tested manually" alone is not evidence. For a bug fix, the PR also says that its test failed
-on the code before the fix (`workflow.md` §2 step 3).
+Apply the [test evidence principle](../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md).
+The PR maps each acceptance criterion to a test and its observable assertion or expected state.
+Use a screenshot for purely visual criteria; Playwright stores these in `frontend/test/e2e/__screenshots__/`.
+"Tested manually" alone is not evidence.
 
-The evidence names what the test checks: the assertion, or the state it expects, not only the
-test name. The builder has seen the test fail without the behaviour (test first does this; for
-a test written later, remove the behaviour in an isolated checkout and run it). A test whose
-name matches the criterion but whose steps never reach it is not evidence: in #59 the test for
-"text typed while a Save is pending stays" typed only after the answer (lesson
-`prove-the-test-fails-first.md`). A wait (`waitFor`) is proof only if it fails without the
-behaviour: wait on what the component sets. In #59 four tests waited for a `disabled`
-attribute that Base UI's Switch never sets, so the wait ended at once (lesson
-`check-every-order-before-the-push.md`).
+Record the tested revision, expected failure and result. Test first normally supplies the failure evidence.
+If a bug-fix test was written later, copy it into an isolated checkout of the code before the fix.
+Use a `git worktree`; do not stash the fix (owner, 2026-10-31).
+For other late tests, remove the required behaviour in the isolated checkout.
+Stop every other end-to-end server first and check ports 8100 and 8101, as described in
+[the fast loop](#fast-loop-while-building). Observe failure for the expected reason.
+
+The incidents behind these rules remain in
+[prove-the-test-fails-first.md](lessons-learned/prove-the-test-fails-first.md) and
+[check-every-order-before-the-push.md](lessons-learned/check-every-order-before-the-push.md).

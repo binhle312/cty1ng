@@ -1,4 +1,4 @@
-# Put every open question in the plan
+# M0c planning questions arrived in separate rounds
 
 Date: 2026-10-30 · Source: M0c build, PR #49 · Status: applied
 
@@ -7,8 +7,9 @@ Hey API and docs page questions.
 
 **Cause.** Questions were raised when the build found them, not collected in the plan.
 
-**Change.** The plan ends with one "Open questions" list, so the owner answers them all at
-once. A question found later in the build is noted in the PR as a missed probe or spec gap.
+**Project response.** The plan format and builder prompt gained one "Open questions" list.
+The workflow records later questions as missed probes or spec gaps.
 
-**Rule now in.** `../workflow.md` §2 step 2 "One round of questions", and the builder prompt
-in §3.
+**Reusable principles.** [Resolve uncertainty before the build](../../.agents/skills/principle-resolve-uncertainty-before-build/SKILL.md).
+
+**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [builder prompt](../workflow.md#3-starting-a-session-builder-prompt).

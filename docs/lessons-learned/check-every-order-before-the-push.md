@@ -1,4 +1,4 @@
-# Check every request against the orders reviews find, before the push
+# M2c repeated request-order defects
 
 Date: 2026-11-03 · Source: M2c, PR #59 · Status: applied
 
@@ -22,17 +22,8 @@ the old value for a moment. A fix for that round also showed that four tests wai
   answers, and finds what the fix's tests do not reach.
 - A wait in a test that passes at once (an attribute the component never sets) looks like proof.
 
-**Change.**
-- Before the push, the builder asks five questions of every request on the screen, not only
-  those near a finding: a late answer, the component gone, a newer request of the same kind,
-  a load or event in between, a refresh that fails or is slow (`../workflow.md` §2 step 4,
-  "Order check").
-- A review fix searches for the property, takes a rule's companion rules with it, and turns two
-  copies of one flow into one (`../workflow.md` §2 step 5).
-- Before the report, a fresh reviewer agent that has the code but not the builder's conclusions
-  tries to break the screen with forced orders (`../workflow.md` §2 step 4).
-- A wait in a test fails when the behaviour is missing; it waits on what the component sets
-  (`../testing.md` §5; Base UI's `data-disabled` in `../frontend-conventions.md` §5).
+**Project response.** The workflow added request-order checks and a fresh reviewer pass. The testing guide added observable waits.
+The Base UI note records `data-disabled`. The later audit results below preserve the reported defects and checks.
 
 **Audit result (2026-11-03).** The tables (`../design/components/bot-page.md` §4.2, §7.1,
 `skills-page.md` §7) found three defects: a Save let go that failed said nothing, the leave
@@ -45,5 +36,6 @@ while a pin change waited, and a skill added back while its Remove waited stayed
 eight have a test that failed first. The fresh reviewer earned its place: five of the eight came
 from it, so it runs again after its own fixes.
 
-**Rule now in.** `../workflow.md` §2 steps 4 and 5; `../testing.md` §5;
-`../frontend-conventions.md` §5.
+**Reusable principles.** [Model state and event order before implementation](../../.agents/skills/principle-model-state-and-order/SKILL.md), [Fix the broken invariant at its owner](../../.agents/skills/principle-fix-invariants-at-the-owner/SKILL.md), [Prove that tests detect the intended behaviour](../../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md).
+
+**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [testing §5](../testing.md#5-evidence-in-prs), [frontend conventions](../frontend-conventions.md).

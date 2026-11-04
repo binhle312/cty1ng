@@ -26,7 +26,7 @@ and summaries.
   Acceptance criteria: UI-14.5 to UI-14.8. Slice: M6 (D59).
 - **PI-3.** As the owner, I want to ask a bot what other conversations in the project decided,
   with links to the messages, so that I do not search them myself.
-  Acceptance criteria: UI-14.9 to UI-14.12. Slice: M5b or the next slice after it (D58).
+  Acceptance criteria: UI-14.9 to UI-14.12. Slice: the next slice after M5b (D58; owner, 2026-10-26).
 - **PI-4.** As the owner, I want to send information from one conversation to another, so that
   the bots there know it, without starting work. Acceptance criteria: UI-14.13 to UI-14.16.
   Slice: Project inbox (after M6).

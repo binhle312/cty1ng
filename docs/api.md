@@ -133,10 +133,10 @@ endpoint to create one.
 | POST | `/conversations/{id}/move` | `{row_version, project_id, memory_item_ids: [], files?: [{path, commit}]}` | M5b (D38, D61, D62). Home conversations only (409 `conversation_in_project`). 409 `run_in_progress` when a run is queued or running (M6 adds: a save is in progress, or unsaved changes, D61); 409 `memory_full` with `{room}` when the project cannot take the ticked items; 409 `place_in_trash` for a project in Trash. One transaction: `project_id`, the memory items (ticked to the project, unticked to Trash), a system line, `conversation.updated` and memory events. `files` is M6 (422 until then): each `commit` is the version that the dialog pinned (D61); the server checks that it is a save of that path in the Home Library (422 `version_mismatch`) and copies that version, as `/libraries/{place}/copies` does |
 | POST | `/conversations/{id}/read` | `{seq}` | sets `last_read_seq` (never moves backwards); drives unread dots and the "New" divider |
 | GET | `/conversations/{id}/messages?before_seq=&limit=` | | the **active path**, newest page first; each message has `siblings: {index, count, ids}` |
-| POST | `/conversations/{id}/messages` | `{client_id, content_md, mentions: [bot_id], attachment_ids: []}` | 201; routing happens server side. A repeated `client_id` in the same conversation returns 200 with the original message and routes nothing (safe retry) |
-| POST | `/conversations/{id}/messages/{message_id}/edit` | `{client_id, content_md, mentions, attachment_ids}` | creates a sibling branch; 409 `run_in_progress` |
+| POST | `/conversations/{id}/messages` | `{client_id, content_md, mentions: [bot_id], attachment_ids: [], confirm_sensitive?: boolean}` | 201; routing happens server side. A repeated `client_id` in the same conversation returns 200 with the original message and routes nothing (safe retry). D39: a guard match needs explicit `confirm_sensitive: true`, else 422 `sensitive_data` |
+| POST | `/conversations/{id}/messages/{message_id}/edit` | `{client_id, content_md, mentions, attachment_ids, confirm_sensitive?: boolean}` | creates a sibling branch; 409 `run_in_progress`; the same D39 check and explicit confirmation as send |
 | PUT | `/conversations/{id}/active-branch` | `{message_id}` | switch to a sibling; leaf = newest below it |
-| POST | `/conversations/{id}/attachments` | multipart files | returns `attachment_ids`; saved under `attachments/<yyyy-mm-dd>-<conversation-slug>/` (D52) |
+| POST | `/conversations/{id}/attachments` | multipart files, optional `confirm_sensitive` field | returns `attachment_ids`; saved under `attachments/<yyyy-mm-dd>-<conversation-slug>/` (D52). Text files use the D39 check at upload; a match needs explicit confirmation, else 422 `sensitive_data` |
 | POST | `/conversations/{id}/members` | `{bot_id}` | 409 `already_member`; posts the history card. **M3 only:** the bot becomes `active` at once with `history_from_seq = 0`, and no card is posted (the history card comes in M4) |
 | POST | `/conversations/{id}/members/{bot_id}/history` | `{mode: "full" \| "from_join"}` | activates the member |
 | DELETE | `/conversations/{id}/members/{bot_id}` | | removes |
@@ -214,7 +214,7 @@ listed or served.
 | GET | `/runs/{id}/save/diff?attempt=` | | read-only: the diff of each file that the attempt changed, compared with its base commit (the attempt's branch, not main; default: the newest attempt). The same file shape as `saves/{commit}` (`path, status, from_path?, added, removed, binary, diff?`). The card calls it only when the owner presses **Show**, so a folded card loads no diff. 409 `nothing_unsaved` when the run has no unsaved changes |
 | POST | `/runs/{id}/unsaved/save` | `{attempt}` | the normal save of that attempt; a missing `attempt` gives 422 `validation_error` (merge, overlap rule, save queue); 409 `nothing_unsaved`. A delete or move outside the plan returns 409 `save_not_waiting` until `/runs/{id}/save-decision` |
 | POST | `/runs/{id}/unsaved/discard` | `{attempt}` | discards the changes of that attempt; a missing `attempt` gives 422 `validation_error`. The page sends it when the Undo toast closes (D62 pattern) |
-| POST | `/runs/{id}/save-decision` | `{ops: [{op_id, action: "approve" \| "reject"}]}` | the save card of `library-cards.md` §4; `op_id` values come from the save state; every waiting op needs an action (422 `validation_error`); then the save runs |
+| POST | `/runs/{id}/save-decision` | `{attempt, ops: [{op_id, action: "approve" \| "reject"}]}` | the save card of `library-cards.md` §4; names the attempt (D52 amendment); a missing `attempt` gives 422 `validation_error`. `op_id` values come from that attempt's save state; every waiting op needs an action (422 `validation_error`); then the save runs |
 | POST | `/libraries/{place}/restore` | `{path, commit}` | Restore other version (D52): a new save "Owner restore" through the save queue |
 | POST | `/libraries/{place}/copies` | `{source_place, items: [{path, commit}]}` | the owner's Copy to and Add from Home Library (D61): one save "Copied from {source}", the `-from-<place-slug>` suffix when a name is taken; no limit |
 | POST | `/copy-proposals/{id}/decision` | `{action: "approve" \| "reject"}` | a bot's `propose_copy` card (D61); 409 `copy_not_pending` (waits for the save, or decided) |
@@ -231,6 +231,14 @@ rest of the M6 brief work (D52 consequences).
 | Method | Path | Body |
 | --- | --- | --- |
 | POST | `/handoffs/{id}/decision` | `{action: "approve" \| "request_changes" \| "reject", note?, add_target?: bool}` |
+
+## 6a. Plan approvals (contract pending)
+
+D48 assigns plan approvals to the first consumer: M5b, M5c or M6.
+The endpoint shapes and errors are not specified yet. The first consumer's specification pass
+must define them alongside the plan schema, version checks and progress events before implementation.
+See [Shared plan approvals](development-plan.md#shared-plan-approvals); the outcome requirements
+in `domain-model.md` §15 do not define a complete schema or API contract.
 
 ## 7. Settings, health, stream, usage and statistics
 

@@ -1,4 +1,4 @@
-# Write the state table before the code of a stateful screen
+# M2c state complexity caused repeated review findings
 
 Date: 2026-11-03 · Source: M2c, PR #59 · Status: applied (2026-11-04)
 
@@ -19,17 +19,9 @@ review found a new combination, and nothing showed when the cases were complete.
 held four parts (edit and lock, Skills tab dialogs, save cards, side list), so the review and
 the spec walk were spread thin.
 
-**Change.**
-- A screen with saves under a lock, live events or late answers gets a state table in the
-  plan, approved with it, and moved into the spec (`../workflow.md` §2 step 2). The plan, the
-  table and the test strategy run at `xhigh` effort.
-- Its rules live in one pure state module with one test per cell, and a test runs every order
-  of a few events (`../frontend-conventions.md` §1, `../testing.md` §3).
-- Answers write only what their request owns, as an allowlist (`../frontend-conventions.md`
-  §1). `withSaveAnswer` replaced a list of fields to keep that grew after every review.
-- Such a screen is its own part of a slice; a plan over about 30 files is a sign to split
-  (`../workflow.md` §2 step 1).
-- Lint now checks the object-argument rule (`max-params`), which the reviews found by hand.
+**Project response.** The project added state tables, pure state modules, cell tests, and sequence tests to its workflow and conventions.
+`withSaveAnswer` uses an allowlist. The `max-params` lint rule checks the object-argument convention.
+The local workflow keeps the `xhigh` planning effort and the approximate 30-file split signal; these are project choices.
 
 **Closed (2026-11-04).** Both screens of #59 have their state module now: the bot list
 (`frontend/src/features/bots/bot-list-state.ts`) and the Profile and Model edit state
@@ -37,5 +29,6 @@ the spec walk were spread thin.
 `../design/components/bot-page.md` §4.2. `BotView` keeps no edit flags or refs that change the
 rules.
 
-**Rule now in.** `../workflow.md` §2 steps 1, 2 and 4; `../frontend-conventions.md` §1, §3;
-`../testing.md` §3, §5; `../review-guide.md` §3.
+**Reusable principles.** [Model state and event order before implementation](../../.agents/skills/principle-model-state-and-order/SKILL.md), [Keep each change independently reviewable](../../.agents/skills/principle-bound-change-scope/SKILL.md), [Encode repeatable checks and keep one source of guidance](../../.agents/skills/principle-encode-repeatable-checks/SKILL.md).
+
+**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [frontend conventions](../frontend-conventions.md), [testing](../testing.md), [review guide](../review-guide.md).

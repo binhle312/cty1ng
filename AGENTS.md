@@ -38,7 +38,7 @@ Start with `docs/README.md` for the reading order.
 | Who replies, bot-to-bot, joining, editing messages | `docs/conversation-rules.md` |
 | Streaming, SSE, events | `docs/realtime-events.md` |
 | HTTP endpoints | `docs/api.md` |
-| Pages and components | `docs/requirements/<area>.md` (behaviour); `docs/design/` (sketches, not final) |
+| Pages and components | `docs/requirements/<area>.md` (behaviour); `docs/design/README.md` (agreed specs and sketch status) |
 | The Flow pane, animations, renderers | `docs/flow-view.md` |
 | Frontend TypeScript rules | `docs/frontend-conventions.md` |
 | A design board, a UI spec or UI code | `docs/design/ui-rules.md` (every agreed UI rule, one list) |
@@ -48,6 +48,7 @@ Start with `docs/README.md` for the reading order.
 | Uploads, file tools, rendering bot output, request checks | `docs/security.md` |
 | Tests | `docs/testing.md` |
 | How to work, branch, review | `docs/workflow.md` |
+| Apply or maintain engineering principles | `.agents/skills/README.md` |
 | Finding a file in the code | The folder's `README.md` index (`docs/architecture.md` §4.2) |
 | Ports, adapters, import rules | `docs/architecture.md` §2, §4.1 (D35) |
 

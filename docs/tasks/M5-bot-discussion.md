@@ -1,6 +1,8 @@
 # M5: Bot discussion
 
-Checkpoint: merge only (the rules are fully specified; the risk is in tests).
+Checkpoint: **plan per part** (routing, caps, Settings UI).
+This milestone brief follows the [M5 delivery breakdown](../development-plan.md#m5-discussion-caps-and-settings).
+Write each part's brief before implementation.
 
 ## Goal
 

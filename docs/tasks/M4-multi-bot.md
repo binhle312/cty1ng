@@ -1,6 +1,8 @@
 # M4: Multi-bot conversations
 
-Checkpoint: **plan** (routing).
+Checkpoint: **plan per part** (routing, branches, UI).
+This milestone brief follows the [M4 delivery breakdown](../development-plan.md#m4-multi-bot-conversations).
+Write each part's brief before implementation.
 
 ## Goal
 

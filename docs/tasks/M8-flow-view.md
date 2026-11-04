@@ -1,6 +1,8 @@
 # M8: Flow view
 
-Checkpoint: **plan** (renderer contract, libraries, performance test setup).
+Checkpoint: **plan per part** (renderer contract, libraries, performance test setup).
+This milestone brief follows the [M8 delivery breakdown](../development-plan.md#m8-flow-timeline).
+Write each part's brief before implementation.
 
 ## Goal
 
@@ -66,5 +68,5 @@ graph dependencies (react-resizable-panels, and the Timeline library the plan pi
   virtualised list is preferred, because the Timeline is lanes and rows, not a graph. A new
   dependency needs the owner's approval (AGENTS.md §7).
 
-- None from D30: the Board is the pane's third map (D30, accepted) and is built in M8b. Keep
-  the tab strip and the renderer registry ready for a third map.
+- The Board is the pane's second map after the Timeline (D30 amendment) and comes in M8b.
+  Keep the tab strip and renderer registry ready for it. The Team map remains parked.

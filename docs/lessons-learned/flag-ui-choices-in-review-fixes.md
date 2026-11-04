@@ -1,4 +1,4 @@
-# Flag the UI choices in review fixes
+# M1b review fixes introduced unlisted UI choices
 
 Date: 2026-10-31 · Source: M1b review fixes, PR #54 · Status: applied
 
@@ -9,7 +9,9 @@ error state and a new History row layout, and did not list them for the owner.
 **Cause.** The builder treated review fixes as already approved. A finding says what is wrong,
 not which text or layout to use, and `AGENTS.md` §7 still asks the owner to approve UI design.
 
-**Change.** When a review fix needs a new text, state, flow or layout, the PR lists it under
-`Needs human review`, one line each.
+**Project response.** The workflow now routes new UI choices from review fixes through `Needs human review`.
+The project design approval boundary remains in `AGENTS.md` §7.
 
-**Rule now in.** `../workflow.md` §2 step 5 "Cross-review".
+**Reusable principles.** [Preserve approval boundaries during fixes](../../.agents/skills/principle-preserve-approval-boundaries/SKILL.md).
+
+**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).

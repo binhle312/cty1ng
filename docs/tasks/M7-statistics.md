@@ -1,6 +1,8 @@
 # M7: Statistics page
 
-Checkpoint: merge (new chart dependency needs the owner's approval in the plan).
+Checkpoint: **plan per part** (metrics, time range picker, charts).
+This milestone brief follows the [M7 delivery breakdown](../development-plan.md#m7-statistics).
+Write each part's brief before implementation. A new chart dependency needs the owner's approval.
 
 ## Goal
 

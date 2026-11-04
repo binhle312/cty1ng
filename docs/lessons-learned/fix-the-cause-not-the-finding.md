@@ -1,4 +1,4 @@
-# Fix the cause, not only the finding
+# M2c repeated fixes for fields in late responses
 
 Date: 2026-11-03 · Source: M2c review fixes, PR #59 · Status: applied
 
@@ -11,8 +11,9 @@ the same list. "Discard while Save waits" took four rounds in the same way, one 
 answer writes only the fields its request owns") or searched for the other places that broke
 it. A list of fields to keep grows by one each time a review finds the next field.
 
-**Change.** For each finding the builder names the broken rule, searches for every place with
-the same cause, fixes the rule once and tests each place. The PR's review-fix table has a
-column "Same cause checked in", and the reviewer looks for one more place itself.
+**Project response.** The review-fix table gained a "Same cause checked in" column. The review guide added a further-path check.
+The later state-module incident records the allowlist implementation.
 
-**Rule now in.** `../workflow.md` §2 step 5 and §6; `../review-guide.md` §5.
+**Reusable principles.** [Fix the broken invariant at its owner](../../.agents/skills/principle-fix-invariants-at-the-owner/SKILL.md).
+
+**Project guidance.** [workflow §6](../workflow.md#6-pr-description-template), [review guide §5](../review-guide.md#5-close-findings-with-evidence), [state-module incident](state-table-before-stateful-code.md).

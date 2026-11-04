@@ -42,9 +42,11 @@ Messages
   syntax highlighting, author avatar, name and time.
 - UI-3.2: Deleted bots' avatar and name render grey (D12), with tooltip "Deleted bot".
 - UI-3.3: System messages are a small centred pill, muted, and red only for a problem. Cards
-  (history choice, plan, handoff) show their current state and have no buttons once decided. A
-  plan or handoff card sits inside the reply of the bot that made it and folds to one line after
-  the decision. A stale handoff card does not fold.
+  (history choice, plan, handoff) show their current state and remove decision buttons once decided.
+  A plan or handoff card sits inside the reply of the bot that made it. A decided handoff
+  folds to one line; a stale handoff stays open. Plan cards follow UI-3.29–UI-3.31:
+  an approved plan stays open to show progress and folds automatically only after successful completion.
+  Rejected plans and plans with changes requested fold as specified in `../design/components/plan-card.md` §3, §5.
 - UI-3.4: Bot replies stream in. The running bot shows one of two live states, both derived
   from existing events: **typing** while `message.delta` events arrive (it expires 10 s after
   the last delta), and **working: <latest step>** between deltas (for example during a long
@@ -176,7 +178,7 @@ Plan progress (D57)
   1 skipped"), and the block "Check after the run". A Done-when item `met` whose quote the app
   did not find is open. A stopped or failed run keeps the
   card open with "Stopped · n of total" or "Failed · n of total".
-- UI-3.30b: Before the run ends, the app reminds the bot once (setting `plan_mark_reminders`)
+- UI-3.30b: Before the run ends, the app reminds the bot up to `plan_mark_reminders` times
   about steps and Done-when items with no mark. Each mark shows its source: "checked by app",
   "bot says" or "not verified"; a step done with no tool call that succeeded shows "no action
   recorded". A mark on a done or skipped step gives the error `step_closed`.

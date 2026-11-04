@@ -1,4 +1,4 @@
-# A fake answer that the API refuses turns a success test into a failure test
+# M2c fake pin responses bypassed the success path
 
 Date: 2026-11-03 · Source: M2c, PR #59 · Status: applied
 
@@ -12,9 +12,9 @@ reviewer agent found it while it probed other orders, not a test run.
 **Cause.** The fake network (`frontend/test/fake-api.ts`) took any body, and a refused answer
 fails quietly by design in the app. Nothing tied a fake answer to the API's shape.
 
-**Change.** The fake records each success answer that the client's response schema refuses,
-and `restore()`, which every test calls in `afterEach`, fails the test with the route and the
-Zod error. It was seen to fail on the old `{ bot_ids }` answer. A test that wants a malformed
-answer can stub `fetch` itself.
+**Project response.** The fake API records success responses rejected by the client schema. Its `restore()` call in `afterEach` fails with the route and schema error.
+The check failed on the old `{ bot_ids }` fixture. Deliberately malformed responses use an explicit `fetch` stub.
 
-**Rule now in.** `../testing.md` §3 "Test helpers".
+**Reusable principles.** [Prove that tests detect the intended behaviour](../../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md), [Encode repeatable checks and keep one source of guidance](../../.agents/skills/principle-encode-repeatable-checks/SKILL.md).
+
+**Project guidance.** [testing](../testing.md), `frontend/test/fake-api.ts`.

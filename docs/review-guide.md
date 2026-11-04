@@ -57,7 +57,7 @@ not have.
 
 For file failures, distinguish failure before publication from failure after a rename or time update.
 A fake can prove service recovery. A real adapter test proves only the adapter paths it exercises.
-For a bug fix, check the evidence that its test fails on the old code ([workflow.md §2](workflow.md#2-lifecycle-of-a-slice)).
+For a bug fix, check the evidence that its test fails on the old code ([testing.md §5](testing.md#5-evidence-in-prs)).
 
 Record safety assumptions, such as upload duration, grace periods or unique names.
 Check whether code enforces each assumption or merely relies on it.
@@ -68,7 +68,7 @@ Check whether code enforces each assumption or merely relies on it.
 
 Report a code/contract difference even when no runtime defect is apparent.
 Explain the practical effect and distinguish a defect, a contract difference and a missing test.
-Use severity to express impact; do not turn a documentation mismatch into a claim of data loss.
+Use severity ([§6](#6-apply-the-merge-bar)) to express impact; do not turn a documentation mismatch into a claim of data loss.
 
 For example, a plan may put all cleanup under a write lock. Check these as separate rows:
 
@@ -88,9 +88,9 @@ A reviewer's recommendation is not approval of that change.
 
 For each earlier finding, report **fixed**, **partial**, **open**, or **withdrawn**, with the supporting evidence.
 Check the fix and the paths it affects. A new commit or a passing test alone does not close the finding.
-A fix closes a finding only when it fixes the cause. Read the builder's "Same cause checked in"
-column, then search for one more place with the same cause yourself. Report a place it missed
-as a new finding with the same cause, so the builder widens the rule, not the list of cases.
+Apply the [invariant repair principle](../.agents/skills/principle-fix-invariants-at-the-owner/SKILL.md)
+to the builder's "Same cause checked in" column. Independently check one further plausible path.
+Report a missed path as a new finding with the same cause.
 If a finding was wrong, name the source or evidence that corrects it.
 
 The final report states the reviewed scope, findings, test results and remaining limits.
@@ -99,5 +99,39 @@ Link the evidence table and cite file locations for actionable findings.
 State "no defect found in the reviewed paths" only for paths the table covers.
 
 **Complete when:** each prior finding has a disposition, every unresolved row appears in the report, and the conclusions fit the evidence.
+
+## 6. Apply the merge bar
+
+Only P1 and P2 findings block a merge (owner, 2026-11-04). Give each finding one severity and one reason.
+This bar applies the [review exit principle](../.agents/skills/principle-set-review-exit/SKILL.md).
+
+Read the table from the top, and use the first row that fits.
+
+| Severity | Meaning | Action |
+| --- | --- | --- |
+| P1 | Data loss, a security failure, or a normal action that cannot complete | Blocks the merge |
+| P2 | A broken required acceptance criterion or its missing proof, or a wrong result in the scope below with harm that is not small and recoverable | Blocks the merge |
+| P3 | A small, recoverable wrong result, a case outside the scope below, or a code quality point | Add it to the follow-up list in `status.md` |
+
+Harm is small and recoverable when all of these are true:
+
+- Saved data stays correct.
+- The owner's unsaved text stays.
+- The owner can see if an action failed.
+- The app's own refresh or the owner's next action shows the truth.
+
+At each milestone close, the owner reviews the P3 follow-ups, and either fixes or drops each item.
+
+The scope is one human on `127.0.0.1`, until the VPS phase (M9).
+
+- **In scope:** actions while a request waits, a second tab, a move to another page, failed requests and refreshes, and live events.
+- **Out of scope:** several humans, and an answer lost on the network, except the case that Q4 decided (`design/components/bot-page.md` §4.2).
+
+An owner decision about a named case stays in force, even when the scope leaves out similar cases.
+
+If the builder and the reviewer disagree about a severity, ask the owner.
+This bar does not change `AGENTS.md` §7, §8 or §9. Check the bar and the scope again before the VPS phase.
+
+**Complete when:** each finding has a severity and a disposition, and a complete review of the final head has no open P1 or P2.
 
 Origin: [the PR #57 review lesson](lessons-learned/review-contract-boundaries.md).

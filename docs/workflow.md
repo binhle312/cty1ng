@@ -4,6 +4,14 @@ This document describes how the owner and two coding agents build the app togeth
 the simplest process that keeps quality high: one agent builds, a different agent reviews, the
 owner approves the decisions that matter.
 
+Use [principle skills](../.agents/skills/README.md) for reusable engineering guidance. Read the matching skill
+before planning, implementation, review, or handoff. This workflow owns project-specific commands,
+roles, thresholds, and approval gates. [Project incidents](lessons-learned/README.md) explain their origin.
+
+After each review and fix, update [delivery quality](delivery-quality.md#7-update-and-assess).
+At handoff, reconcile the PR's issues, review rounds, and verification evidence there.
+[status.md](status.md) continues to own milestone state and next work.
+
 ## 1. Roles
 
 | Who | Does | Does not |
@@ -81,27 +89,25 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    the order and timing cases (an answer that comes late, a change in another tab, a Discard
    while a request waits, a value that changes and changes back). Most review findings are
    these cases; a test planned before the code finds them before the review does.
-   **State table for stateful screens.** When a screen saves under a lock (`row_version`, an
-   `expected` value), takes live events, or sends requests that can answer after the owner
-   moved on, the plan has a state table before any code (owner, 2026-11-03). Rows are the
-   states (no changes, changes, Save on its way, conflict, refused as stale, …); columns are the
-   events (typing, Save sent, its answer, 409, an event with a newer `row_version`, a refresh
-   that fails, Discard, leaving, a request from another tab or dialog, …). Each cell says what
-   the page shows and keeps. A cell the spec does not answer is an open question for the owner.
-   After approval, the table goes into the screen's spec, the code keeps it in one pure state
-   module, and the test strategy has one test per cell (`frontend-conventions.md` §1,
-   `testing.md` §3). Write the plan, the table and the strategy at `xhigh` effort; the build
-   can run at `high` (lesson `state-table-before-stateful-code.md`).
-3. **Build.** Small commits, test first: for each behaviour in the test strategy, write its
-   test, see it fail for the right reason, then write the code that makes it pass (red, green,
-   refactor). A case found during the build goes into the strategy and gets its test first too. While fixing, run only the
-   affected tests (`testing.md` §3, "Fast loop while building"); keep the end-to-end servers
-   running with `pnpm e2e:serve`. A bug fix's test is written first and seen to fail; if it was
-   written after the fix, run it against the old code in an isolated checkout (a `git
-   worktree` of the commit before the fix, with the new test copied in), not by stashing the
-   fix (owner, 2026-10-31). Stop every other end-to-end server first: Playwright reuses a
-   server that runs on its port, which would test the other checkout (`testing.md` §3). See
-   it fail there (lesson `prove-the-test-fails-first.md`).
+   **Code design checkpoint.** If the slice adds shared state, a new module boundary or a flow
+   across several screens, the plan has a one-page code design before any code (owner,
+   2026-11-04; `principle-decide-design-before-build`). The design names the state owner, the
+   modules, the data flow and the failure paths, and it compares at least two options with their
+   costs. A reviewer who did not write it tries to break it. The owner approves it in every such
+   slice, checkpointed or not, from a short form (see "Human review: visual first"). The state
+   table below is part of this design. A slice that stays inside one module skips this step.
+   **State table for stateful screens.** If a screen saves under a lock, takes live events or
+   gets late answers, apply the [state and order principle](../.agents/skills/principle-model-state-and-order/SKILL.md)
+   before code. Use the failure scope in `review-guide.md` §6. Resolve unspecified cells with the owner.
+   After approval, put the table in the screen's spec. Follow `frontend-conventions.md` §1 for
+   its state owner and `testing.md` §3 for cell and sequence tests.
+   Write the plan, table and test strategy at `xhigh` effort; the build can run at `high`
+   (owner, 2026-11-03; lesson `state-table-before-stateful-code.md`).
+3. **Build.** Make small commits and test first. For each behaviour in the strategy, observe
+   the expected test failure before you write the code, then refactor with tests green.
+   Add cases found during the build to the strategy and test them first too.
+   Follow [the fast test loop](testing.md#fast-loop-while-building) while fixing.
+   Use [the evidence rules](testing.md#5-evidence-in-prs) for a test written after its fix.
 4. **Self-check.** Every command in `AGENTS.md` §4 passes, run once in full at the end:
    after the last code change, before the push, and with the full `pnpm e2e`. A report names
    each check and its result and says which checks did not run; nobody reports a run that has
@@ -110,45 +116,28 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    code, not only the acceptance criteria, and tests the edge cases in `testing.md` §3 ("Edge
    cases each slice tests"). The PR lists the sections checked (lesson
    `self-review-against-the-spec.md`).
-   **Order check.** Before the push, for every request on a screen with saves under a lock,
-   live events or late answers (not only those near a finding), the builder answers six
-   questions, each with a test that holds the answer: (1) the answer comes late: does it write
-   only what it owns? (2) the component that sent it is gone (the owner left the tab or page):
-   do its checks still hold? (3) a newer request of the same kind started: does the older answer
-   stay out of its way? (4) a list load or an event came in between: is the answer still right
-   to apply? (5) the refresh after it fails or is slow: does each control still show the truth?
-   (6) another request of the same screen waits too (an older one of another kind on the same
-   thing, or a second one of the same kind): does each answer end only what its own request
-   started, and do two refusals, in either order, leave the server's value on the page?
-   **List states.** Every query read on a changed screen has its loading, error and empty
-   states (`requirements/README.md`), each with a test that holds the load or fails it; a
-   `data ?? []` never turns a failed load into "nothing" (lesson `two-of-my-requests-at-once.md`).
+   **Order and list-state checks.** Before the push, check every request on each changed
+   screen with locks, live events or late answers. Cover all six cases in
+   [Request order and list states](testing.md#request-order-and-list-states), including requests away from the reported finding.
    Then a fresh reviewer agent, given the code and not the builder's conclusions, tries to
    break the screen with forced orders (`review-guide.md` §3; lesson
    `check-every-order-before-the-push.md`).
-   **Proof by assertion.** For each acceptance criterion, the PR names the assertion that
-   proves it, not only the test name, and the builder has seen that test fail without the
-   behaviour (`testing.md` §5). A code comment or a test name that states the rule is not proof. The builder fills the PR template (§6). Anything new that the build taught (a library pitfall,
-   a lint pattern, a test helper) goes into `frontend-conventions.md` §5 or `testing.md` in
-   the same PR, so the next slice does not learn it again.
+   **Evidence.** Fill the PR template (§6) using [testing.md §5](testing.md#5-evidence-in-prs).
+   Add new library pitfalls, lint patterns or test-helper guidance to their owning document:
+   `frontend-conventions.md` §5 or `testing.md`.
    **The guide stays current.** A slice that changes something the owner can see updates
    `seed/skills/using-the-app/SKILL.md` (the Guide bot's knowledge) in the same PR: what works
    now, what is not built yet, and the names on the screen (M2 plan, decision 14).
 5. **Cross-review.** The other agent follows [review-guide.md](review-guide.md) (prompt in §4).
-   Findings become PR comments; the builder fixes or answers each. A finding says what is wrong, not which text or layout to
+   Put findings in the requested review destination; publish PR comments only when the session authorizes it.
+   The builder fixes or answers each. A finding says what is wrong, not which text or layout to
    use: when a fix needs a new text, state, flow or layout, the PR lists it under `Needs human
    review` (`AGENTS.md` §7; lesson `flag-ui-choices-in-review-fixes.md`).
-   **Fix the cause, not only the finding.** For each finding, the builder names the rule that
-   the code broke (for example "a late answer writes a field it does not own"), searches the
-   code for every other place with the same cause, and fixes the rule once: a shared helper, an
-   allowlist, a cell of the state table. Each place gets a test. The review-fix table in the PR
-   has a column "Same cause checked in" (§6). A later finding with the same cause means the
-   first fix was too narrow (lesson `fix-the-cause-not-the-finding.md`). Search for the
-   property the code broke ("a late result does not know if it is still the newest"), not only
-   the mechanism of the finding ("pin answers"). A rule that a fix copies to another place takes
-   the rules it works with (skip a late answer, and keep the control pending until the
-   refresh), and two copies of one flow become one shared flow (lesson
-   `check-every-order-before-the-push.md`).
+   **Merge bar.** Each finding has a severity. Only P1 and P2 block the merge; a P3 goes to
+   the follow-ups in `status.md` (`review-guide.md` §6).
+   **Fix the cause.** Apply the [invariant repair principle](../.agents/skills/principle-fix-invariants-at-the-owner/SKILL.md).
+   Record the search scope in the PR's "Same cause checked in" column (§6).
+   The reviewer verifies the repair through [review-guide.md §5](review-guide.md#5-close-findings-with-evidence).
 6. **Owner review.** Focus on `Needs human review` items, migrations, the evidence table, and
    one run of the app. Merge when satisfied.
 7. **Docs.** If something diverged from the docs, the PR already updated them. If a decision
@@ -241,8 +230,9 @@ Check, in order:
    rule, does it still agree in meaning with each decision in its "Changed by" column
    (`decisions/README.md`) and with every summary table that cites it?
 6. Simplicity: code that could be removed or made plainer.
-Report findings as PR comments, most severe first, each with the file, line, and why it
-matters. Do not push commits. Say explicitly if you found nothing serious.
+Report findings in the requested destination, most severe first, each with the file, line,
+why it matters, and severity (docs/review-guide.md §6). Publish PR comments only when the
+session authorizes it. Do not push commits. State the evidence limits if no defect was found.
 ```
 
 ## 5. Parallel work (only when independent)
@@ -314,6 +304,6 @@ inside a module, update docs to match code, and fix review findings.
 | Brief is ambiguous | Builder asks; owner answers in the brief (so the answer is kept) |
 | CI red on main | Fix main first; no slice merges onto a red main |
 | Agents disagree in review | Owner decides; if it is a design question, record it in `decisions/` |
-| Owner sees a problem in how a slice was built (slow, too many questions, surprises) | Change the owning rule and add a lesson to `lessons-learned/`, in one PR |
+| Owner sees a problem in how a slice was built (slow, too many questions, surprises) | Record project evidence in `lessons-learned/` and quality evidence in `delivery-quality.md`; link or update the reusable principle and its project application |
 | Slice too big | Split the brief into parts (M3a, M3b), each mergeable; UI and infrastructure go in different parts (§2 step 1) |
 | Docs drift found later | Fix the doc or code in a small PR; note it in the next slice's plan |

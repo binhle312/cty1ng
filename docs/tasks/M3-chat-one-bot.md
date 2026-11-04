@@ -1,8 +1,8 @@
 # M3: Chat with one bot
 
-Checkpoint: **plan** (events, worker). This is the largest slice; split into M3a (backend:
-tables, worker, agent port, streaming) and M3b (frontend: rail, conversation page) if the plan
-shows it is too big for one review.
+Checkpoint: **plan per part** (schema, events, worker, UI).
+This is the milestone brief. Follow the seven-part [M3 delivery breakdown](../development-plan.md#m3-delivery-parts)
+and write each part's brief before implementation. The scope and acceptance criteria below cover the full milestone.
 
 ## Goal
 
@@ -22,7 +22,7 @@ in `docs/design/components/conversation-page.md`, `composer.md` and `conversatio
 
 ## In scope
 
-- Tables `conversations`, `conversation_bots`, `messages`, `runs`, `run_history`, `run_skills`,
+- Tables `conversations`, `conversation_bots`, `messages`, `runs`, `run_attempts`, `run_history`, `run_skills`,
   `run_steps` (every tool call recorded with its `run.step` event, D26).
 - Worker with leases, attempts, one running run per conversation, `MAX_CONCURRENT_RUNS`, Stop.
 - Agent port: prompt builder (`conversation-rules.md` §4, without the discussion rules block
@@ -63,7 +63,7 @@ in `docs/design/components/conversation-page.md`, `composer.md` and `conversatio
 - Reply feedback (D51): the `reply_feedback` table (`domain-model.md` §15), `PUT` and
   `DELETE /messages/{id}/feedback`, the `message.feedback` event, and the Good answer and Bad
   answer buttons with the note box (UI-3.27, UI-3.28). Nothing reads the ratings until M5d;
-  M3 only stores them. If M3 is too big, this item can move to M4.
+  M3 only stores them, in M3g. A move to M4 needs a recorded scope change in both briefs and the delivery plan.
 - First open and reopening: the Get started checklist with `GET /setup` and
   `POST /setup/examples` (UI-1.7 to UI-1.9), last conversation, scroll to the "New" divider and
   drafts (UI-1.10 to UI-1.12).
@@ -77,7 +77,7 @@ panel, handoffs (M6); editing and branches (M4).
 
 - Journey J1 steps 1–3 pass in Playwright with the fake model (adding with the add slot).
 - UI-1.1–1.6 (icons from avatars), UI-3.1–3.7, 3.10, 3.14, 3.14b, 3.15 (partial), 3.17.
-- Invariants 7, 8, 9, 11, 14, 15, 17, 18, 22.
+- Invariants 7, 8, 9, 11, 14, 15, 17, 18, 22, 26.
 - Killing the backend mid-stream and restarting: the run is retried after the lease, no
   duplicate message, the UI recovers on reconnect.
 - Stop during streaming → message `stopped` with partial text, run `stopped`.
@@ -111,7 +111,8 @@ panel, handoffs (M6); editing and branches (M4).
     make no second call. A restart with `pending` sets `failed` and makes no call.
   - With the total cap reached, and again with only the title model's provider cap reached
     (D42), the app makes no title call, the status is `skipped`, and the chat gets no extra
-    notice. A model with no known price still gets a title.
+    notice. A model with no known price is skipped while a cap applies to it.
+    With no applicable cap, the title call is allowed and its cost stays unknown (D42 amendment).
   - Near the cap: five conversations send their first message at the same moment, with fake
     prices and a cap that leaves room for exactly two worst-case reservations. Delay the title
     calls (the fake counts in-flight calls). Exactly two are in flight and three are `skipped`
@@ -168,10 +169,16 @@ Migrations; event emission points; worker concurrency; Markdown renderer configu
 Reply feedback (D51): the `reply_feedback` table and its migration, the two
 endpoints, the event, and the UI design of the buttons.
 
-Auto title (D46, proposed): the new columns on `conversations` and the `model_requests` change
+Auto title (D46, accepted; schema design approval pending): the new columns on `conversations` and the `model_requests` change
 (`run_id` nullable, `purpose`, `conversation_id`); `title_source` in the conversation API; the
 new variable `TITLE_REQUEST_TIMEOUT_SECONDS`.
 
 ## Open questions
 
-None.
+- Resolve the M3/M7 boundary and data design for bot Usage (`design/components/bot-page.md` §9.6).
+- Review the first-run Guide offer with the Get started checklist and example loading.
+- Obtain approval for the D46 schema design before implementation.
+- Map each acceptance criterion and M3 follow-up to a part brief and its tests.
+  Include the title tests whose user flows arrive in M4 (mentions and pending-history members).
+
+The [M3 specification checklist](../development-plan.md#specification-work-before-m3a) owns the preparation steps.

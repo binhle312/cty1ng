@@ -1,4 +1,4 @@
-# Check two of the screen's own requests that wait at once, and every list state
+# M2c overlapping local requests and missing list states
 
 Date: 2026-11-03 · Source: M2c, PR #59 · Status: applied
 
@@ -23,22 +23,15 @@ each round still finds new problems.
 - The list states rule (`requirements/README.md`) had no check step: `data ?? []` and a loading
   line passed every test, because no test held the load open or made it fail.
 
-**Change.**
-- A sixth order question: another request of the same screen waits too. Does each answer end
-  only what its own request started, and do two refusals leave the server's value on the page?
-  (`../workflow.md` §2 step 4).
-- Before the push, every query read on the changed screens is checked for its loading, error
-  and empty states, with a test that holds the load and one that fails it (`../workflow.md` §2
-  step 4).
-- The bot page state module (one pure reducer for the server value and the requests that wait)
-  is the next step on this branch, with sequence tests against a simple model of the server.
+**Project response.** The workflow added the sixth request-order question and explicit list-state checks.
+The fixes and reducer follow-up below record the project implementation and its reported tests.
 
 **Fixes of this round.** A Remove ends only for a request sent while it waited
 (`markPinSend`); a refused change goes back past the changes that still wait
 (`lib/api/optimistic.ts`); the after-save cards and the pin cards show shapes and Try again.
 Each has a test that failed first.
 
-**Rule now in.** `../workflow.md` §2 step 4.
+
 
 **Applied (2026-11-04).** The four module maps (the load count, the Always load values, the
 Removes, the held changes of `lib/api/optimistic.ts`) became one pure reducer,
@@ -52,3 +45,7 @@ Broken on purpose in five ways, the reducer fails the sequence test or a unit te
 fresh reviewer agent's check of the first version found the invariants too weak (a late answer
 after a newer load), and they now check that a pin shows a value the server had since the last
 load. Only the bot list store writes the bot list and the settings (lint rule).
+
+**Reusable principles.** [Model state and event order before implementation](../../.agents/skills/principle-model-state-and-order/SKILL.md), [Fix the broken invariant at its owner](../../.agents/skills/principle-fix-invariants-at-the-owner/SKILL.md).
+
+**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [requirements shared states](../requirements/README.md#applies-to-every-story).
