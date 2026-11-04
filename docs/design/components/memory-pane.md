@@ -22,8 +22,9 @@ header, with an M5b tag on the board (there is no conversation settings page):
 
 - **Don't use memory** (switch, UI-9.6): "Bots here do not read or save memory." In every
   conversation: 1:1 or multi-bot, Home or project (D38). D51 uses it in a new 1:1.
-- **Keep earlier versions** (switch, UI-13.9): "{n} versions of each item." (default on, 5).
-  Only in a multi-bot conversation outside a project, because only that type has conversation
+- **Keep earlier versions** (switch, UI-13.9, default on), with the versions menu beside it (1–20,
+  default 5), as on Project settings (`project-settings-page.md` §2). Lower numbers ask for
+  confirmation first (UI-13.9). Only in a multi-bot conversation outside a project, because only that type has conversation
   memory (D38).
 
 The pane also opens from **Memory** in the conversation menu (`conversation-page.md` §2.1).
