@@ -116,7 +116,7 @@ If a command in this list does not exist yet (early slices), creating it is part
 
 - New or changed **database migrations**.
 - Changes to **security-sensitive code**: `adapters/workspace/`, upload handling, origin/host checks,
-  Markdown rendering, anything touching secrets.
+  Markdown rendering, the sensitive data guard (`core/guard/`), anything touching secrets.
 - **New dependencies** (backend or frontend), including major version bumps.
 - Changes to `docs/decisions/`, to this file, or to the public API shape.
 - The **UI design** of any new or changed screen: propose it in the plan and wait for approval

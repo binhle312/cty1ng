@@ -208,7 +208,8 @@ environment, provider-side data handling.
 - PRs that touch the paths in `AGENTS.md` §7 (security-sensitive code) also get an automated
   security review (the `anthropics/claude-code-security-review` GitHub Action, run only on
   the owner's branches, since it reads untrusted PR content and needs an API key secret).
-  It assists the human review; it does not replace it.
+  Without the secret the job skips and still shows as success, so a green check alone does not
+  prove a review ran. It assists the human review; it does not replace it.
 - **Vendored agent skills** (today `ui-ux-pro-max` in `.agents/skills/`; the `principle-*` skills
   there are project-owned) are third-party code that agents run with the
   owner's permissions. Each one keeps its licence and a `SOURCE.md` with the upstream commit

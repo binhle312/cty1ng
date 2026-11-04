@@ -16,6 +16,9 @@ on:
       # The security-sensitive paths of AGENTS.md §7.
       - "backend/src/adapters/workspace/**"
       - "backend/src/adapters/http/**"
+      - "backend/src/adapters/log/**"
+      - "backend/src/adapters/avatars/**"
+      - "backend/src/core/guard/**"
       - "backend/src/app/config.ts"
       - "frontend/src/components/ui/markdown*"
       - ".env.example"
