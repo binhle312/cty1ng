@@ -3,7 +3,6 @@ import { z } from "zod";
 // Error codes from the table in api.md §1 "Errors". Add a code there first, then here and in
 // ERROR_STATUS (the compiler checks that both lists match).
 export const ERROR_CODES = [
-  "invalid_skill_file",
   "invalid_import",
   "bad_request",
   "not_author",
@@ -60,7 +59,6 @@ export type ErrorCode = z.infer<typeof ErrorCode>;
 export const ERROR_STATUS: Readonly<
   Record<ErrorCode, 400 | 403 | 404 | 409 | 410 | 413 | 422 | 429 | 500>
 > = {
-  invalid_skill_file: 400,
   invalid_import: 400,
   bad_request: 400,
   not_author: 403,

@@ -9,7 +9,8 @@ of date. When this document and the OpenAPI schema disagree, raise it.
 
 - Base path `/api`. JSON in and out (`multipart/form-data` for uploads).
 - Ids are TypeIDs (D36): `<prefix>_<26 base32 chars>`, for example `bot_01jb8x6p0afqz8r2m3k5t7v9wx`.
-  A malformed id or a wrong prefix returns 422 `invalid_id`. Timestamps are ISO-8601 UTC.
+  A malformed id or a wrong prefix in the path or the query returns 422 `invalid_id`; in a JSON body
+  it returns 422 `validation_error` with `field`. Timestamps are ISO-8601 UTC.
 - Request schemas forbid unknown fields (Zod `.strict()`) so typos and forbidden fields
   (like `model_id` on bot update) fail loudly with 422.
 - Lists are cursor-paginated where they can grow: `?before_seq=` / `?limit=` (max 100).
@@ -32,7 +33,7 @@ whose page needs the current state to show the conflict also carries `current` (
 
 | HTTP | Codes |
 | --- | --- |
-| 400 | `invalid_skill_file`, `invalid_import`, `bad_request` (also a missing, duplicate or malformed `Host` header) |
+| 400 | `invalid_import`, `bad_request` (also a missing, duplicate or malformed `Host` header) |
 | 403 | `not_author`, `origin_rejected`, `host_rejected` (a well-formed `Host` that is not on the allowlist, `security.md` §2.1) |
 | 404 | `not_found` |
 | 410 | `bot_purged` (the bot was purged from Trash; only its tombstone remains, D50) |

@@ -80,7 +80,7 @@ Implemented in: links.
 | D33 | [Zod for runtime validation in the frontend](D33-zod-for-frontend-runtime-validation.md) | accepted |  |
 | D34 | [TypeScript on the backend and the frontend](D34-typescript-full-stack.md) | accepted |  |
 | D35 | [Ports and adapters at the edges, not "switch anything"](D35-ports-and-adapters-at-the-edges.md) | accepted |  |
-| D36 | [Ids are TypeIDs everywhere outside the database](D36-typeid-outside-the-database.md) | accepted | own amendment 2026-10-30 |
+| D36 | [Ids are TypeIDs everywhere outside the database](D36-typeid-outside-the-database.md) | accepted | own amendments 2026-10-30, 2026-11-04 |
 | D37 | [Projects group conversations](D37-projects-group-conversations.md) | accepted | D45, D47, D52 |
 | D38 | [Bot, project and conversation memory](D38-bot-memory-and-project-memory.md) | accepted | D43, D48, D53, D56, D61, D62, D63, own amendment 2026-10-26 |
 | D39 | [Sensitive-data guard before anything reaches a model or memory](D39-sensitive-data-guard.md) | accepted |  |

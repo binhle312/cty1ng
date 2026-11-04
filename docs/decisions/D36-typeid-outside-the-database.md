@@ -28,6 +28,8 @@ and `mprop` (`memory_proposals`, D63), which `shared/src/ids.ts` already defines
   so passing a message id where a bot id is expected fails both at compile time and at runtime.
 - **API errors.** A malformed id, or one with the wrong prefix, returns 422 `invalid_id`.
   A well-formed id that does not exist returns 404 as before.
+  Amended 2026-11-04 (owner): `invalid_id` covers an id in the path or the query. A bad id in a JSON
+  body gives 422 `validation_error` with `field`.
 - **Library.** `typeid-js`, behind the ids port, with `uuidv7` for generation (new
   dependencies, approved with M0's list).
 
