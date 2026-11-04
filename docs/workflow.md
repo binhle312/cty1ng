@@ -94,13 +94,13 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    these cases; a test planned before the code finds them before the review does.
    **Code design checkpoint.** If the slice adds shared state, a new module boundary or a flow
    across several screens, the plan has a one-page code design before any code (owner,
-   2026-11-04; `principle-decide-design-before-build`). The design names the state owner, the
+   2026-11-04; `principle-design-first`). The design names the state owner, the
    modules, the data flow and the failure paths, and it compares at least two options with their
    costs. A reviewer who did not write it tries to break it. The owner approves it in every such
    slice, checkpointed or not, from a short form (see "Human review: visual first"). The state
    table below is part of this design. A slice that stays inside one module skips this step.
    **State table for stateful screens.** If a screen saves under a lock, takes live events or
-   gets late answers, apply the [state and order principle](../.agents/skills/principle-model-state-and-order/SKILL.md)
+   gets late answers, apply the [state and order principle](../.agents/skills/principle-state-and-order/SKILL.md)
    before code. Use the failure scope in `review-guide.md` §6. Resolve unspecified cells with the owner.
    After approval, put the table in the screen's spec. Follow `frontend-conventions.md` §1 for
    its state owner and `testing.md` §3 for cell and sequence tests.

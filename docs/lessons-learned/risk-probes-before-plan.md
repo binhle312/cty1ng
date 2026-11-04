@@ -12,6 +12,6 @@ tried during the build, so each surprise stopped the build.
 
 **Project response.** The workflow added pre-plan probes. The conventions document keeps the CSP, generated-client, and Base UI pitfalls.
 
-**Reusable principles.** [Resolve uncertainty before the build](../../.agents/skills/principle-resolve-uncertainty-before-build/SKILL.md).
+**Reusable principles.** [Resolve unknowns before the build](../../.agents/skills/principle-resolve-unknowns/SKILL.md).
 
 **Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [frontend conventions §5](../frontend-conventions.md#5-known-pitfalls).

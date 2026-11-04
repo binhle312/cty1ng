@@ -16,6 +16,6 @@ The local workflow uses focused tests during fixes and the full suite at the del
 owner's machine, not of the repository. If connections to closed local ports are refused at
 once, the delay goes away even without `pnpm e2e:serve`.
 
-**Reusable principles.** [Verify the delivered revision and report evidence](../../.agents/skills/principle-verify-delivery-and-report-evidence/SKILL.md).
+**Reusable principles.** [Verify delivery](../../.agents/skills/principle-verify-delivery/SKILL.md).
 
 **Project guidance.** [testing](../testing.md), [workflow §2](../workflow.md#2-lifecycle-of-a-slice).

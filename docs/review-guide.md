@@ -104,7 +104,7 @@ Give the builder one round row for `delivery-quality.md` §6, or write it when t
 ## 6. Apply the merge bar
 
 Only P1 and P2 findings block a merge (owner, 2026-11-04). Give each finding one severity and one reason.
-This bar applies the [review exit principle](../.agents/skills/principle-set-review-exit/SKILL.md).
+This bar applies the [when review ends principle](../.agents/skills/principle-when-review-ends/SKILL.md).
 
 Read the table from the top, and use the first row that fits.
 

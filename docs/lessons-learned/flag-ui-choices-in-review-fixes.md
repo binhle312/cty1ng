@@ -12,6 +12,6 @@ not which text or layout to use, and `AGENTS.md` §7 still asks the owner to app
 **Project response.** The workflow now routes new UI choices from review fixes through `Needs human review`.
 The project design approval boundary remains in `AGENTS.md` §7.
 
-**Reusable principles.** [Preserve approval boundaries during fixes](../../.agents/skills/principle-preserve-approval-boundaries/SKILL.md).
+**Reusable principles.** [Check approval](../../.agents/skills/principle-check-approval/SKILL.md).
 
 **Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).

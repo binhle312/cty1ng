@@ -15,6 +15,6 @@ No runtime defect was needed to report the contract difference.
 **Project response.** The project added a review guide with operation-by-operation evidence and separate compliance and safety conclusions.
 The workflow routes local reviews, PR reviews, and follow-up reviews through it.
 
-**Reusable principles.** [Review each contract with explicit evidence](../../.agents/skills/principle-review-contracts-with-evidence/SKILL.md).
+**Reusable principles.** [Review with evidence](../../.agents/skills/principle-review-with-evidence/SKILL.md).
 
 **Project guidance.** [review guide](../review-guide.md), [workflow §4](../workflow.md#4-review-prompt-reviewer-agent).

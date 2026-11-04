@@ -207,7 +207,7 @@ the component tests then cover the wiring and a few chosen orders.
 For every request on a changed screen with locks, live events or late answers, test these six cases.
 Hold and release answers to force the order, including requests away from a reported finding.
 Apply the failure scope in `review-guide.md` §6 and the
-[state and order principle](../.agents/skills/principle-model-state-and-order/SKILL.md).
+[state and order principle](../.agents/skills/principle-state-and-order/SKILL.md).
 
 | Case | Required check |
 | --- | --- |
@@ -296,7 +296,7 @@ high`, CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also
 
 ## 5. Evidence in PRs
 
-Apply the [test evidence principle](../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md).
+Apply the [prove tests work principle](../.agents/skills/principle-prove-tests-work/SKILL.md).
 The PR maps each acceptance criterion to a test and its observable assertion or expected state.
 Use a screenshot for purely visual criteria; Playwright stores these in `frontend/test/e2e/<spec>.spec.ts-snapshots/`.
 "Tested manually" alone is not evidence.

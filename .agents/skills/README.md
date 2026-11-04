@@ -30,17 +30,17 @@ Read the matching skill before its phase of work.
 
 | Folder | Read when |
 | --- | --- |
-| `principle-resolve-uncertainty-before-build/` | Resolve unclear requirements and test unfamiliar dependencies before the implementation depends on them. |
-| `principle-decide-design-before-build/` | Decide and review the code design before a change adds shared state, a module boundary, or a flow across several screens. |
-| `principle-bound-change-scope/` | Split a plan when independent concerns or separate approval needs make it hard to review or recover. |
-| `principle-set-review-exit/` | Set the merge bar and failure scope before a build, or when each review round still finds issues. |
-| `principle-model-state-and-order/` | Model transitions when requests overlap, replies arrive late, or state survives navigation, locks, retries, or live events. |
+| `principle-resolve-unknowns/` | Resolve unclear requirements and test unfamiliar dependencies before the implementation depends on them. |
+| `principle-design-first/` | Decide and review the code design before a change adds shared state, a module boundary, or a flow across several screens. |
+| `principle-split-changes/` | Split a plan when independent concerns or separate approval needs make it hard to review or recover. |
+| `principle-when-review-ends/` | Set the merge bar and failure scope before a build, or when each review round still finds issues. |
+| `principle-state-and-order/` | Model transitions when requests overlap, replies arrive late, or state survives navigation, locks, retries, or live events. |
 | `principle-fix-root-cause/` | Trace a failure to its first wrong decision, or repair a shared cause when review fixes repeat or several paths enforce one rule. |
-| `principle-prove-tests-detect-the-behaviour/` | Verify tests used as evidence for acceptance, bug fixes, concurrency, or mocked integrations. |
-| `principle-review-contracts-with-evidence/` | Review code or fixes against each requirement, approved plan promise, and implementation boundary. |
-| `principle-verify-delivery-and-report-evidence/` | Verify the final revision before handoff and report the scope and result of each check. |
-| `principle-preserve-approval-boundaries/` | Check authority when a fix changes approved behaviour, scope, contracts, or protected operations. |
-| `principle-encode-repeatable-checks/` | Replace repeated corrections with enforcement, or put judgment rules in one authoritative place. |
-| `principle-use-safe-test-data/` | Create synthetic fixtures when tests or examples need values that resemble credentials or private data. |
+| `principle-prove-tests-work/` | Verify tests used as evidence for acceptance, bug fixes, concurrency, or mocked integrations. |
+| `principle-review-with-evidence/` | Review code or fixes against each requirement, approved plan promise, and implementation boundary. |
+| `principle-verify-delivery/` | Verify the final revision before handoff and report the scope and result of each check. |
+| `principle-check-approval/` | Check authority when a fix changes approved behaviour, scope, contracts, or protected operations. |
+| `principle-automate-checks/` | Replace repeated corrections with enforcement, or put judgment rules in one authoritative place. |
+| `principle-safe-test-data/` | Create synthetic fixtures when tests or examples need values that resemble credentials or private data. |
 | `ui-ux-pro-max/` | Work on interface design; follow the project design rules. |
 | `typescript-best-practices/` | Write or review TypeScript; `docs/frontend-conventions.md` wins where they differ (see its `SOURCE.md`). |

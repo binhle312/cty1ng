@@ -15,6 +15,6 @@ fails quietly by design in the app. Nothing tied a fake answer to the API's shap
 **Project response.** The fake API records success responses rejected by the client schema. Its `restore()` call in `afterEach` fails with the route and schema error.
 The check failed on the old `{ bot_ids }` fixture. Deliberately malformed responses use an explicit `fetch` stub.
 
-**Reusable principles.** [Prove that tests detect the intended behaviour](../../.agents/skills/principle-prove-tests-detect-the-behaviour/SKILL.md), [Encode repeatable checks and keep one source of guidance](../../.agents/skills/principle-encode-repeatable-checks/SKILL.md).
+**Reusable principles.** [Prove that tests work](../../.agents/skills/principle-prove-tests-work/SKILL.md), [Automate repeated checks](../../.agents/skills/principle-automate-checks/SKILL.md).
 
 **Project guidance.** [testing](../testing.md), `frontend/test/fake-api.ts`.

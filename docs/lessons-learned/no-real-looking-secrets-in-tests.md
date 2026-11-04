@@ -13,6 +13,6 @@ backend tests already used.
 **Project response.** The test-helper guidance now uses existing short fake keys or synthetic values built at runtime.
 The security document records the scanner concern; the original alert and branch history remain part of this incident.
 
-**Reusable principles.** [Use safe, purpose-built test data](../../.agents/skills/principle-use-safe-test-data/SKILL.md).
+**Reusable principles.** [Use safe test data](../../.agents/skills/principle-safe-test-data/SKILL.md).
 
 **Project guidance.** [testing](../testing.md), [security](../security.md).

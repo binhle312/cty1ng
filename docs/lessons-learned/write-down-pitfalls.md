@@ -10,6 +10,6 @@ but they were only in the PR conversation. The next slice could learn them again
 **Project response.** The project recorded CSP, Base UI, lint patterns, `renderApp`, and `watchCsp` in the conventions and testing guides.
 The workflow now routes new build knowledge to those owning documents.
 
-**Reusable principles.** [Encode repeatable checks and keep one source of guidance](../../.agents/skills/principle-encode-repeatable-checks/SKILL.md).
+**Reusable principles.** [Automate repeated checks](../../.agents/skills/principle-automate-checks/SKILL.md).
 
 **Project guidance.** [frontend conventions §5](../frontend-conventions.md#5-known-pitfalls), [testing](../testing.md), [workflow §2](../workflow.md#2-lifecycle-of-a-slice).
