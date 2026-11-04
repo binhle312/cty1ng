@@ -138,7 +138,8 @@ added ──▶ pending_history ──owner chooses──▶ active ──remove
 - Deleting a bot cancels its queued runs and stops its running run first (D50). In the same
   transaction, each of its `active` or `pending_history` memberships becomes `removed`, with
   `removed_at` = the bot's `deleted_at` and no "left" line. Its old messages stay, in grey (D12).
-  A restore suggests only the conversations whose membership that delete ended (owner, 2026-11-04).
+  A restore does not add the bot to any conversation and does not suggest any: the owner adds it
+  by hand, as any bot (owner, 2026-11-04).
 
 ## 4. What a bot sees
 

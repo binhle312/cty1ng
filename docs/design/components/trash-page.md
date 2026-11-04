@@ -39,7 +39,7 @@
 | Restore | The item goes back to its place. Toast: "{name} is back in {place}. **Open**" | T4 |
 | Restore, place in Trash (D60, D62) | Restore is off (B5) with the tooltip "Restore {place} first". Under the facts, a link "{place} is in Trash ›" scrolls to the place's row and marks it. No error message | T2 |
 | Restore a skill (D49) | Dialog "{skill} is back": "It is deprecated, as before. These bots used it when you deleted it. Assign it to them again?", one ticked row per active bot ("Pinned v4 before"), a line for bots in Trash ("Translator also used it. Translator is in Trash, so it is not in the list."), **Skip** and **Assign to {n} bots** | T5 |
-| Restore a bot (D50) | Dialog "{bot} is back": "Its persona, skills, tools and bot memory are back. Add it again to the conversations that it was in?", one ticked row per conversation not in Trash that the delete took it out of ("In {place} · last message {date}"), the line "It joins as a new member. You choose what it can read, as when you add any bot.", **Skip** and **Add to {n} conversations** | T6 |
+| Restore a bot (D50) | No dialog. Toast: "{name} is back. **Open**". The bot is in no conversation; the owner adds it by hand, as any bot (owner, 2026-11-04). This replaces the dialog that board T6 still shows | T6 |
 | Delete | No dialog. The row leaves the list at once and the toast says "{name} is deleted for good. **Undo**". The page sends the delete when the toast closes, after `undo_seconds`; Undo puts the row back and sends nothing (D62) | T3 |
 | Empty | A Trash icon, "Trash is empty", and "When you delete a project, conversation, bot, skill or memory item, it waits here for {trash_days} days. You can restore it until then." | T7 |
 

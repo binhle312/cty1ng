@@ -55,7 +55,7 @@ against, not code to copy.
 | [memory-page.md](memory-page.md) | Memory page: places list, place head, item row, edit, add, earlier versions, delete to Trash, search, conflicts and Decide, limits, memory off, bot page Memory tab, Tidy memory and its card | `../previews/command-dark/memory-page.*`, `memory-page-states.*`, `memory-tidy.*` |
 | [library-page.md](library-page.md) | Library page (M6, round 17): page top, Files, History (files changed, like a GitHub PR) and Unsaved changes tabs, attachments, New tag, Copy to, Add from Home Library, Open folder, Home Library | `../previews/command-dark/library-page.*` |
 | [library-cards.md](library-cards.md) | Library parts in a conversation (M6): overlap notice, plan card mark, unsaved changes card, save card for changes outside the plan, copy card and its states | `../previews/command-dark/library-cards.*` |
-| [trash-page.md](trash-page.md) | Trash page: kind list, rows with Restore and Delete, restore blocked by its place, skill and bot restore dialogs, Undo of a permanent delete, several items at once, empty Trash | `../previews/command-dark/trash-page.*` |
+| [trash-page.md](trash-page.md) | Trash page: kind list, rows with Restore and Delete, restore blocked by its place, skill restore dialog, Undo of a permanent delete, several items at once, empty Trash | `../previews/command-dark/trash-page.*` |
 
 Files marked **Standard** are shared rules that many pages use; a page spec links to them and
 does not repeat them.

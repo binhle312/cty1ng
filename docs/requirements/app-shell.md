@@ -169,9 +169,9 @@ Design: `../design/components/trash-page.md`.
   {date}", where the date is `deleted_at + trash_days` in local time. The buttons are
   **Restore** and **Delete**.
 - UI-1.16: Restore puts the item back in its place (D47, D49, D50, D60, D62) and the toast links
-  to it. A skill restore offers to assign the skill again to its active bots; a bot restore
-  offers to add the bot again to its conversations that are not in Trash. Nothing is added
-  without the owner's click.
+  to it. A skill restore offers to assign the skill again to its active bots, and nothing is
+  assigned without the owner's click. A bot restore adds the bot to no conversation and suggests
+  none; the owner adds it by hand, as any bot (owner, 2026-11-04).
 - UI-1.17: When an item's place is in Trash, Restore is off with the tooltip "Restore {place}
   first" and a link to the place's row. The server refuses the restore with 409
   `place_in_trash` and changes nothing. A test calls the endpoint directly.

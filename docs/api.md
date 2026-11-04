@@ -190,7 +190,7 @@ An item is `{kind: "project" | "conversation" | "bot" | "skill" | "memory_item",
 | Method | Path | Body | Notes |
 | --- | --- | --- | --- |
 | GET | `/trash?kind=` | | Trash rows, newest delete first: `kind, id, name, place {kind, id, name}?, facts, deleted_at, deletes_on, restore_blocked_by {kind, id, name}?`; `counts` per kind |
-| POST | `/trash/restore` | `{items: []}` | places first, then the rest; one transaction per item. Returns one result per item: `restored` with the `suggested_bot_ids` (skill, D49) or `suggested_conversation_ids` (bot, D50), or an error code (`place_in_trash`, `memory_full`) |
+| POST | `/trash/restore` | `{items: []}` | places first, then the rest; one transaction per item. Returns one result per item: `restored`, with the `suggested_bot_ids` for a skill (D49), or an error code (`place_in_trash`, `memory_full`) |
 | POST | `/trash/delete` | `{items: []}` | permanent delete (the purge of each item) now; one transaction per item; one result per item. The page sends it when the Undo toast closes (D62) |
 
 `POST /skills/{id}/restore` and `DELETE /skills/{id}` (§2) call the same services for one skill.

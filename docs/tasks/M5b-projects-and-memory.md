@@ -45,7 +45,7 @@ can move into a project and take its conversation memory with it.
 - **Conversation menu items** Memory, Move to project and Delete (round 12), with the Delete
   dialog (D60) and the Move dialog without its file part (`conversation-page.md` §2.1a).
 - **Trash** (D62): the Trash page, Restore and Delete per row and for several rows, the restore
-  dialogs for a skill and a bot, `place_in_trash`, the Undo toast held for `undo_seconds`, Trash
+  dialog for a skill, `place_in_trash`, the Undo toast held for `undo_seconds`, Trash
   in the user panel menu with its count. Remove the temporary CLI commands `skills trash` and
   `skills restore` that M1 added, and `bots trash` and `bots restore` that M2 added (`api.md`
   §2), with their tests and the `api.md` lines; the restore dialog of a skill uses

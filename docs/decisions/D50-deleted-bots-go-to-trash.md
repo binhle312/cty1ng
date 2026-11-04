@@ -6,9 +6,9 @@ for the same action") and then these rules. It amends D12.
 Amends: D12
 
 Amended 2026-11-04 (owner): a delete sets the bot's memberships to `removed` in the same
-transaction, with no "left" line, and the conversation icon leaves it out. A restore suggests only
-the conversations whose membership that delete ended, not one the owner had removed it from
-(`../conversation-rules.md` §3).
+transaction, with no "left" line, and the conversation icon leaves it out. A restore does not add
+the bot to any conversation and does not suggest any: the owner adds it by hand, as any bot. This
+replaces the suggestion in the Restore rule and the example below (`../conversation-rules.md` §3).
 
 Decision:
 
