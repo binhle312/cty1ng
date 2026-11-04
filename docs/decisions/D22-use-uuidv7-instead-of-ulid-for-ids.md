@@ -9,3 +9,4 @@ Why: Same properties as ULID with better ecosystem support.
 Rejected: ULID (fine, but non-standard); UUIDv4 (random, so inserts scatter across indexes and
 ids do not sort by time); auto-increment integers (leak counts, clash when merging data).
 Consequences: Ids are 36 characters in URLs instead of 26.
+Amended 2026-11-04 (owner): Implemented in is `../domain-model.md` §1, `../architecture.md` §2, `../tasks/M0-skeleton.md`.
