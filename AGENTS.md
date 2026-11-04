@@ -48,6 +48,7 @@ Start with `docs/README.md` for the reading order.
 | Uploads, file tools, rendering bot output, request checks | `docs/security.md` |
 | Tests | `docs/testing.md` |
 | How to work, branch, review | `docs/workflow.md` |
+| Writing or finding a slice's plan | `docs/workflow.md` §2 step 2, `docs/plans/README.md` |
 | Apply or maintain engineering principles | `.agents/skills/README.md` |
 | Finding a file in the code | The folder's `README.md` index (`docs/architecture.md` §4.2) |
 | Ports, adapters, import rules | `docs/architecture.md` §2, §4.1 (D35) |

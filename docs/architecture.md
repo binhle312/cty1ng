@@ -302,7 +302,8 @@ Start here: `worker.service.ts`. Do not: call the model except through the model
   - every `Amends:` and `Supersedes:` line in `docs/decisions/` names decisions that exist, and
     the "Changed by" column of `docs/decisions/README.md` lists exactly those entries;
   - every decision file has one index row, and every row links to a file that exists;
-  - `docs/lessons-learned/README.md` lists every lesson file, like a folder index.
+  - `docs/lessons-learned/README.md` and `docs/plans/README.md` list every file in their
+    folder, like a folder index.
   Whether two decisions agree in meaning is not checkable; the reviewer checks it
   (`workflow.md` §4).
 - Leaves only: the root `README.md` and this section link to the package indexes; there is no

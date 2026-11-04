@@ -22,6 +22,7 @@ export const INDEXED_FOLDERS = [
   "frontend/src/lib/realtime",
   "frontend/src/themes",
   "docs/lessons-learned",
+  "docs/plans",
 ] as const;
 
 // Never listed in a folder table: the index itself, tests, generated code (architecture.md
