@@ -1,6 +1,6 @@
 # UI rules
 
-> **Status: proposed (round 12, owner approved the idea 2026-10-25 12:54).** One list of every UI
+> **Status: agreed (owner, 2026-11-04; round 12, owner approved the idea 2026-10-25 12:54).** One list of every UI
 > rule that the owner agreed in the design rounds. Read it before you draw a design board or
 > write or change a UI spec. Each rule has one line and a link to the file that owns it. If this
 > list and the owning file disagree, the owning file wins: report the difference.
@@ -8,26 +8,22 @@
 ## How to use this list
 
 1. Read this file before a design board, a UI spec or UI code.
-2. Draw boards only with the agreed parts in `chat-app-milestone/reviews/board-kit/ui_parts.py`
-   (project files). Do not draw a new button, row, toast or slot. A part that does not exist yet
-   is new: mark it "New, not agreed".
-3. Run `check_board.py` on every board before you post it. It must show 0 errors.
-4. Then check the rules marked **manual** by eye. A script cannot check them.
-5. A new rule from the owner goes into this file in the same PR as the spec it changes.
+2. Draw boards only with the agreed parts in `components/`. Do not draw a new button, row, toast
+   or slot. A part that does not exist yet is new: mark it "New, not agreed".
+3. Check every rule by eye before you post a board. No script checks them.
+4. A new rule from the owner goes into this file in the same PR as the spec it changes.
 
 ## Rules
-
-Auto = `check_board.py` finds a break. Manual = check by eye.
 
 ### Words
 
 | # | Rule | Check | Source |
 | --- | --- | --- | --- |
-| W1 | The UI says "conversation", never "chat" | auto | AGENTS.md §10, owner 2026-10-23 |
+| W1 | The UI says "conversation", never "chat" | manual | AGENTS.md §10, owner 2026-10-23 |
 | W2 | A label does not repeat the page subject: "← Back", "Delete", "+ Create" | manual | Round 9, `create-bot-page.md` |
-| W3 | A button label is a verb in sentence case, and never ends in "…" | auto ("…"), manual (verb) | `components/buttons.md` §4 |
+| W3 | A button label is a verb in sentence case, and never ends in "…" | manual | `components/buttons.md` §4 |
 | W4 | A label with a count says the count: "Apply 4 changes" | manual | `components/buttons.md` §4 |
-| W5 | Fold links say only "Show" and "Hide". The folded line keeps its facts | auto | `components/conversation-cards.md` §3 |
+| W5 | Fold links say only "Show" and "Hide". The folded line keeps its facts | manual | `components/conversation-cards.md` §3 |
 | W6 | A folded line does not repeat a word after a status pill | manual | Round 10 (owner 2026-10-24 17:01) |
 | W7 | Popover and crop buttons say just "Use" | manual | Round 9 |
 | W8 | Text uses Simplified Technical English | manual | `docs/workflow.md` |
@@ -38,7 +34,7 @@ Auto = `check_board.py` finds a break. Manual = check by eye.
 | # | Rule | Check | Source |
 | --- | --- | --- | --- |
 | B1 | Four kinds only: primary, secondary, danger, danger fill. Danger fill only in the last step of a delete | manual | `components/buttons.md` §1 |
-| B2 | Two heights: 36 px (pages, dialogs, save bars), 30 px (headers, cards, lists, banners) | auto | `components/buttons.md` §2 |
+| B2 | Two heights: 36 px (pages, dialogs, save bars), 30 px (headers, cards, lists, banners) | manual | `components/buttons.md` §2 |
 | B3 | The primary button is last, at the far right. At most one primary in an area | manual | `components/buttons.md` §3 |
 | B4 | A dialog that removes something has Cancel as the default | manual | `components/buttons.md` §3 |
 | B5 | Disabled = 40 % opacity, with a tooltip that says why | manual | `components/buttons.md` §1 |
@@ -59,9 +55,9 @@ Auto = `check_board.py` finds a break. Manual = check by eye.
 
 | # | Rule | Check | Source |
 | --- | --- | --- | --- |
-| P1 | A dashed border is only for an empty place that the owner fills by a click or a drop | auto | `components/dashed-slot.md` |
+| P1 | A dashed border is only for an empty place that the owner fills by a click or a drop | manual | `components/dashed-slot.md` |
 | P2 | Reuse an agreed part. Do not draw a second version of a row, card, menu or toast | manual | Owner 2026-10-25 12:46 |
-| P3 | Boards use the real avatar art and all agreed shell parts. No placeholders | auto (words), manual | Owner 2026-10-24 10:32 |
+| P3 | Boards use the real avatar art and all agreed shell parts. No placeholders | manual | Owner 2026-10-24 10:32 |
 | P4 | No section heading when the fields have labels | manual | Round 9 |
 | P5 | No legend when the badges already explain | manual | Round 9 |
 | P6 | One pin glyph and its four states. A pin badge is never on a bot avatar | manual | `components/pin.md` |
@@ -73,9 +69,9 @@ Auto = `check_board.py` finds a break. Manual = check by eye.
 
 | # | Rule | Check | Source |
 | --- | --- | --- | --- |
-| T1 | Under 1 minute "Just now". Under 1 day "x ago" ("5 min ago", "3 h ago"). Otherwise local ISO time ("2026-10-20 16:40") | auto | `components/time-format.md` §1 |
+| T1 | Under 1 minute "Just now". Under 1 day "x ago" ("5 min ago", "3 h ago"). Otherwise local ISO time ("2026-10-20 16:40") | manual | `components/time-format.md` §1 |
 | T2 | The conversation and its cards use local clock time, full date in a tooltip | manual | `components/time-format.md` §1 |
-| T3 | 24-hour clock, two digits: "09:05", "09:05:07". Never "9:05" or "5:40 PM" | auto (AM/PM) | `components/time-format.md` §1 |
+| T3 | 24-hour clock, two digits: "09:05", "09:05:07". Never "9:05" or "5:40 PM" | manual | `components/time-format.md` §1 |
 | T4 | Every time range uses the D25 picker. The bucket follows the range | manual | `../requirements/time-range-picker.md` |
 | T5 | One sort icon. A click sorts, a second click flips | manual | `components/time-format.md` §2 |
 
@@ -100,7 +96,7 @@ cover them.
 
 | Conflict | Where | Status |
 | --- | --- | --- |
-| Agreed round 10 parts use 28 px buttons (Flow in the conversation header, Retry under a failed reply). B2 allows 30 or 36. The check gives a warning, not an error | `conversation-page.md`, `buttons.md` §2 | For the standardisation thread |
+| Agreed round 10 parts use 28 px buttons (Flow in the conversation header, Retry under a failed reply). B2 allows 30 or 36 | `conversation-page.md`, `buttons.md` §2 | For the standardisation thread |
 | The Bots page sort buttons are 24 px icon buttons (`bots-page.md` §5). B2 allows 30 or 36. Built at 24 px in M2b; the owner keeps them for now and reviews the UI at M3 (owner, 2026-11-02) | `bots-page.md` §5, `buttons.md` §2 | Owner review at M3 |
 | "Delete project" on the Project settings page breaks W2 | `project-settings-page.md`, `buttons.md` §1 | For the standardisation thread |
 | Previews made before L1 and L2 still draw some app text under 11 px (badges at 9 px, meta lines at 10.5 px). The shell previews (`user-panel`, `left-bar-rail`, `left-bar`, `top-header`) are fixed; the others keep it until they are next regenerated. The rules win | `previews/command-dark/` | Fix each preview when its slice regenerates it |

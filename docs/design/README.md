@@ -1,7 +1,7 @@
 # Design
 
 > **Status: mixed.** `components/` holds designs the owner has **agreed** (each file says when);
-> builders follow them. Everything else here is a sketch or mockup for discussion: the owner
+> builders follow them, and `ui-rules.md` is the agreed list of their rules. Everything else here is a sketch or mockup for discussion: the owner
 > decides the actual UI when a slice starts, in its plan, and a sketch is not a pixel spec.
 
 ## Files
@@ -10,7 +10,7 @@
 | --- | --- |
 | [screens.md](screens.md) | Text layout sketches for the shell, conversation page, statistics page and time range picker |
 | [concepts.md](concepts.md) | UI concept proposals (7 layouts, then 10 visual styles), compared; the owner picked 2, 11 and 13 (D30) |
-| [ui-rules.md](ui-rules.md) | **Every agreed UI rule in one list**, each with its check (auto or manual) and the file that owns it. Read it before a board, a UI spec or UI code |
+| [ui-rules.md](ui-rules.md) | **Every agreed UI rule in one list**, each with the file that owns it. Read it before a board, a UI spec or UI code |
 | [themes.md](themes.md) | Theme system: Command and Material themes, modes, density, Board map, tokens (D30) |
 | [mockups.md](mockups.md) | Links to visual mockups (Flow view Team, Timeline, Files) and what they illustrate |
 | [components/](components/README.md) | **Agreed** component specs and the shared standards, theme-neutral; the list, the status of each file and the core-vs-theme rule are in its README |

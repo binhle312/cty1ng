@@ -49,7 +49,7 @@ Design: `../design/components/settings-page.md` (round 14).
   picker and by server-side bucketing (`time-range-picker.md`, contract with the backend).
 - UI-8.5 *(D30)*: Appearance: theme (Command; Material appears when slice T2 ships), mode
   (Follow system / Light / Dark), density (Theme default / Compact), Flow pane default (Closed /
-  Timeline / Board; Board appears with M8b), and "Always reduce motion" (the Flow pane Animations switch, UI-12.7, shows the same value). Changes apply instantly without reload,
+  Timeline / Board; Board appears with M8b), "Always reduce motion" (the Flow pane Animations switch, UI-12.7, shows the same value), Bot animations (Off / Reduced / Normal, capped by "Always reduce motion"; `../design/components/bot-avatar.md` §4), and, while Get started is hidden, the row that shows it again (UI-1.8). Changes apply instantly without reload,
   are saved in this browser, and the page never flashes the wrong theme on load
   (`../design/themes.md` §1, §2).
 - UI-8.6 *(D38)*: Memory: a global switch, `memory_item_max_chars` (100–1,000, default 300) and

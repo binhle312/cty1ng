@@ -5,6 +5,11 @@ approved **Delete** in the bot ⋯ menu as a move to Trash ("Skills and Projects
 for the same action") and then these rules. It amends D12.
 Amends: D12
 
+Amended 2026-11-04 (owner): a delete sets the bot's memberships to `removed` in the same
+transaction, with no "left" line, and the conversation icon leaves it out. A restore does not add
+the bot to any conversation and does not suggest any: the owner adds it by hand, as any bot. This
+replaces the suggestion in the Restore rule and the example below (`../conversation-rules.md` §3).
+
 Decision:
 
 - **Delete a bot.** Delete moves the bot to Trash (`bots.deleted_at`). The bot leaves the header,

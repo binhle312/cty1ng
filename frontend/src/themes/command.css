@@ -11,8 +11,11 @@
   --token-surface-container: #16181b;
   --token-surface-raised: #1e2125;
   --token-surface-bubble: #262a30;
+  --token-surface-selected: #23272c;
   --token-on-surface: #e7e8ea;
   --token-on-surface-muted: #9ba1ab;
+  --token-on-surface-soft: #c4c8ce;
+  --token-on-surface-faint: #8b919a;
   --token-primary: #f5b544;
   --token-on-primary: #0e0f11;
   --token-primary-container: #1b170d;

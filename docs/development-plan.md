@@ -18,6 +18,7 @@ Write a brief for each implementation part before code starts; hand it to the bu
 | M4 | [M4-multi-bot.md](tasks/M4-multi-bot.md) | Multi-bot routing, membership and branches, in [four parts](#m4-multi-bot-conversations) | **plan** per part (routing, branches, UI) | M3 |
 | M5 | [M5-bot-discussion.md](tasks/M5-bot-discussion.md) | Discussion, caps and Settings, in [five parts](#m5-discussion-caps-and-settings) | **plan** per part (claim rules, shared state, UI) | M4 |
 | M5b | [M5b-projects-and-memory.md](tasks/M5b-projects-and-memory.md) | Projects, memory, Trash and Move to project without files, in [nine parts](#m5b-projects-memory-and-trash) | **plan** per part (schema, memory isolation, UI) | M5; shared plan approvals before action tools |
+| M5e | not written | Cross-conversation reading (D58; UI-14.9 to UI-14.12): the search tool, the FTS5 table and the Search hits row. The next slice after M5b, as the owner agreed (2026-10-26): the letter is not the order | **plan** (schema, tools) | M4-3, M5b-1, M5b-3, Plans-1 |
 | M5c | not written | Owner-requested skill drafts and explicit assignment, in [three parts](#m5c-skill-drafts) | **plan** per part (schema, tools, UI) | M3 and shared plan approvals |
 | M5d | not written | Skill improvement, blind probes and saved test cases, in [five parts](#m5d-skill-improvement) | **plan** per part (schema, UI, cost) | M5, M5c and shared plan approvals; M5d-3 also needs M5b-2 and M6-1 |
 | M6 | [M6-workspace-parity.md](tasks/M6-workspace-parity.md) | Libraries, file tools, attachments, copies and handoffs, in [ten parts](#m6-libraries-files-and-handoffs) | **plan** per part (security, recovery, UI) | M5b and shared plan approvals |
@@ -26,6 +27,7 @@ Write a brief for each implementation part before code starts; hand it to the bu
 | M8 | [M8-flow-view.md](tasks/M8-flow-view.md) | Flow state, Timeline and motion, in [three parts](#m8-flow-timeline) | **plan** per part (renderer contract, UI, performance) | M7; full integration also needs M6 handoff data |
 | M8b | not written | Board: second map in the Flow pane (D30 amendment), [size review after design](#m8b-and-m8c-board-slices) | **plan** (UI design) | M8 |
 | M8c | not written | Read-only project Board, [two provisional parts](#m8b-and-m8c-board-slices); same project data as the inbox | **plan** (schema/API, UI design) | M8b; project, Library and handoff data |
+| Avatars | not written | Jelly and Pixel avatar styles (art in `design/assets/avatars/`), and the motion that the Bot animations setting controls (`design/components/bot-avatar.md` §3, §4) | merge (UI design, visual snapshots) | M3 and the UI review after it; M5-3 for the setting |
 | T2 | not written | Material theme: one token file plus the documented structural differences (D30) | merge (UI design, visual snapshots) | M0; any time, owner decides |
 | M9 | not written | VPS: auth, Docker, TLS, backups | separate milestone | M8 |
 | later | not written | Scheduled bots and web access (Researcher, Reminder; then Trip planner); web through provider web tools only (D53) | separate milestone | after phase 1 |
@@ -159,7 +161,7 @@ Trash must be usable before the new screens expose deletion.
 | M5b-1 — Project and memory storage | Project and memory schemas, CRUD services, scope rules, versions, limits, settings, seen state and purge-policy entries | Scope isolation; secret refusal; version limits; GET has no side effects; exact schema-policy coverage | M5 |
 | M5b-2 — Lifecycle and move backend | Project/conversation/memory Trash, batch restore, permanent delete, purge, and atomic Home-to-project move without files | Restore places first; `place_in_trash`; purge boundary and idempotence; a racing run refuses the whole move | M5b-1 |
 | M5b-3 — Memory runtime and upkeep | Prompt precedence, memory tools and approval checks, duplicate rules, Tidy/check requests, reservations and usage | No memory or tools when off; cross-scope isolation; plan restrictions; stale instructions; concurrent title/upkeep reservations; secret and size checks | M5b-2, Plans-1, Plans-2 |
-| M5b-4 — Trash page | Shared Trash list, multi-select, restore dialogs, permanent-delete Undo, count and links; removal of the temporary skill/bot Trash CLI | Delete/restore journeys for every supported kind; parent in Trash; expired Undo; late batch results | M5b-2 |
+| M5b-4 — Trash page | Shared Trash list, multi-select, skill restore dialog, permanent-delete Undo, count and links; removal of the temporary skill/bot Trash CLI | Delete/restore journeys for every supported kind; parent in Trash; expired Undo; late batch results | M5b-2 |
 | M5b-5 — Memory proposal cards | Tidy selection and Apply, memory-check results, conflict decisions and failure/retry states | Only selected unchanged items apply; changed instructions refuse an old decision; invalid proposed text stays unsavable | M5b-3 |
 | M5b-6 — Memory surfaces | Memory page, pane and bot tab, history, search, seen tags, switches, Remember and Undo lines | Edit/delete/restore journey; seen survives restart; navigation during saves; memory tools become available with their feedback UI | M5b-4, M5b-5 |
 | M5b-7 — New project and navigation | New project page, project rail groups, pin/reorder, list scrolling and project-scoped conversation creation | Create and reload; keyboard/touch reorder; concurrent pin answers; Home/project separation | M5b-6 |
@@ -168,8 +170,9 @@ Trash must be usable before the new screens expose deletion.
 
 Keep the D56 failure-card integration with M6, as its decision specifies; memory approval checks
 and saved-item records must already hold when memory tools become available.
-D58 cross-conversation reading remains outside M5b. Its next-slice brief and its boundary with
-Send to conversation and the later Inbox still need to be written; do not absorb them into M5b.
+D58 cross-conversation reading remains outside M5b: it is M5e, the next slice. Its brief and its
+boundary with Send to conversation and the later Inbox still need to be written; do not absorb
+them into M5b.
 
 ### M5c: Skill drafts
 

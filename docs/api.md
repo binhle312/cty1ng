@@ -9,7 +9,8 @@ of date. When this document and the OpenAPI schema disagree, raise it.
 
 - Base path `/api`. JSON in and out (`multipart/form-data` for uploads).
 - Ids are TypeIDs (D36): `<prefix>_<26 base32 chars>`, for example `bot_01jb8x6p0afqz8r2m3k5t7v9wx`.
-  A malformed id or a wrong prefix returns 422 `invalid_id`. Timestamps are ISO-8601 UTC.
+  A malformed id or a wrong prefix in the path or the query returns 422 `invalid_id`; in a JSON body
+  it returns 422 `validation_error` with `field`. Timestamps are ISO-8601 UTC.
 - Request schemas forbid unknown fields (Zod `.strict()`) so typos and forbidden fields
   (like `model_id` on bot update) fail loudly with 422.
 - Lists are cursor-paginated where they can grow: `?before_seq=` / `?limit=` (max 100).
@@ -32,7 +33,7 @@ whose page needs the current state to show the conflict also carries `current` (
 
 | HTTP | Codes |
 | --- | --- |
-| 400 | `invalid_skill_file`, `invalid_import`, `bad_request` (also a missing, duplicate or malformed `Host` header) |
+| 400 | `invalid_import`, `bad_request` (also a missing, duplicate or malformed `Host` header) |
 | 403 | `not_author`, `origin_rejected`, `host_rejected` (a well-formed `Host` that is not on the allowlist, `security.md` §2.1) |
 | 404 | `not_found` |
 | 410 | `bot_purged` (the bot was purged from Trash; only its tombstone remains, D50) |
@@ -150,11 +151,11 @@ endpoint to create one.
 | Method | Path | Body | Notes |
 | --- | --- | --- | --- |
 | GET | `/projects` | | projects not in Trash: `id, name, description, colour, pinned_position, counts {conversations, bots, files, memory_items}`, pinned first in `pinned_position` order, then by last activity |
-| POST | `/projects` | `{name, description, instructions_md?, colour}` | 201. `description` is the goal, ≤ 500; `instructions_md` ≤ 3000; both pass the sensitive-data guard (422 `sensitive_data` with the line). Names need not be unique |
+| POST | `/projects` | `{name, description, instructions_md?, colour}` | 201, with the project and `first_conversation_id`: one transaction also creates its first conversation, titled "New conversation", and emits the events of both (owner, 2026-11-04). `description` is the goal, ≤ 500; `instructions_md` ≤ 3000; both pass the sensitive-data guard (422 `sensitive_data` with the line). Names need not be unique |
 | GET | `/projects/{id}` | | the fields above plus `instructions_md`, `memory_history_versions`, `row_version`, and `memory_check` (the latest check proposal: `status`, `disagree_count`, `id`) |
-| PATCH | `/projects/{id}` | `{row_version, name?, description?, instructions_md?, colour?, memory_history_versions?}` | 409 `stale_write`. A changed `instructions_md` starts a memory check request after the commit (D43, D63); a new save replaces a check that has not started. Lowering `memory_history_versions` trims old versions in the same transaction (the page asks first) |
+| PATCH | `/projects/{id}` | `{row_version, name?, description?, instructions_md?, colour?, memory_history_versions?}` | 409 `stale_write`. A changed `instructions_md` starts a memory check request after the commit (D43, D63), when the project has memory items and a bot that last ran there can still run; otherwise it starts none. A new save stops a check in flight and replaces it: the old request is `replaced`, its reservation is released, and a late answer changes nothing (D63 amendment 2026-11-04). Lowering `memory_history_versions` trims old versions in the same transaction (the page asks first) |
 | PUT | `/projects/{id}/pin` | `{position: number \| null}` | pin at a position, move, or unpin (`null`) (`left-bar.md`) |
-| POST | `/projects/{id}/memory-check` | | **Check again** after a failed check (D43). 409 `run_in_progress` when one is in flight; 429 `daily_cap_reached`, `provider_cap_reached` or `price_unknown` before it starts (D42) |
+| POST | `/projects/{id}/memory-check` | `{worker_bot_id?}` | **Check again** after a failed check (D43), or the owner's pick in "Check with" when no bot that last ran can run (D63 amendment 2026-11-04). `worker_bot_id` is required in that case; 422 `validation_error` when that bot is in Trash or cannot run. 409 `run_in_progress` when one is in flight; 429 `daily_cap_reached`, `provider_cap_reached` or `price_unknown` before it starts (D42) |
 | DELETE | `/projects/{id}` | | moves the project to Trash with its live conversations, memory and Library (D47); stops their runs first |
 
 ## 5b. Memory (M5b; D38, D43, D62, D63)
@@ -189,7 +190,7 @@ An item is `{kind: "project" | "conversation" | "bot" | "skill" | "memory_item",
 | Method | Path | Body | Notes |
 | --- | --- | --- | --- |
 | GET | `/trash?kind=` | | Trash rows, newest delete first: `kind, id, name, place {kind, id, name}?, facts, deleted_at, deletes_on, restore_blocked_by {kind, id, name}?`; `counts` per kind |
-| POST | `/trash/restore` | `{items: []}` | places first, then the rest; one transaction per item. Returns one result per item: `restored` with the `suggested_bot_ids` (skill, D49) or `suggested_conversation_ids` (bot, D50), or an error code (`place_in_trash`, `memory_full`) |
+| POST | `/trash/restore` | `{items: []}` | places first, then the rest; one transaction per item. Returns one result per item: `restored`, with the `suggested_bot_ids` for a skill (D49), or an error code (`place_in_trash`, `memory_full`) |
 | POST | `/trash/delete` | `{items: []}` | permanent delete (the purge of each item) now; one transaction per item; one result per item. The page sends it when the Undo toast closes (D62) |
 
 `POST /skills/{id}/restore` and `DELETE /skills/{id}` (§2) call the same services for one skill.

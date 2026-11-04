@@ -126,3 +126,4 @@ New tag. `requirements/settings.md` UI-9.7 and the conversation menu drop "Move 
 Implemented in: `../domain-model.md` §5 and invariants, `../requirements/settings.md` UI-9.7,
 `../design/components/conversation-page.md` §2.1, `../design/components/project-settings-page.md`
 §6, `../tasks/M6-workspace-parity.md`.
+Amended 2026-11-04 (owner): Implemented in is `../domain-model.md` §10, §12 (invariant 23), §14, §16, `../requirements/settings.md` UI-9.7, `../requirements/projects-and-memory.md` UI-13.2, UI-13.3, `../design/components/conversation-page.md` §2.1, §2.1a, `../design/components/project-settings-page.md` §6, `../design/components/library-page.md`, `../design/components/library-cards.md`, `../api.md` §5, §5d, `../security.md` §2.3, §3, `../tasks/M5b-projects-and-memory.md`, `../tasks/M6-workspace-parity.md`.

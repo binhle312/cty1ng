@@ -200,7 +200,10 @@ The new row is part of the M5d UI design checkpoint.
   Mode (Follow system, Light, Dark), Density (Theme default, Compact), Flow pane (the choices in
   UI-8.5, with a slice tag on a later choice). Each has one effect line under it. Then the switch
   **Always reduce motion**: "Stops animations everywhere, also when your computer allows them. The
-  Flow pane Animations switch shows the same value."
+  Flow pane Animations switch shows the same value." Beside it, **Bot animations** (Off, Reduced,
+  Normal; `bot-avatar.md` §4), capped by that switch. While the owner has hidden Get started and
+  setup is not finished, a row **Get started** with **Show** shows it again and saves at once
+  (UI-1.8).
 - **Preview** under the controls, the full page width (860 × 540 px). The line beside the title
   names the current choices and says "Saves at once, in this browser only."
 - **Page slides** (owner 2026-10-26): the preview shows one whole screen at a time, scaled down,

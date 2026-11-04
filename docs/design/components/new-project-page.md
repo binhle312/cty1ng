@@ -31,9 +31,9 @@ title and the page's accessible name stay **"New project"**.
     projects with their pin marks, then the new project as the newest unpinned project,
     selected, then the other projects. Other projects keep their waiting counts and unread
     marks.
-  - **Bar 2:** the header (tile, name, "0 conversations · 0 bots · 0 files", goal), the Board row
-    ("Later", no counts), Memory 0, Library 0, and the Conversations label with its + button. It shows
-    no conversation rows.
+  - **Bar 2:** the header (tile, name, "1 conversation · 0 bots · 0 files", goal), the Board row
+    ("Later", no counts), Memory 0, Library 0, the Conversations label with its + button, and one
+    row "New conversation".
   - Under it: "The new project goes below your pinned projects, as the newest one. The other projects
     keep their pin marks, waiting counts and unread marks. Bar 2 does not show the instructions.
     Every bot in this project reads them."
@@ -84,7 +84,12 @@ page, Cancel goes back at once. The dialog has a joyful tone (owner, 2026-10-22)
 
 ## 6. After Create
 
-The project opens with an empty first conversation. The owner adds bots in the conversation, not on this page.
+The project opens with an empty first conversation, titled "New conversation". The server creates
+both in one transaction, so a failure leaves neither (owner, 2026-11-04). The owner adds bots in the
+conversation, not on this page.
+
+A project can still have no conversations, because the owner can delete the last one. Bar 2 then
+shows no rows, and the + of the Conversations label creates one.
 
 ## Requirement changes (requirements PR)
 
