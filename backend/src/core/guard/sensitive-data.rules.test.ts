@@ -137,6 +137,8 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ['{"require_password":true,"password":"hunter22"}', "a secret after a free key"],
     ["{requirePassword:true,password:hunter22}", "a secret after a free key"],
     ["password:true,password:hunter22", "a secret after a free key"],
+    // The exact text in security.md §2.13 (DQ-048).
+    ['{"require_password":true,"password":"xxxx"}', "the 4-character value after a free key"],
     ["password:$DB_SECRET,password:hunter22", "a secret after a reference"],
     ["password:{secret},password:hunter22", "a secret after a reference"],
     ["password: `true`,password:hunter22", "a secret after a literal in backticks"],
@@ -330,6 +332,7 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ["token_endpoint_auth_method: client_secret_post", "an OAuth setting"],
     ["GITHUB_TOKEN=abc123", "a short value"],
     ['"password": "abc"', "a quoted value under 4 characters"],
+    ['{"require_password":true,"password":"x"}', "a value under 4 characters after a free key"],
     ['"password": "a b"', "a quoted value under 4 characters"],
     ["password: `a b`", "a backtick value under 4 characters"],
     // Review of fe63f7f: the backticks counted toward the 4 characters.

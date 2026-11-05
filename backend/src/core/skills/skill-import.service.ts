@@ -139,21 +139,16 @@ export function createSkillImportService(deps: {
     if (parsed.slug !== slug) {
       return invalid(`The name in SKILL.md is "${parsed.slug}", not the folder name.`);
     }
-    const textProblem = skillTextProblem(
-      { description: parsed.description, bodyMd: parsed.bodyMd },
-      limits,
-    );
+    const content = { description: parsed.description, bodyMd: parsed.bodyMd };
+    const latest =
+      seen.skillId === null ? null : await deps.readers.skills.latestVersion(seen.skillId);
+    const sameAsSaved =
+      latest?.description === parsed.description && latest.bodyMd === parsed.bodyMd;
     // A row that is the same as the saved version saves nothing, so a rule that became stricter
     // after the save does not stop an export from importing.
-    if (textProblem !== null) {
-      const saved =
-        seen.skillId === null ? null : await deps.readers.skills.latestVersion(seen.skillId);
-      if (saved?.description !== parsed.description || saved.bodyMd !== parsed.bodyMd) {
-        return invalid(textProblem.message);
-      }
-    }
+    const textProblem = skillTextProblem(content, limits);
+    if (textProblem !== null && !sameAsSaved) return invalid(textProblem.message);
 
-    const content = { description: parsed.description, bodyMd: parsed.bodyMd };
     const conflict = (reason: string, name: string): StoredRow => ({
       row: { ...base, name, status: "conflict", reason },
       seen,
@@ -179,7 +174,6 @@ export function createSkillImportService(deps: {
       };
     }
     const skill = await deps.readers.skills.byId(seen.skillId);
-    const latest = await deps.readers.skills.latestVersion(seen.skillId);
     if (skill === null || latest === null) return invalid("The skill changed. Preview again.");
     if (seen.trashed) return conflict("This skill is in Trash.", skill.name);
     if (seen.authorId !== actor) {
@@ -189,7 +183,7 @@ export function createSkillImportService(deps: {
       );
     }
     if (seen.deprecated) return conflict("Deprecated. Make it active again to import.", skill.name);
-    if (latest.description === parsed.description && latest.bodyMd === parsed.bodyMd) {
+    if (sameAsSaved) {
       return {
         row: {
           ...base,

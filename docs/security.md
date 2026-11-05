@@ -289,7 +289,7 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
     token with no quotes (`require_password: true`, `showPassword={false}/>`,
     `{"require_password":true,"enabled":false}`, `newPassword: string`,
     `user_password: varchar(255)`). A free value does not hide the next key of a compact object
-    (`{"require_password":true,"password":"x"}` is refused). A string is refused (`password: false!`, `"password": "false"`,
+    (`{"require_password":true,"password":"xxxx"}` is refused). A string is refused (`password: false!`, `"password": "false"`,
     `` password: `false alarm` ``, `"password": "string"`). Prose after a complete token stays
     free, so `password: false alarm` escapes: the code cannot tell it from
     ``Set password: `false` in the file``.
