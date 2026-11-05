@@ -21,7 +21,7 @@ The plans of each slice are in [plans/](plans/README.md).
 
 [#60](https://github.com/binhle312/cty1ng/pull/60) (e2e server guard) is also open, outside the Slices table.
 
-The documentation routing change is on branch `docs-task-routing`, with no PR yet. It splits `docs/workflow.md` into [workflows/](workflows/README.md).
+The documentation routing change is open in [#72](https://github.com/binhle312/cty1ng/pull/72). It splits `docs/workflow.md` into [workflows/](workflows/README.md).
 
 The [Slices table](#slices) records delivery state and PRs.
 The [design index](design/README.md) identifies agreed designs and open design work.
