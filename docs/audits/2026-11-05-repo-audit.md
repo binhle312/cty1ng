@@ -114,7 +114,7 @@ The lead did not check these again, except where a row says so. The others are f
 
 ### Security
 
-- `lineDiff` has no budget: 24.5 s for a body of 20,000 characters: `backend/src/core/skills/skill-diff.ts:8`.
+- `lineDiff` has no budget: 24.5 s for a body of 20,000 characters: `backend/src/core/skills/skill-diff.ts:8`. One `changed` import row can reach it: 11.6 s from a 202-byte zip if the saved body has 10,000 lines. The pause between rows does not help inside a row (#73 review).
 - The dev page has no CSP or `frame-ancestors`: `frontend/vite.config.ts:18`.
 - The paid security review does not watch the model adapters, `skill.rules.ts`, `bot.rules.ts`, `main.ts`, `compose.ts` and other paths: `.github/workflows/security-review.yml:20`.
 - Refused requests carry no security headers, and the plan and `security.md` disagree: `backend/src/adapters/http/app.ts:61`.
