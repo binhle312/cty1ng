@@ -276,7 +276,7 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
   `**password**:`), the separators `:`, `=`, `:=` and `=>`, a whole phrase in quotes or backticks
   (`"password": "my long pass phrase"`) and, next to a key word such as `token` or `SECRET_KEY`,
   long random values of letters and digits, which include hex (owner, 2026-11-05). A password
-  value needs 4 or more characters (owner, 2026-11-05). A placeholder has no exception
+  value needs 4 or more characters, and its quotes or backticks do not count (owner, 2026-11-05). A placeholder has no exception
   (`DB_PASSWORD=changeme` is refused), and a label or a number looks the same
   (`"password": "Password"`, `"password": 1234`). A name with no value stays free (`DB_PASSWORD`).
 - Some values hold no secret and stay free (owner, 2026-11-05). These rules make the guard weaker
