@@ -91,6 +91,7 @@ Check the fix and the paths it affects. A new commit or a passing test alone doe
 Apply the [root cause principle](../.agents/skills/principle-fix-root-cause/SKILL.md)
 to the builder's "Same cause checked in" column. Independently check one further plausible path.
 Report a missed path as a new finding with the same cause.
+Check the "Same cause as an earlier fix?" column. A repeated cause with no owner's decision is a finding.
 If a finding was wrong, name the source or evidence that corrects it.
 
 The final report states the reviewed scope, findings, test results and remaining limits.

@@ -47,6 +47,7 @@ review` (`AGENTS.md` §7; lesson `flag-ui-choices-in-review-fixes.md`).
 the follow-ups in `docs/status.md` ([merge bar](merge-bar.md)).
 **Fix the cause.** Apply the [root cause principle](../../.agents/skills/principle-fix-root-cause/SKILL.md).
 Record the search scope in the PR's "Same cause checked in" column ([PR template](pull-request.md)).
+If a finding has the same cause as an earlier fix, stop patching ([AGENTS.md §9](../../AGENTS.md#9-definition-of-done-every-pr)).
 
 ## Keep docs current
 

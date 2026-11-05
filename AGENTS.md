@@ -93,7 +93,7 @@ If a command in this list does not exist yet (early slices), creating it is part
 
 - Implement work inside an approved task brief (`docs/tasks/`).
 - Write and run tests; fix failing tests caused by your change.
-- Fix review findings. §7 still applies to a fix that needs approval, such as a new UI text or a migration.
+- Fix review findings. §7 still applies to a fix that needs approval, such as a new UI text or a migration. §9 applies to a fix with the same cause as an earlier fix.
 - Refactor inside one module when it keeps behaviour and tests green.
 - Update documentation to match your change.
 
@@ -145,6 +145,10 @@ Merge a PR only when the owner asks you to merge that PR. The merge needs no lin
   knowledge of the app, in the same PR (M2 plan, decision 14).
 - The PR description has: what changed, why, how it was verified, and `Needs human review`
   items (or "none").
+- Name a principle skill in a PR, a review record or `docs/delivery-quality.md` only if you read
+  its `SKILL.md` in that session.
+- Each review fix answers "Same cause as an earlier fix?" in the PR's `Review fixes` table. If the
+  answer is yes, stop patching. Propose a redesign, get the owner's decision, and record it.
 
 ## 10. Conventions
 
