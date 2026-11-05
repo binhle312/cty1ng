@@ -1328,6 +1328,16 @@
     ]
   },
   {
+    "name": "useState: no backticks",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:\"\"|''|``)?",
+        "replace": "(?:\"\"|'')?"
+      }
+    ]
+  },
+  {
     "name": "useState: any argument",
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
