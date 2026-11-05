@@ -128,6 +128,8 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ["password: `abcd`", "the shortest value in backticks: 4 characters"],
     ["password: `abc`def", "text after a short value in backticks"],
     ["password: `false", "a backtick with no close"],
+    ["password: `false`!", "text after a literal in backticks"],
+    ["password: `$DB_SECRET`!", "text after a reference in backticks"],
     // A value after one spelling of the key does not hide another spelling.
     ["pwd='/home/owner,password:hunter22", "a path before another spelling"],
     ["pwd=/home/owner;password=hunter22", "a path before another spelling"],
