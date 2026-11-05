@@ -202,14 +202,18 @@ function randomLetters(value: string): boolean {
 }
 
 // A value made of words is a name, not a key (owner, 2026-11-05): `user_profile_settings_page_2`,
-// `CancellationTokenSource2Factory`. At least 70% of its characters are in words of 3 to 20
-// letters. In a random value, letters of one case rarely stand together. The password check does
-// not use this rule.
+// `CancellationTokenSource2Factory`. A word has 3 to 20 letters, a vowel, and fewer than 5 consonants
+// in a row, which a run of random letters rarely has. At least 70% of the characters are in words,
+// and `_` and `-` do not count, so a short name such as `jwt` does not free or refuse a value. The
+// password check does not use this rule.
+const isWord = (letters: string): boolean =>
+  letters.length >= 3 &&
+  letters.length <= 20 &&
+  /[aeiouy]/i.test(letters) &&
+  !/[^aeiouy]{5}/i.test(letters);
+
 function madeOfWords(value: string): boolean {
-  const words = value.match(/[A-Z]?[a-z]+|[A-Z]+(?![a-z])/g) ?? [];
-  const inWords = words.reduce(
-    (sum, word) => (word.length >= 3 && word.length <= 20 ? sum + word.length : sum),
-    0,
-  );
-  return inWords >= value.length * 0.7;
+  const runs = value.match(/[A-Z]?[a-z]+|[A-Z]+(?![a-z])/g) ?? [];
+  const inWords = runs.filter(isWord).reduce((sum, word) => sum + word.length, 0);
+  return inWords >= value.replace(/[_-]/g, "").length * 0.7;
 }

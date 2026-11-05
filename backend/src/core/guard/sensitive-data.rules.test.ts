@@ -447,6 +447,72 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
   });
 });
 
+// Review of 1b70296 (DQ-046): the word rule took any run of letters as a word, so it freed random
+// keys that `main` refuses. Seeded, so each run reads the same values.
+describe("findSensitive: random values next to a key word", () => {
+  const LOWER = "abcdefghijklmnopqrstuvwxyz";
+  const UPPER = LOWER.toUpperCase();
+  const DIGITS = "0123456789";
+  const SAMPLES = 20_000;
+
+  // mulberry32: small, and the same on every machine.
+  const seededRandom = (seed: number) => () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let mixed = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    mixed = (mixed + Math.imul(mixed ^ (mixed >>> 7), 61 | mixed)) ^ mixed;
+    return ((mixed ^ (mixed >>> 14)) >>> 0) / 4_294_967_296;
+  };
+
+  const randomValues = (alphabet: string, length: number): string[] => {
+    const next = seededRandom(length * 1_000 + alphabet.length);
+    return Array.from({ length: SAMPLES }, () =>
+      Array.from({ length }, () => alphabet[Math.floor(next() * alphabet.length)]).join(""),
+    );
+  };
+
+  const refused = (value: string): boolean => findSensitive(`API_KEY=${value}`).length > 0;
+
+  // The check for a long value on `main` (05367cd): three kinds of character and few repeats.
+  const refusedOnMain = (value: string): boolean => {
+    const kinds = [/[a-z]/, /[A-Z]/, /\d/, /[_\-+/=]/].filter((re) => re.test(value)).length;
+    return kinds >= 3 && new Set(value).size >= Math.min(16, value.length / 2);
+  };
+
+  it.each([
+    ["base62", 24, LOWER + UPPER + DIGITS, 0.01],
+    ["base64", 24, `${LOWER}${UPPER}${DIGITS}+/`, 0.01],
+    ["base62", 40, LOWER + UPPER + DIGITS, 0.001],
+    ["base64", 40, `${LOWER}${UPPER}${DIGITS}+/`, 0.001],
+  ])("%s of %i: few values that main refuses go free", (_name, length, alphabet, limit) => {
+    const values = randomValues(alphabet, length);
+    const escaped = values.filter((value) => refusedOnMain(value) && !refused(value));
+    expect(escaped.length / SAMPLES).toBeLessThanOrEqual(limit);
+  });
+
+  it.each([
+    ["lowercase letters and digits", 24, LOWER + DIGITS, 0.9],
+    ["base32 in capitals", 24, `${UPPER}234567`, 0.85],
+  ])("%s of %i: most values are refused", (_name, length, alphabet, least) => {
+    const caught = randomValues(alphabet, length).filter((value) => refused(value));
+    expect(caught.length / SAMPLES).toBeGreaterThanOrEqual(least);
+  });
+
+  it("refuses a random value with no words in it", () => {
+    expect(findSensitive(`API_KEY=${["Jip5KFddmCqe", "UMZKOGArb1Fv"].join("")}`)).toEqual([
+      { kind: "api_key", line: 1, ending: "b1Fv" },
+    ]);
+  });
+
+  // Owner, 2026-11-05: a value made of words is a name, and this is the disclosed cost.
+  it.each([
+    "api_key = Correct_Horse_Battery_Staple_22",
+    "JWT_SECRET=your_jwt_secret_key_goes_here_123",
+    "cancellationToken: CancellationTokenSource2Factory",
+  ])("finds nothing in the words of %j", (text) => {
+    expect(findSensitive(text)).toEqual([]);
+  });
+});
+
 describe("checksums", () => {
   it.each([
     ["4111111111111111", true],

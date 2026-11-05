@@ -275,7 +275,9 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
   marks around the key (`"password":`, `config["password"] =`, `` `DB_PASSWORD`: ``,
   `**password**:`), the separators `:`, `=`, `:=` and `=>`, a whole phrase in quotes or backticks
   (`"password": "my long pass phrase"`) and, next to a key word such as `token` or `SECRET_KEY`,
-  long random values of letters and digits, which include hex (owner, 2026-11-05). A password
+  long random values of letters and digits, which include hex (owner, 2026-11-05). This is a
+  measured rate, not a promise: of random values with 24 characters, it refuses 99.4% of base62,
+  95.1% of lowercase letters and digits, and 87.7% of base32 in capitals. A password
   value needs 4 or more characters, and its quotes or backticks do not count (owner, 2026-11-05). A placeholder has no exception
   (`DB_PASSWORD=changeme` is refused), and a label or a number looks the same
   (`"password": "Password"`, `"password": 1234`). A name with no value stays free (`DB_PASSWORD`).
@@ -294,9 +296,14 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
     `password: {hunter22}` escapes.
   - After `pwd` only: a path or a command (`PWD=/home/owner`, `NEW_PWD=$(pwd)`). `PWD=hunter22` is
     refused.
-  - Next to a key word, not a password key: a value with 70% or more of its characters in words of
-    3 to 20 letters (`GITHUB_TOKEN=user_profile_settings_page_2`). So a secret made of words
-    escapes there. `DB_PASSWORD=correct_horse_battery` stays refused.
+  - Next to a key word, not a password key: a value with 70% or more of its characters in words,
+    where `_` and `-` do not count (`GITHUB_TOKEN=user_profile_settings_page_2`). A word has 3 to
+    20 letters, a vowel, and fewer than 5 consonants in a row. So a secret made of words escapes
+    there (`api_key = Correct_Horse_Battery_Staple_22`), and so do a few random values that
+    look like words. Of the random values that `main` refuses, the share that goes free here is
+    0.49% of base62 and 0.41% of base64 at 24 characters, and 0.06% and 0.04% at 40 characters
+    (20,000 seeded values each; a test holds the limits of 1% and 0.1%).
+    `DB_PASSWORD=correct_horse_battery` stays refused.
   - After `@` (`action-token@<hash>`) or a word that names a hash (`commit <hash>`, `sha256 <hash>`).
 - Known gaps (owner, 2026-11-05), because a fix costs more false matches or adds state to the scan:
   a Markdown table (`| DB_PASSWORD | hunter22 |`), a value on the next line (`GITHUB_TOKEN: |`), hex
