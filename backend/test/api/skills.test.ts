@@ -1,13 +1,18 @@
+import Database from "better-sqlite3";
 import yazl from "yazl";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { z } from "zod";
 import { SKILL_ZIP } from "../../src/adapters/http/uploads/skill-zip.ts";
 import { OWNER_ID } from "../../src/core/owner.ts";
 import { ORIGIN, testBackend } from "../helpers.ts";
 
+// Built at run time (testing.md §3, "Fake secrets").
+const FAKE_KEY = ["sk", "proj", "abcdefghijklmnop1234"].join("-");
+
 // The skills routes (api.md §2): status codes, error codes and the zip upload limits. The
 // service rules have their own tests next to the services.
 
-const SECRET = "key sk-proj-abcdefghijklmnop1234";
+const SECRET = `key ${FAKE_KEY}`;
 const newSkill = {
   slug: "notes",
   name: "Notes",
@@ -182,6 +187,51 @@ describe("edits", () => {
     const body_md = 'Set `require_password: true`, and send {"has_password": false}.';
     const response = await send("POST", "/skills", { ...newSkill, body_md });
     expect(response.status).toBe(201);
+  });
+
+  // Review of #73: a skill saved before the guard became wider must still export and import. A
+  // row that is `unchanged` saves nothing, so the guard has no reason to refuse it.
+  describe("a saved skill whose text the guard refuses today", () => {
+    const oldText = "Set DB_PASSWORD=hunter22 first.";
+
+    const savedWithOldText = async () => {
+      const { id } = await created();
+      const sqlite = new Database(backend.config.databaseFile);
+      sqlite.prepare("UPDATE skill_versions SET body_md = ?").run(oldText);
+      sqlite.close();
+      return id;
+    };
+
+    const rowOf = async (response: Response) => {
+      expect(response.status).toBe(200);
+      const Preview = z.object({
+        rows: z.array(z.object({ status: z.string(), reason: z.string().nullable() })),
+      });
+      return Preview.parse(await response.json()).rows[0];
+    };
+
+    it("its export imports as unchanged", async () => {
+      const id = await savedWithOldText();
+      const exported = await send("GET", `/skills/export?ids=${id}`);
+      expect(exported.status).toBe(200);
+      const zip = Buffer.from(await exported.arrayBuffer());
+      expect(await rowOf(await upload(zip))).toMatchObject({ status: "unchanged", reason: null });
+    });
+
+    it("an import that changes the text is still invalid", async () => {
+      await savedWithOldText();
+      const data = Buffer.from(skillMdText(newSkill.slug, `${oldText} And more.`));
+      const row = await rowOf(await upload(await zipOf([{ path: "notes/SKILL.md", data }])));
+      expect(row?.status).toBe("invalid");
+      expect(row?.reason).toMatch(/looks like a password/);
+    });
+
+    it("a new skill with the same text is still invalid", async () => {
+      await savedWithOldText();
+      const data = Buffer.from(skillMdText("other", oldText));
+      const row = await rowOf(await upload(await zipOf([{ path: "other/SKILL.md", data }])));
+      expect(row?.status).toBe("invalid");
+    });
   });
 
   it("POST /versions: 201, then 409 stale_write on the same base version", async () => {

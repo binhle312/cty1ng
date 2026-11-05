@@ -143,7 +143,15 @@ export function createSkillImportService(deps: {
       { description: parsed.description, bodyMd: parsed.bodyMd },
       limits,
     );
-    if (textProblem !== null) return invalid(textProblem.message);
+    // A row that is the same as the saved version saves nothing, so a rule that became stricter
+    // after the save does not stop an export from importing.
+    if (textProblem !== null) {
+      const saved =
+        seen.skillId === null ? null : await deps.readers.skills.latestVersion(seen.skillId);
+      if (saved?.description !== parsed.description || saved.bodyMd !== parsed.bodyMd) {
+        return invalid(textProblem.message);
+      }
+    }
 
     const content = { description: parsed.description, bodyMd: parsed.bodyMd };
     const conflict = (reason: string, name: string): StoredRow => ({

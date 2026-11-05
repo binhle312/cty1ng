@@ -4,9 +4,12 @@ import { manualClock, newTestId, testBackend } from "../../../test/helpers.ts";
 import { DomainError } from "../errors.ts";
 import { OWNER_ID } from "../owner.ts";
 
+// Built at run time (testing.md §3, "Fake secrets").
+const FAKE_KEY = ["sk", "proj", "abcdefghijklmnop1234"].join("-");
+
 // The skill service on a temporary database (testing.md §3, domain-model.md §3, §12).
 
-const SECRET = "key sk-proj-abcdefghijklmnop1234";
+const SECRET = `key ${FAKE_KEY}`;
 const DAY = 86_400_000;
 const input = (slug: string, more: Partial<Record<string, string>> = {}) => ({
   slug,
@@ -269,9 +272,7 @@ describe("the sensitive data guard on every write path (D39, no override)", () =
   });
 
   it("a slug", async () => {
-    const error = await failure(
-      backend.skills.create(input("sk-proj-abcdefghijklmnop1234"), OWNER_ID),
-    );
+    const error = await failure(backend.skills.create(input(FAKE_KEY), OWNER_ID));
     expect(error).toMatchObject({ code: "sensitive_data", field: "slug" });
   });
 

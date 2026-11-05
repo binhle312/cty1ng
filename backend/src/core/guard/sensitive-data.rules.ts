@@ -38,18 +38,56 @@ interface Detector {
   accept?: (secret: string) => boolean;
 }
 
+// A setting about a password, not a password (owner, 2026-11-05).
+const SETTING_WORD = String.raw`(?:true|false|null|string|boolean|bool|number|integer|text|(?:var)?char(?:\(\d+\))?)`;
+
+// What follows a password key, for every spelling of the key.
+const AFTER_PASSWORD_KEY = [
+  // Marks that close the key: `"password"`, `\"password\"`, `["password"]`, **password**.
+  String.raw`(?:\\?["']|[\`*\]]){0,4}`,
+  String.raw`\s*(?::=|=>|[:=])\*{0,2}\s*`,
+  // Frees only the literal syntax of a setting: `true,`, `{false}`, `` `null` ``, `string;`. It
+  // runs before the quote, because a quoted "false" is a string, and so is false!.
+  String.raw`(?!(?:\{${SETTING_WORD}\}|\`?${SETTING_WORD})(?:[\`)}\],;]+[.:]?)?(?:\s|$))`,
+  // The value: a whole quoted phrase, an unclosed quote, or a word. It has 4 or more characters.
+  String.raw`("(?:[^"\\\n]|\\.){4,}"|'[^'\n]{4,}'|["'][^\s"']{4,}|[^\s"']\S{3,})`,
+].join("");
+
+// A reference holds no secret: ${DB_PASSWORD}, $DB_PASSWORD, ${{ secrets.X }}, {password}. Case
+// matters: $ecret123 is a password.
+const REFERENCE =
+  /^["']?(?:\$\{\{?\s*[\w.-]+\s*\}\}?|\$[A-Z_][A-Z0-9_]*|\{[A-Za-z_$][\w.$]*\})["']?[`)}\],;]*$/;
+
+// PWD is also the shell's working folder: /home/owner, ~/work, ../work, $(pwd).
+const SHELL_PATH = /^["']?(?:~?\/|\.{1,2}\/|\$\()/;
+
+const notReference = (secret: string): boolean => !REFERENCE.test(secret);
+
 const DETECTORS: readonly Detector[] = [
   { kind: "private_key", pattern: /-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----/g },
   {
-    // Any prefix: `DB_PASSWORD=`, `dbPassword:` and `"password":`. `\b` does not fire after `_`,
-    // so there is no left boundary. `pwd` keeps one for letters and digits, because `OLDPWD` is a
-    // shell variable. A placeholder has no exception. The lookahead frees only the literal
-    // syntax of a setting: `true,`, `{false}` and `` `null` ``. It runs before the optional
-    // quote, because a quoted `"false"` is a string, and so is `false!`.
+    // Any prefix, so there is no left boundary: `\b` does not fire after `_`. A placeholder has no
+    // exception. After the name, only a number or an environment: DB_PASSWORD_FILE is a path.
     kind: "password",
-    pattern:
-      /(?:password|passwd|(?<![a-z0-9])pwd)["']?\s*[:=]\s*(?!(?:\{(?:true|false|null)\}|`?(?:true|false|null))(?:[`)}\],;]+[.:]?)?(?:\s|$))["']?([^\s"']{4,})/gi,
+    pattern: new RegExp(
+      `(?:password|passwd)(?:\\d+|_(?:prod|production|dev|staging|stage|test|old|new|\\d+))?${AFTER_PASSWORD_KEY}`,
+      "gi",
+    ),
     group: 1,
+    accept: notReference,
+  },
+  {
+    kind: "password",
+    pattern: new RegExp(`pwd${AFTER_PASSWORD_KEY}`, "gi"),
+    group: 1,
+    accept: (secret) => notReference(secret) && !SHELL_PATH.test(secret),
+  },
+  {
+    // Capitals only, because `test_pass: done` and `bypass: x` are not passwords.
+    kind: "password",
+    pattern: new RegExp(`[A-Z0-9]_PASS${AFTER_PASSWORD_KEY}`, "g"),
+    group: 1,
+    accept: notReference,
   },
   {
     // Common provider prefixes: OpenAI and Anthropic (sk-), AWS (AKIA), GitHub (ghp_ and
@@ -59,15 +97,15 @@ const DETECTORS: readonly Detector[] = [
       /\b(?:sk-[A-Za-z0-9_-]{16,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{30,}|xox[abpors]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{35})/g,
   },
   {
-    // A long random-looking string next to a word like key, token or secret, with any prefix
-    // (`GITHUB_TOKEN=`, `clientSecret:`).
+    // A long random-looking value next to a word like key, token or secret, with any prefix
+    // (`GITHUB_TOKEN=`, `clientSecret:`). `action-token@<hash>` is a pinned version, and a word
+    // such as `commit` says that the value is a hash. The value starts a run of characters, so
+    // `=` is not in it, and `TOKEN=x` and `TOKEN: x` get the same answer.
     kind: "api_key",
     pattern:
-      /(?:api[_ -]?key|token|secret(?:[_ -]?key(?:[_ -]?base)?)?|access[_ -]?key)\b[^\n]{0,20}?([A-Za-z0-9][A-Za-z0-9_\-+/=]{23,})/gi,
+      /(?:api[_ -]?key|token|secret(?:[_ -]?key(?:[_ -]?base)?)?|access[_ -]?key)(?:_?value|_\d+)?\b[^\n@]{0,20}?(?<!\b(?:commit|sha\d*|hash|digest|checksum|revision)\s+)(?<![A-Za-z0-9])([A-Za-z0-9][A-Za-z0-9_\-+/=]{23,})/gi,
     group: 1,
-    // The value starts with a letter or a digit, so the `=` of `TOKEN=` is not part of it, and
-    // `TOKEN=x` and `TOKEN: x` get the same answer.
-    accept: (secret) => highEntropy(secret) || randomLettersAndDigits(secret),
+    accept: (secret) => !madeOfWords(secret) && (highEntropy(secret) || randomLetters(secret)),
   },
   {
     kind: "card_number",
@@ -100,7 +138,8 @@ function* scan(text: string): Generator<SensitiveMatch> {
       for (const found of line.matchAll(detector.pattern)) {
         const secret = found[detector.group ?? 0] ?? found[0];
         if (detector.accept !== undefined && !detector.accept(secret)) continue;
-        yield { kind: detector.kind, line: index + 1, ending: secret.slice(-4) };
+        const ending = secret.replace(/\\?["']$/, "").slice(-4);
+        yield { kind: detector.kind, line: index + 1, ending };
       }
     }
   }
@@ -148,14 +187,27 @@ function highEntropy(value: string): boolean {
   return classes >= 3 && new Set(value).size >= Math.min(16, value.length / 2);
 }
 
-// Hex and other keys in one case have only two kinds of character, so `highEntropy` misses them.
-// A random value has letters, digits and at least 8 different characters. A long number has no
-// letter, a long word has no digit, and a repeated value has few different characters.
-function randomLettersAndDigits(value: string): boolean {
+// Hex and other keys with few kinds of character, which `highEntropy` misses. A random value has
+// letters, at least 8 different characters, and digits or both cases. A long number has no letter,
+// a long word has neither digits nor both cases, and a repeated value has few different characters.
+function randomLetters(value: string): boolean {
   return (
     /^[\da-z]+$/i.test(value) &&
-    /\d/.test(value) &&
     /[a-z]/i.test(value) &&
+    (/\d/.test(value) || (/[a-z]/.test(value) && /[A-Z]/.test(value))) &&
     new Set(value).size >= 8
   );
+}
+
+// A value made of words is a name, not a key (owner, 2026-11-05): `user_profile_settings_page_2`,
+// `CancellationTokenSource2Factory`. At least 70% of its characters are in words of 3 to 20
+// letters. In a random value, letters of one case rarely stand together. The password check does
+// not use this rule.
+function madeOfWords(value: string): boolean {
+  const words = value.match(/[A-Z]?[a-z]+|[A-Z]+(?![a-z])/g) ?? [];
+  const inWords = words.reduce(
+    (sum, word) => (word.length >= 3 && word.length <= 20 ? sum + word.length : sum),
+    0,
+  );
+  return inWords >= value.length * 0.7;
 }

@@ -4,6 +4,9 @@ import { DomainError } from "../errors.ts";
 import { OWNER_ID } from "../owner.ts";
 import type { ImportFolder } from "./skill-import.service.ts";
 
+// Built at run time (testing.md §3, "Fake secrets").
+const FAKE_KEY = ["sk", "proj", "abcdefghijklmnop1234"].join("-");
+
 // Import preview and Apply (domain-model.md §3.5, spec gap pass #9). The zip reader has its own
 // tests; here the folders come in already read.
 
@@ -142,7 +145,7 @@ describe("preview", () => {
         folder("Bad_Name"),
         { folder: "empty", skillMd: "missing", skippedFiles: ["notes.txt"] },
         { folder: "huge", skillMd: "too_large", skippedFiles: [] },
-        folder("leak", skillMd("leak", "key sk-proj-abcdefghijklmnop1234")),
+        folder("leak", skillMd("leak", `key ${FAKE_KEY}`)),
         folder("other", skillMd("not-other")),
       ],
       OWNER_ID,
@@ -225,7 +228,7 @@ describe("preview", () => {
 
   it("refuses a file name that looks like a secret (it goes into every changelog)", async () => {
     const error = await failure(
-      backend.skillImport.preview("sk-proj-abcdefghijklmnop1234.zip", [folder("fresh")], OWNER_ID),
+      backend.skillImport.preview(`${FAKE_KEY}.zip`, [folder("fresh")], OWNER_ID),
     );
     expect(error).toMatchObject({ code: "sensitive_data", field: "file" });
   });
@@ -233,7 +236,7 @@ describe("preview", () => {
   // Review of PR #52: the preview did not guard the slug, so the row showed as `new` and Apply
   // then refused it and rolled back the valid rows too.
   it("a new skill whose slug looks like a secret is invalid", async () => {
-    const slug = "sk-proj-abcdefghijklmnop1234";
+    const slug = FAKE_KEY;
     const preview = await backend.skillImport.preview(
       "a.zip",
       [folder(slug), folder("fresh")],
@@ -329,6 +332,21 @@ describe("apply", () => {
     await backend.skillImport.apply(preview.preview_id, ["fresh"], OWNER_ID);
     const error = await failure(backend.skillImport.apply(preview.preview_id, ["fresh"], OWNER_ID));
     expect(error.code).toBe("preview_expired");
+  });
+
+  // The pause between rows can make a preview slow. Its time starts when it ends.
+  it("a slow preview gets its full time from the end of the preview", async () => {
+    setImmediate(() => {
+      clock.advance(10 * MINUTE);
+    });
+    const preview = await backend.skillImport.preview(
+      "a.zip",
+      [folder("one"), folder("two")],
+      OWNER_ID,
+    );
+    clock.advance(14 * MINUTE);
+    const result = await backend.skillImport.apply(preview.preview_id, ["one"], OWNER_ID);
+    expect(result).toMatchObject({ created: 1 });
   });
 
   it("an expired preview gets preview_expired", async () => {

@@ -63,6 +63,15 @@ describe("SKILL.md", () => {
       expect(parseSkillMd(withFrontmatter(LIMIT + 1))).toEqual(tooLarge);
     });
 
+    // The limit reads the file as written: CRLF counts as 2 characters.
+    it("counts CRLF as written", () => {
+      const start = "name: a\r\ndescription: d\r\n";
+      const comments = "#\r\n".repeat(2_800);
+      expect(start.length + comments.length).toBeGreaterThan(LIMIT);
+      expect(start.length + comments.replace(/\r/g, "").length).toBeLessThan(LIMIT);
+      expect(parseSkillMd(`---\r\n${start}${comments}---\r\nBody`)).toEqual(tooLarge);
+    });
+
     it("reports 40,000 keys at once, with no parse", () => {
       const keys = Array.from({ length: 40_000 }, (_, index) => `key${String(index)}: 1`);
       const text = `---\nname: a\ndescription: d\n${keys.join("\n")}\n---\n`;
@@ -116,6 +125,20 @@ describe("SKILL.md", () => {
   // body, so an untouched export imported as `changed`.
   it("round-trips a description with outer spaces and a body that starts with blank lines", () => {
     const skill = { slug: "a", description: " Use it. ", bodyMd: "\n\n# A\n" };
+    expect(parseSkillMd(serialiseSkillMd(skill))).toEqual(skill);
+  });
+
+  // Audit 2026-11-05 and the review of #73: the closing --- line took the last newline of a
+  // block that keeps its blank lines, so an untouched export imported as `changed`.
+  it.each([
+    ["two newlines", "Use it.\n\n"],
+    ["three newlines", "Use it.\n\n\n"],
+    ["a space and a newline", " \n"],
+    ["only newlines", "\n\n"],
+    ["CRLF at the end", "Use it.\r\n\r\n"],
+    ["a space after a newline", "Use it.\n "],
+  ])("round-trips a description that ends in %s", (_label, description) => {
+    const skill = { slug: "a", description, bodyMd: "# A\n" };
     expect(parseSkillMd(serialiseSkillMd(skill))).toEqual(skill);
   });
 

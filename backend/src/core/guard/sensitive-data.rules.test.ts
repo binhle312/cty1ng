@@ -1,15 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { findSensitive, firstSensitive, ibanValid, luhn } from "./sensitive-data.rules.ts";
 
+// Built at run time (testing.md §3, "Fake secrets").
+const FAKE_KEY = ["sk", "proj", "abcdefghijklmnop1234"].join("-");
+
 describe("findSensitive (D39)", () => {
   it.each([
     ["password: hunter22", "password"],
     ["db pwd=S3cret!x", "password"],
-    ["key sk-proj-abcdefghijklmnop1234", "api_key"],
-    ["AKIAIOSFODNN7EXAMPLE", "api_key"],
+    [`key ${FAKE_KEY}`, "api_key"],
+    [["AKIA", "IOSFODNN7EXAMPLE"].join(""), "api_key"],
     [`token ghp_${"a1B2".repeat(9)}`, "api_key"],
-    ["slack xoxb-1234567890-abcdef", "api_key"],
-    ["api_key = Zx81_kQ2pL9vT3mN7bR4wY6cH0sD5fG", "api_key"],
+    [`slack ${["xoxb", "1234567890", "abcdef"].join("-")}`, "api_key"],
+    [`api_key = ${["Zx81", "kQ2pL9vT3mN7bR4wY6cH0sD5fG"].join("_")}`, "api_key"],
     ["-----BEGIN RSA PRIVATE KEY-----", "private_key"],
     ["-----BEGIN PRIVATE KEY-----", "private_key"],
     ["card 4111 1111 1111 1111", "card_number"],
@@ -35,7 +38,9 @@ describe("findSensitive (D39)", () => {
   });
 
   it("gives the line and only the last 4 characters", () => {
-    const [match] = findSensitive("# Steps\n\nkey sk-proj-abcdefghijklmnop9f2a");
+    const [match] = findSensitive(
+      `# Steps\n\nkey ${["sk", "proj", "abcdefghijklmnop9f2a"].join("-")}`,
+    );
     expect(match).toEqual({ kind: "api_key", line: 3, ending: "9f2a" });
   });
 
@@ -91,6 +96,44 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ['password="true"', "a quoted word is a string, not a literal"],
     ["'password': 'null'", "a quoted word is a string, not a literal"],
     ['password: "false alarm"', "a quoted phrase that starts with a literal"],
+    // Review of this PR: forms that escaped (DQ-033).
+    ["dbPwd=hunter22", "a camelCase prefix on the short spelling"],
+    ["userPwd: hunter22", "a camelCase prefix on the short spelling"],
+    ["MYSQLPWD=hunter22", "a prefix with no separator"],
+    ["DB_PASS=hunter22", "a shorter name in capitals"],
+    ["SMTP_PASS: hunter22", "a shorter name in capitals"],
+    ["PASSWORD1=hunter22", "a number after the name"],
+    ["DB_PASSWORD_2=hunter22", "a number after the name"],
+    ["DB_PASSWORD_PROD=hunter22", "an environment after the name"],
+    ['config["password"] = "hunter22"', "an index with a string"],
+    ['os.environ["DB_PASSWORD"]="hunter22"', "an index with a string"],
+    ["`DB_PASSWORD`: hunter22", "Markdown code around the name"],
+    ["**password**: hunter22", "Markdown bold around the name"],
+    ["**password:** hunter22", "Markdown bold around the name and the colon"],
+    ['password := "hunter22"', "the := separator"],
+    ['password => "hunter22"', "the => separator"],
+    ['DB_PASSWORD="my long pass phrase"', "a phrase in double quotes"],
+    ['"password": "my long pass phrase"', "a JSON phrase"],
+    ["password: 'my long pass phrase'", "a phrase in single quotes"],
+    ['password: "a b c d e f g h"', "a phrase of short words"],
+    ['password: "abc def"', "a short phrase"],
+    ['"password": "ab\\"cdefgh"', "a JSON string with an escaped quote"],
+    ['{\\"password\\": \\"hunter22\\"}', "JSON inside a JSON string"],
+    ["password: it's-a-long-secret", "a value with a quote inside it"],
+    ['password: "unclosed value', "a quote with no close"],
+    // Owner, 2026-11-05: the password check does not use the rule for values made of words.
+    ["DB_PASSWORD=correct_horse_battery", "a password made of words"],
+    // A reference is free only in its exact form.
+    ["password: $ecret123", "a dollar sign that is not a reference in capitals"],
+    ["DB_PASSWORD=${DB_PASSWORD:-hunter22}", "a reference with a default value"],
+    ["password: string!", "a string that starts with a type name"],
+    ['"password": "string"', "a quoted type name is a string"],
+    ["PWD=hunter22", "the short spelling, with no path"],
+    // Owner, 2026-11-05: placeholders get no exception, and a label looks the same.
+    ['{"email": "Email", "password": "Password"}', "a label"],
+    ['"password": 1234', "a number"],
+    ["password: <your password>", "a placeholder"],
+    ["reset_password: click the link in the mail", "a word as the value"],
   ])("refuses %j as a password: %s", (text) => {
     expect(findSensitive(text).map((match) => match.kind)).toEqual(["password"]);
   });
@@ -122,6 +165,24 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     [`JWT_SECRET_KEY=${hex}`],
     [`secret_key: ${hex}`],
     [`SECRET_KEY_BASE=${hex}`],
+    // Review of this PR: forms that escaped (DQ-033).
+    [`TOKEN_VALUE=${hex}`],
+    [`GITHUB_TOKEN_1=${hex}`],
+    [`clientSecretValue=${hex}`],
+    [`secret: 0x${hex}`],
+    ["client_secret: AbCdEfGhIjKlMnOpQrStUvWxYz"],
+    // Review of this PR: code symbols before the value do not free a real key. Main refuses these.
+    [`token("${randomKey}")`],
+    [`token (${randomKey})`],
+    [`token.value = "${randomKey}"`],
+    [`config.token.value = ${randomKey}`],
+    [`https://example.com/token/${randomKey}`],
+    [`token={"${randomKey}"}`],
+    [`secret.key = ${randomKey}`],
+    [`{token}${randomKey}`],
+    // A word between the key word and the value stays allowed.
+    [`the api key is ${randomKey}`],
+    [`token${" ".repeat(20)}${hex}`],
   ])("refuses %j as an API key", (text) => {
     expect(findSensitive(text).map((match) => match.kind)).toEqual(["api_key"]);
   });
@@ -142,6 +203,12 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
       const text = `${before}${lettersAndDigits.slice(0, 24)}${after}`;
       expect(findSensitive(text).map((match) => match.kind)).toEqual(["api_key"]);
     });
+  });
+
+  it("gives only the last 4 characters of a quoted value, with no quote", () => {
+    expect(findSensitive('"password": "my long pass phrase"')).toEqual([
+      { kind: "password", line: 1, ending: "rase" },
+    ]);
   });
 
   it("gives only the last 4 characters of a hex value, with no separator", () => {
@@ -189,6 +256,49 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ["token_endpoint: https://example.com/oauth/token", "a URL after a similar name"],
     ["token_endpoint_auth_method: client_secret_post", "an OAuth setting"],
     ["GITHUB_TOKEN=abc123", "a short value"],
+    ['"password": "abc"', "a quoted value under 4 characters"],
+    ['"password": "a b"', "a quoted value under 4 characters"],
+    ["password: abc", "a value under 4 characters"],
+    // Owner, 2026-11-05, change 1: a reference holds no secret.
+    ["POSTGRES_PASSWORD=${DB_PASSWORD}", "a reference"],
+    ["POSTGRES_PASSWORD=$DB_PASSWORD", "a reference in capitals"],
+    ['POSTGRES_PASSWORD="${DB_PASSWORD}"', "a quoted reference"],
+    ['password: "${{ secrets.DB_PASSWORD }}"', "a quoted CI reference"],
+    ["confirmPassword={confirmPassword}", "a JSX reference"],
+    ["GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN_V2 }}", "a CI reference"],
+    ["GITHUB_TOKEN=$PERSONAL_ACCESS_TOKEN_2026", "a reference in capitals"],
+    // Owner, 2026-11-05, change 2: a type name with no quotes.
+    ["newPassword: string", "a type"],
+    ["password: string;", "a type in code"],
+    ["hasPassword: boolean", "a type"],
+    ["hashed_password: string", "a type"],
+    ["user_password: varchar(255),", "a column type"],
+    // Owner, 2026-11-05, change 3: a shell path after pwd only.
+    ["PWD=/home/owner", "the shell variable"],
+    ["OLD_PWD=/home/owner", "a path"],
+    ["NEW_PWD=$(pwd)", "a command"],
+    ['"PWD": "/Users/owner"', "a JSON path"],
+    ["DIR=~/work PWD=../work", "a relative path"],
+    ['docker run -v "$PWD":/app node', "a Docker volume"],
+    // Owner, 2026-11-05, change 4: a value made of words, next to a key word.
+    ["GITHUB_TOKEN=user_profile_settings_page_2", "words with a digit"],
+    ["csrf_token: generated_by_the_server_1", "words with a digit"],
+    ["cancellationToken: CancellationTokenSource2Factory", "a type name with a digit"],
+    ["SECRET_KEY: Base64EncodedStringOfLength32Bytes", "a type name with digits"],
+    ["token: kubernetes1dashboardadminuser", "two long words and a digit"],
+    ["JWT_SECRET=your_jwt_secret_key_goes_here_123", "words in an example"],
+    ["SECRET_KEY=generate_with_openssl_rand_hex_32", "words in an example"],
+    ["mistoken for the-long-hyphen-word-with-Number1", "a sentence"],
+    // Code symbols between the key word and the value.
+    ["refreshToken(params: OAuth2RefreshTokenRequestParams1x)", "a function"],
+    ["function getAccessToken(config: OAuth2ClientConfiguration): string", "a function"],
+    ['import { createToken } from "@/features/auth2/useCreateAccessToken"', "an import"],
+    ["src/auth/accessToken/handlers/refreshAccessToken2.ts", "a path"],
+    ["src/auth/access_token/RefreshAccessTokenFlow_v2/index.ts", "a path"],
+    [`uses: actions/create-github-app-token@${hex}`, "a pinned action"],
+    [`the secret rotation commit ${hex}`, "a commit hash"],
+    [`secret.txt sha256 ${hex}`, "a file hash"],
+    [`token${" ".repeat(21)}${hex}`, "a value too far from the key word"],
     [`commit ${hex}`, "long hex with no key word"],
     ["token: 3f2a9c1e", "short hex"],
     [`token ${"0".repeat(32)}`, "hex with no variety"],
@@ -207,9 +317,15 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
       "DB_PASSWORD ".repeat(90_000),
       `DB_PASSWORD${" ".repeat(1_000_000)}`,
       `GITHUB_TOKEN=${"a".repeat(1_000_000)}`,
+      "B_PASS ".repeat(150_000),
+      "token ".repeat(170_000),
+      "`*`*`*`*".repeat(130_000),
+      `password:"${"a".repeat(1_000_000)}`,
+      `password:'${"\\a".repeat(500_000)}`,
+      `password:"${"\\a".repeat(500_000)}`,
     ];
     const start = performance.now();
-    for (const line of lines) expect(findSensitive(line)).toEqual([]);
+    for (const line of lines) findSensitive(line);
     expect(performance.now() - start).toBeLessThan(1_000);
   });
 });

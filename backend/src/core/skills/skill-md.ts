@@ -33,7 +33,9 @@ export function parseSkillMd(text: string): SkillMd | { invalid: string } {
   }
   // The default core schema: no custom tags (security.md §2.4). An unknown tag is only a
   // warning in the yaml package, so any warning or error makes the file invalid.
-  const doc = parseDocument(yaml.replace(/\r\n/g, "\n"), { schema: "core" });
+  // The newline before the closing --- belongs to the frontmatter: a block that keeps its blank
+  // lines needs it, or an export imports as `changed`.
+  const doc = parseDocument(`${yaml.replace(/\r\n/g, "\n")}\n`, { schema: "core" });
   if (doc.errors.length > 0 || doc.warnings.length > 0) {
     return { invalid: "The frontmatter is not valid YAML." };
   }
@@ -58,9 +60,11 @@ export function parseSkillMd(text: string): SkillMd | { invalid: string } {
 }
 
 export function serialiseSkillMd(skill: SkillMd): string {
+  // A YAML block cannot start with a blank line that holds a space: it loses the space. So a
+  // description with a blank first line goes in double quotes.
   const frontmatter = stringify(
     { name: skill.slug, description: skill.description },
-    { lineWidth: 0 },
+    { lineWidth: 0, blockQuote: !/^\s*\n/.test(skill.description) },
   );
   return `---\n${frontmatter}---\n\n${skill.bodyMd}`;
 }
