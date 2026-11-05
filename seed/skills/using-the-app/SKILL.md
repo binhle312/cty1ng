@@ -39,6 +39,10 @@ written ways of working that the bot follows.
 - **Skills page**: make a skill, edit it (a Save of the description or text makes a new version;
   a rename alone does not), see its history and compare two versions, restore an old version,
   clone it, deprecate it, and delete a deprecated skill to Trash. Import and export `SKILL.md` folders as a zip.
+  An import marks a `SKILL.md` as invalid if the file is over 1 MB or its frontmatter is over 8 KB.
+- **Secrets in text**: the app does not save a skill or a bot's text if the text looks like a secret,
+  such as a password or an API key with its value. This also applies to a placeholder password.
+  The name of a setting with no value is fine. Remove the value, and save again.
 - **After a skill save**: "Save as v2" offers to upgrade the bots that use an older version
   (all ticked; untick a bot to keep its version). An upgrade keeps each bot's Always load.
   Creating a skill offers to add it to bots (none ticked). Skip changes nothing.
