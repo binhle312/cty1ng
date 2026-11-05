@@ -36,7 +36,7 @@ The plan comes from the owner, 2026-11-04: audit, owner review of each finding, 
 6. Six tabs (row 14): a one-page design for owner approval first, then code. It includes the P3 "the stream does not come back in `make dev`".
 7. Other P3 marked "Fix before M3": the migration rebuild, the TypeID 500 and the error boundary. GitHub required checks are a repo setting: give the owner the steps, or set them only if the owner asks.
 
-After these: the owner fixes or drops each of the other 34 P3 findings. Then one style-only PR for the 104 `max-params` places, a second audit, the merge of #69, and M3. The coding standard stays parked until the owner restarts it.
+After these: the owner fixes or drops each of the other 34 P3 findings and the P3 rows that later reviews added. Then one style-only PR for the 104 `max-params` places, a second audit, the merge of #69, and M3. The coding standard stays parked until the owner restarts it.
 
 **Decisions made during PR 2** (owner, 2026-11-05):
 
@@ -48,6 +48,12 @@ After these: the owner fixes or drops each of the other 34 P3 findings. Then one
 - A value made of words needs real word shapes. A word has a vowel and fewer than 5 consonants in a row. A test with seeded random values holds these limits: at most 1% of 24-character and 0.1% of 40-character base62 or base64 values that `main` refuses go free, and at least 90% of 24-character lowercase letters and digits and 85% of 24-character base32 in capitals are refused.
 - A schema with no value and `useState("")` are free. These five false matches stay and `security.md` §2.13 lists them: `confirmPassword: z.string().min(8),`, `hashedPassword = await bcrypt.hash(password, 10)`, `resetPassword: async (email) => {`, `newPassword: string|undefined`, `ALL_TESTS_PASS: done`.
 - DQ-049 and DQ-050 have the same cause as DQ-033 and DQ-045, and they get no redesign: keep the fix, with one owner in the code. If a review finds the same cause again, stop patching and propose a redesign (AGENTS.md §9).
+- DQ-052 and DQ-053 have the same cause as DQ-034: a free rule takes more than it names. Decision: close the free rules. A free schema takes only named members, a quoted value after a type name and `=` is a value, and a test puts a secret in each place of each free form. `security.md` §2.13 has the lists.
+- Text after a literal or a type name stays free. So `password: true hunter22` escapes, because the guard cannot tell it from `password: string in the request body`, and a false match blocks a save.
+- The environment suffixes also take `qa`, `uat`, `stg`, `prd`, `local` and `development`. `password_local: disabled` is a false match that stays, and `DB_PASSWORD_ROOT=` escapes.
+- Free React state also takes `null`, `undefined` and the types `<string | null>` and `<string | undefined>`.
+- The speed test keeps one 1,000 ms limit for each line.
+- PR 2 gets one full independent review of its final revision. Only P1 and P2 findings block the merge, and P3 findings go on the follow-up list.
 
 ## Fix progress
 
@@ -125,6 +131,7 @@ The lead did not check these again, except where a row says so. The others are f
 - Refused requests carry no security headers, and the plan and `security.md` disagree: `backend/src/adapters/http/app.ts:61`.
 - The changelog has no length limit, and its regex is quadratic: `backend/src/adapters/http/routes/skills.ts:34`, `backend/src/core/skills/skills.service.ts:584`.
 - No test covers an absolute zip path or a forged entry size, or checks secrets through the CLI: `backend/src/adapters/http/uploads/skill-zip.test.ts`.
+- These secrets are free on `main` and on #73, and audit row 4 does not list them: `Authorization: Bearer <key>`, `PRIVATE_KEY=<hex>`, `encryption_key=<hex>`, `signingKey: <key>`. New key words can bring new false matches, and a false match blocks a save. Found in #73 on 2026-11-05.
 
 ### API and realtime
 

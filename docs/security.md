@@ -273,10 +273,14 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
 - The forms of D39 include a key word with any prefix (`DB_PASSWORD=`, `dbPassword:`, `dbPwd=`,
   `DB_PASS=`, `GITHUB_TOKEN=`, `client_secret=`, `TOKEN_VALUE=`), a number or an environment after
   any key word (`PASSWORD1=`, `DB_PASSWORD_PROD=`, `DB_PASS_PROD=`, `DB_PASS1=`, `DB_PWD_2=`, `PWD1=`,
-  `API_KEY_PROD=`, `GITHUB_TOKEN_PROD=`, `TOKEN1=`, `SECRET1=`),
+  `API_KEY_PROD=`, `GITHUB_TOKEN_PROD=`, `TOKEN1=`, `SECRET1=`; the environments are `prod`, `production`,
+  `prd`, `dev`, `development`, `staging`, `stage`, `stg`, `test`, `qa`, `uat`, `local`, `old` and `new`,
+  so `DB_PASSWORD_UAT=` is refused, and `DB_PASSWORD_ROOT=` and `password_strength:` are not),
   marks around the key (`"password":`, `config["password"] =`, `` `DB_PASSWORD`: ``,
   `**password**:`), the separators `:`, `=`, `:=` and `=>`, a whole phrase in quotes or backticks
-  (`"password": "my long pass phrase"`) and, next to a key word such as `token` or `SECRET_KEY`,
+  (`"password": "my long pass phrase"`), a quoted value after a type name and `=`
+  (`const password: string = "hunter22"`, `password: string | null = 'hunter22'`, `password: str = "hunter22"`)
+  and, next to a key word such as `token` or `SECRET_KEY`,
   long random values of letters and digits, which include hex (owner, 2026-11-05). This is a
   measured rate, not a promise: of random values with 24 characters, it refuses 99.4% of base62,
   95.1% of lowercase letters and digits, and 87.7% of base32 in capitals. A password
@@ -284,15 +288,21 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
   (`DB_PASSWORD=changeme` is refused), and a label or a number looks the same
   (`"password": "Password"`, `"password": 1234`). A name with no value stays free (`DB_PASSWORD`).
 - Some values hold no secret and stay free (owner, 2026-11-05). These rules make the guard weaker
-  on purpose, because a false match blocks a save with no override:
+  on purpose, because a false match blocks a save with no override. A rule that frees a form lists
+  each word that the form can hold. It has no place that takes any text, because a secret can sit
+  in such a place (DQ-052). Words after a free token are the one exception, in the first rule below:
   - After a password key: the literal `true`, `false` or `null` and a type name, as a complete
     token with no quotes (`require_password: true`, `showPassword={false}/>`,
     `{"require_password":true,"enabled":false}`, `newPassword: string`,
     `user_password: varchar(255)`). A free value does not hide the next key of a compact object
     (`{"require_password":true,"password":"xxxx"}` is refused). A string is refused (`password: false!`, `"password": "false"`,
-    `` password: `false alarm` ``, `"password": "string"`). Prose after a complete token stays
-    free, so `password: false alarm` escapes: the code cannot tell it from
-    ``Set password: `false` in the file``.
+    `` password: `false alarm` ``, `"password": "string"`). Text after a complete token stays
+    free, for a literal and for a type name. So `password: false alarm`, `password: true hunter22` and
+    `password: null  // real one is hunter22` escape: the code cannot tell them from
+    ``Set password: `false` in the file`` or `password: string in the request body`. A type name, `=`
+    and text with no quotes is code, so it stays free too (`const password: string = process.env.DB_PASSWORD`,
+    `= getPassword()`), and so does a quoted value that is empty or under the minimum (`= ""`, `= "abc"`),
+    or a reference (`= "${DB_PASSWORD}"`).
   - After a password key: a reference (`${DB_PASSWORD}`, `$DB_PASSWORD` in capitals,
     `${{ secrets.NAME }}`, `{confirmPassword}`). `$ecret123` is refused. So a secret in the form
     `password: {hunter22}` escapes.
@@ -309,13 +319,21 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
     `DB_PASSWORD=correct_horse_battery` stays refused.
   - After `@` (`action-token@<hash>`) or a word that names a hash (`commit <hash>`, `sha256 <hash>`).
   - After a password key: a schema with no value (`"password": {"type": "string"}`,
-    `{"type": "string", "minLength": 8}`), and React state with no first value
-    (`const [password, setPassword] = useState("")`). A schema with `default` or `value`, and
-    `useState("hunter22")`, are refused.
+    `{"type": "string", "minLength": 8}`). A free schema has a type name and only these members:
+    `minLength` and `maxLength` with a number, `nullable`, `required`, `readOnly` and `writeOnly` with
+    `true` or `false`, and `format` with `password`. Any other member makes it a value, so these are
+    refused: `{type:string,default:1234}`, `{"type":"string","secret":99887766}`,
+    `{"type":"string","minimum":8}` and `{"type":"string","format":"hunter22"}`.
+  - After a password key: React state with no first value, with `useState` or `React.useState`. The
+    argument is empty, `""`, `null` or `undefined`, and the type is `<string>`,
+    `<string | null>` or `<string | undefined>`
+    (`const [password, setPassword] = useState<string | null>(null)`). These are refused:
+    `useState("hunter22")`, `useState<string | null>("hunter22")`, `useState<Password>()` and
+    other hooks.
 - These false matches stay, because the value is a word after a password key and the code cannot
   tell it from a secret (owner, 2026-11-05): `confirmPassword: z.string().min(8),`,
   `hashedPassword = await bcrypt.hash(password, 10)`, `resetPassword: async (email) => {`,
-  `newPassword: string|undefined`, `ALL_TESTS_PASS: done`.
+  `newPassword: string|undefined`, `ALL_TESTS_PASS: done`, `TEST_PASS_QA: done`, `password_local: disabled`.
 - Known gaps (owner, 2026-11-05), because a fix costs more false matches or adds state to the scan:
   a Markdown table (`| DB_PASSWORD | hunter22 |`), a value on the next line (`GITHUB_TOKEN: |`), hex
   with colons (`secret: 3f:2a:â€¦`), and a long plain value that hides a second value after it.

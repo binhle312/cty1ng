@@ -44,8 +44,10 @@ written ways of working that the bot follows.
   such as a password or an API key with its value. This also applies to a placeholder password.
   The name of a setting with no value is fine, and so is a reference such as `${DB_PASSWORD}`, a
   type such as `password: string`, a schema such as `"password": {"type": "string"}`, or empty React
-  state such as `useState("")`. Remove the value, and save again. Some code still looks like a secret,
-  such as a password name, a colon and a word, as in a validation rule. Change that line to save.
+  state such as `useState("")` or `useState(null)`. A quoted value after a type, as in
+  `password: string = "..."`, counts as a value. Remove the value, and save again. Some code still looks
+  like a secret, such as a password name, a colon and a word, as in a validation rule, or a schema with a
+  member such as `minimum`. Change that line to save.
   An import keeps a file that is the same as the saved version as `unchanged`, with no refusal.
 - **After a skill save**: "Save as v2" offers to upgrade the bots that use an older version
   (all ticked; untick a bot to keep its version). An upgrade keeps each bot's Always load.
