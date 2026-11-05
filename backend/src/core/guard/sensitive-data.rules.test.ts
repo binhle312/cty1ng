@@ -218,6 +218,8 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ["GITHUB_TOKEN: ", ""],
     ["GITHUB_TOKEN = ", ""],
     ['GITHUB_TOKEN="', '"'],
+    ["GITHUB_TOKEN:=", ""],
+    ["GITHUB_TOKEN: =", ""],
     ['"GITHUB_TOKEN": "', '"'],
   ])("a value after %j", (before, after) => {
     it("is free at 23 characters", () => {
