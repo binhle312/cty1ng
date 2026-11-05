@@ -612,20 +612,20 @@ describe("findSensitive: random values next to a key word", () => {
   };
 
   it.each([
-    ["base62", 24, LOWER + UPPER + DIGITS, 0.01],
-    ["base64", 24, `${LOWER}${UPPER}${DIGITS}+/`, 0.01],
-    ["base62", 40, LOWER + UPPER + DIGITS, 0.001],
-    ["base64", 40, `${LOWER}${UPPER}${DIGITS}+/`, 0.001],
-  ])("%s of %i: few values that main refuses go free", (_name, length, alphabet, limit) => {
+    { name: "base62", length: 24, alphabet: LOWER + UPPER + DIGITS, limit: 0.01 },
+    { name: "base64", length: 24, alphabet: `${LOWER}${UPPER}${DIGITS}+/`, limit: 0.01 },
+    { name: "base62", length: 40, alphabet: LOWER + UPPER + DIGITS, limit: 0.001 },
+    { name: "base64", length: 40, alphabet: `${LOWER}${UPPER}${DIGITS}+/`, limit: 0.001 },
+  ])("$name of $length: few values that main refuses go free", ({ length, alphabet, limit }) => {
     const values = randomValues(alphabet, length);
     const escaped = values.filter((value) => refusedOnMain(value) && !refused(value));
     expect(escaped.length / SAMPLES).toBeLessThanOrEqual(limit);
   });
 
   it.each([
-    ["lowercase letters and digits", 24, LOWER + DIGITS, 0.9],
-    ["base32 in capitals", 24, `${UPPER}234567`, 0.85],
-  ])("%s of %i: most values are refused", (_name, length, alphabet, least) => {
+    { name: "lowercase letters and digits", length: 24, alphabet: LOWER + DIGITS, least: 0.9 },
+    { name: "base32 in capitals", length: 24, alphabet: `${UPPER}234567`, least: 0.85 },
+  ])("$name of $length: most values are refused", ({ length, alphabet, least }) => {
     const caught = randomValues(alphabet, length).filter((value) => refused(value));
     expect(caught.length / SAMPLES).toBeGreaterThanOrEqual(least);
   });
