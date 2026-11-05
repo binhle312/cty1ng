@@ -71,7 +71,11 @@ const REFERENCE =
 // PWD is also the shell's working folder: /home/owner, ~/work, ../work, $(pwd).
 const SHELL_PATH = /^["'`]?(?:~?\/|\.{1,2}\/|\$\()/;
 
-const notReference = (secret: string): boolean => !REFERENCE.test(secret);
+// A value in backticks has the same 4-character minimum as a value in quotes.
+const SHORT_IN_BACKTICKS = /^`[^`]{0,3}`[)}\],;]*[.:]?$/;
+
+const passwordValue = (secret: string): boolean =>
+  !REFERENCE.test(secret) && !SHORT_IN_BACKTICKS.test(secret);
 
 const DETECTORS: readonly Detector[] = [
   { kind: "private_key", pattern: /-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----/g },
@@ -84,20 +88,20 @@ const DETECTORS: readonly Detector[] = [
       "gi",
     ),
     group: 1,
-    accept: notReference,
+    accept: passwordValue,
   },
   {
     kind: "password",
     pattern: new RegExp(`pwd${AFTER_PASSWORD_KEY}`, "gi"),
     group: 1,
-    accept: (secret) => notReference(secret) && !SHELL_PATH.test(secret),
+    accept: (secret) => passwordValue(secret) && !SHELL_PATH.test(secret),
   },
   {
     // The name in capitals only, because `test_pass: done` is not a password. The value has any case.
     kind: "password",
     pattern: new RegExp(`(?-i:[A-Z0-9]_PASS)${AFTER_PASSWORD_KEY}`, "gi"),
     group: 1,
-    accept: notReference,
+    accept: passwordValue,
   },
   {
     // Common provider prefixes: OpenAI and Anthropic (sk-), AWS (AKIA), GitHub (ghp_ and
@@ -109,11 +113,11 @@ const DETECTORS: readonly Detector[] = [
   {
     // A long random-looking value next to a word like key, token or secret, with any prefix
     // (`GITHUB_TOKEN=`, `clientSecret:`). `action-token@<hash>` is a pinned version, and a word
-    // such as `commit` says that the value is a hash. The value starts a run of characters, so
-    // `=` is not in it, and `TOKEN=x` and `TOKEN: x` get the same answer.
+    // such as `commit` says that the value is a hash. The value starts a run of characters, and
+    // `=` cannot start it, so `TOKEN=x` and `TOKEN: x` get the same answer.
     kind: "api_key",
     pattern:
-      /(?:api[_ -]?key|token|secret(?:[_ -]?key(?:[_ -]?base)?)?|access[_ -]?key)(?:_?value|_\d+)?\b[^\n@]{0,20}?(?<!\b(?:commit|sha\d*|hash|digest|checksum|revision)\s+)(?<![A-Za-z0-9])([A-Za-z0-9][A-Za-z0-9_\-+/=]{23,})/gi,
+      /(?:api[_ -]?key|token|secret(?:[_ -]?key(?:[_ -]?base)?)?|access[_ -]?key)(?:_?value|_\d+)?\b[^\n@]{0,20}?(?<!\b(?:commit|sha\d*|hash|digest|checksum|revision)\s+)(?<![A-Za-z0-9])([A-Za-z0-9_\-+/][A-Za-z0-9_\-+/=]{23,})/gi,
     group: 1,
     accept: (secret) => !madeOfWords(secret) && (highEntropy(secret) || randomLetters(secret)),
   },

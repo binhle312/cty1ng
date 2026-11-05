@@ -125,6 +125,8 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ["password: `string theory`", "a backtick phrase that starts with a type"],
     ["password: `my pass phrase`", "a backtick phrase"],
     ["password: `a bc`", "the shortest backtick phrase: 4 characters"],
+    ["password: `abcd`", "the shortest value in backticks: 4 characters"],
+    ["password: `abc`def", "text after a short value in backticks"],
     ["password: `false", "a backtick with no close"],
     // Punctuation after a literal frees it only in the shape of a setting.
     ["password: false/>", "the JSX end needs braces"],
@@ -199,6 +201,7 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     [`token.value = "${randomKey}"`],
     [`config.token.value = ${randomKey}`],
     [`https://example.com/token/${randomKey}`],
+    [`token-${randomKey}`],
     [`token={"${randomKey}"}`],
     [`secret.key = ${randomKey}`],
     [`{token}${randomKey}`],
@@ -223,6 +226,28 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
 
     it("is refused at 24 characters", () => {
       const text = `${before}${lettersAndDigits.slice(0, 24)}${after}`;
+      expect(findSensitive(text).map((match) => match.kind)).toEqual(["api_key"]);
+    });
+  });
+
+  // Review of fe63f7f: a value that started with a symbol lost it before the length check. Only
+  // `=` is not part of a value.
+  describe.each(["_", "-", "+", "/"])("a value that starts with %j", (symbol) => {
+    const forms = [
+      ["token=", ""],
+      ["token: ", ""],
+      ["api_key = ", ""],
+      ["GITHUB_TOKEN=", ""],
+      ['"access_token": "', '"'],
+    ];
+
+    it.each(forms)("after %j is free at 23 characters", (before, after) => {
+      const text = `${before}${symbol}${lettersAndDigits.slice(0, 22)}${after}`;
+      expect(findSensitive(text)).toEqual([]);
+    });
+
+    it.each(forms)("after %j is refused at 24 characters", (before, after) => {
+      const text = `${before}${symbol}${lettersAndDigits.slice(0, 23)}${after}`;
       expect(findSensitive(text).map((match) => match.kind)).toEqual(["api_key"]);
     });
   });
@@ -287,6 +312,12 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ['"password": "abc"', "a quoted value under 4 characters"],
     ['"password": "a b"', "a quoted value under 4 characters"],
     ["password: `a b`", "a backtick value under 4 characters"],
+    // Review of fe63f7f: the backticks counted toward the 4 characters.
+    ["password: `ab`", "a backtick value under 4 characters"],
+    ["password: `abc`", "a backtick value under 4 characters"],
+    ["password: `abc`,", "a backtick value under 4 characters, before a mark"],
+    ["Use password: `abc`.", "a backtick value under 4 characters, in a sentence"],
+    ["password: ``", "an empty backtick value"],
     ["password: abc", "a value under 4 characters"],
     // Owner, 2026-11-05, change 1: a reference holds no secret.
     ["POSTGRES_PASSWORD=${DB_PASSWORD}", "a reference"],
