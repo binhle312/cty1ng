@@ -43,12 +43,13 @@ const DETECTORS: readonly Detector[] = [
   {
     // Any prefix: `DB_PASSWORD=`, `dbPassword:` and `"password":`. `\b` does not fire after `_`,
     // so there is no left boundary. `pwd` keeps one for letters and digits, because `OLDPWD` is a
-    // shell variable. A placeholder has no exception, but true, false and null are settings about
-    // a password, also in JSON (`false,`), Markdown (`` `true` ``) and JSX (`{false}`).
+    // shell variable. A placeholder has no exception. The lookahead frees only the literal
+    // syntax of a setting: `true,`, `{false}` and `` `null` ``. It runs before the optional
+    // quote, because a quoted `"false"` is a string, and so is `false!`.
     kind: "password",
-    pattern: /(?:password|passwd|(?<![a-z0-9])pwd)["']?\s*[:=]\s*["']?([^\s"']{4,})/gi,
+    pattern:
+      /(?:password|passwd|(?<![a-z0-9])pwd)["']?\s*[:=]\s*(?!(?:\{(?:true|false|null)\}|`?(?:true|false|null))(?:[`)}\],;]+[.:]?)?(?:\s|$))["']?([^\s"']{4,})/gi,
     group: 1,
-    accept: (secret) => !/^[^a-z0-9]*(?:true|false|null)[^a-z0-9]*$/i.test(secret),
   },
   {
     // Common provider prefixes: OpenAI and Anthropic (sk-), AWS (AKIA), GitHub (ghp_ and
@@ -62,14 +63,11 @@ const DETECTORS: readonly Detector[] = [
     // (`GITHUB_TOKEN=`, `clientSecret:`).
     kind: "api_key",
     pattern:
-      /(?:api[_ -]?key|token|secret(?:[_ -]?key(?:[_ -]?base)?)?|access[_ -]?key)\b[^\n]{0,20}?([A-Za-z0-9_\-+/=]{24,})/gi,
+      /(?:api[_ -]?key|token|secret(?:[_ -]?key(?:[_ -]?base)?)?|access[_ -]?key)\b[^\n]{0,20}?([A-Za-z0-9][A-Za-z0-9_\-+/=]{23,})/gi,
     group: 1,
-    accept: (secret) => {
-      // The value can start with the separator of `TOKEN=`. It must not count as a kind of
-      // character, or `TOKEN=x` and `TOKEN: x` get different answers.
-      const value = secret.replace(/^[_\-+/=]+/, "");
-      return highEntropy(value) || randomLettersAndDigits(value);
-    },
+    // The value starts with a letter or a digit, so the `=` of `TOKEN=` is not part of it, and
+    // `TOKEN=x` and `TOKEN: x` get the same answer.
+    accept: (secret) => highEntropy(secret) || randomLettersAndDigits(secret),
   },
   {
     kind: "card_number",
@@ -158,6 +156,6 @@ function randomLettersAndDigits(value: string): boolean {
     /^[\da-z]+$/i.test(value) &&
     /\d/.test(value) &&
     /[a-z]/i.test(value) &&
-    new Set(value.toLowerCase()).size >= 8
+    new Set(value).size >= 8
   );
 }

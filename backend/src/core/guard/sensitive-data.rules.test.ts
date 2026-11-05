@@ -75,6 +75,21 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ['{"password":"hunter22"}', "JSON with no spaces"],
     ['"DB_PASSWORD" : "hunter22"', "JSON with a prefix and a space"],
     ["'password': 'hunter22'", "single quotes"],
+    ['"password": "abcd"', "the shortest value: 4 characters (owner, 2026-11-05)"],
+    ["DB_PASSWORD=abcd", "the shortest value: 4 characters (owner, 2026-11-05)"],
+    // Review of this PR: the exception took any symbols, so these strings were saved. Only the
+    // literal syntax of a setting is free.
+    ["password: false!", "a string that starts with a literal"],
+    ['"password":"false!"', "a JSON string that starts with a literal"],
+    ["password: true?", "a string that starts with a literal"],
+    ["password: false.", "a string that ends with a dot"],
+    ["password: !true!", "symbols around a literal"],
+    ["PASSWORD=$false$", "symbols around a literal"],
+    ["password: {true", "an open brace with no close"],
+    ["password=trueSecret123", "a value that only starts like a literal"],
+    ['"password": "false"', "a quoted word is a string, not a literal"],
+    ['password="true"', "a quoted word is a string, not a literal"],
+    ["'password': 'null'", "a quoted word is a string, not a literal"],
   ])("refuses %j as a password: %s", (text) => {
     expect(findSensitive(text).map((match) => match.kind)).toEqual(["password"]);
   });
@@ -93,6 +108,7 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     [`"access_token":"${hex}"`],
     [`AWS_ACCESS_KEY ${hex}`],
     [`GITHUB_TOKEN=${"0123abcd".repeat(4)}`],
+    [`token ${"a1b2c3d4".repeat(3)}`],
     // Review of this PR: `=` counted as a kind of character, so these failed with `:` only.
     [`access_token: ${lettersAndDigits}`],
     [`client_secret: ${lettersAndDigits}`],
@@ -107,6 +123,24 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     [`SECRET_KEY_BASE=${hex}`],
   ])("refuses %j as an API key", (text) => {
     expect(findSensitive(text).map((match) => match.kind)).toEqual(["api_key"]);
+  });
+
+  // Review of this PR: `=` counted in the length, so 23 characters were refused only after `=`.
+  describe.each([
+    ["GITHUB_TOKEN=", ""],
+    ["GITHUB_TOKEN: ", ""],
+    ["GITHUB_TOKEN = ", ""],
+    ['GITHUB_TOKEN="', '"'],
+    ['"GITHUB_TOKEN": "', '"'],
+  ])("a value after %j", (before, after) => {
+    it("is free at 23 characters", () => {
+      expect(findSensitive(`${before}${lettersAndDigits.slice(0, 23)}${after}`)).toEqual([]);
+    });
+
+    it("is refused at 24 characters", () => {
+      const text = `${before}${lettersAndDigits.slice(0, 24)}${after}`;
+      expect(findSensitive(text).map((match) => match.kind)).toEqual(["api_key"]);
+    });
   });
 
   it("gives only the last 4 characters of a hex value, with no separator", () => {
@@ -130,6 +164,11 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ['"password": null,', "a JSON null value"],
     ["Set `require_password: true`.", "a true or false value in Markdown code"],
     ["showPassword={false}", "a true or false value in JSX"],
+    ["REQUIRE_PASSWORD=TRUE", "a true or false value in capitals"],
+    ['{"require_password":true}', "a JSON literal with no spaces"],
+    ['"password": false', "a JSON literal at the end of the line"],
+    ["password: `false`", "a literal in Markdown code"],
+    ["require_password: true\r", "a literal before a CRLF line end"],
     ["requirePassword={true}", "a true or false value in JSX"],
     ["OLDPWD=/home/owner", "the shell variable"],
     ["user_profile_settings_page", "an identifier alone"],
@@ -143,6 +182,7 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ["GITHUB_TOKEN: CamelCaseIdentifierNameForThisThing", "letters with no digit, with :"],
     ["token: averylongwordwithnodigitsinthewholeword", "one long word"],
     ["token: abc1_abc1_def2_def2_abc1_def2_abc1_def2", "a repeated identifier with separators"],
+    ["TOKEN_ENDPOINT_URL_FOR_THE_V2_API_NAME", "a longer name alone, with a digit"],
     ["SECRET_KEY", "a name alone"],
     ["secret_key_name_for_the_app_config", "a longer name alone"],
     ["token_endpoint: https://example.com/oauth/token", "a URL after a similar name"],
@@ -152,6 +192,7 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ["token: 3f2a9c1e", "short hex"],
     [`token ${"0".repeat(32)}`, "hex with no variety"],
     [`token ${"a1".repeat(16)}`, "repeated hex"],
+    [`token ${"a1b2c3d".repeat(4)}`, "only 7 different characters"],
     [`secret: ${"deadbeef".repeat(4)}`, "hex letters only"],
     [`secret: ${"1234567890".repeat(4)}`, "hex digits only"],
   ])("finds nothing in %j: %s", (text) => {
