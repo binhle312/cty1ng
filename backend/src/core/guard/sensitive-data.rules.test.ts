@@ -118,6 +118,22 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ['password: "a b c d e f g h"', "a phrase of short words"],
     ['password: "abc def"', "a short phrase"],
     ['password: "a bc"', "the shortest phrase: 4 characters"],
+    // Review of 1e1cf76: the exception took an opening backtick with no closing one. A backtick
+    // phrase is a value, as a quoted phrase is.
+    ["password: `false alarm`", "a backtick phrase that starts with a literal"],
+    ["password: `null value`", "a backtick phrase that starts with a literal"],
+    ["password: `string theory`", "a backtick phrase that starts with a type"],
+    ["password: `my pass phrase`", "a backtick phrase"],
+    ["password: `a bc`", "the shortest backtick phrase: 4 characters"],
+    ["password: `false", "a backtick with no close"],
+    // Punctuation after a literal frees it only in the shape of a setting.
+    ["password: false/>", "the JSX end needs braces"],
+    ["password: true>", "the JSX end needs braces"],
+    ["password={true}disabled", "text after the braces"],
+    ['password: true,"hunter22"', "a comma with no next key"],
+    ["password: false,hunter22", "a comma with no next key"],
+    ["password: true)=", "a bracket with no arrow"],
+    ["password: string|hunter22", "a union with a word that is not a type"],
     ["password: $HUNTER!22", "more text after a reference"],
     ["password: {hunter}22", "more text after a reference"],
     ["password: /hunter22", "the path rule is only for pwd"],
@@ -217,6 +233,12 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ]);
   });
 
+  it("gives only the last 4 characters of a backtick phrase, with no backtick", () => {
+    expect(findSensitive("password: `my pass phrase`")).toEqual([
+      { kind: "password", line: 1, ending: "rase" },
+    ]);
+  });
+
   it("gives only the last 4 characters of a hex value, with no separator", () => {
     expect(findSensitive(`# Steps\nGITHUB_TOKEN=${hex}`)).toEqual([
       { kind: "api_key", line: 2, ending: "cdef" },
@@ -280,8 +302,27 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ["hashed_password: string", "a type"],
     ["user_password: varchar(255),", "a column type"],
     // Owner, 2026-11-05, change 3: a shell path after pwd only.
+    // Review of 1e1cf76: code with no space after the literal.
+    ['{"require_password":true,"enabled":false}', "a JSON literal before the next key"],
+    ['{"password":null,"a":1}', "a JSON null before the next key"],
+    ['{"password":null,"a-b":1}', "a next key with a hyphen"],
+    ["newPassword:string,other?:string", "a type before an optional key"],
+    ['{"a":{"password":null},"b":1}', "a closing brace before the next key"],
+    ["{requirePassword:true,enabled:false}", "a JS literal before the next key"],
+    ["<Input showPassword={false}/>", "the JSX end"],
+    ["<Input showPassword={false}>", "the JSX end"],
+    ["requirePassword={true}/>", "the JSX end"],
+    ["const f = (newPassword: string)=>void", "a type before an arrow"],
+    ["newPassword: string|null", "a union of types"],
+    ["newPassword: `string|null`", "a union of types in Markdown code"],
+    ["password: `false`", "a complete literal in Markdown code"],
+    ["Set password: `false` in the file.", "a complete literal in a sentence"],
+    ["DB_PASS=TRUE", "a literal in capitals after the shorter name"],
+    ["DB_PASS=true", "a literal after the shorter name"],
     ["PWD=/home/owner", "the shell variable"],
     ["DB_PWD=${DB_SECRET}", "a reference after pwd"],
+    ["password: `$DB_SECRET`", "a reference in Markdown code"],
+    ["PWD=`/home/owner`", "a path in Markdown code"],
     ["DB_PASS=${DB_SECRET}", "a reference after a shorter name"],
     ["test_pass: done", "the shorter name is only in capitals"],
     ["OLD_PWD=/home/owner", "a path"],
@@ -332,6 +373,11 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
       `password:"${"a".repeat(1_000_000)}`,
       `password:'${"\\a".repeat(500_000)}`,
       `password:"${"\\a".repeat(500_000)}`,
+      `password:\`${"a".repeat(1_000_000)}`,
+      "password:`a ".repeat(90_000),
+      `password:true${",".repeat(1_000_000)}`,
+      `password:true,${" ".repeat(1_000_000)}`,
+      "password:true,".repeat(70_000),
     ];
     const start = performance.now();
     for (const line of lines) findSensitive(line);

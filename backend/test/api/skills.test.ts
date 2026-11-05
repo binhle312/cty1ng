@@ -174,17 +174,22 @@ describe("edits", () => {
 
   // Review of PR #73: the exception for true, false and null also took these strings, and the
   // API saved them with 201.
-  it.each(["password: false!", '"password":"false!"', '"password": "false"'])(
-    "POST /skills with the password string %j gives 422 sensitive_data",
-    async (body_md) => {
-      const response = await send("POST", "/skills", { ...newSkill, body_md });
-      expect(response.status).toBe(422);
-      expect(await errorOf(response)).toEqual({ code: "sensitive_data", field: "body_md" });
-    },
-  );
+  it.each([
+    "password: `false alarm`",
+    "password: false!",
+    '"password":"false!"',
+    '"password": "false"',
+  ])("POST /skills with the password string %j gives 422 sensitive_data", async (body_md) => {
+    const response = await send("POST", "/skills", { ...newSkill, body_md });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toEqual({ code: "sensitive_data", field: "body_md" });
+  });
 
-  it("POST /skills with a literal setting about a password gives 201", async () => {
-    const body_md = 'Set `require_password: true`, and send {"has_password": false}.';
+  it.each([
+    'Set `require_password: true`, and send {"has_password": false}.',
+    '{"require_password":true,"enabled":false}',
+    "<Input showPassword={false}/>",
+  ])("POST /skills with the literal setting %j gives 201", async (body_md) => {
     const response = await send("POST", "/skills", { ...newSkill, body_md });
     expect(response.status).toBe(201);
   });

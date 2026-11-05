@@ -40,26 +40,39 @@ interface Detector {
 
 // A setting about a password, not a password (owner, 2026-11-05).
 const SETTING_WORD = String.raw`(?:true|false|null|string|boolean|bool|number|integer|text|(?:var)?char(?:\(\d+\))?)`;
+const SETTING_TYPE = String.raw`${SETTING_WORD}(?:\|${SETTING_WORD})*`;
+
+// A setting is free only as a complete token, in the shape that code or Markdown gives it. What
+// comes after it decides: a space, the line end, closing marks, the next key of a compact object,
+// or an arrow. So `false alarm` in backticks, false! and true,hunter22 are strings.
+const AFTER_SETTING = [
+  String.raw`(?:[\`)}\],;]+[.:]?)?(?:\s|$)`,
+  String.raw`[)}\]]*,["']?[\w-]+["']?\??:`,
+  String.raw`\)=>`,
+].join("|");
+const FREE_SETTING = [
+  String.raw`\{${SETTING_WORD}\}\/?>`, // The end of a JSX tag needs the braces.
+  String.raw`(?:\{${SETTING_WORD}\}|\`${SETTING_TYPE}\`|${SETTING_TYPE})(?:${AFTER_SETTING})`,
+].join("|");
 
 // What follows a password key, for every spelling of the key.
 const AFTER_PASSWORD_KEY = [
   // Marks that close the key: `"password"`, `\"password\"`, `["password"]`, **password**.
   String.raw`(?:\\?["']|[\`*\]]){0,4}`,
   String.raw`\s*(?::=|=>|[:=])\*{0,2}\s*`,
-  // Frees only the literal syntax of a setting: `true,`, `{false}`, `` `null` ``, `string;`. It
-  // runs before the quote, because a quoted "false" is a string, and so is false!.
-  String.raw`(?!(?:\{${SETTING_WORD}\}|\`?${SETTING_WORD})(?:[\`)}\],;]+[.:]?)?(?:\s|$))`,
+  // Before the quote, because a quoted "false" is a string.
+  `(?!${FREE_SETTING})`,
   // The value: a whole quoted phrase, an unclosed quote, or a word. It has 4 or more characters.
-  String.raw`("(?:[^"\\\n]|\\.){4,}"|'[^'\n]{4,}'|["'][^\s"']{4,}|[^\s"']\S{3,})`,
+  String.raw`("(?:[^"\\\n]|\\.){4,}"|'[^'\n]{4,}'|\`[^\`\n]{4,}\`|["'][^\s"']{4,}|[^\s"']\S{3,})`,
 ].join("");
 
 // A reference holds no secret: ${DB_PASSWORD}, $DB_PASSWORD, ${{ secrets.X }}, {password}. Case
 // matters: $ecret123 is a password.
 const REFERENCE =
-  /^["']?(?:\$\{\{?\s*[\w.-]+\s*\}\}?|\$[A-Z_][A-Z0-9_]*|\{[A-Za-z_$][\w.$]*\})["']?[`)}\],;]*$/;
+  /^["'`]?(?:\$\{\{?\s*[\w.-]+\s*\}\}?|\$[A-Z_][A-Z0-9_]*|\{[A-Za-z_$][\w.$]*\})["']?[`)}\],;]*$/;
 
 // PWD is also the shell's working folder: /home/owner, ~/work, ../work, $(pwd).
-const SHELL_PATH = /^["']?(?:~?\/|\.{1,2}\/|\$\()/;
+const SHELL_PATH = /^["'`]?(?:~?\/|\.{1,2}\/|\$\()/;
 
 const notReference = (secret: string): boolean => !REFERENCE.test(secret);
 
@@ -83,9 +96,9 @@ const DETECTORS: readonly Detector[] = [
     accept: (secret) => notReference(secret) && !SHELL_PATH.test(secret),
   },
   {
-    // Capitals only, because `test_pass: done` and `bypass: x` are not passwords.
+    // The name in capitals only, because `test_pass: done` is not a password. The value has any case.
     kind: "password",
-    pattern: new RegExp(`[A-Z0-9]_PASS${AFTER_PASSWORD_KEY}`, "g"),
+    pattern: new RegExp(`(?-i:[A-Z0-9]_PASS)${AFTER_PASSWORD_KEY}`, "gi"),
     group: 1,
     accept: notReference,
   },
@@ -138,7 +151,7 @@ function* scan(text: string): Generator<SensitiveMatch> {
       for (const found of line.matchAll(detector.pattern)) {
         const secret = found[detector.group ?? 0] ?? found[0];
         if (detector.accept !== undefined && !detector.accept(secret)) continue;
-        const ending = secret.replace(/\\?["']$/, "").slice(-4);
+        const ending = secret.replace(/\\?["'`]$/, "").slice(-4);
         yield { kind: detector.kind, line: index + 1, ending };
       }
     }
