@@ -255,7 +255,9 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (ย
 - Memory writes and skill drafts (D41) with a match are refused, with no override.
 - Skills the owner writes are checked too (M1 spec gap pass, owner 2026-10-30): create (also of
   a clone), a rename (`PATCH /skills/{id}` and the `name` of `POST /versions`), a new version, a
-  version restore and every import row, from the editor, the CLI and the seed. The check reads
+  version restore and every import row that saves text, from the editor, the CLI and the seed. An
+  import row that is the same as the latest version saves nothing, so it is `unchanged` with no
+  refusal (owner, 2026-11-05; `domain-model.md` ยง3.5). The check reads
   every field that is saved and shown: the slug, name, description, body and changelog, and the
   import file name, which goes into each changelog ("Imported from {file}"). A
   match is refused with no override (422 `sensitive_data`, an import row is `invalid`, a file
@@ -271,7 +273,7 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (ย
 - The forms of D39 include a key word with any prefix (`DB_PASSWORD=`, `dbPassword:`, `dbPwd=`,
   `DB_PASS=`, `PASSWORD1=`, `DB_PASSWORD_PROD=`, `GITHUB_TOKEN=`, `client_secret=`, `TOKEN_VALUE=`),
   marks around the key (`"password":`, `config["password"] =`, `` `DB_PASSWORD`: ``,
-  `**password**:`), the separators `:`, `=`, `:=` and `=>`, a whole quoted phrase
+  `**password**:`), the separators `:`, `=`, `:=` and `=>`, a whole phrase in quotes or backticks
   (`"password": "my long pass phrase"`) and, next to a key word such as `token` or `SECRET_KEY`,
   long random values of letters and digits, which include hex (owner, 2026-11-05). A password
   value needs 4 or more characters (owner, 2026-11-05). A placeholder has no exception
@@ -279,10 +281,13 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (ย
   (`"password": "Password"`, `"password": 1234`). A name with no value stays free (`DB_PASSWORD`).
 - Some values hold no secret and stay free (owner, 2026-11-05). These rules make the guard weaker
   on purpose, because a false match blocks a save with no override:
-  - After a password key: the literal `true`, `false` or `null` and a type name, with no quotes
-    (`require_password: true`, `showPassword={false}`, `newPassword: string`,
+  - After a password key: the literal `true`, `false` or `null` and a type name, as a complete
+    token with no quotes (`require_password: true`, `showPassword={false}/>`,
+    `{"require_password":true,"enabled":false}`, `newPassword: string`,
     `user_password: varchar(255)`). A string is refused (`password: false!`, `"password": "false"`,
-    `"password": "string"`).
+    `` password: `false alarm` ``, `"password": "string"`). Prose after a complete token stays
+    free, so `password: false alarm` escapes: the code cannot tell it from
+    ``Set password: `false` in the file``.
   - After a password key: a reference (`${DB_PASSWORD}`, `$DB_PASSWORD` in capitals,
     `${{ secrets.NAME }}`, `{confirmPassword}`). `$ecret123` is refused. So a secret in the form
     `password: {hunter22}` escapes.
