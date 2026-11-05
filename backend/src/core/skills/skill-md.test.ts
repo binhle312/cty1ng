@@ -39,6 +39,62 @@ describe("SKILL.md", () => {
     expect(parseSkillMd(text)).toEqual({ invalid: reason });
   });
 
+  // Audit 2026-11-05, row 5. The parse time grows with the square of the keys, and the server
+  // waits for it. 40,000 keys took 12.4 s. The owner approved 8 KB on 2026-11-05.
+  describe("the frontmatter limit of 8,192 characters", () => {
+    const LIMIT = 8_192;
+    const tooLarge = { invalid: "The frontmatter is larger than 8 KB." };
+
+    // A frontmatter of exactly `length` characters, with a filler comment that YAML ignores.
+    function withFrontmatter(length: number): string {
+      const start = "name: a\ndescription: d\n# ";
+      return `---\n${start}${"x".repeat(length - start.length)}\n---\nBody`;
+    }
+
+    it("accepts a frontmatter at the limit", () => {
+      expect(parseSkillMd(withFrontmatter(LIMIT))).toEqual({
+        slug: "a",
+        description: "d",
+        bodyMd: "Body",
+      });
+    });
+
+    it("reports a frontmatter one character over the limit", () => {
+      expect(parseSkillMd(withFrontmatter(LIMIT + 1))).toEqual(tooLarge);
+    });
+
+    it("reports 40,000 keys at once, with no parse", () => {
+      const keys = Array.from({ length: 40_000 }, (_, index) => `key${String(index)}: 1`);
+      const text = `---\nname: a\ndescription: d\n${keys.join("\n")}\n---\n`;
+      const start = performance.now();
+      expect(parseSkillMd(text)).toEqual(tooLarge);
+      expect(performance.now() - start).toBeLessThan(500);
+    });
+
+    // Every character of this description needs a 4-character YAML escape.
+    it("still round-trips the longest description, with full escaping", () => {
+      const skill = { slug: "a", description: "\u0001".repeat(1_024), bodyMd: "# A\n" };
+      expect(parseSkillMd(serialiseSkillMd(skill))).toEqual(skill);
+    });
+
+    it("sets no limit on the body", () => {
+      const bodyMd = "x".repeat(1_000_000);
+      expect(parseSkillMd(`---\nname: a\ndescription: d\n---\n${bodyMd}`)).toEqual({
+        slug: "a",
+        description: "d",
+        bodyMd,
+      });
+    });
+
+    it("finds no closing --- line in a 1 MB file quickly", () => {
+      const start = performance.now();
+      expect(parseSkillMd(`---\n${"\n--".repeat(330_000)}`)).toEqual({
+        invalid: "The file has no frontmatter between --- lines.",
+      });
+      expect(performance.now() - start).toBeLessThan(500);
+    });
+  });
+
   it("round-trips, also a description with YAML characters", () => {
     const skill = { slug: "a", description: "Use when: the owner asks # for it", bodyMd: "# A\n" };
     expect(parseSkillMd(serialiseSkillMd(skill))).toEqual(skill);

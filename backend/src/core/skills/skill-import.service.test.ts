@@ -43,6 +43,20 @@ const create = (slug: string, author = OWNER_ID) =>
   );
 
 describe("preview", () => {
+  // Audit 2026-11-05, row 5: one row is invalid, and the other rows of the zip still work.
+  it("reports a frontmatter over the limit as an invalid row", async () => {
+    const large = `---\nname: large\ndescription: d\n# ${"x".repeat(8_192)}\n---\nBody`;
+    const preview = await backend.skillImport.preview(
+      "skills.zip",
+      [folder("fresh"), folder("large", new TextEncoder().encode(large))],
+      OWNER_ID,
+    );
+    expect(preview.rows.map((row) => [row.slug, row.status, row.reason])).toEqual([
+      ["fresh", "new", null],
+      ["large", "invalid", "The frontmatter is larger than 8 KB."],
+    ]);
+  });
+
   it("sorts rows and marks new, changed, unchanged, invalid and conflict; writes nothing", async () => {
     await create("same");
     await create("edited");
