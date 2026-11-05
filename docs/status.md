@@ -21,7 +21,7 @@ The plans of each slice are in [plans/](plans/README.md).
 
 [#60](https://github.com/binhle312/cty1ng/pull/60) (e2e server guard) is also open, outside the Slices table.
 
-Two rules for fix records are in a draft PR (owner, 2026-11-05): an agent names a principle skill only if it read the skill, and a repeated cause stops patching.
+Two rules for fix records are in draft [#75](https://github.com/binhle312/cty1ng/pull/75) (owner, 2026-11-05): an agent names a principle skill only if it read the skill, and a repeated cause stops patching.
 
 The [Slices table](#slices) records delivery state and PRs.
 The [design index](design/README.md) identifies agreed designs and open design work.
