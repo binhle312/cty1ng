@@ -396,7 +396,7 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     expect(findSensitive(text)).toEqual([]);
   });
 
-  it("scans 1 MB lines of the new forms in well under a second", () => {
+  it("scans each 1 MB line of the new forms in well under a second", () => {
     const lines = [
       "_TOKEN=".repeat(150_000),
       "_TOKEN: x ".repeat(100_000),
@@ -415,9 +415,13 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
       `password:true,${" ".repeat(1_000_000)}`,
       "password:true,".repeat(70_000),
     ];
-    const start = performance.now();
-    for (const line of lines) findSensitive(line);
-    expect(performance.now() - start).toBeLessThan(1_000);
+    // One limit per line, because a shared limit fails on a busy machine. A quadratic pattern
+    // takes many seconds on one of these lines.
+    for (const line of lines) {
+      const start = performance.now();
+      findSensitive(line);
+      expect(performance.now() - start).toBeLessThan(1_000);
+    }
   });
 });
 
