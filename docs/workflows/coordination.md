@@ -21,7 +21,7 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
 | Who | Does | Does not |
 | --- | --- | --- |
 | **Owner (human)** | Chooses the next slice; approves plans for checkpointed slices; reviews `Needs human review` items; merges; accepts or rejects proposed decisions | Write most of the code |
-| **Builder agent** (Claude Code or Codex) | Plans the slice, implements, runs every check, writes the PR description with evidence, updates docs | Merge; change accepted decisions; widen scope |
+| **Builder agent** (Claude Code or Codex) | Plans the slice, implements, runs every check, writes the PR description with evidence, updates docs | Merge, unless the owner asks for that PR; change accepted decisions; widen scope |
 | **Reviewer agent** (the *other* one) | Reviews the PR against the brief and the docs; checks evidence; tries to break it | Push to the builder's branch (it reports findings; the builder fixes) |
 
 **Why two different agents.** Different models make different mistakes, so cross-review catches

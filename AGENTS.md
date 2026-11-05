@@ -13,8 +13,6 @@ personas, versioned skills, a file Library per project plus one Home Library, an
 through human approvals. TypeScript everywhere (D34): backend on Node with Hono, Drizzle and the
 Vercel AI SDK; frontend React + Vite. Libraries sit behind ports (D35).
 
-Use [the documentation map](docs/README.md) to find the workflow and specification sections for your task.
-
 ## 2. Source of truth
 
 - `docs/` is the specification. Code must match it.
@@ -113,9 +111,10 @@ If a command in this list does not exist yet (early slices), creating it is part
   screens or a new requirement that changes an existing design: a one-page design in the plan,
   before any code ([planning workflow](docs/workflows/planning.md#code-design-checkpoint)).
 - Anything outside the current task's scope.
-- The merge.
 
 Mark these in the PR description under a heading `Needs human review` with one line each.
+
+Merge a PR only when the owner asks you to merge that PR. The merge needs no line in the PR description.
 
 ## 8. Never
 
