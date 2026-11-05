@@ -19,6 +19,8 @@ export type RoutingDecision = Readonly<{
 }>;
 ```
 
+Start with the rule affected by the task. Include the context, limits, and state rules it depends on.
+
 ## 1. Who replies to a human message (D3)
 
 | Active bots | Mentions in the message | Runs | Notice |

@@ -6,6 +6,8 @@
 > Requirements: `../../requirements/settings.md` UI-8. Standards it uses: `buttons.md`,
 > `time-format.md`, `../ui-rules.md`.
 
+Read the status above, shared layout, and the settings page in scope. Include shared controls, saving, and states.
+
 ## 1. Where it opens
 
 - From the Settings gear in the user panel, and from **Settings** in its menu (`user-panel.md`).

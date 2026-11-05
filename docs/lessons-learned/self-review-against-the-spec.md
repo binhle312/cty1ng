@@ -18,4 +18,4 @@ The source reports one P1 and four P2 findings in this review, not a lifetime PR
 
 **Reusable principles.** [Review with evidence](../../.agents/skills/principle-review-with-evidence/SKILL.md), [Prove that tests work](../../.agents/skills/principle-prove-tests-work/SKILL.md).
 
-**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [testing](../testing.md).
+**Project guidance.** [implementation workflow](../workflows/implementation.md#self-check), [testing](../testing.md).

@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 // DESIGN.md and .impeccable/design.json are the Impeccable skill's snapshot of the Command dark
-// theme (docs/workflow.md §2). They repeat the token colours; the token file owns them. This
+// theme (docs/workflows/planning.md). They repeat the token colours; the token file owns them. This
 // check fails when a snapshot colour differs from the token file, so the skill never works from
 // old values. Both files are optional: Impeccable runs without them.
 export const TOKEN_FILE = "frontend/src/themes/command.css";

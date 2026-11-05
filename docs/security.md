@@ -3,6 +3,8 @@
 This document owns the threat model and the controls. Changes to any control need the owner's
 review (`AGENTS.md` §7).
 
+Read the threat model and every control affected by the change. Include the corresponding security tests.
+
 ## 1. Threat model (phase 1)
 
 The app runs on the owner's machine for the owner. The owner is trusted. What is **not**

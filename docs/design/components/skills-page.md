@@ -12,6 +12,8 @@
 > (E1–E5). The round 8 previews still show the old header and the History panel; this file
 > wins.
 
+Read the status above, shared layout, and the action in scope. Include its errors, save state, and related bot cards.
+
 ## 1. Where it opens
 
 - From **Manage skills** in the user panel menu (`user-panel.md`).
@@ -203,8 +205,7 @@ says "The app could not load the bots." with **Try again**, and Upgrade or Assig
 ("Loading the bots." / "The bots did not load. Try again first."). A later load that fails keeps
 the bots shown.
 
-**The cards against the five order questions** (M2c audit, 2026-11-03; `../../workflow.md` §2
-step 4). Tests are in `after-save-cards.test.tsx`. The rules are in two pure modules:
+**The cards against the five order questions** (M2c audit, 2026-11-03; [implementation workflow](../../workflows/implementation.md#self-check)). Tests are in `after-save-cards.test.tsx`. The rules are in two pure modules:
 `after-save-card-state.ts` (which card shows) and `dialog-request-state.ts` (a card's request),
 each with one test per cell and every order of two requests.
 

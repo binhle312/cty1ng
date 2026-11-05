@@ -1,61 +1,55 @@
 # Documentation
 
-This folder is the specification of the app. Agents and humans build from it; the code must
-match it. When they disagree, the disagreement is a bug in one of them and must be raised.
+Use this map to find the workflow and specification sections for the current task.
+Requirements and technical or agreed design specifications own product behaviour. Plans, audits,
+and lessons record work and evidence; they do not replace those specifications.
 
-## Reading order
+## Read for the task
 
-New to the project (human or agent), read in this order:
+1. Read [AGENTS.md](../AGENTS.md) and the assigned request, brief, or approved plan.
+2. Use the map below to choose the relevant workflow and specifications. Open their matching sections ([how](../AGENTS.md#3-read-for-the-task)).
+3. Apply the [principle skill](../.agents/skills/README.md) for the current phase when its trigger applies.
+4. Include the shared rules that govern the change: conventions, invariants, security controls, and UI standards where applicable.
+5. When a decision governs the behaviour, check its amendments in [decisions/README.md](decisions/README.md) before you rely on it.
+6. Expand the reading scope when a dependency, conflict, or unanswered question requires it.
 
-1. [requirements/product-brief.md](requirements/product-brief.md): what we are building, for whom, and the words
-   we use (glossary).
-2. [decisions/](decisions/README.md): the decisions already made and why. Saves you from
-   re-arguing them.
-3. [architecture.md](architecture.md): the moving parts and the rules between them.
-4. The document for the area you are working on (table below).
-5. [Principle skills](../.agents/skills/README.md): select the skill for the current phase of work.
-6. [workflow.md](workflow.md): how this project applies them during planning, building, review, and merge.
+A brief's **Read first** list identifies required sources. Use its section references; an explicit **all** requires the whole document.
+A task that covers one part needs that part's rules and dependencies. A whole-slice review needs the full slice contract.
+A link is a route to context, not an instruction to read every linked file.
 
-## Map
+## Task map
 
-| Document | Answers |
-| --- | --- |
-| [status.md](status.md) | Where we are: current step, next steps, what waits on the owner, what is done |
-| [requirements/product-brief.md](requirements/product-brief.md) | Product brief: problem, users, goals, success measures, non-goals, journeys, glossary |
-| [requirements/](requirements/README.md) | Product requirements: user stories and acceptance criteria per area |
-| [decisions/](decisions/README.md) | One file per design decision: its reason and what was rejected; index in the README |
-| [architecture.md](architecture.md) | Components, ports and adapters, repository layout and import rules, folder indexes, request flow |
-| [diagrams.md](diagrams.md) | Index of every diagram: what it shows and which document holds it |
-| [domain-model.md](domain-model.md) | Tables, invariants, skills and versions, model catalog, files on disk |
-| [conversation-rules.md](conversation-rules.md) | Who replies, bot-to-bot budget, joining, what a bot sees, handoffs, branches |
-| [realtime-events.md](realtime-events.md) | Event log, SSE stream, event types and payloads, reconnect |
-| [api.md](api.md) | HTTP endpoints, request and response shapes, errors |
-| [research/](research/) | Notes from studying other products (behaviour only, no copied code). Inputs, not spec |
-| [ideas/](ideas/README.md) | Future ideas the owner wants to keep. Not decisions, not spec; nobody builds from them |
-| [design/](design/README.md) | Agreed UI specs, shared standards and exploratory sketches; the design index identifies their status |
-| [flow-view.md](flow-view.md) | Flow pane: scene and cue model, swappable renderer, animation, performance and memory budgets |
-| [frontend-conventions.md](frontend-conventions.md) | TypeScript rules across packages, frontend state rules and lint enforcement |
-| [security.md](security.md) | Threat model and the controls that must exist |
-| [testing.md](testing.md) | Test layers, fake model, what each slice must prove |
-| [workflow.md](workflow.md) | Using Claude Code and Codex together, branches, reviews, human checkpoints |
-| [review-guide.md](review-guide.md) | Local code and PR reviews: requirement-to-code-to-test evidence, separate safety and compliance conclusions, follow-up checks |
-| [Principle skills](../.agents/skills/README.md) | Select a principle skill, and the rules to maintain them |
-| [lessons-learned/](lessons-learned/README.md) | Project incidents, causes, responses, and their mapping to reusable principles |
-| [delivery-quality.md](delivery-quality.md) | Quality by milestone and PR: issue counts, review rounds, evidence limits, and prevention actions |
-| [development-plan.md](development-plan.md) | Slices M0–M9 in order, dependencies, checkpoints |
-| [tasks/](tasks/) | Existing milestone and part briefs; `development-plan.md` defines delivery parts and the briefs still needed |
-| [plans/](plans/README.md) | The plan of each slice: a record of what the owner and the builder agreed before the build. Not spec |
-| [audits/](audits/2026-11-05-repo-audit.md) | Repository audits: findings, owner decisions and fix progress. A record, not spec |
+| Task or question | Start here | Read scope |
+| --- | --- | --- |
+| Plan, implement, fix a bug, review, or prepare a PR | [Workflows](workflows/README.md) | Choose the workflow for your role and current task |
+| Find the next delivery part or its brief | [Development plan](development-plan.md) | The relevant milestone and part; its table links existing briefs |
+| Find current progress or owner decisions | [Status](status.md) | Current work and relevant waiting or follow-up rows |
+| Find an approved plan | [Plans](plans/README.md) | The named plan and its approval record |
+| Understand product scope or terminology | [Product brief](requirements/product-brief.md) | Relevant goals or [glossary](requirements/product-brief.md#glossary) |
+| Find a feature's behaviour | [Requirements](requirements/README.md) | The area and acceptance criteria in scope; shared rules when applicable |
+| Understand an accepted decision | [Decisions](decisions/README.md) | The matching entry and its "Changed by" entries |
+| Find code, module boundaries, or runtime design | [Architecture](architecture.md) | The matching section, then the affected folder's README |
+| Change tables, storage, or invariants | [Domain model](domain-model.md) | Conventions, affected entities, and applicable invariants |
+| Change routing, bot context, handoffs, or message branches | [Conversation rules](conversation-rules.md) | The affected rule and the state it depends on |
+| Change SSE or events | [Realtime events](realtime-events.md) | The transport, event types, client handling, and ordering rules affected |
+| Change an HTTP endpoint | [API](api.md) | Conventions, errors, and the relevant endpoint group |
+| Build or review a screen | [Design](design/README.md) | The agreed component spec, [UI rules](design/ui-rules.md), and [shared requirements](requirements/README.md#applies-to-every-story); the [design skills rules](workflows/planning.md#design-skills) if you use one |
+| Change style or theme tokens | [Themes](design/themes.md) | The relevant theme, tokens, and shared theme rules |
+| Change the Flow pane or its renderer | [Flow view](flow-view.md) | The affected scene, cue, renderer, performance, or verification sections |
+| Write TypeScript | [Conventions](frontend-conventions.md) | Shared coding rules and relevant frontend or backend guidance |
+| Change a trust boundary, file handling, secrets, or untrusted output | [Security](security.md) | Threat model and every control and security test affected by the change |
+| Write tests or verify a change | [Testing](testing.md) | Relevant layer and cases; required gates and evidence rules still apply |
+| Apply an engineering principle | [Principle skills](../.agents/skills/README.md) | The skill that matches the current phase |
+| Trace a previous failure or review | [Lessons](lessons-learned/README.md), [delivery quality](delivery-quality.md), [repository audit](audits/2026-11-05-repo-audit.md) | Only records relevant to the current issue |
+| Find an existing diagram | [Diagrams](diagrams.md) | The relevant view and its owning specification |
+| Explore future work or research | [Ideas](ideas/README.md), [chat-client research](research/chat-client-patterns.md) | Background only; these do not authorize implementation |
 
-## Rules for keeping docs healthy
+## Keep docs focused
 
-- **One fact, one place.** Each fact lives in exactly one document; others link to it. If you
-  find a fact in two places, keep the one in the owning document (table above) and replace the
-  other with a link.
-- **Change docs with code.** A PR that changes behaviour updates the owning document in the
-  same PR.
-- **Decisions change by rule.** A new entry amends or supersedes an accepted decision, or the
-  owner approves a dated amendment (`decisions/README.md`). Do not rewrite an accepted decision.
-- **Explain why.** A rule without its reason gets deleted by the next person who finds it
-  inconvenient. Every non-obvious rule says why it exists.
-- **Prefer tables and examples** over long prose. Agents and humans both scan.
+- **One rule, one home.** Put each rule in its owning document. Other documents link to the exact section.
+- **Task-specific entry points.** Indexes say when to read a file. Long specifications keep stable headings, so a reader can find one section.
+- **No mirror indexes.** Use the existing folder index or delivery table instead of another list of the same files.
+- **Move links with content.** Update callers when a document moves. Remove obsolete redirects after all callers use the new location.
+- **Change docs with code.** Update the owning specification when behaviour changes. Resolve code/specification conflicts with the owner.
+- **Preserve decisions and evidence.** Follow [decision rules](decisions/README.md) for accepted decisions. Keep historical approvals and test evidence.
+- **Explain non-obvious rules.** Keep the reason beside the rule. Prefer short tables or examples when they make the rule easier to find.

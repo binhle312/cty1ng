@@ -99,7 +99,7 @@ create skill → edit (v2) → diff → restore (v3) → export contains v3. Jou
 ## Needs human review
 
 The UI design in the plan (layout, components, states), approved before UI code is written
-(`docs/workflow.md` §2; sketches in `docs/design/` are not specs).
+([planning workflow](../workflows/planning.md#ui-design-checkpoint); sketches in `docs/design/` are not specs).
 
 Migration for skill tables, including `skills.row_version`, `skills.trashed_at`,
 `skills.trashed_bot_ids` and `skills.updated_at` (D49); zip handling and the zip route's body

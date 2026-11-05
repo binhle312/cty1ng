@@ -14,4 +14,4 @@ The project design approval boundary remains in `AGENTS.md` §7.
 
 **Reusable principles.** [Check approval](../../.agents/skills/principle-check-approval/SKILL.md).
 
-**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
+**Project guidance.** [planning workflow](../workflows/planning.md#ui-design-checkpoint), [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).

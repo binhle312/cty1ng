@@ -13,4 +13,4 @@ Third-party skill, vendored unchanged except for this file and `LICENSE`.
 To update: copy the folder from a newer upstream commit, review the diff (scripts above all),
 and update this table in the same PR. Do not edit the skill in place.
 
-Project rules for using it: `AGENTS.md` §3 and `docs/workflow.md` (design skills).
+Project rules for using it: `AGENTS.md` §8 and `docs/workflows/planning.md` (design skills).

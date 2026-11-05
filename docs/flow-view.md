@@ -5,6 +5,8 @@ bots communicate and work. It covers what it shows, how it is built so the drawi
 replaced (for example by pixel-art characters), and the animation, performance and memory rules
 it must meet. Decisions: D26, D27. Stories and acceptance criteria: `requirements/flow-view.md`. Task: `tasks/M8-flow-view.md`.
 
+Choose the affected scene, cue, renderer, or UI section. Include its performance rules and verification.
+
 ## 1. What it is for
 
 | Map | Question it answers | Phase |

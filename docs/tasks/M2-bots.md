@@ -175,7 +175,7 @@ create skill → create bot with it → clone with a different model → upgrade
 ## Needs human review
 
 - The UI design in the plan (layout, components, states), approved before UI code is written
-  (`docs/workflow.md` §2; sketches in `docs/design/` are not specs).
+  ([planning workflow](../workflows/planning.md#ui-design-checkpoint); sketches in `docs/design/` are not specs).
 - Migration: `bots` (including `row_version`, `name_key` with its unique index,
   `pinned_position`, `avatar_style`, `avatar_colour`, `tool_settings`, `create_key`,
   `create_request_hash`, `purged_at`, and no `write_paths`) and `bot_skills`. The owner approved

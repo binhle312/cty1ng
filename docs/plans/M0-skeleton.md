@@ -10,7 +10,7 @@ Brief: `docs/tasks/M0-skeleton.md`. Checkpoint: **plan**. I stop here until the 
 
 ## 1. Questions for the owner (blocking)
 
-I found these gaps between the brief and the docs. Each one has a recommendation. When you answer, I will record the answer in the owning document in this PR (`workflow.md` §8).
+I found these gaps between the brief and the docs. Each one has a recommendation. When you answer, I will record the answer in the owning document in this PR ([coordination workflow](../workflows/coordination.md#when-things-go-wrong)).
 
 | # | Gap | Recommendation |
 | --- | --- | --- |

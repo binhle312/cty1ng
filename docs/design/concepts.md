@@ -49,7 +49,7 @@ Board map in the Flow pane. Worked out in `themes.md` (D30). Command ships first
 1. Pick the **organising idea** first (the column above), then the library. Most libraries can
    express most ideas; the idea decides daily use.
 2. Prefer one primary concept plus at most one borrowed element. Mixing three becomes slop.
-3. The pick feeds the M0 plan's UI design section (`../workflow.md` §2).
+3. The pick feeds the M0 plan's UI design section ([planning workflow](../workflows/planning.md#ui-design-checkpoint)).
 
 ## Anti-slop rules used for all concepts
 

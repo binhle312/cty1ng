@@ -163,7 +163,7 @@ above.
 
 The UI design is agreed (round 10, `docs/design/components/conversation-page.md`, `composer.md`,
 `conversation-cards.md`). A change to it in the plan needs the owner's approval before UI code is
-written (`docs/workflow.md` §2).
+written ([planning workflow](../workflows/planning.md#ui-design-checkpoint)).
 
 Migrations; event emission points; worker concurrency; Markdown renderer configuration.
 

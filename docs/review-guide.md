@@ -1,7 +1,7 @@
 # Code and PR review guide
 
 Use this guide for local diffs, PR reviews, and reviews of fixes in this project.
-It owns the review method; [workflow.md §4](workflow.md#4-review-prompt-reviewer-agent) lists the review areas.
+It owns the review method; [the review workflow](workflows/review.md) lists the review areas.
 
 The required record is **plan requirement → implementation boundary → test evidence**.
 Judge runtime safety and compliance separately. A safe implementation can still differ from an approved contract.
@@ -51,7 +51,7 @@ For a race, identify the order the test forces and the state it checks afterward
 Sequential calls prove one order; they do not prove an overlap between two operations.
 Use controlled pauses or hooks when the requirement depends on a specific overlap.
 Check both relevant outcomes and the invariant that must hold in either outcome.
-For a screen with a state table ([workflow.md §2](workflow.md#2-lifecycle-of-a-slice) step 2),
+For a screen with a state table ([planning workflow](workflows/planning.md#state-table-for-stateful-screens)),
 check that each cell has a test on the pure state module, and look for an event the table does
 not have.
 
@@ -96,6 +96,7 @@ If a finding was wrong, name the source or evidence that corrects it.
 The final report states the reviewed scope, findings, test results and remaining limits.
 Keep contract differences and evidence gaps visible even when there are no confirmed runtime defects.
 Link the evidence table and cite file locations for actionable findings.
+A finding says what is wrong, not which text or layout to use (`AGENTS.md` §7).
 State "no defect found in the reviewed paths" only for paths the table covers.
 Give the builder one round row for `delivery-quality.md` §6, or write it when the session allows; the builder commits it.
 
@@ -103,35 +104,7 @@ Give the builder one round row for `delivery-quality.md` §6, or write it when t
 
 ## 6. Apply the merge bar
 
-Only P1 and P2 findings block a merge (owner, 2026-11-04). Give each finding one severity and one reason.
-This bar applies the [when review ends principle](../.agents/skills/principle-when-review-ends/SKILL.md).
-
-Read the table from the top, and use the first row that fits.
-
-| Severity | Meaning | Action |
-| --- | --- | --- |
-| P1 | Data loss, a security failure, or a normal action that cannot complete | Blocks the merge |
-| P2 | A broken required acceptance criterion or its missing proof, or a wrong result in the scope below with harm that is not small and recoverable | Blocks the merge |
-| P3 | A small, recoverable wrong result, a case outside the scope below, or a code quality point | Add it to the follow-up list in `status.md` |
-
-Harm is small and recoverable when all of these are true:
-
-- Saved data stays correct.
-- The owner's unsaved text stays.
-- The owner can see if an action failed.
-- The app's own refresh or the owner's next action shows the truth.
-
-At each milestone close, the owner reviews the P3 follow-ups, and either fixes or drops each item.
-
-The scope is one human on `127.0.0.1`, until the VPS phase (M9).
-
-- **In scope:** actions while a request waits, a second tab, a move to another page, failed requests and refreshes, and live events.
-- **Out of scope:** several humans, and an answer lost on the network, except the case that Q4 decided (`design/components/bot-page.md` §4.2).
-
-An owner decision about a named case stays in force, even when the scope leaves out similar cases.
-
-If the builder and the reviewer disagree about a severity, ask the owner.
-This bar does not change `AGENTS.md` §7, §8 or §9. Check the bar and the scope again before the VPS phase.
+Give each finding one severity and one reason, from [the merge bar](workflows/merge-bar.md).
 
 **Complete when:** each finding has a severity and a disposition, and a complete review of the final head has no open P1 or P2.
 
