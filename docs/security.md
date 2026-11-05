@@ -304,7 +304,8 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
     there (`api_key = Correct_Horse_Battery_Staple_22`), and so do a few random values that
     look like words. Of the random values that `main` refuses, the share that goes free here is
     0.49% of base62 and 0.41% of base64 at 24 characters, and 0.06% and 0.04% at 40 characters
-    (20,000 seeded values each; a test holds the limits of 1% and 0.1%).
+    (20,000 seeded values each; a test holds the limits of 1% and 0.1%, and
+    `scripts/guard-compare.ts` prints the whole table).
     `DB_PASSWORD=correct_horse_battery` stays refused.
   - After `@` (`action-token@<hash>`) or a word that names a hash (`commit <hash>`, `sha256 <hash>`).
   - After a password key: a schema with no value (`"password": {"type": "string"}`,
