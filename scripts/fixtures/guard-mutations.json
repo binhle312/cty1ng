@@ -1382,8 +1382,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "(\\{\\s*[\"']?type[\"']?\\s*:[^{}\\n]*(?:\\}|$)|\"(?:",
-        "replace": "(\"(?:"
+        "find": "|\\{\\s*[\"']?type[\"']?\\s*:[^{}\\n]*(?:\\}|$)|\"(?:",
+        "replace": "|\"(?:"
       }
     ]
   },
@@ -1722,8 +1722,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "${TYPE_BEFORE_VALUE}(\\{",
-        "replace": "(\\{"
+        "find": "${TYPE_BEFORE_VALUE}(${REFERENCE",
+        "replace": "(${REFERENCE"
       }
     ]
   },
