@@ -42,12 +42,13 @@ const DETECTORS: readonly Detector[] = [
   { kind: "private_key", pattern: /-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----/g },
   {
     // Any prefix: `DB_PASSWORD=`, `dbPassword:` and `"password":`. `\b` does not fire after `_`,
-    // so there is no left boundary, except that `OLDPWD` is a shell variable and not a password.
-    // A placeholder has no exception, but true, false and null are settings about a password.
+    // so there is no left boundary. `pwd` keeps one for letters and digits, because `OLDPWD` is a
+    // shell variable. A placeholder has no exception, but true, false and null are settings about
+    // a password, also in JSON (`false,`), Markdown (`` `true` ``) and JSX (`{false}`).
     kind: "password",
     pattern: /(?:password|passwd|(?<![a-z0-9])pwd)["']?\s*[:=]\s*["']?([^\s"']{4,})/gi,
     group: 1,
-    accept: (secret) => !/^(?:true|false|null)[^a-z0-9]*$/i.test(secret),
+    accept: (secret) => !/^[^a-z0-9]*(?:true|false|null)[^a-z0-9]*$/i.test(secret),
   },
   {
     // Common provider prefixes: OpenAI and Anthropic (sk-), AWS (AKIA), GitHub (ghp_ and
@@ -61,9 +62,14 @@ const DETECTORS: readonly Detector[] = [
     // (`GITHUB_TOKEN=`, `clientSecret:`).
     kind: "api_key",
     pattern:
-      /(?:api[_ -]?key|token|secret|access[_ -]?key)\b[^\n]{0,20}?([A-Za-z0-9_\-+/=]{24,})/gi,
+      /(?:api[_ -]?key|token|secret(?:[_ -]?key(?:[_ -]?base)?)?|access[_ -]?key)\b[^\n]{0,20}?([A-Za-z0-9_\-+/=]{24,})/gi,
     group: 1,
-    accept: (secret) => highEntropy(secret) || randomHex(secret),
+    accept: (secret) => {
+      // The value can start with the separator of `TOKEN=`. It must not count as a kind of
+      // character, or `TOKEN=x` and `TOKEN: x` get different answers.
+      const value = secret.replace(/^[_\-+/=]+/, "");
+      return highEntropy(value) || randomLettersAndDigits(value);
+    },
   },
   {
     kind: "card_number",
@@ -144,10 +150,14 @@ function highEntropy(value: string): boolean {
   return classes >= 3 && new Set(value).size >= Math.min(16, value.length / 2);
 }
 
-// Hex has only two kinds of character, so `highEntropy` misses it. The pattern's value can start
-// with the separator of `TOKEN=`. Random hex has a letter and at least half of the 16 hex
-// characters. A long number has no letter, and a repeated word has few different characters.
-function randomHex(value: string): boolean {
-  const hex = value.replace(/^[_\-+/=]+/, "").toLowerCase();
-  return /^[\da-f]+$/.test(hex) && /[a-f]/.test(hex) && new Set(hex).size >= 8;
+// Hex and other keys in one case have only two kinds of character, so `highEntropy` misses them.
+// A random value has letters, digits and at least 8 different characters. A long number has no
+// letter, a long word has no digit, and a repeated value has few different characters.
+function randomLettersAndDigits(value: string): boolean {
+  return (
+    /^[\da-z]+$/i.test(value) &&
+    /\d/.test(value) &&
+    /[a-z]/i.test(value) &&
+    new Set(value.toLowerCase()).size >= 8
+  );
 }

@@ -61,6 +61,7 @@ describe("findSensitive (D39)", () => {
 describe("findSensitive: prefixed names, the JSON form and long hex", () => {
   const randomKey = ["Zx81", "kQ2pL9vT3mN7bR4wY6cH0sD5fG"].join("_");
   const hex = "0123456789abcdef".repeat(2);
+  const lettersAndDigits = ["k3j9x2m7", "q1w8e5r0", "t4y6u2i9", "o3p7a1s5"].join("");
 
   it.each([
     ["DB_PASSWORD=hunter22", "the prefixed name"],
@@ -92,6 +93,18 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     [`"access_token":"${hex}"`],
     [`AWS_ACCESS_KEY ${hex}`],
     [`GITHUB_TOKEN=${"0123abcd".repeat(4)}`],
+    // Review of this PR: `=` counted as a kind of character, so these failed with `:` only.
+    [`access_token: ${lettersAndDigits}`],
+    [`client_secret: ${lettersAndDigits}`],
+    [`MY_API_KEY: ${lettersAndDigits}`],
+    [`"access_token": "${lettersAndDigits}"`],
+    [`GITHUB_TOKEN=${lettersAndDigits}`],
+    [`GITHUB_TOKEN: ${lettersAndDigits.toUpperCase()}`],
+    // Review of this PR: the key word can end in `_KEY`, the usual name of a hex secret.
+    [`SECRET_KEY=${hex}`],
+    [`JWT_SECRET_KEY=${hex}`],
+    [`secret_key: ${hex}`],
+    [`SECRET_KEY_BASE=${hex}`],
   ])("refuses %j as an API key", (text) => {
     expect(findSensitive(text).map((match) => match.kind)).toEqual(["api_key"]);
   });
@@ -116,6 +129,8 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ['"has_password": false,', "a JSON true or false value"],
     ['"password": null,', "a JSON null value"],
     ["Set `require_password: true`.", "a true or false value in Markdown code"],
+    ["showPassword={false}", "a true or false value in JSX"],
+    ["requirePassword={true}", "a true or false value in JSX"],
     ["OLDPWD=/home/owner", "the shell variable"],
     ["user_profile_settings_page", "an identifier alone"],
     ["GITHUB_TOKEN", "a name alone"],
@@ -124,6 +139,14 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ["client_secret", "a name alone"],
     ["token_count: 1024", "a number with a similar name"],
     ["GITHUB_TOKEN=user_profile_settings_page", "an identifier as the value"],
+    ["GITHUB_TOKEN=CamelCaseIdentifierNameForThisThing", "letters with no digit, with ="],
+    ["GITHUB_TOKEN: CamelCaseIdentifierNameForThisThing", "letters with no digit, with :"],
+    ["token: averylongwordwithnodigitsinthewholeword", "one long word"],
+    ["token: abc1_abc1_def2_def2_abc1_def2_abc1_def2", "a repeated identifier with separators"],
+    ["SECRET_KEY", "a name alone"],
+    ["secret_key_name_for_the_app_config", "a longer name alone"],
+    ["token_endpoint: https://example.com/oauth/token", "a URL after a similar name"],
+    ["token_endpoint_auth_method: client_secret_post", "an OAuth setting"],
     ["GITHUB_TOKEN=abc123", "a short value"],
     [`commit ${hex}`, "long hex with no key word"],
     ["token: 3f2a9c1e", "short hex"],
