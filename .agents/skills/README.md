@@ -30,7 +30,7 @@ The project's approval rules still apply. Preserve each vendored skill's source 
 
 ## Select a skill
 
-Read the matching skill before its phase of work.
+Read the matching skill before its phase of work. Name a skill in a PR or report only if you read it in that session.
 
 | Folder | Read when |
 | --- | --- |

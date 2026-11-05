@@ -145,6 +145,8 @@ Merge a PR only when the owner asks you to merge that PR. The merge needs no lin
   knowledge of the app, in the same PR (M2 plan, decision 14).
 - The PR description has: what changed, why, how it was verified, and `Needs human review`
   items (or "none").
+- A PR or report names a principle skill only if the agent read its `SKILL.md` in that session.
+  The `Principle` column of `docs/delivery-quality.md` classifies an issue and makes no such claim.
 
 ## 10. Conventions
 

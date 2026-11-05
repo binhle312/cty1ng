@@ -20,6 +20,8 @@ Check, in order:
    rule, does it still agree in meaning with each decision in its "Changed by" column
    (`decisions/README.md`) and with every summary table that cites it?
 6. Simplicity: code that could be removed or made plainer.
+7. Review fixes: does the table in the PR body name the first wrong decision and the search
+   scope? Does a repeated cause have a redesign decision? Check the cause and one further path.
 Report findings in the requested destination, most severe first, each with the file, line,
 why it matters, and severity (docs/workflows/merge-bar.md). Publish PR comments only when the
 session authorizes it. Do not push commits. State the evidence limits if no defect was found.

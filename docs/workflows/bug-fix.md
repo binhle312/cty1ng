@@ -9,8 +9,8 @@ It also applies to defects from reviews and audits. The agent that delegates the
    Reproduce the failure before you change production code. Record the revision, steps, and result.
    If reproduction fails, report what you checked and the missing evidence to the owner or coordinating agent.
    Keep the issue unconfirmed; do not implement a speculative fix.
-2. **Diagnose.** Apply the [root cause principle](../../.agents/skills/principle-fix-root-cause/SKILL.md).
-   Explain the cause and propose the smallest fix, affected files, and verification steps.
+2. **Diagnose.** Read and apply the [root cause principle](../../.agents/skills/principle-fix-root-cause/SKILL.md).
+   If the cause repeats an earlier fix, stop patching and propose a redesign to the owner. Explain the cause and propose the smallest fix, affected files, and verification steps.
 3. **Check approval.** Confirm that the fix fits the approved scope and design.
    Reuse existing approval. Otherwise, obtain approval through the owner or coordinating agent before implementation.
    The [human checkpoints](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr) still apply.
@@ -20,7 +20,7 @@ It also applies to defects from reviews and audits. The agent that delegates the
 5. **Verify behaviour.** Exercise the affected flow through the live app, API, or command, as appropriate.
    Use the fake model and synthetic test data per [testing.md](../testing.md).
    Complete the [implementation self-check](implementation.md#self-check). A successful build alone does not prove the fix.
-6. **Return evidence.** Report the cause, diff summary, tested revision, test results before and after the fix, and runtime evidence.
+6. **Return evidence.** Report the first wrong decision, search scope, any repeated cause and its redesign decision, diff summary, tested revision, test results before and after the fix, and runtime evidence.
    Include screenshots or video when useful for UI behaviour. List unavailable checks and remaining gaps explicitly.
    Keep an issue open when its required verification is incomplete.
    Follow the repository's authorization rules for external actions; any authorized PR stays a draft.

@@ -27,10 +27,14 @@ Link to the brief and decisions.
   descriptions still match what the files do (or "no file changes")
 
 ## Review fixes (when a review found something)
-| Finding | Cause (the rule broken) | Same cause checked in | Fix | Test |
-| --- | --- | --- | --- | --- |
-| A late Profile answer brings back an old pin | An answer writes fields it does not own | Save answers, pin answers, dialog answers | Answers write an allowlist | `bot-edit-form.test` "takes from a save answer only …" |
+| Finding | First wrong decision (the rule broken) | Search scope | Same cause as an earlier fix? Redesign decision | Fix | Test |
+| --- | --- | --- | --- | --- | --- |
+| A late Profile answer brings back an old pin | An answer writes fields it does not own | Save answers, pin answers, dialog answers | No | Answers write an allowlist | `bot-edit-form.test` "takes from a save answer only …" |
 
 ## Follow-ups (not done here)
 - ...
 ```
+
+Fill the "Review fixes" table from the [root cause principle](../../.agents/skills/principle-fix-root-cause/SKILL.md).
+In the "Same cause" column, write `No`, or name the earlier finding and the redesign decision.
+If a finding repeats a cause, stop and patch no more. Propose the redesign to the owner, and record the answer in that column.
