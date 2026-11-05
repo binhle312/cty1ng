@@ -55,6 +55,12 @@ After these: the owner fixes or drops each of the other 34 P3 findings and the P
 - Free React state also takes `null`, `undefined` and the types `<string | null>` and `<string | undefined>`.
 - The speed test keeps one 1,000 ms limit for each line.
 - PR 2 gets one full independent review of its final revision. Only P1 and P2 findings block the merge, and P3 findings go on the follow-up list.
+- The guard forms are frozen at `cabed57`, with no new form or free rule in this PR. Text has no end, so each review of the guard found a new shape, and each new rule could cause the next finding. The goal of row 4 was met in the first commit. A guard finding in the last review blocks the merge only in one of these cases:
+  1. A text that audit row 4 or `security.md` §2.13 names gets the opposite answer from the one that the text gives.
+  2. A seeded random-value test in `sensitive-data.rules.test.ts` misses its limit.
+  3. `backend/test/security/guard-real-text.test.ts` fails.
+
+  Any other text, free or refused, is P3 and goes on the P3 list in this file, even if `main` gives another answer. So a secret in a new shape can stay free until a later PR. The freeze covers only which text the patterns accept. The whole merge bar still applies to the scan speed, the masking of a found value, row 5, the import change, and each required check.
 
 ## Fix progress
 
@@ -133,6 +139,7 @@ The lead did not check these again, except where a row says so. The others are f
 - The changelog has no length limit, and its regex is quadratic: `backend/src/adapters/http/routes/skills.ts:34`, `backend/src/core/skills/skills.service.ts:584`.
 - No test covers an absolute zip path or a forged entry size, or checks secrets through the CLI: `backend/src/adapters/http/uploads/skill-zip.test.ts`.
 - These secrets are free on `main` and on #73, and audit row 4 does not list them: `Authorization: Bearer <key>`, `PRIVATE_KEY=<hex>`, `encryption_key=<hex>`, `signingKey: <key>`. New key words can bring new false matches, and a false match blocks a save. Found in #73 on 2026-11-05.
+- The nil UUID `00000000-0000-0000-0000-000000000000` is refused as a card number on `main` and on #73, because its zeros pass the Luhn check: `backend/src/core/guard/sensitive-data.rules.ts`, `card_number`. A scan of real text found it. Found in #73 on 2026-11-05.
 
 ### API and realtime
 

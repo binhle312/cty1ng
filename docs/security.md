@@ -347,6 +347,11 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
   (`pwd=/home/owner/>`), a reference in backticks or after an open quote before a tag end
   (``password=`{a}`/>``, `password="{a}/>`), and a path after an open quote before the next key
   (`pwd="/home/owner,a:1`).
+- Real text with no secret must pass (owner, 2026-11-05). `backend/test/security/guard-real-text.test.ts`
+  scans the seed skills, the vendored skills, the source code and most of `docs/`. That is at least
+  40,000 lines, and it refuses at most 0 lines. It leaves out test files, the guard folder, generated
+  code and the documents that quote the guard's forms. The limits are constants in that test. It
+  measures false matches only, because this text holds no secret.
 - Known gaps (owner, 2026-11-05), because a fix costs more false matches or adds state to the scan:
   a Markdown table (`| DB_PASSWORD | hunter22 |`), a value on the next line (`GITHUB_TOKEN: |`), hex
   with colons (`secret: 3f:2a:â€¦`), and a long plain value that hides a second value after it. The last
