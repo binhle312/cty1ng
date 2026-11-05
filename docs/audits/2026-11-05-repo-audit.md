@@ -56,7 +56,7 @@ Each fix PR updates its row in the same PR. Check `gh pr list --state all`, beca
 
 Commit `1c413b3` on `main`. The audit changed no repo files. At that commit, all gates passed: lint, typecheck, 1,360 unit tests, 71 e2e tests, `check:index`, `check:events`, `db:check`, build and `check:bundle`.
 
-This list combines two audits. It has 55 findings: 0 P1, 14 P2, 2 for the owner to rate, and 39 P3. The second audit gave 4 findings: 3 are new, and 1 was already on this list. It rated one finding P1, and the lead rates it P2 (row 1a).
+This list combines two audits. It has 55 findings. After the owner's decisions, 15 are P2, 39 are P3, 1 is an accepted case, and none is P1. The second audit gave 4 findings: 3 are new, and 1 was already on this list. It rated one finding P1, and the owner rated it P2 (row 1a).
 
 "Checked" means that the lead ran the case or read the code again. "Reviewer" means that only the reviewer's evidence supports the finding.
 
@@ -86,12 +86,12 @@ For the first five rows, the reviewer changed the code in a scratch copy of the 
 | 12 | The header roster stops moving while the pointer is in the header | `frontend/src/features/shell/header-roster.tsx:263` |
 | 13 | The wheel and a two-finger touchpad motion scroll the roster (`top-header.md` state 3). The code exists, but the only wheel test scrolls `main` (`frontend/test/e2e/shell.spec.ts:52`). This row replaces the touch swipe, which the owner dropped. Mouse drag has tests (`frontend/test/e2e/bots.spec.ts:130`, `:312`, `:409`) | `frontend/src/features/shell/header-roster.tsx:290` |
 
-## For the owner to rate
+## Rated by the owner
 
-| # | Finding | Options |
+| # | Finding | Owner's decision |
 | --- | --- | --- |
-| 14 | With six app tabs open, every request in every tab hangs with no error. Each tab holds one stream, and the browser allows six connections for each host. Reviewer evidence: `frontend/src/lib/realtime/sse.ts:30` | P3 if six tabs is not normal use; P1 by the bar's wording if it is |
-| 15 | Trash in another tab removes the unsaved text on a skill page with no question. The bot page accepts this result in `bot-page.md` §4.2, but `skills-page.md` has no such rule. Code read by the lead: `frontend/src/features/skills/skill-page.tsx:101` | Accept and write it in `skills-page.md`, or keep the text |
+| 14 | With six app tabs open, every request in every tab hangs with no error. Each tab holds one stream, and the browser allows six connections for each host. Reviewer evidence: `frontend/src/lib/realtime/sse.ts:30` | **P2**, fix before M3 (question 2) |
+| 15 | Trash in another tab removes the unsaved text on a skill page with no question. The bot page accepts this result in `bot-page.md` §4.2, but `skills-page.md` has no such rule. Code read by the lead: `frontend/src/features/skills/skill-page.tsx:101` | **Accepted**: `skills-page.md` takes the rule, and no code changes (question 3) |
 
 ## P3
 

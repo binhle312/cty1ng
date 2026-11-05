@@ -12,7 +12,7 @@ Last updated: 2026-11-05
 
 ## Now
 
-The repository audit of 2026-11-05 found 55 issues (0 P1, 14 P2 after the owner's decisions, 39 P3). Its fixes come before M3 and #69 in the owner's order. Findings, decisions and progress are in [audits/2026-11-05-repo-audit.md](audits/2026-11-05-repo-audit.md).
+The repository audit of 2026-11-05 found 55 issues. After the owner's decisions, 15 are P2, 39 are P3, and the owner accepted one case; none is P1. Its fixes come before M3 and #69 in the owner's order. Findings, decisions and progress are in [audits/2026-11-05-repo-audit.md](audits/2026-11-05-repo-audit.md).
 
 M0, M1 and M2 are merged. M2c merged in [#59](https://github.com/binhle312/cty1ng/pull/59) on 2026-11-04.
 M2c adds the bot page and the Skills page's upgrade and assign cards.
