@@ -306,8 +306,15 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
   - After a password key: a reference (`${DB_PASSWORD}`, `$DB_PASSWORD` in capitals,
     `${{ secrets.NAME }}`, `{confirmPassword}`). `$ecret123` is refused. So a secret in the form
     `password: {hunter22}` escapes.
-  - After `pwd` only: a path or a command (`PWD=/home/owner`, `NEW_PWD=$(pwd)`). `PWD=hunter22` is
-    refused.
+  - The value ends at a reference before a JSX tag end, and at a type name before an arrow
+    (`<A password={safe}>Text</A>`, `(password: string)=>login(password)`). The guard reads the text
+    after it as new text, so it reads a later key (`<A password={safe}>{config.password="hunter22"}</A>`
+    is refused), and a word with no key stays free (`<A password={safe}>hunter22</A>`). The same is
+    true with a space after the reference.
+  - After `pwd` only: a path or a command (`PWD=/home/owner`, `NEW_PWD=$(pwd)`, `$(pwd)/sub`). A path
+    holds only letters, digits, `_`, `.`, `/`, `~`, `+`, `@`, `-`, and a space in quotes, and then
+    closing marks. So `pwd=/x;pwd=hunter22` is refused. `PWD=hunter22` is refused. `pwd=/hunter22`
+    escapes, because the code cannot tell it from a path.
   - Next to a key word, not a password key: a value with 70% or more of its characters in words,
     where `_` and `-` do not count (`GITHUB_TOKEN=user_profile_settings_page_2`). A word has 3 to
     20 letters, a vowel, and fewer than 5 consonants in a row. So a secret made of words escapes
@@ -334,9 +341,14 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
   tell it from a secret (owner, 2026-11-05): `confirmPassword: z.string().min(8),`,
   `hashedPassword = await bcrypt.hash(password, 10)`, `resetPassword: async (email) => {`,
   `newPassword: string|undefined`, `ALL_TESTS_PASS: done`, `TEST_PASS_QA: done`, `password_local: disabled`.
+  These stay too, because a free rule that takes other marks could hide a later key (owner, 2026-11-05):
+  `pwd=/a:/b`, `pwd=/a/b?x=1`, `pwd=/a=b`, `pwd=/a/(b)`, `pwd=/a/b#c`, ``(password:`string`)=>x``,
+  `password={a}">x`, `password={a})>x` and `password={a},>x`.
 - Known gaps (owner, 2026-11-05), because a fix costs more false matches or adds state to the scan:
   a Markdown table (`| DB_PASSWORD | hunter22 |`), a value on the next line (`GITHUB_TOKEN: |`), hex
-  with colons (`secret: 3f:2a:â€¦`), and a long plain value that hides a second value after it.
+  with colons (`secret: 3f:2a:â€¦`), and a long plain value that hides a second value after it. The last
+  gap includes a value made of words: a long run of words, then `/secret=` and a key, joined with no
+  space, is free when 70% of it is words. `main` refuses that form.
 - Pattern-based and incomplete by nature: a warning, not a guarantee. Images and PDFs are not
   scanned.
 - Matched text is never logged; only the kinds found are logged.
