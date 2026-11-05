@@ -447,6 +447,16 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
       'password:{"type":'.repeat(60_000),
       `password:{"type":"string"${',"a":1'.repeat(160_000)}`,
       `password:{"type":"string"${" ".repeat(1_000_000)}x`,
+      "password:string = ".repeat(60_000),
+      'password:string = "'.repeat(50_000),
+      `password:string${" ".repeat(1_000_000)}x`,
+      `password:string =${" ".repeat(1_000_000)}x`,
+      `password:string${" | string".repeat(100_000)}`,
+      `password:string = "${"a".repeat(1_000_000)}`,
+      "password:useState<".repeat(60_000),
+      "password:useState<string>(".repeat(40_000),
+      `password:useState<${"a ".repeat(500_000)}`,
+      `password:useState<string>(${"a ".repeat(500_000)}`,
     ];
     // One limit per line, because a shared limit fails on a busy machine. A quadratic pattern
     // takes many seconds on one of these lines.
@@ -469,6 +479,17 @@ describe("findSensitive: a suffix after the key word", () => {
     ["PWD1=hunter22"],
     ["DB_PASSWD_STAGING=hunter22"],
     ["OLD_PWD_OLD=hunter22"],
+    ["DB_PASSWORD_QA=hunter22"],
+    ["DB_PASSWORD_UAT=hunter22"],
+    ["DB_PASSWORD_STG=hunter22"],
+    ["DB_PASSWORD_PRD=hunter22"],
+    ["DB_PASSWORD_LOCAL=hunter22"],
+    ["DB_PASSWORD_DEVELOPMENT=hunter22"],
+    ["DB_PASS_UAT=hunter22"],
+    ["PWD_QA=hunter22"],
+    // Owner, 2026-11-05: false matches of the same kind as `ALL_TESTS_PASS: done`.
+    ["password_local: disabled"],
+    ["TEST_PASS_QA: done"],
   ])("refuses %j as a password", (text) => {
     expect(findSensitive(text).map((match) => match.kind)).toEqual(["password"]);
   });
@@ -480,6 +501,9 @@ describe("findSensitive: a suffix after the key word", () => {
     [`SECRET1=${hex}`],
     [`SECRET_KEY_STAGING=${hex}`],
     [`ACCESS_KEY2=${hex}`],
+    [`GITHUB_TOKEN_UAT=${hex}`],
+    [`API_KEY_QA=${hex}`],
+    [`SECRET_KEY_LOCAL=${hex}`],
   ])("refuses %j as an API key", (text) => {
     expect(findSensitive(text).map((match) => match.kind)).toEqual(["api_key"]);
   });
@@ -493,6 +517,10 @@ describe("findSensitive: a suffix after the key word", () => {
     [`token2vec=${hex}`],
     ["DB_PASS_FILE=/run/secrets/db"],
     ["DB_PWD_FILE=/run/secrets/db"],
+    // A word that is not an environment stays free, so a normal setting does not block a save.
+    ["DB_PASSWORD_ROOT=hunter22"],
+    ["password_strength: strong"],
+    ["password_manager: bitwarden"],
   ])("finds nothing in %j", (text) => {
     expect(findSensitive(text)).toEqual([]);
   });
@@ -549,6 +577,16 @@ describe("findSensitive: code with no secret after a password key", () => {
     ["const [password, setPassword] = useState();", "React state at the end of a statement"],
     ['const [password, setPassword] = useState<string>("");', "React state with a type"],
     ['const [password, setPassword] = React.useState("")', "React state with its namespace"],
+    ["const [password, setPassword] = useState(null)", "React state with null"],
+    ["const [password, setPassword] = useState(undefined)", "React state with undefined"],
+    ["const [password, setPassword] = useState<string | null>(null)", "React state with a union"],
+    ["const [password, setPassword] = useState<string|null>(null);", "React state with a union"],
+    [
+      "const [password, setPassword] = useState<string | undefined>(undefined)",
+      "React state with a union",
+    ],
+    ['const [password, setPassword] = useState<string | null>("")', "React state with a union"],
+    ["const [password, setPassword] = React.useState<string | null>(null);", "React state"],
   ])("finds nothing in %j: %s", (text) => {
     expect(findSensitive(text)).toEqual([]);
   });
@@ -579,6 +617,115 @@ describe("findSensitive: code with no secret after a password key", () => {
     ["ALL_TESTS_PASS: done", "a false match that stays"],
   ])("refuses %j: %s", (text) => {
     expect(findSensitive(text).map((match) => match.kind)).toEqual(["password"]);
+  });
+});
+
+// Review of 9a4cca4 (DQ-052, DQ-053): a free rule had a place that took any text, so a secret in
+// that place went free. Each refused row puts a secret in one place of one free form, and each free
+// row is the same form with no secret. A new free form adds its rows here.
+describe("findSensitive: a secret in each place of a free form", () => {
+  it.each([
+    ["password: {type:string,default:1234}", "a number in default"],
+    ["password: {type:string,value:1234}", "a number in value"],
+    ["password: {type: string, default: 1234}", "a number in default"],
+    ["password: {type: string, value: 1234}", "a number in value"],
+    ['"password": {"type":"string","default":1234}', "a number in default"],
+    ['"password": {"type": "string", "value": 1234}', "a number in value"],
+    ['"password": {"type":"string","secret":99887766}', "a member that is not on the list"],
+    ['"password": {"type":"string","pin":123456}', "a member that is not on the list"],
+    ['"password": {"type":"string","password":1234}', "the key again, with a number"],
+    ['"password": {"type":"string","example":true}', "a literal in a member not on the list"],
+    ['"password": {"type":"string","minLength":"hunter22"}', "a string in a number member"],
+    ['"password": {"type":"string","minLength":true}', "a literal in a number member"],
+    ['"password": {"type":"string","nullable":1234}', "a number in a literal member"],
+    ['"password": {"type":"string","required":"hunter22"}', "a string in a literal member"],
+    ['"password": {"type":"string","format":"hunter22"}', "a word in format"],
+    ['"password": {"type":"string","format":1234}', "a number in format"],
+    ['"password": {"type":"string","minLength":8,"default":1234}', "a value after a free member"],
+    ['"password": {"type":"hunter22","minLength":8}', "a word in type"],
+  ])("refuses the schema %j: %s", (text) => {
+    expect(findSensitive(text).map((match) => match.kind)).toEqual(["password"]);
+  });
+
+  it.each([
+    ['"password": {"type":"string","maxLength":64,"minLength":8}'],
+    ['"password": {"type":"string","nullable":true}'],
+    ['"password": {"type":"string","required":false}'],
+    ['"password": {"type":"string","readOnly":false}'],
+    ['"password": {"type":"string","writeOnly":true}'],
+    ['"password": {"type":"string","format":"password"}'],
+    ["password: {type: String, minlength: 8, required: true}"],
+  ])("finds nothing in the schema %j", (text) => {
+    expect(findSensitive(text)).toEqual([]);
+  });
+
+  it.each([
+    ['const password: string = "hunter22";', "er22"],
+    ['const dbPassword: string = "hunter22";', "er22"],
+    ["let password: String = 'hunter22'", "er22"],
+    ["password: string = `hunter22`", "er22"],
+    ['val password: String = "hunter22"', "er22"],
+    ['function login(password: string = "hunter22") {}', "er22"],
+    ['const password: string | null = "hunter22";', "er22"],
+    ['const password: string|null = "hunter22";', "er22"],
+    ["password: varchar = 'hunter22'", "er22"],
+    ['password: str = "hunter22"', "er22"],
+    ['password: any = "hunter22"', "er22"],
+    ['password: string = "my long phrase"', "rase"],
+    ['password: string = "hunter22', "er22"],
+    ['password: boolean = "true"', "true"],
+    ['password: string = "false"', "alse"],
+    ['password: string="hunter22"', "er22"],
+    ['DB_PASSWORD: string = "hunter22"', "er22"],
+    ['password := string = "hunter22"', "er22"],
+  ])("refuses the typed assignment %j and reads the value that ends in %j", (text, ending) => {
+    expect(findSensitive(text)).toEqual([{ kind: "password", line: 1, ending }]);
+  });
+
+  it.each([
+    ['const password: string = "";'],
+    ["const password: string = '';"],
+    ["const password: string = ``;"],
+    ["const password: string = process.env.DB_PASSWORD;"],
+    ["const password: string = getPassword();"],
+    ["const password: string = await readSecret();"],
+    ["const password: string | null = null;"],
+    ["password: boolean = true"],
+    ['password: string = "abc"'],
+    ['password: str = "abc"'],
+    ['password: string = "${DB_PASSWORD}"'],
+    ["password: string = `${DB_PASSWORD}`"],
+    ['password: string == "hunter22"'],
+    ['password: string => "hunter22"'],
+  ])("finds nothing in the typed assignment %j", (text) => {
+    expect(findSensitive(text)).toEqual([]);
+  });
+
+  it.each([
+    ['const [password, setPassword] = useState<string | null>("hunter22")', "a value in a union"],
+    ["const [password, setPassword] = useState<string | null>(hunter22)", "a word in a union"],
+    ["const [password, setPassword] = useState<hunter22>()", "a word in the type"],
+    ["const [password, setPassword] = useState<string | hunter22>(null)", "a word in the union"],
+    ['const [password, setPassword] = useState<string | null>("my pass phrase")', "a phrase"],
+    ["const [password, setPassword] = useState(nullable)", "a word that starts with null"],
+    ["const [password, setPassword] = useState<string | null>(null)hunter22", "text after it"],
+  ])("refuses React state %j: %s", (text) => {
+    expect(findSensitive(text).map((match) => match.kind)).toEqual(["password"]);
+  });
+
+  // Owner, 2026-11-05: the guard cannot tell this text from a sentence, and a false match blocks a
+  // save with no override. The cost is that the first two rows hold a real secret, and they go free.
+  it.each([
+    ["password: true hunter22"],
+    ["password: null  // real one is hunter22"],
+    ["Set password: `false` in the file"],
+    ["password: true  # only in prod"],
+    ["require_password: true  # only in prod"],
+    ["password: string in the request body"],
+    ["password: text field on the login form"],
+    ["password: null until the user signs in"],
+  ])("finds nothing in the text after a free word: %j", (text) => {
+    expect(findSensitive(text)).toEqual([]);
   });
 });
 
@@ -620,8 +767,9 @@ describe("findSensitive: random values next to a key word", () => {
     { name: "base64", length: 40, alphabet: `${LOWER}${UPPER}${DIGITS}+/`, limit: 0.001 },
   ])("$name of $length: few values that main refuses go free", ({ length, alphabet, limit }) => {
     const values = randomValues(alphabet, length);
-    const escaped = values.filter((value) => refusedOnMain(value) && !refused(value));
-    expect(escaped.length / SAMPLES).toBeLessThanOrEqual(limit);
+    const onMain = values.filter((value) => refusedOnMain(value));
+    const escaped = onMain.filter((value) => !refused(value));
+    expect(escaped.length / onMain.length).toBeLessThanOrEqual(limit);
   });
 
   it.each([

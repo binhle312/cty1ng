@@ -46,15 +46,21 @@ interface Detector {
 const AFTER_KEY = String.raw`(?=((?:\\?["']|[\`*\]]){0,4}\s*(?::=|=>|[:=])\*{0,2}\s*))\1`;
 // A value stops before the next key of a compact object, so the scan still reads that key.
 const VALUE_END = String.raw`(?=,["']?[\w-]+["']?\??:|\s|$)`;
-// A schema object with its type first, read whole so that the free rule sees all its members. Then
-// a whole phrase in quotes or backticks, an unclosed quote, or a word: 4 or more characters.
-const PASSWORD_VALUE = String.raw`(\{\s*["']?type["']?\s*:[^{}\n]*(?:\}|$)|"(?:[^"\\\n]|\\.){4,}"|'[^'\n]{4,}'|\`[^\`\n]{4,}\`\S*?${VALUE_END}|["'][^\s"']{4,}|[^\s"']\S{3,}?${VALUE_END})`;
-
 const SETTING_WORD = String.raw`(?:true|false|null|string|boolean|bool|number|integer|text|(?:var)?char(?:\(\d+\))?)`;
 const SETTING_TYPE = String.raw`${SETTING_WORD}(?:\|${SETTING_WORD})*`;
-// A schema member that cannot hold a secret: a number, a literal or a format. `default` and `value`
-// can, so a schema with one of them is refused.
-const SCHEMA_MEMBER = String.raw`["']?\w+["']?\s*:\s*(?:\d+|true|false|null)|["']?format["']?\s*:\s*["'][\w-]+["']`;
+// A type name, then `=` and a quote: the text in the quotes is the value, so a type name cannot hide
+// it. Other text after `=` is code (`= process.env.X`). `str` and `any` are under the 4-character
+// minimum, so only this rule reads past them.
+const TYPE_BEFORE_VALUE = String.raw`(?:(?:${SETTING_WORD}|str|any)(?:\s*\|\s*${SETTING_WORD})*\s*=\s*(?=["'\`]))?`;
+// A schema object with its type first, read whole so that the free rule sees all its members. Then
+// a whole phrase in quotes or backticks, an unclosed quote, React state with a type, read whole
+// because a union can hold a space, or a word: 4 or more characters.
+const PASSWORD_VALUE = String.raw`${TYPE_BEFORE_VALUE}(\{\s*["']?type["']?\s*:[^{}\n]*(?:\}|$)|"(?:[^"\\\n]|\\.){4,}"|'[^'\n]{4,}'|\`[^\`\n]{4,}\`\S*?${VALUE_END}|["'][^\s"']{4,}|(?:React\.)?useState<[^<>()\n]*>\([^()\n]*\)\S*?${VALUE_END}|[^\s"']\S{3,}?${VALUE_END})`;
+
+// The schema members that cannot hold a secret. A free rule lists each word that it takes, because
+// a place that takes any text can hold a secret (DQ-052). So `default`, `value` and any other member
+// make a schema a value.
+const SCHEMA_MEMBER = String.raw`["']?(?:minLength|maxLength)["']?\s*:\s*\d+|["']?(?:nullable|required|readOnly|writeOnly)["']?\s*:\s*(?:true|false)|["']?format["']?\s*:\s*["']password["']`;
 
 // The values that hold no secret (owner, 2026-11-05, security.md §2.13). A placeholder is not one.
 const FREE_PASSWORD_VALUES: readonly RegExp[] = [
@@ -68,8 +74,8 @@ const FREE_PASSWORD_VALUES: readonly RegExp[] = [
     String.raw`^\{\s*["']?type["']?\s*:\s*["']?${SETTING_TYPE}["']?(?:\s*,\s*(?:${SCHEMA_MEMBER}))*\s*[,}]?$`,
     "i",
   ),
-  // React state with no first value: useState(), useState(""), useState<string>('').
-  /^(?:React\.)?useState(?:<\w+>)?\((?:""|''|``)?\)[)}\],;]*$/,
+  // React state with no first value: useState(), useState(""), useState<string | null>(null).
+  /^(?:React\.)?useState(?:<string(?:\s*\|\s*(?:null|undefined))?>)?\((?:""|''|``|null|undefined)?\)[)}\],;]*$/,
   // A reference: ${DB_PASSWORD}, $DB_PASSWORD, ${{ secrets.X }}, {password}, and {false} before the
   // end of a JSX tag. Case matters: $ecret123 is a password.
   /^["'`]?(?:\$\{\{?\s*[\w.-]+\s*\}\}?|\$[A-Z_][A-Z0-9_]*|\{[A-Za-z_$][\w.$]*\})["']?[`)}\],;]*[.:]?(?:\/?>.*)?$/,
@@ -96,7 +102,7 @@ const passwordDetector = (
 
 // A number or an environment after a key word, for every spelling. No other word, because
 // DB_PASSWORD_FILE is a path and token_endpoint is a URL.
-const KEY_SUFFIX = String.raw`(?:\d+|_(?:prod|production|dev|staging|stage|test|old|new|\d+))`;
+const KEY_SUFFIX = String.raw`(?:\d+|_(?:prod|production|prd|dev|development|staging|stage|stg|test|qa|uat|local|old|new|\d+))`;
 
 const DETECTORS: readonly Detector[] = [
   { kind: "private_key", pattern: /-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----/g },

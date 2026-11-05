@@ -179,6 +179,10 @@ describe("edits", () => {
     "password: false!",
     '"password":"false!"',
     '"password": "false"',
+    "password: {type:string,default:1234}",
+    '"password": {"type":"string","value":1234}',
+    'const password: string = "hunter22";',
+    "DB_PASSWORD_UAT=hunter22",
   ])("POST /skills with the password string %j gives 422 sensitive_data", async (body_md) => {
     const response = await send("POST", "/skills", { ...newSkill, body_md });
     expect(response.status).toBe(422);
@@ -188,6 +192,9 @@ describe("edits", () => {
   it.each([
     'Set `require_password: true`, and send {"has_password": false}.',
     '{"require_password":true,"enabled":false}',
+    '"password": {"type":"string","minLength":8}',
+    "const password: string = process.env.DB_PASSWORD;",
+    "const [password, setPassword] = useState<string | null>(null)",
     "<Input showPassword={false}/>",
   ])("POST /skills with the literal setting %j gives 201", async (body_md) => {
     const response = await send("POST", "/skills", { ...newSkill, body_md });
