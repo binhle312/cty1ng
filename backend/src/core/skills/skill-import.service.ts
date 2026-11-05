@@ -242,7 +242,13 @@ export function createSkillImportService(deps: {
       const limits = { nameMax: settings.skill_name_max, bodyMax: settings.skill_body_max };
       const rows = new Map<string, StoredRow>();
       const sorted = [...folders].sort((a, b) => a.folder.localeCompare(b.folder));
-      for (const folder of sorted) rows.set(folder.folder, await previewRow(folder, actor, limits));
+      for (const folder of sorted) {
+        rows.set(folder.folder, await previewRow(folder, actor, limits));
+        // A row can cost about 70 ms and a zip holds up to 200, so the server answers other
+        // requests between rows (audit 2026-11-05, row 5). A row keeps what it saw when it ran,
+        // and Apply checks each row again.
+        await new Promise((resolve) => setImmediate(resolve));
+      }
 
       dropExpired();
       while (previews.size >= deps.previewMax) {

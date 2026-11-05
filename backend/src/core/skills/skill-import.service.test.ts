@@ -53,8 +53,69 @@ describe("preview", () => {
     );
     expect(preview.rows.map((row) => [row.slug, row.status, row.reason])).toEqual([
       ["fresh", "new", null],
-      ["large", "invalid", "The frontmatter is larger than 8 KB."],
+      ["large", "invalid", "The frontmatter has more than 8,192 characters."],
     ]);
+  });
+
+  // Review of this PR: 200 rows under the limit still blocked the server for about 15 s, because
+  // the rows ran with no pause. The owner chose a pause between rows on 2026-11-05.
+  it("lets the server run other work between rows", async () => {
+    let turns = 0;
+    let done = false;
+    const count = () => {
+      turns += 1;
+      if (!done) setImmediate(count);
+    };
+    setImmediate(count);
+    await backend.skillImport.preview(
+      "skills.zip",
+      ["one", "two", "three", "four"].map((name) => folder(name)),
+      OWNER_ID,
+    );
+    done = true;
+    expect(turns).toBeGreaterThanOrEqual(3);
+  });
+
+  // The pause lets another tab change a skill during a preview. A row that already ran keeps what
+  // it saw, and Apply checks it again. A later row sees the change.
+  describe("a skill that another tab makes during the preview", () => {
+    const previewWhileCreating = async (slug: string) => {
+      setImmediate(() => void create(slug));
+      return backend.skillImport.preview(
+        "skills.zip",
+        [
+          folder("first", skillMd("first", "text from the zip")),
+          folder("second", skillMd("second", "text from the zip")),
+        ],
+        OWNER_ID,
+      );
+    };
+
+    it("a row that already ran stays new, and Apply refuses it with no write", async () => {
+      const preview = await previewWhileCreating("first");
+      expect(preview.rows.map((row) => [row.slug, row.status])).toEqual([
+        ["first", "new"],
+        ["second", "new"],
+      ]);
+      const error = await failure(
+        backend.skillImport.apply(preview.preview_id, ["first", "second"], OWNER_ID),
+      );
+      expect(error.code).toBe("stale_write");
+      const saved = await backend.readers.skills.bySlug("first");
+      if (saved === null) throw new Error("the other tab's skill must exist");
+      expect(await backend.readers.skills.latestVersion(saved.id)).toMatchObject({ version: 1 });
+      expect(await backend.readers.skills.bySlug("second")).toBeNull();
+    });
+
+    it("a row that has not run sees the skill, and Apply adds a version", async () => {
+      const preview = await previewWhileCreating("second");
+      expect(preview.rows.map((row) => [row.slug, row.status])).toEqual([
+        ["first", "new"],
+        ["second", "changed"],
+      ]);
+      const result = await backend.skillImport.apply(preview.preview_id, ["second"], OWNER_ID);
+      expect(result).toMatchObject({ created: 0, new_versions: 1 });
+    });
   });
 
   it("sorts rows and marks new, changed, unchanged, invalid and conflict; writes nothing", async () => {

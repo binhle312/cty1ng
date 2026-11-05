@@ -15,9 +15,10 @@ export interface SkillMd {
 const Frontmatter = z.looseObject({ name: z.string(), description: z.string() });
 
 // A security check, fixed in code (owner, 2026-11-05). The parse time grows with the square of the
-// keys, and the server waits for it. A zip holds up to 200 files, so the limit must stay cheap at
-// 200 times its cost: about 30 ms for each file. The limit holds the longest description with
-// every character escaped (about 4 KB) and other keys.
+// keys, and the server waits for it. This limit keeps one parse to about 70 ms, and the preview
+// pauses between rows, because a zip holds up to 200 files. The limit counts characters, so a
+// description in any language fits. The largest export has about 6.2 KB: the longest slug and
+// description, with a 6-character escape for every character of the description.
 const FRONTMATTER_MAX_CHARS = 8_192;
 
 // The reason a file is not a skill (shown in the import preview), or the parsed skill.
@@ -28,7 +29,7 @@ export function parseSkillMd(text: string): SkillMd | { invalid: string } {
   if (match === null) return { invalid: "The file has no frontmatter between --- lines." };
   const yaml = match[1] ?? "";
   if (yaml.length > FRONTMATTER_MAX_CHARS) {
-    return { invalid: "The frontmatter is larger than 8 KB." };
+    return { invalid: "The frontmatter has more than 8,192 characters." };
   }
   // The default core schema: no custom tags (security.md §2.4). An unknown tag is only a
   // warning in the yaml package, so any warning or error makes the file invalid.

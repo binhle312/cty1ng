@@ -43,7 +43,7 @@ describe("SKILL.md", () => {
   // waits for it. 40,000 keys took 12.4 s. The owner approved 8 KB on 2026-11-05.
   describe("the frontmatter limit of 8,192 characters", () => {
     const LIMIT = 8_192;
-    const tooLarge = { invalid: "The frontmatter is larger than 8 KB." };
+    const tooLarge = { invalid: "The frontmatter has more than 8,192 characters." };
 
     // A frontmatter of exactly `length` characters, with a filler comment that YAML ignores.
     function withFrontmatter(length: number): string {
@@ -71,10 +71,22 @@ describe("SKILL.md", () => {
       expect(performance.now() - start).toBeLessThan(500);
     });
 
-    // Every character of this description needs a 4-character YAML escape.
-    it("still round-trips the longest description, with full escaping", () => {
-      const skill = { slug: "a", description: "\u0001".repeat(1_024), bodyMd: "# A\n" };
+    // The largest export: the longest slug and description, and every character of the
+    // description needs a 6-character YAML escape.
+    it("still round-trips the largest export", () => {
+      const skill = {
+        slug: "a".repeat(64),
+        description: "\ud800".repeat(1_024),
+        bodyMd: "# A\n",
+      };
       expect(parseSkillMd(serialiseSkillMd(skill))).toEqual(skill);
+    });
+
+    it("counts characters, not bytes, so a description in any language fits", () => {
+      const skill = { slug: "a", description: "ệ".repeat(1_024), bodyMd: "# A\n" };
+      expect(parseSkillMd(serialiseSkillMd(skill))).toEqual(skill);
+      const text = `---\nname: a\ndescription: d\n# ${"ệ".repeat(8_000)}\n---\nBody`;
+      expect(parseSkillMd(text)).toMatchObject({ slug: "a" });
     });
 
     it("sets no limit on the body", () => {
