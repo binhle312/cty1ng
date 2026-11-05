@@ -128,6 +128,16 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ["password: `abcd`", "the shortest value in backticks: 4 characters"],
     ["password: `abc`def", "text after a short value in backticks"],
     ["password: `false", "a backtick with no close"],
+    // A value after one spelling of the key does not hide another spelling.
+    ["pwd='/home/owner,password:hunter22", "a path before another spelling"],
+    ["pwd=/home/owner;password=hunter22", "a path before another spelling"],
+    // A free setting does not hide the next key in a compact object.
+    ['{"require_password":true,"password":"hunter22"}', "a secret after a free key"],
+    ["{requirePassword:true,password:hunter22}", "a secret after a free key"],
+    ["password:true,password:hunter22", "a secret after a free key"],
+    ["password:$DB_SECRET,password:hunter22", "a secret after a reference"],
+    ["password:{secret},password:hunter22", "a secret after a reference"],
+    ["password: `true`,password:hunter22", "a secret after a literal in backticks"],
     // Punctuation after a literal frees it only in the shape of a setting.
     ["password: false/>", "the JSX end needs braces"],
     ["password: true>", "the JSX end needs braces"],
@@ -260,6 +270,12 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ]);
   });
 
+  it("gives only the last 4 characters of the value, not of the next key", () => {
+    expect(findSensitive('{"password":hunter22,"a":1}')).toEqual([
+      { kind: "password", line: 1, ending: "er22" },
+    ]);
+  });
+
   it("gives only the last 4 characters of a backtick phrase, with no backtick", () => {
     expect(findSensitive("password: `my pass phrase`")).toEqual([
       { kind: "password", line: 1, ending: "rase" },
@@ -358,6 +374,10 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ["PWD=/home/owner", "the shell variable"],
     ["DB_PWD=${DB_SECRET}", "a reference after pwd"],
     ["password: `$DB_SECRET`", "a reference in Markdown code"],
+    ["Use password: `$DB_SECRET`.", "a reference at the end of a sentence"],
+    ["password:=true", "a literal after :="],
+    ["password:=`false`", "a literal after :="],
+    ["password:={false}", "a reference after :="],
     ["PWD=`/home/owner`", "a path in Markdown code"],
     ["DB_PASS=${DB_SECRET}", "a reference after a shorter name"],
     ["test_pass: done", "the shorter name is only in capitals"],

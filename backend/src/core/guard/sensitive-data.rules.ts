@@ -38,71 +38,59 @@ interface Detector {
   accept?: (secret: string) => boolean;
 }
 
-// A setting about a password, not a password (owner, 2026-11-05).
+// A password detector finds a key and reads its value. It decides nothing else, because
+// `passwordValueIsFree` owns the rule. Each spelling of the key scans alone, so a free value after
+// one spelling cannot hide another spelling. Marks can close the key: `"password"`, `\"password\"`,
+// `["password"]`, **password**.
+const AFTER_KEY = String.raw`(?:\\?["']|[\`*\]]){0,4}\s*(?::=|=>|[:=])\*{0,2}\s*`;
+// A value stops before the next key of a compact object, so the scan still reads that key.
+const VALUE_END = String.raw`(?=,["']?[\w-]+["']?\??:|\s|$)`;
+// A whole phrase in quotes or backticks, an unclosed quote, or a word: 4 or more characters.
+const PASSWORD_VALUE = String.raw`("(?:[^"\\\n]|\\.){4,}"|'[^'\n]{4,}'|\`[^\`\n]{4,}\`\S*?${VALUE_END}|["'][^\s"']{4,}|[^\s"']\S{3,}?${VALUE_END})`;
+
 const SETTING_WORD = String.raw`(?:true|false|null|string|boolean|bool|number|integer|text|(?:var)?char(?:\(\d+\))?)`;
 const SETTING_TYPE = String.raw`${SETTING_WORD}(?:\|${SETTING_WORD})*`;
 
-// A setting is free only as a complete token, in the shape that code or Markdown gives it. What
-// comes after it decides: a space, the line end, closing marks, the next key of a compact object,
-// or an arrow. So `false alarm` in backticks, false! and true,hunter22 are strings.
-const AFTER_SETTING = [
-  String.raw`(?:[\`)}\],;]+[.:]?)?(?:\s|$)`,
-  String.raw`[)}\]]*,["']?[\w-]+["']?\??:`,
-  String.raw`\)=>`,
-].join("|");
-const FREE_SETTING = String.raw`(?:\`${SETTING_TYPE}\`|${SETTING_TYPE})(?:${AFTER_SETTING})`;
+// The values that hold no secret (owner, 2026-11-05, security.md §2.13). A placeholder is not one.
+const FREE_PASSWORD_VALUES: readonly RegExp[] = [
+  // A literal or a type as a complete token, so false!, "false" and `false alarm` are strings.
+  new RegExp(
+    String.raw`^(?:\`${SETTING_TYPE}\`|${SETTING_TYPE})(?:[\`)}\],;]+[.:]?|\)=>.*)?$`,
+    "i",
+  ),
+  // A reference: ${DB_PASSWORD}, $DB_PASSWORD, ${{ secrets.X }}, {password}, and {false} before the
+  // end of a JSX tag. Case matters: $ecret123 is a password.
+  /^["'`]?(?:\$\{\{?\s*[\w.-]+\s*\}\}?|\$[A-Z_][A-Z0-9_]*|\{[A-Za-z_$][\w.$]*\})["']?[`)}\],;]*[.:]?(?:\/?>.*)?$/,
+  // Under the 4-character minimum: backticks do not count, as quotes do not.
+  /^`[^`]{0,3}`[)}\],;]*[.:]?$/,
+];
 
-// What follows a password key, for every spelling of the key.
-const AFTER_PASSWORD_KEY = [
-  // Marks that close the key: `"password"`, `\"password\"`, `["password"]`, **password**.
-  String.raw`(?:\\?["']|[\`*\]]){0,4}`,
-  String.raw`\s*(?::=|=>|[:=])\*{0,2}\s*`,
-  // Before the quote, because a quoted "false" is a string.
-  `(?!${FREE_SETTING})`,
-  // The value: a whole quoted phrase, an unclosed quote, or a word. It has 4 or more characters.
-  String.raw`("(?:[^"\\\n]|\\.){4,}"|'[^'\n]{4,}'|\`[^\`\n]{4,}\`|["'][^\s"']{4,}|[^\s"']\S{3,})`,
-].join("");
-
-// A reference holds no secret: ${DB_PASSWORD}, $DB_PASSWORD, ${{ secrets.X }}, {password}, and
-// {false} before the end of a JSX tag. Case matters: $ecret123 is a password.
-const REFERENCE =
-  /^["'`]?(?:\$\{\{?\s*[\w.-]+\s*\}\}?|\$[A-Z_][A-Z0-9_]*|\{[A-Za-z_$][\w.$]*\})["']?[`)}\],;]*(?:\/?>.*)?$/;
+const passwordValueIsFree = (value: string): boolean =>
+  FREE_PASSWORD_VALUES.some((free) => free.test(value));
 
 // PWD is also the shell's working folder: /home/owner, ~/work, ../work, $(pwd).
 const SHELL_PATH = /^["'`]?(?:~?\/|\.{1,2}\/|\$\()/;
 
-// A value in backticks has the same 4-character minimum as a value in quotes.
-const SHORT_IN_BACKTICKS = /^`[^`]{0,3}`[)}\],;]*[.:]?$/;
-
-const passwordValue = (secret: string): boolean =>
-  !REFERENCE.test(secret) && !SHORT_IN_BACKTICKS.test(secret);
+const passwordDetector = (
+  key: string,
+  isFree: (value: string) => boolean = passwordValueIsFree,
+): Detector => ({
+  kind: "password",
+  pattern: new RegExp(`${key}${AFTER_KEY}${PASSWORD_VALUE}`, "gi"),
+  group: 1,
+  accept: (value) => !isFree(value),
+});
 
 const DETECTORS: readonly Detector[] = [
   { kind: "private_key", pattern: /-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----/g },
-  {
-    // Any prefix, so there is no left boundary: `\b` does not fire after `_`. A placeholder has no
-    // exception. After the name, only a number or an environment: DB_PASSWORD_FILE is a path.
-    kind: "password",
-    pattern: new RegExp(
-      `(?:password|passwd)(?:\\d+|_(?:prod|production|dev|staging|stage|test|old|new|\\d+))?${AFTER_PASSWORD_KEY}`,
-      "gi",
-    ),
-    group: 1,
-    accept: passwordValue,
-  },
-  {
-    kind: "password",
-    pattern: new RegExp(`pwd${AFTER_PASSWORD_KEY}`, "gi"),
-    group: 1,
-    accept: (secret) => passwordValue(secret) && !SHELL_PATH.test(secret),
-  },
-  {
-    // The name in capitals only, because `test_pass: done` is not a password. The value has any case.
-    kind: "password",
-    pattern: new RegExp(`(?-i:[A-Z0-9]_PASS)${AFTER_PASSWORD_KEY}`, "gi"),
-    group: 1,
-    accept: passwordValue,
-  },
+  // Any prefix, so there is no left boundary: `\b` does not fire after `_`. After the name, only a
+  // number or an environment, because DB_PASSWORD_FILE is a path.
+  passwordDetector(
+    String.raw`(?:password|passwd)(?:\d+|_(?:prod|production|dev|staging|stage|test|old|new|\d+))?`,
+  ),
+  passwordDetector("pwd", (value) => passwordValueIsFree(value) || SHELL_PATH.test(value)),
+  // In capitals only, because `test_pass: done` is not a password. The value has any case.
+  passwordDetector("(?-i:[A-Z0-9]_PASS)"),
   {
     // Common provider prefixes: OpenAI and Anthropic (sk-), AWS (AKIA), GitHub (ghp_ and
     // friends), Slack (xox?-), Google (AIza).
