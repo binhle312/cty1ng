@@ -95,6 +95,7 @@ If a command in this list does not exist yet (early slices), creating it is part
 
 - Implement work inside an approved task brief (`docs/tasks/`).
 - Write and run tests; fix failing tests caused by your change.
+- Fix review findings. §7 still applies to a fix that needs approval, such as a new UI text or a migration.
 - Refactor inside one module when it keeps behaviour and tests green.
 - Update documentation to match your change.
 
