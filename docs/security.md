@@ -271,10 +271,11 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
 - The forms of D39 include a key word with any prefix (`DB_PASSWORD=`, `dbPassword:`,
   `GITHUB_TOKEN=`, `client_secret=`), the JSON form (`"password": "â€¦"`) and, next to a key word
   such as `token` or `SECRET_KEY`, long random values of letters and digits, which include hex
-  (owner, 2026-11-05). A password value needs 4 or more characters (owner, 2026-11-05). A
-  placeholder has no exception (`DB_PASSWORD=changeme` is refused). A name with no value stays
-  free (`DB_PASSWORD`), and so does a password key whose value is `true`, `false` or `null`
-  (`require_password: true`, `showPassword={false}`).
+  (owner, 2026-11-05). The first word of a password value needs 4 or more characters (owner,
+  2026-11-05). A placeholder has no exception (`DB_PASSWORD=changeme` is refused). A name with no
+  value stays free (`DB_PASSWORD`). A password key also stays free if its value is the literal
+  `true`, `false` or `null` with no quotes (`require_password: true`, `showPassword={false}`).
+  A string is refused (`password: false!`, `"password": "false"`).
 - Pattern-based and incomplete by nature: a warning, not a guarantee. Images and PDFs are not
   scanned.
 - Matched text is never logged; only the kinds found are logged.
