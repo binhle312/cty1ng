@@ -27,9 +27,10 @@ Link to the brief and decisions.
   descriptions still match what the files do (or "no file changes")
 
 ## Review fixes (when a review found something)
-| Finding | Cause (the rule broken) | Same cause checked in | Fix | Test |
-| --- | --- | --- | --- | --- |
-| A late Profile answer brings back an old pin | An answer writes fields it does not own | Save answers, pin answers, dialog answers | Answers write an allowlist | `bot-edit-form.test` "takes from a save answer only …" |
+| Finding | Cause (the rule broken) | Same cause checked in | Same cause as an earlier fix? | Fix | Test |
+| --- | --- | --- | --- | --- | --- |
+| A late Profile answer brings back an old pin | An answer writes fields it does not own | Save answers, pin answers, dialog answers | No | Answers write an allowlist | `bot-edit-form.test` "takes from a save answer only …" |
+| A late dialog answer brings back an old pin | An answer writes fields it does not own | Every answer that writes the form | Yes, the row above. Owner's decision: redesign, with one owner for the form state | The form state has one owner | `bot-edit-form.test` "takes from a dialog answer only …" |
 
 ## Follow-ups (not done here)
 - ...
