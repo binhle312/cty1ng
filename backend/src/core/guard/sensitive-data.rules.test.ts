@@ -90,6 +90,7 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ['"password": "false"', "a quoted word is a string, not a literal"],
     ['password="true"', "a quoted word is a string, not a literal"],
     ["'password': 'null'", "a quoted word is a string, not a literal"],
+    ['password: "false alarm"', "a quoted phrase that starts with a literal"],
   ])("refuses %j as a password: %s", (text) => {
     expect(findSensitive(text).map((match) => match.kind)).toEqual(["password"]);
   });
