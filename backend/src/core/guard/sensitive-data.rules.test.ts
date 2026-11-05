@@ -454,6 +454,46 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
   });
 });
 
+// Review of 1b70296 (DQ-049): a number or an environment after the name worked on one spelling only.
+describe("findSensitive: a suffix after the key word", () => {
+  const hex = "0123456789abcdef".repeat(2);
+
+  it.each([
+    ["DB_PASS_PROD=hunter22"],
+    ["DB_PASS1=hunter22"],
+    ["DB_PWD_2=hunter22"],
+    ["PWD1=hunter22"],
+    ["DB_PASSWD_STAGING=hunter22"],
+    ["OLD_PWD_OLD=hunter22"],
+  ])("refuses %j as a password", (text) => {
+    expect(findSensitive(text).map((match) => match.kind)).toEqual(["password"]);
+  });
+
+  it.each([
+    [`API_KEY_PROD=${hex}`],
+    [`GITHUB_TOKEN_PROD=${hex}`],
+    [`TOKEN1=${hex}`],
+    [`SECRET1=${hex}`],
+    [`SECRET_KEY_STAGING=${hex}`],
+    [`ACCESS_KEY2=${hex}`],
+  ])("refuses %j as an API key", (text) => {
+    expect(findSensitive(text).map((match) => match.kind)).toEqual(["api_key"]);
+  });
+
+  it.each([
+    ["DB_PASSWORD_FILE=/run/secrets/db"],
+    ["token_endpoint: https://example.com/oauth/token"],
+    ["PWD=/home/owner"],
+    ["PWD1=/home/owner"],
+    [`TOKEN_PROD_HASH=${hex}`],
+    [`token2vec=${hex}`],
+    ["DB_PASS_FILE=/run/secrets/db"],
+    ["DB_PWD_FILE=/run/secrets/db"],
+  ])("finds nothing in %j", (text) => {
+    expect(findSensitive(text)).toEqual([]);
+  });
+});
+
 // Review of 1b70296 (DQ-050): the regex retried a shorter separator, so `=`, `>` or `*` counted as a
 // part of the value, and a short value passed the 4-character minimum.
 describe("findSensitive: the separator is not a part of the value", () => {

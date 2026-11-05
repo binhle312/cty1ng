@@ -94,16 +94,20 @@ const passwordDetector = (
   accept: (value) => !isFree(value),
 });
 
+// A number or an environment after a key word, for every spelling. No other word, because
+// DB_PASSWORD_FILE is a path and token_endpoint is a URL.
+const KEY_SUFFIX = String.raw`(?:\d+|_(?:prod|production|dev|staging|stage|test|old|new|\d+))`;
+
 const DETECTORS: readonly Detector[] = [
   { kind: "private_key", pattern: /-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----/g },
-  // Any prefix, so there is no left boundary: `\b` does not fire after `_`. After the name, only a
-  // number or an environment, because DB_PASSWORD_FILE is a path.
+  // Any prefix, so there is no left boundary: `\b` does not fire after `_`.
+  passwordDetector(`(?:password|passwd)${KEY_SUFFIX}?`),
   passwordDetector(
-    String.raw`(?:password|passwd)(?:\d+|_(?:prod|production|dev|staging|stage|test|old|new|\d+))?`,
+    `pwd${KEY_SUFFIX}?`,
+    (value) => passwordValueIsFree(value) || SHELL_PATH.test(value),
   ),
-  passwordDetector("pwd", (value) => passwordValueIsFree(value) || SHELL_PATH.test(value)),
   // In capitals only, because `test_pass: done` is not a password. The value has any case.
-  passwordDetector("(?-i:[A-Z0-9]_PASS)"),
+  passwordDetector(`(?-i:[A-Z0-9]_PASS)${KEY_SUFFIX}?`),
   {
     // Common provider prefixes: OpenAI and Anthropic (sk-), AWS (AKIA), GitHub (ghp_ and
     // friends), Slack (xox?-), Google (AIza).
@@ -117,8 +121,10 @@ const DETECTORS: readonly Detector[] = [
     // such as `commit` says that the value is a hash. The value starts a run of characters, and
     // `=` cannot start it, so `TOKEN=x` and `TOKEN: x` get the same answer.
     kind: "api_key",
-    pattern:
-      /(?:api[_ -]?key|token|secret(?:[_ -]?key(?:[_ -]?base)?)?|access[_ -]?key)(?:_?value|_\d+)?\b[^\n@]{0,20}?(?<!\b(?:commit|sha\d*|hash|digest|checksum|revision)\s+)(?<![A-Za-z0-9])([A-Za-z0-9_\-+/][A-Za-z0-9_\-+/=]{23,})/gi,
+    pattern: new RegExp(
+      String.raw`(?:api[_ -]?key|token|secret(?:[_ -]?key(?:[_ -]?base)?)?|access[_ -]?key)(?:_?value|${KEY_SUFFIX})?\b[^\n@]{0,20}?(?<!\b(?:commit|sha\d*|hash|digest|checksum|revision)\s+)(?<![A-Za-z0-9])([A-Za-z0-9_\-+/][A-Za-z0-9_\-+/=]{23,})`,
+      "gi",
+    ),
     group: 1,
     accept: (secret) => !madeOfWords(secret) && (highEntropy(secret) || randomLetters(secret)),
   },

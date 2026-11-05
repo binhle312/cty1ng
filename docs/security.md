@@ -271,7 +271,9 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
 - Auto titles (D46): a first message with matches ("Send anyway") gets no title request. The
   guard also checks the model's title; a match keeps "New conversation".
 - The forms of D39 include a key word with any prefix (`DB_PASSWORD=`, `dbPassword:`, `dbPwd=`,
-  `DB_PASS=`, `PASSWORD1=`, `DB_PASSWORD_PROD=`, `GITHUB_TOKEN=`, `client_secret=`, `TOKEN_VALUE=`),
+  `DB_PASS=`, `GITHUB_TOKEN=`, `client_secret=`, `TOKEN_VALUE=`), a number or an environment after
+  any key word (`PASSWORD1=`, `DB_PASSWORD_PROD=`, `DB_PASS_PROD=`, `DB_PASS1=`, `DB_PWD_2=`, `PWD1=`,
+  `API_KEY_PROD=`, `GITHUB_TOKEN_PROD=`, `TOKEN1=`, `SECRET1=`),
   marks around the key (`"password":`, `config["password"] =`, `` `DB_PASSWORD`: ``,
   `**password**:`), the separators `:`, `=`, `:=` and `=>`, a whole phrase in quotes or backticks
   (`"password": "my long pass phrase"`) and, next to a key word such as `token` or `SECRET_KEY`,
