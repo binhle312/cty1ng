@@ -48,4 +48,4 @@ Start at [docs/README.md](docs/README.md). Coding agents start at [AGENTS.md](AG
 | Know where we are | [docs/status.md](docs/status.md) |
 | Know why it is built this way | [docs/decisions/](docs/decisions/README.md) |
 | Understand the code layout | [docs/architecture.md](docs/architecture.md) |
-| Build the next slice | [docs/development-plan.md](docs/development-plan.md) and [docs/workflow.md](docs/workflow.md) |
+| Build the next slice | [docs/development-plan.md](docs/development-plan.md) and [planning workflow](docs/workflows/planning.md) |

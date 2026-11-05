@@ -17,4 +17,4 @@ The incident records a reporting failure as well as missing checks.
 
 **Reusable principles.** [Verify delivery](../../.agents/skills/principle-verify-delivery/SKILL.md).
 
-**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [testing](../testing.md).
+**Project guidance.** [implementation workflow](../workflows/implementation.md#self-check), [testing](../testing.md).

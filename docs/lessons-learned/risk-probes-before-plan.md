@@ -14,4 +14,4 @@ tried during the build, so each surprise stopped the build.
 
 **Reusable principles.** [Resolve unknowns before the build](../../.agents/skills/principle-resolve-unknowns/SKILL.md).
 
-**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [frontend conventions §5](../frontend-conventions.md#5-known-pitfalls).
+**Project guidance.** [planning workflow](../workflows/planning.md#risk-probes-first), [frontend conventions §5](../frontend-conventions.md#5-known-pitfalls).

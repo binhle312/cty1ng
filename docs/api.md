@@ -5,6 +5,8 @@ This document owns the endpoint list, shapes and error codes. The OpenAPI schema
 frontend client is generated from it (`pnpm gen:api`). CI fails if the generated client is out
 of date. When this document and the OpenAPI schema disagree, raise it.
 
+Read conventions and errors, then the endpoint group in scope and its referenced schemas.
+
 ## 1. Conventions
 
 - Base path `/api`. JSON in and out (`multipart/form-data` for uploads).

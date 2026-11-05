@@ -31,4 +31,4 @@ rules.
 
 **Reusable principles.** [Model state and order](../../.agents/skills/principle-state-and-order/SKILL.md), [Split changes](../../.agents/skills/principle-split-changes/SKILL.md), [Automate repeated checks](../../.agents/skills/principle-automate-checks/SKILL.md).
 
-**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [frontend conventions](../frontend-conventions.md), [testing](../testing.md), [review guide](../review-guide.md).
+**Project guidance.** [planning workflow](../workflows/planning.md#state-table-for-stateful-screens), [frontend conventions](../frontend-conventions.md), [testing](../testing.md), [review guide](../review-guide.md).

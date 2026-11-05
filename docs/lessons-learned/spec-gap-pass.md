@@ -13,4 +13,4 @@ it.
 
 **Reusable principles.** [Resolve unknowns before the build](../../.agents/skills/principle-resolve-unknowns/SKILL.md).
 
-**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice).
+**Project guidance.** [planning workflow](../workflows/planning.md#spec-gap-pass).

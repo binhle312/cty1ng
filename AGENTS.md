@@ -4,7 +4,7 @@ Instructions for AI coding agents (Claude Code, Codex, and others) working in th
 `CLAUDE.md` imports this file, so there is one set of rules for every agent.
 
 Read this file fully before your first change in a session. It is short on purpose; the detail
-lives in `docs/`, and this file tells you which document to open for which task.
+lives in `docs/`, and `docs/README.md` maps each task to its document.
 
 ## 1. What this project is
 
@@ -13,7 +13,7 @@ personas, versioned skills, a file Library per project plus one Home Library, an
 through human approvals. TypeScript everywhere (D34): backend on Node with Hono, Drizzle and the
 Vercel AI SDK; frontend React + Vite. Libraries sit behind ports (D35).
 
-Start with `docs/README.md` for the reading order.
+Use [the documentation map](docs/README.md) to find the workflow and specification sections for your task.
 
 ## 2. Source of truth
 
@@ -28,30 +28,16 @@ Start with `docs/README.md` for the reading order.
   those entries (the newest wins where they differ), and read the requirement that owns the
   behaviour. Do not use one accepted decision alone when a later one amends it.
 
-## 3. Which document to read for which task
+## 3. Read for the task
 
-| You are working on | Read first |
-| --- | --- |
-| Anything (first time) | `docs/README.md`, `docs/status.md`, `docs/requirements/product-brief.md`, `docs/architecture.md` |
-| A task from the delivery plan | `docs/tasks/<slice>.md` (it lists everything else you need) |
-| Database tables, migrations | `docs/domain-model.md` |
-| Who replies, bot-to-bot, joining, editing messages | `docs/conversation-rules.md` |
-| Streaming, SSE, events | `docs/realtime-events.md` |
-| HTTP endpoints | `docs/api.md` |
-| Pages and components | `docs/requirements/<area>.md` (behaviour); `docs/design/README.md` (agreed specs and sketch status) |
-| The Flow pane, animations, renderers | `docs/flow-view.md` |
-| Frontend TypeScript rules | `docs/frontend-conventions.md` |
-| A design board, a UI spec or UI code | `docs/design/ui-rules.md` (every agreed UI rule, one list) |
-| Design work with the `ui-ux-pro-max` skill | `docs/workflow.md` §2 (design skills) |
-| Showing a proposal, plan or review item to the human | `docs/workflow.md` §2 (human review: visual first) |
-| Styling, themes, design tokens | `docs/design/themes.md` (D30) |
-| Uploads, file tools, rendering bot output, request checks | `docs/security.md` |
-| Tests | `docs/testing.md` |
-| How to work, branch, review | `docs/workflow.md` |
-| Writing or finding a slice's plan | `docs/workflow.md` §2 step 2, `docs/plans/README.md` |
-| Apply or maintain engineering principles | `.agents/skills/README.md` |
-| Finding a file in the code | The folder's `README.md` index (`docs/architecture.md` §4.2) |
-| Ports, adapters, import rules | `docs/architecture.md` §2, §4.1 (D35) |
+[docs/README.md](docs/README.md) owns the task-to-document map. Select the current task there;
+read the applicable sections and shared rules, not every linked document.
+Read the assigned brief and approved plan for the work in scope. Follow decision amendments
+as §2 requires. Load additional context when a dependency, invariant, or unresolved question needs it.
+
+A `#anchor` in a link does not limit a file read: a plain read loads the whole file. To read one
+section of a long document, list its headings with `grep -nE '^#{2,3} ' <file>`, then read only
+that line range.
 
 ## 4. Commands
 
@@ -114,6 +100,7 @@ If a command in this list does not exist yet (early slices), creating it is part
 
 ## 7. What needs the human's approval (stop and ask, or flag it clearly in the PR)
 
+- The plan for a slice marked **checkpoint: plan**, before implementation ([planning workflow](docs/workflows/planning.md#one-round-of-questions)).
 - New or changed **database migrations**.
 - Changes to **security-sensitive code**: `adapters/workspace/`, upload handling, origin/host checks,
   Markdown rendering, the sensitive data guard (`core/guard/`), anything touching secrets.
@@ -123,8 +110,9 @@ If a command in this list does not exist yet (early slices), creating it is part
   before writing UI code. Sketches and mockups in `docs/design/` are not specs.
 - The **code design** when a slice adds shared state, a module boundary, a flow across several
   screens or a new requirement that changes an existing design: a one-page design in the plan,
-  before any code (`docs/workflow.md` §2).
+  before any code ([planning workflow](docs/workflows/planning.md#code-design-checkpoint)).
 - Anything outside the current task's scope.
+- The merge.
 
 Mark these in the PR description under a heading `Needs human review` with one line each.
 

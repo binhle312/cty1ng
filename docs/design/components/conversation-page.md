@@ -21,6 +21,8 @@ The previews show some options that the owner did not choose (H1, P0, P2). The a
 each board is the one with the "Approved" label. The layout board (`conversation-page.*`) was
 drawn before the header changes; the header in `conversation-header.*` (H2) wins.
 
+Read the status above, shared layout, and the affected action. Include its live and error states.
+
 ## 1. Layout (C1)
 
 | Part | Rule |

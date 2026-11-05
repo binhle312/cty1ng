@@ -97,7 +97,7 @@ Owner answers that apply to every part (2026-10-30):
   the automated security review workflow, request body limit and the error handler
   (`security.md` §2.7–2.11).
 - `README.md` quickstart; `.env.example` with every variable in `architecture.md` §8.
-- PR template from `workflow.md` §6 as `.github/pull_request_template.md`.
+- PR template from [PR template](../workflows/pull-request.md) as `.github/pull_request_template.md`.
 
 ## Out of scope
 
@@ -141,7 +141,7 @@ idempotently; a Playwright smoke test that loads the shell.
 ## Needs human review
 
 The UI design in the plan (layout, components, states), approved before UI code is written
-(`docs/workflow.md` §2; sketches in `docs/design/` are not specs).
+([planning workflow](../workflows/planning.md#ui-design-checkpoint); sketches in `docs/design/` are not specs).
 
 Initial migration; security middleware; dependency list (all new); the port interfaces
 (they shape every later slice).

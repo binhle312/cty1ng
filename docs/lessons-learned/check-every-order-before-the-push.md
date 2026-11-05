@@ -38,4 +38,4 @@ from it, so it runs again after its own fixes.
 
 **Reusable principles.** [Model state and order](../../.agents/skills/principle-state-and-order/SKILL.md), [Fix the root cause](../../.agents/skills/principle-fix-root-cause/SKILL.md), [Prove that tests work](../../.agents/skills/principle-prove-tests-work/SKILL.md).
 
-**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [testing §5](../testing.md#5-evidence-in-prs), [frontend conventions](../frontend-conventions.md).
+**Project guidance.** [implementation workflow](../workflows/implementation.md#self-check), [testing §5](../testing.md#5-evidence-in-prs), [frontend conventions](../frontend-conventions.md).

@@ -2,6 +2,8 @@
 
 This document owns the event log, the SSE stream, and every event type (D9).
 
+Choose the affected transport or event section. Include ordering and transaction rules for state changes.
+
 ## 1. Mental model
 
 The database is the truth; the **event log** is the ordered list of everything that changed;

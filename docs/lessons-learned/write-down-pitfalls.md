@@ -12,4 +12,4 @@ The workflow now routes new build knowledge to those owning documents.
 
 **Reusable principles.** [Automate repeated checks](../../.agents/skills/principle-automate-checks/SKILL.md).
 
-**Project guidance.** [frontend conventions §5](../frontend-conventions.md#5-known-pitfalls), [testing](../testing.md), [workflow §2](../workflow.md#2-lifecycle-of-a-slice).
+**Project guidance.** [frontend conventions §5](../frontend-conventions.md#5-known-pitfalls), [testing](../testing.md), [implementation workflow](../workflows/implementation.md#self-check).

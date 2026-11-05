@@ -1,5 +1,5 @@
 // `pnpm check:index`: folder indexes and docs metadata (architecture.md §4.2), and the design
-// snapshot's colours against the token file (docs/workflow.md §2).
+// snapshot's colours against the token file (docs/workflows/planning.md).
 import { checkAll } from "./lib/check-index.ts";
 import { report } from "./lib/report.ts";
 

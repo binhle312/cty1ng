@@ -4,6 +4,8 @@ Stack (D34): TypeScript on Node 24 LTS for the backend, Hono for HTTP, Drizzle f
 database, the Vercel AI SDK (`ai`) for model calls; React + Vite for the frontend (D28); Zod
 for every schema (D33). Libraries sit behind ports so they can be replaced (D35).
 
+Choose the subsystem in scope. Include its ports, import rules, and transaction or concurrency rules where applicable.
+
 ## 1. The big picture
 
 These diagrams are views of the specification. Where a diagram leaves out or simplifies a rule,
@@ -150,7 +152,7 @@ A pnpm workspace with three packages. Each folder marked † has a `README.md` i
 ├─ CLAUDE.md                 "@AGENTS.md"
 ├─ README.md                 what it is, quickstart
 ├─ PRODUCT.md, DESIGN.md     the Impeccable skill's snapshot of the brief and the theme
-│                            (not a spec; workflow.md §2)
+│                            (not a spec; workflows/planning.md)
 ├─ .impeccable/              Impeccable settings and design.json (its hook cache is ignored)
 ├─ Makefile                  dev, test, lint, seed shortcuts
 ├─ package.json              workspace scripts (lint, typecheck, test, e2e, gen:api, check:index)
@@ -313,7 +315,7 @@ Start here: `worker.service.ts`. Do not: call the model except through the model
   - `docs/lessons-learned/README.md` and `docs/plans/README.md` list every file in their
     folder, like a folder index.
   Whether two decisions agree in meaning is not checkable; the reviewer checks it
-  (`workflow.md` §4).
+  ([review workflow](workflows/review.md)).
 - Leaves only: the root `README.md` and this section link to the package indexes; there is no
   second, central file list to drift.
 

@@ -16,7 +16,7 @@ Brief: `docs/tasks/M2-bots.md` (updated by the spec gap pass, #56). Checkpoint: 
 
 ## 0. Slice split
 
-M2 is larger than M1. `workflow.md` §2 keeps UI and infrastructure apart, and the pages are two groups that share nothing but the API:
+M2 is larger than M1. [planning workflow](../workflows/planning.md#slice-size) keeps UI and infrastructure apart, and the pages are two groups that share nothing but the API:
 
 | PR | Branch | Holds | Ends with |
 | --- | --- | --- | --- |
@@ -39,7 +39,7 @@ M2a's seed makes bots, so after M2a alone the Skills page must not say "No bot u
 | Delete dialog names the bots whose pins it removes (UI-7.6a) | today it warns about nothing |
 | Bots tab rows (UI-7.5a): Upgrade to vN, Always load, Change version, Remove, + Add, and the M1-only "Create a bot first." goes | today it says "No bot uses this skill yet." while bots use it |
 
-This is an exception to "UI and infrastructure in separate PRs" (`workflow.md` §2): it is the smallest set that keeps `main` correct after M2a. Tests: the M1 Skills e2e passes after M2a alone (save v2, deprecate, delete), plus Vitest for the two dialogs with and without bots and an e2e "seeded bot shows on the Bots tab; deprecate with BA ticked removes its pin". The upgrade and assign cards after a save (C4, C4b) stay in M2c: without them nothing is wrong, a save simply moves no pin, and the Bots tab already offers "Upgrade to vN".
+This is an exception to "UI and infrastructure in separate PRs" ([planning workflow](../workflows/planning.md#slice-size)): it is the smallest set that keeps `main` correct after M2a. Tests: the M1 Skills e2e passes after M2a alone (save v2, deprecate, delete), plus Vitest for the two dialogs with and without bots and an e2e "seeded bot shows on the Bots tab; deprecate with BA ticked removes its pin". The upgrade and assign cards after a save (C4, C4b) stay in M2c: without them nothing is wrong, a save simply moves no pin, and the Bots tab already offers "Upgrade to vN".
 
 ## 1. Risk probes (done 2026-11-01; scratch files, nothing installed in the workspace)
 
@@ -284,7 +284,7 @@ Not added: a case-folding library (P3: a generated table instead), `react-colorf
 
 | 12 | **Guide seed bot** (owner, 2026-11-01): `make seed` creates **Guide** first, then BA and Designer. Guide's persona: a friendly guide that answers "how do I…?" in short steps and suggests the next step. Its knowledge is the seed skill `using-the-app` (Always load): what the app is; bots, skills, projects, Library, memory, Trash; how to create a bot, assign a skill and start a conversation; tips. It knows only what the skill says: not the screen, not the owner's data. It can chat from M3. The builder drafts the persona and the skill; the owner reviews both in the M2a PR. The M2 brief and `seed/README.md` change in M2a |
 | 13 | **BA and Designer stay** as seed bots, after Guide |
-| 14 | **The guide stays current** (owner): a slice that changes something the owner can see updates `seed/skills/using-the-app/SKILL.md` in the same PR. M2a adds this line to `AGENTS.md` §9 (definition of done) and `workflow.md` §2 step 4 |
+| 14 | **The guide stays current** (owner): a slice that changes something the owner can see updates `seed/skills/using-the-app/SKILL.md` in the same PR. M2a adds this line to `AGENTS.md` §9 (definition of done) and [implementation workflow](../workflows/implementation.md#self-check) |
 | 15 | **First-run "Add Guide" offer** in the app (no `make seed` needed): parked for the M3 spec gap pass; a follow-up row in `status.md` |
 
 **Data use (owner should know):** on the Gemini API **free tier**, Google may use prompts and replies to improve its products, and people may read them; the paid tier does not. Since 2026-10-26, new paid projects **store requests by default**; turn it off in AI Studio (Logs and Datasets → Settings). Use a key restricted to the Gemini API. The app cannot check the tier: it is a property of the key's project.

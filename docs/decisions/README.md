@@ -21,7 +21,7 @@ nobody has to rediscover the reasoning. This index is the list of record.
   this decision, and the dated amendments. Read those entries before you use a decision: the
   newest entry wins where they differ.
 - `pnpm check:index` checks the metadata lines against the index (M0). It cannot check that two
-  decisions agree in meaning; the reviewer checks that (`../workflow.md` §4).
+  decisions agree in meaning; the reviewer checks that ([review workflow](../workflows/review.md)).
 - Agents may add `proposed` entries. Only the owner moves an entry to `accepted`.
 - Each entry links to the document that implements it.
 - One decision per file, named `Dnn-short-title.md`. Take the next free number; never reuse one.
@@ -61,7 +61,7 @@ Implemented in: links.
 | D14 | [Skill authorship and cloning](D14-skill-authorship-and-cloning.md) | accepted |  |
 | D15 | [Skill provenance from server records](D15-skill-provenance-from-server-records.md) | accepted |  |
 | D16 | ["Always load" per pinned skill](D16-always-load-per-pinned-skill.md) | accepted |  |
-| D17 | [New repository; agent instructions in AGENTS.md](D17-new-repository-agent-instructions-in-agents-md.md) | accepted | own amendment 2026-11-04 |
+| D17 | [New repository; agent instructions in AGENTS.md](D17-new-repository-agent-instructions-in-agents-md.md) | accepted | own amendments 2026-11-04, 2026-11-05 |
 | D18 | [Handoff targets and who decides the workflow](D18-handoff-targets-and-who-decides-the-workflow.md) | accepted | own amendment 2026-10-25 |
 | D19 | [Bot slug fixed at creation](D19-bot-slug-fixed-at-creation.md) | accepted | D38, D52 (amendment 2026-10-27), own amendment 2026-11-01 |
 | D20 | [Daily spending cap](D20-daily-spending-cap.md) | accepted | D40, D42, own amendment 2026-11-04 |
