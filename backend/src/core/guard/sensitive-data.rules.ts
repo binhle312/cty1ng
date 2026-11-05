@@ -50,10 +50,7 @@ const AFTER_SETTING = [
   String.raw`[)}\]]*,["']?[\w-]+["']?\??:`,
   String.raw`\)=>`,
 ].join("|");
-const FREE_SETTING = [
-  String.raw`\{${SETTING_WORD}\}\/?>`, // The end of a JSX tag needs the braces.
-  String.raw`(?:\{${SETTING_WORD}\}|\`${SETTING_TYPE}\`|${SETTING_TYPE})(?:${AFTER_SETTING})`,
-].join("|");
+const FREE_SETTING = String.raw`(?:\`${SETTING_TYPE}\`|${SETTING_TYPE})(?:${AFTER_SETTING})`;
 
 // What follows a password key, for every spelling of the key.
 const AFTER_PASSWORD_KEY = [
@@ -66,10 +63,10 @@ const AFTER_PASSWORD_KEY = [
   String.raw`("(?:[^"\\\n]|\\.){4,}"|'[^'\n]{4,}'|\`[^\`\n]{4,}\`|["'][^\s"']{4,}|[^\s"']\S{3,})`,
 ].join("");
 
-// A reference holds no secret: ${DB_PASSWORD}, $DB_PASSWORD, ${{ secrets.X }}, {password}. Case
-// matters: $ecret123 is a password.
+// A reference holds no secret: ${DB_PASSWORD}, $DB_PASSWORD, ${{ secrets.X }}, {password}, and
+// {false} before the end of a JSX tag. Case matters: $ecret123 is a password.
 const REFERENCE =
-  /^["'`]?(?:\$\{\{?\s*[\w.-]+\s*\}\}?|\$[A-Z_][A-Z0-9_]*|\{[A-Za-z_$][\w.$]*\})["']?[`)}\],;]*$/;
+  /^["'`]?(?:\$\{\{?\s*[\w.-]+\s*\}\}?|\$[A-Z_][A-Z0-9_]*|\{[A-Za-z_$][\w.$]*\})["']?[`)}\],;]*(?:\/?>.*)?$/;
 
 // PWD is also the shell's working folder: /home/owner, ~/work, ../work, $(pwd).
 const SHELL_PATH = /^["'`]?(?:~?\/|\.{1,2}\/|\$\()/;

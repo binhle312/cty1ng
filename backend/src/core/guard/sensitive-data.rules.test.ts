@@ -286,6 +286,7 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ["GITHUB_TOKEN=abc123", "a short value"],
     ['"password": "abc"', "a quoted value under 4 characters"],
     ['"password": "a b"', "a quoted value under 4 characters"],
+    ["password: `a b`", "a backtick value under 4 characters"],
     ["password: abc", "a value under 4 characters"],
     // Owner, 2026-11-05, change 1: a reference holds no secret.
     ["POSTGRES_PASSWORD=${DB_PASSWORD}", "a reference"],
@@ -312,6 +313,8 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ["<Input showPassword={false}/>", "the JSX end"],
     ["<Input showPassword={false}>", "the JSX end"],
     ["requirePassword={true}/>", "the JSX end"],
+    ["<A confirmPassword={confirmPassword}/>", "a JSX reference and the tag end"],
+    ["<Label hasPassword={false}>Text</Label>", "text after the tag end"],
     ["const f = (newPassword: string)=>void", "a type before an arrow"],
     ["newPassword: string|null", "a union of types"],
     ["newPassword: `string|null`", "a union of types in Markdown code"],
