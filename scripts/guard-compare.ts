@@ -325,7 +325,8 @@ for (const key of KEYS) {
           if (answer(text) !== answer(`${key}: ${token}${tail}`)) separatorDifferences += 1;
         }
       }
-      // A free value does not hide a secret after it.
+      // A free value does not hide a later key. It says nothing about text with no key: that stays
+      // free (security.md §2.13).
       if (FREE_KEYS.test(key)) continue;
       for (const separator of [":", "=", ": ", ":=", "=>", ":**"]) {
         for (const tail of SECRETS_AFTER) {
@@ -340,8 +341,6 @@ console.log("\n## Rules");
 console.log(
   `  A separator differs from a colon: ${String(separatorDifferences)} of ${String(separatorInputs)}`,
 );
-console.log(
-  `  A secret after a value goes free: ${String(secretsLost)} of ${String(secretInputs)}`,
-);
+console.log(`  A free value hides a later key: ${String(secretsLost)} of ${String(secretInputs)}`);
 
 rmSync(folder, { recursive: true });
