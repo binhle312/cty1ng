@@ -142,6 +142,11 @@ describe("SKILL.md", () => {
     expect(parseSkillMd(serialiseSkillMd(skill))).toEqual(skill);
   });
 
+  it("keeps a normal description with several lines as a readable block", () => {
+    const text = serialiseSkillMd({ slug: "a", description: "One.\nTwo.\n", bodyMd: "# A\n" });
+    expect(text).toContain("description: |\n  One.\n  Two.\n");
+  });
+
   // Review of PR #52: the parser turned CRLF into LF in the body too.
   it("keeps CRLF line endings in the body and the description", () => {
     const skill = {

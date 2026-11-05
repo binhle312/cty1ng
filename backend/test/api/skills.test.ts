@@ -226,6 +226,24 @@ describe("edits", () => {
       expect(row?.reason).toMatch(/looks like a password/);
     });
 
+    it("an import that changes only the description is still invalid", async () => {
+      await savedWithOldText();
+      const data = Buffer.from(
+        `---\nname: notes\ndescription: Another description.\n---\n\n${oldText}`,
+      );
+      const row = await rowOf(await upload(await zipOf([{ path: "notes/SKILL.md", data }])));
+      expect(row?.status).toBe("invalid");
+    });
+
+    it("an import that changes only the body is still invalid", async () => {
+      await savedWithOldText();
+      const data = Buffer.from(
+        `---\nname: notes\ndescription: ${newSkill.description}\n---\n\n${oldText} And more.`,
+      );
+      const row = await rowOf(await upload(await zipOf([{ path: "notes/SKILL.md", data }])));
+      expect(row?.status).toBe("invalid");
+    });
+
     it("a new skill with the same text is still invalid", async () => {
       await savedWithOldText();
       const data = Buffer.from(skillMdText("other", oldText));
