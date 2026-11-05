@@ -130,9 +130,6 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ["password: `false", "a backtick with no close"],
     ["password: `false`!", "text after a literal in backticks"],
     ["password: `$DB_SECRET`!", "text after a reference in backticks"],
-    // A value after one spelling of the key does not hide another spelling.
-    ["pwd='/home/owner,password:hunter22", "a path before another spelling"],
-    ["pwd=/home/owner;password=hunter22", "a path before another spelling"],
     // A free setting does not hide the next key in a compact object.
     ['{"require_password":true,"password":"hunter22"}', "a secret after a free key"],
     ["{requirePassword:true,password:hunter22}", "a secret after a free key"],
@@ -458,6 +455,21 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
       "password:useState<string>( ".repeat(40_000),
       `password:useState<${"a ".repeat(500_000)}`,
       `password:useState<string>(${"a ".repeat(500_000)}`,
+      "password={a}>".repeat(80_000),
+      "password={a}/>".repeat(70_000),
+      "password=${A}>".repeat(70_000),
+      "password=$A>".repeat(80_000),
+      "password=${{ a }}>".repeat(55_000),
+      "password={".repeat(100_000),
+      `password=$${"A".repeat(1_000_000)}`,
+      `password={${"a".repeat(1_000_000)}`,
+      "password=string)=>".repeat(55_000),
+      `password=${"string|".repeat(150_000)}`,
+      `pwd=/${"a".repeat(1_000_000)}!`,
+      `pwd=/${".".repeat(1_000_000)}!`,
+      `pwd=$(${"a".repeat(1_000_000)}!`,
+      `pwd=$(a)${"a".repeat(1_000_000)}!`,
+      `pwd=/a${")".repeat(1_000_000)}!`,
     ];
     // One limit per line, because a shared limit fails on a busy machine. A quadratic pattern
     // takes many seconds on one of these lines.
@@ -729,6 +741,164 @@ describe("findSensitive: a secret in each place of a free form", () => {
     ["password: text field on the login form"],
     ["password: null until the user signs in"],
   ])("finds nothing in the text after a free word: %j", (text) => {
+    expect(findSensitive(text)).toEqual([]);
+  });
+});
+
+// Review of fb5c975 (DQ-058, DQ-059): the rules for a reference and a type took any text after `>` or
+// `)=>`, and the path rule took any text after the start of a path. So a later key in that text was
+// not read. A free rule now ends at the free text, and the reader stops there. A new free form or a
+// new way to join text adds its rows here.
+describe("findSensitive: a free form does not hide a later key", () => {
+  const FREE_FORMS = [
+    "true",
+    "false",
+    "null",
+    "string",
+    "string|null",
+    "varchar(255)",
+    "`string`",
+    "`null`",
+    "{a}",
+    "{a.b}",
+    "{false}",
+    "${A}",
+    "$A",
+    "${{secrets.X}}",
+    '"${A}"',
+    "useState()",
+    'useState("")',
+    "useState<string>()",
+    "React.useState(null)",
+    "`ab`",
+    "{type:string}",
+    '{"type":"string","minLength":8}',
+    "/x",
+    "~/x",
+    "../x",
+    "$(pwd)",
+  ];
+  const JOINS = [
+    "",
+    ">",
+    "/>",
+    ")=>",
+    ")=>{",
+    "))=>(",
+    "}>",
+    "}>{",
+    ";",
+    ",",
+    ")",
+    "}",
+    "]",
+    "{",
+    "({",
+    "(",
+    "</A>",
+    "|",
+    "&",
+    "?",
+    "!",
+    "#",
+    "%",
+    "+",
+    "*",
+    "\\",
+    '"',
+    "'",
+    "`",
+    "\t",
+    " ",
+  ];
+
+  it.each(["password", "pwd", "DB_PASS"])("reads the later %s key in each form", (key) => {
+    const missed: string[] = [];
+    for (const separator of ["=", ":", ": "]) {
+      for (const form of FREE_FORMS) {
+        for (const join of JOINS) {
+          for (const later of [`${key}=hunter22`, `${key}:"hunter22"`]) {
+            const text = `${key}${separator}${form}${join}${later}`;
+            if (findSensitive(text).length === 0) missed.push(text);
+          }
+        }
+      }
+    }
+    expect(missed).toEqual([]);
+  });
+
+  it.each([
+    ['<A password={safe}>{config.password="hunter22"}</A>', "a JSX tag, then an assignment"],
+    ["<A password={safe} />password: hunter22", "a JSX tag with a space"],
+    ["password={a}>password=hunter22", "the tag end"],
+    ["password={a}/>password=hunter22", "the tag end with a slash"],
+    ["password=${A}>password=hunter22", "a reference in braces"],
+    ["password=$A>password=hunter22", "a reference in capitals"],
+    ['const f = (password: string)=>({password:"hunter22"})', "an arrow, then an object"],
+    ['(password: string)=>{db_password="hunter22"}', "an arrow, then an assignment"],
+    ["password:`string`)=>password=hunter22", "a type in backticks and an arrow"],
+    ["password: string)=hunter22", "half of an arrow"],
+    ["password={a}=>hunter22", "an arrow after a reference is not a tag end"],
+    ["pwd=/x;pwd=hunter22", "a path, then the same key"],
+    ["pwd=/x>pwd=hunter22", "a path, then the same key"],
+    ["pwd:~/x,pwd=hunter22", "a home path, then the same key"],
+    ["pwd=$(x)pwd=hunter22", "a command, then the same key"],
+    ['pwd=../x{pwd="hunter22"}', "a relative path, then the same key"],
+    // Owner, 2026-11-05, the cost of closing these rules. A false match blocks these safe forms.
+    ["password={a})>x", "a closer before the tag end"],
+    ["password={a},>x", "a comma before the tag end"],
+    ['password={a}">x', "a quote before the tag end"],
+    ["(password:`string`)=>x", "a type in backticks before an arrow"],
+    ["pwd=/a:/b", "a colon in a path"],
+    ["pwd=/a/b?x=1", "a query in a path"],
+    ["pwd=/a=b", "an equal sign in a path"],
+    ["pwd=/a/(b)", "brackets in a path"],
+    ["pwd=/a/b#c", "a hash in a path"],
+  ])("refuses %j: %s", (text) => {
+    expect(findSensitive(text).map((match) => match.kind)).toEqual(["password"]);
+  });
+
+  // A value after one spelling of the key does not hide another spelling. Each spelling scans alone,
+  // and the text is not a path, so each spelling reports one match.
+  it.each([["pwd='/home/owner,password:hunter22"], ["pwd=/home/owner;password=hunter22"]])(
+    "reads each spelling in %j",
+    (text) => {
+      expect(findSensitive(text).map((match) => match.kind)).toEqual(["password", "password"]);
+    },
+  );
+
+  it.each([
+    ["<A password={safe}>Text</A>", "text after the tag end"],
+    // No key comes before the word, as in `<A password={safe} >hunter22</A>`.
+    ["<A password={safe}>hunter22</A>", "a word after the tag end"],
+    ["<Input password={value} />", "a tag end after a space"],
+    ["<Input password={value}/>", "a tag end"],
+    ["<A password={a}>{b}</A>", "a reference after the tag end"],
+    ["<A password={a.b}>x=1</A>", "other code after the tag end"],
+    ["password=${A}>x", "a reference in braces"],
+    ["password=$A>x", "a reference in capitals"],
+    ['password="${A}">x', "a reference in quotes"],
+    ["(password: string)=>login(password)", "the key as an argument after an arrow"],
+    ["(password:string)=>{return 1}", "a block after an arrow"],
+    ["(password:string|null)=>x", "a union before an arrow"],
+    ["pwd=/home/owner", "a path"],
+    ["pwd=~/work", "a home path"],
+    ["pwd=../work", "a relative path"],
+    ["pwd=$(pwd)", "a command"],
+    ["pwd=$(pwd)/sub", "a command and a path"],
+    ["pwd=$(git rev-parse)", "a command with a space"],
+    ['pwd="$(cat /x)"', "a command in quotes"],
+    ['pwd="/Program Files/x"', "a space in quotes"],
+    ['"PWD=`/home/owner`",', "a path in a string in code"],
+    ["pwd=/a/b,", "a comma after a path"],
+    ["pwd=/a/b;", "a semicolon after a path"],
+    ["Use pwd=/a/b.", "a path at the end of a sentence"],
+    ["pwd=/a/b:", "a colon after a path"],
+    ["(PWD=/home/owner).", "a dot after a closer"],
+    ["pwd=`$(pwd)`).", "a dot after a closer"],
+    // The cost of the rule: the code cannot tell a secret from a path.
+    ["pwd=/hunter22", "a secret that looks like a path"],
+  ])("finds nothing in %j: %s", (text) => {
     expect(findSensitive(text)).toEqual([]);
   });
 });

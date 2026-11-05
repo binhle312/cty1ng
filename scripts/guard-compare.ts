@@ -177,6 +177,18 @@ const TAILS = [
   ',"password":"hunter22"',
   ",password:hunter22",
   " password: hunter22",
+  ">password=hunter22",
+  "/>password=hunter22",
+  ")=>password=hunter22",
+  ")=>{password:hunter22",
+  ";password=hunter22",
+  "password=hunter22",
+  ">pwd=hunter22",
+  ")=>pwd=hunter22",
+  ";pwd=hunter22",
+  ",pwd=hunter22",
+  ">DB_PASS=hunter22",
+  ";DB_PASS=hunter22",
 ];
 
 // old -> new, then the wrapped value, with the count and the first text.

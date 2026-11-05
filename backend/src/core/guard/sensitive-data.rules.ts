@@ -52,10 +52,14 @@ const SETTING_TYPE = String.raw`${SETTING_WORD}(?:\|${SETTING_WORD})*`;
 // it. Other text after `=` is code (`= process.env.X`). `str` and `any` are under the 4-character
 // minimum, so only this rule reads past them.
 const TYPE_BEFORE_VALUE = String.raw`(?:(?:${SETTING_WORD}|str|any)(?:\s*\|\s*${SETTING_WORD})*\s*=\s*(?=["'\`]))?`;
+// A reference or a type ends at a JSX tag end or an arrow. The text after it is not the value, so the
+// scan still reads a later key there (DQ-058).
+const REFERENCE_BEFORE_TAG_END = String.raw`(?:\$\{\{?\s*[\w.-]+\s*\}\}?|\$[A-Z_][A-Z0-9_]*|\{[A-Za-z_$][\w.$]*\})(?=\/?>)`;
+const TYPE_BEFORE_ARROW = String.raw`${SETTING_TYPE}(?=\)=>)`;
 // A schema object with its type first, read whole so that the free rule sees all its members. Then
 // a whole phrase in quotes or backticks, an unclosed quote, React state with a type, read whole
 // because a union can hold a space, or a word: 4 or more characters.
-const PASSWORD_VALUE = String.raw`${TYPE_BEFORE_VALUE}(\{\s*["']?type["']?\s*:[^{}\n]*(?:\}|$)|"(?:[^"\\\n]|\\.){4,}"|'[^'\n]{4,}'|\`[^\`\n]{4,}\`\S*?${VALUE_END}|["'][^\s"']{4,}|(?:React\.)?useState<[^<>()\n]*>\([^()\n]*\)\S*?${VALUE_END}|[^\s"']\S{3,}?${VALUE_END})`;
+const PASSWORD_VALUE = String.raw`${TYPE_BEFORE_VALUE}(${REFERENCE_BEFORE_TAG_END}|${TYPE_BEFORE_ARROW}|\{\s*["']?type["']?\s*:[^{}\n]*(?:\}|$)|"(?:[^"\\\n]|\\.){4,}"|'[^'\n]{4,}'|\`[^\`\n]{4,}\`\S*?${VALUE_END}|["'][^\s"']{4,}|(?:React\.)?useState<[^<>()\n]*>\([^()\n]*\)\S*?${VALUE_END}|[^\s"']\S{3,}?${VALUE_END})`;
 
 // The schema members that cannot hold a secret. A free rule lists each word that it takes, because
 // a place that takes any text can hold a secret (DQ-052). So `default`, `value` and any other member
@@ -63,12 +67,11 @@ const PASSWORD_VALUE = String.raw`${TYPE_BEFORE_VALUE}(\{\s*["']?type["']?\s*:[^
 const SCHEMA_MEMBER = String.raw`["']?(?:minLength|maxLength)["']?\s*:\s*\d+|["']?(?:nullable|required|readOnly|writeOnly)["']?\s*:\s*(?:true|false)|["']?format["']?\s*:\s*["']password["']`;
 
 // The values that hold no secret (owner, 2026-11-05, security.md §2.13). A placeholder is not one.
+// Each rule lists all that it takes, with no place for any text: free text can hold a key, and the
+// scan does not read the same text again (DQ-052, DQ-058).
 const FREE_PASSWORD_VALUES: readonly RegExp[] = [
   // A literal or a type as a complete token, so false!, "false" and `false alarm` are strings.
-  new RegExp(
-    String.raw`^(?:\`${SETTING_TYPE}\`|${SETTING_TYPE})(?:[\`)}\],;]+[.:]?|\)=>.*)?$`,
-    "i",
-  ),
+  new RegExp(String.raw`^(?:\`${SETTING_TYPE}\`|${SETTING_TYPE})(?:[\`)}\],;]+[.:]?)?$`, "i"),
   // A schema with no value: {"type": "string"}, {"type": "string", "minLength": 8}.
   new RegExp(
     String.raw`^\{\s*["']?type["']?\s*:\s*["']?${SETTING_TYPE}["']?(?:\s*,\s*(?:${SCHEMA_MEMBER}))*\s*[,}]?$`,
@@ -76,9 +79,9 @@ const FREE_PASSWORD_VALUES: readonly RegExp[] = [
   ),
   // React state with no first value: useState(), useState(""), useState<string | null>(null).
   /^(?:React\.)?useState(?:<string(?:\s*\|\s*(?:null|undefined))?>)?\((?:""|''|``|null|undefined)?\)[)}\],;]*$/,
-  // A reference: ${DB_PASSWORD}, $DB_PASSWORD, ${{ secrets.X }}, {password}, and {false} before the
-  // end of a JSX tag. Case matters: $ecret123 is a password.
-  /^["'`]?(?:\$\{\{?\s*[\w.-]+\s*\}\}?|\$[A-Z_][A-Z0-9_]*|\{[A-Za-z_$][\w.$]*\})["']?[`)}\],;]*[.:]?(?:\/?>.*)?$/,
+  // A reference: ${DB_PASSWORD}, $DB_PASSWORD, ${{ secrets.X }}, {password}, {false}. Case matters:
+  // $ecret123 is a password.
+  /^["'`]?(?:\$\{\{?\s*[\w.-]+\s*\}\}?|\$[A-Z_][A-Z0-9_]*|\{[A-Za-z_$][\w.$]*\})["']?[`)}\],;]*[.:]?$/,
   // Under the 4-character minimum: backticks do not count, as quotes do not.
   /^`[^`]{0,3}`[)}\],;]*[.:]?$/,
 ];
@@ -86,8 +89,11 @@ const FREE_PASSWORD_VALUES: readonly RegExp[] = [
 const passwordValueIsFree = (value: string): boolean =>
   FREE_PASSWORD_VALUES.some((free) => free.test(value));
 
-// PWD is also the shell's working folder: /home/owner, ~/work, ../work, $(pwd).
-const SHELL_PATH = /^["'`]?(?:~?\/|\.{1,2}\/|\$\()/;
+// PWD is also the shell's working folder: /home/owner, ~/work, ../work, $(pwd), $(pwd)/sub. A path has
+// no `=` or `:` inside it, because a later key needs one of them (DQ-059). Only text in quotes can
+// hold a space here.
+const SHELL_PATH =
+  /^["'`]?(?:(?:~?\/|\.{1,2}\/)[\w./~+@ -]*|\$\([\w./ -]*(?:\)[\w./ -]*)?)["'`)}\],;]*[.:]?$/;
 
 const passwordDetector = (
   key: string,

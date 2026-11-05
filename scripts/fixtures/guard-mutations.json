@@ -588,8 +588,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "(?:[\\`)}\\],;]+[.:]?|\\)=>.*)?$",
-        "replace": "(?:\\)=>.*)?$"
+        "find": "(?:[\\`)}\\],;]+[.:]?)?$`",
+        "replace": "$`"
       }
     ]
   },
@@ -598,8 +598,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "+[.:]?|\\)=>",
-        "replace": "+|\\)=>"
+        "find": "+[.:]?)?$`",
+        "replace": "+)?$`"
       }
     ]
   },
@@ -608,28 +608,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "[\\`)}\\],;]+[.:]?|\\)=>",
-        "replace": "[\\`)}\\],;.:]+|\\)=>"
-      }
-    ]
-  },
-  {
-    "name": "setting: no arrow",
-    "file": "backend/src/core/guard/sensitive-data.rules.ts",
-    "edits": [
-      {
-        "find": "|\\)=>.*)?$",
-        "replace": ")?$"
-      }
-    ]
-  },
-  {
-    "name": "setting: arrow alone",
-    "file": "backend/src/core/guard/sensitive-data.rules.ts",
-    "edits": [
-      {
-        "find": "|\\)=>.*)?$",
-        "replace": "|\\)=.*)?$"
+        "find": "[\\`)}\\],;]+[.:]?)?$`",
+        "replace": "[\\`)}\\],;.:]+)?$`"
       }
     ]
   },
@@ -638,8 +618,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": ".*)?$`,",
-        "replace": ".*)?`,"
+        "find": "[.:]?)?$`, \"i\"",
+        "replace": "[.:]?)?`, \"i\""
       }
     ]
   },
@@ -648,8 +628,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": ".*)?$`,\n    \"i\",",
-        "replace": ".*)?$`,"
+        "find": "[.:]?)?$`, \"i\"",
+        "replace": "[.:]?)?$`"
       }
     ]
   },
@@ -658,8 +638,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "\\$\\{\\{?\\s*[\\w.-]+\\s*\\}\\}?|",
-        "replace": ""
+        "find": "/^[\"'`]?(?:\\$\\{\\{?\\s*[\\w.-]+\\s*\\}\\}?|",
+        "replace": "/^[\"'`]?(?:"
       }
     ]
   },
@@ -668,8 +648,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "\\$[A-Z_][A-Z0-9_]*|",
-        "replace": ""
+        "find": "\\}\\}?|\\$[A-Z_][A-Z0-9_]*|\\{[A-Za-z_$][\\w.$]*\\})[\"']?",
+        "replace": "\\}\\}?|\\{[A-Za-z_$][\\w.$]*\\})[\"']?"
       }
     ]
   },
@@ -678,8 +658,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "\\$[A-Z_][A-Z0-9_]*|",
-        "replace": "\\$[A-Za-z_]\\w*|"
+        "find": "\\}\\}?|\\$[A-Z_][A-Z0-9_]*|\\{[A-Za-z_$][\\w.$]*\\})[\"']?",
+        "replace": "\\}\\}?|\\$[A-Za-z_]\\w*|\\{[A-Za-z_$][\\w.$]*\\})[\"']?"
       }
     ]
   },
@@ -688,8 +668,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "|\\{[A-Za-z_$][\\w.$]*\\}",
-        "replace": ""
+        "find": "|\\{[A-Za-z_$][\\w.$]*\\})[\"']?",
+        "replace": ")[\"']?"
       }
     ]
   },
@@ -708,18 +688,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "[`)}\\],;]*[.:]?(?:\\/?>",
-        "replace": "[`)}\\],;]*(?:\\/?>"
-      }
-    ]
-  },
-  {
-    "name": "ref: no tag end",
-    "file": "backend/src/core/guard/sensitive-data.rules.ts",
-    "edits": [
-      {
-        "find": "(?:\\/?>.*)?$/",
-        "replace": "$/"
+        "find": "[\"']?[`)}\\],;]*[.:]?$/",
+        "replace": "[\"']?[`)}\\],;]*$/"
       }
     ]
   },
@@ -728,38 +698,288 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "(?:\\/?>.*)?$/",
-        "replace": "(?:\\/?>.*)?/"
+        "find": "[\"']?[`)}\\],;]*[.:]?$/",
+        "replace": "[\"']?[`)}\\],;]*[.:]?/"
       }
     ]
   },
   {
-    "name": "ref: nothing after the tag end",
+    "name": "reader: no tag end stop",
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "(?:\\/?>.*)?$/",
-        "replace": "(?:\\/?>)?$/"
+        "find": "${REFERENCE_BEFORE_TAG_END}|",
+        "replace": ""
       }
     ]
   },
   {
-    "name": "ref: slash needed",
+    "name": "reader: no arrow stop",
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "(?:\\/?>.*)?$/",
-        "replace": "(?:\\/>.*)?$/"
+        "find": "|${TYPE_BEFORE_ARROW}",
+        "replace": ""
       }
     ]
   },
   {
-    "name": "ref: no slash",
+    "name": "reader: a reference ends anywhere",
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "(?:\\/?>.*)?$/",
-        "replace": "(?:>.*)?$/"
+        "find": "(?=\\/?>)",
+        "replace": ""
+      }
+    ]
+  },
+  {
+    "name": "reader: a type ends anywhere",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?=\\)=>)",
+        "replace": ""
+      }
+    ]
+  },
+  {
+    "name": "reader: slash needed",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?=\\/?>)",
+        "replace": "(?=\\/>)"
+      }
+    ]
+  },
+  {
+    "name": "reader: no slash",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?=\\/?>)",
+        "replace": "(?=>)"
+      }
+    ]
+  },
+  {
+    "name": "reader: the tag end at the line end only",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?=\\/?>)",
+        "replace": "(?=\\/?>$)"
+      }
+    ]
+  },
+  {
+    "name": "reader: half an arrow",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?=\\)=>)",
+        "replace": "(?=\\)=)"
+      }
+    ]
+  },
+  {
+    "name": "reader: no arrow bracket",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?=\\)=>)",
+        "replace": "(?==>)"
+      }
+    ]
+  },
+  {
+    "name": "reader: no ${} before a tag end",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:\\$\\{\\{?\\s*[\\w.-]+\\s*\\}\\}?|\\$[A-Z_]",
+        "replace": "(?:\\$[A-Z_]"
+      }
+    ]
+  },
+  {
+    "name": "reader: no $X before a tag end",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "\\}\\}?|\\$[A-Z_][A-Z0-9_]*|\\{[A-Za-z_$][\\w.$]*\\})(?=",
+        "replace": "\\}\\}?|\\{[A-Za-z_$][\\w.$]*\\})(?="
+      }
+    ]
+  },
+  {
+    "name": "reader: no {x} before a tag end",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "|\\{[A-Za-z_$][\\w.$]*\\})(?=",
+        "replace": ")(?="
+      }
+    ]
+  },
+  {
+    "name": "reference: any text after the tag end",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "[\"']?[`)}\\],;]*[.:]?$/",
+        "replace": "[\"']?[`)}\\],;]*[.:]?(?:\\/?>.*)?$/"
+      }
+    ]
+  },
+  {
+    "name": "setting: any text after an arrow",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:[\\`)}\\],;]+[.:]?)?$`",
+        "replace": "(?:[\\`)}\\],;]+[.:]?|\\)=>.*)?$`"
+      }
+    ]
+  },
+  {
+    "name": "path: any text after the start",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "[\\w./~+@ -]*",
+        "replace": ".*"
+      }
+    ]
+  },
+  {
+    "name": "path: = in a path",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "[\\w./~+@ -]*",
+        "replace": "[\\w./~+@ =-]*"
+      }
+    ]
+  },
+  {
+    "name": "path: : in a path",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "[\\w./~+@ -]*",
+        "replace": "[\\w./~+@ :-]*"
+      }
+    ]
+  },
+  {
+    "name": "path: no space in quotes",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "[\\w./~+@ -]*",
+        "replace": "[\\w./~+@-]*"
+      }
+    ]
+  },
+  {
+    "name": "path: no end check",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "[\"'`)}\\],;]*[.:]?$/",
+        "replace": "[\"'`)}\\],;]*[.:]?/"
+      }
+    ]
+  },
+  {
+    "name": "path: no closers",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "[\"'`)}\\],;]*[.:]?$/",
+        "replace": "[.:]?$/"
+      }
+    ]
+  },
+  {
+    "name": "path: no quote in the closers",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "[\"'`)}\\],;]*[.:]?$/",
+        "replace": "[)}\\],;]*[.:]?$/"
+      }
+    ]
+  },
+  {
+    "name": "path: no dot or colon at the end",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "[\"'`)}\\],;]*[.:]?$/",
+        "replace": "[\"'`)}\\],;]*$/"
+      }
+    ]
+  },
+  {
+    "name": "path: no dot at the end",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "[\"'`)}\\],;]*[.:]?$/",
+        "replace": "[\"'`)}\\],;]*:?$/"
+      }
+    ]
+  },
+  {
+    "name": "path: no colon at the end",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "[\"'`)}\\],;]*[.:]?$/",
+        "replace": "[\"'`)}\\],;]*\\.?$/"
+      }
+    ]
+  },
+  {
+    "name": "path: a command takes any text",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "\\$\\([\\w./ -]*",
+        "replace": "\\$\\(.*"
+      }
+    ]
+  },
+  {
+    "name": "path: no space in a command",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "\\$\\([\\w./ -]*",
+        "replace": "\\$\\([\\w./-]*"
+      }
+    ]
+  },
+  {
+    "name": "path: no text after a command",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:\\)[\\w./ -]*)?",
+        "replace": "\\)?"
+      }
+    ]
+  },
+  {
+    "name": "path: any text after a command",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:\\)[\\w./ -]*)?",
+        "replace": "(?:\\).*)?"
       }
     ]
   },
@@ -858,8 +1078,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "SHELL_PATH = /^[\"'`]?",
-        "replace": "SHELL_PATH = /^[\"']?"
+        "find": "SHELL_PATH =\n  /^[\"'`]?",
+        "replace": "SHELL_PATH =\n  /^[\"']?"
       }
     ]
   },
@@ -878,8 +1098,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "\\.{1,2}\\/|",
-        "replace": ""
+        "find": "|\\.{1,2}\\/)[",
+        "replace": ")["
       }
     ]
   },
@@ -888,8 +1108,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "|\\$\\(",
-        "replace": ""
+        "find": "|\\$\\([\\w./ -]*(?:\\)[\\w./ -]*)?)",
+        "replace": ")"
       }
     ]
   },

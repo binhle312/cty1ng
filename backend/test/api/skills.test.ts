@@ -183,6 +183,9 @@ describe("edits", () => {
     '"password": {"type":"string","value":1234}',
     'const password: string = "hunter22";',
     "DB_PASSWORD_UAT=hunter22",
+    '<A password={safe}>{config.password="hunter22"}</A>',
+    'const f = (password: string)=>({password:"hunter22"})',
+    "pwd=/x;pwd=hunter22",
   ])("POST /skills with the password string %j gives 422 sensitive_data", async (body_md) => {
     const response = await send("POST", "/skills", { ...newSkill, body_md });
     expect(response.status).toBe(422);
@@ -196,6 +199,9 @@ describe("edits", () => {
     "const password: string = process.env.DB_PASSWORD;",
     "const [password, setPassword] = useState<string | null>(null)",
     "<Input showPassword={false}/>",
+    "<A password={safe}>Text</A>",
+    "(password: string)=>login(password)",
+    "pwd=/home/owner",
   ])("POST /skills with the literal setting %j gives 201", async (body_md) => {
     const response = await send("POST", "/skills", { ...newSkill, body_md });
     expect(response.status).toBe(201);
