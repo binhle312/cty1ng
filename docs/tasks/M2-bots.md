@@ -157,7 +157,8 @@ dialog in M5b).
 - Header in Recent activity: activity events while the pointer is in the header move no
   avatar; the next click outside applies the new order once.
 - Header with more bots than fit: Tab to an avatar shows its name tooltip and the ‹ › buttons,
-  with no pointer in the header; a swipe on touch scrolls the roster (UI-2.2, UI-2.7,
+  with no pointer in the header; the wheel and a two-finger touchpad motion scroll the roster
+  (the touch swipe was dropped, owner, 2026-11-05) (UI-2.2, UI-2.7,
   `top-header.md` states 3 and 5).
 - `make seed` twice → one Guide, one BA and one Designer; the second run reports them and
   changes nothing.

@@ -45,6 +45,7 @@ New to the project (human or agent), read in this order:
 | [development-plan.md](development-plan.md) | Slices M0–M9 in order, dependencies, checkpoints |
 | [tasks/](tasks/) | Existing milestone and part briefs; `development-plan.md` defines delivery parts and the briefs still needed |
 | [plans/](plans/README.md) | The plan of each slice: a record of what the owner and the builder agreed before the build. Not spec |
+| [audits/](audits/2026-11-05-repo-audit.md) | Repository audits: findings, owner decisions and fix progress. A record, not spec |
 
 ## Rules for keeping docs healthy
 

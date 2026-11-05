@@ -26,7 +26,7 @@ sticky on every page (UI-2.11), background `surface`, bottom line `outline`.
 | --- | --- | --- |
 | 1 | Bots fit | Centred in the middle zone |
 | 2 | More bots than fit | Extra bots stay inside the zone; the zone edge fades (`surface` to transparent, 30 px) on each side that has more. Always visible |
-| 3 | Pointer over the header, or keyboard focus inside it | ‹ › buttons (28 px, `surface-raised`, `outline-strong`) appear just outside the zone, only on a side with more bots; one click moves about one zone width. The wheel scrolls sideways. On touch, a swipe scrolls sideways (a long press still starts a drag, HD6) |
+| 3 | Pointer over the header, or keyboard focus inside it | ‹ › buttons (28 px, `surface-raised`, `outline-strong`) appear just outside the zone, only on a side with more bots; one click moves about one zone width. The wheel and a two-finger touchpad motion scroll sideways. On touch, a long press starts a drag (HD6) |
 | 4 | Hover an avatar | The circle lightens, `cursor: pointer`, the bot name shows in a tooltip under it |
 | 5 | Keyboard focus | Tab reaches each avatar in order and scrolls it into view; 2 px `primary` ring. The same tooltip as hover (state 4, H1) shows within 300 ms (UI-2.2). No arrow-key moves (later) |
 | 6 | Bot states | Faces and badges of `bot-avatar.md` §3, for the open conversation only |

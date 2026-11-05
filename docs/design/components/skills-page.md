@@ -471,6 +471,9 @@ the changes marked "owner, 2026-10-31".
 - The skill is deprecated in another place while this tab has unsaved changes: the text stays,
   leaving asks first, and the save bar says "This skill was deprecated. Your changes are still
   here, but you cannot save them. Copy what you need before you leave." (owner, 2026-10-31).
+- The skill then leaves the list (Trash, another tab) while this tab has unsaved changes: the page
+  shows Page not found, and the edit goes with the page. No question appears. This is the rule of
+  `bot-page.md` §4.2 (owner, 2026-11-05).
 - Read-only fields (a deprecated skill, another author's skill, a pending Create) are real
   read-only controls, not disabled ones: they take focus, so the owner can select and copy the
   text from the keyboard (owner, 2026-10-31).
