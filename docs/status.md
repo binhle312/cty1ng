@@ -12,7 +12,7 @@ Last updated: 2026-11-05
 
 ## Now
 
-The repository audit of 2026-11-05 found 55 issues. After the owner's decisions, 15 are P2, 39 are P3, and the owner accepted one case; none is P1. Its fixes come before M3 and #69 in the owner's order. Findings, decisions and progress are in [audits/2026-11-05-repo-audit.md](audits/2026-11-05-repo-audit.md). PR 2 of 7, the security fixes, is a draft: [#73](https://github.com/binhle312/cty1ng/pull/73). It waits for one full independent review of its final revision, and then for the owner.
+The repository audit of 2026-11-05 found 55 issues. After the owner's decisions, 15 are P2, 39 are P3, and the owner accepted one case; none is P1. Its fixes come before M3 and #69 in the owner's order. Findings, decisions and progress are in [audits/2026-11-05-repo-audit.md](audits/2026-11-05-repo-audit.md). PR 2 of 7, the security fixes, is a draft: [#73](https://github.com/binhle312/cty1ng/pull/73). The independent review of `d008b65` found no P1 or P2. It waits for the owner, who marks it Ready, and that starts the paid security review.
 
 M0, M1 and M2 are merged. M2c merged in [#59](https://github.com/binhle312/cty1ng/pull/59) on 2026-11-04.
 M2c adds the bot page and the Skills page's upgrade and assign cards.
@@ -57,6 +57,7 @@ it in, and the row goes when its PR merges.
 
 | Item | Found in | Target |
 | --- | --- | --- |
+| Add a rule that each claim in a PR body or an owner question needs a real run (owner, 2026-11-05, DQ-057) | [#73](https://github.com/binhle312/cty1ng/pull/73) review | A docs PR after #73 |
 | `pnpm e2e:serve` can die and leave its servers on the ports: a closed stdout (`EPIPE`) or SIGHUP stops the script without stopping them, and the marker stays. It fails safe, but its message says to stop a script that no longer runs, and no doc says to delete `.e2e-serve`. Stop the servers on those exits, and correct the message | [#60](https://github.com/binhle312/cty1ng/pull/60) review | M2 close |
 | No test runs `scripts/e2e-serve.ts` itself, so its guard and signal wiring have only manual evidence | [#60](https://github.com/binhle312/cty1ng/pull/60) review | M2 close |
 | Temporary CLI `skills trash` and `skills restore` (M1 spec gap pass, owner 2026-10-30): remove them when the Trash page exists | [#51](https://github.com/binhle312/cty1ng/pull/51) | M5b |

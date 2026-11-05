@@ -61,6 +61,7 @@ After these: the owner fixes or drops each of the other 34 P3 findings and the P
   3. `backend/test/security/guard-real-text.test.ts` fails.
 
   Any other text, free or refused, is P3 and goes on the P3 list in this file, even if `main` gives another answer. So a secret in a new shape can stay free until a later PR. The freeze covers only which text the patterns accept. The whole merge bar still applies to the scan speed, the masking of a found value, row 5, the import change, and each required check.
+- DQ-057 has the same cause as DQ-046 and DQ-048: a claim with no run behind it. Decision: no redesign, because the cause is process and the wrong claims are corrected. A later docs PR adds a rule that each claim in a PR body or an owner question needs a real run.
 
 ## Fix progress
 
