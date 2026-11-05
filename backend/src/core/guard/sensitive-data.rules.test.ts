@@ -339,6 +339,7 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     ["password: `ab`", "a backtick value under 4 characters"],
     ["password: `abc`", "a backtick value under 4 characters"],
     ["password: `abc`,", "a backtick value under 4 characters, before a mark"],
+    ["password: `a b`x", "a backtick value under 4 characters, before text"],
     ["Use password: `abc`.", "a backtick value under 4 characters, in a sentence"],
     ["password: ``", "an empty backtick value"],
     ["password: abc", "a value under 4 characters"],
@@ -640,6 +641,9 @@ describe("findSensitive: random values next to a key word", () => {
     "api_key = Correct_Horse_Battery_Staple_22",
     "JWT_SECRET=your_jwt_secret_key_goes_here_123",
     "cancellationToken: CancellationTokenSource2Factory",
+    // Mutations that no test caught at 60de8c3 (DQ-051): `y` is a vowel, and `-` is a separator.
+    "SECRET_KEY: syncCryptRhythmLynxPsychGym2",
+    "JWT_SECRET=your-jwt-secret-key-goes-here-123",
   ])("finds nothing in the words of %j", (text) => {
     expect(findSensitive(text)).toEqual([]);
   });
