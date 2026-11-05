@@ -38,6 +38,12 @@ The plan comes from the owner, 2026-11-04: audit, owner review of each finding, 
 
 After these: the owner fixes or drops each of the other 34 P3 findings. Then one style-only PR for the 104 `max-params` places, a second audit, the merge of #69, and M3. The coding standard stays parked until the owner restarts it.
 
+**Decisions made during PR 2** (owner, 2026-11-05):
+
+- The frontmatter limit for row 5 is 8,192 characters. The largest valid export has about 6.2 KB, so a much lower limit is not possible.
+- The import preview pauses between rows. A review showed that a 35 KB zip with 200 folders under the limit still blocked the server for about 15 s.
+- A password value still needs 4 or more characters. In `"password": "x"`, `x` means any value.
+
 ## Fix progress
 
 Each fix PR updates its row in the same PR. Check `gh pr list --state all`, because this table can be behind.

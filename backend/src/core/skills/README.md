@@ -8,7 +8,7 @@ immutable versions, Clone, Deprecate, Trash, and import and export of `SKILL.md`
 | `skills.service.ts` | Every skill use case: list, create, Clone, rename, new version, restore a version, diff, Deprecate, Trash, restore, purge, export |
 | `skill-import.service.ts` | Import preview (kept in memory) and Apply in one transaction, with the full recheck (§3.5) |
 | `skill.rules.ts` | Pure checks of a skill's name, description and body: limits, slug format, the D39 guard |
-| `skill-md.ts` | Parses and writes `SKILL.md` (front matter `name`, `description`, then the body); refuses a front matter over 8 KB before the parse |
+| `skill-md.ts` | Parses and writes `SKILL.md` (front matter `name`, `description`, then the body); refuses a front matter over 8,192 characters before the parse |
 | `skill-diff.ts` | The line diff between two versions (`diff` library) |
 | `skills.service.test.ts` | Service tests: versions, Clone, authorship, Trash and purge, the guard on each path, races, invariants 02, 05, 19, 20, 25 |
 | `skill-import.service.test.ts` | Import preview rows and Apply: the recheck, `stale_write`, `preview_expired` |

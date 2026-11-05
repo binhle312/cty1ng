@@ -675,7 +675,7 @@ Import (UI: upload a zip; CLI: `pnpm --filter backend cli skills import <folder>
 1. **Preview** (no writes): for each `<slug>/SKILL.md` → `new`, `changed` (with a diff against
    the latest version), `unchanged`, or `invalid` (with the reason: bad frontmatter, slug
    mismatch, a slug that breaks the slug rule or is reserved (§3.1), a file over 1 MB, a
-   frontmatter over 8 KB (`security.md` §2.4), not UTF-8, a likely secret (D39, `security.md`
+   frontmatter over 8,192 characters (`security.md` §2.4), not UTF-8, a likely secret (D39, `security.md`
    §2.13)). Skills authored by someone else are `conflict: not author`. A slug of a skill in Trash is `conflict: in Trash`. A slug of a
    deprecated skill is `conflict: deprecated` ("Deprecated. Make it active again to import.").
    Other files in a skill folder are listed as skipped and never read (bots cannot run code).
