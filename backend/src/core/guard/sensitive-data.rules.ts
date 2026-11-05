@@ -41,9 +41,13 @@ interface Detector {
 const DETECTORS: readonly Detector[] = [
   { kind: "private_key", pattern: /-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----/g },
   {
+    // Any prefix: `DB_PASSWORD=`, `dbPassword:` and `"password":`. `\b` does not fire after `_`,
+    // so there is no left boundary, except that `OLDPWD` is a shell variable and not a password.
+    // A placeholder has no exception, but true, false and null are settings about a password.
     kind: "password",
-    pattern: /\b(?:password|passwd|pwd)\s*[:=]\s*["']?([^\s"']{4,})/gi,
+    pattern: /(?:password|passwd|(?<![a-z0-9])pwd)["']?\s*[:=]\s*["']?([^\s"']{4,})/gi,
     group: 1,
+    accept: (secret) => !/^(?:true|false|null)[^a-z0-9]*$/i.test(secret),
   },
   {
     // Common provider prefixes: OpenAI and Anthropic (sk-), AWS (AKIA), GitHub (ghp_ and
@@ -53,12 +57,13 @@ const DETECTORS: readonly Detector[] = [
       /\b(?:sk-[A-Za-z0-9_-]{16,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{30,}|xox[abpors]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{35})/g,
   },
   {
-    // A long random-looking string next to a word like key, token or secret.
+    // A long random-looking string next to a word like key, token or secret, with any prefix
+    // (`GITHUB_TOKEN=`, `clientSecret:`).
     kind: "api_key",
     pattern:
-      /\b(?:api[_ -]?key|token|secret|access[_ -]?key)\b[^\n]{0,20}?([A-Za-z0-9_\-+/=]{24,})/gi,
+      /(?:api[_ -]?key|token|secret|access[_ -]?key)\b[^\n]{0,20}?([A-Za-z0-9_\-+/=]{24,})/gi,
     group: 1,
-    accept: (secret) => highEntropy(secret),
+    accept: (secret) => highEntropy(secret) || randomHex(secret),
   },
   {
     kind: "card_number",
@@ -137,4 +142,12 @@ export function ibanValid(iban: string): boolean {
 function highEntropy(value: string): boolean {
   const classes = [/[a-z]/, /[A-Z]/, /\d/, /[_\-+/=]/].filter((re) => re.test(value)).length;
   return classes >= 3 && new Set(value).size >= Math.min(16, value.length / 2);
+}
+
+// Hex has only two kinds of character, so `highEntropy` misses it. The pattern's value can start
+// with the separator of `TOKEN=`. Random hex has a letter and at least half of the 16 hex
+// characters. A long number has no letter, and a repeated word has few different characters.
+function randomHex(value: string): boolean {
+  const hex = value.replace(/^[_\-+/=]+/, "").toLowerCase();
+  return /^[\da-f]+$/.test(hex) && /[a-f]/.test(hex) && new Set(hex).size >= 8;
 }
