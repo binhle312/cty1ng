@@ -4,9 +4,9 @@ The order in which the app is built, and why. Progress lives in [status.md](stat
 this file changes only when the plan changes.
 
 Split milestones into reviewable parts where needed. Each part preserves a usable, tested
-app and merges before the next starts (except the parallel cases in `workflow.md` §5).
+app and merges before the next starts (except the parallel cases in [parallel work](workflows/coordination.md#parallel-work)).
 Write a brief for each implementation part before code starts; hand it to the builder agent with the prompt in
-`workflow.md` §3.
+[the builder prompt](workflows/planning.md#builder-prompt).
 
 | Slice | Brief | Delivers | Checkpoint | Depends on |
 | --- | --- | --- | --- | --- |
@@ -35,7 +35,7 @@ Write a brief for each implementation part before code starts; hand it to the bu
 | later | not written | Desktop app (Windows, Linux) and coding agents from the app (idea only: [ideas/desktop-app-and-cli-agents.md](ideas/desktop-app-and-cli-agents.md)) | separate milestone | M9 and external project folders (D23) |
 
 "Checkpoint: plan" means the builder stops after writing the plan and waits for the owner's
-approval (`workflow.md` §2). Every slice also needs the owner's review of migrations and
+approval ([planning](workflows/planning.md#plan)). Every slice also needs the owner's review of migrations and
 `Needs human review` items before merge.
 
 Every slice with a screen (M0–M5d, M6, Inbox, M7, M8, M8b, M8c, T2) also has a **UI design checkpoint**:
@@ -60,7 +60,7 @@ each part still needs its implementation plan.
 | M3g — Reply feedback | Ratings, notes, endpoints and events, with the feedback controls and their request states | Only eligible replies accept feedback; replacement and deletion work; secret checks apply; message content stays unchanged | M3f |
 
 Each part has a **plan** checkpoint, its own acceptance tests and a recovery approach.
-Schema, API, security, dependency and UI approvals still follow `workflow.md` §2 and §7.
+Schema, API, security, dependency and UI approvals still follow [planning](workflows/planning.md) and [approvals](../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
 Each intermediate merge must preserve the existing app; part plans must define when new APIs
 and worker execution become available together. Capture usage from the first model call in M3b.
 Keep Stop, retries and recovery with execution; M3d adds their UI.
@@ -99,7 +99,7 @@ their future UI. Do not expose an action that needs an approval card before that
 Each new screen or request-owning card flow gets its state table and order tests.
 
 The listed dependencies are prerequisites, not permission for parallel work on shared schemas.
-Follow `workflow.md` §5 for parallel work. A dependency on a milestone means all its required
+Follow [parallel work](workflows/coordination.md#parallel-work) for parallel work. A dependency on a milestone means all its required
 parts; a dependency on a named part means only that part and its prerequisites.
 Final integration criteria belong to the last consuming part, while each earlier part proves
 its own behaviour at merge. Security, recovery and performance checks start with the code they protect.
@@ -276,7 +276,7 @@ unwritten workflows into the Board.
 Briefs live in [tasks/](tasks/). Every brief has the same sections so agents know where to look:
 
 - **Goal**: one paragraph.
-- **Read first**: the documents (and sections) the builder must read.
+- **Read first:** exact documents and sections required by this delivery part. Require a whole document only when the task needs all of it.
 - **In scope / Out of scope**.
 - **Deliverables**: files, endpoints, pages.
 - **Acceptance criteria**: references to `UI-x.y` ids in `requirements/`, `conversation-rules.md` sections,

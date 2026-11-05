@@ -18,4 +18,4 @@ once, the delay goes away even without `pnpm e2e:serve`.
 
 **Reusable principles.** [Verify delivery](../../.agents/skills/principle-verify-delivery/SKILL.md).
 
-**Project guidance.** [testing](../testing.md), [workflow §2](../workflow.md#2-lifecycle-of-a-slice).
+**Project guidance.** [testing](../testing.md), [implementation workflow](../workflows/implementation.md#self-check).

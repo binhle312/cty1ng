@@ -57,7 +57,7 @@ and land on the message.
 ## Needs human review
 
 The UI design in the plan (layout, components, states), approved before UI code is written
-(`docs/workflow.md` §2; sketches in `docs/design/` are not specs).
+([planning workflow](../workflows/planning.md#ui-design-checkpoint); sketches in `docs/design/` are not specs).
 
 The renderer contract (`renderer.ts`, `model.ts`): it is the long-lived interface; chart and
 graph dependencies (react-resizable-panels, and the Timeline library the plan picks).

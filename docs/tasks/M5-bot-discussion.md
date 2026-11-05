@@ -65,7 +65,7 @@ As above, plus an API test that settings inheritance (`null` = global) works.
 ## Needs human review
 
 The UI design in the plan (layout, components, states), approved before UI code is written
-(`docs/workflow.md` §2; sketches in `docs/design/` are not specs).
+([planning workflow](../workflows/planning.md#ui-design-checkpoint); sketches in `docs/design/` are not specs).
 
 None expected beyond the usual.
 

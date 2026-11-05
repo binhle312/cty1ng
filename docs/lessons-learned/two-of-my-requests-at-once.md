@@ -48,4 +48,4 @@ load. Only the bot list store writes the bot list and the settings (lint rule).
 
 **Reusable principles.** [Model state and order](../../.agents/skills/principle-state-and-order/SKILL.md), [Fix the root cause](../../.agents/skills/principle-fix-root-cause/SKILL.md).
 
-**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [requirements shared states](../requirements/README.md#applies-to-every-story).
+**Project guidance.** [planning workflow](../workflows/planning.md#state-table-for-stateful-screens), [requirements shared states](../requirements/README.md#applies-to-every-story).

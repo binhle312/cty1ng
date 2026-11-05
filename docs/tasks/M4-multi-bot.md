@@ -71,7 +71,7 @@ the purge job, the purge service test and Restore are M5b.
 ## Needs human review
 
 The UI design in the plan (layout, components, states), approved before UI code is written
-(`docs/workflow.md` §2; sketches in `docs/design/` are not specs).
+([planning workflow](../workflows/planning.md#ui-design-checkpoint); sketches in `docs/design/` are not specs).
 
 Routing tests (read the table); the branch columns in the initial schema of this slice;
 the purge policy map for the tables of this slice (`domain-model.md` §16).

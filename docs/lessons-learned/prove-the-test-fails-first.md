@@ -25,4 +25,4 @@ without the behaviour.
 
 **Reusable principles.** [Prove that tests work](../../.agents/skills/principle-prove-tests-work/SKILL.md), [Verify delivery](../../.agents/skills/principle-verify-delivery/SKILL.md).
 
-**Project guidance.** [workflow §2](../workflow.md#2-lifecycle-of-a-slice), [testing §5](../testing.md#5-evidence-in-prs).
+**Project guidance.** [implementation workflow](../workflows/implementation.md#build), [testing §5](../testing.md#5-evidence-in-prs).

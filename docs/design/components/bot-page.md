@@ -24,6 +24,8 @@ is unknown or belongs to a bot in Trash shows "The app could not find this bot. 
 Trash." with **← Back** (M2: the restore is the temporary CLI, `../../api.md` §2). A list that
 does not load shows "The app could not load the bots." with **Try again**, never Page not found.
 
+Read the status above, shared layout, and the tab or action in scope. Include its save and request-state rules.
+
 ## 1. Edit layout (E1–E3)
 
 ```
@@ -275,7 +277,7 @@ switch are off, so the owner cannot send a second change with an old `expected` 
 
 ### 7.1 Requests and late answers (M2c audit, 2026-11-03)
 
-Each request of the tab against the five order questions (`../../workflow.md` §2 step 4). The
+Each request of the tab against the five order questions ([implementation workflow](../../workflows/implementation.md#self-check)). The
 Skills page's Bots tab follows the same rules (`skills-page.md` §2a) through one pure module,
 `frontend/src/features/bots/bot-list-state.ts`: the page shows the server value with the requests
 that wait put on it, in send order, and `bot-list-store.ts` sends it the loads and the answers.

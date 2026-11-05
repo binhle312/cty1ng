@@ -8,6 +8,8 @@ defaults, delete rules, and version history still apply. Each slice adds its tab
 to the initial schema for that slice. The owner approves a schema change in two steps: the schema
 design in this document first, then the generated SQL in the slice PR (`../AGENTS.md` §7).
 
+Read the conventions, affected entities, and applicable invariants. Follow links for related state and constraints.
+
 ## 1. Conventions
 
 - Ids are UUIDv7 (D22), stored as `TEXT` (36 chars) in SQLite and as native `uuid` in Postgres

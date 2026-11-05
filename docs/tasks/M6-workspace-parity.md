@@ -76,7 +76,7 @@ Playwright for J3 and for attaching a file.
 ## Needs human review
 
 The UI design in the plan (layout, components, states), approved before UI code is written
-(`docs/workflow.md` §2; sketches in `docs/design/` are not specs).
+([planning workflow](../workflows/planning.md#ui-design-checkpoint); sketches in `docs/design/` are not specs).
 
 The workspace port, file-serving headers, upload handling.
 

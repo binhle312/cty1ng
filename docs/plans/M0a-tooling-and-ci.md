@@ -26,7 +26,7 @@ shared/ †
 .github/
 ├── workflows/ci.yml, security-review.yml   (+ codeql.yml gets javascript-typescript)
 ├── dependabot.yml      # npm + github-actions, weekly
-└── pull_request_template.md   # workflow.md §6
+└── pull_request_template.md   # ../workflows/pull-request.md
 README.md               # quickstart updated
 ```
 

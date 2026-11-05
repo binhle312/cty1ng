@@ -21,6 +21,8 @@ The plans of each slice are in [plans/](plans/README.md).
 
 [#60](https://github.com/binhle312/cty1ng/pull/60) (e2e server guard) is also open, outside the Slices table.
 
+The documentation routing change is open in [#72](https://github.com/binhle312/cty1ng/pull/72). It splits `docs/workflow.md` into [workflows/](workflows/README.md).
+
 The [Slices table](#slices) records delivery state and PRs.
 The [design index](design/README.md) identifies agreed designs and open design work.
 
@@ -57,7 +59,7 @@ it in, and the row goes when its PR merges.
 | `pnpm e2e:serve` can die and leave its servers on the ports: a closed stdout (`EPIPE`) or SIGHUP stops the script without stopping them, and the marker stays. It fails safe, but its message says to stop a script that no longer runs, and no doc says to delete `.e2e-serve`. Stop the servers on those exits, and correct the message | [#60](https://github.com/binhle312/cty1ng/pull/60) review | M2 close |
 | No test runs `scripts/e2e-serve.ts` itself, so its guard and signal wiring have only manual evidence | [#60](https://github.com/binhle312/cty1ng/pull/60) review | M2 close |
 | Temporary CLI `skills trash` and `skills restore` (M1 spec gap pass, owner 2026-10-30): remove them when the Trash page exists | [#51](https://github.com/binhle312/cty1ng/pull/51) | M5b |
-| P3 (`review-guide.md` §6): late-answer rules still in refs: `create-bot-page.tsx` (`mounted`, `inFlight`), `crop-card.tsx` (`closed`, `lastFile`), `new-skill-page.tsx` (`closed`), and `skill-page.tsx` (`onPage`, added for DQ-020). They are not card or dialog rules, so the owner left them out of the 2026-11-04 design; check them against `frontend-conventions.md` §1 | [#59](https://github.com/binhle312/cty1ng/pull/59) review of `ec8faa7` | When those files next change (owner, 2026-11-04) |
+| P3 (`workflows/merge-bar.md`): late-answer rules still in refs: `create-bot-page.tsx` (`mounted`, `inFlight`), `crop-card.tsx` (`closed`, `lastFile`), `new-skill-page.tsx` (`closed`), and `skill-page.tsx` (`onPage`, added for DQ-020). They are not card or dialog rules, so the owner left them out of the 2026-11-04 design; check them against `frontend-conventions.md` §1 | [#59](https://github.com/binhle312/cty1ng/pull/59) review of `ec8faa7` | When those files next change (owner, 2026-11-04) |
 | The `db_lock_wait_seconds` histogram (`architecture.md` §9, D29 switch trigger 3); there is no metrics output yet | #48 | M3 (the worker brings concurrent writes) |
 | `esbuild` advisory (moderate, dev only, through `drizzle-kit` 0.31.11); no stable fix | #48 | Update `drizzle-kit` when 1.0 is stable (Dependabot) |
 | P3: the wider guard refuses some text that holds no secret: types (`newPassword: string`), JSON labels (`"password": "Password"`), references (`POSTGRES_PASSWORD=${DB_PASSWORD}`, `GITHUB_TOKEN: ${{ secrets.NAME_V2 }}`), and hashes next to a key word. A skill has no override, but the refusal names the line | [#73](https://github.com/binhle312/cty1ng/pull/73) review | Owner decides with the other audit P3 findings |

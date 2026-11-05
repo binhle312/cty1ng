@@ -4,7 +4,7 @@ This file lists every diagram of the specification. It holds no diagram itself. 
 sits in the document that owns its facts, so one fact has one place (`README.md`). Where a
 diagram leaves out or simplifies a rule, that document's text wins.
 
-All diagrams are Mermaid in Markdown (`workflow.md` §2, human review: visual first), so an agent
+All diagrams are Mermaid in Markdown ([human review](workflows/human-review.md#visual-first)), so an agent
 can edit them.
 
 ## Agreed

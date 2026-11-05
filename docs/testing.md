@@ -3,6 +3,8 @@
 This document owns how the app is verified. The goal is that an agent can prove a change works
 without a human clicking around, and that a human reviewer can trust the proof.
 
+Choose the relevant test layer and cases. The required CI gates and evidence rules still apply.
+
 ## 1. Layers
 
 | Layer | Tool | Location | What it proves | Speed |
@@ -180,8 +182,8 @@ Each slice's brief lists which of these steps must pass by its end.
 
 The normal path of an acceptance criterion is not enough. For each screen or flow it builds,
 a slice tests these cases where they apply. The test strategy names them before the code
-(`workflow.md` §2 step 2, "Test strategy before code"), and the spec walk checks them again
-(`workflow.md` §2 step 4):
+([test strategy](workflows/planning.md#test-strategy-before-code)), and the spec walk checks them again
+([implementation self-check](workflows/implementation.md#self-check)):
 
 | Case | Example |
 | --- | --- |
@@ -194,7 +196,7 @@ a slice tests these cases where they apply. The test strategy names them before 
 | An answer comes late | A save or toggle answer that comes after a newer change, a Discard or leaving the page does not undo it |
 | A value changes and changes back | On, then off in another tab: the page cannot tell from the value alone that it changed |
 
-**State table cells.** A screen with a state table (`workflow.md` §2 step 2) tests its pure
+**State table cells.** A screen with a state table ([state table](workflows/planning.md#state-table-for-stateful-screens)) tests its pure
 state module (`frontend-conventions.md` §1): one unit test per cell of the table. It also runs
 every order of a small set of events on the module (for example Save sent, its answer, an
 event with a newer `row_version`, Discard, typing) and checks the same invariants after each
@@ -206,7 +208,7 @@ the component tests then cover the wiring and a few chosen orders.
 
 For every request on a changed screen with locks, live events or late answers, test these six cases.
 Hold and release answers to force the order, including requests away from a reported finding.
-Apply the failure scope in `review-guide.md` §6 and the
+Apply the [failure scope](workflows/merge-bar.md#failure-scope) and the
 [state and order principle](../.agents/skills/principle-state-and-order/SKILL.md).
 
 | Case | Required check |
@@ -226,7 +228,7 @@ A `data ?? []` fallback must not turn a failed load into an empty result.
 
 A full gate run is slow, mostly because Playwright starts two backends and builds the frontend.
 While fixing, run only what the change touches, and run the full suite once at the end
-(`workflow.md` §2 step 4):
+([implementation self-check](workflows/implementation.md#self-check)):
 
 | To run | Command |
 | --- | --- |
@@ -252,7 +254,7 @@ takes any answer as "up" and does not notice when its own server then fails. So 
 ports 8100 or 8101 (one left by an old run, another checkout's, or the real app) makes its own
 server fail with `EADDRINUSE`, and Playwright stops with "was not able to start": no test runs. For
 port 8100 this comes after the frontend build. Stop that server, then run again. So before you test
-old code in a `git worktree` (`workflow.md` §2 step 3), ports 8100 and 8101 must be free. The servers keep one
+old code in a `git worktree` ([evidence rules](#5-evidence-in-prs)), ports 8100 and 8101 must be free. The servers keep one
 database until you stop the script, so a test that needs a fresh database fails on the second
 run: restart the script. The backend serves the frontend build from disk, so after a frontend
 change run `pnpm build` before `pnpm e2e`; after a backend change, restart the script.

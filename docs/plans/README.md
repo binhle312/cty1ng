@@ -1,7 +1,7 @@
 # Plans
 
 This folder keeps every plan of a slice: what the owner and the builder agreed before the build
-(owner, 2026-11-04). [`workflow.md` §2 step 2](../workflow.md#2-lifecycle-of-a-slice) says what a
+(owner, 2026-11-04). [The planning workflow](../workflows/planning.md#plan) says what a
 plan holds and when the owner approves it.
 
 A plan is a record, not spec. If a plan and an owning document differ, the owning document wins.
@@ -37,5 +37,5 @@ Plans up to M2 started as PR comments or PR descriptions. The header of each fil
 | `M2-bots.md` | M2a, M2b, M2c | Approved 2026-11-01, revision 4 |
 | `M2c-state-modules.md` | M2c, two plans made during the review | Summary only: owner-approved 2026-11-04, as #59 records it |
 
-Start here: find the current slice in [`status.md`](../status.md), then open its plan.
+If the task names a plan, open it. Otherwise, find the slice in [status.md](../status.md), then open its plan.
 For current behaviour, read the owning documents.

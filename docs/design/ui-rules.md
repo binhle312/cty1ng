@@ -26,7 +26,7 @@
 | W5 | Fold links say only "Show" and "Hide". The folded line keeps its facts | manual | `components/conversation-cards.md` §3 |
 | W6 | A folded line does not repeat a word after a status pill | manual | Round 10 (owner 2026-10-24 17:01) |
 | W7 | Popover and crop buttons say just "Use" | manual | Round 9 |
-| W8 | Text uses Simplified Technical English | manual | `docs/workflow.md` |
+| W8 | Text uses Simplified Technical English | manual | Owner instruction: 80% ASD-STE100 target |
 | W9 | Every setting says what the owner notices when it changes, not only its range | manual | Owner 2026-10-26, `components/settings-page.md` §3.1 |
 
 ### Buttons and boxes

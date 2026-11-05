@@ -8,7 +8,7 @@ Brief: `docs/tasks/M1-skill-hub.md` (updated by the spec gap pass, #51). Checkpo
 
 ## 0. Slice split (proposal)
 
-M1 is large, and `workflow.md` §2 keeps UI and infrastructure in separate PRs:
+M1 is large, and [planning workflow](../workflows/planning.md#slice-size) keeps UI and infrastructure in separate PRs:
 
 | PR | Holds | Ends with |
 | --- | --- | --- |

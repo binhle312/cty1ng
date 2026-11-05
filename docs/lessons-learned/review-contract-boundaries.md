@@ -17,4 +17,4 @@ The workflow routes local reviews, PR reviews, and follow-up reviews through it.
 
 **Reusable principles.** [Review with evidence](../../.agents/skills/principle-review-with-evidence/SKILL.md).
 
-**Project guidance.** [review guide](../review-guide.md), [workflow §4](../workflow.md#4-review-prompt-reviewer-agent).
+**Project guidance.** [review guide](../review-guide.md), [review workflow](../workflows/review.md).
