@@ -343,7 +343,10 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
   `newPassword: string|undefined`, `ALL_TESTS_PASS: done`, `TEST_PASS_QA: done`, `password_local: disabled`.
   These stay too, because a free rule that takes other marks could hide a later key (owner, 2026-11-05):
   `pwd=/a:/b`, `pwd=/a/b?x=1`, `pwd=/a=b`, `pwd=/a/(b)`, `pwd=/a/b#c`, ``(password:`string`)=>x``,
-  `password={a}">x`, `password={a})>x` and `password={a},>x`.
+  `password={a}">x`, `password={a})>x` and `password={a},>x`. So do a path before a tag end
+  (`pwd=/home/owner/>`), a reference in backticks or after an open quote before a tag end
+  (``password=`{a}`/>``, `password="{a}/>`), and a path after an open quote before the next key
+  (`pwd="/home/owner,a:1`).
 - Known gaps (owner, 2026-11-05), because a fix costs more false matches or adds state to the scan:
   a Markdown table (`| DB_PASSWORD | hunter22 |`), a value on the next line (`GITHUB_TOKEN: |`), hex
   with colons (`secret: 3f:2a:â€¦`), and a long plain value that hides a second value after it. The last

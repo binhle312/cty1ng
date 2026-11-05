@@ -854,6 +854,10 @@ describe("findSensitive: a free form does not hide a later key", () => {
     ["pwd=/a=b", "an equal sign in a path"],
     ["pwd=/a/(b)", "brackets in a path"],
     ["pwd=/a/b#c", "a hash in a path"],
+    ["pwd=/home/owner/>", "a tag end after a path"],
+    ["password=`{a}`/>", "a reference in backticks before a tag end"],
+    ['password="{a}/>', "a reference after an open quote before a tag end"],
+    ['pwd="/home/owner,a:1', "an open quote, a path and the next key"],
   ])("refuses %j: %s", (text) => {
     expect(findSensitive(text).map((match) => match.kind)).toEqual(["password"]);
   });
