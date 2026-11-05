@@ -1222,7 +1222,7 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "|[\"']?format[\"']?\\s*:\\s*[\"'][\\w-]+[\"']`",
+        "find": "|[\"']?format[\"']?\\s*:\\s*[\"']password[\"']`",
         "replace": "`"
       }
     ]
@@ -1232,7 +1232,7 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "[\"'][\\w-]+[\"']`",
+        "find": "[\"']password[\"']`",
         "replace": "[\"'][^\"']+[\"']`"
       }
     ]
@@ -1242,8 +1242,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "(?:\\d+|true|false|null)",
-        "replace": "\\d+"
+        "find": "|[\"']?(?:nullable|required|readOnly|writeOnly)[\"']?\\s*:\\s*(?:true|false)",
+        "replace": ""
       }
     ]
   },
@@ -1252,8 +1252,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "(?:\\d+|true|false|null)",
-        "replace": "(?:true|false|null)"
+        "find": "[\"']?(?:minLength|maxLength)[\"']?\\s*:\\s*\\d+|",
+        "replace": ""
       }
     ]
   },
@@ -1282,7 +1282,7 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "  /^(?:React\\.)?useState(?:<\\w+>)?\\((?:\"\"|''|``)?\\)[)}\\],;]*$/,\n",
+        "find": "  /^(?:React\\.)?useState(?:<string(?:\\s*\\|\\s*(?:null|undefined))?>)?\\((?:\"\"|''|``|null|undefined)?\\)[)}\\],;]*$/,\n",
         "replace": ""
       }
     ]
@@ -1292,8 +1292,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "(?:React\\.)?useState",
-        "replace": "useState"
+        "find": "(?:React\\.)?useState(?:<string(?:\\s*\\|\\s*(?:null|undefined))?>)?",
+        "replace": "useState(?:<string(?:\\s*\\|\\s*(?:null|undefined))?>)?"
       }
     ]
   },
@@ -1302,7 +1302,7 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "useState(?:<\\w+>)?",
+        "find": "useState(?:<string(?:\\s*\\|\\s*(?:null|undefined))?>)?",
         "replace": "useState"
       }
     ]
@@ -1312,8 +1312,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "\\((?:\"\"|''|``)?\\)",
-        "replace": "\\(\\)"
+        "find": "\\((?:\"\"|''|``|null|undefined)?\\)",
+        "replace": "\\((?:null|undefined)?\\)"
       }
     ]
   },
@@ -1322,8 +1322,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "(?:\"\"|''|``)?",
-        "replace": "(?:\"\"|``)?"
+        "find": "(?:\"\"|''|``|null|undefined)?",
+        "replace": "(?:\"\"|``|null|undefined)?"
       }
     ]
   },
@@ -1332,8 +1332,8 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "(?:\"\"|''|``)?",
-        "replace": "(?:\"\"|'')?"
+        "find": "(?:\"\"|''|``|null|undefined)?",
+        "replace": "(?:\"\"|''|null|undefined)?"
       }
     ]
   },
@@ -1342,7 +1342,7 @@
     "file": "backend/src/core/guard/sensitive-data.rules.ts",
     "edits": [
       {
-        "find": "\\((?:\"\"|''|``)?\\)",
+        "find": "\\((?:\"\"|''|``|null|undefined)?\\)",
         "replace": "\\(.*\\)"
       }
     ]
@@ -1364,6 +1364,456 @@
       {
         "find": "\\)[)}\\],;]*$/,",
         "replace": "\\)$/,"
+      }
+    ]
+  },
+  {
+    "name": "schema: format takes a word",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "[\"']password[\"']`",
+        "replace": "[\"'][\\w-]+[\"']`"
+      }
+    ]
+  },
+  {
+    "name": "schema: no minLength",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:minLength|maxLength)",
+        "replace": "maxLength"
+      }
+    ]
+  },
+  {
+    "name": "schema: no maxLength",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:minLength|maxLength)",
+        "replace": "minLength"
+      }
+    ]
+  },
+  {
+    "name": "schema: any number member",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:minLength|maxLength)",
+        "replace": "\\w+"
+      }
+    ]
+  },
+  {
+    "name": "schema: no nullable",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:nullable|required|readOnly|writeOnly)",
+        "replace": "(?:required|readOnly|writeOnly)"
+      }
+    ]
+  },
+  {
+    "name": "schema: no required",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:nullable|required|readOnly|writeOnly)",
+        "replace": "(?:nullable|readOnly|writeOnly)"
+      }
+    ]
+  },
+  {
+    "name": "schema: no readOnly",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:nullable|required|readOnly|writeOnly)",
+        "replace": "(?:nullable|required|writeOnly)"
+      }
+    ]
+  },
+  {
+    "name": "schema: no writeOnly",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:nullable|required|readOnly|writeOnly)",
+        "replace": "(?:nullable|required|readOnly)"
+      }
+    ]
+  },
+  {
+    "name": "schema: any literal member",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:nullable|required|readOnly|writeOnly)",
+        "replace": "\\w+"
+      }
+    ]
+  },
+  {
+    "name": "schema: a literal member takes a number",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "\\s*:\\s*(?:true|false)|[\"']?format",
+        "replace": "\\s*:\\s*(?:\\d+|true|false)|[\"']?format"
+      }
+    ]
+  },
+  {
+    "name": "schema: a number member takes a literal",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "\\s*:\\s*\\d+|[\"']?(?:nullable",
+        "replace": "\\s*:\\s*(?:\\d+|true|false)|[\"']?(?:nullable"
+      }
+    ]
+  },
+  {
+    "name": "schema: no false member",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "\\s*:\\s*(?:true|false)|[\"']?format",
+        "replace": "\\s*:\\s*true|[\"']?format"
+      }
+    ]
+  },
+  {
+    "name": "schema: no true member",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "\\s*:\\s*(?:true|false)|[\"']?format",
+        "replace": "\\s*:\\s*false|[\"']?format"
+      }
+    ]
+  },
+  {
+    "name": "typed: removed",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "${TYPE_BEFORE_VALUE}(\\{",
+        "replace": "(\\{"
+      }
+    ]
+  },
+  {
+    "name": "typed: no str",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "|str|any)",
+        "replace": "|any)"
+      }
+    ]
+  },
+  {
+    "name": "typed: no any",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "|str|any)",
+        "replace": "|str)"
+      }
+    ]
+  },
+  {
+    "name": "typed: no setting word",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:${SETTING_WORD}|str|any)",
+        "replace": "(?:str|any)"
+      }
+    ]
+  },
+  {
+    "name": "typed: no union",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:\\s*\\|\\s*${SETTING_WORD})*\\s*=\\s*(?=",
+        "replace": "\\s*=\\s*(?="
+      }
+    ]
+  },
+  {
+    "name": "typed: a union has no spaces",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:\\s*\\|\\s*${SETTING_WORD})*\\s*=",
+        "replace": "(?:\\|${SETTING_WORD})*\\s*="
+      }
+    ]
+  },
+  {
+    "name": "typed: no space before =",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "${SETTING_WORD})*\\s*=\\s*(?=",
+        "replace": "${SETTING_WORD})*=\\s*(?="
+      }
+    ]
+  },
+  {
+    "name": "typed: no space after =",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "${SETTING_WORD})*\\s*=\\s*(?=",
+        "replace": "${SETTING_WORD})*\\s*=(?="
+      }
+    ]
+  },
+  {
+    "name": "typed: any text after =",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "\\s*=\\s*(?=[\"'\\`]))?",
+        "replace": "\\s*=\\s*)?"
+      }
+    ]
+  },
+  {
+    "name": "typed: no double quote",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?=[\"'\\`]))?",
+        "replace": "(?=['\\`]))?"
+      }
+    ]
+  },
+  {
+    "name": "typed: no single quote",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?=[\"'\\`]))?",
+        "replace": "(?=[\"\\`]))?"
+      }
+    ]
+  },
+  {
+    "name": "typed: no backtick",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?=[\"'\\`]))?",
+        "replace": "(?=[\"']))?"
+      }
+    ]
+  },
+  {
+    "name": "typed: not optional",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?=[\"'\\`]))?`",
+        "replace": "(?=[\"'\\`]))`"
+      }
+    ]
+  },
+  {
+    "name": "useState: any type",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "useState(?:<string(?:\\s*\\|\\s*(?:null|undefined))?>)?",
+        "replace": "useState(?:<\\w+>)?"
+      }
+    ]
+  },
+  {
+    "name": "useState: no union",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:\\s*\\|\\s*(?:null|undefined))?>",
+        "replace": ">"
+      }
+    ]
+  },
+  {
+    "name": "useState: no null in the union",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:\\s*\\|\\s*(?:null|undefined))?>",
+        "replace": "(?:\\s*\\|\\s*undefined)?>"
+      }
+    ]
+  },
+  {
+    "name": "useState: no undefined in the union",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:\\s*\\|\\s*(?:null|undefined))?>",
+        "replace": "(?:\\s*\\|\\s*null)?>"
+      }
+    ]
+  },
+  {
+    "name": "useState: any word in the union",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:\\s*\\|\\s*(?:null|undefined))?>",
+        "replace": "(?:\\s*\\|\\s*\\w+)?>"
+      }
+    ]
+  },
+  {
+    "name": "useState: a union has no spaces",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:\\s*\\|\\s*(?:null|undefined))?>",
+        "replace": "(?:\\|(?:null|undefined))?>"
+      }
+    ]
+  },
+  {
+    "name": "useState: no null",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:\"\"|''|``|null|undefined)?",
+        "replace": "(?:\"\"|''|``|undefined)?"
+      }
+    ]
+  },
+  {
+    "name": "useState: no undefined",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "(?:\"\"|''|``|null|undefined)?",
+        "replace": "(?:\"\"|''|``|null)?"
+      }
+    ]
+  },
+  {
+    "name": "useState: not read whole",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "|(?:React\\.)?useState<[^<>()\\n]*>\\([^()\\n]*\\)\\S*?${VALUE_END}",
+        "replace": ""
+      }
+    ]
+  },
+  {
+    "name": "useState: read with no namespace",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "|(?:React\\.)?useState<",
+        "replace": "|useState<"
+      }
+    ]
+  },
+  {
+    "name": "useState: read with no text after it",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "\\)\\S*?${VALUE_END}|[^\\s",
+        "replace": "\\)${VALUE_END}|[^\\s"
+      }
+    ]
+  },
+  {
+    "name": "useState: read takes < in the type",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "useState<[^<>()\\n]*>",
+        "replace": "useState<[^>\\n]*>"
+      }
+    ]
+  },
+  {
+    "name": "useState: read takes ( in the argument",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": ">\\([^()\\n]*\\)",
+        "replace": ">\\([^)\\n]*\\)"
+      }
+    ]
+  },
+  {
+    "name": "suffix: no prd",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "production|prd|",
+        "replace": "production|"
+      }
+    ]
+  },
+  {
+    "name": "suffix: no development",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "dev|development|",
+        "replace": "dev|"
+      }
+    ]
+  },
+  {
+    "name": "suffix: no stg",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "stage|stg|",
+        "replace": "stage|"
+      }
+    ]
+  },
+  {
+    "name": "suffix: no qa",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "test|qa|",
+        "replace": "test|"
+      }
+    ]
+  },
+  {
+    "name": "suffix: no uat",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "qa|uat|",
+        "replace": "qa|"
+      }
+    ]
+  },
+  {
+    "name": "suffix: no local",
+    "file": "backend/src/core/guard/sensitive-data.rules.ts",
+    "edits": [
+      {
+        "find": "uat|local|",
+        "replace": "uat|"
       }
     ]
   },

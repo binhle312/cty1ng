@@ -453,8 +453,9 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
       `password:string =${" ".repeat(1_000_000)}x`,
       `password:string${" | string".repeat(100_000)}`,
       `password:string = "${"a".repeat(1_000_000)}`,
-      "password:useState<".repeat(60_000),
-      "password:useState<string>(".repeat(40_000),
+      // With a space, because a value with none runs to the line end, and only the first key is read.
+      "password:useState< ".repeat(50_000),
+      "password:useState<string>( ".repeat(40_000),
       `password:useState<${"a ".repeat(500_000)}`,
       `password:useState<string>(${"a ".repeat(500_000)}`,
     ];
@@ -643,6 +644,7 @@ describe("findSensitive: a secret in each place of a free form", () => {
     ['"password": {"type":"string","format":1234}', "a number in format"],
     ['"password": {"type":"string","minLength":8,"default":1234}', "a value after a free member"],
     ['"password": {"type":"hunter22","minLength":8}', "a word in type"],
+    ['"password": {"type":"string","minimum":8}', "a safe member that is not on the list"],
   ])("refuses the schema %j: %s", (text) => {
     expect(findSensitive(text).map((match) => match.kind)).toEqual(["password"]);
   });
@@ -708,6 +710,8 @@ describe("findSensitive: a secret in each place of a free form", () => {
     ["const [password, setPassword] = useState<string | hunter22>(null)", "a word in the union"],
     ['const [password, setPassword] = useState<string | null>("my pass phrase")', "a phrase"],
     ["const [password, setPassword] = useState(nullable)", "a word that starts with null"],
+    ["const [password, setPassword] = useState<Password>()", "a type that is not on the list"],
+    ['const [password, setPassword] = useSignal("")', "another hook"],
     ["const [password, setPassword] = useState<string | null>(null)hunter22", "text after it"],
   ])("refuses React state %j: %s", (text) => {
     expect(findSensitive(text).map((match) => match.kind)).toEqual(["password"]);
