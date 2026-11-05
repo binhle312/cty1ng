@@ -41,8 +41,9 @@ interface Detector {
 // A password detector finds a key and reads its value. It decides nothing else, because
 // `passwordValueIsFree` owns the rule. Each spelling of the key scans alone, so a free value after
 // one spelling cannot hide another spelling. Marks can close the key: `"password"`, `\"password\"`,
-// `["password"]`, **password**.
-const AFTER_KEY = String.raw`(?:\\?["']|[\`*\]]){0,4}\s*(?::=|=>|[:=])\*{0,2}\s*`;
+// `["password"]`, **password**. The separator is one unit: the lookahead and its backreference stop
+// the regex from retrying a shorter one, which would read `=`, `>` or `*` as a part of the value.
+const AFTER_KEY = String.raw`(?=((?:\\?["']|[\`*\]]){0,4}\s*(?::=|=>|[:=])\*{0,2}\s*))\1`;
 // A value stops before the next key of a compact object, so the scan still reads that key.
 const VALUE_END = String.raw`(?=,["']?[\w-]+["']?\??:|\s|$)`;
 // A schema object with its type first, read whole so that the free rule sees all its members. Then
@@ -88,7 +89,8 @@ const passwordDetector = (
 ): Detector => ({
   kind: "password",
   pattern: new RegExp(`${key}${AFTER_KEY}${PASSWORD_VALUE}`, "gi"),
-  group: 1,
+  // Group 1 is the separator.
+  group: 2,
   accept: (value) => !isFree(value),
 });
 

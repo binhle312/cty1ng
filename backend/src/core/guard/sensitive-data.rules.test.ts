@@ -436,6 +436,13 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
       `password:true${",".repeat(1_000_000)}`,
       `password:true,${" ".repeat(1_000_000)}`,
       "password:true,".repeat(70_000),
+      `password${"*".repeat(4)}${" ".repeat(1_000_000)}`,
+      "password:=".repeat(100_000),
+      "password:**".repeat(90_000),
+      `password:${" ".repeat(1_000_000)}=`,
+      'password:{"type":'.repeat(60_000),
+      `password:{"type":"string"${',"a":1'.repeat(160_000)}`,
+      `password:{"type":"string"${" ".repeat(1_000_000)}x`,
     ];
     // One limit per line, because a shared limit fails on a busy machine. A quadratic pattern
     // takes many seconds on one of these lines.
@@ -444,6 +451,39 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
       findSensitive(line);
       expect(performance.now() - start).toBeLessThan(1_000);
     }
+  });
+});
+
+// Review of 1b70296 (DQ-050): the regex retried a shorter separator, so `=`, `>` or `*` counted as a
+// part of the value, and a short value passed the 4-character minimum.
+describe("findSensitive: the separator is not a part of the value", () => {
+  it.each([
+    ["password:=abc"],
+    ["password=>abc"],
+    ['password:="abc"'],
+    ["password:='abc'"],
+    ["password:**abc"],
+    ["**password:**abc"],
+    ["DB_PASS:=abc"],
+    ["pwd:=abc"],
+    ["pwd=>abc"],
+    ["password:=true"],
+    ["password=>true"],
+    ["password:={false}"],
+  ])("finds nothing in %j", (text) => {
+    expect(findSensitive(text)).toEqual([]);
+  });
+
+  it.each([
+    ["password:=abcd", "abcd"],
+    ["password=>abcd", "abcd"],
+    ['password:="abcd"', "abcd"],
+    ['password:="true"', "true"],
+    ["password:**abcd", "abcd"],
+    ["password: =abc", "=abc"],
+    ["password==abc", "=abc"],
+  ])("refuses %j and reads the value %j", (text, ending) => {
+    expect(findSensitive(text)).toEqual([{ kind: "password", line: 1, ending }]);
   });
 });
 
