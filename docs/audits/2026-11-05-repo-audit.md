@@ -47,6 +47,7 @@ After these: the owner fixes or drops each of the other 34 P3 findings. Then one
 - Four rare forms stay as known gaps: a Markdown table, a value on the next line, hex with colons, and a long plain value that hides a second value.
 - A value made of words needs real word shapes. A word has a vowel and fewer than 5 consonants in a row. A test with seeded random values holds these limits: at most 1% of 24-character and 0.1% of 40-character base62 or base64 values that `main` refuses go free, and at least 90% of 24-character lowercase letters and digits and 85% of 24-character base32 in capitals are refused.
 - A schema with no value and `useState("")` are free. These five false matches stay and `security.md` §2.13 lists them: `confirmPassword: z.string().min(8),`, `hashedPassword = await bcrypt.hash(password, 10)`, `resetPassword: async (email) => {`, `newPassword: string|undefined`, `ALL_TESTS_PASS: done`.
+- DQ-049 and DQ-050 have the same cause as DQ-033 and DQ-045, and they get no redesign: keep the fix, with one owner in the code. If a review finds the same cause again, stop patching and propose a redesign (AGENTS.md §9).
 
 ## Fix progress
 
