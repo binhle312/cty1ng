@@ -51,7 +51,7 @@ Each fix PR updates its row in the same PR. Check `gh pr list --state all`, beca
 | PR | Scope | State |
 | --- | --- | --- |
 | 1 | Docs only | merged: #71 |
-| 2 | Security | draft: `fix-audit-security` |
+| 2 | Security | draft: #73 |
 | 3 | Skills page | not started |
 | 4 | Bots page | not started |
 | 5 | Tests only | not started |
