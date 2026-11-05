@@ -23,6 +23,8 @@ The plans of each slice are in [plans/](plans/README.md).
 
 The documentation routing change is open in [#72](https://github.com/binhle312/cty1ng/pull/72). It splits `docs/workflow.md` into [workflows/](workflows/README.md).
 
+[#74](https://github.com/binhle312/cty1ng/pull/74) (draft) adds the root cause record to the review fixes table and limits when a PR can name a principle. It waits for the owner's review.
+
 The [Slices table](#slices) records delivery state and PRs.
 The [design index](design/README.md) identifies agreed designs and open design work.
 
