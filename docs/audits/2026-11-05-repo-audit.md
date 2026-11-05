@@ -43,6 +43,8 @@ After these: the owner fixes or drops each of the other 34 P3 findings. Then one
 - The frontmatter limit for row 5 is 8,192 characters. The largest valid export has about 6.2 KB, so a much lower limit is not possible.
 - The import preview pauses between rows. A review showed that a 35 KB zip with 200 folders under the limit still blocked the server for about 15 s.
 - A password value still needs 4 or more characters. In `"password": "x"`, `x` means any value.
+- The guard frees text that holds no secret: references, type names with no quotes, shell paths after `pwd`, and values made of words next to a key word. Skills have no override, so a false match blocks a save. The cost is that a few weak forms escape, such as `password: {hunter22}`. The rules and their cost are in `security.md` §2.13.
+- Four rare forms stay as known gaps: a Markdown table, a value on the next line, hex with colons, and a long plain value that hides a second value.
 
 ## Fix progress
 
@@ -106,7 +108,7 @@ The lead did not check these again, except where a row says so. The others are f
 ### Backend and data
 
 - A migration that rebuilds a parent table with rows fails at startup. `PRAGMA foreign_keys=OFF` does nothing in a transaction: `backend/src/adapters/db/migrate.ts:20`. No shipped migration does this today. **Fix before M3.**
-- A description that ends in two newlines changes after export and import: `backend/src/core/skills/skill-md.ts:21`.
+- A description that ends in two newlines changes after export and import: `backend/src/core/skills/skill-md.ts:21`. Fixed in #73.
 - A new assign can pin an older version, and the docs do not agree on the rule: `backend/src/core/bots/bots.service.ts:579`.
 - One purge item that fails blocks all later items: `backend/src/core/skills/skills.service.ts:526`, `backend/src/core/bots/bots.service.ts:711`.
 - `trashed_bot_ids` is not parsed on read and holds TypeIDs: `backend/src/adapters/db/repositories.ts:267`.

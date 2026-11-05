@@ -268,14 +268,33 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (�
   `sensitive_data`); the check runs in the bot service.
 - Auto titles (D46): a first message with matches ("Send anyway") gets no title request. The
   guard also checks the model's title; a match keeps "New conversation".
-- The forms of D39 include a key word with any prefix (`DB_PASSWORD=`, `dbPassword:`,
-  `GITHUB_TOKEN=`, `client_secret=`), the JSON form (`"password": "…"`) and, next to a key word
-  such as `token` or `SECRET_KEY`, long random values of letters and digits, which include hex
-  (owner, 2026-11-05). The first word of a password value needs 4 or more characters (owner,
-  2026-11-05). A placeholder has no exception (`DB_PASSWORD=changeme` is refused). A name with no
-  value stays free (`DB_PASSWORD`). A password key also stays free if its value is the literal
-  `true`, `false` or `null` with no quotes (`require_password: true`, `showPassword={false}`).
-  A string is refused (`password: false!`, `"password": "false"`).
+- The forms of D39 include a key word with any prefix (`DB_PASSWORD=`, `dbPassword:`, `dbPwd=`,
+  `DB_PASS=`, `PASSWORD1=`, `DB_PASSWORD_PROD=`, `GITHUB_TOKEN=`, `client_secret=`, `TOKEN_VALUE=`),
+  marks around the key (`"password":`, `config["password"] =`, `` `DB_PASSWORD`: ``,
+  `**password**:`), the separators `:`, `=`, `:=` and `=>`, a whole quoted phrase
+  (`"password": "my long pass phrase"`) and, next to a key word such as `token` or `SECRET_KEY`,
+  long random values of letters and digits, which include hex (owner, 2026-11-05). A password
+  value needs 4 or more characters (owner, 2026-11-05). A placeholder has no exception
+  (`DB_PASSWORD=changeme` is refused), and a label or a number looks the same
+  (`"password": "Password"`, `"password": 1234`). A name with no value stays free (`DB_PASSWORD`).
+- Some values hold no secret and stay free (owner, 2026-11-05). These rules make the guard weaker
+  on purpose, because a false match blocks a save with no override:
+  - After a password key: the literal `true`, `false` or `null` and a type name, with no quotes
+    (`require_password: true`, `showPassword={false}`, `newPassword: string`,
+    `user_password: varchar(255)`). A string is refused (`password: false!`, `"password": "false"`,
+    `"password": "string"`).
+  - After a password key: a reference (`${DB_PASSWORD}`, `$DB_PASSWORD` in capitals,
+    `${{ secrets.NAME }}`, `{confirmPassword}`). `$ecret123` is refused. So a secret in the form
+    `password: {hunter22}` escapes.
+  - After `pwd` only: a path or a command (`PWD=/home/owner`, `NEW_PWD=$(pwd)`). `PWD=hunter22` is
+    refused.
+  - Next to a key word, not a password key: a value with 70% or more of its characters in words of
+    3 to 20 letters (`GITHUB_TOKEN=user_profile_settings_page_2`). So a secret made of words
+    escapes there. `DB_PASSWORD=correct_horse_battery` stays refused.
+  - After `@` (`action-token@<hash>`) or a word that names a hash (`commit <hash>`, `sha256 <hash>`).
+- Known gaps (owner, 2026-11-05), because a fix costs more false matches or adds state to the scan:
+  a Markdown table (`| DB_PASSWORD | hunter22 |`), a value on the next line (`GITHUB_TOKEN: |`), hex
+  with colons (`secret: 3f:2a:…`), and a long plain value that hides a second value after it.
 - Pattern-based and incomplete by nature: a warning, not a guarantee. Images and PDFs are not
   scanned.
 - Matched text is never logged; only the kinds found are logged.
