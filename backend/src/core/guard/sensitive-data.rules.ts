@@ -45,11 +45,15 @@ interface Detector {
 const AFTER_KEY = String.raw`(?:\\?["']|[\`*\]]){0,4}\s*(?::=|=>|[:=])\*{0,2}\s*`;
 // A value stops before the next key of a compact object, so the scan still reads that key.
 const VALUE_END = String.raw`(?=,["']?[\w-]+["']?\??:|\s|$)`;
-// A whole phrase in quotes or backticks, an unclosed quote, or a word: 4 or more characters.
-const PASSWORD_VALUE = String.raw`("(?:[^"\\\n]|\\.){4,}"|'[^'\n]{4,}'|\`[^\`\n]{4,}\`\S*?${VALUE_END}|["'][^\s"']{4,}|[^\s"']\S{3,}?${VALUE_END})`;
+// A schema object with its type first, read whole so that the free rule sees all its members. Then
+// a whole phrase in quotes or backticks, an unclosed quote, or a word: 4 or more characters.
+const PASSWORD_VALUE = String.raw`(\{\s*["']?type["']?\s*:[^{}\n]*(?:\}|$)|"(?:[^"\\\n]|\\.){4,}"|'[^'\n]{4,}'|\`[^\`\n]{4,}\`\S*?${VALUE_END}|["'][^\s"']{4,}|[^\s"']\S{3,}?${VALUE_END})`;
 
 const SETTING_WORD = String.raw`(?:true|false|null|string|boolean|bool|number|integer|text|(?:var)?char(?:\(\d+\))?)`;
 const SETTING_TYPE = String.raw`${SETTING_WORD}(?:\|${SETTING_WORD})*`;
+// A schema member that cannot hold a secret: a number, a literal or a format. `default` and `value`
+// can, so a schema with one of them is refused.
+const SCHEMA_MEMBER = String.raw`["']?\w+["']?\s*:\s*(?:\d+|true|false|null)|["']?format["']?\s*:\s*["'][\w-]+["']`;
 
 // The values that hold no secret (owner, 2026-11-05, security.md §2.13). A placeholder is not one.
 const FREE_PASSWORD_VALUES: readonly RegExp[] = [
@@ -58,6 +62,13 @@ const FREE_PASSWORD_VALUES: readonly RegExp[] = [
     String.raw`^(?:\`${SETTING_TYPE}\`|${SETTING_TYPE})(?:[\`)}\],;]+[.:]?|\)=>.*)?$`,
     "i",
   ),
+  // A schema with no value: {"type": "string"}, {"type": "string", "minLength": 8}.
+  new RegExp(
+    String.raw`^\{\s*["']?type["']?\s*:\s*["']?${SETTING_TYPE}["']?(?:\s*,\s*(?:${SCHEMA_MEMBER}))*\s*[,}]?$`,
+    "i",
+  ),
+  // React state with no first value: useState(), useState(""), useState<string>('').
+  /^(?:React\.)?useState(?:<\w+>)?\((?:""|''|``)?\)[)}\],;]*$/,
   // A reference: ${DB_PASSWORD}, $DB_PASSWORD, ${{ secrets.X }}, {password}, and {false} before the
   // end of a JSX tag. Case matters: $ecret123 is a password.
   /^["'`]?(?:\$\{\{?\s*[\w.-]+\s*\}\}?|\$[A-Z_][A-Z0-9_]*|\{[A-Za-z_$][\w.$]*\})["']?[`)}\],;]*[.:]?(?:\/?>.*)?$/,

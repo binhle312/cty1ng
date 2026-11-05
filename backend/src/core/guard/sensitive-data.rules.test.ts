@@ -447,6 +447,55 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
   });
 });
 
+// Review of 1b70296 (DQ-047): code with no secret that the wider key forms began to refuse.
+describe("findSensitive: code with no secret after a password key", () => {
+  it.each([
+    ['"password": {"type": "string"}', "a JSON schema"],
+    ['"password":{"type":"string"}', "a compact JSON schema"],
+    ['{"properties":{"password":{"type":"string"}}}', "a schema inside a schema"],
+    ['"password": {"type": "string", "minLength": 8},', "a schema with another key"],
+    ["password: {type: string}", "a schema with no quotes"],
+    ['"password": {"type": "string", "format": "password"},', "a schema with a format"],
+    ["password: {type: String, required: true}", "a Mongoose schema"],
+    ['"password": {"type": "string",', "a schema that goes on to the next line"],
+    ['const [password, setPassword] = useState("")', "React state with an empty string"],
+    ["const [password, setPassword] = useState('')", "React state with an empty string"],
+    ["const [password, setPassword] = useState()", "React state with no argument"],
+    ["const [password, setPassword] = useState();", "React state at the end of a statement"],
+    ['const [password, setPassword] = useState<string>("");', "React state with a type"],
+    ['const [password, setPassword] = React.useState("")', "React state with its namespace"],
+  ])("finds nothing in %j: %s", (text) => {
+    expect(findSensitive(text)).toEqual([]);
+  });
+
+  it.each([
+    ['"password":{"value":"hunter22"}', "an object that holds the value"],
+    ['"password": {"value": "hunter22"}', "an object that holds the value"],
+    ['"password": {"type": "hunter22"}', "a type that is not a type name"],
+    ['"password":{"type":"hunter22"}', "a type that is not a type name"],
+    ['"password":{"type":"string","default":"hunter22"}', "a schema that holds a default"],
+    ['"password": {"type": "string", "default": "hunter22"}', "a schema that holds a default"],
+    ['"password":{"type":"string","password":"hunter22"}', "a schema that holds the key again"],
+    ['"password": {"type": "string", "format": "a b"}', "a format with a space is not a format"],
+    ["password: {type: hunter22", "a schema with no close and no type name"],
+    ["const [password, setPassword] = useState(hunter22)", "React state with a word"],
+    ['const [password, setPassword] = useState("")hunter22', "text after the call"],
+    ['"password": ["hunter22"]', "a list that holds the value"],
+    ['const [password, setPassword] = useState("hunter22")', "React state with a value"],
+    ['config["password"] = "hunter22"', "an index with a string"],
+    ['{"password":{"type":"string"},"password2":"hunter22"}', "a secret after a free schema"],
+    ['"password":{"type":"string"},"password":"hunter22"', "a secret after a free schema"],
+    // Owner, 2026-11-05: false matches that stay, listed in security.md §2.13.
+    ["confirmPassword: z.string().min(8),", "a false match that stays"],
+    ["hashedPassword = await bcrypt.hash(password, 10)", "a false match that stays"],
+    ["resetPassword: async (email) => {", "a false match that stays"],
+    ["newPassword: string|undefined", "a false match that stays"],
+    ["ALL_TESTS_PASS: done", "a false match that stays"],
+  ])("refuses %j: %s", (text) => {
+    expect(findSensitive(text).map((match) => match.kind)).toEqual(["password"]);
+  });
+});
+
 // Review of 1b70296 (DQ-046): the word rule took any run of letters as a word, so it freed random
 // keys that `main` refuses. Seeded, so each run reads the same values.
 describe("findSensitive: random values next to a key word", () => {

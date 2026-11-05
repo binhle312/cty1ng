@@ -45,6 +45,8 @@ After these: the owner fixes or drops each of the other 34 P3 findings. Then one
 - A password value still needs 4 or more characters. In `"password": "x"`, `x` means any value.
 - The guard frees text that holds no secret: references, type names with no quotes, shell paths after `pwd`, and values made of words next to a key word. Skills have no override, so a false match blocks a save. The cost is that a few weak forms escape, such as `password: {hunter22}`. The rules and their cost are in `security.md` §2.13.
 - Four rare forms stay as known gaps: a Markdown table, a value on the next line, hex with colons, and a long plain value that hides a second value.
+- A value made of words needs real word shapes. A word has a vowel and fewer than 5 consonants in a row. A test with seeded random values holds these limits: at most 1% of 24-character and 0.1% of 40-character base62 or base64 values that `main` refuses go free, and at least 90% of 24-character lowercase letters and digits and 85% of 24-character base32 in capitals are refused.
+- A schema with no value and `useState("")` are free. These five false matches stay and `security.md` §2.13 lists them: `confirmPassword: z.string().min(8),`, `hashedPassword = await bcrypt.hash(password, 10)`, `resetPassword: async (email) => {`, `newPassword: string|undefined`, `ALL_TESTS_PASS: done`.
 
 ## Fix progress
 

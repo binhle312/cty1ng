@@ -305,6 +305,14 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
     (20,000 seeded values each; a test holds the limits of 1% and 0.1%).
     `DB_PASSWORD=correct_horse_battery` stays refused.
   - After `@` (`action-token@<hash>`) or a word that names a hash (`commit <hash>`, `sha256 <hash>`).
+  - After a password key: a schema with no value (`"password": {"type": "string"}`,
+    `{"type": "string", "minLength": 8}`), and React state with no first value
+    (`const [password, setPassword] = useState("")`). A schema with `default` or `value`, and
+    `useState("hunter22")`, are refused.
+- These false matches stay, because the value is a word after a password key and the code cannot
+  tell it from a secret (owner, 2026-11-05): `confirmPassword: z.string().min(8),`,
+  `hashedPassword = await bcrypt.hash(password, 10)`, `resetPassword: async (email) => {`,
+  `newPassword: string|undefined`, `ALL_TESTS_PASS: done`.
 - Known gaps (owner, 2026-11-05), because a fix costs more false matches or adds state to the scan:
   a Markdown table (`| DB_PASSWORD | hunter22 |`), a value on the next line (`GITHUB_TOKEN: |`), hex
   with colons (`secret: 3f:2a:â€¦`), and a long plain value that hides a second value after it.
