@@ -64,6 +64,8 @@
 | P7 | Standard parts live in `components/`, one file each | manual | Owner 2026-10-23 |
 | P8 | A board shows the whole screen as the spec defines it, also parts from later slices. Draw each later part for real, with a small tag that names its slice ("M5"). Never leave a part out or hide it in a note | manual | Owner 2026-10-25 13:32 |
 | P9 | One control for one job: every number is the number box with its unit, every on/off is the switch, a named choice is the segmented control. A dropdown only for a long list | manual | Owner 2026-10-26, `components/settings-page.md` §3.2 |
+| P10 | The header roster scrolls with the wheel, a two-finger touchpad motion and the ‹ › buttons. A finger swipe is not a requirement | manual | Owner 2026-11-05, `components/top-header.md` state 3 |
+| P11 | A bot or a skill that leaves the list (Trash, another tab) takes its page's unsaved edit with it, and no question appears | manual | Owner 2026-11-05, `components/bot-page.md` §4.2, `components/skills-page.md` |
 
 ### Time
 
