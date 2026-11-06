@@ -44,7 +44,7 @@ Read the matching skill before its phase of work.
 | `principle-prove-tests-work/` | Verify tests used as evidence for acceptance, bug fixes, concurrency, or mocked integrations. |
 | `principle-review-with-evidence/` | Review code or fixes against each requirement, approved plan promise, and implementation boundary. |
 | `principle-verify-delivery/` | Verify the final revision before handoff and report the scope and result of each check. |
-| `principle-ask-with-options/` | Prepare each question for a person with a real example, the options, their tradeoffs and risks, and a recommendation. |
+| `principle-ask-with-options/` | Use before you ask a person a question or for a decision. Gives them a real example, options with gain, cost and risk, and a recommendation. |
 | `principle-check-approval/` | Check authority when a fix changes approved behaviour, scope, contracts, or protected operations. |
 | `principle-automate-checks/` | Replace repeated corrections with enforcement, or put judgment rules in one authoritative place. |
 | `principle-script-the-work/` | Write a script that does or proves non-trivial edits, analyses, or checks, so that a reviewer can rerun the work. |
