@@ -436,6 +436,32 @@ unsaved), nothing would be lost, so the page goes where the owner asked at once 
   banner and the delete toast (§2a, §10.2, §11), the Clone slug suffix (§12), import names and
   the deprecated conflict (§15).
 
+## Rules and texts added by audit PR 3 (2026-11-06, the owner has not reviewed the texts)
+
+The texts below wait for the owner's UI review after M3. `takesServerText` in
+`frontend/src/features/skills/skill-form.ts` owns the first rule.
+
+- The editor replaces its text with the server data only when all of these are true: the data is
+  new, the form has no changes, no Save is on its way, and the data is not older than this page's
+  own last Save. The check runs on each render, so:
+  - Text typed back during a Save stays. After the answer, it shows as a change.
+  - An edit typed back during a conflict takes the new text, and the conflict text goes.
+  - After a Save, data from before that Save does not replace the text, also if its refresh fails.
+- A request that fails after the owner left the page shows as a toast, because no page shows it
+  then (audit row 6, as on the bot page):
+  - "Could not save {skill}. Try again." and "Could not create {name}. Try again."
+  - "Could not save {skill}: {reason}" and "Could not create {name}: {reason}", when the server
+    names a field.
+  - "{skill} changed in another place, so the app did not save your change."
+  - "A skill changed after the preview, so the app applied nothing."
+  - "The preview is too old, so the app applied nothing."
+  - "Could not apply the import. Try again."
+- A late answer moves nothing when the owner left: an Import Apply or a Restore shows its toast
+  and stays, and a Delete shows its toast and stays. A Restore moves the History tab to the newest
+  version only if the owner is still on that compare view.
+- A Clone or Clone to edit whose read of the versions fails stays on the page and shows the toast
+  "The app could not load the skill to copy." An owner who already left sees nothing (audit row 7).
+
 ## Texts added in the M1b build (2026-10-31, reviewed by the owner in the M1b PR)
 
 The spec did not name these; the build uses them. The owner approved them on 2026-10-31, with
@@ -448,24 +474,13 @@ the changes marked "owner, 2026-10-31".
 - The skill changes in another tab while this tab has unsaved changes (review of #54): the
   edit stays, Save is off, and the save bar says "This skill changed in another place. Your
   changes are kept here. Copy what you need, then Discard to load the new text." Discard loads
-  the newest saved text. An editor with no changes takes the new text at once, also when its
-  changes end later: if the owner types an edit back during a conflict, the new text shows.
-  While a Save is on its way, the editor waits for the answer (audit row 1a, 2026-11-06).
+  the newest saved text. An editor with no changes takes the new text at once. See "Rules and
+  texts added by audit PR 3" for when it waits.
 - A list or skill that does not load: "The app could not load the skills." and **Try again**,
   never Page not found. A failed background refresh keeps the list and the editor on the data
   they have, with the unsaved text (second review of #54).
 - Text typed while a Save is pending stays as a change after the Save: only the text the
-  request sent counts as saved. This includes text typed back to the last saved text, also when
-  the Save's own refresh comes before its answer.
-- A request that fails after the owner left the page shows as a toast, because nothing on a page
-  that is gone shows it (audit row 6, as on the bot page): "Could not save {skill}. Try again.",
-  "Could not save {skill}: {reason}" for a field that the server names, "{skill} changed in another
-  place, so the app did not save your change.", "Could not create {name}. Try again.", "Could not
-  create {name}: {reason}", "A skill changed after the preview, so the app applied nothing.", "The
-  preview is too old, so the app applied nothing." and "Could not apply the import. Try again." An
-  Apply that succeeds after the owner left shows its toast and does not move the page.
-- A Clone or Clone to edit whose read of the versions fails stays on the page, with the toast "The
-  app could not load the skill to copy." An owner who already left hears nothing (audit row 7).
+  request sent counts as saved.
 - A Clone whose source does not load: "The app could not load the skill to copy." and **Try
   again**; Page not found only when the version does not exist (third review of #54).
 - While Create is pending, the fields are read-only: the page leaves after Create, so text

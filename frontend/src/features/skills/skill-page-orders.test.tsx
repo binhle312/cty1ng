@@ -153,6 +153,29 @@ describe("the skill editor, a Save and a live refresh", () => {
     expect(bodyText()).toBe(NEW_BODY);
   });
 
+  it("drops the conflict text with the old edit when the editor takes the new text", async () => {
+    const { held, refresh } = await openEditor();
+    typeBody("Mine.");
+    click(screen.getByRole("button", { name: "Save as v4" }));
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/versions`)).toHaveLength(1);
+    });
+    await held.answer({
+      status: 409,
+      body: { error: { code: "stale_write", message: "Stale." } },
+    });
+    await refresh(v4("Text from another place."));
+    expect(screen.getByText(CONFLICT_TEXT)).toBeTruthy();
+    typeBody(OLD_BODY);
+    await waitFor(() => {
+      expect(bodyText()).toBe("Text from another place.");
+    });
+    typeBody("A new edit.");
+    await settle();
+    expect(screen.queryByText(CONFLICT_TEXT)).toBeNull();
+    expect(screen.getByRole("button", { name: /^Save as/ })).toHaveProperty("disabled", false);
+  });
+
   it("shows no conflict when the refresh after a Save has not come", async () => {
     const { held } = await openEditor();
     typeBody(NEW_BODY);
@@ -312,6 +335,27 @@ describe("Delete of a deprecated skill", () => {
     expect(screen.queryByText("Page not found")).toBeNull();
   });
 
+  it("shows Page not found when the owner comes back to the deleted skill", async () => {
+    const trash = heldAnswer();
+    const { router } = await clickDelete({
+      list: () => ({ body: [other] }),
+      trash: () => trash.promise,
+      others: [other],
+    });
+    click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Cancel" }));
+    await act(() => router.navigate({ to: "/skills/$slug", params: { slug: "other-skill" } }));
+    await screen.findByRole("heading", { name: "Other skill" });
+    await trash.answer({ status: 200, body: { skill_id: SKILL_ID, removed_bot_ids: [] } });
+    await screen.findByText("Write user stories is in Trash.");
+    await settle();
+    expect(router.state.location.pathname).toBe("/skills/other-skill");
+    await act(async () => {
+      router.history.back();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(await screen.findByText("Page not found")).toBeTruthy();
+  });
+
   it("stays where the owner went when the answer comes after the owner left", async () => {
     const trash = heldAnswer();
     const { router } = await clickDelete({
@@ -409,6 +453,19 @@ describe("a request that fails after the owner left", () => {
     });
     expect(
       await screen.findByText("Could not save Write user stories: Line 2 holds a password."),
+    ).toBeTruthy();
+  });
+
+  it("row 6: gives the reason when a refused Save names the changelog", async () => {
+    const held = await saveThenLeave({ route: VERSION_ROUTE, edit: editBody });
+    await held.answer({
+      status: 422,
+      body: {
+        error: { code: "sensitive_data", message: "The note holds a key.", field: "changelog" },
+      },
+    });
+    expect(
+      await screen.findByText("Could not save Write user stories: The note holds a key."),
     ).toBeTruthy();
   });
 
@@ -621,5 +678,206 @@ describe("Clone when its read of the versions fails", () => {
     await held.answer(failed);
     await settle();
     expect(screen.queryByText(FAILED_TEXT)).toBeNull();
+  });
+});
+
+describe("a second Save after the refresh of the first came during an edit", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  const at = ({
+    version,
+    row_version,
+    body_md,
+  }: {
+    version: number;
+    row_version: number;
+    body_md: string;
+  }) =>
+    makeSkill({
+      latest_version: { ...makeSkill().latest_version, version },
+      row_version,
+      body_md,
+    });
+
+  async function secondSaveAnswered() {
+    const answers = [heldAnswer(), heldAnswer()];
+    let saves = 0;
+    const server = { skill: makeSkill(), reads: "good" };
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: [server.skill] }),
+      [`GET /api/skills/${SKILL_ID}`]: () =>
+        server.reads === "good"
+          ? { body: server.skill }
+          : { status: 500, body: { error: { code: "internal_error", message: "Failed." } } },
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      [`GET /api/skills/${SKILL_ID}/upgrade-candidates`]: () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [] }),
+      [VERSION_ROUTE]: () => answers[saves++]?.promise,
+    });
+    const { queryClient } = await renderApp("/skills/write-user-stories");
+    await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 });
+    click(screen.getByRole("tab", { name: "Write" }));
+    typeBody("First.");
+    click(screen.getByRole("button", { name: "Save as v4" }));
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/versions`)).toHaveLength(1);
+    });
+    typeBody("Second.");
+    await answers[0]?.answer({
+      status: 201,
+      body: at({ version: 4, row_version: 2, body_md: "First." }),
+    });
+    await settle();
+    // The refresh of the first Save comes during the edit, and the edit stays.
+    server.skill = at({ version: 4, row_version: 2, body_md: "First." });
+    await act(() => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES }));
+    await settle();
+    expect(bodyText()).toBe("Second.");
+    click(screen.getByRole("button", { name: "Save as v5" }));
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/versions`)).toHaveLength(2);
+    });
+    server.reads = "failed";
+    await answers[1]?.answer({
+      status: 201,
+      body: at({ version: 5, row_version: 3, body_md: "Second." }),
+    });
+    await settle();
+    return { answers, queryClient, server };
+  }
+
+  it("keeps its text before the refresh of the second Save", async () => {
+    await secondSaveAnswered();
+    expect(bodyText()).toBe("Second.");
+    expect(screen.getByText("All changes are saved.")).toBeTruthy();
+  });
+
+  it("takes the text of the second Save when its refresh comes", async () => {
+    const { queryClient, server } = await secondSaveAnswered();
+    server.reads = "good";
+    server.skill = at({ version: 5, row_version: 3, body_md: "Second, as the server keeps it." });
+    await act(() => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES }));
+    await waitFor(() => {
+      expect(bodyText()).toBe("Second, as the server keeps it.");
+    });
+  });
+
+  it("sends the newest base when the refresh fails, and shows no conflict", async () => {
+    const { queryClient } = await secondSaveAnswered();
+    await act(() => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES }));
+    await settle();
+    typeBody("Third.");
+    await settle();
+    expect(screen.queryByText(CONFLICT_TEXT)).toBeNull();
+    click(screen.getByRole("button", { name: /^Save as/ }));
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/versions`)).toHaveLength(3);
+    });
+    expect(api?.sent("POST", `/api/skills/${SKILL_ID}/versions`)[2]).toMatchObject({
+      body: { base_version: 5 },
+    });
+  });
+});
+
+describe("a Restore whose answer comes late", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  const RESTORE_PATH = `/api/skills/${SKILL_ID}/versions/1/restore`;
+  const OTHER_ID = typeId("skill", 2);
+  const other = makeSkill({ id: OTHER_ID, slug: "other-skill", name: "Other skill" });
+  const restored = {
+    status: 201,
+    body: makeSkill({
+      latest_version: { ...makeSkill().latest_version, version: 4 },
+      row_version: 2,
+    }),
+  };
+
+  async function restoreSent() {
+    const held = heldAnswer();
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: [makeSkill(), other] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: makeSkill() }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      [`GET /api/skills/${SKILL_ID}/upgrade-candidates`]: () => ({ body: [] }),
+      [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
+        body: { description: null, body: [{ op: "same", text: "Text." }] },
+      }),
+      [`GET /api/skills/${OTHER_ID}`]: () => ({ body: other }),
+      [`GET /api/skills/${OTHER_ID}/versions`]: () => ({ body: makeVersions(1) }),
+      [`GET /api/skills/${OTHER_ID}/upgrade-candidates`]: () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [] }),
+      [`POST ${RESTORE_PATH}`]: () => held.promise,
+    });
+    const app = await renderApp("/skills/write-user-stories?tab=history&from=1&to=3");
+    click(await screen.findByRole("button", { name: "Restore v1" }, { timeout: 5000 }));
+    await waitFor(() => {
+      expect(api?.sent("POST", RESTORE_PATH)).toHaveLength(1);
+    });
+    return { ...app, held };
+  }
+
+  it("opens the newest version of History when the owner stays", async () => {
+    const { held, router } = await restoreSent();
+    await held.answer(restored);
+    expect(await screen.findByText("Saved v4 ✨")).toBeTruthy();
+    await waitFor(() => {
+      expect(router.state.location.search).toEqual({ tab: "history" });
+    });
+  });
+
+  it("does not move an owner who went to another page", async () => {
+    const { held, router } = await restoreSent();
+    await act(() => router.navigate({ to: "/bots" }));
+    await held.answer(restored);
+    expect(await screen.findByText("Saved v4 ✨")).toBeTruthy();
+    await settle();
+    expect(router.state.location.href).toBe("/bots");
+  });
+
+  it("does not move an owner who went to another skill", async () => {
+    const { held, router } = await restoreSent();
+    await act(() => router.navigate({ to: "/skills/$slug", params: { slug: "other-skill" } }));
+    await screen.findByRole("heading", { name: "Other skill" });
+    await held.answer(restored);
+    expect(await screen.findByText("Saved v4 ✨")).toBeTruthy();
+    await settle();
+    expect(router.state.location.href).toBe("/skills/other-skill");
+  });
+
+  it("does not move an owner who went to another tab of the skill", async () => {
+    const { held, router } = await restoreSent();
+    click(screen.getByRole("tab", { name: "Skill" }));
+    await waitFor(() => {
+      expect(router.state.location.search).toEqual({});
+    });
+    await held.answer(restored);
+    expect(await screen.findByText("Saved v4 ✨")).toBeTruthy();
+    await settle();
+    expect(router.state.location.search).toEqual({});
+  });
+
+  it("asks nothing of an owner who types in New skill", async () => {
+    const { held, router } = await restoreSent();
+    await act(() => router.navigate({ to: "/skills/new" }));
+    const name = await screen.findByLabelText("Name", { exact: true }, { timeout: 5000 });
+    act(() => {
+      fireEvent.change(name, { target: { value: "Typed here" } });
+    });
+    await held.answer(restored);
+    expect(await screen.findByText("Saved v4 ✨")).toBeTruthy();
+    await settle();
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(router.state.location.pathname).toBe("/skills/new");
   });
 });

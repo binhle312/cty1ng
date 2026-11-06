@@ -53,11 +53,13 @@ import {
   fieldProblems,
   hasProblem,
   isDirty,
+  isNewer,
   markSaved,
   type SkillFields as FormFields,
   leaveText,
   newForm,
   saveKind,
+  takesServerText,
   setField,
 } from "./skill-form.ts";
 import { SkillHistory } from "./skill-history.tsx";
@@ -198,19 +200,17 @@ function SkillView({
     onError,
   });
   const saving = rename.isPending || saveVersion.isPending;
-  // The editor takes the newest saved text when it has no changes, also when they end later (the
-  // owner types an edit back during a conflict). A Save on its way waits: its answer decides what
-  // is saved, so text typed meanwhile stays until then.
-  const serverKey = `${String(server.version)}:${String(server.rowVersion)}`;
-  const [seenKey, setSeenKey] = useState(serverKey);
-  if (seenKey !== serverKey && !saving && !isDirty(form)) {
-    setSeenKey(serverKey);
+  // The server data that the editor text last came from.
+  const [taken, setTaken] = useState(server);
+  if (takesServerText({ server, base, taken, saving, dirty: isDirty(form) })) {
+    setTaken(server);
     setForm(newForm(saved, false));
     setBase(server);
+    // An error was about the text that this replaces.
+    setSaveError(null);
   }
-  // The server has a change that this edit did not start from. Only a newer version counts: after
-  // this page's own save, the server data here is behind until its refresh comes.
-  const serverAhead = server.version > base.version || server.rowVersion > base.rowVersion;
+  // The server has a change that this edit did not start from.
+  const serverAhead = isNewer(server, base);
   const conflict = serverAhead && !saving;
   const readOnly = skill.deprecated || !skill.is_author;
   const changes = changedFields(form);
@@ -387,6 +387,9 @@ function SkillView({
         // owner who already went to another page stays there.
         if (router.state.location.pathname === `/skills/${skill.slug}`) {
           void navigate({ to: "/skills", replace: true });
+        } else {
+          // The Delete has ended, so a later visit to this URL shows Page not found.
+          onTrashing(null);
         }
       },
       failed: (error) => {

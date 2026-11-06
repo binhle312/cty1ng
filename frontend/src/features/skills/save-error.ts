@@ -34,7 +34,8 @@ export function lostSaveText({
     return `${name} changed in another place, so the app did not save your change.`;
   }
   const failure = saveErrorOf(error);
-  return failure.field === null
+  // A field outside the form, such as the changelog, has a reason too.
+  return failure.field === null && readApiError(error)?.field === undefined
     ? `Could not ${verb} ${name}. Try again.`
     : `Could not ${verb} ${name}: ${failure.message}`;
 }

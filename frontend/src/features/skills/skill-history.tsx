@@ -14,6 +14,7 @@ import type { ListSkillVersionsResponse } from "../../lib/api/generated/types.ge
 import { apiErrorText } from "../../lib/api/api-error.ts";
 import { cn } from "../../lib/cn.ts";
 import { DiffView } from "./diff-view.tsx";
+import { useOnPage } from "./on-page.ts";
 import { VersionPill } from "./pills.tsx";
 import type { SkillRow } from "./skill-queries.ts";
 
@@ -218,11 +219,13 @@ function DiffPanel({
 }) {
   const latest = skill.latest_version.version;
   const diff = useQuery(getSkillDiffOptions({ path: { id: skill.id }, query: { from, to } }));
+  const onPage = useOnPage();
   const restore = useMutation({
     ...restoreSkillVersionMutation(),
     onSuccess: (saved) => {
       showToast(`Saved v${String(saved.latest_version.version)} ✨`);
-      onRestored();
+      // An owner who left this panel has moved on, so the answer moves nothing.
+      if (onPage.current) onRestored();
     },
     onError: (error) => {
       showToast(apiErrorText(error));

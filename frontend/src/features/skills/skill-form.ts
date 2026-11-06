@@ -47,6 +47,38 @@ export function markSaved(form: SkillForm, sent: SkillFields): SkillForm {
   return { ...form, saved: sent };
 }
 
+// A saved state of the skill. Both numbers only go up, so they tell which of two states is newer.
+export interface SavedPoint {
+  version: number;
+  rowVersion: number;
+}
+
+export function isNewer(a: SavedPoint, b: SavedPoint): boolean {
+  return a.version > b.version || a.rowVersion > b.rowVersion;
+}
+
+// The one rule for when the editor replaces its text with the server data. It needs new data, no
+// changes, and no Save on its way, whose answer decides what is saved. Data older than the base
+// waits too: after this page's own Save, the data here is behind until its refresh comes. Each
+// condition is checked on every render, so the editor also takes the text when changes end later.
+export function takesServerText({
+  server,
+  base,
+  taken,
+  saving,
+  dirty,
+}: {
+  server: SavedPoint;
+  base: SavedPoint;
+  taken: SavedPoint;
+  saving: boolean;
+  dirty: boolean;
+}): boolean {
+  if (saving || dirty) return false;
+  if (server.version === taken.version && server.rowVersion === taken.rowVersion) return false;
+  return !isNewer(base, server);
+}
+
 export function discard(form: SkillForm): SkillForm {
   return { ...form, current: form.saved, slugEdited: false };
 }
