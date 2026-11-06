@@ -458,7 +458,10 @@ The texts below wait for the owner's UI review after M3. `takesServerText` in
   - "Could not apply the import. Try again."
 - A late answer moves nothing when the owner left: an Import Apply or a Restore shows its toast
   and stays, and a Delete shows its toast and stays. A Restore moves the History tab to the newest
-  version only if the owner is still on that compare view.
+  version only if the owner is still on the History tab. Until the data shows the restored version,
+  the panel offers no other Restore.
+- A failed Save shows as a toast also if the owner typed the text back or clicked Discard, because
+  the save bar shows an error only while the form has changes.
 - A Clone or Clone to edit whose read of the versions fails stays on the page and shows the toast
   "The app could not load the skill to copy." An owner who already left sees nothing (audit row 7).
 

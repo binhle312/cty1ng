@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { notFound, useNavigate, useParams, useRouter, useSearch } from "@tanstack/react-router";
 import { Bot, Ellipsis, FileText, History } from "lucide-react";
-import { useEffect, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 import {
   MenuItem,
   MenuPopup,
@@ -124,7 +124,7 @@ function SkillView({
   onTrashing,
 }: {
   skill: SkillDetail;
-  onTrashing: (slug: string | null) => void;
+  onTrashing: Dispatch<SetStateAction<string | null>>;
 }) {
   const router = useRouter();
   const search = useSearch({ from: "/skills/$slug" });
@@ -169,8 +169,9 @@ function SkillView({
 
   const onPage = useOnPage();
   const onError = (error: unknown) => {
-    // Nothing on a page that is gone shows the failure.
-    if (onPage.current) {
+    // The save bar shows an error only while the form has changes. An owner who left, typed the
+    // text back or clicked Discard gets a toast, because nothing else shows the failure.
+    if (onPage.current && isDirty(form)) {
       setSaveError(saveErrorOf(error));
     } else {
       showToast(lostSaveText({ name: skill.name, error }));
@@ -293,7 +294,9 @@ function SkillView({
   const moveBase =
     (inSync: boolean) => (result: { latest_version: { version: number }; row_version: number }) => {
       if (inSync) {
-        setBase({ version: result.latest_version.version, rowVersion: result.row_version });
+        const next = { version: result.latest_version.version, rowVersion: result.row_version };
+        // A late answer can be older than a Save that ended first, and the base only goes up.
+        setBase((current) => (isNewer(next, current) ? next : current));
       }
     };
   // A change of pins moves both sides: the bot list and the skill queries fetch again.
@@ -365,6 +368,10 @@ function SkillView({
   const trash = useMutation(trashSkillMutation());
   const trashSkill = () => {
     if (dialog === null) return;
+    // A later Delete of another skill keeps its own wait.
+    const endTrashing = () => {
+      onTrashing((current) => (current === skill.slug ? null : current));
+    };
     onTrashing(skill.slug);
     runInDialog({
       dialog,
@@ -389,11 +396,11 @@ function SkillView({
           void navigate({ to: "/skills", replace: true });
         } else {
           // The Delete has ended, so a later visit to this URL shows Page not found.
-          onTrashing(null);
+          endTrashing();
         }
       },
       failed: (error) => {
-        onTrashing(null);
+        endTrashing();
         return apiErrorText(error);
       },
     });

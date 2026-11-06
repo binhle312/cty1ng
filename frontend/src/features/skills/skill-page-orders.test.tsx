@@ -176,6 +176,43 @@ describe("the skill editor, a Save and a live refresh", () => {
     expect(screen.getByRole("button", { name: /^Save as/ })).toHaveProperty("disabled", false);
   });
 
+  it("says when a Save fails after the text was typed back", async () => {
+    const { held } = await openEditor();
+    typeBody(NEW_BODY);
+    click(screen.getByRole("button", { name: "Save as v4" }));
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/versions`)).toHaveLength(1);
+    });
+    typeBody(OLD_BODY);
+    await held.answer({
+      status: 500,
+      body: { error: { code: "internal_error", message: "Something failed." } },
+    });
+    expect(await screen.findByText("Could not save Write user stories. Try again.")).toBeTruthy();
+    typeBody("A new edit.");
+    await settle();
+    expect(screen.queryByText("Something failed.")).toBeNull();
+  });
+
+  it("says when a Save fails after Discard", async () => {
+    const { held } = await openEditor();
+    typeBody(NEW_BODY);
+    click(screen.getByRole("button", { name: "Save as v4" }));
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/versions`)).toHaveLength(1);
+    });
+    click(screen.getByRole("button", { name: "Discard" }));
+    await held.answer({
+      status: 500,
+      body: { error: { code: "internal_error", message: "Something failed." } },
+    });
+    expect(await screen.findByText("Could not save Write user stories. Try again.")).toBeTruthy();
+    expect(bodyText()).toBe(OLD_BODY);
+    typeBody("A new edit.");
+    await settle();
+    expect(screen.queryByText("Something failed.")).toBeNull();
+  });
+
   it("shows no conflict when the refresh after a Save has not come", async () => {
     const { held } = await openEditor();
     typeBody(NEW_BODY);
@@ -804,10 +841,11 @@ describe("a Restore whose answer comes late", () => {
 
   async function restoreSent() {
     const held = heldAnswer();
+    const server = { skill: makeSkill() };
     api = fakeApi({
       "GET /api/settings": () => ({ body: BOT_SETTINGS }),
-      "GET /api/skills": () => ({ body: [makeSkill(), other] }),
-      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: makeSkill() }),
+      "GET /api/skills": () => ({ body: [server.skill, other] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: server.skill }),
       [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
       [`GET /api/skills/${SKILL_ID}/upgrade-candidates`]: () => ({ body: [] }),
       [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
@@ -824,8 +862,20 @@ describe("a Restore whose answer comes late", () => {
     await waitFor(() => {
       expect(api?.sent("POST", RESTORE_PATH)).toHaveLength(1);
     });
-    return { ...app, held };
+    return { ...app, held, server };
   }
+
+  it("offers no other Restore until the data shows the restored version", async () => {
+    const { held, queryClient, server } = await restoreSent();
+    await held.answer(restored);
+    await screen.findByText("Saved v4 ✨");
+    await settle();
+    // The data here still says v3, so the default pair would offer v2 under the old diff.
+    expect(screen.queryByRole("button", { name: /^Restore v/ })).toBeNull();
+    server.skill = restored.body;
+    await act(() => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES }));
+    expect(await screen.findByRole("button", { name: "Restore v3" })).toBeTruthy();
+  });
 
   it("opens the newest version of History when the owner stays", async () => {
     const { held, router } = await restoreSent();
@@ -879,5 +929,117 @@ describe("a Restore whose answer comes late", () => {
     await settle();
     expect(screen.queryByRole("alertdialog")).toBeNull();
     expect(router.state.location.pathname).toBe("/skills/new");
+  });
+});
+
+describe("orders that overlap two skill actions", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  const DEPRECATED_AT = "2026-10-21T10:00:00.000Z";
+
+  it("keeps the base when a late Make active answer is older than a Save", async () => {
+    const active = heldAnswer();
+    const save = heldAnswer();
+    const v4Skill = makeSkill({
+      latest_version: { ...makeSkill().latest_version, version: 4 },
+      row_version: 4,
+      body_md: "First.",
+    });
+    const server = {
+      skill: makeSkill({ deprecated: true, deprecated_at: DEPRECATED_AT, row_version: 2 }),
+    };
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: [server.skill] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: server.skill }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      [`GET /api/skills/${SKILL_ID}/upgrade-candidates`]: () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [] }),
+      [`POST /api/skills/${SKILL_ID}/undeprecate`]: () => active.promise,
+      [VERSION_ROUTE]: () => save.promise,
+    });
+    const { queryClient } = await renderApp("/skills/write-user-stories");
+    const refresh = async () => {
+      await act(() => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES }));
+      await settle();
+    };
+    click(await screen.findByRole("button", { name: "Make active again" }, { timeout: 5000 }));
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/undeprecate`)).toHaveLength(1);
+    });
+    server.skill = makeSkill({ row_version: 3 });
+    await refresh();
+    click(screen.getByRole("tab", { name: "Write" }));
+    typeBody("First.");
+    click(screen.getByRole("button", { name: "Save as v4" }));
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/versions`)).toHaveLength(1);
+    });
+    await save.answer({ status: 201, body: v4Skill });
+    server.skill = v4Skill;
+    await refresh();
+    await active.answer({ status: 200, body: makeSkill({ row_version: 3 }) });
+    await settle();
+    typeBody("Next edit.");
+    await settle();
+    expect(screen.queryByText(CONFLICT_TEXT)).toBeNull();
+  });
+
+  it("keeps the Delete of a second skill waiting when the first Delete ends", async () => {
+    const first = heldAnswer();
+    const second = heldAnswer();
+    const OTHER_ID = typeId("skill", 2);
+    const firstSkill = makeSkill({ deprecated: true, deprecated_at: DEPRECATED_AT });
+    const otherSkill = makeSkill({
+      id: OTHER_ID,
+      slug: "other-skill",
+      name: "Other skill",
+      deprecated: true,
+      deprecated_at: DEPRECATED_AT,
+    });
+    const server = { list: [firstSkill, otherSkill] };
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: server.list }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: firstSkill }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      [`GET /api/skills/${OTHER_ID}`]: () => ({ body: otherSkill }),
+      [`GET /api/skills/${OTHER_ID}/versions`]: () => ({ body: makeVersions(1) }),
+      "GET /api/bots": () => ({ body: [] }),
+      [TRASH_ROUTE]: () => first.promise,
+      [`POST /api/skills/${OTHER_ID}/trash`]: () => second.promise,
+    });
+    const { queryClient, router } = await renderApp("/skills/write-user-stories");
+    const sendDelete = async () => {
+      click(await screen.findByRole("button", { name: "Skill actions" }, { timeout: 5000 }));
+      click(await screen.findByRole("menuitem", { name: "Delete skill" }));
+      const dialog = await screen.findByRole("alertdialog");
+      click(await within(dialog).findByRole("button", { name: "Delete skill" }));
+      return dialog;
+    };
+    const dialog = await sendDelete();
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/trash`)).toHaveLength(1);
+    });
+    click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await act(() => router.navigate({ to: "/skills/$slug", params: { slug: "other-skill" } }));
+    await screen.findByRole("heading", { name: "Other skill" });
+    await sendDelete();
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${OTHER_ID}/trash`)).toHaveLength(1);
+    });
+    await first.answer({ status: 200, body: { skill_id: SKILL_ID, removed_bot_ids: [] } });
+    await screen.findByText("Write user stories is in Trash.");
+    server.list = [];
+    await act(() => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES }));
+    await settle();
+    expect(screen.queryByText("Page not found")).toBeNull();
+    await second.answer({ status: 200, body: { skill_id: OTHER_ID, removed_bot_ids: [] } });
+    expect(await screen.findByText("Other skill is in Trash.")).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "No skills yet" })).toBeTruthy();
   });
 });

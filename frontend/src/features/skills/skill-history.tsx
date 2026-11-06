@@ -220,9 +220,13 @@ function DiffPanel({
   const latest = skill.latest_version.version;
   const diff = useQuery(getSkillDiffOptions({ path: { id: skill.id }, query: { from, to } }));
   const onPage = useOnPage();
+  // The version that this panel restored. Until the data shows it, `latest` is old, so the panel
+  // would offer a Restore of another version under an old diff.
+  const [restoredTo, setRestoredTo] = useState(0);
   const restore = useMutation({
     ...restoreSkillVersionMutation(),
     onSuccess: (saved) => {
+      setRestoredTo(saved.latest_version.version);
       showToast(`Saved v${String(saved.latest_version.version)} ✨`);
       // An owner who left this panel has moved on, so the answer moves nothing.
       if (onPage.current) onRestored();
@@ -231,7 +235,8 @@ function DiffPanel({
       showToast(apiErrorText(error));
     },
   });
-  const canRestore = skill.is_author && !skill.deprecated && to === latest && from < latest;
+  const canRestore =
+    skill.is_author && !skill.deprecated && to === latest && from < latest && latest >= restoredTo;
 
   return (
     <div className="flex flex-col gap-3">
