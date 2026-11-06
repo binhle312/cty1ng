@@ -77,6 +77,8 @@ After these: the owner fixes or drops each of the other 33 P3 findings and the P
 
 - The skill editor's rule for server text stays one small function, `takesServerText`. The rest of the page's state rules stay in the page, and they are not moved to a `skill-page-state.ts`. The P3 review before M3 can look at this again.
 - #69, "Leave working code alone", stays closed. The owner watches more PRs before deciding whether to bring it back, with no date set. Its rule is not in force, and M3 does not wait for it.
+- The wait of a skill Delete is replaced (`AGENTS.md` §9). Three bugs came from keeping it in the page's state (DQ-067, DQ-069, DQ-078). The page now asks the query client if a Delete of this skill is on its way, so the wait has the life of the request.
+- `useOnPage` is the redesign for late answers on the skill pages (`AGENTS.md` §9, DQ-065). No shared wrapper for all late answers for now. Look again if the same bug comes back in a new request.
 
 ## Fix progress
 
