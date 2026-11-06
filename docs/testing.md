@@ -310,6 +310,8 @@ The PR maps each acceptance criterion to a test and its observable assertion or 
 Use a screenshot for purely visual criteria; Playwright stores these in `frontend/test/e2e/<spec>.spec.ts-snapshots/`.
 "Tested manually" alone is not evidence.
 
+Each claim about behaviour or a number in a PR body or an owner question needs a real run: a command, a test or a probe on the named revision. This includes claims about what `main` does. If you did not run it, write "not run" or "from reading the code". A claim about an owner decision links to its record (owner, 2026-11-06).
+
 Record the tested revision, expected failure and result. Test first normally supplies the failure evidence.
 If a bug-fix test was written later, copy it into an isolated checkout of the code before the fix.
 Use a `git worktree`; do not stash the fix (owner, 2026-10-31).
