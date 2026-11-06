@@ -352,11 +352,26 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (Â
   40,000 lines, and it refuses at most 0 lines. It leaves out test files, the guard folder, generated
   code and the documents that quote the guard's forms. The limits are constants in that test. It
   measures false matches only, because this text holds no secret.
+  If new text fails this test, reword the text or leave that file out of the test, and keep the guard as it is. Lower the
+  line minimum only when text was really removed, and state the reason in the PR (owner, 2026-11-06).
 - Known gaps (owner, 2026-11-05), because a fix costs more false matches or adds state to the scan:
   a Markdown table (`| DB_PASSWORD | hunter22 |`), a value on the next line (`GITHUB_TOKEN: |`), hex
   with colons (`secret: 3f:2a:â€¦`), and a long plain value that hides a second value after it. The last
   gap includes a value made of words: a long run of words, then `/secret=` and a key, joined with no
   space, is free when 70% of it is words. `main` refuses that form.
+  These are free too (owner, 2026-11-06): `Authorization: Bearer <key>`, `PRIVATE_KEY=<hex>`, `encryption_key=<hex>`,
+  `signingKey: <key>`, and a `github_pat_` token with no key word next to it.
+- The guard forms are closed (owner, 2026-11-06), under the [pattern rules](workflows/merge-bar.md#pattern-rules). The
+  named examples are the texts in this section and in row 4 of the [audit](audits/2026-11-05-repo-audit.md). The limits
+  are the seeded tests in `sensitive-data.rules.test.ts` and `guard-real-text.test.ts`.
+  - The forms change only if the owner reports a save that no edit can fix, or a real secret that got through. The first
+    report also reopens the question of a "Save anyway" for skill and bot saves, which have no override for now.
+  - A review or audit that finds another shape, free or refused, counts it under the one audit row "Guard shapes
+    accepted". It adds no row and asks the owner no question, and the milestone P3 review skips that row.
+  - Findings on scan speed, masking and logs follow the normal merge bar.
+  - The next change to the guard also frees a card number with only zeros, such as the nil UUID
+    `00000000-0000-0000-0000-000000000000`, and adds the `github_pat_` prefix. If no change comes, both stay as they are.
+  - The cost: nobody keeps looking for new shapes, so a secret in a new shape can stay free and go unseen.
 - Pattern-based and incomplete by nature: a warning, not a guarantee. Images and PDFs are not
   scanned.
 - Matched text is never logged; only the kinds found are logged.

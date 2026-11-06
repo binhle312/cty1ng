@@ -34,9 +34,9 @@ The plan comes from the owner, 2026-11-04: audit, owner review of each finding, 
 4. Bots page: rows 1 and 2.
 5. Tests only: rows 8, 9, 10, 11, 12 and 13.
 6. Six tabs (row 14): a one-page design for owner approval first, then code. It includes the P3 "the stream does not come back in `make dev`".
-7. Other P3 marked "Fix before M3": the migration rebuild, the TypeID 500 and the error boundary. GitHub required checks are a repo setting: give the owner the steps, or set them only if the owner asks.
+7. Other P3 marked "Fix before M3": the migration rebuild, the TypeID 500, the error boundary and `lineDiff` (DQ-037). GitHub required checks are a repo setting: give the owner the steps, or set them only if the owner asks.
 
-After these: the owner fixes or drops each of the other 34 P3 findings and the P3 rows that later reviews added. Then one style-only PR for the 104 `max-params` places, a second audit, the merge of #69, and M3. The coding standard stays parked until the owner restarts it.
+After these: the owner fixes or drops each of the other 33 P3 findings and the P3 rows that later reviews added, except the row "Guard shapes accepted". Then one style-only PR for the 104 `max-params` places, a second audit, the merge of #69, and M3. The coding standard stays parked until the owner restarts it.
 
 **Decisions made during PR 2** (owner, 2026-11-05):
 
@@ -49,7 +49,7 @@ After these: the owner fixes or drops each of the other 34 P3 findings and the P
 - A schema with no value and `useState("")` are free. These five false matches stay and `security.md` §2.13 lists them: `confirmPassword: z.string().min(8),`, `hashedPassword = await bcrypt.hash(password, 10)`, `resetPassword: async (email) => {`, `newPassword: string|undefined`, `ALL_TESTS_PASS: done`.
 - DQ-049 and DQ-050 have the same cause as DQ-033 and DQ-045, and they get no redesign: keep the fix, with one owner in the code. If a review finds the same cause again, stop patching and propose a redesign (AGENTS.md §9).
 - DQ-052 and DQ-053 have the same cause as DQ-034: a free rule takes more than it names. Decision: close the free rules. A free schema takes only named members, a quoted value after a type name and `=` is a value, and a test puts a secret in each place of each free form. `security.md` §2.13 has the lists.
-- DQ-058 and DQ-059 have the same cause again: the rules for a reference, a type and a `pwd` path took open text, so a later key in that text was not read. Decision: no free rule has a place for any text. A value ends at a reference before a JSX tag end and at a type before an arrow, and a path takes only listed characters. These false matches are the accepted cost: `pwd=/a:/b`, `pwd=/a/b?x=1`, `pwd=/a=b`, `pwd=/a/(b)`, `pwd=/a/b#c`, ``(password:`string`)=>x``, `password={a}">x`, `password={a})>x`, `password={a},>x`. The builder found three more in the comparison, and the owner has not seen them yet: `pwd=/home/owner/>`, ``password=`{a}`/>``, `pwd="/home/owner,a:1`.
+- DQ-058 and DQ-059 have the same cause again: the rules for a reference, a type and a `pwd` path took open text, so a later key in that text was not read. Decision: no free rule has a place for any text. A value ends at a reference before a JSX tag end and at a type before an arrow, and a path takes only listed characters. These false matches are the accepted cost: `pwd=/a:/b`, `pwd=/a/b?x=1`, `pwd=/a=b`, `pwd=/a/(b)`, `pwd=/a/b#c`, ``(password:`string`)=>x``, `password={a}">x`, `password={a})>x`, `password={a},>x`. The builder found four more in the comparison, and the owner accepted them on 2026-11-06: `pwd=/home/owner/>`, ``password=`{a}`/>``, `password="{a}/>`, `pwd="/home/owner,a:1`.
 - Text after a literal or a type name stays free. So `password: true hunter22` escapes, because the guard cannot tell it from `password: string in the request body`, and a false match blocks a save.
 - The environment suffixes also take `qa`, `uat`, `stg`, `prd`, `local` and `development`. `password_local: disabled` is a false match that stays, and `DB_PASSWORD_ROOT=` escapes.
 - Free React state also takes `null`, `undefined` and the types `<string | null>` and `<string | undefined>`.
@@ -63,6 +63,16 @@ After these: the owner fixes or drops each of the other 34 P3 findings and the P
   Any other text, free or refused, is P3 and goes on the P3 list in this file, even if `main` gives another answer. So a secret in a new shape can stay free until a later PR. The freeze covers only which text the patterns accept. The whole merge bar still applies to the scan speed, the masking of a found value, row 5, the import change, and each required check.
 - DQ-057 has the same cause as DQ-046 and DQ-048: a claim with no run behind it. Decision: no redesign, because the cause is process and the wrong claims are corrected. A later docs PR adds a rule that each claim in a PR body or an owner question needs a real run.
 
+**Decisions after PR 2** (owner, 2026-11-06). The guard rules are in `security.md` §2.13.
+
+- Skill and bot saves get no "Save anyway" for now. The guard at the merge of #73 refused 5 of 451 third-party skill files (7 lines) on this machine, and all 7 lines hold example or masked values. An edit fixes each one.
+- The known guard gaps and false matches stay. The guard forms are closed, and later reviews and audits do not ask the owner about guard shapes.
+- Only the owner reopens the guard, after a save that no edit can fix or a real secret that got through.
+- The nil UUID and `github_pat_` wait for the next guard change, with no PR of their own.
+- `lineDiff` (DQ-037) moves to PR 7, as a P3 to fix before M3. All lines different took 27 ms for 500 lines and 10.7 s for 10,000 lines. The `maxEditLength` option of `diff`, set to 2,000, took 187 ms for 10,000 lines (script run, 2026-11-06). Above the limit, the old text shows as removed and the new text as added. The limit needs a home under the "no hardcoded values" rule.
+- New rules: [pattern rules](../workflows/merge-bar.md#pattern-rules) and the claim rule in [testing.md §5](../testing.md#5-evidence-in-prs).
+- No separate stop signal for now. The ledger marks 13 issues as caused by a repair, all on #73, and the 5 P2 among them (DQ-046, DQ-052, DQ-053, DQ-058, DQ-059) come from free rules of the guard, which the pattern rules now limit. Many older ledger rows do not record this field. Reopen if a PR outside pattern rules gets two P2 findings from its repairs.
+
 ## Fix progress
 
 Each fix PR updates its row in the same PR. Check `gh pr list --state all`, because this table can be behind.
@@ -70,7 +80,7 @@ Each fix PR updates its row in the same PR. Check `gh pr list --state all`, beca
 | PR | Scope | State |
 | --- | --- | --- |
 | 1 | Docs only | merged: #71 |
-| 2 | Security | draft: #73 |
+| 2 | Security | merged: #73 |
 | 3 | Skills page | not started |
 | 4 | Bots page | not started |
 | 5 | Tests only | not started |
@@ -133,14 +143,13 @@ The lead did not check these again, except where a row says so. The others are f
 
 ### Security
 
-- `lineDiff` has no budget: 24.5 s for a body of 20,000 characters: `backend/src/core/skills/skill-diff.ts:8`. One `changed` import row can reach it: 11.6 s from a 202-byte zip if the saved body has 10,000 lines. The pause between rows does not help inside a row (#73 review).
+- `lineDiff` has no budget: 24.5 s for a body of 20,000 characters: `backend/src/core/skills/skill-diff.ts:8`. One `changed` import row can reach it: 11.6 s from a 202-byte zip if the saved body has 10,000 lines. The pause between rows does not help inside a row (#73 review). **Fix before M3**, in PR 7 (owner, 2026-11-06).
 - The dev page has no CSP or `frame-ancestors`: `frontend/vite.config.ts:18`.
 - The paid security review does not watch the model adapters, `skill.rules.ts`, `bot.rules.ts`, `main.ts`, `compose.ts` and other paths: `.github/workflows/security-review.yml:20`.
 - Refused requests carry no security headers, and the plan and `security.md` disagree: `backend/src/adapters/http/app.ts:61`.
 - The changelog has no length limit, and its regex is quadratic: `backend/src/adapters/http/routes/skills.ts:34`, `backend/src/core/skills/skills.service.ts:584`.
 - No test covers an absolute zip path or a forged entry size, or checks secrets through the CLI: `backend/src/adapters/http/uploads/skill-zip.test.ts`.
-- These secrets are free on `main` and on #73, and audit row 4 does not list them: `Authorization: Bearer <key>`, `PRIVATE_KEY=<hex>`, `encryption_key=<hex>`, `signingKey: <key>`. New key words can bring new false matches, and a false match blocks a save. Found in #73 on 2026-11-05.
-- The nil UUID `00000000-0000-0000-0000-000000000000` is refused as a card number on `main` and on #73, because its zeros pass the Luhn check: `backend/src/core/guard/sensitive-data.rules.ts`, `card_number`. A scan of real text found it. Found in #73 on 2026-11-05.
+- Guard shapes accepted (owner, 2026-11-06): each guard shape, free or refused, that reviews and audits report. The lists and the rule are in `security.md` §2.13. This row needs no fix or drop answer, and a new shape adds no row.
 
 ### API and realtime
 
