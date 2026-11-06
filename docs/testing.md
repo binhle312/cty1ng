@@ -300,8 +300,8 @@ Prettier, `tsc`, dependency-cruiser import rules (D35), Vitest, `db:check` (Driz
 matches the migrations), Playwright, generated-client freshness, event-type list match,
 `check:index` (folder indexes complete, `architecture.md` §4.2), the bundle budget
 (`pnpm build`, then `pnpm check:bundle`), `pnpm audit --audit-level
-high`, CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also run the automated security review
-(`security.md` §2.11).
+high`, CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also run the automated security review when it is on;
+it is off for now (`security.md` §2.11).
 
 ## 5. Evidence in PRs
 
