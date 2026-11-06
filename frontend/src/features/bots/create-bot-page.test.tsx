@@ -731,12 +731,13 @@ describe("the defaults of a new bot", () => {
     expect(await limitOnForm()).toBe(String(OLD_LIMIT));
   });
 
-  it("keeps the form when the settings answer again while it is open", async () => {
-    let limit = OLD_LIMIT;
-    await start(() => ({ body: { ...BOT_SETTINGS, bot_default_request_limit: limit } }));
+  it("keeps the form and its text while the settings load again and after they answer", async () => {
+    const held = heldAnswer();
+    let read: Settings = () => ({ body: BOT_SETTINGS });
+    await start((...args) => read(...args));
     await form();
     type("Name", "Kept");
-    limit = NEW_LIMIT;
+    read = () => held.promise;
     act(() => {
       focusManager.setFocused(false);
       focusManager.setFocused(true);
@@ -744,6 +745,12 @@ describe("the defaults of a new bot", () => {
     await waitFor(() => {
       expect(fake?.sent("GET", "/api/settings")).toHaveLength(2);
     });
+    // Time for a skeleton to replace the form, if the page waited for this load.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(screen.getByLabelText<HTMLInputElement>("Name", { exact: true }).value).toBe("Kept");
+    await held.answer({ body: { ...BOT_SETTINGS, bot_default_request_limit: NEW_LIMIT } });
     expect(screen.getByLabelText<HTMLInputElement>("Name", { exact: true }).value).toBe("Kept");
     act(() => {
       focusManager.setFocused(undefined);
