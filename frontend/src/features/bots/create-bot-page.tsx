@@ -68,7 +68,9 @@ import { useAvatarUpload } from "./crop-card.tsx";
 // (frontend-conventions.md §5, "Waiting on a query that keeps failing").
 export function CreateBotPage() {
   const { from } = useSearch({ from: "/bots/new" });
-  const settings = useQuery(getSettingsOptions());
+  // The page waits for this read before the form opens (below), so it must not pause when the
+  // browser says it is offline: the app runs on 127.0.0.1.
+  const settings = useQuery({ ...getSettingsOptions(), networkMode: "always" });
   const models = useQuery(listModelsOptions());
   const tools = useQuery(listToolsOptions());
   // Deprecated skills too: a Clone keeps the deprecated pins of its source bot (§6).
@@ -82,6 +84,7 @@ export function CreateBotPage() {
     // nothing is kept after the page closes (§6). The open form keeps its text when this fetches
     // again.
     gcTime: 0,
+    networkMode: "always",
   });
   const queries = [settings, models, tools, skills, bots];
   const failed = queries.find((q) => q.data === undefined && q.isError);

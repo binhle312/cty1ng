@@ -1,4 +1,4 @@
-import { focusManager } from "@tanstack/react-query";
+import { focusManager, onlineManager } from "@tanstack/react-query";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import {
@@ -731,6 +731,25 @@ describe("the defaults of a new bot", () => {
     expect(await limitOnForm()).toBe(String(OLD_LIMIT));
   });
 
+  // The app runs on 127.0.0.1: a laptop with no internet still reaches it.
+  it("opens when the browser says it is offline", async () => {
+    let limit = OLD_LIMIT;
+    const { router } = await start(() => ({
+      body: { ...BOT_SETTINGS, bot_default_request_limit: limit },
+    }));
+    await form();
+    await leave(router);
+    limit = NEW_LIMIT;
+    onlineManager.setOnline(false);
+    try {
+      await back(router);
+      await form();
+      expect(await limitOnForm()).toBe(String(NEW_LIMIT));
+    } finally {
+      onlineManager.setOnline(true);
+    }
+  });
+
   it("keeps the form and its text while the settings load again and after they answer", async () => {
     const held = heldAnswer();
     let read: Settings = () => ({ body: BOT_SETTINGS });
@@ -877,6 +896,25 @@ describe("a second Clone of a bot", () => {
     await held.answer({ body: CHANGED });
     await cloneBanner();
     expect(personaStepText()).toContain("The new persona.");
+  });
+
+  it("opens when the browser says it is offline", async () => {
+    const { router } = await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => ({ body: CHANGED }),
+      ),
+    );
+    await cloneBanner();
+    await leave(router);
+    onlineManager.setOnline(false);
+    try {
+      await cloneAgain(router);
+      await cloneBanner();
+      expect(personaStepText()).toContain("The new persona.");
+    } finally {
+      onlineManager.setOnline(true);
+    }
   });
 
   it("says the bot is gone when it left for Trash since the first Clone", async () => {
