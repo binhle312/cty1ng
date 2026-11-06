@@ -273,11 +273,14 @@ function BotView({
     },
   };
   // Esc asks first, like Discard (bot-page.md §4.1). Only a key pressed on the tab itself: a
-  // popover or a dialog closes on its own Esc.
+  // popover or a dialog closes on its own Esc. An Esc that ends an IME composition is the input
+  // method's. The question opens before this key press ends, and a dialog closes on any Esc that
+  // reaches `document`, so the press stops here (frontend-conventions.md §5).
   const escToDiscard = (t: EditTab) => (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== "Escape" || event.defaultPrevented) return;
+    if (event.key !== "Escape" || event.defaultPrevented || event.nativeEvent.isComposing) return;
     if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target)) return;
     if (view.unsaved[t].length === 0) return;
+    event.stopPropagation();
     leave.ask();
   };
   const discard = () => {

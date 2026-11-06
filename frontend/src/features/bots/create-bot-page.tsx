@@ -78,6 +78,10 @@ export function CreateBotPage() {
     ...getBotCloneTemplateOptions({ path: { id: from ?? "" } }),
     enabled: from !== undefined,
     retry: false,
+    // The form takes its first answer and keeps it, so each Clone reads the source bot again:
+    // nothing is kept after the page closes (§6). The open form keeps its text when this fetches
+    // again.
+    gcTime: 0,
   });
   const queries = [settings, models, tools, skills, bots];
   const failed = queries.find((q) => q.data === undefined && q.isError);
@@ -110,7 +114,10 @@ export function CreateBotPage() {
     }
     return <PageSkeleton />;
   }
+  // The form takes its Advanced defaults once too, and other pages keep the settings in the cache,
+  // so it waits for the read of this visit (§5). If that read fails, the last values stay.
   if (
+    !settings.isFetchedAfterMount ||
     settings.data === undefined ||
     models.data === undefined ||
     tools.data === undefined ||

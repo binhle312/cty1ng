@@ -1,7 +1,12 @@
 import { focusManager } from "@tanstack/react-query";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { fakeApi, NETWORK_ERROR, type RecordedRequest } from "../../../test/fake-api.ts";
+import {
+  fakeApi,
+  heldAnswer,
+  NETWORK_ERROR,
+  type RecordedRequest,
+} from "../../../test/fake-api.ts";
 import {
   BOT_SETTINGS,
   FAKE_SCRIPTED,
@@ -9,10 +14,12 @@ import {
   makeModel,
   makePin,
   makeSkill,
+  makeTool,
   typeId,
   versionId,
 } from "../../../test/fixtures.ts";
 import { renderApp } from "../../../test/render-app.tsx";
+import { BOT_QUERIES, SETTINGS_QUERIES } from "../../lib/api/operation-queries.ts";
 
 // Create with an Idempotency-Key (create-bot-page.md E3, E5; api.md §4): when the outcome is
 // not known, Try again sends the same request with the same key, so a retry never makes two
@@ -642,5 +649,353 @@ describe("the avatar limits on the Create bot page", () => {
     expect(screen.queryByRole("dialog", { name: "Crop the image" })).toBeNull();
     pick(SMALL());
     expect(await screen.findByRole("dialog", { name: "Crop the image" })).toBeTruthy();
+  });
+});
+
+// A form that fills once waits for a read from this visit (create-bot-page.md §5, §6): the Advanced
+// defaults of a new bot come from the settings as they are now, not from the cache.
+describe("the defaults of a new bot", () => {
+  const OLD_LIMIT = BOT_SETTINGS.bot_default_request_limit;
+  const NEW_LIMIT = OLD_LIMIT + 7;
+  const FAILED = {
+    status: 500,
+    body: { error: { code: "internal_error", message: "Failed." } },
+  };
+  let fake: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    fake?.restore();
+    fake = null;
+  });
+  type Settings = Parameters<typeof fakeApi>[0][string];
+
+  function start(settings: Settings) {
+    fake = fakeApi({
+      "GET /api/settings": settings,
+      "GET /api/models": () => ({ body: [makeModel(), FAKE_SCRIPTED] }),
+      "GET /api/tools": () => ({ body: [] }),
+      "GET /api/skills": () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [] }),
+    });
+    return renderApp("/bots/new");
+  }
+  type Router = Awaited<ReturnType<typeof start>>["router"];
+  const form = () => screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+  // A page with no settings on it, so the cached settings wait with no refresh.
+  const leave = (router: Router) => act(() => router.navigate({ to: "/" }));
+  const back = (router: Router) => act(() => router.navigate({ to: "/bots/new" }));
+  const limitOnForm = async () => {
+    await fillToModelStep();
+    const field = await screen.findByLabelText("Model requests per run", { exact: true });
+    if (!(field instanceof HTMLInputElement)) throw new Error("no number field");
+    return field.value;
+  };
+
+  it("takes the newest default when the settings changed since the last visit", async () => {
+    let limit = OLD_LIMIT;
+    const { router } = await start(() => ({
+      body: { ...BOT_SETTINGS, bot_default_request_limit: limit },
+    }));
+    await form();
+    await leave(router);
+    limit = NEW_LIMIT;
+    await back(router);
+    await form();
+    expect(await limitOnForm()).toBe(String(NEW_LIMIT));
+  });
+
+  it("shows the skeleton until the read of this visit answers", async () => {
+    const held = heldAnswer();
+    let read: Settings = () => ({ body: BOT_SETTINGS });
+    const { router } = await start((...args) => read(...args));
+    await form();
+    await leave(router);
+    read = () => held.promise;
+    await back(router);
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/settings")).toHaveLength(2);
+    });
+    expect(screen.queryByRole("heading", { name: "New bot" })).toBeNull();
+    await held.answer({ body: { ...BOT_SETTINGS, bot_default_request_limit: NEW_LIMIT } });
+    await form();
+    expect(await limitOnForm()).toBe(String(NEW_LIMIT));
+  });
+
+  it("opens with the last values when the read of this visit fails", async () => {
+    let read: Settings = () => ({ body: BOT_SETTINGS });
+    const { router } = await start((...args) => read(...args));
+    await form();
+    await leave(router);
+    read = () => FAILED;
+    await back(router);
+    await form();
+    expect(await limitOnForm()).toBe(String(OLD_LIMIT));
+  });
+
+  it("keeps the form when the settings answer again while it is open", async () => {
+    let limit = OLD_LIMIT;
+    await start(() => ({ body: { ...BOT_SETTINGS, bot_default_request_limit: limit } }));
+    await form();
+    type("Name", "Kept");
+    limit = NEW_LIMIT;
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/settings")).toHaveLength(2);
+    });
+    expect(screen.getByLabelText<HTMLInputElement>("Name", { exact: true }).value).toBe("Kept");
+    act(() => {
+      focusManager.setFocused(undefined);
+    });
+  });
+});
+
+// A second Clone starts from the source bot as it is now (create-bot-page.md §6; audit row 2). A
+// cached template must not fill the form, because the form takes its first answer and keeps it.
+describe("a second Clone of a bot", () => {
+  const TEMPLATE_PATH = `/api/bots/${SOURCE.id}/clone-template`;
+  const NEW_PIN = makePin({
+    skill_id: NEW.id,
+    skill_name: NEW.name,
+    skill_version_id: versionId(2),
+    version: 2,
+  });
+  // What the source bot is after another tab changed it.
+  const CHANGED = {
+    ...TEMPLATE,
+    persona_md: "The new persona.",
+    tool_settings: { read_file: false },
+    pins: [{ skill_id: NEW.id, skill_version_id: versionId(2), always_load: false }],
+    copied_pins: [NEW_PIN],
+  };
+  const FAILED = {
+    status: 500,
+    body: { error: { code: "internal_error", message: "Failed." } },
+  };
+  type Routes = Parameters<typeof fakeApi>[0];
+  type Handler = Routes[string];
+
+  let fake: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    fake?.restore();
+    fake = null;
+    act(() => {
+      focusManager.setFocused(undefined);
+    });
+  });
+
+  // Each read of the template takes the next answer, so a test sets the order of the answers.
+  function inOrder(...answers: Handler[]): Handler {
+    return (...args) => {
+      const next = answers.shift();
+      if (next === undefined) throw new Error("no answer left for this read");
+      return next(...args);
+    };
+  }
+
+  function start(template: Handler, routes: Routes = {}) {
+    fake = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/models": () => ({ body: [makeModel(), FAKE_SCRIPTED] }),
+      "GET /api/tools": () => ({ body: [makeTool("read_file", { label: "Read files" })] }),
+      "GET /api/skills": () => ({ body: [OLD, NEW] }),
+      "GET /api/bots": () => ({ body: [SOURCE] }),
+      [`GET ${TEMPLATE_PATH}`]: template,
+      "POST /api/bots": () => ({ status: 201, body: makeBot(10, "Source (copy)") }),
+      ...routes,
+    });
+    return renderApp(`/bots/new?from=${SOURCE.id}`);
+  }
+  type Router = Awaited<ReturnType<typeof start>>["router"];
+
+  const cloneBanner = () => screen.findByText("Cloning Source", {}, { timeout: 5000 });
+  const reads = () => fake?.sent("GET", TEMPLATE_PATH).length;
+  const waitForReads = (count: number) =>
+    waitFor(() => {
+      expect(reads()).toBe(count);
+    });
+  const leave = async (router: Router) => {
+    await act(() => router.navigate({ to: "/bots" }));
+    await screen.findByPlaceholderText(/Search/, {}, { timeout: 5000 });
+  };
+  const cloneAgain = (router: Router) =>
+    act(() => router.navigate({ to: "/bots/new", search: { from: SOURCE.id } }));
+  const personaStepText = () => {
+    openStep(/Persona/);
+    return document.getElementById("create-form")?.textContent;
+  };
+  const createdBody = async () => {
+    openStep(/Model/);
+    click(screen.getByRole("button", { name: "Create" }));
+    await waitFor(() => {
+      expect(fake?.sent("POST", "/api/bots")).toHaveLength(1);
+    });
+    return fake?.sent("POST", "/api/bots")[0]?.body;
+  };
+
+  it("sends the source bot's new persona, tools and pins, not the first answer's", async () => {
+    const { router } = await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => ({ body: CHANGED }),
+      ),
+    );
+    await cloneBanner();
+    await leave(router);
+    await cloneAgain(router);
+    await cloneBanner();
+    expect(personaStepText()).toContain("The new persona.");
+    expect(await createdBody()).toMatchObject({
+      persona_md: "The new persona.",
+      tool_settings: { read_file: false },
+      pins: [{ skill_id: NEW.id, skill_version_id: versionId(2), always_load: false }],
+    });
+  });
+
+  it("shows the skeleton, not the old form, until the new answer comes", async () => {
+    const held = heldAnswer();
+    const { router } = await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => held.promise,
+      ),
+    );
+    await cloneBanner();
+    await leave(router);
+    await cloneAgain(router);
+    await waitForReads(2);
+    expect(screen.queryByText("Cloning Source")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Create" })).toBeNull();
+    await held.answer({ body: CHANGED });
+    await cloneBanner();
+    expect(personaStepText()).toContain("The new persona.");
+  });
+
+  it("says the bot is gone when it left for Trash since the first Clone", async () => {
+    const { router } = await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => ({ status: 404, body: { error: { code: "not_found", message: "No such bot." } } }),
+      ),
+    );
+    await cloneBanner();
+    await leave(router);
+    await cloneAgain(router);
+    expect(await screen.findByText("The app could not find the bot to copy.")).toBeTruthy();
+    expect(screen.queryByText("Cloning Source")).toBeNull();
+  });
+
+  it("says the load failed, and Try again fills the form, when the second read fails", async () => {
+    const { router } = await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => FAILED,
+        () => ({ body: CHANGED }),
+      ),
+    );
+    await cloneBanner();
+    await leave(router);
+    await cloneAgain(router);
+    expect(await screen.findByText("The app could not load the bot to copy.")).toBeTruthy();
+    expect(screen.queryByText("Cloning Source")).toBeNull();
+    click(screen.getByRole("button", { name: "Try again" }));
+    await cloneBanner();
+    expect(personaStepText()).toContain("The new persona.");
+  });
+
+  it("caller left: an answer that comes after the owner left fills no later Clone", async () => {
+    const first = heldAnswer();
+    const { router } = await start(
+      inOrder(
+        () => first.promise,
+        () => ({ body: CHANGED }),
+      ),
+    );
+    await waitForReads(1);
+    await leave(router);
+    await first.answer({ body: TEMPLATE });
+    await cloneAgain(router);
+    await cloneBanner();
+    expect(reads()).toBe(2);
+    expect(personaStepText()).toContain("The new persona.");
+  });
+
+  it("newer request: the old answer of a read from before the leave cannot fill the form", async () => {
+    const first = heldAnswer();
+    const second = heldAnswer();
+    const { router } = await start(
+      inOrder(
+        () => first.promise,
+        () => second.promise,
+      ),
+    );
+    await waitForReads(1);
+    await leave(router);
+    await cloneAgain(router);
+    await waitForReads(2);
+    await first.answer({ body: TEMPLATE });
+    expect(screen.queryByText("Cloning Source")).toBeNull();
+    await second.answer({ body: CHANGED });
+    await cloneBanner();
+    expect(personaStepText()).toContain("The new persona.");
+  });
+
+  // A first load that a live event marks stale goes on (TanStack Query joins it, because it has no
+  // data to keep), and it answers with the source at that moment. A change a moment later is no
+  // different to the owner: an open form keeps its first answer (the test "keeps what it copied").
+  it("list load: a live event during the read still opens the form, and one read fills it", async () => {
+    const held = heldAnswer();
+    const { queryClient } = await start(inOrder(() => held.promise));
+    await waitForReads(1);
+    void queryClient.invalidateQueries({ predicate: BOT_QUERIES });
+    await held.answer({ body: CHANGED });
+    await cloneBanner();
+    expect(reads()).toBe(1);
+    expect(personaStepText()).toContain("The new persona.");
+  });
+
+  it("slow or failed refresh: the open form stays, with no skeleton and no error", async () => {
+    const held = heldAnswer();
+    await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => held.promise,
+      ),
+    );
+    await cloneBanner();
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitForReads(2);
+    expect(screen.getByText("Cloning Source")).toBeTruthy();
+    await held.answer(FAILED);
+    expect(screen.getByText("Cloning Source")).toBeTruthy();
+    expect(screen.queryByText("The app could not load the bot to copy.")).toBeNull();
+    expect(await createdBody()).toMatchObject({ persona_md: TEMPLATE.persona_md });
+  });
+
+  it("another request: the form waits for the settings, then takes this visit's template", async () => {
+    const settings = heldAnswer();
+    let settingsAnswer: Handler = () => ({ body: BOT_SETTINGS });
+    const { router, queryClient } = await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => ({ body: CHANGED }),
+      ),
+      { "GET /api/settings": (...args) => settingsAnswer(...args) },
+    );
+    await cloneBanner();
+    await leave(router);
+    // The settings have no answer yet on this visit.
+    settingsAnswer = () => settings.promise;
+    queryClient.removeQueries({ predicate: SETTINGS_QUERIES });
+    await cloneAgain(router);
+    await waitForReads(2);
+    expect(screen.queryByText("Cloning Source")).toBeNull();
+    await settings.answer({ body: BOT_SETTINGS });
+    await cloneBanner();
+    expect(personaStepText()).toContain("The new persona.");
   });
 });

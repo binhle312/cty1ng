@@ -15,6 +15,7 @@ import {
   typeId,
   versionId,
 } from "../../../test/fixtures.ts";
+import { pressKey } from "../../../test/press-key.ts";
 import { renderApp } from "../../../test/render-app.tsx";
 import { listBotsQueryKey } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 
@@ -1359,18 +1360,6 @@ describe("leaving the bot page with changes (bot-page.md §4.1)", () => {
     expect(await screen.findByRole("heading", { name: "Designer", level: 1 })).toBeTruthy();
   });
 
-  it("asks on Esc in a changed field", async () => {
-    await open({ bots: [makeBot(1, "BA")] });
-    await heading();
-    type({ label: "Name", text: "Analyst" });
-    act(() => {
-      fireEvent.keyDown(screen.getByLabelText("Name", { exact: true }), { key: "Escape" });
-    });
-    expect(
-      await screen.findByRole("alertdialog", { name: "Leave without saving? 👀" }),
-    ).toBeTruthy();
-  });
-
   it("moves between tabs without asking when nothing changed", async () => {
     const { router } = await open({ bots: [makeBot(1, "BA")] });
     await heading();
@@ -1379,6 +1368,258 @@ describe("leaving the bot page with changes (bot-page.md §4.1)", () => {
       expect(router.state.location.search).toEqual({ tab: "model" });
     });
     expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+});
+
+// Esc is pressed outside `act()`, as in a browser: `act()` hid a question that opened and closed
+// in one key press (audit row 1). See `pressKey`.
+describe("Esc on the bot page (bot-page.md §4.1, §4.2)", () => {
+  const QUESTION = { name: "Leave without saving? 👀" };
+  const esc = (label: string) =>
+    pressKey(screen.getByLabelText(label, { exact: true }), { key: "Escape" });
+  const heldPatch = () => {
+    const held = heldAnswer();
+    return {
+      held,
+      routes: {
+        [`PATCH /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+    };
+  };
+
+  it("asks on Esc in a changed field, and the question stays", async () => {
+    await open({ bots: [makeBot(1, "BA")] });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    await esc("Name");
+    expect(screen.getByRole("alertdialog", QUESTION)).toBeTruthy();
+    expect(valueOf("Name")).toBe("Analyst");
+  });
+
+  it("asks on Esc on the Model tab too", async () => {
+    await open({ bots: [makeBot(1, "BA")] }, { path: "/bots/ba?tab=model" });
+    await heading();
+    type({ label: "Model requests per run", text: "20" });
+    await esc("Model requests per run");
+    expect(screen.getByRole("alertdialog", QUESTION)).toBeTruthy();
+  });
+
+  it("closes the question on the next Esc, keeps the text, and asks again after that", async () => {
+    await open({ bots: [makeBot(1, "BA")] });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    await esc("Name");
+    const stay = within(screen.getByRole("alertdialog", QUESTION)).getByRole("button", {
+      name: "Stay on this page",
+    });
+    await pressKey(stay, { key: "Escape" });
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+    });
+    expect(valueOf("Name")).toBe("Analyst");
+    await esc("Name");
+    expect(screen.getByRole("alertdialog", QUESTION)).toBeTruthy();
+  });
+
+  it("drops the changes with Let them go after Esc, and stays on the page", async () => {
+    const { router } = await open({ bots: [makeBot(1, "BA")] });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    await esc("Name");
+    click(screen.getByRole("button", { name: "Let them go" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+    });
+    expect(valueOf("Name")).toBe("BA");
+    expect(router.state.location.pathname).toBe("/bots/ba");
+  });
+
+  it("does nothing with no changes, and the key goes on to the page", async () => {
+    await open({ bots: [makeBot(1, "BA")] });
+    await heading();
+    let reachedPage = false;
+    const onKey = () => {
+      reachedPage = true;
+    };
+    document.addEventListener("keydown", onKey);
+    await esc("Name");
+    document.removeEventListener("keydown", onKey);
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(reachedPage).toBe(true);
+  });
+
+  it("asks nothing when Esc only ends an IME composition", async () => {
+    await open({ bots: [makeBot(1, "BA")] });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    await pressKey(screen.getByLabelText("Name", { exact: true }), {
+      key: "Escape",
+      isComposing: true,
+    });
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(valueOf("Name")).toBe("Analyst");
+  });
+
+  it("closes only the Custom colour card when Esc is pressed in it", async () => {
+    await open({ bots: [makeBot(1, "BA")] });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    click(screen.getByRole("button", { name: "Custom" }));
+    const hex = await screen.findByLabelText("Hex", { exact: true });
+    await pressKey(hex, { key: "Escape" });
+    await waitFor(() => {
+      expect(screen.queryByLabelText("Hex", { exact: true })).toBeNull();
+    });
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(valueOf("Name")).toBe("Analyst");
+  });
+
+  // The six orders of testing.md, "Request order and list states", with Esc as the way in.
+  it("late answer: the question closes when the Save answers and nothing is unsaved", async () => {
+    const { held, routes } = heldPatch();
+    await open({ bots: [makeBot(1, "BA")] }, { routes });
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    click(screen.getByRole("button", { name: "Save" }));
+    await esc("Description");
+    expect(screen.getByRole("alertdialog", QUESTION)).toBeTruthy();
+    await held.answer({ body: { ...makeBot(1, "BA"), row_version: 2, description: "Mine." } });
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+    });
+    expect(valueOf("Description")).toBe("Mine.");
+  });
+
+  it("late answer: the question stays while text typed during the Save is unsaved", async () => {
+    const { held, routes } = heldPatch();
+    await open({ bots: [makeBot(1, "BA")] }, { routes });
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    click(screen.getByRole("button", { name: "Save" }));
+    type({ label: "Description", text: "Mine, later." });
+    await esc("Description");
+    await held.answer({ body: { ...makeBot(1, "BA"), row_version: 2, description: "Mine." } });
+    expect(screen.getByRole("alertdialog", QUESTION)).toBeTruthy();
+    click(screen.getByRole("button", { name: "Let them go" }));
+    await waitFor(() => {
+      expect(valueOf("Description")).toBe("Mine.");
+    });
+  });
+
+  it("caller left: the question goes with the page when the bot leaves the list", async () => {
+    const state = { bots: [makeBot(1, "BA"), makeBot(2, "Designer")] };
+    await open(state);
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    await esc("Name");
+    state.bots = [makeBot(2, "Designer")];
+    refocus();
+    expect(await screen.findByText(/could not find/i)).toBeTruthy();
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+
+  it("newer request: Let them go during a Save drops the change, and the Save goes on", async () => {
+    const { held, routes } = heldPatch();
+    await open({ bots: [makeBot(1, "BA")] }, { routes });
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    click(screen.getByRole("button", { name: "Save" }));
+    await esc("Description");
+    click(screen.getByRole("button", { name: "Let them go" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+    });
+    await held.answer({ body: { ...makeBot(1, "BA"), row_version: 2, description: "Mine." } });
+    await waitFor(() => {
+      expect(valueOf("Description")).toBe("Mine.");
+    });
+    expect(screen.getByText("No changes. Edits apply from the next run.")).toBeTruthy();
+  });
+
+  it("list load: a newer bot during the question keeps the question and the text", async () => {
+    const state = { bots: [makeBot(1, "BA")] };
+    await open(state);
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    await esc("Description");
+    state.bots = [{ ...makeBot(1, "BA"), row_version: 2, description: "From another tab." }];
+    refocus();
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/bots").length).toBeGreaterThan(1);
+    });
+    expect(screen.getByRole("alertdialog", QUESTION)).toBeTruthy();
+    expect(valueOf("Description")).toBe("Mine.");
+    click(screen.getByRole("button", { name: "Let them go" }));
+    await waitFor(() => {
+      expect(valueOf("Description")).toBe("From another tab.");
+    });
+  });
+
+  it("failed refresh: Esc on a stale tab keeps the text until Let them go", async () => {
+    const state = { bots: [makeBot(1, "BA")] };
+    let fail = false;
+    await open(state, {
+      routes: {
+        "GET /api/bots": () => (fail ? FAILED_ANSWER : { body: state.bots }),
+        [`PATCH /api/bots/${BA_ID}`]: () => {
+          fail = true;
+          return {
+            status: 409,
+            body: { error: { code: "stale_write", message: "The bot changed." } },
+          };
+        },
+      },
+    });
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    click(screen.getByRole("button", { name: "Save" }));
+    await screen.findByText(/BA changed in another place/);
+    await esc("Description");
+    expect(screen.getByRole("alertdialog", QUESTION)).toBeTruthy();
+    expect(valueOf("Description")).toBe("Mine.");
+    state.bots = [{ ...makeBot(1, "BA"), row_version: 2, description: "From another tab." }];
+    fail = false;
+    click(screen.getByRole("button", { name: "Let them go" }));
+    await waitFor(() => {
+      expect(valueOf("Description")).toBe("From another tab.");
+    });
+  });
+
+  it("another request: Esc on the Model tab while the Profile Save waits ends only its own work", async () => {
+    const { held, routes } = heldPatch();
+    const { router } = await open({ bots: [makeBot(1, "BA")] }, { routes });
+    await heading();
+    type({ label: "Description", text: "Mine." });
+    click(screen.getByRole("button", { name: "Save" }));
+    // A move to another tab asks too, and Let them go leaves the Save on its way.
+    click(screen.getByRole("tab", { name: /Model/ }));
+    click(
+      within(await screen.findByRole("alertdialog", QUESTION)).getByRole("button", {
+        name: "Let them go",
+      }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.search).toEqual({ tab: "model" });
+    });
+    // The owner types in the field: its draft text ends when the question takes the focus.
+    act(() => {
+      screen.getByLabelText("Model requests per run", { exact: true }).focus();
+    });
+    type({ label: "Model requests per run", text: "20" });
+    await esc("Model requests per run");
+    click(screen.getByRole("button", { name: "Let them go" }));
+    await waitFor(() => {
+      expect(valueOf("Model requests per run")).toBe("10");
+    });
+    expect(fake?.sent("PATCH", `/api/bots/${BA_ID}`)).toHaveLength(1);
+    await held.answer({ body: { ...makeBot(1, "BA"), row_version: 2, description: "Mine." } });
+    click(screen.getByRole("tab", { name: /Profile/ }));
+    await waitFor(() => {
+      expect(valueOf("Description")).toBe("Mine.");
+    });
   });
 });
 

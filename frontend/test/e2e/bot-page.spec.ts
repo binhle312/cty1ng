@@ -1,6 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import { createClient } from "../../src/lib/api/generated/client/index.ts";
-import { createBot } from "../../src/lib/api/generated/sdk.gen.ts";
+import { createBot, getBot, updateBot } from "../../src/lib/api/generated/sdk.gen.ts";
 import { watchCsp } from "./csp.ts";
 
 // The bot page (M2c, bot-page.md) and the bot cards after a skill save (skills-page.md §7). The
@@ -16,7 +16,7 @@ function tagged(): string {
 }
 
 // A bot with no skills, through the API, with the Origin header a browser would send.
-async function makeBot(name: string): Promise<{ id: string; slug: string }> {
+async function makeBot(name: string): Promise<{ id: string; slug: string; name: string }> {
   const created = await createBot({
     client: apiClient(),
     headers: { "idempotency-key": crypto.randomUUID() },
@@ -143,4 +143,108 @@ test("a Profile save shows in another tab at once, and an edit there keeps its t
   );
   expect(await violations()).toEqual([]);
   await context.close();
+});
+
+// Audit row 1. A real key press: in a jsdom test, the dialog's own Esc listener sees the event only
+// through `pressKey`.
+test("Esc in a changed field asks, a second Esc stays with the text, and Let them go drops it", async ({
+  page,
+}) => {
+  const tag = tagged();
+  const bot = await makeBot(`Esc ${tag}`);
+  await page.goto(`/bots/${bot.slug}`);
+  const name = page.getByLabel("Name", { exact: true });
+  await name.fill(`Analyst ${tag}`);
+
+  await name.press("Escape");
+  const question = page.getByRole("alertdialog", { name: "Leave without saving? 👀" });
+  await expect(question).toBeVisible();
+  await expect(question.getByRole("button", { name: "Stay on this page" })).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(question).toHaveCount(0);
+  await expect(name).toHaveValue(`Analyst ${tag}`);
+  await expect(name).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(question).toBeVisible();
+  await question.getByRole("button", { name: "Let them go" }).click();
+  await expect(question).toHaveCount(0);
+  await expect(name).toHaveValue(bot.name);
+  await expect(page).toHaveURL(new RegExp(`/bots/${bot.slug}`));
+
+  // With no changes, Esc does nothing.
+  await name.press("Escape");
+  await expect(question).toHaveCount(0);
+});
+
+test("Esc on the Model tab asks, and Esc in the Custom colour card closes only the card", async ({
+  page,
+}) => {
+  const bot = await makeBot(`Esc tabs ${tagged()}`);
+  await page.goto(`/bots/${bot.slug}?tab=model`);
+  const limit = page.getByLabel("Model requests per run", { exact: true });
+  await limit.fill("20");
+  await limit.press("Escape");
+  const question = page.getByRole("alertdialog", { name: "Leave without saving? 👀" });
+  await expect(question).toBeVisible();
+  await question.getByRole("button", { name: "Let them go" }).click();
+  await expect(limit).not.toHaveValue("20");
+
+  await page.getByRole("tab", { name: /Profile/ }).click();
+  const name = page.getByLabel("Name", { exact: true });
+  await name.fill("Changed");
+  await page.getByRole("button", { name: "Custom" }).click();
+  const hex = page.getByLabel("Hex", { exact: true });
+  await expect(hex).toBeVisible();
+  await hex.press("Escape");
+  await expect(hex).toHaveCount(0);
+  await expect(question).toHaveCount(0);
+  await expect(name).toHaveValue("Changed");
+});
+
+// Audit row 2.
+test("a second Clone starts from the source bot as it is now, and Create sends that", async ({
+  page,
+}) => {
+  const bot = await makeBot(`Twice ${tagged()}`);
+  const openClone = async () => {
+    // The name alone also finds the copy's card.
+    const actions = page.getByRole("button", { name: `${bot.name} actions`, exact: true });
+    await page.getByTestId("bot-card").filter({ has: actions }).hover();
+    await actions.click();
+    await page.getByRole("menuitem", { name: "Clone" }).click();
+    await expect(page.getByText(`Cloning ${bot.name}`)).toBeVisible();
+  };
+  await page.goto("/bots");
+  await openClone();
+  await page.goBack();
+  await expect(page).toHaveURL(/\/bots$/);
+
+  const current = await getBot({ client: apiClient(), path: { id: bot.id } });
+  const changed = await updateBot({
+    client: apiClient(),
+    path: { id: bot.id },
+    body: { row_version: current.data?.row_version ?? 0, persona_md: "The new persona." },
+  });
+  expect(changed.response?.status, JSON.stringify(changed.error)).toBe(200);
+
+  await openClone();
+  const steps = page.getByRole("list", { name: "Steps" });
+  await steps.getByRole("button", { name: /Persona/ }).click();
+  await expect(page.locator("#create-form")).toContainText("The new persona.");
+
+  const sent = page.waitForRequest(
+    (request) => request.method() === "POST" && request.url().endsWith("/api/bots"),
+  );
+  await steps.getByRole("button", { name: /Model/ }).click();
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  expect((await sent).postDataJSON()).toMatchObject({ persona_md: "The new persona." });
+  await expect(page.getByText(`Created ${bot.name} (copy) ✨`)).toBeVisible();
+
+  // The copy now holds the first copy name, so the next Clone proposes the next one.
+  await page.goto("/bots");
+  await openClone();
+  await steps.getByRole("button", { name: /Basics/ }).click();
+  await expect(page.getByLabel("Name", { exact: true })).toHaveValue(`${bot.name} (copy 2)`);
 });
