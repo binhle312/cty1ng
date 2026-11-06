@@ -80,7 +80,8 @@ The historical snapshot column gives evidence for a specific review period.
 | [#59](https://github.com/binhle312/cty1ng/pull/59) | M2 / M2c | Partial | 15 itemized; total unknown | unknown | unknown | unknown | S4: about 32 problems in 7 rounds; S5–S7 overlap is unresolved |
 | [#66](https://github.com/binhle312/cty1ng/pull/66) | M2 / close fixes | Partial | 1 itemized (DQ-024); total unknown | 0 known; total unknown | unknown | 2 builder rounds, 1 owner-pasted review of `30fa61f` | — |
 | [#73](https://github.com/binhle312/cty1ng/pull/73) | Audit 2026-11-05 / PR 2, security | Partial | 35 itemized (DQ-025 to DQ-059); audit findings of other rows are not in this ledger | 1 (DQ-037) | 2 (DQ-025, DQ-026) | 9 independent reviews (`955ebe2`, `eb8f601`, `1e1cf76`, `fe63f7f`, `1b70296` twice, `9a4cca4`, `fb5c975`, `d008b65`), 1 owner review (`eb8f601`), 1 paid security review (`1490400`) | — |
-| [#78](https://github.com/binhle312/cty1ng/pull/78) | Audit 2026-11-05 / PR 3, Skills page | Partial | 24 itemized (DQ-060 to DQ-083) | 6 (DQ-070 to DQ-073, DQ-077, DQ-081) | 14 (DQ-060 to DQ-063, DQ-065, DQ-069 to DQ-077) | 4 independent reviews (`274f118`, `9767da6`, `1193582`, `708a566`), 2 owner reports (`a80186f`, `267bd83`) | — |
+| [#78](https://github.com/binhle312/cty1ng/pull/78) | Audit 2026-11-05 / PR 3, Skills page | Partial | 24 itemized (DQ-060 to DQ-083) | 6 (DQ-070 to DQ-073, DQ-077, DQ-081) | 14 (DQ-060 to DQ-063, DQ-065, DQ-069 to DQ-077) | 4 independent reviews (`274f118`, `9767da6`, `1193582`, `708a566`), 2 owner reports (`a80186f`, `267bd83`) | Merged on 2026-11-06 (`f656251`), with its 6 P3 open |
+| [#79](https://github.com/binhle312/cty1ng/pull/79) | No milestone / principle skill | Unmeasured | unknown | unknown | unknown | unknown | Merged on 2026-11-06 (`8c2278f`) |
 
 ## 4. Historical evidence snapshots
 

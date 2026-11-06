@@ -8,11 +8,11 @@ The plan ([development-plan.md](development-plan.md)) says what and in which ord
 definition of done in `AGENTS.md` §9). The owner updates it for owner-only steps (reviews,
 approvals). Keep it short: link to PRs and briefs instead of describing work.
 
-Last updated: 2026-11-05
+Last updated: 2026-11-06
 
 ## Now
 
-The repository audit of 2026-11-05 found 55 issues. After the owner's decisions, 15 are P2, 39 are P3, and the owner accepted one case; none is P1. Its fixes come before M3 in the owner's order. #69 is closed, and the owner watches more PRs before deciding whether to bring it back. Findings, decisions and progress are in [audits/2026-11-05-repo-audit.md](audits/2026-11-05-repo-audit.md). PR 2 of 7, the security fixes, merged in [#73](https://github.com/binhle312/cty1ng/pull/73) on 2026-11-06. [#76](https://github.com/binhle312/cty1ng/pull/76) merged on 2026-11-06 and records the guard decisions. PR 3 of 7, the Skills page, is a draft in [#78](https://github.com/binhle312/cty1ng/pull/78), and the owner decides the merge.
+The repository audit of 2026-11-05 found 55 issues. After the owner's decisions, 15 are P2, 39 are P3, and the owner accepted one case; none is P1. Its fixes come before M3 in the owner's order. #69 is closed, and the owner watches more PRs before deciding whether to bring it back. Findings, decisions and progress are in [audits/2026-11-05-repo-audit.md](audits/2026-11-05-repo-audit.md). PR 2 of 7, the security fixes, merged in [#73](https://github.com/binhle312/cty1ng/pull/73) on 2026-11-06. [#76](https://github.com/binhle312/cty1ng/pull/76) merged on 2026-11-06 and records the guard decisions. PR 3 of 7, the Skills page, merged in [#78](https://github.com/binhle312/cty1ng/pull/78) on 2026-11-06. PR 4 of 7, the Bots page, is next.
 
 The automated security review is off for now (owner, 2026-11-06, [security.md §2.11](security.md#211-supply-chain-and-review)).
 
@@ -134,5 +134,5 @@ A slice can also be `blocked` (say on what in Notes).
 | 2026-11-04 | M2 close fixes ([#66](https://github.com/binhle312/cty1ng/pull/66)): strict `/health`, `/stream` and import upload, the missing security tests, DQ-020. The owner dropped DQ-018, DQ-019, DQ-021's remaining gaps, and the change to `sameColour`, `isUnder` and `Pct` (working code with no wrong result) |
 | 2026-11-04 | Two flaky e2e tests fixed: `csp.spec.ts` waits for the menu before its Escape, and a local `pnpm e2e` uses 4 workers, so J1 no longer times out on a busy machine |
 | 2026-11-05 | Repository audit recorded, with the owner's seven decisions. Rule changes: Trash in another tab takes a skill page's unsaved text, as on the bot page; the touch swipe on the header roster is dropped, and the touchpad and the wheel are the requirement (owner) |
-| 2026-11-06 | Audit PR 3, the Skills page, opened as a draft in [#78](https://github.com/binhle312/cty1ng/pull/78). Rule change: `takesServerText` is the one rule for when the editor takes server text. Failures after the owner left show as toasts, and late answers move nothing. The new texts wait for the UI review after M3 |
-| 2026-11-06 | Principle skill `principle-ask-with-options` added in a draft, [#79](https://github.com/binhle312/cty1ng/pull/79): each question for a person has a real example, options with gain, cost and risk, and a recommendation (owner, 2026-11-06) |
+| 2026-11-06 | Audit PR 3, the Skills page, merged in [#78](https://github.com/binhle312/cty1ng/pull/78). Rule change: `takesServerText` is the one rule for when the editor takes server text. Failures after the owner left show as toasts, and late answers move nothing. The new texts wait for the UI review after M3 |
+| 2026-11-06 | Principle skill `principle-ask-with-options` merged in [#79](https://github.com/binhle312/cty1ng/pull/79): each question for a person has a real example, options with gain, cost and risk, and a recommendation (owner, 2026-11-06) |
