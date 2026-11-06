@@ -1,7 +1,8 @@
 import { copyName, copySlug } from "@cty1ng/shared/skills";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { showToast } from "../../components/ui/toast.tsx";
 import { readApiError } from "../../lib/api/api-error.ts";
 import {
   getSettingsOptions,
@@ -15,8 +16,9 @@ import { NotFoundPage } from "../placeholder/not-found-page.tsx";
 import { assignCardAfterCreate } from "./after-save-cards.tsx";
 import { useLeaveGuard } from "./leave-guard.tsx";
 import { LoadError } from "./load-error.tsx";
+import { useOnPage } from "./on-page.ts";
 import { SaveBarFrame, SaveButton } from "./save-bar.tsx";
-import { saveErrorOf, type SaveError } from "./save-error.ts";
+import { CLONE_LOAD_FAILED, lostSaveText, saveErrorOf, type SaveError } from "./save-error.ts";
 import { SkillEditorSkeleton } from "./skill-editor-skeleton.tsx";
 import { SkillFields } from "./skill-fields.tsx";
 import {
@@ -63,12 +65,7 @@ export function NewSkillPage() {
   // background refresh keeps the editor on the data it has.
   if (source.data === undefined) {
     if (source.isError) {
-      return (
-        <LoadError
-          text="The app could not load the skill to copy."
-          onRetry={() => void source.refetch()}
-        />
-      );
+      return <LoadError text={CLONE_LOAD_FAILED} onRetry={() => void source.refetch()} />;
     }
     return <SkillEditorSkeleton />;
   }
@@ -177,15 +174,9 @@ function NewSkillView({ source }: { source: CloneSource | null }) {
     text: leaveText(form, name),
   });
 
-  // Set when the editor closes: a Create that ends after that shows its toast but does not move
-  // the page that the owner went to.
-  const closed = useRef(false);
-  useEffect(() => {
-    closed.current = false;
-    return () => {
-      closed.current = true;
-    };
-  }, []);
+  // A Create that ends after the owner left shows its toast but does not move the page that the
+  // owner went to. Its failure shows as a toast too.
+  const onPage = useOnPage();
 
   const create = useMutation({
     mutationFn: (input: Parameters<typeof createWithFreeSlug>) => createWithFreeSlug(...input),
@@ -194,12 +185,16 @@ function NewSkillView({ source }: { source: CloneSource | null }) {
       showBotCard(assignCardAfterCreate(queryClient, skill));
       // The skill page finds the skill in the list, so the list must have it first.
       await queryClient.invalidateQueries({ queryKey: allSkillsOptions().queryKey });
-      if (closed.current) return;
+      if (!onPage.current) return;
       allowLeave();
       await navigate({ to: "/skills/$slug", params: { slug: skill.slug } });
     },
-    onError: (error) => {
-      setSaveError(saveErrorOf(error));
+    onError: (error, [input]) => {
+      if (onPage.current) {
+        setSaveError(saveErrorOf(error));
+      } else {
+        showToast(lostSaveText({ name: input.name, error, verb: "create" }));
+      }
     },
   });
 
