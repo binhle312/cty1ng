@@ -81,7 +81,7 @@ Each fix PR updates its row in the same PR. Check `gh pr list --state all`, beca
 | --- | --- | --- |
 | 1 | Docs only | merged: #71 |
 | 2 | Security | merged: #73 |
-| 3 | Skills page | not started |
+| 3 | Skills page | draft: #78 |
 | 4 | Bots page | not started |
 | 5 | Tests only | not started |
 | 6 | Six tabs | not started |
@@ -171,10 +171,10 @@ The lead did not check these again, except where a row says so. The others are f
 
 ### Skills pages and shell
 
-- Late answers from Restore, Import and Trash move the owner off the page they went to. Both audits found the Import case: `frontend/src/features/skills/skill-history.tsx:223`, `import-page.tsx:119`, `skill-page.tsx:352`.
+- **Fixed in #78.** Late answers from Restore, Import and Trash move the owner off the page they went to. Both audits found the Import case: `frontend/src/features/skills/skill-history.tsx:223`, `import-page.tsx:119`, `skill-page.tsx:352`.
 - Skill Clone can split an emoji, and the saved name then holds "�". The Clone form shows the name first, so the owner can correct it. Second audit; checked through the API by the lead: `shared/src/skills.ts:142`.
 - An unknown skill URL loses the whole shell: `frontend/src/features/skills/skill-page.tsx:101`.
-- If the owner types an edit back during a conflict, the bar says "saved" over old text: `frontend/src/features/skills/skill-page.tsx:131`.
+- **Fixed in #78.** If the owner types an edit back during a conflict, the bar says "saved" over old text: `frontend/src/features/skills/skill-page.tsx:131`.
 - A failed background refresh replaces the History tab: `frontend/src/features/skills/skill-history.tsx:79`, `:262`.
 - "Close this card and try again" does not try again: `frontend/src/features/skills/skill-dialogs.tsx:50`.
 - The app has no error boundary, so a failed lazy chunk replaces the whole app: `frontend/src/router.ts:8`, `frontend/src/features/shell/top-header.tsx:11`. **Fix before M3.**
