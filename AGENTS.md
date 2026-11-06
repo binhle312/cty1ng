@@ -167,5 +167,5 @@ Merge a PR only when the owner asks you to merge that PR. The merge needs no lin
   stay fixed in code: they are rules, not settings.
 - Commits: small, imperative subject line (`Add skill version pinning`), body explains why.
 - One task slice per branch: `m1-skill-hub`, `m3-chat-one-bot`, …
-- Open every PR as a draft, and leave it a draft. The owner marks it Ready right before the merge,
-  and that starts the security review, which costs money (owner, 2026-11-04).
+- Open every PR as a draft, and leave it a draft. The owner marks it Ready right before the merge
+  (owner, 2026-11-04). The paid security review that Ready starts is off for now (owner, 2026-11-06, `docs/security.md` §2.11).

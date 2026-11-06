@@ -214,6 +214,9 @@ environment, provider-side data handling.
   (owner, 2026-11-04); a push after that needs Draft and Ready again. Without the secret the job
   skips and still shows as success, so a green check alone does not prove a review ran. It assists
   the human review; it does not replace it.
+  **The owner turned this workflow off on 2026-11-06, for now.** Ready starts no review, and no
+  automated AI review reads security-sensitive changes. `gh workflow enable security-review.yml`
+  turns it on again. The `ANTHROPIC_API_KEY` secret stays in the repository.
 - **Vendored agent skills** (today `ui-ux-pro-max` and `typescript-best-practices` in `.agents/skills/`; the `principle-*` skills
   there are project-owned) are third-party code that agents run with the
   owner's permissions. Each one keeps its licence and a `SOURCE.md` with the upstream commit
@@ -237,7 +240,7 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (�
 | Protect admin routes | None in phase 1. M9: role check in the service layer. | §4 |
 | No production debugging | Specified. | 2.10 |
 | API secrets server side only | Specified: keys only in backend env; the browser never calls a provider. | 2.6 |
-| Automated security review | Specified. | 2.11 |
+| Automated security review | Specified; off since 2026-11-06 (owner). | 2.11 |
 | Rate limiting | Run caps and spending cap now. M9: per-user and per-IP limits, strict on login. | 2.7, §4 |
 | Validate file uploads | Specified. | 2.4 |
 | No secrets or content in logs | Specified. | 2.6, 2.10 |
