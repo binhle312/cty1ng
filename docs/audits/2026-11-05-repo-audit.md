@@ -10,9 +10,9 @@ This file holds the results for the next agent. It is a record of one audit, not
 2. Ask the owner one question at a time. Give a detailed explanation, an example and a recommended answer.
 3. After each answer, update "Owner decisions" in this file.
 4. When all questions have answers, follow the approved fix order below. Check which PRs exist first (`gh pr list`).
-5. Do not start M3, and do not merge #69. Both wait for the end of this plan.
+5. Do not start M3. It waits for the end of this plan. #69 is closed and not part of this plan now (see "Decisions during PR 3").
 
-The plan comes from the owner, 2026-11-04: audit, owner review of each finding, fixes in small draft PRs by module, second audit, merge #69, and then M3. The coding standard is parked, so this audit checks the code against `docs/` and `AGENTS.md`.
+The plan comes from the owner, 2026-11-04: audit, owner review of each finding, fixes in small draft PRs by module, second audit, and then M3. The plan of 2026-11-04 also merged #69 before M3, and the owner changed that on 2026-11-06. The coding standard is parked, so this audit checks the code against `docs/` and `AGENTS.md`.
 
 ## Owner decisions
 
@@ -36,7 +36,7 @@ The plan comes from the owner, 2026-11-04: audit, owner review of each finding, 
 6. Six tabs (row 14): a one-page design for owner approval first, then code. It includes the P3 "the stream does not come back in `make dev`".
 7. Other P3 marked "Fix before M3": the migration rebuild, the TypeID 500, the error boundary and `lineDiff` (DQ-037). GitHub required checks are a repo setting: give the owner the steps, or set them only if the owner asks.
 
-After these: the owner fixes or drops each of the other 33 P3 findings and the P3 rows that later reviews added, except the row "Guard shapes accepted". Then one style-only PR for the 104 `max-params` places, a second audit, the merge of #69, and M3. The coding standard stays parked until the owner restarts it.
+After these: the owner fixes or drops each of the other 33 P3 findings and the P3 rows that later reviews added, except the row "Guard shapes accepted". Then one style-only PR for the 104 `max-params` places, a second audit, and M3. The coding standard stays parked until the owner restarts it.
 
 **Decisions made during PR 2** (owner, 2026-11-05):
 
@@ -72,6 +72,11 @@ After these: the owner fixes or drops each of the other 33 P3 findings and the P
 - `lineDiff` (DQ-037) moves to PR 7, as a P3 to fix before M3. All lines different took 27 ms for 500 lines and 10.7 s for 10,000 lines. The `maxEditLength` option of `diff`, set to 2,000, took 187 ms for 10,000 lines (script run, 2026-11-06). Above the limit, the old text shows as removed and the new text as added. The limit needs a home under the "no hardcoded values" rule.
 - New rules: [pattern rules](../workflows/merge-bar.md#pattern-rules) and the claim rule in [testing.md §5](../testing.md#5-evidence-in-prs).
 - No separate stop signal for now. The ledger marks 13 issues as caused by a repair, all on #73, and the 5 P2 among them (DQ-046, DQ-052, DQ-053, DQ-058, DQ-059) come from free rules of the guard, which the pattern rules now limit. Many older ledger rows do not record this field. Reopen if a PR outside pattern rules gets two P2 findings from its repairs.
+
+**Decisions during PR 3** (owner, 2026-11-06).
+
+- The skill editor's rule for server text stays one small function, `takesServerText`. The rest of the page's state rules stay in the page, and they are not moved to a `skill-page-state.ts`. The P3 review before M3 can look at this again.
+- #69, "Leave working code alone", stays closed. The owner watches more PRs before deciding whether to bring it back, with no date set. Its rule is not in force, and M3 does not wait for it.
 
 ## Fix progress
 
