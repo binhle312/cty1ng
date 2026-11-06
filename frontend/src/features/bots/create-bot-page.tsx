@@ -68,13 +68,16 @@ import { useAvatarUpload } from "./crop-card.tsx";
 // (frontend-conventions.md §5, "Waiting on a query that keeps failing").
 export function CreateBotPage() {
   const { from } = useSearch({ from: "/bots/new" });
-  // The page waits for these two reads before the form opens (below), so they must not pause when
+  // The page waits for these four reads before the form opens (below), so they must not pause when
   // the browser says it is offline: the app runs on 127.0.0.1.
   const settings = useQuery({ ...getSettingsOptions(), networkMode: "always" });
   const models = useQuery({ ...listModelsOptions(), networkMode: "always" });
-  const tools = useQuery(listToolsOptions());
+  const tools = useQuery({ ...listToolsOptions(), networkMode: "always" });
   // Deprecated skills too: a Clone keeps the deprecated pins of its source bot (§6).
-  const skills = useQuery(listSkillsOptions({ query: { include_deprecated: "true" } }));
+  const skills = useQuery({
+    ...listSkillsOptions({ query: { include_deprecated: "true" } }),
+    networkMode: "always",
+  });
   const bots = useBots();
   const template = useQuery({
     ...getBotCloneTemplateOptions({ path: { id: from ?? "" } }),
@@ -117,13 +120,11 @@ export function CreateBotPage() {
     }
     return <PageSkeleton />;
   }
-  // The form takes its first values once, and other pages keep these lists in the cache, so it
-  // waits for the read of this visit. A new bot takes its Advanced defaults from the settings (§5).
-  // A Clone takes those from the template, and it decides from the catalog if the model is gone
-  // (§6). The first failed try ends the wait, and the last values stay.
-  const firstValues = from === undefined ? settings : models;
+  // The form takes its first values once, and the cache keeps these lists after other pages close,
+  // so it waits for the read of this visit (§5). The first failed try ends the wait, and the last
+  // values stay. The header keeps the bots list live, so that read has no wait.
   if (
-    (!firstValues.isFetchedAfterMount && firstValues.failureCount === 0) ||
+    [settings, models, tools, skills].some((q) => !q.isFetchedAfterMount && q.failureCount === 0) ||
     settings.data === undefined ||
     models.data === undefined ||
     tools.data === undefined ||

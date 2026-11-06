@@ -1,7 +1,7 @@
 import { flushSync } from "react-dom";
 
 // A keydown with the event order of a browser (audit row 1). It does not need focus on the target,
-// and it sends no keyup and no repeat unless `init` asks. In a browser, the stack is empty after each
+// it sends no keyup, and it is a repeat only if `init` asks. In a browser, the stack is empty after each
 // listener of a real key press, so React's work runs before the event goes on: a keydown that
 // opens a dialog runs the dialog's effects, and the listener that the dialog adds on `document`
 // sees the same event. Neither `fireEvent` nor a bare `dispatchEvent` shows this: `act()` holds the

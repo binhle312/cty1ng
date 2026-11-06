@@ -1371,8 +1371,6 @@ describe("leaving the bot page with changes (bot-page.md §4.1)", () => {
   });
 });
 
-// Esc is pressed outside `act()`, as in a browser: `act()` hid a question that opened and closed
-// in one key press (audit row 1). See `pressKey`.
 describe("the first load of the bot page", () => {
   const TEXT = "The app could not load what the bot page needs.";
   const READS = ["/api/settings", "/api/models", "/api/tools"] as const;
@@ -1415,6 +1413,8 @@ describe("the first load of the bot page", () => {
   );
 });
 
+// Esc is pressed outside `act()`, as in a browser: `act()` hid a question that opened and closed
+// in one key press (audit row 1). See `pressKey`.
 describe("Esc on the bot page (bot-page.md §4.1, §4.2)", () => {
   const QUESTION = { name: "Leave without saving? 👀" };
   const esc = (label: string) =>

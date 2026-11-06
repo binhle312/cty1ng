@@ -652,8 +652,6 @@ describe("the avatar limits on the Create bot page", () => {
   });
 });
 
-// A form that fills once waits for a read from this visit (create-bot-page.md §5, §6): the Advanced
-// defaults of a new bot come from the settings as they are now, not from the cache.
 describe("the first load of the Create page", () => {
   const ANSWERS = {
     "/api/settings": BOT_SETTINGS,
@@ -728,6 +726,153 @@ describe("the first load of the Create page", () => {
       true,
     );
   });
+});
+
+// A form that fills once waits for a read from this visit (create-bot-page.md §5, §6): the Advanced
+// defaults of a new bot come from the settings as they are now, not from the cache.
+describe("the read of this visit (create-bot-page.md §5)", () => {
+  const READS = ["/api/settings", "/api/models", "/api/tools", "/api/skills"] as const;
+  type Read = (typeof READS)[number];
+  const ANSWERS: Record<Read, unknown> = {
+    "/api/settings": BOT_SETTINGS,
+    "/api/models": [makeModel(), FAKE_SCRIPTED],
+    "/api/tools": [],
+    "/api/skills": [],
+  };
+  const OK = (read: Read) => ({ body: ANSWERS[read] });
+  const FAILED = {
+    status: 500,
+    body: { error: { code: "internal_error", message: "Failed." } },
+  };
+  let fake: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    fake?.restore();
+    fake = null;
+  });
+  type Handler = Parameters<typeof fakeApi>[0][string];
+
+  // The first answer of `read` is fine. A test sets `next.answer` for the reads after it.
+  function start(read: Read) {
+    const next: { answer: Handler } = { answer: () => OK(read) };
+    fake = fakeApi({
+      "GET /api/settings": () => OK("/api/settings"),
+      "GET /api/models": () => OK("/api/models"),
+      "GET /api/tools": () => OK("/api/tools"),
+      "GET /api/skills": () => OK("/api/skills"),
+      "GET /api/bots": () => ({ body: [] }),
+      [`GET ${read}`]: (...args) => next.answer(...args),
+    });
+    return { next, rendered: renderApp("/bots/new") };
+  }
+  const form = () => screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+  const noForm = () => {
+    expect(screen.queryByRole("heading", { name: "New bot" })).toBeNull();
+  };
+  const readsOf = (read: Read) => fake?.sent("GET", read).length ?? 0;
+  const waitForReads = (read: Read, count: number) =>
+    waitFor(() => {
+      expect(readsOf(read)).toBe(count);
+    });
+
+  it.each(READS)("slow refresh: the second visit waits for %s", async (read) => {
+    const { next, rendered } = start(read);
+    const { router } = await rendered;
+    await form();
+    await act(() => router.navigate({ to: "/settings" }));
+    const held = heldAnswer();
+    next.answer = () => held.promise;
+    const before = readsOf(read);
+    await act(() => router.navigate({ to: "/bots/new" }));
+    await waitForReads(read, before + 1);
+    noForm();
+    await held.answer(OK(read));
+    expect(await form()).toBeTruthy();
+  });
+
+  it.each(READS)("failed refresh: the first failed try of %s opens the form", async (read) => {
+    const { next, rendered } = start(read);
+    const { router, queryClient } = await rendered;
+    await form();
+    await act(() => router.navigate({ to: "/settings" }));
+    next.answer = () => FAILED;
+    // The app's own client retries. The next try is far away, so only the first try can open it.
+    queryClient.setDefaultOptions({ queries: { retry: 3, retryDelay: 60_000 } });
+    await act(() => router.navigate({ to: "/bots/new" }));
+    expect(await form()).toBeTruthy();
+  });
+
+  it.each(READS)("offline: the second visit reads %s and opens", async (read) => {
+    const { rendered } = start(read);
+    const { router } = await rendered;
+    await form();
+    await act(() => router.navigate({ to: "/settings" }));
+    const before = readsOf(read);
+    onlineManager.setOnline(false);
+    try {
+      await act(() => router.navigate({ to: "/bots/new" }));
+      expect(await form()).toBeTruthy();
+      expect(readsOf(read)).toBe(before + 1);
+    } finally {
+      onlineManager.setOnline(true);
+    }
+  });
+
+  it.each(READS)(
+    "caller left: a read of %s from before the leave does not open the form",
+    async (read) => {
+      const { next, rendered } = start(read);
+      const { router } = await rendered;
+      await form();
+      await act(() => router.navigate({ to: "/settings" }));
+      const old = heldAnswer();
+      const current = heldAnswer();
+      const answers = [old, current];
+      next.answer = () => {
+        const held = answers.shift();
+        if (held === undefined) throw new Error("no answer left for this read");
+        return held.promise;
+      };
+      const before = readsOf(read);
+      await act(() => router.navigate({ to: "/bots/new" }));
+      await waitForReads(read, before + 1);
+      await act(() => router.navigate({ to: "/settings" }));
+      await act(() => router.navigate({ to: "/bots/new" }));
+      await waitForReads(read, before + 2);
+      await old.answer(OK(read));
+      noForm();
+      await current.answer(OK(read));
+      expect(await form()).toBeTruthy();
+    },
+  );
+
+  it.each(READS)(
+    "list load: a live event during the read of %s starts a new one, and the old answer does not open the form",
+    async (read) => {
+      const { next, rendered } = start(read);
+      const { router, queryClient } = await rendered;
+      await form();
+      await act(() => router.navigate({ to: "/settings" }));
+      const old = heldAnswer();
+      const current = heldAnswer();
+      const answers = [old, current];
+      next.answer = () => {
+        const held = answers.shift();
+        if (held === undefined) throw new Error("no answer left for this read");
+        return held.promise;
+      };
+      const before = readsOf(read);
+      await act(() => router.navigate({ to: "/bots/new" }));
+      await waitForReads(read, before + 1);
+      act(() => {
+        void queryClient.invalidateQueries();
+      });
+      await waitForReads(read, before + 2);
+      await old.answer(OK(read));
+      noForm();
+      await current.answer(OK(read));
+      expect(await form()).toBeTruthy();
+    },
+  );
 });
 
 describe("the defaults of a new bot", () => {
@@ -1161,24 +1306,29 @@ describe("a second Clone of a bot", () => {
     expect(personaStepText()).toContain("The new persona.");
   });
 
-  // A Clone takes all three Advanced values from the template, so old settings cannot reach it.
-  it("slow refresh: a Clone does not wait for a new read of the settings", async () => {
-    const settings = heldAnswer();
-    let settingsAnswer: Handler = () => ({ body: BOT_SETTINGS });
+  it("another request: a Clone waits for the skill list of this visit, and shows a skill in Trash at once", async () => {
+    const held = heldAnswer();
+    let skillsAnswer: Handler = () => ({ body: [OLD, NEW] });
     const { router } = await start(
       inOrder(
-        () => ({ body: TEMPLATE }),
+        () => ({ body: CHANGED }),
         () => ({ body: CHANGED }),
       ),
-      { "GET /api/settings": (...args) => settingsAnswer(...args) },
+      { "GET /api/skills": (...args) => skillsAnswer(...args) },
     );
     await cloneBanner();
     await leave(router);
-    settingsAnswer = () => settings.promise;
+    skillsAnswer = () => held.promise;
     await cloneAgain(router);
+    await waitForReads(2);
+    expect(screen.queryByText("Cloning Source")).toBeNull();
+    await held.answer({ body: [OLD] });
     await cloneBanner();
-    expect(personaStepText()).toContain("The new persona.");
-    await settings.answer({ body: BOT_SETTINGS });
+    expect(
+      within(screen.getByRole("list", { name: "Steps" })).getByRole("button", {
+        name: /Skills, has an error/,
+      }),
+    ).toBeTruthy();
   });
 
   it("another request: the form with no settings at all waits for them, then takes this visit's template", async () => {

@@ -216,8 +216,14 @@ test("a held Esc asks once, and the next repeat closes the question and keeps th
   await expect(question).toBeVisible();
   await page.keyboard.down("Escape");
   await expect(question).toBeHidden();
+  // Without the check for a repeat, this press opens the question again.
   await page.keyboard.down("Escape");
-  await page.keyboard.down("Escape");
+  await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+      }),
+  );
   await expect(question).toBeHidden();
   await page.keyboard.up("Escape");
   await expect(name).toHaveValue("Changed");
