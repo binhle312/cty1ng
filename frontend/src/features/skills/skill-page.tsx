@@ -1,7 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useIsMutating, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { notFound, useNavigate, useParams, useRouter, useSearch } from "@tanstack/react-router";
 import { Bot, Ellipsis, FileText, History } from "lucide-react";
-import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   MenuItem,
   MenuPopup,
@@ -75,6 +75,8 @@ import { useSkillsPage } from "./skills-context.tsx";
 type SkillDetail = GetSkillResponse;
 type TabName = "skill" | "bots" | "history";
 
+const trashKey = (slug: string) => ["trash-skill", slug];
+
 // `/skills/{slug}` (skills-page.md §1, §2). The page finds the skill id from the slug in the list,
 // which holds deprecated skills too, so a deprecated skill's URL opens after a reload. An unknown
 // or trashed slug is Page not found.
@@ -82,9 +84,10 @@ export function SkillPage() {
   const { slug } = useParams({ from: "/skills/$slug" });
   const skills = useAllSkills();
   const row = skills.data?.find((skill) => skill.slug === slug);
-  // The slug that this page's Delete is moving to Trash. A live event can take the skill from the
-  // list before the answer, and the page leaves only after the answer, so Page not found waits.
-  const [trashingSlug, setTrashingSlug] = useState<string | null>(null);
+  // A Delete of this skill is on its way. The query client holds the request, so the wait has the
+  // same life as the request: it ends once, it is per skill, and it survives a later visit.
+  // A live event can take the skill from the list before the answer, so Page not found waits.
+  const trashing = useIsMutating({ mutationKey: trashKey(slug) }) > 0;
   const detail = useQuery({
     ...getSkillOptions({ path: { id: row?.id ?? "" } }),
     enabled: row !== undefined,
@@ -98,7 +101,7 @@ export function SkillPage() {
       <LoadError text="The app could not load the skills." onRetry={() => void skills.refetch()} />
     );
   }
-  if (row === undefined && trashingSlug === slug) return <SkillEditorSkeleton />;
+  if (row === undefined && trashing) return <SkillEditorSkeleton />;
   // A refresh on its way may bring the skill: a Create moves here when its list refresh ends,
   // and a live event in that time can end the wait before the new list comes (TanStack Query
   // joins only one cancelled refresh). Page not found waits for the newest list.
@@ -116,16 +119,10 @@ export function SkillPage() {
   if (detail.data === undefined) {
     return <LoadError text={apiErrorText(detail.error)} onRetry={() => void detail.refetch()} />;
   }
-  return <SkillView key={detail.data.id} skill={detail.data} onTrashing={setTrashingSlug} />;
+  return <SkillView key={detail.data.id} skill={detail.data} />;
 }
 
-function SkillView({
-  skill,
-  onTrashing,
-}: {
-  skill: SkillDetail;
-  onTrashing: Dispatch<SetStateAction<string | null>>;
-}) {
+function SkillView({ skill }: { skill: SkillDetail }) {
   const router = useRouter();
   const search = useSearch({ from: "/skills/$slug" });
   const navigate = useNavigate({ from: "/skills/$slug" });
@@ -365,14 +362,28 @@ function SkillView({
       showToast(apiErrorText(error));
     },
   });
-  const trash = useMutation(trashSkillMutation());
+  const trash = useMutation({
+    ...trashSkillMutation(),
+    mutationKey: trashKey(skill.slug),
+    // These run before the request ends, so the wait lasts until the page has moved.
+    onSuccess: async () => {
+      // The answer says that the skill is gone, so `/skills` must not read it from an old list and
+      // come back here. The refresh in `done` cuts any older load, so none can bring it back.
+      queryClient.setQueryData(allSkillsOptions().queryKey, (list) =>
+        list?.filter((row) => row.id !== skill.id),
+      );
+      // The Trash page comes in M5b; until then "Trash" is plain text, not a link (§11).
+      showToast(`${skill.name} is in Trash.`);
+      allowLeave();
+      // The skill is gone, so the page leaves it even when the dialog was closed meanwhile. An
+      // owner who already went to another page stays there.
+      if (router.state.location.pathname === `/skills/${skill.slug}`) {
+        await navigate({ to: "/skills", replace: true });
+      }
+    },
+  });
   const trashSkill = () => {
     if (dialog === null) return;
-    // A later Delete of another skill keeps its own wait.
-    const endTrashing = () => {
-      onTrashing((current) => (current === skill.slug ? null : current));
-    };
-    onTrashing(skill.slug);
     runInDialog({
       dialog,
       request: trash.mutateAsync({
@@ -380,29 +391,10 @@ function SkillView({
         body: { row_version: skill.row_version },
       }),
       done: () => {
-        // The answer says that the skill is gone, so `/skills` must not read it from an old list
-        // and come back here. The refresh below cuts any older load, so none can bring it back.
-        queryClient.setQueryData(allSkillsOptions().queryKey, (list) =>
-          list?.filter((row) => row.id !== skill.id),
-        );
         void refreshPins();
-        // The Trash page comes in M5b; until then "Trash" is plain text, not a link (§11).
-        showToast(`${skill.name} is in Trash.`);
         closeDialog();
-        allowLeave();
-        // The skill is gone, so the page leaves it even when the dialog was closed meanwhile. An
-        // owner who already went to another page stays there.
-        if (router.state.location.pathname === `/skills/${skill.slug}`) {
-          void navigate({ to: "/skills", replace: true });
-        } else {
-          // The Delete has ended, so a later visit to this URL shows Page not found.
-          endTrashing();
-        }
       },
-      failed: (error) => {
-        endTrashing();
-        return apiErrorText(error);
-      },
+      failed: apiErrorText,
     });
   };
 

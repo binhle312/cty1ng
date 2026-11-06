@@ -393,6 +393,26 @@ describe("Delete of a deprecated skill", () => {
     expect(await screen.findByText("Page not found")).toBeTruthy();
   });
 
+  it("keeps the wait and the toast after the owner left and came back", async () => {
+    const trash = heldAnswer();
+    const { queryClient, router } = await clickDelete({
+      list: () => ({ body: [] }),
+      trash: () => trash.promise,
+    });
+    await act(() => router.navigate({ to: "/bots" }));
+    await settle();
+    await act(() =>
+      router.navigate({ to: "/skills/$slug", params: { slug: "write-user-stories" } }),
+    );
+    await act(() => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES }));
+    await settle();
+    expect(screen.queryByText("Page not found")).toBeNull();
+    await trash.answer({ status: 200, body: { skill_id: SKILL_ID, removed_bot_ids: [] } });
+    expect(await screen.findByText("Write user stories is in Trash.")).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "No skills yet" })).toBeTruthy();
+    expect(screen.queryByText("Page not found")).toBeNull();
+  });
+
   it("stays where the owner went when the answer comes after the owner left", async () => {
     const trash = heldAnswer();
     const { router } = await clickDelete({

@@ -323,7 +323,8 @@ with the tooltip "Tick a bot first." (§ Texts added in the M1b build).
 - After the answer, the page opens the next skill, or the empty state if no skill is left, also
   when the list refresh is slow or a live event takes the skill from the list first. Page not
   found does not show, and the toast stays. If this Delete fails and the skill is gone from the
-  list, Page not found shows. An owner who already went to another page stays there (audit row 3).
+  list, Page not found shows. An owner who already went to another page stays there, and an owner
+  who comes back during the Delete sees the same wait (audit row 3).
 - Trash keeps the list of bots that used the skill. A restore suggests to assign it again to
   those bots that are still active, never to bots in Trash. The Trash page round (M5b) draws
   this card.
