@@ -368,10 +368,11 @@ function SkillView({ skill }: { skill: SkillDetail }) {
     // These run before the request ends, so the wait lasts until the page has moved.
     onSuccess: async () => {
       // The answer says that the skill is gone, so `/skills` must not read it from an old list and
-      // come back here. The refresh in `done` cuts any older load, so none can bring it back.
+      // come back here. The refresh cuts any older load before the move, so none can bring it back.
       queryClient.setQueryData(allSkillsOptions().queryKey, (list) =>
         list?.filter((row) => row.id !== skill.id),
       );
+      void refreshPins();
       // The Trash page comes in M5b; until then "Trash" is plain text, not a link (§11).
       showToast(`${skill.name} is in Trash.`);
       allowLeave();
@@ -390,10 +391,7 @@ function SkillView({ skill }: { skill: SkillDetail }) {
         path: { id: skill.id },
         body: { row_version: skill.row_version },
       }),
-      done: () => {
-        void refreshPins();
-        closeDialog();
-      },
+      done: closeDialog,
       failed: apiErrorText,
     });
   };

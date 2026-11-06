@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { fakeApi, heldAnswer } from "../../../test/fake-api.ts";
 import { BOT_SETTINGS, makeSkill, makeVersions, SKILL_ID, typeId } from "../../../test/fixtures.ts";
 import { renderApp } from "../../../test/render-app.tsx";
@@ -411,6 +411,91 @@ describe("Delete of a deprecated skill", () => {
     expect(await screen.findByText("Write user stories is in Trash.")).toBeTruthy();
     expect(await screen.findByRole("heading", { name: "No skills yet" })).toBeTruthy();
     expect(screen.queryByText("Page not found")).toBeNull();
+  });
+
+  it("keeps the wait until the page has moved, and an older list load cannot bring the skill back", async () => {
+    const trash = heldAnswer();
+    const older = heldAnswer();
+    let listReads = 0;
+    const { queryClient, router } = await clickDelete({
+      list: () => {
+        listReads += 1;
+        return listReads === 1 ? older.promise : { body: [] };
+      },
+      trash: () => trash.promise,
+    });
+    act(() => {
+      void queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES });
+    });
+    await waitFor(() => {
+      expect(listReads).toBe(1);
+    });
+    const realNavigate = router.navigate.bind(router);
+    let releaseMove = () => {};
+    const moveHeld = new Promise<void>((resolve) => {
+      releaseMove = resolve;
+    });
+    const hold = vi
+      .spyOn(router, "navigate")
+      .mockImplementation((options) => moveHeld.then(() => realNavigate(options)));
+    await trash.answer({ status: 200, body: { skill_id: SKILL_ID, removed_bot_ids: [] } });
+    await older.answer({ body: [deprecated] });
+    await settle();
+    expect(screen.queryByText("Page not found")).toBeNull();
+    await act(async () => {
+      releaseMove();
+      await moveHeld;
+    });
+    hold.mockRestore();
+    expect(await screen.findByRole("heading", { name: "No skills yet" })).toBeTruthy();
+    expect(screen.getByText("Write user stories is in Trash.")).toBeTruthy();
+    expect(screen.queryByText("Page not found")).toBeNull();
+  });
+
+  it("shows Page not found for another missing skill while a Delete waits", async () => {
+    const trash = heldAnswer();
+    const { router } = await clickDelete({
+      list: () => ({ body: [deprecated] }),
+      trash: () => trash.promise,
+    });
+    await act(() => router.navigate({ to: "/skills/$slug", params: { slug: "no-such-skill" } }));
+    expect(await screen.findByText("Page not found")).toBeTruthy();
+  });
+
+  it("asks no leave question when a Delete leaves text that another place made read-only", async () => {
+    const server = { list: [makeSkill(), other], skill: makeSkill() };
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: server.list }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: server.skill }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      [`GET /api/skills/${SKILL_ID}/upgrade-candidates`]: () => ({ body: [] }),
+      [`GET /api/skills/${OTHER_ID}`]: () => ({ body: other }),
+      [`GET /api/skills/${OTHER_ID}/versions`]: () => ({ body: makeVersions(1) }),
+      [`GET /api/skills/${OTHER_ID}/upgrade-candidates`]: () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [] }),
+      [TRASH_ROUTE]: () => {
+        server.list = [other];
+        return { status: 200, body: { skill_id: SKILL_ID, removed_bot_ids: [] } };
+      },
+    });
+    const { queryClient, router } = await renderApp("/skills/write-user-stories");
+    await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 });
+    click(screen.getByRole("tab", { name: "Write" }));
+    typeBody("Unsaved text.");
+    server.skill = deprecated;
+    server.list = [deprecated, other];
+    await act(() => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES }));
+    await settle();
+    click(screen.getByRole("button", { name: "Skill actions" }));
+    click(await screen.findByRole("menuitem", { name: "Delete skill" }));
+    const dialog = await screen.findByRole("alertdialog");
+    click(await within(dialog).findByRole("button", { name: "Delete skill" }));
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/skills/other-skill");
+    });
+    await settle();
+    expect(screen.queryByRole("alertdialog")).toBeNull();
   });
 
   it("stays where the owner went when the answer comes after the owner left", async () => {
