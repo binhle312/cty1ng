@@ -15,6 +15,12 @@ Link to the brief and decisions.
 | UI-2.4 | `e2e/header-drag.spec.ts` "drop adds bot": expects the bot chip in the header after the drop; + screenshot |
 | conversation-rules §1 table | `decide-runs.rules.test.ts` "human message: …" rows: one row per table line |
 
+## Edge cases (one table for each changed screen, `testing.md` §3)
+| Case | Test, or why the row does not apply |
+| --- | --- |
+| The same action twice | `bots.spec` "a second Clone …" |
+| Keyboard only | Does not apply: this PR adds no control |
+
 ## Needs human review
 - Migration `0003_skill_versions` (new tables, no data change)
 - (or "none")

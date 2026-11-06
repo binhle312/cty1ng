@@ -193,8 +193,11 @@ a slice tests these cases where they apply. The test strategy names them before 
 | Keyboard only | Every tooltip, menu and dialog opens and closes from the keyboard |
 | Leaving with unsaved work | Every way out asks first, including moves inside one path |
 | Moving through the app, not only reloads | A test that reloads can hide a cache bug |
+| Leaving and coming back | A form that fills once shows the data as it is now, not the cached data ([pitfall](frontend-conventions.md#5-known-pitfalls)) |
 | An answer comes late | A save or toggle answer that comes after a newer change, a Discard or leaving the page does not undo it |
 | A value changes and changes back | On, then off in another tab: the page cannot tell from the value alone that it changed |
+
+For each changed screen, the PR names a test for each row of this table, or says why the row does not apply ([PR template](workflows/pull-request.md)). A rule with no check did not stop DQ-085 (owner, 2026-11-06).
 
 **State table cells.** A screen with a state table ([state table](workflows/planning.md#state-table-for-stateful-screens)) tests its pure
 state module (`frontend-conventions.md` §1): one unit test per cell of the table. It also runs
@@ -272,6 +275,7 @@ killed.
 | --- | --- | --- |
 | `renderApp(path)` | `frontend/test/render-app.tsx` | Component tests on the real app: routes, shell and providers on an in-memory address. Returns the Testing Library view and the router. Queries do not retry, so a failed request shows its error state at once. |
 | `fakeApi(routes)`, `heldAnswer()` | `frontend/test/fake-api.ts` | Component tests: the fake network. A route is `"METHOD /path"` and answers a status and a body; `heldAnswer()` keeps a request open until the test answers it, for order cases. A success answer that the generated response schema refuses fails the test at `restore()`, so a wrong shape never turns a success test into a test of the failure path (lesson `fake-answers-match-the-api.md`). |
+| `pressKey(target, init)` | `frontend/test/press-key.ts` | Component tests: a key press as a browser sends it, outside `act()`. React finishes its work before the event reaches `document`. Use it when a key press opens or closes something. |
 | `watchCsp(page)` | `frontend/test/e2e/csp.ts` | End-to-end tests: collects every CSP violation of a page; assert that the list is empty. |
 | `readZip(buffer)` | `frontend/test/e2e/zip.ts` | End-to-end tests: the files of a downloaded zip (the skill export), by name. |
 

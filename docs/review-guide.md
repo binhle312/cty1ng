@@ -58,6 +58,8 @@ not have.
 For file failures, distinguish failure before publication from failure after a rename or time update.
 A fake can prove service recovery. A real adapter test proves only the adapter paths it exercises.
 For a bug fix, check the evidence that its test fails on the old code ([testing.md §5](testing.md#5-evidence-in-prs)).
+Check the PR's edge case table for each changed screen ([testing.md §3](testing.md#edge-cases-each-slice-tests)). A missing row, or a test that does not reach its case, is a finding.
+For a form that fills once, ask where its first values come from ([pitfall](frontend-conventions.md#5-known-pitfalls)).
 
 Record safety assumptions, such as upload duration, grace periods or unique names.
 Check whether code enforces each assumption or merely relies on it.
@@ -92,6 +94,7 @@ Apply the [root cause principle](../.agents/skills/principle-fix-root-cause/SKIL
 to the builder's "Same cause checked in" column. Independently check one further plausible path.
 Report a missed path as a new finding with the same cause.
 Check the "Same cause as an earlier fix?" column. A repeated cause with no owner's decision is a finding.
+Check that the fix record names the general rule and the search of old fixes ([bug fix, step 2](workflows/bug-fix.md)).
 If a finding was wrong, name the source or evidence that corrects it.
 
 The final report states the reviewed scope, findings, test results and remaining limits.

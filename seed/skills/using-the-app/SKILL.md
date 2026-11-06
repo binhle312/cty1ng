@@ -67,7 +67,7 @@ written ways of working that the bot follows.
   run shows why, with Clone. Tabs:
   - **Profile**: the avatar style and colour, the name, the description and the persona. The big
     avatar and the colour band show a change at once ("Not saved"); Save (or Ctrl+S) applies it
-    from the bot's next run. Discard drops the changes.
+    from the bot's next run. Discard or Esc asks first; Let them go drops the changes.
   - **Skills**: the bot's skills, the version each uses and Always load. "v3 available" opens
     the changes and Upgrade; the ⋯ menu has Change version (any version, also an older one) and
     Remove; + Add gives the bot more skills at their latest version. Changes save at once:
@@ -95,7 +95,7 @@ written ways of working that the bot follows.
   reply). Create is on step 4. If the app cannot reach the server, Try again sends the same
   request, so it never makes two bots.
 - **Clone a bot** (⋯ → Clone on its card): the Create form opens on step 4 with everything
-  copied: persona, skills at the same versions, tools and Advanced. The name gets "(copy)" and
+  copied from the bot as it is now: persona, skills at the same versions, tools and Advanced. The name gets "(copy)" and
   the colour is a free one; bot memory starts empty. Change the model or the effort here: this is
   the way to try a bot on another model.
 - **Example content**: `make seed` adds example skills and three bots: Guide (you), BA and

@@ -80,6 +80,15 @@ After these: the owner fixes or drops each of the other 33 P3 findings and the P
 - The wait of a skill Delete is replaced (`AGENTS.md` §9). Three bugs came from keeping it in the page's state (DQ-067, DQ-069, DQ-078). The page now asks the query client if a Delete of this skill is on its way, so the wait has the life of the request.
 - `useOnPage` is the redesign for late answers on the skill pages (`AGENTS.md` §9, DQ-065). No shared wrapper for all late answers for now. Look again if the same bug comes back in a new request.
 
+**Decisions during PR 4** (owner, 2026-11-06).
+
+- Row 2 and the Advanced defaults of a new bot have the same cause as DQ-003 (`AGENTS.md` §9): a form that fills once takes cached data. The cause is mainly process, because `testing.md` had the rule ("A second Clone …", "A test that reloads …") and no step checked that a builder applied it. Decision: small fixes with no shared hook, plus these four steps.
+  1. For each changed screen, the PR names a test for each row of the edge case table, or says why the row does not apply. A reviewer reports a missing row as a finding.
+  2. The general rule goes in `frontend-conventions.md` §5, `testing.md` §3 and the review guide.
+  3. A fix record names the general rule and the search of old fixes (`workflows/bug-fix.md`, step 2).
+  4. The second audit lists each form that fills once, and it runs a second visit on each.
+- This is an exception to `principle-fix-root-cause`, which asks for one owner. The rule stays in three code places: the skill Clone, the bot Clone and the settings wait. The builder's advice, not part of the decision: look again if a third form of this type appears.
+
 ## Fix progress
 
 Each fix PR updates its row in the same PR. Check `gh pr list --state all`, because this table can be behind.
@@ -89,7 +98,7 @@ Each fix PR updates its row in the same PR. Check `gh pr list --state all`, beca
 | 1 | Docs only | merged: #71 |
 | 2 | Security | merged: #73 |
 | 3 | Skills page | merged: #78 |
-| 4 | Bots page | not started |
+| 4 | Bots page | draft: PR_LINK |
 | 5 | Tests only | not started |
 | 6 | Six tabs | not started |
 | 7 | Other P3 for M3 | not started |
@@ -175,6 +184,14 @@ The lead did not check these again, except where a row says so. The others are f
 - Try again never shows the sending state: `frontend/src/features/bots/create-bot-page.tsx:366`.
 - A server error on `cloned_from_bot_id` shows on no step and blocks Create: `frontend/src/features/bots/create-bot-form.ts:110`.
 - A ticked skill that another tab deprecates shows as "A skill in Trash": `frontend/src/features/bots/create-bot-page.tsx:592`.
+
+### Found during PR 4
+
+- **Not rated yet; the owner rates it.** After the browser reports that it is offline, the first visit to a Clone page or a bot page stays loading until the browser is online again. TanStack Query pauses reads, and the app runs on 127.0.0.1. Run on `8c2278f` and `425da2a` with an `offline` event; real Wi-Fi off is not tested: `frontend/src/main.tsx:15`.
+- Esc on the bot page does nothing when the focus is outside the fields, for example after a click on a blank area or on Discard. Run on `8c2278f` and `425da2a`: `frontend/src/features/bots/bot-page.tsx:279`.
+- The skill Clone cuts the name with a cached limit. The form checks the name against the current limit. From reading the code: `frontend/src/features/skills/new-skill-page.tsx:161`.
+
+Correction to row 1: `act()` is not the only thing that hides the failure. A bare `dispatchEvent` hides it too, so removing `act()` alone gives a test that passes on the old code (run on `8c2278f`). `pressKey` makes React finish its work where a browser does.
 
 ### Skills pages and shell
 

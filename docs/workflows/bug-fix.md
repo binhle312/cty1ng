@@ -11,6 +11,9 @@ It also applies to defects from reviews and audits. The agent that delegates the
    Keep the issue unconfirmed; do not implement a speculative fix.
 2. **Diagnose.** Apply the [root cause principle](../../.agents/skills/principle-fix-root-cause/SKILL.md).
    Explain the cause and propose the smallest fix, affected files, and verification steps.
+   Write the general rule that the bug broke, not only its symptom. Search the old fixes in
+   [delivery quality](../delivery-quality.md) and [lessons](../lessons-learned/README.md) for that rule,
+   and record the search. The lesson of DQ-003 named a symptom, so the same bug came back in new code (owner, 2026-11-06).
 3. **Check approval.** Confirm that the fix fits the approved scope and design.
    Reuse existing approval. Otherwise, obtain approval through the owner or coordinating agent before implementation.
    The [human checkpoints](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr) still apply.
