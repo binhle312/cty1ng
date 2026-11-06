@@ -320,6 +320,10 @@ with the tooltip "Tick a bot first." (§ Texts added in the M1b build).
   The toast says "{skill} is in Trash." The word **Trash** is a link to the Trash page. No
   Undo: moving to Trash is not permanent (D49). Until the Trash page exists (M5b), **Trash** is
   plain text, not a link, and the dialog lists no bots in M1.
+- After the answer, the page opens the next skill, or the empty state if no skill is left, also
+  when the list refresh is slow or a live event takes the skill from the list first. Page not
+  found does not show, and the toast stays. If this Delete fails and the skill is gone from the
+  list, Page not found shows. An owner who already went to another page stays there (audit row 3).
 - Trash keeps the list of bots that used the skill. A restore suggests to assign it again to
   those bots that are still active, never to bots in Trash. The Trash page round (M5b) draws
   this card.
@@ -444,12 +448,24 @@ the changes marked "owner, 2026-10-31".
 - The skill changes in another tab while this tab has unsaved changes (review of #54): the
   edit stays, Save is off, and the save bar says "This skill changed in another place. Your
   changes are kept here. Copy what you need, then Discard to load the new text." Discard loads
-  the newest saved text. An editor with no changes takes the new text at once.
+  the newest saved text. An editor with no changes takes the new text at once, also when its
+  changes end later: if the owner types an edit back during a conflict, the new text shows.
+  While a Save is on its way, the editor waits for the answer (audit row 1a, 2026-11-06).
 - A list or skill that does not load: "The app could not load the skills." and **Try again**,
   never Page not found. A failed background refresh keeps the list and the editor on the data
   they have, with the unsaved text (second review of #54).
 - Text typed while a Save is pending stays as a change after the Save: only the text the
-  request sent counts as saved.
+  request sent counts as saved. This includes text typed back to the last saved text, also when
+  the Save's own refresh comes before its answer.
+- A request that fails after the owner left the page shows as a toast, because nothing on a page
+  that is gone shows it (audit row 6, as on the bot page): "Could not save {skill}. Try again.",
+  "Could not save {skill}: {reason}" for a field that the server names, "{skill} changed in another
+  place, so the app did not save your change.", "Could not create {name}. Try again.", "Could not
+  create {name}: {reason}", "A skill changed after the preview, so the app applied nothing.", "The
+  preview is too old, so the app applied nothing." and "Could not apply the import. Try again." An
+  Apply that succeeds after the owner left shows its toast and does not move the page.
+- A Clone or Clone to edit whose read of the versions fails stays on the page, with the toast "The
+  app could not load the skill to copy." An owner who already left hears nothing (audit row 7).
 - A Clone whose source does not load: "The app could not load the skill to copy." and **Try
   again**; Page not found only when the version does not exist (third review of #54).
 - While Create is pending, the fields are read-only: the page leaves after Create, so text

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { notFound, useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { notFound, useNavigate, useParams, useRouter, useSearch } from "@tanstack/react-router";
 import { Bot, Ellipsis, FileText, History } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   MenuItem,
   MenuPopup,
@@ -33,9 +33,16 @@ import { useDialogRequests } from "./dialog-requests.ts";
 import { LoadError } from "./load-error.tsx";
 import { useExportSkills } from "./export-card.tsx";
 import { useLeaveGuard } from "./leave-guard.tsx";
+import { useOnPage } from "./on-page.ts";
 import { Pill, VersionPill } from "./pills.tsx";
 import { EditSaveBar, ReadOnlySaveBar } from "./save-bar.tsx";
-import { CONFLICT_TEXT, saveErrorOf, type SaveError } from "./save-error.ts";
+import {
+  CLONE_LOAD_FAILED,
+  CONFLICT_TEXT,
+  lostSaveText,
+  saveErrorOf,
+  type SaveError,
+} from "./save-error.ts";
 import { useBotUses } from "./skill-bot-uses.ts";
 import { SkillBotsTab } from "./skill-bots-tab.tsx";
 import { DeleteDialog, DeprecateDialog, RemoveFromBotsDialog } from "./skill-dialogs.tsx";
@@ -73,6 +80,9 @@ export function SkillPage() {
   const { slug } = useParams({ from: "/skills/$slug" });
   const skills = useAllSkills();
   const row = skills.data?.find((skill) => skill.slug === slug);
+  // The slug that this page's Delete is moving to Trash. A live event can take the skill from the
+  // list before the answer, and the page leaves only after the answer, so Page not found waits.
+  const [trashingSlug, setTrashingSlug] = useState<string | null>(null);
   const detail = useQuery({
     ...getSkillOptions({ path: { id: row?.id ?? "" } }),
     enabled: row !== undefined,
@@ -86,6 +96,7 @@ export function SkillPage() {
       <LoadError text="The app could not load the skills." onRetry={() => void skills.refetch()} />
     );
   }
+  if (row === undefined && trashingSlug === slug) return <SkillEditorSkeleton />;
   // A refresh on its way may bring the skill: a Create moves here when its list refresh ends,
   // and a live event in that time can end the wait before the new list comes (TanStack Query
   // joins only one cancelled refresh). Page not found waits for the newest list.
@@ -103,10 +114,17 @@ export function SkillPage() {
   if (detail.data === undefined) {
     return <LoadError text={apiErrorText(detail.error)} onRetry={() => void detail.refetch()} />;
   }
-  return <SkillView key={detail.data.id} skill={detail.data} />;
+  return <SkillView key={detail.data.id} skill={detail.data} onTrashing={setTrashingSlug} />;
 }
 
-function SkillView({ skill }: { skill: SkillDetail }) {
+function SkillView({
+  skill,
+  onTrashing,
+}: {
+  skill: SkillDetail;
+  onTrashing: (slug: string | null) => void;
+}) {
+  const router = useRouter();
   const search = useSearch({ from: "/skills/$slug" });
   const navigate = useNavigate({ from: "/skills/$slug" });
   const queryClient = useQueryClient();
@@ -124,18 +142,6 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   // over a change made in another place (409 `stale_write`) instead of overwriting it.
   const server = { version: skill.latest_version.version, rowVersion: skill.row_version };
   const [base, setBase] = useState(server);
-  // When the skill changes on the server, an editor with no changes takes the new text; an
-  // editor with changes keeps them and shows the conflict.
-  const serverKey = `${String(server.version)}:${String(server.rowVersion)}`;
-  const [seenKey, setSeenKey] = useState(serverKey);
-  if (seenKey !== serverKey) {
-    setSeenKey(serverKey);
-    if (!isDirty(form)) {
-      setForm(newForm(saved, false));
-      setBase(server);
-    }
-  }
-  const conflict = base.version !== server.version || base.rowVersion !== server.rowVersion;
   // After this page's own save, the text it sent is the saved text, based on the result.
   const savedHere = (
     result: { latest_version: { version: number }; row_version: number },
@@ -159,29 +165,14 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   } = useDialogRequests<{ kind: "deprecate" | "delete" | "remove" }>();
   const bots = useBotUses(skill.id);
 
-  const readOnly = skill.deprecated || !skill.is_author;
-  const changes = changedFields(form);
-  // Unsaved text is protected also when the skill turns read-only under it (deprecated in
-  // another place): the text stays on screen, and leaving asks first.
-  const dirty = changes.length > 0;
-  const kind = saveKind(form);
-  const problems = fieldProblems(form, settings.limits);
-  const latest = server.version;
-
-  useEffect(() => {
-    setDirtySlug(dirty ? skill.slug : null);
-    return () => {
-      setDirtySlug(null);
-    };
-  }, [dirty, skill.slug, setDirtySlug]);
-
-  const { allowLeave, dialog: leaveDialog } = useLeaveGuard({
-    dirty,
-    text: leaveText(form, skill.name),
-  });
-
+  const onPage = useOnPage();
   const onError = (error: unknown) => {
-    setSaveError(saveErrorOf(error));
+    // Nothing on a page that is gone shows the failure.
+    if (onPage.current) {
+      setSaveError(saveErrorOf(error));
+    } else {
+      showToast(lostSaveText({ name: skill.name, error }));
+    }
     // A stale save: load the newest version now. The edit stays, and the conflict shows.
     if (readApiError(error)?.code === "stale_write") {
       void queryClient.invalidateQueries({
@@ -207,6 +198,40 @@ function SkillView({ skill }: { skill: SkillDetail }) {
     onError,
   });
   const saving = rename.isPending || saveVersion.isPending;
+  // The editor takes the newest saved text when it has no changes, also when they end later (the
+  // owner types an edit back during a conflict). A Save on its way waits: its answer decides what
+  // is saved, so text typed meanwhile stays until then.
+  const serverKey = `${String(server.version)}:${String(server.rowVersion)}`;
+  const [seenKey, setSeenKey] = useState(serverKey);
+  if (seenKey !== serverKey && !saving && !isDirty(form)) {
+    setSeenKey(serverKey);
+    setForm(newForm(saved, false));
+    setBase(server);
+  }
+  // The server has a change that this edit did not start from. Only a newer version counts: after
+  // this page's own save, the server data here is behind until its refresh comes.
+  const serverAhead = server.version > base.version || server.rowVersion > base.rowVersion;
+  const conflict = serverAhead && !saving;
+  const readOnly = skill.deprecated || !skill.is_author;
+  const changes = changedFields(form);
+  // Unsaved text is protected also when the skill turns read-only under it (deprecated in
+  // another place): the text stays on screen, and leaving asks first.
+  const dirty = changes.length > 0;
+  const kind = saveKind(form);
+  const problems = fieldProblems(form, settings.limits);
+  const latest = server.version;
+
+  useEffect(() => {
+    setDirtySlug(dirty ? skill.slug : null);
+    return () => {
+      setDirtySlug(null);
+    };
+  }, [dirty, skill.slug, setDirtySlug]);
+
+  const { allowLeave, dialog: leaveDialog } = useLeaveGuard({
+    dirty,
+    text: leaveText(form, skill.name),
+  });
 
   const save = () => {
     setSaveError(null);
@@ -245,23 +270,20 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   };
 
   const exportSkill = useExportSkills();
-  // Only whether this page is still there (DQ-020). A layout cleanup runs in the commit that
-  // removes the page, so no answer lands in between. A later visit is a new page: the click
-  // belonged to the old one, so it moves nothing either.
-  const onPage = useRef(true);
-  useLayoutEffect(() => {
-    onPage.current = true;
-    return () => {
-      onPage.current = false;
-    };
-  }, []);
   const clone = async () => {
-    // Clone takes the version on screen, the latest (§12).
-    const versions = await readNewest(() =>
+    // Clone takes the version on screen, the latest (§12). A read that fails leaves the page as it
+    // is. An owner who left has moved on, so only an owner who stayed hears about it.
+    const version = await readNewest(() =>
       queryClient.query(listSkillVersionsOptions({ path: { id: skill.id } })),
+    ).then(
+      (versions) => versions.find((item) => item.version === latest),
+      () => undefined,
     );
-    const version = versions.find((item) => item.version === latest);
-    if (version === undefined || !onPage.current) return;
+    if (!onPage.current) return;
+    if (version === undefined) {
+      showToast(CLONE_LOAD_FAILED);
+      return;
+    }
     void navigate({ to: "/skills/new", search: { from: version.id } });
   };
 
@@ -279,7 +301,7 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   const deprecate = useMutation(deprecateSkillMutation());
   const deprecateSkill = (removeBotIds: string[]) => {
     if (dialog === null) return;
-    const inSync = !conflict;
+    const inSync = !serverAhead;
     runInDialog({
       dialog,
       // Also after a failure, the lists refresh: a 422 on remove_bot_ids means the bot list here
@@ -343,6 +365,7 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   const trash = useMutation(trashSkillMutation());
   const trashSkill = () => {
     if (dialog === null) return;
+    onTrashing(skill.slug);
     runInDialog({
       dialog,
       request: trash.mutateAsync({
@@ -350,15 +373,26 @@ function SkillView({ skill }: { skill: SkillDetail }) {
         body: { row_version: skill.row_version },
       }),
       done: () => {
+        // The answer says that the skill is gone, so `/skills` must not read it from an old list
+        // and come back here. The refresh below cuts any older load, so none can bring it back.
+        queryClient.setQueryData(allSkillsOptions().queryKey, (list) =>
+          list?.filter((row) => row.id !== skill.id),
+        );
         void refreshPins();
         // The Trash page comes in M5b; until then "Trash" is plain text, not a link (§11).
-        // The skill is gone, so the page leaves it even when the dialog was closed meanwhile.
         showToast(`${skill.name} is in Trash.`);
         closeDialog();
         allowLeave();
-        void navigate({ to: "/skills", replace: true });
+        // The skill is gone, so the page leaves it even when the dialog was closed meanwhile. An
+        // owner who already went to another page stays there.
+        if (router.state.location.pathname === `/skills/${skill.slug}`) {
+          void navigate({ to: "/skills", replace: true });
+        }
       },
-      failed: apiErrorText,
+      failed: (error) => {
+        onTrashing(null);
+        return apiErrorText(error);
+      },
     });
   };
 
@@ -414,7 +448,7 @@ function SkillView({ skill }: { skill: SkillDetail }) {
           onActivate={() => {
             undeprecate.mutate(
               { path: { id: skill.id }, body: { row_version: skill.row_version } },
-              { onSuccess: moveBase(!conflict) },
+              { onSuccess: moveBase(!serverAhead) },
             );
           }}
         />
