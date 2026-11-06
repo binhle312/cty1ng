@@ -208,7 +208,7 @@ function SkillView({ skill }: { skill: SkillDetail }) {
     setSaveError(null);
   }
   // The server has a change that this edit did not start from.
-  const serverAhead = isNewer(server, base);
+  const serverAhead = isNewer({ point: server, than: base });
   const conflict = serverAhead && !saving;
   const readOnly = skill.deprecated || !skill.is_author;
   const changes = changedFields(form);
@@ -293,7 +293,7 @@ function SkillView({ skill }: { skill: SkillDetail }) {
       if (inSync) {
         const next = { version: result.latest_version.version, rowVersion: result.row_version };
         // A late answer can be older than a Save that ended first, and the base only goes up.
-        setBase((current) => (isNewer(next, current) ? next : current));
+        setBase((current) => (isNewer({ point: next, than: current }) ? next : current));
       }
     };
   // A change of pins moves both sides: the bot list and the skill queries fetch again.

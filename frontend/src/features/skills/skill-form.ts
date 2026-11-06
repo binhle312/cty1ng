@@ -53,8 +53,8 @@ export interface SavedPoint {
   rowVersion: number;
 }
 
-export function isNewer(a: SavedPoint, b: SavedPoint): boolean {
-  return a.version > b.version || a.rowVersion > b.rowVersion;
+export function isNewer({ point, than }: { point: SavedPoint; than: SavedPoint }): boolean {
+  return point.version > than.version || point.rowVersion > than.rowVersion;
 }
 
 // The one rule for when the editor replaces its text with the server data. It needs new data, no
@@ -76,7 +76,7 @@ export function takesServerText({
 }): boolean {
   if (saving || dirty) return false;
   if (server.version === taken.version && server.rowVersion === taken.rowVersion) return false;
-  return !isNewer(base, server);
+  return !isNewer({ point: base, than: server });
 }
 
 export function discard(form: SkillForm): SkillForm {
