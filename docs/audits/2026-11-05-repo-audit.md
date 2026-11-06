@@ -36,7 +36,32 @@ The plan comes from the owner, 2026-11-04: audit, owner review of each finding, 
 6. Six tabs (row 14): a one-page design for owner approval first, then code. It includes the P3 "the stream does not come back in `make dev`".
 7. Other P3 marked "Fix before M3": the migration rebuild, the TypeID 500 and the error boundary. GitHub required checks are a repo setting: give the owner the steps, or set them only if the owner asks.
 
-After these: the owner fixes or drops each of the other 34 P3 findings. Then one style-only PR for the 104 `max-params` places, a second audit, the merge of #69, and M3. The coding standard stays parked until the owner restarts it.
+After these: the owner fixes or drops each of the other 34 P3 findings and the P3 rows that later reviews added. Then one style-only PR for the 104 `max-params` places, a second audit, the merge of #69, and M3. The coding standard stays parked until the owner restarts it.
+
+**Decisions made during PR 2** (owner, 2026-11-05):
+
+- The frontmatter limit for row 5 is 8,192 characters. The largest valid export has about 6.2 KB, so a much lower limit is not possible.
+- The import preview pauses between rows. A review showed that a 35 KB zip with 200 folders under the limit still blocked the server for about 15 s.
+- A password value still needs 4 or more characters. In `"password": "x"`, `x` means any value.
+- The guard frees text that holds no secret: references, type names with no quotes, shell paths after `pwd`, and values made of words next to a key word. Skills have no override, so a false match blocks a save. The cost is that a few weak forms escape, such as `password: {hunter22}`. The rules and their cost are in `security.md` §2.13.
+- Four rare forms stay as known gaps: a Markdown table, a value on the next line, hex with colons, and a long plain value that hides a second value.
+- A value made of words needs real word shapes. A word has a vowel and fewer than 5 consonants in a row. A test with seeded random values holds these limits: at most 1% of 24-character and 0.1% of 40-character base62 or base64 values that `main` refuses go free, and at least 90% of 24-character lowercase letters and digits and 85% of 24-character base32 in capitals are refused.
+- A schema with no value and `useState("")` are free. These five false matches stay and `security.md` §2.13 lists them: `confirmPassword: z.string().min(8),`, `hashedPassword = await bcrypt.hash(password, 10)`, `resetPassword: async (email) => {`, `newPassword: string|undefined`, `ALL_TESTS_PASS: done`.
+- DQ-049 and DQ-050 have the same cause as DQ-033 and DQ-045, and they get no redesign: keep the fix, with one owner in the code. If a review finds the same cause again, stop patching and propose a redesign (AGENTS.md §9).
+- DQ-052 and DQ-053 have the same cause as DQ-034: a free rule takes more than it names. Decision: close the free rules. A free schema takes only named members, a quoted value after a type name and `=` is a value, and a test puts a secret in each place of each free form. `security.md` §2.13 has the lists.
+- DQ-058 and DQ-059 have the same cause again: the rules for a reference, a type and a `pwd` path took open text, so a later key in that text was not read. Decision: no free rule has a place for any text. A value ends at a reference before a JSX tag end and at a type before an arrow, and a path takes only listed characters. These false matches are the accepted cost: `pwd=/a:/b`, `pwd=/a/b?x=1`, `pwd=/a=b`, `pwd=/a/(b)`, `pwd=/a/b#c`, ``(password:`string`)=>x``, `password={a}">x`, `password={a})>x`, `password={a},>x`. The builder found three more in the comparison, and the owner has not seen them yet: `pwd=/home/owner/>`, ``password=`{a}`/>``, `pwd="/home/owner,a:1`.
+- Text after a literal or a type name stays free. So `password: true hunter22` escapes, because the guard cannot tell it from `password: string in the request body`, and a false match blocks a save.
+- The environment suffixes also take `qa`, `uat`, `stg`, `prd`, `local` and `development`. `password_local: disabled` is a false match that stays, and `DB_PASSWORD_ROOT=` escapes.
+- Free React state also takes `null`, `undefined` and the types `<string | null>` and `<string | undefined>`.
+- The speed test keeps one 1,000 ms limit for each line.
+- PR 2 gets one full independent review of its final revision. Only P1 and P2 findings block the merge, and P3 findings go on the follow-up list.
+- The guard forms are frozen at `cabed57`, with no new form or free rule in this PR. Text has no end, so each review of the guard found a new shape, and each new rule could cause the next finding. The goal of row 4 was met in the first commit. A guard finding in the last review blocks the merge only in one of these cases:
+  1. A text that audit row 4 or `security.md` §2.13 names gets the opposite answer from the one that the text gives.
+  2. A seeded random-value test in `sensitive-data.rules.test.ts` misses its limit.
+  3. `backend/test/security/guard-real-text.test.ts` fails.
+
+  Any other text, free or refused, is P3 and goes on the P3 list in this file, even if `main` gives another answer. So a secret in a new shape can stay free until a later PR. The freeze covers only which text the patterns accept. The whole merge bar still applies to the scan speed, the masking of a found value, row 5, the import change, and each required check.
+- DQ-057 has the same cause as DQ-046 and DQ-048: a claim with no run behind it. Decision: no redesign, because the cause is process and the wrong claims are corrected. A later docs PR adds a rule that each claim in a PR body or an owner question needs a real run.
 
 ## Fix progress
 
@@ -44,8 +69,8 @@ Each fix PR updates its row in the same PR. Check `gh pr list --state all`, beca
 
 | PR | Scope | State |
 | --- | --- | --- |
-| 1 | Docs only | draft: `audit-2026-11-05-docs` |
-| 2 | Security | not started |
+| 1 | Docs only | merged: #71 |
+| 2 | Security | draft: #73 |
 | 3 | Skills page | not started |
 | 4 | Bots page | not started |
 | 5 | Tests only | not started |
@@ -100,7 +125,7 @@ The lead did not check these again, except where a row says so. The others are f
 ### Backend and data
 
 - A migration that rebuilds a parent table with rows fails at startup. `PRAGMA foreign_keys=OFF` does nothing in a transaction: `backend/src/adapters/db/migrate.ts:20`. No shipped migration does this today. **Fix before M3.**
-- A description that ends in two newlines changes after export and import: `backend/src/core/skills/skill-md.ts:21`.
+- A description that ends in two newlines changes after export and import: `backend/src/core/skills/skill-md.ts:21`. Fixed in #73.
 - A new assign can pin an older version, and the docs do not agree on the rule: `backend/src/core/bots/bots.service.ts:579`.
 - One purge item that fails blocks all later items: `backend/src/core/skills/skills.service.ts:526`, `backend/src/core/bots/bots.service.ts:711`.
 - `trashed_bot_ids` is not parsed on read and holds TypeIDs: `backend/src/adapters/db/repositories.ts:267`.
@@ -108,12 +133,14 @@ The lead did not check these again, except where a row says so. The others are f
 
 ### Security
 
-- `lineDiff` has no budget: 24.5 s for a body of 20,000 characters: `backend/src/core/skills/skill-diff.ts:8`.
+- `lineDiff` has no budget: 24.5 s for a body of 20,000 characters: `backend/src/core/skills/skill-diff.ts:8`. One `changed` import row can reach it: 11.6 s from a 202-byte zip if the saved body has 10,000 lines. The pause between rows does not help inside a row (#73 review).
 - The dev page has no CSP or `frame-ancestors`: `frontend/vite.config.ts:18`.
 - The paid security review does not watch the model adapters, `skill.rules.ts`, `bot.rules.ts`, `main.ts`, `compose.ts` and other paths: `.github/workflows/security-review.yml:20`.
 - Refused requests carry no security headers, and the plan and `security.md` disagree: `backend/src/adapters/http/app.ts:61`.
 - The changelog has no length limit, and its regex is quadratic: `backend/src/adapters/http/routes/skills.ts:34`, `backend/src/core/skills/skills.service.ts:584`.
 - No test covers an absolute zip path or a forged entry size, or checks secrets through the CLI: `backend/src/adapters/http/uploads/skill-zip.test.ts`.
+- These secrets are free on `main` and on #73, and audit row 4 does not list them: `Authorization: Bearer <key>`, `PRIVATE_KEY=<hex>`, `encryption_key=<hex>`, `signingKey: <key>`. New key words can bring new false matches, and a false match blocks a save. Found in #73 on 2026-11-05.
+- The nil UUID `00000000-0000-0000-0000-000000000000` is refused as a card number on `main` and on #73, because its zeros pass the Luhn check: `backend/src/core/guard/sensitive-data.rules.ts`, `card_number`. A scan of real text found it. Found in #73 on 2026-11-05.
 
 ### API and realtime
 

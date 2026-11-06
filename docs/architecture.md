@@ -167,6 +167,8 @@ A pnpm workspace with three packages. Each folder marked † has a `README.md` i
 │                            lint:imports, db:check), gen:api, gen:case-folding, start (the
 │                            production build),
 │                            e2e:serve (the e2e servers, kept running)
+│                            guard-compare and guard-mutations (evidence for guard changes;
+│                            run by hand)
 ├─ shared/ †                 code both sides import
 │  └─ src/
 │     ├─ events/             Zod schemas of the event envelope and every event type

@@ -139,13 +139,16 @@ export function createSkillImportService(deps: {
     if (parsed.slug !== slug) {
       return invalid(`The name in SKILL.md is "${parsed.slug}", not the folder name.`);
     }
-    const textProblem = skillTextProblem(
-      { description: parsed.description, bodyMd: parsed.bodyMd },
-      limits,
-    );
-    if (textProblem !== null) return invalid(textProblem.message);
-
     const content = { description: parsed.description, bodyMd: parsed.bodyMd };
+    const latest =
+      seen.skillId === null ? null : await deps.readers.skills.latestVersion(seen.skillId);
+    const sameAsSaved =
+      latest?.description === parsed.description && latest.bodyMd === parsed.bodyMd;
+    // A row that is the same as the saved version saves nothing, so a rule that became stricter
+    // after the save does not stop an export from importing.
+    const textProblem = skillTextProblem(content, limits);
+    if (textProblem !== null && !sameAsSaved) return invalid(textProblem.message);
+
     const conflict = (reason: string, name: string): StoredRow => ({
       row: { ...base, name, status: "conflict", reason },
       seen,
@@ -171,7 +174,6 @@ export function createSkillImportService(deps: {
       };
     }
     const skill = await deps.readers.skills.byId(seen.skillId);
-    const latest = await deps.readers.skills.latestVersion(seen.skillId);
     if (skill === null || latest === null) return invalid("The skill changed. Preview again.");
     if (seen.trashed) return conflict("This skill is in Trash.", skill.name);
     if (seen.authorId !== actor) {
@@ -181,7 +183,7 @@ export function createSkillImportService(deps: {
       );
     }
     if (seen.deprecated) return conflict("Deprecated. Make it active again to import.", skill.name);
-    if (latest.description === parsed.description && latest.bodyMd === parsed.bodyMd) {
+    if (sameAsSaved) {
       return {
         row: {
           ...base,
@@ -242,7 +244,13 @@ export function createSkillImportService(deps: {
       const limits = { nameMax: settings.skill_name_max, bodyMax: settings.skill_body_max };
       const rows = new Map<string, StoredRow>();
       const sorted = [...folders].sort((a, b) => a.folder.localeCompare(b.folder));
-      for (const folder of sorted) rows.set(folder.folder, await previewRow(folder, actor, limits));
+      for (const folder of sorted) {
+        rows.set(folder.folder, await previewRow(folder, actor, limits));
+        // One parse can cost about 70 ms and a zip holds up to 200, so the server answers other
+        // requests between rows (audit 2026-11-05, row 5). A row keeps what it saw when it ran,
+        // and Apply checks each row again.
+        await new Promise((resolve) => setImmediate(resolve));
+      }
 
       dropExpired();
       while (previews.size >= deps.previewMax) {

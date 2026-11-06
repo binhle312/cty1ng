@@ -39,6 +39,16 @@ written ways of working that the bot follows.
 - **Skills page**: make a skill, edit it (a Save of the description or text makes a new version;
   a rename alone does not), see its history and compare two versions, restore an old version,
   clone it, deprecate it, and delete a deprecated skill to Trash. Import and export `SKILL.md` folders as a zip.
+  An import marks a `SKILL.md` as invalid if the file is over 1 MB or its frontmatter has more than 8,192 characters.
+- **Secrets in text**: the app does not save a skill or a bot's text if the text looks like a secret,
+  such as a password or an API key with its value. This also applies to a placeholder password.
+  The name of a setting with no value is fine, and so is a reference such as `${DB_PASSWORD}`, a
+  type such as `password: string`, a schema such as `"password": {"type": "string"}`, or empty React
+  state such as `useState("")` or `useState(null)`. A quoted value after a type, as in
+  `password: string = "..."`, counts as a value. Remove the value, and save again. Some code still looks
+  like a secret, such as a password name, a colon and a word, as in a validation rule, a schema with a
+  member such as `minimum`, or a `pwd` path with a mark such as `:` or `?`. Change that line to save.
+  An import keeps a file that is the same as the saved version as `unchanged`, with no refusal.
 - **After a skill save**: "Save as v2" offers to upgrade the bots that use an older version
   (all ticked; untick a bot to keep its version). An upgrade keeps each bot's Always load.
   Creating a skill offers to add it to bots (none ticked). Skip changes nothing.

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { skillTextProblem } from "./skill.rules.ts";
 
+// Built at run time (testing.md §3, "Fake secrets").
+const FAKE_KEY = ["sk", "proj", "abcdefghijklmnop1234"].join("-");
+
 const limits = { nameMax: 64, bodyMax: 20_000 };
 const good = { slug: "notes", name: "Notes", description: "Use it.", bodyMd: "## Steps" };
 
@@ -49,7 +52,7 @@ describe("skillTextProblem (skills-page.md §6)", () => {
   });
 
   it("refuses a likely secret in any field and names the body line", () => {
-    const body = "# Steps\n\n1. Call the API\n2. Use sk-proj-abcdefghijklmnop9f2a";
+    const body = `# Steps\n\n1. Call the API\n2. Use ${["sk", "proj", "abcdefghijklmnop9f2a"].join("-")}`;
     expect(skillTextProblem({ ...good, bodyMd: body }, limits)).toEqual({
       code: "sensitive_data",
       field: "body_md",
@@ -65,9 +68,7 @@ describe("skillTextProblem (skills-page.md §6)", () => {
 
   // Review of PR #52: every saved field goes through the guard, not only the edited text.
   it("refuses a likely secret in the slug and in the changelog", () => {
-    expect(
-      skillTextProblem({ ...good, slug: "sk-proj-abcdefghijklmnop1234" }, limits),
-    ).toMatchObject({
+    expect(skillTextProblem({ ...good, slug: FAKE_KEY }, limits)).toMatchObject({
       code: "sensitive_data",
       field: "slug",
     });

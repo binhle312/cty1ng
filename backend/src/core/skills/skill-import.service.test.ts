@@ -4,6 +4,9 @@ import { DomainError } from "../errors.ts";
 import { OWNER_ID } from "../owner.ts";
 import type { ImportFolder } from "./skill-import.service.ts";
 
+// Built at run time (testing.md §3, "Fake secrets").
+const FAKE_KEY = ["sk", "proj", "abcdefghijklmnop1234"].join("-");
+
 // Import preview and Apply (domain-model.md §3.5, spec gap pass #9). The zip reader has its own
 // tests; here the folders come in already read.
 
@@ -43,6 +46,81 @@ const create = (slug: string, author = OWNER_ID) =>
   );
 
 describe("preview", () => {
+  // Audit 2026-11-05, row 5: one row is invalid, and the other rows of the zip still work.
+  it("reports a frontmatter over the limit as an invalid row", async () => {
+    const large = `---\nname: large\ndescription: d\n# ${"x".repeat(8_192)}\n---\nBody`;
+    const preview = await backend.skillImport.preview(
+      "skills.zip",
+      [folder("fresh"), folder("large", new TextEncoder().encode(large))],
+      OWNER_ID,
+    );
+    expect(preview.rows.map((row) => [row.slug, row.status, row.reason])).toEqual([
+      ["fresh", "new", null],
+      ["large", "invalid", "The frontmatter has more than 8,192 characters."],
+    ]);
+  });
+
+  // Review of this PR: 200 rows under the limit still blocked the server for about 15 s, because
+  // the rows ran with no pause. The owner chose a pause between rows on 2026-11-05.
+  it("lets the server run other work between rows", async () => {
+    let turns = 0;
+    let done = false;
+    const count = () => {
+      turns += 1;
+      if (!done) setImmediate(count);
+    };
+    setImmediate(count);
+    await backend.skillImport.preview(
+      "skills.zip",
+      ["one", "two", "three", "four"].map((name) => folder(name)),
+      OWNER_ID,
+    );
+    done = true;
+    expect(turns).toBeGreaterThanOrEqual(3);
+  });
+
+  // The pause lets another tab change a skill during a preview. A row that already ran keeps what
+  // it saw, and Apply checks it again. A later row sees the change.
+  describe("a skill that another tab makes during the preview", () => {
+    const previewWhileCreating = async (slug: string) => {
+      setImmediate(() => void create(slug));
+      return backend.skillImport.preview(
+        "skills.zip",
+        [
+          folder("first", skillMd("first", "text from the zip")),
+          folder("second", skillMd("second", "text from the zip")),
+        ],
+        OWNER_ID,
+      );
+    };
+
+    it("a row that already ran stays new, and Apply refuses it with no write", async () => {
+      const preview = await previewWhileCreating("first");
+      expect(preview.rows.map((row) => [row.slug, row.status])).toEqual([
+        ["first", "new"],
+        ["second", "new"],
+      ]);
+      const error = await failure(
+        backend.skillImport.apply(preview.preview_id, ["first", "second"], OWNER_ID),
+      );
+      expect(error.code).toBe("stale_write");
+      const saved = await backend.readers.skills.bySlug("first");
+      if (saved === null) throw new Error("the other tab's skill must exist");
+      expect(await backend.readers.skills.latestVersion(saved.id)).toMatchObject({ version: 1 });
+      expect(await backend.readers.skills.bySlug("second")).toBeNull();
+    });
+
+    it("a row that has not run sees the skill, and Apply adds a version", async () => {
+      const preview = await previewWhileCreating("second");
+      expect(preview.rows.map((row) => [row.slug, row.status])).toEqual([
+        ["first", "new"],
+        ["second", "changed"],
+      ]);
+      const result = await backend.skillImport.apply(preview.preview_id, ["second"], OWNER_ID);
+      expect(result).toMatchObject({ created: 0, new_versions: 1 });
+    });
+  });
+
   it("sorts rows and marks new, changed, unchanged, invalid and conflict; writes nothing", async () => {
     await create("same");
     await create("edited");
@@ -67,7 +145,7 @@ describe("preview", () => {
         folder("Bad_Name"),
         { folder: "empty", skillMd: "missing", skippedFiles: ["notes.txt"] },
         { folder: "huge", skillMd: "too_large", skippedFiles: [] },
-        folder("leak", skillMd("leak", "key sk-proj-abcdefghijklmnop1234")),
+        folder("leak", skillMd("leak", `key ${FAKE_KEY}`)),
         folder("other", skillMd("not-other")),
       ],
       OWNER_ID,
@@ -150,7 +228,7 @@ describe("preview", () => {
 
   it("refuses a file name that looks like a secret (it goes into every changelog)", async () => {
     const error = await failure(
-      backend.skillImport.preview("sk-proj-abcdefghijklmnop1234.zip", [folder("fresh")], OWNER_ID),
+      backend.skillImport.preview(`${FAKE_KEY}.zip`, [folder("fresh")], OWNER_ID),
     );
     expect(error).toMatchObject({ code: "sensitive_data", field: "file" });
   });
@@ -158,7 +236,7 @@ describe("preview", () => {
   // Review of PR #52: the preview did not guard the slug, so the row showed as `new` and Apply
   // then refused it and rolled back the valid rows too.
   it("a new skill whose slug looks like a secret is invalid", async () => {
-    const slug = "sk-proj-abcdefghijklmnop1234";
+    const slug = FAKE_KEY;
     const preview = await backend.skillImport.preview(
       "a.zip",
       [folder(slug), folder("fresh")],
@@ -254,6 +332,21 @@ describe("apply", () => {
     await backend.skillImport.apply(preview.preview_id, ["fresh"], OWNER_ID);
     const error = await failure(backend.skillImport.apply(preview.preview_id, ["fresh"], OWNER_ID));
     expect(error.code).toBe("preview_expired");
+  });
+
+  // The pause between rows can make a preview slow. Its time starts when it ends.
+  it("a slow preview gets its full time from the end of the preview", async () => {
+    setImmediate(() => {
+      clock.advance(10 * MINUTE);
+    });
+    const preview = await backend.skillImport.preview(
+      "a.zip",
+      [folder("one"), folder("two")],
+      OWNER_ID,
+    );
+    clock.advance(14 * MINUTE);
+    const result = await backend.skillImport.apply(preview.preview_id, ["one"], OWNER_ID);
+    expect(result).toMatchObject({ created: 1 });
   });
 
   it("an expired preview gets preview_expired", async () => {

@@ -88,7 +88,7 @@ environment, provider-side data handling.
 | --- | --- | --- |
 | Avatar | PNG, JPEG, WebP; the file ≤ `AVATAR_MAX_BYTES` (default 2 MB), the whole multipart request ≤ `AVATAR_MAX_BYTES` + 64 KB for the part headers and boundaries; either one over gets 413 `too_large` (M2 spec gap pass, owner 2026-11-01) | Detect type from content (`sharp`), reject others incl. SVG; refuse an image over 25 million pixels before it is decoded (`limitInputPixels`, fixed), with 422 "The image has too many pixels. Use one under 25 megapixels."; at most two uploads decode at once, the others wait (fixed: one decode at the pixel limit holds about 100 MB); strip metadata; re-encode to 256×256 WebP; store by SHA-256. The size limit is an environment variable (`architecture.md` §8) and `GET /avatars/limits` gives it to the page; the accepted types, the pixel limit and the output size are fixed security rules. Unused files: `domain-model.md` §2 Avatar files |
 | Attachment | Text (`.md .txt .csv .json .yaml .html .css .js .ts .py .sql .xml .svg`), images, PDF; 10 files × 10 MB | Sanitised file name; saved under `attachments/<yyyy-mm-dd>-<conversation-slug>/` (D52); SVG and HTML are only ever shown as text |
-| Skill zip | `.zip` ≤ 5 MB, ≤ 200 entries, ≤ 20 MB uncompressed (every entry, by the size its header states), a `SKILL.md` ≤ 1 MB uncompressed | `POST /skills/import/preview` has its own two limits in place of the 1 MB JSON limit (§2.7): the zip file part ≤ 5 MB, and the whole multipart request ≤ 5 MB + 64 KB for the part headers and boundaries; either one over gets 413. Every other route keeps its own limit (1 MB JSON, and the avatar and attachment limits in this table). Reject entries with absolute paths or `..` (zip slip); only `<slug>/SKILL.md` read, every other file in a skill folder is listed as skipped and never opened, and a file at the top of the zip is ignored; the total is checked from each entry's header before that entry is opened, so at most 20 MB is ever unpacked, a `SKILL.md` over 1 MB is not read and its row is invalid, and the reader stops an entry that grows past the size its header states, so a zip bomb is never fully unpacked (M1 plan, decision 2: this replaces a 100:1 ratio limit, which refused valid repetitive Markdown); UTF-8 only; YAML parsed with the `yaml` package's default core schema (no custom tags); frontmatter validated by a Zod schema |
+| Skill zip | `.zip` ≤ 5 MB, ≤ 200 entries, ≤ 20 MB uncompressed (every entry, by the size its header states), a `SKILL.md` ≤ 1 MB uncompressed | `POST /skills/import/preview` has its own two limits in place of the 1 MB JSON limit (§2.7): the zip file part ≤ 5 MB, and the whole multipart request ≤ 5 MB + 64 KB for the part headers and boundaries; either one over gets 413. Every other route keeps its own limit (1 MB JSON, and the avatar and attachment limits in this table). Reject entries with absolute paths or `..` (zip slip); only `<slug>/SKILL.md` read, every other file in a skill folder is listed as skipped and never opened, and a file at the top of the zip is ignored; the total is checked from each entry's header before that entry is opened, so at most 20 MB is ever unpacked, a `SKILL.md` over 1 MB is not read and its row is invalid, and the reader stops an entry that grows past the size its header states, so a zip bomb is never fully unpacked (M1 plan, decision 2: this replaces a 100:1 ratio limit, which refused valid repetitive Markdown); UTF-8 only; YAML parsed with the `yaml` package's default core schema (no custom tags); a frontmatter over 8,192 characters is not parsed and its row is invalid, because the parse time grows with the square of the keys, and the preview pauses between rows so that the server answers other requests, because a zip holds up to 200 files (owner, 2026-11-05); frontmatter validated by a Zod schema |
 
 ### 2.5 Skills, personas and prompt injection
 
@@ -255,7 +255,9 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (�
 - Memory writes and skill drafts (D41) with a match are refused, with no override.
 - Skills the owner writes are checked too (M1 spec gap pass, owner 2026-10-30): create (also of
   a clone), a rename (`PATCH /skills/{id}` and the `name` of `POST /versions`), a new version, a
-  version restore and every import row, from the editor, the CLI and the seed. The check reads
+  version restore and every import row that saves text, from the editor, the CLI and the seed. An
+  import row that is the same as the latest version saves nothing, so it is `unchanged` with no
+  refusal (owner, 2026-11-05; `domain-model.md` §3.5). The check reads
   every field that is saved and shown: the slug, name, description, body and changelog, and the
   import file name, which goes into each changelog ("Imported from {file}"). A
   match is refused with no override (422 `sensitive_data`, an import row is `invalid`, a file
@@ -268,6 +270,93 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (�
   `sensitive_data`); the check runs in the bot service.
 - Auto titles (D46): a first message with matches ("Send anyway") gets no title request. The
   guard also checks the model's title; a match keeps "New conversation".
+- The forms of D39 include a key word with any prefix (`DB_PASSWORD=`, `dbPassword:`, `dbPwd=`,
+  `DB_PASS=`, `GITHUB_TOKEN=`, `client_secret=`, `TOKEN_VALUE=`), a number or an environment after
+  any key word (`PASSWORD1=`, `DB_PASSWORD_PROD=`, `DB_PASS_PROD=`, `DB_PASS1=`, `DB_PWD_2=`, `PWD1=`,
+  `API_KEY_PROD=`, `GITHUB_TOKEN_PROD=`, `TOKEN1=`, `SECRET1=`; the environments are `prod`, `production`,
+  `prd`, `dev`, `development`, `staging`, `stage`, `stg`, `test`, `qa`, `uat`, `local`, `old` and `new`,
+  so `DB_PASSWORD_UAT=` is refused, and `DB_PASSWORD_ROOT=` and `password_strength:` are not),
+  marks around the key (`"password":`, `config["password"] =`, `` `DB_PASSWORD`: ``,
+  `**password**:`), the separators `:`, `=`, `:=` and `=>`, a whole phrase in quotes or backticks
+  (`"password": "my long pass phrase"`), a quoted value after a type name and `=`
+  (`const password: string = "hunter22"`, `password: string | null = 'hunter22'`, `password: str = "hunter22"`)
+  and, next to a key word such as `token` or `SECRET_KEY`,
+  long random values of letters and digits, which include hex (owner, 2026-11-05). This is a
+  measured rate, not a promise: of random values with 24 characters, it refuses 99.4% of base62,
+  95.1% of lowercase letters and digits, and 87.7% of base32 in capitals. A password
+  value needs 4 or more characters, and its quotes or backticks do not count (owner, 2026-11-05). A placeholder has no exception
+  (`DB_PASSWORD=changeme` is refused), and a label or a number looks the same
+  (`"password": "Password"`, `"password": 1234`). A name with no value stays free (`DB_PASSWORD`).
+- Some values hold no secret and stay free (owner, 2026-11-05). These rules make the guard weaker
+  on purpose, because a false match blocks a save with no override. A rule that frees a form lists
+  each word that the form can hold. It has no place that takes any text, because a secret can sit
+  in such a place (DQ-052). Words after a free token are the one exception, in the first rule below:
+  - After a password key: the literal `true`, `false` or `null` and a type name, as a complete
+    token with no quotes (`require_password: true`, `showPassword={false}/>`,
+    `{"require_password":true,"enabled":false}`, `newPassword: string`,
+    `user_password: varchar(255)`). A free value does not hide the next key of a compact object
+    (`{"require_password":true,"password":"xxxx"}` is refused). A string is refused (`password: false!`, `"password": "false"`,
+    `` password: `false alarm` ``, `"password": "string"`). Text after a complete token stays
+    free, for a literal and for a type name. So `password: false alarm`, `password: true hunter22` and
+    `password: null  // real one is hunter22` escape: the code cannot tell them from
+    ``Set password: `false` in the file`` or `password: string in the request body`. A type name, `=`
+    and text with no quotes is code, so it stays free too (`const password: string = process.env.DB_PASSWORD`,
+    `= getPassword()`), and so does a quoted value that is empty or under the minimum (`= ""`, `= "abc"`),
+    or a reference (`= "${DB_PASSWORD}"`).
+  - After a password key: a reference (`${DB_PASSWORD}`, `$DB_PASSWORD` in capitals,
+    `${{ secrets.NAME }}`, `{confirmPassword}`). `$ecret123` is refused. So a secret in the form
+    `password: {hunter22}` escapes.
+  - The value ends at a reference before a JSX tag end, and at a type name before an arrow
+    (`<A password={safe}>Text</A>`, `(password: string)=>login(password)`). The guard reads the text
+    after it as new text, so it reads a later key (`<A password={safe}>{config.password="hunter22"}</A>`
+    is refused), and a word with no key stays free (`<A password={safe}>hunter22</A>`). The same is
+    true with a space after the reference.
+  - After `pwd` only: a path or a command (`PWD=/home/owner`, `NEW_PWD=$(pwd)`, `$(pwd)/sub`). A path
+    holds only letters, digits, `_`, `.`, `/`, `~`, `+`, `@`, `-`, and a space in quotes, and then
+    closing marks. So `pwd=/x;pwd=hunter22` is refused. `PWD=hunter22` is refused. `pwd=/hunter22`
+    escapes, because the code cannot tell it from a path.
+  - Next to a key word, not a password key: a value with 70% or more of its characters in words,
+    where `_` and `-` do not count (`GITHUB_TOKEN=user_profile_settings_page_2`). A word has 3 to
+    20 letters, a vowel, and fewer than 5 consonants in a row. So a secret made of words escapes
+    there (`api_key = Correct_Horse_Battery_Staple_22`), and so do a few random values that
+    look like words. Of the random values that `main` refuses, the share that goes free here is
+    0.49% of base62 and 0.41% of base64 at 24 characters, and 0.06% and 0.04% at 40 characters
+    (20,000 seeded values each; a test holds the limits of 1% and 0.1%, and
+    `scripts/guard-compare.ts` prints the whole table).
+    `DB_PASSWORD=correct_horse_battery` stays refused.
+  - After `@` (`action-token@<hash>`) or a word that names a hash (`commit <hash>`, `sha256 <hash>`).
+  - After a password key: a schema with no value (`"password": {"type": "string"}`,
+    `{"type": "string", "minLength": 8}`). A free schema has a type name and only these members:
+    `minLength` and `maxLength` with a number, `nullable`, `required`, `readOnly` and `writeOnly` with
+    `true` or `false`, and `format` with `password`. Any other member makes it a value, so these are
+    refused: `{type:string,default:1234}`, `{"type":"string","secret":99887766}`,
+    `{"type":"string","minimum":8}` and `{"type":"string","format":"hunter22"}`.
+  - After a password key: React state with no first value, with `useState` or `React.useState`. The
+    argument is empty, `""`, `null` or `undefined`, and the type is `<string>`,
+    `<string | null>` or `<string | undefined>`
+    (`const [password, setPassword] = useState<string | null>(null)`). These are refused:
+    `useState("hunter22")`, `useState<string | null>("hunter22")`, `useState<Password>()` and
+    other hooks.
+- These false matches stay, because the value is a word after a password key and the code cannot
+  tell it from a secret (owner, 2026-11-05): `confirmPassword: z.string().min(8),`,
+  `hashedPassword = await bcrypt.hash(password, 10)`, `resetPassword: async (email) => {`,
+  `newPassword: string|undefined`, `ALL_TESTS_PASS: done`, `TEST_PASS_QA: done`, `password_local: disabled`.
+  These stay too, because a free rule that takes other marks could hide a later key (owner, 2026-11-05):
+  `pwd=/a:/b`, `pwd=/a/b?x=1`, `pwd=/a=b`, `pwd=/a/(b)`, `pwd=/a/b#c`, ``(password:`string`)=>x``,
+  `password={a}">x`, `password={a})>x` and `password={a},>x`. So do a path before a tag end
+  (`pwd=/home/owner/>`), a reference in backticks or after an open quote before a tag end
+  (``password=`{a}`/>``, `password="{a}/>`), and a path after an open quote before the next key
+  (`pwd="/home/owner,a:1`).
+- Real text with no secret must pass (owner, 2026-11-05). `backend/test/security/guard-real-text.test.ts`
+  scans the seed skills, the vendored skills, the source code and most of `docs/`. That is at least
+  40,000 lines, and it refuses at most 0 lines. It leaves out test files, the guard folder, generated
+  code and the documents that quote the guard's forms. The limits are constants in that test. It
+  measures false matches only, because this text holds no secret.
+- Known gaps (owner, 2026-11-05), because a fix costs more false matches or adds state to the scan:
+  a Markdown table (`| DB_PASSWORD | hunter22 |`), a value on the next line (`GITHUB_TOKEN: |`), hex
+  with colons (`secret: 3f:2a:…`), and a long plain value that hides a second value after it. The last
+  gap includes a value made of words: a long run of words, then `/secret=` and a key, joined with no
+  space, is free when 70% of it is words. `main` refuses that form.
 - Pattern-based and incomplete by nature: a warning, not a guarantee. Images and PDFs are not
   scanned.
 - Matched text is never logged; only the kinds found are logged.

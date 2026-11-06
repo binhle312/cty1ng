@@ -38,13 +38,88 @@ interface Detector {
   accept?: (secret: string) => boolean;
 }
 
+// A password detector finds a key and reads its value. It decides nothing else, because
+// `passwordValueIsFree` owns the rule. Each spelling of the key scans alone, so a free value after
+// one spelling cannot hide another spelling. Marks can close the key: `"password"`, `\"password\"`,
+// `["password"]`, **password**. The separator is one unit: the lookahead and its backreference stop
+// the regex from retrying a shorter one, which would read `=`, `>` or `*` as a part of the value.
+const AFTER_KEY = String.raw`(?=((?:\\?["']|[\`*\]]){0,4}\s*(?::=|=>|[:=])\*{0,2}\s*))\1`;
+// A value stops before the next key of a compact object, so the scan still reads that key.
+const VALUE_END = String.raw`(?=,["']?[\w-]+["']?\??:|\s|$)`;
+const SETTING_WORD = String.raw`(?:true|false|null|string|boolean|bool|number|integer|text|(?:var)?char(?:\(\d+\))?)`;
+const SETTING_TYPE = String.raw`${SETTING_WORD}(?:\|${SETTING_WORD})*`;
+// A type name, then `=` and a quote: the text in the quotes is the value, so a type name cannot hide
+// it. Other text after `=` is code (`= process.env.X`). `str` and `any` are under the 4-character
+// minimum, so only this rule reads past them.
+const TYPE_BEFORE_VALUE = String.raw`(?:(?:${SETTING_WORD}|str|any)(?:\s*\|\s*${SETTING_WORD})*\s*=\s*(?=["'\`]))?`;
+// A reference or a type ends at a JSX tag end or an arrow. The text after it is not the value, so the
+// scan still reads a later key there (DQ-058).
+const REFERENCE_BEFORE_TAG_END = String.raw`(?:\$\{\{?\s*[\w.-]+\s*\}\}?|\$[A-Z_][A-Z0-9_]*|\{[A-Za-z_$][\w.$]*\})(?=\/?>)`;
+const TYPE_BEFORE_ARROW = String.raw`${SETTING_TYPE}(?=\)=>)`;
+// A schema object with its type first, read whole so that the free rule sees all its members. Then
+// a whole phrase in quotes or backticks, an unclosed quote, React state with a type, read whole
+// because a union can hold a space, or a word: 4 or more characters.
+const PASSWORD_VALUE = String.raw`${TYPE_BEFORE_VALUE}(${REFERENCE_BEFORE_TAG_END}|${TYPE_BEFORE_ARROW}|\{\s*["']?type["']?\s*:[^{}\n]*(?:\}|$)|"(?:[^"\\\n]|\\.){4,}"|'[^'\n]{4,}'|\`[^\`\n]{4,}\`\S*?${VALUE_END}|["'][^\s"']{4,}|(?:React\.)?useState<[^<>()\n]*>\([^()\n]*\)\S*?${VALUE_END}|[^\s"']\S{3,}?${VALUE_END})`;
+
+// The schema members that cannot hold a secret. A free rule lists each word that it takes, because
+// a place that takes any text can hold a secret (DQ-052). So `default`, `value` and any other member
+// make a schema a value.
+const SCHEMA_MEMBER = String.raw`["']?(?:minLength|maxLength)["']?\s*:\s*\d+|["']?(?:nullable|required|readOnly|writeOnly)["']?\s*:\s*(?:true|false)|["']?format["']?\s*:\s*["']password["']`;
+
+// The values that hold no secret (owner, 2026-11-05, security.md §2.13). A placeholder is not one.
+// Each rule lists all that it takes, with no place for any text: free text can hold a key, and the
+// scan does not read the same text again (DQ-052, DQ-058).
+const FREE_PASSWORD_VALUES: readonly RegExp[] = [
+  // A literal or a type as a complete token, so false!, "false" and `false alarm` are strings.
+  new RegExp(String.raw`^(?:\`${SETTING_TYPE}\`|${SETTING_TYPE})(?:[\`)}\],;]+[.:]?)?$`, "i"),
+  // A schema with no value: {"type": "string"}, {"type": "string", "minLength": 8}.
+  new RegExp(
+    String.raw`^\{\s*["']?type["']?\s*:\s*["']?${SETTING_TYPE}["']?(?:\s*,\s*(?:${SCHEMA_MEMBER}))*\s*[,}]?$`,
+    "i",
+  ),
+  // React state with no first value: useState(), useState(""), useState<string | null>(null).
+  /^(?:React\.)?useState(?:<string(?:\s*\|\s*(?:null|undefined))?>)?\((?:""|''|``|null|undefined)?\)[)}\],;]*$/,
+  // A reference: ${DB_PASSWORD}, $DB_PASSWORD, ${{ secrets.X }}, {password}, {false}. Case matters:
+  // $ecret123 is a password.
+  /^["'`]?(?:\$\{\{?\s*[\w.-]+\s*\}\}?|\$[A-Z_][A-Z0-9_]*|\{[A-Za-z_$][\w.$]*\})["']?[`)}\],;]*[.:]?$/,
+  // Under the 4-character minimum: backticks do not count, as quotes do not.
+  /^`[^`]{0,3}`[)}\],;]*[.:]?$/,
+];
+
+const passwordValueIsFree = (value: string): boolean =>
+  FREE_PASSWORD_VALUES.some((free) => free.test(value));
+
+// PWD is also the shell's working folder: /home/owner, ~/work, ../work, $(pwd), $(pwd)/sub. A path has
+// no `=` or `:` inside it, because a later key needs one of them (DQ-059). Only text in quotes can
+// hold a space here.
+const SHELL_PATH =
+  /^["'`]?(?:(?:~?\/|\.{1,2}\/)[\w./~+@ -]*|\$\([\w./ -]*(?:\)[\w./ -]*)?)["'`)}\],;]*[.:]?$/;
+
+const passwordDetector = (
+  key: string,
+  isFree: (value: string) => boolean = passwordValueIsFree,
+): Detector => ({
+  kind: "password",
+  pattern: new RegExp(`${key}${AFTER_KEY}${PASSWORD_VALUE}`, "gi"),
+  // Group 1 is the separator.
+  group: 2,
+  accept: (value) => !isFree(value),
+});
+
+// A number or an environment after a key word, for every spelling. No other word, because
+// DB_PASSWORD_FILE is a path and token_endpoint is a URL.
+const KEY_SUFFIX = String.raw`(?:\d+|_(?:prod|production|prd|dev|development|staging|stage|stg|test|qa|uat|local|old|new|\d+))`;
+
 const DETECTORS: readonly Detector[] = [
   { kind: "private_key", pattern: /-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----/g },
-  {
-    kind: "password",
-    pattern: /\b(?:password|passwd|pwd)\s*[:=]\s*["']?([^\s"']{4,})/gi,
-    group: 1,
-  },
+  // Any prefix, so there is no left boundary: `\b` does not fire after `_`.
+  passwordDetector(`(?:password|passwd)${KEY_SUFFIX}?`),
+  passwordDetector(
+    `pwd${KEY_SUFFIX}?`,
+    (value) => passwordValueIsFree(value) || SHELL_PATH.test(value),
+  ),
+  // In capitals only, because `test_pass: done` is not a password. The value has any case.
+  passwordDetector(`(?-i:[A-Z0-9]_PASS)${KEY_SUFFIX}?`),
   {
     // Common provider prefixes: OpenAI and Anthropic (sk-), AWS (AKIA), GitHub (ghp_ and
     // friends), Slack (xox?-), Google (AIza).
@@ -53,12 +128,17 @@ const DETECTORS: readonly Detector[] = [
       /\b(?:sk-[A-Za-z0-9_-]{16,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{30,}|xox[abpors]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{35})/g,
   },
   {
-    // A long random-looking string next to a word like key, token or secret.
+    // A long random-looking value next to a word like key, token or secret, with any prefix
+    // (`GITHUB_TOKEN=`, `clientSecret:`). `action-token@<hash>` is a pinned version, and a word
+    // such as `commit` says that the value is a hash. The value starts a run of characters, and
+    // `=` cannot start it, so `TOKEN=x` and `TOKEN: x` get the same answer.
     kind: "api_key",
-    pattern:
-      /\b(?:api[_ -]?key|token|secret|access[_ -]?key)\b[^\n]{0,20}?([A-Za-z0-9_\-+/=]{24,})/gi,
+    pattern: new RegExp(
+      String.raw`(?:api[_ -]?key|token|secret(?:[_ -]?key(?:[_ -]?base)?)?|access[_ -]?key)(?:_?value|${KEY_SUFFIX})?\b[^\n@]{0,20}?(?<!\b(?:commit|sha\d*|hash|digest|checksum|revision)\s+)(?<![A-Za-z0-9])([A-Za-z0-9_\-+/][A-Za-z0-9_\-+/=]{23,})`,
+      "gi",
+    ),
     group: 1,
-    accept: (secret) => highEntropy(secret),
+    accept: (secret) => !madeOfWords(secret) && (highEntropy(secret) || randomLetters(secret)),
   },
   {
     kind: "card_number",
@@ -91,7 +171,8 @@ function* scan(text: string): Generator<SensitiveMatch> {
       for (const found of line.matchAll(detector.pattern)) {
         const secret = found[detector.group ?? 0] ?? found[0];
         if (detector.accept !== undefined && !detector.accept(secret)) continue;
-        yield { kind: detector.kind, line: index + 1, ending: secret.slice(-4) };
+        const ending = secret.replace(/\\?["'`]$/, "").slice(-4);
+        yield { kind: detector.kind, line: index + 1, ending };
       }
     }
   }
@@ -137,4 +218,33 @@ export function ibanValid(iban: string): boolean {
 function highEntropy(value: string): boolean {
   const classes = [/[a-z]/, /[A-Z]/, /\d/, /[_\-+/=]/].filter((re) => re.test(value)).length;
   return classes >= 3 && new Set(value).size >= Math.min(16, value.length / 2);
+}
+
+// Hex and other keys with few kinds of character, which `highEntropy` misses. A random value has
+// letters, at least 8 different characters, and digits or both cases. A long number has no letter,
+// a long word has neither digits nor both cases, and a repeated value has few different characters.
+function randomLetters(value: string): boolean {
+  return (
+    /^[\da-z]+$/i.test(value) &&
+    /[a-z]/i.test(value) &&
+    (/\d/.test(value) || (/[a-z]/.test(value) && /[A-Z]/.test(value))) &&
+    new Set(value).size >= 8
+  );
+}
+
+// A value made of words is a name, not a key (owner, 2026-11-05): `user_profile_settings_page_2`,
+// `CancellationTokenSource2Factory`. A word has 3 to 20 letters, a vowel, and fewer than 5 consonants
+// in a row, which a run of random letters rarely has. At least 70% of the characters are in words,
+// and `_` and `-` do not count, so a short name such as `jwt` does not free or refuse a value. The
+// password check does not use this rule.
+const isWord = (letters: string): boolean =>
+  letters.length >= 3 &&
+  letters.length <= 20 &&
+  /[aeiouy]/i.test(letters) &&
+  !/[^aeiouy]{5}/i.test(letters);
+
+function madeOfWords(value: string): boolean {
+  const runs = value.match(/[A-Z]?[a-z]+|[A-Z]+(?![a-z])/g) ?? [];
+  const inWords = runs.filter(isWord).reduce((sum, word) => sum + word.length, 0);
+  return inWords >= value.replace(/[_-]/g, "").length * 0.7;
 }
