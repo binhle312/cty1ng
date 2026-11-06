@@ -250,6 +250,78 @@ test("leaving with unsaved changes asks first", async ({ page }) => {
   await expect(page).toHaveURL("/skills/new");
 });
 
+// Audit row 1a: the Save's own event comes while its answer waits, so a refresh arrives first.
+test("text typed back during a save stays when the save's own event comes first", async ({
+  page,
+}) => {
+  const skill = unique("Typed back");
+  const before = "## Steps\n1. Read the brief.";
+  await createSkill(page, skill, before);
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(/\/api\/skills\/[^/]+\/versions$/, async (route) => {
+    if (route.request().method() !== "POST") return route.fallback();
+    // The server saves now, and the page gets the answer later.
+    const response = await route.fetch();
+    await held;
+    await route.fulfill({ response });
+  });
+  await page.getByRole("tab", { name: "Write" }).click();
+  await fill(page, "Body", "## Steps\n1. Sent with the save.");
+  await page.getByRole("button", { name: "Save as v2" }).click();
+  await fill(page, "Body", before);
+  await expect(page.getByRole("tab", { name: /History/ })).toHaveText(/History\s*2/);
+  await expect(page.getByLabel("Body", { exact: true })).toHaveValue(before);
+  release();
+  await expect(page.getByText("Saved v2 ✨")).toBeVisible();
+  await expect(page.getByLabel("Body", { exact: true })).toHaveValue(before);
+  await expect(page.getByText("1 change not saved")).toBeVisible();
+  await expect(page.getByText("All changes are saved.")).toHaveCount(0);
+});
+
+// Audit row 3. The list shows only this skill, as when it is the last one, and its refresh waits.
+test("deleting the last skill shows the empty state and the toast while the list waits", async ({
+  page,
+}) => {
+  const skill = unique("Last one");
+  await createSkill(page, skill);
+  let trashed = false;
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(
+    (url) => url.pathname === "/api/skills",
+    async (route) => {
+      if (route.request().method() !== "GET") return route.fallback();
+      if (trashed) await held;
+      const response = await route.fetch();
+      const rows = z.array(z.looseObject({ slug: z.string() })).parse(await response.json());
+      await route.fulfill({ response, json: rows.filter((row) => row.slug === skill.slug) });
+    },
+  );
+  await page.route(/\/api\/skills\/[^/]+\/trash$/, async (route) => {
+    trashed = true;
+    await route.continue();
+  });
+  await page.goto(`/skills/${skill.slug}`);
+  await page.getByRole("button", { name: "Skill actions" }).click();
+  await page.getByRole("menuitem", { name: "Deprecate" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Deprecate" }).click();
+  await expect(page.getByRole("button", { name: "Make active again" })).toBeVisible();
+  await page.getByRole("button", { name: "Skill actions" }).click();
+  await page.getByRole("menuitem", { name: "Delete skill" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Delete skill" }).click();
+  await expect(page.getByText(`${skill.name} is in Trash.`)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "No skills yet" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Page not found" })).toHaveCount(0);
+  release();
+  await expect(page.getByRole("heading", { name: "No skills yet" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Page not found" })).toHaveCount(0);
+});
+
 test("deprecate, open after a reload, make active, deprecate and delete", async ({ page }) => {
   const skill = unique("Retire");
   await createSkill(page, skill);

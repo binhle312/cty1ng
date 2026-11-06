@@ -13,6 +13,7 @@ import {
   saveKind,
   setField,
   type SkillFields,
+  takesServerText,
 } from "./skill-form.ts";
 
 const LIMITS = {
@@ -155,5 +156,89 @@ describe("markSaved", () => {
     expect(after.saved).toEqual(sent.current);
     expect(after.current.body_md).toBe("Typed while saving.");
     expect(changedFields(after)).toEqual(["body_md"]);
+  });
+});
+
+// skills-page.md, "Texts added in the M1b build". Each row is one order of a Save and a refresh.
+describe("takesServerText", () => {
+  const v3 = { version: 3, rowVersion: 1 };
+  const v4 = { version: 4, rowVersion: 2 };
+  const v5 = { version: 5, rowVersion: 3 };
+  const rename = { version: 3, rowVersion: 2 };
+  it.each([
+    {
+      why: "same data as last taken",
+      server: v3,
+      base: v3,
+      taken: v3,
+      saving: false,
+      dirty: false,
+      takes: false,
+    },
+    {
+      why: "a change from another place",
+      server: v4,
+      base: v3,
+      taken: v3,
+      saving: false,
+      dirty: false,
+      takes: true,
+    },
+    {
+      why: "a rename from another place",
+      server: rename,
+      base: v3,
+      taken: v3,
+      saving: false,
+      dirty: false,
+      takes: true,
+    },
+    {
+      why: "unsaved changes stay",
+      server: v4,
+      base: v3,
+      taken: v3,
+      saving: false,
+      dirty: true,
+      takes: false,
+    },
+    {
+      why: "a Save on its way decides first",
+      server: v4,
+      base: v3,
+      taken: v3,
+      saving: true,
+      dirty: false,
+      takes: false,
+    },
+    {
+      why: "the refresh of the own Save brings its text",
+      server: v4,
+      base: v4,
+      taken: v3,
+      saving: false,
+      dirty: false,
+      takes: true,
+    },
+    {
+      why: "the data is older than the own Save",
+      server: v4,
+      base: v5,
+      taken: v3,
+      saving: false,
+      dirty: false,
+      takes: false,
+    },
+    {
+      why: "the data has no refresh yet",
+      server: v3,
+      base: v4,
+      taken: v3,
+      saving: false,
+      dirty: false,
+      takes: false,
+    },
+  ])("$why: $takes", ({ server, base, taken, saving, dirty, takes }) => {
+    expect(takesServerText({ server, base, taken, saving, dirty })).toBe(takes);
   });
 });

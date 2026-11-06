@@ -21,6 +21,7 @@ Export card. Routes: `src/routes/skills.tsx`.
 | `skill-bots-tab.tsx` | The Bots tab: the rows, the Always load switch, ⋯, + Add |
 | `dialog-request-state.ts` | A dialog that sends one request (pure): a late answer goes to its own dialog, or to a toast |
 | `dialog-requests.ts` | The hook for `dialog-request-state.ts`, for the pin dialogs, the skill page, the delete dialog and the cards after a save |
+| `on-page.ts` | Whether a page is still there, for a request that can end after the owner left |
 | `toast-store.ts` | A pure state module's state outside React: a late answer changes it, also after the page went, and its toast shows at once |
 | `skill-pin-dialogs.tsx` | The cards that move a pin: + Add, Upgrade or Move to a version, Change version |
 | `after-save-card-state.ts` | The bot card after a save (pure): which save's card shows, and when a card is its toast |

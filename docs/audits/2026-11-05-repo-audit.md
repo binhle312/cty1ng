@@ -10,9 +10,9 @@ This file holds the results for the next agent. It is a record of one audit, not
 2. Ask the owner one question at a time. Give a detailed explanation, an example and a recommended answer.
 3. After each answer, update "Owner decisions" in this file.
 4. When all questions have answers, follow the approved fix order below. Check which PRs exist first (`gh pr list`).
-5. Do not start M3, and do not merge #69. Both wait for the end of this plan.
+5. Do not start M3. It waits for the end of this plan. #69 is closed and not part of this plan now (see "Decisions during PR 3").
 
-The plan comes from the owner, 2026-11-04: audit, owner review of each finding, fixes in small draft PRs by module, second audit, merge #69, and then M3. The coding standard is parked, so this audit checks the code against `docs/` and `AGENTS.md`.
+The plan comes from the owner, 2026-11-04: audit, owner review of each finding, fixes in small draft PRs by module, second audit, and then M3. The plan of 2026-11-04 also merged #69 before M3, and the owner changed that on 2026-11-06. The coding standard is parked, so this audit checks the code against `docs/` and `AGENTS.md`.
 
 ## Owner decisions
 
@@ -36,7 +36,7 @@ The plan comes from the owner, 2026-11-04: audit, owner review of each finding, 
 6. Six tabs (row 14): a one-page design for owner approval first, then code. It includes the P3 "the stream does not come back in `make dev`".
 7. Other P3 marked "Fix before M3": the migration rebuild, the TypeID 500, the error boundary and `lineDiff` (DQ-037). GitHub required checks are a repo setting: give the owner the steps, or set them only if the owner asks.
 
-After these: the owner fixes or drops each of the other 33 P3 findings and the P3 rows that later reviews added, except the row "Guard shapes accepted". Then one style-only PR for the 104 `max-params` places, a second audit, the merge of #69, and M3. The coding standard stays parked until the owner restarts it.
+After these: the owner fixes or drops each of the other 33 P3 findings and the P3 rows that later reviews added, except the row "Guard shapes accepted". Then one style-only PR for the 104 `max-params` places, a second audit, and M3. The coding standard stays parked until the owner restarts it.
 
 **Decisions made during PR 2** (owner, 2026-11-05):
 
@@ -73,6 +73,13 @@ After these: the owner fixes or drops each of the other 33 P3 findings and the P
 - New rules: [pattern rules](../workflows/merge-bar.md#pattern-rules) and the claim rule in [testing.md §5](../testing.md#5-evidence-in-prs).
 - No separate stop signal for now. The ledger marks 13 issues as caused by a repair, all on #73, and the 5 P2 among them (DQ-046, DQ-052, DQ-053, DQ-058, DQ-059) come from free rules of the guard, which the pattern rules now limit. Many older ledger rows do not record this field. Reopen if a PR outside pattern rules gets two P2 findings from its repairs.
 
+**Decisions during PR 3** (owner, 2026-11-06).
+
+- The skill editor's rule for server text stays one small function, `takesServerText`. The rest of the page's state rules stay in the page, and they are not moved to a `skill-page-state.ts`. The P3 review before M3 can look at this again.
+- #69, "Leave working code alone", stays closed. The owner watches more PRs before deciding whether to bring it back, with no date set. Its rule is not in force, and M3 does not wait for it.
+- The wait of a skill Delete is replaced (`AGENTS.md` §9). Three bugs came from keeping it in the page's state (DQ-067, DQ-069, DQ-078). The page now asks the query client if a Delete of this skill is on its way, so the wait has the life of the request.
+- `useOnPage` is the redesign for late answers on the skill pages (`AGENTS.md` §9, DQ-065). No shared wrapper for all late answers for now. Look again if the same bug comes back in a new request.
+
 ## Fix progress
 
 Each fix PR updates its row in the same PR. Check `gh pr list --state all`, because this table can be behind.
@@ -81,7 +88,7 @@ Each fix PR updates its row in the same PR. Check `gh pr list --state all`, beca
 | --- | --- | --- |
 | 1 | Docs only | merged: #71 |
 | 2 | Security | merged: #73 |
-| 3 | Skills page | not started |
+| 3 | Skills page | draft: #78 |
 | 4 | Bots page | not started |
 | 5 | Tests only | not started |
 | 6 | Six tabs | not started |
@@ -171,10 +178,10 @@ The lead did not check these again, except where a row says so. The others are f
 
 ### Skills pages and shell
 
-- Late answers from Restore, Import and Trash move the owner off the page they went to. Both audits found the Import case: `frontend/src/features/skills/skill-history.tsx:223`, `import-page.tsx:119`, `skill-page.tsx:352`.
+- **Fixed in #78.** Late answers from Restore, Import and Trash move the owner off the page they went to. Both audits found the Import case: `frontend/src/features/skills/skill-history.tsx:223`, `import-page.tsx:119`, `skill-page.tsx:352`.
 - Skill Clone can split an emoji, and the saved name then holds "�". The Clone form shows the name first, so the owner can correct it. Second audit; checked through the API by the lead: `shared/src/skills.ts:142`.
 - An unknown skill URL loses the whole shell: `frontend/src/features/skills/skill-page.tsx:101`.
-- If the owner types an edit back during a conflict, the bar says "saved" over old text: `frontend/src/features/skills/skill-page.tsx:131`.
+- **Fixed in #78.** If the owner types an edit back during a conflict, the bar says "saved" over old text: `frontend/src/features/skills/skill-page.tsx:131`.
 - A failed background refresh replaces the History tab: `frontend/src/features/skills/skill-history.tsx:79`, `:262`.
 - "Close this card and try again" does not try again: `frontend/src/features/skills/skill-dialogs.tsx:50`.
 - The app has no error boundary, so a failed lazy chunk replaces the whole app: `frontend/src/router.ts:8`, `frontend/src/features/shell/top-header.tsx:11`. **Fix before M3.**

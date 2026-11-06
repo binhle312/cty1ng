@@ -13,6 +13,7 @@ import {
 import type { PreviewSkillImportResponse } from "../../lib/api/generated/types.gen.ts";
 import { cn } from "../../lib/cn.ts";
 import { DiffView } from "./diff-view.tsx";
+import { useOnPage } from "./on-page.ts";
 import { Pill } from "./pills.tsx";
 import { SaveBarFrame, SaveButton } from "./save-bar.tsx";
 import { useSkillsPage } from "./skills-context.tsx";
@@ -106,9 +107,11 @@ function ImportPreview({
 }) {
   const navigate = useNavigate();
   const { clearImportFile } = useSkillsPage();
+  const onPage = useOnPage();
   const leave = () => {
     clearImportFile();
-    void navigate({ to: "/skills" });
+    // An Apply that ends after the owner left does not move the page that the owner went to.
+    if (onPage.current) void navigate({ to: "/skills" });
   };
   const good = preview.rows.filter(canApply);
   // Every good row starts ticked.
@@ -125,6 +128,17 @@ function ImportPreview({
     },
     onError: (error) => {
       const code = readApiError(error)?.code;
+      // Nothing on a page that is gone shows the failure, and it has no Preview again there.
+      if (!onPage.current) {
+        showToast(
+          code === "stale_write"
+            ? "A skill changed after the preview, so the app applied nothing."
+            : code === "preview_expired"
+              ? "The preview is too old, so the app applied nothing."
+              : "Could not apply the import. Try again.",
+        );
+        return;
+      }
       setStale(
         code === "stale_write"
           ? "A skill changed after the preview. The app applied nothing. Preview again."
