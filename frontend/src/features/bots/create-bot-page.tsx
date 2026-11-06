@@ -68,10 +68,10 @@ import { useAvatarUpload } from "./crop-card.tsx";
 // (frontend-conventions.md §5, "Waiting on a query that keeps failing").
 export function CreateBotPage() {
   const { from } = useSearch({ from: "/bots/new" });
-  // The page waits for this read before the form opens (below), so it must not pause when the
-  // browser says it is offline: the app runs on 127.0.0.1.
+  // The page waits for these two reads before the form opens (below), so they must not pause when
+  // the browser says it is offline: the app runs on 127.0.0.1.
   const settings = useQuery({ ...getSettingsOptions(), networkMode: "always" });
-  const models = useQuery(listModelsOptions());
+  const models = useQuery({ ...listModelsOptions(), networkMode: "always" });
   const tools = useQuery(listToolsOptions());
   // Deprecated skills too: a Clone keeps the deprecated pins of its source bot (§6).
   const skills = useQuery(listSkillsOptions({ query: { include_deprecated: "true" } }));
@@ -117,10 +117,13 @@ export function CreateBotPage() {
     }
     return <PageSkeleton />;
   }
-  // The form takes its Advanced defaults once too, and other pages keep the settings in the cache,
-  // so it waits for the read of this visit (§5). If that read fails, the last values stay.
+  // The form takes its first values once, and other pages keep these lists in the cache, so it
+  // waits for the read of this visit. A new bot takes its Advanced defaults from the settings (§5).
+  // A Clone takes those from the template, and it decides from the catalog if the model is gone
+  // (§6). The first failed try ends the wait, and the last values stay.
+  const firstValues = from === undefined ? settings : models;
   if (
-    !settings.isFetchedAfterMount ||
+    (!firstValues.isFetchedAfterMount && firstValues.failureCount === 0) ||
     settings.data === undefined ||
     models.data === undefined ||
     tools.data === undefined ||

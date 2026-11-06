@@ -1373,6 +1373,48 @@ describe("leaving the bot page with changes (bot-page.md §4.1)", () => {
 
 // Esc is pressed outside `act()`, as in a browser: `act()` hid a question that opened and closed
 // in one key press (audit row 1). See `pressKey`.
+describe("the first load of the bot page", () => {
+  const TEXT = "The app could not load what the bot page needs.";
+  const READS = ["/api/settings", "/api/models", "/api/tools"] as const;
+  const answers = {
+    "/api/settings": BOT_SETTINGS,
+    "/api/models": [FAKE_SCRIPTED],
+    "/api/tools": [],
+  };
+
+  it.each(READS)("shows the skeleton until %s answers", async (read) => {
+    const held = heldAnswer();
+    await open({ bots: [makeBot(1, "BA")] }, { routes: { [`GET ${read}`]: () => held.promise } });
+    expect(await screen.findByLabelText("Loading the bot")).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "BA", level: 1 })).toBeNull();
+    await held.answer({ body: answers[read] });
+    expect(await heading()).toBeTruthy();
+  });
+
+  it.each(READS)(
+    "says the load failed when %s fails, and Try again opens the page",
+    async (read) => {
+      let failing = true;
+      await open(
+        { bots: [makeBot(1, "BA")] },
+        {
+          routes: {
+            [`GET ${read}`]: () =>
+              failing
+                ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+                : { body: answers[read] },
+          },
+        },
+      );
+      expect(await screen.findByText(TEXT)).toBeTruthy();
+      failing = false;
+      click(screen.getByRole("button", { name: "Try again" }));
+      expect(await heading()).toBeTruthy();
+      expect(screen.queryByText(TEXT)).toBeNull();
+    },
+  );
+});
+
 describe("Esc on the bot page (bot-page.md §4.1, §4.2)", () => {
   const QUESTION = { name: "Leave without saving? 👀" };
   const esc = (label: string) =>
@@ -1397,6 +1439,39 @@ describe("Esc on the bot page (bot-page.md §4.1, §4.2)", () => {
     await esc("Name");
     expect(screen.getByRole("alertdialog", QUESTION)).toBeTruthy();
     expect(valueOf("Name")).toBe("Analyst");
+  });
+
+  it("does not ask on a key repeat: a held Esc asks once", async () => {
+    await open({ bots: [makeBot(1, "BA")] });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    await pressKey(screen.getByLabelText("Name", { exact: true }), {
+      key: "Escape",
+      repeat: true,
+    });
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(valueOf("Name")).toBe("Analyst");
+  });
+
+  it("changes back: text typed back during a Save still asks, and Let them go shows the saved value", async () => {
+    const { held, routes } = heldPatch();
+    const state = { bots: [makeBot(1, "BA")] };
+    await open(state, { routes });
+    await heading();
+    const saved = "BA does its job.";
+    type({ label: "Description", text: "Mine." });
+    click(screen.getByRole("button", { name: "Save" }));
+    type({ label: "Description", text: saved });
+    await esc("Description");
+    expect(screen.getByRole("alertdialog", QUESTION)).toBeTruthy();
+    await held.answer({
+      body: { ...makeBot(1, "BA"), row_version: 2, description: "Mine." },
+    });
+    expect(await screen.findByRole("alertdialog", QUESTION)).toBeTruthy();
+    click(screen.getByRole("button", { name: "Let them go" }));
+    await waitFor(() => {
+      expect(valueOf("Description")).toBe("Mine.");
+    });
   });
 
   it("asks on Esc on the Model tab too", async () => {
@@ -1515,6 +1590,7 @@ describe("Esc on the bot page (bot-page.md §4.1, §4.2)", () => {
     await heading();
     type({ label: "Name", text: "Analyst" });
     await esc("Name");
+    expect(screen.getByRole("alertdialog", QUESTION)).toBeTruthy();
     state.bots = [makeBot(2, "Designer")];
     refocus();
     expect(await screen.findByText(/could not find/i)).toBeTruthy();

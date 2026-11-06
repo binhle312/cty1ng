@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { z } from "zod";
 import { createClient } from "../../src/lib/api/generated/client/index.ts";
 import { createBot, getBot, updateBot } from "../../src/lib/api/generated/sdk.gen.ts";
 import { watchCsp } from "./csp.ts";
@@ -203,6 +204,25 @@ test("Esc on the Model tab asks, and Esc in the Custom colour card closes only t
   await expect(name).toHaveValue("Changed");
 });
 
+test("a held Esc asks once, and the next repeat closes the question and keeps the text", async ({
+  page,
+}) => {
+  const bot = await makeBot(`Held ${tagged()}`);
+  await page.goto(`/bots/${bot.slug}`);
+  const name = page.getByLabel("Name", { exact: true });
+  await name.fill("Changed");
+  const question = page.getByRole("alertdialog");
+  await page.keyboard.down("Escape");
+  await expect(question).toBeVisible();
+  await page.keyboard.down("Escape");
+  await expect(question).toBeHidden();
+  await page.keyboard.down("Escape");
+  await page.keyboard.down("Escape");
+  await expect(question).toBeHidden();
+  await page.keyboard.up("Escape");
+  await expect(name).toHaveValue("Changed");
+});
+
 // Audit row 2.
 test("a second Clone starts from the source bot as it is now, and Create sends that", async ({
   page,
@@ -242,9 +262,51 @@ test("a second Clone starts from the source bot as it is now, and Create sends t
   expect((await sent).postDataJSON()).toMatchObject({ persona_md: "The new persona." });
   await expect(page.getByText(`Created ${bot.name} (copy) ✨`)).toBeVisible();
 
-  // The copy now holds the first copy name, so the next Clone proposes the next one.
-  await page.goto("/bots");
+  // The copy now holds the first copy name, so the next Clone proposes the next one. No reload: a
+  // reload empties the cache (testing.md §3).
+  await page.locator('a[href="/bots"]').first().click();
+  await expect(page).toHaveURL(/\/bots$/);
   await openClone();
   await steps.getByRole("button", { name: /Basics/ }).click();
   await expect(page.getByLabel("Name", { exact: true })).toHaveValue(`${bot.name} (copy 2)`);
+});
+
+// CL2 (create-bot-page.md §6). A page.route gives the new list: the real catalog changes only with
+// a server restart.
+test("a second Clone uses the model list of this visit, and says the model is gone", async ({
+  page,
+}) => {
+  const bot = await makeBot(`Gone ${tagged()}`);
+  const openClone = async () => {
+    const actions = page.getByRole("button", { name: `${bot.name} actions`, exact: true });
+    await page.getByTestId("bot-card").filter({ has: actions }).hover();
+    await actions.click();
+    await page.getByRole("menuitem", { name: "Clone" }).click();
+  };
+  await page.goto("/bots");
+  await openClone();
+  await expect(page.getByText(`Cloning ${bot.name}`)).toBeVisible();
+  await page.goBack();
+  await expect(page).toHaveURL(/\/bots$/);
+
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/api/models", async (route) => {
+    const response = await route.fetch();
+    const list = z.array(z.looseObject({ id: z.string() })).parse(await response.json());
+    await held;
+    await route.fulfill({ response, json: list.filter((model) => model.id !== "fake:scripted") });
+  });
+  await openClone();
+  await expect(page.getByRole("status", { name: /Loading/ }).first()).toBeVisible();
+  await expect(page.getByText(`Cloning ${bot.name}`)).toBeHidden();
+  release();
+  await expect(
+    page.getByText(`${bot.name} cannot run: its model is no longer offered`),
+  ).toBeVisible();
+  await expect(
+    page.getByText("fake:scripted is no longer offered. Pick another model."),
+  ).toBeVisible();
 });

@@ -87,7 +87,8 @@ After these: the owner fixes or drops each of the other 33 P3 findings and the P
   2. The general rule goes in `frontend-conventions.md` §5, `testing.md` §3 and the review guide.
   3. A fix record names the general rule and the search of old fixes (`workflows/bug-fix.md`, step 2).
   4. The second audit lists each form that fills once, and it runs a second visit on each.
-- This is an exception to `principle-fix-root-cause`, which asks for one owner. The rule stays in three code places: the skill Clone, the bot Clone and the settings wait. The builder's advice, not part of the decision: look again if a third form of this type appears.
+- The independent review found one more path with this cause: a Clone decides from the cached catalog if its model is gone. Decision: fix it in PR 4 with the same small wait (DQ-096).
+- This is an exception to `principle-fix-root-cause`, which asks for one owner. The rule stays in three code places: the skill Clone, the bot Clone and the wait for this visit's read in `create-bot-page.tsx`. The builder's advice, not part of the decision: look again if a third form of this type appears.
 
 ## Fix progress
 
@@ -187,8 +188,9 @@ The lead did not check these again, except where a row says so. The others are f
 
 ### Found during PR 4
 
-- **Not rated yet; the owner rates it.** After the browser reports that it is offline, the first visit to a Clone page or a bot page stays loading until the browser is online again. TanStack Query pauses reads, and the app runs on 127.0.0.1. Run on `8c2278f` and `425da2a` with an `offline` event; real Wi-Fi off is not tested: `frontend/src/main.tsx:15`.
-- Esc on the bot page does nothing when the focus is outside the fields, for example after a click on a blank area or on Discard. Run on `8c2278f` and `425da2a`: `frontend/src/features/bots/bot-page.tsx:279`.
+- **Not rated yet; the owner rates it.** After the browser reports that it is offline, the first visit to a Clone page, a bot page or `/bots/new` stays loading until the browser is online again. TanStack Query pauses reads, and the app runs on 127.0.0.1. Run with an `offline` event on `8c2278f` and on the branch; real Wi-Fi off is not tested: `frontend/src/main.tsx:15`.
+- Esc on the bot page does nothing when the focus is outside the edit form, for example after a click on a blank area, on Discard or on a tab. Run on `8c2278f` and on the branch: `frontend/src/features/bots/bot-page.tsx:279`.
+- Two older Esc checks and two older options have no test that fails without them: `contains`, `defaultPrevented`, `key={from ?? "new"}` and the template's `retry: false` (DQ-095).
 - The skill Clone cuts the name with a cached limit. The form checks the name against the current limit. From reading the code: `frontend/src/features/skills/new-skill-page.tsx:161`.
 
 Correction to row 1: `act()` is not the only thing that hides the failure. A bare `dispatchEvent` hides it too, so removing `act()` alone gives a test that passes on the old code (run on `8c2278f`). `pressKey` makes React finish its work where a browser does.

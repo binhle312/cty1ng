@@ -179,7 +179,7 @@ job (D55).
 The limits (name 32, description 160, persona 8,000, history 10–80 %) are settings with these
 defaults (`../../domain-model.md` §10).
 
-The form takes its Advanced defaults once and keeps them. So the page shows its skeleton until the settings read of this visit answers. If that read fails, the last values stay (audit row 2, owner's decision of 2026-11-06).
+A new bot takes its Advanced defaults once and keeps them. So the page shows its skeleton until the settings read of this visit answers. If the first try of that read fails, the form opens with the last values, and the app does not wait for the retries (audit row 2, owner's decision of 2026-11-06).
 
 After a successful Create, the bot page opens on the Profile tab with a toast.
 
@@ -201,6 +201,7 @@ that cannot run) opens this page filled from `GET /bots/{id}/clone-template` (UI
 - The name follows the clone name rule (`../../domain-model.md` §2): cut to fit the name limit,
   and "(copy 2)", "(copy 3)" when the name is taken.
 - Each Clone reads the source bot again, so it copies the bot as it is now. The app keeps no template after the page closes. The page shows its skeleton until the answer comes, and a failed read shows the texts of §7. An open form keeps its first answer when the template loads again.
+- A Clone decides once if its model is gone (CL2), so the page also waits for the catalog read of this visit. If the first try of that read fails, the form opens from the last catalog (owner's decision of 2026-11-06).
 - Cancel or Leave creates nothing (E6).
 - **CL2, the model is gone.** For a bot that cannot run because its model is no longer offered (removed from the catalog),
   the banner says "{name} cannot run: its model is no longer offered. Pick a new model.

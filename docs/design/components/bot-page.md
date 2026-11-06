@@ -149,7 +149,7 @@ there, so it never jumps.
   names the changed fields, **Stay on this page** (`primary`, default) and **Let them go**
   (`danger` text). When the changes go while the question is open (its Save answered, and
   nothing typed after it is unsaved), nothing would be lost, so the page does what the owner
-  asked at once (M2c audit, 2026-11-03). An Esc that ends an IME composition asks nothing.
+  asked at once (M2c audit, 2026-11-03). An Esc that ends an IME composition asks nothing. A held Esc asks once: a key repeat does not ask, and a repeat that reaches the open question closes it. The text stays.
 - **A Save the owner let go** (Discard, Esc or leaving while it waits) that then fails shows a
   toast, because no field or bar shows it any more: "BA changed in another place, so the app did
   not save your change." for a stale save, "Could not save BA: {name} is taken by another bot,

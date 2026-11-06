@@ -654,6 +654,82 @@ describe("the avatar limits on the Create bot page", () => {
 
 // A form that fills once waits for a read from this visit (create-bot-page.md §5, §6): the Advanced
 // defaults of a new bot come from the settings as they are now, not from the cache.
+describe("the first load of the Create page", () => {
+  const ANSWERS = {
+    "/api/settings": BOT_SETTINGS,
+    "/api/models": [makeModel(), FAKE_SCRIPTED],
+    "/api/tools": [],
+    "/api/skills": [],
+    "/api/bots": [],
+  };
+  const READS = ["/api/settings", "/api/models", "/api/tools", "/api/skills", "/api/bots"] as const;
+  const TEXT = "The app could not load what the Create page needs.";
+  let fake: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    fake?.restore();
+    fake = null;
+  });
+  type Routes = Parameters<typeof fakeApi>[0];
+  function start(routes: Routes) {
+    fake = fakeApi({
+      "GET /api/settings": () => ({ body: ANSWERS["/api/settings"] }),
+      "GET /api/models": () => ({ body: ANSWERS["/api/models"] }),
+      "GET /api/tools": () => ({ body: [] }),
+      "GET /api/skills": () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [] }),
+      ...routes,
+    });
+    return renderApp("/bots/new");
+  }
+  const form = () => screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+
+  it.each(READS)("shows no form until %s answers", async (read) => {
+    const held = heldAnswer();
+    await start({ [`GET ${read}`]: () => held.promise });
+    await waitFor(() => {
+      expect(fake?.sent("GET", read)).toHaveLength(1);
+    });
+    expect(screen.queryByRole("heading", { name: "New bot" })).toBeNull();
+    await held.answer({ body: ANSWERS[read] });
+    expect(await form()).toBeTruthy();
+  });
+
+  it.each(READS)(
+    "says the load failed when %s fails, and Try again opens the form",
+    async (read) => {
+      let failing = true;
+      await start({
+        [`GET ${read}`]: () =>
+          failing
+            ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+            : { body: ANSWERS[read] },
+      });
+      expect(await screen.findByText(TEXT, {}, { timeout: 5000 })).toBeTruthy();
+      failing = false;
+      click(screen.getByRole("button", { name: "Try again" }));
+      expect(await form()).toBeTruthy();
+      expect(screen.queryByText(TEXT)).toBeNull();
+    },
+  );
+
+  it("an empty catalog opens the form, and Create stays off", async () => {
+    await start({ "GET /api/models": () => ({ body: [] }) });
+    await form();
+    type("Name", "BA");
+    type("Description", "Writes stories.");
+    click(screen.getByRole("button", { name: "Next" }));
+    type("Persona", "You are the BA.");
+    click(screen.getByRole("button", { name: "Next" }));
+    click(await screen.findByRole("button", { name: "Next" }));
+    const model = await screen.findByLabelText("Model", { exact: true });
+    expect(within(model).queryByRole("option", { name: new RegExp(FAKE_SCRIPTED.id) })).toBeNull();
+    const create = screen.getByRole("button", { name: "Create" });
+    expect(create.hasAttribute("disabled") || create.getAttribute("aria-disabled") === "true").toBe(
+      true,
+    );
+  });
+});
+
 describe("the defaults of a new bot", () => {
   const OLD_LIMIT = BOT_SETTINGS.bot_default_request_limit;
   const NEW_LIMIT = OLD_LIMIT + 7;
@@ -726,6 +802,19 @@ describe("the defaults of a new bot", () => {
     await form();
     await leave(router);
     read = () => FAILED;
+    await back(router);
+    await form();
+    expect(await limitOnForm()).toBe(String(OLD_LIMIT));
+  });
+
+  it("opens at the first failed try, and does not wait for the retries", async () => {
+    let read: Settings = () => ({ body: BOT_SETTINGS });
+    const { router, queryClient } = await start((...args) => read(...args));
+    await form();
+    await leave(router);
+    read = () => FAILED;
+    // The app's own client retries. The next try is far away, so only the first try can open it.
+    queryClient.setDefaultOptions({ queries: { retry: 3, retryDelay: 60_000 } });
     await back(router);
     await form();
     expect(await limitOnForm()).toBe(String(OLD_LIMIT));
@@ -988,7 +1077,8 @@ describe("a second Clone of a bot", () => {
 
   // A first load that a live event marks stale goes on (TanStack Query joins it, because it has no
   // data to keep), and it answers with the source at that moment. A change a moment later is no
-  // different to the owner: an open form keeps its first answer (the test "keeps what it copied").
+  // different to the owner: an open form keeps its first answer (the test "keeps the copied versions
+  // with the form when the template comes again").
   it("list load: a live event during the read still opens the form, and one read fills it", async () => {
     const held = heldAnswer();
     const { queryClient } = await start(inOrder(() => held.promise));
@@ -1021,7 +1111,77 @@ describe("a second Clone of a bot", () => {
     expect(await createdBody()).toMatchObject({ persona_md: TEMPLATE.persona_md });
   });
 
-  it("another request: the form waits for the settings, then takes this visit's template", async () => {
+  // CL2 (§6): the form decides once if the model left the catalog, so it needs this visit's list.
+  it("another request: a Clone waits for the catalog of this visit, and says the model is gone", async () => {
+    const held = heldAnswer();
+    let modelsAnswer: Handler = () => ({ body: [makeModel(), FAKE_SCRIPTED] });
+    const { router } = await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => ({ body: TEMPLATE }),
+      ),
+      { "GET /api/models": (...args) => modelsAnswer(...args) },
+    );
+    await cloneBanner();
+    await leave(router);
+    modelsAnswer = () => held.promise;
+    await cloneAgain(router);
+    await waitForReads(2);
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/models").length).toBeGreaterThan(1);
+    });
+    expect(screen.queryByText("Cloning Source")).toBeNull();
+    await held.answer({ body: [makeModel()] });
+    expect(
+      await screen.findByText(/Source cannot run: its model is no longer offered/),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(`${TEMPLATE.model_id} is no longer offered. Pick another model.`),
+    ).toBeTruthy();
+  });
+
+  it("failed refresh: a Clone opens from the last catalog at the first failed try", async () => {
+    let modelsAnswer: Handler = () => ({ body: [makeModel(), FAKE_SCRIPTED] });
+    const { router, queryClient } = await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => ({ body: CHANGED }),
+      ),
+      { "GET /api/models": (...args) => modelsAnswer(...args) },
+    );
+    await cloneBanner();
+    await leave(router);
+    modelsAnswer = () => ({
+      status: 500,
+      body: { error: { code: "internal_error", message: "Failed." } },
+    });
+    queryClient.setDefaultOptions({ queries: { retry: 3, retryDelay: 60_000 } });
+    await cloneAgain(router);
+    await cloneBanner();
+    expect(personaStepText()).toContain("The new persona.");
+  });
+
+  // A Clone takes all three Advanced values from the template, so old settings cannot reach it.
+  it("slow refresh: a Clone does not wait for a new read of the settings", async () => {
+    const settings = heldAnswer();
+    let settingsAnswer: Handler = () => ({ body: BOT_SETTINGS });
+    const { router } = await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => ({ body: CHANGED }),
+      ),
+      { "GET /api/settings": (...args) => settingsAnswer(...args) },
+    );
+    await cloneBanner();
+    await leave(router);
+    settingsAnswer = () => settings.promise;
+    await cloneAgain(router);
+    await cloneBanner();
+    expect(personaStepText()).toContain("The new persona.");
+    await settings.answer({ body: BOT_SETTINGS });
+  });
+
+  it("another request: the form with no settings at all waits for them, then takes this visit's template", async () => {
     const settings = heldAnswer();
     let settingsAnswer: Handler = () => ({ body: BOT_SETTINGS });
     const { router, queryClient } = await start(
