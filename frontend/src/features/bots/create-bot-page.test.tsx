@@ -752,7 +752,7 @@ describe("the read of this visit (create-bot-page.md §5)", () => {
   type Handler = Parameters<typeof fakeApi>[0][string];
 
   // The first answer of `read` is fine. A test sets `next.answer` for the reads after it.
-  function start(read: Read) {
+  function start(read: Read, routes: Parameters<typeof fakeApi>[0] = {}) {
     const next: { answer: Handler } = { answer: () => OK(read) };
     fake = fakeApi({
       "GET /api/settings": () => OK("/api/settings"),
@@ -761,12 +761,19 @@ describe("the read of this visit (create-bot-page.md §5)", () => {
       "GET /api/skills": () => OK("/api/skills"),
       "GET /api/bots": () => ({ body: [] }),
       [`GET ${read}`]: (...args) => next.answer(...args),
+      ...routes,
     });
     return { next, rendered: renderApp("/bots/new") };
   }
   const form = () => screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
   const noForm = () => {
     expect(screen.queryByRole("heading", { name: "New bot" })).toBeNull();
+  };
+  const noSkeletonOverForm = () => {
+    expect(screen.getByRole("heading", { name: "New bot" })).toBeTruthy();
+    expect(screen.getByLabelText<HTMLInputElement>("Name", { exact: true }).value).toBe(
+      "Typed by the owner",
+    );
   };
   const readsOf = (read: Read) => fake?.sent("GET", read).length ?? 0;
   const waitForReads = (read: Read, count: number) =>
@@ -789,17 +796,99 @@ describe("the read of this visit (create-bot-page.md §5)", () => {
     expect(await form()).toBeTruthy();
   });
 
-  it.each(READS)("failed refresh: the first failed try of %s opens the form", async (read) => {
+  // The wait ends once, when this visit's read gives its last answer (DQ-104).
+  it.each(READS)("failed refresh: the form opens when the retries of %s end", async (read) => {
     const { next, rendered } = start(read);
     const { router, queryClient } = await rendered;
     await form();
     await act(() => router.navigate({ to: "/settings" }));
-    next.answer = () => FAILED;
-    // The app's own client retries. The next try is far away, so only the first try can open it.
-    queryClient.setDefaultOptions({ queries: { retry: 3, retryDelay: 60_000 } });
+    const lastTry = heldAnswer();
+    const answers = [() => FAILED, () => lastTry.promise];
+    next.answer = () => {
+      const answer = answers.shift();
+      if (answer === undefined) throw new Error("no answer left for this read");
+      return answer();
+    };
+    const before = readsOf(read);
+    queryClient.setDefaultOptions({ queries: { retry: 1, retryDelay: 1 } });
     await act(() => router.navigate({ to: "/bots/new" }));
+    await waitForReads(read, before + 2);
+    noForm();
+    await lastTry.answer(FAILED);
     expect(await form()).toBeTruthy();
   });
+
+  // A live event starts the read again. The old wait used the failure count, which goes back to 0.
+  it.each(READS)(
+    "leaving with unsaved: a live event after a failed read of %s keeps the form and the text",
+    async (read) => {
+      const { next, rendered } = start(read);
+      const { router, queryClient } = await rendered;
+      await form();
+      await act(() => router.navigate({ to: "/settings" }));
+      next.answer = () => FAILED;
+      queryClient.setDefaultOptions({ queries: { retry: 1, retryDelay: 200 } });
+      await act(() => router.navigate({ to: "/bots/new" }));
+      await form();
+      type("Name", "Typed by the owner");
+      const again = heldAnswer();
+      next.answer = () => again.promise;
+      const before = readsOf(read);
+      act(() => {
+        void queryClient.invalidateQueries();
+      });
+      await waitFor(() => {
+        expect(readsOf(read)).toBeGreaterThan(before);
+      });
+      noSkeletonOverForm();
+      await again.answer(FAILED);
+      noSkeletonOverForm();
+    },
+  );
+
+  // `/bots/new` and `/bots/new?from={id}` are one route, so only a key gives each form its own mount.
+  const CLONE_ROUTES = {
+    "GET /api/bots": () => ({ body: [SOURCE] }),
+    [`GET /api/bots/${SOURCE.id}/clone-template`]: () => ({
+      body: { ...TEMPLATE, pins: [], copied_pins: [] },
+    }),
+  };
+  it.each(READS)(
+    "leaving and coming back: a move from the new-bot form to a Clone waits for %s",
+    async (read) => {
+      const { next, rendered } = start(read, CLONE_ROUTES);
+      const { router } = await rendered;
+      await form();
+      const held = heldAnswer();
+      next.answer = () => held.promise;
+      const before = readsOf(read);
+      await act(() => router.navigate({ to: "/bots/new", search: { from: SOURCE.id } }));
+      await waitForReads(read, before + 1);
+      expect(screen.queryByText("Cloning Source")).toBeNull();
+      await held.answer(OK(read));
+      expect(await screen.findByText("Cloning Source", {}, { timeout: 5000 })).toBeTruthy();
+    },
+  );
+
+  it.each(READS)(
+    "leaving and coming back: a move from a Clone to the new-bot form waits for %s",
+    async (read) => {
+      const { next, rendered } = start(read, CLONE_ROUTES);
+      const { router } = await rendered;
+      await form();
+      await act(() => router.navigate({ to: "/bots/new", search: { from: SOURCE.id } }));
+      await screen.findByText("Cloning Source", {}, { timeout: 5000 });
+      const held = heldAnswer();
+      next.answer = () => held.promise;
+      const before = readsOf(read);
+      await act(() => router.navigate({ to: "/bots/new", search: {} }));
+      await waitForReads(read, before + 1);
+      noForm();
+      await held.answer(OK(read));
+      expect(await form()).toBeTruthy();
+      expect(screen.queryByText("Cloning Source")).toBeNull();
+    },
+  );
 
   it.each(READS)("offline: the second visit reads %s and opens", async (read) => {
     const { rendered } = start(read);
@@ -952,15 +1041,25 @@ describe("the defaults of a new bot", () => {
     expect(await limitOnForm()).toBe(String(OLD_LIMIT));
   });
 
-  it("opens at the first failed try, and does not wait for the retries", async () => {
+  it("waits for the retries of the settings, then opens with the last values", async () => {
     let read: Settings = () => ({ body: BOT_SETTINGS });
     const { router, queryClient } = await start((...args) => read(...args));
     await form();
     await leave(router);
-    read = () => FAILED;
-    // The app's own client retries. The next try is far away, so only the first try can open it.
-    queryClient.setDefaultOptions({ queries: { retry: 3, retryDelay: 60_000 } });
+    const lastTry = heldAnswer();
+    const answers = [() => FAILED, () => lastTry.promise];
+    read = () => {
+      const answer = answers.shift();
+      if (answer === undefined) throw new Error("no answer left for this read");
+      return answer();
+    };
+    queryClient.setDefaultOptions({ queries: { retry: 1, retryDelay: 1 } });
     await back(router);
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/settings")).toHaveLength(3);
+    });
+    expect(screen.queryByRole("heading", { name: "New bot" })).toBeNull();
+    await lastTry.answer(FAILED);
     await form();
     expect(await limitOnForm()).toBe(String(OLD_LIMIT));
   });
@@ -1223,7 +1322,8 @@ describe("a second Clone of a bot", () => {
   // A first load that a live event marks stale goes on (TanStack Query joins it, because it has no
   // data to keep), and it answers with the source at that moment. A change a moment later is no
   // different to the owner: an open form keeps its first answer (the test "keeps the copied versions
-  // with the form when the template comes again").
+  // with the form when the template comes again"). The four lists do the same on a first visit, and
+  // the form can open with a value from before the event (DQ-107).
   it("list load: a live event during the read still opens the form, and one read fills it", async () => {
     const held = heldAnswer();
     const { queryClient } = await start(inOrder(() => held.promise));
@@ -1285,7 +1385,7 @@ describe("a second Clone of a bot", () => {
     ).toBeTruthy();
   });
 
-  it("failed refresh: a Clone opens from the last catalog at the first failed try", async () => {
+  it("failed refresh: a Clone opens from the last catalog when the retries end", async () => {
     let modelsAnswer: Handler = () => ({ body: [makeModel(), FAKE_SCRIPTED] });
     const { router, queryClient } = await start(
       inOrder(
@@ -1296,12 +1396,17 @@ describe("a second Clone of a bot", () => {
     );
     await cloneBanner();
     await leave(router);
-    modelsAnswer = () => ({
-      status: 500,
-      body: { error: { code: "internal_error", message: "Failed." } },
-    });
-    queryClient.setDefaultOptions({ queries: { retry: 3, retryDelay: 60_000 } });
+    const lastTry = heldAnswer();
+    const answers: Handler[] = [() => FAILED, () => lastTry.promise];
+    modelsAnswer = inOrder(...answers);
+    const before = fake?.sent("GET", "/api/models").length ?? 0;
+    queryClient.setDefaultOptions({ queries: { retry: 1, retryDelay: 1 } });
     await cloneAgain(router);
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/models")).toHaveLength(before + 2);
+    });
+    expect(screen.queryByText("Cloning Source")).toBeNull();
+    await lastTry.answer(FAILED);
     await cloneBanner();
     expect(personaStepText()).toContain("The new persona.");
   });

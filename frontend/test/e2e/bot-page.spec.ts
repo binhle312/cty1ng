@@ -316,3 +316,89 @@ test("a second Clone uses the model list of this visit, and says the model is go
     page.getByText("fake:scripted is no longer offered. Pick another model."),
   ).toBeVisible();
 });
+
+// A skill list that keeps failing, as the app's real client sees it: this needs the real retries.
+async function failSkillReads(page: Page): Promise<{ count: () => number }> {
+  let reads = 0;
+  await page.route("**/api/skills*", async (route) => {
+    reads += 1;
+    await route.fulfill({
+      status: 500,
+      json: { error: { code: "internal_error", message: "Failed." } },
+    });
+  });
+  return { count: () => reads };
+}
+
+// Other test files share the server, and each of their events restarts the retries of a failing read
+// (DQ-109). So these pages get no events until the test lets the stream connect.
+async function holdLiveEvents(page: Page): Promise<() => Promise<void>> {
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/api/stream*", async (route) => {
+    await held;
+    await route.continue();
+  });
+  return async () => {
+    const connected = page.waitForResponse("**/api/stream*");
+    release();
+    await connected;
+  };
+}
+
+// DQ-104. The wait ends once, so an event cannot close an open form.
+test("a live event during a failed read keeps the Create form and the typed text", async ({
+  page,
+}) => {
+  const connectLiveEvents = await holdLiveEvents(page);
+  await page.goto("/bots");
+  const create = page.getByRole("main").getByRole("link", { name: "Create" });
+  await create.click();
+  await expect(page.getByLabel("Name", { exact: true })).toBeVisible();
+  await page.goBack();
+  await expect(page).toHaveURL(/\/bots$/);
+
+  const skillReads = await failSkillReads(page);
+  await create.click();
+  const name = page.getByLabel("Name", { exact: true });
+  await expect(name).toBeVisible({ timeout: 20_000 });
+  await name.fill("Typed by the owner");
+
+  await connectLiveEvents();
+  const before = skillReads.count();
+  await makeBot(`Event ${tagged()}`);
+  await expect.poll(skillReads.count).toBeGreaterThan(before);
+  await expect(name).toHaveValue("Typed by the owner");
+  // The event read fails too, and its first failure must not change the form.
+  await expect.poll(skillReads.count).toBeGreaterThan(before + 1);
+  await expect(name).toHaveValue("Typed by the owner");
+});
+
+// DQ-104. Create invalidates the lists, so the old wait closed the form before the move.
+test("Create from a second Clone moves to the new bot when a read keeps failing", async ({
+  page,
+}) => {
+  const bot = await makeBot(`Moves ${tagged()}`);
+  await holdLiveEvents(page);
+  const openClone = async () => {
+    const actions = page.getByRole("button", { name: `${bot.name} actions`, exact: true });
+    await page.getByTestId("bot-card").filter({ has: actions }).hover();
+    await actions.click();
+    await page.getByRole("menuitem", { name: "Clone" }).click();
+  };
+  await page.goto("/bots");
+  await openClone();
+  await expect(page.getByText(`Cloning ${bot.name}`)).toBeVisible();
+  await page.goBack();
+  await expect(page).toHaveURL(/\/bots$/);
+
+  await failSkillReads(page);
+  await openClone();
+  await expect(page.getByText(`Cloning ${bot.name}`)).toBeVisible({ timeout: 20_000 });
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  // Create waits for its refresh of the skill list, so the move comes when the retries end (DQ-108).
+  await expect(page.getByText(`Created ${bot.name} (copy) ✨`)).toBeVisible({ timeout: 20_000 });
+  await expect(page).toHaveURL(/\/bots\/(?!new)[^/?]+/);
+});

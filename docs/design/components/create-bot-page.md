@@ -179,7 +179,7 @@ job (D55).
 The limits (name 32, description 160, persona 8,000, history 10–80 %) are settings with these
 defaults (`../../domain-model.md` §10).
 
-The form takes its first values once and keeps them, for a new bot and for a Clone. So the page shows its skeleton until this visit's read of the settings, the models, the tools and the skills answers. If the first try of one of these reads fails, the form opens with the last values, and the app does not wait for the retries. The bots list has no wait, because the header keeps it live (audit row 2, owner's decision of 2026-11-06).
+The form takes its first values once and keeps them, for a new bot and for a Clone. So the page shows its skeleton until this visit's read of the settings, the models, the tools and the skills gives its last answer. If one of these reads fails on a later visit, the skeleton stays while the app retries (about 7 s). A live event for that list starts the retries again, so the skeleton stays until about 7 s after the last event. Then the form opens with the last values. This wait ends once, so an open form does not go back to the skeleton. A move between the new-bot form and a Clone starts a new wait. The bots list has no wait, because the header keeps it live (audit row 2, owner's decisions of 2026-11-06 and 2026-11-07).
 
 After a successful Create, the bot page opens on the Profile tab with a toast.
 
