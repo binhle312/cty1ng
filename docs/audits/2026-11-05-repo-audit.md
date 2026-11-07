@@ -196,6 +196,7 @@ The lead did not check these again, except where a row says so. The others are f
 - Two older Esc checks and one older option have no test that fails without them: `contains`, `defaultPrevented` and the template's `retry: false` (DQ-095).
 - A live event during a first-load read joins that read, so the form can open with a value from before the event. The next change has the same result, because an open form keeps its first answer (DQ-107).
 - When a read of the Create form keeps failing, each live event for that list starts the retries again. With an event every 3 s for 21 s, the form opened at 25.1 s (DQ-109).
+- `heldAnswer` waits on the client that `watchQueryClient` set last, and nothing checks it. A test with its own client and no call gets the old race back (DQ-115).
 - Create waits for its refresh of the lists before it moves to the new bot. When the skill read keeps failing, the form stays disabled for about 7 s (DQ-108).
 - The skill Clone cuts the name with a cached limit. The form checks the name against the current limit. From reading the code: `frontend/src/features/skills/new-skill-page.tsx:160`.
 
