@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { fakeApi, heldAnswer } from "../../../test/fake-api.ts";
+import { fakeApi, heldAnswer, watchQueryClient } from "../../../test/fake-api.ts";
 import {
   makeBot,
   makePin,
@@ -35,6 +35,7 @@ function open(bots: Bot[], extra: Parameters<typeof fakeApi>[0] = {}) {
     ...extra,
   });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  watchQueryClient(queryClient);
   const page = (tab: boolean) => (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -791,6 +792,7 @@ describe("the Bots tab of a skill", () => {
       [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
     });
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    watchQueryClient(queryClient);
     render(
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
@@ -810,6 +812,7 @@ describe("the Bots tab of a skill", () => {
       [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
     });
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    watchQueryClient(queryClient);
     render(
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>

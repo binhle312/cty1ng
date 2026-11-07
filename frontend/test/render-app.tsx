@@ -3,6 +3,7 @@ import { createMemoryHistory, createRouter, RouterProvider } from "@tanstack/rea
 import { act, render } from "@testing-library/react";
 import { TooltipProvider } from "../src/components/ui/tooltip.tsx";
 import { routeTree } from "../src/routes/route-tree.ts";
+import { watchQueryClient } from "./fake-api.ts";
 
 // The real app (routes, shell, providers) on an in-memory address, for component tests
 // (frontend-conventions.md §1, "Real tests": mock only the network and the clock).
@@ -15,6 +16,7 @@ export async function renderApp(path = "/") {
   });
   // A failed request fails at once: the error state shows without TanStack Query's retries.
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  watchQueryClient(queryClient);
   const view = render(
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

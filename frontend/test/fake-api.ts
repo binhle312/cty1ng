@@ -1,3 +1,4 @@
+import type { QueryClient } from "@tanstack/react-query";
 import { act } from "@testing-library/react";
 import { z } from "zod";
 import { client } from "../src/lib/api/client.ts";
@@ -16,6 +17,31 @@ export interface RecordedRequest {
 
 type Answer = { status?: number; body?: unknown } | undefined;
 
+// The query client of the page under test. `heldAnswer` asks it when the page took an answer.
+let pageClient: QueryClient | null = null;
+export function watchQueryClient(client: QueryClient) {
+  pageClient = client;
+}
+
+const nextTimerStep = () => new Promise((resolve) => setTimeout(resolve, 0));
+// Longer than the retry delays that tests set. A read that another held answer keeps open ends this
+// wait at the limit.
+const SETTLE_LIMIT_MS = 500;
+
+// TanStack Query tells the page through its own timer, which starts when the read or the write
+// ends. So wait for that end, with its retries, and then for one timer step after it.
+async function pageTookTheAnswer() {
+  const end = Date.now() + SETTLE_LIMIT_MS;
+  while (
+    pageClient !== null &&
+    pageClient.isFetching() + pageClient.isMutating() > 0 &&
+    Date.now() < end
+  ) {
+    await nextTimerStep();
+  }
+  await nextTimerStep();
+}
+
 // An answer the test gives later, so a request stays open until the test says. `answer` returns
 // after the page takes the answer, so a check that something did not happen is real (DQ-110).
 export function heldAnswer() {
@@ -29,8 +55,8 @@ export function heldAnswer() {
       await act(async () => {
         give(value);
         await promise;
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
+      await act(pageTookTheAnswer);
     },
   };
 }

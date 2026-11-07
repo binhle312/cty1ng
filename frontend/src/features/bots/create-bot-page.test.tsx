@@ -846,6 +846,35 @@ describe("the read of this visit (create-bot-page.md §5)", () => {
     },
   );
 
+  // The open form keeps its first values, but its check of the name follows the bots list.
+  it("changes back: a name that is taken and then free keeps the text, and the error goes", async () => {
+    const TAKEN = "BA is taken by another bot. Pick another name.";
+    let bots: unknown[] = [];
+    const { rendered } = start("/api/tools", { "GET /api/bots": () => ({ body: bots }) });
+    const { queryClient } = await rendered;
+    await form();
+    const name = () => screen.getByLabelText<HTMLInputElement>("Name", { exact: true });
+    type("Name", "BA");
+    act(() => {
+      fireEvent.blur(name());
+    });
+    expect(screen.queryByText(TAKEN)).toBeNull();
+    bots = [makeBot(1, "BA")];
+    act(() => {
+      void queryClient.invalidateQueries();
+    });
+    expect(await screen.findByText(TAKEN)).toBeTruthy();
+    expect(name().value).toBe("BA");
+    bots = [];
+    act(() => {
+      void queryClient.invalidateQueries();
+    });
+    await waitFor(() => {
+      expect(screen.queryByText(TAKEN)).toBeNull();
+    });
+    expect(name().value).toBe("BA");
+  });
+
   // `/bots/new` and `/bots/new?from={id}` are one route, so only a key gives each form its own mount.
   const CLONE_ROUTES = {
     "GET /api/bots": () => ({ body: [SOURCE] }),
