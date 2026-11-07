@@ -16,7 +16,8 @@ export interface RecordedRequest {
 
 type Answer = { status?: number; body?: unknown } | undefined;
 
-// An answer the test gives later, so a request stays open until the test says.
+// An answer the test gives later, so a request stays open until the test says. `answer` returns
+// after the page takes the answer, so a check that something did not happen is real (DQ-110).
 export function heldAnswer() {
   let give: (value: Answer) => void = () => undefined;
   const promise = new Promise<Answer>((resolve) => {
@@ -28,6 +29,7 @@ export function heldAnswer() {
       await act(async () => {
         give(value);
         await promise;
+        await new Promise((resolve) => setTimeout(resolve, 0));
       });
     },
   };

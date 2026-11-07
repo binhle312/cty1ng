@@ -1441,6 +1441,15 @@ describe("Esc on the bot page (bot-page.md §4.1, §4.2)", () => {
     expect(valueOf("Name")).toBe("Analyst");
   });
 
+  it("asks only on Esc: another key in a changed field does not ask", async () => {
+    await open({ bots: [makeBot(1, "BA")] });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    await pressKey(screen.getByLabelText("Name", { exact: true }), { key: "a" });
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(valueOf("Name")).toBe("Analyst");
+  });
+
   it("does not ask on a key repeat: a held Esc asks once", async () => {
     await open({ bots: [makeBot(1, "BA")] });
     await heading();

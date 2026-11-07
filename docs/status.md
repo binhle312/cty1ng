@@ -8,7 +8,7 @@ The plan ([development-plan.md](development-plan.md)) says what and in which ord
 definition of done in `AGENTS.md` §9). The owner updates it for owner-only steps (reviews,
 approvals). Keep it short: link to PRs and briefs instead of describing work.
 
-Last updated: 2026-11-06
+Last updated: 2026-11-07
 
 ## Now
 

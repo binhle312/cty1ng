@@ -1083,6 +1083,32 @@ describe("the defaults of a new bot", () => {
     }
   });
 
+  // The open form keeps its first values, but its limits follow the settings.
+  it("changes back: a limit that changes and changes back keeps the text, and the error goes", async () => {
+    const usual = BOT_SETTINGS.bot_name_max;
+    let limit = usual;
+    const { queryClient } = await start(() => ({ body: { ...BOT_SETTINGS, bot_name_max: limit } }));
+    await form();
+    const name = "x".repeat(20);
+    const nameOnForm = () => screen.getByLabelText<HTMLInputElement>("Name", { exact: true }).value;
+    type("Name", name);
+    expect(screen.queryByText(/The limit is 16/)).toBeNull();
+    limit = 16;
+    act(() => {
+      void queryClient.invalidateQueries();
+    });
+    expect(await screen.findByText(/The limit is 16/)).toBeTruthy();
+    expect(nameOnForm()).toBe(name);
+    limit = usual;
+    act(() => {
+      void queryClient.invalidateQueries();
+    });
+    await waitFor(() => {
+      expect(screen.queryByText(/The limit is 16/)).toBeNull();
+    });
+    expect(nameOnForm()).toBe(name);
+  });
+
   it("keeps the form and its text while the settings load again and after they answer", async () => {
     const held = heldAnswer();
     let read: Settings = () => ({ body: BOT_SETTINGS });
