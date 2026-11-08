@@ -64,20 +64,35 @@ import { useAvatarUpload } from "./crop-card.tsx";
 // `/bots/new` and `/bots/new?from={bot id}` (create-bot-page.md, UI-5): four steps and a live
 // preview card. Clone fills the form from `GET /bots/{id}/clone-template` and opens on Model.
 // The page waits for its data once: the settings (limits, defaults), the catalog, the bots and
-// the skills. After the first answer it never shows the skeleton again
+// the skills. An open form never goes back to the skeleton
 // (frontend-conventions.md §5, "Waiting on a query that keeps failing").
 export function CreateBotPage() {
   const { from } = useSearch({ from: "/bots/new" });
-  const settings = useQuery(getSettingsOptions());
-  const models = useQuery(listModelsOptions());
-  const tools = useQuery(listToolsOptions());
+  // Both forms use one route, so the key gives each its own mount and its own read of this visit.
+  return <CreateBotData key={from ?? "new"} from={from} />;
+}
+
+function CreateBotData({ from }: { from: string | undefined }) {
+  // The page waits for these four reads before the form opens (below), so they must not pause when
+  // the browser says it is offline: the app runs on 127.0.0.1.
+  const settings = useQuery({ ...getSettingsOptions(), networkMode: "always" });
+  const models = useQuery({ ...listModelsOptions(), networkMode: "always" });
+  const tools = useQuery({ ...listToolsOptions(), networkMode: "always" });
   // Deprecated skills too: a Clone keeps the deprecated pins of its source bot (§6).
-  const skills = useQuery(listSkillsOptions({ query: { include_deprecated: "true" } }));
+  const skills = useQuery({
+    ...listSkillsOptions({ query: { include_deprecated: "true" } }),
+    networkMode: "always",
+  });
   const bots = useBots();
   const template = useQuery({
     ...getBotCloneTemplateOptions({ path: { id: from ?? "" } }),
     enabled: from !== undefined,
     retry: false,
+    // The form takes its first answer and keeps it, so each Clone reads the source bot again:
+    // nothing is kept after the page closes (§6). The open form keeps its text when this fetches
+    // again.
+    gcTime: 0,
+    networkMode: "always",
   });
   const queries = [settings, models, tools, skills, bots];
   const failed = queries.find((q) => q.data === undefined && q.isError);
@@ -110,7 +125,12 @@ export function CreateBotPage() {
     }
     return <PageSkeleton />;
   }
+  // The form takes its first values once, and the cache keeps these lists after other pages close,
+  // so it waits for the read of this visit (§5). `isFetchedAfterMount` cannot go back to false, so
+  // the wait ends once. If the retries fail, the last values stay. The header keeps the bots list
+  // live, so that read has no wait.
   if (
+    [settings, models, tools, skills].some((q) => !q.isFetchedAfterMount) ||
     settings.data === undefined ||
     models.data === undefined ||
     tools.data === undefined ||
@@ -121,7 +141,6 @@ export function CreateBotPage() {
   }
   return (
     <CreateBotView
-      key={from ?? "new"}
       settings={settings.data}
       models={models.data}
       tools={tools.data}
