@@ -42,6 +42,11 @@ async function bots() {
   return (await listBots({ client: apiClient(), throwOnError: true })).data;
 }
 
+// Other test files make bots at the same time, so each try counts the bots again (DQ-123).
+async function showsEveryBot(rows: Locator) {
+  await expect.poll(async () => (await rows.count()) - (await bots()).length).toBe(0);
+}
+
 // Unpins every bot, so the next test starts with no pins.
 async function unpinAll(): Promise<void> {
   const pinned = (await bots()).filter((bot) => bot.pinned_position !== null).map((b) => b.id);
@@ -317,7 +322,7 @@ test("the header scrolls a long roster and pins a bot by drag", async ({ page })
   await page.goto("/skills");
   const header = page.getByRole("banner", { name: "Bots" });
   const roster = header.getByTestId("roster");
-  await expect(header.getByTestId("header-bot")).toHaveCount((await bots()).length);
+  await showsEveryBot(header.getByTestId("header-bot"));
   const sizes = await roster.evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
   expect(sizes.scroll).toBeGreaterThan(sizes.client);
   const pageWidth = await page.evaluate(() => ({
@@ -333,7 +338,12 @@ test("the header scrolls a long roster and pins a bot by drag", async ({ page })
   await avatars.first().focus();
   await page.keyboard.press("Tab");
   await expect(avatars.nth(1)).toBeFocused();
-  const second = (await bots())[1];
+  // The focused avatar's bot, not the API's second bot: other test files add bots (DQ-123).
+  const focusedSlug = await header
+    .getByTestId("header-bot")
+    .filter({ has: page.locator(":focus") })
+    .getAttribute("data-bot");
+  const second = (await bots()).find((bot) => bot.slug === focusedSlug);
   await expect(page.getByText(`${second?.name ?? ""} · Idle`, { exact: true })).toBeVisible();
   await expect(header.getByRole("button", { name: "Scroll bots right" })).toBeVisible();
 
@@ -358,12 +368,11 @@ test("the header scrolls a long roster and pins a bot by drag", async ({ page })
 // has every bot, and a pick scrolls the header to the avatar and opens its card.
 test('the "+N" chip lists every bot and shows the picked one in the header', async ({ page }) => {
   const violations = await watchCsp(page);
-  const all = await bots();
-  expect(all.length).toBeGreaterThanOrEqual(14);
+  expect((await bots()).length).toBeGreaterThanOrEqual(14);
   await page.goto("/skills");
   const header = page.getByRole("banner", { name: "Bots" });
   const roster = header.getByTestId("roster");
-  await expect(header.getByTestId("header-bot")).toHaveCount(all.length);
+  await showsEveryBot(header.getByTestId("header-bot"));
   const chip = header.getByTestId("all-bots");
   const notInView = () =>
     roster.evaluate((el) => {
@@ -381,11 +390,11 @@ test('the "+N" chip lists every bot and shows the picked one in the header', asy
   const list = page.getByRole("dialog", { name: "All bots" });
   const search = list.getByRole("searchbox", { name: "Find a bot" });
   await expect(search).toBeFocused();
-  await expect(list.getByTestId("all-bots-row")).toHaveCount(all.length);
+  await showsEveryBot(list.getByTestId("all-bots-row"));
 
   // The last avatar is out of view at the start: find it and pick it with Enter.
   const lastSlug = await header.getByTestId("header-bot").last().getAttribute("data-bot");
-  const last = all.find((bot) => bot.slug === lastSlug);
+  const last = (await bots()).find((bot) => bot.slug === lastSlug);
   if (last === undefined) throw new Error("The last avatar has no bot.");
   await search.fill(last.name);
   await expect(list.getByTestId("all-bots-row")).toHaveCount(1);

@@ -1,13 +1,23 @@
 import { expect, type Page, test } from "@playwright/test";
+import { z } from "zod";
 import { createClient } from "../../src/lib/api/generated/client/index.ts";
-import { createBot } from "../../src/lib/api/generated/sdk.gen.ts";
+import { createBot, createSkill } from "../../src/lib/api/generated/sdk.gen.ts";
 import { skipAssignCard, skipUpgradeCard } from "./skill-cards.ts";
 
 // DQ-088 (frontend-conventions.md §5, "A browser that says it is offline"). The app runs on
 // 127.0.0.1, so an `offline` event in the browser does not stop the backend. After the event,
-// each page still reads its data and each save still runs. The tests move with links inside the
-// app: a reload would end the offline state. The servers keep one database for every file, so
-// each test makes its own bot and skill.
+// each page still reads its data and each save still runs.
+//
+// Each test checks one step (DQ-117). It opens the page online, sends the event just before the
+// step, and checks only that step, so each test fails alone without the fix. The tests move with
+// links inside the app: a reload would end the offline state. The servers keep one database for
+// every file, so each test makes its own bot and skill.
+//
+// Steps with no test, because they read no new data after the event: the Bots page and the
+// skill's Bots tab (the header already read the bot list), the bot's Skills tab (its data comes
+// with the bot), and the new-skill form (it reads nothing). The Create of a bot Clone has no test
+// either: it calls the API without TanStack Query (`create-bot-page.tsx`), so the event never
+// stopped it.
 
 function apiClient() {
   const origin = test.info().project.use.baseURL ?? "";
@@ -18,7 +28,25 @@ function tagged(): string {
   return `${Date.now().toString(36)}${String(Math.floor(Math.random() * 1000))}`;
 }
 
-async function makeBot(name: string): Promise<{ slug: string; name: string }> {
+async function makeSkill(): Promise<{ id: string; slug: string; name: string }> {
+  const tag = tagged();
+  const created = await createSkill({
+    client: apiClient(),
+    headers: { "idempotency-key": crypto.randomUUID() },
+    body: {
+      slug: `offline-${tag}`,
+      name: `Offline ${tag}`,
+      description: "Use this skill when the browser says offline.",
+      body_md: "## Steps\n1. Read the brief.",
+    },
+  });
+  expect(created.response?.status, JSON.stringify(created.error)).toBe(201);
+  if (created.data === undefined) throw new Error("no skill");
+  return { id: created.data.id, slug: created.data.slug, name: created.data.name };
+}
+
+async function makeBot(skillId?: string): Promise<{ slug: string; name: string }> {
+  const name = `Offline ${tagged()}`;
   const created = await createBot({
     client: apiClient(),
     headers: { "idempotency-key": crypto.randomUUID() },
@@ -29,7 +57,7 @@ async function makeBot(name: string): Promise<{ slug: string; name: string }> {
       avatar_style: "flat",
       avatar_colour: "#6FA8FF",
       model_id: "fake:scripted",
-      pins: [],
+      pins: skillId === undefined ? [] : [{ skill_id: skillId, always_load: false }],
     },
   });
   expect(created.response?.status, JSON.stringify(created.error)).toBe(201);
@@ -51,74 +79,184 @@ async function fill(page: Page, { label, text }: { label: string; text: string }
   await page.getByLabel(label, { exact: true }).fill(text);
 }
 
-test("after an offline event, the bot pages read their data and the saves run", async ({
-  page,
-}) => {
-  const bot = await makeBot(`Offline ${tagged()}`);
-  await page.goto("/");
-  await expect(page.getByRole("button", { name: /^Sir( · Menu)?$/ })).toBeVisible();
-  await goOffline(page);
+async function openSkill(page: Page, slug: string) {
+  await page.goto(`/skills/${slug}`);
+  await expect(page.getByRole("button", { name: "Skill actions" })).toBeVisible();
+}
 
-  // The Bots page, then the bot page: first visits after the event.
-  await openPage(page, "Manage bots");
-  await page.getByRole("link", { name: bot.name, exact: true }).click();
+async function openBot(page: Page, bot: { slug: string; name: string; tab?: string }) {
+  await page.goto(`/bots/${bot.slug}${bot.tab ?? ""}`);
   await expect(page.getByRole("heading", { name: bot.name, level: 1 })).toBeVisible();
+}
 
-  // A save on the bot page.
-  await fill(page, { label: "Description", text: "Works when the browser says offline." });
-  await page.getByRole("button", { name: "Save" }).click();
-  await expect(page.getByText("No changes. Edits apply from the next run.")).toBeVisible();
+test.describe("bots, after an offline event", () => {
+  test("a bot page reads its data", async ({ page }) => {
+    const bot = await makeBot();
+    await page.goto("/bots");
+    await expect(page.getByRole("link", { name: bot.name, exact: true })).toBeVisible();
+    await goOffline(page);
 
-  // A Clone from the Bots page, and its Create.
-  await openPage(page, "Manage bots");
-  await page.getByRole("button", { name: `${bot.name} actions` }).click();
-  await page.getByRole("menuitem", { name: "Clone" }).click();
-  // A Clone opens on its last step, Model.
-  await expect(page.getByRole("heading", { name: "New bot", level: 1 })).toBeVisible();
-  await page.getByRole("button", { name: "Create", exact: true }).click();
-  await expect(page.getByText(`Created ${bot.name} (copy) ✨`)).toBeVisible();
+    await page.getByRole("link", { name: bot.name, exact: true }).click();
+    await expect(page.getByRole("heading", { name: bot.name, level: 1 })).toBeVisible();
+  });
+
+  test("a bot save runs", async ({ page }) => {
+    const bot = await makeBot();
+    await openBot(page, bot);
+    await goOffline(page);
+
+    await fill(page, { label: "Description", text: "Works when the browser says offline." });
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByText("No changes. Edits apply from the next run.")).toBeVisible();
+  });
+
+  test("the Add card of the Skills tab reads the skills", async ({ page }) => {
+    const skill = await makeSkill();
+    const bot = await makeBot();
+    await openBot(page, { ...bot, tab: "?tab=skills" });
+    await goOffline(page);
+
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    const card = page.getByRole("dialog", { name: `Add skills to ${bot.name}` });
+    await card.getByLabel("Search skills").fill(skill.name);
+    await expect(card.getByRole("checkbox", { name: new RegExp(skill.name) })).toBeVisible();
+  });
+
+  test("an Add from the Skills tab saves the pin", async ({ page }) => {
+    const skill = await makeSkill();
+    const bot = await makeBot();
+    await openBot(page, { ...bot, tab: "?tab=skills" });
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    const card = page.getByRole("dialog", { name: `Add skills to ${bot.name}` });
+    await card.getByLabel("Search skills").fill(skill.name);
+    await card.getByRole("checkbox", { name: new RegExp(skill.name) }).click();
+    await goOffline(page);
+
+    await card.getByRole("button", { name: "Add 1" }).click();
+    await expect(page.locator(`tr[data-skill="${skill.slug}"]`)).toBeVisible();
+  });
 });
 
-test("after an offline event, the skill pages read their data and the saves run", async ({
-  page,
-}) => {
-  const tag = tagged();
-  const skill = { name: `Offline ${tag}`, slug: `offline-${tag}` };
-  await page.goto("/skills/new");
-  await fill(page, { label: "Name", text: skill.name });
-  await fill(page, { label: "Description", text: "Use this skill when the browser says offline." });
-  await fill(page, { label: "Body", text: "## Steps\n1. Read the brief." });
-  await page.getByRole("button", { name: "Create", exact: true }).click();
-  await skipAssignCard(page, skill.name);
-  await expect(page).toHaveURL(`/skills/${skill.slug}`);
+test.describe("skills, after an offline event", () => {
+  test("the Skills page reads the skills", async ({ page }) => {
+    const skill = await makeSkill();
+    await page.goto("/");
+    await expect(page.getByRole("button", { name: /^Sir( · Menu)?$/ })).toBeVisible();
+    await goOffline(page);
 
-  // A reload empties the cache, so each page below is a first visit after the event.
-  await page.goto("/");
-  await expect(page.getByRole("button", { name: /^Sir( · Menu)?$/ })).toBeVisible();
-  await goOffline(page);
+    await openPage(page, "Manage skills");
+    await expect(page.getByRole("link", { name: new RegExp(skill.name) })).toBeVisible();
+  });
 
-  // The Skills page, then the skill page.
-  await openPage(page, "Manage skills");
-  await page.getByRole("link", { name: new RegExp(skill.name) }).click();
-  await expect(page).toHaveURL(`/skills/${skill.slug}`);
+  test("a skill page reads its data", async ({ page }) => {
+    const skill = await makeSkill();
+    await page.goto("/skills");
+    await expect(page.getByRole("link", { name: new RegExp(skill.name) })).toBeVisible();
+    await goOffline(page);
 
-  // A save on the skill page.
-  await page.getByRole("tab", { name: "Write" }).click();
-  await fill(page, { label: "Body", text: "## Steps\n1. Read the brief.\n2. Write it down." });
-  await page.getByRole("button", { name: "Save as v2" }).click();
-  await skipUpgradeCard(page, 2);
+    await page.getByRole("link", { name: new RegExp(skill.name) }).click();
+    await expect(page.getByRole("button", { name: "Skill actions" })).toBeVisible();
+  });
 
-  // A Clone of the skill, and its Create.
-  await page.getByRole("button", { name: "Skill actions" }).click();
-  await page.getByRole("menuitem", { name: "Clone" }).click();
-  await expect(page.getByLabel("Name", { exact: true })).toHaveValue(`${skill.name} (copy)`);
-  await page.getByRole("button", { name: "Create", exact: true }).click();
-  await skipAssignCard(page, `${skill.name} (copy)`);
-  await expect(page).toHaveURL(`/skills/${skill.slug}-copy`);
+  test("a skill save runs", async ({ page }) => {
+    const skill = await makeSkill();
+    await openSkill(page, skill.slug);
+    await page.getByRole("tab", { name: "Write" }).click();
+    await goOffline(page);
 
-  // The new-skill form.
-  await page.getByRole("link", { name: "Create", exact: true }).click();
-  await expect(page.getByLabel("Name", { exact: true })).toHaveValue("");
+    await fill(page, { label: "Body", text: "## Steps\n1. Read the brief.\n2. Write it down." });
+    await page.getByRole("button", { name: "Save as v2" }).click();
+    await skipUpgradeCard(page, 2);
+  });
+
+  test("the History tab reads the versions", async ({ page }) => {
+    const skill = await makeSkill();
+    await openSkill(page, skill.slug);
+    await goOffline(page);
+
+    await page.getByRole("tab", { name: "History" }).click();
+    await expect(page.getByRole("list", { name: "Versions" })).toBeVisible();
+  });
+
+  test("an Always load switch on the Bots tab saves", async ({ page }) => {
+    const skill = await makeSkill();
+    const bot = await makeBot(skill.id);
+    await page.goto(`/skills/${skill.slug}?tab=bots`);
+    const always = page.getByRole("switch", { name: `Always load for ${bot.name}` });
+    await expect(always).toHaveAttribute("aria-checked", "false");
+    await goOffline(page);
+
+    // The switch shows the new value at once, so the check reads the saved pin.
+    await always.click();
+    await expect
+      .poll(async () => {
+        const bots = z
+          .array(
+            z.object({ name: z.string(), pins: z.array(z.object({ always_load: z.boolean() })) }),
+          )
+          .parse(await (await page.request.get("/api/bots")).json());
+        return bots.find((row) => row.name === bot.name)?.pins[0]?.always_load;
+      })
+      .toBe(true);
+  });
+
+  test("the Create of a skill Clone runs", async ({ page }) => {
+    const skill = await makeSkill();
+    await openSkill(page, skill.slug);
+    await page.getByRole("button", { name: "Skill actions" }).click();
+    await page.getByRole("menuitem", { name: "Clone" }).click();
+    await expect(page.getByLabel("Name", { exact: true })).toHaveValue(`${skill.name} (copy)`);
+    await goOffline(page);
+
+    await page.getByRole("button", { name: "Create", exact: true }).click();
+    await skipAssignCard(page, `${skill.name} (copy)`);
+    await expect(page).toHaveURL(`/skills/${skill.slug}-copy`);
+  });
+
+  // A zip of the skill at v1, then the skill at v2: so the zip brings a new version.
+  async function zipOneVersionBack(page: Page, slug: string): Promise<string> {
+    await openSkill(page, slug);
+    await page.getByRole("button", { name: "Skill actions" }).click();
+    const downloading = page.waitForEvent("download");
+    await page.getByRole("menuitem", { name: "Export" }).click();
+    const zipPath = await (await downloading).path();
+    await page.getByRole("tab", { name: "Write" }).click();
+    await fill(page, { label: "Body", text: "## Steps\n1. Read the brief twice." });
+    await page.getByRole("button", { name: "Save as v2" }).click();
+    await skipUpgradeCard(page, 2);
+    return zipPath;
+  }
+
+  async function chooseImport(page: Page, zipPath: string) {
+    const choosing = page.waitForEvent("filechooser");
+    await page.getByRole("button", { name: "Import", exact: true }).click();
+    await (await choosing).setFiles(zipPath);
+    await expect(page).toHaveURL("/skills/import");
+  }
+
+  test("the Import page reads the zip", async ({ page }) => {
+    const skill = await makeSkill();
+    const zipPath = await zipOneVersionBack(page, skill.slug);
+    await openPage(page, "Manage skills");
+    await goOffline(page);
+
+    await chooseImport(page, zipPath);
+    const changed = page.getByRole("region", { name: "New versions of your skills" });
+    await expect(changed).toContainText("v2 → v3 · body changed");
+  });
+
+  test("an Import Apply runs", async ({ page }) => {
+    const skill = await makeSkill();
+    const zipPath = await zipOneVersionBack(page, skill.slug);
+    await openPage(page, "Manage skills");
+    await chooseImport(page, zipPath);
+    const changed = page.getByRole("region", { name: "New versions of your skills" });
+    await expect(changed).toContainText("v2 → v3 · body changed");
+    await goOffline(page);
+
+    await page.getByRole("button", { name: "Apply 1 change" }).click();
+    await expect(page.getByText("Imported 1 change ✨ 0 new skills, 1 new version.")).toBeVisible();
+  });
 });
 
 test("after an offline event, a read that keeps failing shows the error state", async ({

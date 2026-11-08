@@ -323,6 +323,13 @@ For other late tests, remove the required behaviour in the isolated checkout.
 Stop every other end-to-end server first and check ports 8100 and 8101, as described in
 [the fast loop](#fast-loop-while-building). Observe failure for the expected reason.
 
+**Each claimed step fails alone.** When a PR says that a test proves several steps (pages,
+tabs, saves), each step must fail on the old code by itself. A test stops at its first failure,
+so a step after it proves nothing. Give each step its own test, and start the cause of the bug
+(for example the `offline` event) just before that step. The PR lists each claimed step with
+its result on the old code. A step that passes on the old code is not a claim: the PR names it
+and gives the reason, such as "reads no new data" (owner, 2026-11-08, DQ-117).
+
 The incidents behind these rules remain in
 [prove-the-test-fails-first.md](lessons-learned/prove-the-test-fails-first.md) and
 [check-every-order-before-the-push.md](lessons-learned/check-every-order-before-the-push.md).
