@@ -188,9 +188,11 @@ build, add `--no-deps`. If a `shared` test fails, the `alone` tests do not run, 
 lists them as "did not run".
 
 **Held requests.** A handler that calls `route.fetch()` fails if the test ends during that call,
-and the error is not part of any test. A live event can start such a read at any time. So a
-test with such a handler ends with `page.unrouteAll({ behavior: "ignoreErrors" })` after its
-checks. If its last checks need the answers of held requests, it waits for those handlers
+and the error is not part of any test. A live event can start a read again at any time: a
+`reset` event refreshes all reads (`frontend/src/lib/realtime/reducer.ts:46`). So a test whose
+handler calls `route.fetch()` for a read ends with `page.unrouteAll({ behavior: "ignoreErrors" })`
+after its checks. A handler for one save needs no `unrouteAll` if the checks wait for its
+answer. If the last checks need the answers of held requests, the test waits for those handlers
 first (DQ-116).
 
 ### Edge cases each slice tests
@@ -329,7 +331,7 @@ The PR maps each acceptance criterion to a test and its observable assertion or 
 Use a screenshot for purely visual criteria; Playwright stores these in `frontend/test/e2e/<spec>.spec.ts-snapshots/`.
 "Tested manually" alone is not evidence.
 
-Each claim about behaviour or a number in a PR body or an owner question needs a real run: a command, a test or a probe on the named revision. This includes claims about what `main` does. If you did not run it, write "not run" or "from reading the code". A claim about an owner decision links to its record (owner, 2026-11-06).
+Each claim about behaviour or a number in a PR body or an owner question needs a real run: a command, a test or a probe on the named revision. This includes claims about what `main` does. If you did not run it, write "not run" or "from reading the code". A claim about an owner decision links to its record (owner, 2026-11-06). Before each push, check all the records this way ([the records check](workflows/pull-request.md#before-each-push-check-the-records)).
 
 Record the tested revision, expected failure and result. Test first normally supplies the failure evidence.
 If a bug-fix test was written later, copy it into an isolated checkout of the code before the fix.
