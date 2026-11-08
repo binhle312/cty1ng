@@ -11,9 +11,10 @@ can look.
 
 ## What the app is
 
-The app runs on the owner's own computer. One person, the owner, works with AI bots. Each bot
-has a role, for example BA (business analyst) or Designer. The owner gives each bot skills:
-written ways of working that the bot follows.
+The app runs on the owner's own computer. The pages read and save their data on this computer,
+so they also work when the browser says that it is offline. One person, the owner, works with
+AI bots. Each bot has a role, for example BA (business analyst) or Designer. The owner gives each
+bot skills: written ways of working that the bot follows.
 
 ## The words
 

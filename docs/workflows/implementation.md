@@ -31,6 +31,7 @@ does not need to read that file (lesson `check-every-order-before-the-push.md`).
 At handoff, reconcile the PR's issues, review rounds, and verification evidence there.
 [Status](../status.md) owns milestone state and next work.
 **Evidence.** Fill the PR template in [pull-request.md](pull-request.md) using [testing.md §5](../testing.md#5-evidence-in-prs).
+Before each push, also after a review fix, do [the records check](pull-request.md#before-each-push-check-the-records).
 Add new library pitfalls, lint patterns or test-helper guidance to their owning document:
 `docs/frontend-conventions.md` §5 or `docs/testing.md`.
 **The guide stays current.** A slice that changes something the owner can see updates

@@ -1,7 +1,9 @@
+import { globSync } from "node:fs";
 import { resolve } from "node:path";
 import { ESLint } from "eslint";
 import tseslint from "typescript-eslint";
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 
 // Lints small snippets with the real eslint.config.js: the SQL rules (security.md §2.8) and
 // the raw colour rules (design/themes.md §2). Type-aware rules are switched off here only, so
@@ -74,5 +76,141 @@ describe("raw colour lint rules", () => {
     expect(await messages('export const c = "#F5B544";', "frontend/src/themes/command.ts")).toEqual(
       [],
     );
+  });
+});
+
+// frontend-conventions.md §5 (DQ-088): the app's code makes no query client of its own, sets
+// no `networkMode` on one read or save, and does not replace the defaults.
+describe("query client lint rules", () => {
+  const client =
+    'import { QueryClient } from "@tanstack/react-query";\nexport const c = new QueryClient();\n';
+  const mode =
+    'import { useQuery } from "@tanstack/react-query";\nexport const useX = () => useQuery({ queryKey: ["x"], queryFn: () => 1, networkMode: "online" });\n';
+
+  it.each([
+    { label: "a new QueryClient in main.tsx", code: client, file: "frontend/src/main.tsx" },
+    {
+      label: "a new QueryClient in a feature",
+      code: client,
+      file: "frontend/src/features/bots/bot-page.tsx",
+    },
+    {
+      label: "networkMode on one read in a feature",
+      code: mode,
+      file: "frontend/src/features/skills/skill-page.tsx",
+    },
+    { label: "networkMode in lib", code: mode, file: "frontend/src/lib/api/bots.ts" },
+    {
+      label: "a networkMode set by assignment",
+      code: 'declare const o: { networkMode?: string };\no.networkMode = "online";\n',
+      file: "frontend/src/features/bots/bot-list-store.ts",
+    },
+    {
+      label: "setDefaultOptions in the bot list store",
+      code: "declare const c: { setDefaultOptions(x: object): void };\nc.setDefaultOptions({});\n",
+      file: "frontend/src/features/bots/bot-list-store.ts",
+    },
+  ])("reject $label", async ({ code, file }) => {
+    const found = await messages(code, file);
+    expect(found.some((m) => m.startsWith("no-restricted-syntax"))).toBe(true);
+  });
+
+  it.each([
+    {
+      label: "createQueryClient itself",
+      code: client,
+      file: "frontend/src/lib/api/query-client.ts",
+    },
+    {
+      label: "a test that checks one store",
+      code: client,
+      file: "frontend/src/features/bots/bot-list-store.test.tsx",
+    },
+  ])("allows $label", async ({ code, file }) => {
+    const found = await messages(code, file);
+    expect(found.filter((m) => m.startsWith("no-restricted-syntax"))).toEqual([]);
+  });
+});
+
+// For one file, the last block that sets `no-restricted-syntax` wins, so a block can drop the
+// rules of an earlier one (review of `78d01fb`: `bot-list-store.ts` lost the query client rules).
+// This reads the real config of each file.
+describe("each file gets its rule sets", () => {
+  const ROOT = resolve(import.meta.dirname, "..");
+  const config = z.object({ rules: z.record(z.string(), z.array(z.unknown())) });
+  const selectorsOf = async (file: string): Promise<string> => {
+    const { rules } = config.parse(await eslint.calculateConfigForFile(file));
+    return JSON.stringify(rules["no-restricted-syntax"] ?? []);
+  };
+  const files = globSync("frontend/src/**/*.{ts,tsx}", { cwd: ROOT }).filter(
+    (file) => !file.includes("/lib/api/generated/"),
+  );
+  const isTest = (file: string) => /\.test\.tsx?$/.test(file);
+  const inUi = (file: string) => /^frontend\/src\/(components|features)\//.test(file);
+
+  it("finds the files", () => {
+    expect(files.length).toBeGreaterThan(100);
+  });
+
+  it("gives the query client rules to every app file", async () => {
+    const missing: string[] = [];
+    for (const file of files.filter((f) => !isTest(f) && !f.endsWith("lib/api/query-client.ts"))) {
+      const found = await selectorsOf(file);
+      const imports = config.parse(await eslint.calculateConfigForFile(file)).rules[
+        "@typescript-eslint/no-restricted-imports"
+      ];
+      // The selectors themselves, not words that the messages also contain.
+      for (const part of [
+        "NewExpression[callee.name='QueryClient']",
+        "Property[key.name='networkMode']",
+        "CallExpression[callee.property.name='setDefaultOptions']",
+      ]) {
+        if (!found.includes(part)) missing.push(`${file}: ${part}`);
+      }
+      if (!JSON.stringify(imports ?? []).includes("QueryClient")) missing.push(`${file}: import`);
+    }
+    expect(missing).toEqual([]);
+  });
+
+  it("keeps the raw colour rules on every components and features file", async () => {
+    const missing: string[] = [];
+    for (const file of files.filter(inUi)) {
+      if (!(await selectorsOf(file)).includes("No raw colours")) missing.push(file);
+    }
+    expect(missing).toEqual([]);
+  });
+
+  it("keeps the bot list write rule on every app file in components and features but the store", async () => {
+    const missing: string[] = [];
+    for (const file of files.filter(
+      (f) => inUi(f) && !isTest(f) && !f.endsWith("features/bots/bot-list-store.ts"),
+    )) {
+      if (!(await selectorsOf(file)).includes("listBotsQueryKey")) missing.push(file);
+    }
+    expect(missing).toEqual([]);
+  });
+});
+
+describe("query client import rule", () => {
+  it.each([
+    {
+      label: "an aliased import",
+      code: 'import { QueryClient as QC } from "@tanstack/react-query";\nexport const c = new QC();\n',
+    },
+    {
+      label: "a namespace import",
+      code: 'import * as RQ from "@tanstack/react-query";\nexport const c = new RQ.QueryClient();\n',
+    },
+  ])("reject $label", async ({ code }) => {
+    const found = await messages(code, "frontend/src/routes/route-tree.ts");
+    expect(found.some((m) => m.startsWith("@typescript-eslint/no-restricted-imports"))).toBe(true);
+  });
+
+  it("allows a type import", async () => {
+    const found = await messages(
+      'import type { QueryClient } from "@tanstack/react-query";\nexport type C = QueryClient;\n',
+      "frontend/src/lib/realtime/start.ts",
+    );
+    expect(found.filter((m) => m.includes("no-restricted-imports"))).toEqual([]);
   });
 });

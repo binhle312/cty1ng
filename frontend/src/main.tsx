@@ -2,17 +2,18 @@ import "./lib/zod-config.ts";
 import "@fontsource-variable/geist";
 import "@fontsource-variable/geist-mono";
 import "./styles.css";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { TooltipProvider } from "./components/ui/tooltip.tsx";
 import "./lib/api/client.ts";
+import { createQueryClient } from "./lib/api/query-client.ts";
 import { startRealtime } from "./lib/realtime/start.ts";
 import { createAppRouter } from "./router.ts";
 import { createThemeController, readAppearance } from "./themes/theme.ts";
 
-const queryClient = new QueryClient();
+const queryClient = createQueryClient();
 const router = createAppRouter();
 
 createThemeController(

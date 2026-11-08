@@ -178,6 +178,23 @@ open at the "New" divider.
 
 Each slice's brief lists which of these steps must pass by its end.
 
+**Shared data.** All test files share one server and one database, and they run at the same
+time. A test that reads data that other files change (every bot, the pins) gets the tag
+`@alone`. The `alone` project of `playwright.config.ts` runs those tests after all the others
+end, one at a time. A test that reads only what it made needs no tag; a route can filter a
+shared list down to the test's own rows (owner, 2026-11-08, DQ-126). The `alone` project
+depends on the other one, so a run of one tagged file also runs every other test: while you
+build, add `--no-deps`. If a `shared` test fails, the `alone` tests do not run, and the report
+lists them as "did not run".
+
+**Held requests.** A handler that calls `route.fetch()` fails if the test ends during that call,
+and the error is not part of any test. A live event can start a read again at any time: a
+`reset` event refreshes all reads (`frontend/src/lib/realtime/reducer.ts:46`). So a test whose
+handler calls `route.fetch()` for a read ends with `page.unrouteAll({ behavior: "ignoreErrors" })`
+after its checks. A handler for one save needs no `unrouteAll` if the checks wait for its
+answer. If the last checks need the answers of held requests, the test waits for those handlers
+first (DQ-116).
+
 ### Edge cases each slice tests
 
 The normal path of an acceptance criterion is not enough. For each screen or flow it builds,
@@ -314,7 +331,7 @@ The PR maps each acceptance criterion to a test and its observable assertion or 
 Use a screenshot for purely visual criteria; Playwright stores these in `frontend/test/e2e/<spec>.spec.ts-snapshots/`.
 "Tested manually" alone is not evidence.
 
-Each claim about behaviour or a number in a PR body or an owner question needs a real run: a command, a test or a probe on the named revision. This includes claims about what `main` does. If you did not run it, write "not run" or "from reading the code". A claim about an owner decision links to its record (owner, 2026-11-06).
+Each claim about behaviour or a number in a PR body or an owner question needs a real run: a command, a test or a probe on the named revision. This includes claims about what `main` does. If you did not run it, write "not run" or "from reading the code". A claim about an owner decision links to its record (owner, 2026-11-06). Before each push, check all the records this way ([the records check](workflows/pull-request.md#before-each-push-check-the-records)).
 
 Record the tested revision, expected failure and result. Test first normally supplies the failure evidence.
 If a bug-fix test was written later, copy it into an isolated checkout of the code before the fix.
@@ -322,6 +339,13 @@ Use a `git worktree`; do not stash the fix (owner, 2026-10-31).
 For other late tests, remove the required behaviour in the isolated checkout.
 Stop every other end-to-end server first and check ports 8100 and 8101, as described in
 [the fast loop](#fast-loop-while-building). Observe failure for the expected reason.
+
+**Each claimed step fails alone.** When a PR says that a test proves several steps (pages,
+tabs, saves), each step must fail on the old code by itself. A test stops at its first failure,
+so a step after it proves nothing. Give each step its own test, and start the cause of the bug
+(for example the `offline` event) just before that step. The PR lists each claimed step with
+its result on the old code. A step that passes on the old code is not a claim: the PR names it
+and gives the reason, such as "reads no new data" (owner, 2026-11-08, DQ-117).
 
 The incidents behind these rules remain in
 [prove-the-test-fails-first.md](lessons-learned/prove-the-test-fails-first.md) and

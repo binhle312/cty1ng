@@ -41,3 +41,18 @@ Link to the brief and decisions.
 ## Follow-ups (not done here)
 - ...
 ```
+
+## Before each push: check the records
+
+The records are the PR description and the rows that the PR adds or changes in
+`docs/delivery-quality.md`, `docs/status.md` and other docs. Before each push, also after a
+review fix, check them against the commit that you push (owner, 2026-11-08, DQ-125):
+
+1. Read each claim in the records, and compare it with that commit. Each claim has its
+   evidence, as [testing.md §5](../testing.md#5-evidence-in-prs) says: a run with its command
+   and commit, `file:line` for a claim from the code, or "not run".
+2. If a claim says that X fixes a failure, run it again without X. Write down that the run fails.
+3. If a claim says that X causes a failure, run it again without X. Write down that the failure
+   stops.
+4. If you cannot show step 2 or 3, write that, and do not call X the fix or the cause.
+5. If you correct a claim, search for its old text in all the records, and correct each copy.

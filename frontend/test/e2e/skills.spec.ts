@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import AxeBuilder from "@axe-core/playwright";
-import { expect, type Locator, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, type Route, test } from "@playwright/test";
 import { z } from "zod";
 import { createClient } from "../../src/lib/api/generated/client/index.ts";
 import { createBot } from "../../src/lib/api/generated/sdk.gen.ts";
@@ -292,14 +292,20 @@ test("deleting the last skill shows the empty state and the toast while the list
   const held = new Promise<void>((resolve) => {
     release = resolve;
   });
+  const answer = async (route: Route) => {
+    if (route.request().method() !== "GET") return route.fallback();
+    if (trashed) await held;
+    const response = await route.fetch();
+    const rows = z.array(z.looseObject({ slug: z.string() })).parse(await response.json());
+    await route.fulfill({ response, json: rows.filter((row) => row.slug === skill.slug) });
+  };
+  const answers: Promise<void>[] = [];
   await page.route(
     (url) => url.pathname === "/api/skills",
-    async (route) => {
-      if (route.request().method() !== "GET") return route.fallback();
-      if (trashed) await held;
-      const response = await route.fetch();
-      const rows = z.array(z.looseObject({ slug: z.string() })).parse(await response.json());
-      await route.fulfill({ response, json: rows.filter((row) => row.slug === skill.slug) });
+    (route) => {
+      const answered = answer(route);
+      answers.push(answered);
+      return answered;
     },
   );
   await page.route(/\/api\/skills\/[^/]+\/trash$/, async (route) => {
@@ -318,8 +324,17 @@ test("deleting the last skill shows the empty state and the toast while the list
   await expect(page.getByRole("heading", { name: "No skills yet" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Page not found" })).toHaveCount(0);
   release();
+  // The held reads answer now, and an answer can start another read: check the page after all
+  // of them.
+  for (let seen = -1; seen !== answers.length;) {
+    seen = answers.length;
+    await Promise.all(answers);
+  }
   await expect(page.getByRole("heading", { name: "No skills yet" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Page not found" })).toHaveCount(0);
+  // A live event can still start a read, and `route.fetch()` fails if the test ends during it
+  // (DQ-116).
+  await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
 test("deprecate, open after a reload, make active, deprecate and delete", async ({ page }) => {
