@@ -7,7 +7,9 @@ import { type DefaultOptions, QueryClient } from "@tanstack/react-query";
 export function createQueryClient(queries: DefaultOptions["queries"] = {}): QueryClient {
   return new QueryClient({
     defaultOptions: {
-      queries: { networkMode: "always", ...queries },
+      // "always" turns the refetch on reconnect off unless it is set, so set it: nothing changes
+      // while the browser is online.
+      queries: { networkMode: "always", refetchOnReconnect: true, ...queries },
       mutations: { networkMode: "always" },
     },
   });

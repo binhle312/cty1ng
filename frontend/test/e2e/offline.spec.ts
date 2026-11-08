@@ -3,7 +3,7 @@ import { createClient } from "../../src/lib/api/generated/client/index.ts";
 import { createBot } from "../../src/lib/api/generated/sdk.gen.ts";
 import { skipAssignCard, skipUpgradeCard } from "./skill-cards.ts";
 
-// DQ-088 (frontend-conventions.md §5, "Reads when the browser says offline"). The app runs on
+// DQ-088 (frontend-conventions.md §5, "A browser that says it is offline"). The app runs on
 // 127.0.0.1, so an `offline` event in the browser does not stop the backend. After the event,
 // each page still reads its data and each save still runs. The tests move with links inside the
 // app: a reload would end the offline state. The servers keep one database for every file, so
@@ -148,7 +148,8 @@ test("after an offline event, a read that keeps failing shows the error state", 
   await goOffline(page);
   const before = reads;
 
-  // The first try and TanStack Query's 3 retries run, about 7 s, and none of them pauses.
+  // The first try and TanStack Query's 3 retries run, about 7 s, and none of them pauses. The
+  // count follows the default `retry` of `createQueryClient`: change both together.
   await openPage(page, "Manage skills");
   await expect(page.getByText("The app could not load the skills.").first()).toBeVisible({
     timeout: 20_000,

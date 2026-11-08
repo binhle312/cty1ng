@@ -1,4 +1,4 @@
-import { onlineManager } from "@tanstack/react-query";
+import { onlineManager, QueryObserver } from "@tanstack/react-query";
 import { afterEach, describe, expect, it } from "vitest";
 import { createQueryClient } from "./query-client.ts";
 
@@ -44,10 +44,34 @@ describe("createQueryClient", () => {
     expect(calls).toBe(3);
   });
 
+  // With networkMode "always", TanStack Query turns the refetch on reconnect off unless the
+  // option is set. The app keeps it, so nothing changes while the browser is online.
+  it("online again: a stale read fetches again", async () => {
+    const queryClient = createQueryClient();
+    // QueryClientProvider mounts the client in the app; only a mounted client hears "online".
+    queryClient.mount();
+    let calls = 0;
+    const observer = new QueryObserver(queryClient, {
+      queryKey: ["things"],
+      queryFn: () => {
+        calls += 1;
+        return Promise.resolve(["one"]);
+      },
+    });
+    const stop = observer.subscribe(() => undefined);
+    await expect.poll(() => calls).toBe(1);
+    onlineManager.setOnline(false);
+    onlineManager.setOnline(true);
+    await expect.poll(() => calls).toBe(2);
+    stop();
+    queryClient.unmount();
+  });
+
   it("keeps the other options that a caller gives", () => {
     const queryClient = createQueryClient({ retry: false });
     expect(queryClient.getDefaultOptions().queries?.retry).toBe(false);
     expect(queryClient.getDefaultOptions().queries?.networkMode).toBe("always");
     expect(queryClient.getDefaultOptions().mutations?.networkMode).toBe("always");
+    expect(queryClient.getDefaultOptions().queries?.refetchOnReconnect).toBe(true);
   });
 });
