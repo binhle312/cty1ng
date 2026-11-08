@@ -73,16 +73,12 @@ export function CreateBotPage() {
 }
 
 function CreateBotData({ from }: { from: string | undefined }) {
-  // The page waits for these four reads before the form opens (below), so they must not pause when
-  // the browser says it is offline: the app runs on 127.0.0.1.
-  const settings = useQuery({ ...getSettingsOptions(), networkMode: "always" });
-  const models = useQuery({ ...listModelsOptions(), networkMode: "always" });
-  const tools = useQuery({ ...listToolsOptions(), networkMode: "always" });
+  // The page waits for these four reads before the form opens (below).
+  const settings = useQuery(getSettingsOptions());
+  const models = useQuery(listModelsOptions());
+  const tools = useQuery(listToolsOptions());
   // Deprecated skills too: a Clone keeps the deprecated pins of its source bot (§6).
-  const skills = useQuery({
-    ...listSkillsOptions({ query: { include_deprecated: "true" } }),
-    networkMode: "always",
-  });
+  const skills = useQuery(listSkillsOptions({ query: { include_deprecated: "true" } }));
   const bots = useBots();
   const template = useQuery({
     ...getBotCloneTemplateOptions({ path: { id: from ?? "" } }),
@@ -92,7 +88,6 @@ function CreateBotData({ from }: { from: string | undefined }) {
     // nothing is kept after the page closes (§6). The open form keeps its text when this fetches
     // again.
     gcTime: 0,
-    networkMode: "always",
   });
   const queries = [settings, models, tools, skills, bots];
   const failed = queries.find((q) => q.data === undefined && q.isError);
