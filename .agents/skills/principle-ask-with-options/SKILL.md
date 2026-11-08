@@ -1,6 +1,6 @@
 ---
 name: principle-ask-with-options
-description: Use before you ask a person a question or for a decision. Gives them a real example, options with gain, cost and risk, and a recommendation.
+description: Use before you ask a person a question or for a decision. Gives them a real example, options with gain, cost and risk, and a recommendation, in Simplified Technical English at an 80% target.
 ---
 
 # Ask with options
@@ -13,5 +13,7 @@ description: Use before you ask a person a question or for a decision. Gives the
    how the person would notice it and undo it). If you find no real risk, say so.
 5. Recommend one option and put it first. Say what would change your recommendation.
 6. Say how you know each fact: you ran it, you read it, or you do not know.
+7. Write the whole text in Simplified Technical English. Load `ste-writing`, then run its check on the draft.
+   Fix the text until the score is 80% or more.
 
-**Done:** The person can choose without another question about what the options mean.
+**Done:** The person can choose without another question about what the options mean. The `ste-writing` check of the sent text gives 80% or more.
