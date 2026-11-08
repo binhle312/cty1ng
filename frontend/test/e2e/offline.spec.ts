@@ -85,7 +85,7 @@ test("after an offline event, the skill pages read their data and the saves run"
   const tag = tagged();
   const skill = { name: `Offline ${tag}`, slug: `offline-${tag}` };
   await page.goto("/skills/new");
-  await fill(page, "Name", skill.name);
+  await fill(page, { label: "Name", text: skill.name });
   await fill(page, { label: "Description", text: "Use this skill when the browser says offline." });
   await fill(page, { label: "Body", text: "## Steps\n1. Read the brief." });
   await page.getByRole("button", { name: "Create", exact: true }).click();
@@ -119,4 +119,29 @@ test("after an offline event, the skill pages read their data and the saves run"
   // The new-skill form.
   await page.getByRole("link", { name: "Create", exact: true }).click();
   await expect(page.getByLabel("Name", { exact: true })).toHaveValue("");
+});
+
+test("after an offline event, a read that keeps failing shows the error state", async ({
+  page,
+}) => {
+  let reads = 0;
+  await page.route(
+    (url) => url.pathname === "/api/skills",
+    async (route) => {
+      if (route.request().method() !== "GET") return route.fallback();
+      reads += 1;
+      await route.fulfill({ status: 500, json: { error: { code: "internal" } } });
+    },
+  );
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: /^Sir( · Menu)?$/ })).toBeVisible();
+  await goOffline(page);
+  const before = reads;
+
+  // The first try and TanStack Query's 3 retries run, about 7 s, and none of them pauses.
+  await openPage(page, "Manage skills");
+  await expect(page.getByText("The app could not load the skills.").first()).toBeVisible({
+    timeout: 20_000,
+  });
+  expect(reads - before).toBe(4);
 });
