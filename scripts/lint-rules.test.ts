@@ -76,3 +76,46 @@ describe("raw colour lint rules", () => {
     );
   });
 });
+
+// frontend-conventions.md §5 (DQ-088): the app's code makes no query client of its own and sets
+// no `networkMode` on one read or save.
+describe("query client lint rules", () => {
+  const client =
+    'import { QueryClient } from "@tanstack/react-query";\nexport const c = new QueryClient();\n';
+  const mode =
+    'import { useQuery } from "@tanstack/react-query";\nexport const useX = () => useQuery({ queryKey: ["x"], queryFn: () => 1, networkMode: "online" });\n';
+
+  it.each([
+    { label: "a new QueryClient in main.tsx", code: client, file: "frontend/src/main.tsx" },
+    {
+      label: "a new QueryClient in a feature",
+      code: client,
+      file: "frontend/src/features/bots/bot-page.tsx",
+    },
+    {
+      label: "networkMode on one read in a feature",
+      code: mode,
+      file: "frontend/src/features/skills/skill-page.tsx",
+    },
+    { label: "networkMode in lib", code: mode, file: "frontend/src/lib/api/bots.ts" },
+  ])("reject $label", async ({ code, file }) => {
+    const found = await messages(code, file);
+    expect(found.some((m) => m.startsWith("no-restricted-syntax"))).toBe(true);
+  });
+
+  it.each([
+    {
+      label: "createQueryClient itself",
+      code: client,
+      file: "frontend/src/lib/api/query-client.ts",
+    },
+    {
+      label: "a test that checks one store",
+      code: client,
+      file: "frontend/src/features/bots/bot-list-store.test.tsx",
+    },
+  ])("allows $label", async ({ code, file }) => {
+    const found = await messages(code, file);
+    expect(found.filter((m) => m.startsWith("no-restricted-syntax"))).toEqual([]);
+  });
+});

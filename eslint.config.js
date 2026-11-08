@@ -1,5 +1,6 @@
 // ESLint for the whole workspace. Rules: docs/frontend-conventions.md §3 (TypeScript),
-// docs/security.md §2.8 (SQL) and docs/design/themes.md §2 rule 1 (no raw colours).
+// docs/security.md §2.8 (SQL), docs/design/themes.md §2 rule 1 (no raw colours) and
+// docs/frontend-conventions.md §5 (one query client).
 // A new exception needs a comment that says why (frontend-conventions.md §3).
 import js from "@eslint/js";
 import drizzle from "eslint-plugin-drizzle";
@@ -51,6 +52,22 @@ const BOT_LIST_WRITE_RULES = [
       "CallExpression[callee.property.name=/^(setQueryData|setQueriesData)$/] > CallExpression.arguments[callee.name=/^(listBotsQueryKey|getSettingsQueryKey)$/]",
     message:
       "Write the bot list and the settings only through features/bots/bot-list-store.ts (frontend-conventions.md §1).",
+  },
+];
+
+// frontend-conventions.md §5, "A browser that says it is offline" (DQ-088, owner 2026-11-08):
+// every read and save uses the one default of `createQueryClient`. A second client or a
+// `networkMode` on one call can pause again after an `offline` event.
+const QUERY_CLIENT_RULES = [
+  {
+    selector: "NewExpression[callee.name='QueryClient']",
+    message:
+      "Make the query client with createQueryClient (lib/api/query-client.ts): its default runs reads and saves when the browser says it is offline (frontend-conventions.md §5).",
+  },
+  {
+    selector: "Property[key.name='networkMode']",
+    message:
+      "Do not set networkMode on one read or save: the default of createQueryClient covers all of them (frontend-conventions.md §5).",
   },
 ];
 
@@ -115,6 +132,14 @@ export default tseslint.config(
     extends: [reactHooks.configs.flat["recommended-latest"]],
   },
   {
+    // Tests that check the library or one store make their own client; the app's code does not.
+    files: ["frontend/src/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.{ts,tsx}", "frontend/src/lib/api/query-client.ts"],
+    rules: {
+      "no-restricted-syntax": ["error", ...SQL_RULES, ...QUERY_CLIENT_RULES],
+    },
+  },
+  {
     files: ["frontend/src/components/**/*.{ts,tsx}", "frontend/src/features/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-syntax": ["error", ...SQL_RULES, ...RAW_COLOUR_RULES],
@@ -125,7 +150,13 @@ export default tseslint.config(
     // Tests set the cache up before the store exists; the store itself writes it.
     ignores: ["**/*.test.{ts,tsx}", "frontend/src/features/bots/bot-list-store.ts"],
     rules: {
-      "no-restricted-syntax": ["error", ...SQL_RULES, ...RAW_COLOUR_RULES, ...BOT_LIST_WRITE_RULES],
+      "no-restricted-syntax": [
+        "error",
+        ...SQL_RULES,
+        ...RAW_COLOUR_RULES,
+        ...BOT_LIST_WRITE_RULES,
+        ...QUERY_CLIENT_RULES,
+      ],
     },
   },
   {
