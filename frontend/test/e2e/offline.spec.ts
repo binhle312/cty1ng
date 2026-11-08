@@ -124,6 +124,16 @@ test("after an offline event, the skill pages read their data and the saves run"
 test("after an offline event, a read that keeps failing shows the error state", async ({
   page,
 }) => {
+  // Other test files share the server, and each of their live events starts the retries again
+  // (DQ-109). So this page gets no events until the end.
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/api/stream*", async (route) => {
+    await held;
+    await route.abort();
+  });
   let reads = 0;
   await page.route(
     (url) => url.pathname === "/api/skills",
@@ -144,4 +154,5 @@ test("after an offline event, a read that keeps failing shows the error state", 
     timeout: 20_000,
   });
   expect(reads - before).toBe(4);
+  release();
 });
