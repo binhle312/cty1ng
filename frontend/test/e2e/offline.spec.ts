@@ -8,14 +8,17 @@ import { skipAssignCard, skipUpgradeCard } from "./skill-cards.ts";
 // 127.0.0.1, so an `offline` event in the browser does not stop the backend. After the event,
 // each page still reads its data and each save still runs.
 //
-// Each test checks one step (DQ-117). It opens the page online, sends the event just before the
-// step, and checks only that step, so each test fails alone without the fix. The tests move with
+// The tests are a sample (DQ-124): lint keeps every read and save on the one default of
+// `createQueryClient`. Each test checks one step (DQ-117). It opens the page online, sends the
+// event just before the step, and checks only that step, so each test fails alone without the fix. The tests move with
 // links inside the app: a reload would end the offline state. The servers keep one database for
 // every file, so each test makes its own bot and skill.
 //
 // Steps with no test, because they read no new data after the event: the Bots page and the
 // skill's Bots tab (the header already read the bot list), the bot's Skills tab (its data comes
-// with the bot), and the new-skill form (it reads nothing). The Create of a bot Clone has no test
+// with the bot), and the new-skill form (its settings read is in the cache). `/bots/new` and the
+// bot Clone form passed before the fix because each of their reads set `networkMode`; the unit
+// tests of `create-bot-page.test.tsx` prove them through the default. The Create of a bot Clone has no test
 // either: it calls the API without TanStack Query (`create-bot-page.tsx`), so the event never
 // stopped it.
 
