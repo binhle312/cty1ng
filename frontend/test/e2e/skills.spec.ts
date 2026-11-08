@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import AxeBuilder from "@axe-core/playwright";
-import { expect, type Locator, type Page, type Request, type Route, test } from "@playwright/test";
+import { expect, type Locator, type Page, type Route, test } from "@playwright/test";
 import { z } from "zod";
 import { createClient } from "../../src/lib/api/generated/client/index.ts";
 import { createBot } from "../../src/lib/api/generated/sdk.gen.ts";
@@ -292,25 +292,12 @@ test("deleting the last skill shows the empty state and the toast while the list
   const held = new Promise<void>((resolve) => {
     release = resolve;
   });
-  // DQ-116: TanStack Query cancels a held read when a newer read of the list starts. The
-  // cancelled read has no answer to change, so its handler stops; any other error fails the test.
-  const cancelledByPage = async (request: Request): Promise<boolean> => {
-    const failed = page
-      .waitForEvent("requestfailed", { predicate: (r) => r === request, timeout: 2000 })
-      .catch(() => undefined);
-    if (request.failure() === null) await failed;
-    return request.failure()?.errorText === "net::ERR_ABORTED";
-  };
   const answer = async (route: Route) => {
     if (route.request().method() !== "GET") return route.fallback();
     if (trashed) await held;
-    try {
-      const response = await route.fetch();
-      const rows = z.array(z.looseObject({ slug: z.string() })).parse(await response.json());
-      await route.fulfill({ response, json: rows.filter((row) => row.slug === skill.slug) });
-    } catch (error) {
-      if (!(await cancelledByPage(route.request()))) throw error;
-    }
+    const response = await route.fetch();
+    const rows = z.array(z.looseObject({ slug: z.string() })).parse(await response.json());
+    await route.fulfill({ response, json: rows.filter((row) => row.slug === skill.slug) });
   };
   const answers: Promise<void>[] = [];
   await page.route(
@@ -337,15 +324,16 @@ test("deleting the last skill shows the empty state and the toast while the list
   await expect(page.getByRole("heading", { name: "No skills yet" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Page not found" })).toHaveCount(0);
   release();
-  // The held reads answer now, and an answer can start another read. Check the page after all of
-  // them, or the test can end while a handler is still in `route.fetch()` (DQ-116).
+  // The held reads answer now, and an answer can start another read: check the page after all
+  // of them.
   for (let seen = -1; seen !== answers.length;) {
     seen = answers.length;
     await Promise.all(answers);
   }
   await expect(page.getByRole("heading", { name: "No skills yet" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Page not found" })).toHaveCount(0);
-  // A live event can still start a read after the checks.
+  // A live event can still start a read, and `route.fetch()` fails if the test ends during it
+  // (DQ-116).
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 

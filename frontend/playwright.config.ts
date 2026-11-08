@@ -64,6 +64,9 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.01 } },
+  // Screenshot names without the project name, so a new project does not need new images.
+  snapshotPathTemplate:
+    "{testDir}/{testFileDir}/{testFileName}-snapshots/{arg}{-snapshotSuffix}{ext}",
   // All test files share one server and one database. A test that reads data that other files
   // change (every bot, the pins) has the tag `@alone`. Those tests start after all the others
   // end, one at a time (testing.md §3, DQ-126, owner 2026-11-08).

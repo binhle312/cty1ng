@@ -184,12 +184,14 @@ time. A test that reads data that other files change (every bot, the pins) gets 
 end, one at a time. A test that reads only what it made needs no tag; a route can filter a
 shared list down to the test's own rows (owner, 2026-11-08, DQ-126). The `alone` project
 depends on the other one, so a run of one tagged file also runs every other test: while you
-build, add `--no-deps`.
+build, add `--no-deps`. If a `shared` test fails, the `alone` tests do not run, and the report
+lists them as "did not run".
 
-**Held requests.** A test that holds a request with `page.route` waits for each held handler
-to end before its last check. The page can cancel a held request when a newer one starts
-(`net::ERR_ABORTED`), so the handler stops for that request and fails for any other error
-(DQ-116).
+**Held requests.** A handler that calls `route.fetch()` fails if the test ends during that call,
+and the error is not part of any test. A live event can start such a read at any time. So a
+test with such a handler ends with `page.unrouteAll({ behavior: "ignoreErrors" })` after its
+checks. If its last checks need the answers of held requests, it waits for those handlers
+first (DQ-116).
 
 ### Edge cases each slice tests
 

@@ -159,7 +159,12 @@ describe("each file gets its rule sets", () => {
       const imports = config.parse(await eslint.calculateConfigForFile(file)).rules[
         "@typescript-eslint/no-restricted-imports"
       ];
-      for (const part of ["QueryClient", "networkMode", "setDefaultOptions"]) {
+      // The selectors themselves, not words that the messages also contain.
+      for (const part of [
+        "NewExpression[callee.name='QueryClient']",
+        "Property[key.name='networkMode']",
+        "CallExpression[callee.property.name='setDefaultOptions']",
+      ]) {
         if (!found.includes(part)) missing.push(`${file}: ${part}`);
       }
       if (!JSON.stringify(imports ?? []).includes("QueryClient")) missing.push(`${file}: import`);
