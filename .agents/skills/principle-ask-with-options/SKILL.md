@@ -8,6 +8,7 @@ description: Use before you ask a person a question or for a decision. Gives the
 1. Try not to ask. Look in the code, docs and records, or run a probe.
    If no approval rule covers the choice and it is cheap to undo, decide and report it.
 2. Say the decision in one sentence. Define terms the person may not know.
+   Ask about one decision in each question. If a question mixes a cause, a scope and a severity, split it.
 3. Give a real example with real values: what the person would see, in order.
 4. List each real option with its gain, its cost (certain) and its risk (may happen:
    how the person would notice it and undo it). If you find no real risk, say so.
@@ -15,5 +16,7 @@ description: Use before you ask a person a question or for a decision. Gives the
 6. Say how you know each fact: you ran it, you read it, or you do not know.
 7. Write the whole text in Simplified Technical English. Load `ste-writing`, then run its check on the draft.
    Fix the text until the score is 80% or more.
+8. If you ask a question again, give the example and the options again. Do this after a context reset too.
+   A person cannot answer "A, B or C?" alone.
 
 **Done:** The person can choose without another question about what the options mean. The `ste-writing` check of the sent text gives 80% or more.
