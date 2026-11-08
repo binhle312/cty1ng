@@ -315,6 +315,9 @@ test("a second Clone uses the model list of this visit, and says the model is go
   await expect(
     page.getByText("fake:scripted is no longer offered. Pick another model."),
   ).toBeVisible();
+  // A live event can start another models read, and `route.fetch()` fails if the test ends during
+  // it (testing.md §3, "Held requests").
+  await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
 // A skill list that keeps failing, as the app's real client sees it: this needs the real retries.

@@ -8,6 +8,10 @@ import { watchCsp } from "./csp.ts";
 // this file run one after another and each one unpins what it pinned.
 test.describe.configure({ mode: "serial" });
 
+// Every test here reads the bots or the pins that other files change, so each one runs alone
+// (playwright.config.ts, DQ-126).
+const ALONE = { tag: "@alone" };
+
 // A 40 × 30 PNG of one colour (the same bytes as avatar-upload.spec.ts).
 const PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAACgAAAAeCAMAAABpA6zvAAAAA1BMVEUzZv+f8kW/AAAACXBIWXMAAAPoAAAD6AG1e1Jr" +
@@ -40,6 +44,11 @@ async function makeBot(name: string): Promise<void> {
 
 async function bots() {
   return (await listBots({ client: apiClient(), throwOnError: true })).data;
+}
+
+// Other test files make bots at the same time, so each try counts the bots again (DQ-123).
+async function showsEveryBot(rows: Locator) {
+  await expect.poll(async () => (await rows.count()) - (await bots()).length).toBe(0);
 }
 
 // Unpins every bot, so the next test starts with no pins.
@@ -88,7 +97,7 @@ async function notClipped(line: Locator): Promise<boolean> {
 
 // The keyboard moves a pinned card (pin.md §2): Space picks it up, an arrow shows the drop line
 // where it lands, and the line is not cut off by the card (review of #58).
-test("the keyboard moves a pinned card and the drop line shows", async ({ page }) => {
+test("the keyboard moves a pinned card and the drop line shows", ALONE, async ({ page }) => {
   const tag = tagged();
   await makeBot(`First ${tag}`);
   await makeBot(`Second ${tag}`);
@@ -127,7 +136,7 @@ test("the keyboard moves a pinned card and the drop line shows", async ({ page }
 // The side list of the bot page reorders as everywhere (bot-page.md E2, pin.md §2): a drag
 // inside Pinned shows the drop line, which the scrolling list does not cut off, and the drop
 // saves the new order at once.
-test("the bot page's side list reorders the pinned bots by drag", async ({ page }) => {
+test("the bot page's side list reorders the pinned bots by drag", ALONE, async ({ page }) => {
   const tag = tagged();
   await makeBot(`First ${tag}`);
   await makeBot(`Second ${tag}`);
@@ -168,7 +177,7 @@ test("the bot page's side list reorders the pinned bots by drag", async ({ page 
   await expect(page).toHaveURL(`/bots/${slug}`);
 });
 
-test("the Bots page searches, pins and deletes a bot to Trash", async ({ page }) => {
+test("the Bots page searches, pins and deletes a bot to Trash", ALONE, async ({ page }) => {
   const violations = await watchCsp(page);
   const tag = tagged();
   const keep = `Keep ${tag}`;
@@ -208,93 +217,102 @@ test("the Bots page searches, pins and deletes a bot to Trash", async ({ page })
   expect(await violations()).toEqual([]);
 });
 
-test("the colour row, the Custom card and the crop card run under the CSP", async ({ page }) => {
-  const violations = await watchCsp(page);
-  await page.goto("/bots/new");
-  const colours = page.getByRole("group", { name: "Colour" });
-  await colours.getByRole("button", { name: "Colour 3" }).click();
-  await expect(colours.getByRole("button", { name: "Colour 3" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+test(
+  "the colour row, the Custom card and the crop card run under the CSP",
+  ALONE,
+  async ({ page }) => {
+    const violations = await watchCsp(page);
+    await page.goto("/bots/new");
+    const colours = page.getByRole("group", { name: "Colour" });
+    await colours.getByRole("button", { name: "Colour 3" }).click();
+    await expect(colours.getByRole("button", { name: "Colour 3" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
 
-  await colours.getByRole("button", { name: "Custom", exact: true }).click();
-  const hex = page.getByLabel("Hex", { exact: true });
-  await hex.fill("#123456");
-  await page.getByRole("button", { name: "Use", exact: true }).click();
-  await expect(colours.getByRole("img", { name: "Custom colour, picked" })).toBeVisible();
+    await colours.getByRole("button", { name: "Custom", exact: true }).click();
+    const hex = page.getByLabel("Hex", { exact: true });
+    await hex.fill("#123456");
+    await page.getByRole("button", { name: "Use", exact: true }).click();
+    await expect(colours.getByRole("img", { name: "Custom colour, picked" })).toBeVisible();
 
-  await colours.getByRole("button", { name: "Random colour" }).click();
-  await expect(colours.getByRole("img", { name: "Custom colour, picked" })).toBeVisible();
+    await colours.getByRole("button", { name: "Random colour" }).click();
+    await expect(colours.getByRole("img", { name: "Custom colour, picked" })).toBeVisible();
 
-  const chooser = page.waitForEvent("filechooser");
-  await page.getByRole("radio", { name: "Upload image" }).click();
-  await (await chooser).setFiles({ name: "face.png", mimeType: "image/png", buffer: PNG });
-  const crop = page.getByRole("dialog", { name: "Crop the image" });
-  await expect(crop).toBeVisible();
-  const position = crop.getByRole("group", { name: "Image position. Arrow keys move it." });
-  await position.focus();
-  await page.keyboard.press("ArrowRight");
-  await expectTextAboveButtons(
-    crop.getByRole("slider", { name: /Zoom/ }),
-    crop.getByRole("button", { name: "Cancel" }).locator(".."),
-  );
-  await crop.getByRole("button", { name: "Use", exact: true }).click();
-  await expect(crop).toBeHidden();
-  await expect(page.getByRole("radio", { name: "Your image" })).toHaveAttribute(
-    "aria-checked",
-    "true",
-  );
-  expect(await violations()).toEqual([]);
-});
+    const chooser = page.waitForEvent("filechooser");
+    await page.getByRole("radio", { name: "Upload image" }).click();
+    await (await chooser).setFiles({ name: "face.png", mimeType: "image/png", buffer: PNG });
+    const crop = page.getByRole("dialog", { name: "Crop the image" });
+    await expect(crop).toBeVisible();
+    const position = crop.getByRole("group", { name: "Image position. Arrow keys move it." });
+    await position.focus();
+    await page.keyboard.press("ArrowRight");
+    await expectTextAboveButtons(
+      crop.getByRole("slider", { name: /Zoom/ }),
+      crop.getByRole("button", { name: "Cancel" }).locator(".."),
+    );
+    await crop.getByRole("button", { name: "Use", exact: true }).click();
+    await expect(crop).toBeHidden();
+    await expect(page.getByRole("radio", { name: "Your image" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(await violations()).toEqual([]);
+  },
+);
 
 // A late upload after Cancel is dropped (review of #58): upload A, Cancel while it is sent, open
 // image B; when A's answer comes, B's crop card stays open and A is not chosen.
-test("an upload that ends after Cancel does not replace the next image", async ({ page }) => {
-  let release: () => void = () => undefined;
-  const held = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  let first = true;
-  await page.route("**/api/avatars", async (route) => {
-    if (route.request().method() === "POST" && first) {
-      first = false;
-      await held;
-    }
-    await route.continue();
-  });
-  await page.goto("/bots/new");
-  const crop = page.getByRole("dialog", { name: "Crop the image" });
-  const pick = async (name: string) => {
-    const chooser = page.waitForEvent("filechooser");
-    await page.getByRole("radio", { name: "Upload image" }).click();
-    await (await chooser).setFiles({ name, mimeType: "image/png", buffer: PNG });
-    await expect(crop).toBeVisible();
-  };
-  await pick("a.png");
-  const sent = page.waitForRequest(
-    (request) => request.method() === "POST" && request.url().endsWith("/api/avatars"),
-  );
-  await crop.getByRole("button", { name: "Use", exact: true }).click();
-  await sent;
-  await crop.getByRole("button", { name: "Cancel" }).click();
-  await expect(crop).toBeHidden();
+test(
+  "an upload that ends after Cancel does not replace the next image",
+  ALONE,
+  async ({ page }) => {
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let first = true;
+    await page.route("**/api/avatars", async (route) => {
+      if (route.request().method() === "POST" && first) {
+        first = false;
+        await held;
+      }
+      await route.continue();
+    });
+    await page.goto("/bots/new");
+    const crop = page.getByRole("dialog", { name: "Crop the image" });
+    const pick = async (name: string) => {
+      const chooser = page.waitForEvent("filechooser");
+      await page.getByRole("radio", { name: "Upload image" }).click();
+      await (await chooser).setFiles({ name, mimeType: "image/png", buffer: PNG });
+      await expect(crop).toBeVisible();
+    };
+    await pick("a.png");
+    const sent = page.waitForRequest(
+      (request) => request.method() === "POST" && request.url().endsWith("/api/avatars"),
+    );
+    await crop.getByRole("button", { name: "Use", exact: true }).click();
+    await sent;
+    await crop.getByRole("button", { name: "Cancel" }).click();
+    await expect(crop).toBeHidden();
 
-  await pick("b.png");
-  const answered = page.waitForResponse(
-    (response) => response.request().method() === "POST" && response.url().endsWith("/api/avatars"),
-  );
-  release();
-  await answered;
-  // Give the page a moment to act on the late answer.
-  await page.waitForTimeout(300);
-  await expect(crop).toBeVisible();
-  await expect(page.getByRole("radio", { name: "Your image" })).toHaveCount(0);
-});
+    await pick("b.png");
+    const answered = page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" && response.url().endsWith("/api/avatars"),
+    );
+    release();
+    await answered;
+    // Give the page a moment to act on the late answer.
+    await page.waitForTimeout(300);
+    await expect(crop).toBeVisible();
+    await expect(page.getByRole("radio", { name: "Your image" })).toHaveCount(0);
+  },
+);
 
 // A file with the PNG type that the browser cannot decode (review of #58): the crop card closes
 // with the error, instead of a Use button that stays off.
-test("a broken image closes the crop card with an error", async ({ page }) => {
+test("a broken image closes the crop card with an error", ALONE, async ({ page }) => {
   const violations = await watchCsp(page);
   await page.goto("/bots/new");
   const chooser = page.waitForEvent("filechooser");
@@ -309,7 +327,7 @@ test("a broken image closes the crop card with an error", async ({ page }) => {
 
 // The middle 6 columns hold about 12 avatars (top-header.md state 2). With 14 or more, the
 // roster scrolls inside the header and the page never scrolls sideways.
-test("the header scrolls a long roster and pins a bot by drag", async ({ page }) => {
+test("the header scrolls a long roster and pins a bot by drag", ALONE, async ({ page }) => {
   const violations = await watchCsp(page);
   const tag = tagged();
   const count = (await bots()).length;
@@ -317,7 +335,7 @@ test("the header scrolls a long roster and pins a bot by drag", async ({ page })
   await page.goto("/skills");
   const header = page.getByRole("banner", { name: "Bots" });
   const roster = header.getByTestId("roster");
-  await expect(header.getByTestId("header-bot")).toHaveCount((await bots()).length);
+  await showsEveryBot(header.getByTestId("header-bot"));
   const sizes = await roster.evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
   expect(sizes.scroll).toBeGreaterThan(sizes.client);
   const pageWidth = await page.evaluate(() => ({
@@ -333,8 +351,14 @@ test("the header scrolls a long roster and pins a bot by drag", async ({ page })
   await avatars.first().focus();
   await page.keyboard.press("Tab");
   await expect(avatars.nth(1)).toBeFocused();
-  const second = (await bots())[1];
-  await expect(page.getByText(`${second?.name ?? ""} · Idle`, { exact: true })).toBeVisible();
+  // The focused avatar's bot, not the API's second bot: other test files add bots (DQ-123).
+  const focusedSlug = await header
+    .getByTestId("header-bot")
+    .filter({ has: page.locator(":focus") })
+    .getAttribute("data-bot");
+  const second = (await bots()).find((bot) => bot.slug === focusedSlug);
+  if (second === undefined) throw new Error("The focused avatar has no bot.");
+  await expect(page.getByText(`${second.name} · Idle`, { exact: true })).toBeVisible();
   await expect(header.getByRole("button", { name: "Scroll bots right" })).toBeVisible();
 
   await roster.hover();
@@ -356,57 +380,60 @@ test("the header scrolls a long roster and pins a bot by drag", async ({ page })
 
 // The "+N" chip (top-header.md §4, UI-2.12): N counts the avatars not fully in view, the list
 // has every bot, and a pick scrolls the header to the avatar and opens its card.
-test('the "+N" chip lists every bot and shows the picked one in the header', async ({ page }) => {
-  const violations = await watchCsp(page);
-  const all = await bots();
-  expect(all.length).toBeGreaterThanOrEqual(14);
-  await page.goto("/skills");
-  const header = page.getByRole("banner", { name: "Bots" });
-  const roster = header.getByTestId("roster");
-  await expect(header.getByTestId("header-bot")).toHaveCount(all.length);
-  const chip = header.getByTestId("all-bots");
-  const notInView = () =>
-    roster.evaluate((el) => {
-      const view = el.getBoundingClientRect();
-      return Array.from(el.querySelectorAll("[data-testid='header-bot']")).filter((avatar) => {
+test(
+  'the "+N" chip lists every bot and shows the picked one in the header',
+  ALONE,
+  async ({ page }) => {
+    const violations = await watchCsp(page);
+    expect((await bots()).length).toBeGreaterThanOrEqual(14);
+    await page.goto("/skills");
+    const header = page.getByRole("banner", { name: "Bots" });
+    const roster = header.getByTestId("roster");
+    await showsEveryBot(header.getByTestId("header-bot"));
+    const chip = header.getByTestId("all-bots");
+    const notInView = () =>
+      roster.evaluate((el) => {
+        const view = el.getBoundingClientRect();
+        return Array.from(el.querySelectorAll("[data-testid='header-bot']")).filter((avatar) => {
+          const box = avatar.getBoundingClientRect();
+          return box.left < view.left - 0.5 || box.right > view.right + 0.5;
+        }).length;
+      });
+    const hidden = await notInView();
+    expect(hidden).toBeGreaterThan(0);
+    await expect(chip).toHaveText(`+${String(hidden)}`);
+
+    await chip.click();
+    const list = page.getByRole("dialog", { name: "All bots" });
+    const search = list.getByRole("searchbox", { name: "Find a bot" });
+    await expect(search).toBeFocused();
+    await showsEveryBot(list.getByTestId("all-bots-row"));
+
+    // The last avatar is out of view at the start: find it and pick it with Enter.
+    const lastSlug = await header.getByTestId("header-bot").last().getAttribute("data-bot");
+    const last = (await bots()).find((bot) => bot.slug === lastSlug);
+    if (last === undefined) throw new Error("The last avatar has no bot.");
+    await search.fill(last.name);
+    await expect(list.getByTestId("all-bots-row")).toHaveCount(1);
+    await page.keyboard.press("Enter");
+    await expect(list).toBeHidden();
+    await expect(page.getByRole("dialog", { name: last.name })).toBeVisible();
+    const inView = await header
+      .locator(`[data-testid="header-bot"][data-bot="${last.slug}"]`)
+      .evaluate((avatar) => {
+        const view = avatar.closest("[data-testid='roster']")?.getBoundingClientRect();
         const box = avatar.getBoundingClientRect();
-        return box.left < view.left - 0.5 || box.right > view.right + 0.5;
-      }).length;
-    });
-  const hidden = await notInView();
-  expect(hidden).toBeGreaterThan(0);
-  await expect(chip).toHaveText(`+${String(hidden)}`);
-
-  await chip.click();
-  const list = page.getByRole("dialog", { name: "All bots" });
-  const search = list.getByRole("searchbox", { name: "Find a bot" });
-  await expect(search).toBeFocused();
-  await expect(list.getByTestId("all-bots-row")).toHaveCount(all.length);
-
-  // The last avatar is out of view at the start: find it and pick it with Enter.
-  const lastSlug = await header.getByTestId("header-bot").last().getAttribute("data-bot");
-  const last = all.find((bot) => bot.slug === lastSlug);
-  if (last === undefined) throw new Error("The last avatar has no bot.");
-  await search.fill(last.name);
-  await expect(list.getByTestId("all-bots-row")).toHaveCount(1);
-  await page.keyboard.press("Enter");
-  await expect(list).toBeHidden();
-  await expect(page.getByRole("dialog", { name: last.name })).toBeVisible();
-  const inView = await header
-    .locator(`[data-testid="header-bot"][data-bot="${last.slug}"]`)
-    .evaluate((avatar) => {
-      const view = avatar.closest("[data-testid='roster']")?.getBoundingClientRect();
-      const box = avatar.getBoundingClientRect();
-      return view !== undefined && box.left >= view.left - 0.5 && box.right <= view.right + 0.5;
-    });
-  expect(inView).toBe(true);
-  await expect(chip).toHaveText(`+${String(await notInView())}`);
-  expect(await violations()).toEqual([]);
-});
+        return view !== undefined && box.left >= view.left - 0.5 && box.right <= view.right + 0.5;
+      });
+    expect(inView).toBe(true);
+    await expect(chip).toHaveText(`+${String(await notInView())}`);
+    expect(await violations()).toEqual([]);
+  },
+);
 
 // A drop outside the header changes no pin (top-header.md HD5, review of #58): the drop place
 // decides, and below the header there is nothing to drop on yet (M3 adds the conversation).
-test("a drop below the header changes no pin", async ({ page }) => {
+test("a drop below the header changes no pin", ALONE, async ({ page }) => {
   const tag = tagged();
   await makeBot(`Drop ${tag}`);
   await page.goto("/skills");
@@ -432,7 +459,7 @@ test("a drop below the header changes no pin", async ({ page }) => {
 
 // Touch (top-header.md HD6, review of #58): a long press starts the drag. The touches go
 // through Chrome's own input, as a finger's would.
-test.describe("on a touch screen", () => {
+test.describe("on a touch screen", ALONE, () => {
   test.use({ hasTouch: true });
 
   test("a short tap on a header avatar opens its bot card", async ({ page }) => {
