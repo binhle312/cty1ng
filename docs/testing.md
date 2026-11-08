@@ -178,6 +178,19 @@ open at the "New" divider.
 
 Each slice's brief lists which of these steps must pass by its end.
 
+**Shared data.** All test files share one server and one database, and they run at the same
+time. A test that reads data that other files change (every bot, the pins) gets the tag
+`@alone`. The `alone` project of `playwright.config.ts` runs those tests after all the others
+end, one at a time. A test that reads only what it made needs no tag; a route can filter a
+shared list down to the test's own rows (owner, 2026-11-08, DQ-126). The `alone` project
+depends on the other one, so a run of one tagged file also runs every other test: while you
+build, add `--no-deps`.
+
+**Held requests.** A test that holds a request with `page.route` waits for each held handler
+to end before its last check. The page can cancel a held request when a newer one starts
+(`net::ERR_ABORTED`), so the handler stops for that request and fails for any other error
+(DQ-116).
+
 ### Edge cases each slice tests
 
 The normal path of an acceptance criterion is not enough. For each screen or flow it builds,

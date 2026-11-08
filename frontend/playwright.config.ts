@@ -64,6 +64,13 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.01 } },
+  // All test files share one server and one database. A test that reads data that other files
+  // change (every bot, the pins) has the tag `@alone`. Those tests start after all the others
+  // end, one at a time (testing.md §3, DQ-126, owner 2026-11-08).
+  projects: [
+    { name: "shared", grepInvert: /@alone/ },
+    { name: "alone", grep: /@alone/, dependencies: ["shared"], workers: 1 },
+  ],
   webServer: [
     {
       ...backend(APP_PORT, { NODE_ENV: "production", APP_ENV: "prod" }),
