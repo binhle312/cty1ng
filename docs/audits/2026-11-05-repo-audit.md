@@ -80,6 +80,20 @@ After these: the owner fixes or drops each of the other 33 P3 findings and the P
 - The wait of a skill Delete is replaced (`AGENTS.md` §9). Three bugs came from keeping it in the page's state (DQ-067, DQ-069, DQ-078). The page now asks the query client if a Delete of this skill is on its way, so the wait has the life of the request.
 - `useOnPage` is the redesign for late answers on the skill pages (`AGENTS.md` §9, DQ-065). No shared wrapper for all late answers for now. Look again if the same bug comes back in a new request.
 
+**Decisions during PR 4** (owner, 2026-11-06).
+
+- Row 2 and the Advanced defaults of a new bot have the same cause as DQ-003 (`AGENTS.md` §9): a form that fills once takes cached data. The cause is mainly process, because `testing.md` had the rule ("A second Clone …", "A test that reloads …") and no step checked that a builder applied it. Decision: small fixes with no shared hook, plus these four steps.
+  1. For each changed screen, the PR names a test for each row of the edge case table, or says why the row does not apply. A reviewer reports a missing row as a finding.
+  2. The general rule goes in `frontend-conventions.md` §5, `testing.md` §3 and the review guide.
+  3. A fix record names the general rule and the search of old fixes (`workflows/bug-fix.md`, step 2).
+  4. The second audit lists each form that fills once, and it runs a second visit on each.
+- The independent review found one more path with this cause: a Clone decides from the cached catalog if its model is gone. Decision: fix it in PR 4 with the same small wait (DQ-096).
+- The next review found another path: a Clone decides from the cached skill list if a copied skill is in Trash (DQ-101). Decision: one rule for the form. The Create page waits for this visit's read of the settings, the models, the tools and the skills. This replaces the separate waits.
+- The third review found that the builder's fix of DQ-092 made a wait that can come back: an event closed an open form, and the typed text went (DQ-104). This has the cause of the pitfall "Waiting on a query that keeps failing". Decision (owner, 2026-11-07): delete that clause. The wait ends when the read gives its last answer. When a read fails on a later visit, the page holds the skeleton for about 7 s (DQ-092, dropped). The builder told the owner only this number. A later run showed that each live event starts the retries again (DQ-109), so the owner has not decided on that longer hold.
+- The review of `2a39bd6` found a test that checked before the page took its held answer (DQ-110). This has the cause of DQ-094, DQ-099 and DQ-100: a test that does not reach its case. Decision (owner, 2026-11-07): fix the shared helper `heldAnswer`, so all its tests wait for the page. The first form of this fix waited for one timer step, and it raced the page (review of `3b7e074`). The builder changed the helper to wait for the query client, under this same decision, and told the owner.
+- Decisions on the PR's open items (owner, 2026-11-08): keep the longer skeleton of DQ-109 as a P3 follow-up. DQ-088 is P2, and it gets its own small PR after PR 4: the app's reads and saves run when the browser says that it is offline, and each page is tested offline. Write the `docs/workflows/audit.md` PR now, at the same time as PR 4.
+- This is an exception to `principle-fix-root-cause`, which asks for one owner. The rule stays in three code places: the skill Clone, the bot Clone and the wait for this visit's read in `create-bot-page.tsx`. The builder's advice, not part of the decision: look again if a third form of this type appears.
+
 ## Fix progress
 
 Each fix PR updates its row in the same PR. Check `gh pr list --state all`, because this table can be behind.
@@ -88,8 +102,8 @@ Each fix PR updates its row in the same PR. Check `gh pr list --state all`, beca
 | --- | --- | --- |
 | 1 | Docs only | merged: #71 |
 | 2 | Security | merged: #73 |
-| 3 | Skills page | draft: #78 |
-| 4 | Bots page | not started |
+| 3 | Skills page | merged: #78 |
+| 4 | Bots page | draft: [#82](https://github.com/binhle312/cty1ng/pull/82) |
 | 5 | Tests only | not started |
 | 6 | Six tabs | not started |
 | 7 | Other P3 for M3 | not started |
@@ -175,6 +189,19 @@ The lead did not check these again, except where a row says so. The others are f
 - Try again never shows the sending state: `frontend/src/features/bots/create-bot-page.tsx:366`.
 - A server error on `cloned_from_bot_id` shows on no step and blocks Create: `frontend/src/features/bots/create-bot-form.ts:110`.
 - A ticked skill that another tab deprecates shows as "A skill in Trash": `frontend/src/features/bots/create-bot-page.tsx:592`.
+
+### Found during PR 4
+
+- **P2 (owner, 2026-11-08); its own PR after PR 4.** After the browser reports that it is offline, the first visit to a Clone page, a bot page or `/bots/new` stays loading until the browser is online again. TanStack Query pauses reads, and the app runs on 127.0.0.1. Run with an `offline` event on `8c2278f` and on the branch; real Wi-Fi off is not tested: `frontend/src/main.tsx:15`.
+- Esc on the bot page does nothing when the focus is outside the edit form, for example after a click on a blank area, on Discard or on a tab. Run on `8c2278f` and on the branch: `frontend/src/features/bots/bot-page.tsx:279`.
+- Two older Esc checks and one older option have no test that fails without them: `contains`, `defaultPrevented` and the template's `retry: false` (DQ-095).
+- A live event during a first-load read joins that read, so the form can open with a value from before the event. The next change has the same result, because an open form keeps its first answer (DQ-107).
+- When a read of the Create form keeps failing, each live event for that list starts the retries again. With an event every 3 s for 21 s, the form opened at 25.1 s (DQ-109).
+- `heldAnswer` waits on the client that `watchQueryClient` set last, and nothing checks it. A test with its own client and no call gets the old race back (DQ-115).
+- Create waits for its refresh of the lists before it moves to the new bot. When the skill read keeps failing, the form stays disabled for about 7 s (DQ-108).
+- The skill Clone cuts the name with a cached limit. The form checks the name against the current limit. From reading the code: `frontend/src/features/skills/new-skill-page.tsx:160`.
+
+Correction to row 1: `act()` is not the only thing that hides the failure. A bare `dispatchEvent` hides it too, so removing `act()` alone gives a test that passes on the old code (run on `8c2278f`). `pressKey` makes React finish its work where a browser does.
 
 ### Skills pages and shell
 

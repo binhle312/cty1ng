@@ -1,7 +1,12 @@
-import { focusManager } from "@tanstack/react-query";
+import { focusManager, onlineManager } from "@tanstack/react-query";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { fakeApi, NETWORK_ERROR, type RecordedRequest } from "../../../test/fake-api.ts";
+import {
+  fakeApi,
+  heldAnswer,
+  NETWORK_ERROR,
+  type RecordedRequest,
+} from "../../../test/fake-api.ts";
 import {
   BOT_SETTINGS,
   FAKE_SCRIPTED,
@@ -9,10 +14,12 @@ import {
   makeModel,
   makePin,
   makeSkill,
+  makeTool,
   typeId,
   versionId,
 } from "../../../test/fixtures.ts";
 import { renderApp } from "../../../test/render-app.tsx";
+import { BOT_QUERIES, SETTINGS_QUERIES } from "../../lib/api/operation-queries.ts";
 
 // Create with an Idempotency-Key (create-bot-page.md E3, E5; api.md §4): when the outcome is
 // not known, Try again sends the same request with the same key, so a retry never makes two
@@ -642,5 +649,868 @@ describe("the avatar limits on the Create bot page", () => {
     expect(screen.queryByRole("dialog", { name: "Crop the image" })).toBeNull();
     pick(SMALL());
     expect(await screen.findByRole("dialog", { name: "Crop the image" })).toBeTruthy();
+  });
+});
+
+describe("the first load of the Create page", () => {
+  const ANSWERS = {
+    "/api/settings": BOT_SETTINGS,
+    "/api/models": [makeModel(), FAKE_SCRIPTED],
+    "/api/tools": [],
+    "/api/skills": [],
+    "/api/bots": [],
+  };
+  const READS = ["/api/settings", "/api/models", "/api/tools", "/api/skills", "/api/bots"] as const;
+  const TEXT = "The app could not load what the Create page needs.";
+  let fake: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    fake?.restore();
+    fake = null;
+  });
+  type Routes = Parameters<typeof fakeApi>[0];
+  function start(routes: Routes) {
+    fake = fakeApi({
+      "GET /api/settings": () => ({ body: ANSWERS["/api/settings"] }),
+      "GET /api/models": () => ({ body: ANSWERS["/api/models"] }),
+      "GET /api/tools": () => ({ body: [] }),
+      "GET /api/skills": () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [] }),
+      ...routes,
+    });
+    return renderApp("/bots/new");
+  }
+  const form = () => screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+
+  it.each(READS)("shows no form until %s answers", async (read) => {
+    const held = heldAnswer();
+    await start({ [`GET ${read}`]: () => held.promise });
+    await waitFor(() => {
+      expect(fake?.sent("GET", read)).toHaveLength(1);
+    });
+    expect(screen.queryByRole("heading", { name: "New bot" })).toBeNull();
+    await held.answer({ body: ANSWERS[read] });
+    expect(await form()).toBeTruthy();
+  });
+
+  it.each(READS)(
+    "says the load failed when %s fails, and Try again opens the form",
+    async (read) => {
+      let failing = true;
+      await start({
+        [`GET ${read}`]: () =>
+          failing
+            ? { status: 500, body: { error: { code: "internal_error", message: "Failed." } } }
+            : { body: ANSWERS[read] },
+      });
+      expect(await screen.findByText(TEXT, {}, { timeout: 5000 })).toBeTruthy();
+      failing = false;
+      click(screen.getByRole("button", { name: "Try again" }));
+      expect(await form()).toBeTruthy();
+      expect(screen.queryByText(TEXT)).toBeNull();
+    },
+  );
+
+  it("an empty catalog opens the form, and Create stays off", async () => {
+    await start({ "GET /api/models": () => ({ body: [] }) });
+    await form();
+    type("Name", "BA");
+    type("Description", "Writes stories.");
+    click(screen.getByRole("button", { name: "Next" }));
+    type("Persona", "You are the BA.");
+    click(screen.getByRole("button", { name: "Next" }));
+    click(await screen.findByRole("button", { name: "Next" }));
+    const model = await screen.findByLabelText("Model", { exact: true });
+    expect(within(model).queryByRole("option", { name: new RegExp(FAKE_SCRIPTED.id) })).toBeNull();
+    const create = screen.getByRole("button", { name: "Create" });
+    expect(create.hasAttribute("disabled") || create.getAttribute("aria-disabled") === "true").toBe(
+      true,
+    );
+  });
+});
+
+// A form that fills once waits for a read from this visit (create-bot-page.md §5, §6): the Advanced
+// defaults of a new bot come from the settings as they are now, not from the cache.
+describe("the read of this visit (create-bot-page.md §5)", () => {
+  const READS = ["/api/settings", "/api/models", "/api/tools", "/api/skills"] as const;
+  type Read = (typeof READS)[number];
+  const ANSWERS: Record<Read, unknown> = {
+    "/api/settings": BOT_SETTINGS,
+    "/api/models": [makeModel(), FAKE_SCRIPTED],
+    "/api/tools": [],
+    "/api/skills": [],
+  };
+  const OK = (read: Read) => ({ body: ANSWERS[read] });
+  const FAILED = {
+    status: 500,
+    body: { error: { code: "internal_error", message: "Failed." } },
+  };
+  let fake: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    fake?.restore();
+    fake = null;
+  });
+  type Handler = Parameters<typeof fakeApi>[0][string];
+
+  // The first answer of `read` is fine. A test sets `next.answer` for the reads after it.
+  function start(read: Read, routes: Parameters<typeof fakeApi>[0] = {}) {
+    const next: { answer: Handler } = { answer: () => OK(read) };
+    fake = fakeApi({
+      "GET /api/settings": () => OK("/api/settings"),
+      "GET /api/models": () => OK("/api/models"),
+      "GET /api/tools": () => OK("/api/tools"),
+      "GET /api/skills": () => OK("/api/skills"),
+      "GET /api/bots": () => ({ body: [] }),
+      [`GET ${read}`]: (...args) => next.answer(...args),
+      ...routes,
+    });
+    return { next, rendered: renderApp("/bots/new") };
+  }
+  const form = () => screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+  const noForm = () => {
+    expect(screen.queryByRole("heading", { name: "New bot" })).toBeNull();
+  };
+  const noSkeletonOverForm = () => {
+    expect(screen.getByRole("heading", { name: "New bot" })).toBeTruthy();
+    expect(screen.getByLabelText<HTMLInputElement>("Name", { exact: true }).value).toBe(
+      "Typed by the owner",
+    );
+  };
+  const readsOf = (read: Read) => fake?.sent("GET", read).length ?? 0;
+  const waitForReads = (read: Read, count: number) =>
+    waitFor(() => {
+      expect(readsOf(read)).toBe(count);
+    });
+
+  it.each(READS)("slow refresh: the second visit waits for %s", async (read) => {
+    const { next, rendered } = start(read);
+    const { router } = await rendered;
+    await form();
+    await act(() => router.navigate({ to: "/settings" }));
+    const held = heldAnswer();
+    next.answer = () => held.promise;
+    const before = readsOf(read);
+    await act(() => router.navigate({ to: "/bots/new" }));
+    await waitForReads(read, before + 1);
+    noForm();
+    await held.answer(OK(read));
+    expect(await form()).toBeTruthy();
+  });
+
+  // The wait ends once, when this visit's read gives its last answer (DQ-104).
+  it.each(READS)("failed refresh: the form opens when the retries of %s end", async (read) => {
+    const { next, rendered } = start(read);
+    const { router, queryClient } = await rendered;
+    await form();
+    await act(() => router.navigate({ to: "/settings" }));
+    const lastTry = heldAnswer();
+    const answers = [() => FAILED, () => lastTry.promise];
+    next.answer = () => {
+      const answer = answers.shift();
+      if (answer === undefined) throw new Error("no answer left for this read");
+      return answer();
+    };
+    const before = readsOf(read);
+    queryClient.setDefaultOptions({ queries: { retry: 1, retryDelay: 1 } });
+    await act(() => router.navigate({ to: "/bots/new" }));
+    await waitForReads(read, before + 2);
+    noForm();
+    await lastTry.answer(FAILED);
+    expect(await form()).toBeTruthy();
+  });
+
+  // A live event starts the read again. The old wait used the failure count, which goes back to 0.
+  it.each(READS)(
+    "leaving with unsaved: a live event after a failed read of %s keeps the form and the text",
+    async (read) => {
+      const { next, rendered } = start(read);
+      const { router, queryClient } = await rendered;
+      await form();
+      await act(() => router.navigate({ to: "/settings" }));
+      next.answer = () => FAILED;
+      queryClient.setDefaultOptions({ queries: { retry: 1, retryDelay: 200 } });
+      await act(() => router.navigate({ to: "/bots/new" }));
+      await form();
+      type("Name", "Typed by the owner");
+      const again = heldAnswer();
+      next.answer = () => again.promise;
+      const before = readsOf(read);
+      act(() => {
+        void queryClient.invalidateQueries();
+      });
+      await waitFor(() => {
+        expect(readsOf(read)).toBeGreaterThan(before);
+      });
+      noSkeletonOverForm();
+      await again.answer(FAILED);
+      noSkeletonOverForm();
+    },
+  );
+
+  // The open form keeps its first values, but its check of the name follows the bots list.
+  it("changes back: a name that is taken and then free keeps the text, and the error goes", async () => {
+    const TAKEN = "BA is taken by another bot. Pick another name.";
+    let bots: unknown[] = [];
+    const { rendered } = start("/api/tools", { "GET /api/bots": () => ({ body: bots }) });
+    const { queryClient } = await rendered;
+    await form();
+    const name = () => screen.getByLabelText<HTMLInputElement>("Name", { exact: true });
+    type("Name", "BA");
+    act(() => {
+      fireEvent.blur(name());
+    });
+    expect(screen.queryByText(TAKEN)).toBeNull();
+    bots = [makeBot(1, "BA")];
+    act(() => {
+      void queryClient.invalidateQueries();
+    });
+    expect(await screen.findByText(TAKEN)).toBeTruthy();
+    expect(name().value).toBe("BA");
+    bots = [];
+    act(() => {
+      void queryClient.invalidateQueries();
+    });
+    await waitFor(() => {
+      expect(screen.queryByText(TAKEN)).toBeNull();
+    });
+    expect(name().value).toBe("BA");
+  });
+
+  // `/bots/new` and `/bots/new?from={id}` are one route, so only a key gives each form its own mount.
+  const CLONE_ROUTES = {
+    "GET /api/bots": () => ({ body: [SOURCE] }),
+    [`GET /api/bots/${SOURCE.id}/clone-template`]: () => ({
+      body: { ...TEMPLATE, pins: [], copied_pins: [] },
+    }),
+  };
+  it.each(READS)(
+    "leaving and coming back: a move from the new-bot form to a Clone waits for %s",
+    async (read) => {
+      const { next, rendered } = start(read, CLONE_ROUTES);
+      const { router } = await rendered;
+      await form();
+      const held = heldAnswer();
+      next.answer = () => held.promise;
+      const before = readsOf(read);
+      await act(() => router.navigate({ to: "/bots/new", search: { from: SOURCE.id } }));
+      await waitForReads(read, before + 1);
+      expect(screen.queryByText("Cloning Source")).toBeNull();
+      await held.answer(OK(read));
+      expect(await screen.findByText("Cloning Source", {}, { timeout: 5000 })).toBeTruthy();
+    },
+  );
+
+  it.each(READS)(
+    "leaving and coming back: a move from a Clone to the new-bot form waits for %s",
+    async (read) => {
+      const { next, rendered } = start(read, CLONE_ROUTES);
+      const { router } = await rendered;
+      await form();
+      await act(() => router.navigate({ to: "/bots/new", search: { from: SOURCE.id } }));
+      await screen.findByText("Cloning Source", {}, { timeout: 5000 });
+      const held = heldAnswer();
+      next.answer = () => held.promise;
+      const before = readsOf(read);
+      await act(() => router.navigate({ to: "/bots/new", search: {} }));
+      await waitForReads(read, before + 1);
+      noForm();
+      await held.answer(OK(read));
+      expect(await form()).toBeTruthy();
+      expect(screen.queryByText("Cloning Source")).toBeNull();
+    },
+  );
+
+  it.each(READS)("offline: the second visit reads %s and opens", async (read) => {
+    const { rendered } = start(read);
+    const { router } = await rendered;
+    await form();
+    await act(() => router.navigate({ to: "/settings" }));
+    const before = readsOf(read);
+    onlineManager.setOnline(false);
+    try {
+      await act(() => router.navigate({ to: "/bots/new" }));
+      expect(await form()).toBeTruthy();
+      expect(readsOf(read)).toBe(before + 1);
+    } finally {
+      onlineManager.setOnline(true);
+    }
+  });
+
+  it.each(READS)(
+    "caller left: a read of %s from before the leave does not open the form",
+    async (read) => {
+      const { next, rendered } = start(read);
+      const { router } = await rendered;
+      await form();
+      await act(() => router.navigate({ to: "/settings" }));
+      const old = heldAnswer();
+      const current = heldAnswer();
+      const answers = [old, current];
+      next.answer = () => {
+        const held = answers.shift();
+        if (held === undefined) throw new Error("no answer left for this read");
+        return held.promise;
+      };
+      const before = readsOf(read);
+      await act(() => router.navigate({ to: "/bots/new" }));
+      await waitForReads(read, before + 1);
+      await act(() => router.navigate({ to: "/settings" }));
+      await act(() => router.navigate({ to: "/bots/new" }));
+      await waitForReads(read, before + 2);
+      await old.answer(OK(read));
+      noForm();
+      await current.answer(OK(read));
+      expect(await form()).toBeTruthy();
+    },
+  );
+
+  it.each(READS)(
+    "list load: a live event during the read of %s starts a new one, and the old answer does not open the form",
+    async (read) => {
+      const { next, rendered } = start(read);
+      const { router, queryClient } = await rendered;
+      await form();
+      await act(() => router.navigate({ to: "/settings" }));
+      const old = heldAnswer();
+      const current = heldAnswer();
+      const answers = [old, current];
+      next.answer = () => {
+        const held = answers.shift();
+        if (held === undefined) throw new Error("no answer left for this read");
+        return held.promise;
+      };
+      const before = readsOf(read);
+      await act(() => router.navigate({ to: "/bots/new" }));
+      await waitForReads(read, before + 1);
+      act(() => {
+        void queryClient.invalidateQueries();
+      });
+      await waitForReads(read, before + 2);
+      await old.answer(OK(read));
+      noForm();
+      await current.answer(OK(read));
+      expect(await form()).toBeTruthy();
+    },
+  );
+});
+
+describe("the defaults of a new bot", () => {
+  const OLD_LIMIT = BOT_SETTINGS.bot_default_request_limit;
+  const NEW_LIMIT = OLD_LIMIT + 7;
+  const FAILED = {
+    status: 500,
+    body: { error: { code: "internal_error", message: "Failed." } },
+  };
+  let fake: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    fake?.restore();
+    fake = null;
+  });
+  type Settings = Parameters<typeof fakeApi>[0][string];
+
+  function start(settings: Settings) {
+    fake = fakeApi({
+      "GET /api/settings": settings,
+      "GET /api/models": () => ({ body: [makeModel(), FAKE_SCRIPTED] }),
+      "GET /api/tools": () => ({ body: [] }),
+      "GET /api/skills": () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [] }),
+    });
+    return renderApp("/bots/new");
+  }
+  type Router = Awaited<ReturnType<typeof start>>["router"];
+  const form = () => screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+  // A page with no settings on it, so the cached settings wait with no refresh.
+  const leave = (router: Router) => act(() => router.navigate({ to: "/" }));
+  const back = (router: Router) => act(() => router.navigate({ to: "/bots/new" }));
+  const limitOnForm = async () => {
+    await fillToModelStep();
+    const field = await screen.findByLabelText("Model requests per run", { exact: true });
+    if (!(field instanceof HTMLInputElement)) throw new Error("no number field");
+    return field.value;
+  };
+
+  it("takes the newest default when the settings changed since the last visit", async () => {
+    let limit = OLD_LIMIT;
+    const { router } = await start(() => ({
+      body: { ...BOT_SETTINGS, bot_default_request_limit: limit },
+    }));
+    await form();
+    await leave(router);
+    limit = NEW_LIMIT;
+    await back(router);
+    await form();
+    expect(await limitOnForm()).toBe(String(NEW_LIMIT));
+  });
+
+  it("shows the skeleton until the read of this visit answers", async () => {
+    const held = heldAnswer();
+    let read: Settings = () => ({ body: BOT_SETTINGS });
+    const { router } = await start((...args) => read(...args));
+    await form();
+    await leave(router);
+    read = () => held.promise;
+    await back(router);
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/settings")).toHaveLength(2);
+    });
+    expect(screen.queryByRole("heading", { name: "New bot" })).toBeNull();
+    await held.answer({ body: { ...BOT_SETTINGS, bot_default_request_limit: NEW_LIMIT } });
+    await form();
+    expect(await limitOnForm()).toBe(String(NEW_LIMIT));
+  });
+
+  it("opens with the last values when the read of this visit fails", async () => {
+    let read: Settings = () => ({ body: BOT_SETTINGS });
+    const { router } = await start((...args) => read(...args));
+    await form();
+    await leave(router);
+    read = () => FAILED;
+    await back(router);
+    await form();
+    expect(await limitOnForm()).toBe(String(OLD_LIMIT));
+  });
+
+  it("waits for the retries of the settings, then opens with the last values", async () => {
+    let read: Settings = () => ({ body: BOT_SETTINGS });
+    const { router, queryClient } = await start((...args) => read(...args));
+    await form();
+    await leave(router);
+    const lastTry = heldAnswer();
+    const answers = [() => FAILED, () => lastTry.promise];
+    read = () => {
+      const answer = answers.shift();
+      if (answer === undefined) throw new Error("no answer left for this read");
+      return answer();
+    };
+    queryClient.setDefaultOptions({ queries: { retry: 1, retryDelay: 1 } });
+    await back(router);
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/settings")).toHaveLength(3);
+    });
+    expect(screen.queryByRole("heading", { name: "New bot" })).toBeNull();
+    await lastTry.answer(FAILED);
+    await form();
+    expect(await limitOnForm()).toBe(String(OLD_LIMIT));
+  });
+
+  // The app runs on 127.0.0.1: a laptop with no internet still reaches it.
+  it("opens when the browser says it is offline", async () => {
+    let limit = OLD_LIMIT;
+    const { router } = await start(() => ({
+      body: { ...BOT_SETTINGS, bot_default_request_limit: limit },
+    }));
+    await form();
+    await leave(router);
+    limit = NEW_LIMIT;
+    onlineManager.setOnline(false);
+    try {
+      await back(router);
+      await form();
+      expect(await limitOnForm()).toBe(String(NEW_LIMIT));
+    } finally {
+      onlineManager.setOnline(true);
+    }
+  });
+
+  // The open form keeps its first values, but its limits follow the settings.
+  it("changes back: a limit that changes and changes back keeps the text, and the error goes", async () => {
+    const usual = BOT_SETTINGS.bot_name_max;
+    let limit = usual;
+    const { queryClient } = await start(() => ({ body: { ...BOT_SETTINGS, bot_name_max: limit } }));
+    await form();
+    const name = "x".repeat(20);
+    const nameOnForm = () => screen.getByLabelText<HTMLInputElement>("Name", { exact: true }).value;
+    type("Name", name);
+    expect(screen.queryByText(/The limit is 16/)).toBeNull();
+    limit = 16;
+    act(() => {
+      void queryClient.invalidateQueries();
+    });
+    expect(await screen.findByText(/The limit is 16/)).toBeTruthy();
+    expect(nameOnForm()).toBe(name);
+    limit = usual;
+    act(() => {
+      void queryClient.invalidateQueries();
+    });
+    await waitFor(() => {
+      expect(screen.queryByText(/The limit is 16/)).toBeNull();
+    });
+    expect(nameOnForm()).toBe(name);
+  });
+
+  it("keeps the form and its text while the settings load again and after they answer", async () => {
+    const held = heldAnswer();
+    let read: Settings = () => ({ body: BOT_SETTINGS });
+    await start((...args) => read(...args));
+    await form();
+    type("Name", "Kept");
+    read = () => held.promise;
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/settings")).toHaveLength(2);
+    });
+    // Time for a skeleton to replace the form, if the page waited for this load.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(screen.getByLabelText<HTMLInputElement>("Name", { exact: true }).value).toBe("Kept");
+    await held.answer({ body: { ...BOT_SETTINGS, bot_default_request_limit: NEW_LIMIT } });
+    expect(screen.getByLabelText<HTMLInputElement>("Name", { exact: true }).value).toBe("Kept");
+    act(() => {
+      focusManager.setFocused(undefined);
+    });
+  });
+});
+
+// A second Clone starts from the source bot as it is now (create-bot-page.md §6; audit row 2). A
+// cached template must not fill the form, because the form takes its first answer and keeps it.
+describe("a second Clone of a bot", () => {
+  const TEMPLATE_PATH = `/api/bots/${SOURCE.id}/clone-template`;
+  const NEW_PIN = makePin({
+    skill_id: NEW.id,
+    skill_name: NEW.name,
+    skill_version_id: versionId(2),
+    version: 2,
+  });
+  // What the source bot is after another tab changed it.
+  const CHANGED = {
+    ...TEMPLATE,
+    persona_md: "The new persona.",
+    tool_settings: { read_file: false },
+    pins: [{ skill_id: NEW.id, skill_version_id: versionId(2), always_load: false }],
+    copied_pins: [NEW_PIN],
+  };
+  const FAILED = {
+    status: 500,
+    body: { error: { code: "internal_error", message: "Failed." } },
+  };
+  type Routes = Parameters<typeof fakeApi>[0];
+  type Handler = Routes[string];
+
+  let fake: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    fake?.restore();
+    fake = null;
+    act(() => {
+      focusManager.setFocused(undefined);
+    });
+  });
+
+  // Each read of the template takes the next answer, so a test sets the order of the answers.
+  function inOrder(...answers: Handler[]): Handler {
+    return (...args) => {
+      const next = answers.shift();
+      if (next === undefined) throw new Error("no answer left for this read");
+      return next(...args);
+    };
+  }
+
+  function start(template: Handler, routes: Routes = {}) {
+    fake = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/models": () => ({ body: [makeModel(), FAKE_SCRIPTED] }),
+      "GET /api/tools": () => ({ body: [makeTool("read_file", { label: "Read files" })] }),
+      "GET /api/skills": () => ({ body: [OLD, NEW] }),
+      "GET /api/bots": () => ({ body: [SOURCE] }),
+      [`GET ${TEMPLATE_PATH}`]: template,
+      "POST /api/bots": () => ({ status: 201, body: makeBot(10, "Source (copy)") }),
+      ...routes,
+    });
+    return renderApp(`/bots/new?from=${SOURCE.id}`);
+  }
+  type Router = Awaited<ReturnType<typeof start>>["router"];
+
+  const cloneBanner = () => screen.findByText("Cloning Source", {}, { timeout: 5000 });
+  const reads = () => fake?.sent("GET", TEMPLATE_PATH).length;
+  const waitForReads = (count: number) =>
+    waitFor(() => {
+      expect(reads()).toBe(count);
+    });
+  const leave = async (router: Router) => {
+    await act(() => router.navigate({ to: "/bots" }));
+    await screen.findByPlaceholderText(/Search/, {}, { timeout: 5000 });
+  };
+  const cloneAgain = (router: Router) =>
+    act(() => router.navigate({ to: "/bots/new", search: { from: SOURCE.id } }));
+  const personaStepText = () => {
+    openStep(/Persona/);
+    return document.getElementById("create-form")?.textContent;
+  };
+  const createdBody = async () => {
+    openStep(/Model/);
+    click(screen.getByRole("button", { name: "Create" }));
+    await waitFor(() => {
+      expect(fake?.sent("POST", "/api/bots")).toHaveLength(1);
+    });
+    return fake?.sent("POST", "/api/bots")[0]?.body;
+  };
+
+  it("sends the source bot's new persona, tools and pins, not the first answer's", async () => {
+    const { router } = await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => ({ body: CHANGED }),
+      ),
+    );
+    await cloneBanner();
+    await leave(router);
+    await cloneAgain(router);
+    await cloneBanner();
+    expect(personaStepText()).toContain("The new persona.");
+    expect(await createdBody()).toMatchObject({
+      persona_md: "The new persona.",
+      tool_settings: { read_file: false },
+      pins: [{ skill_id: NEW.id, skill_version_id: versionId(2), always_load: false }],
+    });
+  });
+
+  it("shows the skeleton, not the old form, until the new answer comes", async () => {
+    const held = heldAnswer();
+    const { router } = await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => held.promise,
+      ),
+    );
+    await cloneBanner();
+    await leave(router);
+    await cloneAgain(router);
+    await waitForReads(2);
+    expect(screen.queryByText("Cloning Source")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Create" })).toBeNull();
+    await held.answer({ body: CHANGED });
+    await cloneBanner();
+    expect(personaStepText()).toContain("The new persona.");
+  });
+
+  it("opens when the browser says it is offline", async () => {
+    const { router } = await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => ({ body: CHANGED }),
+      ),
+    );
+    await cloneBanner();
+    await leave(router);
+    onlineManager.setOnline(false);
+    try {
+      await cloneAgain(router);
+      await cloneBanner();
+      expect(personaStepText()).toContain("The new persona.");
+    } finally {
+      onlineManager.setOnline(true);
+    }
+  });
+
+  it("says the bot is gone when it left for Trash since the first Clone", async () => {
+    const { router } = await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => ({ status: 404, body: { error: { code: "not_found", message: "No such bot." } } }),
+      ),
+    );
+    await cloneBanner();
+    await leave(router);
+    await cloneAgain(router);
+    expect(await screen.findByText("The app could not find the bot to copy.")).toBeTruthy();
+    expect(screen.queryByText("Cloning Source")).toBeNull();
+  });
+
+  it("says the load failed, and Try again fills the form, when the second read fails", async () => {
+    const { router } = await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => FAILED,
+        () => ({ body: CHANGED }),
+      ),
+    );
+    await cloneBanner();
+    await leave(router);
+    await cloneAgain(router);
+    expect(await screen.findByText("The app could not load the bot to copy.")).toBeTruthy();
+    expect(screen.queryByText("Cloning Source")).toBeNull();
+    click(screen.getByRole("button", { name: "Try again" }));
+    await cloneBanner();
+    expect(personaStepText()).toContain("The new persona.");
+  });
+
+  it("caller left: an answer that comes after the owner left fills no later Clone", async () => {
+    const first = heldAnswer();
+    const { router } = await start(
+      inOrder(
+        () => first.promise,
+        () => ({ body: CHANGED }),
+      ),
+    );
+    await waitForReads(1);
+    await leave(router);
+    await first.answer({ body: TEMPLATE });
+    await cloneAgain(router);
+    await cloneBanner();
+    expect(reads()).toBe(2);
+    expect(personaStepText()).toContain("The new persona.");
+  });
+
+  it("newer request: the old answer of a read from before the leave cannot fill the form", async () => {
+    const first = heldAnswer();
+    const second = heldAnswer();
+    const { router } = await start(
+      inOrder(
+        () => first.promise,
+        () => second.promise,
+      ),
+    );
+    await waitForReads(1);
+    await leave(router);
+    await cloneAgain(router);
+    await waitForReads(2);
+    await first.answer({ body: TEMPLATE });
+    expect(screen.queryByText("Cloning Source")).toBeNull();
+    await second.answer({ body: CHANGED });
+    await cloneBanner();
+    expect(personaStepText()).toContain("The new persona.");
+  });
+
+  // A first load that a live event marks stale goes on (TanStack Query joins it, because it has no
+  // data to keep), and it answers with the source at that moment. A change a moment later is no
+  // different to the owner: an open form keeps its first answer (the test "keeps the copied versions
+  // with the form when the template comes again"). The four lists do the same on a first visit, and
+  // the form can open with a value from before the event (DQ-107).
+  it("list load: a live event during the read still opens the form, and one read fills it", async () => {
+    const held = heldAnswer();
+    const { queryClient } = await start(inOrder(() => held.promise));
+    await waitForReads(1);
+    void queryClient.invalidateQueries({ predicate: BOT_QUERIES });
+    await held.answer({ body: CHANGED });
+    await cloneBanner();
+    expect(reads()).toBe(1);
+    expect(personaStepText()).toContain("The new persona.");
+  });
+
+  it("slow or failed refresh: the open form stays, with no skeleton and no error", async () => {
+    const held = heldAnswer();
+    await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => held.promise,
+      ),
+    );
+    await cloneBanner();
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitForReads(2);
+    expect(screen.getByText("Cloning Source")).toBeTruthy();
+    await held.answer(FAILED);
+    expect(screen.getByText("Cloning Source")).toBeTruthy();
+    expect(screen.queryByText("The app could not load the bot to copy.")).toBeNull();
+    expect(await createdBody()).toMatchObject({ persona_md: TEMPLATE.persona_md });
+  });
+
+  // CL2 (§6): the form decides once if the model left the catalog, so it needs this visit's list.
+  it("another request: a Clone waits for the catalog of this visit, and says the model is gone", async () => {
+    const held = heldAnswer();
+    let modelsAnswer: Handler = () => ({ body: [makeModel(), FAKE_SCRIPTED] });
+    const { router } = await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => ({ body: TEMPLATE }),
+      ),
+      { "GET /api/models": (...args) => modelsAnswer(...args) },
+    );
+    await cloneBanner();
+    await leave(router);
+    modelsAnswer = () => held.promise;
+    await cloneAgain(router);
+    await waitForReads(2);
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/models").length).toBeGreaterThan(1);
+    });
+    expect(screen.queryByText("Cloning Source")).toBeNull();
+    await held.answer({ body: [makeModel()] });
+    expect(
+      await screen.findByText(/Source cannot run: its model is no longer offered/),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(`${TEMPLATE.model_id} is no longer offered. Pick another model.`),
+    ).toBeTruthy();
+  });
+
+  it("failed refresh: a Clone opens from the last catalog when the retries end", async () => {
+    let modelsAnswer: Handler = () => ({ body: [makeModel(), FAKE_SCRIPTED] });
+    const { router, queryClient } = await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => ({ body: CHANGED }),
+      ),
+      { "GET /api/models": (...args) => modelsAnswer(...args) },
+    );
+    await cloneBanner();
+    await leave(router);
+    const lastTry = heldAnswer();
+    const answers: Handler[] = [() => FAILED, () => lastTry.promise];
+    modelsAnswer = inOrder(...answers);
+    const before = fake?.sent("GET", "/api/models").length ?? 0;
+    queryClient.setDefaultOptions({ queries: { retry: 1, retryDelay: 1 } });
+    await cloneAgain(router);
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/models")).toHaveLength(before + 2);
+    });
+    expect(screen.queryByText("Cloning Source")).toBeNull();
+    await lastTry.answer(FAILED);
+    await cloneBanner();
+    expect(personaStepText()).toContain("The new persona.");
+  });
+
+  it("another request: a Clone waits for the skill list of this visit, and shows a skill in Trash at once", async () => {
+    const held = heldAnswer();
+    let skillsAnswer: Handler = () => ({ body: [OLD, NEW] });
+    const { router } = await start(
+      inOrder(
+        () => ({ body: CHANGED }),
+        () => ({ body: CHANGED }),
+      ),
+      { "GET /api/skills": (...args) => skillsAnswer(...args) },
+    );
+    await cloneBanner();
+    await leave(router);
+    skillsAnswer = () => held.promise;
+    await cloneAgain(router);
+    await waitForReads(2);
+    expect(screen.queryByText("Cloning Source")).toBeNull();
+    await held.answer({ body: [OLD] });
+    await cloneBanner();
+    expect(
+      within(screen.getByRole("list", { name: "Steps" })).getByRole("button", {
+        name: /Skills, has an error/,
+      }),
+    ).toBeTruthy();
+  });
+
+  it("another request: the form with no settings at all waits for them, then takes this visit's template", async () => {
+    const settings = heldAnswer();
+    let settingsAnswer: Handler = () => ({ body: BOT_SETTINGS });
+    const { router, queryClient } = await start(
+      inOrder(
+        () => ({ body: TEMPLATE }),
+        () => ({ body: CHANGED }),
+      ),
+      { "GET /api/settings": (...args) => settingsAnswer(...args) },
+    );
+    await cloneBanner();
+    await leave(router);
+    // The settings have no answer yet on this visit.
+    settingsAnswer = () => settings.promise;
+    queryClient.removeQueries({ predicate: SETTINGS_QUERIES });
+    await cloneAgain(router);
+    await waitForReads(2);
+    expect(screen.queryByText("Cloning Source")).toBeNull();
+    await settings.answer({ body: BOT_SETTINGS });
+    await cloneBanner();
+    expect(personaStepText()).toContain("The new persona.");
   });
 });

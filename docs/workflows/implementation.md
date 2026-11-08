@@ -20,7 +20,7 @@ not finished (lesson `full-gate-before-the-report.md`).
 **Spec walk.** Before the PR, the builder reads each section of the slice's spec against the
 code, not only the acceptance criteria, and tests the edge cases in `docs/testing.md` §3 ("Edge
 cases each slice tests"). The PR lists the sections checked (lesson
-`self-review-against-the-spec.md`).
+`self-review-against-the-spec.md`), and it has one edge case table for each changed screen ([PR template](pull-request.md)).
 **Order and list-state checks.** Before the push, check every request on each changed
 screen with locks, live events or late answers. Cover all six cases in
 [Request order and list states](../testing.md#request-order-and-list-states), including requests away from the reported finding.
