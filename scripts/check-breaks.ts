@@ -13,6 +13,7 @@ import {
   changedLines,
   coverageProblems,
   lineOf,
+  newErrorLines,
   projectOf,
   linkProblems,
   type TestCall,
@@ -141,15 +142,30 @@ async function waitForPorts() {
   }
 }
 
-async function run(test: Claim["test"]): Promise<{ command: string; outcomes: TestOutcome[] }> {
+interface Run {
+  command: string;
+  outcomes: TestOutcome[];
+  // What the command printed: the console output of the tests, and the servers' errors.
+  log: string;
+}
+
+const printed = (result: { stdout: string; stderr: string }) => `${result.stdout}${result.stderr}`;
+
+async function run(test: Claim["test"]): Promise<Run> {
   const out = join(copy, OUT);
   rmSync(out, { force: true });
   const name = escape(test.name);
   if (test.kind === "vitest") {
-    const command = ["vitest", "run", test.file, "-t", name, "--reporter=json"];
-    command.push(`--outputFile=${OUT}`);
-    spawnSync(join(copy, "node_modules/.bin/vitest"), command.slice(1), { cwd: copy });
-    return { command: shown(command), outcomes: vitestOutcomes(parse(out), test.name) };
+    // The default reporter prints the console output of the test; the JSON one gives the result.
+    const command = ["vitest", "run", test.file, "-t", name, "--reporter=default"];
+    command.push("--reporter=json", `--outputFile.json=${OUT}`);
+    const result = spawnSync(join(copy, "node_modules/.bin/vitest"), command.slice(1), {
+      cwd: copy,
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    const outcomes = vitestOutcomes(parse(out), test.name);
+    return { command: shown(command), outcomes, log: printed(result) };
   }
   await waitForPorts();
   const command = ["playwright", "test", "-c", "frontend/playwright.config.ts", test.file];
@@ -157,8 +173,14 @@ async function run(test: Claim["test"]): Promise<{ command: string; outcomes: Te
   // The copy's own servers: no marker from the shell points them at a server that runs now.
   const env: NodeJS.ProcessEnv = { ...process.env, PLAYWRIGHT_JSON_OUTPUT_NAME: out };
   Reflect.deleteProperty(env, "E2E_SERVE_MARKER");
-  spawnSync(join(copy, "node_modules/.bin/playwright"), command.slice(1), { cwd: copy, env });
-  return { command: shown(command), outcomes: playwrightOutcomes(parse(out), test.name) };
+  const result = spawnSync(join(copy, "node_modules/.bin/playwright"), command.slice(1), {
+    cwd: copy,
+    env,
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  const outcomes = playwrightOutcomes(parse(out), test.name);
+  return { command: shown(command), outcomes, log: printed(result) };
 }
 
 // `true`, or the first error of `tsc` on the project that holds `file`, in the copy. A break
@@ -197,7 +219,7 @@ const show = (v: Verdict) =>
     ? `caught at \`${v.at}\`: ${v.message.replace(/\|/g, "\\|")}`
     : v.kind === "survived"
       ? "SURVIVED"
-      : `INVALID: ${v.reason}`;
+      : `INVALID: ${v.reason.replace(/\|/g, "\\|").slice(0, 300)}`;
 
 const lines = [
   `# Break run of \`${listPath}\``,
@@ -229,12 +251,20 @@ for (const claim of claims) {
     // A break that does not compile proves nothing, even when the test then fails at the
     // assertion: a page that loads later fails only at the first wait (testing.md §5).
     const compiled = compiles(step.file);
-    const result = compiled === true ? await run(claim.test) : { command: "not run", outcomes: [] };
+    const result: Run =
+      compiled === true ? await run(claim.test) : { command: "not run", outcomes: [], log: "" };
     writeFileSync(join(copy, step.file), original);
+    const errors = newErrorLines({ before: base.log, after: result.log, file: step.file });
+    const found = verdict(result.outcomes, { file: claim.test.file, line });
     const v: Verdict =
-      compiled === true
-        ? verdict(result.outcomes, { file: claim.test.file, line })
-        : { kind: "invalid", reason: `the break does not compile: ${compiled}` };
+      compiled !== true
+        ? { kind: "invalid", reason: `the break does not compile: ${compiled}` }
+        : found.kind === "caught" && errors.length > 0
+          ? {
+              kind: "invalid",
+              reason: `the broken code printed an error: ${errors[0]?.trim() ?? ""}`,
+            }
+          : found;
     if (v.kind !== "caught") failures += 1;
     lines.push(`| ${claim.id} | ${step.id} | \`${result.command}\` | ${show(v)} |`);
     console.log(`${step.id}: ${show(v)}`);

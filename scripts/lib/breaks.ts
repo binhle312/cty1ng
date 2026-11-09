@@ -113,6 +113,20 @@ export function changedLines(diff: string): Map<string, Set<number>> {
   return files;
 }
 
+// The lines of the run with a break (`after`) that name the broken `file` and that the run with
+// no break (`before`) did not print. Such a line comes from an error in the broken code: a throw
+// while a page loads or renders, or an import that does not resolve. The page then never shows,
+// and the first wait for it fails at the assertion line, so the test result alone cannot tell it
+// from a real catch (testing.md §5).
+export function newErrorLines(run: { before: string; after: string; file: string }): string[] {
+  const name = run.file.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const names = new RegExp(`(?:^|[\\s"'(/])${name}(?![\\w.-])`);
+  const old = new Set(plain(run.before).split("\n"));
+  return plain(run.after)
+    .split("\n")
+    .filter((row) => names.test(row) && !old.has(row));
+}
+
 // The folder of the TypeScript project that compiles `path`: a workspace package, or the root.
 export function projectOf(path: string): string {
   const top = path.split("/")[0] ?? "";

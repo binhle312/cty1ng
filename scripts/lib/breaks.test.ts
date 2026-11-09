@@ -9,6 +9,7 @@ import {
   lineOf,
   linkProblems,
   nameMatches,
+  newErrorLines,
   projectOf,
   playwrightOutcomes,
   testCalls,
@@ -303,6 +304,23 @@ describe("the tests of a PR", () => {
       "@@ -1,4 +0,0 @@",
     ].join("\n");
     expect(changedLines(diff)).toEqual(new Map([["x.test.ts", new Set([3])]]));
+  });
+
+  it("finds the errors that name the broken file and that the run with no break did not log", () => {
+    const file = "frontend/src/a.tsx";
+    const before = "stderr | a.test.tsx > t\nWarning: old at /c/frontend/src/a.tsx:3:1\n";
+    const after = [
+      "stderr | a.test.tsx > t",
+      "Warning: old at /c/frontend/src/a.tsx:3:1",
+      "Error: boom",
+      "    at View (/c/frontend/src/a.tsx:9:5)",
+      'Error: Failed to resolve import "./x.css" from "frontend/src/a.tsx".',
+      "    at /c/frontend/src/a.test.tsx:4:2",
+    ].join("\n");
+    expect(newErrorLines({ before, after, file })).toEqual([
+      "    at View (/c/frontend/src/a.tsx:9:5)",
+      'Error: Failed to resolve import "./x.css" from "frontend/src/a.tsx".',
+    ]);
   });
 
   it("names the TypeScript project that compiles a broken file", () => {
