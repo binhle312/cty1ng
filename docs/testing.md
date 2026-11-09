@@ -375,8 +375,8 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
    its base (`git merge-base HEAD origin/main`, or `--base`) needs a claim, or an entry in
    `exempt` with its reason. With `--only`, the list runs in part, and this check does not run.
 4. Each test must pass with no break first.
-5. Each break runs alone. First, `tsc` must compile the project of the broken file; a break
-   that does not compile is `INVALID` and its test does not run (a page that loads later fails
+5. Each break runs alone. First, `tsc` must compile the project of the broken file (an unused
+   variable is allowed); a break that does not compile is `INVALID` and its test does not run (a page that loads later fails
    only at its first wait, so the test result cannot show it). Then the break counts only when
    the named test fails at the line of its assertion text, and that line is the innermost place
    outside the libraries. No result (a server failure), a test timeout, a failure at another
