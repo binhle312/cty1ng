@@ -44,7 +44,7 @@ Link to the brief and decisions.
 
 ## One home for each fact
 
-Each fact has one home, and other records link to it (owner, 2026-11-09, DQ-152). The PR body
+Each fact has one home, and other records link to it (decided by the builder at the owner's request, 2026-11-09, DQ-152). The PR body
 states no state, count or result that a file or a tool owns:
 
 - The state of an issue or a prevention action lives only in its row of

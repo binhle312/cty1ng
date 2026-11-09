@@ -168,6 +168,34 @@ describe("the reports", () => {
     ]);
   });
 
+  it("reads places only from the stack lines, not from the error text above them", () => {
+    expect(
+      framesOf(
+        "Error: parse at /tmp/c/app/a.tsx:238:70\n 238 | x\n    at /tmp/c/app/a.test.ts:5:3",
+      ),
+    ).toEqual([{ file: "/tmp/c/app/a.test.ts", line: 5 }]);
+  });
+
+  it("removes the colour codes from a failure message", () => {
+    const escape = String.fromCharCode(27);
+    const report = {
+      testResults: [
+        {
+          assertionResults: [
+            {
+              title: "t",
+              status: "failed",
+              failureMessages: [
+                `${escape}[31mAssertionError${escape}[39m: x\n    at /a.test.ts:1:1`,
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    expect(vitestOutcomes(report, "t")[0]?.message).toBe("AssertionError: x");
+  });
+
   it("reads the named test from a Vitest JSON report, with a test timeout", () => {
     const report = {
       testResults: [
@@ -265,6 +293,17 @@ describe("the tests of a PR", () => {
     expect(changedLines(diff)).toEqual(new Map([["x.test.ts", new Set([3, 4, 10])]]));
   });
 
+  it("adds no lines of a deleted file to the file before it", () => {
+    const diff = [
+      "+++ b/x.test.ts",
+      "@@ -3 +3 @@",
+      "--- a/y.test.ts",
+      "+++ /dev/null",
+      "@@ -1,4 +0,0 @@",
+    ].join("\n");
+    expect(changedLines(diff)).toEqual(new Map([["x.test.ts", new Set([3])]]));
+  });
+
   it("tells a test or a test helper from the code", () => {
     expect(isTestFile("backend/test/helpers.ts")).toBe(true);
     expect(isTestFile("frontend/src/a.test.tsx")).toBe(true);
@@ -282,5 +321,23 @@ describe("the tests of a PR", () => {
         changed,
       ),
     ).toEqual([`${TEST}:2: the test "one" has no claim`]);
+  });
+
+  it("names an exemption that matches no test that the PR adds or changes", () => {
+    const changed = new Map([[TEST, testCalls(FILE, TEST)]]);
+    const claims = list({ test: { kind: "vitest", file: TEST, name: "row a" } }).claims;
+    expect(
+      coverageProblems(
+        {
+          claims,
+          exempt: [
+            { file: TEST, name: "one", reason: "a unit test" },
+            { file: TEST, name: "later", reason: "a unit test" },
+            { file: TEST, name: "no such test", reason: "a typo" },
+          ],
+        },
+        changed,
+      ),
+    ).toEqual([`${TEST}: the exemption "no such test" names no test that the PR adds or changes`]);
   });
 });

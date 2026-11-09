@@ -1,9 +1,5 @@
-// `pnpm check:breaks <list.json> [--only <id part>] [--report <file.md>]`: runs the break list of
-// a PR (testing.md §5, "Break lists"). It copies HEAD and the local changes to a temporary folder
-// with its own install, so the checkout does not change and the e2e tests use the copy's own build
-// and servers. Each test must pass with no break. Then each break runs alone, and it counts only
-// when the named test fails at the line of its assertion text. The report names the commit, the
-// hash of the local changes, each command and each result.
+// `pnpm check:breaks`: runs the break list of a PR. testing.md §5, "Break lists", owns what it
+// checks, its steps and its verdicts; the usage line is in the code below.
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";

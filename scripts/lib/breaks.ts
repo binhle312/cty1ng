@@ -92,6 +92,10 @@ export function changedLines(diff: string): Map<string, Set<number>> {
   const files = new Map<string, Set<number>>();
   let current: Set<number> | undefined;
   for (const row of diff.split("\n")) {
+    if (row === "+++ /dev/null") {
+      current = undefined;
+      continue;
+    }
     const file = /^\+\+\+ b\/(.+)$/.exec(row);
     if (file?.[1] !== undefined) {
       current = new Set();
@@ -131,6 +135,13 @@ export function coverageProblems(
       if (!claimed && !exempt) {
         problems.push(`${file}:${String(call.start)}: the test "${call.name}" has no claim`);
       }
+    }
+  }
+  for (const entry of list.exempt) {
+    if (!(changed.get(entry.file) ?? []).some((call) => call.name === entry.name)) {
+      problems.push(
+        `${entry.file}: the exemption "${entry.name}" names no test that the PR adds or changes`,
+      );
     }
   }
   return problems;
@@ -251,11 +262,18 @@ export function verdict(
 
 // The `file:line` places in a stack text, innermost first.
 export function framesOf(stack: string): { file: string; line: number }[] {
-  return [...stack.matchAll(/((?:\/|[A-Za-z]:\\)[^\s():]+):(\d+):\d+/g)].map((match) => ({
-    file: match[1] ?? "",
-    line: Number(match[2]),
-  }));
+  // Only the `at …` lines: the error text above them can hold a path too (a parse error's code
+  // frame, or a message that quotes a place).
+  return stack
+    .split("\n")
+    .filter((row) => /^\s*at /.test(row))
+    .flatMap((row) => [...row.matchAll(/((?:\/|[A-Za-z]:\\)[^\s():]+):(\d+):\d+/g)].slice(-1))
+    .map((match) => ({ file: match[1] ?? "", line: Number(match[2]) }));
 }
+
+// Terminal colour codes, which a test runner puts in its messages.
+const COLOUR = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
+export const plain = (text: string) => text.replace(COLOUR, "");
 
 const VitestReport = z.object({
   testResults: z.array(
@@ -279,7 +297,7 @@ export function vitestOutcomes(report: unknown, name: string): TestOutcome[] {
     .flatMap((file) => file.assertionResults)
     .filter((test) => test.title === name)
     .map((test) => {
-      const message = (test.failureMessages ?? []).join("\n");
+      const message = plain((test.failureMessages ?? []).join("\n"));
       return {
         status:
           test.status === "passed" ? "passed" : test.status === "failed" ? "failed" : "skipped",
@@ -342,7 +360,7 @@ export function playwrightOutcomes(report: unknown, name: string): TestOutcome[]
                 : "failed",
           timedOut: result.status === "timedOut",
           frames: errors.flatMap((error) => (error.location === undefined ? [] : [error.location])),
-          message: (errors[0]?.message ?? "").split("\n")[0] ?? "",
+          message: plain(errors[0]?.message ?? "").split("\n")[0] ?? "",
         });
       }
     }

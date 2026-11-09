@@ -2,7 +2,7 @@
   "claims": [
     {
       "id": "T-compile",
-      "claim": "A break that stops the file from compiling: no result, so INVALID",
+      "claim": "A break that stops the file from compiling: INVALID",
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/bots/create-bot-page.test.tsx",

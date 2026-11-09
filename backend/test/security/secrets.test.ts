@@ -30,14 +30,15 @@ describe("API keys", () => {
   // The scan reads error answers (part 1, an empty body) and success answers (part 2, real
   // requests), so it sees what the services give (audit 2026-11-05, row 9). The success check at
   // the end of part 2 names each operation that never succeeded.
-  it("never appear in an answer of any operation, in the stream, or in the log", async () => {
+  it("never appear in an answer of an operation other than the stream, in the stream frames, or in the log", async () => {
     const backend = testBackend({
       FAKE_MODEL: "1",
       OPENAI_API_KEY: SENTINEL,
       ANTHROPIC_API_KEY: `${SENTINEL}-2`,
     });
     const texts: string[] = [];
-    // Every answer goes through here, so its headers and its body are both scanned.
+    // Scans the headers and the body of an answer. The stream answer does not come here: only its
+    // frames are scanned, and its headers are not (DQ-154).
     const scan = async (response: Response) => {
       texts.push(JSON.stringify([...response.headers]), await response.clone().text());
       return response;

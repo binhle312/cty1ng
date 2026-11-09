@@ -50,7 +50,7 @@
       "test": {
         "kind": "vitest",
         "file": "backend/test/security/secrets.test.ts",
-        "name": "never appear in an answer of any operation, in the stream, or in the log"
+        "name": "never appear in an answer of an operation other than the stream, in the stream frames, or in the log"
       },
       "assertion": "for (const text of [...texts, ...backend.lines]) expect(text).not.toContain(\"SENTINEL\");",
       "breaks": [
@@ -72,7 +72,7 @@
       "test": {
         "kind": "vitest",
         "file": "backend/test/security/secrets.test.ts",
-        "name": "never appear in an answer of any operation, in the stream, or in the log"
+        "name": "never appear in an answer of an operation other than the stream, in the stream frames, or in the log"
       },
       "assertion": "for (const text of [...texts, ...backend.lines]) expect(text).not.toContain(\"SENTINEL\");",
       "breaks": [
@@ -104,7 +104,7 @@
       "test": {
         "kind": "vitest",
         "file": "backend/test/security/secrets.test.ts",
-        "name": "never appear in an answer of any operation, in the stream, or in the log"
+        "name": "never appear in an answer of an operation other than the stream, in the stream frames, or in the log"
       },
       "assertion": "for (const text of [...texts, ...backend.lines]) expect(text).not.toContain(\"SENTINEL\");",
       "breaks": [
@@ -122,11 +122,11 @@
     },
     {
       "id": "R9-host",
-      "claim": "The answer that refuses a foreign Host holds no key, also in its headers",
+      "claim": "The answer that refuses a foreign Host has no key in its headers",
       "test": {
         "kind": "vitest",
         "file": "backend/test/security/secrets.test.ts",
-        "name": "never appear in an answer of any operation, in the stream, or in the log"
+        "name": "never appear in an answer of an operation other than the stream, in the stream frames, or in the log"
       },
       "assertion": "for (const text of [...texts, ...backend.lines]) expect(text).not.toContain(\"SENTINEL\");",
       "breaks": [
@@ -144,11 +144,11 @@
     },
     {
       "id": "R9-event-answer",
-      "claim": "The answer of the test event holds no key, also in its headers",
+      "claim": "The answer of the test event has no key in its headers",
       "test": {
         "kind": "vitest",
         "file": "backend/test/security/secrets.test.ts",
-        "name": "never appear in an answer of any operation, in the stream, or in the log"
+        "name": "never appear in an answer of an operation other than the stream, in the stream frames, or in the log"
       },
       "assertion": "for (const text of [...texts, ...backend.lines]) expect(text).not.toContain(\"SENTINEL\");",
       "breaks": [
@@ -170,7 +170,7 @@
       "test": {
         "kind": "vitest",
         "file": "backend/test/security/secrets.test.ts",
-        "name": "never appear in an answer of any operation, in the stream, or in the log"
+        "name": "never appear in an answer of an operation other than the stream, in the stream frames, or in the log"
       },
       "assertion": "for (const text of [...texts, ...backend.lines]) expect(text).not.toContain(\"SENTINEL\");",
       "breaks": [
@@ -192,7 +192,7 @@
       "test": {
         "kind": "vitest",
         "file": "backend/test/security/secrets.test.ts",
-        "name": "never appear in an answer of any operation, in the stream, or in the log"
+        "name": "never appear in an answer of an operation other than the stream, in the stream frames, or in the log"
       },
       "assertion": "if (Date.now() > deadline) throw new Error(\"The test event did not come on the stream.\");",
       "breaks": [
@@ -702,11 +702,6 @@
   "exempt": [
     {
       "file": "scripts/lib/breaks.test.ts",
-      "name": "adds",
-      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
-    },
-    {
-      "file": "scripts/lib/breaks.test.ts",
       "name": "finds a text that occurs once, and refuses one that is missing or repeated",
       "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
     },
@@ -767,17 +762,22 @@
     },
     {
       "file": "scripts/lib/breaks.test.ts",
+      "name": "reads places only from the stack lines, not from the error text above them",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "removes the colour codes from a failure message",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
       "name": "reads the named test from a Vitest JSON report, with a test timeout",
       "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
     },
     {
       "file": "scripts/lib/breaks.test.ts",
       "name": "reads the named test from nested Playwright suites, and tells a test timeout from a failed wait",
-      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
-    },
-    {
-      "file": "scripts/lib/breaks.test.ts",
-      "name": "one",
       "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
     },
     {
@@ -797,12 +797,22 @@
     },
     {
       "file": "scripts/lib/breaks.test.ts",
+      "name": "adds no lines of a deleted file to the file before it",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
       "name": "tells a test or a test helper from the code",
       "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
     },
     {
       "file": "scripts/lib/breaks.test.ts",
       "name": "names each changed test that has no claim and no exemption",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "names an exemption that matches no test that the PR adds or changes",
       "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
     }
   ]
