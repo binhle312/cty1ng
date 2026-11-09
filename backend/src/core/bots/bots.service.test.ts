@@ -52,6 +52,14 @@ async function failure(promise: Promise<unknown>): Promise<DomainError> {
   return error;
 }
 
+// The error of a call, or "no error". A test that checks it fails at its own line, not inside a
+// helper, so a break list can tell its claims apart (testing.md §5).
+const rejection = (promise: Promise<unknown>) =>
+  promise.then(
+    () => "no error",
+    (caught: unknown) => caught,
+  );
+
 async function events(): Promise<[string, unknown][]> {
   return (await backend.readers.events.after(0, 1000)).map((event) => [event.type, event.payload]);
 }
@@ -219,9 +227,9 @@ describe("create (POST /bots)", () => {
       [{ name: `BA ${SECRET}` }, "name"],
       [{ description: `Logs in with ${SECRET}.` }, "description"],
     ] as const) {
-      const error = await failure(create(more));
-      expect(error).toMatchObject({ code: "sensitive_data", field });
-      expect(error.message).not.toContain("hunter22");
+      const error = await rejection(create(more));
+      expect(error, "the create is refused").toMatchObject({ code: "sensitive_data", field });
+      expect(String(error)).not.toContain("hunter22");
     }
     expect(await backend.bots.list()).toEqual([]);
     expect(await events()).toEqual([]);
@@ -449,9 +457,9 @@ describe("update (PATCH /bots/{id})", () => {
       const bot = await create();
       const id = BotId.parse(bot.id);
       const before = (await events()).length;
-      const error = await failure(backend.bots.update(id, { row_version: 1, ...change }));
-      expect(error).toMatchObject({ code: "sensitive_data", field });
-      expect(error.message).not.toContain("hunter22");
+      const error = await rejection(backend.bots.update(id, { row_version: 1, ...change }));
+      expect(error, "the PATCH is refused").toMatchObject({ code: "sensitive_data", field });
+      expect(String(error)).not.toContain("hunter22");
       expect(await backend.bots.get(id)).toMatchObject({
         name: bot.name,
         description: bot.description,

@@ -347,10 +347,22 @@ so a step after it proves nothing. Give each step its own test, and start the ca
 its result on the old code. A step that passes on the old code is not a claim: the PR names it
 and gives the reason, such as "reads no new data" (owner, 2026-11-08, DQ-117).
 
-**Break lists (trial on PR #86; owner, 2026-11-09).** A break list makes the break evidence
-repeatable. `scripts/breaks/pr-<n>.json` gives each claim an id, its test, the text of the
-assertion that must fail, and one or more breaks of the code. `pnpm check:breaks <list>` runs
-the list ([check-breaks.ts](../scripts/check-breaks.ts)):
+**Break lists (owner, 2026-11-09).** A break list makes break evidence repeatable. A PR needs
+one only for these tests:
+
+- tests added after the code that they check (an audit, or a bug fix whose test came later);
+- security tests;
+- order and race tests.
+
+For other work, test first: the PR records the red run of each new test on the code before the
+change. A reviewer can ask for a break of any claim that they doubt, and it goes into the list.
+Claim no more than the breaks prove: a test name or a PR line that claims a step needs that
+step's own break.
+
+`scripts/breaks/pr-<n>.json` gives each claim an id, its test, the text of the assertion that
+must fail, and one or more breaks of the code. The assertion is in the test itself, not in a
+shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` runs the list
+([check-breaks.ts](../scripts/check-breaks.ts)):
 
 1. It copies HEAD and the local changes to a temporary folder with its own install. The
    checkout does not change, and e2e tests use the copy's own build and servers.
@@ -362,10 +374,10 @@ the list ([check-breaks.ts](../scripts/check-breaks.ts)):
    is `INVALID`, not caught.
 5. The report names the commit, a hash of the local changes, each command and each result.
 
-The list proves only the claims that someone wrote down. The reviewer still checks that the
-list has every claim of the PR. During the trial, other PRs do not need a list; the owner
-decides that after the trial. `scripts/fixtures/break-runner-trial.json` holds breaks that the
-runner must not count, to check the runner itself.
+The list proves only the claims that someone wrote down; the reviewer still checks that it has
+every claim of the PR. A list is evidence for its review. After the merge, nobody runs it again.
+`scripts/fixtures/break-runner-trial.json` holds breaks that the runner must not count, to check
+the runner itself.
 
 The incidents behind these rules remain in
 [prove-the-test-fails-first.md](lessons-learned/prove-the-test-fails-first.md) and

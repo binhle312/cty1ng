@@ -30,7 +30,7 @@
         "file": "backend/src/core/bots/bots.service.test.ts",
         "name": "refuses a secret in the name or the description, and makes no bot"
       },
-      "assertion": "throw new Error(`expected a DomainError, got ${String(error)}`);",
+      "assertion": "expect(error, \"the create is refused\")",
       "breaks": [
         {
           "id": "T-timeout-a",

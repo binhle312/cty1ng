@@ -55,6 +55,13 @@ const local =
     : `sha256 ${hash.digest("hex").slice(0, 16)} (${String(untracked.length)} new files)`;
 
 const copy = mkdtempSync(join(tmpdir(), "check-breaks-"));
+// The copy goes at every end: success, a thrown error, a stop with Ctrl+C, or a kill.
+process.on("exit", () => {
+  rmSync(copy, { recursive: true, force: true });
+});
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  process.on(signal, () => process.exit(1));
+}
 execFileSync("tar", ["-x", "-C", copy], {
   input: execFileSync("git", ["archive", "HEAD"], { maxBuffer: 2 ** 30 }),
 });
@@ -64,7 +71,8 @@ for (const file of untracked) {
   mkdirSync(join(copy, dirname(file)), { recursive: true });
   writeFileSync(join(copy, file), readFileSync(file));
 }
-execFileSync("pnpm", ["install", "--frozen-lockfile", "--offline", "--silent"], {
+// The local store first; the registry only for a package that the store does not have.
+execFileSync("pnpm", ["install", "--frozen-lockfile", "--prefer-offline", "--silent"], {
   cwd: copy,
   stdio: "inherit",
 });
@@ -83,7 +91,6 @@ const claims = list.claims.filter(
 const problems = linkProblems({ claims }, read);
 if (problems.length > 0) {
   for (const problem of problems) console.error(problem);
-  rmSync(copy, { recursive: true });
   process.exit(1);
 }
 
@@ -189,5 +196,4 @@ lines.push("", `${String(failures)} problem(s)`);
 const text = lines.join("\n");
 console.log(`\n${text}`);
 if (reportPath !== undefined) writeFileSync(reportPath, `${text}\n`);
-rmSync(copy, { recursive: true });
 process.exitCode = failures === 0 ? 0 : 1;

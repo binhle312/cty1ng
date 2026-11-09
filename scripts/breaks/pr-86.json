@@ -150,7 +150,7 @@
         "file": "backend/src/core/bots/bots.service.test.ts",
         "name": "refuses a secret in the name or the description, and makes no bot"
       },
-      "assertion": "throw new Error(`expected a DomainError, got ${String(error)}`);",
+      "assertion": "expect(error, \"the create is refused\")",
       "breaks": [
         {
           "id": "R10-create-name",
@@ -182,7 +182,7 @@
         "file": "backend/src/core/bots/bots.service.test.ts",
         "name": "refuses a secret in a new name, and keeps the bot as it was"
       },
-      "assertion": "throw new Error(`expected a DomainError, got ${String(error)}`);",
+      "assertion": "expect(error, \"the PATCH is refused\")",
       "breaks": [
         {
           "id": "R10-patch-name-a",
@@ -204,7 +204,7 @@
         "file": "backend/src/core/bots/bots.service.test.ts",
         "name": "refuses a secret in a new description, and keeps the bot as it was"
       },
-      "assertion": "throw new Error(`expected a DomainError, got ${String(error)}`);",
+      "assertion": "expect(error, \"the PATCH is refused\")",
       "breaks": [
         {
           "id": "R10-patch-description-a",
@@ -226,7 +226,7 @@
         "file": "backend/src/core/bots/bots.service.test.ts",
         "name": "refuses a secret in a new persona_md, and keeps the bot as it was"
       },
-      "assertion": "throw new Error(`expected a DomainError, got ${String(error)}`);",
+      "assertion": "expect(error, \"the PATCH is refused\")",
       "breaks": [
         {
           "id": "R10-patch-persona_md-a",
