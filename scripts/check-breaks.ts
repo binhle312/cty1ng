@@ -64,7 +64,8 @@ const local =
     : `sha256 ${hash.digest("hex").slice(0, 16)} (${String(untracked.length)} new files)`;
 
 const copy = mkdtempSync(join(tmpdir(), "check-breaks-"));
-// The copy goes at every end: success, a thrown error, a stop with Ctrl+C, or a kill.
+// The copy goes when the run ends, after an error, and on SIGINT or SIGTERM. A SIGKILL or a
+// SIGHUP leaves it in the temporary folder.
 process.on("exit", () => {
   rmSync(copy, { recursive: true, force: true });
 });
@@ -189,7 +190,7 @@ const lines = [
   `- Commit: \`${head}\``,
   `- Local changes: ${local}`,
   `- Base: \`${base}\`; ${only === "" ? "every test that the PR adds or changes has a claim or an exemption" : `only the claims that match "${only}", so the list is not checked for every test`}`,
-  `- Node ${process.version}; each command runs in a fresh copy with its own install`,
+  `- Node ${process.version}; all commands run in one copy with its own install, and each break is undone after its run`,
   "",
   "| Claim | Run | Command | Result |",
   "| --- | --- | --- | --- |",

@@ -121,6 +121,50 @@
       ]
     },
     {
+      "id": "R9-host",
+      "claim": "The answer that refuses a foreign Host holds no key, also in its headers",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/secrets.test.ts",
+        "name": "never appear in an answer of any operation, in the stream, or in the log"
+      },
+      "assertion": "for (const text of [...texts, ...backend.lines]) expect(text).not.toContain(\"SENTINEL\");",
+      "breaks": [
+        {
+          "id": "R9-host-header",
+          "file": "backend/src/adapters/http/middleware.ts",
+          "edits": [
+            {
+              "find": "    if (!allowed.has(host)) {\n      throw new ApiFailure(\"host_rejected\"",
+              "replace": "    if (!allowed.has(host)) {\n      c.header(\"x-debug-key\", \"sk-test-SENTINEL-4f9a2c71e0b3\");\n      throw new ApiFailure(\"host_rejected\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R9-event-answer",
+      "claim": "The answer of the test event holds no key, also in its headers",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/secrets.test.ts",
+        "name": "never appear in an answer of any operation, in the stream, or in the log"
+      },
+      "assertion": "for (const text of [...texts, ...backend.lines]) expect(text).not.toContain(\"SENTINEL\");",
+      "breaks": [
+        {
+          "id": "R9-event-answer-header",
+          "file": "backend/src/adapters/http/routes/test-events.ts",
+          "edits": [
+            {
+              "find": "    return c.json({ seq }, 201);",
+              "replace": "    c.header(\"x-debug-key\", \"sk-test-SENTINEL-4f9a2c71e0b3\");\n    return c.json({ seq }, 201);"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "R9-log",
       "claim": "No log line holds an API key",
       "test": {

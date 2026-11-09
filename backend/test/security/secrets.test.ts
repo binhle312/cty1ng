@@ -27,10 +27,9 @@ const ApiDocument = z.object({
 const Row = z.looseObject({ id: z.string(), row_version: z.number() });
 
 describe("API keys", () => {
-  // Each operation of the API document gets two requests: one with an empty body, which most
-  // operations refuse, and one real request that succeeds. So the scan reads the error answers
-  // and the answers that the services give (audit 2026-11-05, row 9). A new operation fails the
-  // success check below until a step here sends it a real request.
+  // The scan reads error answers (part 1, an empty body) and success answers (part 2, real
+  // requests), so it sees what the services give (audit 2026-11-05, row 9). The success check at
+  // the end of part 2 names each operation that never succeeded.
   it("never appear in an answer of any operation, in the stream, or in the log", async () => {
     const backend = testBackend({
       FAKE_MODEL: "1",
@@ -38,6 +37,11 @@ describe("API keys", () => {
       ANTHROPIC_API_KEY: `${SENTINEL}-2`,
     });
     const texts: string[] = [];
+    // Every answer goes through here, so its headers and its body are both scanned.
+    const scan = async (response: Response) => {
+      texts.push(JSON.stringify([...response.headers]), await response.clone().text());
+      return response;
+    };
     const succeeded = new Set<string>();
     // `operation` is the method and the path as the API document writes it, for example
     // `GET /api/skills/{id}`.
@@ -65,7 +69,7 @@ describe("API keys", () => {
           body: options.form ?? (json ? JSON.stringify(options.body) : null),
         },
       );
-      texts.push(JSON.stringify([...response.headers]), await response.clone().text());
+      await scan(response);
       if (response.ok) succeeded.add(operation);
       return response;
     };
@@ -117,8 +121,8 @@ describe("API keys", () => {
       file: { file: avatar.url.split("/").pop() ?? "" },
     };
 
-    // 1. Every operation of the document with an empty body (a DELETE has no body, and the
-    // success part below sends it). No answer may be a 500.
+    // 1. The operations of the document with an empty body, except the stream (part 3) and a
+    // DELETE (it has no body; part 2 sends it). No answer may be a 500 (the check in the loop).
     const doc = ApiDocument.parse(await (await ok("GET /api/openapi.json")).json());
     const operations = Object.entries(doc.paths).flatMap(([path, methods]) =>
       Object.entries(methods).map(([method, operation]) => ({
@@ -151,7 +155,8 @@ describe("API keys", () => {
       expect(answer.status, `${method} ${path}`).toBeLessThan(500);
     }
 
-    // 2. A real request to each operation, in an order where each one succeeds.
+    // 2. A real request to the operations, in an order where they succeed. The success check at
+    // the end of this part names each operation that did not.
     for (const template of [
       "/api/health",
       "/api/settings",
@@ -276,16 +281,14 @@ describe("API keys", () => {
     ).toEqual([]);
 
     await call("GET /api/nope");
-    texts.push(
-      await (await backend.request("/api/health", { headers: { host: "evil.com" } })).text(),
-    );
+    await scan(await backend.request("/api/health", { headers: { host: "evil.com" } }));
 
     // 3. The stream: read until the test event comes, so that the check reads real frames.
     const abort = new AbortController();
     const stream = await backend.request("/api/stream", { signal: abort.signal });
     if (stream.body === null) throw new Error("The stream has no body.");
     const frames = collect(readFrames(stream.body));
-    texts.push(await (await backend.postTestEvent("note-for-the-key-test")).text());
+    await scan(await backend.postTestEvent("note-for-the-key-test"));
     const deadline = Date.now() + 2000;
     while (!frames.items.some((frame) => frame.data?.includes("note-for-the-key-test") === true)) {
       if (Date.now() > deadline) throw new Error("The test event did not come on the stream.");
