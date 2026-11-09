@@ -105,8 +105,11 @@ describe("the header order while the owner uses the header", () => {
     expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
     const roster = screen.getByTestId("roster");
     // A minute passes at each step: the order waits for a click outside, not for a timer. Only
-    // the timeouts are fake, and they also follow real time, so the queries and the waits run.
-    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"], shouldAdvanceTime: true });
+    // the timers are fake, and they also follow real time, so the queries and the waits run.
+    vi.useFakeTimers({
+      toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"],
+      shouldAdvanceTime: true,
+    });
     try {
       const later = () => {
         act(() => {

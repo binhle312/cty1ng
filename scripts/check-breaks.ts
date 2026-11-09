@@ -14,8 +14,12 @@ import {
   applyEdits,
   BreakList,
   type Claim,
+  changedLines,
+  coverageProblems,
   lineOf,
   linkProblems,
+  type TestCall,
+  testCalls,
   playwrightOutcomes,
   type TestOutcome,
   verdict,
@@ -30,7 +34,9 @@ const option = (name: string) => {
   return at === -1 ? undefined : args[at + 1];
 };
 if (listPath === undefined) {
-  console.error("usage: pnpm check:breaks <list.json> [--only <id part>] [--report <file.md>]");
+  console.error(
+    "usage: pnpm check:breaks <list.json> [--only <id part>] [--base <ref>] [--report <file.md>]",
+  );
   process.exit(2);
 }
 const only = option("--only") ?? "";
@@ -41,6 +47,9 @@ const git = (...gitArgs: string[]) =>
 
 // The tested revision: HEAD plus the local changes, named by a hash.
 const head = git("rev-parse", "HEAD").trim();
+// The PR's base: each test that the PR adds or changes since then needs a claim or an exemption.
+const base = git("merge-base", "HEAD", option("--base") ?? "origin/main").trim();
+const changed = changedLines(git("diff", "--unified=0", base));
 const patch = execFileSync("git", ["diff", "HEAD", "--binary"], { maxBuffer: 2 ** 30 });
 // New files that git does not ignore. Only plain files: a link, such as a linked node_modules,
 // is not part of the change.
@@ -88,7 +97,23 @@ const list = BreakList.parse(JSON.parse(read(listPath) ?? "null"));
 const claims = list.claims.filter(
   (claim) => claim.id.includes(only) || claim.breaks.some((step) => step.id.includes(only)),
 );
-const problems = linkProblems({ claims }, read);
+// The tests of the PR (all of a new file), with the lines that the PR touched.
+const testsOfPr = new Map<string, TestCall[]>();
+const testFile = /\.(test|spec)\.[cm]?[jt]sx?$/;
+for (const file of [...changed.keys(), ...untracked].filter((path) => testFile.test(path))) {
+  const text = read(file);
+  if (text === null) continue;
+  const lines = changed.get(file);
+  const calls = testCalls(text, file).filter(
+    (call) => lines === undefined || [...lines].some((at) => call.start <= at && at <= call.end),
+  );
+  testsOfPr.set(file, calls);
+}
+// With --only, the list runs in part, so it cannot be complete.
+const problems = [
+  ...linkProblems({ claims }, read),
+  ...(only === "" ? coverageProblems(list, testsOfPr) : []),
+];
 if (problems.length > 0) {
   for (const problem of problems) console.error(problem);
   process.exit(1);
@@ -153,7 +178,7 @@ function parse(path: string): unknown {
 
 const show = (v: Verdict) =>
   v.kind === "caught"
-    ? `caught at \`${v.at}\``
+    ? `caught at \`${v.at}\`: ${v.message.replace(/\|/g, "\\|")}`
     : v.kind === "survived"
       ? "SURVIVED"
       : `INVALID: ${v.reason}`;
@@ -163,6 +188,7 @@ const lines = [
   "",
   `- Commit: \`${head}\``,
   `- Local changes: ${local}`,
+  `- Base: \`${base}\`; ${only === "" ? "every test that the PR adds or changes has a claim or an exemption" : `only the claims that match "${only}", so the list is not checked for every test`}`,
   `- Node ${process.version}; each command runs in a fresh copy with its own install`,
   "",
   "| Claim | Run | Command | Result |",

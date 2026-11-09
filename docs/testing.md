@@ -357,7 +357,9 @@ one only for these tests:
 For other work, test first: the PR records the red run of each new test on the code before the
 change. A reviewer can ask for a break of any claim that they doubt, and it goes into the list.
 Claim no more than the breaks prove: a test name or a PR line that claims a step needs that
-step's own break.
+step's own break. **One claim per test name** (owner, 2026-11-09): a name with "and" gets a break
+for each part, or it becomes two tests. A check that a test makes but its name does not claim
+is fine.
 
 `scripts/breaks/pr-<n>.json` gives each claim an id, its test, the text of the assertion that
 must fail, and one or more breaks of the code. The assertion is in the test itself, not in a
@@ -367,12 +369,18 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
 1. It copies HEAD and the local changes to a temporary folder with its own install. The
    checkout does not change, and e2e tests use the copy's own build and servers.
 2. It refuses a list with a missing link: a claim with no break, a test file or assertion text
-   that is not there exactly once, or a break that edits the test instead of the code.
-3. Each test must pass with no break first.
-4. Each break runs alone. It counts only when the named test fails at the line of its assertion
-   text. No result (a compile or server failure), a test timeout, or a failure at another line
-   is `INVALID`, not caught.
-5. The report names the commit, a hash of the local changes, each command and each result.
+   that is not there exactly once, an assertion outside the named test, or a break that edits a
+   test or a test helper (a `test/` folder, `*.test.*`, `*.spec.*`) instead of the code.
+3. It refuses a list that misses a test of the PR: each test that the PR adds or changes since
+   its base (`git merge-base HEAD origin/main`, or `--base`) needs a claim, or an entry in
+   `exempt` with its reason. With `--only`, the list runs in part, and this check does not run.
+4. Each test must pass with no break first.
+5. Each break runs alone. It counts only when the named test fails at the line of its assertion
+   text, and that line is the innermost place outside the libraries. No result (a compile or
+   server failure), a test timeout, a failure at another line, or an error that the broken code
+   throws is `INVALID`, not caught.
+6. The report names the commit, a hash of the local changes, the base, each command and each
+   result, with the failure message of each caught break.
 
 The list proves only the claims that someone wrote down; the reviewer still checks that it has
 every claim of the PR. A list is evidence for its review. After the merge, nobody runs it again.

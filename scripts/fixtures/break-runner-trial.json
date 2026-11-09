@@ -6,7 +6,7 @@
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/bots/create-bot-page.test.tsx",
-        "name": "starts with no model and no effort, and sends the model that the owner picks"
+        "name": "starts with no model, and sends the model that the owner picks with its default effort"
       },
       "assertion": "expect(screen.getByText(/Source cannot run: its model is no longer offered/)).toBeTruthy();",
       "breaks": [
@@ -28,7 +28,7 @@
       "test": {
         "kind": "vitest",
         "file": "backend/src/core/bots/bots.service.test.ts",
-        "name": "refuses a secret in the name or the description, and makes no bot"
+        "name": "refuses a secret in the name and in the description"
       },
       "assertion": "expect(error, \"the create is refused\")",
       "breaks": [
@@ -72,7 +72,7 @@
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/bots/create-bot-page.test.tsx",
-        "name": "starts with no model and no effort, and sends the model that the owner picks"
+        "name": "starts with no model, and sends the model that the owner picks with its default effort"
       },
       "assertion": "expect(screen.getByText(/Source cannot run: its model is no longer offered/)).toBeTruthy();",
       "breaks": [
@@ -105,6 +105,28 @@
             {
               "find": "async function start(): Promise<void> {\n",
               "replace": "async function start(): Promise<void> {\n  throw new Error(\"trial: no start\");\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T-throw",
+      "claim": "A break that throws in the code on the assertion line: INVALID, not a failed assertion",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/bots/bots.service.test.ts",
+        "name": "restore assigns the skill to no bot, live or in Trash"
+      },
+      "assertion": "expect((await backend.bots.restoreBySlug(gone.slug)).pins).toEqual([]);",
+      "breaks": [
+        {
+          "id": "T-throw-a",
+          "file": "backend/src/core/bots/bots.service.ts",
+          "edits": [
+            {
+              "find": "  function restoreBySlug(slug: string): Promise<Bot> {\n",
+              "replace": "  function restoreBySlug(slug: string): Promise<Bot> {\n    throw new Error(\"trial: boom\");\n"
             }
           ]
         }

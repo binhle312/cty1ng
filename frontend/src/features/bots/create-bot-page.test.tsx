@@ -547,7 +547,7 @@ describe("a Clone whose model left the catalog (CL2)", () => {
   const isOff = (button: HTMLElement) =>
     button.hasAttribute("disabled") || button.getAttribute("aria-disabled") === "true";
 
-  it("starts with no model and no effort, and sends the model that the owner picks", async () => {
+  it("starts with no model, and sends the model that the owner picks with its default effort", async () => {
     const catalog = { models: [makeModel()] };
     fake = fakeApi({
       "GET /api/settings": () => ({ body: BOT_SETTINGS }),

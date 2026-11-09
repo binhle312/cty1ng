@@ -2,10 +2,15 @@ import { describe, expect, it } from "vitest";
 import {
   applyEdits,
   type BreakList,
+  changedLines,
+  coverageProblems,
   framesOf,
+  isTestFile,
   lineOf,
   linkProblems,
+  nameMatches,
   playwrightOutcomes,
+  testCalls,
   verdict,
   vitestOutcomes,
 } from "./breaks.ts";
@@ -31,6 +36,7 @@ function list(more: Partial<BreakList["claims"][number]> = {}): BreakList {
         ...more,
       },
     ],
+    exempt: [],
   };
 }
 
@@ -78,7 +84,24 @@ describe("linkProblems", () => {
         }),
         read,
       ),
-    ).toEqual(["C1: the id is used twice", "C1: a break changes the code, not its test"]);
+    ).toEqual([
+      "C1: the id is used twice",
+      "C1: a break changes the code, not a test or a test helper",
+    ]);
+  });
+
+  it("refuses a break of a test helper, and an assertion outside the named test", () => {
+    const helper = "backend/test/helpers.ts";
+    const withHelper = (path: string) => (path === helper ? "export const x = 1;\n" : read(path));
+    expect(
+      linkProblems(
+        list({ breaks: [{ id: "C1-a", file: helper, edits: [{ find: "1", replace: "2" }] }] }),
+        withHelper,
+      ),
+    ).toEqual(["C1-a: a break changes the code, not a test or a test helper"]);
+    expect(
+      linkProblems(list({ test: { kind: "vitest", file: TEST, name: "other" } }), read),
+    ).toEqual(["C1: the assertion is not inside the named test"]);
   });
 });
 
@@ -94,13 +117,28 @@ describe("verdict", () => {
   });
 
   it("counts only a failure of the named test at the assertion line", () => {
-    expect(verdict([failed(3)], AT)).toEqual({ kind: "caught", at: `${TEST}:3` });
+    expect(verdict([failed(3)], AT)).toEqual({
+      kind: "caught",
+      at: `${TEST}:3`,
+      message: "AssertionError: expected 4 to be 3",
+    });
   });
 
   it("calls a pass a survivor", () => {
     expect(verdict([{ status: "passed", timedOut: false, frames: [], message: "" }], AT)).toEqual({
       kind: "survived",
     });
+  });
+
+  it("does not count an error that the broken code throws on the assertion line", () => {
+    const thrown = {
+      ...failed(3),
+      frames: [
+        { file: "/tmp/copy/app/a.ts", line: 1 },
+        { file: `/tmp/copy/${TEST}`, line: 3 },
+      ],
+    };
+    expect(verdict([thrown], AT)).toMatchObject({ kind: "invalid" });
   });
 
   it("does not count a failure at another line, outside the test file, or a timeout", () => {
@@ -185,5 +223,64 @@ describe("the reports", () => {
     expect(
       playwrightOutcomes({ suites: [], errors: [{ message: "webServer failed" }] }, "scrolls"),
     ).toEqual([]);
+  });
+});
+
+describe("the tests of a PR", () => {
+  const FILE = [
+    'describe("group", () => {',
+    '  it("one", () => {',
+    "    expect(1).toBe(1);",
+    "  });",
+    '  it.each([["a"], ["b"]])("row %s", (row) => {',
+    "    expect(row).toBeTruthy();",
+    "  });",
+    '  test.skip("later", () => {});',
+    "});",
+    "",
+  ].join("\n");
+
+  it("finds each test call with its lines, and no describe", () => {
+    expect(testCalls(FILE, "x.test.ts")).toEqual([
+      { name: "one", start: 2, end: 4 },
+      { name: "row %s", start: 5, end: 7 },
+      { name: "later", start: 8, end: 8 },
+    ]);
+  });
+
+  it("matches a reported name to the name as written", () => {
+    expect(nameMatches("row %s", "row a")).toBe(true);
+    expect(nameMatches("row %s", "a row a")).toBe(false);
+    expect(nameMatches("one (x)", "one (x)")).toBe(true);
+  });
+
+  it("reads the changed lines of a diff, also of a hunk that only removes lines", () => {
+    const diff = [
+      "diff --git a/x.test.ts b/x.test.ts",
+      "--- a/x.test.ts",
+      "+++ b/x.test.ts",
+      "@@ -3 +3,2 @@",
+      "@@ -9,2 +10,0 @@",
+    ].join("\n");
+    expect(changedLines(diff)).toEqual(new Map([["x.test.ts", new Set([3, 4, 10])]]));
+  });
+
+  it("tells a test or a test helper from the code", () => {
+    expect(isTestFile("backend/test/helpers.ts")).toBe(true);
+    expect(isTestFile("frontend/src/a.test.tsx")).toBe(true);
+    expect(isTestFile("frontend/test/e2e/bots.spec.ts")).toBe(true);
+    expect(isTestFile("backend/src/core/bots/bots.service.ts")).toBe(false);
+  });
+
+  it("names each changed test that has no claim and no exemption", () => {
+    const calls = testCalls(FILE, TEST);
+    const changed = new Map([[TEST, calls]]);
+    const claims = list({ test: { kind: "vitest", file: TEST, name: "row a" } }).claims;
+    expect(
+      coverageProblems(
+        { claims, exempt: [{ file: TEST, name: "later", reason: "written first" }] },
+        changed,
+      ),
+    ).toEqual([`${TEST}:2: the test "one" has no claim`]);
   });
 });

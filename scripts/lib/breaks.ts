@@ -1,3 +1,4 @@
+import ts from "typescript";
 import { z } from "zod";
 
 // The break list of a PR (testing.md §5, "Break lists"): each claim names its test, the text of
@@ -25,10 +26,115 @@ const Claim = z
     breaks: z.array(Break),
   })
   .strict();
-export const BreakList = z.object({ claims: z.array(Claim) }).strict();
+// A test that the PR adds or changes, but that needs no break list (testing.md §5): for example
+// a test written first, with its red run in the PR.
+const Exempt = z
+  .object({ file: z.string().min(1), name: z.string().min(1), reason: z.string().min(1) })
+  .strict();
+export const BreakList = z
+  .object({ claims: z.array(Claim), exempt: z.array(Exempt).default([]) })
+  .strict();
 export type BreakList = z.infer<typeof BreakList>;
 export type Claim = z.infer<typeof Claim>;
 export type Break = z.infer<typeof Break>;
+
+// A test call in a test file: its name as written (with `%s` for `it.each`) and its lines.
+export interface TestCall {
+  name: string;
+  start: number;
+  end: number;
+}
+
+const TEST_FUNCTIONS = new Set(["it", "test"]);
+const MODIFIERS = new Set(["only", "skip", "concurrent", "fails", "fixme", "slow", "each"]);
+
+// The test calls of a Vitest or Playwright file: `it(...)`, `test(...)`, `it.each(rows)(...)`
+// and the modifiers such as `test.skip(...)`. A `describe` is not a test.
+export function testCalls(text: string, path: string): TestCall[] {
+  const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true);
+  const line = (position: number) => source.getLineAndCharacterOfPosition(position).line + 1;
+  const isTestFunction = (node: ts.Expression): boolean => {
+    if (ts.isIdentifier(node)) return TEST_FUNCTIONS.has(node.text);
+    if (ts.isPropertyAccessExpression(node))
+      return MODIFIERS.has(node.name.text) && isTestFunction(node.expression);
+    if (ts.isCallExpression(node)) return isTestFunction(node.expression);
+    return false;
+  };
+  const calls: TestCall[] = [];
+  const visit = (node: ts.Node) => {
+    if (ts.isCallExpression(node) && isTestFunction(node.expression)) {
+      const [first] = node.arguments;
+      if (first !== undefined && ts.isStringLiteralLike(first)) {
+        calls.push({
+          name: first.text,
+          start: line(node.getStart(source)),
+          end: line(node.getEnd()),
+        });
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return calls;
+}
+
+// Whether a test name as the report gives it comes from a name as written: `it.each` fills
+// `%s`, `%d` and the like.
+export function nameMatches(written: string, reported: string): boolean {
+  const parts = written.split(/%[sdifjo#%]/);
+  const pattern = parts.map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join(".+");
+  return new RegExp(`^${pattern}$`).test(reported);
+}
+
+// The changed lines of each file in a `git diff --unified=0` text, on the new side. A hunk that
+// only removes lines marks the line where they were.
+export function changedLines(diff: string): Map<string, Set<number>> {
+  const files = new Map<string, Set<number>>();
+  let current: Set<number> | undefined;
+  for (const row of diff.split("\n")) {
+    const file = /^\+\+\+ b\/(.+)$/.exec(row);
+    if (file?.[1] !== undefined) {
+      current = new Set();
+      files.set(file[1], current);
+      continue;
+    }
+    const hunk = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/.exec(row);
+    if (hunk !== null && current !== undefined) {
+      const start = Number(hunk[1]);
+      const count = hunk[2] === undefined ? 1 : Number(hunk[2]);
+      if (count === 0) current.add(Math.max(start, 1));
+      for (let at = start; at < start + count; at += 1) current.add(at);
+    }
+  }
+  return files;
+}
+
+// A file that tests read but that is not the code under test: a break must not edit it.
+export function isTestFile(path: string): boolean {
+  return /(^|\/)test\/|\.(test|spec)\.[cm]?[jt]sx?$/.test(path);
+}
+
+// Each test that the PR adds or changes and that no claim and no exemption names
+// (testing.md §5: the list has every test of the PR). `changed` holds the test calls whose
+// lines the PR touched, by file.
+export function coverageProblems(
+  list: BreakList,
+  changed: ReadonlyMap<string, readonly TestCall[]>,
+): string[] {
+  const problems: string[] = [];
+  for (const [file, calls] of changed) {
+    for (const call of calls) {
+      const claimed = list.claims.some(
+        (claim) => claim.test.file === file && nameMatches(call.name, claim.test.name),
+      );
+      const exempt = list.exempt.some((entry) => entry.file === file && entry.name === call.name);
+      if (!claimed && !exempt) {
+        problems.push(`${file}:${String(call.start)}: the test "${call.name}" has no claim`);
+      }
+    }
+  }
+  return problems;
+}
 
 // The 1-based line of `snippet` in `text`, or a problem when it is not there exactly once.
 export function lineOf(text: string, snippet: string): number | string {
@@ -50,7 +156,10 @@ export function applyEdits(text: string, edits: readonly { find: string; replace
 }
 
 // Every missing link of the list. `read` gives a file of the tested copy, or null.
-export function linkProblems(list: BreakList, read: (path: string) => string | null): string[] {
+export function linkProblems(
+  list: Pick<BreakList, "claims">,
+  read: (path: string) => string | null,
+): string[] {
   const problems: string[] = [];
   const ids = new Set<string>();
   const seen = (id: string) => {
@@ -63,14 +172,21 @@ export function linkProblems(list: BreakList, read: (path: string) => string | n
     const test = read(claim.test.file);
     if (test === null) problems.push(`${claim.id}: no test file ${claim.test.file}`);
     else {
-      // The test name is checked by the run with no break: a name with no result fails there.
+      // The run with no break also checks the name: a name with no result fails there.
       const line = lineOf(test, claim.assertion);
       if (typeof line === "string") problems.push(`${claim.id}: the assertion is ${line}`);
+      else {
+        const inside = testCalls(test, claim.test.file).some(
+          (call) =>
+            nameMatches(call.name, claim.test.name) && call.start <= line && line <= call.end,
+        );
+        if (!inside) problems.push(`${claim.id}: the assertion is not inside the named test`);
+      }
     }
     for (const step of claim.breaks) {
       seen(step.id);
-      if (step.file === claim.test.file) {
-        problems.push(`${step.id}: a break changes the code, not its test`);
+      if (isTestFile(step.file)) {
+        problems.push(`${step.id}: a break changes the code, not a test or a test helper`);
       }
       const code = read(step.file);
       if (code === null) problems.push(`${step.id}: no file ${step.file}`);
@@ -93,7 +209,9 @@ export interface TestOutcome {
 }
 
 export type Verdict =
-  { kind: "caught"; at: string } | { kind: "survived" } | { kind: "invalid"; reason: string };
+  | { kind: "caught"; at: string; message: string }
+  | { kind: "survived" }
+  | { kind: "invalid"; reason: string };
 
 // The verdict of one break run. Only a failure of the named test at the assertion line counts:
 // no result (a load or server failure), a test timeout, or a failure at another line does not.
@@ -108,9 +226,15 @@ export function verdict(
   if (outcome.timedOut) return { kind: "invalid", reason: "the test timed out" };
   if (outcome.status === "skipped") return { kind: "invalid", reason: "the test was skipped" };
   if (outcome.status === "passed") return { kind: "survived" };
-  const frame = outcome.frames.find((place) => place.file.endsWith(assertion.file));
-  if (frame === undefined) {
-    return { kind: "invalid", reason: `the failure is not in the test file: ${outcome.message}` };
+  // The innermost place outside the libraries must be the assertion. When the broken code
+  // throws, its own file comes first, and the failure is not a failed assertion.
+  const frame = outcome.frames.find((place) => !place.file.includes("/node_modules/"));
+  if (frame === undefined || !frame.file.endsWith(assertion.file)) {
+    const where = frame === undefined ? "no place" : frame.file;
+    return {
+      kind: "invalid",
+      reason: `the failure comes from ${where}, not from the test: ${outcome.message}`,
+    };
   }
   if (frame.line !== assertion.line) {
     return {
@@ -118,7 +242,11 @@ export function verdict(
       reason: `failed at line ${String(frame.line)}, not at the assertion (line ${String(assertion.line)}): ${outcome.message}`,
     };
   }
-  return { kind: "caught", at: `${assertion.file}:${String(frame.line)}` };
+  return {
+    kind: "caught",
+    at: `${assertion.file}:${String(frame.line)}`,
+    message: outcome.message,
+  };
 }
 
 // The `file:line` places in a stack text, innermost first.

@@ -121,6 +121,28 @@
       ]
     },
     {
+      "id": "R9-log",
+      "claim": "No log line holds an API key",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/secrets.test.ts",
+        "name": "never appear in an answer of any operation, in the stream, or in the log"
+      },
+      "assertion": "for (const text of [...texts, ...backend.lines]) expect(text).not.toContain(\"SENTINEL\");",
+      "breaks": [
+        {
+          "id": "R9-log-unredacted",
+          "file": "backend/src/adapters/log/pino-logger.ts",
+          "edits": [
+            {
+              "find": "  return pino(\n    { level: options.level, base: null, timestamp: pino.stdTimeFunctions.isoTime },\n    redactingStream(destination, options.secrets),\n  );",
+              "replace": "  const logger = pino(\n    { level: options.level, base: null, timestamp: pino.stdTimeFunctions.isoTime },\n    destination,\n  );\n  logger.info({ keys: options.secrets }, \"keys\");\n  return logger;"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "R9-event",
       "claim": "The stream part reads a real event, not an empty stream",
       "test": {
@@ -148,7 +170,7 @@
       "test": {
         "kind": "vitest",
         "file": "backend/src/core/bots/bots.service.test.ts",
-        "name": "refuses a secret in the name or the description, and makes no bot"
+        "name": "refuses a secret in the name and in the description"
       },
       "assertion": "expect(error, \"the create is refused\")",
       "breaks": [
@@ -180,7 +202,7 @@
       "test": {
         "kind": "vitest",
         "file": "backend/src/core/bots/bots.service.test.ts",
-        "name": "refuses a secret in a new name, and keeps the bot as it was"
+        "name": "refuses a secret in a new name"
       },
       "assertion": "expect(error, \"the PATCH is refused\")",
       "breaks": [
@@ -202,7 +224,7 @@
       "test": {
         "kind": "vitest",
         "file": "backend/src/core/bots/bots.service.test.ts",
-        "name": "refuses a secret in a new description, and keeps the bot as it was"
+        "name": "refuses a secret in a new description"
       },
       "assertion": "expect(error, \"the PATCH is refused\")",
       "breaks": [
@@ -224,7 +246,7 @@
       "test": {
         "kind": "vitest",
         "file": "backend/src/core/bots/bots.service.test.ts",
-        "name": "refuses a secret in a new persona_md, and keeps the bot as it was"
+        "name": "refuses a secret in a new persona_md"
       },
       "assertion": "expect(error, \"the PATCH is refused\")",
       "breaks": [
@@ -241,12 +263,34 @@
       ]
     },
     {
+      "id": "R11-nokey",
+      "claim": "A Clone keeps a copied model that has no API key (CL2 starts empty only for a gone model)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "shows a copied model with no API key as an error at once (\u00a76)"
+      },
+      "assertion": "expect(model instanceof HTMLSelectElement && model.value).toBe(noKey.id);",
+      "breaks": [
+        {
+          "id": "R11-nokey-empties",
+          "file": "frontend/src/features/bots/create-bot-steps.tsx",
+          "edits": [
+            {
+              "find": "            value={form.model_id ?? \"\"}",
+              "replace": "            value={model?.available === true ? (form.model_id ?? \"\") : \"\"}"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "R11-empty",
       "claim": "A Clone whose model left the catalog starts with no model (CL2)",
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/bots/create-bot-page.test.tsx",
-        "name": "starts with no model and no effort, and sends the model that the owner picks"
+        "name": "starts with no model, and sends the model that the owner picks with its default effort"
       },
       "assertion": "expect(model.value).toBe(\"\");\n    expect(screen.queryByLabelText(\"Effort\"",
       "breaks": [
@@ -268,7 +312,7 @@
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/bots/create-bot-page.test.tsx",
-        "name": "starts with no model and no effort, and sends the model that the owner picks"
+        "name": "starts with no model, and sends the model that the owner picks with its default effort"
       },
       "assertion": "expect(screen.getByText(/Source cannot run: its model is no longer offered/)).toBeTruthy();",
       "breaks": [
@@ -285,8 +329,30 @@
       ]
     },
     {
+      "id": "R11-pick",
+      "claim": "Create sends the model that the owner picks, with its own default effort",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "starts with no model, and sends the model that the owner picks with its default effort"
+      },
+      "assertion": "expect(fake.sent(\"POST\", \"/api/bots\")[0]?.body).toMatchObject({\n      model_id: GONE.id,",
+      "breaks": [
+        {
+          "id": "R11-pick-last-effort",
+          "file": "frontend/src/features/bots/create-bot-form.ts",
+          "edits": [
+            {
+              "find": "        : (model.default_effort ?? model.efforts[0] ?? null);",
+              "replace": "        : (model.efforts.at(-1) ?? null);"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "R12-in",
-      "claim": "While the pointer is in the header, a new order waits, also after time passes",
+      "claim": "While the pointer is over the avatars, a new order waits, also after a minute of timeouts and intervals",
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/shell/top-header.test.tsx",
@@ -311,6 +377,16 @@
             {
               "find": "        setHover(true);\n        deferred.freeze();",
               "replace": "        setHover(true);\n        deferred.freeze();\n        setTimeout(deferred.thaw, 300);"
+            }
+          ]
+        },
+        {
+          "id": "R12-in-interval",
+          "file": "frontend/src/features/shell/header-roster.tsx",
+          "edits": [
+            {
+              "find": "        setHover(true);\n        deferred.freeze();",
+              "replace": "        setHover(true);\n        deferred.freeze();\n        setInterval(deferred.thaw, 300);"
             }
           ]
         }
@@ -340,7 +416,7 @@
     },
     {
       "id": "R12-leave",
-      "claim": "The pointer leaving does not apply the order, also after time passes",
+      "claim": "The pointer leaving does not apply the order, also after a minute of timeouts and intervals",
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/shell/top-header.test.tsx",
@@ -365,6 +441,38 @@
             {
               "find": "        setHover(false);\n      }}",
               "replace": "        setHover(false);\n        setTimeout(deferred.thaw, 300);\n      }}"
+            }
+          ]
+        },
+        {
+          "id": "R12-leave-interval",
+          "file": "frontend/src/features/shell/header-roster.tsx",
+          "edits": [
+            {
+              "find": "        setHover(false);\n      }}",
+              "replace": "        setHover(false);\n        setInterval(deferred.thaw, 300);\n      }}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R12-outside",
+      "claim": "A click outside the header applies the new order",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/shell/top-header.test.tsx",
+        "name": "keeps the order while the pointer is over the avatars, and after it leaves, until a click outside"
+      },
+      "assertion": "expect(shownOrder()).toEqual([\"ux\", \"ba\", \"qa\"]);\n  });\n\n  it(\"follows a new order",
+      "breaks": [
+        {
+          "id": "R12-outside-no-thaw",
+          "file": "frontend/src/features/shell/header-roster.tsx",
+          "edits": [
+            {
+              "find": "return;\n      if (engaged.current) thaw();\n    };\n    const onBlur",
+              "replace": "return;\n    };\n    const onBlur"
             }
           ]
         }
@@ -435,6 +543,223 @@
           ]
         }
       ]
+    },
+    {
+      "id": "R10-api-create-name",
+      "claim": "The create route refuses a secret in the name with 422 sensitive_data",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/bots.test.ts",
+        "name": "refuses a secret in the name with 422 sensitive_data"
+      },
+      "assertion": "expect(response.status, \"the create is refused\")",
+      "breaks": [
+        {
+          "id": "R10-api-create-name-a",
+          "file": "backend/src/core/bots/bots.service.ts",
+          "edits": [
+            {
+              "find": "        [\"name\", name],\n        [\"description\", body.description],",
+              "replace": "        [\"description\", body.description],"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R10-api-create-description",
+      "claim": "The create route refuses a secret in the description with 422 sensitive_data",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/bots.test.ts",
+        "name": "refuses a secret in the description with 422 sensitive_data"
+      },
+      "assertion": "expect(response.status, \"the create is refused\")",
+      "breaks": [
+        {
+          "id": "R10-api-create-description-a",
+          "file": "backend/src/core/bots/bots.service.ts",
+          "edits": [
+            {
+              "find": "        [\"name\", name],\n        [\"description\", body.description],",
+              "replace": "        [\"name\", name],"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R10-api-patch-name",
+      "claim": "The PATCH route refuses a secret in the name with 422 sensitive_data",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/bots.test.ts",
+        "name": "PATCH refuses a secret in the name with 422 sensitive_data"
+      },
+      "assertion": "expect(response.status, \"the PATCH is refused\")",
+      "breaks": [
+        {
+          "id": "R10-api-patch-name-a",
+          "file": "backend/src/core/bots/bots.service.ts",
+          "edits": [
+            {
+              "find": "fail(botTextProblem(\"name\", name, settings));",
+              "replace": "fail(botLimitProblem(\"name\", name, settings));"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R10-api-patch-description",
+      "claim": "The PATCH route refuses a secret in the description with 422 sensitive_data",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/bots.test.ts",
+        "name": "PATCH refuses a secret in the description with 422 sensitive_data"
+      },
+      "assertion": "expect(response.status, \"the PATCH is refused\")",
+      "breaks": [
+        {
+          "id": "R10-api-patch-description-a",
+          "file": "backend/src/core/bots/bots.service.ts",
+          "edits": [
+            {
+              "find": "fail(botTextProblem(\"description\", patch.description, settings));",
+              "replace": "fail(botLimitProblem(\"description\", patch.description, settings));"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R10-api-patch-persona_md",
+      "claim": "The PATCH route refuses a secret in the persona_md with 422 sensitive_data",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/bots.test.ts",
+        "name": "PATCH refuses a secret in the persona_md with 422 sensitive_data"
+      },
+      "assertion": "expect(response.status, \"the PATCH is refused\")",
+      "breaks": [
+        {
+          "id": "R10-api-patch-persona_md-a",
+          "file": "backend/src/core/bots/bots.service.ts",
+          "edits": [
+            {
+              "find": "fail(botTextProblem(\"persona_md\", patch.persona_md, settings));",
+              "replace": "fail(botLimitProblem(\"persona_md\", patch.persona_md, settings));"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "adds",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "finds a text that occurs once, and refuses one that is missing or repeated",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "applies each edit once, and names an edit that does not match",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "accepts a list where each claim links a test, an assertion and a break",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "refuses each missing link",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "refuses a break of the test itself and an id used twice",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "refuses a break of a test helper, and an assertion outside the named test",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "counts only a failure of the named test at the assertion line",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "calls a pass a survivor",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "does not count an error that the broken code throws on the assertion line",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "does not count a failure at another line, outside the test file, or a timeout",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "does not count a run with no result (a load or server failure), or two tests",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "reads the stack places of a Vitest failure, innermost first",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "reads the named test from a Vitest JSON report, with a test timeout",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "reads the named test from nested Playwright suites, and tells a test timeout from a failed wait",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "one",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "finds each test call with its lines, and no describe",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "matches a reported name to the name as written",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "reads the changed lines of a diff, also of a hunk that only removes lines",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "tells a test or a test helper from the code",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
+      "name": "names each changed test that has no claim and no exemption",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
     }
   ]
 }

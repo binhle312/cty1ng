@@ -222,7 +222,7 @@ describe("create (POST /bots)", () => {
 
   // The guard (D39, security.md §2.13) reads the name and the description too, not only the
   // persona. The error never holds the secret.
-  it("refuses a secret in the name or the description, and makes no bot", async () => {
+  it("refuses a secret in the name and in the description", async () => {
     for (const [more, field] of [
       [{ name: `BA ${SECRET}` }, "name"],
       [{ description: `Logs in with ${SECRET}.` }, "description"],
@@ -451,24 +451,21 @@ describe("update (PATCH /bots/{id})", () => {
     ["name", { name: `BA ${SECRET}` }],
     ["description", { description: `Logs in with ${SECRET}.` }],
     ["persona_md", { persona_md: `You log in with ${SECRET}.` }],
-  ] as const)(
-    "refuses a secret in a new %s, and keeps the bot as it was",
-    async (field, change) => {
-      const bot = await create();
-      const id = BotId.parse(bot.id);
-      const before = (await events()).length;
-      const error = await rejection(backend.bots.update(id, { row_version: 1, ...change }));
-      expect(error, "the PATCH is refused").toMatchObject({ code: "sensitive_data", field });
-      expect(String(error)).not.toContain("hunter22");
-      expect(await backend.bots.get(id)).toMatchObject({
-        name: bot.name,
-        description: bot.description,
-        persona_md: bot.persona_md,
-        row_version: 1,
-      });
-      expect((await events()).length).toBe(before);
-    },
-  );
+  ] as const)("refuses a secret in a new %s", async (field, change) => {
+    const bot = await create();
+    const id = BotId.parse(bot.id);
+    const before = (await events()).length;
+    const error = await rejection(backend.bots.update(id, { row_version: 1, ...change }));
+    expect(error, "the PATCH is refused").toMatchObject({ code: "sensitive_data", field });
+    expect(String(error)).not.toContain("hunter22");
+    expect(await backend.bots.get(id)).toMatchObject({
+      name: bot.name,
+      description: bot.description,
+      persona_md: bot.persona_md,
+      row_version: 1,
+    });
+    expect((await events()).length).toBe(before);
+  });
 
   it("two PATCHes with one row_version at once: one saves, the other gets stale_write", async () => {
     const bot = await create();
