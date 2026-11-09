@@ -377,17 +377,29 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
 4. Each test must pass with no break first.
 5. Each break runs alone. First, `tsc` must compile the project of the broken file (an unused
    variable is allowed); a break that does not compile is `INVALID`, and its test does not run.
-   Then the break counts only when the named test fails at the line of its assertion text, and
-   that line is the innermost place outside the libraries. No result (a server failure), a test
-   timeout, a failure at another line, or an error that the broken code throws is `INVALID`,
-   not caught. The runner also reads what the run prints: a new error line that names the
-   broken file makes the break `INVALID`. Such a line comes from a throw while a page loads or
-   renders, or from an import that does not resolve. The page then never shows, and the first
-   wait for it fails at the assertion line, so the test result alone cannot show it. For an e2e
-   test, the runner sees only what Playwright and the servers print, not an error in the
-   browser page, so the reviewer reads the message of each e2e catch.
+   Then the test runs. A failure at another line, a test timeout, no result (a server failure),
+   or a failure whose innermost place outside the libraries is the broken code is `INVALID`.
+   A new error line in the printed output that names the broken file also makes the break
+   `INVALID`: it comes from a throw while a page loads or renders, or from an import that does
+   not resolve. Otherwise a failure at the line of the assertion text is `caught`.
 6. The report names the commit, a hash of the local changes, the base, each command and each
-   result, with the failure message of each caught break.
+   result, with the first line of the failure message of each caught break.
+
+**What `caught` proves (owner, 2026-11-09, DQ-168).** The compile check of the project passed,
+the run printed no new error that names the broken file, and the test failed at the assertion
+line. It does not prove why the assertion failed. An error that the app catches can reach the
+same line with nothing printed: a `.catch` that shows another state, a query callback, or a
+backend 500. For an e2e test, the runner also does not see errors in the browser page. So the
+proof of each claim is the reviewer's check of each catch, in the frontend and the backend:
+
+- The reviewer compares the edit of the break, the claim and the failure message. For example,
+  "expected 500 to be 422" does not prove that a removed check let the request through: the
+  request may have failed earlier. "Unable to find an element" needs a look at the state that
+  the page reached.
+- When the first line of the message does not show the broken behaviour, the reviewer runs that
+  break again with `--only` and reads the full output. A claim whose evidence stays unclear does
+  not count.
+- A break changes a value or a branch. It does not throw.
 
 The list proves only the claims that someone wrote down; the reviewer still checks that it has
 every claim of the PR. A list is evidence for its review. After the merge, nobody runs it again.
