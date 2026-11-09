@@ -36,6 +36,9 @@ const body = (more: Partial<CreateBotBody> = {}): CreateBotBody => ({
   ...more,
 });
 
+// A password short enough for the name limit.
+const SECRET = "password=Hunt3r-x9";
+
 const create = async (more: Partial<CreateBotBody> = {}) =>
   (await backend.bots.create(body(more), key(), OWNER_ID)).bot;
 
@@ -206,6 +209,21 @@ describe("create (POST /bots)", () => {
     expect(
       await failure(create({ avatar_style: "upload", avatar_id: "a".repeat(64) })),
     ).toMatchObject({ field: "avatar_id", message: "Upload the image again." });
+    expect(await events()).toEqual([]);
+  });
+
+  // The guard (D39, security.md §2.13) reads the name and the description too, not only the
+  // persona. The error never holds the secret.
+  it("refuses a secret in the name or the description, and makes no bot", async () => {
+    for (const [more, field] of [
+      [{ name: `BA ${SECRET}` }, "name"],
+      [{ description: `Logs in with ${SECRET}.` }, "description"],
+    ] as const) {
+      const error = await failure(create(more));
+      expect(error).toMatchObject({ code: "sensitive_data", field });
+      expect(error.message).not.toContain("Hunt3r");
+    }
+    expect(await backend.bots.list()).toEqual([]);
     expect(await events()).toEqual([]);
   });
 
@@ -418,6 +436,17 @@ describe("update (PATCH /bots/{id})", () => {
     expect(
       await failure(backend.bots.update(id, { row_version: 1, description: "x" })),
     ).toMatchObject({ code: "stale_write" });
+  });
+
+  it("refuses a secret in a new name, and keeps the old name", async () => {
+    const bot = await create();
+    const id = BotId.parse(bot.id);
+    const before = (await events()).length;
+    const error = await failure(backend.bots.update(id, { row_version: 1, name: `BA ${SECRET}` }));
+    expect(error).toMatchObject({ code: "sensitive_data", field: "name" });
+    expect(error.message).not.toContain("Hunt3r");
+    expect(await backend.bots.get(id)).toMatchObject({ name: "BA", row_version: 1 });
+    expect((await events()).length).toBe(before);
   });
 
   it("two PATCHes with one row_version at once: one saves, the other gets stale_write", async () => {
@@ -729,6 +758,37 @@ describe("skills that touch pins (api.md §2)", () => {
     // domain-model.md §3.4: restore keeps trashed_bot_ids until the next delete (M5b reads it).
     const row = await backend.readers.skills.byId(notes);
     expect(new Set(row?.trashedBotIds)).toEqual(new Set([bId, cId]));
+  });
+
+  // Invariant 21 (domain-model.md §12, D49): a restore only suggests bots. The test above checks
+  // the suggestion; this one checks that no pin comes back, now or when a bot leaves Trash.
+  it("restore assigns the skill to no bot, live or in Trash", async () => {
+    const notes = await skill("notes");
+    const live = await create({ name: "Live", pins: [{ skill_id: notes, always_load: true }] });
+    const gone = await create({ name: "Gone", pins: [{ skill_id: notes, always_load: false }] });
+    const liveId = BotId.parse(live.id);
+    await backend.bots.trash(BotId.parse(gone.id));
+    let summary = await backend.skills.summary(notes, OWNER_ID);
+    await backend.skills.deprecate(
+      notes,
+      { removeBotIds: [], rowVersion: summary.row_version },
+      OWNER_ID,
+    );
+    summary = await backend.skills.summary(notes, OWNER_ID);
+    await backend.skills.trash(notes, { rowVersion: summary.row_version }, OWNER_ID);
+    const before = (await events()).length;
+
+    const restored = await backend.skills.restore(notes, OWNER_ID);
+    expect(restored.suggested_bot_ids).toEqual([liveId]);
+    expect((await events()).slice(before).map(([type]) => type)).toEqual([
+      "skill.restored",
+      "trash.changed",
+    ]);
+    expect((await backend.bots.get(liveId)).pins).toEqual([]);
+    expect(await backend.skills.summary(notes, OWNER_ID)).toMatchObject({ bots_using: 0 });
+    // The bot in Trash comes back with no pin of the restored skill.
+    expect((await backend.bots.restoreBySlug(gone.slug)).pins).toEqual([]);
+    expect(await backend.skills.summary(notes, OWNER_ID)).toMatchObject({ bots_using: 0 });
   });
 
   it("deprecate and Trash emit bot.updated for each bot whose pin went", async () => {

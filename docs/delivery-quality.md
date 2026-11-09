@@ -84,6 +84,7 @@ The historical snapshot column gives evidence for a specific review period.
 | [#79](https://github.com/binhle312/cty1ng/pull/79) | No milestone / principle skill | Unmeasured | unknown | unknown | unknown | unknown | Merged on 2026-11-06 (`8c2278f`) |
 | [#82](https://github.com/binhle312/cty1ng/pull/82) | Audit 2026-11-05 / PR 4, Bots page | Partial | 33 itemized (DQ-084 to DQ-116) | 9 (DQ-088, DQ-089, DQ-090, DQ-095, DQ-107 to DQ-109, DQ-115, DQ-116) | 13 (DQ-084 to DQ-086, DQ-088 to DQ-091, DQ-095, DQ-096, DQ-101, DQ-106 to DQ-108) | 6 | — |
 | [#84](https://github.com/binhle312/cty1ng/pull/84) | Audit 2026-11-05 / DQ-088 | Partial | 23 itemized (DQ-088, DQ-117 to DQ-138) | 0 | 1 (DQ-088) | 6 independent reviews (`35ea872`, `d5f5d6e`, `78d01fb`, `0dc734c`, `25cb287`, `d6265ae`) and the owner's review of `25cb287` | — |
+| [#86](https://github.com/binhle312/cty1ng/pull/86) | Audit 2026-11-05 / PR 5, tests only | Partial | 0 itemized | 0 | 0 | none yet | — |
 
 ## 4. Historical evidence snapshots
 

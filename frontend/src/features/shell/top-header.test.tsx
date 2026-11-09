@@ -93,6 +93,37 @@ describe("the header order while the owner uses the header", () => {
     expect(shownOrder()).toEqual(["qa", "ux", "ba"]);
   });
 
+  // top-header.md state 9: the pointer alone, with no focus in the header.
+  it("keeps the order while the pointer is in the header, and after it leaves, until a click outside", async () => {
+    const fake = serve([
+      [BA, QA, UX],
+      [UX, BA, QA],
+    ]);
+    await renderApp("/");
+    // The roster is a lazy chunk: its first import in a test run takes a while.
+    await screen.findAllByTestId("header-bot", {}, { timeout: 5000 });
+    expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
+    const roster = screen.getByTestId("roster");
+    act(() => {
+      fireEvent.pointerEnter(roster);
+    });
+    await refetchBots(fake, 2);
+    expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
+    // A click in the header is not a click outside.
+    act(() => {
+      fireEvent.pointerDown(roster);
+    });
+    expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
+    act(() => {
+      fireEvent.pointerLeave(roster);
+    });
+    expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
+    act(() => {
+      fireEvent.pointerDown(document.body);
+    });
+    expect(shownOrder()).toEqual(["ux", "ba", "qa"]);
+  });
+
   it("follows a new order at once when the owner is not in the header", async () => {
     const fake = serve([
       [BA, QA, UX],

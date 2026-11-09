@@ -104,7 +104,7 @@ Each fix PR updates its row in the same PR. Check `gh pr list --state all`, beca
 | 2 | Security | merged: #73 |
 | 3 | Skills page | merged: #78 |
 | 4 | Bots page | merged: #82 |
-| 5 | Tests only | not started |
+| 5 | Tests only | draft: #86 |
 | 6 | Six tabs | not started |
 | 7 | Other P3 for M3 | not started |
 
