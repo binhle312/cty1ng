@@ -16,15 +16,13 @@ Frame, Fan out, Judge, Pick, Graft, Verify.
 
 Every seat and the judge use one of these two models, at effort `high`:
 
-| Model           | How to start it from Claude Code                                                                                  |
-| --------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Claude Opus 5.5 | `Agent` tool with `model: "opus"` and `effort: "high"`                                                            |
-| GPT-6 Astra     | `codex exec -m gpt-6-astra -c model_reasoning_effort="high" -c service_tier="default"` with `run_in_background` |
-
-From Codex, start the Opus seat with `claude -p --model claude-opus-5-5 --effort high`.
+| Model           | From Claude Code                                                                       | From Codex                                                                    |
+| --------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Claude Opus 5.5 | `Agent` tool with `model: "opus"` and `effort: "high"`                                 | `claude -p --model claude-opus-5-5 --effort high`                             |
+| GPT-6 Astra     | `codex exec -m gpt-6-astra -c model_reasoning_effort="high" -c service_tier="default"` | The same `codex exec` command                                                 |
 
 Use only these two models at effort `high` and standard speed. Do not use `xhigh` or fast mode.
-If a model fails to start, run that seat on the other model and tell the owner.
+From Codex, `claude -p` needs network access. If it fails in the sandbox, ask the owner for network access.
 
 ## Phase A: Frame
 
@@ -33,14 +31,18 @@ All candidates get the same brief, so the brief is the contract.
 1. State the artifact that each candidate makes.
 2. Write the rubric: 3 to 6 criteria that you can grade on this task.
    Only you and the judge see the rubric. The candidates see only the task.
-3. Choose the seats. The default is two: one Opus 5.5 and one GPT-6 Astra.
+3. Check which models you can start. Your own model is always available.
+   From Claude Code, run `command -v codex`. From Codex, run `command -v claude`.
+   If the command finds nothing, you have one model family. Tell the owner once, before the fan out.
+4. Choose the seats. The default is two: one Opus 5.5 and one GPT-6 Astra.
+   With one model family, all seats use your own model.
    Add seats when the task has more than one design direction.
    Use one model for all seats when the work is mostly generation, not judgment.
-4. Give each seat its own output place:
+5. Give each seat its own output place:
    - Code: a git worktree on a new branch `arena-<slug>-<n>`.
      Install the dependencies in each worktree before the fan out, because the Codex sandbox has no network.
    - Text only: `<scratchpad>/arena-<slug>/candidate-<n>/`.
-5. Write one brief file. It contains the task and the paths to the documents that define it.
+6. Write one brief file. It contains the task and the paths to the documents that define it.
    It also tells each candidate to:
    - work only in its output place, and keep all changes uncommitted;
    - follow the repository's agent instructions;
@@ -51,22 +53,28 @@ The phase is complete when the rubric and the brief file exist and each seat has
 ## Phase B: Fan out
 
 1. In one message, start all seats in the background with the brief file and the output place.
-   - Opus seat: `Agent` tool, `run_in_background: true`.
+   - Opus seat from Claude Code: `Agent` tool, `run_in_background: true`.
+   - Opus seat from Codex: `claude -p ... --permission-mode acceptEdits < <brief>`, run in `<worktree>`.
    - GPT-6 Astra seat: `codex exec ... -s workspace-write -C <worktree> -o <out>/last-message.md - < <brief>`.
-2. If a seat gives no output, continue with the others and record the dropout.
+2. If a seat fails to start, run it on the other model and tell the owner.
+3. If a seat gives no output, continue with the others and record the dropout.
 
 ## Phase C: Judge
 
 Start the judge only after all seats finish.
 
 1. Use one read-only judge from the other model family than yours.
-   From Claude Code, the judge is GPT-6 Astra: `codex exec ... -s read-only -C <repo root>`.
-   From Codex, the judge is Opus 5.5.
-2. Give the judge the rubric and the candidate paths as labels (`candidate-1`, `candidate-2`).
+   - From Claude Code, the judge is GPT-6 Astra: `codex exec ... -s read-only -C <repo root>`.
+   - From Codex, the judge is Opus 5.5: `claude -p ... --permission-mode plan`.
+2. If the other family is not available, start a new judge on your own model.
+   - From Claude Code: `Agent` tool with `model: "opus"` and `effort: "high"`.
+   - From Codex: `codex exec ... -s read-only -C <repo root>`.
+   This judge has the same model bias as you. Record it as a same-family judge.
+3. Give the judge the rubric and the candidate paths as labels (`candidate-1`, `candidate-2`).
    Do not tell the judge which model made which candidate.
-3. Ask for a score on each criterion and a recommended base with reasons.
-4. Do Phase D while the judge works.
-5. If the judge fails to start, pick the base alone and tell the owner.
+4. Ask for a score on each criterion and a recommended base with reasons.
+5. Do Phase D while the judge works.
+6. If no judge starts, pick the base alone and tell the owner.
 
 ## Phase D: Pick a base
 
@@ -106,7 +114,7 @@ Build the result on the task's own branch, not on an arena branch.
 2. A synthesis note. Put it in the PR description under the heading `Arena`, or in your reply if
    there is no PR. The note gives:
    - the base and why you picked it;
-   - the judge's verdict, or that there was no judge;
+   - the judge's verdict and family (other or same), or that there was no judge;
    - each graft and its source candidate;
    - what you rejected and why;
    - agreement between candidates and any dropouts;
