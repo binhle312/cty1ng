@@ -39,6 +39,7 @@ Read the matching skill before its phase of work.
 | `principle-review-with-evidence/` | Review code or fixes against each requirement, approved plan promise, and implementation boundary. |
 | `principle-verify-delivery/` | Verify the final revision before handoff and report the scope and result of each check. |
 | `principle-ask-with-options/` | Use before you ask a person a question or for a decision. Gives them a real example, options with gain, cost and risk, and a recommendation, in Simplified Technical English at an 80% target. |
+| `principle-answer-first/` | Use when a person asks about your work, such as "why X?" or "did you do Y?". Answer and give your view before you act. |
 | `principle-check-approval/` | Check authority when a fix changes approved behaviour, scope, contracts, or protected operations. |
 | `principle-automate-checks/` | Replace repeated corrections with enforcement, or put judgment rules in one authoritative place. |
 | `principle-script-the-work/` | Write a script that does or proves non-trivial edits, analyses, or checks, so that a reviewer can rerun the work. |
