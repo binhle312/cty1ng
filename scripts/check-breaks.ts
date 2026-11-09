@@ -13,6 +13,7 @@ import {
   changedLines,
   coverageProblems,
   lineOf,
+  projectOf,
   linkProblems,
   type TestCall,
   testCalls,
@@ -160,6 +161,18 @@ async function run(test: Claim["test"]): Promise<{ command: string; outcomes: Te
   return { command: shown(command), outcomes: playwrightOutcomes(parse(out), test.name) };
 }
 
+// `true`, or the first error of `tsc` on the project that holds `file`, in the copy.
+function compiles(file: string): true | string {
+  const project = projectOf(file);
+  const result = spawnSync(join(copy, "node_modules/.bin/tsc"), ["-p", project, "--noEmit"], {
+    cwd: copy,
+    encoding: "utf8",
+  });
+  if (result.status === 0) return true;
+  const first = `${result.stdout}${result.stderr}`.split("\n").find((row) => row.includes("error"));
+  return (first ?? "tsc failed").replace(/\|/g, "\\|").slice(0, 200);
+}
+
 // The results file, in the copy, where the commands run.
 const OUT = "break-results.json";
 const shown = (command: string[]) =>
@@ -207,9 +220,15 @@ for (const claim of claims) {
     const edited = applyEdits(original, step.edits);
     if ("problem" in edited) throw new Error(`${step.id}: ${edited.problem}`);
     writeFileSync(join(copy, step.file), edited.text);
-    const result = await run(claim.test);
+    // A break that does not compile proves nothing, even when the test then fails at the
+    // assertion: a page that loads later fails only at the first wait (testing.md §5).
+    const compiled = compiles(step.file);
+    const result = compiled === true ? await run(claim.test) : { command: "not run", outcomes: [] };
     writeFileSync(join(copy, step.file), original);
-    const v = verdict(result.outcomes, { file: claim.test.file, line });
+    const v: Verdict =
+      compiled === true
+        ? verdict(result.outcomes, { file: claim.test.file, line })
+        : { kind: "invalid", reason: `the break does not compile: ${compiled}` };
     if (v.kind !== "caught") failures += 1;
     lines.push(`| ${claim.id} | ${step.id} | \`${result.command}\` | ${show(v)} |`);
     console.log(`${step.id}: ${show(v)}`);

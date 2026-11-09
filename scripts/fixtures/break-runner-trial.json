@@ -131,6 +131,28 @@
           ]
         }
       ]
+    },
+    {
+      "id": "T-compile-first",
+      "claim": "A break that stops a lazy page from compiling, with the assertion on the first wait: INVALID",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "starts with no model, and sends the model that the owner picks with its default effort"
+      },
+      "assertion": "      await screen.findByText(\n        /Source cannot run: its model is no longer offered/,\n        {},\n        { timeout: 5000 },",
+      "breaks": [
+        {
+          "id": "T-compile-first-a",
+          "file": "frontend/src/features/bots/create-bot-page.tsx",
+          "edits": [
+            {
+              "find": "  const [copiedPins] = useState(",
+              "replace": "  const [copiedPins] = useState(((("
+            }
+          ]
+        }
+      ]
     }
   ]
 }

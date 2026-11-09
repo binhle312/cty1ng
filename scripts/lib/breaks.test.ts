@@ -9,6 +9,7 @@ import {
   lineOf,
   linkProblems,
   nameMatches,
+  projectOf,
   playwrightOutcomes,
   testCalls,
   verdict,
@@ -302,6 +303,13 @@ describe("the tests of a PR", () => {
       "@@ -1,4 +0,0 @@",
     ].join("\n");
     expect(changedLines(diff)).toEqual(new Map([["x.test.ts", new Set([3])]]));
+  });
+
+  it("names the TypeScript project that compiles a broken file", () => {
+    expect(projectOf("frontend/src/features/bots/create-bot-page.tsx")).toBe("frontend");
+    expect(projectOf("backend/src/core/bots/bots.service.ts")).toBe("backend");
+    expect(projectOf("shared/src/ids.ts")).toBe("shared");
+    expect(projectOf("scripts/lib/breaks.ts")).toBe(".");
   });
 
   it("tells a test or a test helper from the code", () => {

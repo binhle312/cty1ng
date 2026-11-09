@@ -113,6 +113,12 @@ export function changedLines(diff: string): Map<string, Set<number>> {
   return files;
 }
 
+// The folder of the TypeScript project that compiles `path`: a workspace package, or the root.
+export function projectOf(path: string): string {
+  const top = path.split("/")[0] ?? "";
+  return ["backend", "frontend", "shared"].includes(top) ? top : ".";
+}
+
 // A file that tests read but that is not the code under test: a break must not edit it.
 export function isTestFile(path: string): boolean {
   return /(^|\/)test\/|\.(test|spec)\.[cm]?[jt]sx?$/.test(path);
