@@ -2,15 +2,6 @@
 
 The `principle-*` skills are project-owned. Their content stays generic for reuse in other projects.
 Each skill has one source here and a relative symlink in `../../.claude/skills/`.
-`principle-fix-root-cause` takes its diagnosis steps from the MIT-licensed
-[`principle-fix-root-causes`](https://github.com/cursor/plugins/blob/e5136d82418d2db3165ea1050d17577cd618cc05/pstack/skills/principle-fix-root-causes/SKILL.md) (Lauren Tan), in our words.
-`principle-remove-first`, `principle-script-the-work`, and the new-requirement steps of `principle-design-first` take their rules from the MIT-licensed
-[`principle-subtract-before-you-add`](https://github.com/cursor/plugins/blob/e5136d82418d2db3165ea1050d17577cd618cc05/pstack/skills/principle-subtract-before-you-add/SKILL.md),
-[`principle-build-the-lever`](https://github.com/cursor/plugins/blob/e5136d82418d2db3165ea1050d17577cd618cc05/pstack/skills/principle-build-the-lever/SKILL.md), and
-[`principle-redesign-from-first-principles`](https://github.com/cursor/plugins/blob/e5136d82418d2db3165ea1050d17577cd618cc05/pstack/skills/principle-redesign-from-first-principles/SKILL.md) (Lauren Tan), in our words.
-`arena` adapts the MIT-licensed `arena` skill from
-[pstack](https://github.com/cursor/plugins/tree/e5136d82418d2db3165ea1050d17577cd618cc05/pstack/skills) (Lauren Tan) to Claude Code, Codex and this project's models.
-It is owner-only: `disable-model-invocation` in `SKILL.md` and `allow_implicit_invocation: false` in `agents/openai.yaml` stop agents from starting it.
 `ui-ux-pro-max` and `typescript-best-practices` are vendored; follow their source rules:
 [ui-ux-pro-max](ui-ux-pro-max/SOURCE.md), [typescript-best-practices](typescript-best-practices/SOURCE.md).
 
