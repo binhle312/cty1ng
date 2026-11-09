@@ -1,0 +1,5 @@
+interface:
+  display_name: "Arena"
+  short_description: "Run candidates in parallel, pick a base, graft the best parts"
+policy:
+  allow_implicit_invocation: false

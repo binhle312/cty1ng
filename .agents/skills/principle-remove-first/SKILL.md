@@ -7,6 +7,8 @@ description: Remove unused code, checks, and text before you add a feature, refa
 
 Remove what the change does not need. Then build on the simpler base.
 Leave the design simpler than you found it. If a simpler way reaches the same goal, use it.
+Make each decision in one place. Pass the result to other code as a simple value, such as a flag.
+If `principle-design-first` prefers a redesign, the design rule wins over a smaller diff.
 
 1. List what the change touches: code, checks, references, and prompt text.
 2. Mark each item that has no current use or adds no new content.
