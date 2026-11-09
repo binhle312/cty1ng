@@ -9,6 +9,7 @@ import { dirname, join } from "node:path";
 import {
   applyEdits,
   BreakList,
+  cell,
   type Claim,
   changedLines,
   coverageProblems,
@@ -198,7 +199,7 @@ function compiles(file: string): true | string {
   );
   if (result.status === 0) return true;
   const first = `${result.stdout}${result.stderr}`.split("\n").find((row) => row.includes("error"));
-  return (first ?? "tsc failed").replace(/\|/g, "\\|").slice(0, 200);
+  return cell(first ?? "tsc failed").slice(0, 200);
 }
 
 // The results file, in the copy, where the commands run.
@@ -216,10 +217,10 @@ function parse(path: string): unknown {
 
 const show = (v: Verdict) =>
   v.kind === "caught"
-    ? `caught at \`${v.at}\`: ${v.message.replace(/\|/g, "\\|")}`
+    ? `caught at \`${v.at}\`: ${cell(v.message)}`
     : v.kind === "survived"
       ? "SURVIVED"
-      : `INVALID: ${v.reason.replace(/\|/g, "\\|").slice(0, 300)}`;
+      : `INVALID: ${cell(v.reason).slice(0, 300)}`;
 
 const lines = [
   `# Break run of \`${listPath}\``,

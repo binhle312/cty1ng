@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyEdits,
+  cell,
   type BreakList,
   changedLines,
   coverageProblems,
@@ -335,6 +336,15 @@ describe("the tests of a PR", () => {
     expect(isTestFile("frontend/src/a.test.tsx")).toBe(true);
     expect(isTestFile("frontend/test/e2e/bots.spec.ts")).toBe(true);
     expect(isTestFile("backend/src/core/bots/bots.service.ts")).toBe(false);
+    expect(isTestFile("test/a.ts")).toBe(true);
+    expect(isTestFile("backend/src/contest/a.ts")).toBe(false);
+    expect(isTestFile("backend/src/a.test.ts.bak")).toBe(false);
+  });
+
+  it("keeps a backslash and a pipe of a message inside one table cell", () => {
+    expect(cell("a|b")).toBe("a\\|b");
+    expect(cell("a\\|b")).toBe("a\\\\\\|b");
+    expect(cell("C:\\x")).toBe("C:\\\\x");
   });
 
   it("names each changed test that has no claim and no exemption", () => {

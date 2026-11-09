@@ -817,6 +817,11 @@
     },
     {
       "file": "scripts/lib/breaks.test.ts",
+      "name": "keeps a backslash and a pipe of a message inside one table cell",
+      "reason": "A unit test of the runner's report text (DQ-177). It is not a late, security, or order test. Its red run on the old escape is in the DQ-177 row"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
       "name": "names each changed test that has no claim and no exemption",
       "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
     },

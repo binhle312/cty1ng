@@ -134,8 +134,14 @@ export function projectOf(path: string): string {
 }
 
 // A file that tests read but that is not the code under test: a break must not edit it.
+// That is a file in a `test/` folder, or a test file by its name (`a.test.tsx`, `b.spec.ts`).
 export function isTestFile(path: string): boolean {
-  return /(^|\/)test\/|\.(test|spec)\.[cm]?[jt]sx?$/.test(path);
+  return /(?:^|\/)test\//.test(path) || /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(path);
+}
+
+// Text for one cell of a Markdown table: `\` first, then `|`, so that no text closes the cell.
+export function cell(text: string): string {
+  return text.replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
 }
 
 // Each test that the PR adds or changes and that no claim and no exemption names
