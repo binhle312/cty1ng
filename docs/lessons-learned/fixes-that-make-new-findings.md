@@ -1,6 +1,6 @@
 # Review fixes that made the next findings
 
-Date: 2026-11-09 · Source: review rounds of PR #84 and PR #86 · Status: open (the response waits for the owner)
+Date: 2026-11-09 · Source: review rounds of PR #84 and PR #86 · Status: applied (2026-11-09; the measure is open)
 
 **Observed.** The ledger rows DQ-117 to DQ-153 come from the reviews of two PRs: #84 (six
 independent reviews and one owner review) and #86 (two reviews so far). They hold 37 issues.
@@ -47,15 +47,13 @@ break runner refuses a list that misses a test that the PR adds (DQ-148).
 The [M2c lesson](fix-the-cause-not-the-finding.md) found the same shape in code: a list of
 fields grew by one at each review. Here the list of rules and records grew at each review.
 
-**Response.** Done in #86: one home for each fact (`docs/workflows/pull-request.md`), the
+**Response.** In #86 (a draft PR when this lesson was written): one home for each fact (`docs/workflows/pull-request.md`), the
 comment rule (`docs/frontend-conventions.md` §1), and the break runner with its coverage check
-(`docs/testing.md` §5). Proposed, for the owner's decision:
-
-1. A review fix only corrects or narrows. It adds no tool, check, rule or new kind of record. If
-   a finding needs one, the PR narrows its claim, or it marks the criterion "not met", and the
-   new mechanism gets its own PR with its own plan and test strategy.
-2. A §9 stop decides the redesign, and the redesign gets its own PR. The PR that found the
-   repeat waits for it, or narrows its claim.
+(`docs/testing.md` §5). The owner chose on 2026-11-09 (option A of three):
+a §9 stop still decides the redesign, but the redesign gets its own PR, with its own plan and test
+strategy. The PR that found the repeat waits for it, or makes its claim smaller and records the
+gap in the ledger (`AGENTS.md` §9, `docs/review-guide.md`). The owner did not choose a wider
+limit on all review fixes, because no issue in the data needs it.
 
 **Measure.** For the next three PRs, count the issues of each review and how many came from a
 fix. The goal: no issue from a new mechanism after the first review, at most one issue from a

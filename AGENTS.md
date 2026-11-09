@@ -149,6 +149,9 @@ Merge a PR only when the owner asks you to merge that PR. The merge needs no lin
   its `SKILL.md` in that session.
 - Each review fix answers "Same cause as an earlier fix?" in the PR's `Review fixes` table. If the
   answer is yes, stop patching. Propose a redesign, get the owner's decision, and record it.
+  Build the redesign in its own PR, with its own plan and test strategy, not in the PR under
+  review. That PR waits for it, or makes its claim smaller and records the gap in
+  `docs/delivery-quality.md` (owner, 2026-11-09; `docs/lessons-learned/fixes-that-make-new-findings.md`).
 
 ## 10. Conventions
 
