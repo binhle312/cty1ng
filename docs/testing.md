@@ -396,9 +396,10 @@ proof of each claim is the reviewer's check of each catch, in the frontend and t
   "expected 500 to be 422" does not prove that a removed check let the request through: the
   request may have failed earlier. "Unable to find an element" needs a look at the state that
   the page reached.
-- When the first line of the message does not show the broken behaviour, the reviewer runs that
-  break again with `--only` and reads the full output. A claim whose evidence stays unclear does
-  not count.
+- When the first line of the message does not show the broken behaviour, the reviewer applies
+  the break by hand in an own copy, runs the command from the report, reads its full output,
+  and then undoes the break. `--only` does not help here: it prints the same first line. A
+  claim whose evidence stays unclear does not count.
 - A break changes a value or a branch. It does not throw.
 
 The list proves only the claims that someone wrote down; the reviewer still checks that it has
