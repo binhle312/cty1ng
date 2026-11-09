@@ -347,6 +347,26 @@ so a step after it proves nothing. Give each step its own test, and start the ca
 its result on the old code. A step that passes on the old code is not a claim: the PR names it
 and gives the reason, such as "reads no new data" (owner, 2026-11-08, DQ-117).
 
+**Break lists (trial on PR #86; owner, 2026-11-09).** A break list makes the break evidence
+repeatable. `scripts/breaks/pr-<n>.json` gives each claim an id, its test, the text of the
+assertion that must fail, and one or more breaks of the code. `pnpm check:breaks <list>` runs
+the list ([check-breaks.ts](../scripts/check-breaks.ts)):
+
+1. It copies HEAD and the local changes to a temporary folder with its own install. The
+   checkout does not change, and e2e tests use the copy's own build and servers.
+2. It refuses a list with a missing link: a claim with no break, a test file or assertion text
+   that is not there exactly once, or a break that edits the test instead of the code.
+3. Each test must pass with no break first.
+4. Each break runs alone. It counts only when the named test fails at the line of its assertion
+   text. No result (a compile or server failure), a test timeout, or a failure at another line
+   is `INVALID`, not caught.
+5. The report names the commit, a hash of the local changes, each command and each result.
+
+The list proves only the claims that someone wrote down. The reviewer still checks that the
+list has every claim of the PR. During the trial, other PRs do not need a list; the owner
+decides that after the trial. `scripts/fixtures/break-runner-trial.json` holds breaks that the
+runner must not count, to check the runner itself.
+
 The incidents behind these rules remain in
 [prove-the-test-fails-first.md](lessons-learned/prove-the-test-fails-first.md) and
 [check-every-order-before-the-push.md](lessons-learned/check-every-order-before-the-push.md).

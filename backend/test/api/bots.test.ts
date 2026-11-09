@@ -25,8 +25,8 @@ const newBot = {
   pins: [],
 };
 
-// A password short enough for the name limit.
-const SECRET = "password=Hunt3r-x9";
+// The guard's own test password (sensitive-data.rules.test.ts), short enough for the name limit.
+const SECRET = "password: hunter22";
 
 function send(method: string, path: string, body?: unknown, headers: Record<string, string> = {}) {
   return backend.request(`/api${path}`, {
@@ -118,19 +118,28 @@ describe("/bots/{id}", () => {
     expect(now.conversations).toEqual([]);
   });
 
-  it("PATCH refuses a secret in the name with 422 sensitive_data and keeps the old name", async () => {
-    const { bot } = await createBot();
-    const response = await send("PATCH", `/bots/${String(bot.id)}`, {
-      row_version: 1,
-      name: `BA ${SECRET}`,
-    });
-    expect(response.status).toBe(422);
-    expect(await errorOf(response)).toMatchObject({ code: "sensitive_data", field: "name" });
-    expect(await json(await send("GET", `/bots/${String(bot.id)}`))).toMatchObject({
-      name: "BA",
-      row_version: 1,
-    });
-  });
+  it.each([
+    ["name", { name: `BA ${SECRET}` }],
+    ["description", { description: `Logs in with ${SECRET}.` }],
+    ["persona_md", { persona_md: `You log in with ${SECRET}.` }],
+  ])(
+    "PATCH refuses a secret in the %s with 422 sensitive_data and keeps the row",
+    async (field, change) => {
+      const { bot } = await createBot();
+      const response = await send("PATCH", `/bots/${String(bot.id)}`, {
+        row_version: 1,
+        ...change,
+      });
+      expect(response.status).toBe(422);
+      expect(await errorOf(response)).toMatchObject({ code: "sensitive_data", field });
+      expect(await json(await send("GET", `/bots/${String(bot.id)}`))).toMatchObject({
+        name: newBot.name,
+        description: newBot.description,
+        persona_md: newBot.persona_md,
+        row_version: 1,
+      });
+    },
+  );
 
   it("PATCH refuses a description with a line break and leaves the row unchanged", async () => {
     const { bot } = await createBot();

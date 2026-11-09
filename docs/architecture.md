@@ -169,6 +169,7 @@ A pnpm workspace with three packages. Each folder marked † has a `README.md` i
 │                            e2e:serve (the e2e servers, kept running)
 │                            guard-compare and guard-mutations (evidence for guard changes;
 │                            run by hand)
+│                            check:breaks (runs a PR's break list, testing.md §5; run by hand)
 ├─ shared/ †                 code both sides import
 │  └─ src/
 │     ├─ events/             Zod schemas of the event envelope and every event type

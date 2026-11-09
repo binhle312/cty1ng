@@ -36,8 +36,8 @@ const body = (more: Partial<CreateBotBody> = {}): CreateBotBody => ({
   ...more,
 });
 
-// A password short enough for the name limit.
-const SECRET = "password=Hunt3r-x9";
+// The guard's own test password (sensitive-data.rules.test.ts), short enough for the name limit.
+const SECRET = "password: hunter22";
 
 const create = async (more: Partial<CreateBotBody> = {}) =>
   (await backend.bots.create(body(more), key(), OWNER_ID)).bot;
@@ -221,7 +221,7 @@ describe("create (POST /bots)", () => {
     ] as const) {
       const error = await failure(create(more));
       expect(error).toMatchObject({ code: "sensitive_data", field });
-      expect(error.message).not.toContain("Hunt3r");
+      expect(error.message).not.toContain("hunter22");
     }
     expect(await backend.bots.list()).toEqual([]);
     expect(await events()).toEqual([]);
@@ -438,16 +438,29 @@ describe("update (PATCH /bots/{id})", () => {
     ).toMatchObject({ code: "stale_write" });
   });
 
-  it("refuses a secret in a new name, and keeps the old name", async () => {
-    const bot = await create();
-    const id = BotId.parse(bot.id);
-    const before = (await events()).length;
-    const error = await failure(backend.bots.update(id, { row_version: 1, name: `BA ${SECRET}` }));
-    expect(error).toMatchObject({ code: "sensitive_data", field: "name" });
-    expect(error.message).not.toContain("Hunt3r");
-    expect(await backend.bots.get(id)).toMatchObject({ name: "BA", row_version: 1 });
-    expect((await events()).length).toBe(before);
-  });
+  // The guard as for create (api.md §4, security.md §2.13): each text field that a PATCH sends.
+  it.each([
+    ["name", { name: `BA ${SECRET}` }],
+    ["description", { description: `Logs in with ${SECRET}.` }],
+    ["persona_md", { persona_md: `You log in with ${SECRET}.` }],
+  ] as const)(
+    "refuses a secret in a new %s, and keeps the bot as it was",
+    async (field, change) => {
+      const bot = await create();
+      const id = BotId.parse(bot.id);
+      const before = (await events()).length;
+      const error = await failure(backend.bots.update(id, { row_version: 1, ...change }));
+      expect(error).toMatchObject({ code: "sensitive_data", field });
+      expect(error.message).not.toContain("hunter22");
+      expect(await backend.bots.get(id)).toMatchObject({
+        name: bot.name,
+        description: bot.description,
+        persona_md: bot.persona_md,
+        row_version: 1,
+      });
+      expect((await events()).length).toBe(before);
+    },
+  );
 
   it("two PATCHes with one row_version at once: one saves, the other gets stale_write", async () => {
     const bot = await create();

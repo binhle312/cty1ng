@@ -24,9 +24,13 @@ const ApiDocument = z.object({
   paths: z.record(z.string(), z.record(z.string(), Operation)),
 });
 
+const Row = z.looseObject({ id: z.string(), row_version: z.number() });
+
 describe("API keys", () => {
-  // Every operation of the API document gets one request, with real ids, so that a new
-  // operation is checked with no change here (audit 2026-11-05, row 9).
+  // Each operation of the API document gets two requests: one with an empty body, which most
+  // operations refuse, and one real request that succeeds. So the scan reads the error answers
+  // and the answers that the services give (audit 2026-11-05, row 9). A new operation fails the
+  // success check below until a step here sends it a real request.
   it("never appear in an answer of any operation, in the stream, or in the log", async () => {
     const backend = testBackend({
       FAKE_MODEL: "1",
@@ -34,112 +38,254 @@ describe("API keys", () => {
       ANTHROPIC_API_KEY: `${SENTINEL}-2`,
     });
     const texts: string[] = [];
-    const record = async (response: Response) => {
-      texts.push(JSON.stringify([...response.headers]), await response.clone().text());
-      return response;
-    };
-    const created = async (response: Response) =>
-      z.looseObject({ id: z.string() }).parse(await (await record(response)).json());
-    const write = (path: string, body: unknown) =>
-      backend.request(path, {
-        method: "POST",
-        headers: {
-          origin: ORIGIN,
-          "content-type": "application/json",
-          "idempotency-key": crypto.randomUUID(),
-        },
-        body: JSON.stringify(body),
-      });
-
-    // Real rows for the path ids: a skill, a bot with its pin, and an avatar file.
-    const skill = await created(
-      await write("/api/skills", {
-        slug: "notes",
-        name: "Notes",
-        description: "Use it when you write notes.",
-        body_md: "## Steps",
-      }),
-    );
-    const bot = await created(
-      await write("/api/bots", {
-        name: "BA",
-        description: "Writes user stories.",
-        persona_md: "You are a business analyst.",
-        avatar_style: "flat",
-        avatar_colour: "#336699",
-        model_id: "fake:effort",
-        pins: [{ skill_id: skill.id, always_load: false }],
-      }),
-    );
-    const form = new FormData();
-    form.append("file", new File([new Uint8Array(PNG)], "a.png", { type: "image/png" }));
-    const uploaded = await record(
-      await backend.request("/api/avatars", {
-        method: "POST",
-        headers: { origin: ORIGIN },
-        body: form,
-      }),
-    );
-    const avatar = z
-      .object({ avatar_id: z.string(), url: z.string() })
-      .parse(await uploaded.json());
-    const values: Record<string, string> = {
-      skill_id: skill.id,
-      version: "1",
-      file: avatar.url.split("/").pop() ?? "",
-    };
-
-    const doc = ApiDocument.parse(
-      await (await record(await backend.request("/api/openapi.json"))).json(),
-    );
-    const operations = Object.entries(doc.paths).flatMap(([path, methods]) =>
-      Object.entries(methods).map(([method, operation]) => ({ path, method, operation })),
-    );
-    // A DELETE goes last, so the other operations still find the rows.
-    operations.sort((a, b) => Number(a.method === "delete") - Number(b.method === "delete"));
-    const called: string[] = [];
-    for (const { path, method, operation } of operations) {
-      called.push(`${method.toUpperCase()} ${path}`);
-      if (path === "/api/stream") continue;
-      const id = path.startsWith("/api/bots") ? bot.id : skill.id;
-      const query = new URLSearchParams();
-      for (const parameter of operation.parameters ?? []) {
-        if (parameter.in === "query" && parameter.required === true) query.set(parameter.name, "1");
-      }
-      if (path === "/api/skills/export") query.set("ids", skill.id);
-      const filled = path.replace(/\{(\w+)\}/g, (_, name: string) =>
-        name === "id" ? id : (values[name] ?? ""),
-      );
-      const url = query.size > 0 ? `${filled}?${query.toString()}` : filled;
-      const content = Object.keys(operation.requestBody?.content ?? {});
-      const json = content.includes("application/json");
-      const answer = await record(
-        await backend.request(url, {
-          method: method.toUpperCase(),
+    const succeeded = new Set<string>();
+    // `operation` is the method and the path as the API document writes it, for example
+    // `GET /api/skills/{id}`.
+    const call = async (
+      operation: string,
+      options: {
+        ids?: Record<string, string>;
+        query?: string;
+        body?: unknown;
+        form?: FormData;
+      } = {},
+    ) => {
+      const [method = "", template = ""] = operation.split(" ");
+      const path = template.replace(/\{(\w+)\}/g, (_, name: string) => options.ids?.[name] ?? "");
+      const json = options.body !== undefined;
+      const response = await backend.request(
+        options.query === undefined ? path : `${path}?${options.query}`,
+        {
+          method,
           headers: {
             origin: ORIGIN,
             "idempotency-key": crypto.randomUUID(),
             ...(json ? { "content-type": "application/json" } : {}),
           },
-          body: content.includes("multipart/form-data") ? new FormData() : json ? "{}" : null,
-        }),
+          body: options.form ?? (json ? JSON.stringify(options.body) : null),
+        },
       );
-      // A 500 would hide the answer that the operation gives with good input.
-      expect(answer.status, `${method} ${url}`).toBeLessThan(500);
+      texts.push(JSON.stringify([...response.headers]), await response.clone().text());
+      if (response.ok) succeeded.add(operation);
+      return response;
+    };
+    const ok = async (...args: Parameters<typeof call>) => {
+      const response = await call(...args);
+      expect(response.ok, `${args[0]}: ${String(response.status)}`).toBe(true);
+      return response;
+    };
+    const rowOf = async (template: string, id: string) =>
+      Row.parse(await (await ok(`GET ${template}`, { ids: { id } })).json());
+
+    // Real rows for the path ids: a skill, a bot with its pin, and an avatar file.
+    const skill = Row.parse(
+      await (
+        await ok("POST /api/skills", {
+          body: {
+            slug: "notes",
+            name: "Notes",
+            description: "Use it when you write notes.",
+            body_md: "## Steps",
+          },
+        })
+      ).json(),
+    );
+    const bot = Row.parse(
+      await (
+        await ok("POST /api/bots", {
+          body: {
+            name: "BA",
+            description: "Writes user stories.",
+            persona_md: "You are a business analyst.",
+            avatar_style: "flat",
+            avatar_colour: "#336699",
+            model_id: "fake:effort",
+            pins: [{ skill_id: skill.id, always_load: false }],
+          },
+        })
+      ).json(),
+    );
+    const image = new FormData();
+    image.append("file", new File([new Uint8Array(PNG)], "a.png", { type: "image/png" }));
+    const avatar = z
+      .object({ url: z.string() })
+      .parse(await (await ok("POST /api/avatars", { form: image })).json());
+    const ids = {
+      skill: { id: skill.id },
+      bot: { id: bot.id },
+      pin: { id: bot.id, skill_id: skill.id },
+      file: { file: avatar.url.split("/").pop() ?? "" },
+    };
+
+    // 1. Every operation of the document with an empty body (a DELETE has no body, and the
+    // success part below sends it). No answer may be a 500.
+    const doc = ApiDocument.parse(await (await ok("GET /api/openapi.json")).json());
+    const operations = Object.entries(doc.paths).flatMap(([path, methods]) =>
+      Object.entries(methods).map(([method, operation]) => ({
+        path,
+        method: method.toUpperCase(),
+        operation,
+      })),
+    );
+    // The current OpenAPI document has 37 operations. If it lost some, this test would check
+    // less, so a change of this number needs a look.
+    expect(operations).toHaveLength(37);
+    for (const { path, method, operation } of operations) {
+      if (path === "/api/stream" || method === "DELETE") continue;
+      const content = Object.keys(operation.requestBody?.content ?? {});
+      const query = (operation.parameters ?? [])
+        .filter((parameter) => parameter.in === "query" && parameter.required === true)
+        .map((parameter) => `${parameter.name}=1`)
+        .join("&");
+      const answer = await call(`${method} ${path}`, {
+        ids: path.startsWith("/api/bots")
+          ? { ...ids.pin }
+          : { id: skill.id, skill_id: skill.id, version: "1", ...ids.file },
+        ...(query === "" ? {} : { query }),
+        ...(content.includes("multipart/form-data")
+          ? { form: new FormData() }
+          : content.length > 0
+            ? { body: {} }
+            : {}),
+      });
+      expect(answer.status, `${method} ${path}`).toBeLessThan(500);
     }
-    // The 37 operations of api.md: if the document lost some, this test would check less.
-    expect(called).toHaveLength(37);
-    expect(called).toContain("GET /api/stream");
 
-    await record(await backend.request("/api/nope"));
-    await record(await backend.request("/api/health", { headers: { host: "evil.com" } }));
+    // 2. A real request to each operation, in an order where each one succeeds.
+    for (const template of [
+      "/api/health",
+      "/api/settings",
+      "/api/models",
+      "/api/tools",
+      "/api/skills",
+      "/api/bots",
+      "/api/avatars/limits",
+    ]) {
+      await ok(`GET ${template}`);
+    }
+    await ok("GET /api/avatars/{file}", { ids: ids.file });
+    await ok("PATCH /api/settings", { body: {} });
+    for (const template of [
+      "/api/skills/{id}",
+      "/api/skills/{id}/versions",
+      "/api/skills/{id}/upgrade-candidates",
+    ]) {
+      await ok(`GET ${template}`, { ids: ids.skill });
+    }
+    await ok("GET /api/skills/{id}/versions/{version}", { ids: { ...ids.skill, version: "1" } });
+    await ok("GET /api/skills/{id}/diff", { ids: ids.skill, query: "from=1&to=1" });
+    await ok("GET /api/bots/{id}", { ids: ids.bot });
+    await ok("GET /api/bots/{id}/clone-template", { ids: ids.bot });
+    const zip = await (
+      await ok("GET /api/skills/export", { query: `ids=${skill.id}` })
+    ).arrayBuffer();
 
-    // The stream: read until the test event comes, so that the check reads real frames.
+    await ok("PATCH /api/skills/{id}", {
+      ids: ids.skill,
+      body: {
+        name: "Meeting notes",
+        row_version: (await rowOf("/api/skills/{id}", skill.id)).row_version,
+      },
+    });
+    // Part 1 restored version 1 once (an empty body is a valid restore), so the base is the
+    // newest version.
+    const latest = z
+      .array(z.object({ version: z.number() }))
+      .parse(await (await ok("GET /api/skills/{id}/versions", { ids: ids.skill })).json())[0];
+    await ok("POST /api/skills/{id}/versions", {
+      ids: ids.skill,
+      body: {
+        base_version: latest?.version,
+        description: "Use it.",
+        body_md: "## Steps, version 2",
+      },
+    });
+    // The export holds version 1, so its import is a change now.
+    const archive = new FormData();
+    archive.append("file", new File([zip], "skills.zip", { type: "application/zip" }));
+    const preview = z
+      .object({ preview_id: z.string() })
+      .parse(await (await ok("POST /api/skills/import/preview", { form: archive })).json());
+    await ok("POST /api/skills/import/apply", {
+      body: { preview_id: preview.preview_id, slugs: ["notes"] },
+    });
+    await ok("POST /api/skills/{id}/versions/{version}/restore", {
+      ids: { ...ids.skill, version: "1" },
+      body: {},
+    });
+    const versions = z
+      .array(z.object({ id: z.string() }))
+      .parse(await (await ok("GET /api/skills/{id}/versions", { ids: ids.skill })).json());
+    const pins = z
+      .object({ pins: z.array(z.object({ skill_version_id: z.string() })) })
+      .parse(await (await ok("GET /api/bots/{id}", { ids: ids.bot })).json()).pins;
+    const newest = versions[0]?.id ?? "";
+    await ok("POST /api/skills/{id}/bots", {
+      ids: ids.skill,
+      body: {
+        skill_version_id: newest,
+        bots: [{ bot_id: bot.id, expected_skill_version_id: pins[0]?.skill_version_id ?? null }],
+      },
+    });
+    await ok("PUT /api/bots/{id}/skills/{skill_id}", {
+      ids: ids.pin,
+      body: {
+        skill_version_id: newest,
+        always_load: true,
+        expected: { skill_version_id: newest, always_load: false },
+      },
+    });
+    await ok("PUT /api/bots/pins", { body: { bot_ids: [bot.id], expected_bot_ids: [] } });
+    await ok("PATCH /api/bots/{id}", {
+      ids: ids.bot,
+      body: {
+        row_version: (await rowOf("/api/bots/{id}", bot.id)).row_version,
+        description: "Writes stories.",
+      },
+    });
+    await ok("DELETE /api/bots/{id}/skills/{skill_id}", { ids: ids.pin });
+    const skillVersion = async () => (await rowOf("/api/skills/{id}", skill.id)).row_version;
+    await ok("POST /api/skills/{id}/deprecate", {
+      ids: ids.skill,
+      body: { remove_bot_ids: [], row_version: await skillVersion() },
+    });
+    await ok("POST /api/skills/{id}/undeprecate", {
+      ids: ids.skill,
+      body: { row_version: await skillVersion() },
+    });
+    await ok("POST /api/skills/{id}/deprecate", {
+      ids: ids.skill,
+      body: { remove_bot_ids: [], row_version: await skillVersion() },
+    });
+    const trash = async () =>
+      ok("POST /api/skills/{id}/trash", {
+        ids: ids.skill,
+        body: { row_version: await skillVersion() },
+      });
+    await trash();
+    await ok("POST /api/skills/{id}/restore", { ids: ids.skill });
+    await trash();
+    await ok("DELETE /api/skills/{id}", { ids: ids.skill });
+    await ok("DELETE /api/bots/{id}", { ids: ids.bot });
+
+    // Each operation answered with success at least once (the stream has its own part).
+    expect(
+      operations
+        .map(({ method, path }) => `${method} ${path}`)
+        .filter((operation) => operation !== "GET /api/stream" && !succeeded.has(operation)),
+    ).toEqual([]);
+
+    await call("GET /api/nope");
+    texts.push(
+      await (await backend.request("/api/health", { headers: { host: "evil.com" } })).text(),
+    );
+
+    // 3. The stream: read until the test event comes, so that the check reads real frames.
     const abort = new AbortController();
     const stream = await backend.request("/api/stream", { signal: abort.signal });
     if (stream.body === null) throw new Error("The stream has no body.");
     const frames = collect(readFrames(stream.body));
-    await record(await backend.postTestEvent("note-for-the-key-test"));
+    texts.push(await (await backend.postTestEvent("note-for-the-key-test")).text());
     const deadline = Date.now() + 2000;
     while (!frames.items.some((frame) => frame.data?.includes("note-for-the-key-test") === true)) {
       if (Date.now() > deadline) throw new Error("The test event did not come on the stream.");

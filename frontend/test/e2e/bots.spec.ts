@@ -395,6 +395,12 @@ test("the wheel and a sideways touchpad motion scroll a long roster", ALONE, asy
       window.scrollY,
       document.querySelector("main")?.scrollTop ?? 0,
     ]);
+  // A tall page, so that a wheel that scrolled the page would show (as in shell.spec.ts).
+  await page.evaluate(() => {
+    const tall = document.createElement("div");
+    tall.style.height = "5000px";
+    document.querySelector("main")?.append(tall);
+  });
   expect(await left()).toBe(0);
   await roster.hover();
 
@@ -403,7 +409,8 @@ test("the wheel and a sideways touchpad motion scroll a long roster", ALONE, asy
   await expect.poll(left).toBeGreaterThan(0);
   expect(await pageScroll()).toEqual([0, 0, 0]);
 
-  // A two-finger motion to the side gives a horizontal motion.
+  // A two-finger motion to the side gives a horizontal motion. The app leaves it to the
+  // browser, which scrolls the roster itself (`header-roster.tsx`, the wheel handler).
   await roster.evaluate((el) => {
     el.scrollLeft = 0;
   });

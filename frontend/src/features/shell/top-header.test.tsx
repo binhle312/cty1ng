@@ -1,6 +1,6 @@
 import { focusManager } from "@tanstack/react-query";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { fakeApi } from "../../../test/fake-api.ts";
 import { type Bot, makeBot } from "../../../test/fixtures.ts";
 import { renderApp } from "../../../test/render-app.tsx";
@@ -104,20 +104,35 @@ describe("the header order while the owner uses the header", () => {
     await screen.findAllByTestId("header-bot", {}, { timeout: 5000 });
     expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
     const roster = screen.getByTestId("roster");
-    act(() => {
-      fireEvent.pointerEnter(roster);
-    });
-    await refetchBots(fake, 2);
-    expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
-    // A click in the header is not a click outside.
-    act(() => {
-      fireEvent.pointerDown(roster);
-    });
-    expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
-    act(() => {
-      fireEvent.pointerLeave(roster);
-    });
-    expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
+    // A minute passes at each step: the order waits for a click outside, not for a timer. Only
+    // the timeouts are fake, and they also follow real time, so the queries and the waits run.
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"], shouldAdvanceTime: true });
+    try {
+      const later = () => {
+        act(() => {
+          vi.advanceTimersByTime(60_000);
+        });
+      };
+      act(() => {
+        fireEvent.pointerEnter(roster);
+      });
+      await refetchBots(fake, 2);
+      later();
+      expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
+      // A click in the header is not a click outside.
+      act(() => {
+        fireEvent.pointerDown(roster);
+      });
+      later();
+      expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
+      act(() => {
+        fireEvent.pointerLeave(roster);
+      });
+      later();
+      expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
+    } finally {
+      vi.useRealTimers();
+    }
     act(() => {
       fireEvent.pointerDown(document.body);
     });

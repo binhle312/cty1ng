@@ -585,6 +585,9 @@ describe("a Clone whose model left the catalog (CL2)", () => {
     });
     expect(model.value).toBe("");
     expect(isOff(screen.getByRole("button", { name: "Create" }))).toBe(true);
+    // The Clone decided once (§6): the banner and the field error stay until the owner picks.
+    expect(screen.getByText(/Source cannot run: its model is no longer offered/)).toBeTruthy();
+    expect(screen.getByText(`${GONE.id} is no longer offered. Pick another model.`)).toBeTruthy();
 
     // The owner picks the model: Create sends it with its own default effort, not the old one.
     act(() => {

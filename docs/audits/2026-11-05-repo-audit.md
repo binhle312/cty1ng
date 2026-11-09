@@ -203,6 +203,10 @@ The lead did not check these again, except where a row says so. The others are f
 
 Correction to row 1: `act()` is not the only thing that hides the failure. A bare `dispatchEvent` hides it too, so removing `act()` alone gives a test that passes on the old code (run on `8c2278f`). `pressKey` makes React finish its work where a browser does.
 
+### Found during PR 5
+
+- The pointer freezes the header order only over the middle 6 of the 12 header columns. The freeze starts on the roster wrapper (`frontend/src/features/shell/header-roster.tsx:262`, inside `col-span-6` at `top-header.tsx:25`). The comment at `header-roster.tsx:40`, the click-outside check (`data-header-part` on the whole `<header>`, `top-header.tsx:22`) and `top-header.md` state 9 say "in the header". So a pointer in a side column does not freeze the order. From reading the code, not run. Found by the review of `41df63a`; the owner has not decided which one is right.
+
 ### Skills pages and shell
 
 - **Fixed in #78.** Late answers from Restore, Import and Trash move the owner off the page they went to. Both audits found the Import case: `frontend/src/features/skills/skill-history.tsx:223`, `import-page.tsx:119`, `skill-page.tsx:352`.
