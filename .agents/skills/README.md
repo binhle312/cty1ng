@@ -8,6 +8,9 @@ Each skill has one source here and a relative symlink in `../../.claude/skills/`
 [`principle-subtract-before-you-add`](https://github.com/cursor/plugins/blob/e5136d82418d2db3165ea1050d17577cd618cc05/pstack/skills/principle-subtract-before-you-add/SKILL.md),
 [`principle-build-the-lever`](https://github.com/cursor/plugins/blob/e5136d82418d2db3165ea1050d17577cd618cc05/pstack/skills/principle-build-the-lever/SKILL.md), and
 [`principle-redesign-from-first-principles`](https://github.com/cursor/plugins/blob/e5136d82418d2db3165ea1050d17577cd618cc05/pstack/skills/principle-redesign-from-first-principles/SKILL.md) (Lauren Tan), in our words.
+`arena` adapts the MIT-licensed `arena` skill from
+[pstack](https://github.com/cursor/plugins/tree/e5136d82418d2db3165ea1050d17577cd618cc05/pstack/skills) (Lauren Tan) to Claude Code, Codex and this project's models.
+It is owner-only: `disable-model-invocation` in `SKILL.md` and `allow_implicit_invocation: false` in `agents/openai.yaml` stop agents from starting it.
 `ui-ux-pro-max` and `typescript-best-practices` are vendored; follow their source rules:
 [ui-ux-pro-max](ui-ux-pro-max/SOURCE.md), [typescript-best-practices](typescript-best-practices/SOURCE.md).
 
@@ -51,3 +54,4 @@ Read the matching skill before its phase of work.
 | `principle-safe-test-data/` | Create synthetic fixtures when tests or examples need values that resemble credentials or private data. |
 | `ui-ux-pro-max/` | Work on interface design; follow the project design rules. |
 | `typescript-best-practices/` | Write or review TypeScript; `docs/frontend-conventions.md` wins where they differ (see its `SOURCE.md`). |
+| `arena/` | Owner only, with `/arena`: run candidates in parallel on one task, pick a base, and graft the best parts. |
