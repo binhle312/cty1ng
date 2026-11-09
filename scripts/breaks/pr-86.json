@@ -802,6 +802,11 @@
     },
     {
       "file": "scripts/lib/breaks.test.ts",
+      "name": "names the TypeScript project that compiles a broken file",
+      "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
+    },
+    {
+      "file": "scripts/lib/breaks.test.ts",
       "name": "tells a test or a test helper from the code",
       "reason": "A unit test of the new runner, written with it in this PR. It is not a late, security, or order test, and no red run was recorded"
     },

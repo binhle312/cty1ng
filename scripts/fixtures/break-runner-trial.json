@@ -104,7 +104,7 @@
           "edits": [
             {
               "find": "async function start(): Promise<void> {\n",
-              "replace": "async function start(): Promise<void> {\n  throw new Error(\"trial: no start\");\n"
+              "replace": "async function start(): Promise<void> {\n  if (process.argv.length > 0) throw new Error(\"trial: no start\");\n"
             }
           ]
         }
