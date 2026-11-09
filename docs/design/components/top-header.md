@@ -32,7 +32,7 @@ sticky on every page (UI-2.11), background `surface`, bottom line `outline`.
 | 6 | Bot states | Faces and badges of `bot-avatar.md` §3, for the open conversation only |
 | 7 | Click an avatar | Opens the bot card (`bot-card.md`). Only one card is open at a time |
 | 8 | Drag an avatar into the conversation | The conversation area becomes an active dashed slot (`dashed-slot.md`, "Drop to add Researcher to this conversation") as soon as the avatar leaves the header; the dragged bot is dimmed in the roster. Bots that cannot join say why ("Already here") |
-| 9 | Deferred reordering | While the pointer is in the header, activity moves nothing; after a click elsewhere the new order applies in one step. The owner's own pin, unpin or drag applies at once |
+| 9 | Deferred reordering | While the pointer is over the bot avatars (the middle 6 of the 12 columns), activity moves nothing; after a click elsewhere the new order applies in one step. The owner's own pin, unpin or drag applies at once |
 | 10 | Page scrolls | The header stays; only the content moves |
 | 11 | No bots yet | A dashed slot (`dashed-slot.md`): 36 px circle with "+" and the text "Hey, add your bot here 👋" (`on-surface-muted`); opens the Create bot page. Gone once a bot exists |
 | 12 | Uploaded image | Never animates; same badges |

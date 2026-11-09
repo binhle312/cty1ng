@@ -93,8 +93,8 @@ describe("the header order while the owner uses the header", () => {
     expect(shownOrder()).toEqual(["qa", "ux", "ba"]);
   });
 
-  // top-header.md state 9: the pointer alone, with no focus in the header.
-  it("keeps the order while the pointer is in the header, and after it leaves, until a click outside", async () => {
+  // top-header.md state 9: the pointer over the avatars, with no focus in the header.
+  it("keeps the order while the pointer is over the avatars, and after it leaves, until a click outside", async () => {
     const fake = serve([
       [BA, QA, UX],
       [UX, BA, QA],

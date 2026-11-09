@@ -290,7 +290,7 @@
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/shell/top-header.test.tsx",
-        "name": "keeps the order while the pointer is in the header, and after it leaves, until a click outside"
+        "name": "keeps the order while the pointer is over the avatars, and after it leaves, until a click outside"
       },
       "assertion": "expect(shownOrder()).toEqual([\"ba\", \"qa\", \"ux\"]);\n      // A click in the header is not a click outside.",
       "breaks": [
@@ -322,7 +322,7 @@
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/shell/top-header.test.tsx",
-        "name": "keeps the order while the pointer is in the header, and after it leaves, until a click outside"
+        "name": "keeps the order while the pointer is over the avatars, and after it leaves, until a click outside"
       },
       "assertion": "expect(shownOrder()).toEqual([\"ba\", \"qa\", \"ux\"]);\n      act(() => {\n        fireEvent.pointerLeave(roster);",
       "breaks": [
@@ -344,7 +344,7 @@
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/shell/top-header.test.tsx",
-        "name": "keeps the order while the pointer is in the header, and after it leaves, until a click outside"
+        "name": "keeps the order while the pointer is over the avatars, and after it leaves, until a click outside"
       },
       "assertion": "expect(shownOrder()).toEqual([\"ba\", \"qa\", \"ux\"]);\n    } finally {",
       "breaks": [

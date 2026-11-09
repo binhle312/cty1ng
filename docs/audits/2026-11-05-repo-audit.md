@@ -205,7 +205,7 @@ Correction to row 1: `act()` is not the only thing that hides the failure. A bar
 
 ### Found during PR 5
 
-- The pointer freezes the header order only over the middle 6 of the 12 header columns. The freeze starts on the roster wrapper (`frontend/src/features/shell/header-roster.tsx:262`, inside `col-span-6` at `top-header.tsx:25`). The comment at `header-roster.tsx:40`, the click-outside check (`data-header-part` on the whole `<header>`, `top-header.tsx:22`) and `top-header.md` state 9 say "in the header". So a pointer in a side column does not freeze the order. From reading the code, not run. Found by the review of `41df63a`; the owner has not decided which one is right.
+- The pointer freezes the header order only over the middle 6 of the 12 header columns. The freeze starts on the roster wrapper (`frontend/src/features/shell/header-roster.tsx:262`, inside `col-span-6` at `top-header.tsx:25`). The comment at `header-roster.tsx:40`, the click-outside check (`data-header-part` on the whole `<header>`, `top-header.tsx:22`) and `top-header.md` state 9 say "in the header". So a pointer in a side column does not freeze the order. From reading the code, not run. Found by the review of `41df63a`. **Owner, 2026-11-09: change the docs, not the code.** Fixed in #86: UI-2.9, `top-header.md` state 9, `bots-page.md`, the M2 brief and the code comment now say "over the bot avatars".
 
 ### Skills pages and shell
 

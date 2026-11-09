@@ -37,8 +37,8 @@ import { AllBotsChip } from "./header-bot-list.tsx";
 import { arrangeFrozen, headerDrop, notInView, OTHERS_ZONE, PINNED_ZONE } from "./header-order.ts";
 import { useClosestInside, useDragSensors } from "../bots/drag-setup.ts";
 
-// The others' order freezes while the owner engages with the header (UI-2.9): the pointer or the
-// focus enters it, or its bot card is open. It applies in one step at the next click or key press
+// The others' order freezes while the owner engages with the header (UI-2.9): the pointer enters
+// the avatars, the focus enters the header, or its bot card is open. It applies in one step at the next click or key press
 // outside the header, when the focus leaves the window, or when the page changes. Parts of the
 // header that live in a portal (the bot card) carry `data-header-part`.
 function useDeferredOrder(currentOthers: readonly string[]) {

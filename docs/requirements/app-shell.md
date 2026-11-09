@@ -90,7 +90,7 @@ Design: `../design/components/left-bar.md`, `top-header.md` and `user-panel.md` 
   Statistics and Settings open from the user panel menu (`../design/components/user-panel.md`).
   With no bots, the header shows a dashed "+" with "Hey, add your bot here 👋".
 - UI-2.9: Deferred reordering (changes that come from activity). The order freezes when the pointer enters
-  the header or focus moves into it, and stays frozen while the owner scrolls, drags, clicks or
+  the bot avatars (the middle 6 of the 12 header columns) or focus moves into the header, and stays frozen while the owner scrolls, drags, clicks or
   uses a bot's card; leaving with the pointer keeps it frozen. Activity that arrives meanwhile
   is recorded but no avatar moves. The pending order applies in one step at the next of these events:
   a click or key press **outside** the header; focus moves out of the header (for example to
