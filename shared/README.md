@@ -12,6 +12,7 @@ Code that both the backend and the frontend import: the event schemas, TypeIDs a
 | `src/events/` | The stream event envelope and every built event type (`docs/realtime-events.md` §1a, §4) |
 | `src/events/index.ts` | Re-exports the event schemas |
 | `src/events/stream-event.ts` | `StreamEvent`, the union of every event type, and `EVENT_TYPES` |
+| `src/events/stream-retry.ts` | `STREAM_RETRY_MS`, the one wait before a new try of the stream, for the server and the client |
 | `src/ids.ts` | One branded TypeID schema per table prefix (`BotId`, `MessageId`, …; D36) |
 | `src/bots.ts` | Bot name rules (storage form, name key, slug, clone names, field limits and messages), the header order, and the bot API shapes (api.md §4) |
 | `src/bots.test.ts` | Name key collisions and stability, slugs, clone names, field messages |
