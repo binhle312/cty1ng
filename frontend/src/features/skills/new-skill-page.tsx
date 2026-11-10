@@ -71,15 +71,18 @@ function ClonePage({ from }: { from: string }) {
   if (!settingsSettled && !settings.isPending) setSettingsSettled(true);
 
   const [opened, setOpened] = useState<CloneSource | null>(null);
-  // Data that the cache had before this visit does not count: a read that was on its way when
-  // the page closed keeps the old data alive. `isFetchedAfterMount` cannot go back to false.
+  // A good answer of this visit. Data that the cache had before this visit does not count: it
+  // can be old (frontend-conventions.md §5, "A form that fills once").
   const answered = source.isFetchedAfterMount && source.isSuccess;
-  if (opened === null && answered && source.data !== null && settingsSettled) {
-    setOpened(source.data);
+  // The source is kept at once. `answered` can go back to false, because a later read that
+  // fails changes the status of the query; the kept source cannot.
+  if (opened === null && answered && source.data !== null) setOpened(source.data);
+  if (opened !== null) {
+    if (!settingsSettled) return <SkillEditorSkeleton />;
+    // Open. A later read that finds nothing, or that fails, keeps the editor on the source that
+    // it opened with; a later good answer gives Create its newest slugs.
+    return <NewSkillView source={source.data ?? opened} />;
   }
-  // Open. A later read that finds nothing, or that fails, keeps the editor on the source that it
-  // opened with; a later good answer gives Create its newest slugs.
-  if (opened !== null) return <NewSkillView source={source.data ?? opened} />;
   if (!answered) {
     // A failed request is not a missing version: the error state with Try again.
     if (source.isError) {
@@ -87,9 +90,7 @@ function ClonePage({ from }: { from: string }) {
     }
     return <SkillEditorSkeleton />;
   }
-  if (source.data === null) return <NotFoundPage />;
-  // The settings wait.
-  return <SkillEditorSkeleton />;
+  return <NotFoundPage />;
 }
 
 // The version a Clone copies. The URL holds only the version id, so after a reload the page
@@ -100,9 +101,9 @@ function useCloneSource(versionId: string) {
     // The settings are not in the key: a new limit must not open a new editor over a draft.
     queryKey: ["skill-clone-source", versionId],
     // Each Clone looks again at the slugs that are taken: a copy made since the last Clone
-    // takes `-copy`, so the next one must get `-copy-2` (skills-page.md §12). Nothing is kept
-    // after the page closes, and the open editor keeps its text when this fetches again.
-    gcTime: 0,
+    // takes `-copy`, so the next one must get `-copy-2` (skills-page.md §12). `ClonePage` opens
+    // its editor only from an answer of its own visit, so it does not use the data that the
+    // cache keeps from an earlier visit.
     refetchOnWindowFocus: false,
     queryFn: async (): Promise<CloneSource | null> => {
       const skills = await readNewest(() =>

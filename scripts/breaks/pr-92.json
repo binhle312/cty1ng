@@ -15,8 +15,8 @@
           "file": "frontend/src/features/skills/new-skill-page.tsx",
           "edits": [
             {
-              "find": "  if (opened !== null) return <NewSkillView source={source.data ?? opened} />;\n",
-              "replace": "  if (opened !== null && source.data !== null) return <NewSkillView source={source.data ?? opened} />;\n"
+              "find": "  if (opened !== null) {\n",
+              "replace": "  if (opened !== null && source.data !== null) {\n"
             }
           ]
         }
@@ -37,8 +37,8 @@
           "file": "frontend/src/features/skills/new-skill-page.tsx",
           "edits": [
             {
-              "find": "  if (opened !== null) return <NewSkillView source={source.data ?? opened} />;\n",
-              "replace": "  if (opened !== null && source.data !== null) return <NewSkillView source={source.data ?? opened} />;\n"
+              "find": "  if (opened !== null) {\n",
+              "replace": "  if (opened !== null && source.data !== null) {\n"
             }
           ]
         }
@@ -59,8 +59,8 @@
           "file": "frontend/src/features/skills/new-skill-page.tsx",
           "edits": [
             {
-              "find": "  if (opened !== null) return <NewSkillView source={source.data ?? opened} />;\n",
-              "replace": "  if (opened !== null && !source.isError) return <NewSkillView source={source.data ?? opened} />;\n"
+              "find": "  if (opened !== null) {\n",
+              "replace": "  if (opened !== null && !source.isError) {\n"
             }
           ]
         }
@@ -68,7 +68,7 @@
     },
     {
       "id": "K4",
-      "claim": "The text stays when the source goes away, comes back and goes away again",
+      "claim": "A guard for the whole order: source gone, back, gone again. Its break is the one of K1 and fails at the first step, so it proves no more than K1",
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/skills/new-skill-page.test.tsx",
@@ -81,8 +81,8 @@
           "file": "frontend/src/features/skills/new-skill-page.tsx",
           "edits": [
             {
-              "find": "  if (opened !== null) return <NewSkillView source={source.data ?? opened} />;\n",
-              "replace": "  if (opened !== null && source.data !== null) return <NewSkillView source={source.data ?? opened} />;\n"
+              "find": "  if (opened !== null) {\n",
+              "replace": "  if (opened !== null && source.data !== null) {\n"
             }
           ]
         }
@@ -103,8 +103,8 @@
           "file": "frontend/src/features/skills/new-skill-page.tsx",
           "edits": [
             {
-              "find": "  if (source.data === null) return <NotFoundPage />;\n",
-              "replace": ""
+              "find": "  return <NotFoundPage />;\n",
+              "replace": "  return <SkillEditorSkeleton />;\n"
             }
           ]
         }
@@ -112,7 +112,7 @@
     },
     {
       "id": "K6",
-      "claim": "After a failed first read, a Try again that finds nothing shows Page not found",
+      "claim": "After a failed first read, Try again reads again (break b), and an answer with nothing shows Page not found (break a)",
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/skills/new-skill-page.test.tsx",
@@ -125,8 +125,18 @@
           "file": "frontend/src/features/skills/new-skill-page.tsx",
           "edits": [
             {
-              "find": "  if (source.data === null) return <NotFoundPage />;\n",
-              "replace": ""
+              "find": "  return <NotFoundPage />;\n",
+              "replace": "  return <SkillEditorSkeleton />;\n"
+            }
+          ]
+        },
+        {
+          "id": "K6-b",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "onRetry={() => void source.refetch()}",
+              "replace": "onRetry={() => undefined}"
             }
           ]
         }
@@ -188,6 +198,94 @@
       "breaks": [
         {
           "id": "K9-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "  const answered = source.isFetchedAfterMount && source.isSuccess;\n",
+              "replace": "  const answered = source.isSuccess;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K10",
+      "claim": "The editor does not open while the settings are on their way",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/new-skill-page.test.tsx",
+        "name": "shows no editor while the settings are on their way"
+      },
+      "assertion": "expect(nameValue(), \"the settings wait\").toBeNull();",
+      "breaks": [
+        {
+          "id": "K10-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "    if (!settingsSettled) return <SkillEditorSkeleton />;\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K11",
+      "claim": "A good answer of this visit stays good: a read that fails during the settings wait does not stop the editor",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/new-skill-page.test.tsx",
+        "name": "opens the editor after the settings wait when a read failed during the wait"
+      },
+      "assertion": "expect(nameValue(), \"after the settings wait\").toBe(\"Write user stories (copy)\");",
+      "breaks": [
+        {
+          "id": "K11-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "  if (opened === null && answered && source.data !== null) setOpened(source.data);\n",
+              "replace": "  if (opened === null && answered && source.data !== null && settingsSettled) setOpened(source.data);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K12",
+      "claim": "A second visit with the old source in the cache and no read on its way shows Page not found when the source went away",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/new-skill-page.test.tsx",
+        "name": "shows Page not found when the source went away since the first visit"
+      },
+      "assertion": "expect(await screen.findByText(\"Page not found\", {}, WAIT), \"second visit\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "K12-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "  const answered = source.isFetchedAfterMount && source.isSuccess;\n",
+              "replace": "  const answered = source.isSuccess;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K13",
+      "claim": "A second visit takes the slugs of its own read: it proposes the next free slug",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/new-skill-page.test.tsx",
+        "name": "proposes the next free slug when a copy took the first one since the first visit"
+      },
+      "assertion": "expect(slugValue(), \"the slug of this visit\").toBe(\"write-user-stories-copy-2\");",
+      "breaks": [
+        {
+          "id": "K13-a",
           "file": "frontend/src/features/skills/new-skill-page.tsx",
           "edits": [
             {

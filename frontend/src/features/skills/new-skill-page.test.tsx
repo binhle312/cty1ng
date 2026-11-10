@@ -7,6 +7,7 @@ import {
   makeSkill,
   makeVersions,
   SKILL_ID,
+  typeId,
   versionId,
 } from "../../../test/fixtures.ts";
 import { renderApp } from "../../../test/render-app.tsx";
@@ -30,16 +31,22 @@ describe("the Clone page and the reads of its source", () => {
   const CLONE_URL = `/skills/new?from=${versionId(3)}`;
 
   // The fake server. `listed` is what a read of the skill list answers; `fails` makes it fail;
-  // `next`, when set, answers the next read of the list, one time.
+  // `next`, when set, answers the next read of the list, one time; `settings`, when set,
+  // answers the next read of the settings, one time.
   function startServer() {
     const server: {
       listed: unknown[];
       fails: boolean;
       next: ReturnType<typeof heldAnswer>["promise"] | null;
-    } = { listed: [makeSkill()], fails: false, next: null };
+      settings: ReturnType<typeof heldAnswer>["promise"] | null;
+    } = { listed: [makeSkill()], fails: false, next: null, settings: null };
     const [v3] = makeVersions(3);
     api = fakeApi({
-      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/settings": () => {
+        const { settings } = server;
+        server.settings = null;
+        return settings ?? { body: BOT_SETTINGS };
+      },
       "GET /api/skills": () => {
         const { next } = server;
         server.next = null;
@@ -90,6 +97,14 @@ describe("the Clone page and the reads of its source", () => {
       expect(queryClient.isFetching()).toBe(0);
     });
   }
+
+  const slugValue = () => {
+    const field = screen.queryByLabelText("Slug", { exact: true });
+    return field instanceof HTMLInputElement ? field.value : null;
+  };
+
+  const sourceStatus = (queryClient: QueryClient) =>
+    queryClient.getQueryState(["skill-clone-source", versionId(3)])?.status;
 
   // A full read starts and stays on its way. The owner leaves the page and returns before its
   // answer. The returned object gives the answer.
@@ -160,6 +175,38 @@ describe("the Clone page and the reads of its source", () => {
       expect(await screen.findByText("Page not found", {}, WAIT), "first visit").toBeTruthy();
     });
 
+    // The copy's name is cut to the name limit, so the editor waits for the settings.
+    it("shows no editor while the settings are on their way", async () => {
+      const server = startServer();
+      server.settings = heldAnswer().promise;
+      const { queryClient } = await renderApp(CLONE_URL);
+      await waitFor(() => {
+        expect(sourceStatus(queryClient)).toBe("success");
+      });
+      expect(nameValue(), "the settings wait").toBeNull();
+    });
+
+    // A good answer of this visit stays good: a read that fails later, while the settings are
+    // still on their way, is a failed refresh (review of `6ab9430`).
+    it("opens the editor after the settings wait when a read failed during the wait", async () => {
+      const server = startServer();
+      const settings = heldAnswer();
+      server.settings = settings.promise;
+      const { queryClient } = await renderApp(CLONE_URL);
+      await waitFor(() => {
+        expect(sourceStatus(queryClient)).toBe("success");
+      });
+      server.fails = true;
+      void queryClient.invalidateQueries();
+      await waitFor(() => {
+        expect(sourceStatus(queryClient)).toBe("error");
+      });
+      await settings.answer({ body: BOT_SETTINGS });
+      await waitFor(() => {
+        expect(nameValue(), "after the settings wait").toBe("Write user stories (copy)");
+      });
+    });
+
     it("shows Page not found after a failed read and a Try again with the source gone", async () => {
       const server = startServer();
       server.fails = true;
@@ -171,6 +218,38 @@ describe("the Clone page and the reads of its source", () => {
         fireEvent.click(retry);
       });
       expect(await screen.findByText("Page not found", {}, WAIT), "after Try again").toBeTruthy();
+    });
+  });
+
+  // The cache still has the source of the first visit. The page does not open from it.
+  describe("a second visit, with no read on its way", () => {
+    async function leave() {
+      const { router, queryClient, server } = await openClone({ draft: false });
+      await act(() => router.navigate({ to: "/skills" }));
+      await waitFor(() => {
+        expect(queryClient.isFetching()).toBe(0);
+      });
+      const back = () =>
+        act(() => router.navigate({ to: "/skills/new", search: { from: versionId(3) } }));
+      return { server, back };
+    }
+
+    it("shows Page not found when the source went away since the first visit", async () => {
+      const { server, back } = await leave();
+      server.listed = [];
+      await back();
+      expect(await screen.findByText("Page not found", {}, WAIT), "second visit").toBeTruthy();
+    });
+
+    // skills-page.md §12: a copy made since the last Clone took `-copy`.
+    it("proposes the next free slug when a copy took the first one since the first visit", async () => {
+      const { server, back } = await leave();
+      const copy = makeSkill({ id: typeId("skill", 9), slug: "write-user-stories-copy" });
+      server.listed = [makeSkill(), copy];
+      await back();
+      await waitFor(() => {
+        expect(slugValue(), "the slug of this visit").toBe("write-user-stories-copy-2");
+      });
     });
   });
 
