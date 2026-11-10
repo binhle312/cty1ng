@@ -47,7 +47,8 @@ and mockups in `docs/design/` are starting points for that discussion, never spe
 M3 follows M2c. Keep M3 as the milestone and deliver M3a–M3g as separate PRs in the order below.
 The [M3 brief](tasks/M3-chat-one-bot.md) follows this breakdown. The milestone scope and acceptance criteria still apply.
 Write the part briefs before implementation. This table defines the delivery boundaries;
-each part still needs its implementation plan.
+each part still needs its implementation plan. While the EGM trial runs, the EGM design step
+comes before the plan of each part ([egm.md](workflows/egm.md)).
 
 | Part | Delivers | Main verification | Depends on |
 | --- | --- | --- | --- |

@@ -11,7 +11,8 @@ Read AGENTS.md, docs/review-guide.md, docs/tasks/<M#>-<name>.md, and the documen
 Read the approved plan revision. Follow the guide's evidence table and completion checks.
 Check, in order:
 1. Every acceptance criterion: is it implemented, and does the cited test really prove it?
-   Run the tests yourself.
+   Run the tests of the diff yourself, and your own breaks. Do not run the full gates or the
+   full e2e suite again: the builder's gate run and CI cover them (owner, 2026-11-09).
 2. Architecture rules in AGENTS.md §5 (domain purity, events in the same transaction,
    generated client only, immutability rules, workspace port use, Markdown rendering).
 3. Security: anything touching docs/security.md controls.
