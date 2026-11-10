@@ -37,9 +37,16 @@ beforeAll(async () => {
   await waitUntilUp(base);
 }, 30_000);
 
+let backendClosed = false;
+async function closeBackend() {
+  if (backendClosed) return;
+  backendClosed = true;
+  await backend.close();
+}
+
 afterAll(async () => {
   vite.kill();
-  await backend.close();
+  await closeBackend();
 });
 
 describe("Vite dev proxy", () => {
@@ -79,5 +86,34 @@ describe("Vite dev proxy", () => {
       break;
     }
     abort.abort();
+  });
+
+  // realtime-events.md §3, rule for `make dev`: without this the browser keeps a dead stream
+  // that looks open, and gets no live events until a reload. Last in the file: it stops the
+  // backend.
+  it("ends the client's stream when the backend closes it", async () => {
+    const response = await fetch(`${base}/api/stream`);
+    if (response.body === null) throw new Error("no body");
+    const frames = readFrames(response.body);
+    const next = async () => {
+      const result = await frames.next();
+      return result.done === true ? null : result.value;
+    };
+    let frame = await next();
+    while (frame !== null && frame.event !== "ready") frame = await next();
+    expect(frame?.event).toBe("ready");
+
+    await closeBackend();
+    // The stream ends (with or without an error) well before the 15 s heartbeat.
+    const ended = (async () => {
+      try {
+        while ((await next()) !== null);
+      } catch {
+        // A cut connection ends the body with an error.
+      }
+      return "ended";
+    })();
+    const late = new Promise<string>((r) => setTimeout(r, 2_000, "still open after 2 s"));
+    expect(await Promise.race([ended, late])).toBe("ended");
   });
 });

@@ -1,3 +1,4 @@
+import { STREAM_RETRY_MS } from "@cty1ng/shared/events";
 import type { Transport } from "../../core/ports/transport.ts";
 import { PING_FRAME, eventFrame, retryFrame } from "./frames.ts";
 
@@ -5,7 +6,7 @@ import { PING_FRAME, eventFrame, retryFrame } from "./frames.ts";
 // connection, and `retry: 2000` makes the browser reconnect after 2 s. Fixed by the protocol;
 // tests pass shorter values.
 export const HEARTBEAT_MS = 15_000;
-export const RETRY_MS = 2_000;
+export const RETRY_MS = STREAM_RETRY_MS;
 
 export interface SseOptions {
   heartbeatMs?: number;

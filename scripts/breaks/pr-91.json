@@ -1,0 +1,1000 @@
+{
+  "claims": [
+    {
+      "id": "S1",
+      "claim": "A visible page opens one stream at page start",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "a visible page opens one stream"
+      },
+      "assertion": "expect(streams, \"at page start\").toHaveLength(1);",
+      "breaks": [
+        {
+          "id": "S1-a",
+          "file": "frontend/src/lib/realtime/start.ts",
+          "edits": [
+            {
+              "find": "startLife(visible())",
+              "replace": "startLife(!visible())"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "claim": "The events of the stream reach the reducer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "the events of the stream reach the reducer"
+      },
+      "assertion": "expect(notes(), \"applied\").toEqual([\"n5\"]);",
+      "breaks": [
+        {
+          "id": "S2-a",
+          "file": "frontend/src/lib/realtime/start.ts",
+          "edits": [
+            {
+              "find": "            reducer.apply(event);\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S3",
+      "claim": "The ready of the stream of page start starts no read of all data",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "the ready of the stream of page start reads nothing again"
+      },
+      "assertion": "expect(readAll, \"page start\").not.toHaveBeenCalled();",
+      "breaks": [
+        {
+          "id": "S3-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "visible ? open(0, false)",
+              "replace": "visible ? open(0, true)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S4",
+      "claim": "A hidden tab closes its stream",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "a hidden tab closes its stream"
+      },
+      "assertion": "expect(stream(1).closed, \"hidden\").toBe(true);",
+      "breaks": [
+        {
+          "id": "S4-a",
+          "file": "frontend/src/lib/realtime/start.ts",
+          "edits": [
+            {
+              "find": "        close?.();\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S5",
+      "claim": "A tab that becomes visible opens a new stream",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "a tab that becomes visible opens a new stream"
+      },
+      "assertion": "expect([streams.length, open()], \"streams made, streams open\").toEqual([2, 1]);",
+      "breaks": [
+        {
+          "id": "S5-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "      return event.type === \"visible\" ? open(state.streams, true) : stay(state);\n",
+              "replace": "      return stay(state);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S6",
+      "claim": "The read of all data does not start at the open status, before ready",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "the read does not start before the ready of a new stream"
+      },
+      "assertion": "expect(readAll, \"open, no ready yet\").not.toHaveBeenCalled();",
+      "breaks": [
+        {
+          "id": "S6-a",
+          "file": "frontend/src/lib/realtime/start.ts",
+          "edits": [
+            {
+              "find": "            if (status === \"closed\") send({ type: \"stopped\", stream });\n",
+              "replace": "            if (status === \"closed\") send({ type: \"stopped\", stream });\n            if (status === \"open\") send({ type: \"ready\", stream });\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S7",
+      "claim": "The first ready of a new stream reads all data",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "the first ready of a new stream reads all"
+      },
+      "assertion": "expect(readAll, \"first ready\").toHaveBeenCalledExactlyOnceWith();",
+      "breaks": [
+        {
+          "id": "S7-a",
+          "file": "frontend/src/lib/realtime/start.ts",
+          "edits": [
+            {
+              "find": "            if (event.type === \"ready\") send({ type: \"ready\", stream });\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S8",
+      "claim": "A second ready in the same stream starts no second read",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "a second ready in the same stream reads nothing again"
+      },
+      "assertion": "expect(readAll, \"second ready\").toHaveBeenCalledTimes(1);",
+      "breaks": [
+        {
+          "id": "S8-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "{ ...state, readOnReady: false }",
+              "replace": "{ ...state, readOnReady: true }"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S9",
+      "claim": "A new stream takes its cursor from its own ready, not from the stream before",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "a new stream takes its cursor from its own ready"
+      },
+      "assertion": "expect(notes(), \"own cursor\").toEqual([\"n101\", \"n4\"]);",
+      "breaks": [
+        {
+          "id": "S9-a",
+          "file": "frontend/src/lib/realtime/start.ts",
+          "edits": [
+            {
+              "find": "  let closeStream: (() => void) | null = null;\n",
+              "replace": "  const oneReducer = createEventReducer(queryClient);\n  let closeStream: (() => void) | null = null;\n"
+            },
+            {
+              "find": "        const reducer = createEventReducer(queryClient);\n",
+              "replace": "        const reducer = oneReducer;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S10",
+      "claim": "A late event of a closed stream does not reach the reducer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "a late event of a closed stream does not reach the reducer"
+      },
+      "assertion": "expect(notes(), \"late event\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "S10-a",
+          "file": "frontend/src/lib/realtime/start.ts",
+          "edits": [
+            {
+              "find": "            if (!isLiveStream(state, stream)) return;\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S11",
+      "claim": "After a stop for good, no new stream opens before the wait ends",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "stopped for good: no new stream opens before the wait ends"
+      },
+      "assertion": "expect(streams, \"before the wait ends\").toHaveLength(1);",
+      "breaks": [
+        {
+          "id": "S11-a",
+          "file": "frontend/src/lib/realtime/start.ts",
+          "edits": [
+            {
+              "find": "        }, retryMs);\n",
+              "replace": "        }, 0);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S12",
+      "claim": "After a stop for good, a new stream opens after the wait",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "stopped for good: a new stream opens after the wait"
+      },
+      "assertion": "expect([streams.length, open()], \"after the wait\").toEqual([2, 1]);",
+      "breaks": [
+        {
+          "id": "S12-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "          return event.stream === state.streams ? open(state.streams, true) : stay(state);\n",
+              "replace": "          return stay(state);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S13",
+      "claim": "The stream that opens after a stop reads all data at its ready",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "the stream after a stop reads all at its ready"
+      },
+      "assertion": "expect(readAll, \"after a stop\").toHaveBeenCalledTimes(1);",
+      "breaks": [
+        {
+          "id": "S13-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "          return event.stream === state.streams ? open(state.streams, true) : stay(state);\n",
+              "replace": "          return event.stream === state.streams ? open(state.streams, false) : stay(state);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S14",
+      "claim": "Each stream that fails gets a new try, not only the first",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "a stream that fails each time gets a new try after each wait"
+      },
+      "assertion": "expect(streams, \"four failures\").toHaveLength(5);",
+      "breaks": [
+        {
+          "id": "S14-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "          if (event.stream !== state.streams) return stay(state);\n",
+              "replace": "          if (event.stream !== 1) return stay(state);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S15",
+      "claim": "A status that is not closed starts no timer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "a status that is not closed starts no timer"
+      },
+      "assertion": "expect(vi.getTimerCount(), \"connecting\").toBe(0);",
+      "breaks": [
+        {
+          "id": "S15-a",
+          "file": "frontend/src/lib/realtime/start.ts",
+          "edits": [
+            {
+              "find": "            if (status === \"closed\") send({ type: \"stopped\", stream });\n",
+              "replace": "            if (status !== \"open\") send({ type: \"stopped\", stream });\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S16",
+      "claim": "A tab that becomes hidden during the wait cancels the timer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "hidden during the wait cancels the timer"
+      },
+      "assertion": "expect(vi.getTimerCount(), \"hidden during the wait\").toBe(0);",
+      "breaks": [
+        {
+          "id": "S16-a",
+          "file": "frontend/src/lib/realtime/start.ts",
+          "edits": [
+            {
+              "find": "        if (timer !== null) clearTimeout(timer);\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S17",
+      "claim": "A page that starts hidden opens no stream",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "a page that starts hidden opens no stream"
+      },
+      "assertion": "expect(streams, \"starts hidden\").toHaveLength(0);",
+      "breaks": [
+        {
+          "id": "S17-a",
+          "file": "frontend/src/lib/realtime/start.ts",
+          "edits": [
+            {
+              "find": "startLife(visible())",
+              "replace": "startLife(true)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S18",
+      "claim": "The first stream of a page that started hidden reads all data",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "the first stream of a page that starts hidden reads all"
+      },
+      "assertion": "expect(readAll, \"started hidden\").toHaveBeenCalledTimes(1);",
+      "breaks": [
+        {
+          "id": "S18-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "      return event.type === \"visible\" ? open(state.streams, true) : stay(state);\n",
+              "replace": "      return event.type === \"visible\" ? open(state.streams, false) : stay(state);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O1",
+      "claim": "Each return to the tab opens a stream with a new number",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/stream-life.test.ts",
+        "name": "five returns to the tab: each return opens one new stream"
+      },
+      "assertion": "expect(opened, \"five returns\").toEqual([2, 3, 4, 5, 6]);",
+      "breaks": [
+        {
+          "id": "O1-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "  const stream = streams + 1;\n",
+              "replace": "  const stream = streams;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O2",
+      "claim": "A timer of an older stream opens nothing in a live stream",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/stream-life.test.ts",
+        "name": "stopped, then hidden before the timer, then visible: the old timer opens nothing"
+      },
+      "assertion": "expect(stepLife(shown.state, { type: \"timer\", stream: 1 }).actions, \"old timer\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "O2-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "        case \"visible\":\n        case \"timer\":\n          return stay(state);\n",
+              "replace": "        case \"visible\":\n          return stay(state);\n        case \"timer\":\n          return open(state.streams, true);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L1",
+      "claim": "A late stop of a closed stream starts no timer in a hidden tab",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/stream-life.test.ts",
+        "name": "a late stop of the closed stream is ignored"
+      },
+      "assertion": "expect(stepLife(idle(3), { type: \"stopped\", stream: 3 }), \"idle, late stop\").toEqual({",
+      "breaks": [
+        {
+          "id": "L1-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "      return event.type === \"visible\" ? open(state.streams, true) : stay(state);\n",
+              "replace": "      if (event.type === \"stopped\") {\n        return { state, actions: [{ type: \"startTimer\", stream: state.streams }] };\n      }\n      return event.type === \"visible\" ? open(state.streams, true) : stay(state);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L2",
+      "claim": "A late timer opens no stream in a hidden tab",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/stream-life.test.ts",
+        "name": "a late timer is ignored in a hidden tab"
+      },
+      "assertion": "expect(stepLife(idle(3), { type: \"timer\", stream: 3 }), \"idle, late timer\").toEqual({",
+      "breaks": [
+        {
+          "id": "L2-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "      return event.type === \"visible\" ? open(state.streams, true) : stay(state);\n",
+              "replace": "      if (event.type === \"timer\") return open(state.streams, true);\n      return event.type === \"visible\" ? open(state.streams, true) : stay(state);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L3",
+      "claim": "A late ready of a closed stream starts no read in a hidden tab",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/stream-life.test.ts",
+        "name": "a late ready of the closed stream is ignored"
+      },
+      "assertion": "expect(stepLife(idle(3), { type: \"ready\", stream: 3 }), \"idle, late ready\").toEqual({",
+      "breaks": [
+        {
+          "id": "L3-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "      return event.type === \"visible\" ? open(state.streams, true) : stay(state);\n",
+              "replace": "      if (event.type === \"ready\") return { state, actions: [{ type: \"readAll\" }] };\n      return event.type === \"visible\" ? open(state.streams, true) : stay(state);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L4",
+      "claim": "The stop of an older stream does not stop the live stream",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/stream-life.test.ts",
+        "name": "the stop of an older stream is ignored"
+      },
+      "assertion": "expect(stepLife(live(2, false), { type: \"stopped\", stream: 1 }), \"live, old stop\").toEqual({",
+      "breaks": [
+        {
+          "id": "L4-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "          if (event.stream !== state.streams) return stay(state);\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L5",
+      "claim": "A timer opens no second stream while a stream is live",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/stream-life.test.ts",
+        "name": "a timer is ignored: a live stream has no timer"
+      },
+      "assertion": "expect(stepLife(live(2, true), { type: \"timer\", stream: 1 }), \"live, timer\").toEqual({",
+      "breaks": [
+        {
+          "id": "L5-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "        case \"visible\":\n        case \"timer\":\n          return stay(state);\n",
+              "replace": "        case \"visible\":\n          return stay(state);\n        case \"timer\":\n          return open(state.streams, true);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L6",
+      "claim": "The ready of an older stream starts no read",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/stream-life.test.ts",
+        "name": "the ready of an older stream starts no read"
+      },
+      "assertion": "expect(actions, \"live, old ready\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "L6-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "          if (event.stream !== state.streams || !state.readOnReady) return stay(state);\n",
+              "replace": "          if (!state.readOnReady) return stay(state);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L7",
+      "claim": "The ready of an older stream does not use up the read of the new stream",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/stream-life.test.ts",
+        "name": "after the ready of an older stream, the new stream still reads at its own ready"
+      },
+      "assertion": "expect(stepLife(state, { type: \"ready\", stream: 2 }).actions, \"own ready\").toEqual([",
+      "breaks": [
+        {
+          "id": "L7-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "          if (event.stream !== state.streams || !state.readOnReady) return stay(state);\n",
+              "replace": "          if (!state.readOnReady) return stay(state);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L8",
+      "claim": "The timer of an older stream opens nothing during the wait",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/stream-life.test.ts",
+        "name": "the timer of an older stream opens nothing during the wait"
+      },
+      "assertion": "expect(stepLife(waiting(2), { type: \"timer\", stream: 1 }), \"waiting, old timer\").toEqual({",
+      "breaks": [
+        {
+          "id": "L8-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "          return event.stream === state.streams ? open(state.streams, true) : stay(state);\n",
+              "replace": "          return open(state.streams, true);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L9",
+      "claim": "A second stop during the wait starts no second timer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/stream-life.test.ts",
+        "name": "a second stop during the wait starts no second timer"
+      },
+      "assertion": "expect(stepLife(waiting(2), { type: \"stopped\", stream: 2 }), \"waiting, stop\").toEqual({",
+      "breaks": [
+        {
+          "id": "L9-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "        case \"visible\":\n        case \"stopped\":\n        case \"ready\":\n          return stay(state);\n",
+              "replace": "        case \"stopped\":\n          return { state, actions: [{ type: \"startTimer\", stream: state.streams }] };\n        case \"visible\":\n        case \"ready\":\n          return stay(state);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L10",
+      "claim": "A ready during the wait starts no read",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/stream-life.test.ts",
+        "name": "a ready during the wait starts no read"
+      },
+      "assertion": "expect(stepLife(waiting(2), { type: \"ready\", stream: 2 }), \"waiting, ready\").toEqual({",
+      "breaks": [
+        {
+          "id": "L10-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "        case \"visible\":\n        case \"stopped\":\n        case \"ready\":\n          return stay(state);\n",
+              "replace": "        case \"ready\":\n          return { state, actions: [{ type: \"readAll\" }] };\n        case \"visible\":\n        case \"stopped\":\n          return stay(state);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "G1",
+      "claim": "A change between the read on the return and the new stream shows only by the read after ready (rule 4)",
+      "test": {
+        "kind": "e2e",
+        "file": "frontend/test/e2e/stream-life.spec.ts",
+        "name": "a change between the read on the return and the new stream shows after ready"
+      },
+      "assertion": "await expect(botLink(page, inGap), \"after ready\").toBeVisible();",
+      "breaks": [
+        {
+          "id": "G1-a",
+          "file": "frontend/src/lib/realtime/start.ts",
+          "edits": [
+            {
+              "find": "        readAll(queryClient);\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S23",
+      "claim": "The closed status of a stream that a hidden tab closed starts no timer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "the close of a hidden tab's stream starts no timer"
+      },
+      "assertion": "expect(vi.getTimerCount(), \"own close, hidden\").toBe(0);",
+      "breaks": [
+        {
+          "id": "S23-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "      return event.type === \"visible\" ? open(state.streams, true) : stay(state);\n",
+              "replace": "      if (event.type === \"stopped\") {\n        return { state, actions: [{ type: \"startTimer\", stream: state.streams }] };\n      }\n      return event.type === \"visible\" ? open(state.streams, true) : stay(state);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S24",
+      "claim": "The closed status of a stream that the tab closed after a stop starts no second timer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "the close of a stopped stream starts no second timer"
+      },
+      "assertion": "expect(vi.getTimerCount(), \"own close, waiting\").toBe(1);",
+      "breaks": [
+        {
+          "id": "S24-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "        case \"visible\":\n        case \"stopped\":\n        case \"ready\":\n          return stay(state);\n",
+              "replace": "        case \"stopped\":\n          return { state, actions: [{ type: \"startTimer\", stream: state.streams }] };\n        case \"visible\":\n        case \"ready\":\n          return stay(state);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "I1",
+      "claim": "Only the newest stream of a live state is the live stream",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/stream-life.test.ts",
+        "name": "only the newest stream of a live state is the live stream"
+      },
+      "assertion": "expect(answers, \"live stream\").toEqual([true, false, false, false]);",
+      "breaks": [
+        {
+          "id": "I1-a",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "  return state.kind === \"live\" && state.streams === stream;\n",
+              "replace": "  return state.kind === \"live\";\n"
+            }
+          ]
+        },
+        {
+          "id": "I1-b",
+          "file": "frontend/src/lib/realtime/stream-life.ts",
+          "edits": [
+            {
+              "find": "  return state.kind === \"live\" && state.streams === stream;\n",
+              "replace": "  return state.streams === stream;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R1",
+      "claim": "After the first ready of a new stream, a first read that is still on its way starts again",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "the read after ready starts again a first read that is still on its way"
+      },
+      "assertion": "expect(reads, \"reads of a query with no answer yet\").toBe(2);",
+      "breaks": [
+        {
+          "id": "R1-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "  void queryClient.cancelQueries(\n    {\n      type: \"active\",\n      fetchStatus: \"fetching\",\n      predicate: (query) => query.state.data === undefined,\n    },\n    { silent: true, revert: false },\n  );\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "claim": "After a reset, a first read that is still on its way starts again",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/reducer.test.ts",
+        "name": "on reset, starts again a first read that is still on its way"
+      },
+      "assertion": "expect(reads, \"reads of a query with no answer yet\").toBe(2);",
+      "breaks": [
+        {
+          "id": "R2-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "  void queryClient.cancelQueries(\n    {\n      type: \"active\",\n      fetchStatus: \"fetching\",\n      predicate: (query) => query.state.data === undefined,\n    },\n    { silent: true, revert: false },\n  );\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "claim": "readAll starts a new read for an active query whose first read is on its way",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/read-all.test.ts",
+        "name": "starts a new read for a query whose first read is still on its way"
+      },
+      "assertion": "expect(query.answers, \"reads of a query with no answer yet\").toHaveLength(2);",
+      "breaks": [
+        {
+          "id": "R3-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "  void queryClient.cancelQueries(\n    {\n      type: \"active\",\n      fetchStatus: \"fetching\",\n      predicate: (query) => query.state.data === undefined,\n    },\n    { silent: true, revert: false },\n  );\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "claim": "The answer of the first read that readAll cut does not reach the cache",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/read-all.test.ts",
+        "name": "drops the answer of the first read that it cut"
+      },
+      "assertion": "expect(query.data(), \"the old answer\").toBeUndefined();",
+      "breaks": [
+        {
+          "id": "R4-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "  void queryClient.cancelQueries(\n    {\n      type: \"active\",\n      fetchStatus: \"fetching\",\n      predicate: (query) => query.state.data === undefined,\n    },\n    { silent: true, revert: false },\n  );\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "claim": "The cache takes the answer of the read that started after readAll",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/read-all.test.ts",
+        "name": "takes the answer of the read that started after it"
+      },
+      "assertion": "expect(query.data(), \"the new answer\").toBe(\"from after\");",
+      "breaks": [
+        {
+          "id": "R5-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "  void queryClient.cancelQueries(\n    {\n      type: \"active\",\n      fetchStatus: \"fetching\",\n      predicate: (query) => query.state.data === undefined,\n    },\n    { silent: true, revert: false },\n  );\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R6",
+      "claim": "readAll starts a new read for a query that has data and a read on its way",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/read-all.test.ts",
+        "name": "starts a new read for a query that has data and a read on its way"
+      },
+      "assertion": "expect(query.answers, \"reads of a query with data\").toHaveLength(3);",
+      "breaks": [
+        {
+          "id": "R6-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "  void queryClient.invalidateQueries();\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "frontend/src/lib/realtime/stream-life.test.ts",
+      "name": "a visible page opens stream 1, which does not read all",
+      "reason": "A cell test of the state table, written before stream-life.ts. The run before the code was not recorded: the import of the module failed"
+    },
+    {
+      "file": "frontend/src/lib/realtime/stream-life.test.ts",
+      "name": "a hidden page opens no stream",
+      "reason": "A cell test of the state table, written before stream-life.ts. The run before the code was not recorded: the import of the module failed"
+    },
+    {
+      "file": "frontend/src/lib/realtime/stream-life.test.ts",
+      "name": "a page that starts hidden: its first stream reads all",
+      "reason": "A cell test of the state table, written before stream-life.ts. The run before the code was not recorded: the import of the module failed"
+    },
+    {
+      "file": "frontend/src/lib/realtime/stream-life.test.ts",
+      "name": "hidden: stays",
+      "reason": "A cell test of the state table, written before stream-life.ts. The run before the code was not recorded: the import of the module failed"
+    },
+    {
+      "file": "frontend/src/lib/realtime/stream-life.test.ts",
+      "name": "visible: opens a new stream that reads all",
+      "reason": "A cell test of the state table, written before stream-life.ts. The run before the code was not recorded: the import of the module failed"
+    },
+    {
+      "file": "frontend/src/lib/realtime/stream-life.test.ts",
+      "name": "hidden: closes the stream",
+      "reason": "A cell test of the state table, written before stream-life.ts. The run before the code was not recorded: the import of the module failed"
+    },
+    {
+      "file": "frontend/src/lib/realtime/stream-life.test.ts",
+      "name": "visible: stays, with no second stream",
+      "reason": "A cell test of the state table, written before stream-life.ts. The run before the code was not recorded: the import of the module failed"
+    },
+    {
+      "file": "frontend/src/lib/realtime/stream-life.test.ts",
+      "name": "stopped for good: closes what is left and starts the timer",
+      "reason": "A cell test of the state table, written before stream-life.ts. The run before the code was not recorded: the import of the module failed"
+    },
+    {
+      "file": "frontend/src/lib/realtime/stream-life.test.ts",
+      "name": "the first ready of a new stream reads all, one time",
+      "reason": "A cell test of the state table, written before stream-life.ts. The run before the code was not recorded: the import of the module failed"
+    },
+    {
+      "file": "frontend/src/lib/realtime/stream-life.test.ts",
+      "name": "the ready of the stream of page start does not read all",
+      "reason": "A cell test of the state table, written before stream-life.ts. The run before the code was not recorded: the import of the module failed"
+    },
+    {
+      "file": "frontend/src/lib/realtime/stream-life.test.ts",
+      "name": "hidden: cancels the timer",
+      "reason": "A cell test of the state table, written before stream-life.ts. The run before the code was not recorded: the import of the module failed"
+    },
+    {
+      "file": "frontend/src/lib/realtime/stream-life.test.ts",
+      "name": "visible: stays",
+      "reason": "A cell test of the state table, written before stream-life.ts. The run before the code was not recorded: the import of the module failed"
+    },
+    {
+      "file": "frontend/src/lib/realtime/stream-life.test.ts",
+      "name": "timer: opens a new stream that reads all",
+      "reason": "A cell test of the state table, written before stream-life.ts. The run before the code was not recorded: the import of the module failed"
+    },
+    {
+      "file": "frontend/src/lib/realtime/stream-life.test.ts",
+      "name": "random orders keep the invariants (page starts visible)",
+      "reason": "The assertions are in the model's check, outside the test, so the runner cannot link a break to it. The PR records a break by hand: without cancelTimer on hidden, the run fails with its seed and steps"
+    },
+    {
+      "file": "frontend/src/lib/realtime/stream-life.test.ts",
+      "name": "random orders keep the invariants (page starts hidden)",
+      "reason": "The assertions are in the model's check, outside the test, so the runner cannot link a break to it. The PR records a break by hand: without cancelTimer on hidden, the run fails with its seed and steps"
+    },
+    {
+      "file": "frontend/test/e2e/stream-life.spec.ts",
+      "name": "seven tabs: a save in the seventh tab gets its answer",
+      "reason": "Not a late, security or order test. The PR records its red run with start.ts of origin/main"
+    },
+    {
+      "file": "frontend/test/e2e/stream-life.spec.ts",
+      "name": "a stream that the browser stops for good comes back after the wait",
+      "reason": "Not a late, security or order test. The PR records its red run with start.ts of origin/main"
+    },
+    {
+      "file": "scripts/dev-proxy.test.ts",
+      "name": "ends the client's stream when the backend closes it",
+      "reason": "Written before the proxy hook. The PR records its red run: still open after 2 s"
+    },
+    {
+      "file": "frontend/test/e2e/stream-life.spec.ts",
+      "name": "a tab that was hidden opens a new stream when it returns",
+      "reason": "Not a late, security or order test. The PR records its red run with start.ts of origin/main"
+    },
+    {
+      "file": "frontend/test/e2e/stream-life.spec.ts",
+      "name": "a Clone draft stays when the tab returns after its source went to Trash",
+      "reason": "The PR records its red run: 4 of 4 fail on this branch with the page code before the fix of #92 (the draft is gone after the return)"
+    }
+  ]
+}

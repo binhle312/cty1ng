@@ -18,7 +18,23 @@ export default defineConfig(({ mode }) => {
       host: "127.0.0.1",
       port: 5173,
       strictPort: true,
-      proxy: { "/api": { target: backend, changeOrigin: true } },
+      proxy: {
+        "/api": {
+          target: backend,
+          changeOrigin: true,
+          // The proxy keeps the browser's side open when the backend's side closes before the
+          // end of a response. The event stream would then look open with no events for ever,
+          // so cut it: the browser sees the error and the app opens a new stream
+          // (realtime-events.md §3, "Stream life"). A response that completed stays as it is.
+          configure: (proxy) => {
+            proxy.on("proxyRes", (...[proxyRes, , response]) => {
+              proxyRes.on("close", () => {
+                if (!proxyRes.complete) response.destroy();
+              });
+            });
+          },
+        },
+      },
     },
     preview: { host: "127.0.0.1", port: 4173, strictPort: true },
     // The first-load budget is `pnpm check:bundle` (gzipped, frontend-conventions.md §4); Vite's
