@@ -6,6 +6,7 @@ import {
   SETTINGS_OR_BOT_QUERIES,
   SKILL_OR_BOT_QUERIES,
 } from "../api/operation-queries.ts";
+import { readAll } from "./read-all.ts";
 
 // Test only: the notes of the test.ping events seen, so tests can see what the reducer applied.
 export const TEST_PINGS_KEY = ["realtime", "test-pings"] as const;
@@ -43,7 +44,7 @@ export function createEventReducer(queryClient: QueryClient) {
           // the server continues, not to null: a later reconnect's `ready` must not move it
           // past the events that the server replays then.
           lastSeq = readyMaxSeq;
-          void queryClient.invalidateQueries();
+          readAll(queryClient);
           return true;
         case "test.ping": {
           const note = event.data.note;
