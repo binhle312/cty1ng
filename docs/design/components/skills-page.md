@@ -342,10 +342,12 @@ with the tooltip "Tick a bot first." (§ Texts added in the M1b build).
   (§7.2). Cancel or leave, and nothing is saved, so no unwanted copies stay in the list.
 - The source can go away after the editor opened (to Trash or purged, from another tab). The
   editor and its text stay, and Create makes the copy from the text in the form
-  (`domain-model.md` §3.3; owner, 2026-11-10, DQ-180). Page not found shows when the first
-  read of a visit finds no listed skill with the version. A skill in Trash is not listed.
-  Each visit opens its editor from an answer of that visit, not from data that the app kept
-  from an earlier visit; a failed read on a return shows the load error (DQ-191).
+  (`domain-model.md` §3.3; owner, 2026-11-10, DQ-180). Page not found shows when a
+  visit has no source yet and its read finds no listed skill with the version. A skill in
+  Trash is not listed. Each visit opens its editor from an answer of that visit, not from data
+  that the app kept from an earlier visit; a failed read on a return shows the load error
+  (DQ-191). A good answer of a visit stays good: a read that fails later, during the wait for
+  the settings, does not stop the editor (DQ-194).
 
 ## 13. History tab (S3, UI-7.5, UI-7.14)
 

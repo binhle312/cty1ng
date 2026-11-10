@@ -108,16 +108,19 @@ source that its editor opened with.
 
 | State of the mount | A good answer with the source | A good answer with nothing | A failed read |
 | --- | --- | --- | --- |
-| No answer of this visit yet (also when the cache has old data) | Open the editor from this answer, when the settings wait has ended | Page not found | The load error with Try again |
+| No source of this visit yet (also when the cache has old data) | Keep this source. Open the editor from it when the settings wait has ended | Page not found | The load error with Try again |
+| A source of this visit, the settings wait | Stays | Stays: the editor opens from the kept source | Stays |
 | The editor is open | Stays. Create uses the newest slugs of the answer | Stays, with the source that it opened with | Stays |
-| Page not found shows | Open the editor from this answer | Stays | The load error with Try again |
+| Page not found shows | Keep this source and open the editor from it | Stays | The load error with Try again |
 
-- "An answer of this visit" is `isFetchedAfterMount` with a good status. It counts for each
-  mount and cannot go back, so the open editor never closes (`frontend-conventions.md` §5).
+- "A good answer of this visit" is `isFetchedAfterMount` with a good status. `isFetchedAfterMount`
+  counts for each mount and cannot go back. The status can go back, when a later read fails. So
+  the mount keeps the source at once, when the good answer arrives; after that it does not ask
+  the query if an answer came (`frontend-conventions.md` §5; review of `6ab9430`, DQ-194).
 - The source read tells the truth again: `null` when no listed skill has the version. The cache
   fallback goes.
-- `gcTime: 0` stays for its first reason only, the slugs of each Clone. Page not found on a new
-  visit no longer depends on it.
+- `gcTime: 0` goes. A visit opens only from an answer of that visit, so the data that the cache
+  keeps from an earlier visit is never used, for the source and for its slugs.
 
 Options compared:
 
@@ -140,11 +143,18 @@ are marked.
 | A failed read after the editor opened keeps the editor and the text | **A failed request** |
 | The source goes away, comes back, and goes away again: the text stays | **A value that changes and changes back** |
 | A first read with no match shows Page not found | The rule that the fix must keep |
-| A second visit after the source went away shows Page not found | No pending read |
+| A second visit after the source went away shows Page not found | No pending read; the cache has the old source |
+| A second visit proposes the next free slug when a copy took the first one | The slugs come from the read of this visit (`skills-page.md` §12) |
+| The editor does not open while the settings are on their way | The settings wait |
+| A read that fails during the settings wait does not stop the editor | **A failed request** during the wait; DQ-194 |
 | A second visit that returns before a pending read ends shows Page not found | **A late answer**; the P2 |
 | A second visit that returns before a pending read ends opens the editor from the new answer, not from the old data | **A late answer**; the form fills from the read of this visit |
 | A second visit whose read fails shows the load error, not the old editor | **A failed request** on a return |
 | A first read that fails, then Try again with the source gone, shows Page not found | **A failed request**, then a retry |
+
+The row "the source goes away, comes back, and goes away again" is a guard for the whole order.
+Its break is the break of the first row and fails at the first step, so it proves no more than
+that row (review of `6ab9430`, DQ-195).
 
 Not in scope: the Clone of a bot has `gcTime: 0` for its template too (`create-bot-page.tsx`),
 so a return during a pending read can fill its form from old data. It goes on the P3 list.
