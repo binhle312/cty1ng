@@ -342,8 +342,8 @@ with the tooltip "Tick a bot first." (§ Texts added in the M1b build).
   (§7.2). Cancel or leave, and nothing is saved, so no unwanted copies stay in the list.
 - The source can go away after the editor opened (to Trash or purged, from another tab). The
   editor and its text stay, and Create makes the copy from the text in the form
-  (`domain-model.md` §3.3; owner, 2026-11-10, DQ-180). Page not found shows only when the
-  version does not exist on the first read.
+  (`domain-model.md` §3.3; owner, 2026-11-10, DQ-180). Page not found shows when the first
+  read of a visit finds no listed skill with the version. A skill in Trash is not listed.
 
 ## 13. History tab (S3, UI-7.5, UI-7.14)
 
@@ -490,7 +490,7 @@ the changes marked "owner, 2026-10-31".
 - Text typed while a Save is pending stays as a change after the Save: only the text the
   request sent counts as saved.
 - A Clone whose source does not load: "The app could not load the skill to copy." and **Try
-  again**; Page not found only when the version does not exist (third review of #54).
+  again**; Page not found only when no listed skill has the version (third review of #54).
 - While Create is pending, the fields are read-only: the page leaves after Create, so text
   typed meanwhile would be lost. **Cancel** is off too, with the tooltip "Creating the skill."
   If the owner leaves another way, a Create that ends later shows its toast and does not move

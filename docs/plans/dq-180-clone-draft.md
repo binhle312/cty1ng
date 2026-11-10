@@ -12,8 +12,9 @@ source. Both changes are in this PR.
 
 1. The owner opens Clone on a skill and types in the form.
 2. The source skill goes to Trash, from another tab.
-3. The Clone page reads its source again. On `main` this occurs after a `reset` event. With #91
-   it occurs on each return to the tab.
+3. The Clone page reads its source again. On `main` this occurs after a `reset` event, and
+   when the browser is online again (`refetchOnReconnect` of the query client; found by the
+   review of `c38b698`). With #91 it occurs on each return to the tab.
 4. The page shows Page not found, and the typed text is gone.
 
 Reproduced on `main` (`76f6b2d`): `new-skill-page.test.tsx` "keeps the editor and the typed text
@@ -57,7 +58,9 @@ Each test is written before its code, and its run on the code before the change 
 | Behaviour | Level | Cases |
 | --- | --- | --- |
 | A later read with the source gone keeps the editor and the text | Component, `new-skill-page.test.tsx` | A full read (`invalidateQueries()`, what `reset` and #91 do) after the list lost the source. It is an order test, so it also has a break |
-| A first read with no match shows Page not found | Component | The companion rule of the fix: the kept value must not hide a version that never loaded |
+| A later read after the browser is online again keeps the editor and the text | Component | The second trigger on `main`; added after the review of `c38b698` |
+| A first read with no match shows Page not found | Component | A rule that the fix must keep |
+| A second visit after the source went away shows Page not found | Component | The companion rule of the fix: the kept value lives only while the page is open (`gcTime: 0`); added after the review of `c38b698` |
 | The server makes the copy with no source | Service, `skills.service.test.ts` | The source in Trash; the source purged |
 | The HTTP answer is 201 | API, `backend/test/api/skills.test.ts` | The source in Trash |
 | The whole flow in a browser | End to end, `skills.spec.ts` | Open a Clone, type, move the source to Trash through the API, click Create: the copy opens with the typed text |

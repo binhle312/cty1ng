@@ -30,7 +30,7 @@
         "file": "frontend/src/features/skills/new-skill-page.test.tsx",
         "name": "shows Page not found on a first visit when the version does not exist"
       },
-      "assertion": "expect(await screen.findByText(\"Page not found\", {}, { timeout: 5000 })).toBeTruthy();",
+      "assertion": "expect(await screen.findByText(\"Page not found\", {}, WAIT), \"first visit\").toBeTruthy();",
       "breaks": [
         {
           "id": "C2-a",
@@ -39,6 +39,50 @@
             {
               "find": "  if (source.data === null) return <NotFoundPage />;\n",
               "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C3",
+      "claim": "The kept source does not live after the page closes: a second visit with the source gone shows Page not found",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/new-skill-page.test.tsx",
+        "name": "shows Page not found on a second visit after the source went away"
+      },
+      "assertion": "expect(await screen.findByText(\"Page not found\", {}, WAIT), \"second visit\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "C3-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "    gcTime: 0,\n",
+              "replace": "    gcTime: 300_000,\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C4",
+      "claim": "A read after the browser is online again keeps the Clone editor and the typed text",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/new-skill-page.test.tsx",
+        "name": "keeps the editor and the typed text when the browser is online again"
+      },
+      "assertion": "expect(bodyText(), \"the draft, online again\").toBe(DRAFT);",
+      "breaks": [
+        {
+          "id": "C4-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "      return queryClient.getQueryData<CloneSource | null>(queryKey) ?? null;\n",
+              "replace": "      return null;\n"
             }
           ]
         }
