@@ -52,6 +52,15 @@ interface CloneSource {
 // saves nothing until Create, so no unwanted copies stay in the list.
 export function NewSkillPage() {
   const { from } = useSearch({ from: "/skills/new" });
+  if (from === undefined) return <NewSkillView key="new" source={null} />;
+  // One mount for each source version: the mount holds what its editor opened with.
+  return <ClonePage key={from} from={from} />;
+}
+
+// The Clone of one version (skills-page.md §12). This mount owns one fact: the source that its
+// editor opened with. The editor opens from a good answer of this visit, and then no later read
+// closes it (frontend-conventions.md §5; DQ-180, DQ-191).
+function ClonePage({ from }: { from: string }) {
   const source = useCloneSource(from);
   // The copy's name is cut to the name limit, so a Clone waits for the settings, once: after
   // the first answer, success or failure, it never waits again. After a failed load the editor
@@ -60,34 +69,39 @@ export function NewSkillPage() {
   const settings = useQuery(getSettingsOptions());
   const [settingsSettled, setSettingsSettled] = useState(false);
   if (!settingsSettled && !settings.isPending) setSettingsSettled(true);
-  if (from === undefined) return <NewSkillView key="new" source={null} />;
-  // A failed request is not a missing version: the error state with Try again. A failed
-  // background refresh keeps the editor on the data it has.
-  if (source.data === undefined) {
+
+  const [opened, setOpened] = useState<CloneSource | null>(null);
+  // Data that the cache had before this visit does not count: a read that was on its way when
+  // the page closed keeps the old data alive. `isFetchedAfterMount` cannot go back to false.
+  const answered = source.isFetchedAfterMount && source.isSuccess;
+  if (opened === null && answered && source.data !== null && settingsSettled) {
+    setOpened(source.data);
+  }
+  // Open. A later read that finds nothing, or that fails, keeps the editor on the source that it
+  // opened with; a later good answer gives Create its newest slugs.
+  if (opened !== null) return <NewSkillView source={source.data ?? opened} />;
+  if (!answered) {
+    // A failed request is not a missing version: the error state with Try again.
     if (source.isError) {
       return <LoadError text={CLONE_LOAD_FAILED} onRetry={() => void source.refetch()} />;
     }
     return <SkillEditorSkeleton />;
   }
   if (source.data === null) return <NotFoundPage />;
-  if (!settingsSettled) return <SkillEditorSkeleton />;
-  return <NewSkillView key={from} source={source.data} />;
+  // The settings wait.
+  return <SkillEditorSkeleton />;
 }
 
 // The version a Clone copies. The URL holds only the version id, so after a reload the page
 // looks for it in each skill's version list (most are in the cache already).
-function useCloneSource(versionId: string | undefined) {
+function useCloneSource(versionId: string) {
   const queryClient = useQueryClient();
-  const queryKey = ["skill-clone-source", versionId] as const;
   return useQuery({
     // The settings are not in the key: a new limit must not open a new editor over a draft.
-    queryKey,
-    enabled: versionId !== undefined,
-    // Nothing is kept after the page closes, for two rules. Each Clone looks again at the slugs
-    // that are taken: a copy made since the last Clone takes `-copy`, so the next one must get
-    // `-copy-2` (skills-page.md §12). And the read below keeps a source that went away while
-    // the page is open: a later visit must read from nothing and show Page not found. The open
-    // editor keeps its text when this fetches again.
+    queryKey: ["skill-clone-source", versionId],
+    // Each Clone looks again at the slugs that are taken: a copy made since the last Clone
+    // takes `-copy`, so the next one must get `-copy-2` (skills-page.md §12). Nothing is kept
+    // after the page closes, and the open editor keeps its text when this fetches again.
     gcTime: 0,
     refetchOnWindowFocus: false,
     queryFn: async (): Promise<CloneSource | null> => {
@@ -116,11 +130,8 @@ function useCloneSource(versionId: string | undefined) {
           takenSlugs: slugs,
         };
       }
-      // No listed skill has the version. On a first read that is Page not found. On a later
-      // read the source went away after the editor opened (to Trash, or purged): the editor
-      // keeps the source that it opened with, because a later read does not close an open form
-      // (frontend-conventions.md §5, DQ-180).
-      return queryClient.getQueryData<CloneSource | null>(queryKey) ?? null;
+      // No listed skill has the version: it does not exist, or its skill is in Trash.
+      return null;
     },
   });
 }

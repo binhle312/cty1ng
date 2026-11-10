@@ -1,39 +1,105 @@
 {
   "claims": [
     {
-      "id": "C1",
-      "claim": "A later full read with the source gone keeps the Clone editor and the typed text",
+      "id": "K1",
+      "claim": "A full read that no longer finds the source keeps the open editor and the typed text",
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/skills/new-skill-page.test.tsx",
-        "name": "keeps the editor and the typed text when the source skill is no longer listed"
+        "name": "keeps the typed text when a full read no longer finds the source skill"
       },
       "assertion": "expect(bodyText(), \"the draft\").toBe(DRAFT);",
       "breaks": [
         {
-          "id": "C1-a",
+          "id": "K1-a",
           "file": "frontend/src/features/skills/new-skill-page.tsx",
           "edits": [
             {
-              "find": "      return queryClient.getQueryData<CloneSource | null>(queryKey) ?? null;\n",
-              "replace": "      return null;\n"
+              "find": "  if (opened !== null) return <NewSkillView source={source.data ?? opened} />;\n",
+              "replace": "  if (opened !== null && source.data !== null) return <NewSkillView source={source.data ?? opened} />;\n"
             }
           ]
         }
       ]
     },
     {
-      "id": "C2",
-      "claim": "A first read with no match shows Page not found",
+      "id": "K2",
+      "claim": "A read after the browser is online again keeps the open editor and the typed text",
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/skills/new-skill-page.test.tsx",
-        "name": "shows Page not found on a first visit when the version does not exist"
+        "name": "keeps the typed text when the browser is online again"
+      },
+      "assertion": "expect(bodyText(), \"the draft, online again\").toBe(DRAFT);",
+      "breaks": [
+        {
+          "id": "K2-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "  if (opened !== null) return <NewSkillView source={source.data ?? opened} />;\n",
+              "replace": "  if (opened !== null && source.data !== null) return <NewSkillView source={source.data ?? opened} />;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K3",
+      "claim": "A later read that fails keeps the open editor and the typed text",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/new-skill-page.test.tsx",
+        "name": "keeps the typed text when a later read fails"
+      },
+      "assertion": "expect(bodyText(), \"the draft, failed read\").toBe(DRAFT);",
+      "breaks": [
+        {
+          "id": "K3-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "  if (opened !== null) return <NewSkillView source={source.data ?? opened} />;\n",
+              "replace": "  if (opened !== null && !source.isError) return <NewSkillView source={source.data ?? opened} />;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K4",
+      "claim": "The text stays when the source goes away, comes back and goes away again",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/new-skill-page.test.tsx",
+        "name": "keeps the typed text when the source goes away, comes back and goes away again"
+      },
+      "assertion": "expect(bodyText(), \"the draft, gone and back\").toBe(DRAFT);",
+      "breaks": [
+        {
+          "id": "K4-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "  if (opened !== null) return <NewSkillView source={source.data ?? opened} />;\n",
+              "replace": "  if (opened !== null && source.data !== null) return <NewSkillView source={source.data ?? opened} />;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K5",
+      "claim": "A first visit with no listed skill for the version shows Page not found",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/new-skill-page.test.tsx",
+        "name": "shows Page not found when no listed skill has the version"
       },
       "assertion": "expect(await screen.findByText(\"Page not found\", {}, WAIT), \"first visit\").toBeTruthy();",
       "breaks": [
         {
-          "id": "C2-a",
+          "id": "K5-a",
           "file": "frontend/src/features/skills/new-skill-page.tsx",
           "edits": [
             {
@@ -45,44 +111,88 @@
       ]
     },
     {
-      "id": "C3",
-      "claim": "The kept source does not live after the page closes: a second visit with the source gone shows Page not found",
+      "id": "K6",
+      "claim": "After a failed first read, a Try again that finds nothing shows Page not found",
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/skills/new-skill-page.test.tsx",
-        "name": "shows Page not found on a second visit after the source went away"
+        "name": "shows Page not found after a failed read and a Try again with the source gone"
       },
-      "assertion": "expect(await screen.findByText(\"Page not found\", {}, WAIT), \"second visit\").toBeTruthy();",
+      "assertion": "expect(await screen.findByText(\"Page not found\", {}, WAIT), \"after Try again\").toBeTruthy();",
       "breaks": [
         {
-          "id": "C3-a",
+          "id": "K6-a",
           "file": "frontend/src/features/skills/new-skill-page.tsx",
           "edits": [
             {
-              "find": "    gcTime: 0,\n",
-              "replace": "    gcTime: 300_000,\n"
+              "find": "  if (source.data === null) return <NotFoundPage />;\n",
+              "replace": ""
             }
           ]
         }
       ]
     },
     {
-      "id": "C4",
-      "claim": "A read after the browser is online again keeps the Clone editor and the typed text",
+      "id": "K7",
+      "claim": "A second visit that returns before a pending read ends shows Page not found when the answer has no source",
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/skills/new-skill-page.test.tsx",
-        "name": "keeps the editor and the typed text when the browser is online again"
+        "name": "shows Page not found when the answer has no source"
       },
-      "assertion": "expect(bodyText(), \"the draft, online again\").toBe(DRAFT);",
+      "assertion": "expect(await screen.findByText(\"Page not found\", {}, WAIT), \"pending read\").toBeTruthy();",
       "breaks": [
         {
-          "id": "C4-a",
+          "id": "K7-a",
           "file": "frontend/src/features/skills/new-skill-page.tsx",
           "edits": [
             {
-              "find": "      return queryClient.getQueryData<CloneSource | null>(queryKey) ?? null;\n",
-              "replace": "      return null;\n"
+              "find": "  const answered = source.isFetchedAfterMount && source.isSuccess;\n",
+              "replace": "  const answered = source.isSuccess;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K8",
+      "claim": "A second visit that returns before a pending read ends fills the editor from the answer of this visit",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/new-skill-page.test.tsx",
+        "name": "fills the editor from the answer of this visit, not from the old data"
+      },
+      "assertion": "expect(nameValue(), \"the name of this visit\").toBe(\"Renamed since (copy)\");",
+      "breaks": [
+        {
+          "id": "K8-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "  const answered = source.isFetchedAfterMount && source.isSuccess;\n",
+              "replace": "  const answered = source.isSuccess;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K9",
+      "claim": "A second visit whose pending read fails shows the load error, not the old editor",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/new-skill-page.test.tsx",
+        "name": "shows the load error when the read fails, not the old editor"
+      },
+      "assertion": "expect(await screen.findByText(CLONE_LOAD_FAILED, {}, WAIT), \"failed return\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "K9-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "  const answered = source.isFetchedAfterMount && source.isSuccess;\n",
+              "replace": "  const answered = source.isSuccess;\n"
             }
           ]
         }
