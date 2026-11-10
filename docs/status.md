@@ -71,6 +71,7 @@ it in, and the row goes when its PR merges.
 | Test names: invariants 4, 6, 7 and 12 have no `invariant NN:` test (`testing.md`), and no schema test checks every primary key column (`domain-model.md` §1) | Docs audit 2026-11-04 | M3 plan |
 | Small built-UI differences: the empty-state slime at 96 px (`bot-avatar.md` sizes), "⚠" on the card health line (`bots-page.md`), header arrows only over the roster (UI-2.9), Create errors on leaving a field, not after Next (`create-bot-page.md` E1, E2) | Docs audit 2026-11-04 | UI review after M3 |
 | The Clone of a bot can fill its form from old data: its template read has `gcTime: 0`, and a read that is on its way when the page closes keeps the old template in the cache. A visit that returns before that answer fills the form from it (`frontend-conventions.md` §5, "A form that fills once"). Not run; from reading | [#92](https://github.com/binhle312/cty1ng/pull/92), DQ-191 | P3 list before M3 |
+| A read that no page watches is not cut when the tab reads all data (DQ-200). One real case: the source read of a skill Clone goes on after its page closes, and a visit that returns before its answer opens the editor from it, so the skill name or the taken slugs can be old. A rule for each read on its way needs calls to the query objects of the library; the owner waits with it until reads become slow, for example with M3 message streams (owner, 2026-11-10) | [#96](https://github.com/binhle312/cty1ng/pull/96) | P3 list before M3, or M3 |
 
 ## Slices
 
