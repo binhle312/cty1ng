@@ -12,11 +12,11 @@ Link to the brief and decisions.
 | --- | --- |
 | | |
 
-## Review fixes (when a review found something)
+## Edge cases (one table for each changed screen, `testing.md` §3)
 
-| Finding | Cause (the rule broken) | Same cause checked in | Fix | Test |
-| --- | --- | --- | --- | --- |
-| | | | | |
+| Case | Test, or why the row does not apply |
+| --- | --- |
+| | |
 
 ## Needs human review
 
@@ -30,6 +30,12 @@ Link to the brief and decisions.
 
 - README.md tables updated for every added, removed, renamed or repurposed file, and the
   descriptions still match what the files do (or "no file changes")
+
+## Review fixes (when a review found something)
+
+| Finding | Cause (the rule broken) | Same cause checked in | Same cause as an earlier fix? | Fix | Test |
+| --- | --- | --- | --- | --- | --- |
+| | | | | | |
 
 ## Follow-ups (not done here)
 
