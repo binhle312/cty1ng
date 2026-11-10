@@ -65,7 +65,7 @@ stream that all tabs share, was refused for now.
 | `frontend/src/lib/realtime/stream-life.ts` (new) | The state owner. A pure function: state and event in, new state and actions out. No DOM, no timer, no `EventSource` |
 | `frontend/src/lib/realtime/start.ts` | The boundary. It gives `visibilitychange`, the transport status, the timer and `ready` to the pure function, and does the actions: open, close, start or cancel the timer, read all |
 | `frontend/src/lib/realtime/sse.ts` | No rule change. It reports `closed` when the browser stops the stream, as today |
-| `frontend/vite.config.ts` | Rule 6, about 8 lines in the proxy options. Dev server only |
+| `frontend/vite.config.ts` | Rule 6, about 8 lines in the proxy options. Vite servers only (`vite` and `vite preview`, which takes the same proxy options); the production build has no proxy |
 | `shared/` and `backend/src/adapters/sse/sse-stream.ts` | Only if the owner picks the first answer of the open question: one constant for the 2 s |
 
 No API change, no migration, no new dependency, no screen change.
@@ -154,3 +154,13 @@ the PR records the red run.
      it is a rule and not a setting. One home, no new configuration.
    - An environment variable. The owner can change it, but the frontend has no environment
      values today, so this adds a build-time value or a field in an API answer.
+
+## Changes after the first review (owner, 2026-11-10)
+
+- **`startRealtime` has no stop function** (DQ-183). The app never called it, and it was the
+  reason that one rule sat in `start.ts`. The test strategy line "The stop function removes the
+  listener and the timer" no longer applies. `start.ts` also keeps no stream number of its own:
+  it asks the state (`isLiveStream`).
+- **The lost Clone draft (DQ-180) gets its own PR on `main` first**, and this PR waits for it
+  (`AGENTS.md` §9). Then this PR takes `main` and adds a test for the return to a tab.
+

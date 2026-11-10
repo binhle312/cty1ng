@@ -98,6 +98,7 @@ After these: the owner fixes or drops each of the other 33 P3 findings and the P
 
 - 2026-11-09, option A: only a visible tab holds the stream. A hidden tab closes it, and a tab that becomes visible opens a new stream and reads all data again. Option B, one stream that all tabs share, is refused for now. Look at it again if the owner keeps many windows side by side, or if a feature needs a live tab in the background.
 - 2026-11-10: the design in [the plan](../plans/audit-pr6-six-tabs.md) is approved. The wait before a new stream is 2 s, the same value as `retry: 2000`, with one home in `shared/`.
+- 2026-11-10, after the first review of #91: the lost Clone draft (DQ-180) has the failed rule of DQ-104, so its fix gets its own PR on `main` first, and #91 waits (option A). The unused stop function of `startRealtime` goes (DQ-183).
 - The cause in the P3 row "the stream does not come back in `make dev`" was not correct. A run on 2026-11-10 showed two causes: the Vite proxy kept a dead stream open, and after a 502 `EventSource` stops for good and the client opened no new stream. The length of the stop does not matter. The rules are in `realtime-events.md` §3, "Stream life".
 
 ## Fix progress

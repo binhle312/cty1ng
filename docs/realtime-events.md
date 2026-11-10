@@ -8,8 +8,11 @@ Choose the affected transport or event section. Include ordering and transaction
 
 The database is the truth; the **event log** is the ordered list of everything that changed;
 the browser's state is a **projection** of the events it has received. If the browser misses
-events (sleep, network drop, reload), it asks for everything after the last sequence number it
-saw and catches up. This is the same idea as a Kafka consumer committing an offset.
+events (sleep, network drop), it asks for everything after the last sequence number it
+saw and catches up. This is the same idea as a Kafka consumer committing an offset. A page that
+starts, and a tab that opens a new stream after it was hidden, do not catch up by events: they
+read the current state with normal GETs and continue from the newest event
+([§3, Stream life](#stream-life)).
 
 ```
 action (POST)  ──▶  service transaction: change rows + INSERT events(seq=812)  ──▶ commit
