@@ -2,7 +2,12 @@
 
 Brief: [audit of 2026-11-05](../audits/2026-11-05-repo-audit.md), row 14 and the P3 "the stream does not come back in `make dev`"
 Checkpoint: code design (owner, 2026-11-05: "Show the owner a one-page design first")
-Approval: waiting
+Approval: approved 2026-11-10, revision 1 (owner: "Approve your designs", then "Also approve 2s wait")
+
+Owner decisions of 2026-11-10: the design below is approved as written, with option 1. The wait
+of rule 3 is 2 s. It takes the recommended home of open question 1: one constant in `shared/`,
+used by the server and the client. The owner approved the 2 s and did not name the home, so
+the builder took the recommended answer.
 
 ## Problem
 
@@ -120,9 +125,10 @@ probe shows no dead stream without the proxy, so the plan does not take it.
 | Stopped for good, then back | End to end | The test answers `/api/stream` with 502 one time. The app opens a new stream after the wait and shows a change. Red on `main` |
 | The proxy closes a dead stream (rule 6) | `scripts/dev-proxy.test.ts` | The backend closes during a stream; the client side of the proxy ends in under 2 s. Red on `main` |
 
-Risk probe at the start of the build: how a Playwright test makes a tab hidden. If headless
-Chromium does not change `visibilityState` for a tab in the background, the test sets it and
-sends `visibilitychange`, and the PR says so.
+Risk probe, done on 2026-11-10: headless Chromium does not hide a tab. With a second tab in
+front, `visibilityState` of the first tab stays `visible`, and `Page.setWebLifecycleState` does
+not change it. So the end to end tests set `visibilityState` and send `visibilitychange`
+themselves. The seven tabs test hides each tab in this way before it opens the next one.
 
 Break lists (owner, 2026-11-09) apply to the order and timing rows only. For the other rows
 the PR records the red run.
