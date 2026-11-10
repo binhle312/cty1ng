@@ -99,7 +99,6 @@ export default tseslint.config(
       "**/coverage/**",
       "frontend/src/lib/api/generated/**",
       "docs/**",
-      "mockups/**",
       ".agents/**",
       ".claude/**",
       ".impeccable/**",

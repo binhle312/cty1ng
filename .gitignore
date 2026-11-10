@@ -28,6 +28,13 @@ test-results/
 
 # Impeccable's hook cache (the config and design.json are committed, docs/workflows/planning.md)
 .impeccable/hook.cache.json
+.impeccable/hook.pending.json
+.impeccable/config.local.json
+
+# Local files of Claude Code
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/worktrees/
 
 # OS and editors
 .DS_Store

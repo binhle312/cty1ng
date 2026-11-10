@@ -49,3 +49,4 @@ Implemented in: `../design/components/plan-card.md`, `../conversation-rules.md`,
 **Amended 2026-10-27 (round 17, path follow-up).** The example used `out/ba/tiers.md`. D52 dropped
 the `out/<slug>/` folders (folders are by topic), so the example now uses `pricing/tiers.md`, as
 the plan card board does. The decision does not change.
+Amended 2026-11-10 (owner): the status text names D43 and D38 only. The `Amends:` line is complete: this entry also amends D41 (skill drafts). No rule changes.

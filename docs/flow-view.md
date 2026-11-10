@@ -24,8 +24,8 @@ not build them.
 
 Timeline look (agreed with the owner, 2026-10-25): `design/components/flow-timeline.md`. Older mockups: `design/mockups.md`, illustrative only. This document fixes behaviour and architecture, not visual style.
 
-The Flow view is **read-only** in M8. It is a second view of the same event log as the chat
-(`realtime-events.md`), so it can never disagree with the chat. A later milestone may let the
+The Flow view is **read-only** in M8. It is a second view of the same event log as the conversation
+(`realtime-events.md`), so it can never disagree with the conversation. A later milestone may let the
 owner draw explicit workflows here (the alternative recorded in D18); nothing in M8 may make
 that harder (see §3: the scene is data, not drawing code).
 
@@ -42,9 +42,9 @@ Sketch only (not final; see `design/README.md`):
                               ↑ draggable divider (double-click resets to 50/50)
 ```
 
-- Exactly two panes: chat and the side pane. The side pane shows Flow or Memory, never both
+- Exactly two panes: the conversation and the side pane. The side pane shows Flow or Memory, never both
   (D44). No arbitrary splitting.
-- Divider drag with min widths (chat 360 px, Flow 320 px); keyboard resizable (arrow keys on the
+- Divider drag with min widths (conversation 360 px, Flow 320 px); keyboard resizable (arrow keys on the
   focused divider); double-click resets.
 - ⇄ swaps sides; ✕ closes the pane; a "Flow" button in the conversation header opens Flow, and
   the Memory row in the left bar opens Memory. When one opens, the other closes. The two use one
@@ -67,7 +67,7 @@ SSE events ──▶ flowStore (bounded, normalised)
                    │                                                              ├──▶ Renderer
                    └──▶ cue builder (pure) ──▶ FlowCue stream "what just happened" ┘    (diagram today,
                                                                                          pixel later)
-Renderer ──▶ onSelect(target) ──▶ chat pane (filter / scroll)
+Renderer ──▶ onSelect(target) ──▶ conversation pane (filter / scroll)
 ```
 
 ### 3.1 The scene (state)

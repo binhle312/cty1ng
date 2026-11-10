@@ -3,7 +3,8 @@
 Builders and reviewers use this bar. Read it when you give a finding a severity, decide what a
 finding blocks, write a state table or order test, or set the limits of a pattern rule.
 
-Only P1 and P2 findings block a merge (owner, 2026-11-04).
+Only P1 and P2 findings block a merge (owner, 2026-11-04). Fix each of them at once, in the PR that has it.
+A P3 finding does not block a merge. Fix it at the end of the milestone, before the next milestone starts (owner, 2026-11-10).
 This bar applies the [when review ends principle](../../.agents/skills/principle-when-review-ends/SKILL.md).
 
 ## Severity
@@ -14,7 +15,7 @@ Read the table from the top, and use the first row that fits.
 | --- | --- | --- |
 | P1 | Data loss, a security failure, or a normal action that cannot complete | Blocks the merge |
 | P2 | A broken required acceptance criterion or its missing proof, or a wrong result in the scope below with harm that is not small and recoverable | Blocks the merge |
-| P3 | A small, recoverable wrong result, a case outside the scope below, or a code quality point | Add it to the follow-up list in `docs/status.md` |
+| P3 | A small, recoverable wrong result, a case outside the scope below, or a code quality point | Record it in one place: its row in the ledger of `docs/delivery-quality.md`, or, for an item with no DQ id, the follow-up list in `docs/status.md` |
 
 Harm is small and recoverable when all of these are true:
 
@@ -23,7 +24,7 @@ Harm is small and recoverable when all of these are true:
 - The owner can see if an action failed.
 - The app's own refresh or the owner's next action shows the truth.
 
-At each milestone close, the owner reviews the P3 follow-ups, and either fixes or drops each item.
+At each milestone close, before the next milestone starts, each open P3 (ledger rows and follow-ups) is fixed, or the owner drops it (owner, 2026-11-10).
 
 If the builder and the reviewer disagree about a severity, ask the owner.
 This bar does not change `AGENTS.md` §7, §8 or §9.

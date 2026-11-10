@@ -71,3 +71,5 @@ review fix, check them against the commit that you push (owner, 2026-11-08, DQ-1
    stops.
 4. If you cannot show step 2 or 3, write that, and do not call X the fix or the cause.
 5. If you correct a claim, search for its old text in all the records, and correct each copy.
+6. Run `gh pr list --state all`. Correct the state of each PR that `docs/status.md` or the active
+   audit file names. A PR cannot record its own merge, so the next push does it (owner, 2026-11-10).

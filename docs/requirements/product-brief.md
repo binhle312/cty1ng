@@ -186,7 +186,7 @@ Use these words, with these meanings, in code, database, API, UI and docs.
 | **Persona** | Markdown describing who the bot is and how it works. Editable. |
 | **Skill** | A named, versioned Markdown playbook (`SKILL.md` format) a bot can load. |
 | **Skill version** | An immutable release of a skill: v1, v2, … |
-| **Pin** | The skill version a bot uses (`bot_skills.skill_version_id`). Changes only by upgrade or downgrade. |
+| **Pin** | The skill version a bot uses (`bot_skills.skill_version_id`). Its version changes only by upgrade or downgrade. Deprecate (for the ticked bots), Trash and Remove delete the pin. |
 | **Always load** | Per pin flag: the skill body is in the bot's prompt on every run instead of loaded on demand. |
 | **Author** | The user who created a skill. Only the author can create new versions or deprecate it. |
 | **Deprecated** | A skill hidden from new assignment; pinned bots keep working. Only a deprecated skill can be deleted, through Trash (D49). |
@@ -208,7 +208,7 @@ Use these words, with these meanings, in code, database, API, UI and docs.
 | **Handoff** | A bot's request that the owner approve files and pass them to another bot or to the owner. |
 | **Team directory** | The list of other bots (name, slug, one-line description) in every prompt, so a bot knows whom to mention or hand off to. |
 | **Estimated cost** | Tokens × catalog prices at the time of the run. An estimate, not an invoice. |
-| **Daily cap** | Owner-level limit on today's estimated spend; alerts at 75% and 90%, and new runs are refused once reached (D40). |
+| **Daily cap** | Owner-level limit on today's estimated spend; alerts at 75% and 90%, and new runs are refused once reached (D20; the alerts are D40, and the caps per provider are D42). |
 | **Project** | A named group of conversations with a shared project memory (and, later, an attached folder, D23). A conversation may sit outside any project (D37). |
 | **Bot memory** | What a bot has learned about how the owner likes it to work, from 1:1 conversations outside projects. Used by that bot everywhere (D38). |
 | **Library** | The workspace files of a project or of Home, as the UI names them: a row in the left bar that opens the files page (`../design/components/left-bar.md`). |

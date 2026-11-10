@@ -47,7 +47,8 @@ and mockups in `docs/design/` are starting points for that discussion, never spe
 M3 follows M2c. Keep M3 as the milestone and deliver M3a–M3g as separate PRs in the order below.
 The [M3 brief](tasks/M3-chat-one-bot.md) follows this breakdown. The milestone scope and acceptance criteria still apply.
 Write the part briefs before implementation. This table defines the delivery boundaries;
-each part still needs its implementation plan.
+each part still needs its implementation plan. While the EGM trial runs, the EGM design step
+comes before the plan of each part ([egm.md](workflows/egm.md)).
 
 | Part | Delivers | Main verification | Depends on |
 | --- | --- | --- | --- |
@@ -75,6 +76,7 @@ Prepare one docs-only PR before implementation:
 - Resolve the M3/M7 boundary for the bot Usage tab (`design/components/bot-page.md` §9.6).
   Approve any required data design before the part that first stores that data.
 - Resolve the first-run Guide design and its relation to the Get started checklist and example loading.
+  UI-1.7 and `api.md` say that "Load the examples" makes BA and Designer, "the same content as `make seed`", but `make seed` also makes Guide (`seed/bots.yaml`). Make the three agree.
 - Assign the auto-title tests that use mentions or pending-history members, whose user flows arrive in M4.
 - Map the M3 follow-ups in `status.md` to part briefs, including the database lock metric in M3a
   and conversation-list scrolling in M3d.

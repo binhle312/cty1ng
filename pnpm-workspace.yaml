@@ -1,4 +1,4 @@
-# The three packages of architecture.md §4. backend/ and frontend/ come in M0b and M0c.
+# The three packages of architecture.md §4.
 packages:
   - shared
   - backend
@@ -12,8 +12,7 @@ allowBuilds:
   esbuild: false
   "@scarf/scarf": false
 
-# Refuse to install on a Node version outside "engines" (Node 24 LTS, D34; 24.15 or newer,
-# because jsdom 30 needs it).
+# Refuse to install on a Node version outside "engines" (Node 26 LTS; D34, amended 2026-11-10).
 engineStrict: true
 
 # @hey-api/json-schema-ref-parser pins js-yaml 4.2.0, which has three high advisories

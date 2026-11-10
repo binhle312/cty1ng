@@ -44,8 +44,8 @@ The other agent reviews the PR and reports its findings.
 The builder fixes or answers each. A finding says what is wrong, not which text or layout to
 use: when a fix needs a new text, state, flow or layout, the PR lists it under `Needs human
 review` (`AGENTS.md` §7; lesson `flag-ui-choices-in-review-fixes.md`).
-**Merge bar.** Each finding has a severity. Only P1 and P2 block the merge; a P3 goes to
-the follow-ups in `docs/status.md` ([merge bar](merge-bar.md)).
+**Merge bar.** Each finding has a severity. Only P1 and P2 block the merge; a P3 gets its
+ledger row, or a follow-up row if it has no DQ id ([merge bar](merge-bar.md)).
 **Fix the cause.** Apply the [root cause principle](../../.agents/skills/principle-fix-root-cause/SKILL.md).
 Record the search scope in the PR's "Same cause checked in" column ([PR template](pull-request.md)).
 If a finding has the same cause as an earlier fix, stop patching ([AGENTS.md §9](../../AGENTS.md#9-definition-of-done-every-pr)).

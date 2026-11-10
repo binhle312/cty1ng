@@ -193,7 +193,7 @@ export const SkillVersion = z
     changelog: z.string().nullable(),
     created_by: z.string(),
     created_at: Timestamp,
-    // Bots that use this version (M1: always 0; pins come with M2).
+    // Live bots pinned to this version.
     bots_using: z.number().int().nonnegative(),
   })
   .strict();

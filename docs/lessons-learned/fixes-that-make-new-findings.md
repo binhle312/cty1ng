@@ -35,8 +35,10 @@ tool, a new rule or a new kind of record, to the PR under review. A review can e
 revision has no new defect. Each fix that adds surface gives the next review new things to find.
 Two things make the loop longer:
 
-- The merge bar blocks on each P3 issue (owner, 2026-11-08). So each small new defect starts one
-  more round.
+- The builder fixed the P3 issues in the PR under review. So each small new defect started one
+  more round. Corrected on 2026-11-10 (owner): this line said that the merge bar blocks on each
+  P3 issue. It does not. Only P1 and P2 block a merge, and a P3 waits for the end of the
+  milestone ([merge bar](../workflows/merge-bar.md)).
 - The §9 stop chooses a redesign, and the builder built it in the same PR. So the stop, a
   correct rule, fed the loop.
 

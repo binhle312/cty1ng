@@ -82,6 +82,28 @@ async function freePort(): Promise<number> {
   return address.port;
 }
 
+// Two ports for two servers. Two calls of `freePort` can give the same port, because the first
+// port is free again before the second call. Here the two servers stay open until each has its port.
+async function twoFreePorts(): Promise<[number, number]> {
+  const servers = [await listenOn(0), await listenOn(0)] as const;
+  const ports = servers.map((server) => {
+    const address = server.address();
+    if (address === null || typeof address === "string") throw new Error("no port");
+    return address.port;
+  });
+  await Promise.all(
+    servers.map(
+      (server) =>
+        new Promise((done) => {
+          server.close(done);
+        }),
+    ),
+  );
+  const [first, second] = ports;
+  if (first === undefined || second === undefined) throw new Error("no port");
+  return [first, second];
+}
+
 async function foreignServer(port: number): Promise<void> {
   foreignServers.push(await listenOn(port));
 }
@@ -164,7 +186,7 @@ describe("listeningPort", () => {
 
 describe("the marker while the servers start", () => {
   it("is never written while another server holds a port and ours starts", async () => {
-    const [ours, taken] = [await freePort(), await freePort()];
+    const [ours, taken] = await twoFreePorts();
     await foreignServer(taken);
     const serve = start([server(ours), server(taken, { DELAY_MS: "300" })]);
     expect(await markerSeenUntil(serve.done)).toBe(false);
@@ -174,7 +196,7 @@ describe("the marker while the servers start", () => {
   });
 
   it("is written only after the last server is listening", async () => {
-    const [first, second] = [await freePort(), await freePort()];
+    const [first, second] = await twoFreePorts();
     start([server(first), server(second, { DELAY_MS: "400" })]);
     await waitUntil(() => answers(first));
     expect(await answers(second)).toBe(false);
@@ -193,7 +215,7 @@ describe("the marker while the servers start", () => {
   });
 
   it("stops everything when a server does not report in time", async () => {
-    const [good, silent] = [await freePort(), await freePort()];
+    const [good, silent] = await twoFreePorts();
     const serve = start([server(good), { ...server(silent, { SILENT: "1" }), timeoutMs: 300 }]);
     expect(await markerSeenUntil(serve.done)).toBe(false);
     expect(await serve.done).toBe(1);
@@ -231,7 +253,7 @@ describe("the marker while the servers run", () => {
   });
 
   it("is removed and the other servers stop when a server ends by itself", async () => {
-    const [first, second] = [await freePort(), await freePort()];
+    const [first, second] = await twoFreePorts();
     const serve = start([server(first), server(second)]);
     await waitUntil(() => serveIsRunning(markerPath));
     process.kill(-(serve.pids[0] ?? 0), "SIGKILL");

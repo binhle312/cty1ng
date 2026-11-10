@@ -1,6 +1,6 @@
 # Source
 
-Third-party skill, vendored unchanged except for this file, `LICENSE` and one frontmatter line (below).
+Third-party skill, vendored unchanged except for this file, `LICENSE`, one frontmatter line and one line of `SKILL.md` (both below).
 
 | | |
 | --- | --- |
@@ -9,7 +9,7 @@ Third-party skill, vendored unchanged except for this file, `LICENSE` and one fr
 | Licence | MIT (Lauren Tan), copied from `pstack/LICENSE` to `LICENSE` |
 | Reviewed | 2026-11-04: two Markdown files; no scripts, network calls, subprocesses, key access or package installs. |
 
-To update: copy the folder from a newer upstream commit, review the diff, remove the frontmatter line again,
+To update: copy the folder from a newer upstream commit, review the diff, make the two local edits again,
 and update this table in the same PR. Do not edit the skill in place in any other way.
 
 ## Project rules win
@@ -22,7 +22,6 @@ and update this table in the same PR. Do not edit the skill in place in any othe
 | A time range is a start plus a duration | Not adopted: the frontend and URL keep `{ from, to }` (`frontend-conventions.md` §1) |
 | A brand comes from a type guard, with the `__brand` shape | A brand comes from a schema parse; ids live in `shared/src/ids.ts` (`frontend-conventions.md` §1) |
 | Pick one discriminant name | `type` on SSE events, `status` on runs and messages, `kind` on messages and UI view state (`frontend-conventions.md` §1) |
-| When the type comes first, annotate the schema with it | The type is inferred from the schema, never declared twice (`frontend-conventions.md` §1) |
 | Parse wire formats with `ignoreUnknownFields` | API schemas are `.strict()` (`security.md` §2.8) |
 
 The skill also names the `type-system-discipline` and `boundary-discipline` principle skills.
@@ -32,3 +31,9 @@ They are not in this project.
 
 The owner removed `disable-model-invocation: true` from the frontmatter (2026-11-04), so that
 agents can load the skill by themselves. `paths` still limits that to `.ts` and `.tsx` files.
+
+The owner approved a line at the top of `SKILL.md` (2026-11-10): "Project rules win where they differ:
+read `SOURCE.md` in this folder first." The table above does not load with the skill, so an agent
+could follow a skill rule that the project does not use. On the same day the owner kept the five
+project rules of the table, and the project took one rule from the skill: a schema for a type that
+exists already has that type as its annotation (`frontend-conventions.md` §1).

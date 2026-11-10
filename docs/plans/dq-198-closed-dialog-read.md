@@ -91,7 +91,7 @@ Tests added, each written before the change and with a break:
 | The old answer of that read does not replace the data | Unit, real library |
 | Add skills shows the new list after "open, close, open, close, read all, open" | Component, the real dialog |
 
-**Open after this PR (DQ-200, P3, on the follow-up list):** a read with no observer is not cut.
+**Open after this PR (DQ-200, P3, open in the ledger):** a read with no observer is not cut.
 One real case: the source read of a skill Clone goes on after its page closes, because its read
 function does not take the abort signal. A visit that returns before that answer opens its
 editor from it. The harm is an old skill name or old taken slugs, in a small window. A full rule
