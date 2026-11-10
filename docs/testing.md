@@ -347,6 +347,66 @@ so a step after it proves nothing. Give each step its own test, and start the ca
 its result on the old code. A step that passes on the old code is not a claim: the PR names it
 and gives the reason, such as "reads no new data" (owner, 2026-11-08, DQ-117).
 
+**Break lists (owner, 2026-11-09).** A break list makes break evidence repeatable. A PR needs
+one only for these tests:
+
+- tests added after the code that they check (an audit, or a bug fix whose test came later);
+- security tests;
+- order and race tests.
+
+For other work, test first: the PR records the red run of each new test on the code before the
+change. A reviewer can ask for a break of any claim that they doubt, and it goes into the list.
+Claim no more than the breaks prove: a test name or a PR line that claims a step needs that
+step's own break. **One claim per test name** (owner, 2026-11-09): a name with "and" gets a break
+for each part, or it becomes two tests. A check that a test makes but its name does not claim
+is fine.
+
+`scripts/breaks/pr-<n>.json` gives each claim an id, its test, the text of the assertion that
+must fail, and one or more breaks of the code. The assertion is in the test itself, not in a
+shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` runs the list
+([check-breaks.ts](../scripts/check-breaks.ts)):
+
+1. It copies HEAD and the local changes to a temporary folder with its own install. The
+   checkout does not change, and e2e tests use the copy's own build and servers.
+2. It refuses a list with a missing link: a claim with no break, a test file or assertion text
+   that is not there exactly once, an assertion outside the named test, or a break that edits a
+   test or a test helper (a `test/` folder, `*.test.*`, `*.spec.*`) instead of the code.
+3. It refuses a list that misses a test of the PR: each test that the PR adds or changes since
+   its base (`git merge-base HEAD origin/main`, or `--base`) needs a claim, or an entry in
+   `exempt` with its reason. With `--only`, the list runs in part, and this check does not run.
+4. Each test must pass with no break first.
+5. Each break runs alone. First, `tsc` must compile the project of the broken file (an unused
+   variable is allowed); a break that does not compile is `INVALID`, and its test does not run.
+   Then the test runs. A failure at another line, a test timeout, no result (a server failure),
+   or a failure whose innermost place outside the libraries is the broken code is `INVALID`.
+   A new error line in the printed output that names the broken file also makes the break
+   `INVALID`: it comes from a throw while a page loads or renders, or from an import that does
+   not resolve. Otherwise a failure at the line of the assertion text is `caught`.
+6. The report names the commit, a hash of the local changes, the base, each command and each
+   result, with the first line of the failure message of each caught break.
+
+**What `caught` proves (owner, 2026-11-09, DQ-168).** The compile check of the project passed,
+the run printed no new error that names the broken file, and the test failed at the assertion
+line. It does not prove why the assertion failed. An error that the app catches can reach the
+same line with nothing printed: a `.catch` that shows another state, a query callback, or a
+backend 500. For an e2e test, the runner also does not see errors in the browser page. So the
+proof of each claim is the reviewer's check of each catch, in the frontend and the backend:
+
+- The reviewer compares the edit of the break, the claim and the failure message. For example,
+  "expected 500 to be 422" does not prove that a removed check let the request through: the
+  request may have failed earlier. "Unable to find an element" needs a look at the state that
+  the page reached.
+- When the first line of the message does not show the broken behaviour, the reviewer applies
+  the break by hand in an own copy, runs the command from the report, reads its full output,
+  and then undoes the break. `--only` does not help here: it prints the same first line. A
+  claim whose evidence stays unclear does not count.
+- A break changes a value or a branch. It does not throw.
+
+The list proves only the claims that someone wrote down; the reviewer still checks that it has
+every claim of the PR. A list is evidence for its review. After the merge, nobody runs it again.
+`scripts/fixtures/break-runner-trial.json` holds breaks that the runner must not count, to check
+the runner itself.
+
 The incidents behind these rules remain in
 [prove-the-test-fails-first.md](lessons-learned/prove-the-test-fails-first.md) and
 [check-every-order-before-the-push.md](lessons-learned/check-every-order-before-the-push.md).

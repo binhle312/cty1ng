@@ -154,7 +154,7 @@ dialog in M5b).
 - A bot settings PATCH out of range, or with `bot_history_min_pct` above the default, or
   `health_failed_runs` above `health_recent_runs` → 422 with the key. A lower `bot_persona_max`
   leaves a longer persona as it is, and a rename of that bot still saves.
-- Header in Recent activity: activity events while the pointer is in the header move no
+- Header in Recent activity: activity events while the pointer is over the header avatars move no
   avatar; the next click outside applies the new order once.
 - Header with more bots than fit: Tab to an avatar shows its name tooltip and the ‹ › buttons,
   with no pointer in the header; the wheel and a two-finger touchpad motion scroll the roster

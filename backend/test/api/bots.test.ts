@@ -25,6 +25,9 @@ const newBot = {
   pins: [],
 };
 
+// The guard's own test password (sensitive-data.rules.test.ts), short enough for the name limit.
+const SECRET = "password: hunter22";
+
 function send(method: string, path: string, body?: unknown, headers: Record<string, string> = {}) {
   return backend.request(`/api${path}`, {
     method,
@@ -81,6 +84,17 @@ describe("POST /bots", () => {
     expect(await errorOf(response)).toMatchObject({ field });
   });
 
+  // The guard on the name and the description (D39), through the route: 422 with the field.
+  it.each([
+    ["name", { ...newBot, name: `BA ${SECRET}` }],
+    ["description", { ...newBot, description: `Logs in with ${SECRET}.` }],
+  ])("refuses a secret in the %s with 422 sensitive_data", async (field, body) => {
+    const { response } = await createBot(body);
+    expect(response.status, "the create is refused").toBe(422);
+    expect(await errorOf(response)).toMatchObject({ code: "sensitive_data", field });
+    expect(await (await send("GET", "/bots")).json()).toEqual([]);
+  });
+
   it("answers 409 name_taken for a name whose key is taken", async () => {
     await createBot();
     const { response } = await createBot(
@@ -102,6 +116,26 @@ describe("/bots/{id}", () => {
     const now = await json(await send("GET", `/bots/${String(bot.id)}`));
     expect(now).toMatchObject({ model_id: "fake:effort", effort: "medium", row_version: 1 });
     expect(now.conversations).toEqual([]);
+  });
+
+  it.each([
+    ["name", { name: `BA ${SECRET}` }],
+    ["description", { description: `Logs in with ${SECRET}.` }],
+    ["persona_md", { persona_md: `You log in with ${SECRET}.` }],
+  ])("PATCH refuses a secret in the %s with 422 sensitive_data", async (field, change) => {
+    const { bot } = await createBot();
+    const response = await send("PATCH", `/bots/${String(bot.id)}`, {
+      row_version: 1,
+      ...change,
+    });
+    expect(response.status, "the PATCH is refused").toBe(422);
+    expect(await errorOf(response)).toMatchObject({ code: "sensitive_data", field });
+    expect(await json(await send("GET", `/bots/${String(bot.id)}`))).toMatchObject({
+      name: newBot.name,
+      description: newBot.description,
+      persona_md: newBot.persona_md,
+      row_version: 1,
+    });
   });
 
   it("PATCH refuses a description with a line break and leaves the row unchanged", async () => {

@@ -489,6 +489,9 @@ describe("skills on the Create bot page", () => {
       ),
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: /Model, has an error/ })).toBeTruthy();
+    // CL2 keeps a model with no key: only a model that left the catalog starts empty.
+    const model = screen.getByLabelText("Model", { exact: true });
+    expect(model instanceof HTMLSelectElement && model.value).toBe(noKey.id);
   });
 
   it("keeps a ticked skill that another tab deleted, so it can be unticked (D49)", async () => {
@@ -526,6 +529,78 @@ describe("skills on the Create bot page", () => {
     expect(screen.getByText("0 ticked")).toBeTruthy();
     click(screen.getByRole("button", { name: "Next" }));
     expect(await screen.findByLabelText("Model", { exact: true })).toBeTruthy();
+  });
+});
+
+// CL2 (create-bot-page.md §6, domain-model.md §2 Clone): a Clone whose model left the catalog
+// starts with no model. Its error text does not prove this, because a form that kept the old
+// model shows the same text. If the model comes back, the field stays empty until the owner picks.
+describe("a Clone whose model left the catalog (CL2)", () => {
+  let fake: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    fake?.restore();
+    fake = null;
+    focusManager.setFocused(undefined);
+  });
+
+  const GONE = makeModel({ id: "fake:gone", label: "Fake gone", default_effort: "low" });
+  const isOff = (button: HTMLElement) =>
+    button.hasAttribute("disabled") || button.getAttribute("aria-disabled") === "true";
+
+  it("starts with no model, and sends the model that the owner picks with its default effort", async () => {
+    const catalog = { models: [makeModel()] };
+    fake = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/models": () => ({ body: catalog.models }),
+      "GET /api/tools": () => ({ body: [] }),
+      "GET /api/skills": () => ({ body: [OLD, NEW] }),
+      "GET /api/bots": () => ({ body: [SOURCE] }),
+      [`GET /api/bots/${SOURCE.id}/clone-template`]: () => ({
+        body: { ...TEMPLATE, model_id: GONE.id, effort: "high" },
+      }),
+      "POST /api/bots": () => ({ status: 201, body: makeBot(10, "Source (copy)") }),
+    });
+    await renderApp(`/bots/new?from=${SOURCE.id}`);
+    expect(
+      await screen.findByText(
+        /Source cannot run: its model is no longer offered/,
+        {},
+        { timeout: 5000 },
+      ),
+    ).toBeTruthy();
+    const model = screen.getByLabelText("Model", { exact: true });
+    if (!(model instanceof HTMLSelectElement)) throw new Error("The model field is not a select.");
+    expect(model.value).toBe("");
+    expect(screen.queryByLabelText("Effort", { exact: true })).toBeNull();
+    expect(isOff(screen.getByRole("button", { name: "Create" }))).toBe(true);
+
+    // The model comes back (a restart with it in the catalog), and the list loads again.
+    catalog.models = [makeModel(), GONE];
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitFor(() => {
+      expect(within(model).queryByRole("option", { name: GONE.label })).not.toBeNull();
+    });
+    expect(model.value).toBe("");
+    expect(isOff(screen.getByRole("button", { name: "Create" }))).toBe(true);
+    // The Clone decided once (§6): the banner and the field error stay until the owner picks.
+    expect(screen.getByText(/Source cannot run: its model is no longer offered/)).toBeTruthy();
+    expect(screen.getByText(`${GONE.id} is no longer offered. Pick another model.`)).toBeTruthy();
+
+    // The owner picks the model: Create sends it with its own default effort, not the old one.
+    act(() => {
+      fireEvent.change(model, { target: { value: GONE.id } });
+    });
+    click(screen.getByRole("button", { name: "Create" }));
+    await waitFor(() => {
+      expect(fake?.sent("POST", "/api/bots")).toHaveLength(1);
+    });
+    expect(fake.sent("POST", "/api/bots")[0]?.body).toMatchObject({
+      model_id: GONE.id,
+      effort: "low",
+    });
   });
 });
 

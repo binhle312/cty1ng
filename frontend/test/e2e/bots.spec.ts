@@ -378,6 +378,47 @@ test("the header scrolls a long roster and pins a bot by drag", ALONE, async ({ 
   expect(await violations()).toEqual([]);
 });
 
+// top-header.md state 3: the wheel and a two-finger touchpad motion scroll the roster sideways,
+// and the page does not scroll (audit 2026-11-05, row 13).
+test("the wheel and a sideways touchpad motion scroll a long roster", ALONE, async ({ page }) => {
+  const tag = tagged();
+  const count = (await bots()).length;
+  for (let i = count; i < 14; i += 1) await makeBot(`Wheel ${tag} ${String(i)}`);
+  await page.goto("/skills");
+  const header = page.getByRole("banner", { name: "Bots" });
+  const roster = header.getByTestId("roster");
+  await showsEveryBot(header.getByTestId("header-bot"));
+  const left = () => roster.evaluate((el) => el.scrollLeft);
+  const pageScroll = () =>
+    page.evaluate(() => [
+      window.scrollX,
+      window.scrollY,
+      document.querySelector("main")?.scrollTop ?? 0,
+    ]);
+  // A tall page, so that a wheel that scrolled the page would show (as in shell.spec.ts).
+  await page.evaluate(() => {
+    const tall = document.createElement("div");
+    tall.style.height = "5000px";
+    document.querySelector("main")?.append(tall);
+  });
+  expect(await left()).toBe(0);
+  await roster.hover();
+
+  // A mouse wheel gives only a vertical motion.
+  await page.mouse.wheel(0, 200);
+  await expect.poll(left).toBeGreaterThan(0);
+  expect(await pageScroll()).toEqual([0, 0, 0]);
+
+  // A two-finger motion to the side gives a horizontal motion. The app leaves it to the
+  // browser, which scrolls the roster itself (`header-roster.tsx`, the wheel handler).
+  await roster.evaluate((el) => {
+    el.scrollLeft = 0;
+  });
+  await page.mouse.wheel(200, 0);
+  await expect.poll(left).toBeGreaterThan(0);
+  expect(await pageScroll()).toEqual([0, 0, 0]);
+});
+
 // The "+N" chip (top-header.md §4, UI-2.12): N counts the avatars not fully in view, the list
 // has every bot, and a pick scrolls the header to the avatar and opens its card.
 test(

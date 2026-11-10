@@ -1,6 +1,6 @@
 import { focusManager } from "@tanstack/react-query";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { fakeApi } from "../../../test/fake-api.ts";
 import { type Bot, makeBot } from "../../../test/fixtures.ts";
 import { renderApp } from "../../../test/render-app.tsx";
@@ -91,6 +91,55 @@ describe("the header order while the owner uses the header", () => {
       outside.focus();
     });
     expect(shownOrder()).toEqual(["qa", "ux", "ba"]);
+  });
+
+  // top-header.md state 9: the pointer over the avatars, with no focus in the header.
+  it("keeps the order while the pointer is over the avatars, and after it leaves, until a click outside", async () => {
+    const fake = serve([
+      [BA, QA, UX],
+      [UX, BA, QA],
+    ]);
+    await renderApp("/");
+    // The roster is a lazy chunk: its first import in a test run takes a while.
+    await screen.findAllByTestId("header-bot", {}, { timeout: 5000 });
+    expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
+    const roster = screen.getByTestId("roster");
+    // A minute passes at each step: the order waits for a click outside, not for a timer. Only
+    // the timers are fake, and they also follow real time, so the queries and the waits run.
+    vi.useFakeTimers({
+      toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"],
+      shouldAdvanceTime: true,
+    });
+    try {
+      const later = () => {
+        act(() => {
+          vi.advanceTimersByTime(60_000);
+        });
+      };
+      act(() => {
+        fireEvent.pointerEnter(roster);
+      });
+      await refetchBots(fake, 2);
+      later();
+      expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
+      // A click in the header is not a click outside.
+      act(() => {
+        fireEvent.pointerDown(roster);
+      });
+      later();
+      expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
+      act(() => {
+        fireEvent.pointerLeave(roster);
+      });
+      later();
+      expect(shownOrder()).toEqual(["ba", "qa", "ux"]);
+    } finally {
+      vi.useRealTimers();
+    }
+    act(() => {
+      fireEvent.pointerDown(document.body);
+    });
+    expect(shownOrder()).toEqual(["ux", "ba", "qa"]);
   });
 
   it("follows a new order at once when the owner is not in the header", async () => {

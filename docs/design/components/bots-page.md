@@ -105,7 +105,7 @@ The rules of `pin.md`. A pin puts the bot at the end of the Pinned group; an unp
 its sorted place in Others. A drag works only inside the Pinned group; the old place is a gap and
 a drop line shows where it lands (`dashed-slot.md` §3). Each pin, unpin and drop saves at once,
 with no save bar, and the header follows at once. Deferred reordering (`app-shell.md` UI-2.9)
-still stops header avatars from moving while the pointer is in the header.
+still stops header avatars from moving while the pointer is over them.
 
 ## 7. Search (S8)
 

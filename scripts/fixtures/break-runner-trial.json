@@ -1,0 +1,202 @@
+{
+  "claims": [
+    {
+      "id": "T-compile",
+      "claim": "A break that stops the file from compiling: INVALID",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "starts with no model, and sends the model that the owner picks with its default effort"
+      },
+      "assertion": "expect(screen.getByText(/Source cannot run: its model is no longer offered/)).toBeTruthy();",
+      "breaks": [
+        {
+          "id": "T-compile-a",
+          "file": "frontend/src/features/bots/create-bot-page.tsx",
+          "edits": [
+            {
+              "find": "  const [copiedPins] = useState(",
+              "replace": "  const [copiedPins] = useState(((("
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T-timeout",
+      "claim": "A break that makes the test time out: INVALID, not caught",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/bots/bots.service.test.ts",
+        "name": "refuses a secret in the name and in the description"
+      },
+      "assertion": "expect(error, \"the create is refused\")",
+      "breaks": [
+        {
+          "id": "T-timeout-a",
+          "file": "backend/src/core/bots/bots.service.ts",
+          "edits": [
+            {
+              "find": "    const requestHash = createHash(",
+              "replace": "    if (actor !== \"\") return new Promise(() => {});\n    const requestHash = createHash("
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T-other-line",
+      "claim": "A break that fails an earlier step: INVALID, the claimed step is not proved alone",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/shell/top-header.test.tsx",
+        "name": "keeps the order while the pointer is over the avatars, and after it leaves, until a click outside"
+      },
+      "assertion": "expect(shownOrder()).toEqual([\"ba\", \"qa\", \"ux\"]);\n    } finally {",
+      "breaks": [
+        {
+          "id": "T-other-line-a",
+          "file": "frontend/src/features/shell/header-roster.tsx",
+          "edits": [
+            {
+              "find": "        setHover(true);\n        deferred.freeze();",
+              "replace": "        setHover(true);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T-no-effect",
+      "claim": "A break that changes nothing the test sees: SURVIVED",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "starts with no model, and sends the model that the owner picks with its default effort"
+      },
+      "assertion": "expect(screen.getByText(/Source cannot run: its model is no longer offered/)).toBeTruthy();",
+      "breaks": [
+        {
+          "id": "T-no-effect-a",
+          "file": "frontend/src/features/bots/create-bot-page.tsx",
+          "edits": [
+            {
+              "find": "  // The model that left the catalog, for the CL2 error.",
+              "replace": "  // A changed comment."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T-server",
+      "claim": "A break that stops the backend from starting: no result, so INVALID",
+      "test": {
+        "kind": "e2e",
+        "file": "frontend/test/e2e/bots.spec.ts",
+        "name": "the wheel and a sideways touchpad motion scroll a long roster"
+      },
+      "assertion": "await expect.poll(left).toBeGreaterThan(0);\n  expect(await pageScroll()).toEqual([0, 0, 0]);\n\n",
+      "breaks": [
+        {
+          "id": "T-server-a",
+          "file": "backend/src/app/main.ts",
+          "edits": [
+            {
+              "find": "async function start(): Promise<void> {\n",
+              "replace": "async function start(): Promise<void> {\n  if (process.argv.length > 0) throw new Error(\"trial: no start\");\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T-throw",
+      "claim": "A break that throws in the code on the assertion line: INVALID, not a failed assertion",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/bots/bots.service.test.ts",
+        "name": "restore assigns the skill to no bot, live or in Trash"
+      },
+      "assertion": "expect((await backend.bots.restoreBySlug(gone.slug)).pins).toEqual([]);",
+      "breaks": [
+        {
+          "id": "T-throw-a",
+          "file": "backend/src/core/bots/bots.service.ts",
+          "edits": [
+            {
+              "find": "  function restoreBySlug(slug: string): Promise<Bot> {\n",
+              "replace": "  function restoreBySlug(slug: string): Promise<Bot> {\n    throw new Error(\"trial: boom\");\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T-compile-first",
+      "claim": "A break that stops a lazy page from compiling, with the assertion on the first wait: INVALID",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "starts with no model, and sends the model that the owner picks with its default effort"
+      },
+      "assertion": "      await screen.findByText(\n        /Source cannot run: its model is no longer offered/,\n        {},\n        { timeout: 5000 },",
+      "breaks": [
+        {
+          "id": "T-compile-first-a",
+          "file": "frontend/src/features/bots/create-bot-page.tsx",
+          "edits": [
+            {
+              "find": "  const [copiedPins] = useState(",
+              "replace": "  const [copiedPins] = useState(((("
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T-render-throw",
+      "claim": "A break that throws while the lazy page renders, with the assertion on the first wait: INVALID",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "starts with no model, and sends the model that the owner picks with its default effort"
+      },
+      "assertion": "      await screen.findByText(\n        /Source cannot run: its model is no longer offered/,\n        {},\n        { timeout: 5000 },",
+      "breaks": [
+        {
+          "id": "T-render-throw-a",
+          "file": "frontend/src/features/bots/create-bot-page.tsx",
+          "edits": [
+            {
+              "find": "export function CreateBotPage() {",
+              "replace": "const renderFails = () => Date.now() > 0;\nexport function CreateBotPage() {\n  if (renderFails()) throw new Error(\"trial: render\");"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T-missing-import",
+      "claim": "A break whose import does not resolve, with the assertion on the first wait: INVALID",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "starts with no model, and sends the model that the owner picks with its default effort"
+      },
+      "assertion": "      await screen.findByText(\n        /Source cannot run: its model is no longer offered/,\n        {},\n        { timeout: 5000 },",
+      "breaks": [
+        {
+          "id": "T-missing-import-a",
+          "file": "frontend/src/features/bots/create-bot-page.tsx",
+          "edits": [
+            {
+              "find": "export function CreateBotPage() {",
+              "replace": "import \"./no-such-file.css\";\nexport function CreateBotPage() {"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

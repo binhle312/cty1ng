@@ -42,6 +42,21 @@ Link to the brief and decisions.
 - ...
 ```
 
+## One home for each fact
+
+Each fact has one home, and other records link to it (decided by the builder at the owner's request, 2026-11-09, DQ-152). The PR body
+states no state, count or result that a file or a tool owns:
+
+- The state of an issue or a prevention action lives only in its row of
+  `docs/delivery-quality.md`. The PR body names the id.
+- The results of a script live in its output. The PR body pastes the output unchanged, with the
+  commit that it names. It does not retype numbers from it. `pnpm check:breaks --report <file>`
+  writes such a report.
+- What a test does lives in the test. The PR body names the test or the break id.
+
+A new ledger row is short: one sentence for the finding and its cause, and a fix of a commit
+plus a test or a break id.
+
 ## Before each push: check the records
 
 The records are the PR description and the rows that the PR adds or changes in
