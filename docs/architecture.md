@@ -568,6 +568,10 @@ loser's rolled-back transaction leaves no event. Event order uses the global `ev
 - **SQLite (phase 1):** WAL mode, `busy_timeout = 5000`, and every write transaction starts
   with `BEGIN IMMEDIATE`, so it takes the write lock up front. That serialises writers, which
   is what "lock the conversation" means here. Reads never block.
+  The connection also sets `synchronous = NORMAL`. In WAL mode the database stays valid after
+  a power loss or a crash of the operating system, but the last commits can be lost. A crash of
+  the app alone loses nothing. The owner accepts this for phase 1 (2026-11-10): one person
+  writes, on a laptop. `FULL` would make each commit wait for the disk.
 - **One writer per thread (M1c).** better-sqlite3 is synchronous: a write on a second writer
   connection on the same thread blocks the thread while it waits for the first writer's lock,
   for up to `busy_timeout` (5 s), and then fails with `SQLITE_BUSY`; the first writer cannot
