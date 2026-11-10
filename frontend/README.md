@@ -25,6 +25,10 @@ UI parts. `docs/architecture.md` §4; TypeScript rules in `docs/frontend-convent
 | `test/` | Test helpers and the end-to-end tests |
 | `test/setup.ts` | Vitest setup for component tests |
 | `test/render-app.tsx` | Renders the real app on an in-memory address |
+| `test/fake-api.ts` | The fake network for component tests: routes, recorded requests, held answers |
+| `test/fixtures.ts` | Typed API answers that the component tests share |
+| `test/press-key.ts` | A keydown with the event order of a browser (audit row 1) |
+| `test/sequences.ts` | Drivers for sequence tests of a pure state module (`docs/testing.md` §3) |
 | `test/e2e/` | Playwright tests (`docs/testing.md` §3) |
 
 Start here: `src/routes/route-tree.ts`. Do not: write a fetch call for an API endpoint (use

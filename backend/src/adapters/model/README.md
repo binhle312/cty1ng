@@ -1,7 +1,7 @@
 # model
 
-The model port's adapters. M0 has only the fake model plumbing (`docs/testing.md` §2); the AI
-SDK adapter and the fake that plays scripts come with the agent (M3).
+The model port's adapters. M2 has the effort mapping of the AI SDK adapter and the loader of
+the fake scripts (`docs/testing.md` §2); the agent and the fake that plays scripts come in M3.
 
 | File | What it is for |
 | --- | --- |

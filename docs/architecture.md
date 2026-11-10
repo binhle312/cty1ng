@@ -316,7 +316,9 @@ Start here: `worker.service.ts`. Do not: call the model except through the model
     the "Changed by" column of `docs/decisions/README.md` lists exactly those entries;
   - every decision file has one index row, and every row links to a file that exists;
   - `docs/lessons-learned/README.md` and `docs/plans/README.md` list every file in their
-    folder, like a folder index.
+    folder, like a folder index;
+  - the Command dark colours in `DESIGN.md` and `.impeccable/design.json` equal those in
+    `frontend/src/themes/command.css` ([design skills](workflows/planning.md#design-skills)).
   Whether two decisions agree in meaning is not checkable; the reviewer checks it
   ([review workflow](workflows/review.md)).
 - Leaves only: the root `README.md` and this section link to the package indexes; there is no
@@ -381,7 +383,7 @@ memory, so each job also runs once at start; that run catches up on any time the
 
 | Job | When | What it does | Slice |
 | --- | --- | --- | --- |
-| Trash purge (D49, D50, D60, D62) | At start and every `PURGE_INTERVAL_HOURS` (default 24) | Purges each item where `deleted_at + trash_days` is at or before now. One item per transaction, with its event | M1 (skills), M2 (bots, unused avatar files), M5b (every item) |
+| Trash purge (D49, D50, D60, D62) | At start and every `PURGE_INTERVAL_HOURS` (default 24) | Purges each item where `deleted_at` (`trashed_at` for a skill) `+ trash_days` is at or before now. One item per transaction, with its event | M1 (skills), M2 (bots, unused avatar files), M5b (every item) |
 | Event pruning (M1c) | At start and every `EVENT_PRUNE_INTERVAL_HOURS` (default 24) | Deletes the events whose `created_at` is before now − `EVENT_RETENTION_DAYS` (default 30) × 24 h, in one transaction. Writes no event, but wakes the open streams so they check for lost events; `seq` never goes back (`AUTOINCREMENT`). A client with an older cursor gets `reset` (`realtime-events.md` §2). Separate from `trash_days` | M1c |
 | Unsaved changes discard (D52) | The same job, the same interval | Discards each unsaved run branch at `discard_on`: the run's end `+ trash_days`, or the purge of its conversation or project, whichever comes first. Example: the run fails on Oct 1, the conversation goes to Trash on Oct 20, `trash_days` is 30: the changes go on Oct 31, the conversation on Nov 19 | M6 |
 
@@ -456,7 +458,7 @@ invalid), plus `config/models.yaml` and `config/tools.yaml`.
 | `RUN_STALL_SECONDS` | `600` | No delta and no step for this long → run fails as `timed_out` |
 | `MODEL_REQUEST_TIMEOUT_SECONDS` | `300` | Read timeout per model request |
 | `TITLE_REQUEST_TIMEOUT_SECONDS` | `20` | Timeout of the one auto title request (D46) |
-| `PURGE_INTERVAL_HOURS` | `24` | How often the Trash purge job looks for items past `deleted_at + trash_days`; it also runs at start (D62). It does not change how long Trash keeps an item |
+| `PURGE_INTERVAL_HOURS` | `24` | How often the Trash purge job looks for items past `deleted_at` (`trashed_at` for a skill) `+ trash_days`; it also runs at start (D62). It does not change how long Trash keeps an item |
 | `EVENT_RETENTION_DAYS` | `30` | How long the `events` log keeps an event (`domain-model.md` §8); older events are pruned (§6.1). A positive integer; separate from `trash_days` |
 | `EVENT_PRUNE_INTERVAL_HOURS` | `24` | How often the event pruning job runs; it also runs at start (§6.1). A positive integer |
 | `IMPORT_PREVIEW_MINUTES` | `15` | How long the server keeps a skill import preview in memory (`domain-model.md` §3.5) |

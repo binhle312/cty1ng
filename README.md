@@ -14,7 +14,7 @@ date:
 
 ```bash
 nvm use                       # Node 24
-npm install -g pnpm@12.16.1   # or let corepack pick it from package.json
+npm install -g pnpm@12.16.1   # or: corepack enable, which takes the version from package.json
 make dev                      # open http://127.0.0.1:5173 (API on http://127.0.0.1:8000)
 ```
 
