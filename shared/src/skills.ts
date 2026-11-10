@@ -170,8 +170,8 @@ export const Skill = z
     deprecated: z.boolean(),
     deprecated_at: Timestamp.nullable(),
     updated_at: Timestamp,
-    // The version this skill was cloned from; null when it was not cloned, or when that skill
-    // was purged (domain-model.md §3.4).
+    // The version this skill was cloned from; null when it was not cloned, when that skill was
+    // purged (domain-model.md §3.4), or when that version did not exist at Create (§3.3).
     cloned_from: z
       .object({ skill_id: SkillId, slug: z.string(), version: z.number().int().positive() })
       .strict()

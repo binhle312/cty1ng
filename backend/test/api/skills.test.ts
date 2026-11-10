@@ -100,6 +100,27 @@ describe("create, read, list", () => {
     expect(await one.json()).toMatchObject({ id, body_md: "## Steps\n\n1. Write." });
   });
 
+  // The Clone editor can be open while its source goes to Trash (domain-model.md §3.3).
+  it("POST /skills with a clone source in Trash gives 201 and keeps the link", async () => {
+    const { id } = await created();
+    const versions = z
+      .array(z.object({ id: z.string() }))
+      .parse(await (await send("GET", `/skills/${id}/versions`)).json());
+    await send("POST", `/skills/${id}/deprecate`, { remove_bot_ids: [], row_version: 1 });
+    expect((await send("POST", `/skills/${id}/trash`, { row_version: 2 })).status).toBe(200);
+
+    const copy = await send("POST", "/skills", {
+      ...newSkill,
+      slug: "notes-copy",
+      cloned_from_skill_version_id: versions[0]?.id,
+    });
+    expect(copy.status).toBe(201);
+    expect(await copy.json()).toMatchObject({
+      slug: "notes-copy",
+      cloned_from: { skill_id: id, slug: "notes", version: 1 },
+    });
+  });
+
   it("a taken slug gives 409 slug_taken", async () => {
     await created();
     const response = await send("POST", "/skills", newSkill);

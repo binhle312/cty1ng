@@ -52,6 +52,15 @@ interface CloneSource {
 // saves nothing until Create, so no unwanted copies stay in the list.
 export function NewSkillPage() {
   const { from } = useSearch({ from: "/skills/new" });
+  if (from === undefined) return <NewSkillView key="new" source={null} />;
+  // One mount for each source version: the mount holds what its editor opened with.
+  return <ClonePage key={from} from={from} />;
+}
+
+// The Clone of one version (skills-page.md §12). This mount owns one fact: the source that its
+// editor opened with. The editor opens from a good answer of this visit, and then no later read
+// closes it (frontend-conventions.md §5; DQ-180, DQ-191).
+function ClonePage({ from }: { from: string }) {
   const source = useCloneSource(from);
   // The copy's name is cut to the name limit, so a Clone waits for the settings, once: after
   // the first answer, success or failure, it never waits again. After a failed load the editor
@@ -60,32 +69,41 @@ export function NewSkillPage() {
   const settings = useQuery(getSettingsOptions());
   const [settingsSettled, setSettingsSettled] = useState(false);
   if (!settingsSettled && !settings.isPending) setSettingsSettled(true);
-  if (from === undefined) return <NewSkillView key="new" source={null} />;
-  // A failed request is not a missing version: the error state with Try again. A failed
-  // background refresh keeps the editor on the data it has.
-  if (source.data === undefined) {
+
+  const [opened, setOpened] = useState<CloneSource | null>(null);
+  // A good answer of this visit. Data that the cache had before this visit does not count: it
+  // can be old (frontend-conventions.md §5, "A form that fills once").
+  const answered = source.isFetchedAfterMount && source.isSuccess;
+  // The source is kept at once. `answered` can go back to false, because a later read that
+  // fails changes the status of the query; the kept source cannot.
+  if (opened === null && answered && source.data !== null) setOpened(source.data);
+  if (opened !== null) {
+    if (!settingsSettled) return <SkillEditorSkeleton />;
+    // Open. A later read that finds nothing, or that fails, keeps the editor on the source that
+    // it opened with; a later good answer gives Create its newest slugs.
+    return <NewSkillView source={source.data ?? opened} />;
+  }
+  if (!answered) {
+    // A failed request is not a missing version: the error state with Try again.
     if (source.isError) {
       return <LoadError text={CLONE_LOAD_FAILED} onRetry={() => void source.refetch()} />;
     }
     return <SkillEditorSkeleton />;
   }
-  if (source.data === null) return <NotFoundPage />;
-  if (!settingsSettled) return <SkillEditorSkeleton />;
-  return <NewSkillView key={from} source={source.data} />;
+  return <NotFoundPage />;
 }
 
 // The version a Clone copies. The URL holds only the version id, so after a reload the page
 // looks for it in each skill's version list (most are in the cache already).
-function useCloneSource(versionId: string | undefined) {
+function useCloneSource(versionId: string) {
   const queryClient = useQueryClient();
   return useQuery({
     // The settings are not in the key: a new limit must not open a new editor over a draft.
     queryKey: ["skill-clone-source", versionId],
-    enabled: versionId !== undefined,
     // Each Clone looks again at the slugs that are taken: a copy made since the last Clone
-    // takes `-copy`, so the next one must get `-copy-2` (skills-page.md §12). Nothing is kept
-    // after the page closes, and the open editor keeps its text when this fetches again.
-    gcTime: 0,
+    // takes `-copy`, so the next one must get `-copy-2` (skills-page.md §12). `ClonePage` opens
+    // its editor only from an answer of its own visit, so it does not use the data that the
+    // cache keeps from an earlier visit.
     refetchOnWindowFocus: false,
     queryFn: async (): Promise<CloneSource | null> => {
       const skills = await readNewest(() =>
@@ -113,6 +131,7 @@ function useCloneSource(versionId: string | undefined) {
           takenSlugs: slugs,
         };
       }
+      // No listed skill has the version: it does not exist, or its skill is in Trash.
       return null;
     },
   });
