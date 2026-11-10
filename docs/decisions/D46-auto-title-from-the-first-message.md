@@ -78,3 +78,4 @@ Consequences:
 Implemented in: `../conversation-rules.md` §8, `../domain-model.md` §5, §7, §12 and §13,
 `../api.md` §5, `../requirements/conversation.md` (CV-11, UI-3.24 to UI-3.26),
 `../security.md` §2.2 and §2.13, `../testing.md` §2, task M3.
+Amended 2026-11-10 (owner): "at most approximately 600 input tokens" gives the usual size of a title call. The limit is the reserve of this decision: 2500 input and 30 output tokens.
