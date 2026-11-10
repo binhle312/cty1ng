@@ -16,14 +16,14 @@ export function readAll(queryClient: QueryClient): void {
     { type: "active", fetchStatus: "fetching", predicate: noAnswerYet },
     { silent: true, revert: false },
   );
-  // A query that a page watches but has turned off, such as the query of a closed dialog. No new
-  // read starts for it now, so it goes back to "no read", and it reads when it is turned on again.
-  // A read with no observer stays: its caller waits for that read.
+  // A query that a page watches but has turned off, such as the query of a closed dialog, with
+  // or without data. No new read starts for it now, so it goes back to the state from before
+  // that read, and it reads when it is turned on again. A read with no observer stays.
   void queryClient.cancelQueries(
     {
       type: "inactive",
       fetchStatus: "fetching",
-      predicate: (query) => noAnswerYet(query) && query.getObserversCount() > 0,
+      predicate: (query) => query.getObserversCount() > 0,
     },
     { revert: true },
   );

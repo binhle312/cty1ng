@@ -87,6 +87,38 @@ describe("readAll and a query that is turned off before its first answer", () =>
   });
 });
 
+// The dialog opened before and has data. It opens again, a second read starts, and it closes
+// before that answer (DQ-199).
+describe("readAll and a turned-off query that has data and a read on its way", () => {
+  async function closedDuringSecondRead(queryClient: QueryClient) {
+    const dialog = dialogQuery(queryClient);
+    dialog.answers[0]?.("first answer");
+    await dialog.settle();
+    dialog.close();
+    dialog.open();
+    dialog.close();
+    return dialog;
+  }
+
+  it("reads again when the query is turned on before the answer of the second read", async () => {
+    const queryClient = new QueryClient();
+    const dialog = await closedDuringSecondRead(queryClient);
+    readAll(queryClient);
+    dialog.open();
+    expect(dialog.answers, "reads of a dialog with data").toHaveLength(3);
+  });
+
+  it("does not take the answer of the second read", async () => {
+    const queryClient = new QueryClient();
+    const dialog = await closedDuringSecondRead(queryClient);
+    readAll(queryClient);
+    dialog.open();
+    dialog.answers[1]?.("from before");
+    await dialog.settle();
+    expect(dialog.data(), "the data after the old answer").toBe("first answer");
+  });
+});
+
 // Code that asks the query client directly, with no observer. Its caller waits for this read.
 describe("readAll and a read with no observer", () => {
   it("does not cut the read: the caller gets its answer", async () => {
