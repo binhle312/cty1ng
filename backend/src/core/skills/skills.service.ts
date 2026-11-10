@@ -173,16 +173,14 @@ export function createSkillsService(deps: SkillsDeps) {
       },
       settings,
     );
-    // The source of a Clone can go away while its editor is open: to Trash, or purged. The copy
-    // is a skill of its own with its own text, so Create still makes it, with no source
-    // (domain-model.md §3.3).
+    // The source of a Clone can go away while its editor is open. The copy is a skill of its
+    // own with its own text, so Create always makes it (domain-model.md §3.3). It records the
+    // source while the source version exists, also for a skill in Trash, as for a source that
+    // goes to Trash after the Create. A version that does not exist (purged) gives no source.
     let clonedFrom: SkillVersionId | null = null;
     if (input.clonedFromSkillVersionId !== undefined) {
       const source = await tx.skills.versionById(input.clonedFromSkillVersionId);
-      const sourceSkill = source === null ? null : await tx.skills.byId(source.skillId);
-      if (sourceSkill !== null && sourceSkill.trashedAt === null) {
-        clonedFrom = input.clonedFromSkillVersionId;
-      }
+      if (source !== null) clonedFrom = source.id;
     }
     const now = clock.now();
     const id = SkillId.parse(deps.ids.newId("skill"));

@@ -101,7 +101,7 @@ describe("create, read, list", () => {
   });
 
   // The Clone editor can be open while its source goes to Trash (domain-model.md §3.3).
-  it("POST /skills with a clone source in Trash gives 201 and no source", async () => {
+  it("POST /skills with a clone source in Trash gives 201 and keeps the link", async () => {
     const { id } = await created();
     const versions = z
       .array(z.object({ id: z.string() }))
@@ -115,7 +115,10 @@ describe("create, read, list", () => {
       cloned_from_skill_version_id: versions[0]?.id,
     });
     expect(copy.status).toBe(201);
-    expect(await copy.json()).toMatchObject({ slug: "notes-copy", cloned_from: null });
+    expect(await copy.json()).toMatchObject({
+      slug: "notes-copy",
+      cloned_from: { skill_id: id, slug: "notes", version: 1 },
+    });
   });
 
   it("a taken slug gives 409 slug_taken", async () => {

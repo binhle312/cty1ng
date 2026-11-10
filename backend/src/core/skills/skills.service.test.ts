@@ -316,7 +316,9 @@ describe("Clone", () => {
   });
 
   // The source can go away while the Clone editor is open (domain-model.md §3.3, DQ-180).
-  it("makes the copy with no source when the source skill is in Trash", async () => {
+  // The same link as for a source that goes to Trash after the Create. A restore of the source
+  // makes the link work again, and a purge clears it.
+  it("makes the copy and keeps the link when the source skill is in Trash", async () => {
     const source = await backend.skills.create(input("notes"), OWNER_ID);
     const [v1] = await backend.skills.versions(source.id);
     await backend.skills.deprecate(source.id, { removeBotIds: [], rowVersion: 1 }, OWNER_ID);
@@ -326,7 +328,7 @@ describe("Clone", () => {
       { ...input("notes-copy"), clonedFromSkillVersionId: v1?.id },
       OWNER_ID,
     );
-    expect(clone.cloned_from).toBeNull();
+    expect(clone.cloned_from).toEqual({ skill_id: source.id, slug: "notes", version: 1 });
     expect((await backend.skills.get(clone.id, OWNER_ID)).slug).toBe("notes-copy");
   });
 
