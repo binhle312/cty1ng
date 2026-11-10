@@ -13,12 +13,13 @@ The existing file paths stay stable so earlier review records still resolve.
 - `applied` does not establish that every defect is closed or that a PR merged.
 - Update [delivery quality](../delivery-quality.md) when a review adds or resolves an issue.
 
-All 17 source lessons remain because each contains project evidence.
+All source lessons remain because each contains project evidence.
 Their repeated general instructions now point to principles. The table maps every source lesson.
 Historical observations keep their original text; later entries can supersede an earlier project state.
 
 | File | Project evidence | Reusable principles | Source | Response status |
 | --- | --- | --- | --- | --- |
+| `fixes-that-make-new-findings.md` | Review fixes in #84 and #86 made 19 of 37 issues; later reviews found almost only those | [Fix the root cause](../../.agents/skills/principle-fix-root-cause/SKILL.md), [Split changes](../../.agents/skills/principle-split-changes/SKILL.md), [Decide when review ends](../../.agents/skills/principle-when-review-ends/SKILL.md) | PR #84, PR #86 | applied (2026-11-09) |
 | `two-of-my-requests-at-once.md` | M2c overlapping local requests and missing list states | [Model state and order](../../.agents/skills/principle-state-and-order/SKILL.md), [Fix the root cause](../../.agents/skills/principle-fix-root-cause/SKILL.md) | M2c, PR #59 | applied |
 | `fake-answers-match-the-api.md` | M2c fake pin responses bypassed the success path | [Prove that tests work](../../.agents/skills/principle-prove-tests-work/SKILL.md), [Automate repeated checks](../../.agents/skills/principle-automate-checks/SKILL.md) | M2c, PR #59 | applied |
 | `check-every-order-before-the-push.md` | M2c repeated request-order defects | [Model state and order](../../.agents/skills/principle-state-and-order/SKILL.md), [Fix the root cause](../../.agents/skills/principle-fix-root-cause/SKILL.md), [Prove that tests work](../../.agents/skills/principle-prove-tests-work/SKILL.md) | M2c, PR #59 | applied |
