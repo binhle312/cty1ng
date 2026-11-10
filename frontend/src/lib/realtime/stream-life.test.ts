@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { type Logged, type Model, randomOrders } from "../../../test/sequences.ts";
 import {
+  isLiveStream,
   type LifeAction,
   type LifeEvent,
   type StreamLife,
@@ -36,6 +37,18 @@ describe("stream life: page start", () => {
   });
 });
 
+describe("stream life: which stream is live", () => {
+  it("only the newest stream of a live state is the live stream", () => {
+    const answers = [
+      isLiveStream(live(2, true), 2),
+      isLiveStream(live(2, true), 1),
+      isLiveStream(idle(2), 2),
+      isLiveStream(waiting(2), 2),
+    ];
+    expect(answers, "live stream").toEqual([true, false, false, false]);
+  });
+});
+
 describe("stream life: hidden, no stream", () => {
   it("hidden: stays", () => {
     expect(stepLife(idle(3), { type: "hidden" })).toEqual({ state: idle(3), actions: [] });
@@ -48,12 +61,25 @@ describe("stream life: hidden, no stream", () => {
     });
   });
 
-  it.each<LifeEvent>([
-    { type: "stopped", stream: 3 },
-    { type: "timer", stream: 3 },
-    { type: "ready", stream: 3 },
-  ])("a late $type of the closed stream is ignored", (event) => {
-    expect(stepLife(idle(3), event)).toEqual({ state: idle(3), actions: [] });
+  it("a late stop of the closed stream is ignored", () => {
+    expect(stepLife(idle(3), { type: "stopped", stream: 3 }), "idle, late stop").toEqual({
+      state: idle(3),
+      actions: [],
+    });
+  });
+
+  it("a late timer is ignored in a hidden tab", () => {
+    expect(stepLife(idle(3), { type: "timer", stream: 3 }), "idle, late timer").toEqual({
+      state: idle(3),
+      actions: [],
+    });
+  });
+
+  it("a late ready of the closed stream is ignored", () => {
+    expect(stepLife(idle(3), { type: "ready", stream: 3 }), "idle, late ready").toEqual({
+      state: idle(3),
+      actions: [],
+    });
   });
 });
 
@@ -80,14 +106,14 @@ describe("stream life: visible, live", () => {
   });
 
   it("the stop of an older stream is ignored", () => {
-    expect(stepLife(live(2, false), { type: "stopped", stream: 1 })).toEqual({
+    expect(stepLife(live(2, false), { type: "stopped", stream: 1 }), "live, old stop").toEqual({
       state: live(2, false),
       actions: [],
     });
   });
 
   it("a timer is ignored: a live stream has no timer", () => {
-    expect(stepLife(live(2, true), { type: "timer", stream: 1 })).toEqual({
+    expect(stepLife(live(2, true), { type: "timer", stream: 1 }), "live, timer").toEqual({
       state: live(2, true),
       actions: [],
     });
@@ -110,11 +136,16 @@ describe("stream life: visible, live", () => {
     });
   });
 
-  it("the ready of an older stream is ignored, and the new stream still reads", () => {
-    expect(stepLife(live(2, true), { type: "ready", stream: 1 })).toEqual({
-      state: live(2, true),
-      actions: [],
-    });
+  it("the ready of an older stream starts no read", () => {
+    const { actions } = stepLife(live(2, true), { type: "ready", stream: 1 });
+    expect(actions, "live, old ready").toEqual([]);
+  });
+
+  it("after the ready of an older stream, the new stream still reads at its own ready", () => {
+    const { state } = stepLife(live(2, true), { type: "ready", stream: 1 });
+    expect(stepLife(state, { type: "ready", stream: 2 }).actions, "own ready").toEqual([
+      { type: "readAll" },
+    ]);
   });
 });
 
@@ -137,12 +168,25 @@ describe("stream life: visible, waiting", () => {
     });
   });
 
-  it.each<LifeEvent>([
-    { type: "timer", stream: 1 },
-    { type: "stopped", stream: 2 },
-    { type: "ready", stream: 2 },
-  ])("a late $type is ignored", (event) => {
-    expect(stepLife(waiting(2), event)).toEqual({ state: waiting(2), actions: [] });
+  it("the timer of an older stream opens nothing during the wait", () => {
+    expect(stepLife(waiting(2), { type: "timer", stream: 1 }), "waiting, old timer").toEqual({
+      state: waiting(2),
+      actions: [],
+    });
+  });
+
+  it("a second stop during the wait starts no second timer", () => {
+    expect(stepLife(waiting(2), { type: "stopped", stream: 2 }), "waiting, stop").toEqual({
+      state: waiting(2),
+      actions: [],
+    });
+  });
+
+  it("a ready during the wait starts no read", () => {
+    expect(stepLife(waiting(2), { type: "ready", stream: 2 }), "waiting, ready").toEqual({
+      state: waiting(2),
+      actions: [],
+    });
   });
 });
 

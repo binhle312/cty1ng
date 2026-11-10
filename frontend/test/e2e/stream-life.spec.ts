@@ -82,7 +82,9 @@ test("seven tabs: a save in the seventh tab gets its answer", async ({ context }
   await expect(botLink(last, body)).toBeVisible();
 });
 
-test("a tab that was hidden opens a new stream and shows what changed", async ({ page }) => {
+// This test does not prove the read after `ready` (rule 4): TanStack Query's own read on the
+// return shows the change too. The next test proves rule 4.
+test("a tab that was hidden opens a new stream when it returns", async ({ page }) => {
   const first = await makeBot();
   const stream = page.waitForResponse("**/api/stream");
   await page.goto("/bots");
@@ -100,6 +102,46 @@ test("a tab that was hidden opens a new stream and shows what changed", async ({
   const later = await makeBot();
   await expect(botLink(page, later)).toBeVisible();
 });
+
+// Rule 4. A change that comes after TanStack Query's read on the return, and before the new
+// stream is live, is in no read and in no event. Only the read after `ready` shows it. The
+// test holds the new stream's request to make that gap. It runs alone: a bot event of another
+// test also reads the list again, and then the test passes with no read after `ready`.
+test(
+  "a change between the read on the return and the new stream shows after ready",
+  {
+    tag: "@alone",
+  },
+  async ({ page }) => {
+    const first = await makeBot();
+    const stream = page.waitForResponse("**/api/stream");
+    await page.goto("/bots");
+    await expect(botLink(page, first)).toBeVisible();
+    await stream;
+    await setVisible(page, false);
+
+    let release = (): void => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route("**/api/stream", async (route) => {
+      await held;
+      await route.continue();
+    });
+    const readOnReturn = page.waitForResponse(
+      (r) => new URL(r.url()).pathname === "/api/bots" && r.request().method() === "GET",
+    );
+    await setVisible(page, true);
+    await readOnReturn;
+
+    // The read on the return has its answer, and the new stream is not open yet.
+    const inGap = await makeBot();
+    const newStream = page.waitForResponse("**/api/stream");
+    release();
+    expect((await newStream).status()).toBe(200);
+    await expect(botLink(page, inGap), "after ready").toBeVisible();
+  },
+);
 
 test("a stream that the browser stops for good comes back after the wait", async ({ page }) => {
   const first = await makeBot();
