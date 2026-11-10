@@ -578,8 +578,8 @@ or the title.
 ## 9. Limits: settings and fixed values
 
 The owner can change a limit that controls how much work bots may do. It is a setting in the
-`settings` table (`domain-model.md` §10), with the default written next to the rule that uses
-it (AGENTS.md §10). A fixed rule or security check stays in code as one named constant, and
+`settings` table (`domain-model.md` §10). Its default is written one time in the docs: here for
+the limits of the table below, and in `domain-model.md` §10 for the other settings (AGENTS.md §10). A fixed rule or security check stays in code as one named constant, and
 other code reads that constant instead of repeating the number.
 
 ### Settings
