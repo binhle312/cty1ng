@@ -633,6 +633,9 @@ Why integers and not semver: compatibility of prose cannot be checked by a machi
 - Anyone may clone. Clone saves nothing: it opens the New skill editor filled from the version
   being viewed (name + " (copy)", slug `<slug>-copy`, both editable). Create makes a new skill
   (author = cloner, v1, `cloned_from_skill_version_id` set). No sync later.
+- The source can go away while the editor is open: to Trash, or purged. The copy is a skill of
+  its own, so Create still makes it. `cloned_from_skill_version_id` is then empty, as after a
+  purge of the source (§3.4). This is not an error (owner, 2026-11-10, DQ-180).
 - In phase 1 the owner authors everything, so the 403 path is exercised only by tests. It is
   built now because adding ownership later means rewriting every skill endpoint.
 

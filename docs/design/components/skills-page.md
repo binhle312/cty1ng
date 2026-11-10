@@ -340,6 +340,10 @@ with the tooltip "Tick a bot first." (§ Texts added in the M1b build).
   limits; the slug is cut before its suffix, so the suffix stays.
 - **Create** makes the copy at v1, with the owner as author, and then shows the assign card
   (§7.2). Cancel or leave, and nothing is saved, so no unwanted copies stay in the list.
+- The source can go away after the editor opened (to Trash or purged, from another tab). The
+  editor and its text stay, and Create makes the copy from the text in the form
+  (`domain-model.md` §3.3; owner, 2026-11-10, DQ-180). Page not found shows only when the
+  version does not exist on the first read.
 
 ## 13. History tab (S3, UI-7.5, UI-7.14)
 
