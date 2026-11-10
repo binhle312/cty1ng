@@ -166,4 +166,7 @@ the PR records the red run.
   Done: [#92](https://github.com/binhle312/cty1ng/pull/92) merged on 2026-11-10, and
   `stream-life.spec.ts` has the test "a Clone draft stays when the tab returns after its source
   went to Trash".
+- **Rule 4 also covers a first read that is on its way** (owner-pasted review of `6136561`,
+  DQ-197). `invalidateQueries()` reuses such a read, and it started before `ready`. One function,
+  `readAll`, now cuts those reads and starts them again, for `ready` and for `reset`.
 

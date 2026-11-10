@@ -145,9 +145,11 @@ only a visible tab holds the stream (owner, 2026-11-09, option A; audit of 2026-
    tab is visible, the tab waits `STREAM_RETRY_MS` (2 s, §2) and opens a new stream. It does
    this again after each failure, with no limit.
 4. A new stream has no `Last-Event-ID`, so the server sends nothing old. After the first `ready`
-   of each new stream, the tab reads all data again (`invalidateQueries`, as for `reset`), and
+   of each new stream, the tab reads all data again (`readAll`, as for `reset`), and
    the stream gets a new reducer that takes its cursor from that `ready`. The read starts after
-   `ready`, so no change falls between the read and the live events. The stream that a visible
+   `ready`, so no change falls between the read and the live events. This holds for each query
+   that a page shows: a first read that is still on its way at `ready` started before it, so the
+   tab cuts it and starts it again (`read-all.ts`; the same for `reset`). The stream that a visible
    page opens at its start is the exception: the page reads its data at that time.
 5. A reconnect that the browser does itself (the same `EventSource`, with `Last-Event-ID`) stays
    as §2 says: the server replays, and the tab does not read all data again.
