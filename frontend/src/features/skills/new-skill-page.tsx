@@ -78,9 +78,10 @@ export function NewSkillPage() {
 // looks for it in each skill's version list (most are in the cache already).
 function useCloneSource(versionId: string | undefined) {
   const queryClient = useQueryClient();
+  const queryKey = ["skill-clone-source", versionId] as const;
   return useQuery({
     // The settings are not in the key: a new limit must not open a new editor over a draft.
-    queryKey: ["skill-clone-source", versionId],
+    queryKey,
     enabled: versionId !== undefined,
     // Each Clone looks again at the slugs that are taken: a copy made since the last Clone
     // takes `-copy`, so the next one must get `-copy-2` (skills-page.md §12). Nothing is kept
@@ -113,7 +114,11 @@ function useCloneSource(versionId: string | undefined) {
           takenSlugs: slugs,
         };
       }
-      return null;
+      // No listed skill has the version. On a first read that is Page not found. On a later
+      // read the source went away after the editor opened (to Trash, or purged): the editor
+      // keeps the source that it opened with, because a later read does not close an open form
+      // (frontend-conventions.md §5, DQ-180).
+      return queryClient.getQueryData<CloneSource | null>(queryKey) ?? null;
     },
   });
 }
