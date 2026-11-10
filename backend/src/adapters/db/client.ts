@@ -5,7 +5,8 @@ import * as schema from "./schema.ts";
 
 export type Db = BetterSQLite3Database<typeof schema>;
 
-// SQLite settings of architecture.md §11: WAL, foreign keys on, a 5 s busy timeout.
+// SQLite settings of architecture.md §11: WAL, foreign keys on, a 5 s busy timeout, and
+// `synchronous = NORMAL` (a power loss can lose the last commits; the database stays valid).
 const BUSY_TIMEOUT_MS = 5000;
 
 // The writers open in this thread, by the identity of their file. better-sqlite3 is synchronous,

@@ -10,6 +10,7 @@ A plan is a record, not spec. If a plan and an owning document differ, the ownin
 
 1. Name the file `<slice>-<name>.md`, with the slice and name of its brief in `docs/tasks/`.
    A plan for one part uses the name of the part, for example `M3a-storage-and-queue.md`.
+   A plan for one issue uses the id of the issue, for example `dq-180-clone-draft.md`.
 2. Start the file with the title, then the lines `Brief:`, `Checkpoint:` and `Approval:`.
    `Approval:` says `waiting` until the owner approves the plan.
 3. Commit the plan to the draft PR before any code. The first comment of the PR links to the file.

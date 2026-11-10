@@ -1,6 +1,6 @@
 ---
 name: principle-ask-with-options
-description: Use before you ask a person a question or for a decision. Gives them a real example, options with gain, cost and risk, and a recommendation, in Simplified Technical English at an 80% target.
+description: Use before you ask a person a question or for a decision. Give a real example, options with gain, cost and risk, and a recommendation.
 ---
 
 # Ask with options

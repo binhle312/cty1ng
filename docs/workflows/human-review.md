@@ -7,7 +7,7 @@ Read this workflow when you present a proposal, plan, design, or review item to 
 The documents in `docs/` are written for agents. They are long and exact. The owner must not
 have to read them to understand or approve a proposal. So an agent shows each proposal to the
 owner in a short, visual form first. This applies to plans, design rounds, decisions and
-review items, in the project threads and in local sessions.
+review items, in PRs and in local sessions.
 
 1. **Sketch first.** For a new flow, screen, data model, architecture change or other
    structural decision, show a short text sketch, table or outline before a detailed artifact.

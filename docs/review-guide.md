@@ -45,6 +45,8 @@ The lead checks the combined rows for gaps between assignments before the final 
 Read each test's setup and assertions. A test name or comment does not establish coverage.
 Ask which incorrect behaviour the test would detect.
 Run the affected checks; use [testing.md](testing.md) for test rules and the required gates.
+Run only the tests and breaks of the diff. Do not run the full gates or the full e2e suite again, and do not
+confirm total test counts: the builder's gate run and CI give that proof (owner, 2026-11-09).
 Separate local results from CI results and checks that did not run.
 
 For a race, identify the order the test forces and the state it checks afterward.

@@ -1,6 +1,7 @@
 # D36. Ids are TypeIDs everywhere outside the database
 
 Status: accepted (2026-10-21, owner). Builds on D22, which still decides the stored value.
+Amends: D22
 Decision: Every id keeps the UUIDv7 value from D22. In the database it is stored as a UUID
 (`TEXT` on SQLite, `uuid` on Postgres). Everywhere else it is written as a
 [TypeID](https://github.com/jetify-com/typeid): a type prefix, an underscore, and the same
@@ -50,3 +51,4 @@ Consequences:
   (`ids decode`) that converts both ways.
 Implemented in: `../domain-model.md` §1, `../api.md` §1, `../frontend-conventions.md`,
 `../architecture.md` §2, `../tasks/M0-skeleton.md`.
+Amended 2026-11-10 (owner): the `Amends:` line names D22, so that the "Changed by" cell of D22 points to this entry. No rule changes.

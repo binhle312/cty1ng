@@ -62,8 +62,6 @@ pnpm --filter backend db:check      # schema and migrations agree (also in CI)
 make dev                        # backend on 127.0.0.1:8000, frontend on 127.0.0.1:5173
 ```
 
-If a command in this list does not exist yet (early slices), creating it is part of task M0.
-
 ## 5. Architecture rules (do not break these)
 
 1. `*.rules.ts` files in `backend/src/core/` are pure functions and types only: no database,
@@ -123,7 +121,7 @@ Merge a PR only when the owner asks you to merge that PR. The merge needs no lin
 - Never commit `.env`, API keys, the `data/` folder, or real conversation data.
 - Never call a real model provider in tests. Use the fake model (`docs/testing.md`).
 - Never bind the server to `0.0.0.0`.
-- Never build SQL from strings (f-strings, `%`, `+`); use bound parameters and allowlists
+- Never build SQL from strings (template strings, `+`); use bound parameters and allowlists
   (`docs/security.md` §2.8).
 - Never return stack traces or internal errors to the client.
 - Never let a design skill's output override `docs/design/` or an approved plan, and never run

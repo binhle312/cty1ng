@@ -68,6 +68,9 @@ accessibility for that section. Its output is input to the proposal, never a dec
 recommendations that conflict with them (another component library, other fonts or
 palettes) are listed as alternatives for the owner, not applied. Results are written into the
 plan or `docs/design/`, never with `--persist`.
+Its `SKILL.md` gives the search command with a path that does not exist in this repository. Use
+`python3 .agents/skills/ui-ux-pro-max/scripts/search.py "<query>" --domain <domain>`. Ignore its
+rules for mobile screens: the owner uses a laptop (owner, 2026-11-10).
 The builder may also use the `impeccable` skill. It reads `PRODUCT.md`, `DESIGN.md` and
 `.impeccable/design.json` at the repository root: a short snapshot of the product brief and
 of the Command dark theme, so the skill keeps the agreed look. The snapshot is not a spec;
