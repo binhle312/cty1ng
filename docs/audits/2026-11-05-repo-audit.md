@@ -94,6 +94,12 @@ After these: the owner fixes or drops each of the other 33 P3 findings and the P
 - Decisions on the PR's open items (owner, 2026-11-08): keep the longer skeleton of DQ-109 as a P3 follow-up. DQ-088 is P2, and it gets its own small PR after PR 4: the app's reads and saves run when the browser says that it is offline, and each page is tested offline. Write the `docs/workflows/audit.md` PR now, at the same time as PR 4.
 - This is an exception to `principle-fix-root-cause`, which asks for one owner. The rule stays in three code places: the skill Clone, the bot Clone and the wait for this visit's read in `create-bot-page.tsx`. The builder's advice, not part of the decision: look again if a third form of this type appears.
 
+**Decisions for PR 6** (owner):
+
+- 2026-11-09, option A: only a visible tab holds the stream. A hidden tab closes it, and a tab that becomes visible opens a new stream and reads all data again. Option B, one stream that all tabs share, is refused for now. Look at it again if the owner keeps many windows side by side, or if a feature needs a live tab in the background.
+- 2026-11-10: the design in [the plan](../plans/audit-pr6-six-tabs.md) is approved. The wait before a new stream is 2 s, the same value as `retry: 2000`, with one home in `shared/`.
+- The cause in the P3 row "the stream does not come back in `make dev`" was not correct. A run on 2026-11-10 showed two causes: the Vite proxy kept a dead stream open, and after a 502 `EventSource` stops for good and the client opened no new stream. The length of the stop does not matter. The rules are in `realtime-events.md` §3, "Stream life".
+
 ## Fix progress
 
 Each fix PR updates its row in the same PR. Check `gh pr list --state all`, because this table can be behind.
@@ -104,8 +110,8 @@ Each fix PR updates its row in the same PR. Check `gh pr list --state all`, beca
 | 2 | Security | merged: #73 |
 | 3 | Skills page | merged: #78 |
 | 4 | Bots page | merged: #82 |
-| 5 | Tests only | draft: #86 |
-| 6 | Six tabs | not started |
+| 5 | Tests only | merged: #86 |
+| 6 | Six tabs | draft: #91 |
 | 7 | Other P3 for M3 | not started |
 
 ## Result

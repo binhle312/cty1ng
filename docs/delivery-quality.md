@@ -85,6 +85,7 @@ The historical snapshot column gives evidence for a specific review period.
 | [#82](https://github.com/binhle312/cty1ng/pull/82) | Audit 2026-11-05 / PR 4, Bots page | Partial | 33 itemized (DQ-084 to DQ-116) | 9 (DQ-088, DQ-089, DQ-090, DQ-095, DQ-107 to DQ-109, DQ-115, DQ-116) | 13 (DQ-084 to DQ-086, DQ-088 to DQ-091, DQ-095, DQ-096, DQ-101, DQ-106 to DQ-108) | 6 | — |
 | [#84](https://github.com/binhle312/cty1ng/pull/84) | Audit 2026-11-05 / DQ-088 | Partial | 23 itemized (DQ-088, DQ-117 to DQ-138) | 0 | 1 (DQ-088) | 6 independent reviews (`35ea872`, `d5f5d6e`, `78d01fb`, `0dc734c`, `25cb287`, `d6265ae`) and the owner's review of `25cb287` | — |
 | [#86](https://github.com/binhle312/cty1ng/pull/86) | Audit 2026-11-05 / PR 5, tests only | Partial | 41 itemized (DQ-139 to DQ-179) | 17 (DQ-154, DQ-160 to DQ-163, DQ-165 to DQ-167, DQ-169, DQ-170, DQ-172 to DQ-176, DQ-178, DQ-179) | 0 | 8 independent reviews (`41df63a`, `1965703`, `c46712f`, `af3bf5b`, `991f5b0`, `7baae5a`, `8c0eb15`, `3db62f7`), a text check (`2f9a385`), an owner review (`4dba2f5`) and CodeQL (`629f347`) | — |
+| [#91](https://github.com/binhle312/cty1ng/pull/91) | Audit 2026-11-05 / PR 6, six tabs | Partial | 0 so far; the PR fixes audit row 14 and the P3 "stream in `make dev`" | 0 | 0 | none yet | — |
 
 ## 4. Historical evidence snapshots
 

@@ -99,6 +99,9 @@ bot skills: written ways of working that the bot follows.
   copied from the bot as it is now: persona, skills at the same versions, tools and Advanced. The name gets "(copy)" and
   the colour is a free one; bot memory starts empty. Change the model or the effort here: this is
   the way to try a bot on another model.
+- **Many tabs**: the app works in as many browser tabs as the owner opens. Only a tab that the
+  owner can see updates live; a tab in the background shows the newest data when the owner
+  returns to it.
 - **Example content**: `make seed` adds example skills and three bots: Guide (you), BA and
   Designer.
 

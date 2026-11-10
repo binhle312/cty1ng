@@ -90,7 +90,9 @@ conversation).
   so a long replay to a slow client holds one page of events in memory, not the whole replay.
 - `HEAD /api/stream` returns the headers only and opens no subscription.
 - Heartbeat: a comment line `: ping` every 15 s keeps proxies from closing the connection.
-- `retry: 2000` tells the browser to reconnect after 2 s.
+- `retry: 2000` tells the browser to reconnect after 2 s. The 2 s is fixed by the protocol and has
+  one home, `STREAM_RETRY_MS` in `shared/src/events/stream-retry.ts`; the client waits the same
+  time before it opens a new stream ([§3, Stream life](#stream-life)).
 
 ### Ephemeral events
 
@@ -110,7 +112,7 @@ The client appends `text` only if `offset` equals its current length.
 
 `frontend/src/lib/realtime/`:
 
-- One `EventSource` for the app, opened at startup.
+- One `EventSource` for the app, held only while the tab is visible ([Stream life](#stream-life)).
 - A reducer turns each persisted event into a refresh of the TanStack Query queries it touches
   (`invalidateQueries`), so pages update with no action from the owner. A `message.delta` is not a
   refresh: its text appends to the message directly, by `offset`, because a refetch for each token
@@ -126,6 +128,44 @@ The client appends `text` only if `offset` equals its current length.
 - **Live indicators never outlive the stream.** When the connection drops, the client clears
   every "typing" and "working" indicator. They come back only from events received after
   reconnecting (replayed or new), so nothing spins for ever on a dead connection.
+
+### Stream life
+
+The browser allows six connections for each host, and a stream holds one for its whole life. So
+only a visible tab holds the stream (owner, 2026-11-09, option A; audit of 2026-11-05, row 14).
+`stream-life.ts` owns these rules as a pure function, and `start.ts` is its boundary.
+
+1. A visible tab holds one stream. A hidden tab (`document.visibilityState`) holds none: it
+   closes its stream at once.
+2. When a tab becomes visible, it opens a new stream.
+3. When the browser stops the stream for good (an HTTP error is final for `EventSource`) and the
+   tab is visible, the tab waits `STREAM_RETRY_MS` (2 s, §2) and opens a new stream. It does
+   this again after each failure, with no limit.
+4. A new stream has no `Last-Event-ID`, so the server sends nothing old. After the first `ready`
+   of each new stream, the tab reads all data again (`invalidateQueries`, as for `reset`), and
+   the stream gets a new reducer that takes its cursor from that `ready`. The read starts after
+   `ready`, so no change falls between the read and the live events. The stream that a visible
+   page opens at its start is the exception: the page reads its data at that time.
+5. A reconnect that the browser does itself (the same `EventSource`, with `Last-Event-ID`) stays
+   as §2 says: the server replays, and the tab does not read all data again.
+6. In `make dev`, the Vite proxy cuts the browser's side of a response when the backend's side
+   closes before its end (`frontend/vite.config.ts`). Without this, the browser keeps a dead
+   stream that looks open. With it, a backend stop follows rule 3.
+
+Each stream has a number. An event that carries the number of an older stream changes nothing.
+
+| State | Tab hidden | Tab visible | Stopped for good | Timer | First `ready` of this stream |
+| --- | --- | --- | --- | --- | --- |
+| Hidden, no stream | Stays | Open a stream that reads all | Ignored: an old number | Ignored: an old number | Ignored: an old number |
+| Visible, live | Close the stream. To "Hidden, no stream" | Stays | Close what is left and start the timer. To "Visible, waiting" | Ignored: a live stream has no timer | Read all, but not for the stream of page start |
+| Visible, waiting | Cancel the timer. To "Hidden, no stream" | Stays | Ignored | Open a stream that reads all. To "Visible, live" | Ignored |
+
+A page that starts hidden starts in "Hidden, no stream", and its first stream reads all.
+Invariants: at most one stream; no stream and no timer while hidden; a stream and a timer never
+exist together; a visible tab has one of the two.
+
+Known limits: a hidden tab shows no live change, so its title cannot show a count. Six windows
+that are all visible at the same time still block.
 
 ## 4. Event types
 
