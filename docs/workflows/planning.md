@@ -32,6 +32,7 @@ The builder reads the brief and the documents it lists, then writes a short plan
 touch, migrations, tests to add, risks) in `docs/plans/<slice>-<name>.md`. The file goes in a
 draft PR, so the owner reviews it there and the repository keeps it for reference. The rules
 for the file are in [plans/README.md](../plans/README.md).
+For M3 and later parts, the EGM design step comes before the plan ([egm.md](egm.md)).
 
 ### Risk probes first
 
