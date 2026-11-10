@@ -96,7 +96,7 @@
         "file": "frontend/src/lib/realtime/read-all.test.ts",
         "name": "does not cut the read: the caller gets its answer"
       },
-      "assertion": "expect(await read, \"the caller's answer\").toBe(\"the answer\");",
+      "assertion": "expect(result, \"the caller's answer\").toBe(\"the answer\");",
       "breaks": [
         {
           "id": "D5-a",

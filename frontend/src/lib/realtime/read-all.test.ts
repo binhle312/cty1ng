@@ -101,7 +101,8 @@ describe("readAll and a read with no observer", () => {
     });
     readAll(queryClient);
     answer("the answer");
-    expect(await read, "the caller's answer").toBe("the answer");
+    const result = await read.catch(() => "the read was cut");
+    expect(result, "the caller's answer").toBe("the answer");
   });
 });
 

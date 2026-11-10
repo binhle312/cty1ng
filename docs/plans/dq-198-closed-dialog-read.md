@@ -4,7 +4,8 @@ Brief: DQ-198 in [delivery-quality.md](../delivery-quality.md), found by the own
 Checkpoint: owner decision (`AGENTS.md` §9: the cause of DQ-197)
 Approval: owner, 2026-11-10: "You can ignore reviewer's recommendation if you think you have a better solution for it"
 
-This PR is built on the branch of #91, because `read-all.ts` is new there. It merges after #91.
+This PR was built on the branch of #91, because `read-all.ts` was new there. #91 merged on
+2026-11-10, so the base is `main` now.
 
 ## Defect
 

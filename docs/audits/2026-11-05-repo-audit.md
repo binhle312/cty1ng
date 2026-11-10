@@ -112,7 +112,7 @@ Each fix PR updates its row in the same PR. Check `gh pr list --state all`, beca
 | 3 | Skills page | merged: #78 |
 | 4 | Bots page | merged: #82 |
 | 5 | Tests only | merged: #86 |
-| 6 | Six tabs | draft: #91 |
+| 6 | Six tabs | merged: #91 |
 | 7 | Other P3 for M3 | not started |
 
 ## Result
