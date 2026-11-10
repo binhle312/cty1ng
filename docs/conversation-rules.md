@@ -444,15 +444,15 @@ bar 2 row and the header show it.
    409, 422 validation) is not stored, so it does not claim. A repeated `client_id` (200) does
    not claim again.
 3. **Skip without a call** (`skipped`, no model request):
-   - `title_source` is `manual`. The owner named the chat before the first message.
+   - `title_source` is `manual`. The owner named the conversation before the first message.
    - The guard (D39) found matches in the message, and the owner chose "Send anyway"
      (`confirm_sensitive: true`). The owner agreed to send the text to the bot, not to a title
      call.
    - The message text is empty after the app removes the mention tokens.
    - No model is available (rule 4). This is the case when no member is active and available
-     when the message is stored, for example a chat with only a `pending_history` member, or
+     when the message is stored, for example a conversation with only a `pending_history` member, or
      with bots whose model has no key. The composer blocks a send with 0 bots (UI-3.12), but
-     the API does not. The title stays "New conversation" and the owner can rename the chat.
+     the API does not. The title stays "New conversation" and the owner can rename the conversation.
    - A cap is reached (rule 5).
 4. **Model.** The app takes the first bot in this list, and uses its model:
    1. the bots that the message mentions, in mention order;
@@ -466,7 +466,7 @@ bar 2 row and the header show it.
 5. **Caps.** The app checks the caps with the same rule as a run claim (`domain-model.md` §13):
    the provider cap of the title model (D42), then the total cap (D20). It checks two times:
    in the send transaction, and again just before it sends the request (rule 6). If a cap is
-   reached at either check, the status is `skipped`. The title adds no notice to the chat. A run
+   reached at either check, the status is `skipped`. The title adds no notice to the conversation. A run
    that the cap stops posts its own notice (D20). A message that starts no run gets no notice.
    A model with no known price is skipped (reason `cap`) while a cap applies to it, and allowed
    when no cap applies (D21, D42 amendment 2026-10-27).
@@ -526,13 +526,13 @@ bar 2 row and the header show it.
      for a change that the owner did not make.
    - This is safe only because a `PATCH` writes only the fields in its body (`api.md` §5). A
      PATCH that changes the icon does not send `title`, so it does not overwrite an auto title.
-   - If the update changes 0 rows, the owner renamed the chat during the call. The app then runs
+   - If the update changes 0 rows, the owner renamed the conversation during the call. The app then runs
      `UPDATE conversations SET auto_title_status = 'skipped' WHERE id = ? AND
      auto_title_status = 'pending'`. This update never writes `title` or `title_source`, and
      the app emits no event.
 10. **Failure.** A timeout, a provider error, an empty answer or a guard match sets the status
     to `failed` with the same kind of update (only `auto_title_status`, only from `pending`).
-    The title stays "New conversation". There is no retry and no notice in the chat. A provider
+    The title stays "New conversation". There is no retry and no notice in the conversation. A provider
     rate limit (429), for example during a burst of parallel titles (rule 6), is a provider
     error too: it uses the one attempt.
 11. **Restart.** At startup the app sets every `pending` status to `failed`. The call is not

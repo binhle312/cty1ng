@@ -58,7 +58,7 @@ Tests never call real providers (`AGENTS.md` §8).
   _titles:
     - when_contains: "login"
       title: "Login page user stories"
-      delay_ms: 500          # lets a test rename the chat during the call
+      delay_ms: 500          # lets a test rename the conversation during the call
     - when_contains: "fail"
       fail: timeout
   ```
@@ -155,7 +155,7 @@ Lessons from an earlier prototype. Each needs a named test in the slice that bui
 `e2e/journey-first-use.spec.ts` follows J1 from `requirements/product-brief.md`, then continues:
 
 1. create skill → create bot BA with it → create conversation;
-2. drag BA from the header into the chat → choose "Full history";
+2. drag BA from the header into the conversation → choose "Full history";
 3. `@` shows only BA → send → reply streams → chip `write-user-stories v1` visible → the bar 2
    row shows the fake auto title (D46);
 4. add Designer with the add slot (+) in the conversation header → enable discussion with limit 2 → bots stop after 2 turns with

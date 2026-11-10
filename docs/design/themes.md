@@ -86,7 +86,7 @@ adds a layout, not a new architecture. Keyboard: arrows pan, `F` fits, `G B` swi
 
 Decided (D30): the Board is a tab of the Flow pane. M8 ships only the Timeline (D26 amendment
 2026-10-25), so from M8b the pane has two maps, Timeline and Board; the Team map is parked. There is
-one split screen; no separate Chat + Board layout. Built in slice M8b, after the
+one split screen; no separate Conversation + Board layout. Built in slice M8b, after the
 pane and its Timeline map exist (M8).
 
 ## 5. Verification
