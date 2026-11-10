@@ -5,8 +5,8 @@ Checkpoint: owner decision (`AGENTS.md` §9: the failed rule is that of DQ-104)
 Approval: approved 2026-11-10 (owner: "Do A", then "both in one PR")
 
 Owner decisions of 2026-11-10: the Clone page gets its fix in its own PR on `main`, before #91
-(option A). Create also works when the source is in Trash or gone, and the copy then has no
-source. Both changes are in this PR.
+(option A). Create also works when the source is in Trash or gone. Both changes are in this
+PR. The link rule of the copy changed after the first review: see the last section.
 
 ## Defect
 
@@ -76,4 +76,3 @@ Not covered here: the return to a tab. #91 adds that test when it takes `main`.
   source in Trash. The owner chose one rule: the copy records its source while the source
   version exists. A version that does not exist gives no source.
 - **D14 gets a dated amendment** for the two cases with no origin (DQ-188).
-

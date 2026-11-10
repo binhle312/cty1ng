@@ -28,14 +28,11 @@ describe("a Clone draft when its source is read again", () => {
   // Opens the Clone of v3 and types a draft. `server.listed` is what the next list read answers.
   async function openClone({ draft = true } = {}) {
     const skill = makeSkill();
-    const server = { listed: [skill], listReads: 0 };
+    const server = { listed: [skill] };
     const [v3] = makeVersions(3);
     api = fakeApi({
       "GET /api/settings": () => ({ body: BOT_SETTINGS }),
-      "GET /api/skills": () => {
-        server.listReads += 1;
-        return { body: server.listed };
-      },
+      "GET /api/skills": () => ({ body: server.listed }),
       [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
       [`GET /api/skills/${SKILL_ID}/versions/3`]: () => ({ body: { ...v3, body_md: SOURCE_BODY } }),
       "GET /api/bots": () => ({ body: [] }),
@@ -74,16 +71,20 @@ describe("a Clone draft when its source is read again", () => {
   it("keeps the editor and the typed text when the browser is online again", async () => {
     const { queryClient, server } = await openClone();
     server.listed = [];
-    const before = server.listReads;
+    // How many answers the Clone source read has had. Other parts of the page read the skill
+    // list too, so a count of list requests does not show that this read ran again.
+    const sourceAnswers = () =>
+      queryClient.getQueryState(["skill-clone-source", versionId(3)])?.dataUpdateCount ?? 0;
+    const before = sourceAnswers();
     act(() => {
       onlineManager.setOnline(false);
     });
     act(() => {
       onlineManager.setOnline(true);
     });
+    // The test proves nothing if the source is not read again: then it must fail here.
     await waitFor(() => {
-      expect(server.listReads).toBeGreaterThan(before);
-      expect(queryClient.isFetching()).toBe(0);
+      expect(sourceAnswers(), "the source is read again").toBeGreaterThan(before);
     });
     expect(bodyText(), "the draft, online again").toBe(DRAFT);
   });

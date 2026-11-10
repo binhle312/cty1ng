@@ -316,8 +316,8 @@ describe("Clone", () => {
   });
 
   // The source can go away while the Clone editor is open (domain-model.md §3.3, DQ-180).
-  // The same link as for a source that goes to Trash after the Create. A restore of the source
-  // makes the link work again, and a purge clears it.
+  // The same link as for a source that goes to Trash after the Create. A purge of the source
+  // clears it ("purging a source skill keeps its clone and clears the link", below).
   it("makes the copy and keeps the link when the source skill is in Trash", async () => {
     const source = await backend.skills.create(input("notes"), OWNER_ID);
     const [v1] = await backend.skills.versions(source.id);

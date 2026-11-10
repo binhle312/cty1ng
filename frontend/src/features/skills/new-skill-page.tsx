@@ -83,11 +83,11 @@ function useCloneSource(versionId: string | undefined) {
     // The settings are not in the key: a new limit must not open a new editor over a draft.
     queryKey,
     enabled: versionId !== undefined,
-    // Each Clone looks again at the slugs that are taken: a copy made since the last Clone
-    // takes `-copy`, so the next one must get `-copy-2` (skills-page.md §12). Nothing is kept
-    // after the page closes, and the open editor keeps its text when this fetches again.
-    // The read below keeps a source that went away while the page is open; with no data kept
-    // after the page closes, a later visit reads from nothing and shows Page not found.
+    // Nothing is kept after the page closes, for two rules. Each Clone looks again at the slugs
+    // that are taken: a copy made since the last Clone takes `-copy`, so the next one must get
+    // `-copy-2` (skills-page.md §12). And the read below keeps a source that went away while
+    // the page is open: a later visit must read from nothing and show Page not found. The open
+    // editor keeps its text when this fetches again.
     gcTime: 0,
     refetchOnWindowFocus: false,
     queryFn: async (): Promise<CloneSource | null> => {
