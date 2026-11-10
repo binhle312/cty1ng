@@ -61,24 +61,24 @@ Implemented in: links.
 | D14 | [Skill authorship and cloning](D14-skill-authorship-and-cloning.md) | accepted | own amendment 2026-11-10 |
 | D15 | [Skill provenance from server records](D15-skill-provenance-from-server-records.md) | accepted |  |
 | D16 | ["Always load" per pinned skill](D16-always-load-per-pinned-skill.md) | accepted |  |
-| D17 | [New repository; agent instructions in AGENTS.md](D17-new-repository-agent-instructions-in-agents-md.md) | accepted | own amendments 2026-11-04, 2026-11-05 |
+| D17 | [New repository; agent instructions in AGENTS.md](D17-new-repository-agent-instructions-in-agents-md.md) | accepted | D34, own amendments 2026-11-04, 2026-11-05 |
 | D18 | [Handoff targets and who decides the workflow](D18-handoff-targets-and-who-decides-the-workflow.md) | accepted | own amendment 2026-10-25 |
 | D19 | [Bot slug fixed at creation](D19-bot-slug-fixed-at-creation.md) | accepted | D38, D52 (amendment 2026-10-27), own amendment 2026-11-01 |
 | D20 | [Daily spending cap](D20-daily-spending-cap.md) | accepted | D40, D42, own amendment 2026-11-04 |
-| D21 | [Token and cost tracking](D21-token-and-cost-tracking.md) | accepted |  |
-| D22 | [Use UUIDv7 instead of ULID for ids](D22-use-uuidv7-instead-of-ulid-for-ids.md) | accepted (shown as TypeIDs, D36) | own amendment 2026-11-04 |
+| D21 | [Token and cost tracking](D21-token-and-cost-tracking.md) | accepted | D34 |
+| D22 | [Use UUIDv7 instead of ULID for ids](D22-use-uuidv7-instead-of-ulid-for-ids.md) | accepted (shown as TypeIDs, D36) | D34, own amendment 2026-11-04 |
 | D23 | [Bots working on an external project folder](D23-bots-working-on-an-external-project-folder.md) | accepted in principle | D52 |
 | D24 | [Statistics page](D24-statistics-page.md) | accepted |  |
 | D25 | [One Grafana-style time range picker](D25-one-grafana-style-time-range-picker.md) | accepted |  |
 | D26 | [Flow view beside the chat](D26-flow-view-beside-the-chat.md) | accepted | D44, own amendment 2026-10-25 |
 | D27 | [Flow rendering is swappable; animations have hard budgets](D27-swappable-flow-renderer-with-animation-budgets.md) | accepted | own amendment 2026-10-26 |
 | D28 | [TanStack Router and shadcn/ui on Base UI](D28-router-and-component-primitives.md) | accepted |  |
-| D29 | [SQLite now; switch to PostgreSQL on defined triggers](D29-sqlite-now-postgres-on-triggers.md) | accepted |  |
+| D29 | [SQLite now; switch to PostgreSQL on defined triggers](D29-sqlite-now-postgres-on-triggers.md) | accepted | D34 |
 | D30 | [Switchable themes (Command, Material) and conversation views](D30-themes-and-conversation-views.md) | accepted | own amendment 2026-10-26 |
 | D31 | [Bots answering the same message see each other's replies](D31-later-bots-see-earlier-replies.md) | accepted |  |
 | D32 | [History budget is a per-bot share of the model's context window](D32-history-budget-from-model-context.md) | accepted |  |
 | D33 | [Zod for runtime validation in the frontend](D33-zod-for-frontend-runtime-validation.md) | accepted |  |
-| D34 | [TypeScript on the backend and the frontend](D34-typescript-full-stack.md) | accepted |  |
+| D34 | [TypeScript on the backend and the frontend](D34-typescript-full-stack.md) | accepted | own amendment 2026-11-10 |
 | D35 | [Ports and adapters at the edges, not "switch anything"](D35-ports-and-adapters-at-the-edges.md) | accepted |  |
 | D36 | [Ids are TypeIDs everywhere outside the database](D36-typeid-outside-the-database.md) | accepted | own amendments 2026-10-30, 2026-11-04 |
 | D37 | [Projects group conversations](D37-projects-group-conversations.md) | accepted | D45, D47, D52 |

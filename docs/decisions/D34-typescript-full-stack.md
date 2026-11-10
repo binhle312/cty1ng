@@ -2,6 +2,7 @@
 
 Status: accepted (2026-10-21, owner). Supersedes D10.
 Supersedes: D10
+Amends: D17, D21, D22, D29
 Decision: The backend is written in TypeScript on Node, like the frontend. The project starts
 from scratch, so nothing from the Python prototype is ported as code; only behaviour that the
 specification asks for is rebuilt.
@@ -46,3 +47,4 @@ stand; only the tool changes:
 | Python time bucketing | TypeScript bucketing with Node's time zone data |
 
 Implemented in: `../architecture.md`, `../../AGENTS.md` §4 and §10, `../testing.md`, `../tasks/M0-skeleton.md`.
+Amended 2026-11-10 (owner): the `Amends:` line names the four decisions of the table above, so that their "Changed by" cells in the index point to this entry. No rule changes.
