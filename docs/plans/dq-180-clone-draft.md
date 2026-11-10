@@ -38,7 +38,7 @@ Search for the same property, a good answer that closes an open editor:
 | Clone of a bot (`create-bot-page.tsx`) | Safe from reading: a source that is gone is a 404 error, and the page looks only at the first answer |
 | Skill page and bot page, item in Trash | The owner accepted this on 2026-11-05 (audit decision 3, `bot-page.md` §4.2): the page of an item in Trash closes |
 | New skill with no source | No read of a source |
-| Dialogs | Not checked |
+| Dialogs | The builder did not check them. The reviewer of `c38b698` read five dialogs and found no such case; this was a read, not a full trace |
 
 ## Fix
 
@@ -46,8 +46,9 @@ Search for the same property, a good answer that closes an open editor:
    source that the editor opened with. A first read with no match still gives Page not found.
    No new state: the kept value is the data of the same query.
 2. **Server.** `POST /skills` with a `cloned_from_skill_version_id` whose skill is in Trash or
-   does not exist makes the skill with no source. Before, it answered 422 "The skill to copy
-   does not exist." The request and answer shapes do not change.
+   does not exist makes the skill. Before, it answered 422 "The skill to copy does not exist."
+   The request and answer shapes do not change. The link rule changed after the first review:
+   see the last section.
 
 No migration, no new dependency, no new screen text.
 
@@ -61,8 +62,18 @@ Each test is written before its code, and its run on the code before the change 
 | A later read after the browser is online again keeps the editor and the text | Component | The second trigger on `main`; added after the review of `c38b698` |
 | A first read with no match shows Page not found | Component | A rule that the fix must keep |
 | A second visit after the source went away shows Page not found | Component | The companion rule of the fix: the kept value lives only while the page is open (`gcTime: 0`); added after the review of `c38b698` |
-| The server makes the copy with no source | Service, `skills.service.test.ts` | The source in Trash; the source purged |
+| The server makes the copy | Service, `skills.service.test.ts` | The source in Trash: the link stays. The source purged: no source |
 | The HTTP answer is 201 | API, `backend/test/api/skills.test.ts` | The source in Trash |
 | The whole flow in a browser | End to end, `skills.spec.ts` | Open a Clone, type, move the source to Trash through the API, click Create: the copy opens with the typed text |
 
 Not covered here: the return to a tab. #91 adds that test when it takes `main`.
+
+## Changes after the first review (owner, 2026-11-10)
+
+- **A source in Trash keeps the link.** The first version of this PR gave no link for a source
+  in Trash or gone. The review showed three different link rules: a copy made before its source
+  goes to Trash keeps the link, a copy made after got none, and a bot Clone keeps the link to a
+  source in Trash. The owner chose one rule: the copy records its source while the source
+  version exists. A version that does not exist gives no source.
+- **D14 gets a dated amendment** for the two cases with no origin (DQ-188).
+

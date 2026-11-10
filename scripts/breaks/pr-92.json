@@ -92,7 +92,7 @@
   "exempt": [
     {
       "file": "backend/src/core/skills/skills.service.test.ts",
-      "name": "makes the copy with no source when the source skill is in Trash",
+      "name": "makes the copy and keeps the link when the source skill is in Trash",
       "reason": "Written before its code. The PR records its red run on the code before the change"
     },
     {
@@ -102,7 +102,7 @@
     },
     {
       "file": "backend/test/api/skills.test.ts",
-      "name": "POST /skills with a clone source in Trash gives 201 and no source",
+      "name": "POST /skills with a clone source in Trash gives 201 and keeps the link",
       "reason": "Written before its code. The PR records its red run on the code before the change"
     },
     {
