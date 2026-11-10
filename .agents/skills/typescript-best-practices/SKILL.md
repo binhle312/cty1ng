@@ -6,6 +6,8 @@ paths: ["**/*.ts", "**/*.tsx"]
 
 # TypeScript best practices
 
+Project rules win where they differ: read `SOURCE.md` in this folder first.
+
 Apply the **type-system-discipline** principle skill first.
 
 | Rule | Summary |
