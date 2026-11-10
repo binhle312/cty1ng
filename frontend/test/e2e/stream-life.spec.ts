@@ -1,6 +1,12 @@
 import { expect, type Page, test } from "@playwright/test";
 import { createClient } from "../../src/lib/api/generated/client/index.ts";
-import { createBot } from "../../src/lib/api/generated/sdk.gen.ts";
+import {
+  createBot,
+  createSkill,
+  deprecateSkill,
+  listSkillVersions,
+  trashSkill,
+} from "../../src/lib/api/generated/sdk.gen.ts";
 
 // realtime-events.md §3, "Stream life" (audit of 2026-11-05, row 14). The browser allows six
 // connections for each host, so only a visible tab holds the stream.
@@ -101,6 +107,64 @@ test("a tab that was hidden opens a new stream when it returns", async ({ page }
   // The new stream is live: a later change shows with no action in the tab.
   const later = await makeBot();
   await expect(botLink(page, later)).toBeVisible();
+});
+
+// DQ-180. The read after `ready` also reads the source of an open Clone again. The source is
+// in Trash by then, so that read finds nothing. The editor and the typed text stay.
+test("a Clone draft stays when the tab returns after its source went to Trash", async ({
+  page,
+}) => {
+  const tag = `${Date.now().toString(36)}${String(Math.floor(Math.random() * 1000))}`;
+  const made = await createSkill({
+    client: apiClient(),
+    headers: { "idempotency-key": crypto.randomUUID() },
+    body: {
+      slug: `stream-${tag}`,
+      name: `Stream ${tag}`,
+      description: "Use this skill when a tab returns.",
+      body_md: "## Steps\n1. Read the brief.",
+    },
+  });
+  expect(made.response?.status, JSON.stringify(made.error)).toBe(201);
+  if (made.data === undefined) throw new Error("no skill");
+  const skill = made.data;
+  const versions = await listSkillVersions({ client: apiClient(), path: { id: skill.id } });
+  const [version] = versions.data ?? [];
+  if (version === undefined) throw new Error("no version");
+
+  const stream = page.waitForResponse("**/api/stream");
+  await page.goto(`/skills/new?from=${version.id}`);
+  await expect(page.getByLabel("Name", { exact: true })).toHaveValue(`${skill.name} (copy)`);
+  await stream;
+  const description = page.getByLabel("Description", { exact: true });
+  await description.fill("My draft, not saved.");
+
+  await setVisible(page, false);
+  const deprecated = await deprecateSkill({
+    client: apiClient(),
+    path: { id: skill.id },
+    body: { remove_bot_ids: [], row_version: skill.row_version },
+  });
+  expect(deprecated.response?.status, JSON.stringify(deprecated.error)).toBe(200);
+  if (deprecated.data === undefined) throw new Error("no deprecated skill");
+  const trashed = await trashSkill({
+    client: apiClient(),
+    path: { id: skill.id },
+    body: { row_version: deprecated.data.row_version },
+  });
+  expect(trashed.response?.status, JSON.stringify(trashed.error)).toBe(200);
+
+  // The read after `ready` starts with the list of skills, which no longer has the source.
+  const newStream = page.waitForResponse("**/api/stream");
+  const listRead = page.waitForResponse(
+    (r) => new URL(r.url()).pathname === "/api/skills" && r.request().method() === "GET",
+  );
+  await setVisible(page, true);
+  await newStream;
+  await listRead;
+  // Time for the page to close the editor, when it does.
+  await page.waitForTimeout(500);
+  await expect(description, "the draft after the return").toHaveValue("My draft, not saved.");
 });
 
 // Rule 4. A change that comes after TanStack Query's read on the return, and before the new

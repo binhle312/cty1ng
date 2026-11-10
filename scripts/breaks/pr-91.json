@@ -858,6 +858,11 @@
       "file": "frontend/test/e2e/stream-life.spec.ts",
       "name": "a tab that was hidden opens a new stream when it returns",
       "reason": "Not a late, security or order test. The PR records its red run with start.ts of origin/main"
+    },
+    {
+      "file": "frontend/test/e2e/stream-life.spec.ts",
+      "name": "a Clone draft stays when the tab returns after its source went to Trash",
+      "reason": "The PR records its red run: 4 of 4 fail on this branch with the page code before the fix of #92 (the draft is gone after the return)"
     }
   ]
 }
