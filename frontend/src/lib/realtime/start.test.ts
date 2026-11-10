@@ -31,7 +31,7 @@ function setup(startVisible = true) {
     target.dispatchEvent(new Event("visibilitychange"));
   };
   const streams: (ConnectOptions & { closed: boolean })[] = [];
-  const stop = startRealtime(queryClient, {
+  startRealtime(queryClient, {
     page,
     retryMs: RETRY_MS,
     connect: (options) => {
@@ -51,7 +51,7 @@ function setup(startVisible = true) {
   };
   const open = () => streams.filter((s) => !s.closed).length;
   const notes = () => queryClient.getQueryData<string[]>(TEST_PINGS_KEY) ?? [];
-  return { readAll, show, streams, stream, open, notes, stop };
+  return { readAll, show, streams, stream, open, notes };
 }
 
 beforeEach(() => {
@@ -199,31 +199,16 @@ describe("startRealtime", () => {
     expect(readAll, "started hidden").toHaveBeenCalledTimes(1);
   });
 
-  it("stop closes the stream", () => {
-    const { stream, stop } = setup();
-    stop();
-    expect(stream(1).closed, "stop").toBe(true);
-  });
-
   // The close of a stream reports "closed" too. That is not a stop by the browser.
-  it("stop starts no timer for a new stream", () => {
-    const { stop } = setup();
-    stop();
-    expect(vi.getTimerCount(), "after stop").toBe(0);
-  });
-
-  it("after stop, a visibility change opens nothing", () => {
-    const { show, streams, stop } = setup();
-    stop();
+  it("the close of a hidden tab's stream starts no timer", () => {
+    const { show } = setup();
     show(false);
-    show(true);
-    expect(streams, "visibility after stop").toHaveLength(1);
+    expect(vi.getTimerCount(), "own close, hidden").toBe(0);
   });
 
-  it("stop during the wait cancels the timer", () => {
-    const { stream, stop } = setup();
+  it("the close of a stopped stream starts no second timer", () => {
+    const { stream } = setup();
     stream(1).onStatus("closed");
-    stop();
-    expect(vi.getTimerCount(), "stop during the wait").toBe(0);
+    expect(vi.getTimerCount(), "own close, waiting").toBe(1);
   });
 });

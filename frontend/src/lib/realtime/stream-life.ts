@@ -49,6 +49,11 @@ export function startLife(visible: boolean): LifeStep {
   return visible ? open(0, false) : stay({ kind: "idle", streams: 0 });
 }
 
+// Whether this stream is the one that the tab holds now.
+export function isLiveStream(state: StreamLife, stream: number): boolean {
+  return state.kind === "live" && state.streams === stream;
+}
+
 export function stepLife(state: StreamLife, event: LifeEvent): LifeStep {
   switch (state.kind) {
     case "idle":
