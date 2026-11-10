@@ -69,3 +69,41 @@ Each is an order test, so each has a break in `scripts/breaks/pr-<n>.json`.
 
 Not covered: a browser test of the full order. The component test uses the real dialog, the real
 query client and `readAll`; a browser adds the real stream, which #91 already tests.
+
+## Change after the first review (owner, 2026-11-10: option A)
+
+The review of `8953c0a` found one more order with the same cause (DQ-199): a closed dialog that
+already has data, with a second read on its way, was not cut. The owner chose the plainer rule,
+in this PR. This section is committed before the change.
+
+| A read that is on its way | What `readAll` does | Then |
+| --- | --- | --- |
+| The query is active, no data yet | Cuts it, silent (DQ-197) | `invalidateQueries()` starts a new read |
+| The query is active, with data | Nothing here; `invalidateQueries()` cuts it (the library does this) | `invalidateQueries()` starts a new read |
+| The query has observers, and all are turned off, **with or without data** | Cuts it, with a revert | The query is back at the state from before that read, and stale. It reads when it is turned on again |
+| The query has no observer | Nothing | Open, DQ-200: see below |
+
+Tests added, each written before the change and with a break:
+
+| Behaviour | Level |
+| --- | --- |
+| A turned-off query with data and a read on its way reads again when it is turned on | Unit, real library |
+| The old answer of that read does not replace the data | Unit, real library |
+| Add skills shows the new list after "open, close, open, close, read all, open" | Component, the real dialog |
+
+**Open after this PR (DQ-200, P3, on the follow-up list):** a read with no observer is not cut.
+One real case: the source read of a skill Clone goes on after its page closes, because its read
+function does not take the abort signal. A visit that returns before that answer opens its
+editor from it. The harm is an old skill name or old taken slugs, in a small window. A full rule
+for each read on its way needs calls to the query objects of the library; the owner chose to
+wait with it until reads become slow, for example with M3 message streams.
+
+Corrections to the text above, from the same review:
+
+- Only Add skills had the defect of DQ-198. The skill versions dialog and the History row lose
+  their observer when they close, and the library then cuts their reads itself.
+- The app has seven direct reads of the query client in four files, not two callers. Each one
+  uses `readNewest`.
+- For a query whose first read had failed, the revert brings back the error state, not "no
+  read". The page shows no error from it: when the dialog opens, the query reads again.
+
