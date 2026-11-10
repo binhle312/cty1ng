@@ -1,7 +1,7 @@
 # backend
 
 The Node backend: Hono over HTTP, Drizzle on SQLite, ports and adapters (D35,
-`docs/architecture.md` §2, §4). It runs TypeScript directly on Node 24, with no build step.
+`docs/architecture.md` §2, §4). It runs TypeScript directly on Node 26, with no build step.
 
 | File | What it is for |
 | --- | --- |

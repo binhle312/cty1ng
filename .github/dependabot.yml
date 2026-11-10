@@ -10,6 +10,11 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    # The major of @types/node follows "engines" in package.json. It changes only with the Node
+    # version, in a PR that the owner approves (D34).
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
