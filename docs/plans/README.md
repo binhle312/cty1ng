@@ -37,6 +37,7 @@ Plans up to M2 started as PR comments or PR descriptions. The header of each fil
 | `M2-bots.md` | M2a, M2b, M2c | Approved 2026-11-01, revision 4 |
 | `M2c-state-modules.md` | M2c, two plans made during the review | Summary only: owner-approved 2026-11-04, as #59 records it |
 | `audit-pr6-six-tabs.md` | Audit PR 6 (row 14, six tabs) | Approved 2026-11-10, revision 1 |
+| `dq-180-clone-draft.md` | DQ-180, the Clone draft (before audit PR 6) | Approved 2026-11-10 |
 
 If the task names a plan, open it. Otherwise, find the slice in [status.md](../status.md), then open its plan.
 For current behaviour, read the owning documents.

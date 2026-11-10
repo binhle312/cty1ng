@@ -163,4 +163,7 @@ the PR records the red run.
   it asks the state (`isLiveStream`).
 - **The lost Clone draft (DQ-180) gets its own PR on `main` first**, and this PR waits for it
   (`AGENTS.md` §9). Then this PR takes `main` and adds a test for the return to a tab.
+  Done: [#92](https://github.com/binhle312/cty1ng/pull/92) merged on 2026-11-10, and
+  `stream-life.spec.ts` has the test "a Clone draft stays when the tab returns after its source
+  went to Trash".
 

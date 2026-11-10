@@ -58,7 +58,7 @@ Implemented in: links.
 | D11 | [One run at a time per conversation](D11-one-run-at-a-time-per-conversation.md) | accepted |  |
 | D12 | [Bots are soft-deleted](D12-bots-are-soft-deleted.md) | accepted | D50 |
 | D13 | [Editing a message creates a branch](D13-editing-a-message-creates-a-branch.md) | accepted |  |
-| D14 | [Skill authorship and cloning](D14-skill-authorship-and-cloning.md) | accepted |  |
+| D14 | [Skill authorship and cloning](D14-skill-authorship-and-cloning.md) | accepted | own amendment 2026-11-10 |
 | D15 | [Skill provenance from server records](D15-skill-provenance-from-server-records.md) | accepted |  |
 | D16 | ["Always load" per pinned skill](D16-always-load-per-pinned-skill.md) | accepted |  |
 | D17 | [New repository; agent instructions in AGENTS.md](D17-new-repository-agent-instructions-in-agents-md.md) | accepted | own amendments 2026-11-04, 2026-11-05 |

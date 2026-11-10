@@ -702,6 +702,44 @@ test("leaving an edited Clone for a new skill asks first", async ({ page }) => {
   await expect(page.getByLabel("Description", { exact: true })).toHaveValue("Edited copy.");
 });
 
+// domain-model.md §3.3 (DQ-180): the source can go to Trash while the Clone editor is open.
+// The copy is a skill of its own, so Create still makes it from the text in the form.
+test("a Clone whose source went to Trash is created from the text in the form", async ({
+  page,
+  baseURL,
+}) => {
+  const skill = unique("Clone gone");
+  await createSkill(page, skill);
+  await openClone(page);
+  await expect(page.getByLabel("Name", { exact: true })).toHaveValue(`${skill.name} (copy)`);
+  await fill(page, "Description", "Use this copy when the source is gone.");
+
+  // The source goes to Trash, as from another tab.
+  const listed = z
+    .array(z.object({ id: z.string(), slug: z.string() }))
+    .parse(await (await page.request.get("/api/skills")).json());
+  const source = listed.find((item) => item.slug === skill.slug);
+  if (source === undefined) throw new Error("the source skill is not listed");
+  const headers = { origin: baseURL ?? "" };
+  const deprecated = await page.request.post(`/api/skills/${source.id}/deprecate`, {
+    headers,
+    data: { remove_bot_ids: [], row_version: 1 },
+  });
+  expect(deprecated.status()).toBe(200);
+  const trashed = await page.request.post(`/api/skills/${source.id}/trash`, {
+    headers,
+    data: { row_version: 2 },
+  });
+  expect(trashed.status()).toBe(200);
+
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await skipAssignCard(page, `${skill.name} (copy)`);
+  await expect(page).toHaveURL(`/skills/${skill.slug}-copy`);
+  await expect(page.getByLabel("Description", { exact: true })).toHaveValue(
+    "Use this copy when the source is gone.",
+  );
+});
+
 test("a second Clone of a skill proposes the next free slug", async ({ page }) => {
   const skill = unique("Clone twice");
   await createSkill(page, skill);
