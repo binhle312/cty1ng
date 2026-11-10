@@ -1,6 +1,6 @@
 # Architecture
 
-Stack (D34): TypeScript on Node 24 LTS for the backend, Hono for HTTP, Drizzle for the
+Stack (D34): TypeScript on Node 26 LTS for the backend, Hono for HTTP, Drizzle for the
 database, the Vercel AI SDK (`ai`) for model calls; React + Vite for the frontend (D28); Zod
 for every schema (D33). Libraries sit behind ports so they can be replaced (D35).
 

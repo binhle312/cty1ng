@@ -8,13 +8,13 @@ Bots discuss within a turn budget you set and hand work to each other with your 
 
 ## Quickstart
 
-Needs Node 24.15 or a newer 24 (`.nvmrc`; jsdom 30 needs 24.15) and the pnpm version in `package.json` (`packageManager`). One
+Needs Node 26 (`.nvmrc`) and the pnpm version in `package.json` (`packageManager`). One
 command starts the app; it installs the dependencies first when they are missing or out of
 date:
 
 ```bash
-nvm use                       # Node 24
-npm install -g pnpm@12.16.1   # or: corepack enable, which takes the version from package.json
+nvm use                       # Node 26
+npm install -g pnpm@12.16.1   # Node 26 has no corepack
 make dev                      # open http://127.0.0.1:5173 (API on http://127.0.0.1:8000)
 ```
 
