@@ -318,7 +318,8 @@ theme-switch leak test.
 
 All must be green to merge: ESLint (including the security rules in `security.md` §2.8),
 Prettier, `tsc`, dependency-cruiser import rules (D35), Vitest, `db:check` (Drizzle schema
-matches the migrations), Playwright, generated-client freshness, event-type list match,
+matches the migrations), Playwright (a test that passes only on its second try fails the job:
+`failOnFlakyTests`), generated-client freshness, event-type list match,
 `check:index` (folder indexes complete, `architecture.md` §4.2), the bundle budget
 (`pnpm build`, then `pnpm check:bundle`), `pnpm audit --audit-level
 high`, CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also run the automated security review when it is on;
