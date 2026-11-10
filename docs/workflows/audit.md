@@ -23,7 +23,8 @@ the second Clone bug to DQ-003, and its file records no search and no coverage.
 3. **Give each finding a general rule, then search.** Write the rule that the finding breaks in
    one sentence. Do not name the one screen in it. Search all the code for the same rule, also in
    other mechanisms. Record in the finding where the search looked and what it found.
-4. **Compare with old fixes.** Search [delivery-quality.md](../delivery-quality.md) and
+4. **Compare with old fixes.** Search [delivery-quality.md](../delivery-quality.md), its
+   [archive](../delivery-quality-archive.md) and
    [lessons-learned](../lessons-learned/README.md) for rows with the same rule. If one exists,
    answer "Same cause as an earlier fix?" with yes. Then
    [AGENTS.md §9](../../AGENTS.md#9-definition-of-done-every-pr) applies to the fix. This step is
