@@ -10,6 +10,9 @@
 #
 # When it runs (owner, 2026-11-04): each run costs money, so only when the owner marks a PR Ready,
 # right before the merge. A push does not start it, and a PR opened as Ready does not either.
+#
+# Off since 2026-11-06 (owner): the workflow is disabled on GitHub, so Ready starts nothing.
+# `gh workflow enable security-review.yml` turns it on again.
 name: Security review
 
 on:
