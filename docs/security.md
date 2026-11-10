@@ -94,9 +94,10 @@ environment, provider-side data handling.
 
 - Skills and personas are text in the database; they are never written to code paths and never
   executed.
-- Size limits: skill name `skill_name_max` (64) characters, description 1,024 characters, body
-  `skill_body_max` (20,000) characters (all required; a body over `skill_body_warn_lines` (500)
-  lines gets a warning only), persona 8,000 characters (`bot_persona_max`). The slug and the
+- Size limits: skill name `skill_name_max` characters, description 1,024 characters, body
+  `skill_body_max` characters (all required; a body over `skill_body_warn_lines`
+  lines gets a warning only), persona `bot_persona_max` characters. These four limits are
+  settings; their values are in `domain-model.md` §10. The slug and the
   description limit are fixed format rules (`domain-model.md` §3.1); the others are settings
   (§10 there). The server checks the same limits as the editor, in the service, so the editor,
   Clone, import, the CLI, the seed and bot drafts (D41) all pass the same check.

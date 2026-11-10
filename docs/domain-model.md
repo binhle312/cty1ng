@@ -321,15 +321,15 @@ bots
   name_key             TEXT NOT NULL                 -- botNameKey(name); unique among bots not purged, Trash included (D50, §2 Name key)
   row_version          INTEGER NOT NULL DEFAULT 1    -- §1; raised by every Profile or Model save, delete and restore; not by pins (§2 Concurrency)
   description          TEXT NOT NULL                 -- one line, ≤ bot_description_max (160) chars, shown to other bots (team directory, D18)
-  persona_md           TEXT NOT NULL                 -- ≤ bot_persona_max (8,000) chars
+  persona_md           TEXT NOT NULL                 -- ≤ bot_persona_max (§10) chars
   avatar_style         TEXT NOT NULL DEFAULT 'flat'  -- flat | jelly | pixel | upload (bot-avatar.md); until a slice draws Jelly and Pixel, the API refuses them (422 validation_error)
   avatar_colour        TEXT NOT NULL                 -- any colour as '#RRGGBB' (bot-avatar.md §5); the Create page picks the default; the backend does not know the palette
   avatar_path          TEXT NULL                     -- avatars/<sha256>.webp (under DATA_DIR) when avatar_style = 'upload', else NULL (§2 Avatar files)
   model_id             TEXT NOT NULL                 -- catalog id, e.g. anthropic:<model-name>        (immutable, D7)
   effort               TEXT NULL                     -- one of the model's efforts, NULL if none       (immutable, D7)
-  request_limit        INTEGER NOT NULL              -- model requests per run; default from setting bot_default_request_limit (30)
-  max_reply_chars      INTEGER NOT NULL              -- default from setting bot_default_max_reply_chars (6000)
-  history_share_pct    INTEGER NOT NULL              -- % of the model's context window for history per run, step 5 (D32); default bot_default_history_pct (40), range bot_history_min_pct–bot_history_max_pct (10–80)
+  request_limit        INTEGER NOT NULL              -- model requests per run; default from setting bot_default_request_limit (§10)
+  max_reply_chars      INTEGER NOT NULL              -- default from setting bot_default_max_reply_chars (§10)
+  history_share_pct    INTEGER NOT NULL              -- % of the model's context window for history per run, step 5 (D32); default bot_default_history_pct, range bot_history_min_pct–bot_history_max_pct (§10)
   tool_settings        JSON NOT NULL                 -- {<tool_id>: true | false} as last saved (§4.1, D55); read through the effective-settings rule below
   cloned_from_bot_id   TEXT NULL REFERENCES bots(id)
   create_key           TEXT NULL UNIQUE              -- Idempotency-Key of POST /bots; a repeat returns this bot (bots.md UI-5.6)
@@ -943,7 +943,7 @@ conversations
   auto_title_status        TEXT NULL        -- NULL = not tried | pending | done | failed | skipped (D46)
   active_leaf_message_id   TEXT NULL                -- composite FK below
   bot_discussion_enabled   BOOLEAN NULL     -- NULL = use global setting
-  bot_turn_limit           INTEGER NULL     -- NULL = use global; 1..20
+  bot_turn_limit           INTEGER NULL     -- NULL = use global; range BOT_TURN_LIMIT_RANGE (conversation-rules.md §9)
   bot_turns_used           INTEGER NOT NULL DEFAULT 0
   last_activity_at         TIMESTAMP NOT NULL
   last_read_seq            INTEGER NOT NULL DEFAULT 0   -- owner's read position: unread dot and "New" divider
@@ -1166,7 +1166,7 @@ settings
   value  JSON NOT NULL
 ```
 
-Defaults: `bot_discussion_enabled = false`, `bot_turn_limit = 5`, `bot_order = "recent"` (`"recent"` | `"created"`), `bot_order_direction = "desc"` (`"desc"` | `"asc"`), `trash_days = 30` (every item in Trash, D49, D62), `undo_seconds = 10` (D62: the Undo toast of a permanent delete), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3`, `improve_probe_tasks_max = 10` (D51: the probe starts at the first and allows at most the second; read by M5d, never hard-coded), `skill_test_cases_max = 5` (D51 amendment 2026-10-27: test cases kept for each skill), `plan_mark_reminders = 1` (D57: reminders before an action run ends when a step or Done-when item has no mark; 0 = off), `share_max_per_conversation_24h = 5` (D58), `copy_proposals_max_per_conversation_24h = 5` (D61), `library_diff_open_max_lines = 400` (round 17: a file block in the Library History tab with more changed lines starts folded, `design/components/library-page.md` §4.1), `cross_search_max_hits = 10` (D58), `display_name = "Sir"` (UI-8.7: trimmed, 1 to `display_name_max` characters), `display_name_max = 32`, `memory_enabled = true` (UI-8.6), `memory_item_max_chars = 300`, `memory_items_max = 50` (D38 amendment 2026-10-26: about 7,500 tokens at most for the bot and project memory of one request). The Settings page shows most keys; `design/components/settings-page.md` §8 lists the ones that it does not show.
+Defaults (each default and range of a setting is written in one place: here, or in `conversation-rules.md` for the keys that this section gives to it; other documents name the key and do not repeat the number. A design document in `design/` can show a text of the screen with a default value in it, as an example; if it differs, the place here is right): `bot_order = "recent"` (`"recent"` | `"created"`), `bot_order_direction = "desc"` (`"desc"` | `"asc"`), `trash_days = 30` (every item in Trash, D49, D62), `undo_seconds = 10` (D62: the Undo toast of a permanent delete), `improve_min_signals = 3`, `improve_min_conversations = 2`, `improve_min_bad_signals = 1`, `improve_probe_tasks = 3`, `improve_probe_tasks_max = 10` (D51: the probe starts at the first and allows at most the second; read by M5d, never hard-coded), `skill_test_cases_max = 5` (D51 amendment 2026-10-27: test cases kept for each skill), `plan_mark_reminders = 1` (D57: reminders before an action run ends when a step or Done-when item has no mark; 0 = off), `share_max_per_conversation_24h = 5` (D58), `copy_proposals_max_per_conversation_24h = 5` (D61), `library_diff_open_max_lines = 400` (round 17: a file block in the Library History tab with more changed lines starts folded, `design/components/library-page.md` §4.1), `cross_search_max_hits = 10` (D58), `display_name = "Sir"` (UI-8.7: trimmed, 1 to `display_name_max` characters), `display_name_max = 32`, `memory_enabled = true` (UI-8.6), `memory_item_max_chars = 300`, `memory_items_max = 50` (D38 amendment 2026-10-26: about 7,500 tokens at most for the bot and project memory of one request). `bot_discussion_enabled` and `bot_turn_limit` have their defaults in `conversation-rules.md` §2. The Settings page shows most keys; `design/components/settings-page.md` §8 lists the ones that it does not show.
 
 **Ranges** (owner 2026-10-26; whole numbers; this list is the one source for the Settings page and
 the Zod schema of `PATCH /settings`): `trash_days` ≥ 1, no upper limit; `undo_seconds` 5–60; `memory_item_max_chars` 100–1,000; `memory_items_max` 10–200 (a lower value never deletes items: a place over it takes no new item until it is under it); `display_name` 1 to
@@ -1182,7 +1182,7 @@ the Zod schema of `PATCH /settings`): `trash_days` ≥ 1, no upper limit; `undo_
 lowered below Conversations) is refused: the row shows its error, **Save changes** stays off, and
 the server returns 422 with the key. The app never changes the other value on its own.
 
-Conversation limits (`conversation-rules.md` §9, which owns the type, range and what counts; read by the services, never hard-coded): `runs_per_conversation_per_hour = 50` (1–500), `handoff_max_per_conversation_24h = 5` (1–50), `skill_draft_max_per_run = 3` (1–10), `skill_draft_max_pending_per_conversation = 10` (1–50). They are safety caps: the server refuses 0, NULL and values out of range.
+Conversation limits (`conversation-rules.md` §9, which owns the default, the type, the range and what counts; read by the services, never hard-coded): `runs_per_conversation_per_hour`, `handoff_max_per_conversation_24h`, `skill_draft_max_per_run`, `skill_draft_max_pending_per_conversation`. They are safety caps: the server refuses 0, NULL and values out of range.
 
 Skill limits (M1 spec gap pass, owner 2026-10-30; read by M1, never hard-coded): `skill_name_max = 64` (16–128), `skill_body_max = 20000` (1,000–100,000), `skill_body_warn_lines = 500` (50–5,000; a warning only). These are app choices. The format rules of the Agent Skills standard (slug, description ≤ 1,024 characters) are fixed in code (`SKILL_FORMAT`, `conversation-rules.md` §9), so an export is always valid. A lower limit never changes a saved skill: a Save or an import of a skill over it is refused until the text is shorter. The Settings page does not show them (`design/components/settings-page.md` §8).
 
@@ -1360,7 +1360,7 @@ memory_items
   bot_id             TEXT NULL REFERENCES bots(id)     -- set when scope = bot
   project_id         TEXT NULL REFERENCES projects(id) -- set when scope = project
   conversation_id    TEXT NULL REFERENCES conversations(id) -- set when scope = conversation
-  text               TEXT NOT NULL                     -- ≤ memory_item_max_chars (300); passed the sensitive-data guard (D39)
+  text               TEXT NOT NULL                     -- ≤ memory_item_max_chars (§10); passed the sensitive-data guard (D39)
   current_version    INTEGER NOT NULL DEFAULT 1
   row_version        INTEGER NOT NULL DEFAULT 1
   created_by_bot_id  TEXT NULL REFERENCES bots(id)     -- NULL = the owner
@@ -1446,8 +1446,8 @@ UNIQUE INDEX memory_proposals_one_open ON memory_proposals(kind, scope, coalesce
 - **Versions.** With history off, an update overwrites `text`, and only the previous text needed
   for Undo is kept until the next change. With history on, the old text goes to
   `memory_item_versions`, and rows beyond the setting are deleted in the same transaction.
-- **Limits:** `memory_items_max` (50) live items per bot, per project and per conversation, and
-  `memory_item_max_chars` (300) per item (§10; D38 amendment 2026-10-26), enforced in the service with a
+- **Limits:** `memory_items_max` live items per bot, per project and per conversation, and
+  `memory_item_max_chars` characters per item (§10; D38 amendment 2026-10-26), enforced in the service with a
   compare-and-set count (`architecture.md` §11).
 - **Seen (New tag).** An item is new while `seen_at` is NULL or older than `updated_at`.
   `POST /memory/seen` sets `seen_at = now` for the live items of one place, emits `memory.seen`,

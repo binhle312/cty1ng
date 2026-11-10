@@ -52,17 +52,17 @@ Design: `../design/components/settings-page.md` (round 14).
   Timeline / Board; Board appears with M8b), "Always reduce motion" (the Flow pane Animations switch, UI-12.7, shows the same value), Bot animations (Off / Reduced / Normal, capped by "Always reduce motion"; `../design/components/bot-avatar.md` §4), and, while Get started is hidden, the row that shows it again (UI-1.8). Changes apply instantly without reload,
   are saved in this browser, and the page never flashes the wrong theme on load
   (`../design/themes.md` §1, §2).
-- UI-8.6 *(D38)*: Memory: a global switch, `memory_item_max_chars` (100–1,000, default 300) and
-  `memory_items_max` (10–200, default 50). When the switch is off, no bot reads or saves memory anywhere;
+- UI-8.6 *(D38)*: Memory: a global switch, `memory_item_max_chars` and
+  `memory_items_max` (ranges and defaults: `../domain-model.md` §10). When the switch is off, no bot reads or saves memory anywhere;
   saved items are kept and return when it is turned back on. A link opens the Memory page.
-- UI-8.7: Profile: the owner's display name (`display_name`, default "Sir"). After the app
-  trims spaces, it must have 1 to `display_name_max` characters (default 32); an empty or too
+- UI-8.7: Profile: the owner's display name (`display_name`). After the app
+  trims spaces, it must have 1 to `display_name_max` characters (both defaults: `../domain-model.md` §10); an empty or too
   long name shows a field error and does not save (422 from the server). The user panel shows
   it, and its first letter is the owner avatar (`../design/components/user-panel.md`).
 - UI-8.8: New bots: the start values of the Create bot page (`bot_default_history_pct`,
   `bot_default_request_limit`, `bot_default_max_reply_chars`, UI-5.8). A change does not change
   existing bots.
-- UI-8.9 *(D49)* (M5b): Trash: `trash_days`, a whole number of days, at least 1 (0 would delete at once, with no restore), no upper limit, default 30.
+- UI-8.9 *(D49)* (M5b): Trash: `trash_days`, a whole number of days. The app refuses 0, which would delete at once, with no restore. Range and default: `../domain-model.md` §10.
 - UI-8.10 *(D51)* (M5d): Skill improvement: the five `improve_*` settings and `skill_test_cases_max`.
 
 ## Conversation settings (UI-9)

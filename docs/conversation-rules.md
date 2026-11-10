@@ -52,7 +52,7 @@ Effective settings: conversation value if not NULL, else the global setting.
 | Setting | Global default | Range |
 | --- | --- | --- |
 | `bot_discussion_enabled` | false | on/off |
-| `bot_turn_limit` | 5 | 1–20 |
+| `bot_turn_limit` | 5 | `BOT_TURN_LIMIT_RANGE` (§9) |
 
 When a run finishes, `decideRuns` is called with the bot's message as trigger:
 
@@ -234,7 +234,7 @@ next tool call." A planning run and a run with no plan do not get the tool.
 `done` or `skipped` mark, or a Done-when item has no `check_done`, the app does not end the run.
 It sends one more turn with the open marks: "Before you reply: step 4 and Done-when item 2 have
 no mark. Mark each step done or skipped (with a note), and check each Done-when item. Mark done
-only what you really did." It does this at most `plan_mark_reminders` times (setting, default 1,
+only what you really did." It does this at most `plan_mark_reminders` times (setting, `domain-model.md` §10;
 0 = off). Each reminder is one model request and counts toward `request_limit`.
 
 ### Visible history
@@ -266,7 +266,7 @@ only what you really did." It does this at most `plan_mark_reminders` times (set
   from the bot's model. In a project, the instructions and the goal count toward it too (D45):
 
   ```
-  budget = bot.history_share_pct / 100 × catalog context_window     (default 40 %)
+  budget = bot.history_share_pct / 100 × catalog context_window     (default: bot_default_history_pct)
   ```
 
   It is a ceiling, not a target: short conversations use far less. The rest of the window is
@@ -307,7 +307,7 @@ Example:
   not an active member, the card offers "Add <bot> and start" (the bot joins with full history,
   since the files are the point).
 - Files must exist and be inside the workspace; they are committed and the commit sha pinned.
-- Limit: `handoff_max_per_conversation_24h` (setting, default 5, §9) handoffs per conversation
+- Limit: `handoff_max_per_conversation_24h` (setting, §9) handoffs per conversation
   in a rolling 24-hour period. Pending, approved, changes-requested, rejected and stale handoffs
   all count. Beyond that the tool returns `limit_reached` asking the bot to tell the owner, and
   creates no handoff. A blocked call does not count.
@@ -396,12 +396,12 @@ Rules:
   the draft only; the owner still approves the finished draft on its card (D41). The tool is never offered in other action runs, planning runs, bot turns or
   handoff runs. The prompt says to use it only when the owner asks. A bot may offer in one line ("Want me to save this
   as a skill?") and waits for a yes.
-- **Text only.** Name (≤ `skill_name_max`), description (≤ 1,024 characters), body (≤ `skill_body_max`, default 20,000 characters) and changelog. No files,
+- **Text only.** Name (≤ `skill_name_max`), description (≤ 1,024 characters), body (≤ `skill_body_max` characters; both limits are settings, `domain-model.md` §10) and changelog. No files,
   no frontmatter beyond what the app writes, no tool permissions or write folders.
 - **Guard.** The text passes the sensitive-data guard (D39) or the tool returns an error
   naming the kinds found; there is no "Send anyway" for drafts.
-- **Limits.** At most `skill_draft_max_per_run` (setting, default 3, §9) drafts per run, of any
-  status, and at most `skill_draft_max_pending_per_conversation` (setting, default 10) drafts
+- **Limits.** At most `skill_draft_max_per_run` (setting, §9) drafts per run, of any
+  status, and at most `skill_draft_max_pending_per_conversation` (setting, §9) drafts
   with status `pending` per conversation. An approve, reject or stale frees a pending slot.
   Beyond a limit the tool returns an error asking the bot to tell the owner, and creates no
   draft. A blocked call does not count.

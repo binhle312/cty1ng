@@ -144,7 +144,7 @@ Save titles (one row per commit on main):
   lines added, `danger` lines removed and struck, hunk lines in `on-surface-faint`. A binary
   file shows "Binary file · {old size} → {new size}" and no diff.
 - When the save opens, every block is open, except deletes and blocks with more than
-  `library_diff_open_max_lines` changed lines (setting, default 400). They start folded.
+  `library_diff_open_max_lines` changed lines (setting, `../../domain-model.md` §10). They start folded.
 
 ## 5. Unsaved changes tab (L3, L3b)
 
@@ -229,7 +229,7 @@ Home Library. The facts and the History tab name the Home conversations.
 
 - UI-3.16: the Files side panel is replaced by the Library page (§1). The conversation has no
   file panel (D44: the right pane holds Flow or Memory).
-- New setting `library_diff_open_max_lines` (default 400, 50–5,000): a file block with more
+- New setting `library_diff_open_max_lines` (default and range: `../../domain-model.md` §10): a file block with more
   changed lines starts folded in the History tab.
 - API: `api.md` §5d (Library endpoints, the save state, `GET /runs/{id}/save/diff`,
   `GET /libraries/{place}/files/detail`, `POST /libraries/{place}/seen`) and the
