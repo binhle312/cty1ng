@@ -38,6 +38,14 @@ The plan comes from the owner, 2026-11-04: audit, owner review of each finding, 
 
 After these: the owner fixes or drops each of the other 33 P3 findings and the P3 rows that later reviews added, except the row "Guard shapes accepted". Then one style-only PR for the 104 `max-params` places, a second audit, and M3. The coding standard stays parked until the owner restarts it.
 
+**Changed on 2026-11-08 (owner; written here on 2026-11-10):** fix every P3 found so far before M3. This replaces item 7 and the "fixes or drops" step above.
+
+- Scope: the P3 findings of this file, the open and `partial` P3 rows of [delivery quality](../delivery-quality.md), and the follow-ups of [status](../status.md). DQ-109 is in scope too.
+- Method: make one list with no duplicates. Check each item in the code: still there, already fixed, or not reproduced. Then fix in small PRs by area. Bring an item to the owner to drop only when it costs more than it gives.
+- Order: PR 5, PR 6, the P3 PRs, the style-only `max-params` PR, the second audit with [the audit workflow](../workflows/audit.md), then M3.
+- The list is not in the repository yet. The ledger rows that say "on the P3 list before M3" mean this list. A draft of 2026-11-10 has 97 items; it comes into this folder after its items are checked.
+- The rule for later milestones is in the [merge bar](../workflows/merge-bar.md): P3 findings are fixed at the end of each milestone (owner, 2026-11-10).
+
 **Decisions made during PR 2** (owner, 2026-11-05):
 
 - The frontmatter limit for row 5 is 8,192 characters. The largest valid export has about 6.2 KB, so a much lower limit is not possible.
@@ -192,7 +200,7 @@ The lead did not check these again, except where a row says so. The others are f
 
 ### Found during PR 4
 
-- **P2 (owner, 2026-11-08); its own PR after PR 4.** After the browser reports that it is offline, the first visit to a Clone page, a bot page or `/bots/new` stays loading until the browser is online again. TanStack Query pauses reads, and the app runs on 127.0.0.1. Run with an `offline` event on `8c2278f` and on the branch; real Wi-Fi off is not tested: `frontend/src/main.tsx:15`.
+- **Fixed in #84. P2 (owner, 2026-11-08); its own PR after PR 4.** After the browser reports that it is offline, the first visit to a Clone page, a bot page or `/bots/new` stays loading until the browser is online again. TanStack Query pauses reads, and the app runs on 127.0.0.1. Run with an `offline` event on `8c2278f` and on the branch; real Wi-Fi off is not tested: `frontend/src/main.tsx:15`.
 - Esc on the bot page does nothing when the focus is outside the edit form, for example after a click on a blank area, on Discard or on a tab. Run on `8c2278f` and on the branch: `frontend/src/features/bots/bot-page.tsx:279`.
 - Two older Esc checks and one older option have no test that fails without them: `contains`, `defaultPrevented` and the template's `retry: false` (DQ-095).
 - A live event during a first-load read joins that read, so the form can open with a value from before the event. The next change has the same result, because an open form keeps its first answer (DQ-107).
@@ -231,7 +239,7 @@ Correction to row 1: `act()` is not the only thing that hides the failure. A bar
 ## Limits
 
 - Not reached: real-browser avatar upload and touch drag, the order that each race test forces in the service tests, GitHub secret scanning settings, and decoder fuzzing.
-- The owner's list of PR #59 issues is not in this audit, because the owner has not given it yet.
+- The owner's list of PR #59 issues is not a separate list: the owner closed that question on 2026-11-05 (question 7), and the findings of this audit count as those issues.
 
 ## How to repeat the key checks
 

@@ -24,11 +24,17 @@ The [design index](design/README.md) identifies agreed designs and open design w
 
 ## Next
 
-1. Close M2. The P3 follow-ups with target M2 close are fixed or dropped in [#66](https://github.com/binhle312/cty1ng/pull/66), except the rows from the [#60](https://github.com/binhle312/cty1ng/pull/60) review, which the owner has not decided yet.
-   The PR population is confirmed. Exact totals are not possible: three PRs are unmeasured and 11 of the 17 issue rows are `partial` or `unknown` (`delivery-quality.md` §2).
-2. Prepare the [M3 part briefs and specification work](development-plan.md#specification-work-before-m3a).
-   M3 follows M2c and has seven delivery parts. Resolve the open schema, Usage and Guide questions before dependent code.
-3. Complete the owner's whole-UI review after M3. The deferred items remain in the table below.
+The owner's order (2026-11-08, in the [audit file](audits/2026-11-05-repo-audit.md), "Approved fix order"):
+
+1. Audit PR 6, six tabs: draft [#91](https://github.com/binhle312/cty1ng/pull/91).
+2. The P3 PRs: every P3 found so far, from one list with no duplicates, in small PRs by area. The M2 close rows of the [#60](https://github.com/binhle312/cty1ng/pull/60) review are on that list.
+3. One style-only PR for the 104 `max-params` places.
+4. The second audit, with the [audit workflow](workflows/audit.md).
+5. Prepare the [M3 part briefs and specification work](development-plan.md#specification-work-before-m3a).
+   M3 has seven delivery parts. Resolve the open schema, Usage and Guide questions before dependent code. Each M3 part starts with the EGM step ([egm.md](workflows/egm.md)).
+6. Complete the owner's whole-UI review after M3. The deferred items remain in the table below.
+
+From M3 on, P3 findings are fixed at the end of each milestone, before the next one starts ([merge bar](workflows/merge-bar.md); owner, 2026-11-10).
 
 ## Waiting on the owner
 
@@ -52,12 +58,12 @@ it in, and the row goes when its PR merges.
 
 | Item | Found in | Target |
 | --- | --- | --- |
-| `pnpm e2e:serve` can die and leave its servers on the ports: a closed stdout (`EPIPE`) or SIGHUP stops the script without stopping them, and the marker stays. It fails safe, but its message says to stop a script that no longer runs, and no doc says to delete `.e2e-serve`. Stop the servers on those exits, and correct the message | [#60](https://github.com/binhle312/cty1ng/pull/60) review | M2 close |
-| No test runs `scripts/e2e-serve.ts` itself, so its guard and signal wiring have only manual evidence | [#60](https://github.com/binhle312/cty1ng/pull/60) review | M2 close |
+| `pnpm e2e:serve` can die and leave its servers on the ports: a closed stdout (`EPIPE`) or SIGHUP stops the script without stopping them, and the marker stays. It fails safe, but its message says to stop a script that no longer runs, and no doc says to delete `.e2e-serve`. Stop the servers on those exits, and correct the message | [#60](https://github.com/binhle312/cty1ng/pull/60) review | The P3 PRs before M3 (owner, 2026-11-08) |
+| No test runs `scripts/e2e-serve.ts` itself, so its guard and signal wiring have only manual evidence | [#60](https://github.com/binhle312/cty1ng/pull/60) review | The P3 PRs before M3 (owner, 2026-11-08) |
 | Temporary CLI `skills trash` and `skills restore` (M1 spec gap pass, owner 2026-10-30): remove them when the Trash page exists | [#51](https://github.com/binhle312/cty1ng/pull/51) | M5b |
 | P3 (`workflows/merge-bar.md`): late-answer rules still in refs: `create-bot-page.tsx` (`mounted`, `inFlight`), `crop-card.tsx` (`closed`, `lastFile`), and the skill pages' still-on-page check, now one hook (`on-page.ts`, [#78](https://github.com/binhle312/cty1ng/pull/78)). They are not card or dialog rules, so the owner left them out of the 2026-11-04 design; check them against `frontend-conventions.md` §1. The check for the skill pages, done in [#78](https://github.com/binhle312/cty1ng/pull/78): the hook holds one yes or no, and `takesServerText` owns the rule for server text, but the rest of the skill page's state rules are not in one pure module | [#59](https://github.com/binhle312/cty1ng/pull/59) review of `ec8faa7` | When those files next change (owner, 2026-11-04) |
-| P3 (`workflows/merge-bar.md`): the Skills page orders that [#78](https://github.com/binhle312/cty1ng/pull/78) leaves open, DQ-070 to DQ-073, DQ-077 and DQ-081: an old Apply and a newer preview, the bar during a Save with text typed back, Discard with a slow refresh, Make active again during a slow refresh, a pick during a Restore, and a second Delete on a return visit | [#78](https://github.com/binhle312/cty1ng/pull/78) review of `274f118` | Audit PR 7 or P3 triage, as the owner decides |
-| Found during audit PR 4, in the audit file under "Found during PR 4": pages stay loading after an `offline` event (DQ-088, P2 by the owner on 2026-11-08: fixed in [#84](https://github.com/binhle312/cty1ng/pull/84), merged on 2026-11-08), Esc outside the edit form on the bot page (P3), the cached name limit of the skill Clone (P3), three older items with no test that fails without them (DQ-095: Esc's `contains` and `defaultPrevented` checks, the template's `retry: false`; P3), a live event during a first-load read of the Create form (DQ-107, P3), the wait of Create for its refresh when a read keeps failing (DQ-108, P3), and a longer skeleton when live events come during a failing read (DQ-109, P3), and a test client that `heldAnswer` does not check (DQ-115, P3), and CI failures of `skills.spec.ts` "deleting the last skill" (DQ-116, P3: the test's own `route.fetch()` handler; fixed in [#84](https://github.com/binhle312/cty1ng/pull/84), merged on 2026-11-08) | [#82](https://github.com/binhle312/cty1ng/pull/82) | The owner decides |
+| P3 (`workflows/merge-bar.md`): the Skills page orders that [#78](https://github.com/binhle312/cty1ng/pull/78) leaves open, DQ-070 to DQ-073, DQ-077 and DQ-081: an old Apply and a newer preview, the bar during a Save with text typed back, Discard with a slow refresh, Make active again during a slow refresh, a pick during a Restore, and a second Delete on a return visit | [#78](https://github.com/binhle312/cty1ng/pull/78) review of `274f118` | The P3 PRs before M3 (owner, 2026-11-08) |
+| Found during audit PR 4, in the audit file under "Found during PR 4": Esc outside the edit form on the bot page (P3), the cached name limit of the skill Clone (P3), three older items with no test that fails without them (DQ-095: Esc's `contains` and `defaultPrevented` checks, the template's `retry: false`; P3), a live event during a first-load read of the Create form (DQ-107, P3), the wait of Create for its refresh when a read keeps failing (DQ-108, P3), and a longer skeleton when live events come during a failing read (DQ-109, P3), and a test client that `heldAnswer` does not check (DQ-115, P3). DQ-088 and DQ-116 of this list are fixed in [#84](https://github.com/binhle312/cty1ng/pull/84) | [#82](https://github.com/binhle312/cty1ng/pull/82) | The P3 PRs before M3 (owner, 2026-11-08) |
 | The `db_lock_wait_seconds` histogram (`architecture.md` §9, D29 switch trigger 3); there is no metrics output yet | #48 | M3 (the worker brings concurrent writes) |
 | `esbuild` advisory (moderate, dev only, through `drizzle-kit` 0.31.11); no stable fix | #48 | Update `drizzle-kit` when 1.0 is stable (Dependabot) |
 | First-run offer of the Guide bot in the app ("Add Guide" in the empty state, so a new owner needs no `make seed`); needs a design round (owner, 2026-11-01, M2 plan decision 15) | [#57](https://github.com/binhle312/cty1ng/pull/57) | M3 spec gap pass |
@@ -79,11 +85,12 @@ it in, and the row goes when its PR merges.
 | M0 | merged | [#46](https://github.com/binhle312/cty1ng/pull/46) (M0a), [#48](https://github.com/binhle312/cty1ng/pull/48) (M0b), [#49](https://github.com/binhle312/cty1ng/pull/49) (M0c), [#50](https://github.com/binhle312/cty1ng/pull/50) (Impeccable snapshot) | Three parts (M0a tooling, M0b backend, M0c frontend), all merged 2026-10-30 |
 | M1 | merged | [#51](https://github.com/binhle312/cty1ng/pull/51) (spec gap pass), [#52](https://github.com/binhle312/cty1ng/pull/52) (plan and M1a backend), [#53](https://github.com/binhle312/cty1ng/pull/53) (M1c brief), [#54](https://github.com/binhle312/cty1ng/pull/54) (M1b Skills page), [#55](https://github.com/binhle312/cty1ng/pull/55) (M1c backend maintenance) | Plan approved 2026-10-31 ([plan](plans/M1-skill-hub.md)), split into M1a (backend), M1b (Skills page) and M1c (event pruning, SQLite writer guard), all merged. Design approved: `design/components/skills-page.md` (round 8); D49 accepted. Round 16 moves the page to the bot page layout (agreed, #38) |
 | M1c | merged | see M1 | Part of the M1 row; its own row in the plan |
-| M2 | merged | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec), [#56](https://github.com/binhle312/cty1ng/pull/56) (spec gap pass), [#57](https://github.com/binhle312/cty1ng/pull/57) (plan, M2a), [#58](https://github.com/binhle312/cty1ng/pull/58) (M2b), [#59](https://github.com/binhle312/cty1ng/pull/59) (M2c) | Plan approved 2026-11-01 ([plan](plans/M2-bots.md)); M2a merged 2026-11-01; M2b merged 2026-11-02; M2c (bot page, upgrade and assign cards) merged 2026-11-04. Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open (M2 shows its empty state). Spec gap pass answered 2026-11-01 |
+| M2 | merged | [#20](https://github.com/binhle312/cty1ng/pull/20) (spec), [#56](https://github.com/binhle312/cty1ng/pull/56) (spec gap pass), [#57](https://github.com/binhle312/cty1ng/pull/57) (plan, M2a), [#58](https://github.com/binhle312/cty1ng/pull/58) (M2b), [#59](https://github.com/binhle312/cty1ng/pull/59) (M2c), [#66](https://github.com/binhle312/cty1ng/pull/66) (close fixes) | Plan approved 2026-11-01 ([plan](plans/M2-bots.md)); M2a merged 2026-11-01; M2b merged 2026-11-02; M2c (bot page, upgrade and assign cards) merged 2026-11-04. Agreed: `design/components/bots-page.md`, `create-bot-page.md` (with Clone), `bot-page.md` and the standards (round 9). Usage tab design agreed, its data open (M2 shows its empty state). Spec gap pass answered 2026-11-01 |
 | M3 | UI design agreed | [#26](https://github.com/binhle312/cty1ng/pull/26) (spec) | Round 10: `design/components/conversation-page.md`, `composer.md`, `conversation-cards.md` |
 | M4 | UI design agreed | [#34](https://github.com/binhle312/cty1ng/pull/34) (spec) | Round 12: `design/components/conversation-page.md` §2 |
 | M5 | UI design agreed | [#35](https://github.com/binhle312/cty1ng/pull/35) (spec) | Round 14: `design/components/settings-page.md`, `conversation-page.md` §2.4; key `bot_discussion_enabled` |
 | M5b | UI design agreed | [#37](https://github.com/binhle312/cty1ng/pull/37) (spec) | Brief: `tasks/M5b-projects-and-memory.md`. Round 15: `design/components/memory-page.md`, `trash-page.md`, `conversation-page.md` §2.1a; D62, D63 accepted |
+| M5e | not written | | Cross-conversation reading (D58); the next slice after M5b |
 | M5c | UI design agreed | [#38](https://github.com/binhle312/cty1ng/pull/38) (spec) | Skills drafted by bots (D41, D64, D65 accepted). Round 16: `design/components/skill-draft-card.md`, `skills-page.md` §2a, §13, §17. Brief not written |
 | M5d | not written | [#39](https://github.com/binhle312/cty1ng/pull/39) (spec) | Bots improve their skills from the owner's feedback (D51). D51 amendment 2026-10-27: saved test cases for each skill, approved by the owner |
 | M6 | UI design agreed | [#41](https://github.com/binhle312/cty1ng/pull/41) (spec) | Round 17: `design/components/library-page.md`, `library-cards.md` |
@@ -92,6 +99,7 @@ it in, and the row goes when its PR merges.
 | M8 | UI design agreed | [#33](https://github.com/binhle312/cty1ng/pull/33) (spec) | Round 11: `design/components/flow-timeline.md`; Timeline only |
 | M8b | not written | | Board map in the Flow pane (D30) |
 | M8c | proposed | | Project-wide Board, read-only, after M8b (`design/components/left-bar.md` §5) |
+| Avatars | not written | | Jelly and Pixel avatar styles, and the motion of the Bot animations setting |
 | T2 | not written | | Material theme (D30) |
 | M9 | not written | | VPS milestone |
 
