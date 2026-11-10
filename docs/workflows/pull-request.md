@@ -74,6 +74,6 @@ review fix, check them against the commit that you push (owner, 2026-11-08, DQ-1
 5. If you correct a claim, search for its old text in all the records, and correct each copy.
 6. Run `gh pr list --state all`. Correct the state of each PR that `docs/status.md` or the active
    audit file names. A PR cannot record its own merge, so the next push does it (owner, 2026-11-10).
-7. Measure each ledger row that the PR adds. This command prints the rows that are too long:
-   `awk '/^\| DQ-/ && length($0) > 600 { print substr($0, 3, 6), length($0) }' docs/delivery-quality.md`.
-   Make a new row of that list shorter. A row from before 2026-11-10 can stay as it is (owner, 2026-11-10).
+7. Measure each ledger row with an id above DQ-202. This command must print nothing:
+   `awk -F'|' '/^\| DQ-/ { id = substr($2, 5) + 0; if (id > 202 && length($0) > 600) print "DQ-" id, length($0) }' docs/delivery-quality.md`.
+   Make each row that it prints shorter. A row up to DQ-202 can stay as it is (owner, 2026-11-10).
