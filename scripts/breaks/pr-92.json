@@ -1,0 +1,70 @@
+{
+  "claims": [
+    {
+      "id": "C1",
+      "claim": "A later full read with the source gone keeps the Clone editor and the typed text",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/new-skill-page.test.tsx",
+        "name": "keeps the editor and the typed text when the source skill is no longer listed"
+      },
+      "assertion": "expect(bodyText(), \"the draft\").toBe(DRAFT);",
+      "breaks": [
+        {
+          "id": "C1-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "      return queryClient.getQueryData<CloneSource | null>(queryKey) ?? null;\n",
+              "replace": "      return null;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C2",
+      "claim": "A first read with no match shows Page not found",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/new-skill-page.test.tsx",
+        "name": "shows Page not found on a first visit when the version does not exist"
+      },
+      "assertion": "expect(await screen.findByText(\"Page not found\", {}, { timeout: 5000 })).toBeTruthy();",
+      "breaks": [
+        {
+          "id": "C2-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "  if (source.data === null) return <NotFoundPage />;\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "backend/src/core/skills/skills.service.test.ts",
+      "name": "makes the copy with no source when the source skill is in Trash",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/core/skills/skills.service.test.ts",
+      "name": "makes the copy with no source when the source version no longer exists",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/test/api/skills.test.ts",
+      "name": "POST /skills with a clone source in Trash gives 201 and no source",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "frontend/test/e2e/skills.spec.ts",
+      "name": "a Clone whose source went to Trash is created from the text in the form",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    }
+  ]
+}
