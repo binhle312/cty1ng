@@ -2,7 +2,7 @@
 
 Brief: DQ-180 in [delivery-quality.md](../delivery-quality.md), found by the first review of [#91](https://github.com/binhle312/cty1ng/pull/91)
 Checkpoint: owner decision (`AGENTS.md` §9: the failed rule is that of DQ-104)
-Approval: approved 2026-11-10 (owner: "Do A", then "both in one PR")
+Approval: approved 2026-11-10 (owner: "Do A", then "both in one PR"); the redesign of the page fix: owner, 2026-11-10, option B
 
 Owner decisions of 2026-11-10: the Clone page gets its fix in its own PR on `main`, before #91
 (option A). Create also works when the source is in Trash or gone. Both changes are in this
@@ -76,3 +76,76 @@ Not covered here: the return to a tab. #91 adds that test when it takes `main`.
   source in Trash. The owner chose one rule: the copy records its source while the source
   version exists. A version that does not exist gives no source.
 - **D14 gets a dated amendment** for the two cases with no origin (DQ-188).
+
+## Redesign of the page fix (owner, 2026-11-10: option B)
+
+Checkpoint: owner decision (`AGENTS.md` §9). An owner-pasted review of `279500b` found a P2
+with the cause of DQ-185. The owner chose to replace the mechanism in this PR, not in a new
+one. This section is committed before the code of the redesign.
+
+### The finding
+
+1. The Clone page is open, and a full read of its source starts.
+2. The owner leaves the page and returns before the answer arrives.
+3. The answer arrives: no listed skill has the version.
+4. The old editor stays. The rule says Page not found.
+
+Reproduced on `279500b`: the test "shows Page not found on a second visit that returns before
+a pending read ends" fails there, and passes on the page code of `76f6b2d`.
+
+### Cause
+
+The first fix kept the opened source in the query cache, and relied on `gcTime: 0` to drop it
+when the page closes. TanStack Query removes a query only when no read is on its way
+(`optionalRemove` in `query.js` of the installed version). So a pending read keeps the old data,
+and the fallback gives it to the next visit. DQ-185 had the same cause: the kept value lives as
+long as the cache, not as long as the open editor. The cache is the wrong owner.
+
+### Design
+
+One owner: the page instance of one Clone (`ClonePage`, one mount for each `from`) holds the
+source that its editor opened with.
+
+| State of the mount | A good answer with the source | A good answer with nothing | A failed read |
+| --- | --- | --- | --- |
+| No answer of this visit yet (also when the cache has old data) | Open the editor from this answer, when the settings wait has ended | Page not found | The load error with Try again |
+| The editor is open | Stays. Create uses the newest slugs of the answer | Stays, with the source that it opened with | Stays |
+| Page not found shows | Open the editor from this answer | Stays | The load error with Try again |
+
+- "An answer of this visit" is `isFetchedAfterMount` with a good status. It counts for each
+  mount and cannot go back, so the open editor never closes (`frontend-conventions.md` §5).
+- The source read tells the truth again: `null` when no listed skill has the version. The cache
+  fallback goes.
+- `gcTime: 0` stays for its first reason only, the slugs of each Clone. Page not found on a new
+  visit no longer depends on it.
+
+Options compared:
+
+| Option | Gain | Cost |
+| --- | --- | --- |
+| **The mount holds the opened source** (chosen) | The value lives exactly as long as the editor. A new visit decides from its own answer | One small component and one state |
+| Keep the cache fallback and clear the query when the page closes | Fewer lines | A second rule about the cache lifetime, with the same owner problem: the next pending read brings it back |
+| A reducer module for the page (`new-skill-page-state.ts`) | One pure table with a test for each cell | More code than the three rules above need. The owner kept such a move out of #78 (audit file, "Decisions during PR 3") |
+
+### Test strategy
+
+Component tests in `new-skill-page.test.tsx`, each with a break in `scripts/breaks/pr-92.json`,
+because they are order tests. The table rows of `testing.md` §3 that the review found missing
+are marked.
+
+| Behaviour | Case |
+| --- | --- |
+| A full read with the source gone keeps the editor and the text | A change in another tab; an intervening load |
+| The same when the browser is online again | The second trigger on `main` |
+| A failed read after the editor opened keeps the editor and the text | **A failed request** |
+| The source goes away, comes back, and goes away again: the text stays | **A value that changes and changes back** |
+| A first read with no match shows Page not found | The rule that the fix must keep |
+| A second visit after the source went away shows Page not found | No pending read |
+| A second visit that returns before a pending read ends shows Page not found | **A late answer**; the P2 |
+| A second visit that returns before a pending read ends opens the editor from the new answer, not from the old data | **A late answer**; the form fills from the read of this visit |
+| A second visit whose read fails shows the load error, not the old editor | **A failed request** on a return |
+| A first read that fails, then Try again with the source gone, shows Page not found | **A failed request**, then a retry |
+
+Not in scope: the Clone of a bot has `gcTime: 0` for its template too (`create-bot-page.tsx`),
+so a return during a pending read can fill its form from old data. It goes on the P3 list.
+
