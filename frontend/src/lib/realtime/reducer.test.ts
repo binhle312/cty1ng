@@ -1,5 +1,5 @@
 import { StreamEvent } from "@cty1ng/shared/events";
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import {
   getSettingsOptions,
@@ -67,6 +67,22 @@ describe("event reducer", () => {
     // The new database starts its seq again from 1.
     expect(reducer.apply(ping(1))).toBe(true);
     expect(queryClient.getQueryState(["anything"])?.isInvalidated).toBe(true);
+  });
+
+  it("on reset, starts again a first read that is still on its way", () => {
+    const { queryClient, reducer } = setup();
+    let reads = 0;
+    const observer = new QueryObserver(queryClient, {
+      queryKey: ["first read"],
+      queryFn: () => {
+        reads += 1;
+        return new Promise<string>(() => undefined);
+      },
+    });
+    observer.subscribe(() => undefined);
+    reducer.apply({ type: "ready", data: { max_seq: 7 } });
+    reducer.apply({ type: "reset", data: {} });
+    expect(reads, "reads of a query with no answer yet").toBe(2);
   });
 
   it("on a reset during a replay, moves the cursor past the pruned events and refetches", () => {

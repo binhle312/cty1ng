@@ -1,5 +1,6 @@
 import { STREAM_RETRY_MS } from "@cty1ng/shared/events";
 import type { QueryClient } from "@tanstack/react-query";
+import { readAll } from "./read-all.ts";
 import { createEventReducer } from "./reducer.ts";
 import { connectSse } from "./sse.ts";
 import {
@@ -77,7 +78,7 @@ export function startRealtime(
         timer = null;
         return;
       case "readAll":
-        void queryClient.invalidateQueries();
+        readAll(queryClient);
         return;
       default: {
         const _exhaustive: never = action;

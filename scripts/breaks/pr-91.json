@@ -679,7 +679,7 @@
           "file": "frontend/src/lib/realtime/start.ts",
           "edits": [
             {
-              "find": "        void queryClient.invalidateQueries();\n",
+              "find": "        readAll(queryClient);\n",
               "replace": ""
             }
           ]
@@ -757,6 +757,138 @@
             {
               "find": "  return state.kind === \"live\" && state.streams === stream;\n",
               "replace": "  return state.streams === stream;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R1",
+      "claim": "After the first ready of a new stream, a first read that is still on its way starts again",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/start.test.ts",
+        "name": "the read after ready starts again a first read that is still on its way"
+      },
+      "assertion": "expect(reads, \"reads of a query with no answer yet\").toBe(2);",
+      "breaks": [
+        {
+          "id": "R1-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "  void queryClient.cancelQueries(\n    {\n      type: \"active\",\n      fetchStatus: \"fetching\",\n      predicate: (query) => query.state.data === undefined,\n    },\n    { silent: true, revert: false },\n  );\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "claim": "After a reset, a first read that is still on its way starts again",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/reducer.test.ts",
+        "name": "on reset, starts again a first read that is still on its way"
+      },
+      "assertion": "expect(reads, \"reads of a query with no answer yet\").toBe(2);",
+      "breaks": [
+        {
+          "id": "R2-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "  void queryClient.cancelQueries(\n    {\n      type: \"active\",\n      fetchStatus: \"fetching\",\n      predicate: (query) => query.state.data === undefined,\n    },\n    { silent: true, revert: false },\n  );\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "claim": "readAll starts a new read for an active query whose first read is on its way",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/read-all.test.ts",
+        "name": "starts a new read for a query whose first read is still on its way"
+      },
+      "assertion": "expect(query.answers, \"reads of a query with no answer yet\").toHaveLength(2);",
+      "breaks": [
+        {
+          "id": "R3-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "  void queryClient.cancelQueries(\n    {\n      type: \"active\",\n      fetchStatus: \"fetching\",\n      predicate: (query) => query.state.data === undefined,\n    },\n    { silent: true, revert: false },\n  );\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "claim": "The answer of the first read that readAll cut does not reach the cache",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/read-all.test.ts",
+        "name": "drops the answer of the first read that it cut"
+      },
+      "assertion": "expect(query.data(), \"the old answer\").toBeUndefined();",
+      "breaks": [
+        {
+          "id": "R4-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "  void queryClient.cancelQueries(\n    {\n      type: \"active\",\n      fetchStatus: \"fetching\",\n      predicate: (query) => query.state.data === undefined,\n    },\n    { silent: true, revert: false },\n  );\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "claim": "The cache takes the answer of the read that started after readAll",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/read-all.test.ts",
+        "name": "takes the answer of the read that started after it"
+      },
+      "assertion": "expect(query.data(), \"the new answer\").toBe(\"from after\");",
+      "breaks": [
+        {
+          "id": "R5-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "  void queryClient.cancelQueries(\n    {\n      type: \"active\",\n      fetchStatus: \"fetching\",\n      predicate: (query) => query.state.data === undefined,\n    },\n    { silent: true, revert: false },\n  );\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R6",
+      "claim": "readAll starts a new read for a query that has data and a read on its way",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/read-all.test.ts",
+        "name": "starts a new read for a query that has data and a read on its way"
+      },
+      "assertion": "expect(query.answers, \"reads of a query with data\").toHaveLength(3);",
+      "breaks": [
+        {
+          "id": "R6-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "  void queryClient.invalidateQueries();\n",
+              "replace": ""
             }
           ]
         }

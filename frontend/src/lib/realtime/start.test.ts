@@ -1,5 +1,5 @@
 import type { StreamEvent } from "@cty1ng/shared/events";
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TEST_PINGS_KEY } from "./reducer.ts";
 import { type Page, startRealtime } from "./start.ts";
@@ -51,7 +51,7 @@ function setup(startVisible = true) {
   };
   const open = () => streams.filter((s) => !s.closed).length;
   const notes = () => queryClient.getQueryData<string[]>(TEST_PINGS_KEY) ?? [];
-  return { readAll, show, streams, stream, open, notes };
+  return { queryClient, readAll, show, streams, stream, open, notes };
 }
 
 beforeEach(() => {
@@ -109,6 +109,25 @@ describe("startRealtime", () => {
     show(true);
     stream(2).onEvent(ready(9));
     expect(readAll, "first ready").toHaveBeenCalledExactlyOnceWith();
+  });
+
+  // A page that the tab has just opened reads its data for the first time. That read started
+  // before `ready`, so its answer can miss a change that no event will bring.
+  it("the read after ready starts again a first read that is still on its way", () => {
+    const { show, stream, queryClient } = setup();
+    show(false);
+    show(true);
+    let reads = 0;
+    const observer = new QueryObserver(queryClient, {
+      queryKey: ["first read"],
+      queryFn: () => {
+        reads += 1;
+        return new Promise<string>(() => undefined);
+      },
+    });
+    observer.subscribe(() => undefined);
+    stream(2).onEvent(ready(9));
+    expect(reads, "reads of a query with no answer yet").toBe(2);
   });
 
   // The browser's own reconnect: `ready` again in the same stream, then the server's replay.
