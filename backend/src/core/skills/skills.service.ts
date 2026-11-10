@@ -173,15 +173,15 @@ export function createSkillsService(deps: SkillsDeps) {
       },
       settings,
     );
+    // The source of a Clone can go away while its editor is open: to Trash, or purged. The copy
+    // is a skill of its own with its own text, so Create still makes it, with no source
+    // (domain-model.md §3.3).
+    let clonedFrom: SkillVersionId | null = null;
     if (input.clonedFromSkillVersionId !== undefined) {
       const source = await tx.skills.versionById(input.clonedFromSkillVersionId);
       const sourceSkill = source === null ? null : await tx.skills.byId(source.skillId);
-      if (sourceSkill === null || sourceSkill.trashedAt !== null) {
-        throw new DomainError(
-          "validation_error",
-          "The skill to copy does not exist.",
-          "cloned_from_skill_version_id",
-        );
+      if (sourceSkill !== null && sourceSkill.trashedAt === null) {
+        clonedFrom = input.clonedFromSkillVersionId;
       }
     }
     const now = clock.now();
@@ -191,7 +191,7 @@ export function createSkillsService(deps: SkillsDeps) {
       slug: input.slug,
       name: input.name,
       authorId: actor,
-      clonedFromSkillVersionId: input.clonedFromSkillVersionId ?? null,
+      clonedFromSkillVersionId: clonedFrom,
       rowVersion: 1,
       createdAt: now,
       updatedAt: now,

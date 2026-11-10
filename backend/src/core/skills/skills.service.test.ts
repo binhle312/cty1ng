@@ -314,6 +314,36 @@ describe("Clone", () => {
     expect(clone.cloned_from).toEqual({ skill_id: source.id, slug: "notes", version: 2 });
     expect(clone.author_id).toBe("someone-else");
   });
+
+  // The source can go away while the Clone editor is open (domain-model.md §3.3, DQ-180).
+  it("makes the copy with no source when the source skill is in Trash", async () => {
+    const source = await backend.skills.create(input("notes"), OWNER_ID);
+    const [v1] = await backend.skills.versions(source.id);
+    await backend.skills.deprecate(source.id, { removeBotIds: [], rowVersion: 1 }, OWNER_ID);
+    await backend.skills.trash(source.id, { rowVersion: 2 }, OWNER_ID);
+
+    const clone = await backend.skills.create(
+      { ...input("notes-copy"), clonedFromSkillVersionId: v1?.id },
+      OWNER_ID,
+    );
+    expect(clone.cloned_from).toBeNull();
+    expect((await backend.skills.get(clone.id, OWNER_ID)).slug).toBe("notes-copy");
+  });
+
+  it("makes the copy with no source when the source version no longer exists", async () => {
+    const source = await backend.skills.create(input("notes"), OWNER_ID);
+    const [v1] = await backend.skills.versions(source.id);
+    await backend.skills.deprecate(source.id, { removeBotIds: [], rowVersion: 1 }, OWNER_ID);
+    await backend.skills.trash(source.id, { rowVersion: 2 }, OWNER_ID);
+    await backend.skills.purge(source.id, OWNER_ID);
+
+    const clone = await backend.skills.create(
+      { ...input("notes-copy"), clonedFromSkillVersionId: v1?.id },
+      OWNER_ID,
+    );
+    expect(clone.cloned_from).toBeNull();
+    expect((await backend.skills.get(clone.id, OWNER_ID)).slug).toBe("notes-copy");
+  });
 });
 
 describe("authorship (invariant 05)", () => {
