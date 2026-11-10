@@ -14,15 +14,32 @@ Frame, Fan out, Judge, Pick, Graft, Verify.
 
 ## Models
 
-Every seat and the judge use one of these two models, at effort `high`:
+Every seat and the judge use one of these three models, at effort `high`:
 
-| Model           | From Claude Code                                                                       | From Codex                                                                    |
-| --------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Claude Opus 5.5 | `Agent` tool with `model: "opus"` and `effort: "high"`                                 | `claude -p --model claude-opus-5-5 --effort high`                             |
-| GPT-6 Astra     | `codex exec -m gpt-6-astra -c model_reasoning_effort="high" -c service_tier="default"` | The same `codex exec` command                                                 |
+| Model            | From Claude Code                                                                       | From Codex                                         |
+| ---------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Claude Opus 5.5  | `Agent` tool with `model: "opus"` and `effort: "high"`                                 | `claude -p --model claude-opus-5-5 --effort high`  |
+| Claude Fable 5.2 | `Agent` tool with `model: "fable"` and `effort: "high"`                                | `claude -p --model claude-fable-5-2 --effort high` |
+| GPT-6 Astra      | `codex exec -m gpt-6-astra -c model_reasoning_effort="high" -c service_tier="default"` | The same `codex exec` command                      |
 
-Use only these two models at effort `high` and standard speed. Do not use `xhigh` or fast mode.
+Use only these three models at effort `high` and standard speed. Do not use `xhigh` or fast mode.
 From Codex, `claude -p` needs network access. If it fails in the sandbox, ask the owner for network access.
+
+### Fable areas
+
+Opus 5.5 and GPT-6 Astra take the default seats on every task.
+Fable 5.2 takes one more seat when the task is in a Fable area.
+A Fable area is a subject where Anthropic names Fable 5.2 as its strongest model:
+
+- software engineering: code, architecture, refactors, bug diagnosis, tests and engineering plans;
+- the design of an agent system: a lead agent, subagents, or sessions that run for hours;
+- deep research, and analysis that ends in a document, a spreadsheet or a slide deck;
+- science and quantitative finance;
+- data analysis and machine learning experiments;
+- work that reads detailed images or PDF files;
+- the design of objects for the real world or the screen: 3D, hardware, motion and robotics.
+
+A task in cybersecurity or biology keeps the default seats, because Anthropic's safeguards limit Fable 5.2 there.
 
 ## Phase A: Frame
 
@@ -31,11 +48,13 @@ All candidates get the same brief, so the brief is the contract.
 1. State the artifact that each candidate makes.
 2. Write the rubric: 3 to 6 criteria that you can grade on this task.
    Only you and the judge see the rubric. The candidates see only the task.
-3. Check which models you can start. Your own model is always available.
+3. Check which models you can start. Your own model family is always available.
    From Claude Code, run `command -v codex`. From Codex, run `command -v claude`.
    If the command finds nothing, you have one model family. Tell the owner once, before the fan out.
 4. Choose the seats. The default is two: one Opus 5.5 and one GPT-6 Astra.
-   With one model family, all seats use your own model.
+   If the task is in a Fable area, add one Fable 5.2 seat.
+   With one model family, the default seats use that family: Opus 5.5 from Claude Code, GPT-6 Astra from Codex.
+   The Fable seat needs the Claude family.
    Add seats when the task has more than one design direction.
    Use one model for all seats when the work is mostly generation, not judgment.
 5. Give each seat its own output place:
@@ -53,10 +72,10 @@ The phase is complete when the rubric and the brief file exist and each seat has
 ## Phase B: Fan out
 
 1. In one message, start all seats in the background with the brief file and the output place.
-   - Opus seat from Claude Code: `Agent` tool, `run_in_background: true`.
-   - Opus seat from Codex: `claude -p ... --permission-mode acceptEdits < <brief>`, run in `<worktree>`.
+   - Opus or Fable seat from Claude Code: `Agent` tool, `run_in_background: true`.
+   - Opus or Fable seat from Codex: `claude -p ... --permission-mode acceptEdits < <brief>`, run in `<worktree>`.
    - GPT-6 Astra seat: `codex exec ... -s workspace-write -C <worktree> -o <out>/last-message.md - < <brief>`.
-2. If a seat fails to start, run it on the other model and tell the owner.
+2. If a seat fails to start, run it on another model from the table and tell the owner.
 3. If a seat gives no output, continue with the others and record the dropout.
 
 ## Phase C: Judge
@@ -113,6 +132,7 @@ Build the result on the task's own branch, not on an arena branch.
 1. The result, on the task's own branch.
 2. A synthesis note. Put it in the PR description under the heading `Arena`, or in your reply if
    there is no PR. The note gives:
+   - the model of each seat, and the Fable area if a Fable seat ran;
    - the base and why you picked it;
    - the judge's verdict and family (other or same), or that there was no judge;
    - each graft and its source candidate;
