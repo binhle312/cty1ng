@@ -17,8 +17,11 @@ Decision:
   first message through one message, its **end message**.
 - **Nothing is deleted.** Compact changes only what bots read. The owner still sees each
   message in full, and no message row changes (`AGENTS.md` §5 rule 5).
-- **Auto compact.** When a run starts and the history of its bot does not fit in the budget,
-  the app makes a compact request before the first request of the run. The new summary covers
+- **Auto compact.** The threshold is the history budget of the bot (D32: its share of the
+  window of its model, 40 % by default, which the owner sets for each bot). When a run starts
+  and the history of its bot is larger than that budget, the app makes one compact request
+  before the first request of the run. It does not compact message by message: one summary
+  takes the place of the whole old part. The new summary covers
   enough messages that the history then uses `compact_target_pct` of the budget or less
   (setting, default 50). So the next runs do not compact again at once. The setting
   `auto_compact` (default on) turns this off; then the D32 rule applies as before.
@@ -109,8 +112,8 @@ Open points (the owner decides; the text above has the proposed answer for each)
 
 1. After an auto compact, only a bot with too little room reads the summary. The other choice:
    each bot of the conversation reads it.
-2. A manual compact keeps the newest 10 messages in full. The other choice: it compacts each
-   message.
+2. A manual compact keeps the newest 10 messages in full, outside the summary. The other
+   choice: the summary takes all messages, also the newest.
 3. The model: the bot that needs the compact (auto), and the bot that replied last (manual).
 4. The slice: its own slice after M4-3, because it needs the branch rules and the member rules
    of M4. M3 then ships with the D32 rule. The other choice: build it in M3b.
