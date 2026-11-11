@@ -97,6 +97,8 @@ export default tseslint.config(
       "**/node_modules/**",
       "**/dist/**",
       "**/coverage/**",
+      // Playwright writes its HTML report here on CI and in a local run with `CI=1`.
+      "**/playwright-report/**",
       "frontend/src/lib/api/generated/**",
       "docs/**",
       ".agents/**",

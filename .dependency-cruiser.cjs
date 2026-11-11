@@ -104,7 +104,8 @@ module.exports = {
   ],
   options: {
     doNotFollow: { path: "node_modules" },
-    exclude: { path: "(^|/)(dist|generated)/" },
+    // `playwright-report`: the HTML report of a browser run in CI mode; it is not our code.
+    exclude: { path: "(^|/)(dist|generated|playwright-report)/" },
     tsPreCompilationDeps: true,
     tsConfig: { fileName: "tsconfig.base.json" },
     enhancedResolveOptions: {
