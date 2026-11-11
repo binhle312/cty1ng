@@ -197,8 +197,8 @@ tool result, and the bot continues.
   unexpected exception gives
   `internal`. The full error goes to the server log only, never to the model or the UI
   (AGENTS.md §8).
-- **No automatic retry of a tool.** The model can call the tool again. `request_limit` (default
-  30) stops a loop.
+- **No automatic retry of a tool.** The model can call the tool again. The bot's `request_limit`
+  (`domain-model.md` §2) stops a loop.
 - **The prompt says** (part 2, with the tools): "If a tool returns an error or no data, say so in
   your reply. Do not invent the result. Do not say that a step is done when its tool failed."
   This is best effort, like the check in D43. The app guarantees only that the error reaches the

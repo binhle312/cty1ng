@@ -1162,7 +1162,7 @@ handoffs
 
 ```
 settings
-  key    TEXT PK      -- display_name, display_name_max, bot_discussion_enabled, bot_turn_limit, runs_per_conversation_per_hour, handoff_max_per_conversation_24h, skill_draft_max_*, share_max_per_conversation_24h, copy_proposals_max_per_conversation_24h, library_diff_open_max_lines, plan_mark_reminders, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, bot_order_direction, trash_days, undo_seconds, memory_item_max_chars, memory_items_max, improve_* (D51), skill_* limits, bot_* limits, health_* …
+  key    TEXT PK      -- display_name, display_name_max, bot_discussion_enabled, bot_turn_limit, runs_per_conversation_per_hour, handoff_max_per_conversation_24h, skill_draft_max_*, share_max_per_conversation_24h, copy_proposals_max_per_conversation_24h, library_diff_open_max_lines, plan_mark_reminders, daily_cap_usd (NULL = off), provider_caps_usd ({provider: usd}, missing = no own cap, D42), timezone (NULL = browser local), bot_order, bot_order_direction, trash_days, undo_seconds, memory_item_max_chars, memory_items_max, improve_* (D51), skill_* limits, bot_* limits, health_*, web_* (D53) …
   value  JSON NOT NULL
 ```
 
@@ -1185,6 +1185,8 @@ the server returns 422 with the key. The app never changes the other value on it
 Conversation limits (`conversation-rules.md` §9, which owns the default, the type, the range and what counts; read by the services, never hard-coded): `runs_per_conversation_per_hour`, `handoff_max_per_conversation_24h`, `skill_draft_max_per_run`, `skill_draft_max_pending_per_conversation`. They are safety caps: the server refuses 0, NULL and values out of range.
 
 Skill limits (M1 spec gap pass, owner 2026-10-30; read by M1, never hard-coded): `skill_name_max = 64` (16–128), `skill_body_max = 20000` (1,000–100,000), `skill_body_warn_lines = 500` (50–5,000; a warning only). These are app choices. The format rules of the Agent Skills standard (slug, description ≤ 1,024 characters) are fixed in code (`SKILL_FORMAT`, `conversation-rules.md` §9), so an export is always valid. A lower limit never changes a saved skill: a Save or an import of a skill over it is refused until the text is shorter. The Settings page does not show them (`design/components/settings-page.md` §8).
+
+Web limits (D53; read by the slice that builds web access, never hard-coded): `web_searches_per_run = 5`, `web_fetches_per_run = 5`, `web_fetch_max_tokens = 10000`, `web_allowed_domains = []` (empty: all domains; if not empty, only these domains), `web_blocked_domains = []` (domains that are never searched or fetched). They have no ranges and no row on the Settings page yet: the slice that builds web access writes the ranges here and designs the row.
 
 Bot limits and defaults (`bots.md` UI-4.6, UI-5.8; read by M2, never hard-coded):
 `bot_name_max = 32`, `bot_description_max = 160`, `bot_persona_max = 8000`,
@@ -1321,7 +1323,7 @@ a toast and a system line.
 | Cache hit rate | cache_read_tokens ÷ (input_tokens + cache_read_tokens) |
 | Skill used | A run with a `run_skills` row for the skill; counted once per run, also when two tries of the run used it |
 | Never loaded | An on-demand pin (`always_load = false`) with no `run_skills` row in the period |
-| Bucket | A time bucket (5 min, 1 h, 1 day, 1 week) aligned to the timezone in settings (default: browser local); chosen from the range length (`requirements/time-range-picker.md` §Contract with the backend and the URL). Computed in TypeScript with Node's built-in time zone data, not SQL, because SQLite has no time zone database (D29) |
+| Bucket | A time bucket (5 min, 1 h, 1 day, 1 week) aligned to the `timezone` setting (§10); chosen from the range length (`requirements/time-range-picker.md` §Contract with the backend and the URL). Computed in TypeScript with Node's built-in time zone data, not SQL, because SQLite has no time zone database (D29) |
 
 Indexes for the statistics queries: `model_requests(finished_at)`, `runs(finished_at, bot_id)`,
 `run_skills(skill_version_id)`. Aggregation runs on demand in SQL; a pre-aggregated daily table
