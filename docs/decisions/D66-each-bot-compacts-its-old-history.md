@@ -1,6 +1,6 @@
 # D66. Each bot compacts its old history into a summary
 
-Status: proposed (2026-11-11). The owner decided seven things in the session of 2026-11-11:
+Status: proposed (2026-11-11). The owner decided eight things in the session of 2026-11-11:
 
 1. The app gets auto compact and manual compact.
 2. Each bot compacts itself: a bot has its own summary, written with its own model. The owner
@@ -12,12 +12,17 @@ Status: proposed (2026-11-11). The owner decided seven things in the session of 
 6. A compact request uses a low effort.
 7. For the other points, the owner follows the advice of the consultants ("ask consultants and
    do as they suggest").
+8. A compact reads a message that the owner sent with "Send anyway". The owner reviewed that
+   message and chose to send it, so the owner is responsible for it. A message that the owner
+   did not send is not in the conversation, and no compact reads it. This replaces the answer
+   of the second arena round, which refused such a compact.
 
 Two arena rounds read this entry (the records are in PR #102). Round 1 read the first text,
 with the shared summary. Round 2 read the text with one summary for each bot; three consultants
 and a judge answered its four open points and gave exact changes. This text has the changes
 that two or more consultants asked for and that the judge found correct. Where the consultants
-did not agree, it has the answer that the judge found best supported. No open point is left.
+did not agree, it has the answer that the judge found best supported, except for the guard
+(decision 8). No open point is left.
 The owner accepts or changes the entry.
 Amends: D32
 
@@ -128,8 +133,7 @@ Decision:
   never leaves a message out without a mark.
 - **Steps are kept, but only the end result is used.** Each request of a long compact stores
   its result as a **checkpoint**. Runs do not read a checkpoint. The app **publishes** only
-  the final summary, after it checked its size and ran the guard, in one transaction with its
-  event. A failure or a Stop publishes nothing, and the bot keeps the summary that it had. The
+  the final summary, after it checked its size, in one transaction with its event. A failure or a Stop publishes nothing, and the bot keeps the summary that it had. The
   checkpoints and the cost of the requests stay, and a Retry starts from them.
 - **One compact at a time.** A conversation has at most one compact in flight; the database
   enforces it. A manual compact does not start while a run is queued or running in the
@@ -155,8 +159,7 @@ Decision:
 **When a compact fails**
 
 - **The owner sees it and can retry (owner).** A failed compact publishes no summary. The
-  causes are: a cap, a provider error, an empty or cut answer, a guard match, a summary that
-  does not fit, and a target that is impossible. The app tells the owner what happened and
+  causes are: a cap, a provider error, an empty or cut answer, a summary that does not fit, and a target that is impossible. The app tells the owner what happened and
   offers a retry. A notice in the conversation names the bot, the cause and the real effect.
   For example, it says how many messages the bot did not read. It has a **Retry** action. The
   notice is for the owner, and bots do not read it. It is not a message of the conversation:
@@ -169,24 +172,27 @@ Decision:
   Retry or a manual compact that succeeds starts auto compact again for that bot.
 - **Retry.** Retry follows the rules of a manual compact. It makes the same compact again:
   the same bot and the same end message, from the stored checkpoints. Before that, the app
-  checks the guard, the members, the budget and the caps again. The app refuses a Retry that is out of
+  checks the members, the budget and the caps again. The app refuses a Retry that is out of
   date, for example after a newer summary of that bot was published. The owner then starts a
   new Compact.
 - **A failed manual compact** shows the same kind of notice, and the bot does not change.
 
 **Sensitive data (D39)**
 
-- **No compact of a part with a "Send anyway" message.** The owner agreed to send such a
-  message to the bot for its reply, not to one more request. The title request has the same
-  rule (D46; `../conversation-rules.md` §8 rule 3). The app stores, for each message, whether
-  the guard matched and the owner chose "Send anyway". It refuses a compact whose part has
-  such a message, also when the part comes in through an older summary. The cause in the
-  notice is that message. The owner can go on with the D32 rule, or edit the message on a new
-  branch.
-- **The guard also checks the real text.** Before each request, the app runs the guard on the
-  input. A match fails the compact, with no "Send anyway" for a compact. Before it publishes,
-  the app runs the guard on the summary, as for a title. The request reads the names of
-  attachments, not their contents. Logs name the kinds of the matches, never the text.
+- **A compact reads the conversation as the bot does (owner, 2026-11-11).** The composer
+  already stops a message that looks like it holds a secret. The owner then removes the
+  secret, or reviews the message and chooses "Send anyway". A message that the owner sent in
+  that way is in the conversation, and its bot reads it in each run. A compact reads it too,
+  and the summary can hold what it holds. A message that the owner did not send is not stored
+  (the server refuses it), so no compact can read it.
+- **No new reader.** The compact request goes to the model of the same bot, so no other
+  provider sees the text. The request reads the names of attachments, not their contents.
+- **No guard step in a compact.** The app does not run the guard on the input or on the
+  summary of a compact. The input is text that the bot may read, and a guard match there
+  would stop the compact that the owner allowed. This differs from the title request (D46),
+  which does not run for a "Send anyway" message.
+- **The summary gets the care of a message.** Its text is in no log. The purge deletes it with
+  its conversation. The owner's view of it follows `AGENTS.md` §5 rule 8.
 
 **Other rules**
 
@@ -236,10 +242,13 @@ Rejected:
   messages with no trace of their content.
 - **A fixed compact model in Settings.** D63 rejected a second model setting for the same
   reason: the owner already chose a model for each bot.
+- **No compact of a part with a "Send anyway" message.** One consultant advised it, and the
+  judge found that it agrees best with the title rule (D46). The entry had it after the second
+  arena round. The owner decided against it (2026-11-11): the owner reviewed the message and
+  chose to send it, and one such message would stop compact for that part of the chat.
 - **A mask in place of each guard match in the compact request.** Two of three consultants
-  advised it, because it keeps compact available. D39 rejected silent masking, and the judge
-  found that a mask is a new policy that the present rules do not support. The guard does not
-  find each secret, so a mask also does not prove that a summary has none.
+  advised it, because it keeps compact available. D39 rejected silent masking. With the
+  owner's decision, the bot keeps a value that the owner gave it on purpose.
 - **Publish each step of a long compact.** A failed manual compact would then change the bot,
   against the rule that a failure changes nothing.
 - **Store only the last summary of a long compact.** A failure at a late request would lose
@@ -261,8 +270,8 @@ Consequences:
 - D32 keeps the budget, the share for each bot, the order of the fill, the token estimate and
   the retry with half the budget. One thing changes: a summary takes the place of the
   omitted-messages marker when one applies.
-- One "Send anyway" message stops compact for each part of the path that has it. Retry cannot
-  help there. The bot works as today, with the D32 rule. This is the cost of the safe rule.
+- A summary can hold a secret that the owner sent with "Send anyway". It is then stored one
+  more time, in the summary of that bot. The purge removes it with the conversation.
 - A bot with a large run record can be over its budget when no compact can help. The app then
   tells the owner the cause and sends no request. The gap "tool results inside one run" in
   `../status.md` is the place for a limit on that text. The research note
@@ -271,10 +280,9 @@ Consequences:
 - Two bots in one conversation can remember the past in different ways, because each has its
   own summary. The owner can open each summary to see the difference.
 - A conversation with several small bots costs one compact for each bot.
-- New stored data, in four groups. The summaries: bot, history choice, first and end message,
+- New stored data, in three groups. The summaries: bot, history choice, first and end message,
   the summary that was an input, source and request. The checkpoints. The record of each
-  compact: bot, source, state, cause, path, end message and the try of the run. And for each
-  message, whether the owner sent it with "Send anyway". The schema design needs the owner's approval before SQL is
+  compact: bot, source, state, cause, path, end message and the try of the run. The schema design needs the owner's approval before SQL is
   written (`AGENTS.md` §7).
 - `../domain-model.md`: `model_requests.purpose` gets the value `compact`, with a
   conversation. An auto compact request also has its run and try, so the CHECKs of §7 change.
@@ -282,9 +290,8 @@ Consequences:
   compact. The purge policy of §16 gets an entry for each new table that holds conversation
   text.
 - `../architecture.md` §6 and §11 get the rule that keeps the lease of a run alive during a
-  compact, and the new claim and race rows. `../security.md` §2.13 gets the guard rules for
-  the input and the output of a compact. The guard is security-sensitive code (`AGENTS.md`
-  §7).
+  compact, and the new claim and race rows. `../security.md` §2.13 gets the rule that a compact
+  has no guard step, with the owner's reason. No guard code changes.
 - New events tell open pages that a bot has a new summary, or that a compact failed
   (`AGENTS.md` §5 rule 3). A summary and its event are written in one transaction.
 - New settings: `auto_compact`, `compact_target_pct`, `compact_keep_recent_messages`,
@@ -317,8 +324,8 @@ Tests that the slice needs (from the consultants; the slice brief takes them in)
   it changes nothing.
 - A message that arrives during a manual compact waits; a later bot still reads the reply of
   an earlier bot.
-- A guard match in the messages, in an older summary that is an input, and in the answer; no
-  secret in the log.
+- A "Send anyway" message is in the compact request as it is, and the compact works. No
+  summary text is in a log.
 - Two reservations with cap room for one; a model with no price; each cost counted one time
   after a restart.
 - After a failure, new messages start no new auto compact; the retry with half the budget
