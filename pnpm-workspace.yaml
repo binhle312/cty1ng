@@ -4,11 +4,11 @@ packages:
   - backend
   - frontend
 
-# Install scripts run only for native packages listed here as true (security.md §2.11).
+# Install scripts run only for packages listed here as true (security.md §2.11). No package
+# needs one today: better-sqlite3 13 has no install script and ships its prebuilt binaries.
 # esbuild ships its binary as an optional platform package, so its script is not needed.
 # @scarf/scarf (through swagger-ui-dist) only sends install analytics, so it never runs.
 allowBuilds:
-  better-sqlite3: true
   esbuild: false
   "@scarf/scarf": false
 

@@ -318,7 +318,8 @@ theme-switch leak test.
 
 All must be green to merge: ESLint (including the security rules in `security.md` §2.8),
 Prettier, `tsc`, dependency-cruiser import rules (D35), Vitest, `db:check` (Drizzle schema
-matches the migrations), Playwright, generated-client freshness, event-type list match,
+matches the migrations), Playwright (a test that passes only on its second try fails the job:
+`failOnFlakyTests`), generated-client freshness, event-type list match,
 `check:index` (folder indexes complete, `architecture.md` §4.2), the bundle budget
 (`pnpm build`, then `pnpm check:bundle`), `pnpm audit --audit-level
 high`, CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also run the automated security review when it is on;
@@ -375,8 +376,11 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
    its base (`git merge-base HEAD origin/main`, or `--base`) needs a claim, or an entry in
    `exempt` with its reason. With `--only`, the list runs in part, and this check does not run.
 4. Each test must pass with no break first.
-5. Each break runs alone. First, `tsc` must compile the project of the broken file (an unused
-   variable is allowed); a break that does not compile is `INVALID`, and its test does not run.
+5. Each break runs alone. First, `tsc` must compile each project of the package of the broken
+   file (an unused variable is allowed). The frontend has two: its `tsconfig.json` only points
+   at one config for the browser code and one for the tests, and the runner compiles both. A
+   break that does not compile is `INVALID`, and its test does not run. A broken TypeScript file
+   that no project reads is also `INVALID`: a compile that did not read the file is no check.
    Then the test runs. A failure at another line, a test timeout, no result (a server failure),
    or a failure whose innermost place outside the libraries is the broken code is `INVALID`.
    A new error line in the printed output that names the broken file also makes the break

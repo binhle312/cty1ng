@@ -247,11 +247,11 @@ M2c  /bots/{slug}?tab=profile|skills|model|activity|usage
 
 | Package | Version (date) | Where | Why | Notes |
 | --- | --- | --- | --- | --- |
-| `ai` | 7.0.143 (2026-10-16) | backend, `adapters/model/` only | effort mapping now, the agent in M3 | no install scripts; pulls `@ai-sdk/gateway`, `@vercel/oidc` (unused) |
+| `ai` | 7.0.143 (2026-10-16) | backend, `adapters/model/` only | the agent in M3. No file imports it before M3: the effort mapping uses only the types of the provider packages (corrected on 2026-11-10) | no install scripts; pulls `@ai-sdk/gateway`, `@vercel/oidc` (unused) |
 | `@ai-sdk/anthropic` | 4.0.82 (2026-10-16) | backend, `adapters/model/` only | the Anthropic provider | the newest (4.0.94) is under two weeks old |
 | `@ai-sdk/google` | 4.0.99 (2026-10-16) | backend, `adapters/model/` only | the Gemini provider (P8) | shares `ai`'s provider packages; no install scripts |
 | `sharp` | 0.35.5 (2026-09-27) | backend, `adapters/http/uploads/` only | avatar check and re-encode | Apache-2.0; **bundles libvips, LGPL-3.0-or-later** (dynamic, prebuilt; fine for a local app, noted for the record); no install script |
-| `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` | 6.3.1, 10.0.0, 3.2.2 | frontend | drag to pin and reorder (P5) | MIT; ~17 kB gzip |
+| `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` | 6.3.1, 10.0.0, 3.2.2 | frontend | drag to pin and reorder (P5) | MIT; ~17 kB gzip. No file imports `@dnd-kit/utilities`, so it is not a direct dependency since 2026-11-10; it still comes with `@dnd-kit/sortable` |
 
 Not added: a case-folding library (P3: a generated table instead), `react-colorful`, `react-easy-crop` (P6: own components). `dependency-cruiser` keeps `sharp` in `http/uploads/` and `ai`, `@ai-sdk/*` in `adapters/model/`.
 

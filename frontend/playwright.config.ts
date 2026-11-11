@@ -55,6 +55,9 @@ export default defineConfig({
   workers: inCi ? "50%" : 4,
   forbidOnly: process.env.CI !== undefined,
   retries: process.env.CI === undefined ? 0 : 1,
+  // A test that needs its second try fails the CI job. Without this, CI stays green and nobody
+  // sees the flaky test. The report still shows the two tries.
+  failOnFlakyTests: inCi,
   reporter: process.env.CI === undefined ? "list" : [["list"], ["html", { open: "never" }]],
   // Laptop screens only (owner, 2026-10-30).
   use: {
