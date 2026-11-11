@@ -31,6 +31,9 @@ test-results/
 .impeccable/hook.pending.json
 .impeccable/config.local.json
 
+# Local notes and prompts that are not for the repository
+tmp/
+
 # Local files of Claude Code
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
