@@ -52,7 +52,7 @@ Effective settings: conversation value if not NULL, else the global setting.
 | Setting | Global default | Range |
 | --- | --- | --- |
 | `bot_discussion_enabled` | false | on/off |
-| `bot_turn_limit` | 5 | 1–20 |
+| `bot_turn_limit` | 5 | `BOT_TURN_LIMIT_RANGE` (§9) |
 
 When a run finishes, `decideRuns` is called with the bot's message as trigger:
 
@@ -72,7 +72,7 @@ When a run finishes, `decideRuns` is called with the bot's message as trigger:
 - Changing the toggle or limit posts a notice ("Bot discussion limit changed to 8") and applies
   from the next routing decision. A running run is not interrupted.
 - **Safety cap:** independent of the budget, at most `runs_per_conversation_per_hour` (setting,
-  default 50, §9) admitted executions per conversation per rolling hour. The worker checks the
+  §9) admitted executions per conversation per rolling hour. The worker checks the
   cap when it claims a run, like the daily cap (D20, `domain-model.md` §13):
   - The count is the number of `run_slots` rows of the conversation with `used_at` in the last
     hour (`domain-model.md` §7). `run_slots` is the only record for this count; `started_at` is
@@ -197,8 +197,8 @@ tool result, and the bot continues.
   unexpected exception gives
   `internal`. The full error goes to the server log only, never to the model or the UI
   (AGENTS.md §8).
-- **No automatic retry of a tool.** The model can call the tool again. `request_limit` (default
-  30) stops a loop.
+- **No automatic retry of a tool.** The model can call the tool again. The bot's `request_limit`
+  (`domain-model.md` §2) stops a loop.
 - **The prompt says** (part 2, with the tools): "If a tool returns an error or no data, say so in
   your reply. Do not invent the result. Do not say that a step is done when its tool failed."
   This is best effort, like the check in D43. The app guarantees only that the error reaches the
@@ -234,7 +234,7 @@ next tool call." A planning run and a run with no plan do not get the tool.
 `done` or `skipped` mark, or a Done-when item has no `check_done`, the app does not end the run.
 It sends one more turn with the open marks: "Before you reply: step 4 and Done-when item 2 have
 no mark. Mark each step done or skipped (with a note), and check each Done-when item. Mark done
-only what you really did." It does this at most `plan_mark_reminders` times (setting, default 1,
+only what you really did." It does this at most `plan_mark_reminders` times (setting, `domain-model.md` §10;
 0 = off). Each reminder is one model request and counts toward `request_limit`.
 
 ### Visible history
@@ -266,7 +266,7 @@ only what you really did." It does this at most `plan_mark_reminders` times (set
   from the bot's model. In a project, the instructions and the goal count toward it too (D45):
 
   ```
-  budget = bot.history_share_pct / 100 × catalog context_window     (default 40 %)
+  budget = bot.history_share_pct / 100 × catalog context_window     (default: bot_default_history_pct)
   ```
 
   It is a ceiling, not a target: short conversations use far less. The rest of the window is
@@ -307,7 +307,7 @@ Example:
   not an active member, the card offers "Add <bot> and start" (the bot joins with full history,
   since the files are the point).
 - Files must exist and be inside the workspace; they are committed and the commit sha pinned.
-- Limit: `handoff_max_per_conversation_24h` (setting, default 5, §9) handoffs per conversation
+- Limit: `handoff_max_per_conversation_24h` (setting, §9) handoffs per conversation
   in a rolling 24-hour period. Pending, approved, changes-requested, rejected and stale handoffs
   all count. Beyond that the tool returns `limit_reached` asking the bot to tell the owner, and
   creates no handoff. A blocked call does not count.
@@ -396,12 +396,12 @@ Rules:
   the draft only; the owner still approves the finished draft on its card (D41). The tool is never offered in other action runs, planning runs, bot turns or
   handoff runs. The prompt says to use it only when the owner asks. A bot may offer in one line ("Want me to save this
   as a skill?") and waits for a yes.
-- **Text only.** Name (≤ `skill_name_max`), description (≤ 1,024 characters), body (≤ `skill_body_max`, default 20,000 characters) and changelog. No files,
+- **Text only.** Name (≤ `skill_name_max`), description (≤ 1,024 characters), body (≤ `skill_body_max` characters; both limits are settings, `domain-model.md` §10) and changelog. No files,
   no frontmatter beyond what the app writes, no tool permissions or write folders.
 - **Guard.** The text passes the sensitive-data guard (D39) or the tool returns an error
   naming the kinds found; there is no "Send anyway" for drafts.
-- **Limits.** At most `skill_draft_max_per_run` (setting, default 3, §9) drafts per run, of any
-  status, and at most `skill_draft_max_pending_per_conversation` (setting, default 10) drafts
+- **Limits.** At most `skill_draft_max_per_run` (setting, §9) drafts per run, of any
+  status, and at most `skill_draft_max_pending_per_conversation` (setting, §9) drafts
   with status `pending` per conversation. An approve, reject or stale frees a pending slot.
   Beyond a limit the tool returns an error asking the bot to tell the owner, and creates no
   draft. A blocked call does not count.
@@ -578,8 +578,8 @@ or the title.
 ## 9. Limits: settings and fixed values
 
 The owner can change a limit that controls how much work bots may do. It is a setting in the
-`settings` table (`domain-model.md` §10), with the default written next to the rule that uses
-it (AGENTS.md §10). A fixed rule or security check stays in code as one named constant, and
+`settings` table (`domain-model.md` §10). Its default is written one time in the docs: here for
+the limits of the table below, and in `domain-model.md` §10 for the other settings (AGENTS.md §10). A fixed rule or security check stays in code as one named constant, and
 other code reads that constant instead of repeating the number.
 
 ### Settings

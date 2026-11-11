@@ -163,9 +163,11 @@ Merge a PR only when the owner asks you to merge that PR. The merge needs no lin
 - **No hardcoded values** (owner, 2026-10-23). A number, threshold, limit, time or default that
   the owner may want to change (caps, Improve thresholds, Trash days, size limits, timeouts) has
   one home: the `settings` table if the owner changes it in the app, otherwise an environment
-  variable or config file. Each has a default, written in the docs next to the rule that uses
-  it. Code reads the value from there, and tests set it. Only invariants and security checks
-  stay fixed in code: they are rules, not settings.
+  variable or config file. Each has a default, written one time in the docs. For a setting, the
+  place is `docs/domain-model.md` §10, or `docs/conversation-rules.md` for the conversation
+  limits (owner, 2026-11-10). For an environment variable or a config value, the place is next
+  to the rule that uses it. Code reads the value from the setting or the variable, and tests set
+  it. Only invariants and security checks stay fixed in code: they are rules, not settings.
 - Commits: small, imperative subject line (`Add skill version pinning`), body explains why.
 - One task slice per branch: `m1-skill-hub`, `m3-chat-one-bot`, …
 - Open every PR as a draft, and leave it a draft. The owner marks it Ready right before the merge

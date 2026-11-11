@@ -41,8 +41,8 @@ Design: `../design/components/bots-page.md` (agreed, round 9).
   The suggested name fits the name limit and is free ("(copy 2)" when "(copy)" is taken). A model
   change turns off copied tools the new model does not have and says which ones (§3.0 there).
 - UI-4.5: **Order.** Pinned bots come first, in the owner's order; the others follow by the
-  `bot_order` setting: *Recent activity* (default; bots with no activity follow, newest created
-  first) or *Created*, each newest first or oldest first. Two sort buttons beside the Others
+  `bot_order` setting: *Recent activity* (bots with no activity follow, newest created
+  first) or *Created*, each newest first or oldest first (defaults: `../domain-model.md` §10). Two sort buttons beside the Others
   title switch the sort; a click on the sort that is on flips the direction. Pin and unpin use
   the corner badge (`../design/components/pin.md`). A drag inside the Pinned group, or Alt+← and
   Alt+→ on a focused pinned card, reorders. Each pin, unpin and reorder saves at once: the
@@ -53,7 +53,8 @@ Design: `../design/components/bots-page.md` (agreed, round 9).
   run* (`danger`: no API key, or the model is not in the catalog) or *Needs attention*
   (`primary`: {n} of the last {m} runs failed; runs stopped at the request limit this week; uses
   a deprecated skill; the last run cut history to fit the context). Thresholds are settings
-  (`health_failed_runs` 2, `health_recent_runs` 5, `health_limit_stops` 3 in 7 days). Health is
+  (`health_failed_runs` of the last `health_recent_runs` runs, and `health_limit_stops` stops in
+  `health_limit_window_days` days; defaults in `../domain-model.md` §10). Health is
   computed on read; nothing is stored.
 - UI-4.7: **Search** filters cards by name, slug, description and model label while the owner
   types. Empty groups hide. Esc clears. Drag is off while a search is on. No match: 'No bots match
@@ -65,17 +66,18 @@ Design: `../design/components/bots-page.md` (agreed, round 9).
 
 Design: `../design/components/create-bot-page.md` (agreed, round 9).
 
-- UI-5.1: A page of its own with four steps and a live preview card: **Basics** (name ≤ 32,
-  description ≤ 160 in a 3-line box, avatar style Flat / Jelly / Pixel / Upload image, colour from
+- UI-5.1: A page of its own with four steps and a live preview card: **Basics** (name ≤ `bot_name_max`,
+  description ≤ `bot_description_max` in a 3-line box, avatar style Flat / Jelly / Pixel / Upload image, colour from
   the theme's 10 swatches, Custom or Random, with a random unused swatch as default (the page
   picks it; the palette is frontend only); used colours are not
-  shown), **Persona** (≤ 8,000, Markdown, Write / Preview, with
+  shown), **Persona** (≤ `bot_persona_max`, Markdown, Write / Preview, with
   the persona template as placeholder), **Skills** (optional; tick non-deprecated skills, each
   pinned to its latest version, with an Always load switch), **Model** (model, effort shown only
   if the model has efforts with `default_effort` preselected, the Tools list, and Advanced always
-  open: history share slider 10–80 %, step 5, default 40 % with the live label "≈ 400k tokens of
-  1M. 600k are left for work." (D32); model requests per run, default 30; longest reply, default
-  6,000 characters). There is no Review step: the preview card is the review, and **Create** is on
+  open: history share slider from `bot_history_min_pct` to `bot_history_max_pct`, step 5, with the
+  live label, for example "≈ 400k tokens of 1M. 600k are left for work." (D32); model requests
+  per run; longest reply in characters. The three start values are the `bot_default_*` settings
+  (UI-5.8; values in `../domain-model.md` §10). There is no Review step: the preview card is the review, and **Create** is on
   step 4. Models with no API key are grey with the reason.
 - UI-5.2: Model and effort show the note "You cannot change the model or the effort after you
   create the bot. To use another one later, clone the bot."

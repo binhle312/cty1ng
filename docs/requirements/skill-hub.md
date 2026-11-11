@@ -28,11 +28,11 @@ Shared rules for every story: `README.md` §Applies to every story. Agreed desig
   the tabs Skill, Bots and History, as on the bot page (round 16).
   ⋯ for an active skill: Clone, Export, Deprecate; for a deprecated skill: Clone, Delete skill.
   Deprecate and Delete are author only.
-- UI-7.3: Editor: name (≤ `skill_name_max`, 64; not versioned: a rename alone creates no
+- UI-7.3: Editor: name (≤ `skill_name_max`; not versioned: a rename alone creates no
   version), slug (only when creating, made from the name until the
-  owner edits it, accents removed, the slug rule of `../domain-model.md` §3.1), description (≤ 1,024), body (≤ `skill_body_max`, 20,000, Markdown, Write and
+  owner edits it, accents removed, the slug rule of `../domain-model.md` §3.1), description (≤ 1,024), body (≤ `skill_body_max`, Markdown, Write and
   Preview tabs, opens in Preview when it has text), changelog line in the save bar. Every field
-  except the changelog is required. A body over `skill_body_warn_lines` (500) lines gets a warning only. Non-authors see
+  except the changelog is required. A body over `skill_body_warn_lines` lines gets a warning only (the three limits are settings, `../domain-model.md` §10). Non-authors see
   disabled fields and "Clone to edit" instead of Save.
 - UI-7.4: Saving creates a new version, then shows "Also upgrade these bots to vN?" with the
   author's bots on older versions, all ticked, and Skip / Upgrade (D6). After Create, the card

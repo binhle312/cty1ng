@@ -51,7 +51,7 @@ already above it:
 - After a choice the card folds: "**Unsaved changes** [Saved] 12:52 · 2 files · Show" or
   "**Unsaved changes** [Discarded] 12:52 · 2 files". Discard has the Undo toast (B7). A card
   that the app discarded after `trash_days` folds to [Discarded] with "after {trash_days} days",
-  where {trash_days} is the value that applied to that run (default 30). The text never has a fixed
+  where {trash_days} is the value that applied to that run. The text never has a fixed
   number.
 - Retry is an action on the failed reply (the E1 line), not a separate chip in the Flow timeline.
   It queues the same run again (UI-3.7), so the Flow timeline keeps one run chip with "· retried

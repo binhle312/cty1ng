@@ -137,5 +137,5 @@ Decided in the PR #37 review (owner, 2026-10-26 14:34):
 
 - D58 (cross-conversation reading, FTS5 search entries) is the next slice after M5b, to keep M5b
   smaller. The plan calls it M5e.
-- D38's limits are settings: `memory_item_max_chars` (default 300, 100–1,000) and `memory_items_max`
-  (default 50, 10–200; owner 2026-10-26 14:56), on Settings › Memory (`domain-model.md` §10).
+- D38's limits are settings: `memory_item_max_chars` and `memory_items_max` (owner 2026-10-26
+  14:56), on Settings › Memory. Their defaults and ranges are in `domain-model.md` §10.

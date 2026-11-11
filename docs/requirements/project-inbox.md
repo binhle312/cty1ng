@@ -71,7 +71,7 @@ There is no "overlap found, waits for you" state. D52 saves and then shows a not
 - **UI-14.9** `search_project_conversations` returns hits only from other conversations of the
   same project, only from their active branch, and never from a conversation with "Don't use
   memory" on.
-- **UI-14.10** It returns at most `cross_search_max_hits` hits (setting, default 10).
+- **UI-14.10** It returns at most `cross_search_max_hits` hits (setting, `../domain-model.md` §10).
 - **UI-14.11** A bot reply that uses a hit links the source message. The link opens that
   conversation at that message.
 - **UI-14.12** No run calls the search unless the bot chose the tool. A test shows that a planning

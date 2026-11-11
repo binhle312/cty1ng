@@ -60,7 +60,7 @@ Design: `../design/components/left-bar.md`, `top-header.md` and `user-panel.md` 
     the zone is a dashed pill "Drag a bot here to pin it". With no bots, only the add slot of
     UI-2.8 shows (owner, 2026-10-30). Header avatars have no pin mark
     (`../design/components/top-header.md` §3).
-  - **Others** by the `bot_order` setting: *Recent activity* (default): the bot with the latest
+  - **Others** by the `bot_order` setting (default: `../domain-model.md` §10): *Recent activity*: the bot with the latest
     message or run, in any conversation, comes first (`last_activity_at`, `../api.md` §4); bots
     with no activity follow, newest created first. *Created*: by creation time. Either can be
     newest first or oldest first. Clicking, hovering or opening a bot never changes the order.

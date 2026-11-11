@@ -86,7 +86,10 @@ A 6 px bar (`surface-raised` track, `success` fill) under the row text, 300 px w
 
 ## 4. Pages
 
-The texts below are the agreed labels. Values are the defaults in `../../domain-model.md` §10.
+The texts below are the agreed labels. The numbers in the notes are examples: they show the
+defaults and ranges of `../../domain-model.md` §10 and `../../conversation-rules.md` §2 and §9.
+Those documents own the values. If a note here differs, they are right, and the page reads each
+value from the setting.
 
 ### 4.1 Profile
 
@@ -95,7 +98,7 @@ The texts below are the agreed labels. Values are the defaults in `../../domain-
 | Your name | Shows in the user panel. Its first letter is your avatar. | 1 to 32 characters. Default: Sir | Text box, 220 px |
 
 The app trims spaces at the start and end before it checks the name. An empty name shows the
-field error "Enter a name." A name longer than `display_name_max` (default 32) shows "Use 32
+field error "Enter a name." A name longer than `display_name_max` shows "Use {n}
 characters or fewer." with the number from the setting. While the field has an error, **Save
 changes** stays off. The server checks again and returns 422 (`../../api.md` §7).
 
