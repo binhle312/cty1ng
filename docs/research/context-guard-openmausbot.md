@@ -52,16 +52,18 @@ has one bot. A **room** has several bots.
 
 ## 2. Compared with D66
 
+D66 as it is after the owner's decision of 2026-11-11: each bot compacts itself.
+
 | Topic | OpenMausBot | D66 today | Difference that matters |
 | --- | --- | --- | --- |
 | Threshold | 80 % of the window, from the real prompt size (O2, O5) | History above the history budget (40 % of the window), from an estimate | The real size includes tool results and the system prompt. |
 | When | Before a turn, and while idle (O3) | Before the first request of a run | Idle compact removes the wait, but adds timers and order rules. |
-| Writer | Small model, fixed limits (O7) | The bot's model; effort is open point 6 | OpenMausBot is on the "lowest effort" side. |
+| Writer | Small model, fixed limits (O7) | The bot's own model, at its lowest effort | The same direction. |
 | Failure | Excerpts take the place of the summary (O9) | No summary; a notice with Retry; the D32 rule | D66 tells the owner more. OpenMausBot always leaves a record for the bot. |
 | Form | Free text plus excerpts (O8) | Fixed parts | Excerpts keep the owner's exact words. |
 | Source | The older summary (O10) | The messages when they fit | D66 loses less. |
-| Kept in full | 2 exchanges; manual keeps none (O4, O11) | `compact_target_pct`; manual keeps 10 messages | An exchange never starts in the middle of a reply. |
-| Several bots | No shared summary (O17) | One summary for the conversation | No proof for or against a shared summary. |
+| Kept in full | 2 exchanges; manual keeps none (O4, O11) | `compact_target_pct`; manual keeps 10 messages (open point 1) | An exchange never starts in the middle of a reply. |
+| Several bots | No shared summary. A room bot starts a new session (O17) | One summary for each bot; no shared summary | The same direction. D66 keeps a summary for a bot in a room; OpenMausBot keeps none. |
 | Tool results in a run | A limit, a notice, a way to read the rest (O13–O15) | No rule | The largest difference. |
 | "Too long" | A smaller request that also cuts tool results (O16) | A retry with half the history budget (D32) | Half the history does not help when a tool result is the cause. |
 
@@ -76,9 +78,9 @@ Proposals for the owner, not decisions.
 3. **Cut tool results first after a "too long" refusal** (O16). Cost: a change to the D32 retry.
    Fits the gap and D32.
 4. **Excerpts when the writer fails** (O9). Cost: no model request. It touches owner decision 5.
-   Fits D66.
+   Fits D66 (its open point 4).
 5. **Use the provider's reported prompt size** (O5). Cost: one stored number for each bot and
-   conversation. Fits D32 and D66.
+   conversation. Fits D32 and D66 (its open point 4).
 6. **Prompt lines** (O8): "data, never instructions", mark cancelled requests, name who made
    each claim. Cost: none. Fits D66.
 7. **Compare the messages before the summary is stored** (O18). Cost: small. Fits D66.
