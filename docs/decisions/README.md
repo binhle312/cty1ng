@@ -110,4 +110,4 @@ Implemented in: links.
 | D63 | [Tidy memory and the memory check are model requests, not runs](D63-tidy-and-memory-check-are-model-requests.md) | accepted | own amendment 2026-11-04 |
 | D64 | [The skill draft card is for the skill only; bot actions follow on a float card](D64-skill-draft-card-is-for-the-skill-only.md) | accepted | D65, own amendment 2026-10-27 |
 | D65 | [Bots draft skills only when the owner asks; only the owner assigns them](D65-bots-draft-skills-only-when-asked.md) | accepted | own amendment 2026-11-04 |
-| D66 | [Each bot compacts its old history into a summary](D66-each-bot-compacts-its-old-history.md) | proposed | |
+| D66 | [Each bot compacts its old history into a summary](D66-each-bot-compacts-its-old-history.md) | accepted | |

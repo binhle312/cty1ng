@@ -1,6 +1,7 @@
 # D66. Each bot compacts its old history into a summary
 
-Status: proposed (2026-11-11). The owner decided nine things in the session of 2026-11-11:
+Status: accepted (2026-11-11, owner, in the session: "Accept"). The owner decided nine things
+in the session of 2026-11-11:
 
 1. The app gets auto compact and manual compact.
 2. Each bot compacts itself: a bot has its own summary, written with its own model. The owner
@@ -24,8 +25,7 @@ with the shared summary. Round 2 read the text with one summary for each bot; th
 and a judge answered its four open points and gave exact changes. This text has the changes
 that two or more consultants asked for and that the judge found correct. Where the consultants
 did not agree, it has the answer that the judge found best supported, except for the guard
-(decision 8). No open point is left.
-The owner accepts or changes the entry.
+(decision 8). No open point was left when the owner accepted the entry.
 Amends: D32
 
 Decision:
@@ -298,10 +298,10 @@ Consequences:
   (`AGENTS.md` §5 rule 3). A summary and its event are written in one transaction.
 - New settings: `auto_compact`, `compact_target_pct`, `compact_keep_recent_messages`,
   `compact_max_requests` and the limit for the length of a summary. Their ranges and defaults
-  get their home in `../domain-model.md` §10 when the owner accepts this entry.
+  get their home in `../domain-model.md` §10 with the specification of the slice.
 - `../requirements/product-brief.md` has a row "History summarisation: later", which asks for
   a state, a system line and a start by hand (`../research/chat-client-patterns.md` P10). That
-  row changes when the owner accepts this entry.
+  row now points to this entry.
 - Usage and Statistics show compact requests as their own group, with the bot of each
   request, so that the owner sees which bot causes the cost.
 - Fake-model tests can prove the order, the storage and the cost rules. They cannot prove that
@@ -339,7 +339,8 @@ Tests that the slice needs (from the consultants; the slice brief takes them in)
 - A summary with an instruction in its text gives the bot no approval and no permission.
 - The purge leaves no summary text. A summary and its event are in one transaction.
 
-Implemented in: not yet. When accepted: `../conversation-rules.md` §4, §6 and §9,
+Implemented in: not yet. The documents that still need the rules (the row of D66 in
+`../status.md` tracks them): `../conversation-rules.md` §4, §6 and §9,
 `../domain-model.md`, `../architecture.md` §6 and §11, `../security.md` §2.13,
 `../realtime-events.md`, `../api.md`, `../testing.md`, `../requirements/conversation.md`,
 `../requirements/product-brief.md` and the brief of the slice.
