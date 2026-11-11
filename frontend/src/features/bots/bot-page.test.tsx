@@ -18,6 +18,7 @@ import {
 import { pressKey } from "../../../test/press-key.ts";
 import { renderApp } from "../../../test/render-app.tsx";
 import { listBotsQueryKey } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
+import { readAll } from "../../lib/realtime/read-all.ts";
 
 // The bot page (bot-page.md, UI-6): the edit layout, the Profile and Model save bars with their
 // conflicts and the leave question, and the Skills tab.
@@ -2445,6 +2446,71 @@ describe("the Skills tab (bot-page.md §7)", () => {
       expect(within(list).getAllByRole("checkbox")).toHaveLength(1);
     });
     expect(within(dialog).queryByRole("status", { name: "Loading the skills" })).toBeNull();
+  });
+
+  // DQ-198: the dialog closed before the first answer of its list, so its query is turned off.
+  // A read of all data (a `reset`, or a return to the tab) must not leave that old read in use.
+  it("+ Add shows the list of a new read when it opens again after a read of all data", async () => {
+    const held = heldAnswer();
+    let reads = 0;
+    const { queryClient } = await open(
+      { bots: [makeBot(1, "BA", [makePin()])] },
+      {
+        routes: {
+          "GET /api/skills": () => {
+            reads += 1;
+            // The first read is slow. A skill is made after it; the next read has that skill.
+            return reads === 1 ? held.promise : { body: [makeSkill(), writing] };
+          },
+        },
+        path: "/bots/ba?tab=skills",
+      },
+    );
+    await heading();
+    click(screen.getByRole("button", { name: "Add" }));
+    const first = await screen.findByRole("dialog", { name: "Add skills to BA" });
+    click(within(first).getByRole("button", { name: "Skip" }));
+    readAll(queryClient);
+    click(screen.getByRole("button", { name: "Add" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add skills to BA" });
+    await held.answer({ body: [makeSkill()] });
+    const list = await within(dialog).findByRole("list", { name: "Skills to add" });
+    expect(within(list).queryAllByRole("checkbox"), "skills of the new read").toHaveLength(1);
+  });
+
+  // DQ-199: the dialog has its list already. It opens again, a second read starts, and it closes
+  // before that answer. Then the tab reads all data.
+  it("+ Add shows the list of a new read when its second read was on its way at a read of all data", async () => {
+    const held = heldAnswer();
+    let reads = 0;
+    const { queryClient } = await open(
+      { bots: [makeBot(1, "BA", [makePin()])] },
+      {
+        routes: {
+          "GET /api/skills": () => {
+            reads += 1;
+            if (reads === 1) return { body: [makeSkill()] };
+            // The second read is slow. A skill is made after it; the next read has that skill.
+            return reads === 2 ? held.promise : { body: [makeSkill(), writing] };
+          },
+        },
+        path: "/bots/ba?tab=skills",
+      },
+    );
+    await heading();
+    click(screen.getByRole("button", { name: "Add" }));
+    const first = await screen.findByRole("dialog", { name: "Add skills to BA" });
+    await within(first).findByText(/The bot has every active skill/);
+    click(within(first).getByRole("button", { name: "Skip" }));
+    click(screen.getByRole("button", { name: "Add" }));
+    const second = await screen.findByRole("dialog", { name: "Add skills to BA" });
+    click(within(second).getByRole("button", { name: "Skip" }));
+    readAll(queryClient);
+    click(screen.getByRole("button", { name: "Add" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add skills to BA" });
+    await held.answer({ body: [makeSkill()] });
+    const list = await within(dialog).findByRole("list", { name: "Skills to add" });
+    expect(within(list).queryAllByRole("checkbox"), "skills of the read after").toHaveLength(1);
   });
 
   // Review of 571375a: a failed skill list in + Add had no Try again.
