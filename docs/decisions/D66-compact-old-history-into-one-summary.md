@@ -2,7 +2,8 @@
 
 Status: proposed (2026-11-11). The owner asked for auto compact and manual compact, and chose
 "one summary for the conversation, not one for each bot" (option A of two), in the session of
-2026-11-11. The rules below are a proposal. The five points under "Open points" need the
+2026-11-11. The owner also chose that a manual compact changes only the bots that the owner
+ticks (option B of three, 2026-11-11). The other rules below are a proposal. The five points under "Open points" need the
 owner's answer before this entry can be accepted.
 Amends: D32
 
@@ -29,13 +30,21 @@ Decision:
   active path, except the newest `compact_keep_recent_messages` messages (setting, default 10),
   which bots still read in full. It is not available while a run is queued or running in the
   conversation, as for an edit (D13), or while another compact request runs.
-- **Who reads the summary.** After a manual compact, each bot of the conversation reads the
+- **The owner chooses the bots (owner, 2026-11-11).** Models have different windows, so a
+  manual compact must not take detail from a bot that has room, unless the owner wants that.
+  The Compact action lists the bots of the conversation, each with the part of its history
+  budget that it uses now, for example "BA 3 %" and "QA 95 %". All are ticked at the start. The
+  owner unticks a bot to leave it as it is. Only the ticked bots read the new summary.
+- **Undo for a bot.** The owner can undo a manual compact for one bot. That bot then reads the
+  messages in full again, as far as its budget allows; the auto rule still applies to it.
+- **Who reads the summary.** After a manual compact, each bot that the owner ticked reads the
   summary and then the messages after its end message. After an auto compact, only a bot whose
-  budget is too small reads it. A bot with enough room still reads the messages in full.
+  budget is too small reads it. A bot with enough room, and a bot that the owner did not tick,
+  still reads the messages in full.
 - **Summaries are kept, not edited.** A later compact makes a new summary from the last
   summary and the next messages. The old one stays. A bot reads the summary that leaves it the
-  most messages in full: the one with the earliest end message that is not before the owner's
-  last manual compact and that lets the other messages fit.
+  most messages in full: the one with the earliest end message that is not before the last
+  manual compact that the owner made for this bot and that lets the other messages fit.
 - **The request.** A compact is one model request with `purpose = 'compact'`, like the title
   request (D46) and the memory requests (D63): no tools, no run, no run slot. It is stored and
   priced in `model_requests` (D21), counts toward the caps (D20, D42) and reserves its
@@ -72,8 +81,10 @@ Example: A conversation has 300 messages, and BA and QA are members. BA uses a m
 tokens of history. QA's run starts, and messages 1 to 260 do not fit. The app makes one compact
 request with QA's model. It stores a summary with end message 280, so that the history uses
 half of QA's budget. QA reads the summary and messages 281 to 300. BA's next run reads all 300
-messages, because they fit. Later the owner presses **Compact**. The app stores a summary with
-end message 290, and from then on BA also reads that summary and the messages after 290.
+messages, because they fit. Later the owner presses **Compact**. The action lists BA and QA
+with the part of the budget that each uses, both ticked. The owner wants BA to cost less and
+leaves both ticked. The app stores a summary with end message 290, and from then on BA also
+reads that summary and the messages after 290. With BA unticked, BA still reads all messages.
 
 Why: A dropped message is lost for the bot, and the owner cannot see what the bot no longer
 knows. A summary keeps the main facts for a small cost, and the owner can read it. One summary
@@ -86,6 +97,11 @@ Rejected:
 - **One summary for each bot.** Each summary would keep what its bot needs. It costs one request
   for each bot, and two bots can remember the past in different ways. The owner chose one
   summary (2026-11-11).
+- **A manual compact that always changes all bots.** It is the simplest screen, but a bot on a
+  large model loses detail that it had room for. The owner raised this (2026-11-11).
+- **A manual compact that changes only bots near their limit.** No bot loses detail, but the
+  owner cannot make a bot on a large model cheaper, and for the other bots the auto rule does
+  the same work a short time later.
 - **Keep only the D32 rule.** It is simple and costs nothing, but the bot loses the old
   messages with no trace of their content.
 - **A fixed compact model in Settings.** D63 rejected a second model setting for the same
@@ -97,7 +113,7 @@ Consequences:
   budget. Only its fill rule changes: a summary takes the place of the omitted-messages marker
   when one exists.
 - New stored data: the summaries, with their end message, their source (auto or manual) and
-  their request. `model_requests.purpose` gets the value `compact`. The schema design needs
+  their request; and for each member, the manual compact that applies to it, if any. `model_requests.purpose` gets the value `compact`. The schema design needs
   the owner's approval before SQL is written (`AGENTS.md` §7).
 - A new event tells open pages that a conversation has a new summary (`AGENTS.md` §5 rule 3).
 - New settings: `auto_compact`, `compact_target_pct`, `compact_keep_recent_messages`, and a
