@@ -42,6 +42,13 @@ The lead checks the combined rows for gaps between assignments before the final 
 
 ## 3. Verify what the evidence proves
 
+Start with each acceptance claim that says "all", "each", "every", "no" or "none". Ask: what can be
+false while this proof stays the same? A search or a reading shows what it found; it does not show
+that nothing else is there. If the proof of such a claim is only a search or a reading, report one
+finding: the claim is bigger than its proof. Name the places that you found in it. The fix makes the claim
+smaller ([AGENTS.md §9](../AGENTS.md#9-definition-of-done-every-pr); owner, 2026-11-11,
+[lesson](lessons-learned/claim-bigger-than-its-proof.md)).
+
 Read each test's setup and assertions. A test name or comment does not establish coverage.
 Ask which incorrect behaviour the test would detect.
 Run the affected checks; use [testing.md](testing.md) for test rules and the required gates.
@@ -98,6 +105,9 @@ Report a missed path as a new finding with the same cause.
 Check the "Same cause as an earlier fix?" column. A repeated cause with no owner's decision is a finding.
 So is a redesign built in the PR under review ([AGENTS.md §9](../AGENTS.md#9-definition-of-done-every-pr)).
 Check that the fix record names the general rule and the search of old fixes ([bug fix, step 2](workflows/bug-fix.md)).
+The search covers earlier PRs: "the first fix of this PR" is not an answer to "Same cause as an earlier fix?".
+For a claim that was bigger than its proof, check that the fix made the claim smaller. A fix that keeps the
+claim and only makes the search bigger is a finding.
 If a finding was wrong, name the source or evidence that corrects it.
 
 The final report states the reviewed scope, findings, test results and remaining limits.
