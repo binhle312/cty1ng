@@ -1,3 +1,4 @@
+import { posix } from "node:path";
 import ts from "typescript";
 import { z } from "zod";
 
@@ -127,10 +128,34 @@ export function newErrorLines(run: { before: string; after: string; file: string
     .filter((row) => names.test(row) && !old.has(row));
 }
 
-// The folder of the TypeScript project that compiles `path`: a workspace package, or the root.
-export function projectOf(path: string): string {
+const References = z.object({ references: z.array(z.object({ path: z.string().min(1) })).min(1) });
+
+// The TypeScript projects that compile the package of `path`, as `tsc -p` takes them: the folder
+// of a workspace package, or the root. A package config that points at other configs
+// (`references`) compiles no file by itself, and `tsc -p` then exits with 0. So those configs
+// take its place: the frontend has one for the browser code and one for the tests.
+// `read` gives the text of a file of the repository, or null.
+export function projectsOf(path: string, read: (path: string) => string | null): string[] {
   const top = path.split("/")[0] ?? "";
-  return ["backend", "frontend", "shared"].includes(top) ? top : ".";
+  const folder = ["backend", "frontend", "shared"].includes(top) ? top : ".";
+  const file = posix.join(folder, "tsconfig.json");
+  // The parser of TypeScript: a config can have comments and commas at the end.
+  const parsed: unknown = ts.parseConfigFileTextToJson(file, read(file) ?? "{}").config;
+  const config = References.safeParse(parsed);
+  if (!config.success) return [folder];
+  return config.data.references.map((reference) => posix.join(folder, reference.path));
+}
+
+// Whether the file list of `tsc --listFiles` has `file` (a path from the repository root) of
+// the copy at `root`. A compile that does not read the broken file proves nothing about it.
+export function listsFile(printed: string, at: { root: string; file: string }): boolean {
+  const full = posix.join(at.root, at.file);
+  return printed.split("\n").some((row) => row.trim() === full);
+}
+
+// The first error line of `tsc`, or null. With `--listFiles`, the output also has file paths.
+export function firstTscError(printed: string): string | null {
+  return printed.split("\n").find((row) => /\berror TS\d+:/.test(row)) ?? null;
 }
 
 // A file that tests read but that is not the code under test: a break must not edit it.
