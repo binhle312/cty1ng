@@ -8,3 +8,4 @@ needed, a new decision in [../decisions/](../decisions/README.md).
 | File | Idea | Earliest start |
 | --- | --- | --- |
 | [desktop-app-and-cli-agents.md](desktop-app-and-cli-agents.md) | Desktop app for Windows and Linux; send work to Claude Code or Codex and watch it in the app | After M9 |
+| [login-providers.md](login-providers.md) | Bots that run on a CLI login (Copilot, Claude Code, Codex), not an API key | After M3 (owner, 2026-11-11) |
