@@ -1,6 +1,6 @@
 # D66. Each bot compacts its old history into a summary
 
-Status: proposed (2026-11-11). The owner decided eight things in the session of 2026-11-11:
+Status: proposed (2026-11-11). The owner decided nine things in the session of 2026-11-11:
 
 1. The app gets auto compact and manual compact.
 2. Each bot compacts itself: a bot has its own summary, written with its own model. The owner
@@ -15,7 +15,9 @@ Status: proposed (2026-11-11). The owner decided eight things in the session of 
 8. A compact reads a message that the owner sent with "Send anyway". The owner reviewed that
    message and chose to send it, so the owner is responsible for it. A message that the owner
    did not send is not in the conversation, and no compact reads it. This replaces the answer
-   of the second arena round, which refused such a compact.
+   of the second arena round, which refused such a compact. A compact has no secret check,
+   on its input or on its summary.
+9. The first slice has no undo of a compact.
 
 Two arena rounds read this entry (the records are in PR #102). Round 1 read the first text,
 with the shared summary. Round 2 read the text with one summary for each bot; three consultants
@@ -187,7 +189,7 @@ Decision:
   (the server refuses it), so no compact can read it.
 - **No new reader.** The compact request goes to the model of the same bot, so no other
   provider sees the text. The request reads the names of attachments, not their contents.
-- **No guard step in a compact.** The app does not run the guard on the input or on the
+- **No guard step in a compact (owner, 2026-11-11).** The app does not run the guard on the input or on the
   summary of a compact. The input is text that the bot may read, and a guard match there
   would stop the compact that the owner allowed. This differs from the title request (D46),
   which does not run for a "Send anyway" message.
@@ -203,8 +205,8 @@ Decision:
 - **The slice (owner).** Compact is its own slice after M4-3, because it needs the branch
   rules and the member rules of M4. M3 ships with the D32 rule.
 - **Not in this decision.**
-  - Undo of a compact. Two of three consultants and the judge advised to leave it out of the
-    first slice. A new manual compact reads the messages again when they fit, so it replaces a
+  - Undo of a compact (owner, 2026-11-11). Two of three consultants and the judge advised to
+    leave it out of the first slice. A new manual compact reads the messages again when they fit, so it replaces a
     poor summary.
   - A summary of a bot's own run record (`run_history`). The D32 rule stays for it:
     `[N earlier runs of yours omitted]`.
