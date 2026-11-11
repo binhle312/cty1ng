@@ -145,11 +145,19 @@ Merge a PR only when the owner asks you to merge that PR. The merge needs no lin
   items (or "none").
 - Name a principle skill in a PR, a review record or `docs/delivery-quality.md` only if you read
   its `SKILL.md` in that session.
-- Each review fix answers "Same cause as an earlier fix?" in the PR's `Review fixes` table. If the
+- Each review fix answers "Same cause as an earlier fix?" in the PR's `Review fixes` table. An
+  earlier fix can be in this PR or in an earlier one: search the prevention actions of
+  `docs/delivery-quality.md` §7 and the lessons, and name the search in the answer. If the
   answer is yes, stop patching. Propose a redesign, get the owner's decision, and record it.
   Build the redesign in its own PR, with its own plan and test strategy, not in the PR under
   review. That PR waits for it, or makes its claim smaller and records the gap in
   `docs/delivery-quality.md` (owner, 2026-11-09; `docs/lessons-learned/fixes-that-make-new-findings.md`).
+- One cause has a fixed answer: a review shows that a claim is bigger than its proof. Correct
+  the places that the review found, and make the claim smaller: say what you did and what the
+  proof shows, then `Not claimed: …`. Put it under `Needs human review`; do not stop to ask. You
+  can search more and correct more places, but a wider search does not bring the bigger claim
+  back in that PR. Exception: ask the owner before you make a criterion from a task brief or an
+  approved plan smaller (owner, 2026-11-11; `docs/lessons-learned/claim-bigger-than-its-proof.md`).
 
 ## 10. Conventions
 
@@ -163,9 +171,11 @@ Merge a PR only when the owner asks you to merge that PR. The merge needs no lin
 - **No hardcoded values** (owner, 2026-10-23). A number, threshold, limit, time or default that
   the owner may want to change (caps, Improve thresholds, Trash days, size limits, timeouts) has
   one home: the `settings` table if the owner changes it in the app, otherwise an environment
-  variable or config file. Each has a default, written in the docs next to the rule that uses
-  it. Code reads the value from there, and tests set it. Only invariants and security checks
-  stay fixed in code: they are rules, not settings.
+  variable or config file. Each has a default, written one time in the docs. For a setting, the
+  place is `docs/domain-model.md` §10, or `docs/conversation-rules.md` for the conversation
+  limits (owner, 2026-11-10). For an environment variable or a config value, the place is next
+  to the rule that uses it. Code reads the value from the setting or the variable, and tests set
+  it. Only invariants and security checks stay fixed in code: they are rules, not settings.
 - Commits: small, imperative subject line (`Add skill version pinning`), body explains why.
 - One task slice per branch: `m1-skill-hub`, `m3-chat-one-bot`, …
 - Open every PR as a draft, and leave it a draft. The owner marks it Ready right before the merge

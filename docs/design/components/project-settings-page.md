@@ -86,7 +86,7 @@ changed.
 - "Everything in the project goes to Trash:", then the real counts: 💬 "{n} conversations, with all their
   messages and runs", 🧠 "{n} memory items", 📚 "{n} Library files".
 - ↩️ "You can restore the project from Trash for {trash_days} days, with all of it. You cannot restore one
-  conversation alone. After {trash_days} days, the app deletes it." (`trash_days`, default 30, D62.)
+  conversation alone. After {trash_days} days, the app deletes it." (`trash_days`, D62.)
 - 💡 "To keep something from this project, ask a bot to write it to a file, then use Copy to."
   (D61: a project conversation never leaves its project.)
 - Buttons: **Cancel** (default, with the focus ring, so Enter does not delete) and **Delete

@@ -12,6 +12,9 @@ Link to the brief and decisions.
 | --- | --- |
 | | |
 
+A claim with "all" or "no" needs a check that covers each item. With a search or a reading as proof,
+say what the proof shows and add `Not claimed: …` (`docs/workflows/pull-request.md`).
+
 ## Edge cases (one table for each changed screen, `testing.md` §3)
 
 | Case | Test, or why the row does not apply |
@@ -36,6 +39,9 @@ Link to the brief and decisions.
 | Finding | Cause (the rule broken) | Same cause checked in | Same cause as an earlier fix? | Fix | Test |
 | --- | --- | --- | --- | --- | --- |
 | | | | | | |
+
+"Same cause as an earlier fix?" covers earlier PRs too: name the search of the prevention actions
+(`docs/delivery-quality.md` §7) and of the lessons in the answer.
 
 ## Follow-ups (not done here)
 

@@ -14,6 +14,7 @@ Link to the brief and decisions.
 | --- | --- |
 | UI-2.4 | `e2e/header-drag.spec.ts` "drop adds bot": expects the bot chip in the header after the drop; + screenshot |
 | conversation-rules §1 table | `decide-runs.rules.test.ts` "human message: …" rows: one row per table line |
+| Each default has one home (a claim with no test) | The search script in this description and its output on `abc1234`; the 21 places that it printed now point to the home. **Not claimed:** that no copy stays |
 
 ## Edge cases (one table for each changed screen, `testing.md` §3)
 | Case | Test, or why the row does not apply |
@@ -41,6 +42,19 @@ Link to the brief and decisions.
 ## Follow-ups (not done here)
 - ...
 ```
+
+## A claim fits its proof
+
+A claim with "all", "each", "every", "no" or "none" needs a check that covers each item. A test,
+a lint rule or a script over a closed list is such a check. A search or a reading shows what it
+found; it does not show that nothing else is there. With such a proof, say what you did and what
+the proof shows, and add `Not claimed: …` (owner, 2026-11-11;
+[lesson](../lessons-learned/claim-bigger-than-its-proof.md)). The reviewer tests these claims
+first ([review guide §3](../review-guide.md#3-verify-what-the-evidence-proves)).
+
+In the `Review fixes` table, "Same cause as an earlier fix?" covers earlier PRs too. Name the
+search of the prevention actions ([delivery quality §7](../delivery-quality.md#7-update-and-assess))
+and of the [lessons](../lessons-learned/README.md) in the answer.
 
 ## One home for each fact
 

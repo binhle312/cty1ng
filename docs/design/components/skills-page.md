@@ -59,11 +59,11 @@ browser's own "Leave site?" question; nothing else of an unsaved edit is kept.
   "↑m" in `primary` when m bots use an older version, **History** with the number of versions.
   The open tab has the 2 px `primary` underline.
 - **Skill tab:** the editor, one column, 14 px between fields:
-  1. **Name**, counter "n / {skill_name_max}" (default 64).
+  1. **Name**, counter "n / {skill_name_max}".
   2. **Description**, hint "Say when a bot must use this skill. Bots read it in every prompt,
      so keep it short.", counter "n / 1,024".
   3. **Body**, hint "The steps a bot follows for this task. Bots read it only when they load
-     the skill.", counter "n / {skill_body_max}" (default 20,000). The tabs **Write** and **Preview** sit on top of the
+     the skill.", counter "n / {skill_body_max}". The tabs **Write** and **Preview** sit on top of the
      body box, with "Markdown" at the right of the tab bar. The open tab has a 2 px `primary`
      underline. The tab bar has the same border colour as the box.
 - **Save bar**, fixed at the bottom of the Skill tab (§5). The Bots and History tabs have no
@@ -166,10 +166,10 @@ over its limit turns `danger`.
 | --- | --- |
 | Slug exists | "This slug exists. Type a different one." |
 | Description over the limit | "The description has 1,047 characters. The limit is 1,024. Make it shorter." |
-| Name or body over the limit | The same pattern, with the limit `skill_name_max` or `skill_body_max` (defaults 64 and 20,000) |
+| Name or body over the limit | The same pattern, with the limit `skill_name_max` or `skill_body_max` |
 | Text looks like a secret (D39) | "Line 5 looks like an API key. The app does not save secrets in skills. Remove the key." |
 
-A body over `skill_body_warn_lines` lines (default 500) gets a warning only, in `waiting`: "The
+A body over `skill_body_warn_lines` lines gets a warning only, in `waiting`: "The
 body has 612 lines. Bots read the full body each time they load it. Try to keep it under 500
 lines." (the example uses the default). The Agent Skills standard
 recommends this length but does not require it.
@@ -436,7 +436,7 @@ unsaved), nothing would be lost, so the page goes where the owner asked at once 
 - Limits (`security.md` §2.5, `domain-model.md` §3.1, §10): description 1,024 characters and
   the slug rule are fixed, as in the Agent Skills standard; the name, the body and the line
   warning are the settings `skill_name_max`, `skill_body_max` and `skill_body_warn_lines`
-  (defaults 64, 20,000 and 500). The editor reads them from `GET /settings`, so its counters,
+  (`domain-model.md` §10). The editor reads them from `GET /settings`, so its counters,
   errors and warning always match the server.
 - API (`api.md` §2): import apply takes the picked folders, export takes the picked skills,
   `POST /skills/{id}/trash`, and the restore endpoint (D49).

@@ -127,7 +127,7 @@ Header and side panel
   the member avatars (click opens a picker of non-member available bots; a header avatar dropped
   on it or on the conversation adds that bot); member avatars (click → menu with each member's
   model and effort and "Remove"; Remove is off while that bot is queued or running); Flow; ⋯ with
-  the conversation menu (UI-9.7); discussion status ("Discussion: on · 3/5 used" or "off", from
+  the conversation menu (UI-9.7); discussion status ("Discussion: on · {used}/{limit} used" or "off", from
   slice M5; a click opens the discussion settings, UI-9.3). When every available bot is already a
   member, the picker says so and has **+ Create**, which opens the create bot page. The Stop button sits
   inside the composer at the left while any run is queued or running.

@@ -17,7 +17,7 @@ sticky on every page (UI-2.11), background `surface`, bottom line `outline`.
 - Avatars are 36 px circles (`bot-avatar.md` §2), 8 px apart, centred in the zone. No names under
   them.
 - Order: the pinned bots in the owner's order, a short divider, then the others by the `bot_order`
-  sort, Recent activity (default) or Created. The same order as the Bots page (UI-2.1, §3). UI-2.9
+  sort, Recent activity or Created (default: `../../domain-model.md` §10). The same order as the Bots page (UI-2.1, §3). UI-2.9
   deferred reordering holds changes that come from activity.
 
 ## 2. States

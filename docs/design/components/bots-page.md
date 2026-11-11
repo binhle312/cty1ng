@@ -83,7 +83,7 @@ Health is computed from data that the app has; nothing new is stored. Healthy bo
 | Needs attention | `primary` | "{n} of the last {m} runs failed"; "{n} runs stopped at the request limit this week"; "Uses a deprecated skill"; "Last run cut history to fit the context" |
 
 The thresholds are settings with defaults (`../../domain-model.md` §10): `health_failed_runs`
-(2) of `health_recent_runs` (5), and `health_limit_stops` (3 in 7 days). Skill updates are not a
+of `health_recent_runs`, and `health_limit_stops` in `health_limit_window_days` days. Skill updates are not a
 health problem (they show as "↑1" in the numbers). Waiting for you is a state, not health.
 
 ## 5. Sort the others (S5)

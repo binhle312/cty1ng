@@ -94,9 +94,10 @@ environment, provider-side data handling.
 
 - Skills and personas are text in the database; they are never written to code paths and never
   executed.
-- Size limits: skill name `skill_name_max` (64) characters, description 1,024 characters, body
-  `skill_body_max` (20,000) characters (all required; a body over `skill_body_warn_lines` (500)
-  lines gets a warning only), persona 8,000 characters (`bot_persona_max`). The slug and the
+- Size limits: skill name `skill_name_max` characters, description 1,024 characters, body
+  `skill_body_max` characters (all required; a body over `skill_body_warn_lines`
+  lines gets a warning only), persona `bot_persona_max` characters. These four limits are
+  settings; their values are in `domain-model.md` §10. The slug and the
   description limit are fixed format rules (`domain-model.md` §3.1); the others are settings
   (§10 there). The server checks the same limits as the editor, in the service, so the editor,
   Clone, import, the CLI, the seed and bot drafts (D41) all pass the same check.
@@ -113,7 +114,7 @@ environment, provider-side data handling.
     private data and an injected page can put private text in a query. The query goes to the
     search provider, not to a server that the attacker picks, and the app cannot check a query
     inside a provider tool before it is sent. Limits: web access is off by default for each
-    bot, `web_searches_per_run` (default 5), fetch only of search-result or owner URLs (D53
+    bot, the setting `web_searches_per_run` (`domain-model.md` §10), fetch only of search-result or owner URLs (D53
     rule 1), and the MCP switch stays locked (D55).
   - **The owner accepts this residual risk for phase 1 (owner, 2026-10-27).** The gate is a
     review process, not technical prevention. Five searches per run give fewer chances, but one
@@ -391,8 +392,9 @@ built with the slice that needs it (most in M0); "M9" means the VPS milestone (�
 - In a run that read the web: fetch only URLs from search results or the owner's messages;
   memory saves only from the approved plan or the owner's Remember click; writes keep their
   approvals; web text is fenced and marked untrusted; source links follow §2.2.
-- Limits are settings with defaults in D53 (`web_searches_per_run`, `web_fetches_per_run`,
-  `web_fetch_max_tokens`, `web_allowed_domains`, `web_blocked_domains`).
+- Limits are settings (D53): `web_searches_per_run`, `web_fetches_per_run`,
+  `web_fetch_max_tokens`, `web_allowed_domains`, `web_blocked_domains`. Their defaults are in
+  `domain-model.md` §10.
 - Tests (with the fake model): a bot with web access off never sends a web tool; a run that
   read the web cannot save memory without approval; a model-written fetch URL is refused.
 

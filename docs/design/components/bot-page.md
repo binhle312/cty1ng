@@ -100,9 +100,9 @@ them; each field has its own label.
 1. **Appearance:** Avatar style cards (Flat, Jelly, Pixel, Upload image), then the Colour row
    (`bot-avatar.md` §5, §6). Hint under "Colour": "Pick a colour, mix your own with Custom, or let
    Random pick any colour."
-2. **Basics:** Name (≤ 32) and Description (one line, ≤ 160, a 3-line box), with the hints of the
+2. **Basics:** Name (≤ `bot_name_max`) and Description (one line, ≤ `bot_description_max`, a 3-line box), with the hints of the
    Create page (`create-bot-page.md` §2).
-3. **Persona:** ≤ 8,000, Markdown, Write and Preview tabs. It opens in Preview, or in Write when
+3. **Persona:** ≤ `bot_persona_max` (the three limits are settings, `../../domain-model.md` §10), Markdown, Write and Preview tabs. It opens in Preview, or in Write when
    it is empty (then the persona template is the placeholder, PF4).
 
 History is not on this tab. It is in Advanced on the Model tab, as in Create.
