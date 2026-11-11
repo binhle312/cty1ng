@@ -7,11 +7,13 @@ import {
   coverageProblems,
   framesOf,
   isTestFile,
+  firstTscError,
   lineOf,
   linkProblems,
+  listsFile,
   nameMatches,
   newErrorLines,
-  projectOf,
+  projectsOf,
   playwrightOutcomes,
   testCalls,
   verdict,
@@ -325,10 +327,49 @@ describe("the tests of a PR", () => {
   });
 
   it("names the TypeScript project that compiles a broken file", () => {
-    expect(projectOf("frontend/src/features/bots/create-bot-page.tsx")).toBe("frontend");
-    expect(projectOf("backend/src/core/bots/bots.service.ts")).toBe("backend");
-    expect(projectOf("shared/src/ids.ts")).toBe("shared");
-    expect(projectOf("scripts/lib/breaks.ts")).toBe(".");
+    const configs: Record<string, string> = {
+      "backend/tsconfig.json": '{ "extends": "../tsconfig.base.json", "include": ["src"] }',
+      "tsconfig.json": '{ "include": ["*.ts", "scripts/**/*.ts"] }',
+    };
+    const config = (path: string) => configs[path] ?? null;
+    expect(projectsOf("backend/src/core/bots/bots.service.ts", config)).toEqual(["backend"]);
+    expect(projectsOf("shared/src/ids.ts", config)).toEqual(["shared"]);
+    expect(projectsOf("scripts/lib/breaks.ts", config)).toEqual(["."]);
+  });
+
+  it("names the configs that a package config points at, in place of that config", () => {
+    // `tsc -p frontend` compiles no file of such a config, and it exits with 0.
+    const text = [
+      "{",
+      "  // The browser code and the tests have their own config.",
+      '  "files": [],',
+      '  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.test.json" }],',
+      "}",
+    ].join("\n");
+    const config = (path: string) => (path === "frontend/tsconfig.json" ? text : null);
+    expect(projectsOf("frontend/src/features/bots/create-bot-page.tsx", config)).toEqual([
+      "frontend/tsconfig.app.json",
+      "frontend/tsconfig.test.json",
+    ]);
+  });
+
+  it("finds the broken file in the file list of tsc only at its full path", () => {
+    const printed = "/c/node_modules/typescript/lib/lib.d.ts\n/c/frontend/src/a.tsx\n";
+    expect(listsFile(printed, { root: "/c", file: "frontend/src/a.tsx" })).toBe(true);
+    expect(listsFile(printed, { root: "/c", file: "src/a.tsx" })).toBe(false);
+    expect(listsFile(printed, { root: "/c", file: "frontend/src/b.tsx" })).toBe(false);
+  });
+
+  it("takes the first error of tsc, not a listed file with the word error in its path", () => {
+    const printed = [
+      "/c/frontend/src/lib/error-text.ts",
+      "frontend/src/a.ts(2,14): error TS2322: Type 'string' is not assignable to type 'number'.",
+      "frontend/src/b.ts(1,1): error TS2304: Cannot find name 'x'.",
+    ].join("\n");
+    expect(firstTscError(printed)).toBe(
+      "frontend/src/a.ts(2,14): error TS2322: Type 'string' is not assignable to type 'number'.",
+    );
+    expect(firstTscError("/c/frontend/src/lib/error-text.ts\n")).toBeNull();
   });
 
   it("tells a test or a test helper from the code", () => {

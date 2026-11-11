@@ -2,7 +2,15 @@
 // checks, its steps and its verdicts; the usage line is in the code below.
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { createConnection } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -13,10 +21,12 @@ import {
   type Claim,
   changedLines,
   coverageProblems,
+  firstTscError,
   lineOf,
   newErrorLines,
-  projectOf,
+  projectsOf,
   linkProblems,
+  listsFile,
   type TestCall,
   testCalls,
   playwrightOutcomes,
@@ -62,7 +72,8 @@ const local =
     ? "none"
     : `sha256 ${hash.digest("hex").slice(0, 16)} (${String(untracked.length)} new files)`;
 
-const copy = mkdtempSync(join(tmpdir(), "check-breaks-"));
+// The real path: `tsc` prints it in its file list, also when the temporary folder is a link.
+const copy = realpathSync(mkdtempSync(join(tmpdir(), "check-breaks-")));
 // The copy goes when the run ends, after an error, and on SIGINT or SIGTERM. A SIGKILL or a
 // SIGHUP leaves it in the temporary folder.
 process.on("exit", () => {
@@ -184,22 +195,26 @@ async function run(test: Claim["test"]): Promise<Run> {
   return { command: shown(command), outcomes, log: printed(result) };
 }
 
-// `true`, or the first error of `tsc` on the project that holds `file`, in the copy. A break
-// often leaves a variable unused, which does not stop the code from running.
+const TYPESCRIPT = /\.[cm]?tsx?$/;
+
+// `true`, or the first error of `tsc` on the projects of the package that holds `file`, in the
+// copy. A break often leaves a variable unused, which does not stop the code from running.
 function compiles(file: string): true | string {
-  const project = projectOf(file);
   const unused = ["--noUnusedLocals", "false", "--noUnusedParameters", "false"];
-  const result = spawnSync(
-    join(copy, "node_modules/.bin/tsc"),
-    ["-p", project, "--noEmit", ...unused],
-    {
-      cwd: copy,
-      encoding: "utf8",
-    },
-  );
-  if (result.status === 0) return true;
-  const first = `${result.stdout}${result.stderr}`.split("\n").find((row) => row.includes("error"));
-  return cell(first ?? "tsc failed").slice(0, 200);
+  let listed = false;
+  for (const project of projectsOf(file, read)) {
+    const result = spawnSync(
+      join(copy, "node_modules/.bin/tsc"),
+      ["-p", project, "--noEmit", "--listFiles", ...unused],
+      { cwd: copy, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+    );
+    const printed = `${result.stdout}${result.stderr}`;
+    if (result.status !== 0) return cell(firstTscError(printed) ?? "tsc failed").slice(0, 200);
+    listed ||= listsFile(printed, { root: copy, file });
+  }
+  // A passed compile that did not read the broken file is no compile check (testing.md §5).
+  if (!listed && TYPESCRIPT.test(file)) return `no TypeScript project compiles ${file}`;
+  return true;
 }
 
 // The results file, in the copy, where the commands run.

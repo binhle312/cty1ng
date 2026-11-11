@@ -195,8 +195,9 @@ environment, provider-side data handling.
 
 - Lockfile committed (`pnpm-lock.yaml`); CI installs with `--frozen-lockfile`. pnpm runs
   dependency install scripts only for packages set to `true` under `allowBuilds` in
-  `pnpm-workspace.yaml` (native ones; today `better-sqlite3`); every other package
-  with a script is listed as `false`, and install fails on a package that is in neither list.
+  `pnpm-workspace.yaml` (none today: `better-sqlite3` 13 has no install script and ships
+  prebuilt binaries); each package with a script is listed as `false`, and install fails on a
+  package with a script that is in neither list.
 - CI runs `pnpm audit --audit-level high`; Dependabot opens weekly update
   PRs. New dependencies need the owner's approval (`AGENTS.md` §7).
 - The repository is public: GitHub secret scanning and push protection are on, and
