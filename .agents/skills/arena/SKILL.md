@@ -65,7 +65,13 @@ All candidates get the same brief, so the brief is the contract.
    It also tells each candidate to:
    - work only in its output place, and keep all changes uncommitted;
    - follow the repository's agent instructions;
-   - write `RATIONALE.md` in its output place: the options it compared and why it rejected each.
+   - work at the level of a world-class specialist in the subject of the task;
+   - write `RATIONALE.md` in its output place, with three parts:
+     - the options it compared and why it rejected each;
+     - what it would build if it started from zero, and how that differs from its candidate;
+     - where it disagrees with the task or the current design.
+
+   The candidate builds the task as the brief states it. The from-zero idea stays in `RATIONALE.md`.
 
 The phase is complete when the rubric and the brief file exist and each seat has an output place.
 
@@ -137,5 +143,6 @@ Build the result on the task's own branch, not on an arena branch.
    - the judge's verdict and family (other or same), or that there was no judge;
    - each graft and its source candidate;
    - what you rejected and why;
+   - what the candidates would build from zero, and each point where two or more of them agree;
    - agreement between candidates and any dropouts;
    - the verification result.
