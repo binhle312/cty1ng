@@ -40,7 +40,7 @@ A link is a route to context, not an instruction to read every linked file.
 | Change a trust boundary, file handling, secrets, or untrusted output | [Security](security.md) | Threat model and every control and security test affected by the change |
 | Write tests or verify a change | [Testing](testing.md) | Relevant layer and cases; required gates and evidence rules still apply |
 | Apply an engineering principle | [Principle skills](../.agents/skills/README.md) | The skill that matches the current phase |
-| Trace a previous failure or review | [Lessons](lessons-learned/README.md), [delivery quality](delivery-quality.md), [repository audit](audits/2026-11-05-repo-audit.md) | Only records relevant to the current issue |
+| Trace a previous failure or review | [Lessons](lessons-learned/README.md), [delivery quality](delivery-quality.md) and its [archive](delivery-quality-archive.md) of closed rows, [repository audit](audits/2026-11-05-repo-audit.md) | Only records relevant to the current issue |
 | Audit the repository or one area of it | [Audit workflow](workflows/audit.md) | The five steps, then the latest file in [audits](audits/) for the format |
 | Find an existing diagram | [Diagrams](diagrams.md) | The relevant view and its owning specification |
 | Explore future work or research | [Ideas](ideas/README.md), [chat-client research](research/chat-client-patterns.md) | Background only; these do not authorize implementation |

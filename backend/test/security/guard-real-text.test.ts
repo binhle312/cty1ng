@@ -19,7 +19,7 @@ const FOLDERS = [
 ];
 // Text that quotes the guard's forms, or that holds fake secrets on purpose.
 const LEFT_OUT =
-  /\.test\.tsx?$|\/core\/guard\/|\/generated\/|docs\/(audits|lessons-learned)\/|docs\/(delivery-quality|security)\.md$/;
+  /\.test\.tsx?$|\/core\/guard\/|\/generated\/|docs\/(audits|lessons-learned)\/|docs\/(delivery-quality|delivery-quality-archive|security)\.md$/;
 const MAX_REFUSED_LINES = 0;
 // A smaller text means that a folder moved, and the limit would then prove less.
 const MIN_LINES = 40_000;

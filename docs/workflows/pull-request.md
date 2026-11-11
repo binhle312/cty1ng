@@ -55,7 +55,8 @@ states no state, count or result that a file or a tool owns:
 - What a test does lives in the test. The PR body names the test or the break id.
 
 A new ledger row is short: one sentence for the finding and its cause, and a fix of a commit
-plus a test or a break id.
+plus a test or a break id. The whole row has 600 bytes or less (step 7 of the check below; owner, 2026-11-11).
+The detail of a finding lives in the PR description, the test or the review record.
 
 ## Before each push: check the records
 
@@ -73,3 +74,11 @@ review fix, check them against the commit that you push (owner, 2026-11-08, DQ-1
 5. If you correct a claim, search for its old text in all the records, and correct each copy.
 6. Run `gh pr list --state all`. Correct the state of each PR that `docs/status.md` or the active
    audit file names. A PR cannot record its own merge, so the next push does it (owner, 2026-11-10).
+7. Measure each ledger row with an id above DQ-202. This command must print nothing:
+   `LC_ALL=C awk -F'|' '/^\| DQ-/ { id = substr($2, 5) + 0; if (id > 202 && length($0) > 600) print "DQ-" id, length($0) }' docs/delivery-quality.md`.
+   `LC_ALL=C` makes it count bytes, so each machine gives the same result. Make each row that it
+   prints shorter, also when the PR only adds a fix to the row. A row up to DQ-202 can stay as it
+   is (owner, 2026-11-10).
+8. Run `wc -c < docs/delivery-quality.md`. If the result is larger than the limit in
+   [§7 step 6 of the ledger](../delivery-quality.md#7-update-and-assess), write under Follow-ups
+   of the PR description that a move of the closed rows is due. The move is a PR of its own.
