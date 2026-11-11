@@ -42,14 +42,14 @@ Step 2 of 4.                                              Back   Next / Create
 
 | Field | Rules |
 | --- | --- |
-| Name | 1–32 characters, counter "12 / 32". Hint: "A short role name. You see it in the header, in mentions and in the status." Unique among bots, Trash included; upper and lower case are the same |
-| Description | 1–160 characters, a 3-line box, counter. Hint: "What the bot does and when to ask it, in one line. Other bots read it to choose who helps." (D18) |
+| Name | 1 to `bot_name_max` characters, counter "12 / 32" (the example uses the default). Hint: "A short role name. You see it in the header, in mentions and in the status." Unique among bots, Trash included; upper and lower case are the same |
+| Description | 1 to `bot_description_max` characters, a 3-line box, counter. Hint: "What the bot does and when to ask it, in one line. Other bots read it to choose who helps." (D18) |
 | Avatar style | 4 cards: **Flat** (default), Jelly, Pixel, + Upload image. Until a slice draws Jelly and Pixel (`bot-avatar.md` §1), only Flat and Upload image show (M2). The cards show the chosen colour. Upload uses the crop card (`bot-avatar.md` §6; upload rules in `../../security.md` §2.4) |
 | Colour | The colour row of `bot-avatar.md` §5: 10 swatches from the theme, **Custom** and **Random**. The default is a random swatch that no other bot uses. Used colours are not shown |
 
 ### Step 2 · Persona (CS2)
 
-One field: **Persona**, 1–8,000 characters, Write / Preview tabs (Markdown), counter. Hint: "Who
+One field: **Persona**, 1 to `bot_persona_max` characters, Write / Preview tabs (Markdown), counter. Hint: "Who
 the bot is, its goal, how it works and its rules. The bot reads it in every run. Put long
 procedures in skills." An empty box shows the persona template as placeholder: role, goal,
 steps, rules with reasons, output, example.
@@ -86,11 +86,12 @@ In this order:
 
    | Field | Default | Rule |
    | --- | --- | --- |
-   | History: {n} % of context | 40 % | Slider 10–80 %, step 5, with the live label "≈ 400k tokens of 1M. 600k are left for work." (D32) |
-   | Model requests per run | 30 | A run stops at this number of model calls |
-   | Longest reply | 6,000 | In characters. A longer reply is cut |
+   | History: {n} % of context | `bot_default_history_pct` | Slider from `bot_history_min_pct` to `bot_history_max_pct`, step 5, with the live label, for example "≈ 400k tokens of 1M. 600k are left for work." (D32) |
+   | Model requests per run | `bot_default_request_limit` | A run stops at this number of model calls |
+   | Longest reply | `bot_default_max_reply_chars` | In characters. A longer reply is cut |
 
-The defaults are settings (`../../domain-model.md` §10), not numbers in the code.
+The defaults and the two ends of the slider are settings, not numbers in the code. Their values
+are in `../../domain-model.md` §10.
 
 ## 3. Tools list (CS4b, CS4c)
 
@@ -176,8 +177,9 @@ job (D55).
 | E5 | Create failed (no connection, server error) | A red banner under the stepper: "Could not confirm whether the bot was created. Your input is kept." and Try again (owner, 2026-11-02: the app does not know if the bot was created, so the banner does not say it failed). No stack trace and no internal text. Try again sends the same request with the same retry key, so a retry never makes two bots (`../../api.md` §4). Until the outcome is known, the page keeps that request as sent and the form stays read-only: Try again resends it unchanged, so an edit cannot ride on the old key. When the answer comes, a bot that was created opens as after Create; an input error unlocks the form, and the next Create is a new request with a new key (`../../domain-model.md` §2 Idempotency; M2 spec gap pass, owner 2026-11-01) |
 | E6 | Leave with input | Cancel, ← Back, the rail or a header bot opens "Leave without creating? {name} is not created. What you typed in the 4 steps is lost." with Stay and **Leave** (`danger`). Esc = Stay. With nothing typed, the owner leaves at once. No draft is saved. The browser's own question covers a closed tab or a reload |
 
-The limits (name 32, description 160, persona 8,000, history 10–80 %) are settings with these
-defaults (`../../domain-model.md` §10).
+The limits are settings: `bot_name_max`, `bot_description_max`, `bot_persona_max`, and
+`bot_history_min_pct` to `bot_history_max_pct` for the history share. Their defaults and ranges
+are in `../../domain-model.md` §10.
 
 The form takes its first values once and keeps them, for a new bot and for a Clone. So the page shows its skeleton until this visit's read of the settings, the models, the tools and the skills gives its last answer. If one of these reads fails on a later visit, the skeleton stays while the app retries (about 7 s). A live event for that list starts the retries again, so the skeleton stays until about 7 s after the last event. Then the form opens with the last values. This wait ends once, so an open form does not go back to the skeleton. A move between the new-bot form and a Clone starts a new wait. The bots list has no wait, because the header keeps it live (audit row 2, owner's decisions of 2026-11-06 and 2026-11-07).
 

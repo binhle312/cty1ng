@@ -72,7 +72,7 @@ When a run finishes, `decideRuns` is called with the bot's message as trigger:
 - Changing the toggle or limit posts a notice ("Bot discussion limit changed to 8") and applies
   from the next routing decision. A running run is not interrupted.
 - **Safety cap:** independent of the budget, at most `runs_per_conversation_per_hour` (setting,
-  default 50, §9) admitted executions per conversation per rolling hour. The worker checks the
+  §9) admitted executions per conversation per rolling hour. The worker checks the
   cap when it claims a run, like the daily cap (D20, `domain-model.md` §13):
   - The count is the number of `run_slots` rows of the conversation with `used_at` in the last
     hour (`domain-model.md` §7). `run_slots` is the only record for this count; `started_at` is

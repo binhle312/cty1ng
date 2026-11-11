@@ -27,7 +27,9 @@ Design: `../design/components/settings-page.md` (round 14).
   improvement. Every setting is one row with its name, what the owner notices when it changes,
   and its range or default (owner 2026-10-26). A page saves with the save bar, except Models
   (read-only) and Appearance (saves at once).
-- UI-8.1: Bot discussion: the global switch (default off) and turn limit (1–20, default 5). The
+- UI-8.1: Bot discussion: the global switch (`bot_discussion_enabled`) and the turn limit
+  (`bot_turn_limit`). Their defaults are in `../conversation-rules.md` §2, and the range is
+  `BOT_TURN_LIMIT_RANGE` (§9 there). The
   turn limit stays on when the switch is off, because a conversation that turns discussion on
   uses it. Limits: runs per conversation per hour and the other conversation limits
   (`../conversation-rules.md` §9), `share_max_per_conversation_24h`, `cross_search_max_hits`,
@@ -76,8 +78,9 @@ owner sees it. Designs: `../design/components/conversation-page.md` §2 and
 - UI-9.2: *Removed (round 12).* No preset icons: the icon always comes from the bot avatars
   (UI-1.3).
 - UI-9.3: Bot discussion (M5): a click on the discussion status in the header ("Discussion:
-  on · 3/5 used") opens a popover with "Global (off)" / On / Off and the turn limit "Global (5)" /
-  Custom, where Custom is a number input in place (1–20). A change saves at once and applies
+  on · 3/5 used") opens a popover with "Global ({global value})" / On / Off and the turn limit "Global ({n})" /
+  Custom, where Custom is a number input in place (range `BOT_TURN_LIMIT_RANGE`,
+  `../conversation-rules.md` §9). A change saves at once and applies
   from the next bot message (`../design/components/conversation-page.md` §2.4).
 - UI-9.4: Members: in the header, with the add slot and the members menu (UI-3.15).
 - UI-9.5 (M5b): Delete: **Delete** in the conversation menu (UI-9.7) sends the conversation to Trash

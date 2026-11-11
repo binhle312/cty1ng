@@ -114,7 +114,7 @@ environment, provider-side data handling.
     private data and an injected page can put private text in a query. The query goes to the
     search provider, not to a server that the attacker picks, and the app cannot check a query
     inside a provider tool before it is sent. Limits: web access is off by default for each
-    bot, `web_searches_per_run` (default 5), fetch only of search-result or owner URLs (D53
+    bot, the setting `web_searches_per_run` (default in D53), fetch only of search-result or owner URLs (D53
     rule 1), and the MCP switch stays locked (D55).
   - **The owner accepts this residual risk for phase 1 (owner, 2026-10-27).** The gate is a
     review process, not technical prevention. Five searches per run give fewer chances, but one

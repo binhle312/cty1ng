@@ -14,7 +14,9 @@ Settings gear (36 px). Hover and keyboard focus: the row lightens and gets a 2 p
 No chevron: the avatar and name open the menu (owner 2026-10-22, kept in the shell review
 2026-10-30).
 
-Until the owner sets a display name, the name is **"Sir"** and the avatar letter **"S"**.
+Until the owner sets a display name, the name is the default of `display_name`
+(`../../domain-model.md` §10) and the avatar letter is its first letter. The examples here use
+the default: **"Sir"** and **"S"**.
 
 ## 2. Menu
 
@@ -63,5 +65,5 @@ Content and states are as above; only the placement changed.
 
 ## Requirement changes (requirements PR)
 
-- New owner setting: display name (default "Sir").
+- New owner setting: display name (`display_name`; default in `../../domain-model.md` §10).
 - The battery and its hover in `app-shell.md`: done in UI-1.20 to UI-1.23 (shell review, 2026-10-30).

@@ -41,8 +41,8 @@ Design: `../design/components/bots-page.md` (agreed, round 9).
   The suggested name fits the name limit and is free ("(copy 2)" when "(copy)" is taken). A model
   change turns off copied tools the new model does not have and says which ones (§3.0 there).
 - UI-4.5: **Order.** Pinned bots come first, in the owner's order; the others follow by the
-  `bot_order` setting: *Recent activity* (default; bots with no activity follow, newest created
-  first) or *Created*, each newest first or oldest first. Two sort buttons beside the Others
+  `bot_order` setting: *Recent activity* (bots with no activity follow, newest created
+  first) or *Created*, each newest first or oldest first (defaults: `../domain-model.md` §10). Two sort buttons beside the Others
   title switch the sort; a click on the sort that is on flips the direction. Pin and unpin use
   the corner badge (`../design/components/pin.md`). A drag inside the Pinned group, or Alt+← and
   Alt+→ on a focused pinned card, reorders. Each pin, unpin and reorder saves at once: the
@@ -66,8 +66,8 @@ Design: `../design/components/bots-page.md` (agreed, round 9).
 
 Design: `../design/components/create-bot-page.md` (agreed, round 9).
 
-- UI-5.1: A page of its own with four steps and a live preview card: **Basics** (name ≤ 32,
-  description ≤ 160 in a 3-line box, avatar style Flat / Jelly / Pixel / Upload image, colour from
+- UI-5.1: A page of its own with four steps and a live preview card: **Basics** (name ≤ `bot_name_max`,
+  description ≤ `bot_description_max` in a 3-line box, avatar style Flat / Jelly / Pixel / Upload image, colour from
   the theme's 10 swatches, Custom or Random, with a random unused swatch as default (the page
   picks it; the palette is frontend only); used colours are not
   shown), **Persona** (≤ `bot_persona_max`, Markdown, Write / Preview, with
