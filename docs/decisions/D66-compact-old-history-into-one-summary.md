@@ -18,10 +18,10 @@ Decision:
   first message through one message, its **end message**.
 - **Nothing is deleted.** Compact changes only what bots read. The owner still sees each
   message in full, and no message row changes (`AGENTS.md` §5 rule 5).
-- **Auto compact.** The threshold is the history budget of the bot (D32: its share of the
-  window of its model, 40 % by default, which the owner sets for each bot). When a run starts
-  and the history of its bot is larger than that budget, the app makes one compact request
-  before the first request of the run. It does not compact message by message: one summary
+- **Auto compact.** The threshold is the history budget of the bot (D32). That budget is a
+  share of the window of its model: 40 % by default, and the owner sets it for each bot. A run
+  starts, and the history of its bot is larger than that budget. The app then makes one compact
+  request before the first request of the run. It does not compact message by message: one summary
   takes the place of the whole old part. The new summary covers
   enough messages that the history then uses `compact_target_pct` of the budget or less
   (setting, default 50). So the next runs do not compact again at once. The setting
@@ -30,21 +30,23 @@ Decision:
   active path, except the newest `compact_keep_recent_messages` messages (setting, default 10),
   which bots still read in full. It is not available while a run is queued or running in the
   conversation, as for an edit (D13), or while another compact request runs.
-- **The owner chooses the bots (owner, 2026-11-11).** Models have different windows, so a
-  manual compact must not take detail from a bot that has room, unless the owner wants that.
-  The Compact action lists the bots of the conversation, each with the part of its history
-  budget that it uses now, for example "BA 3 %" and "QA 95 %". All are ticked at the start. The
-  owner unticks a bot to leave it as it is. Only the ticked bots read the new summary.
+- **The owner chooses the bots (owner, 2026-11-11).** Models have different windows. A manual
+  compact must not take detail from a bot that has room, unless the owner wants that. The
+  Compact action lists the bots of the conversation. Each bot shows the part of its history
+  budget that it uses now, for example "BA 3 %" and "QA 95 %". Each bot has a tick at the
+  start. The owner unticks a bot to leave it as it is. Only the ticked bots read the new
+  summary.
 - **Undo for a bot.** The owner can undo a manual compact for one bot. That bot then reads the
-  messages in full again, as far as its budget allows; the auto rule still applies to it.
+  messages in full again, up to its budget. The auto rule still applies to it.
 - **Who reads the summary.** After a manual compact, each bot that the owner ticked reads the
   summary and then the messages after its end message. After an auto compact, only a bot whose
   budget is too small reads it. A bot with enough room, and a bot that the owner did not tick,
   still reads the messages in full.
 - **Summaries are kept, not edited.** A later compact makes a new summary from the last
   summary and the next messages. The old one stays. A bot reads the summary that leaves it the
-  most messages in full: the one with the earliest end message that is not before the last
-  manual compact that the owner made for this bot and that lets the other messages fit.
+  most messages in full. That is the summary with the earliest end message that meets two
+  conditions. The end message is not before the last manual compact for this bot. The messages
+  after it fit in the budget.
 - **The request.** A compact is one model request with `purpose = 'compact'`, like the title
   request (D46) and the memory requests (D63): no tools, no run, no run slot. It is stored and
   priced in `model_requests` (D21), counts toward the caps (D20, D42) and reserves its
@@ -89,8 +91,8 @@ reads that summary and the messages after 290. With BA unticked, BA still reads 
 Why: A dropped message is lost for the bot, and the owner cannot see what the bot no longer
 knows. A summary keeps the main facts for a small cost, and the owner can read it. One summary
 for the conversation costs one request, and each bot has the same picture of the past (the
-owner's choice). The manual action gives the owner a way to cut the cost of a long
-conversation on a large model, where the auto rule would not start for a long time.
+owner's choice). On a large model, the auto rule does not start for a long
+time. The manual action lets the owner cut the cost of a long conversation there.
 
 Rejected:
 
@@ -99,9 +101,9 @@ Rejected:
   summary (2026-11-11).
 - **A manual compact that always changes all bots.** It is the simplest screen, but a bot on a
   large model loses detail that it had room for. The owner raised this (2026-11-11).
-- **A manual compact that changes only bots near their limit.** No bot loses detail, but the
-  owner cannot make a bot on a large model cheaper, and for the other bots the auto rule does
-  the same work a short time later.
+- **A manual compact that changes only bots near their limit.** No bot loses detail. But the
+  owner cannot make a bot on a large model cheaper. For the other bots, the auto rule does the
+  same work a short time later.
 - **Keep only the D32 rule.** It is simple and costs nothing, but the bot loses the old
   messages with no trace of their content.
 - **A fixed compact model in Settings.** D63 rejected a second model setting for the same
@@ -112,8 +114,8 @@ Consequences:
 - D32 keeps the budget, the share for each bot, the token estimate and the retry with half the
   budget. Only its fill rule changes: a summary takes the place of the omitted-messages marker
   when one exists.
-- New stored data: the summaries, with their end message, their source (auto or manual) and
-  their request; and for each member, the manual compact that applies to it, if any. `model_requests.purpose` gets the value `compact`. The schema design needs
+- New stored data: the summaries. Each has its end message, its source (auto or manual) and
+  its request. Each member also has the manual compact that applies to it, if one exists. `model_requests.purpose` gets the value `compact`. The schema design needs
   the owner's approval before SQL is written (`AGENTS.md` §7).
 - A new event tells open pages that a conversation has a new summary (`AGENTS.md` §5 rule 3).
 - New settings: `auto_compact`, `compact_target_pct`, `compact_keep_recent_messages`, and a
