@@ -5,7 +5,7 @@ The Node backend: Hono over HTTP, Drizzle on SQLite, ports and adapters (D35,
 
 | File | What it is for |
 | --- | --- |
-| `package.json` | The `@cty1ng/backend` package: `dev`, `start`, `cli`, `typecheck`, `db:*` scripts |
+| `package.json` | The `@cty1ng/backend` package: `dev`, `cli`, `typecheck`, `db:*` scripts |
 | `tsconfig.json` | Type-check settings for this package |
 | `drizzle.config.ts` | drizzle-kit settings: the schema file and the migrations folder |
 | `migrations/` | SQL that drizzle-kit writes from the schema, reviewed like code (`docs/architecture.md` §10) |
