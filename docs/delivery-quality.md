@@ -198,15 +198,19 @@ If the head changes after review, the row still describes the original reviewed 
 
 ## 7. Update and assess
 
-1. At PR creation, add its milestone and source coverage to the register.
+1. At the creation of a PR in a milestone or an audit, add its milestone and source coverage to the register.
+   A PR with no milestone needs no entry (`AGENTS.md` §9; owner, 2026-11-11).
 2. After each review, add the round and reconcile its findings with existing issue IDs.
 3. After a fix, add the verification result and change the issue state only when evidence supports it.
 4. After a new discovery, check whether it escaped a merge, repeats a cause, or came from a repair. Record the general rule and the search of old fixes ([bug fix, step 2](workflows/bug-fix.md)).
 5. At PR handoff, reconcile the register with the issue ledger and round log.
 6. At milestone close, confirm the PR population and calculate the totals from distinct IDs in this file and the archive.
-   Then move the rows with the state `fixed` or `dropped`, and the rounds of merged PRs, to the
-   [archive](delivery-quality-archive.md), unchanged, in a PR that changes records only. Do the same
-   move before that time if this file is larger than 80 KB.
+   Then move the rows with the state `fixed`, `dropped` or `withdrawn`, and the rounds of merged
+   PRs, to the [archive](delivery-quality-archive.md), unchanged, in a PR that changes records only.
+   A `withdrawn` row stays out of the confirmed totals there too.
+   Do the same move before that time if `wc -c` gives more than 80,000 bytes for this file. If no
+   row can move, or if the file is not below 80,000 bytes after a move, ask the owner and do not
+   move again (owner, 2026-11-11).
 7. Record one prevention action for a recurring cause, with an owner and verification evidence.
 
 The builder maintains this file in the delivery change. The reviewer checks its sources and counts.

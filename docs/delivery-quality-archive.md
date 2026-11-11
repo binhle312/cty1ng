@@ -4,7 +4,7 @@ The closed rows of [delivery-quality.md](delivery-quality.md): its rules, its co
 counts apply here too. Read this file only to trace an old fix or to count; current work needs
 the live file only.
 
-- **Closed issues:** each issue row with the state `fixed` or `dropped`.
+- **Closed issues:** each issue row with the state `fixed`, `dropped` or `withdrawn`.
 - **Review rounds:** each round of a merged PR.
 
 A row comes here unchanged. Nobody edits it here. If an issue opens again, move its row back to
