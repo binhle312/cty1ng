@@ -1,0 +1,203 @@
+{
+  "claims": [
+    {
+      "id": "D1",
+      "claim": "After a read of all data, a query that was turned off before its first answer reads again when it is turned on",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/read-all.test.ts",
+        "name": "reads again when the query is turned on before the old answer"
+      },
+      "assertion": "expect(dialog.answers, \"reads after the dialog opened again\").toHaveLength(2);",
+      "breaks": [
+        {
+          "id": "D1-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "  // A query that a page watches but has turned off, such as the query of a closed dialog, with\n  // or without data. No new read starts for it now, so it goes back to the state from before\n  // that read, and it reads when it is turned on again. A read with no observer stays.\n  void queryClient.cancelQueries(\n    {\n      type: \"inactive\",\n      fetchStatus: \"fetching\",\n      predicate: (query) => query.getObserversCount() > 0,\n    },\n    { revert: true },\n  );\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D2",
+      "claim": "The old answer does not reach the cache when the query was turned on again",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/read-all.test.ts",
+        "name": "drops the old answer when the query was turned on again"
+      },
+      "assertion": "expect(dialog.data(), \"the old answer, dialog open again\").toBeUndefined();",
+      "breaks": [
+        {
+          "id": "D2-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "  // A query that a page watches but has turned off, such as the query of a closed dialog, with\n  // or without data. No new read starts for it now, so it goes back to the state from before\n  // that read, and it reads when it is turned on again. A read with no observer stays.\n  void queryClient.cancelQueries(\n    {\n      type: \"inactive\",\n      fetchStatus: \"fetching\",\n      predicate: (query) => query.getObserversCount() > 0,\n    },\n    { revert: true },\n  );\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D3",
+      "claim": "The old answer does not reach the cache when the query stays off",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/read-all.test.ts",
+        "name": "drops the old answer when the query stays off"
+      },
+      "assertion": "expect(dialog.data(), \"the old answer, dialog closed\").toBeUndefined();",
+      "breaks": [
+        {
+          "id": "D3-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "  // A query that a page watches but has turned off, such as the query of a closed dialog, with\n  // or without data. No new read starts for it now, so it goes back to the state from before\n  // that read, and it reads when it is turned on again. A read with no observer stays.\n  void queryClient.cancelQueries(\n    {\n      type: \"inactive\",\n      fetchStatus: \"fetching\",\n      predicate: (query) => query.getObserversCount() > 0,\n    },\n    { revert: true },\n  );\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D4",
+      "claim": "No read stays on its way for a query that stays off",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/read-all.test.ts",
+        "name": "leaves no read on its way when the query stays off"
+      },
+      "assertion": "expect(queryClient.isFetching(), \"reads on their way\").toBe(0);",
+      "breaks": [
+        {
+          "id": "D4-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "  // A query that a page watches but has turned off, such as the query of a closed dialog, with\n  // or without data. No new read starts for it now, so it goes back to the state from before\n  // that read, and it reads when it is turned on again. A read with no observer stays.\n  void queryClient.cancelQueries(\n    {\n      type: \"inactive\",\n      fetchStatus: \"fetching\",\n      predicate: (query) => query.getObserversCount() > 0,\n    },\n    { revert: true },\n  );\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D5",
+      "claim": "A read with no observer is not cut: its caller gets its answer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/read-all.test.ts",
+        "name": "does not cut the read: the caller gets its answer"
+      },
+      "assertion": "expect(result, \"the caller's answer\").toBe(\"the answer\");",
+      "breaks": [
+        {
+          "id": "D5-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "      predicate: (query) => query.getObserversCount() > 0,\n",
+              "replace": "      predicate: () => true,\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D6",
+      "claim": "The real Add skills dialog shows the list of a new read when it opens again after a read of all data",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "+ Add shows the list of a new read when it opens again after a read of all data"
+      },
+      "assertion": "expect(within(list).queryAllByRole(\"checkbox\"), \"skills of the new read\").toHaveLength(1);",
+      "breaks": [
+        {
+          "id": "D6-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "  // A query that a page watches but has turned off, such as the query of a closed dialog, with\n  // or without data. No new read starts for it now, so it goes back to the state from before\n  // that read, and it reads when it is turned on again. A read with no observer stays.\n  void queryClient.cancelQueries(\n    {\n      type: \"inactive\",\n      fetchStatus: \"fetching\",\n      predicate: (query) => query.getObserversCount() > 0,\n    },\n    { revert: true },\n  );\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D7",
+      "claim": "A turned-off query that has data and a read on its way reads again when it is turned on",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/read-all.test.ts",
+        "name": "reads again when the query is turned on before the answer of the second read"
+      },
+      "assertion": "expect(dialog.answers, \"reads of a dialog with data\").toHaveLength(3);",
+      "breaks": [
+        {
+          "id": "D7-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "      predicate: (query) => query.getObserversCount() > 0,\n",
+              "replace": "      predicate: (query) => noAnswerYet(query) && query.getObserversCount() > 0,\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D8",
+      "claim": "The answer of the read that was cut does not replace the data of a turned-off query",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/realtime/read-all.test.ts",
+        "name": "does not take the answer of the second read"
+      },
+      "assertion": "expect(dialog.data(), \"the data after the old answer\").toBe(\"first answer\");",
+      "breaks": [
+        {
+          "id": "D8-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "      predicate: (query) => query.getObserversCount() > 0,\n",
+              "replace": "      predicate: (query) => noAnswerYet(query) && query.getObserversCount() > 0,\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D9",
+      "claim": "The real Add skills dialog shows the list of a new read when its second read was on its way at a read of all data",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "+ Add shows the list of a new read when its second read was on its way at a read of all data"
+      },
+      "assertion": "expect(within(list).queryAllByRole(\"checkbox\"), \"skills of the read after\").toHaveLength(1);",
+      "breaks": [
+        {
+          "id": "D9-a",
+          "file": "frontend/src/lib/realtime/read-all.ts",
+          "edits": [
+            {
+              "find": "      predicate: (query) => query.getObserversCount() > 0,\n",
+              "replace": "      predicate: (query) => noAnswerYet(query) && query.getObserversCount() > 0,\n"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": []
+}

@@ -19,6 +19,125 @@ function watched(queryClient: QueryClient, key: string) {
   return { answers, stop, settle, data: () => queryClient.getQueryData<string>([key]) };
 }
 
+// A query that a page watches but has turned off, as the query of a closed dialog (DQ-198).
+function dialogQuery(queryClient: QueryClient) {
+  const answers: ((value: string) => void)[] = [];
+  const options = (enabled: boolean) => ({
+    queryKey: ["dialog"],
+    enabled,
+    queryFn: () =>
+      new Promise<string>((resolve) => {
+        answers.push(resolve);
+      }),
+  });
+  const observer = new QueryObserver(queryClient, options(true));
+  observer.subscribe(() => undefined);
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+  return {
+    answers,
+    settle,
+    open: () => {
+      observer.setOptions(options(true));
+    },
+    close: () => {
+      observer.setOptions(options(false));
+    },
+    data: () => queryClient.getQueryData<string>(["dialog"]),
+  };
+}
+
+describe("readAll and a query that is turned off before its first answer", () => {
+  it("reads again when the query is turned on before the old answer", () => {
+    const queryClient = new QueryClient();
+    const dialog = dialogQuery(queryClient);
+    dialog.close();
+    readAll(queryClient);
+    dialog.open();
+    expect(dialog.answers, "reads after the dialog opened again").toHaveLength(2);
+  });
+
+  it("drops the old answer when the query was turned on again", async () => {
+    const queryClient = new QueryClient();
+    const dialog = dialogQuery(queryClient);
+    dialog.close();
+    readAll(queryClient);
+    dialog.open();
+    dialog.answers[0]?.("from before");
+    await dialog.settle();
+    expect(dialog.data(), "the old answer, dialog open again").toBeUndefined();
+  });
+
+  it("drops the old answer when the query stays off", async () => {
+    const queryClient = new QueryClient();
+    const dialog = dialogQuery(queryClient);
+    dialog.close();
+    readAll(queryClient);
+    dialog.answers[0]?.("from before");
+    await dialog.settle();
+    expect(dialog.data(), "the old answer, dialog closed").toBeUndefined();
+  });
+
+  it("leaves no read on its way when the query stays off", async () => {
+    const queryClient = new QueryClient();
+    const dialog = dialogQuery(queryClient);
+    dialog.close();
+    readAll(queryClient);
+    await dialog.settle();
+    expect(queryClient.isFetching(), "reads on their way").toBe(0);
+  });
+});
+
+// The dialog opened before and has data. It opens again, a second read starts, and it closes
+// before that answer (DQ-199).
+describe("readAll and a turned-off query that has data and a read on its way", () => {
+  async function closedDuringSecondRead(queryClient: QueryClient) {
+    const dialog = dialogQuery(queryClient);
+    dialog.answers[0]?.("first answer");
+    await dialog.settle();
+    dialog.close();
+    dialog.open();
+    dialog.close();
+    return dialog;
+  }
+
+  it("reads again when the query is turned on before the answer of the second read", async () => {
+    const queryClient = new QueryClient();
+    const dialog = await closedDuringSecondRead(queryClient);
+    readAll(queryClient);
+    dialog.open();
+    expect(dialog.answers, "reads of a dialog with data").toHaveLength(3);
+  });
+
+  it("does not take the answer of the second read", async () => {
+    const queryClient = new QueryClient();
+    const dialog = await closedDuringSecondRead(queryClient);
+    readAll(queryClient);
+    dialog.open();
+    dialog.answers[1]?.("from before");
+    await dialog.settle();
+    expect(dialog.data(), "the data after the old answer").toBe("first answer");
+  });
+});
+
+// Code that asks the query client directly, with no observer. Its caller waits for this read.
+describe("readAll and a read with no observer", () => {
+  it("does not cut the read: the caller gets its answer", async () => {
+    const queryClient = new QueryClient();
+    let answer: (value: string) => void = () => undefined;
+    const read = queryClient.query({
+      queryKey: ["plain"],
+      queryFn: () =>
+        new Promise<string>((resolve) => {
+          answer = resolve;
+        }),
+    });
+    readAll(queryClient);
+    answer("the answer");
+    const result = await read.catch(() => "the read was cut");
+    expect(result, "the caller's answer").toBe("the answer");
+  });
+});
+
 describe("readAll", () => {
   it("starts a new read for a query whose first read is still on its way", () => {
     const queryClient = new QueryClient();

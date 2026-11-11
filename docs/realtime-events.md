@@ -149,9 +149,13 @@ only a visible tab holds the stream (owner, 2026-11-09, option A; audit of 2026-
    the stream gets a new reducer that takes its cursor from that `ready`. The read starts after
    `ready`, so no change falls between the read and the live events. This holds for each query
    that a page shows: a first read that is still on its way at `ready` started before it, so the
-   tab cuts it and starts it again (`read-all.ts`; the same for `reset`). Known gap: a query
-   that is turned off at that moment, such as the query of a closed dialog (DQ-198). The stream that a visible
-   page opens at its start is the exception: the page reads its data at that time.
+   tab cuts it and starts it again (`read-all.ts`; the same for `reset`). A query that is turned
+   off at that moment, such as the query of a closed dialog, has its read cut too, with or
+   without data; it reads when it is turned on again (DQ-198, DQ-199). Known gap: a read with no
+   observer is not cut, for example the source read of a skill Clone whose page closed before its
+   answer (DQ-200). One stream is the exception to the rule: the stream that a visible page opens
+   at its start. Its `ready` starts no read of all data, because the page reads its data at that
+   time.
 5. A reconnect that the browser does itself (the same `EventSource`, with `Last-Event-ID`) stays
    as §2 says: the server replays, and the tab does not read all data again.
 6. In `make dev`, the Vite proxy cuts the browser's side of a response when the backend's side
