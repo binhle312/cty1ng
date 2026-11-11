@@ -68,4 +68,4 @@ second round.
 
 **Reusable principles.** [Fix the root cause](../../.agents/skills/principle-fix-root-cause/SKILL.md), [Review with evidence](../../.agents/skills/principle-review-with-evidence/SKILL.md).
 
-**Project guidance.** `AGENTS.md` §9, [review guide](../review-guide.md) §3 and §5, [PR template](../workflows/pull-request.md), [delivery quality](../delivery-quality.md) (DQ-203, DQ-204, in PR #98).
+**Project guidance.** `AGENTS.md` §9, [review guide](../review-guide.md) §3 and §5, [PR template](../workflows/pull-request.md), [delivery quality](../delivery-quality.md) (the prevention action) and its [archive](../delivery-quality-archive.md) (DQ-203, DQ-204).
