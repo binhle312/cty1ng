@@ -145,11 +145,19 @@ Merge a PR only when the owner asks you to merge that PR. The merge needs no lin
   items (or "none").
 - Name a principle skill in a PR, a review record or `docs/delivery-quality.md` only if you read
   its `SKILL.md` in that session.
-- Each review fix answers "Same cause as an earlier fix?" in the PR's `Review fixes` table. If the
+- Each review fix answers "Same cause as an earlier fix?" in the PR's `Review fixes` table. An
+  earlier fix can be in this PR or in an earlier one: search the prevention actions of
+  `docs/delivery-quality.md` §7 and the lessons, and name the search in the answer. If the
   answer is yes, stop patching. Propose a redesign, get the owner's decision, and record it.
   Build the redesign in its own PR, with its own plan and test strategy, not in the PR under
   review. That PR waits for it, or makes its claim smaller and records the gap in
   `docs/delivery-quality.md` (owner, 2026-11-09; `docs/lessons-learned/fixes-that-make-new-findings.md`).
+- One cause has a fixed answer: a review shows that a claim is bigger than its proof. Correct
+  the places that the review found, and make the claim smaller: say what you did and what the
+  proof shows, then `Not claimed: …`. Put it under `Needs human review`; do not stop to ask. You
+  can search more and correct more places, but a wider search does not bring the bigger claim
+  back in that PR. Exception: ask the owner before you make a criterion from a task brief or an
+  approved plan smaller (owner, 2026-11-11; `docs/lessons-learned/claim-bigger-than-its-proof.md`).
 
 ## 10. Conventions
 
