@@ -78,7 +78,7 @@ owner sees it. Designs: `../design/components/conversation-page.md` §2 and
 - UI-9.2: *Removed (round 12).* No preset icons: the icon always comes from the bot avatars
   (UI-1.3).
 - UI-9.3: Bot discussion (M5): a click on the discussion status in the header ("Discussion:
-  on · 3/5 used") opens a popover with "Global ({global value})" / On / Off and the turn limit "Global ({n})" /
+  on · {used}/{limit} used") opens a popover with "Global ({global value})" / On / Off and the turn limit "Global ({n})" /
   Custom, where Custom is a number input in place (range `BOT_TURN_LIMIT_RANGE`,
   `../conversation-rules.md` §9). A change saves at once and applies
   from the next bot message (`../design/components/conversation-page.md` §2.4).
