@@ -276,8 +276,9 @@ only what you really did." It does this at most `plan_mark_reminders` times (set
   `config/models.yaml` is enough.
 - Filling: newest first. Transcript lines and past runs are taken in `seq` order from the most
   recent backwards until the budget is used; older ones are dropped with
-  `[N earlier messages omitted]` and `[N earlier runs of yours omitted]`. Summarisation is a
-  later milestone.
+  `[N earlier messages omitted]` and `[N earlier runs of yours omitted]`. A summary in place
+  of the omitted messages comes with the Compact slice (D66, after M4-3). Until that slice
+  ships, this rule applies as it is.
 - Tokens are estimated with `TOKEN_ESTIMATE` (§9): 4 characters per token, 2 for text that is
   mostly non-Latin, which tokenises worse. If the provider still rejects the request as too long, the run retries
   once with the budget halved, then fails with a clear error.

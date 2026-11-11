@@ -76,7 +76,7 @@ Implemented in: links.
 | D29 | [SQLite now; switch to PostgreSQL on defined triggers](D29-sqlite-now-postgres-on-triggers.md) | accepted | D34 |
 | D30 | [Switchable themes (Command, Material) and conversation views](D30-themes-and-conversation-views.md) | accepted | own amendment 2026-10-26 |
 | D31 | [Bots answering the same message see each other's replies](D31-later-bots-see-earlier-replies.md) | accepted |  |
-| D32 | [History budget is a per-bot share of the model's context window](D32-history-budget-from-model-context.md) | accepted |  |
+| D32 | [History budget is a per-bot share of the model's context window](D32-history-budget-from-model-context.md) | accepted | D66 |
 | D33 | [Zod for runtime validation in the frontend](D33-zod-for-frontend-runtime-validation.md) | accepted |  |
 | D34 | [TypeScript on the backend and the frontend](D34-typescript-full-stack.md) | accepted | own amendment 2026-11-10 |
 | D35 | [Ports and adapters at the edges, not "switch anything"](D35-ports-and-adapters-at-the-edges.md) | accepted |  |
@@ -110,3 +110,4 @@ Implemented in: links.
 | D63 | [Tidy memory and the memory check are model requests, not runs](D63-tidy-and-memory-check-are-model-requests.md) | accepted | own amendment 2026-11-04 |
 | D64 | [The skill draft card is for the skill only; bot actions follow on a float card](D64-skill-draft-card-is-for-the-skill-only.md) | accepted | D65, own amendment 2026-10-27 |
 | D65 | [Bots draft skills only when the owner asks; only the owner assigns them](D65-bots-draft-skills-only-when-asked.md) | accepted | own amendment 2026-11-04 |
+| D66 | [Each bot compacts its old history into a summary](D66-each-bot-compacts-its-old-history.md) | accepted | |
