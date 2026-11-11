@@ -3,8 +3,10 @@
 Status: proposed (2026-11-11). The owner asked for auto compact and manual compact, and chose
 "one summary for the conversation, not one for each bot" (option A of two), in the session of
 2026-11-11. The owner also chose that a manual compact changes only the bots that the owner
-ticks (option B of three, 2026-11-11). The other rules below are a proposal. The five points under "Open points" need the
-owner's answer before this entry can be accepted.
+ticks (option B of three, 2026-11-11). On the same day the owner agreed that this is its own
+slice after M4-3, and asked that a failed compact tells the owner what happened and offers a
+retry. The other rules below are a proposal. The points under "Open points" need the owner's
+answer before the owner can accept this entry.
 Amends: D32
 
 Decision:
@@ -54,10 +56,16 @@ Decision:
   A longer part takes more than one request, oldest messages first.
 - **Which model.** An auto compact uses the model and effort of the bot whose run needs it. A
   manual compact uses the bot that replied last in the conversation.
-- **If a compact cannot be made.** A cap, a provider error, an empty answer or a guard match
-  stores no summary. An auto compact then lets the run go on with the D32 rule: the oldest
-  lines are left out, with the marker. A compact never stops a reply. A manual compact shows
-  the error, and nothing changes.
+- **If a compact fails (owner, 2026-11-11).** A cap, a provider error, an empty answer or a
+  guard match stores no summary. The app tells the owner what happened and offers a retry. A
+  notice in the conversation names the bot, the cause and the effect, and it has a **Retry**
+  action. Example: "The history of QA was not compacted: the daily cap is reached. QA replied
+  without the 260 oldest messages. Retry". Retry makes the compact request again for that bot.
+  For an auto compact, the run does not wait for the owner: it goes on with the D32 rule, and
+  the oldest lines are left out, with the marker. A failed manual compact shows the same kind
+  of notice, and nothing changes. The final texts are in the UI design of the slice.
+- **The slice (owner, 2026-11-11).** Compact is its own slice after M4-3, because it needs the
+  branch rules and the member rules of M4. M3 ships with the D32 rule.
 - **Sensitive data (D39).** The app checks the summary text with the guard before it stores
   the text, as it checks a title (D46).
 - **What the bot sees.** The transcript starts with one labelled block, then the messages
@@ -117,7 +125,8 @@ Consequences:
 - New stored data: the summaries. Each has its end message, its source (auto or manual) and
   its request. Each member also has the manual compact that applies to it, if one exists. `model_requests.purpose` gets the value `compact`. The schema design needs
   the owner's approval before SQL is written (`AGENTS.md` §7).
-- A new event tells open pages that a conversation has a new summary (`AGENTS.md` §5 rule 3).
+- New events tell open pages that a conversation has a new summary, or that a compact failed
+  (`AGENTS.md` §5 rule 3).
 - New settings: `auto_compact`, `compact_target_pct`, `compact_keep_recent_messages`, and a
   limit for the length of a summary. Their ranges and defaults get their home in
   `../domain-model.md` §10 when this entry is accepted.
@@ -128,15 +137,17 @@ Consequences:
 
 Open points (the owner decides; the text above has the proposed answer for each):
 
-1. After an auto compact, only a bot with too little room reads the summary. The other choice:
-   each bot of the conversation reads it.
+1. After an auto compact, only a bot with too little room reads the summary. This follows from
+   the owner's reason for the manual rule: a bot with room keeps its detail. The owner has not
+   said yes to this point in these words.
 2. A manual compact keeps the newest 10 messages in full, outside the summary. The other
    choice: the summary takes all messages, also the newest.
-3. The model: the bot that needs the compact (auto), and the bot that replied last (manual).
-4. The slice: its own slice after M4-3, because it needs the branch rules and the member rules
-   of M4. M3 then ships with the D32 rule. The other choice: build it in M3b.
-5. If an auto compact fails, the run goes on with the D32 rule. The other choice: the run fails
-   with a clear error.
+3. Which model writes the summary. Proposed: for an auto compact, the model of the bot that
+   needs it; for a manual compact, the bot that replied last. The owner asked for an
+   explanation of this point (2026-11-11).
+4. After a failed auto compact, the run goes on with the D32 rule while the notice offers
+   Retry. The owner asked for the notice and the retry; that the run goes on is the proposal.
+   The other choice: the run waits for the owner.
 
 Implemented in: not yet. When accepted: `../conversation-rules.md` §4 and §9,
 `../domain-model.md`, `../realtime-events.md`, `../api.md`, `../requirements/conversation.md`,
