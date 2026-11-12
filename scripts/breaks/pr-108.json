@@ -1,0 +1,277 @@
+{
+  "claims": [
+    {
+      "id": "R9-read",
+      "claim": "No read answer holds an API key, in its headers or its body",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/secrets.test.ts",
+        "name": "never appear in an answer, in the stream frames, or in the log"
+      },
+      "assertion": "for (const text of [...texts, ...backend.lines]) expect(text).not.toContain(\"SENTINEL\");",
+      "breaks": [
+        {
+          "id": "R9-read-tools",
+          "file": "backend/src/adapters/http/routes/catalog.ts",
+          "edits": [
+            {
+              "find": "c.json([...catalog.tools], 200)",
+              "replace": "c.json([...catalog.tools, { leaked: \"sk-test-SENTINEL-4f9a2c71e0b3\" }] as never, 200)"
+            }
+          ]
+        },
+        {
+          "id": "R9-read-tools-header",
+          "file": "backend/src/adapters/http/routes/catalog.ts",
+          "edits": [
+            {
+              "find": "    .openapi(listTools, (c) => c.json([...catalog.tools], 200));",
+              "replace": "    .openapi(listTools, (c) => {\n      c.header(\"x-debug-key\", \"sk-test-SENTINEL-4f9a2c71e0b3\");\n      return c.json([...catalog.tools], 200);\n    });"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R9-write",
+      "claim": "No success answer of a write holds an API key, in its headers or its body",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/secrets.test.ts",
+        "name": "never appear in an answer, in the stream frames, or in the log"
+      },
+      "assertion": "for (const text of [...texts, ...backend.lines]) expect(text).not.toContain(\"SENTINEL\");",
+      "breaks": [
+        {
+          "id": "R9-write-patch-header",
+          "file": "backend/src/adapters/http/routes/bots.ts",
+          "edits": [
+            {
+              "find": "    .openapi(routes.updateBot, async (c) =>\n      c.json(await bots.update(c.req.valid(\"param\").id, c.req.valid(\"json\")), 200),",
+              "replace": "    .openapi(routes.updateBot, async (c) => {\n      c.header(\"x-debug-key\", \"sk-test-SENTINEL-4f9a2c71e0b3\");\n      return c.json(await bots.update(c.req.valid(\"param\").id, c.req.valid(\"json\")), 200);\n    }"
+            }
+          ]
+        },
+        {
+          "id": "R9-write-deprecate-body",
+          "file": "backend/src/adapters/http/routes/skills.ts",
+          "edits": [
+            {
+              "find": "        OWNER_ID,\n      );\n      return c.json(skill, 200);\n    })\n    .openapi(routes.undeprecateSkill",
+              "replace": "        OWNER_ID,\n      );\n      return c.json({ ...skill, debug: \"sk-test-SENTINEL-4f9a2c71e0b3\" } as never, 200);\n    })\n    .openapi(routes.undeprecateSkill"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R9-stream",
+      "claim": "No stream frame holds an API key",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/secrets.test.ts",
+        "name": "never appear in an answer, in the stream frames, or in the log"
+      },
+      "assertion": "for (const text of [...texts, ...backend.lines]) expect(text).not.toContain(\"SENTINEL\");",
+      "breaks": [
+        {
+          "id": "R9-stream-frames",
+          "file": "backend/src/adapters/sse/frames.ts",
+          "edits": [
+            {
+              "find": "data: ${JSON.stringify(event.data)}",
+              "replace": "data: ${JSON.stringify({ ...(event.data as object), leaked: \"sk-test-SENTINEL-4f9a2c71e0b3\" })}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R9-stream-header",
+      "claim": "The stream answer has no API key in its headers",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/secrets.test.ts",
+        "name": "never appear in an answer, in the stream frames, or in the log"
+      },
+      "assertion": "for (const text of [...texts, ...backend.lines]) expect(text).not.toContain(\"SENTINEL\");",
+      "breaks": [
+        {
+          "id": "R9-stream-header-a",
+          "file": "backend/src/adapters/http/routes/stream.ts",
+          "edits": [
+            {
+              "find": "    const headers = {\n      \"Content-Type\": \"text/event-stream\",",
+              "replace": "    const headers = {\n      \"x-debug-key\": \"sk-test-SENTINEL-4f9a2c71e0b3\",\n      \"Content-Type\": \"text/event-stream\","
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R9-host",
+      "claim": "The answer that refuses a foreign Host has no key in its headers",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/secrets.test.ts",
+        "name": "never appear in an answer, in the stream frames, or in the log"
+      },
+      "assertion": "for (const text of [...texts, ...backend.lines]) expect(text).not.toContain(\"SENTINEL\");",
+      "breaks": [
+        {
+          "id": "R9-host-header",
+          "file": "backend/src/adapters/http/middleware.ts",
+          "edits": [
+            {
+              "find": "    if (!allowed.has(host)) {\n      throw new ApiFailure(\"host_rejected\"",
+              "replace": "    if (!allowed.has(host)) {\n      c.header(\"x-debug-key\", \"sk-test-SENTINEL-4f9a2c71e0b3\");\n      throw new ApiFailure(\"host_rejected\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R9-event-answer",
+      "claim": "The answer of the test event has no key in its headers",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/secrets.test.ts",
+        "name": "never appear in an answer, in the stream frames, or in the log"
+      },
+      "assertion": "for (const text of [...texts, ...backend.lines]) expect(text).not.toContain(\"SENTINEL\");",
+      "breaks": [
+        {
+          "id": "R9-event-answer-header",
+          "file": "backend/src/adapters/http/routes/test-events.ts",
+          "edits": [
+            {
+              "find": "    return c.json({ seq }, 201);",
+              "replace": "    c.header(\"x-debug-key\", \"sk-test-SENTINEL-4f9a2c71e0b3\");\n    return c.json({ seq }, 201);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R9-log",
+      "claim": "No log line holds an API key",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/secrets.test.ts",
+        "name": "never appear in an answer, in the stream frames, or in the log"
+      },
+      "assertion": "for (const text of [...texts, ...backend.lines]) expect(text).not.toContain(\"SENTINEL\");",
+      "breaks": [
+        {
+          "id": "R9-log-unredacted",
+          "file": "backend/src/adapters/log/pino-logger.ts",
+          "edits": [
+            {
+              "find": "  return pino(\n    { level: options.level, base: null, timestamp: pino.stdTimeFunctions.isoTime },\n    redactingStream(destination, options.secrets),\n  );",
+              "replace": "  const logger = pino(\n    { level: options.level, base: null, timestamp: pino.stdTimeFunctions.isoTime },\n    destination,\n  );\n  logger.info({ keys: options.secrets }, \"keys\");\n  return logger;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R9-event",
+      "claim": "The stream part reads a real event, not an empty stream",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/secrets.test.ts",
+        "name": "never appear in an answer, in the stream frames, or in the log"
+      },
+      "assertion": "if (Date.now() > deadline) throw new Error(\"The test event did not come on the stream.\");",
+      "breaks": [
+        {
+          "id": "R9-event-no-data",
+          "file": "backend/src/adapters/sse/frames.ts",
+          "edits": [
+            {
+              "find": "data: ${JSON.stringify(event.data)}",
+              "replace": "data: {}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Z1",
+      "claim": "A zip with an absolute path is refused",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/adapters/http/uploads/skill-zip.test.ts",
+        "name": "refuses a zip with an absolute path"
+      },
+      "assertion": "await expect(readSkillZip(await absolutePathZip())).rejects.toMatchObject({",
+      "breaks": [
+        {
+          "id": "Z1-a",
+          "file": "backend/src/adapters/http/uploads/skill-zip.ts",
+          "edits": [
+            {
+              "find": "          fail(new ApiFailure(\"invalid_import\", zipErrorMessage(error)));",
+              "replace": "          resolve([]);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Z2",
+      "claim": "A SKILL.md that is longer than the size in its header is refused",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/adapters/http/uploads/skill-zip.test.ts",
+        "name": "refuses a SKILL.md that is longer than the size in its header"
+      },
+      "assertion": "await expect(readSkillZip(zip)).rejects.toMatchObject({ code: \"invalid_import\" });",
+      "breaks": [
+        {
+          "id": "Z2-a",
+          "file": "backend/src/adapters/http/uploads/skill-zip.ts",
+          "edits": [
+            {
+              "find": "validateEntrySizes: true",
+              "replace": "validateEntrySizes: false"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C1",
+      "claim": "No output of a CLI command holds an API key, for a command that ends well and for one that fails",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/cli-secrets.test.ts",
+        "name": "never appear, for a command that ends well and for one that fails"
+      },
+      "assertion": "expect(text.includes(\"SENTINEL\"), command).toBe(false);",
+      "breaks": [
+        {
+          "id": "C1-ends-well",
+          "file": "backend/src/app/skill-commands.ts",
+          "edits": [
+            {
+              "find": "  if (trashed.length === 0) out(\"Trash has no skills.\");",
+              "replace": "  if (trashed.length === 0) out(`Trash has no skills. ${String(process.env.OPENAI_API_KEY)}`);"
+            }
+          ]
+        },
+        {
+          "id": "C1-fails",
+          "file": "backend/src/app/config.ts",
+          "edits": [
+            {
+              "find": "    throw new ConfigError(`Invalid configuration: ${problems.join(\"; \")}`);",
+              "replace": "    throw new ConfigError(`Invalid configuration: ${problems.join(\"; \")} (${String(env.OPENAI_API_KEY)})`);"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": []
+}

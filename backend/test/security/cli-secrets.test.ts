@@ -93,7 +93,9 @@ describe("API keys in the output of the CLI", () => {
         ["bots trash", 1],
       ]);
       for (const { text } of outputs) expect(text.length).toBeGreaterThan(0);
-      for (const { command, text } of outputs) expect(text, command).not.toContain("SENTINEL");
+      // A check of true or false: a failure here must not print the output that holds a key.
+      for (const { command, text } of outputs)
+        expect(text.includes("SENTINEL"), command).toBe(false);
     },
   );
 });
