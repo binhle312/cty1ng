@@ -202,7 +202,9 @@ function NewSkillView({ source }: { source: CloneSource | null }) {
     onSuccess: async (skill) => {
       // The assign card (§7.2), or only the toast when no bot exists.
       showBotCard(assignCardAfterCreate(queryClient, skill));
-      // The skill page finds the skill in the list, so the list must have it first.
+      // The skill page finds the skill in the list, so Create waits for the newest list before
+      // it moves (frontend-conventions.md §5). A live event in that time starts a newer load,
+      // and this wait follows it.
       await queryClient.invalidateQueries({ queryKey: allSkillsOptions().queryKey });
       if (!onPage.current) return;
       allowLeave();

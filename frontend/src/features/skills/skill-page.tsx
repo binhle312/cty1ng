@@ -102,9 +102,8 @@ export function SkillPage() {
     );
   }
   if (row === undefined && trashing) return <SkillEditorSkeleton />;
-  // A refresh on its way may bring the skill: a Create moves here when its list refresh ends,
-  // and a live event in that time can end the wait before the new list comes (TanStack Query
-  // joins only one cancelled refresh). Page not found waits for the newest list.
+  // A list on its way may bring the skill, for example after a link from another tab. Page not
+  // found waits for the newest list.
   if (row === undefined && skills.isFetching) return <SkillEditorSkeleton />;
   // A refresh that failed is not a missing skill either: the list did not load.
   if (row === undefined && skills.isError) {
