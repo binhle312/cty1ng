@@ -374,12 +374,18 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
    test or a test helper (a `test/` folder, `*.test.*`, `*.spec.*`) instead of the code.
 3. It refuses a list that misses a test of the PR: each test that the PR adds or changes since
    its base (`git merge-base HEAD origin/main`, or `--base`) needs a claim, or an entry in
-   `exempt` with its reason. With `--only`, the list runs in part, and this check does not run.
+   `exempt` with its reason. It also refuses an entry in `exempt` that names no test that the PR
+   adds or changes. It reads the tests of the PR from a `git diff` with fixed options, so the git
+   settings of the machine do not change the text, and it stops at a line of the diff that it
+   cannot read: a file that it does not see would need no claim. With `--only`, the list runs
+   in part, and this check does not run. An `--only` text that matches no claim id and no break
+   id is a problem: the runner runs nothing and exits with 1.
 4. Each test must pass with no break first.
 5. Each break runs alone. First, `tsc` must compile each project of the package of the broken
    file (an unused variable is allowed). The frontend has two: its `tsconfig.json` only points
    at one config for the browser code and one for the tests, and the runner compiles both. A
-   break that does not compile is `INVALID`, and its test does not run. A broken TypeScript file
+   break in `shared/` must also compile in each package that uses it: the backend, the frontend
+   and the scripts. A break that does not compile is `INVALID`, and its test does not run. A broken TypeScript file
    that no project reads is also `INVALID`: a compile that did not read the file is no check.
    Then the test runs. A failure at another line, a test timeout, no result (a server failure),
    or a failure whose innermost place outside the libraries is the broken code is `INVALID`.
@@ -402,8 +408,10 @@ proof of each claim is the reviewer's check of each catch, in the frontend and t
   the page reached.
 - When the first line of the message does not show the broken behaviour, the reviewer applies
   the break by hand in an own copy, runs the command from the report, reads its full output,
-  and then undoes the break. `--only` does not help here: it prints the same first line. A
-  claim whose evidence stays unclear does not count.
+  and then undoes the break. For a Playwright command, unset `E2E_SERVE_MARKER` first, as the
+  runner does: with it, the run can use the servers of a `pnpm e2e:serve` that runs now. Those
+  servers do not have the break, so the run shows no catch. `--only` does not help here: it
+  prints the same first line. A claim whose evidence stays unclear does not count.
 - A break changes a value or a branch. It does not throw.
 
 The list proves only the claims that someone wrote down; the reviewer still checks that it has

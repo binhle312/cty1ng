@@ -87,17 +87,56 @@ export function nameMatches(written: string, reported: string): boolean {
   return new RegExp(`^${pattern}$`).test(reported);
 }
 
-// The arguments of the `git diff` whose text `changedLines` reads.
+// The arguments of the `git diff` whose text `changedLines` reads. The options are fixed, so the
+// git settings of a machine (`diff.noprefix`, `diff.mnemonicPrefix`, `color.diff`, an external
+// diff tool, `core.quotePath`) do not change the text (DQ-161).
 export function diffArgs(base: string): string[] {
-  return ["diff", "--unified=0", base];
+  return [
+    "-c",
+    "core.quotePath=false",
+    "diff",
+    "--unified=0",
+    "--no-color",
+    "--no-ext-diff",
+    "--no-textconv",
+    "--src-prefix=a/",
+    "--dst-prefix=b/",
+    base,
+  ];
 }
 
+// The lines that git prints for one file before its first hunk.
+const FILE_HEAD =
+  /^(?:diff --git |index |--- |old mode |new mode |new file mode |deleted file mode |similarity index |dissimilarity index |rename from |rename to |copy from |copy to |Binary files |GIT binary patch$)/;
+
 // The changed lines of each file in a `git diff --unified=0` text, on the new side. A hunk that
-// only removes lines marks the line where they were.
+// only removes lines marks the line where they were. A hunk says how many lines follow it, so a
+// changed line that starts with `+++` or `---` is not read as a file line. A line that is no
+// known line of a diff stops the read with an error: a file that this function does not see needs
+// no claim, and the list would look complete (DQ-161).
 export function changedLines(diff: string): Map<string, Set<number>> {
   const files = new Map<string, Set<number>>();
   let current: Set<number> | undefined;
+  // The lines of the hunk that are still to come.
+  let body = 0;
   for (const row of diff.split("\n")) {
+    if (body > 0 && (row.startsWith("+") || row.startsWith("-"))) {
+      body -= 1;
+      continue;
+    }
+    if (row.startsWith("\\") || row === "") continue;
+    body = 0;
+    const hunk = /^@@ -\d+(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/.exec(row);
+    if (hunk !== null) {
+      const removed = hunk[1] === undefined ? 1 : Number(hunk[1]);
+      const start = Number(hunk[2]);
+      const count = hunk[3] === undefined ? 1 : Number(hunk[3]);
+      body = removed + count;
+      if (current === undefined) continue;
+      if (count === 0) current.add(Math.max(start, 1));
+      for (let at = start; at < start + count; at += 1) current.add(at);
+      continue;
+    }
     if (row === "+++ /dev/null") {
       current = undefined;
       continue;
@@ -108,13 +147,8 @@ export function changedLines(diff: string): Map<string, Set<number>> {
       files.set(file[1], current);
       continue;
     }
-    const hunk = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/.exec(row);
-    if (hunk !== null && current !== undefined) {
-      const start = Number(hunk[1]);
-      const count = hunk[2] === undefined ? 1 : Number(hunk[2]);
-      if (count === 0) current.add(Math.max(start, 1));
-      for (let at = start; at < start + count; at += 1) current.add(at);
-    }
+    if (FILE_HEAD.test(row)) continue;
+    throw new Error(`cannot read this line of the diff: ${JSON.stringify(row)}`);
   }
   return files;
 }
@@ -142,7 +176,15 @@ const References = z.object({ references: z.array(z.object({ path: z.string().mi
 // `read` gives the text of a file of the repository, or null.
 export function projectsOf(path: string, read: (path: string) => string | null): string[] {
   const top = path.split("/")[0] ?? "";
-  const folder = ["backend", "frontend", "shared"].includes(top) ? top : ".";
+  // Each other package compiles the code of `shared/` that it uses, so a break there must
+  // compile in each of them (DQ-166).
+  if (top === "shared") {
+    return ["shared", "backend", "frontend", "."].flatMap((folder) => configsOf(folder, read));
+  }
+  return configsOf(["backend", "frontend"].includes(top) ? top : ".", read);
+}
+
+function configsOf(folder: string, read: (path: string) => string | null): string[] {
   const file = posix.join(folder, "tsconfig.json");
   // The parser of TypeScript: a config can have comments and commas at the end.
   const parsed: unknown = ts.parseConfigFileTextToJson(file, read(file) ?? "{}").config;
@@ -163,9 +205,9 @@ export function firstTscError(printed: string): string | null {
   return printed.split("\n").find((row) => /\berror TS\d+:/.test(row)) ?? null;
 }
 
-// The first error of a `tsc` run that failed, for the report.
+// The first error of a `tsc` run that failed, for the report. Not escaped: `reportRow` does it.
 export function tscProblem(printed: string): string {
-  return cell(firstTscError(printed) ?? "tsc failed").slice(0, 200);
+  return (firstTscError(printed) ?? "tsc failed").slice(0, 200);
 }
 
 // A file that tests read but that is not the code under test: a break must not edit it.
@@ -291,21 +333,28 @@ export function claimsFor(list: BreakList, only: string): { claims: Claim[]; pro
   const claims = list.claims.filter(
     (claim) => claim.id.includes(only) || claim.breaks.some((step) => step.id.includes(only)),
   );
-  return { claims, problems: [] };
+  // A text that picks nothing runs nothing, and a run of nothing has no problem (DQ-175).
+  const problems =
+    claims.length === 0 && only !== ""
+      ? [`--only ${JSON.stringify(only)} matches no claim id and no break id of the list`]
+      : [];
+  return { claims, problems };
 }
 
-// The result of one break run, as the report shows it.
+// The result of one break run, as the report shows it. Not escaped: `reportRow` does it.
 export function verdictText(v: Verdict): string {
   return v.kind === "caught"
-    ? `caught at \`${v.at}\`: ${cell(v.message)}`
+    ? `caught at \`${v.at}\`: ${v.message}`
     : v.kind === "survived"
       ? "SURVIVED"
-      : `INVALID: ${cell(v.reason).slice(0, 300)}`;
+      : `INVALID: ${v.reason.slice(0, 300)}`;
 }
 
-// One row of the report table.
+// One row of the report table. Each cell is escaped here, one time (DQ-178, DQ-179): quotes and
+// backticks do not stop a pipe from closing a cell.
 export function reportRow(row: { claim: string; run: string; command: string; result: string }) {
-  return `| ${row.claim} | ${row.run} | \`${row.command}\` | ${row.result} |`;
+  const cells = [row.claim, row.run, `\`${row.command}\``, row.result];
+  return `| ${cells.map(cell).join(" | ")} |`;
 }
 
 // The verdict of one break run. Only a failure of the named test at the assertion line counts:

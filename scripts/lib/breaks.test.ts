@@ -1,10 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   applyEdits,
   cell,
   type BreakList,
   changedLines,
+  claimsFor,
   coverageProblems,
+  diffArgs,
   framesOf,
   isTestFile,
   firstTscError,
@@ -15,8 +21,11 @@ import {
   newErrorLines,
   projectsOf,
   playwrightOutcomes,
+  reportRow,
   testCalls,
+  tscProblem,
   verdict,
+  verdictText,
   vitestOutcomes,
 } from "./breaks.ts";
 
@@ -300,11 +309,21 @@ describe("the tests of a PR", () => {
 
   it("adds no lines of a deleted file to the file before it", () => {
     const diff = [
+      "diff --git a/x.test.ts b/x.test.ts",
+      "--- a/x.test.ts",
       "+++ b/x.test.ts",
       "@@ -3 +3 @@",
+      "-old",
+      "+new",
+      "diff --git a/y.test.ts b/y.test.ts",
+      "deleted file mode 100644",
       "--- a/y.test.ts",
       "+++ /dev/null",
       "@@ -1,4 +0,0 @@",
+      "-1",
+      "-2",
+      "-3",
+      "-4",
     ].join("\n");
     expect(changedLines(diff)).toEqual(new Map([["x.test.ts", new Set([3])]]));
   });
@@ -333,7 +352,6 @@ describe("the tests of a PR", () => {
     };
     const config = (path: string) => configs[path] ?? null;
     expect(projectsOf("backend/src/core/bots/bots.service.ts", config)).toEqual(["backend"]);
-    expect(projectsOf("shared/src/ids.ts", config)).toEqual(["shared"]);
     expect(projectsOf("scripts/lib/breaks.ts", config)).toEqual(["."]);
   });
 
@@ -350,6 +368,22 @@ describe("the tests of a PR", () => {
     expect(projectsOf("frontend/src/features/bots/create-bot-page.tsx", config)).toEqual([
       "frontend/tsconfig.app.json",
       "frontend/tsconfig.test.json",
+    ]);
+  });
+
+  // DQ-166: a break in `shared/` can break the compile of a package that uses it.
+  it("names the projects of each package for a broken file of shared", () => {
+    const configs: Record<string, string> = {
+      "frontend/tsconfig.json":
+        '{ "files": [], "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.test.json" }] }',
+    };
+    const config = (path: string) => configs[path] ?? null;
+    expect(projectsOf("shared/src/ids.ts", config)).toEqual([
+      "shared",
+      "backend",
+      "frontend/tsconfig.app.json",
+      "frontend/tsconfig.test.json",
+      ".",
     ]);
   });
 
@@ -416,5 +450,112 @@ describe("the tests of a PR", () => {
         changed,
       ),
     ).toEqual([`${TEST}: the exemption "no such test" names no test that the PR adds or changes`]);
+  });
+});
+
+// DQ-161: the diff text depends on the git settings of the machine, and a file that the parser
+// does not see needs no claim, so the list then looks complete.
+describe("the diff of a PR", () => {
+  const folders: string[] = [];
+  afterEach(() => {
+    for (const folder of folders.splice(0)) rmSync(folder, { recursive: true, force: true });
+  });
+
+  it("reads a changed line that looks like a file line as a line of its file", () => {
+    const diff = [
+      "diff --git a/x.test.ts b/x.test.ts",
+      "index 1111111..2222222 100644",
+      "--- a/x.test.ts",
+      "+++ b/x.test.ts",
+      "@@ -3,0 +4,2 @@",
+      "+++ b/other.test.ts",
+      "+++ /dev/null",
+      "@@ -9 +11 @@",
+      "--- a/third.test.ts",
+      "+++ b/third.test.ts",
+      "\\ No newline at end of file",
+    ].join("\n");
+    expect(changedLines(diff)).toEqual(new Map([["x.test.ts", new Set([4, 5, 11])]]));
+  });
+
+  it.each([
+    ['+++ "b/a\\tb.test.ts"', "a quoted path"],
+    ["+++ w/x.test.ts", "the prefix of diff.mnemonicPrefix"],
+    ["+++ x.test.ts", "no prefix (diff.noprefix)"],
+    [`${String.fromCharCode(27)}[1m+++ b/x.test.ts${String.fromCharCode(27)}[m`, "a colour code"],
+  ])("refuses the file line %j (%s)", (line) => {
+    const diff = ["diff --git a/x.test.ts b/x.test.ts", "--- a/x.test.ts", line, "@@ -3 +3 @@"];
+    expect(() => changedLines(diff.join("\n"))).toThrow(/cannot read this line of the diff/);
+  });
+
+  it("gets the same diff text with git settings that change it", () => {
+    const folder = mkdtempSync(join(tmpdir(), "breaks-diff-"));
+    folders.push(folder);
+    const git = (...args: string[]) =>
+      execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...args], {
+        cwd: folder,
+        encoding: "utf8",
+      });
+    git("init", "--quiet");
+    git("config", "commit.gpgsign", "false");
+    writeFileSync(join(folder, "a.test.ts"), "1\n2\n3\n");
+    writeFileSync(join(folder, "é.test.ts"), "1\n");
+    git("add", ".");
+    git("commit", "--quiet", "-m", "first");
+    writeFileSync(join(folder, "a.test.ts"), "1\ntwo\n3\n");
+    writeFileSync(join(folder, "é.test.ts"), "1\n2\n");
+    for (const [key, value] of [
+      ["diff.noprefix", "true"],
+      ["diff.mnemonicPrefix", "true"],
+      ["color.diff", "always"],
+      ["color.ui", "always"],
+      ["core.quotePath", "true"],
+    ] as const) {
+      git("config", key, value);
+    }
+    expect(changedLines(git(...diffArgs("HEAD")))).toEqual(
+      new Map([
+        ["a.test.ts", new Set([2])],
+        ["é.test.ts", new Set([2])],
+      ]),
+    );
+  });
+});
+
+// DQ-175: a wrong id must not look like a run with no problem.
+describe("--only", () => {
+  it("names a text that matches no claim and no break", () => {
+    expect(claimsFor(list(), "C2")).toEqual({
+      claims: [],
+      problems: ['--only "C2" matches no claim id and no break id of the list'],
+    });
+  });
+
+  it("picks a claim by its id, or by the id of one of its breaks", () => {
+    expect(claimsFor(list(), "").claims.map((claim) => claim.id)).toEqual(["C1"]);
+    expect(claimsFor(list(), "C1")).toMatchObject({ claims: [{ id: "C1" }], problems: [] });
+    expect(claimsFor(list(), "1-a")).toMatchObject({ claims: [{ id: "C1" }], problems: [] });
+  });
+});
+
+describe("a row of the report", () => {
+  // DQ-178: the compile error was escaped two times.
+  it("escapes a pipe of a compile error one time", () => {
+    const reason = `the break does not compile: ${tscProblem("a.ts(1,1): error TS2322: Type 'a | b' is wrong.")}`;
+    const result = verdictText({ kind: "invalid", reason });
+    expect(reportRow({ claim: "C1", run: "C1-a", command: "not run", result })).toBe(
+      "| C1 | C1-a | `not run` | INVALID: the break does not compile: a.ts(1,1): error TS2322: Type 'a \\| b' is wrong. |",
+    );
+  });
+
+  // DQ-179: a pipe in an id or in a test name closed the cell.
+  it("escapes a pipe in the claim id, the break id and the command", () => {
+    const row = reportRow({
+      claim: "C|1",
+      run: "C|1-a",
+      command: 'vitest -t "a | b"',
+      result: "passed",
+    });
+    expect(row).toBe('| C\\|1 | C\\|1-a | `vitest -t "a \\| b"` | passed |');
   });
 });
