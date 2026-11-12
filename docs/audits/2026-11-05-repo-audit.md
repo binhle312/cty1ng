@@ -236,7 +236,7 @@ Correction to row 1: `act()` is not the only thing that hides the failure. A bar
 ### Tests and tooling
 
 - Invariant 7: no test proves `bot.updated` on `POST /skills/{id}/bots`, or `trash.changed` on a bot purge: `backend/src/core/bots/bots.service.ts:680`, `:695`.
-- **Since 2026-11-12, GitHub requires nine checks** (a repository setting, at the owner's request; `testing.md` §4 names them). The check `audit` is not one of them, so a PR with a red `audit` can still merge (DQ-211). GitHub requires no status checks, so a PR with a red gate can merge: `docs/testing.md:296`. **Fix before M3.**
+- **Since 2026-11-12, GitHub requires nine checks** (a repository setting, at the owner's request; `testing.md` §4 names them). The check `audit` is not one of them: a red `audit` is a signal, and `testing.md` §4 has its rule (owner, 2026-11-12). GitHub requires no status checks, so a PR with a red gate can merge: `docs/testing.md:296`. **Fix before M3.**
 - `db:check` does not read the migration SQL, so a hand edit passes: `scripts/db-check.ts:31`.
 - Lint guards are narrower than the text that relies on them, and `pnpm lint` allows warnings: `eslint.config.js:19`, `:50`.
 - The Guide skill omits "Make active again" and "Show deprecated": `seed/skills/using-the-app/SKILL.md:30`.

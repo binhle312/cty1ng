@@ -321,14 +321,19 @@ Prettier, `tsc`, dependency-cruiser import rules (D35), Vitest, `db:check` (Driz
 matches the migrations), Playwright (a test that passes only on its second try fails the job:
 `failOnFlakyTests`), generated-client freshness, event-type list match,
 `check:index` (folder indexes complete, `architecture.md` §4.2), the bundle budget
-(`pnpm build`, then `pnpm check:bundle`), `pnpm audit --audit-level
-high`, CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also run the automated security review when it is on;
+(`pnpm build`, then `pnpm check:bundle`), CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also run the automated security review when it is on;
 it is off for now (`security.md` §2.11).
+
+`pnpm audit --audit-level high` also runs on each PR (`security.md` §2.11). A red `audit` check
+is a signal (owner, 2026-11-12). The first PR that shows it adds a row to "Follow-ups" in
+`docs/status.md`, and a separate PR fixes it. One case stops a merge: if a PR changes
+`pnpm-lock.yaml` and its `audit` check is red while `main` is green, that PR does not merge
+until the check is green.
 
 GitHub requires nine checks before a merge into `main` (ruleset "Protected main"; owner,
 2026-11-12): `lint`, `typecheck`, `test`, `check:index`, `check:events`, `db:check`,
-`gen:api fresh`, `build + check:bundle` and `e2e`. The check `audit` is not one of them (owner,
-2026-11-12). The same ruleset has its own rules for CodeQL alerts, code quality, test coverage
+`gen:api fresh`, `build + check:bundle` and `e2e`. The check `audit` is not one of them: the
+rule above is for the person who merges. The same ruleset has its own rules for CodeQL alerts, code quality, test coverage
 and open review threads. A branch does not have to be up to date with `main` before its merge.
 
 ## 5. Evidence in PRs
