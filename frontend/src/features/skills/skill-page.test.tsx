@@ -76,7 +76,7 @@ describe("the skill page when a refresh of the list fails", () => {
 
 // A Create moves to the new skill when the newest list came (frontend-conventions.md §5; owner,
 // 2026-11-12). A live event in that time cuts the refresh and starts a newer load, and the wait
-// follows it. Before TanStack Query 5.105.3 the wait ended at the second cut, on the old list.
+// follows it. Before TanStack Query 5.105.2 the wait ended at the second cut, on the old list.
 describe("the skill page after Create while live events refresh the list", () => {
   let api: ReturnType<typeof fakeApi> | null = null;
   afterEach(() => {
@@ -147,9 +147,8 @@ describe("the skill page after Create while live events refresh the list", () =>
   });
 });
 
-// A visit to a skill that the list in the cache does not have, while a newer list loads: the
-// newer list can have the skill, so Page not found waits for it (a link from another tab, or a
-// move that did not wait for the list).
+// A move to a skill that the list in the cache does not have, while a newer list loads: the
+// newer list can have the skill, so Page not found waits for it.
 describe("the skill page while a newer list loads", () => {
   let api: ReturnType<typeof fakeApi> | null = null;
   afterEach(() => {
@@ -157,7 +156,7 @@ describe("the skill page while a newer list loads", () => {
     api = null;
   });
 
-  it("shows its skeleton, not Page not found, until the list comes", async () => {
+  it("shows no Page not found while a newer list loads", async () => {
     const skill = makeSkill({ latest_version: { ...makeSkill().latest_version, version: 1 } });
     const held: ReturnType<typeof heldAnswer>[] = [];
     api = fakeApi({
@@ -188,6 +187,7 @@ describe("the skill page while a newer list loads", () => {
       expect(router.state.location.pathname).toBe("/skills/write-user-stories");
     });
     expect(screen.queryByText("Page not found"), "while the list loads").toBeNull();
+    expect(screen.getByRole("status", { name: "Loading the skill" })).toBeTruthy();
     await held[0]?.answer({ body: [skill] });
     expect(
       await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 }),

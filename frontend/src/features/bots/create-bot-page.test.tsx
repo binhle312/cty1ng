@@ -174,12 +174,13 @@ describe("Create on the Create bot page", () => {
         expect(held).toHaveLength(count);
       });
     }
-    // The toast comes in the same step as the end of the wait, so one timer step shows it.
+    // The move and the toast come in the same step as the end of the wait, so one timer step
+    // shows them.
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
-    expect(screen.queryByText("Created BA ✨"), "before the newest list").toBeNull();
     expect(router.state.location.pathname, "before the newest list").toBe("/bots/new");
+    expect(screen.queryByText("Created BA ✨"), "before the newest list").toBeNull();
     // Only the newest load gets an answer: the two cut loads never do.
     await held.at(-1)?.answer({ body: [bot] });
     expect(await screen.findByText("Created BA ✨")).toBeTruthy();

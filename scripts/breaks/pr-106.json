@@ -2,13 +2,13 @@
   "claims": [
     {
       "id": "W1",
-      "claim": "After Create, the bot Create page does not move or show its toast before the newest bot list came",
+      "claim": "After Create, the bot Create page does not move before the newest bot list came",
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/bots/create-bot-page.test.tsx",
         "name": "stays on the Create page until the newest bot list comes"
       },
-      "assertion": "expect(screen.queryByText(\"Created BA ✨\"), \"before the newest list\").toBeNull();",
+      "assertion": "expect(router.state.location.pathname, \"before the newest list\").toBe(\"/bots/new\");",
       "breaks": [
         {
           "id": "W1-a",
@@ -50,7 +50,7 @@
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/skills/skill-page.test.tsx",
-        "name": "shows its skeleton, not Page not found, until the list comes"
+        "name": "shows no Page not found while a newer list loads"
       },
       "assertion": "expect(screen.queryByText(\"Page not found\"), \"while the list loads\").toBeNull();",
       "breaks": [

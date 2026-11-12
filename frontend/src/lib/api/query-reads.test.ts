@@ -3,11 +3,11 @@ import { afterEach, describe, expect, it } from "vitest";
 import { readNewest, refreshQueries } from "./query-reads.ts";
 
 // These run the real TanStack Query: the behaviour they hold is the library's, and a mock would
-// only repeat what the helpers assume. Since 5.105.3, a load that a newer load cuts short gives
+// only repeat what the helpers assume. Since 5.105.2, a load that a newer load cuts short gives
 // its promise to the newer load at each cut, so the tests of 0 to 3 cuts also pass with the plain
-// library calls. The helpers do work in two other cases: a cut that gives the old list back and
-// then a new load (`refreshQueries`), and a query that leaves the cache during a read
-// (`readNewest`).
+// library calls. The tests below hold two cases where a helper does work: a cut that gives the old
+// list back and then a new load (`refreshQueries`), and a query that leaves the cache during a
+// read (`readNewest`).
 const KEY = ["things"];
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
