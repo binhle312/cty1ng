@@ -26,23 +26,42 @@ const ApiDocument = z.object({
 
 const Row = z.looseObject({ id: z.string(), row_version: z.number() });
 
+// The backend of the scan test, with three ways to an answer and no other (DQ-154): the test
+// cannot get an answer that the scan did not read. The headers of each answer are scanned, and
+// its body too. The body of the stream never ends, so `stream` leaves it to the test, which
+// scans the frames that it reads.
+function scannedBackend(env: NodeJS.ProcessEnv) {
+  const backend = testBackend(env);
+  const texts: string[] = [];
+  const scan = async (response: Response, body: "scanned" | "left to the test") => {
+    texts.push(JSON.stringify([...response.headers]));
+    if (body === "scanned") texts.push(await response.clone().text());
+    return response;
+  };
+  return {
+    texts,
+    lines: backend.lines,
+    secrets: backend.config.secrets,
+    close: backend.close,
+    request: async (path: string, init?: RequestInit) =>
+      scan(await backend.request(path, init), "scanned"),
+    stream: async (path: string, init?: RequestInit) =>
+      scan(await backend.request(path, init), "left to the test"),
+    postTestEvent: async (note: string) => scan(await backend.postTestEvent(note), "scanned"),
+  };
+}
+
 describe("API keys", () => {
   // The scan reads error answers (part 1, an empty body) and success answers (part 2, real
   // requests), so it sees what the services give (audit 2026-11-05, row 9). The success check at
   // the end of part 2 names each operation that never succeeded.
-  it("never appear in an answer of an operation other than the stream, in the stream frames, or in the log", async () => {
-    const backend = testBackend({
+  it("never appear in an answer, in the stream frames, or in the log", async () => {
+    const backend = scannedBackend({
       FAKE_MODEL: "1",
       OPENAI_API_KEY: SENTINEL,
       ANTHROPIC_API_KEY: `${SENTINEL}-2`,
     });
-    const texts: string[] = [];
-    // Scans the headers and the body of an answer. The stream answer does not come here: only its
-    // frames are scanned, and its headers are not (DQ-154).
-    const scan = async (response: Response) => {
-      texts.push(JSON.stringify([...response.headers]), await response.clone().text());
-      return response;
-    };
+    const { texts } = backend;
     const succeeded = new Set<string>();
     // `operation` is the method and the path as the API document writes it, for example
     // `GET /api/skills/{id}`.
@@ -70,7 +89,6 @@ describe("API keys", () => {
           body: options.form ?? (json ? JSON.stringify(options.body) : null),
         },
       );
-      await scan(response);
       if (response.ok) succeeded.add(operation);
       return response;
     };
@@ -282,14 +300,14 @@ describe("API keys", () => {
     ).toEqual([]);
 
     await call("GET /api/nope");
-    await scan(await backend.request("/api/health", { headers: { host: "evil.com" } }));
+    await backend.request("/api/health", { headers: { host: "evil.com" } });
 
     // 3. The stream: read until the test event comes, so that the check reads real frames.
     const abort = new AbortController();
-    const stream = await backend.request("/api/stream", { signal: abort.signal });
+    const stream = await backend.stream("/api/stream", { signal: abort.signal });
     if (stream.body === null) throw new Error("The stream has no body.");
     const frames = collect(readFrames(stream.body));
-    await scan(await backend.postTestEvent("note-for-the-key-test"));
+    await backend.postTestEvent("note-for-the-key-test");
     const deadline = Date.now() + 2000;
     while (!frames.items.some((frame) => frame.data?.includes("note-for-the-key-test") === true)) {
       if (Date.now() > deadline) throw new Error("The test event did not come on the stream.");
@@ -298,7 +316,7 @@ describe("API keys", () => {
     abort.abort();
     texts.push(JSON.stringify(frames.items));
 
-    expect(backend.config.secrets).toContain(SENTINEL);
+    expect(backend.secrets).toContain(SENTINEL);
     for (const text of [...texts, ...backend.lines]) expect(text).not.toContain("SENTINEL");
     backend.close();
   });
