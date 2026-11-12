@@ -516,7 +516,15 @@ describe("the diff of a PR", () => {
   it("reads the same changed lines with git settings that change the diff text", () => {
     const folder = mkdtempSync(join(tmpdir(), "breaks-diff-"));
     folders.push(folder);
-    const git = (args: string[], env: NodeJS.ProcessEnv = process.env) =>
+    // Only this folder: no `GIT_DIR` or `GIT_INDEX_FILE` of a git hook that runs the tests, and
+    // no git settings of the user or the machine. With them, these commands could write into
+    // another repository.
+    const own = {
+      PATH: process.env.PATH ?? "",
+      GIT_CONFIG_GLOBAL: "/dev/null",
+      GIT_CONFIG_NOSYSTEM: "1",
+    };
+    const git = (args: string[], env: NodeJS.ProcessEnv = own) =>
       execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...args], {
         cwd: folder,
         encoding: "utf8",
@@ -556,7 +564,7 @@ describe("the diff of a PR", () => {
     ] as const) {
       git(["config", key, value]);
     }
-    const env = { ...process.env, GIT_DIFF_OPTS: "--unified=3", GIT_EXTERNAL_DIFF: "true" };
+    const env = { ...own, GIT_DIFF_OPTS: "--unified=3", GIT_EXTERNAL_DIFF: "true" };
     expect(changedLines(git(diffArgs("HEAD"), diffEnv(env)))).toEqual(
       new Map([
         ["a.test.ts", new Set([2, 7])],

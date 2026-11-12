@@ -125,7 +125,8 @@ const FILE_HEAD =
 // only removes lines marks the line where they were. A hunk says how many lines follow it, so a
 // changed line that starts with `+++` or `---` is not read as a file line. A line that is no
 // known line of a diff stops the read with an error: a file that this function does not see needs
-// no claim, and the list would look complete (DQ-161).
+// no claim, and the list would look complete (DQ-161). One known gap: a file that git shows as
+// binary (`Binary files … differ`) has no hunk, so it gets no changed line and no error.
 export function changedLines(diff: string): Map<string, Set<number>> {
   const files = new Map<string, Set<number>>();
   let current: Set<number> | undefined;
