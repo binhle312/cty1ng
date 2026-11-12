@@ -155,7 +155,8 @@ only a visible tab holds the stream (owner, 2026-11-09, option A; audit of 2026-
    observer is not cut, for example the source read of a skill Clone whose page closed before its
    answer (DQ-200). One stream is the exception to the rule: the stream that a visible page opens
    at its start. Its `ready` starts no read of all data, because the page reads its data at that
-   time.
+   time. Known gap, which the owner accepted on 2026-11-12: an event that commits between a
+   first read of the page and this `ready` does not reach the page.
 5. A reconnect that the browser does itself (the same `EventSource`, with `Last-Event-ID`) stays
    as §2 says: the server replays, and the tab does not read all data again.
 6. In `make dev`, the Vite proxy cuts the browser's side of a response when the backend's side

@@ -179,6 +179,7 @@ new variable `TITLE_REQUEST_TIMEOUT_SECONDS`.
 - Resolve the M3/M7 boundary and data design for bot Usage (`design/components/bot-page.md` §9.6).
 - Review the first-run Guide offer with the Get started checklist and example loading.
 - Obtain approval for the D46 schema design before implementation.
+- Input for the code design of M3 (owner, 2026-11-12): DQ-107 and DQ-200 in `docs/delivery-quality.md`, with the dropped DQ-108 and DQ-109, and the follow-up row "The Clone of a bot can fill its form from old data" in `docs/status.md`. They are one family: a read that is on its way gives a form old data.
 - Map each acceptance criterion and M3 follow-up to a part brief and its tests.
   Include the title tests whose user flows arrive in M4 (mentions and pending-history members).
 
