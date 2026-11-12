@@ -66,7 +66,7 @@
     },
     {
       "id": "R9-stream",
-      "claim": "No text of the stream holds an API key: not in the data of a frame, and not in another line of a frame",
+      "claim": "The stream text that the test reads holds no API key: the events of the test's writes and the test event, in the data of a frame or in another line of a frame",
       "test": {
         "kind": "vitest",
         "file": "backend/test/security/secrets.test.ts",
@@ -91,6 +91,16 @@
             {
               "find": "data: ${JSON.stringify(event.data)}",
               "replace": "x-debug: sk-test-SENTINEL-4f9a2c71e0b3\\ndata: ${JSON.stringify(event.data)}"
+            }
+          ]
+        },
+        {
+          "id": "R9-stream-write-event",
+          "file": "backend/src/core/bots/bots.service.ts",
+          "edits": [
+            {
+              "find": "    await deps.appendEvent(tx, { event: { type, data }, conversationId: null });\n    return data.bot;",
+              "replace": "    await deps.appendEvent(tx, {\n      event: {\n        type,\n        data: { bot: { ...data.bot, description: \"sk-test-SENTINEL-4f9a2c71e0b3\" } },\n      },\n      conversationId: null,\n    });\n    return data.bot;"
             }
           ]
         }

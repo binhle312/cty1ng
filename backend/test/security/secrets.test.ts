@@ -321,10 +321,17 @@ describe("API keys", () => {
     await call("GET /api/nope");
     await backend.request("/api/health", { headers: { host: "evil.com" } });
 
-    // 3. The stream: read until the test event comes, so that the check reads real frames.
+    // 3. The stream, from its start: the server sends again the events of the writes above, and
+    // then the test event. The scan reads this text and no more: no heartbeat comes in that time,
+    // and an event that these writes do not make is not read.
     const abort = new AbortController();
     const frames = collect(
-      readFrames(await backend.stream("/api/stream", { signal: abort.signal })),
+      readFrames(
+        await backend.stream("/api/stream", {
+          signal: abort.signal,
+          headers: { "last-event-id": "0" },
+        }),
+      ),
     );
     await backend.postTestEvent("note-for-the-key-test");
     const deadline = Date.now() + 2000;
@@ -333,6 +340,10 @@ describe("API keys", () => {
       await sleep(10);
     }
     abort.abort();
+    // The events of the writes came, so the scan read them.
+    expect(frames.items.map((frame) => frame.event)).toEqual(
+      expect.arrayContaining(["skill.created", "bot.created", "bot.updated", "test.ping"]),
+    );
     texts.push(JSON.stringify(frames.items));
 
     expect(backend.secrets).toContain(SENTINEL);
