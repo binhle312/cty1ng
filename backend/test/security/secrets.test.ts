@@ -28,14 +28,18 @@ const Row = z.looseObject({ id: z.string(), row_version: z.number() });
 
 // The backend of the scan test, with three ways to an answer and no other (DQ-154): the test
 // cannot get an answer that the scan did not read. The headers of each answer are scanned, and
-// its body too. The body of the stream never ends, so `stream` leaves it to the test, which
-// scans the frames that it reads.
+// its body too, as text. The body of the stream never ends, so `stream` scans each part of it
+// that the test reads, before a parse: a parse into frames drops the lines that it does not
+// know. One limit: a zip body is scanned as its bytes, so text inside a packed file is not seen.
 function scannedBackend(env: NodeJS.ProcessEnv) {
   const backend = testBackend(env);
   const texts: string[] = [];
-  const scan = async (response: Response, body: "scanned" | "left to the test") => {
+  const scanHead = (response: Response) => {
     texts.push(JSON.stringify([...response.headers]));
-    if (body === "scanned") texts.push(await response.clone().text());
+  };
+  const scan = async (response: Response) => {
+    scanHead(response);
+    texts.push(await response.clone().text());
     return response;
   };
   return {
@@ -43,11 +47,26 @@ function scannedBackend(env: NodeJS.ProcessEnv) {
     lines: backend.lines,
     secrets: backend.config.secrets,
     close: backend.close,
-    request: async (path: string, init?: RequestInit) =>
-      scan(await backend.request(path, init), "scanned"),
-    stream: async (path: string, init?: RequestInit) =>
-      scan(await backend.request(path, init), "left to the test"),
-    postTestEvent: async (note: string) => scan(await backend.postTestEvent(note), "scanned"),
+    request: async (path: string, init?: RequestInit) => scan(await backend.request(path, init)),
+    postTestEvent: async (note: string) => scan(await backend.postTestEvent(note)),
+    // The body that the test reads from: each part goes into one text of the scan as it passes.
+    stream: async (path: string, init?: RequestInit): Promise<ReadableStream<Uint8Array>> => {
+      const response = await backend.request(path, init);
+      scanHead(response);
+      if (response.body === null) throw new Error("The stream has no body.");
+      const at = texts.push("") - 1;
+      const decoder = new TextDecoder();
+      let seen = "";
+      return response.body.pipeThrough(
+        new TransformStream<Uint8Array, Uint8Array>({
+          transform(part, controller) {
+            seen += decoder.decode(part, { stream: true });
+            texts[at] = seen;
+            controller.enqueue(part);
+          },
+        }),
+      );
+    },
   };
 }
 
@@ -304,9 +323,9 @@ describe("API keys", () => {
 
     // 3. The stream: read until the test event comes, so that the check reads real frames.
     const abort = new AbortController();
-    const stream = await backend.stream("/api/stream", { signal: abort.signal });
-    if (stream.body === null) throw new Error("The stream has no body.");
-    const frames = collect(readFrames(stream.body));
+    const frames = collect(
+      readFrames(await backend.stream("/api/stream", { signal: abort.signal })),
+    );
     await backend.postTestEvent("note-for-the-key-test");
     const deadline = Date.now() + 2000;
     while (!frames.items.some((frame) => frame.data?.includes("note-for-the-key-test") === true)) {

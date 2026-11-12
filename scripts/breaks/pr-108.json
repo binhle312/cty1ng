@@ -66,7 +66,7 @@
     },
     {
       "id": "R9-stream",
-      "claim": "No stream frame holds an API key",
+      "claim": "No text of the stream holds an API key: not in the data of a frame, and not in another line of a frame",
       "test": {
         "kind": "vitest",
         "file": "backend/test/security/secrets.test.ts",
@@ -81,6 +81,16 @@
             {
               "find": "data: ${JSON.stringify(event.data)}",
               "replace": "data: ${JSON.stringify({ ...(event.data as object), leaked: \"sk-test-SENTINEL-4f9a2c71e0b3\" })}"
+            }
+          ]
+        },
+        {
+          "id": "R9-stream-line",
+          "file": "backend/src/adapters/sse/frames.ts",
+          "edits": [
+            {
+              "find": "data: ${JSON.stringify(event.data)}",
+              "replace": "x-debug: sk-test-SENTINEL-4f9a2c71e0b3\\ndata: ${JSON.stringify(event.data)}"
             }
           ]
         }

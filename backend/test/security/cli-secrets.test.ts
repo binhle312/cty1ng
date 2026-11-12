@@ -15,6 +15,8 @@ const BACKEND = resolve(import.meta.dirname, "../..");
 const SEED_BOTS = resolve(BACKEND, "../seed/bots.yaml");
 const SEED_SKILLS = resolve(BACKEND, "../seed/skills");
 
+const CHILD_LIMIT_MS = 30_000;
+
 const dirs: ReturnType<typeof tempDir>[] = [];
 afterEach(() => {
   for (const dir of dirs.splice(0)) dir.remove();
@@ -50,9 +52,13 @@ describe("API keys in the output of the CLI", () => {
           cwd: BACKEND,
           env: { ...env, ...more },
           encoding: "utf8",
+          // Only for a command that hangs: the time limit of the test cannot stop this call.
+          timeout: CHILD_LIMIT_MS,
         });
+        // The label of a failure names the command, with a changed setting if it has one.
+        const setting = Object.entries(more).map(([name, value]) => ` (${name}=${String(value)})`);
         outputs.push({
-          command: args.join(" "),
+          command: `${args.join(" ")}${setting.join("")}`,
           status: result.status,
           text: `${result.stdout}${result.stderr}`,
         });
@@ -93,7 +99,7 @@ describe("API keys in the output of the CLI", () => {
         ["bots trash", 1],
       ]);
       for (const { text } of outputs) expect(text.length).toBeGreaterThan(0);
-      // A check of true or false: a failure here must not print the output that holds a key.
+      // True or false for each command: a failure names the command and prints no output.
       for (const { command, text } of outputs)
         expect(text.includes("SENTINEL"), command).toBe(false);
     },
