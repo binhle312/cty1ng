@@ -12,7 +12,9 @@ Read conventions and errors, then the endpoint group in scope and its referenced
 - Base path `/api`. JSON in and out (`multipart/form-data` for uploads).
 - Ids are TypeIDs (D36): `<prefix>_<26 base32 chars>`, for example `bot_01jb8x6p0afqz8r2m3k5t7v9wx`.
   A malformed id or a wrong prefix in the path or the query returns 422 `invalid_id`; in a JSON body
-  it returns 422 `validation_error` with `field`. Timestamps are ISO-8601 UTC.
+  it returns 422 `validation_error` with `field`. An id with the right shape whose value is no UUID
+  is an id that does not exist: it gets the answer of an unknown id, for example 404. Timestamps
+  are ISO-8601 UTC.
 - Request schemas forbid unknown fields (Zod `.strict()`) so typos and forbidden fields
   (like `model_id` on bot update) fail loudly with 422.
 - Lists are cursor-paginated where they can grow: `?before_seq=` / `?limit=` (max 100).
