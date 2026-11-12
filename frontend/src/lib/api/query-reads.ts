@@ -7,16 +7,14 @@ import {
 // A read or a refresh that waits for a list, while live events start newer loads of that list.
 // TanStack Query (5.105.2 and later, query.ts): a load that a newer load cuts short gives its
 // promise to the newer load, at each cut. So a waiting `query()` and a waiting
-// `invalidateQueries()` follow the newer loads, and end with the newest list. Three cuts do not
-// hand over to a newer load:
-// - `cancelQueries()` gives the old list back to the code that waits. If a new load starts after
-//   it, a waiting `invalidateQueries()` has ended before the new list. `refreshQueries` waits for
-//   that load.
+// `invalidateQueries()` follow the newer loads, and end with the newest list. A cut of another
+// kind does not hand over. The two helpers are for two such cuts, which their tests hold; this is
+// not a list of each cut that the library can make:
+// - `cancelQueries()` on a query with data gives the old list back to the code that waits (its
+//   default, `revert`). If a new load starts after it, a waiting `invalidateQueries()` has ended
+//   before the new list. `refreshQueries` waits for that load.
 // - A query that leaves the cache during a read fails the waiting `query()` with a
 //   `CancelledError`. `readNewest` reads again.
-// - The library cuts a load when the last observer of its query leaves. A waiting `query()` on a
-//   query with no data then fails with a `CancelledError`, and `readNewest` reads again. With
-//   data, the code that waits gets the old list (see `readNewest`).
 // Use the helpers when the code goes on to act on the answer (frontend-conventions.md §5). A
 // Create that moves to its new page waits with a plain `invalidateQueries()`: the page finds its
 // item in the list, so Create moves after the newest list came (owner, 2026-11-12).
