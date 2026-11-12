@@ -50,6 +50,7 @@ From M3 on, P3 findings are fixed at the end of each milestone, before the next 
 | D53 accepted (web through provider web tools): check the default limits and approve the schema design for the bot setting and the run flag (initial schema for that milestone). The generated SQL is approved in the slice PR | Web access milestone plan |
 | Login providers ([ideas/login-providers.md](ideas/login-providers.md) §7): choose the first tool, the cap rule for a provider with no price for each token, and the place of the slice in the order after M3. Decide if the Claude rule for plan credentials needs a question to Anthropic | When M3 ends, before the slice plan |
 | D66 accepted (2026-11-11; each bot compacts its old history into its own summary, [D66](decisions/D66-each-bot-compacts-its-old-history.md)). An agent writes the documents still missing: `conversation-rules.md` §4, §6 and §9, `domain-model.md` (the summaries, the checkpoints, the compact record, `model_requests`, the new settings), `architecture.md` §6 and §11, `security.md` §2.13, `realtime-events.md`, `api.md`, `testing.md`, `requirements/conversation.md` and the brief of the slice. The owner approves the schema design, and the UI design of the Compact action, the failure notice and the summary view. The generated SQL is approved in the slice PR | Plan of the Compact slice (after M4-3) |
+| The P3 list (owner's order of 2026-11-12: one question after the third P3 PR): the items that the builder advises to drop or to move to M3; DQ-170, whose fix changes a row of the archive; the three wrong sentences in the body of #86 (DQ-163, DQ-172, DQ-173); the gap before the first `ready` of the stream of page start; the assign rule of the audit P3 "A new assign can pin an older version" | After the third P3 PR |
 | Approve the M3 schema design for D46 (auto title) before it is written. The generated SQL is approved in the slice PR | M3 plan |
 | Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a schema design approval (initial schema for M3 and M7). The generated SQL is approved in the slice PR | M3 and M7 plans |
 | Approve the M5b schema design: `projects.instructions_md`, `instructions_version`, `colour`, `pinned_position`, goal ≤ 500 chars, `memory_items.seen_at`, `memory_proposals` and the `model_requests` change (D63) (initial schema for M5b, `domain-model.md` §14). Claude Code stops for this approval before it writes them. The generated SQL is approved in the M5b PR | M5b plan |
@@ -125,20 +126,20 @@ A slice can also be `blocked` (say on what in Notes).
 
 ## Done
 
-Each row has a date, 15 words or less, and the PR link (owner, 2026-11-10). The detail is in the PR.
+Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10). The first row has no PR of its own. The detail is in the PR.
 
 | Date | What |
 | --- | --- |
 | 2026-10-21 | Specification: requirements, design sketches, decisions D1–D29, briefs M0–M8 |
 | 2026-10-21 | Repository created and spec merged; D31 and D32 accepted. [#1](https://github.com/binhle312/cty1ng/pull/1) to [#5](https://github.com/binhle312/cty1ng/pull/5) |
-| 2026-10-21 | Owner review: D6, D11, D13, D33 accepted; D9 and D21 accepted with changes |
-| 2026-10-26 | M5b design round 15: Memory, Trash and Move to project; D62, D63 accepted |
-| 2026-10-27 | M5c design round 16: skill draft card, Edit on the Skills page; D64, D65 accepted |
+| 2026-10-21 | Owner review: D6, D11, D13, D33 accepted; D9 and D21 accepted with changes. [#6](https://github.com/binhle312/cty1ng/pull/6) |
+| 2026-10-26 | M5b design round 15: Memory, Trash and Move to project; D62, D63 accepted. [#37](https://github.com/binhle312/cty1ng/pull/37) |
+| 2026-10-27 | M5c design round 16: skill draft card, Edit on the Skills page; D64, D65 accepted. [#38](https://github.com/binhle312/cty1ng/pull/38) |
 | 2026-10-27 | Eval and guardrail review: amendments of D51 and D42. [#39](https://github.com/binhle312/cty1ng/pull/39), [#40](https://github.com/binhle312/cty1ng/pull/40) |
-| 2026-10-28 | Diagram gate step 1: system overview and component boundaries; D57 path amendment |
-| 2026-10-29 | Diagram gate step 2: four ERDs by domain, and schema fixes |
-| 2026-10-30 | Shell review: rail, header, user panel, battery focus, text size rules L1–L3 |
-| 2026-10-30 | Prototype references and `porting-guide.md` removed (owner); its lessons moved to `testing.md` §3 |
+| 2026-10-28 | Diagram gate step 1: system overview and component boundaries; D57 path amendment. [#42](https://github.com/binhle312/cty1ng/pull/42) |
+| 2026-10-29 | Diagram gate step 2: four ERDs by domain, and schema fixes. [#43](https://github.com/binhle312/cty1ng/pull/43) |
+| 2026-10-30 | Shell review: rail, header, user panel, battery focus, text size rules L1–L3. [#44](https://github.com/binhle312/cty1ng/pull/44) |
+| 2026-10-30 | Prototype references and `porting-guide.md` removed (owner); its lessons moved to `testing.md` §3. [#45](https://github.com/binhle312/cty1ng/pull/45) |
 | 2026-10-30 | M0 merged: tooling, backend, frontend shell, design snapshot. [#46](https://github.com/binhle312/cty1ng/pull/46), [#48](https://github.com/binhle312/cty1ng/pull/48), [#49](https://github.com/binhle312/cty1ng/pull/49), [#50](https://github.com/binhle312/cty1ng/pull/50) |
 | 2026-10-30 | M1 spec gap pass: 28 gaps answered; D6 and D36 amended. [#51](https://github.com/binhle312/cty1ng/pull/51) |
 | 2026-10-31 | M1 plan approved; M1a built and merged; M1c added. [#52](https://github.com/binhle312/cty1ng/pull/52) |
@@ -155,10 +156,10 @@ Each row has a date, 15 words or less, and the PR link (owner, 2026-11-10). The 
 | 2026-11-04 | Every plan now has a file in `docs/plans/` (owner). [#63](https://github.com/binhle312/cty1ng/pull/63) |
 | 2026-11-04 | Docs audit: docs matched to the built code and the current decisions. [#61](https://github.com/binhle312/cty1ng/pull/61) |
 | 2026-11-04 | Skill `typescript-best-practices` vendored; the 12 `principle-*` skills get shorter names. [#68](https://github.com/binhle312/cty1ng/pull/68) |
-| 2026-11-04 | Three pstack principles adapted: `principle-remove-first`, `principle-script-the-work`, and the redesign rule |
-| 2026-11-04 | Automated security review on; it runs when the owner marks a PR Ready |
+| 2026-11-04 | Three pstack principles adapted: `principle-remove-first`, `principle-script-the-work`, and the redesign rule. [#68](https://github.com/binhle312/cty1ng/pull/68) |
+| 2026-11-04 | Automated security review on; it runs when the owner marks a PR Ready. [#64](https://github.com/binhle312/cty1ng/pull/64) |
 | 2026-11-04 | Docs audit answers: the owner answered all the questions; no feature is built. [#65](https://github.com/binhle312/cty1ng/pull/65) |
-| 2026-11-04 | M2 close fixes; the owner dropped DQ-018, DQ-019 and the gaps of DQ-021. [#66](https://github.com/binhle312/cty1ng/pull/66) |
+| 2026-11-04 | M2 close fixes; the owner dropped DQ-018, DQ-019 and the remaining gaps of DQ-021. [#66](https://github.com/binhle312/cty1ng/pull/66) |
 | 2026-11-04 | Two flaky e2e tests fixed: `csp.spec.ts` and J1. [#70](https://github.com/binhle312/cty1ng/pull/70) |
 | 2026-11-05 | Repository audit recorded, with the owner's seven decisions. [#71](https://github.com/binhle312/cty1ng/pull/71) |
 | 2026-11-06 | Audit PR 3, the Skills page, merged; `takesServerText` is the one rule for server text. [#78](https://github.com/binhle312/cty1ng/pull/78) |

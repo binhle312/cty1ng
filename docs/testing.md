@@ -325,11 +325,13 @@ matches the migrations), Playwright (a test that passes only on its second try f
 high`, CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also run the automated security review when it is on;
 it is off for now (`security.md` §2.11).
 
-GitHub refuses a merge into `main` until nine checks pass (ruleset "Protected main"; owner,
+GitHub enforces nine of these gates as required checks (ruleset "Protected main"; owner,
 2026-11-12): `lint`, `typecheck`, `test`, `check:index`, `check:events`, `db:check`,
-`gen:api fresh`, `build + check:bundle` and `e2e`. `audit` is not in this list: a new advisory
-for a package must not stop a PR that changed no package. CodeQL has its own rule in the
-ruleset. A branch does not have to be up to date with `main` before its merge.
+`gen:api fresh`, `build + check:bundle` and `e2e`. The rule above does not change: `audit` must
+be green too. GitHub does not enforce it, because a new advisory for a package would then lock
+each PR, also a PR that changed no package. The same ruleset has its own rules for CodeQL
+alerts, code quality, test coverage and open review threads. A branch does not have to be up to
+date with `main` before its merge.
 
 ## 5. Evidence in PRs
 
