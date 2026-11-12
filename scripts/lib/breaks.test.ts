@@ -11,6 +11,7 @@ import {
   claimsFor,
   coverageProblems,
   diffArgs,
+  diffEnv,
   framesOf,
   isTestFile,
   firstTscError,
@@ -488,34 +489,79 @@ describe("the diff of a PR", () => {
     expect(() => changedLines(diff.join("\n"))).toThrow(/cannot read this line of the diff/);
   });
 
-  it("gets the same diff text with git settings that change it", () => {
+  // git puts a tab after a file name that has a space.
+  it("reads a file name with a space", () => {
+    const diff = [
+      "diff --git a/a b.test.ts b/a b.test.ts",
+      "--- a/a b.test.ts\t",
+      "+++ b/a b.test.ts\t",
+      "@@ -1 +1 @@",
+      "-old",
+      "+new",
+    ].join("\n");
+    expect(changedLines(diff)).toEqual(new Map([["a b.test.ts", new Set([1])]]));
+  });
+
+  // A copy has no hunk, so its file would have no changed line. The fixed options find no copy.
+  it("refuses a file that the diff shows as a copy", () => {
+    const diff = [
+      "diff --git a/a.test.ts b/copied.test.ts",
+      "similarity index 100%",
+      "copy from a.test.ts",
+      "copy to copied.test.ts",
+    ].join("\n");
+    expect(() => changedLines(diff)).toThrow(/cannot read this line of the diff/);
+  });
+
+  it("reads the same changed lines with git settings that change the diff text", () => {
     const folder = mkdtempSync(join(tmpdir(), "breaks-diff-"));
     folders.push(folder);
-    const git = (...args: string[]) =>
+    const git = (args: string[], env: NodeJS.ProcessEnv = process.env) =>
       execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...args], {
         cwd: folder,
         encoding: "utf8",
+        env,
       });
-    git("init", "--quiet");
-    git("config", "commit.gpgsign", "false");
-    writeFileSync(join(folder, "a.test.ts"), "1\n2\n3\n");
+    git(["init", "--quiet"]);
+    git(["config", "commit.gpgsign", "false"]);
+    const lines = (from: number, to: number) =>
+      Array.from({ length: to - from + 1 }, (_, i) => `line ${String(from + i)}\n`).join("");
+    writeFileSync(join(folder, "a.test.ts"), lines(1, 12));
     writeFileSync(join(folder, "é.test.ts"), "1\n");
-    git("add", ".");
-    git("commit", "--quiet", "-m", "first");
-    writeFileSync(join(folder, "a.test.ts"), "1\ntwo\n3\n");
+    writeFileSync(join(folder, "b c.test.ts"), "1\n");
+    // A text filter that adds a line: with it, each line number of the diff is one too high.
+    writeFileSync(join(folder, ".gitattributes"), "*.test.ts diff=more\n");
+    git(["add", "."]);
+    git(["commit", "--quiet", "-m", "first"]);
+    // Two changes with 4 lines between them: one hunk if the diff joins hunks 5 lines apart.
+    writeFileSync(
+      join(folder, "a.test.ts"),
+      `${lines(1, 1)}two\n${lines(3, 6)}seven\n${lines(8, 12)}`,
+    );
     writeFileSync(join(folder, "é.test.ts"), "1\n2\n");
+    writeFileSync(join(folder, "b c.test.ts"), "1\n2\n");
+    // The same text as the old `a.test.ts`, which this diff changes: a copy for `diff.renames`.
+    writeFileSync(join(folder, "copied.test.ts"), lines(1, 12));
+    git(["add", "."]);
     for (const [key, value] of [
       ["diff.noprefix", "true"],
       ["diff.mnemonicPrefix", "true"],
       ["color.diff", "always"],
       ["color.ui", "always"],
       ["core.quotePath", "true"],
+      ["diff.renames", "copies"],
+      ["diff.interHunkContext", "5"],
+      ["diff.external", "true"],
+      ["diff.more.textconv", "sh -c 'echo more; cat \"$0\"'"],
     ] as const) {
-      git("config", key, value);
+      git(["config", key, value]);
     }
-    expect(changedLines(git(...diffArgs("HEAD")))).toEqual(
+    const env = { ...process.env, GIT_DIFF_OPTS: "--unified=3", GIT_EXTERNAL_DIFF: "true" };
+    expect(changedLines(git(diffArgs("HEAD"), diffEnv(env)))).toEqual(
       new Map([
-        ["a.test.ts", new Set([2])],
+        ["a.test.ts", new Set([2, 7])],
+        ["b c.test.ts", new Set([2])],
+        ["copied.test.ts", new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])],
         ["é.test.ts", new Set([2])],
       ]),
     );
@@ -548,14 +594,17 @@ describe("a row of the report", () => {
     );
   });
 
-  // DQ-179: a pipe in an id or in a test name closed the cell.
-  it("escapes a pipe in the claim id, the break id and the command", () => {
-    const row = reportRow({
-      claim: "C|1",
-      run: "C|1-a",
-      command: 'vitest -t "a | b"',
-      result: "passed",
-    });
-    expect(row).toBe('| C\\|1 | C\\|1-a | `vitest -t "a \\| b"` | passed |');
+  // DQ-179: a pipe in an id closed the cell.
+  it("escapes a pipe in the claim id and the break id", () => {
+    const row = reportRow({ claim: "C|1", run: "C|1-a", command: "vitest", result: "passed" });
+    expect(row).toBe("| C\\|1 | C\\|1-a | `vitest` | passed |");
+  });
+
+  // The reviewer runs the command from the report, so its text must be the text that ran. An
+  // escape inside the backticks shows as it is: a second backslash would change a test name.
+  it("keeps the command as it ran", () => {
+    const command = 'vitest run x.test.ts -t "refuses \\(a\\)"';
+    const row = reportRow({ claim: "C1", run: "C1-a", command, result: "passed" });
+    expect(row).toBe(`| C1 | C1-a | \`${command}\` | passed |`);
   });
 });

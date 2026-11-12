@@ -375,11 +375,12 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
 3. It refuses a list that misses a test of the PR: each test that the PR adds or changes since
    its base (`git merge-base HEAD origin/main`, or `--base`) needs a claim, or an entry in
    `exempt` with its reason. It also refuses an entry in `exempt` that names no test that the PR
-   adds or changes. It reads the tests of the PR from a `git diff` with fixed options, so the git
-   settings of the machine do not change the text, and it stops at a line of the diff that it
-   cannot read: a file that it does not see would need no claim. With `--only`, the list runs
-   in part, and this check does not run. An `--only` text that matches no claim id and no break
-   id is a problem: the runner runs nothing and exits with 1.
+   adds or changes. It reads the tests of the PR from a `git diff` with fixed options (`diffArgs`
+   in `scripts/lib/breaks.ts`): a git setting of the machine can change the text of a diff, and
+   the options fix the settings that the tests of the runner name. It stops at a line of the diff
+   that it cannot read: a file that it does not see would need no claim. With `--only`, the list
+   runs in part, and this check does not run. An `--only` text that matches no claim id and no
+   break id is a problem: the runner runs nothing and exits with 1.
 4. Each test must pass with no break first.
 5. Each break runs alone. First, `tsc` must compile each project of the package of the broken
    file (an unused variable is allowed). The frontend has two: its `tsconfig.json` only points

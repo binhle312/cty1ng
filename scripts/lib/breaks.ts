@@ -87,27 +87,39 @@ export function nameMatches(written: string, reported: string): boolean {
   return new RegExp(`^${pattern}$`).test(reported);
 }
 
-// The arguments of the `git diff` whose text `changedLines` reads. The options are fixed, so the
-// git settings of a machine (`diff.noprefix`, `diff.mnemonicPrefix`, `color.diff`, an external
-// diff tool, `core.quotePath`) do not change the text (DQ-161).
+// The arguments of the `git diff` whose text `changedLines` reads. Each option is fixed against a
+// git setting that changes the text (DQ-161): the prefixes, colours, an external diff tool, a
+// text filter, quoted names, copies, lines around a hunk, and the form of a submodule line.
 export function diffArgs(base: string): string[] {
   return [
     "-c",
     "core.quotePath=false",
     "diff",
     "--unified=0",
+    "--inter-hunk-context=0",
     "--no-color",
     "--no-ext-diff",
     "--no-textconv",
+    // Renames as git finds them with no setting, and no copies: a copy has no hunk.
+    "--find-renames",
+    "--diff-algorithm=myers",
+    "--submodule=short",
     "--src-prefix=a/",
     "--dst-prefix=b/",
     base,
   ];
 }
 
+// The environment of that `git diff`: `GIT_DIFF_OPTS` wins over `--unified=0`.
+export function diffEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const rest = { ...env };
+  Reflect.deleteProperty(rest, "GIT_DIFF_OPTS");
+  return rest;
+}
+
 // The lines that git prints for one file before its first hunk.
 const FILE_HEAD =
-  /^(?:diff --git |index |--- |old mode |new mode |new file mode |deleted file mode |similarity index |dissimilarity index |rename from |rename to |copy from |copy to |Binary files |GIT binary patch$)/;
+  /^(?:diff --git |index |--- |old mode |new mode |new file mode |deleted file mode |similarity index |dissimilarity index |rename from |rename to |Binary files |GIT binary patch$)/;
 
 // The changed lines of each file in a `git diff --unified=0` text, on the new side. A hunk that
 // only removes lines marks the line where they were. A hunk says how many lines follow it, so a
@@ -141,7 +153,8 @@ export function changedLines(diff: string): Map<string, Set<number>> {
       current = undefined;
       continue;
     }
-    const file = /^\+\+\+ b\/(.+)$/.exec(row);
+    // git puts a tab after a name that has a space.
+    const file = /^\+\+\+ b\/(.+?)\t?$/.exec(row);
     if (file?.[1] !== undefined) {
       current = new Set();
       files.set(file[1], current);
@@ -350,11 +363,11 @@ export function verdictText(v: Verdict): string {
       : `INVALID: ${v.reason.slice(0, 300)}`;
 }
 
-// One row of the report table. Each cell is escaped here, one time (DQ-178, DQ-179): quotes and
-// backticks do not stop a pipe from closing a cell.
+// One row of the report table. The ids and the result are escaped here, one time (DQ-178,
+// DQ-179). The command is not: the reviewer runs it as the report shows it, and an escape
+// inside the backticks shows as it is. So a pipe in a command still closes its cell.
 export function reportRow(row: { claim: string; run: string; command: string; result: string }) {
-  const cells = [row.claim, row.run, `\`${row.command}\``, row.result];
-  return `| ${cells.map(cell).join(" | ")} |`;
+  return `| ${cell(row.claim)} | ${cell(row.run)} | \`${row.command}\` | ${cell(row.result)} |`;
 }
 
 // The verdict of one break run. Only a failure of the named test at the assertion line counts:

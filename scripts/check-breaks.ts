@@ -22,6 +22,7 @@ import {
   claimsFor,
   coverageProblems,
   diffArgs,
+  diffEnv,
   lineOf,
   newErrorLines,
   projectsOf,
@@ -61,7 +62,13 @@ const git = (...gitArgs: string[]) =>
 const head = git("rev-parse", "HEAD").trim();
 // The PR's base: each test that the PR adds or changes since then needs a claim or an exemption.
 const base = git("merge-base", "HEAD", option("--base") ?? "origin/main").trim();
-const changed = changedLines(git(...diffArgs(base)));
+const changed = changedLines(
+  execFileSync("git", diffArgs(base), {
+    encoding: "utf8",
+    maxBuffer: 2 ** 30,
+    env: diffEnv(process.env),
+  }),
+);
 const patch = execFileSync("git", ["diff", "HEAD", "--binary"], { maxBuffer: 2 ** 30 });
 // New files that git does not ignore. Only plain files: a link, such as a linked node_modules,
 // is not part of the change.
