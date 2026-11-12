@@ -1,7 +1,8 @@
 # Merge bar
 
 Builders and reviewers use this bar. Read it when you give a finding a severity, decide what a
-finding blocks, write a state table or order test, or set the limits of a pattern rule.
+finding blocks, write a state table or order test, set the limits of a pattern rule, or decide
+when the review of a P3 PR ends.
 
 Only P1 and P2 findings block a merge (owner, 2026-11-04). Fix each of them at once, in the PR that has it.
 A P3 finding does not block a merge. Fix it at the end of the milestone, before the next milestone starts (owner, 2026-11-10).
@@ -31,20 +32,30 @@ This bar does not change `AGENTS.md` §7, §8 or §9.
 
 ## When the review of a P3 PR ends
 
-A PR that fixes P3 findings gets two review rounds (owner, 2026-11-12). Before this rule, each
-round of such a PR found about six new P3 points, and many came from the fixes of the round
-before it.
+A P3 PR is one of the P3 PRs before M3 ([status](../status.md#next), item 2), or their cleanup PR.
+This section is the owner's rule for these PRs (2026-11-12). For them it takes the place of the
+two sentences about a P3 finding at the top of this file, and of "a complete review of the final
+head" in [review guide §6](../review-guide.md#6-apply-the-merge-bar): round 1 is the complete
+review, and round 2 and the check of step 4 read what changed after it.
 
-1. Round 1 is a full review.
+The reason: each review round of #105 found new P3 points, and some came from the fixes of the
+round before it ([round log](../delivery-quality.md#6-review-round-log)).
+
+A round is a review round as the [ledger](../delivery-quality.md#1-counting-rules) counts it, by
+an independent reviewer. New work is each change that is not a fix of a finding of round 1 and not
+a record of the reviews of the PR itself.
+
+1. Round 1 is a full review. The builder fixes its findings in the PR.
 2. No new work enters the PR after round 1. The record of an owner's answer that comes during a
    review goes into the next PR.
-3. Round 2 has a narrow brief: is each fix of round 1 correct, and does a fix make a P1 or a P2?
-   The reviewer does not search for new points in the wording. A P3 that it finds gets a row in
-   the ledger of `docs/delivery-quality.md`, and the PR does not fix it.
+3. Round 2 reads the fix commits of round 1. Its brief is narrow: is each fix of round 1 correct,
+   and does a fix make a P1 or a P2? The reviewer does not search for new points in the wording.
 4. After round 2, the builder fixes only a P1 or a P2. Such a fix gets one check of that commit
-   only.
-5. One cleanup PR fixes the P3 rows of these rounds before the second audit. The cleanup PR
-   obeys the same rule: what its round 2 finds goes to the second audit.
+   only, by an independent reviewer, with a row in the round log.
+5. A P3 that round 2 or a later check finds gets a row in the ledger of
+   `docs/delivery-quality.md`, and the PR does not fix it.
+6. One cleanup PR fixes those rows before the audit that "Next" of `docs/status.md` names. The
+   cleanup PR obeys the same rule: what its round 2 finds goes to that audit.
 
 ## Pattern rules
 

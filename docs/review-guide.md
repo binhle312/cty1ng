@@ -124,5 +124,6 @@ Give the builder one round row for `delivery-quality.md` §6, or write it when t
 Give each finding one severity and one reason, from [the merge bar](workflows/merge-bar.md).
 
 **Complete when:** each finding has a severity and a disposition, and a complete review of the final head has no open P1 or P2.
+For a P3 PR, the merge bar says which rounds make that review ([when the review of a P3 PR ends](workflows/merge-bar.md#when-the-review-of-a-p3-pr-ends)).
 
 Origin: [the PR #57 review lesson](lessons-learned/review-contract-boundaries.md).
