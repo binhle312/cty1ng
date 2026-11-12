@@ -87,6 +87,11 @@ export function nameMatches(written: string, reported: string): boolean {
   return new RegExp(`^${pattern}$`).test(reported);
 }
 
+// The arguments of the `git diff` whose text `changedLines` reads.
+export function diffArgs(base: string): string[] {
+  return ["diff", "--unified=0", base];
+}
+
 // The changed lines of each file in a `git diff --unified=0` text, on the new side. A hunk that
 // only removes lines marks the line where they were.
 export function changedLines(diff: string): Map<string, Set<number>> {
@@ -156,6 +161,11 @@ export function listsFile(printed: string, at: { root: string; file: string }): 
 // The first error line of `tsc`, or null. With `--listFiles`, the output also has file paths.
 export function firstTscError(printed: string): string | null {
   return printed.split("\n").find((row) => /\berror TS\d+:/.test(row)) ?? null;
+}
+
+// The first error of a `tsc` run that failed, for the report.
+export function tscProblem(printed: string): string {
+  return cell(firstTscError(printed) ?? "tsc failed").slice(0, 200);
 }
 
 // A file that tests read but that is not the code under test: a break must not edit it.
@@ -274,6 +284,29 @@ export type Verdict =
   | { kind: "caught"; at: string; message: string }
   | { kind: "survived" }
   | { kind: "invalid"; reason: string };
+
+// The claims that `--only` picks: each claim whose id, or the id of one of its breaks, has the
+// text. An empty text picks each claim.
+export function claimsFor(list: BreakList, only: string): { claims: Claim[]; problems: string[] } {
+  const claims = list.claims.filter(
+    (claim) => claim.id.includes(only) || claim.breaks.some((step) => step.id.includes(only)),
+  );
+  return { claims, problems: [] };
+}
+
+// The result of one break run, as the report shows it.
+export function verdictText(v: Verdict): string {
+  return v.kind === "caught"
+    ? `caught at \`${v.at}\`: ${cell(v.message)}`
+    : v.kind === "survived"
+      ? "SURVIVED"
+      : `INVALID: ${cell(v.reason).slice(0, 300)}`;
+}
+
+// One row of the report table.
+export function reportRow(row: { claim: string; run: string; command: string; result: string }) {
+  return `| ${row.claim} | ${row.run} | \`${row.command}\` | ${row.result} |`;
+}
 
 // The verdict of one break run. Only a failure of the named test at the assertion line counts:
 // no result (a load or server failure), a test timeout, or a failure at another line does not.

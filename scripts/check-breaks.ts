@@ -17,22 +17,25 @@ import { dirname, join } from "node:path";
 import {
   applyEdits,
   BreakList,
-  cell,
   type Claim,
   changedLines,
+  claimsFor,
   coverageProblems,
-  firstTscError,
+  diffArgs,
   lineOf,
   newErrorLines,
   projectsOf,
   linkProblems,
   listsFile,
+  reportRow,
   type TestCall,
   testCalls,
   playwrightOutcomes,
   type TestOutcome,
+  tscProblem,
   verdict,
   type Verdict,
+  verdictText,
   vitestOutcomes,
 } from "./lib/breaks.ts";
 
@@ -58,7 +61,7 @@ const git = (...gitArgs: string[]) =>
 const head = git("rev-parse", "HEAD").trim();
 // The PR's base: each test that the PR adds or changes since then needs a claim or an exemption.
 const base = git("merge-base", "HEAD", option("--base") ?? "origin/main").trim();
-const changed = changedLines(git("diff", "--unified=0", base));
+const changed = changedLines(git(...diffArgs(base)));
 const patch = execFileSync("git", ["diff", "HEAD", "--binary"], { maxBuffer: 2 ** 30 });
 // New files that git does not ignore. Only plain files: a link, such as a linked node_modules,
 // is not part of the change.
@@ -105,9 +108,8 @@ const read = (path: string) => {
   }
 };
 const list = BreakList.parse(JSON.parse(read(listPath) ?? "null"));
-const claims = list.claims.filter(
-  (claim) => claim.id.includes(only) || claim.breaks.some((step) => step.id.includes(only)),
-);
+const picked = claimsFor(list, only);
+const claims = picked.claims;
 // The tests of the PR (all of a new file), with the lines that the PR touched.
 const testsOfPr = new Map<string, TestCall[]>();
 const testFile = /\.(test|spec)\.[cm]?[jt]sx?$/;
@@ -122,6 +124,7 @@ for (const file of [...changed.keys(), ...untracked].filter((path) => testFile.t
 }
 // With --only, the list runs in part, so it cannot be complete.
 const problems = [
+  ...picked.problems,
   ...linkProblems({ claims }, read),
   ...(only === "" ? coverageProblems(list, testsOfPr) : []),
 ];
@@ -209,7 +212,7 @@ function compiles(file: string): true | string {
       { cwd: copy, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
     );
     const printed = `${result.stdout}${result.stderr}`;
-    if (result.status !== 0) return cell(firstTscError(printed) ?? "tsc failed").slice(0, 200);
+    if (result.status !== 0) return tscProblem(printed);
     listed ||= listsFile(printed, { root: copy, file });
   }
   // A passed compile that did not read the broken file is no compile check (testing.md §5).
@@ -230,13 +233,6 @@ function parse(path: string): unknown {
   }
 }
 
-const show = (v: Verdict) =>
-  v.kind === "caught"
-    ? `caught at \`${v.at}\`: ${cell(v.message)}`
-    : v.kind === "survived"
-      ? "SURVIVED"
-      : `INVALID: ${cell(v.reason).slice(0, 300)}`;
-
 const lines = [
   `# Break run of \`${listPath}\``,
   "",
@@ -252,7 +248,14 @@ let failures = 0;
 for (const claim of claims) {
   const base = await run(claim.test);
   const ok = base.outcomes.length === 1 && base.outcomes[0]?.status === "passed";
-  lines.push(`| ${claim.id} | no break | \`${base.command}\` | ${ok ? "passed" : "NOT PASSED"} |`);
+  lines.push(
+    reportRow({
+      claim: claim.id,
+      run: "no break",
+      command: base.command,
+      result: ok ? "passed" : "NOT PASSED",
+    }),
+  );
   if (!ok) {
     failures += 1;
     continue;
@@ -282,8 +285,10 @@ for (const claim of claims) {
             }
           : found;
     if (v.kind !== "caught") failures += 1;
-    lines.push(`| ${claim.id} | ${step.id} | \`${result.command}\` | ${show(v)} |`);
-    console.log(`${step.id}: ${show(v)}`);
+    lines.push(
+      reportRow({ claim: claim.id, run: step.id, command: result.command, result: verdictText(v) }),
+    );
+    console.log(`${step.id}: ${verdictText(v)}`);
   }
 }
 lines.push("", `${String(failures)} problem(s)`);
