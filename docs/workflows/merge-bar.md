@@ -54,6 +54,20 @@ a record of the reviews of the PR itself.
    only, by an independent reviewer, with a row in the round log.
 5. A P3 that round 2 or a later check finds gets a row in the ledger of
    `docs/delivery-quality.md`, and the PR does not fix it.
+
+   Exception (owner, 2026-11-12): a P3 of round 2 that is a claim bigger than its proof gets the
+   answer of `AGENTS.md` §9, inside these limits:
+
+   - The builder changes only the places that round 2 found. A wider search waits for the
+     cleanup PR.
+   - The builder only removes or narrows words, and adds the `Not claimed` line under "Needs
+     human review". No new fact, no new rule, and no change of code or tests.
+   - If the correction needs more, the finding gets a ledger row, as each other P3 of round 2.
+
+   Such a correction is not new work (step 2), and step 4 allows it.
+
+   Measure: at the cleanup PR, count the corrections of round 2 that a later read found wrong.
+   If the count is one or more, the exception ends, and each P3 of round 2 gets a ledger row.
 6. One cleanup PR fixes those rows before the audit that "Next" of `docs/status.md` names. The
    cleanup PR obeys the same rule: what its round 2 finds goes to that audit.
 
