@@ -10,6 +10,7 @@ The composition root (D35): the only place that wires adapters into the core.
 | `catalog-files.ts` | Reads `config/models.yaml` and `config/tools.yaml` into the catalog; checks at start that the model adapter knows each provider and effort |
 | `database.ts` | Opens the database and applies pending migrations (used at start and by `db migrate`) |
 | `cli.ts` | Owner commands: `ids decode`, `db migrate`, `skills import`, `export`, `trash`, `restore`, and `bots seed`, `trash`, `restore` |
+| `cli.test.ts` | The real commands in their own process: one line and no stack trace for a path that is not there or a bad setting |
 | `bot-commands.ts` | The `bots` commands: the seed of `seed/bots.yaml`, and `trash` and `restore` until M5b |
 | `bot-commands.test.ts` | The seed with the real seed files (order, a second run, no model, a missing skill), Trash list and restore |
 | `skill-commands.ts` | The `skills` commands; they call the same services as the API (`trash` and `restore` until M5b) |

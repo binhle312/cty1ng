@@ -45,16 +45,31 @@ async function run(args: readonly string[]): Promise<number> {
       return 1;
     }
   }
-  if (group === "skills") {
-    const code = await skillsCommand(command, rest);
-    if (code !== null) return code;
-  }
-  if (group === "bots") {
-    const code = await botsCommand(command, rest);
-    if (code !== null) return code;
+  if (group === "skills" || group === "bots") {
+    try {
+      const code = await (group === "skills"
+        ? skillsCommand(command, rest)
+        : botsCommand(command, rest));
+      if (code !== null) return code;
+    } catch (error) {
+      const line = ownerError(error);
+      // Any other failure is a bug: it goes up, with its stack trace.
+      if (line === null) throw error;
+      process.stderr.write(`${line}\n`);
+      return 1;
+    }
   }
   process.stderr.write(`${USAGE}\n`);
   return 2;
+}
+
+// The one line for a failure that the owner can correct: a bad setting, or a path that the
+// command cannot read or write (a system error, for example ENOENT or EACCES). Null for any
+// other error.
+function ownerError(error: unknown): string | null {
+  if (error instanceof ConfigError) return error.message;
+  if (error instanceof Error && "syscall" in error && "code" in error) return error.message;
+  return null;
 }
 
 type Commands = typeof import("./skill-commands.ts");
