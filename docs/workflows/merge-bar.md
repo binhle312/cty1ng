@@ -29,6 +29,23 @@ At each milestone close, before the next milestone starts, each open P3 (ledger 
 If the builder and the reviewer disagree about a severity, ask the owner.
 This bar does not change `AGENTS.md` §7, §8 or §9.
 
+## When the review of a P3 PR ends
+
+A PR that fixes P3 findings gets two review rounds (owner, 2026-11-12). Before this rule, each
+round of such a PR found about six new P3 points, and many came from the fixes of the round
+before it.
+
+1. Round 1 is a full review.
+2. No new work enters the PR after round 1. The record of an owner's answer that comes during a
+   review goes into the next PR.
+3. Round 2 has a narrow brief: is each fix of round 1 correct, and does a fix make a P1 or a P2?
+   The reviewer does not search for new points in the wording. A P3 that it finds gets a row in
+   the ledger of `docs/delivery-quality.md`, and the PR does not fix it.
+4. After round 2, the builder fixes only a P1 or a P2. Such a fix gets one check of that commit
+   only.
+5. One cleanup PR fixes the P3 rows of these rounds before the second audit. The cleanup PR
+   obeys the same rule: what its round 2 finds goes to the second audit.
+
 ## Pattern rules
 
 A pattern rule guesses from the shape of text, so it cannot be right for all text. Before the build, the plan names:
