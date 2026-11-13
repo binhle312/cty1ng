@@ -88,6 +88,8 @@ review fix, check them against the commit that you push (owner, 2026-11-08, DQ-1
 5. If you correct a claim, search for its old text in all the records, and correct each copy.
 6. Run `gh pr list --state all`. Correct the state of each PR that `docs/status.md` or the active
    audit file names. A PR cannot record its own merge, so the next push does it (owner, 2026-11-10).
+   For a PR that is ready and has no record turn, the record of a later review goes into the next
+   PR.
 7. Measure each ledger row with an id above DQ-202. This command must print nothing:
    `LC_ALL=C awk -F'|' '/^\| DQ-/ { id = substr($2, 5) + 0; if (id > 202 && length($0) > 600) print "DQ-" id, length($0) }' docs/delivery-quality.md`.
    `LC_ALL=C` makes it count bytes, so each machine gives the same result. Make each row that it
@@ -95,4 +97,6 @@ review fix, check them against the commit that you push (owner, 2026-11-08, DQ-1
    is (owner, 2026-11-10).
 8. Run `wc -c < docs/delivery-quality.md`. If the result is larger than the limit in
    [§7 step 6 of the ledger](../delivery-quality.md#7-update-and-assess), write under Follow-ups
-   of the PR description that a move of the closed rows is due. The move is a PR of its own.
+   of the PR description that a move of the closed rows is due. The move is a PR of its own. The
+   one exception is the move of the P3 PRs in
+   [§7 step 6 of the ledger](../delivery-quality.md#7-update-and-assess).

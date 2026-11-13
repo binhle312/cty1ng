@@ -103,7 +103,7 @@ Apply the [root cause principle](../.agents/skills/principle-fix-root-cause/SKIL
 to the builder's "Same cause checked in" column. Independently check one further plausible path.
 Report a missed path as a new finding with the same cause.
 Check the "Same cause as an earlier fix?" column. A repeated cause with no owner's decision is a finding.
-So is a redesign built in the PR under review ([AGENTS.md §9](../AGENTS.md#9-definition-of-done-every-pr)).
+So is a redesign with no plan that the owner approved. So is a redesign in a new PR, not in the PR that found the issue ([AGENTS.md §9](../AGENTS.md#9-definition-of-done-every-pr)).
 Check that the fix record names the general rule and the search of old fixes ([bug fix, step 2](workflows/bug-fix.md)).
 The search covers earlier PRs: "the first fix of this PR" is not an answer to "Same cause as an earlier fix?".
 For a claim that was bigger than its proof, check that the fix made the claim smaller. A fix that keeps the

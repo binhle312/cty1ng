@@ -32,7 +32,7 @@ This bar does not change `AGENTS.md` §7, §8 or §9, but step 5 of the section 
 
 ## When the review of a P3 PR ends
 
-A P3 PR is one of the P3 PRs before M3 ([status](../status.md#next), item 2), or their cleanup PR.
+A P3 PR is one of the P3 PRs before M3 ([status](../status.md#next), item 2).
 This section is the owner's rule for these PRs (2026-11-12). For them it takes the place of the
 two sentences about a P3 finding at the top of this file, and of "a complete review of the final
 head" in [review guide §6](../review-guide.md#6-apply-the-merge-bar): round 1 is the complete
@@ -58,19 +58,30 @@ owner answer is new work and goes into the next PR.
 
 1. Round 1 is a full review. The builder fixes its findings in the PR.
 2. No new work enters the PR after round 1. The record of an owner's answer that comes during a
-   review goes into the next PR.
+   review goes into the next PR. Exception: a redesign that the owner approves under `AGENTS.md`
+   §9. Its commits get their own round 1 and round 2.
 3. Round 2 reads the fix commits of round 1. Its brief is narrow: is each fix of round 1 correct,
    and does a fix make a P1 or a P2? The reviewer does not search for new points in the wording.
 4. After round 2, the builder fixes only a P1 or a P2. Such a fix gets one check of that commit
    only, by an independent reviewer, with a row in the round log.
 5. A P3 that round 2 or a later check finds gets a row in the ledger of
-   `docs/delivery-quality.md`, and the PR does not fix it.
+   `docs/delivery-quality.md`. Before the merge, the PR fixes its own open rows (owner,
+   2026-11-13).
+   - First, one table gives each open row its end. Fix it here. Or it stays open by an owner
+     decision: name the decision. Or it is part of a redesign that the owner approved. Or the
+     owner drops it.
+   - Make the fixes in one fix commit. An independent reviewer checks only that commit. The
+     check gets a row in the round log.
+   - If that check finds a problem in the fix, fix it. One more check is the limit.
+   - Never leave a P1 or a P2 open.
+   - The owner decides each P3 that is still left: fix it in the same PR, or merge with it
+     recorded. Each open row has a named home. No finding opens a new PR.
 
-   Exception (owner, 2026-11-12 and 2026-11-13): a P3 of round 2 that is a claim bigger than its
-   proof gets the answer of `AGENTS.md` §9, inside these limits:
+   Exception (owner, 2026-11-12 and 2026-11-13): a P3 of round 2 or of a later review that is a
+   claim bigger than its proof gets the answer of `AGENTS.md` §9, inside these limits:
 
-   - The builder changes only the places that round 2 found. A wider search waits for the
-     cleanup PR.
+   - The builder changes only the places that round 2 found. A wider search is not part of the
+     correction.
    - The builder only removes or narrows words, and adds the `Not claimed` line under "Needs
      human review". No new fact, no new rule, and no change of code or tests.
    - If the correction needs more, the finding gets a ledger row, as each other P3 of round 2.
@@ -80,7 +91,8 @@ owner answer is new work and goes into the next PR.
    Each round 2 correction gets its own issue row with the state `fixed`. The cell "Fix and
    verification" starts with the fixed words "Round 2 correction:".
 
-   Measure: at the cleanup PR, count the corrections of round 2 that a later read found wrong.
+   Measure: the check of step 5 reads each row of the PR that starts with "Round 2 correction:". It
+   gives one result for each id: correct or wrong.
 
    - The brief of round 1 of the cleanup PR lists each row that starts with "Round 2
      correction:". The report gives one result for each id: correct or wrong.
@@ -89,9 +101,10 @@ owner answer is new work and goes into the next PR.
    - A later finding about a wrong correction writes "fix-induced: yes (the round 2 correction
      DQ-x)" in its last cell. The measure counts these rows.
 
-   If the count is one or more, the exception does not apply to round 2 of the cleanup PR.
-6. One cleanup PR fixes those rows before the audit that "Next" of `docs/status.md` names. The
-   cleanup PR obeys the same rule.
+   If the count is one or more, tell the owner. The owner decides if the exception stays.
+6. Sometimes a review finds an issue in a PR after its merge. The issue goes into the next open
+   PR that changes the same file. If no open PR changes that file, the issue goes to the audit
+   that "Next" of `docs/status.md` names.
 
 ## Pattern rules
 
