@@ -129,6 +129,38 @@
       ]
     },
     {
+      "id": "R9-replay",
+      "claim": "The scan reads the whole replay: the events of the stream have the ids 1, 2, 3 and on with no gap, and no reset frame comes",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/secrets.test.ts",
+        "name": "never appear in an answer, in the stream frames, or in the log"
+      },
+      "assertion": "expect(replay.map(({ id, event }) => ({ id, event }))).toEqual(whole);",
+      "breaks": [
+        {
+          "id": "R9-replay-gap",
+          "file": "backend/src/adapters/sse/sse-stream.ts",
+          "edits": [
+            {
+              "find": "          controller.enqueue(encoder.encode(eventFrame(event, cursor)));",
+              "replace": "          if (!(\"seq\" in event && event.seq === 4))\n            controller.enqueue(encoder.encode(eventFrame(event, cursor)));"
+            }
+          ]
+        },
+        {
+          "id": "R9-replay-reset",
+          "file": "backend/src/adapters/sse/sse-stream.ts",
+          "edits": [
+            {
+              "find": "          controller.enqueue(encoder.encode(eventFrame(event, cursor)));",
+              "replace": "          if (\"seq\" in event && event.seq === 5)\n            controller.enqueue(encoder.encode(\"id: 4\\nevent: reset\\ndata: {}\\n\\n\"));\n          controller.enqueue(encoder.encode(eventFrame(event, cursor)));"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "R9-host",
       "claim": "The answer that refuses a foreign Host has no key in its headers",
       "test": {

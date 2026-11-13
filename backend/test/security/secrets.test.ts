@@ -322,8 +322,8 @@ describe("API keys", () => {
     await backend.request("/api/health", { headers: { host: "evil.com" } });
 
     // 3. The stream, from its start: the server sends again the events of the writes above, and
-    // then the test event. The scan reads this text and no more: no heartbeat comes in that time,
-    // and an event that these writes do not make is not read.
+    // then the test event. The scan reads the text that comes until the test event. The test does
+    // not make a heartbeat come, and it reads no event that these writes do not make.
     const abort = new AbortController();
     const frames = collect(
       readFrames(
@@ -344,6 +344,16 @@ describe("API keys", () => {
     expect(frames.items.map((frame) => frame.event)).toEqual(
       expect.arrayContaining(["skill.created", "bot.created", "bot.updated", "test.ping"]),
     );
+    // The whole replay came (DQ-273): the events have the ids 1, 2, 3 … with no gap, and no
+    // `reset` came, so the scan read each event of the writes.
+    const replay = frames.items.filter(
+      (frame) => frame.event !== undefined && frame.event !== "ready",
+    );
+    const whole = replay.map((frame, at) => ({
+      id: String(at + 1),
+      event: frame.event === "reset" ? "no reset" : frame.event,
+    }));
+    expect(replay.map(({ id, event }) => ({ id, event }))).toEqual(whole);
     texts.push(JSON.stringify(frames.items));
 
     expect(backend.secrets).toContain(SENTINEL);

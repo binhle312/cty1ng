@@ -15,6 +15,9 @@ const BACKEND = resolve(import.meta.dirname, "../..");
 const SEED_BOTS = resolve(BACKEND, "../seed/bots.yaml");
 const SEED_SKILLS = resolve(BACKEND, "../seed/skills");
 
+// Limits of this test, not settings of the app (AGENTS.md §10 is for values that the owner
+// changes). The commands share one deadline, so together they stay inside the limit of the test.
+const TEST_LIMIT_MS = 120_000;
 const CHILD_LIMIT_MS = 30_000;
 
 const dirs: ReturnType<typeof tempDir>[] = [];
@@ -25,8 +28,10 @@ afterEach(() => {
 describe("API keys in the output of the CLI", () => {
   it(
     "never appear, for a command that ends well and for one that fails",
-    { timeout: 120_000 },
+    // The margin is for the work before and after the commands.
+    { timeout: TEST_LIMIT_MS + 10_000 },
     () => {
+      const deadline = Date.now() + TEST_LIMIT_MS;
       const dir = tempDir("cli-secrets");
       dirs.push(dir);
       const env = {
@@ -46,20 +51,29 @@ describe("API keys in the output of the CLI", () => {
         "---\nname: notes\ndescription: Use it.\n---\n\n## Steps\n\n1. Do it.",
       );
 
-      const outputs: { command: string; status: number | null; text: string }[] = [];
+      const outputs: { command: string; status: number | string | null; text: string }[] = [];
       const run = (args: string[], more: NodeJS.ProcessEnv = {}) => {
         const result = spawnSync(process.execPath, ["src/app/cli.ts", ...args], {
           cwd: BACKEND,
           env: { ...env, ...more },
           encoding: "utf8",
           // Only for a command that hangs: the time limit of the test cannot stop this call.
-          timeout: CHILD_LIMIT_MS,
+          timeout: Math.max(1, Math.min(CHILD_LIMIT_MS, deadline - Date.now())),
         });
+        // A command that did not end by itself shows why, in place of its exit code: the error
+        // code (`ETIMEDOUT` for a time limit) or the signal that stopped it.
+        const error = result.error;
+        const reason =
+          error === undefined
+            ? result.signal
+            : "code" in error
+              ? String(error.code)
+              : error.message;
         // The label of a failure names the command, with a changed setting if it has one.
         const setting = Object.entries(more).map(([name, value]) => ` (${name}=${String(value)})`);
         outputs.push({
           command: `${args.join(" ")}${setting.join("")}`,
-          status: result.status,
+          status: reason ?? result.status,
           text: `${result.stdout}${result.stderr}`,
         });
       };
