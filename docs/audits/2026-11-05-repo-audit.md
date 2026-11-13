@@ -43,7 +43,7 @@ After these: the owner fixes or drops each of the other 33 P3 findings and the P
 - Scope: the P3 findings of this file, the open and `partial` P3 rows of [delivery quality](../delivery-quality.md), and the follow-ups of [status](../status.md). DQ-109 is in scope too.
 - Method: make one list with no duplicates. Check each item in the code: still there, already fixed, or not reproduced. Then fix in small PRs by area. Bring an item to the owner to drop only when it costs more than it gives.
 - Order: PR 5, PR 6, the P3 PRs, the style-only `max-params` PR, the second audit with [the audit workflow](../workflows/audit.md), then M3.
-- The list is not in the repository yet. The ledger rows that say "on the P3 list before M3" mean this list. A draft of 2026-11-10 has 97 items; it comes into this folder after its items are checked.
+- The list is not in the repository. The ledger rows that say "on the P3 list before M3" mean this list. The list of 2026-11-12 was checked on `ec41c39`, and it replaces the draft of 2026-11-10. The owner approved it and the order of its PRs on 2026-11-12.
 - The rule for later milestones is in the [merge bar](../workflows/merge-bar.md): P3 findings are fixed at the end of each milestone (owner, 2026-11-10).
 
 **Decisions made during PR 2** (owner, 2026-11-05):
@@ -121,7 +121,7 @@ Each fix PR updates its row in the same PR. Check `gh pr list --state all`, beca
 | 4 | Bots page | merged: #82 |
 | 5 | Tests only | merged: #86 |
 | 6 | Six tabs | merged: #91 |
-| 7 | Other P3 for M3 | not started |
+| 7 | Other P3 for M3 | replaced by the P3 PRs (owner, 2026-11-08). The first, records only: #105 |
 
 ## Result
 
@@ -181,7 +181,7 @@ The lead did not check these again, except where a row says so. The others are f
 
 - `lineDiff` has no budget: 24.5 s for a body of 20,000 characters: `backend/src/core/skills/skill-diff.ts:8`. One `changed` import row can reach it: 11.6 s from a 202-byte zip if the saved body has 10,000 lines. The pause between rows does not help inside a row (#73 review). **Fix before M3**, in PR 7 (owner, 2026-11-06).
 - The dev page has no CSP or `frame-ancestors`: `frontend/vite.config.ts:18`.
-- The paid security review does not watch the model adapters, `skill.rules.ts`, `bot.rules.ts`, `main.ts`, `compose.ts` and other paths: `.github/workflows/security-review.yml:20`.
+- **Target (owner, 2026-11-12): before the paid review is turned on** (`security.md` §2.11). The paid security review does not watch the model adapters, `skill.rules.ts`, `bot.rules.ts`, `main.ts`, `compose.ts` and other paths: `.github/workflows/security-review.yml:20`.
 - Refused requests carry no security headers, and the plan and `security.md` disagree: `backend/src/adapters/http/app.ts:61`.
 - The changelog has no length limit, and its regex is quadratic: `backend/src/adapters/http/routes/skills.ts:34`, `backend/src/core/skills/skills.service.ts:584`.
 - No test covers an absolute zip path or a forged entry size, or checks secrets through the CLI: `backend/src/adapters/http/uploads/skill-zip.test.ts`.
@@ -190,9 +190,9 @@ The lead did not check these again, except where a row says so. The others are f
 ### API and realtime
 
 - A TypeID with the right shape gives 500 on most routes, not 422 or 404: `shared/src/ids.ts:7`, `backend/src/adapters/db/columns.ts:11`. **Fix before M3.**
-- In `make dev`, the stream does not come back after a backend outage longer than the 2 s retry: `frontend/src/lib/realtime/start.ts:14`. **Fix before M3.**
-- CLI changes do not wake the server's event stream, so open pages stay old until the next server write, a reconnect or a window focus. Second audit; code read by the lead: `backend/src/core/events/hub.ts:103`.
-- An event that commits between the first GET and the first `ready` does not reach the page. The spec has this gap too: `frontend/src/lib/realtime/reducer.ts:34`.
+- **Fixed in #91** ("Decisions for PR 6", last item). In `make dev`, the stream does not come back after a backend outage longer than the 2 s retry: `frontend/src/lib/realtime/start.ts:14`. **Fix before M3.**
+- **Dropped (owner, 2026-11-12).** The owner's correction of the last words: the page reads again only after the tab was hidden, or after a reload. CLI changes do not wake the server's event stream, so open pages stay old until the next server write, a reconnect or a window focus. Second audit; code read by the lead: `backend/src/core/events/hub.ts:103`.
+- **Dropped for the stream of page start (owner, 2026-11-12);** `realtime-events.md` §3, rule 4, names the gap. An event that commits between the first GET and the first `ready` does not reach the page. The spec has this gap too: `frontend/src/lib/realtime/reducer.ts:34`. Read again on 2026-11-12: since #91, each later stream reads all data after its `ready`; DQ-200 is the open gap of that read. The stream of page start is the exception, so the gap of this bullet stays there (`realtime-events.md` §3, "Stream life", rule 4; `start.test.ts`, "the ready of the stream of page start reads nothing again").
 - `field` in a 422 has two formats: `pins.0.skill_id` and `pins[0]`: `backend/src/adapters/http/router.ts:19`.
 - Repeated items are not refused in import apply and export. An empty `ids=` gives an empty zip: `backend/src/core/skills/skill-import.service.ts:282`, `backend/src/adapters/http/routes/skills.ts:393`.
 - Three inputs skip strict parsing: `backend/src/adapters/http/routes/skills.ts:32`, `backend/src/adapters/http/app.ts:85`, `shared/src/bots.ts:198`.
@@ -236,12 +236,12 @@ Correction to row 1: `act()` is not the only thing that hides the failure. A bar
 ### Tests and tooling
 
 - Invariant 7: no test proves `bot.updated` on `POST /skills/{id}/bots`, or `trash.changed` on a bot purge: `backend/src/core/bots/bots.service.ts:680`, `:695`.
-- GitHub requires no status checks, so a PR with a red gate can merge: `docs/testing.md:296`. **Fix before M3.**
+- **Fixed on 2026-11-12:** GitHub requires the nine checks that are merge gates (a repository setting, at the owner's request; `testing.md` §4 names them). The check `audit` is not one of them: a red `audit` is a signal by the owner's rule in `testing.md` §4. The finding of 2026-11-05 was: GitHub requires no status checks, so a PR with a red gate can merge: `docs/testing.md:296`. **Fix before M3.**
 - `db:check` does not read the migration SQL, so a hand edit passes: `scripts/db-check.ts:31`.
 - Lint guards are narrower than the text that relies on them, and `pnpm lint` allows warnings: `eslint.config.js:19`, `:50`.
 - The Guide skill omits "Make active again" and "Show deprecated": `seed/skills/using-the-app/SKILL.md:30`.
 - Some e2e tests wait a fixed time and then check that nothing happened (plausible only): `frontend/test/e2e/bots.spec.ts:290`.
-- A test holds a full-shape AWS example key: `backend/src/core/guard/sensitive-data.rules.test.ts:9`.
+- **Fixed in #73** (commit `2eb1b9e`: the test joins the key from two parts). A test holds a full-shape AWS example key: `backend/src/core/guard/sensitive-data.rules.test.ts:9`.
 
 ## Limits
 

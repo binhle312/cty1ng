@@ -218,7 +218,10 @@ environment, provider-side data handling.
   the human review; it does not replace it.
   **The owner turned this workflow off on 2026-11-06, for now.** Ready starts no review, and no
   automated AI review reads security-sensitive changes. `gh workflow enable security-review.yml`
-  turns it on again. The `ANTHROPIC_API_KEY` secret stays in the repository.
+  turns it on again. The `ANTHROPIC_API_KEY` secret stays in the repository. Before the owner
+  turns it on, the path list of `security-review.yml` gets the paths that the
+  [audit of 2026-11-05](audits/2026-11-05-repo-audit.md) found missing (P3, "Security"; owner,
+  2026-11-12).
 - **Vendored agent skills** (today `ui-ux-pro-max` and `typescript-best-practices` in `.agents/skills/`; the `principle-*` skills
   there are project-owned) are third-party code that agents run with the
   owner's permissions. Each one keeps its licence and a `SOURCE.md` with the upstream commit
