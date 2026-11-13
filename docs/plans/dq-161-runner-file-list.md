@@ -107,7 +107,7 @@ needs no claim.
 | --- | --- |
 | A plain string, or a template with no `${…}` | Its text, as today |
 | A template with `${…}` | Its text, with `%s` in the place of each `${…}` |
-| Another expression (for example a variable), when a later argument is a function | The text of the argument as written, for example `row.name` |
+| Another expression (for example a variable), when a later argument can be a function; or a spread (`...row`) | The text of the argument as written, for example `row.name` |
 
 - `it.each` with a template table (``it.each`…`("name", …)``) is a test call. Today the reader
   does not see it.
@@ -119,8 +119,17 @@ needs no claim.
   name (round 1 of the review; part 12, point 10).
 - A claim stands for one test: the test whose name matches and that has the assertion text of
   the claim (part 12, point 10).
-- A call with no function after its first argument, such as `test.skip(condition, "reason")`
-  inside a test of Playwright, is no test call.
+- A later argument can be a function unless it is a string, a template, a number, an object
+  or an array as written (part 12, point 11). So the name of a function counts, and each other
+  expression: the reader cannot know what it holds. The first text of this plan said "when a
+  later argument is a function", and the code took only a function that is written in the
+  call (round 3 of the review).
+- A call with no argument (`test.slow()`) is no test call. A call whose first argument is such
+  an expression is no test call when no later argument can be a function, such as
+  `test.skip(condition, "reason")` inside a test of Playwright, and `it.each(rows)`.
+- The cost of that rule: `test.skip(condition, reason)` with the reason in a variable is no
+  test, but the runner reads a test with the name `condition` and asks for an `exempt` entry.
+  The repository has no such call (part 12, point 11).
 - The claim format does not change.
 
 ### The copy (owner, 2026-11-13, D5 and D8: way 2, no patch)
@@ -247,10 +256,24 @@ revision 5 show that this is not so (part 12, point 2).
   fix the two settings that the probes found; 21 settings cases gave the same copy.
 - That the runner finds each test of a file that does not parse (for example a file with the
   marks of a merge conflict). The run with no break of a claim on such a file fails.
-- That the runner sees each form of a test call. It sees `it` and `test` with the modifiers
-  `only`, `skip`, `concurrent`, `fails`, `fixme`, `slow` and `each`. It does not see another
-  modifier (for example `it.skipIf(…)`, `it.runIf(…)`, `test.for(…)`) or a test function with
-  another name. No test of this repository has such a form (a search of 2026-11-13).
+- That the runner sees each form of a test. It sees a call of `it` or `test`, also with the
+  modifiers `only`, `skip`, `concurrent`, `fails`, `fixme`, `slow` and `each`, with a first
+  argument of the table "The name of a test". A test of another form needs no claim, with no
+  message. The forms that a probe ran (part 12, point 11):
+  - another modifier: `it.skipIf(…)(…)`, `it.runIf(…)(…)`, `it.todo(…)`, `it.sequential(…)`,
+    `it.for(…)(…)`, `test.for(…)(…)`, and `test.fail(…)` of Playwright;
+  - a test function with another name: `import { it as spec }`, `const spec = it`,
+    `bench(…)`, `vi.it(…)`, `globalThis.it(…)`;
+  - `it` or `test` that is not written as a plain name: `(it)(…)`, `it["skip"](…)`,
+    `it.call(…)`, `(it as T)(…)`, `it!(…)`;
+  - `it(title)`, with an expression as its only argument (Vitest reads it as a todo, and it
+    runs nothing);
+  - a test in a file with another name than `*.test.*` or `*.spec.*` (the name rule above),
+    and a test that a function of such a file makes for a test file. The three contract
+    suites in `backend/test/contracts/` have 27 such tests.
+
+  The 118 test files of this repository have none of the first four forms (a parse of
+  2026-11-14).
 
 ## 3. Files to touch
 
@@ -289,8 +312,11 @@ text about the break runner.
    with a name that git quotes, a file that becomes a link, a local change that gives a file
    the base text again, a file that becomes a folder, a folder that becomes a file (D8), and a
    merge that is not complete (D8). The status `U` stops the copy and names the file (D8).
-8. A new or changed test whose name is no plain string needs a claim or an exemption: a name
-   with `${…}`, a variable as the name, and `it.each` with a template table.
+8. A new or changed test whose name is no plain string needs a claim or an exemption, for
+   these forms: a name with `${…}`; a variable or another expression as the name, when a
+   later argument can be a function (part 2, "The name of a test"); a spread as the first
+   argument; and `it.each` with a template table. The forms of the line "That the runner sees
+   each form of a test" in part 2, "Not claimed", are not part of this criterion.
 
 ## 5. Test strategy
 
@@ -520,7 +546,8 @@ finding: I report it.
 | "Each old test stands for one new test only" | 16 |
 | "A line end of Windows is no change" | 25 |
 | The stops with `--only` | 47 |
-| "A later argument is a function" in the name rule | 53 |
+| "A later argument is a function" in the name rule | 53, and the 6 cases of "reads a call whose later arguments are plain values as no test" (round 3) |
+| A plain value is no function (round 3) | 53, and 5 of those 6 cases: each case with a later argument (`it.each(rows)` has none) |
 | A claim stands only for the test that has its assertion (round 1) | "does not take a claim for a row of it.each as a claim for a plain name with %s"; "takes a claim only for the test that has its assertion, of two tests with one name" |
 | No claim names a test whose name is an expression (round 1) | "does not take a claim for a plain name as a claim for a variable with the same text" |
 | `-z` of the list of new files | C9 |
@@ -885,6 +912,39 @@ description of #107.
       line still had one claim (P2; row DQ-305). Now the test that has the assertion is the
       innermost test call around the exact place of the assertion, by line and column.
 
+11. **A fix of review round 3 (Codex on `959a4bd`, 2026-11-14): which calls the reader sees.**
+    The reviewer found that `it(title, check)` was no test call: the code of point 5 took an
+    expression as a name only when a later argument was a function that is written in the
+    call (P3; row DQ-306). The test needed no claim and no exemption, with no message. That is
+    the cause of DQ-301. `main` has the path too: its reader takes only a plain string as a
+    name. The fix of DQ-301 did not close it, because its guard took only a function that is
+    written in the call.
+    - The fix turns the guard around. A call with an expression as its name is a test call
+      unless no later argument can be a function. A string, a template, a number, an object
+      and an array as written are no function. A spread as the first argument is a test call
+      too. So a form that the reader cannot read for sure gives a message that asks for an
+      `exempt` entry, not a silent pass. About 10 code lines.
+    - The numbers (a parse of the 118 test files, 2026-11-14; the scripts and their outputs
+      are in the description of #107): on `959a4bd`, 1557 calls of `it` or `test` with the
+      modifiers; 117 have a first argument that is no string and no template; each of the
+      117 is `it.each(rows)` with one argument. So the fix changes no result in this
+      repository: 0 tests of the missed form, and 0 calls such as
+      `test.skip(condition, reason)`.
+    - The tests, each written before the fix: "finds a test with a variable as its name and
+      no inline function" (6 cases), "finds a test whose arguments are a spread, by the text
+      of the argument", and "needs an exemption for a new test with a variable as its name
+      and no inline function" (in a git folder) fail on `959a4bd`. "reads a call whose later
+      arguments are plain values as no test" (6 cases) is a guard, with a removal run (5.6).
+    - **The orchestrator's answer (2026-11-14):** fix it in #107, and close the area by a
+      list: part 2 and `docs/testing.md` §5 name each form that the reader sees and what it
+      gives, and each form that it does not see is a `Not claimed` line. Criterion 8 names
+      the forms that the tests prove.
+    - "Same cause as an earlier fix?" Yes (DQ-301). No owner decision answers it: one line
+      under `Needs human review`, with two options for the owner. A: the turned guard is
+      enough, because a form that the reader cannot read for sure now gives a message. B: a
+      redesign in which the runner asks the test runner for the tests of a file
+      (`vitest list`, `playwright test --list`) and has no reader of its own.
+
 ## 13. The end of each open row and each correction that waits
 
 The ends: (a) fix here; (c) part of the redesign, built in #107; (d) needs the owner's words.
@@ -906,6 +966,7 @@ The ends: (a) fix here; (c) part of the redesign, built in #107; (d) needs the o
 | The owner's approval of revision 5 and of the test strategy | waits | (d) | One line under `Needs human review`; the report says "ready except the owner's approval" |
 | The merge order #109, #112, then #107 (D11, W1, W3) | waits | (d) | One line under `Needs human review` |
 | Modifiers that the reader does not see (part 12, point 9) | no row | (d) | A `Not claimed` line in `docs/testing.md` §5, and one line under `Needs human review` |
+| A test whose function is no inline function (part 12, point 11; round 3) | no row | (a) | A new row DQ-306, `fixed`. The repeat of the cause of DQ-301: one line under `Needs human review` |
 | DQ-176 | `open`, a row of #86 | not a row of #107 | Its home is the style PR for `max-params` (part 12, point 8) |
 
-Free ids after this table: DQ-264 and DQ-302 to DQ-309.
+Free ids after this table: DQ-264 and DQ-307 to DQ-309 (the review rounds used DQ-302 to DQ-306).

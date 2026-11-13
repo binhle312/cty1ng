@@ -73,12 +73,27 @@ function isTestFunction(node: ts.Expression): boolean {
   return false;
 }
 
+// Whether an argument as written can be a function. A string, a template, a number, an object
+// and an array are plain values. The reader cannot say what another expression gives, such as
+// the name of a function, so that one can be a function.
+function canBeFunction(arg: ts.Expression): boolean {
+  const plainValue =
+    ts.isStringLiteralLike(arg) ||
+    ts.isTemplateExpression(arg) ||
+    ts.isNumericLiteral(arg) ||
+    ts.isObjectLiteralExpression(arg) ||
+    ts.isArrayLiteralExpression(arg);
+  return !plainValue;
+}
+
 // The name of a test call, or null for a call that is no test. A plain string is the name. A
 // template with `${…}` gives its text with `%s` in the place of each `${…}`, so that
 // `nameMatches` reads it as a name of `it.each`. Another expression, such as a variable, gives
-// its text as written, but only when a later argument is a function: `test.skip(condition,
-// "reason")` inside a test of Playwright is no test. A test that this function does not see
-// needs no claim, with no message (DQ-301).
+// its text as written, but only when a later argument can be a function: `test.skip(condition,
+// "reason")` inside a test of Playwright and `it.each(rows)` are no tests. A spread as the first
+// argument can hold the name and the function. A test that this function does not see needs no
+// claim, with no message (DQ-301). So a call that it cannot read for sure is a test call: its
+// test then needs an exemption, with a message (DQ-306).
 function nameOf(
   call: ts.CallExpression,
   source: ts.SourceFile,
@@ -90,7 +105,7 @@ function nameOf(
     const parts = [first.head.text, ...first.templateSpans.map((span) => span.literal.text)];
     return { name: parts.join("%s"), nameKind: "text" };
   }
-  const hasFunction = rest.some((arg) => ts.isArrowFunction(arg) || ts.isFunctionExpression(arg));
+  const hasFunction = ts.isSpreadElement(first) || rest.some(canBeFunction);
   return hasFunction ? { name: first.getText(source), nameKind: "expression" } : null;
 }
 

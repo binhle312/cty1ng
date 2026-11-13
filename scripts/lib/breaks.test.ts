@@ -1100,6 +1100,25 @@ describe("the name of a test", () => {
     ]);
   });
 
+  // The function of a test can be a name or another expression (round 3 of the review). The
+  // reader cannot say that such an argument is no function, so the call is a test call.
+  it.each([
+    "it(title, check);",
+    "it(title, (check));",
+    "it(title, make(1));",
+    "it(title, { timeout: 5 }, check);",
+    "it(title, check, 1000);",
+    "it.each(rows)(title, check);",
+  ])("finds a test with a variable as its name and no inline function: %s", (text) => {
+    expect(testCalls(text, "x.test.ts")).toMatchObject([{ name: "title", nameKind: "expression" }]);
+  });
+
+  it("finds a test whose arguments are a spread, by the text of the argument", () => {
+    expect(testCalls("it(...row);\n", "x.test.ts")).toMatchObject([
+      { name: "...row", nameKind: "expression" },
+    ]);
+  });
+
   it("finds a test of it.each with a template table", () => {
     const text = 'it.each`\n  a    | b\n  ${1} | ${2}\n`("adds $a and $b", ({ a, b }) => {\n});\n';
     expect(testCalls(text, "x.test.ts")).toMatchObject([
@@ -1118,6 +1137,34 @@ describe("the name of a test", () => {
     expect(testCalls(text, "e.spec.ts")).toMatchObject([
       { name: "outer", nameKind: "text", start: 1, end: 4 },
     ]);
+  });
+
+  // A plain value as written is no function: these calls stay no test.
+  it.each([
+    'test.skip(condition, "reason");',
+    "test.fixme(condition, `not on ${name}`);",
+    "test.slow(condition, 3);",
+    "it.each(rows);",
+    "it.each(rows, { timeout: 5 });",
+    "it.each(rows, [1]);",
+  ])("reads a call whose later arguments are plain values as no test: %s", (text) => {
+    expect(testCalls(text, "e.spec.ts")).toEqual([]);
+  });
+
+  it("needs an exemption for a new test with a variable as its name and no inline function", () => {
+    const file = "x.test.ts";
+    const folder = committed({ text: 'it("old", () => {});\n', file });
+    const added =
+      'const title = "new case";\nconst check = () => {\n  expect(1).toBe(1);\n};\nit(title, check);\n';
+    folder.write(file, `it("old", () => {});\n${added}`);
+    const { tests } = prOf(folder);
+    const problems = (given: unknown) =>
+      coverageProblems({ list: BreakList.parse(given), changed: tests, read: folder.read });
+    expect(problems({ claims: [] })).toEqual([
+      `${file}:6: the test with the name \`title\` (an expression, not a string) has no exemption: a claim cannot name it`,
+    ]);
+    const exempt = [{ file, name: "title", reason: "a name from a table" }];
+    expect(problems({ claims: [], exempt })).toEqual([]);
   });
 
   // A claim names a test by the name that the test report gives. The text of an expression is

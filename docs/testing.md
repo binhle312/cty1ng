@@ -413,12 +413,27 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
      moves into a group or out of it needs one. Each test of a group needs one when the first
      line of the group changes: a new name, or `describe.skip` to `describe`. A line end of
      Windows is no change.
-   - **The name of a test** is its first argument as written. A template gives its text with
-     `%s` in the place of each `${…}`. `%s` and the other marks of `it.each` match one or more
-     characters of the name that the test report gives. A name that is another expression,
-     such as a variable, is the text of that expression. No claim can name such a test: it
-     needs an `exempt` entry with that text as its name, or a plain name. A `$name` mark of
-     `it.each` matches no name of a report, so such a test needs an `exempt` entry too.
+   - **The test calls that the runner sees.** A test call is a call of `it` or `test`, also
+     with one or more of the modifiers `only`, `skip`, `concurrent`, `fails`, `fixme`, `slow`
+     and `each`: for example `it.skip(…)`, `it.each(rows)(…)` and `it.each` with a template
+     table. The first argument of the call, as written, decides what the runner reads:
+     - **A string, or a template with no `${…}`:** a test with that name. It needs a claim or
+       an `exempt` entry.
+     - **A template with `${…}`:** a test whose name has `%s` in the place of each `${…}`. It
+       needs a claim or an `exempt` entry. `%s` and the other marks of `it.each` match one or
+       more characters of the name that the test report gives. A `$name` mark of `it.each`
+       matches no name of a report, so such a test needs an `exempt` entry.
+     - **Another expression,** such as a variable: a test whose name is the text of that
+       expression, when a later argument can be a function. An argument can be a function
+       unless it is a string, a template, a number, an object or an array as written. So the
+       name of a function counts, and each other expression: the runner cannot know what it
+       holds. A spread as the first argument (`it(...row)`) is such a test too. No claim can
+       name such a test: the runner gives a message, and the test needs an `exempt` entry with
+       that text as its name, or a plain name. The cost: `test.skip(condition, reason)` with
+       the reason in a variable is no test, but the runner asks for an `exempt` entry.
+     - **No test:** a call with no argument (`test.slow()`), and a call with such an
+       expression as its first argument when no later argument can be a function
+       (`test.skip(condition, "reason")`, `it.each(rows)`).
    - **What a claim covers.** A claim stands for one test: the test of its file whose name
      matches the name of the claim and that has the assertion text of the claim. The test that
      has the assertion is the innermost test call around its exact place, by line and column:
@@ -441,16 +456,31 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
      holds each way to start or stop a test: it does not hold a condition on a later line of a
      `describe` call, an `if` or a loop around a test, a skip that a `beforeEach` makes, the
      config of the test runner, or a `describe.only` or `it.only` that goes out. That the
-     runner sees each form of a test call: it sees `it` and `test` with the modifiers `only`,
-     `skip`, `concurrent`, `fails`, `fixme`, `slow` and `each`, not another modifier (such as
-     `it.skipIf(…)`, `it.runIf(…)` or `test.for(…)`) and not a test function with another name.
-     That the runner finds each test of a file that does not parse. That the copy is correct
+     runner finds each test of a file that does not parse. That the copy is correct
      for a submodule, a sparse checkout, a clean filter (such as LFS) or an `export-ignore` or
      `export-subst` attribute. That an `exempt` entry stands for one test only: with two tests
      of one name in a file, one entry stands for the two. That the copy has a change that git does not list: a file with the bit
      `assume-unchanged` or `skip-worktree`, or a change of the execute bit with
      `core.fileMode=false`. That the copy is one moment of the checkout: a file that changes
      during the copy is in the copy as it is at that time.
+   - **Not claimed: that the runner sees each form of a test.** It sees only the test calls
+     of the list above. A test of another form needs no claim, and the runner gives no
+     message. The forms that a probe of 2026-11-14 ran (`forms-probe.mts`, in the description
+     of #107):
+     - another modifier: `it.skipIf(…)(…)`, `it.runIf(…)(…)`, `it.todo(…)`,
+       `it.sequential(…)`, `it.for(…)(…)`, `test.for(…)(…)`, and `test.fail(…)` of Playwright;
+     - a test function with another name: `import { it as spec }`, `const spec = it`,
+       `bench(…)`, `vi.it(…)`, `globalThis.it(…)`;
+     - `it` or `test` that is not written as a plain name: `(it)(…)`, `it["skip"](…)`,
+       `it.call(…)`, `(it as T)(…)`, `it!(…)`;
+     - `it(title)`, with an expression as its only argument (Vitest reads it as a todo, and
+       it runs nothing);
+     - a test in a file with another name than `*.test.*` or `*.spec.*`, and a test that a
+       function of such a file makes for a test file. The three contract suites in
+       `backend/test/contracts/` (`*.contract.ts`) have 27 such tests.
+
+     The 118 test files of the repository have none of the first four forms (a parse of
+     2026-11-14, in the description of #107).
 4. Each test must pass with no break first.
 5. Each break runs alone. First, `tsc` must compile each project of the package of the broken
    file (an unused variable is allowed). The frontend has two: its `tsconfig.json` only points
