@@ -40,6 +40,7 @@ Plans up to M2 started as PR comments or PR descriptions. The header of each fil
 | `audit-pr6-six-tabs.md` | Audit PR 6 (row 14, six tabs) | Approved 2026-11-10, revision 1 |
 | `dq-180-clone-draft.md` | DQ-180, the Clone draft (before audit PR 6) | Approved 2026-11-10 |
 | `dq-198-closed-dialog-read.md` | DQ-198, a closed dialog and the read of all data (after audit PR 6) | Owner, 2026-11-10 |
+| `dq-161-runner-file-list.md` | DQ-161, the redesign of the break runner (built in #107) | Revision 4 approved 2026-11-13. Revision 5: `waiting` for the owner |
 
 If the task names a plan, open it. Otherwise, find the slice in [status.md](../status.md), then open its plan.
 For current behaviour, read the owning documents.
