@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { tempDir } from "../../test/helpers.ts";
@@ -48,5 +49,18 @@ describe("a failure of a CLI command that the owner can correct", () => {
     expect(run.stderr.trimEnd().split("\n"), run.stderr).toHaveLength(1);
     expect(run.stderr).toContain(path ?? "PORT");
     expect(run.stdout).toBe("");
+  });
+});
+
+// A failure of another kind keeps its stack trace, because it can be a defect: the command lets
+// it go up, and Node prints the trace. A seed file with wrong content is such a failure today.
+describe("a failure of a CLI command of another kind", () => {
+  it("keeps its stack trace", () => {
+    const file = join(dir.path, "bots.yaml");
+    writeFileSync(file, "bots: 1\n");
+    const run = cli(["bots", "seed", file]);
+    expect(run.error?.message ?? null, "the child could not run or hit the time limit").toBeNull();
+    expect(run.status).toBe(1);
+    expect(run.stderr).toContain("\n    at ");
   });
 });

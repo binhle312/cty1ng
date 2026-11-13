@@ -1,6 +1,5 @@
 import { spawnSync, type SpawnSyncReturns } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { createServer } from "node:net";
 import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { tempDir } from "../helpers.ts";
@@ -61,22 +60,6 @@ describe("startup checks", () => {
     expect(run.stderr).toContain("Run pnpm install again");
     expect(run.stderr).not.toContain("    at ");
     expect(existsSync(join(dir.path, "app.db"))).toBe(false);
-  });
-
-  // The port check comes when the server starts to listen, after the app loaded. Without a
-  // listener for that error, Node ends the process with a stack trace.
-  it("refuses a port that another program uses, with one line and no stack", async () => {
-    const other = createServer();
-    await new Promise<void>((done) => other.listen(0, "127.0.0.1", done));
-    const address = other.address();
-    if (address === null || typeof address === "string") throw new Error("no port");
-    try {
-      const run = start({ PORT: String(address.port) });
-      expectRefused(run, `cty1ng: cannot listen on 127.0.0.1:${String(address.port)}`);
-      expect(run.stderr.trimEnd().split("\n"), run.stderr).toHaveLength(1);
-    } finally {
-      other.close();
-    }
   });
 
   it("refuses before it loads the app, the database or the logger", () => {

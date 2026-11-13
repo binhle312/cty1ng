@@ -53,7 +53,7 @@ async function run(args: readonly string[]): Promise<number> {
       if (code !== null) return code;
     } catch (error) {
       const line = ownerError(error);
-      // Any other failure is a bug: it goes up, with its stack trace.
+      // Another failure goes up and keeps its stack trace, because it can be a defect.
       if (line === null) throw error;
       process.stderr.write(`${line}\n`);
       return 1;
