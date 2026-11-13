@@ -1,8 +1,12 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  closeSync,
+  constants,
+  fstatSync,
   lstatSync,
   mkdirSync,
+  openSync,
   readFileSync,
   readlinkSync,
   rmSync,
@@ -79,22 +83,46 @@ function take(at: { repo: string; copy: string; path: string }): {
 } {
   const from = join(at.repo, at.path);
   const to = join(at.copy, at.path);
-  const stat = lstatSync(from);
-  if (!stat.isSymbolicLink() && !stat.isFile()) {
+  const target = linkTarget(from);
+  const file = target === null ? plainFile(from) : null;
+  if (target === null && file === null) {
     throw new Error(`cannot make the copy: ${at.path} is no plain file and no link`);
   }
   mkdirSync(dirname(to), { recursive: true });
   // The old file goes. A folder can be in its place: then the checkout has deleted each file of
   // that folder, and the folder goes too.
   rmSync(to, { recursive: true, force: true });
-  if (stat.isSymbolicLink()) {
-    const target = readlinkSync(from);
-    symlinkSync(target, to);
-    return { type: "link", content: target };
+  if (file === null) {
+    symlinkSync(target ?? "", to);
+    return { type: "link", content: target ?? "" };
   }
-  const content = readFileSync(from);
-  const executable = (stat.mode & 0o100) !== 0;
   // The mode of a new file, less the umask of the process, as `tar` gives it to the other files.
-  writeFileSync(to, content, { mode: executable ? 0o777 : 0o666 });
-  return { type: executable ? "file with the execute bit" : "file", content };
+  writeFileSync(to, file.content, { mode: file.executable ? 0o777 : 0o666 });
+  return { type: file.executable ? "file with the execute bit" : "file", content: file.content };
+}
+
+// The target of a link, or null for a path that is no link. A path that is not there is an error.
+function linkTarget(path: string): string | null {
+  try {
+    return readlinkSync(path);
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "EINVAL") return null;
+    throw error;
+  }
+}
+
+// The content and the execute bit of a plain file, or null for a path that is no plain file.
+// One open file gives the type, the bit and the content: a check of the path and then a read of
+// the path can see two files if the path changes between them. `O_NOFOLLOW`: a link that came
+// into the place of the file is an error, not the content of another file. `O_NONBLOCK`: the
+// open of a pipe does not wait.
+function plainFile(path: string): { content: Buffer; executable: boolean } | null {
+  const file = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+  try {
+    const stat = fstatSync(file);
+    if (!stat.isFile()) return null;
+    return { content: readFileSync(file), executable: (stat.mode & 0o100) !== 0 };
+  } finally {
+    closeSync(file);
+  }
 }
