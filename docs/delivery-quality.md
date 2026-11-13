@@ -50,7 +50,7 @@ Reconcile the population when a milestone closes or another PR is assigned to it
 | M0 | #46, #48, #49, #50 | 6 lessons for #49; other PRs unmeasured | 1 itemized; total unknown | unknown | unknown | unknown |
 | M1 | #51, #52, #53, #54, #55 | 5 lessons for #54; other PRs unmeasured | 6 itemized; total unknown | unknown | unknown | unknown |
 | M2 | #20, #56, #57, #58, #59, #66 | 1 lesson for #57; 5 for #59; other PRs unmeasured | 27 itemized; total unknown | 8 known (7 `partial`, 1 `open`); 5 rows `unknown`; total unknown | 10 in the 22 rows that record it; 5 rows `unknown`; total unknown | 7 logged; total unknown |
-| Audit 2026-11-05 | #73, #78, #82, #84, #86, #91, #92, #96, #105, #111 (the PRs with ledger rows) | no lesson source; the ledger rows of these PRs | 168 itemized | 15 (all `open`) | 3 in the 142 rows that record it; 26 rows do not record it | 68 logged |
+| Audit 2026-11-05 | #73, #78, #82, #84, #86, #91, #92, #96, #105, #111 (the PRs with ledger rows) | no lesson source; the ledger rows of these PRs | 168 itemized | 15 (all `open`) | 3 in the 142 rows that record it; 26 rows do not record it | 69 logged |
 
 For a milestone total, count each issue ID assigned to that milestone once.
 Count review rounds by distinct PR and round ID.
@@ -61,7 +61,7 @@ fixed DQ-165. The audit PRs found
 178 issues (DQ-025 to DQ-202). 141 of them name the audit as the milestone that introduced them;
 the other 37 name M2 or `unknown`, and they are not in the Audit row.
 #105 added fifteen issues (DQ-207 to DQ-221) and three rounds on 2026-11-12; the row has them.
-#111 added thirteen issues (DQ-285 to DQ-294, DQ-345 to DQ-347) and three rounds on 2026-11-13. Eleven name the audit, and the row has them. DQ-292 and DQ-293 name `unknown`, so they are not in the Audit row. On 2026-11-14 #111 fixed DQ-345 and DQ-347, and added DQ-355 and one round (Codex).
+#111 added thirteen issues (DQ-285 to DQ-294, DQ-345 to DQ-347) and three rounds on 2026-11-13. Eleven name the audit, and the row has them. DQ-292 and DQ-293 name `unknown`, so they are not in the Audit row. On 2026-11-14 #111 fixed DQ-345 and DQ-347, and added DQ-355 and two rounds (Codex).
 On 2026-11-12 the owner dropped DQ-109, DQ-167, DQ-169 and DQ-170, and DQ-163, DQ-172 and DQ-173 are fixed (the body of #86); the row has this too. DQ-108, which the owner also dropped, is in the M2 row.
 
 **M2 close check (2026-11-04).** Population: all five baseline PRs are merged, and #66 is the sixth.
@@ -110,7 +110,7 @@ The historical snapshot column gives evidence for a specific review period.
 | [#96](https://github.com/binhle312/cty1ng/pull/96) | Audit 2026-11-05 / DQ-198, a closed dialog and the read of all data | Partial | 5 itemized (DQ-198 from #91, DQ-199 to DQ-202) | 1 (DQ-200) | 2 (DQ-198, DQ-200) | 2 independent reviews (`8953c0a`, `04cad60`) | — |
 | [#98](https://github.com/binhle312/cty1ng/pull/98) | No milestone / one home for each settings default | Partial | 4 itemized (DQ-203 to DQ-206) | 1 (DQ-206) | 0 | 3 reviews that the owner gave to the session (`7f791c5`, `44fa8cf`, `c5a8049`) | — |
 | [#105](https://github.com/binhle312/cty1ng/pull/105) | Audit 2026-11-05 / P3 PR 1, records only | Partial | 15 itemized (DQ-207 to DQ-221) | 3 (DQ-216, DQ-218, DQ-221) | 0 | 3 independent reviews (`5b8cb4e`, `78e1727`, `8f52a7c`) | — |
-| [#111](https://github.com/binhle312/cty1ng/pull/111) | Audit 2026-11-05 / P3 PR 8, a busy port and the CLI stack traces | Partial | 14 itemized (DQ-285 to DQ-294, DQ-345 to DQ-347, DQ-355) | 1 (DQ-292) | 2 (DQ-292, DQ-293) | 2 independent reviews (`c146f34`, `d6c9e67`), a review that the owner gave (`c146f34`) and 1 Codex round (`3a6388d`) | — |
+| [#111](https://github.com/binhle312/cty1ng/pull/111) | Audit 2026-11-05 / P3 PR 8, a busy port and the CLI stack traces | Partial | 14 itemized (DQ-285 to DQ-294, DQ-345 to DQ-347, DQ-355) | 1 (DQ-292) | 2 (DQ-292, DQ-293) | 2 independent reviews (`c146f34`, `d6c9e67`), a review that the owner gave (`c146f34`) and 2 Codex rounds (`3a6388d`, `dec8bbd`) | — |
 
 ## 4. Historical evidence snapshots
 
@@ -245,6 +245,7 @@ The rounds of merged PRs are in the [archive](delivery-quality-archive.md#review
 | [#111](https://github.com/binhle312/cty1ng/pull/111) / round 2, review of `d6c9e67` | 2026-11-13 | `c146f34` / `d6c9e67`, no local changes | Round 2, the fix commit only, with the narrow brief (owner, 2026-11-12) / independent reviewer agent, reported in the session | DQ-290, DQ-291 | none | DQ-286 to DQ-289 confirmed; DQ-285 confirmed in part (DQ-290) | none | Reviewer: no P1 or P2. The three test files pass. `pnpm check:breaks scripts/breaks/pr-111.json`: 0 problems. Three breaks of its own in a separate worktree, the red run on `ec41c39`, and a probe of `main.ts` on a busy port. Not run: the full gates, `check:index` |
 | [#111](https://github.com/binhle312/cty1ng/pull/111) / owner's review of `c146f34` | 2026-11-12 | Base not stated / `c146f34` | Standards and spec / review text that the owner gave; the session got it on 2026-11-13, after round 2 | DQ-294, DQ-345 to DQ-347 | none | none | none | Reviewer: no P1 or P2. No run reported. Builder's check of the three findings on `d6c9e67`, read only: a run of the CLI for DQ-347. The ids of #111 are in two parts: DQ-285 to DQ-294 and DQ-345 to DQ-347. DQ-292 and DQ-293 come from no round |
 | [#111](https://github.com/binhle312/cty1ng/pull/111) / Codex round 1, review of `3a6388d` | 2026-11-14 | `7d346f4` / `3a6388d`, no local changes | The whole diff, standards and spec / `codex exec` (owner's order of 2026-11-13, 23:09), report in `tmp/reviews/` of the main checkout | DQ-355 | none | DQ-285 to DQ-291, DQ-293, DQ-294, DQ-345 to DQ-347 confirmed | none | Reviewer: no P1 or P2. 3 test files, 20 tests pass; `pnpm check:breaks`: 0 problems; its own break of `one-line.ts` caught; a probe of `skills export`. Not run: the full gates. Unused ids: DQ-356 to DQ-361 |
+| [#111](https://github.com/binhle312/cty1ng/pull/111) / Codex round 2, review of `dec8bbd` | 2026-11-14 | `7d346f4` / `dec8bbd`, no local changes | The whole diff, standards and spec / `codex exec` (owner's order of 2026-11-13, 23:09), report in `tmp/reviews/` of the main checkout | none | none | DQ-285 to DQ-291, DQ-293, DQ-294, DQ-345 to DQ-347, DQ-355 confirmed | none | Reviewer: no finding; no P1 or P2. 4 test files, 28 tests pass; `pnpm check:breaks`: 0 problems; three breaks of its own caught; a probe of `skills export`. Not run: the full gates. The loop ends here. Unused ids: DQ-356 to DQ-361 |
 
 Use a local review artifact or an authorized PR comment as the source.
 If the head changes after review, the row still describes the original reviewed revision.
