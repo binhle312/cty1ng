@@ -379,21 +379,70 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
 ([check-breaks.ts](../scripts/check-breaks.ts)):
 
 1. It copies HEAD and the local changes to a temporary folder with its own install. The
-   checkout does not change, and e2e tests use the copy's own build and servers.
+   checkout does not change, and e2e tests use the copy's own build and servers. The copy is
+   `git archive HEAD`, and then each file that is not as in HEAD comes from the disk (`makeCopy`
+   in `scripts/lib/breaks-copy.ts`). The runner reads no patch text for this: a git setting of
+   the machine can change that text. git lists the files
+   (`git diff --name-status -z --no-renames --no-relative HEAD`). The copy removes each deleted
+   file. It takes each new file, each changed file and each link from the disk, with its
+   execute bit. A new file that git does not track and does not ignore also comes from the
+   disk, if it is a plain file. A status that is not `A`, `M`, `T` or `D` stops the run before
+   the copy: report it as a defect of the runner.
 2. It refuses a list with a missing link: a claim with no break, a test file or assertion text
    that is not there exactly once, an assertion outside the named test, or a break that edits a
    test or a test helper (a `test/` folder, `*.test.*`, `*.spec.*`) instead of the code.
 3. It refuses a list that misses a test of the PR: each test that the PR adds or changes since
    its base (`git merge-base HEAD origin/main`, or `--base`) needs a claim, or an entry in
    `exempt` with its reason. It also refuses an entry in `exempt` that names no test that the PR
-   adds or changes. It reads the tests of the PR from a `git diff` with fixed options (`diffArgs`
-   in `scripts/lib/breaks.ts`): a git setting of the machine can change the text of a diff, and
-   the options fix the settings that the tests of the runner name. It stops at a line of the diff
-   that it cannot read, also with `--only`. Known gap: a test file that git shows as binary (for
-   example by a `-diff` attribute) has no hunk, so it needs no claim and stops nothing. With
-   `--only`, the list runs in part, and the check for a missing test does not run. An `--only`
-   text that matches no claim id and no break id is a problem: the runner runs nothing and exits
-   with 1.
+   adds or changes. With `--only`, the list runs in part, and the check for a missing test does
+   not run. An `--only` text that matches no claim id and no break id is a problem: the runner
+   runs nothing and exits with 1. How the runner finds the tests of the PR (`testsOfPr` in
+   `scripts/lib/breaks.ts`; owner, 2026-11-13):
+   - **The files.** git lists the files that changed since the base
+     (`git diff --name-status -z --no-renames --no-relative <base>`). The runner reads no patch
+     text. A renamed file is a deleted file and a new file. A test file is a file with a name
+     such as `a.test.tsx` or `b.spec.ts`; the rules below apply only to such a file.
+   - **A new test file** (the status `A`, or a new file that git does not track): each test
+     needs a claim. So each test of a renamed test file needs one. A deleted test file needs
+     nothing.
+   - **A changed test file** (the status `M`): each test with a new key needs a claim. The key
+     of a test is its name, the first line of each `describe` group around it, and its text
+     from the first line of the test call to its last line. The runner compares the keys of
+     the old text (`git cat-file blob <base>:<path>`) with the keys of the new text (from the
+     copy). A test that moves inside its group with the same text needs no claim. A test that
+     moves into a group or out of it needs one. Each test of a group needs one when the first
+     line of the group changes: a new name, or `describe.skip` to `describe`. A line end of
+     Windows is no change.
+   - **The name of a test** is its first argument as written. A template gives its text with
+     `%s` in the place of each `${…}`. `%s` and the other marks of `it.each` match one or more
+     characters of the name that the test report gives. A name that is another expression,
+     such as a variable, is the text of that expression. It matches no name of a report, and
+     neither does a `$name` mark of `it.each`: such a test needs an `exempt` entry with the
+     name as written, or a plain name.
+   - **The stops.** They apply also with `--only`. The status `T` means that a test file became
+     a link, or that a link became a test file. Then keep the type that the file has in the
+     base, or give the changed file a new name: git then lists a deleted file and a new file,
+     and each test of the new file needs a claim. The runner also stops at another status that
+     is not `A`, `M` or `D`, and at a test file that it cannot read in its copy (or whose old
+     text it cannot read). Make the file a file that a program can read. If it is one, report
+     the stop as a defect of the runner.
+   - **A merge that is not complete.** For a file in conflict, git gives `M` or `A` here, not a
+     status of its own. The copy has the file with the marks of the conflict, and each test
+     with a new key counts.
+   - **Not claimed:** that no git setting changes the file list (`--no-renames` and
+     `--no-relative` fix the two settings that the probes of the plan found). That the key
+     holds each way to start or stop a test: it does not hold a condition on a later line of a
+     `describe` call, an `if` or a loop around a test, a skip that a `beforeEach` makes, the
+     config of the test runner, or a `describe.only` or `it.only` that goes out. That the
+     runner sees each form of a test call: it sees `it` and `test` with the modifiers `only`,
+     `skip`, `concurrent`, `fails`, `fixme`, `slow` and `each`, not another modifier (such as
+     `it.skipIf(…)`, `it.runIf(…)` or `test.for(…)`) and not a test function with another name.
+     That the runner finds each test of a file that does not parse. That the copy is correct
+     for a submodule, a sparse checkout, a clean filter (such as LFS) or an `export-ignore`
+     attribute. That the copy has a change that git does not list: a file with the bit
+     `assume-unchanged` or `skip-worktree`, or a change of the execute bit with
+     `core.fileMode=false`. That the copy is one moment of the checkout: a file that changes
+     during the copy is in the copy as it is at that time.
 4. Each test must pass with no break first.
 5. Each break runs alone. First, `tsc` must compile each project of the package of the broken
    file (an unused variable is allowed). The frontend has two: its `tsconfig.json` only points
@@ -407,7 +456,11 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
    `INVALID`: it comes from a throw while a page loads or renders, or from an import that does
    not resolve. Otherwise a failure at the line of the assertion text is `caught`.
 6. The report names the commit, a hash of the local changes, the base, each command and each
-   result, with the first line of the failure message of each caught break.
+   result, with the first line of the failure message of each caught break. The hash comes from
+   the files as the copy takes them: for each file that is not as in HEAD and each new file, in
+   the order of the paths, the status, the path, the type (a file, a file with the execute bit,
+   a link) and the content. The line says `none` when no file differs from HEAD and no new file
+   exists.
 
 **What `caught` proves (owner, 2026-11-09, DQ-168).** The compile check of the project passed,
 the run printed no new error that names the broken file, and the test failed at the assertion
