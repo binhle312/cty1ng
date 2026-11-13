@@ -28,7 +28,8 @@ The owner's order (2026-11-08, in the [audit file](audits/2026-11-05-repo-audit.
 
 1. Audit PR 6, six tabs: merged in [#91](https://github.com/binhle312/cty1ng/pull/91) on 2026-11-10. Its follow-up, [#96](https://github.com/binhle312/cty1ng/pull/96), merged on 2026-11-10.
 2. The P3 PRs: every P3 found so far, from one list with no duplicates, in small PRs by area. The M2 close rows of the [#60](https://github.com/binhle312/cty1ng/pull/60) review are on that list.
-   The owner approved the list and the order of its PRs on 2026-11-12 ([audit file](audits/2026-11-05-repo-audit.md), "Changed on 2026-11-08"). The first PR, records only, is [#105](https://github.com/binhle312/cty1ng/pull/105).
+   The owner approved the list and the order of its PRs on 2026-11-12 ([audit file](audits/2026-11-05-repo-audit.md), "Changed on 2026-11-08"). The first PR, records only, merged in [#105](https://github.com/binhle312/cty1ng/pull/105) on 2026-11-12.
+   The second PR, the update of `@tanstack/react-query` to 5.107.1, is [#106](https://github.com/binhle312/cty1ng/pull/106).
 3. One style-only PR for the 104 `max-params` places.
 4. The second audit, with the [audit workflow](workflows/audit.md).
 5. Prepare the [M3 part briefs and specification work](development-plan.md#specification-work-before-m3a).
@@ -92,7 +93,6 @@ A P3 that has a DQ id is not in this table. Its state lives only in its row of t
 | Frontend cleanup with the same texts and screens: `changesLine` has no caller; the list of skill tabs is written three times; two `plural` helpers; `bar-two.tsx` copies the style of `MenuItem`; two links use `?tab=profile`; about 50 exports have no user outside their file | Repository review of 2026-11-10 ([#94](https://github.com/binhle312/cty1ng/pull/94)) | The P3 PRs before M3 (owner, 2026-11-08) |
 | Specification gap: nothing limits the text that tools add during one run. The history budget (D32) is checked one time, when the prompt is built; a large `read_file` result or many tool results can then fill the window, and the retry with half the budget cuts only the history. Decide a size limit for one tool result and a token count during the run (both settings). From reading `conversation-rules.md` §4 and §9; no code exists yet | Owner's question, 2026-11-11 (with [D66](decisions/D66-each-bot-compacts-its-old-history.md)) | Specification work before M3a |
 | A script in `scripts/` that moves the closed ledger rows to the archive and can run again, with a test. The script of #99 is only in its PR description, and it runs one time | Review of [#99](https://github.com/binhle312/cty1ng/pull/99) (owner, 2026-11-11) | Its own PR, before the next move of ledger rows |
-| `@tanstack/react-query` stays at 5.105.0 (owner, 2026-11-09). With 5.105.3 and with 5.107.1, two tests fail: "leaves no listener on the cache after it ends" (`frontend/src/lib/api/query-reads.test.ts`) and "shows the new skill, not Page not found" (`frontend/src/features/skills/skill-page.test.tsx`); run on `ec41c39`, 2026-11-12. Each weekly Dependabot group PR has this update. The update needs the owner's decision on the Create rule of `frontend-conventions.md` §5 | [#81](https://github.com/binhle312/cty1ng/pull/81) | The P3 PRs before M3, the second PR (owner, 2026-11-12) |
 
 ## Slices
 
@@ -186,3 +186,4 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-11 | Skill `arena`: two more rules for the brief of each candidate. [#100](https://github.com/binhle312/cty1ng/pull/100) |
 | 2026-11-11 | A claim fits its proof: three rule changes after an arena. [#101](https://github.com/binhle312/cty1ng/pull/101) |
 | 2026-11-11 | D66 accepted, merged on 2026-11-11: each bot compacts its old history into a summary. [#102](https://github.com/binhle312/cty1ng/pull/102) |
+| 2026-11-12 | [#105](https://github.com/binhle312/cty1ng/pull/105) merged. |
