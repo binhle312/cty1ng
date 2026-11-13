@@ -28,7 +28,7 @@ Harm is small and recoverable when all of these are true:
 At each milestone close, before the next milestone starts, each open P3 (ledger rows and follow-ups) is fixed, or the owner drops it (owner, 2026-11-10).
 
 If the builder and the reviewer disagree about a severity, ask the owner.
-This bar does not change `AGENTS.md` §7, §8 or §9.
+This bar does not change `AGENTS.md` §7, §8 or §9, but step 5 of the section below has an owner's exception with limits for §9 in round 2 (owner, 2026-11-12).
 
 ## When the review of a P3 PR ends
 
@@ -42,8 +42,19 @@ The reason: each review round of #105 found new P3 points, and some came from th
 round before it ([round log](../delivery-quality.md#6-review-round-log)).
 
 A round is a review round as the [ledger](../delivery-quality.md#1-counting-rules) counts it, by
-an independent reviewer. New work is each change that is not a fix of a finding of round 1 and not
-a record of the reviews of the PR itself.
+an independent reviewer.
+
+After round 1, a PR takes only these changes:
+
+- A fix of a finding of round 1.
+- The records that the definition of done (`AGENTS.md` §9) and the records check
+  ([pull-request.md, "Before each push"](pull-request.md#before-each-push-check-the-records)) ask
+  for: the rows of this PR in the ledger and in `docs/status.md`, and the state of other PRs
+  ([step 6](pull-request.md#before-each-push-check-the-records)).
+- A merge of `main`, with its conflicts solved and no other change.
+
+Limits: a merge record has only the state, the date and the link of the PR. The record of an
+owner answer is new work and goes into the next PR.
 
 1. Round 1 is a full review. The builder fixes its findings in the PR.
 2. No new work enters the PR after round 1. The record of an owner's answer that comes during a
@@ -55,8 +66,8 @@ a record of the reviews of the PR itself.
 5. A P3 that round 2 or a later check finds gets a row in the ledger of
    `docs/delivery-quality.md`, and the PR does not fix it.
 
-   Exception (owner, 2026-11-12): a P3 of round 2 that is a claim bigger than its proof gets the
-   answer of `AGENTS.md` §9, inside these limits:
+   Exception (owner, 2026-11-12 and 2026-11-13): a P3 of round 2 that is a claim bigger than its
+   proof gets the answer of `AGENTS.md` §9, inside these limits:
 
    - The builder changes only the places that round 2 found. A wider search waits for the
      cleanup PR.
@@ -64,12 +75,23 @@ a record of the reviews of the PR itself.
      human review". No new fact, no new rule, and no change of code or tests.
    - If the correction needs more, the finding gets a ledger row, as each other P3 of round 2.
 
-   Such a correction is not new work (step 2), and step 4 allows it.
+   Steps 2 and 4 do not stop such a correction.
+
+   Each round 2 correction gets its own issue row with the state `fixed`. The cell "Fix and
+   verification" starts with the fixed words "Round 2 correction:".
 
    Measure: at the cleanup PR, count the corrections of round 2 that a later read found wrong.
-   If the count is one or more, the exception ends, and each P3 of round 2 gets a ledger row.
+
+   - The brief of round 1 of the cleanup PR lists each row that starts with "Round 2
+     correction:". The report gives one result for each id: correct or wrong.
+   - For each correction the reviewer asks one question: does the proof in the row cover the
+     words of the sentence now? No search for other points in that text.
+   - A later finding about a wrong correction writes "fix-induced: yes (the round 2 correction
+     DQ-x)" in its last cell. The measure counts these rows.
+
+   If the count is one or more, the exception does not apply to round 2 of the cleanup PR.
 6. One cleanup PR fixes those rows before the audit that "Next" of `docs/status.md` names. The
-   cleanup PR obeys the same rule: what its round 2 finds goes to that audit.
+   cleanup PR obeys the same rule.
 
 ## Pattern rules
 

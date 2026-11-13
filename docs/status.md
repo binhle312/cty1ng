@@ -28,7 +28,7 @@ The owner's order (2026-11-08, in the [audit file](audits/2026-11-05-repo-audit.
 
 1. Audit PR 6, six tabs: merged in [#91](https://github.com/binhle312/cty1ng/pull/91) on 2026-11-10. Its follow-up, [#96](https://github.com/binhle312/cty1ng/pull/96), merged on 2026-11-10.
 2. The P3 PRs: every P3 found so far, from one list with no duplicates, in small PRs by area. The M2 close rows of the [#60](https://github.com/binhle312/cty1ng/pull/60) review are on that list.
-   The owner approved the list and the order of its PRs on 2026-11-12 ([audit file](audits/2026-11-05-repo-audit.md), "Changed on 2026-11-08"). The first PR, records only, merged in [#105](https://github.com/binhle312/cty1ng/pull/105) on 2026-11-12. A P3 PR gets two review rounds, and one cleanup PR comes at the end of these PRs, before item 4 ([merge bar](workflows/merge-bar.md#when-the-review-of-a-p3-pr-ends); owner, 2026-11-12, [#109](https://github.com/binhle312/cty1ng/pull/109)).
+   The owner approved the list and the order of its PRs on 2026-11-12 ([audit file](audits/2026-11-05-repo-audit.md), "Changed on 2026-11-08"). The first PR, records only, merged in [#105](https://github.com/binhle312/cty1ng/pull/105) on 2026-11-12. A P3 PR gets two review rounds, and one cleanup PR comes at the end of these PRs, before item 4 ([merge bar](workflows/merge-bar.md#when-the-review-of-a-p3-pr-ends); owner, 2026-11-12, [#109](https://github.com/binhle312/cty1ng/pull/109) and [#112](https://github.com/binhle312/cty1ng/pull/112)).
 3. One style-only PR for the 104 `max-params` places.
 4. The second audit, with the [audit workflow](workflows/audit.md).
 5. Prepare the [M3 part briefs and specification work](development-plan.md#specification-work-before-m3a).
