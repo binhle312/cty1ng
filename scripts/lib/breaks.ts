@@ -49,34 +49,74 @@ export interface TestCall {
 const TEST_FUNCTIONS = new Set(["it", "test"]);
 const MODIFIERS = new Set(["only", "skip", "concurrent", "fails", "fixme", "slow", "each"]);
 
+// A test call with the first line of each `describe` group around it.
+interface GroupedCall extends TestCall {
+  groups: string[];
+}
+
+function isTestFunction(node: ts.Expression): boolean {
+  if (ts.isIdentifier(node)) return TEST_FUNCTIONS.has(node.text);
+  if (ts.isPropertyAccessExpression(node))
+    return MODIFIERS.has(node.name.text) && isTestFunction(node.expression);
+  if (ts.isCallExpression(node)) return isTestFunction(node.expression);
+  return false;
+}
+
+// Whether a call starts a group: `describe(...)`, `describe.skip(...)`, `describe.each(rows)(...)`
+// and `test.describe(...)` of Playwright.
+function isDescribe(node: ts.Expression): boolean {
+  if (ts.isIdentifier(node)) return node.text === "describe";
+  if (ts.isPropertyAccessExpression(node))
+    return node.name.text === "describe" || isDescribe(node.expression);
+  if (ts.isCallExpression(node)) return isDescribe(node.expression);
+  if (ts.isTaggedTemplateExpression(node)) return isDescribe(node.tag);
+  return false;
+}
+
+function groupedCalls(text: string, path: string): GroupedCall[] {
+  const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true);
+  const rows = text.split("\n");
+  const line = (position: number) => source.getLineAndCharacterOfPosition(position).line + 1;
+  const calls: GroupedCall[] = [];
+  const visit = (node: ts.Node, groups: string[]) => {
+    let inside = groups;
+    if (ts.isCallExpression(node)) {
+      const start = line(node.getStart(source));
+      // The line as written, with its spaces.
+      if (isDescribe(node.expression)) inside = [...groups, rows[start - 1] ?? ""];
+      else if (isTestFunction(node.expression)) {
+        const [first] = node.arguments;
+        if (first !== undefined && ts.isStringLiteralLike(first)) {
+          calls.push({ name: first.text, start, end: line(node.getEnd()), groups });
+        }
+      }
+    }
+    ts.forEachChild(node, (child) => {
+      visit(child, inside);
+    });
+  };
+  visit(source, []);
+  return calls;
+}
+
 // The test calls of a Vitest or Playwright file: `it(...)`, `test(...)`, `it.each(rows)(...)`
 // and the modifiers such as `test.skip(...)`. A `describe` is not a test.
 export function testCalls(text: string, path: string): TestCall[] {
-  const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true);
-  const line = (position: number) => source.getLineAndCharacterOfPosition(position).line + 1;
-  const isTestFunction = (node: ts.Expression): boolean => {
-    if (ts.isIdentifier(node)) return TEST_FUNCTIONS.has(node.text);
-    if (ts.isPropertyAccessExpression(node))
-      return MODIFIERS.has(node.name.text) && isTestFunction(node.expression);
-    if (ts.isCallExpression(node)) return isTestFunction(node.expression);
-    return false;
-  };
-  const calls: TestCall[] = [];
-  const visit = (node: ts.Node) => {
-    if (ts.isCallExpression(node) && isTestFunction(node.expression)) {
-      const [first] = node.arguments;
-      if (first !== undefined && ts.isStringLiteralLike(first)) {
-        calls.push({
-          name: first.text,
-          start: line(node.getStart(source)),
-          end: line(node.getEnd()),
-        });
-      }
-    }
-    ts.forEachChild(node, visit);
-  };
-  visit(source);
-  return calls;
+  return groupedCalls(text, path).map(({ name, start, end }) => ({ name, start, end }));
+}
+
+// The key of each test of a file: its name, the first line of each `describe` group around it,
+// and its text, from the first line of the test call to its last line. A test with a key that
+// the old text does not have is a new or changed test. The groups are in the key because a group
+// decides if its tests run: a test that moves out of a `describe.skip` group starts to run with
+// no change of its text. A line end of Windows is no change.
+function testKeys(text: string, path: string): { call: TestCall; key: string }[] {
+  const unix = text.replace(/\r\n/g, "\n");
+  const rows = unix.split("\n");
+  return groupedCalls(unix, path).map(({ groups, ...call }) => ({
+    call,
+    key: JSON.stringify([call.name, groups, rows.slice(call.start - 1, call.end).join("\n")]),
+  }));
 }
 
 // Whether a test name as the report gives it comes from a name as written: `it.each` fills
@@ -87,82 +127,37 @@ export function nameMatches(written: string, reported: string): boolean {
   return new RegExp(`^${pattern}$`).test(reported);
 }
 
-// The arguments of the `git diff` whose text `changedLines` reads. Each option is fixed against a
-// git setting that changes the text (DQ-161): the prefixes, colours, an external diff tool, a
-// text filter, quoted names, copies, lines around a hunk, and the form of a submodule line.
-export function diffArgs(base: string): string[] {
-  return [
-    "-c",
-    "core.quotePath=false",
-    "diff",
-    "--unified=0",
-    "--inter-hunk-context=0",
-    "--no-color",
-    "--no-ext-diff",
-    "--no-textconv",
-    // Renames as git finds them with no setting, and no copies: a copy has no hunk.
-    "--find-renames",
-    "--diff-algorithm=myers",
-    "--submodule=short",
-    "--src-prefix=a/",
-    "--dst-prefix=b/",
-    base,
-  ];
+// The arguments of the `git diff` that lists the files that changed since `base`: one status
+// letter and one name for each file, each with a NUL after it, so that git quotes no name. The
+// runner reads no patch text: that text is for people, and git settings change it (DQ-161).
+// `--no-renames`: a renamed file is a deleted file and a new file, so each test of the new file
+// counts (DQ-262). `--no-relative`: with `diff.relative`, git lists only the files of the folder
+// where it starts.
+export function fileListArgs(base: string): string[] {
+  return ["diff", "--name-status", "-z", "--no-renames", "--no-relative", base];
 }
 
-// The environment of that `git diff`: `GIT_DIFF_OPTS` wins over `--unified=0`.
-export function diffEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-  const rest = { ...env };
-  Reflect.deleteProperty(rest, "GIT_DIFF_OPTS");
-  return rest;
+// A file of that list, with the status letter that git gives it.
+export interface ListedFile {
+  status: string;
+  path: string;
 }
 
-// The lines that git prints for one file before its first hunk.
-const FILE_HEAD =
-  /^(?:diff --git |index |--- |old mode |new mode |new file mode |deleted file mode |similarity index |dissimilarity index |rename from |rename to |Binary files |GIT binary patch$)/;
-
-// The changed lines of each file in a `git diff --unified=0` text, on the new side. A hunk that
-// only removes lines marks the line where they were. A hunk says how many lines follow it, so a
-// changed line that starts with `+++` or `---` is not read as a file line. A line that is no
-// known line of a diff stops the read with an error: a file that this function does not see needs
-// no claim, and the list would look complete (DQ-161). One known gap: a file that git shows as
-// binary (`Binary files … differ`) has no hunk, so it gets no changed line and no error.
-export function changedLines(diff: string): Map<string, Set<number>> {
-  const files = new Map<string, Set<number>>();
-  let current: Set<number> | undefined;
-  // The lines of the hunk that are still to come.
-  let body = 0;
-  for (const row of diff.split("\n")) {
-    if (body > 0 && (row.startsWith("+") || row.startsWith("-"))) {
-      body -= 1;
-      continue;
-    }
-    if (row.startsWith("\\") || row === "") continue;
-    body = 0;
-    const hunk = /^@@ -\d+(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/.exec(row);
-    if (hunk !== null) {
-      const removed = hunk[1] === undefined ? 1 : Number(hunk[1]);
-      const start = Number(hunk[2]);
-      const count = hunk[3] === undefined ? 1 : Number(hunk[3]);
-      body = removed + count;
-      if (current === undefined) continue;
-      if (count === 0) current.add(Math.max(start, 1));
-      for (let at = start; at < start + count; at += 1) current.add(at);
-      continue;
-    }
-    if (row === "+++ /dev/null") {
-      current = undefined;
-      continue;
-    }
-    // git puts a tab after a name that has a space.
-    const file = /^\+\+\+ b\/(.+?)\t?$/.exec(row);
-    if (file?.[1] !== undefined) {
-      current = new Set();
-      files.set(file[1], current);
-      continue;
-    }
-    if (FILE_HEAD.test(row)) continue;
-    throw new Error(`cannot read this line of the diff: ${JSON.stringify(row)}`);
+// The files of the text of that command. A text that is no list of pairs stops the read with an
+// error: a part that the reader drops is a file that needs no claim.
+export function fileList(text: string): ListedFile[] {
+  const parts = text.split("\0");
+  const files: ListedFile[] = [];
+  // The text ends with a NUL, so the last part is empty.
+  let known = parts.pop() === "" && parts.length % 2 === 0;
+  for (let at = 0; known && at < parts.length; at += 2) {
+    const status = parts[at] ?? "";
+    const path = parts[at + 1] ?? "";
+    known = /^[A-Z]$/.test(status) && path !== "";
+    files.push({ status, path });
+  }
+  if (!known) {
+    throw new Error(`cannot read the file list of git: ${JSON.stringify(text.slice(0, 200))}`);
   }
   return files;
 }
@@ -233,27 +228,76 @@ export function isTestFile(path: string): boolean {
   return /(?:^|\/)test\//.test(path) || TEST_NAME.test(path);
 }
 
-// The tests of the PR, by file: each test of a new file, and the tests on the changed lines of a
-// changed file. `git` runs a git command in the checkout and gives its output; `read` gives a
-// file of the tested copy, or null. `problems` are the reasons to stop the run.
+// The tests of the new text `now` of a test file whose key the old text `before` does not have.
+// Two tests with one key: each old test stands for one new test only.
+export function changedTests(at: { before: string; now: string; path: string }): TestCall[] {
+  const old = testKeys(at.before, at.path).map((test) => test.key);
+  return testKeys(at.now, at.path)
+    .filter((test) => {
+      const same = old.indexOf(test.key);
+      if (same === -1) return true;
+      old.splice(same, 1);
+      return false;
+    })
+    .map((test) => test.call);
+}
+
+// The tests of the PR, by file, and the reasons to stop the run (testing.md §5, step 3). git
+// says which files changed since `base`. Each test of a new test file counts, and each test of
+// a changed test file whose key is new. `git` runs a git command in the checkout and gives its
+// output; `read` gives a file of the tested copy, or null; `newFiles` are the new files that git
+// does not track.
 export function testsOfPr(at: {
   base: string;
   newFiles: readonly string[];
   git: (args: string[]) => string;
   read: (path: string) => string | null;
 }): { tests: Map<string, TestCall[]>; problems: string[] } {
-  const changed = changedLines(at.git(diffArgs(at.base)));
   const tests = new Map<string, TestCall[]>();
-  for (const file of [...changed.keys(), ...at.newFiles].filter((path) => TEST_NAME.test(path))) {
-    const text = at.read(file);
-    if (text === null) continue;
-    const lines = changed.get(file);
-    const calls = testCalls(text, file).filter(
-      (call) => lines === undefined || [...lines].some((n) => call.start <= n && n <= call.end),
-    );
-    tests.set(file, calls);
+  const problems: string[] = [];
+  const unread = (path: string) =>
+    `${path}: the runner cannot read this test file in its copy. Make it a file that a program can read. If it is one, report this as a defect of the runner`;
+  const whole = (path: string) => {
+    const text = at.read(path);
+    if (text === null) problems.push(unread(path));
+    else tests.set(path, testCalls(text, path));
+  };
+  for (const { status, path } of fileList(at.git(fileListArgs(at.base)))) {
+    if (!TEST_NAME.test(path) || status === "D") continue;
+    if (status === "A") whole(path);
+    else if (status === "M") {
+      const now = at.read(path);
+      const before = now === null ? null : oldText(at, path);
+      if (now === null) problems.push(unread(path));
+      else if (before === null) {
+        problems.push(
+          `${path}: the runner cannot read the old text of this test file (git cat-file blob ${at.base}:${path}). Report this as a defect of the runner`,
+        );
+      } else tests.set(path, changedTests({ before, now, path }));
+    } else if (status === "T") {
+      problems.push(
+        `${path}: git gives the status "T": the file changed its type (a file became a link, or a link became a file). Keep the type that the file has in the base, or give the changed file a new name`,
+      );
+    } else {
+      problems.push(
+        `${path}: git gives the status "${status}", which the runner does not know. Report this as a defect of the runner`,
+      );
+    }
   }
-  return { tests, problems: [] };
+  for (const path of at.newFiles) if (TEST_NAME.test(path)) whole(path);
+  return { tests, problems };
+}
+
+// The text of a file at `base`, as git stores it, or null.
+function oldText(
+  at: { base: string; git: (args: string[]) => string },
+  path: string,
+): string | null {
+  try {
+    return at.git(["cat-file", "blob", `${at.base}:${path}`]);
+  } catch {
+    return null;
+  }
 }
 
 // Text for one cell of a Markdown table: `\` first, then `|`, so that no text closes the cell.
@@ -262,8 +306,8 @@ export function cell(text: string): string {
 }
 
 // Each test that the PR adds or changes and that no claim and no exemption names
-// (testing.md §5: the list has every test of the PR). `changed` holds the test calls whose
-// lines the PR touched, by file.
+// (testing.md §5: the list has every test of the PR). `changed` holds the tests of the PR, by
+// file (`testsOfPr`).
 export function coverageProblems(
   list: BreakList,
   changed: ReadonlyMap<string, readonly TestCall[]>,

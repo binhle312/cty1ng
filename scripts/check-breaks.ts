@@ -11,7 +11,6 @@ import {
   BreakList,
   type Claim,
   claimsFor,
-  diffEnv,
   lineOf,
   listProblems,
   newErrorLines,
@@ -84,12 +83,7 @@ const claims = claimsFor(list, only).claims;
 const pr = testsOfPr({
   base,
   newFiles,
-  git: (gitArgs) =>
-    execFileSync("git", gitArgs, {
-      encoding: "utf8",
-      maxBuffer: 2 ** 30,
-      env: diffEnv(process.env),
-    }),
+  git: (gitArgs) => git(...gitArgs),
   read,
 });
 const problems = listProblems({ list, only, pr, read });
