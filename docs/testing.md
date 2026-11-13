@@ -476,8 +476,9 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
      - `it(title)`, with an expression as its only argument (Vitest reads it as a todo, and
        it runs nothing);
      - a test in a file with another name than `*.test.*` or `*.spec.*`, and a test that a
-       function of such a file makes for a test file. The three contract suites in
-       `backend/test/contracts/` (`*.contract.ts`) have 27 such tests.
+       function of such a file makes for a test file. Four files of the repository have
+       such tests: the three contract suites in `backend/test/contracts/` (`*.contract.ts`,
+       27 tests) and the fixture `scripts/fixtures/e2e-fresh-run/write.pw.ts` (1 test).
 
      The 118 test files of the repository have none of the first four forms (a parse of
      2026-11-14, in the description of #107).

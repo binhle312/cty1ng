@@ -269,8 +269,9 @@ revision 5 show that this is not so (part 12, point 2).
   - `it(title)`, with an expression as its only argument (Vitest reads it as a todo, and it
     runs nothing);
   - a test in a file with another name than `*.test.*` or `*.spec.*` (the name rule above),
-    and a test that a function of such a file makes for a test file. The three contract
-    suites in `backend/test/contracts/` have 27 such tests.
+    and a test that a function of such a file makes for a test file. Four files of this
+    repository have such tests: the three contract suites in `backend/test/contracts/`
+    (27 tests) and the fixture `scripts/fixtures/e2e-fresh-run/write.pw.ts` (1 test).
 
   The 118 test files of this repository have none of the first four forms (a parse of
   2026-11-14).
