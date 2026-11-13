@@ -55,6 +55,26 @@
       "file": "backend/src/app/main.test.ts",
       "name": "prints one line on stderr and no stack trace",
       "reason": "The claim of its name was written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/app/cli.test.ts",
+      "name": "$name: prints one line, with the line break escaped",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/app/main.test.ts",
+      "name": "prints one line, with the line break escaped",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/app/one-line.test.ts",
+      "name": "writes $name as its escaped form",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/app/one-line.test.ts",
+      "name": "keeps a text with no control character as it is",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
     }
   ]
 }

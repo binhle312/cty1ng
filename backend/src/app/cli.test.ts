@@ -52,6 +52,50 @@ describe("a failure of a CLI command that the owner can correct", () => {
   });
 });
 
+// A setting or a path can hold a line break. The line still is one line: each control
+// character is printed in its escaped form (one-line.ts). The same holds for `db migrate` and
+// `ids decode`, which print their own failure line.
+const UUID = "0190c8a0-0000-7000-8000-000000000000";
+describe("a line break in a failure line of a CLI command", () => {
+  it.each([
+    {
+      name: "skills import, a path",
+      args: ["skills", "import"],
+      path: "no\nfolder",
+      part: "no\\nfolder'",
+    },
+    {
+      name: "bots trash, HOST",
+      args: ["bots", "trash"],
+      env: { HOST: "127.0.0.1\nevil" },
+      part: "HOST=127.0.0.1\\nevil is not a loopback address",
+    },
+    {
+      name: "skills trash, ALLOWED_ORIGINS",
+      args: ["skills", "trash"],
+      env: { ALLOWED_ORIGINS: "http://a\nb" },
+      part: "ALLOWED_ORIGINS: http://a\\nb is not an origin",
+    },
+    {
+      name: "db migrate, HOST",
+      args: ["db", "migrate"],
+      env: { HOST: "127.0.0.1\nevil" },
+      part: "Migration failed: HOST=127.0.0.1\\nevil is not a loopback address",
+    },
+    {
+      name: "ids decode, a prefix",
+      args: ["ids", "decode", UUID, "bo\nt"],
+      part: 'Invalid prefix "bo\\nt"',
+    },
+  ])("$name: prints one line, with the line break escaped", ({ args, path, env, part }) => {
+    const run = cli(path === undefined ? args : [...args, join(dir.path, path)], env);
+    expect(run.error?.message ?? null, "the child could not run or hit the time limit").toBeNull();
+    expect(run.status).toBe(1);
+    expect(run.stderr.trimEnd().split("\n"), run.stderr).toHaveLength(1);
+    expect(run.stderr).toContain(part);
+  });
+});
+
 // A failure of another kind keeps its stack trace, because it can be a defect: the command lets
 // it go up, and Node prints the trace. A seed file with wrong content is such a failure today.
 describe("a failure of a CLI command of another kind", () => {

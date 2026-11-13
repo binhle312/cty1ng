@@ -28,9 +28,9 @@ afterEach(() => {
   dir.remove();
 });
 
-function start() {
+function start(env: NodeJS.ProcessEnv = {}) {
   return spawnSync(process.execPath, [MAIN], {
-    env: { PATH: process.env.PATH, DATA_DIR: dir.path, PORT: String(port) },
+    env: { PATH: process.env.PATH, DATA_DIR: dir.path, PORT: String(port), ...env },
     encoding: "utf8",
     timeout: CHILD_LIMIT_MS,
   });
@@ -50,5 +50,17 @@ describe("a start on a port that another program uses", () => {
     const run = start();
     expect(run.error?.message ?? null, "the child could not run or hit the time limit").toBeNull();
     expect(readdirSync(dir.path).filter((name) => name.startsWith("app.db"))).toEqual(["app.db"]);
+  });
+});
+
+// A bad setting stops the start before the port check. A line break in it stays on one line:
+// the start prints the control character in its escaped form (one-line.ts).
+describe("a start with a line break in a setting", () => {
+  it("prints one line, with the line break escaped", () => {
+    const run = start({ HOST: "127.0.0.1\nevil" });
+    expect(run.error?.message ?? null, "the child could not run or hit the time limit").toBeNull();
+    expect(run.status).toBe(1);
+    expect(run.stderr.trimEnd().split("\n"), run.stderr).toHaveLength(1);
+    expect(run.stderr).toContain("cty1ng: HOST=127.0.0.1\\nevil is not a loopback address");
   });
 });

@@ -1,5 +1,6 @@
 import { typeIdToUuid, uuidToTypeId } from "../adapters/ids/typeid-ids.ts";
 import { ConfigError, loadConfig } from "./config.ts";
+import { oneLine } from "./one-line.ts";
 
 // Small owner commands (architecture.md §4): `pnpm --filter backend cli <command>`.
 const USAGE = `Usage:
@@ -26,7 +27,7 @@ async function run(args: readonly string[]): Promise<number> {
       );
       return 0;
     } catch (error) {
-      process.stderr.write(`${error instanceof Error ? error.message : "Not an id"}\n`);
+      process.stderr.write(`${oneLine(error instanceof Error ? error.message : "Not an id")}\n`);
       return 1;
     }
   }
@@ -40,7 +41,7 @@ async function run(args: readonly string[]): Promise<number> {
       return 0;
     } catch (error) {
       process.stderr.write(
-        `Migration failed: ${error instanceof ConfigError || error instanceof Error ? error.message : "unknown error"}\n`,
+        `${oneLine(`Migration failed: ${error instanceof ConfigError || error instanceof Error ? error.message : "unknown error"}`)}\n`,
       );
       return 1;
     }
@@ -55,7 +56,7 @@ async function run(args: readonly string[]): Promise<number> {
       const line = ownerError(error);
       // Another failure goes up and keeps its stack trace, because it can be a defect.
       if (line === null) throw error;
-      process.stderr.write(`${line}\n`);
+      process.stderr.write(`${oneLine(line)}\n`);
       return 1;
     }
   }

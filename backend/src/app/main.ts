@@ -1,4 +1,5 @@
 import { ConfigError, loadConfig } from "./config.ts";
+import { oneLine } from "./one-line.ts";
 
 // Starts the backend: configuration first, then migrations, then the server and the timed jobs.
 // Any failure before listening stops the process with a clear message and a non-zero exit (M0b
@@ -13,7 +14,7 @@ async function start(): Promise<void> {
     config = loadConfig(process.env);
   } catch (error) {
     if (!(error instanceof ConfigError)) throw error;
-    process.stderr.write(`cty1ng: ${error.message}\n`);
+    process.stderr.write(`cty1ng: ${oneLine(error.message)}\n`);
     process.exit(1);
   }
 
