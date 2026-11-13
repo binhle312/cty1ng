@@ -420,7 +420,9 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
      needs an `exempt` entry with that text as its name, or a plain name. A `$name` mark of
      `it.each` matches no name of a report, so such a test needs an `exempt` entry too.
    - **What a claim covers.** A claim stands for one test: the test of its file whose name
-     matches the name of the claim and that has the assertion text of the claim. The name alone
+     matches the name of the claim and that has the assertion text of the claim. The test that
+     has the assertion is the innermost test call around its exact place, by line and column:
+     two test calls can be on one line. The name alone
      does not say which test a claim runs: two tests can have one name, and the `%s` of an
      `it.each` name matches the name of another test. An `exempt` entry has a name and no
      assertion: it stands for each test of its file with that name as written.

@@ -282,7 +282,7 @@ describe("the tests of a PR", () => {
   ].join("\n");
 
   it("finds each test call with its lines, and no describe", () => {
-    expect(testCalls(FILE, "x.test.ts")).toEqual([
+    expect(testCalls(FILE, "x.test.ts")).toMatchObject([
       { name: "one", nameKind: "text", start: 2, end: 4 },
       { name: "row %s", nameKind: "text", start: 5, end: 7 },
       { name: "later", nameKind: "text", start: 8, end: 8 },
@@ -653,7 +653,7 @@ describe("which tests count", () => {
     const folder = committed();
     folder.write(S, edited({ from: "expect(11).toBe(11);", to: "expect(12).toBe(12);" }));
     const line = BASE.slice(0, BASE.indexOf("expect(11)")).split("\n").length - 1;
-    expect(prOf(folder).tests.get(S)).toEqual([
+    expect(prOf(folder).tests.get(S)).toMatchObject([
       { name: "one", nameKind: "text", start: line, end: line + 2 },
     ]);
   });
@@ -978,7 +978,19 @@ describe("the stops", () => {
 
   it("names a stop also with --only, and no missing test", () => {
     const tests = new Map([
-      [TEST, [{ name: "other", nameKind: "text" as const, start: 9, end: 9 }]],
+      [
+        TEST,
+        [
+          {
+            name: "other",
+            nameKind: "text" as const,
+            start: 9,
+            end: 9,
+            startColumn: 0,
+            endColumn: 9,
+          },
+        ],
+      ],
     ]);
     const pr = { tests, problems: ["a.test.ts: a stop"] };
     expect(listProblems({ list: list(), only: "C1", pr, read })).toEqual(["a.test.ts: a stop"]);
@@ -1076,21 +1088,21 @@ describe("git settings", () => {
 describe("the name of a test", () => {
   it("finds a test with ${…} in its name, with %s in the place of each", () => {
     const text = "test(`opens ${path} directly, ${String(n)} times`, async () => {\n});\n";
-    expect(testCalls(text, "e.spec.ts")).toEqual([
+    expect(testCalls(text, "e.spec.ts")).toMatchObject([
       { name: "opens %s directly, %s times", nameKind: "text", start: 1, end: 2 },
     ]);
   });
 
   it("finds a test with a variable as its name, by the text of the argument", () => {
     const text = "for (const row of rows) {\n  it(row.name, () => {\n    row.check();\n  });\n}\n";
-    expect(testCalls(text, "x.test.ts")).toEqual([
+    expect(testCalls(text, "x.test.ts")).toMatchObject([
       { name: "row.name", nameKind: "expression", start: 2, end: 4 },
     ]);
   });
 
   it("finds a test of it.each with a template table", () => {
     const text = 'it.each`\n  a    | b\n  ${1} | ${2}\n`("adds $a and $b", ({ a, b }) => {\n});\n';
-    expect(testCalls(text, "x.test.ts")).toEqual([
+    expect(testCalls(text, "x.test.ts")).toMatchObject([
       { name: "adds $a and $b", nameKind: "text", start: 1, end: 5 },
     ]);
   });
@@ -1103,7 +1115,7 @@ describe("the name of a test", () => {
       "});",
       "",
     ].join("\n");
-    expect(testCalls(text, "e.spec.ts")).toEqual([
+    expect(testCalls(text, "e.spec.ts")).toMatchObject([
       { name: "outer", nameKind: "text", start: 1, end: 4 },
     ]);
   });
@@ -1187,6 +1199,53 @@ describe("the name of a test", () => {
     const claims = BreakList.parse({ claims: [{ ...claim, assertion: "expect(2).toBe(2);" }] });
     expect(coverageProblems({ list: claims, changed: tests, read: () => text })).toEqual([
       `${file}:2: the test "works" has no claim`,
+    ]);
+  });
+
+  // Two test calls on one line: the line alone does not say which call has the assertion.
+  it("takes a claim only for the test that has its assertion, of two tests on one line", () => {
+    const file = "x.test.ts";
+    const text =
+      'it.each(["a"])("row %s", (row) => { expect(row).toBe(row); }); it("row %s", () => { expect(1).toBe(2); });\n';
+    const tests = new Map([[file, testCalls(text, file)]]);
+    const claim = { ...list().claims[0], test: { kind: "vitest", file, name: "row a" } };
+    const claims = BreakList.parse({ claims: [{ ...claim, assertion: "expect(row).toBe(row);" }] });
+    expect(coverageProblems({ list: claims, changed: tests, read: () => text })).toEqual([
+      `${file}:1: the test "row %s" has no claim`,
+    ]);
+    // The link check: the assertion of the claim "one" is in the test "two" of the same line.
+    const pair =
+      'it("one", () => { expect(1).toBe(1); }); it("two", () => { expect(2).toBe(2); });\n';
+    const one = { ...claim, test: { kind: "vitest", file, name: "one" } };
+    const wrong = BreakList.parse({ claims: [{ ...one, assertion: "expect(2).toBe(2);" }] });
+    const reader = (path: string) => (path === file ? pair : read(path));
+    expect(linkProblems(wrong, reader)).toEqual(["C1: the assertion is not inside the named test"]);
+    const right = BreakList.parse({ claims: [{ ...one, assertion: "expect(1).toBe(1);" }] });
+    expect(linkProblems(right, reader)).toEqual([]);
+  });
+
+  // A test call inside a test call: the claim stands for the inner one, which has the assertion.
+  it("takes a claim only for the inner test of a test call inside a test call", () => {
+    const file = "x.test.ts";
+    const text = [
+      'it("outer", () => {',
+      '  it("inner", () => {',
+      "    expect(1).toBe(1);",
+      "  });",
+      "});",
+      "",
+    ].join("\n");
+    const tests = new Map([[file, testCalls(text, file)]]);
+    const claim = { ...list().claims[0], assertion: "expect(1).toBe(1);" };
+    const named = (name: string) =>
+      BreakList.parse({ claims: [{ ...claim, test: { kind: "vitest", file, name } }] });
+    const reader = (path: string) => (path === file ? text : read(path));
+    expect(linkProblems(named("outer"), reader)).toEqual([
+      "C1: the assertion is not inside the named test",
+    ]);
+    expect(linkProblems(named("inner"), reader)).toEqual([]);
+    expect(coverageProblems({ list: named("inner"), changed: tests, read: reader })).toEqual([
+      `${file}:1: the test "outer" has no claim`,
     ]);
   });
 

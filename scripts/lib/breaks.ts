@@ -49,6 +49,10 @@ export interface TestCall {
   nameKind: "text" | "expression";
   start: number;
   end: number;
+  // The columns (from 0) where the call starts on the line `start` and ends on the line `end`.
+  // Two test calls can be on one line, so the lines alone do not say which call has a place.
+  startColumn: number;
+  endColumn: number;
 }
 
 const TEST_FUNCTIONS = new Set(["it", "test"]);
@@ -105,17 +109,20 @@ function groupedCalls(at: { text: string; path: string }): GroupedCall[] {
   const { text, path } = at;
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true);
   const rows = text.split("\n");
-  const line = (position: number) => source.getLineAndCharacterOfPosition(position).line + 1;
+  const place = (position: number) => source.getLineAndCharacterOfPosition(position);
   const calls: GroupedCall[] = [];
   const visit = (node: ts.Node, groups: string[]) => {
     let inside = groups;
     if (ts.isCallExpression(node)) {
-      const start = line(node.getStart(source));
+      const from = place(node.getStart(source));
+      const to = place(node.getEnd());
       // The line as written, with its spaces.
-      if (isDescribe(node.expression)) inside = [...groups, rows[start - 1] ?? ""];
+      if (isDescribe(node.expression)) inside = [...groups, rows[from.line] ?? ""];
       else if (isTestFunction(node.expression)) {
         const name = nameOf(node, source);
-        if (name !== null) calls.push({ ...name, start, end: line(node.getEnd()), groups });
+        const lines = { start: from.line + 1, end: to.line + 1 };
+        const columns = { startColumn: from.character, endColumn: to.character };
+        if (name !== null) calls.push({ ...name, ...lines, ...columns, groups });
       }
     }
     ts.forEachChild(node, (child) => {
@@ -129,11 +136,13 @@ function groupedCalls(at: { text: string; path: string }): GroupedCall[] {
 // The test calls of a Vitest or Playwright file: `it(...)`, `test(...)`, `it.each(rows)(...)`
 // and the modifiers such as `test.skip(...)`. A `describe` is not a test.
 export function testCalls(text: string, path: string): TestCall[] {
-  return groupedCalls({ text, path }).map(({ name, nameKind, start, end }) => ({
-    name,
-    nameKind,
-    start,
-    end,
+  return groupedCalls({ text, path }).map((call) => ({
+    name: call.name,
+    nameKind: call.nameKind,
+    start: call.start,
+    end: call.end,
+    startColumn: call.startColumn,
+    endColumn: call.endColumn,
   }));
 }
 
@@ -373,8 +382,10 @@ export function coverageProblems(at: {
       // of an `it.each` name matches the name of another test.
       const claimed = list.claims.some((claim) => {
         if (claim.test.file !== file || !nameMatches(call.name, claim.test.name)) return false;
-        const line = lineOf(text(file), claim.assertion);
-        return typeof line === "number" && call.start <= line && line <= call.end;
+        const place = placeOf({ text: text(file), snippet: claim.assertion });
+        if (typeof place === "string") return false;
+        const owner = ownerOf(testCalls(text(file), file), place);
+        return owner?.start === call.start && owner.startColumn === call.startColumn;
       });
       if (!claimed) problems.push(`${at}: the test "${call.name}" has no claim`);
     }
@@ -387,6 +398,33 @@ export function coverageProblems(at: {
     }
   }
   return problems;
+}
+
+// The place of `snippet` in `text`: its line (from 1) and its column (from 0), or a problem when
+// it is not there exactly once.
+function placeOf(at: { text: string; snippet: string }): { line: number; column: number } | string {
+  const line = lineOf(at.text, at.snippet);
+  if (typeof line === "string") return line;
+  const first = at.text.indexOf(at.snippet);
+  return { line, column: first - (at.text.lastIndexOf("\n", first - 1) + 1) };
+}
+
+// Whether a place is inside a test call, by line and column: two calls can be on one line.
+function holds(call: TestCall, place: { line: number; column: number }): boolean {
+  const after =
+    call.start < place.line || (call.start === place.line && call.startColumn <= place.column);
+  const before =
+    place.line < call.end || (place.line === call.end && place.column < call.endColumn);
+  return after && before;
+}
+
+// The test call that has a place: the innermost call around it. `calls` are in the order of
+// `testCalls`, where a call comes before the calls inside it.
+function ownerOf(
+  calls: readonly TestCall[],
+  place: { line: number; column: number },
+): TestCall | undefined {
+  return calls.filter((call) => holds(call, place)).at(-1);
 }
 
 // The 1-based line of `snippet` in `text`, or a problem when it is not there exactly once.
@@ -426,16 +464,11 @@ export function linkProblems(
     if (test === null) problems.push(`${claim.id}: no test file ${claim.test.file}`);
     else {
       // The run with no break also checks the name: a name with no result fails there.
-      const line = lineOf(test, claim.assertion);
-      if (typeof line === "string") problems.push(`${claim.id}: the assertion is ${line}`);
+      const place = placeOf({ text: test, snippet: claim.assertion });
+      if (typeof place === "string") problems.push(`${claim.id}: the assertion is ${place}`);
       else {
-        const inside = testCalls(test, claim.test.file).some(
-          (call) =>
-            call.nameKind === "text" &&
-            nameMatches(call.name, claim.test.name) &&
-            call.start <= line &&
-            line <= call.end,
-        );
+        const owner = ownerOf(testCalls(test, claim.test.file), place);
+        const inside = owner?.nameKind === "text" && nameMatches(owner.name, claim.test.name);
         if (!inside) problems.push(`${claim.id}: the assertion is not inside the named test`);
       }
     }

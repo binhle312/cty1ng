@@ -881,6 +881,9 @@ description of #107.
       file with that name. That stays, with a `Not claimed` line in `docs/testing.md` §5.
     - Round 1 also found that six new helpers took two arguments of one type, against point 8
       (P3; row DQ-304). Each takes one object now.
+    - Round 2 (Codex on `7118ecc`) found that the fix compared lines: two test calls on one
+      line still had one claim (P2; row DQ-305). Now the test that has the assertion is the
+      innermost test call around the exact place of the assertion, by line and column.
 
 ## 13. The end of each open row and each correction that waits
 
