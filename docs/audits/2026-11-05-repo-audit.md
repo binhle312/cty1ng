@@ -121,7 +121,7 @@ Each fix PR updates its row in the same PR. Check `gh pr list --state all`, beca
 | 4 | Bots page | merged: #82 |
 | 5 | Tests only | merged: #86 |
 | 6 | Six tabs | merged: #91 |
-| 7 | Other P3 for M3 | replaced by the P3 PRs (owner, 2026-11-08). The first, records only: #105 |
+| 7 | Other P3 for M3 | replaced by the P3 PRs (owner, 2026-11-08). The first, records only: #105. The fourth, the security tests: #108 |
 
 ## Result
 
