@@ -113,8 +113,12 @@ needs no claim.
   does not see it.
 - `%s` matches one or more characters of a reported name: `nameMatches` joins the parts of a
   name with `.+`, as today for `it.each`. So a `${…}` matches one or more characters too.
-- A name that is the text of an expression matches no reported name. Such a test cannot have a
-  claim: it needs an `exempt` entry with that text as its name, or a plain name.
+- No claim can name a test whose name is an expression. Such a test needs an `exempt` entry
+  with that text as its name, or a plain name. The first text of this plan said that such a
+  name "matches no reported name". That was wrong when another test has that text as its plain
+  name (round 1 of the review; part 12, point 10).
+- A claim stands for one test: the test whose name matches and that has the assertion text of
+  the claim (part 12, point 10).
 - A call with no function after its first argument, such as `test.skip(condition, "reason")`
   inside a test of Playwright, is no test call.
 - The claim format does not change.
@@ -232,7 +236,8 @@ revision 5 show that this is not so (part 12, point 2).
 - That a clean filter (such as LFS) gives the same result. The old text is the stored text, and
   the new text is the file on disk. Not run.
 - That the copy is correct for a submodule, a sparse checkout, a clean filter (such as LFS) or
-  an `export-ignore` attribute. Not run.
+  an `export-ignore` attribute. Not run. Or for an `export-subst` attribute: the reviewer of
+  round 1 ran it, and `git archive` then changes the text of a file with no local change.
 - That the copy has a change that git does not list. Three cases of the probes: a file with the
   bit `assume-unchanged` or `skip-worktree` and a local change is not in the list (today's patch
   is also empty); with `core.fileMode=false`, a change of the execute bit is not in the list.
@@ -516,6 +521,8 @@ finding: I report it.
 | "A line end of Windows is no change" | 25 |
 | The stops with `--only` | 47 |
 | "A later argument is a function" in the name rule | 53 |
+| A claim stands only for the test that has its assertion (round 1) | "does not take a claim for a row of it.each as a claim for a plain name with %s"; "takes a claim only for the test that has its assertion, of two tests with one name" |
+| No claim names a test whose name is an expression (round 1) | "does not take a claim for a plain name as a claim for a variable with the same text" |
 | `-z` of the list of new files | C9 |
 | The `D` files of the copy | C4 |
 | The execute bit of the copy | C5 |
@@ -857,6 +864,23 @@ description of #107.
    No test of this repository has such a form. **Answer:** not fixed in #107; the 40 lines of
    point 5 stay the limit. The `Not claimed` line of part 2 and of `docs/testing.md` §5 names
    them, with one line under `Needs human review`.
+
+10. **A fix of review round 1 (Codex on `dc8a1d5`, 2026-11-14): what a claim covers.** The
+    reviewer found that `it(title, …)` and `it("title", …)` get one name, so one claim covered
+    the two (P2; row DQ-303). The cause is older than this plan: the check for a missing test
+    took a claim by the name only. Two paths of #86 have it too: two tests with one name in two
+    groups, and the `%s` of an `it.each` name, which matches the name of another test. Options:
+    - A (the builder's view): a claim covers a test call only if the name matches and the
+      assertion text of the claim is inside that call. The runner has that line already, for
+      the check "the assertion is not inside the named test". The claim format does not change.
+    - B: only a rule that no claim names an expression, and a `Not claimed` line for the two
+      older paths.
+    - **Answer: A.** R1 is a P2 and cannot stay open; the rule exists in the runner already, so
+      it is no new detector. About 55 added lines for the test names in total is approved.
+    - An `exempt` entry has a name and no assertion. One entry stands for each test of its
+      file with that name. That stays, with a `Not claimed` line in `docs/testing.md` §5.
+    - Round 1 also found that six new helpers took two arguments of one type, against point 8
+      (P3; row DQ-304). Each takes one object now.
 
 ## 13. The end of each open row and each correction that waits
 

@@ -35,7 +35,8 @@ function statOf(path: string): Stats | null {
 }
 
 // The type, the execute bit and the content of a path.
-function entry(root: string, path: string): string {
+function entry(at: { root: string; path: string }): string {
+  const { root, path } = at;
   const stat = statOf(join(root, path));
   if (stat === null) return "absent";
   if (stat.isSymbolicLink()) return `link ${readlinkSync(join(root, path))}`;
@@ -44,10 +45,11 @@ function entry(root: string, path: string): string {
   return `${type} ${readFileSync(join(root, path)).toString("base64")}`;
 }
 
-function filesUnder(root: string, under = ""): string[] {
+function filesUnder(at: { root: string; under?: string }): string[] {
+  const { root, under = "" } = at;
   return readdirSync(join(root, under), { withFileTypes: true }).flatMap((item) => {
     const path = under === "" ? item.name : `${under}/${item.name}`;
-    return item.isDirectory() ? filesUnder(root, path) : [path];
+    return item.isDirectory() ? filesUnder({ root, under: path }) : [path];
   });
 }
 
@@ -58,14 +60,19 @@ function differences(folder: GitFolder, copy: string): string[] {
     .git(["ls-files", "-z", "--cached", "--others", "--exclude-standard"])
     .split("\0")
     .filter((path) => path !== "");
-  return [...new Set([...listed, ...filesUnder(copy)])]
+  return [...new Set([...listed, ...filesUnder({ root: copy })])]
     .sort()
-    .filter((path) => entry(folder.path, path) !== entry(copy, path))
-    .map((path) => `${path}: ${entry(folder.path, path)} / ${entry(copy, path)}`.slice(0, 120));
+    .filter((path) => entry({ root: folder.path, path }) !== entry({ root: copy, path }))
+    .map((path) =>
+      `${path}: ${entry({ root: folder.path, path })} / ${entry({ root: copy, path })}`.slice(
+        0,
+        120,
+      ),
+    );
 }
 
-const rows = (from: number, to: number) =>
-  Array.from({ length: to - from + 1 }, (_, at) => `line ${String(from + at)}\n`).join("");
+const rows = (at: { from: number; to: number }) =>
+  Array.from({ length: at.to - at.from + 1 }, (_, n) => `line ${String(at.from + n)}\n`).join("");
 
 // A git folder with a committed file `a.test.ts` and other files.
 function committed(more: Record<string, string | Buffer> = {}): GitFolder {
@@ -80,25 +87,25 @@ function committed(more: Record<string, string | Buffer> = {}): GitFolder {
 function withLocalChanges(): GitFolder {
   const folder = committed({
     ".gitattributes": "*.test.ts diff=more\nplain.test.ts -diff\n",
-    "staged.test.ts": rows(1, 9),
-    "a b.test.ts": rows(1, 9),
+    "staged.test.ts": rows({ from: 1, to: 9 }),
+    "a b.test.ts": rows({ from: 1, to: 9 }),
     "data.test.ts": Buffer.from([1, 0, 2, 10]),
-    "plain.test.ts": rows(1, 9),
+    "plain.test.ts": rows({ from: 1, to: 9 }),
     "run.sh": "#!/bin/sh\n",
-    "gone.test.ts": rows(1, 3),
-    "old-name.test.ts": rows(1, 9),
-    "same.test.ts": rows(1, 9),
+    "gone.test.ts": rows({ from: 1, to: 3 }),
+    "old-name.test.ts": rows({ from: 1, to: 9 }),
+    "same.test.ts": rows({ from: 1, to: 9 }),
   });
   folder.write("a.test.ts", "new\n");
-  folder.write("staged.test.ts", rows(2, 9));
+  folder.write("staged.test.ts", rows({ from: 2, to: 9 }));
   folder.git(["add", "staged.test.ts"]);
-  folder.write("a b.test.ts", `${rows(1, 4)}five\n${rows(6, 9)}`);
+  folder.write("a b.test.ts", `${rows({ from: 1, to: 4 })}five\n${rows({ from: 6, to: 9 })}`);
   folder.write("data.test.ts", Buffer.from([9, 0, 8, 10]));
-  folder.write("plain.test.ts", `${rows(1, 9)}line 10\n`);
+  folder.write("plain.test.ts", `${rows({ from: 1, to: 9 })}line 10\n`);
   chmodSync(join(folder.path, "run.sh"), 0o755);
   rmSync(join(folder.path, "gone.test.ts"));
   folder.git(["mv", "old-name.test.ts", "new-name.test.ts"]);
-  folder.write("new-name.test.ts", `${rows(1, 1)}two\n${rows(3, 9)}`);
+  folder.write("new-name.test.ts", `${rows({ from: 1, to: 1 })}two\n${rows({ from: 3, to: 9 })}`);
   folder.write("staged-new.test.ts", "n\n");
   folder.git(["add", "staged-new.test.ts"]);
   folder.write("new/deep/fresh.test.ts", "n\n");
@@ -143,7 +150,7 @@ describe("the copy is the same as the checkout", () => {
     chmodSync(join(folder.path, "run.sh"), 0o755);
     const { copy } = copyOf(folder);
     expect(differences(folder, copy)).toEqual([]);
-    expect(entry(copy, "run.sh")).toMatch(/^file with the execute bit /);
+    expect(entry({ root: copy, path: "run.sh" })).toMatch(/^file with the execute bit /);
   });
 
   it("with a changed binary file", () => {
@@ -155,12 +162,12 @@ describe("the copy is the same as the checkout", () => {
   });
 
   it("with a renamed file", () => {
-    const folder = committed({ "old-name.test.ts": rows(1, 9) });
+    const folder = committed({ "old-name.test.ts": rows({ from: 1, to: 9 }) });
     folder.git(["mv", "old-name.test.ts", "new-name.test.ts"]);
-    folder.write("new-name.test.ts", `${rows(1, 1)}two\n${rows(3, 9)}`);
+    folder.write("new-name.test.ts", `${rows({ from: 1, to: 1 })}two\n${rows({ from: 3, to: 9 })}`);
     const { copy } = copyOf(folder);
     expect(differences(folder, copy)).toEqual([]);
-    expect(filesUnder(copy).sort()).toEqual(["a.test.ts", "new-name.test.ts"]);
+    expect(filesUnder({ root: copy }).sort()).toEqual(["a.test.ts", "new-name.test.ts"]);
   });
 
   it("with a new file that git does not track, in a new folder", () => {
@@ -187,7 +194,7 @@ describe("the copy is the same as the checkout", () => {
     symlinkSync("target.ts", join(folder.path, "a.test.ts"));
     const { copy } = copyOf(folder);
     expect(differences(folder, copy)).toEqual([]);
-    expect(entry(copy, "a.test.ts")).toBe("link target.ts");
+    expect(entry({ root: copy, path: "a.test.ts" })).toBe("link target.ts");
   });
 
   it("with a link that becomes a file", () => {
@@ -199,7 +206,7 @@ describe("the copy is the same as the checkout", () => {
     folder.write("a.test.ts", "now a file\n");
     const { copy } = copyOf(folder);
     expect(differences(folder, copy)).toEqual([]);
-    expect(entry(copy, "target.ts")).toMatch(/^file /);
+    expect(entry({ root: copy, path: "target.ts" })).toMatch(/^file /);
     expect(readFileSync(join(copy, "a.test.ts"), "utf8")).toBe("now a file\n");
   });
 
@@ -265,7 +272,7 @@ describe("the copy is the same as the checkout", () => {
     symlinkSync("a.test.ts", join(folder.path, "linked.test.ts"));
     const made = copyOf(folder);
     expect(made).toMatchObject({ local: "none", newFiles: [] });
-    expect(entry(made.copy, "linked.test.ts")).toBe("absent");
+    expect(entry({ root: made.copy, path: "linked.test.ts" })).toBe("absent");
   });
 });
 

@@ -283,9 +283,9 @@ describe("the tests of a PR", () => {
 
   it("finds each test call with its lines, and no describe", () => {
     expect(testCalls(FILE, "x.test.ts")).toEqual([
-      { name: "one", start: 2, end: 4 },
-      { name: "row %s", start: 5, end: 7 },
-      { name: "later", start: 8, end: 8 },
+      { name: "one", nameKind: "text", start: 2, end: 4 },
+      { name: "row %s", nameKind: "text", start: 5, end: 7 },
+      { name: "later", nameKind: "text", start: 8, end: 8 },
     ]);
   });
 
@@ -392,21 +392,24 @@ describe("the tests of a PR", () => {
   it("names each changed test that has no claim and no exemption", () => {
     const calls = testCalls(FILE, TEST);
     const changed = new Map([[TEST, calls]]);
-    const claims = list({ test: { kind: "vitest", file: TEST, name: "row a" } }).claims;
+    const test = { kind: "vitest" as const, file: TEST, name: "row a" };
+    const claims = list({ test, assertion: "expect(row).toBeTruthy();" }).claims;
     expect(
-      coverageProblems(
-        { claims, exempt: [{ file: TEST, name: "later", reason: "written first" }] },
+      coverageProblems({
+        list: { claims, exempt: [{ file: TEST, name: "later", reason: "written first" }] },
         changed,
-      ),
+        read: () => FILE,
+      }),
     ).toEqual([`${TEST}:2: the test "one" has no claim`]);
   });
 
   it("names an exemption that matches no test that the PR adds or changes", () => {
     const changed = new Map([[TEST, testCalls(FILE, TEST)]]);
-    const claims = list({ test: { kind: "vitest", file: TEST, name: "row a" } }).claims;
+    const test = { kind: "vitest" as const, file: TEST, name: "row a" };
+    const claims = list({ test, assertion: "expect(row).toBeTruthy();" }).claims;
     expect(
-      coverageProblems(
-        {
+      coverageProblems({
+        list: {
           claims,
           exempt: [
             { file: TEST, name: "one", reason: "a unit test" },
@@ -415,7 +418,8 @@ describe("the tests of a PR", () => {
           ],
         },
         changed,
-      ),
+        read: () => FILE,
+      }),
     ).toEqual([`${TEST}: the exemption "no such test" names no test that the PR adds or changes`]);
   });
 });
@@ -534,7 +538,8 @@ function edited(at: { from: string; to: string; text?: string }): string {
 }
 
 // A git folder with one committed test file.
-function committed(text = BASE, file = S): GitFolder {
+function committed(at: { text?: string; file?: string } = {}): GitFolder {
+  const { text = BASE, file = S } = at;
   const folder = gitFolder();
   folder.write(file, text);
   folder.commit();
@@ -648,7 +653,9 @@ describe("which tests count", () => {
     const folder = committed();
     folder.write(S, edited({ from: "expect(11).toBe(11);", to: "expect(12).toBe(12);" }));
     const line = BASE.slice(0, BASE.indexOf("expect(11)")).split("\n").length - 1;
-    expect(prOf(folder).tests.get(S)).toEqual([{ name: "one", start: line, end: line + 2 }]);
+    expect(prOf(folder).tests.get(S)).toEqual([
+      { name: "one", nameKind: "text", start: line, end: line + 2 },
+    ]);
   });
 
   it("gives each old test to one new test only", () => {
@@ -689,7 +696,7 @@ describe("which tests count", () => {
         "});",
         "",
       ].join("\n");
-    const folder = committed(parked("test.describe.skip"), "e.spec.ts");
+    const folder = committed({ text: parked("test.describe.skip"), file: "e.spec.ts" });
     folder.write("e.spec.ts", parked("test.describe"));
     expect(prOf(folder).names).toEqual({ "e.spec.ts": ["four", "five"] });
   });
@@ -704,7 +711,7 @@ describe("which tests count", () => {
 
   it("counts a changed test of a file with a quote in its name", () => {
     const file = 'q"s.test.ts';
-    const folder = committed(BASE, file);
+    const folder = committed({ text: BASE, file });
     folder.write(file, edited({ from: "const value = 2;", to: "const value = 3;" }));
     expect(prOf(folder)).toMatchObject({ names: { [file]: ["two"] }, problems: [] });
   });
@@ -739,7 +746,7 @@ describe("which tests count", () => {
   it.each(["staged", "not staged"])(
     "counts each test of the new files when a test file becomes a folder (%s)",
     (state) => {
-      const folder = committed(BASE, "a.test.ts");
+      const folder = committed({ text: BASE, file: "a.test.ts" });
       rmSync(join(folder.path, "a.test.ts"));
       folder.write("a.test.ts/in.test.ts", PAIR);
       if (state === "staged") folder.git(["add", "-A"]);
@@ -753,7 +760,7 @@ describe("which tests count", () => {
   it.each(["staged", "not staged"])(
     "counts each test of the new file when a folder becomes a test file (%s)",
     (state) => {
-      const folder = committed(BASE, "d.test.ts/in.test.ts");
+      const folder = committed({ text: BASE, file: "d.test.ts/in.test.ts" });
       rmSync(join(folder.path, "d.test.ts"), { recursive: true });
       folder.write("d.test.ts", PAIR);
       if (state === "staged") folder.git(["add", "-A"]);
@@ -806,20 +813,20 @@ describe("a renamed file", () => {
   ].join("\n");
 
   it("counts each test when cases.ts becomes cases.test.ts with no changed line", () => {
-    const folder = committed(CASES, "cases.ts");
+    const folder = committed({ text: CASES, file: "cases.ts" });
     folder.git(["mv", "cases.ts", "cases.test.ts"]);
     expect(prOf(folder).names).toEqual({ "cases.test.ts": ["a", "b", "c"] });
   });
 
   it("counts each test when cases.ts becomes cases.test.ts with 3 changed lines", () => {
-    const folder = committed(CASES, "cases.ts");
+    const folder = committed({ text: CASES, file: "cases.ts" });
     folder.git(["mv", "cases.ts", "cases.test.ts"]);
     folder.write("cases.test.ts", CASES.replace(/= 3;/g, "= 4;").replace("toBe(9)", "toBe(12)"));
     expect(prOf(folder).names).toEqual({ "cases.test.ts": ["a", "b", "c"] });
   });
 
   it("counts each test when parked.test.ts.skip becomes parked.test.ts", () => {
-    const folder = committed(CASES, "parked.test.ts.skip");
+    const folder = committed({ text: CASES, file: "parked.test.ts.skip" });
     folder.git(["mv", "parked.test.ts.skip", "parked.test.ts"]);
     expect(prOf(folder).names).toEqual({ "parked.test.ts": ["a", "b", "c"] });
   });
@@ -914,7 +921,7 @@ describe("the stops", () => {
     'git gives the status "T": the file changed its type (a file became a link, or a link became a file). Keep the type that the file has in the base, or give the changed file a new name';
 
   it("stops at a test file that became a link, and names the file and the action", () => {
-    const folder = committed(BASE, "a.test.ts");
+    const folder = committed({ text: BASE, file: "a.test.ts" });
     folder.write("target.ts", BASE);
     folder.commit();
     rmSync(join(folder.path, "a.test.ts"));
@@ -970,7 +977,9 @@ describe("the stops", () => {
   });
 
   it("names a stop also with --only, and no missing test", () => {
-    const tests = new Map([[TEST, [{ name: "other", start: 9, end: 9 }]]]);
+    const tests = new Map([
+      [TEST, [{ name: "other", nameKind: "text" as const, start: 9, end: 9 }]],
+    ]);
     const pr = { tests, problems: ["a.test.ts: a stop"] };
     expect(listProblems({ list: list(), only: "C1", pr, read })).toEqual(["a.test.ts: a stop"]);
     expect(listProblems({ list: list(), only: "", pr, read })).toEqual([
@@ -1068,18 +1077,22 @@ describe("the name of a test", () => {
   it("finds a test with ${…} in its name, with %s in the place of each", () => {
     const text = "test(`opens ${path} directly, ${String(n)} times`, async () => {\n});\n";
     expect(testCalls(text, "e.spec.ts")).toEqual([
-      { name: "opens %s directly, %s times", start: 1, end: 2 },
+      { name: "opens %s directly, %s times", nameKind: "text", start: 1, end: 2 },
     ]);
   });
 
   it("finds a test with a variable as its name, by the text of the argument", () => {
     const text = "for (const row of rows) {\n  it(row.name, () => {\n    row.check();\n  });\n}\n";
-    expect(testCalls(text, "x.test.ts")).toEqual([{ name: "row.name", start: 2, end: 4 }]);
+    expect(testCalls(text, "x.test.ts")).toEqual([
+      { name: "row.name", nameKind: "expression", start: 2, end: 4 },
+    ]);
   });
 
   it("finds a test of it.each with a template table", () => {
     const text = 'it.each`\n  a    | b\n  ${1} | ${2}\n`("adds $a and $b", ({ a, b }) => {\n});\n';
-    expect(testCalls(text, "x.test.ts")).toEqual([{ name: "adds $a and $b", start: 1, end: 5 }]);
+    expect(testCalls(text, "x.test.ts")).toEqual([
+      { name: "adds $a and $b", nameKind: "text", start: 1, end: 5 },
+    ]);
   });
 
   it("reads a call with no function after its first argument as no test", () => {
@@ -1090,24 +1103,111 @@ describe("the name of a test", () => {
       "});",
       "",
     ].join("\n");
-    expect(testCalls(text, "e.spec.ts")).toEqual([{ name: "outer", start: 1, end: 4 }]);
+    expect(testCalls(text, "e.spec.ts")).toEqual([
+      { name: "outer", nameKind: "text", start: 1, end: 4 },
+    ]);
+  });
+
+  // A claim names a test by the name that the test report gives. The text of an expression is
+  // no such name: a claim for the test "title" must not stand for the test `it(title, …)`.
+  it("does not take a claim for a plain name as a claim for a variable with the same text", () => {
+    const file = "x.test.ts";
+    const text = [
+      'const title = "uncovered";',
+      "it(title, () => {",
+      "  expect(1).toBe(2);",
+      "});",
+      'it("title", () => {',
+      "  expect(2).toBe(2);",
+      "});",
+      "",
+    ].join("\n");
+    const tests = new Map([[file, testCalls(text, file)]]);
+    const claim = { ...list().claims[0], test: { kind: "vitest", file, name: "title" } };
+    const claims = BreakList.parse({ claims: [{ ...claim, assertion: "expect(2).toBe(2);" }] });
+    const reader = (path: string) => (path === file ? text : read(path));
+    expect(coverageProblems({ list: claims, changed: tests, read: reader })).toEqual([
+      `${file}:2: the test with the name \`title\` (an expression, not a string) has no exemption: a claim cannot name it`,
+    ]);
+    const exempt = [{ file, name: "title", reason: "a name from a table" }];
+    const withExempt = { claims: claims.claims, exempt };
+    expect(coverageProblems({ list: withExempt, changed: tests, read: reader })).toEqual([]);
+    // The assertion of a claim cannot be inside such a test.
+    const inside = BreakList.parse({ claims: [{ ...claim, assertion: "expect(1).toBe(2);" }] });
+    expect(linkProblems(inside, reader)).toEqual([
+      "C1: the assertion is not inside the named test",
+    ]);
+  });
+
+  // `%s` stands for any text only in a name of `it.each` and in a template. In a plain name it
+  // is the text `%s`: a claim for a row of `it.each` must not stand for such a test.
+  it("does not take a claim for a row of it.each as a claim for a plain name with %s", () => {
+    const file = "x.test.ts";
+    const text = [
+      'it.each(["a"])("row %s", (row) => {',
+      "  expect(row).toBe(row);",
+      "});",
+      'it("row %s", () => {',
+      "  expect(1).toBe(2);",
+      "});",
+      "",
+    ].join("\n");
+    const tests = new Map([[file, testCalls(text, file)]]);
+    const problems = (at: { name: string; assertion: string }) => {
+      const claim = { ...list().claims[0], test: { kind: "vitest", file, name: at.name } };
+      const claims = BreakList.parse({ claims: [{ ...claim, assertion: at.assertion }] });
+      return coverageProblems({ list: claims, changed: tests, read: () => text });
+    };
+    expect(problems({ name: "row a", assertion: "expect(row).toBe(row);" })).toEqual([
+      `${file}:4: the test "row %s" has no claim`,
+    ]);
+    expect(problems({ name: "row %s", assertion: "expect(1).toBe(2);" })).toEqual([
+      `${file}:1: the test "row %s" has no claim`,
+    ]);
+  });
+
+  // A claim names one test: the test with its name that has its assertion.
+  it("takes a claim only for the test that has its assertion, of two tests with one name", () => {
+    const file = "x.test.ts";
+    const text = [
+      'describe("first", () => {',
+      '  it("works", () => {',
+      "    expect(1).toBe(1);",
+      "  });",
+      "});",
+      'describe("second", () => {',
+      '  it("works", () => {',
+      "    expect(2).toBe(2);",
+      "  });",
+      "});",
+      "",
+    ].join("\n");
+    const tests = new Map([[file, testCalls(text, file)]]);
+    const claim = { ...list().claims[0], test: { kind: "vitest", file, name: "works" } };
+    const claims = BreakList.parse({ claims: [{ ...claim, assertion: "expect(2).toBe(2);" }] });
+    expect(coverageProblems({ list: claims, changed: tests, read: () => text })).toEqual([
+      `${file}:2: the test "works" has no claim`,
+    ]);
   });
 
   it("needs a claim or an exemption for a new test with ${…} in its name", () => {
     const file = "e.spec.ts";
-    const folder = committed('test("old", async () => {});\n', file);
+    const folder = committed({ text: 'test("old", async () => {});\n', file });
     const added = "test(`opens ${path} directly`, async () => {\n  expect(1).toBe(1);\n});\n";
     folder.write(file, `test("old", async () => {});\n${added}`);
     const { tests } = prOf(folder);
     const claim = {
       ...list().claims[0],
       test: { kind: "e2e", file, name: "opens /bots directly" },
+      assertion: "expect(1).toBe(1);",
     };
-    expect(coverageProblems({ claims: [], exempt: [] }, tests)).toEqual([
+    const problems = (given: unknown) =>
+      coverageProblems({ list: BreakList.parse(given), changed: tests, read: folder.read });
+    expect(problems({ claims: [] })).toEqual([
       `${file}:2: the test "opens %s directly" has no claim`,
     ]);
-    expect(coverageProblems(BreakList.parse({ claims: [claim] }), tests)).toEqual([]);
+    expect(problems({ claims: [claim] })).toEqual([]);
     const exempt = [{ file, name: "opens %s directly", reason: "written first" }];
-    expect(coverageProblems({ claims: [], exempt }, tests)).toEqual([]);
+    expect(problems({ claims: [], exempt })).toEqual([]);
   });
 });

@@ -416,9 +416,14 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
    - **The name of a test** is its first argument as written. A template gives its text with
      `%s` in the place of each `${…}`. `%s` and the other marks of `it.each` match one or more
      characters of the name that the test report gives. A name that is another expression,
-     such as a variable, is the text of that expression. It matches no name of a report, and
-     neither does a `$name` mark of `it.each`: such a test needs an `exempt` entry with the
-     name as written, or a plain name.
+     such as a variable, is the text of that expression. No claim can name such a test: it
+     needs an `exempt` entry with that text as its name, or a plain name. A `$name` mark of
+     `it.each` matches no name of a report, so such a test needs an `exempt` entry too.
+   - **What a claim covers.** A claim stands for one test: the test of its file whose name
+     matches the name of the claim and that has the assertion text of the claim. The name alone
+     does not say which test a claim runs: two tests can have one name, and the `%s` of an
+     `it.each` name matches the name of another test. An `exempt` entry has a name and no
+     assertion: it stands for each test of its file with that name as written.
    - **The stops.** They apply also with `--only`. The status `T` means that a test file became
      a link, or that a link became a test file. Then keep the type that the file has in the
      base, or give the changed file a new name: git then lists a deleted file and a new file,
@@ -438,8 +443,9 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
      `skip`, `concurrent`, `fails`, `fixme`, `slow` and `each`, not another modifier (such as
      `it.skipIf(…)`, `it.runIf(…)` or `test.for(…)`) and not a test function with another name.
      That the runner finds each test of a file that does not parse. That the copy is correct
-     for a submodule, a sparse checkout, a clean filter (such as LFS) or an `export-ignore`
-     attribute. That the copy has a change that git does not list: a file with the bit
+     for a submodule, a sparse checkout, a clean filter (such as LFS) or an `export-ignore` or
+     `export-subst` attribute. That an `exempt` entry stands for one test only: with two tests
+     of one name in a file, one entry stands for the two. That the copy has a change that git does not list: a file with the bit
      `assume-unchanged` or `skip-worktree`, or a change of the execute bit with
      `core.fileMode=false`. That the copy is one moment of the checkout: a file that changes
      during the copy is in the copy as it is at that time.

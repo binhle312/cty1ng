@@ -43,6 +43,10 @@ export type Break = z.infer<typeof Break>;
 // of a template) and its lines.
 export interface TestCall {
   name: string;
+  // How the name is written. "text": a string or a template; the test report gives it as the
+  // name of the test. "expression": another expression, such as a variable; `name` is then its
+  // text as written. No test report gives that text, so no claim can name such a test.
+  nameKind: "text" | "expression";
   start: number;
   end: number;
 }
@@ -71,15 +75,19 @@ function isTestFunction(node: ts.Expression): boolean {
 // its text as written, but only when a later argument is a function: `test.skip(condition,
 // "reason")` inside a test of Playwright is no test. A test that this function does not see
 // needs no claim, with no message (DQ-301).
-function nameOf(call: ts.CallExpression, source: ts.SourceFile): string | null {
+function nameOf(
+  call: ts.CallExpression,
+  source: ts.SourceFile,
+): Pick<TestCall, "name" | "nameKind"> | null {
   const [first, ...rest] = call.arguments;
   if (first === undefined) return null;
-  if (ts.isStringLiteralLike(first)) return first.text;
+  if (ts.isStringLiteralLike(first)) return { name: first.text, nameKind: "text" };
   if (ts.isTemplateExpression(first)) {
-    return [first.head.text, ...first.templateSpans.map((span) => span.literal.text)].join("%s");
+    const parts = [first.head.text, ...first.templateSpans.map((span) => span.literal.text)];
+    return { name: parts.join("%s"), nameKind: "text" };
   }
   const hasFunction = rest.some((arg) => ts.isArrowFunction(arg) || ts.isFunctionExpression(arg));
-  return hasFunction ? first.getText(source) : null;
+  return hasFunction ? { name: first.getText(source), nameKind: "expression" } : null;
 }
 
 // Whether a call starts a group: `describe(...)`, `describe.skip(...)`, `describe.each(rows)(...)`
@@ -93,7 +101,8 @@ function isDescribe(node: ts.Expression): boolean {
   return false;
 }
 
-function groupedCalls(text: string, path: string): GroupedCall[] {
+function groupedCalls(at: { text: string; path: string }): GroupedCall[] {
+  const { text, path } = at;
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true);
   const rows = text.split("\n");
   const line = (position: number) => source.getLineAndCharacterOfPosition(position).line + 1;
@@ -106,7 +115,7 @@ function groupedCalls(text: string, path: string): GroupedCall[] {
       if (isDescribe(node.expression)) inside = [...groups, rows[start - 1] ?? ""];
       else if (isTestFunction(node.expression)) {
         const name = nameOf(node, source);
-        if (name !== null) calls.push({ name, start, end: line(node.getEnd()), groups });
+        if (name !== null) calls.push({ ...name, start, end: line(node.getEnd()), groups });
       }
     }
     ts.forEachChild(node, (child) => {
@@ -120,7 +129,12 @@ function groupedCalls(text: string, path: string): GroupedCall[] {
 // The test calls of a Vitest or Playwright file: `it(...)`, `test(...)`, `it.each(rows)(...)`
 // and the modifiers such as `test.skip(...)`. A `describe` is not a test.
 export function testCalls(text: string, path: string): TestCall[] {
-  return groupedCalls(text, path).map(({ name, start, end }) => ({ name, start, end }));
+  return groupedCalls({ text, path }).map(({ name, nameKind, start, end }) => ({
+    name,
+    nameKind,
+    start,
+    end,
+  }));
 }
 
 // The key of each test of a file: its name, the first line of each `describe` group around it,
@@ -128,10 +142,10 @@ export function testCalls(text: string, path: string): TestCall[] {
 // the old text does not have is a new or changed test. The groups are in the key because a group
 // decides if its tests run: a test that moves out of a `describe.skip` group starts to run with
 // no change of its text. A line end of Windows is no change.
-function testKeys(text: string, path: string): { call: TestCall; key: string }[] {
-  const unix = text.replace(/\r\n/g, "\n");
+function testKeys(at: { text: string; path: string }): { call: TestCall; key: string }[] {
+  const unix = at.text.replace(/\r\n/g, "\n");
   const rows = unix.split("\n");
-  return groupedCalls(unix, path).map(({ groups, ...call }) => ({
+  return groupedCalls({ text: unix, path: at.path }).map(({ groups, ...call }) => ({
     call,
     key: JSON.stringify([call.name, groups, rows.slice(call.start - 1, call.end).join("\n")]),
   }));
@@ -249,8 +263,8 @@ export function isTestFile(path: string): boolean {
 // The tests of the new text `now` of a test file whose key the old text `before` does not have.
 // Two tests with one key: each old test stands for one new test only.
 export function changedTests(at: { before: string; now: string; path: string }): TestCall[] {
-  const old = testKeys(at.before, at.path).map((test) => test.key);
-  return testKeys(at.now, at.path)
+  const old = testKeys({ text: at.before, path: at.path }).map((test) => test.key);
+  return testKeys({ text: at.now, path: at.path })
     .filter((test) => {
       const same = old.indexOf(test.key);
       if (same === -1) return true;
@@ -325,21 +339,44 @@ export function cell(text: string): string {
 
 // Each test that the PR adds or changes and that no claim and no exemption names
 // (testing.md §5: the list has every test of the PR). `changed` holds the tests of the PR, by
-// file (`testsOfPr`).
-export function coverageProblems(
-  list: BreakList,
-  changed: ReadonlyMap<string, readonly TestCall[]>,
-): string[] {
+// file (`testsOfPr`); `read` gives a file of the tested copy, or null. An `exempt` entry has
+// only a name: it stands for each test of its file with that name as written.
+export function coverageProblems(at: {
+  list: BreakList;
+  changed: ReadonlyMap<string, readonly TestCall[]>;
+  read: (path: string) => string | null;
+}): string[] {
+  const { list, changed } = at;
   const problems: string[] = [];
+  // The text of each test file of the copy, read one time.
+  const texts = new Map<string, string>();
+  const text = (file: string) => {
+    const known = texts.get(file) ?? at.read(file) ?? "";
+    texts.set(file, known);
+    return known;
+  };
   for (const [file, calls] of changed) {
     for (const call of calls) {
-      const claimed = list.claims.some(
-        (claim) => claim.test.file === file && nameMatches(call.name, claim.test.name),
-      );
       const exempt = list.exempt.some((entry) => entry.file === file && entry.name === call.name);
-      if (!claimed && !exempt) {
-        problems.push(`${file}:${String(call.start)}: the test "${call.name}" has no claim`);
+      if (exempt) continue;
+      const at = `${file}:${String(call.start)}`;
+      // A claim names a test by the name of the test report. The text of an expression is no
+      // such name, also when another test has that text as its name.
+      if (call.nameKind === "expression") {
+        problems.push(
+          `${at}: the test with the name \`${call.name}\` (an expression, not a string) has no exemption: a claim cannot name it`,
+        );
+        continue;
       }
+      // A claim stands for one test: the test with its name that has its assertion. The name
+      // alone does not say which test a claim runs: two tests can have one name, and the `%s`
+      // of an `it.each` name matches the name of another test.
+      const claimed = list.claims.some((claim) => {
+        if (claim.test.file !== file || !nameMatches(call.name, claim.test.name)) return false;
+        const line = lineOf(text(file), claim.assertion);
+        return typeof line === "number" && call.start <= line && line <= call.end;
+      });
+      if (!claimed) problems.push(`${at}: the test "${call.name}" has no claim`);
     }
   }
   for (const entry of list.exempt) {
@@ -394,7 +431,10 @@ export function linkProblems(
       else {
         const inside = testCalls(test, claim.test.file).some(
           (call) =>
-            nameMatches(call.name, claim.test.name) && call.start <= line && line <= call.end,
+            call.nameKind === "text" &&
+            nameMatches(call.name, claim.test.name) &&
+            call.start <= line &&
+            line <= call.end,
         );
         if (!inside) problems.push(`${claim.id}: the assertion is not inside the named test`);
       }
@@ -428,7 +468,9 @@ export function listProblems(at: {
     ...picked.problems,
     ...at.pr.problems,
     ...linkProblems({ claims: picked.claims }, at.read),
-    ...(at.only === "" ? coverageProblems(at.list, at.pr.tests) : []),
+    ...(at.only === ""
+      ? coverageProblems({ list: at.list, changed: at.pr.tests, read: at.read })
+      : []),
   ];
 }
 
