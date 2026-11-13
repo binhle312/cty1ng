@@ -184,7 +184,7 @@ The lead did not check these again, except where a row says so. The others are f
 - **Target (owner, 2026-11-12): before the paid review is turned on** (`security.md` §2.11). The paid security review does not watch the model adapters, `skill.rules.ts`, `bot.rules.ts`, `main.ts`, `compose.ts` and other paths: `.github/workflows/security-review.yml:20`.
 - Refused requests carry no security headers, and the plan and `security.md` disagree: `backend/src/adapters/http/app.ts:61`.
 - The changelog has no length limit, and its regex is quadratic: `backend/src/adapters/http/routes/skills.ts:34`, `backend/src/core/skills/skills.service.ts:584`.
-- No test covers an absolute zip path or a forged entry size, or checks secrets through the CLI: `backend/src/adapters/http/uploads/skill-zip.test.ts`.
+- No test covers an absolute zip path or a forged entry size, or checks secrets through the CLI: `backend/src/adapters/http/uploads/skill-zip.test.ts`. Fixed in #108: two tests in that file, and `backend/test/security/cli-secrets.test.ts`.
 - Guard shapes accepted (owner, 2026-11-06): each guard shape, free or refused, that reviews and audits report. The lists and the rule are in `security.md` §2.13. This row needs no fix or drop answer, and a new shape adds no row.
 
 ### API and realtime
