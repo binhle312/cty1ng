@@ -50,7 +50,7 @@ Reconcile the population when a milestone closes or another PR is assigned to it
 | M0 | #46, #48, #49, #50 | 6 lessons for #49; other PRs unmeasured | 1 itemized; total unknown | unknown | unknown | unknown |
 | M1 | #51, #52, #53, #54, #55 | 5 lessons for #54; other PRs unmeasured | 6 itemized; total unknown | unknown | unknown | unknown |
 | M2 | #20, #56, #57, #58, #59, #66 | 1 lesson for #57; 5 for #59; other PRs unmeasured | 27 itemized; total unknown | 8 known (7 `partial`, 1 `open`); 5 rows `unknown`; total unknown | 10 in the 22 rows that record it; 5 rows `unknown`; total unknown | 7 logged; total unknown |
-| Audit 2026-11-05 | #73, #78, #82, #84, #86, #91, #92, #96, #105, #106 (the PRs with ledger rows) | no lesson source; the ledger rows of these PRs | 171 itemized | 16 (all `open`) | 3 in the 145 rows that record it; 26 rows do not record it | 67 logged |
+| Audit 2026-11-05 | #73, #78, #82, #84, #86, #91, #92, #96, #105, #106 (the PRs with ledger rows) | no lesson source; the ledger rows of these PRs | 171 itemized | 16 (all `open`) | 3 in the 145 rows that record it; 26 rows do not record it | 68 logged |
 
 For a milestone total, count each issue ID assigned to that milestone once.
 Count review rounds by distinct PR and round ID.
@@ -61,7 +61,7 @@ fixed DQ-165. The audit PRs found
 178 issues (DQ-025 to DQ-202). 141 of them name the audit as the milestone that introduced them;
 the other 37 name M2 or `unknown`, and they are not in the Audit row.
 #105 added fifteen issues (DQ-207 to DQ-221) and three rounds on 2026-11-12; the row has them.
-#106 added fifteen issues (DQ-235 to DQ-249) and three rounds on 2026-11-13; the row has them.
+#106 added fifteen issues (DQ-235 to DQ-249) and four rounds on 2026-11-13 and 2026-11-14; the row has them.
 On 2026-11-12 the owner dropped DQ-109, DQ-167, DQ-169 and DQ-170, and DQ-163, DQ-172 and DQ-173 are fixed (the body of #86); the row has this too. DQ-108, which the owner also dropped, is in the M2 row.
 
 **M2 close check (2026-11-04).** Population: all five baseline PRs are merged, and #66 is the sixth.
@@ -110,7 +110,7 @@ The historical snapshot column gives evidence for a specific review period.
 | [#96](https://github.com/binhle312/cty1ng/pull/96) | Audit 2026-11-05 / DQ-198, a closed dialog and the read of all data | Partial | 5 itemized (DQ-198 from #91, DQ-199 to DQ-202) | 1 (DQ-200) | 2 (DQ-198, DQ-200) | 2 independent reviews (`8953c0a`, `04cad60`) | — |
 | [#98](https://github.com/binhle312/cty1ng/pull/98) | No milestone / one home for each settings default | Partial | 4 itemized (DQ-203 to DQ-206) | 1 (DQ-206) | 0 | 3 reviews that the owner gave to the session (`7f791c5`, `44fa8cf`, `c5a8049`) | — |
 | [#105](https://github.com/binhle312/cty1ng/pull/105) | Audit 2026-11-05 / P3 PR 1, records only | Partial | 15 itemized (DQ-207 to DQ-221) | 3 (DQ-216, DQ-218, DQ-221) | 0 | 3 independent reviews (`5b8cb4e`, `78e1727`, `8f52a7c`) | — |
-| [#106](https://github.com/binhle312/cty1ng/pull/106) | Audit 2026-11-05 / P3 PR 2, react-query 5.107.1 | Partial | 15 itemized (DQ-235 to DQ-249) | 1 (DQ-249) | 0 | 2 independent reviews (`04649f9`, `7c0bc73`) and the owner's review of `109721a` | — |
+| [#106](https://github.com/binhle312/cty1ng/pull/106) | Audit 2026-11-05 / P3 PR 2, react-query 5.107.1 | Partial | 15 itemized (DQ-235 to DQ-249) | 1 (DQ-249) | 0 | 2 independent reviews (`04649f9`, `7c0bc73`), the owner's review of `109721a`, and a Codex review of `6e4af56` | — |
 
 ## 4. Historical evidence snapshots
 
@@ -245,6 +245,7 @@ The rounds of merged PRs are in the [archive](delivery-quality-archive.md#review
 | [#106](https://github.com/binhle312/cty1ng/pull/106) / review of `04649f9` | 2026-11-12 | `ec41c39` / `04649f9` | Scope not recorded; the findings name the diff, the break list and the PR body / independent reviewer agent, reported in the session. The report is not in a file: this row comes from the "Review fixes" table of the PR body | DQ-235 to DQ-242 | none | none | none | Reviewer, as the PR body records: `npm pack` and a source compare of the library versions, two probes on the library, and three page tests by hand with the helpers removed. Other checks not recorded |
 | [#106](https://github.com/binhle312/cty1ng/pull/106) / review of `7c0bc73` | 2026-11-12 | `ec41c39` / `7c0bc73` | Scope not recorded; the findings name the fix commit and the PR body / second reviewer agent, reported in the session. The report is not in a file | DQ-243 to DQ-246 | DQ-236 | Not recorded | none | Not recorded. All five findings are P3 (the PR body). The fix commit `109721a` came after this round |
 | [#106](https://github.com/binhle312/cty1ng/pull/106) / owner's review of `109721a` | 2026-11-12 | Base not stated / `109721a` | Standards and spec, a static review / review text that the owner gave to the session on 2026-11-13 | DQ-247 to DQ-249 | DQ-244 | none named | none | Reviewer: "no P1/P2 identified in static review"; checks not reported. The builder checked the four findings at `109721a` on 2026-11-13: all four are right. The owner answered them on 2026-11-13 |
+| [#106](https://github.com/binhle312/cty1ng/pull/106) / Codex review of `6e4af56` (order 27, round 1) | 2026-11-14 | `7d346f4` / `6e4af56`, no local changes | Standards and spec / Codex (`gpt-6-astra`, high effort), `Review PR#106`; the full review is in `tmp/reviews/pr-106-codex-round-1-full.md` (not in the repo) | none | none | none | none | Reviewer: no new finding; DQ-249 is open at the reviewed head. Six affected test files, 253 passed; the five breaks of `scripts/breaks/pr-106.json` each caught at the intended line; CI and CodeQL passed. Not repeated: the full gates, e2e, the scratch probes. Ids DQ-367 to DQ-371 unused |
 
 Use a local review artifact or an authorized PR comment as the source.
 If the head changes after review, the row still describes the original reviewed revision.
