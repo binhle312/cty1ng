@@ -50,7 +50,7 @@ Reconcile the population when a milestone closes or another PR is assigned to it
 | M0 | #46, #48, #49, #50 | 6 lessons for #49; other PRs unmeasured | 1 itemized; total unknown | unknown | unknown | unknown |
 | M1 | #51, #52, #53, #54, #55 | 5 lessons for #54; other PRs unmeasured | 6 itemized; total unknown | unknown | unknown | unknown |
 | M2 | #20, #56, #57, #58, #59, #66 | 1 lesson for #57; 5 for #59; other PRs unmeasured | 27 itemized; total unknown | 8 known (7 `partial`, 1 `open`); 5 rows `unknown`; total unknown | 10 in the 22 rows that record it; 5 rows `unknown`; total unknown | 7 logged; total unknown |
-| Audit 2026-11-05 | #73, #78, #82, #84, #86, #91, #92, #96, #105, #110 (the PRs with ledger rows) | no lesson source; the ledger rows of these PRs | 162 itemized | 15 (all `open`) | 3 in the 136 rows that record it; 26 rows do not record it | 68 logged |
+| Audit 2026-11-05 | #73, #78, #82, #84, #86, #91, #92, #96, #105, #110 (the PRs with ledger rows) | no lesson source; the ledger rows of these PRs | 164 itemized | 15 (all `open`) | 3 in the 138 rows that record it; 26 rows do not record it | 69 logged |
 
 For a milestone total, count each issue ID assigned to that milestone once.
 Count review rounds by distinct PR and round ID.
@@ -61,7 +61,7 @@ fixed DQ-165. The audit PRs found
 178 issues (DQ-025 to DQ-202). 141 of them name the audit as the milestone that introduced them;
 the other 37 name M2 or `unknown`, and they are not in the Audit row.
 #105 added fifteen issues (DQ-207 to DQ-221) and three rounds on 2026-11-12; the row has them.
-#110 added six issues (DQ-280 to DQ-284, DQ-348) and four rounds (one is a builder's check).
+#110 added eight issues (DQ-280 to DQ-284, DQ-348 to DQ-350) and five rounds (one is a builder's check).
 On 2026-11-12 the owner dropped DQ-109, DQ-167, DQ-169 and DQ-170, and DQ-163, DQ-172 and DQ-173 are fixed (the body of #86); the row has this too. DQ-108, which the owner also dropped, is in the M2 row.
 
 **M2 close check (2026-11-04).** Population: all five baseline PRs are merged, and #66 is the sixth.
@@ -110,7 +110,7 @@ The historical snapshot column gives evidence for a specific review period.
 | [#96](https://github.com/binhle312/cty1ng/pull/96) | Audit 2026-11-05 / DQ-198, a closed dialog and the read of all data | Partial | 5 itemized (DQ-198 from #91, DQ-199 to DQ-202) | 1 (DQ-200) | 2 (DQ-198, DQ-200) | 2 independent reviews (`8953c0a`, `04cad60`) | — |
 | [#98](https://github.com/binhle312/cty1ng/pull/98) | No milestone / one home for each settings default | Partial | 4 itemized (DQ-203 to DQ-206) | 1 (DQ-206) | 0 | 3 reviews that the owner gave to the session (`7f791c5`, `44fa8cf`, `c5a8049`) | — |
 | [#105](https://github.com/binhle312/cty1ng/pull/105) | Audit 2026-11-05 / P3 PR 1, records only | Partial | 15 itemized (DQ-207 to DQ-221) | 3 (DQ-216, DQ-218, DQ-221) | 0 | 3 independent reviews (`5b8cb4e`, `78e1727`, `8f52a7c`) | — |
-| [#110](https://github.com/binhle312/cty1ng/pull/110) | Audit 2026-11-05 / P3 PR 5, an id that is no UUID | Partial | 6 itemized (DQ-280 to DQ-284, DQ-348) | 0 | 0 | 2 independent reviews (`4cffbd2`, `6677339`), a review that the owner gave (`6677339`) and a builder's check (`738d914`) | — |
+| [#110](https://github.com/binhle312/cty1ng/pull/110) | Audit 2026-11-05 / P3 PR 5, an id that is no UUID | Partial | 8 itemized (DQ-280 to DQ-284, DQ-348 to DQ-350) | 0 | 0 | 2 independent reviews (`4cffbd2`, `6677339`), a review that the owner gave (`6677339`), a builder's check (`738d914`) and Codex round 1 (`e965932`) | — |
 
 ## 4. Historical evidence snapshots
 
@@ -209,6 +209,8 @@ A delivery PR does not move rows: it changes the state of a row here (§7, step 
 | DQ-283 | Audit / #110 | 2026-11-12 / #110 / round 2, review of `6677339` | Test gap / P3 | The case "PUT /bots/pins, a bot id of bot_ids" gets to the id lookup only because a new bot is not pinned. If a create pinned the bot, both requests get the same 409, with a broken fix too | [Principle](../.agents/skills/principle-prove-tests-work/SKILL.md) | fixed | Reviewer agent, in the session | `17e9524`: the case reads the pinned list, runs from two start states, and that list gets 200. `check:breaks`: P1, P2 caught | Related: DQ-280; escaped: no; fix-induced: yes (the fix of DQ-280) |
 | DQ-284 | Audit / #110 | 2026-11-12 / #110 / owner's review of `6677339` | Test gap / P3 | The setup of `odd-ids.test.ts` reads three answers with `in` checks and `String()`, not a Zod schema (`frontend-conventions.md` §1). `skills.test.ts` and `stream.test.ts` have the same shape | [Principle](../.agents/skills/principle-prove-tests-work/SKILL.md) | fixed | Review text that the owner gave | `17e9524`: the setup parses each answer with its schema; each of four invalid values stops it (probe). Not claimed: those files and `host-origin.test.ts` | Related: none; escaped: no; fix-induced: no |
 | DQ-348 | Audit / #110 | 2026-11-14 / #110 / builder's check of `738d914` | Missing proof / P3 | The description said "No break list: the test was written before the fix"; 15 cases of `6677339` came after the fix (`testing.md` §5). Rounds 1 and 2 did not name it | [Principle](../.agents/skills/principle-prove-tests-work/SKILL.md) | fixed | Builder's check, at the orchestrator's question | `17e9524`: `scripts/breaks/pr-110.json`, one claim for each of the 33 tests. `pnpm check:breaks`: 33 of 33 caught | Related: DQ-280; escaped: no; fix-induced: yes (the fix of DQ-280) |
+| DQ-349 | Audit / #110 | 2026-11-14 / #110 / Codex round 1, review of `e965932` | Test gap / P3 | The new `PinnedAnswer` of the pins case took any string, not `BotId`, so a wrong id in a setup answer passed. Same cause as DQ-284 | [Principle](../.agents/skills/principle-prove-tests-work/SKILL.md) | fixed | Codex review (gpt-6-astra), local report | `18f1c79`: `PinnedAnswer` uses `BotId`. Probe, a wrong id in the first pins answer: passes on `e965932`, `ZodError` on `18f1c79` | Related: DQ-284; escaped: no; fix-induced: yes (the fix of DQ-284) |
+| DQ-350 | Audit / #110 | 2026-11-14 / #110 / Codex round 1, review of `e965932` | Contract difference / P3 | The new helper `pins(botIds, expected)` took two lists of one type by position, against "Object arguments" (`frontend-conventions.md` §1). Same cause as DQ-014, DQ-083 and DQ-176 | — | fixed | Codex review (gpt-6-astra), local report | `18f1c79`: `pins({ botIds, expected })` | Related: DQ-176; escaped: no; fix-induced: yes (the fix of DQ-283) |
 
 States: `open`, `partial`, `fixed`, `dropped`, `withdrawn`; use `unknown` for historical rows without reconciled closure evidence.
 Unknown states prevent an exact open-issue count. The S7 source reports fixes and failing tests, but lacks per-issue verification references.
@@ -237,6 +239,7 @@ The rounds of merged PRs are in the [archive](delivery-quality-archive.md#review
 | [#110](https://github.com/binhle312/cty1ng/pull/110) / round 2, review of `6677339` | 2026-11-12 | `4cffbd2` / `6677339` | Round 2, the fix commit only, with the narrow brief (owner, 2026-11-12) / independent reviewer agent, reported in the session | DQ-283 | none | DQ-280 and DQ-281 confirmed | none | Reviewer: no P1 or P2. The builder's records do not have its checks |
 | [#110](https://github.com/binhle312/cty1ng/pull/110) / owner's review of `6677339` | 2026-11-12 | Base not stated / `6677339` | The PR at that head, a static review / review text that the owner gave; the session got it on 2026-11-13 | DQ-284 | none; DQ-282 named as still open | none | none | Reviewer: no P1 or P2 "in static review". No run reported. Builder's check of the two findings, read only: a probe for DQ-284 |
 | [#110](https://github.com/binhle312/cty1ng/pull/110) / builder's check of `738d914` | 2026-11-14 | `738d914` / `17e9524` | The open rows and the records, before the Codex rounds / the builder's own check, not an independent review | DQ-348 | none | DQ-283, DQ-284, DQ-348 | none | `odd-ids.test.ts` 33 passed; red run with the `columns.ts` of `ec41c39`: 33 failed; `pnpm check:breaks`: 33 of 33 caught |
+| [#110](https://github.com/binhle312/cty1ng/pull/110) / Codex round 1, review of `e965932` | 2026-11-14 | `7d346f4` / `e965932`, no local changes | The whole PR, standards and spec / Codex (gpt-6-astra, effort high), local report | DQ-349, DQ-350 | none; the review called DQ-284 partial because of DQ-349 | DQ-280 to DQ-283 and DQ-348 confirmed | none | Reviewer: no P1 or P2. 33 passed; 33 failed with the old conversion; conversion and malformed-answer probes; CI success; no full gates |
 
 Use a local review artifact or an authorized PR comment as the source.
 If the head changes after review, the row still describes the original reviewed revision.
