@@ -38,7 +38,7 @@ async function absolutePathZip(): Promise<Buffer> {
 
 // A zip whose `SKILL.md` is longer than its headers say. The size is in two places: the local
 // header (4 bytes at offset 22) and the central directory (4 bytes at offset 24).
-async function forgedSizeZip(real: number, stated: number): Promise<Buffer> {
+async function forgedSizeZip({ real, stated }: { real: number; stated: number }): Promise<Buffer> {
   const zip = await zipOf([{ path: "notes/SKILL.md", data: Buffer.alloc(real, "x") }]);
   const local = zip.indexOf(Buffer.from([0x50, 0x4b, 0x03, 0x04]));
   const central = zip.indexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02]));
@@ -150,7 +150,7 @@ describe("readSkillZip", () => {
   // The limits count the size that a header states, so a header that states too little must not
   // let more bytes in: 2 MB behind a stated size of 10 bytes, under the 1 MB limit of a SKILL.md.
   it("refuses a SKILL.md that is longer than the size in its header", async () => {
-    const zip = await forgedSizeZip(2 * MB, 10);
+    const zip = await forgedSizeZip({ real: 2 * MB, stated: 10 });
     await expect(readSkillZip(zip)).rejects.toMatchObject({ code: "invalid_import" });
   });
 
