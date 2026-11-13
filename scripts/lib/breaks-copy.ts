@@ -4,7 +4,6 @@ import {
   closeSync,
   constants,
   fstatSync,
-  lstatSync,
   mkdirSync,
   openSync,
   readFileSync,
@@ -38,13 +37,12 @@ export function makeCopy(at: { repo: string; copy: string; git: (args: string[])
     );
     throw new Error(rows.join("\n"));
   }
-  // `-z`: git prints each name as it is, with no quotes (DQ-300). Only plain files: a link, such
-  // as a linked node_modules, is not part of the change.
-  const newFiles = at
+  // `-z`: git prints each name as it is, with no quotes (DQ-300).
+  const untracked = at
     .git(["ls-files", "-z", "--others", "--exclude-standard"])
     .toString("utf8")
     .split("\0")
-    .filter((file) => file !== "" && lstatSync(join(at.repo, file)).isFile());
+    .filter((file) => file !== "");
 
   execFileSync("tar", ["-x", "-C", at.copy], { input: at.git(["archive", "HEAD"]) });
   // First each deleted file goes, then the other files come. So the result does not depend on
@@ -52,7 +50,7 @@ export function makeCopy(at: { repo: string; copy: string; git: (args: string[])
   for (const { status, path } of listed) {
     if (status === "D") rmSync(join(at.copy, path), { force: true });
   }
-  const changes = [...listed, ...newFiles.map((path) => ({ status: "?", path }))];
+  const changes = [...listed, ...untracked.map((path) => ({ status: "?", path }))];
   // A fixed order, so that one state has one hash: `diff.orderFile` changes the order of the list.
   changes.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
   const hash = createHash("sha256");
@@ -61,33 +59,44 @@ export function makeCopy(at: { repo: string; copy: string; git: (args: string[])
     const bytes = Buffer.from(part);
     hash.update(`${String(bytes.length)}:`).update(bytes);
   };
+  const newFiles: string[] = [];
   for (const { status, path } of changes) {
+    const taken = status === "D" ? null : take({ ...at, path, tracked: status !== "?" });
+    // Of the paths that git does not track, only a plain file is part of the change: not a
+    // link, such as a linked node_modules, and not a folder with a repository of its own.
+    if (status === "?" && taken?.type !== "file" && taken?.type !== "file with the execute bit") {
+      continue;
+    }
+    if (status !== "D" && taken === null) {
+      throw new Error(`cannot make the copy: ${path} is no plain file and no link`);
+    }
+    if (status === "?") newFiles.push(path);
     put(status);
     put(path);
-    if (status === "D") continue;
-    const taken = take({ ...at, path });
+    if (taken === null) continue;
     put(taken.type);
     put(taken.content);
   }
   const local =
-    changes.length === 0
+    listed.length === 0 && newFiles.length === 0
       ? "none"
       : `sha256 ${hash.digest("hex").slice(0, 16)} (${String(newFiles.length)} new files)`;
   return { local, newFiles };
 }
 
-// Puts one file or link of the checkout into the copy, and gives what it put there.
-function take(at: { repo: string; copy: string; path: string }): {
+// Puts one file or link of the checkout into the copy, and gives what it put there. It gives
+// null, and puts nothing, for a path that is no plain file and no link. `tracked` is false for a
+// path that git does not track: then a link is not put into the copy.
+function take(at: { repo: string; copy: string; path: string; tracked: boolean }): {
   type: "file" | "file with the execute bit" | "link";
   content: string | Buffer;
-} {
+} | null {
   const from = join(at.repo, at.path);
   const to = join(at.copy, at.path);
   const target = linkTarget(from);
+  if (target !== null && !at.tracked) return { type: "link", content: target };
   const file = target === null ? plainFile(from) : null;
-  if (target === null && file === null) {
-    throw new Error(`cannot make the copy: ${at.path} is no plain file and no link`);
-  }
+  if (target === null && file === null) return null;
   mkdirSync(dirname(to), { recursive: true });
   // The old file goes. A folder can be in its place: then the checkout has deleted each file of
   // that folder, and the folder goes too.

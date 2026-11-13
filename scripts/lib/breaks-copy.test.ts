@@ -259,6 +259,14 @@ describe("the copy is the same as the checkout", () => {
     expect(made.newFiles).toEqual([]);
     expect(existsSync(join(made.copy, "inner"))).toBe(false);
   });
+
+  it("with a new link that git does not track: it is not copied, and it is no new file", () => {
+    const folder = committed();
+    symlinkSync("a.test.ts", join(folder.path, "linked.test.ts"));
+    const made = copyOf(folder);
+    expect(made).toMatchObject({ local: "none", newFiles: [] });
+    expect(entry(made.copy, "linked.test.ts")).toBe("absent");
+  });
 });
 
 describe("the stops of the copy", () => {
