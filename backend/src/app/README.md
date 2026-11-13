@@ -7,7 +7,7 @@ The composition root (D35): the only place that wires adapters into the core.
 | `main.ts` | Starts the backend: configuration, migrations, then the server; stops on any failure before it listens. Loads the app only after the settings pass, so a refused start stays small |
 | `main.test.ts` | The real entry point on a port that another program uses: one line, and the database is closed |
 | `compose.ts` | Wires the adapters and the core into the Hono app: the bots and avatar services with the disk avatar store |
-| `one-line.ts` | Writes an owner error line of the CLI or the start as one line: each control character in its escaped form |
+| `one-line.ts` | Writes a failure line of the CLI or the start on stderr as one line: each control character in its escaped form |
 | `one-line.test.ts` | Line breaks, a tab, an escape code, DEL and a C1 control become escapes; other text stays |
 | `config.ts` | Environment variables parsed with Zod (`docs/architecture.md` §8), the loopback check, `DATA_DIR` from the repository root |
 | `catalog-files.ts` | Reads `config/models.yaml` and `config/tools.yaml` into the catalog; checks at start that the model adapter knows each provider and effort |

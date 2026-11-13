@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { oneLine } from "./one-line.ts";
 
-// The owner error lines of the CLI and of the start hold a setting or a path that the owner
-// typed. A control character in it must not add a line or move the cursor.
+// The failure lines that the CLI and the start write on stderr can hold a setting or a path
+// that the owner typed. A control character in such a line must not add a line or move the cursor.
 describe("oneLine", () => {
   it.each([
     { name: "a line break", text: "a\nb", line: "a\\nb" },
