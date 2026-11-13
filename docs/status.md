@@ -29,6 +29,7 @@ The owner's order (2026-11-08, in the [audit file](audits/2026-11-05-repo-audit.
 1. Audit PR 6, six tabs: merged in [#91](https://github.com/binhle312/cty1ng/pull/91) on 2026-11-10. Its follow-up, [#96](https://github.com/binhle312/cty1ng/pull/96), merged on 2026-11-10.
 2. The P3 PRs: every P3 found so far, from one list with no duplicates, in small PRs by area. The M2 close rows of the [#60](https://github.com/binhle312/cty1ng/pull/60) review are on that list.
    The owner approved the list and the order of its PRs on 2026-11-12 ([audit file](audits/2026-11-05-repo-audit.md), "Changed on 2026-11-08"). The first PR, records only, is [#105](https://github.com/binhle312/cty1ng/pull/105).
+   The third PR, the break runner, is [#107](https://github.com/binhle312/cty1ng/pull/107).
 3. One style-only PR for the 104 `max-params` places.
 4. The second audit, with the [audit workflow](workflows/audit.md).
 5. Prepare the [M3 part briefs and specification work](development-plan.md#specification-work-before-m3a).
@@ -186,3 +187,4 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-11 | Skill `arena`: two more rules for the brief of each candidate. [#100](https://github.com/binhle312/cty1ng/pull/100) |
 | 2026-11-11 | A claim fits its proof: three rule changes after an arena. [#101](https://github.com/binhle312/cty1ng/pull/101) |
 | 2026-11-11 | D66 accepted, merged on 2026-11-11: each bot compacts its old history into a summary. [#102](https://github.com/binhle312/cty1ng/pull/102) |
+| 2026-11-12 | [#105](https://github.com/binhle312/cty1ng/pull/105) merged. |
