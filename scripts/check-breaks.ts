@@ -1,36 +1,24 @@
 // `pnpm check:breaks`: runs the break list of a PR. testing.md §5, "Break lists", owns what it
 // checks, its steps and its verdicts; the usage line is in the code below.
 import { execFileSync, spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import {
-  lstatSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  realpathSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { createConnection } from "node:net";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
+import { makeCopy } from "./lib/breaks-copy.ts";
 import {
   applyEdits,
   BreakList,
   type Claim,
-  changedLines,
   claimsFor,
-  coverageProblems,
-  diffArgs,
   diffEnv,
   lineOf,
+  listProblems,
   newErrorLines,
   projectsOf,
-  linkProblems,
   listsFile,
   reportRow,
-  type TestCall,
-  testCalls,
+  testsOfPr,
   playwrightOutcomes,
   type TestOutcome,
   tscProblem,
@@ -62,25 +50,6 @@ const git = (...gitArgs: string[]) =>
 const head = git("rev-parse", "HEAD").trim();
 // The PR's base: each test that the PR adds or changes since then needs a claim or an exemption.
 const base = git("merge-base", "HEAD", option("--base") ?? "origin/main").trim();
-const changed = changedLines(
-  execFileSync("git", diffArgs(base), {
-    encoding: "utf8",
-    maxBuffer: 2 ** 30,
-    env: diffEnv(process.env),
-  }),
-);
-const patch = execFileSync("git", ["diff", "HEAD", "--binary"], { maxBuffer: 2 ** 30 });
-// New files that git does not ignore. Only plain files: a link, such as a linked node_modules,
-// is not part of the change.
-const untracked = git("ls-files", "--others", "--exclude-standard")
-  .split("\n")
-  .filter((file) => file !== "" && lstatSync(file).isFile());
-const hash = createHash("sha256").update(patch);
-for (const file of untracked) hash.update(file).update(readFileSync(file));
-const local =
-  patch.length === 0 && untracked.length === 0
-    ? "none"
-    : `sha256 ${hash.digest("hex").slice(0, 16)} (${String(untracked.length)} new files)`;
 
 // The real path: `tsc` prints it in its file list, also when the temporary folder is a link.
 const copy = realpathSync(mkdtempSync(join(tmpdir(), "check-breaks-")));
@@ -92,15 +61,11 @@ process.on("exit", () => {
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, () => process.exit(1));
 }
-execFileSync("tar", ["-x", "-C", copy], {
-  input: execFileSync("git", ["archive", "HEAD"], { maxBuffer: 2 ** 30 }),
+const { local, newFiles } = makeCopy({
+  repo: ".",
+  copy,
+  git: (gitArgs) => execFileSync("git", gitArgs, { maxBuffer: 2 ** 30 }),
 });
-if (patch.length > 0)
-  execFileSync("git", ["apply", "--whitespace=nowarn"], { cwd: copy, input: patch });
-for (const file of untracked) {
-  mkdirSync(join(copy, dirname(file)), { recursive: true });
-  writeFileSync(join(copy, file), readFileSync(file));
-}
 // The local store first; the registry only for a package that the store does not have.
 execFileSync("pnpm", ["install", "--frozen-lockfile", "--prefer-offline", "--silent"], {
   cwd: copy,
@@ -115,26 +80,19 @@ const read = (path: string) => {
   }
 };
 const list = BreakList.parse(JSON.parse(read(listPath) ?? "null"));
-const picked = claimsFor(list, only);
-const claims = picked.claims;
-// The tests of the PR (all of a new file), with the lines that the PR touched.
-const testsOfPr = new Map<string, TestCall[]>();
-const testFile = /\.(test|spec)\.[cm]?[jt]sx?$/;
-for (const file of [...changed.keys(), ...untracked].filter((path) => testFile.test(path))) {
-  const text = read(file);
-  if (text === null) continue;
-  const lines = changed.get(file);
-  const calls = testCalls(text, file).filter(
-    (call) => lines === undefined || [...lines].some((at) => call.start <= at && at <= call.end),
-  );
-  testsOfPr.set(file, calls);
-}
-// With --only, the list runs in part, so it cannot be complete.
-const problems = [
-  ...picked.problems,
-  ...linkProblems({ claims }, read),
-  ...(only === "" ? coverageProblems(list, testsOfPr) : []),
-];
+const claims = claimsFor(list, only).claims;
+const pr = testsOfPr({
+  base,
+  newFiles,
+  git: (gitArgs) =>
+    execFileSync("git", gitArgs, {
+      encoding: "utf8",
+      maxBuffer: 2 ** 30,
+      env: diffEnv(process.env),
+    }),
+  read,
+});
+const problems = listProblems({ list, only, pr, read });
 if (problems.length > 0) {
   for (const problem of problems) console.error(problem);
   process.exit(1);

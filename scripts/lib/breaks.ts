@@ -224,10 +224,36 @@ export function tscProblem(printed: string): string {
   return (firstTscError(printed) ?? "tsc failed").slice(0, 200);
 }
 
+// A test file by its name (`a.test.tsx`, `b.spec.ts`).
+const TEST_NAME = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
+
 // A file that tests read but that is not the code under test: a break must not edit it.
-// That is a file in a `test/` folder, or a test file by its name (`a.test.tsx`, `b.spec.ts`).
+// That is a file in a `test/` folder, or a test file by its name.
 export function isTestFile(path: string): boolean {
-  return /(?:^|\/)test\//.test(path) || /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(path);
+  return /(?:^|\/)test\//.test(path) || TEST_NAME.test(path);
+}
+
+// The tests of the PR, by file: each test of a new file, and the tests on the changed lines of a
+// changed file. `git` runs a git command in the checkout and gives its output; `read` gives a
+// file of the tested copy, or null. `problems` are the reasons to stop the run.
+export function testsOfPr(at: {
+  base: string;
+  newFiles: readonly string[];
+  git: (args: string[]) => string;
+  read: (path: string) => string | null;
+}): { tests: Map<string, TestCall[]>; problems: string[] } {
+  const changed = changedLines(at.git(diffArgs(at.base)));
+  const tests = new Map<string, TestCall[]>();
+  for (const file of [...changed.keys(), ...at.newFiles].filter((path) => TEST_NAME.test(path))) {
+    const text = at.read(file);
+    if (text === null) continue;
+    const lines = changed.get(file);
+    const calls = testCalls(text, file).filter(
+      (call) => lines === undefined || [...lines].some((n) => call.start <= n && n <= call.end),
+    );
+    tests.set(file, calls);
+  }
+  return { tests, problems: [] };
 }
 
 // Text for one cell of a Markdown table: `\` first, then `|`, so that no text closes the cell.
@@ -325,6 +351,23 @@ export function linkProblems(
     }
   }
   return problems;
+}
+
+// Each problem that stops a run before its first test. With `--only`, the list runs in part,
+// so it cannot be complete: the check for a missing test does not run.
+export function listProblems(at: {
+  list: BreakList;
+  only: string;
+  pr: { tests: ReadonlyMap<string, readonly TestCall[]>; problems: readonly string[] };
+  read: (path: string) => string | null;
+}): string[] {
+  const picked = claimsFor(at.list, at.only);
+  return [
+    ...picked.problems,
+    ...at.pr.problems,
+    ...linkProblems({ claims: picked.claims }, at.read),
+    ...(at.only === "" ? coverageProblems(at.list, at.pr.tests) : []),
+  ];
 }
 
 // One test result, reduced to what the verdict needs. `frames` are the `file:line` places of the
