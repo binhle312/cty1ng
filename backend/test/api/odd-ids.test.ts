@@ -1,4 +1,5 @@
 import { Bot } from "@cty1ng/shared/bots";
+import { BotId } from "@cty1ng/shared/ids";
 import { Skill, SkillVersionListItem } from "@cty1ng/shared/skills";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
@@ -338,9 +339,9 @@ async function pinnedIds(): Promise<string[]> {
     .map(([, id]) => id);
 }
 
-// The answer of PUT /bots/pins.
-const PinnedAnswer = z.object({ pinned_bot_ids: z.array(z.string()) }).strict();
-const pins = (botIds: string[], expected: string[]): Request => ({
+// The answer of PUT /bots/pins, as the route gives it.
+const PinnedAnswer = z.object({ pinned_bot_ids: z.array(BotId) }).strict();
+const pins = ({ botIds, expected }: { botIds: string[]; expected: string[] }): Request => ({
   method: "PUT",
   path: "/bots/pins",
   body: { bot_ids: botIds, expected_bot_ids: expected },
@@ -357,15 +358,19 @@ describe("PUT /bots/pins, a bot id of bot_ids that is no UUID", () => {
       { method: "POST", path: "/bots", body: botBody },
       { status: 201, schema: Bot },
     );
-    if (pinFirst) await read(pins([bot.id], []), { status: 200, schema: PinnedAnswer });
+    if (pinFirst)
+      await read(pins({ botIds: [bot.id], expected: [] }), { status: 200, schema: PinnedAnswer });
     const pinned = await pinnedIds();
     expect(pinned).toEqual(pinFirst ? [bot.id] : []);
-    const pinsWith = (id: IdOf) => pins([...pinned, id("bot")], pinned);
+    const pinsWith = (id: IdOf) => pins({ botIds: [...pinned, id("bot")], expected: pinned });
     const expected = await send(pinsWith(unknown));
     expect(expected.status, "with an id that does not exist").toBeLessThan(500);
     expect(await send(pinsWith(odd))).toEqual(expected);
     // The list check passes with this list, so the two requests above got to the id lookup.
-    const kept = await read(pins(pinned, pinned), { status: 200, schema: PinnedAnswer });
+    const kept = await read(pins({ botIds: pinned, expected: pinned }), {
+      status: 200,
+      schema: PinnedAnswer,
+    });
     expect(kept.pinned_bot_ids).toEqual(pinned);
   });
 });
