@@ -379,18 +379,115 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
 ([check-breaks.ts](../scripts/check-breaks.ts)):
 
 1. It copies HEAD and the local changes to a temporary folder with its own install. The
-   checkout does not change, and e2e tests use the copy's own build and servers.
+   checkout does not change, and e2e tests use the copy's own build and servers. The copy is
+   `git archive HEAD`, and then each file that is not as in HEAD comes from the disk (`makeCopy`
+   in `scripts/lib/breaks-copy.ts`). The runner reads no patch text for this: a git setting of
+   the machine can change that text. git lists the files
+   (`git diff --name-status -z --no-renames --no-relative HEAD`). The copy removes each deleted
+   file. It takes each new file, each changed file and each link from the disk, with its
+   execute bit. A new file that git does not track and does not ignore also comes from the
+   disk, if it is a plain file. A status that is not `A`, `M`, `T` or `D` stops the run before
+   the copy: report it as a defect of the runner.
 2. It refuses a list with a missing link: a claim with no break, a test file or assertion text
    that is not there exactly once, an assertion outside the named test, or a break that edits a
    test or a test helper (a `test/` folder, `*.test.*`, `*.spec.*`) instead of the code.
 3. It refuses a list that misses a test of the PR: each test that the PR adds or changes since
    its base (`git merge-base HEAD origin/main`, or `--base`) needs a claim, or an entry in
-   `exempt` with its reason. With `--only`, the list runs in part, and this check does not run.
+   `exempt` with its reason. It also refuses an entry in `exempt` that names no test that the PR
+   adds or changes. With `--only`, the list runs in part, and the check for a missing test does
+   not run. An `--only` text that matches no claim id and no break id is a problem: the runner
+   runs nothing and exits with 1. How the runner finds the tests of the PR (`testsOfPr` in
+   `scripts/lib/breaks.ts`; owner, 2026-11-13):
+   - **The files.** git lists the files that changed since the base
+     (`git diff --name-status -z --no-renames --no-relative <base>`). The runner reads no patch
+     text. A renamed file is a deleted file and a new file. A test file is a file with a name
+     such as `a.test.tsx` or `b.spec.ts`; the rules below apply only to such a file.
+   - **A new test file** (the status `A`, or a new file that git does not track): each test
+     needs a claim. So each test of a renamed test file needs one. A deleted test file needs
+     nothing.
+   - **A changed test file** (the status `M`): each test with a new key needs a claim. The key
+     of a test is its name, the first line of each `describe` group around it, and its text
+     from the first line of the test call to its last line. The runner compares the keys of
+     the old text (`git cat-file blob <base>:<path>`) with the keys of the new text (from the
+     copy). A test that moves inside its group with the same text needs no claim. A test that
+     moves into a group or out of it needs one. Each test of a group needs one when the first
+     line of the group changes: a new name, or `describe.skip` to `describe`. A line end of
+     Windows is no change.
+   - **The test calls that the runner sees.** A test call is a call of `it` or `test`, also
+     with one or more of the modifiers `only`, `skip`, `concurrent`, `fails`, `fixme`, `slow`
+     and `each`: for example `it.skip(…)`, `it.each(rows)(…)` and `it.each` with a template
+     table. The first argument of the call, as written, decides what the runner reads:
+     - **A string, or a template with no `${…}`:** a test with that name. It needs a claim or
+       an `exempt` entry.
+     - **A template with `${…}`:** a test whose name has `%s` in the place of each `${…}`. It
+       needs a claim or an `exempt` entry. `%s` and the other marks of `it.each` match one or
+       more characters of the name that the test report gives. A `$name` mark of `it.each`
+       matches no name of a report, so such a test needs an `exempt` entry.
+     - **Another expression,** such as a variable: a test whose name is the text of that
+       expression, when a later argument can be a function. An argument can be a function
+       unless it is a string, a template, a number, an object or an array as written. So the
+       name of a function counts, and each other expression: the runner cannot know what it
+       holds. A spread as the first argument (`it(...row)`) is such a test too. No claim can
+       name such a test: the runner gives a message, and the test needs an `exempt` entry with
+       that text as its name, or a plain name. The cost: `test.skip(condition, reason)` with
+       the reason in a variable is no test, but the runner asks for an `exempt` entry.
+     - **No test:** a call with no argument (`test.slow()`), and a call with such an
+       expression as its first argument when no later argument can be a function
+       (`test.skip(condition, "reason")`, `it.each(rows)`).
+   - **What a claim covers.** A claim stands for one test: the test of its file whose name
+     matches the name of the claim and that has the assertion text of the claim. The test that
+     has the assertion is the innermost test call around its exact place, by line and column:
+     two test calls can be on one line. The name alone
+     does not say which test a claim runs: two tests can have one name, and the `%s` of an
+     `it.each` name matches the name of another test. An `exempt` entry has a name and no
+     assertion: it stands for each test of its file with that name as written.
+   - **The stops.** They apply also with `--only`. The status `T` means that a test file became
+     a link, or that a link became a test file. Then keep the type that the file has in the
+     base, or give the changed file a new name: git then lists a deleted file and a new file,
+     and each test of the new file needs a claim. The runner also stops at another status that
+     is not `A`, `M` or `D`, and at a test file that it cannot read in its copy (or whose old
+     text it cannot read). Make the file a file that a program can read. If it is one, report
+     the stop as a defect of the runner.
+   - **A merge that is not complete.** For a file in conflict, git gives `M` or `A` here, not a
+     status of its own. The copy has the file with the marks of the conflict, and each test
+     with a new key counts.
+   - **Not claimed:** that no git setting changes the file list (`--no-renames` and
+     `--no-relative` fix the two settings that the probes of the plan found). That the key
+     holds each way to start or stop a test: it does not hold a condition on a later line of a
+     `describe` call, an `if` or a loop around a test, a skip that a `beforeEach` makes, the
+     config of the test runner, or a `describe.only` or `it.only` that goes out. That the
+     runner finds each test of a file that does not parse. That the copy is correct
+     for a submodule, a sparse checkout, a clean filter (such as LFS) or an `export-ignore` or
+     `export-subst` attribute. That an `exempt` entry stands for one test only: with two tests
+     of one name in a file, one entry stands for the two. That the copy has a change that git does not list: a file with the bit
+     `assume-unchanged` or `skip-worktree`, or a change of the execute bit with
+     `core.fileMode=false`. That the copy is one moment of the checkout: a file that changes
+     during the copy is in the copy as it is at that time.
+   - **Not claimed: that the runner sees each form of a test.** It sees only the test calls
+     of the list above. A test of another form needs no claim, and the runner gives no
+     message. The forms that a probe of 2026-11-14 ran (`forms-probe.mts`, in the description
+     of #107):
+     - another modifier: `it.skipIf(…)(…)`, `it.runIf(…)(…)`, `it.todo(…)`,
+       `it.sequential(…)`, `it.for(…)(…)`, `test.for(…)(…)`, and `test.fail(…)` of Playwright;
+     - a test function with another name: `import { it as spec }`, `const spec = it`,
+       `bench(…)`, `vi.it(…)`, `globalThis.it(…)`;
+     - `it` or `test` that is not written as a plain name: `(it)(…)`, `it["skip"](…)`,
+       `it.call(…)`, `(it as T)(…)`, `it!(…)`;
+     - `it(title)`, with an expression as its only argument (Vitest reads it as a todo, and
+       it runs nothing);
+     - a test in a file with another name than `*.test.*` or `*.spec.*`, and a test that a
+       function of such a file makes for a test file. Four files of the repository have
+       such tests: the three contract suites in `backend/test/contracts/` (`*.contract.ts`,
+       27 tests) and the fixture `scripts/fixtures/e2e-fresh-run/write.pw.ts` (1 test).
+
+     The 118 test files of the repository have none of the first four forms (a parse of
+     2026-11-14, in the description of #107).
 4. Each test must pass with no break first.
 5. Each break runs alone. First, `tsc` must compile each project of the package of the broken
    file (an unused variable is allowed). The frontend has two: its `tsconfig.json` only points
    at one config for the browser code and one for the tests, and the runner compiles both. A
-   break that does not compile is `INVALID`, and its test does not run. A broken TypeScript file
+   break in `shared/` must also compile in each package that uses it: the backend, the frontend
+   and the scripts. A break that does not compile is `INVALID`, and its test does not run. A broken TypeScript file
    that no project reads is also `INVALID`: a compile that did not read the file is no check.
    Then the test runs. A failure at another line, a test timeout, no result (a server failure),
    or a failure whose innermost place outside the libraries is the broken code is `INVALID`.
@@ -398,7 +495,11 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
    `INVALID`: it comes from a throw while a page loads or renders, or from an import that does
    not resolve. Otherwise a failure at the line of the assertion text is `caught`.
 6. The report names the commit, a hash of the local changes, the base, each command and each
-   result, with the first line of the failure message of each caught break.
+   result, with the first line of the failure message of each caught break. The hash comes from
+   the files as the copy takes them: for each file that is not as in HEAD and each new file, in
+   the order of the paths, the status, the path, the type (a file, a file with the execute bit,
+   a link) and the content. The line says `none` when no file differs from HEAD and no new file
+   exists.
 
 **What `caught` proves (owner, 2026-11-09, DQ-168).** The compile check of the project passed,
 the run printed no new error that names the broken file, and the test failed at the assertion
@@ -413,8 +514,10 @@ proof of each claim is the reviewer's check of each catch, in the frontend and t
   the page reached.
 - When the first line of the message does not show the broken behaviour, the reviewer applies
   the break by hand in an own copy, runs the command from the report, reads its full output,
-  and then undoes the break. `--only` does not help here: it prints the same first line. A
-  claim whose evidence stays unclear does not count.
+  and then undoes the break. For a Playwright command, unset `E2E_SERVE_MARKER` first, as the
+  runner does: with it, the run can use the servers of a `pnpm e2e:serve` that runs now. Those
+  servers do not have the break, so the run shows no catch. `--only` does not help here: it
+  prints the same first line. A claim whose evidence stays unclear does not count.
 - A break changes a value or a branch. It does not throw.
 
 The list proves only the claims that someone wrote down; the reviewer still checks that it has

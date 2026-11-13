@@ -1,38 +1,29 @@
 // `pnpm check:breaks`: runs the break list of a PR. testing.md §5, "Break lists", owns what it
 // checks, its steps and its verdicts; the usage line is in the code below.
 import { execFileSync, spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import {
-  lstatSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  realpathSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { createConnection } from "node:net";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
+import { makeCopy } from "./lib/breaks-copy.ts";
 import {
   applyEdits,
   BreakList,
-  cell,
   type Claim,
-  changedLines,
-  coverageProblems,
-  firstTscError,
+  claimsFor,
   lineOf,
+  listProblems,
   newErrorLines,
   projectsOf,
-  linkProblems,
   listsFile,
-  type TestCall,
-  testCalls,
+  reportRow,
+  testsOfPr,
   playwrightOutcomes,
   type TestOutcome,
+  tscProblem,
   verdict,
   type Verdict,
+  verdictText,
   vitestOutcomes,
 } from "./lib/breaks.ts";
 
@@ -58,19 +49,6 @@ const git = (...gitArgs: string[]) =>
 const head = git("rev-parse", "HEAD").trim();
 // The PR's base: each test that the PR adds or changes since then needs a claim or an exemption.
 const base = git("merge-base", "HEAD", option("--base") ?? "origin/main").trim();
-const changed = changedLines(git("diff", "--unified=0", base));
-const patch = execFileSync("git", ["diff", "HEAD", "--binary"], { maxBuffer: 2 ** 30 });
-// New files that git does not ignore. Only plain files: a link, such as a linked node_modules,
-// is not part of the change.
-const untracked = git("ls-files", "--others", "--exclude-standard")
-  .split("\n")
-  .filter((file) => file !== "" && lstatSync(file).isFile());
-const hash = createHash("sha256").update(patch);
-for (const file of untracked) hash.update(file).update(readFileSync(file));
-const local =
-  patch.length === 0 && untracked.length === 0
-    ? "none"
-    : `sha256 ${hash.digest("hex").slice(0, 16)} (${String(untracked.length)} new files)`;
 
 // The real path: `tsc` prints it in its file list, also when the temporary folder is a link.
 const copy = realpathSync(mkdtempSync(join(tmpdir(), "check-breaks-")));
@@ -82,15 +60,11 @@ process.on("exit", () => {
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, () => process.exit(1));
 }
-execFileSync("tar", ["-x", "-C", copy], {
-  input: execFileSync("git", ["archive", "HEAD"], { maxBuffer: 2 ** 30 }),
+const { local, newFiles } = makeCopy({
+  repo: ".",
+  copy,
+  git: (gitArgs) => execFileSync("git", gitArgs, { maxBuffer: 2 ** 30 }),
 });
-if (patch.length > 0)
-  execFileSync("git", ["apply", "--whitespace=nowarn"], { cwd: copy, input: patch });
-for (const file of untracked) {
-  mkdirSync(join(copy, dirname(file)), { recursive: true });
-  writeFileSync(join(copy, file), readFileSync(file));
-}
 // The local store first; the registry only for a package that the store does not have.
 execFileSync("pnpm", ["install", "--frozen-lockfile", "--prefer-offline", "--silent"], {
   cwd: copy,
@@ -105,26 +79,14 @@ const read = (path: string) => {
   }
 };
 const list = BreakList.parse(JSON.parse(read(listPath) ?? "null"));
-const claims = list.claims.filter(
-  (claim) => claim.id.includes(only) || claim.breaks.some((step) => step.id.includes(only)),
-);
-// The tests of the PR (all of a new file), with the lines that the PR touched.
-const testsOfPr = new Map<string, TestCall[]>();
-const testFile = /\.(test|spec)\.[cm]?[jt]sx?$/;
-for (const file of [...changed.keys(), ...untracked].filter((path) => testFile.test(path))) {
-  const text = read(file);
-  if (text === null) continue;
-  const lines = changed.get(file);
-  const calls = testCalls(text, file).filter(
-    (call) => lines === undefined || [...lines].some((at) => call.start <= at && at <= call.end),
-  );
-  testsOfPr.set(file, calls);
-}
-// With --only, the list runs in part, so it cannot be complete.
-const problems = [
-  ...linkProblems({ claims }, read),
-  ...(only === "" ? coverageProblems(list, testsOfPr) : []),
-];
+const claims = claimsFor(list, only).claims;
+const pr = testsOfPr({
+  base,
+  newFiles,
+  git: (gitArgs) => git(...gitArgs),
+  read,
+});
+const problems = listProblems({ list, only, pr, read });
 if (problems.length > 0) {
   for (const problem of problems) console.error(problem);
   process.exit(1);
@@ -209,7 +171,7 @@ function compiles(file: string): true | string {
       { cwd: copy, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
     );
     const printed = `${result.stdout}${result.stderr}`;
-    if (result.status !== 0) return cell(firstTscError(printed) ?? "tsc failed").slice(0, 200);
+    if (result.status !== 0) return tscProblem(printed);
     listed ||= listsFile(printed, { root: copy, file });
   }
   // A passed compile that did not read the broken file is no compile check (testing.md §5).
@@ -230,13 +192,6 @@ function parse(path: string): unknown {
   }
 }
 
-const show = (v: Verdict) =>
-  v.kind === "caught"
-    ? `caught at \`${v.at}\`: ${cell(v.message)}`
-    : v.kind === "survived"
-      ? "SURVIVED"
-      : `INVALID: ${cell(v.reason).slice(0, 300)}`;
-
 const lines = [
   `# Break run of \`${listPath}\``,
   "",
@@ -252,7 +207,14 @@ let failures = 0;
 for (const claim of claims) {
   const base = await run(claim.test);
   const ok = base.outcomes.length === 1 && base.outcomes[0]?.status === "passed";
-  lines.push(`| ${claim.id} | no break | \`${base.command}\` | ${ok ? "passed" : "NOT PASSED"} |`);
+  lines.push(
+    reportRow({
+      claim: claim.id,
+      run: "no break",
+      command: base.command,
+      result: ok ? "passed" : "NOT PASSED",
+    }),
+  );
   if (!ok) {
     failures += 1;
     continue;
@@ -282,8 +244,10 @@ for (const claim of claims) {
             }
           : found;
     if (v.kind !== "caught") failures += 1;
-    lines.push(`| ${claim.id} | ${step.id} | \`${result.command}\` | ${show(v)} |`);
-    console.log(`${step.id}: ${show(v)}`);
+    lines.push(
+      reportRow({ claim: claim.id, run: step.id, command: result.command, result: verdictText(v) }),
+    );
+    console.log(`${step.id}: ${verdictText(v)}`);
   }
 }
 lines.push("", `${String(failures)} problem(s)`);
