@@ -189,7 +189,7 @@ The lead did not check these again, except where a row says so. The others are f
 
 ### API and realtime
 
-- A TypeID with the right shape gives 500 on most routes, not 422 or 404: `shared/src/ids.ts:7`, `backend/src/adapters/db/columns.ts:11`. **Fix before M3.**
+- **Fixed in #110** (such an id gets the answer of an unknown id, for example 404). A TypeID with the right shape gives 500 on most routes, not 422 or 404: `shared/src/ids.ts:7`, `backend/src/adapters/db/columns.ts:11`. **Fix before M3.**
 - **Fixed in #91** ("Decisions for PR 6", last item). In `make dev`, the stream does not come back after a backend outage longer than the 2 s retry: `frontend/src/lib/realtime/start.ts:14`. **Fix before M3.**
 - **Dropped (owner, 2026-11-12).** The owner's correction of the last words: the page reads again only after the tab was hidden, or after a reload. CLI changes do not wake the server's event stream, so open pages stay old until the next server write, a reconnect or a window focus. Second audit; code read by the lead: `backend/src/core/events/hub.ts:103`.
 - **Dropped for the stream of page start (owner, 2026-11-12);** `realtime-events.md` §3, rule 4, names the gap. An event that commits between the first GET and the first `ready` does not reach the page. The spec has this gap too: `frontend/src/lib/realtime/reducer.ts:34`. Read again on 2026-11-12: since #91, each later stream reads all data after its `ready`; DQ-200 is the open gap of that read. The stream of page start is the exception, so the gap of this bullet stays there (`realtime-events.md` §3, "Stream life", rule 4; `start.test.ts`, "the ready of the stream of page start reads nothing again").
