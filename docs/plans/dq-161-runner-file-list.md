@@ -5,8 +5,8 @@ Checkpoint: plan. A redesign after repeated fixes with one cause (`AGENTS.md` §
 Approval: waiting for revision 5. Revision 4 is approved by the owner (2026-11-13). The owner answered the four points of revision 5 (D8, part 9). The owner did not approve the text of revision 5 and the test strategy yet: the owner's order 27 gave the night review to the orchestrator, and the description of #107 names this under `Needs human review`.
 
 This text is revision 5. It is revision 4, plus the copy of the runner (D5), plus the answers of
-D8, plus the probes of 2026-11-14 (part 6, "Probes of revision 5"), plus the points of part 12.
-The orchestrator answered those points on 2026-11-14; the owner did not see them yet.
+D8, plus the probes of 2026-11-13 (part 6, "Probes of revision 5"), plus the points of part 12.
+The orchestrator answered those points on 2026-11-13; the owner did not see them yet.
 
 Where it is built (owner, 2026-11-13, D11): in #107, on the branch `fix-break-runner`. Not in a
 new PR and not on a new branch. This file becomes `docs/plans/dq-161-runner-file-list.md` there.
@@ -245,7 +245,7 @@ revision 5 show that this is not so (part 12, point 2).
 - That the runner sees each form of a test call. It sees `it` and `test` with the modifiers
   `only`, `skip`, `concurrent`, `fails`, `fixme`, `slow` and `each`. It does not see another
   modifier (for example `it.skipIf(…)`, `it.runIf(…)`, `test.for(…)`) or a test function with
-  another name. No test of this repository has such a form (a search of 2026-11-14).
+  another name. No test of this repository has such a form (a search of 2026-11-13).
 
 ## 3. Files to touch
 
@@ -596,7 +596,7 @@ so I expect that the runner fails for another reason. So `--no-relative` is a gu
 | The status list against the base, for a local change that gives the base text again | 0 of 1, no error |
 | `git ls-files --others` with no `-z`, a new file `né.test.ts` | Today the runner stops: `ENOENT … lstat '"n\303\251.test.ts"'` |
 
-**Probes of revision 5 (2026-11-14, the leader of #107; the same list command):**
+**Probes of revision 5 (2026-11-13, the leader of #107; the same list command):**
 
 | Probe | Result |
 | --- | --- |
@@ -773,7 +773,7 @@ They are in "Which tests count", in criterion 7, and in the probes of part 6.
 ## 12. The points of revision 5 that no owner decision answers
 
 No decision of the owner (D5, D8, revision 4) answers these points. Each has the view of the
-builder and the answer of the orchestrator (2026-11-14, under the owner's order 27). The owner
+builder and the answer of the orchestrator (2026-11-13, under the owner's order 27). The owner
 did not see them. Points 2, 3, 5 and 9 have one line each under `Needs human review` in the
 description of #107.
 
