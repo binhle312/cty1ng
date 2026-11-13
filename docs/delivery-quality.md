@@ -50,7 +50,7 @@ Reconcile the population when a milestone closes or another PR is assigned to it
 | M0 | #46, #48, #49, #50 | 6 lessons for #49; other PRs unmeasured | 1 itemized; total unknown | unknown | unknown | unknown |
 | M1 | #51, #52, #53, #54, #55 | 5 lessons for #54; other PRs unmeasured | 6 itemized; total unknown | unknown | unknown | unknown |
 | M2 | #20, #56, #57, #58, #59, #66 | 1 lesson for #57; 5 for #59; other PRs unmeasured | 27 itemized; total unknown | 8 known (7 `partial`, 1 `open`); 5 rows `unknown`; total unknown | 10 in the 22 rows that record it; 5 rows `unknown`; total unknown | 7 logged; total unknown |
-| Audit 2026-11-05 | #73, #78, #82, #84, #86, #91, #92, #96, #105, #109, #112 (the PRs with ledger rows) | no lesson source; the ledger rows of these PRs | 181 itemized | 19 (18 `open`, 1 `partial`) | 3 in the 155 rows that record it; 26 rows do not record it | 71 logged |
+| Audit 2026-11-05 | #73, #78, #82, #84, #86, #91, #92, #96, #105, #109, #112 (the PRs with ledger rows) | no lesson source; the ledger rows of these PRs | 181 itemized | 19 (18 `open`, 1 `partial`) | 3 in the 155 rows that record it; 26 rows do not record it | 72 logged |
 
 For a milestone total, count each issue ID assigned to that milestone once.
 Count review rounds by distinct PR and round ID.
@@ -60,7 +60,7 @@ The Audit row was counted on 2026-11-11 from the rows of the two files, after #9
 fixed DQ-165. The audit PRs found
 178 issues (DQ-025 to DQ-202). 141 of them name the audit as the milestone that introduced them;
 the other 37 name M2 or `unknown`, and they are not in the Audit row.
-#105 added fifteen issues (DQ-207 to DQ-221) and three rounds on 2026-11-12; the row has them. #109 has sixteen issues (DQ-222 to DQ-234, DQ-335, DQ-336, DQ-339) and four rounds; #112 records three of these issues and two of these rounds (D6). #112 added nine issues (DQ-295 to DQ-299, DQ-337, DQ-338, DQ-340, DQ-341) and three rounds.
+#105 added fifteen issues (DQ-207 to DQ-221) and three rounds on 2026-11-12; the row has them. #109 has sixteen issues (DQ-222 to DQ-234, DQ-335, DQ-336, DQ-339) and four rounds; #112 records three of these issues and two of these rounds (D6). #112 added nine issues (DQ-295 to DQ-299, DQ-337, DQ-338, DQ-340, DQ-341) and four rounds.
 On 2026-11-12 the owner dropped DQ-109, DQ-167, DQ-169 and DQ-170, and DQ-163, DQ-172 and DQ-173 are fixed (the body of #86); the row has this too. DQ-108, which the owner also dropped, is in the M2 row.
 
 **M2 close check (2026-11-04).** Population: all five baseline PRs are merged, and #66 is the sixth.
@@ -110,7 +110,7 @@ The historical snapshot column gives evidence for a specific review period.
 | [#98](https://github.com/binhle312/cty1ng/pull/98) | No milestone / one home for each settings default | Partial | 4 itemized (DQ-203 to DQ-206) | 1 (DQ-206) | 0 | 3 reviews that the owner gave to the session (`7f791c5`, `44fa8cf`, `c5a8049`) | — |
 | [#105](https://github.com/binhle312/cty1ng/pull/105) | Audit 2026-11-05 / P3 PR 1, records only | Partial | 15 itemized (DQ-207 to DQ-221) | 1 (DQ-216) | 0 | 3 independent reviews (`5b8cb4e`, `78e1727`, `8f52a7c`) | — |
 | [#109](https://github.com/binhle312/cty1ng/pull/109) | Audit 2026-11-05 / the review end rule, and two texts from the owner | Partial | 16 itemized (DQ-222 to DQ-234, DQ-335, DQ-336, DQ-339) | 4 (DQ-230, DQ-231, DQ-339 `open`; DQ-232 `partial`) | 0 | 2 independent reviews (`da80b74`, `4d68a89`), an owner's review (`d6dd296`) and a Codex review (`a717396`); #112 records the last two (D6) | — |
-| [#112](https://github.com/binhle312/cty1ng/pull/112) | Audit 2026-11-05 / the exception for a claim bigger than its proof in round 2 | Partial | 9 itemized (DQ-295 to DQ-299, DQ-337, DQ-338, DQ-340, DQ-341) | 2 (DQ-338, DQ-340) | 0 | 2 independent reviews (`01c2638`, `0be17c4`) and a Codex review (`cd6fe4b`) | — |
+| [#112](https://github.com/binhle312/cty1ng/pull/112) | Audit 2026-11-05 / the exception for a claim bigger than its proof in round 2 | Partial | 9 itemized (DQ-295 to DQ-299, DQ-337, DQ-338, DQ-340, DQ-341) | 2 (DQ-338, DQ-340) | 0 | 2 independent reviews (`01c2638`, `0be17c4`) and 2 Codex reviews (`cd6fe4b`, `7268261`) | — |
 
 ## 4. Historical evidence snapshots
 
@@ -259,6 +259,7 @@ The rounds of merged PRs are in the [archive](delivery-quality-archive.md#review
 | [#112](https://github.com/binhle312/cty1ng/pull/112) / round 1, review of `01c2638` | 2026-11-12 | `d6dd296` (the head of #109) / `01c2638`; the handoff of the PR says that the worktree was clean | Round 1, the whole diff of the PR / independent reviewer agent; the orchestrator session gave its findings to the builder in the handoff of the PR | DQ-295 to DQ-299 (R1 to R5) | none | none | none | Reviewer: no P1 or P2. It compared the exception with the owner's words, and it counted the ledger rows and bytes again. `pnpm lint` and `pnpm check:index` not run, by its brief. Its other commands were not reported to the builder |
 | [#112](https://github.com/binhle312/cty1ng/pull/112) / round 2, review of `0be17c4` | 2026-11-13 | `6a64220` / `0be17c4`, no local changes | Round 2, the fix commit and the records of round 1, with the narrow brief of the merge bar, also step 6 and the list of question 8 / independent reviewer agent; its report is in a file outside the repository | DQ-337, DQ-338 | none | DQ-295 to DQ-299 confirmed | none | Reviewer: no P1 or P2. `git`, `grep` and `awk` commands, the description's script, Prettier on three files, `pnpm check:index`, a count of §2; `pnpm lint` not run |
 | [#112](https://github.com/binhle312/cty1ng/pull/112) / Codex round 1, review of `cd6fe4b` | 2026-11-13 | `a717396` / `cd6fe4b`, no local changes | The whole PR, and a narrow check of the fix commit `04f32d8` / Codex, model gpt-6-astra, effort high (order 27), with two reviewer agents | DQ-340, DQ-341 | none | DQ-233, DQ-234, DQ-337 confirmed; DQ-336 correct | none | No P1 or P2. Answered by owner decisions, not counted: the rule words after round 1 (D12), the ledger size (D13), the records of #109 here (D6). `git diff --check`, Prettier on seven files, a ledger count. Not verified by it: the copy of W1 to W7 (the owner's file is outside the repository) |
+| [#112](https://github.com/binhle312/cty1ng/pull/112) / Codex round 2, review of `7268261` | 2026-11-13 | `cd6fe4b` / `7268261`, PR base `a717396`, no local changes | The changes after `cd6fe4b`, the description and the carried rows / Codex, model gpt-6-astra, effort high (order 27), with two reviewer agents | none | none | DQ-341 confirmed; DQ-233, DQ-234, DQ-337 still fixed | none | No P1, P2 or P3. Known, end (d): DQ-230, DQ-231, DQ-232 part b, DQ-338, DQ-339, DQ-340. `git diff --check`, Prettier, a ledger count. Unused ids of #112: DQ-342 to DQ-344 |
 
 Use a local review artifact or an authorized PR comment as the source.
 If the head changes after review, the row still describes the original reviewed revision.
