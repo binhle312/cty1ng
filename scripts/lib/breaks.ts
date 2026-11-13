@@ -39,7 +39,8 @@ export type BreakList = z.infer<typeof BreakList>;
 export type Claim = z.infer<typeof Claim>;
 export type Break = z.infer<typeof Break>;
 
-// A test call in a test file: its name as written (with `%s` for `it.each`) and its lines.
+// A test call in a test file: its name as written (with `%s` for `it.each`, and for each `${…}`
+// of a template) and its lines.
 export interface TestCall {
   name: string;
   start: number;
@@ -59,7 +60,26 @@ function isTestFunction(node: ts.Expression): boolean {
   if (ts.isPropertyAccessExpression(node))
     return MODIFIERS.has(node.name.text) && isTestFunction(node.expression);
   if (ts.isCallExpression(node)) return isTestFunction(node.expression);
+  // `it.each` with a template table.
+  if (ts.isTaggedTemplateExpression(node)) return isTestFunction(node.tag);
   return false;
+}
+
+// The name of a test call, or null for a call that is no test. A plain string is the name. A
+// template with `${…}` gives its text with `%s` in the place of each `${…}`, so that
+// `nameMatches` reads it as a name of `it.each`. Another expression, such as a variable, gives
+// its text as written, but only when a later argument is a function: `test.skip(condition,
+// "reason")` inside a test of Playwright is no test. A test that this function does not see
+// needs no claim, with no message (DQ-301).
+function nameOf(call: ts.CallExpression, source: ts.SourceFile): string | null {
+  const [first, ...rest] = call.arguments;
+  if (first === undefined) return null;
+  if (ts.isStringLiteralLike(first)) return first.text;
+  if (ts.isTemplateExpression(first)) {
+    return [first.head.text, ...first.templateSpans.map((span) => span.literal.text)].join("%s");
+  }
+  const hasFunction = rest.some((arg) => ts.isArrowFunction(arg) || ts.isFunctionExpression(arg));
+  return hasFunction ? first.getText(source) : null;
 }
 
 // Whether a call starts a group: `describe(...)`, `describe.skip(...)`, `describe.each(rows)(...)`
@@ -85,10 +105,8 @@ function groupedCalls(text: string, path: string): GroupedCall[] {
       // The line as written, with its spaces.
       if (isDescribe(node.expression)) inside = [...groups, rows[start - 1] ?? ""];
       else if (isTestFunction(node.expression)) {
-        const [first] = node.arguments;
-        if (first !== undefined && ts.isStringLiteralLike(first)) {
-          calls.push({ name: first.text, start, end: line(node.getEnd()), groups });
-        }
+        const name = nameOf(node, source);
+        if (name !== null) calls.push({ name, start, end: line(node.getEnd()), groups });
       }
     }
     ts.forEachChild(node, (child) => {

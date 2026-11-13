@@ -1062,3 +1062,52 @@ describe("git settings", () => {
     });
   });
 });
+
+// DQ-301: a test call that the reader does not see needs no claim.
+describe("the name of a test", () => {
+  it("finds a test with ${…} in its name, with %s in the place of each", () => {
+    const text = "test(`opens ${path} directly, ${String(n)} times`, async () => {\n});\n";
+    expect(testCalls(text, "e.spec.ts")).toEqual([
+      { name: "opens %s directly, %s times", start: 1, end: 2 },
+    ]);
+  });
+
+  it("finds a test with a variable as its name, by the text of the argument", () => {
+    const text = "for (const row of rows) {\n  it(row.name, () => {\n    row.check();\n  });\n}\n";
+    expect(testCalls(text, "x.test.ts")).toEqual([{ name: "row.name", start: 2, end: 4 }]);
+  });
+
+  it("finds a test of it.each with a template table", () => {
+    const text = 'it.each`\n  a    | b\n  ${1} | ${2}\n`("adds $a and $b", ({ a, b }) => {\n});\n';
+    expect(testCalls(text, "x.test.ts")).toEqual([{ name: "adds $a and $b", start: 1, end: 5 }]);
+  });
+
+  it("reads a call with no function after its first argument as no test", () => {
+    const text = [
+      'test("outer", async ({ browserName }) => {',
+      '  test.skip(browserName === "webkit", "not on this browser");',
+      "  test.slow();",
+      "});",
+      "",
+    ].join("\n");
+    expect(testCalls(text, "e.spec.ts")).toEqual([{ name: "outer", start: 1, end: 4 }]);
+  });
+
+  it("needs a claim or an exemption for a new test with ${…} in its name", () => {
+    const file = "e.spec.ts";
+    const folder = committed('test("old", async () => {});\n', file);
+    const added = "test(`opens ${path} directly`, async () => {\n  expect(1).toBe(1);\n});\n";
+    folder.write(file, `test("old", async () => {});\n${added}`);
+    const { tests } = prOf(folder);
+    const claim = {
+      ...list().claims[0],
+      test: { kind: "e2e", file, name: "opens /bots directly" },
+    };
+    expect(coverageProblems({ claims: [], exempt: [] }, tests)).toEqual([
+      `${file}:2: the test "opens %s directly" has no claim`,
+    ]);
+    expect(coverageProblems(BreakList.parse({ claims: [claim] }), tests)).toEqual([]);
+    const exempt = [{ file, name: "opens %s directly", reason: "written first" }];
+    expect(coverageProblems({ claims: [], exempt }, tests)).toEqual([]);
+  });
+});
