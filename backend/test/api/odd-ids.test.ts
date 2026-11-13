@@ -1,4 +1,7 @@
+import { Bot } from "@cty1ng/shared/bots";
+import { Skill, SkillVersionListItem } from "@cty1ng/shared/skills";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { z } from "zod";
 import { typeIdIds } from "../../src/adapters/ids/typeid-ids.ts";
 import { ORIGIN, testBackend } from "../helpers.ts";
 
@@ -55,32 +58,51 @@ function request({ method, path, body }: Request) {
   });
 }
 
+// An answer with an error (api.md §1 Errors). Any other answer has no code.
+const ErrorAnswer = z.object({ error: z.object({ code: z.string() }) });
+
 async function send(sent: Request) {
   const response = await request(sent);
-  const json: unknown = await response.json().catch(() => null);
-  const error = typeof json === "object" && json !== null && "error" in json ? json.error : null;
-  const code = typeof error === "object" && error !== null && "code" in error ? error.code : null;
-  return { status: response.status, code };
+  const answer = ErrorAnswer.safeParse(await response.json().catch(() => null));
+  return { status: response.status, code: answer.success ? answer.data.error.code : null };
 }
 
-async function created(path: string, body: unknown): Promise<{ id: string; row_version: number }> {
-  const response = await request({ method: "POST", path, body });
-  expect(response.status, `POST ${path}`).toBe(201);
-  const json: unknown = await response.json();
-  if (typeof json !== "object" || json === null || !("id" in json) || !("row_version" in json)) {
-    throw new Error("no row in the answer");
-  }
-  return { id: String(json.id), row_version: Number(json.row_version) };
+// Each answer of the setup is parsed with its schema, so a wrong value stops the setup.
+async function read<T>(
+  sent: Request,
+  { status, schema }: { status: number; schema: z.ZodType<T> },
+): Promise<T> {
+  const response = await request(sent);
+  expect(response.status, `${sent.method} ${sent.path}`).toBe(status);
+  return schema.parse(await response.json());
+}
+
+async function setup() {
+  const skill = await read(
+    { method: "POST", path: "/skills", body: skillBody },
+    { status: 201, schema: Skill },
+  );
+  const versions = await read(
+    { method: "GET", path: `/skills/${skill.id}/versions` },
+    { status: 200, schema: z.array(SkillVersionListItem) },
+  );
+  const first = versions.find((version) => version.version === 1);
+  if (first === undefined) throw new Error("the skill has no version 1");
+  const bot = await read(
+    { method: "POST", path: "/bots", body: botBody },
+    { status: 201, schema: Bot },
+  );
+  return { skill, skillv: first.id, bot };
 }
 
 // What a case gets: the id maker, the rows that exist, and 1 or 2 for a value that must be new
 // in each of its two requests.
 interface With {
   id: IdOf;
-  skill: { id: string; row_version: number };
+  skill: Skill;
   // The id of version 1 of that skill.
   skillv: string;
-  bot: { id: string; row_version: number };
+  bot: Bot;
   run: number;
 }
 type Case = (given: With) => Request;
@@ -200,14 +222,6 @@ const CASES: [name: string, requestOf: Case][] = [
     ({ id, skill }) => ({ method: "DELETE", path: `/bots/${id("bot")}/skills/${skill.id}` }),
   ],
   [
-    "PUT /bots/pins, a bot id of bot_ids",
-    ({ id }) => ({
-      method: "PUT",
-      path: "/bots/pins",
-      body: { bot_ids: [id("bot")], expected_bot_ids: [] },
-    }),
-  ],
-  [
     "POST /skills/{id}/versions",
     ({ id }) => ({
       method: "POST",
@@ -305,18 +319,53 @@ const CASES: [name: string, requestOf: Case][] = [
 
 describe("an id of the right shape that is no UUID", () => {
   it.each(CASES)("%s: answers as for an id that does not exist", async (_name, requestOf) => {
-    const skill = await created("/skills", skillBody);
-    const versions: unknown = await (
-      await request({ method: "GET", path: `/skills/${skill.id}/versions` })
-    ).json();
-    const first: unknown = Array.isArray(versions) ? versions[0] : null;
-    if (typeof first !== "object" || first === null || !("id" in first)) {
-      throw new Error("the skill has no version");
-    }
-    const rows = { skill, skillv: String(first.id), bot: await created("/bots", botBody) };
+    const rows = await setup();
     const expected = await send(requestOf({ id: unknown, ...rows, run: 1 }));
     // The request with a new id is a real refusal or a real success, so the comparison has a base.
     expect(expected.status, "with an id that does not exist").toBeLessThan(500);
     expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);
+  });
+});
+
+// The pinned list in header order (domain-model.md §2), read from the bots.
+async function pinnedIds(): Promise<string[]> {
+  const bots = await read({ method: "GET", path: "/bots" }, { status: 200, schema: z.array(Bot) });
+  return bots
+    .flatMap((bot) =>
+      bot.pinned_position === null ? [] : [[bot.pinned_position, bot.id] as const],
+    )
+    .sort(([a], [b]) => a - b)
+    .map(([, id]) => id);
+}
+
+// The answer of PUT /bots/pins.
+const PinnedAnswer = z.object({ pinned_bot_ids: z.array(z.string()) }).strict();
+const pins = (botIds: string[], expected: string[]): Request => ({
+  method: "PUT",
+  path: "/bots/pins",
+  body: { bot_ids: botIds, expected_bot_ids: expected },
+});
+
+// PUT /bots/pins compares expected_bot_ids with the pinned list before it looks up each bot id.
+// So the case sends the pinned list that it reads, and runs from each start state (DQ-283).
+describe("PUT /bots/pins, a bot id of bot_ids that is no UUID", () => {
+  it.each([
+    ["no bot is pinned", false],
+    ["a bot is pinned", true],
+  ] as const)("when %s: answers as for an id that does not exist", async (_name, pinFirst) => {
+    const bot = await read(
+      { method: "POST", path: "/bots", body: botBody },
+      { status: 201, schema: Bot },
+    );
+    if (pinFirst) await read(pins([bot.id], []), { status: 200, schema: PinnedAnswer });
+    const pinned = await pinnedIds();
+    expect(pinned).toEqual(pinFirst ? [bot.id] : []);
+    const pinsWith = (id: IdOf) => pins([...pinned, id("bot")], pinned);
+    const expected = await send(pinsWith(unknown));
+    expect(expected.status, "with an id that does not exist").toBeLessThan(500);
+    expect(await send(pinsWith(odd))).toEqual(expected);
+    // The list check passes with this list, so the two requests above got to the id lookup.
+    const kept = await read(pins(pinned, pinned), { status: 200, schema: PinnedAnswer });
+    expect(kept.pinned_bot_ids).toEqual(pinned);
   });
 });
