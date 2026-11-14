@@ -6,6 +6,9 @@ import { heldAnswer, watchQueryClient } from "./fake-api.ts";
 // wait checks nothing, so the helper fails loudly when the client is missing or left over from an
 // earlier test (DQ-115).
 describe("heldAnswer", () => {
+  // Set by the test that sets a client, so the "left over" test fails when it runs alone.
+  let earlierTestSetAClient = false;
+
   it("fails when the test set no query client", async () => {
     const held = heldAnswer();
     await expect(held.answer({ body: [] }), "no client").rejects.toThrow(/watchQueryClient/);
@@ -15,12 +18,14 @@ describe("heldAnswer", () => {
   // the first sets a client, the second must not use it.
   it("takes the answer when the test set its query client", async () => {
     watchQueryClient(new QueryClient());
+    earlierTestSetAClient = true;
     const held = heldAnswer();
     await held.answer({ body: [] });
     await expect(held.promise).resolves.toEqual({ body: [] });
   });
 
   it("fails when only an earlier test set the query client", async () => {
+    expect(earlierTestSetAClient, "the earlier test ran first").toBe(true);
     const held = heldAnswer();
     await expect(held.answer({ body: [] }), "left over").rejects.toThrow(/watchQueryClient/);
   });

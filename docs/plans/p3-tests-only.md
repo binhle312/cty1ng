@@ -16,7 +16,7 @@ without a real check.
 | --- | --- | --- |
 | `bots.spec.ts:307` | After the late answer to upload A, B's crop card stays open and A is not chosen (`crop-card.tsx`, `closed.current`) | `pageIsQuiet` |
 | `bots.spec.ts:496` | A drop below the header sends no pin save | `pageIsQuiet` |
-| `bots.spec.ts:534` | A long press (300 ms, `drag-setup.ts`) starts a drag | Wait for dnd-kit's live-region text `Picked up <name>.`, which `onDragStart` sets |
+| `bots.spec.ts:534` | A long press (300 ms, `drag-setup.ts`) starts a drag | Wait for a live region (`role="status"`) that contains the bot's name. dnd-kit writes it at each drag step, from `onDragStart` on (revision 2) |
 | `skills.spec.ts:872` | After the 4th failed list read, the editor and its text stay | `pageIsQuiet`, after the existing count `failures >= 4` |
 | `skills.spec.ts:1029`, `:1031` | No more settings requests come: the page does not loop | Kept. The time window is the check itself. A loop that waits on retry timers has no open request, so no signal can replace the window |
 | `stream-life.spec.ts:166` | After the read that follows `ready`, the Clone draft stays | `pageIsQuiet`. After the list read, the clone source reads each skill's versions one by one, so "list read + 500 ms" was weak |
@@ -40,7 +40,7 @@ is open, so a test with retries first waits for their count.
 - `frontend/test/setup.ts` forgets the client after each test.
 - `answer` throws a clear error when the test set no client.
 
-The callers are 10 files and 136 `heldAnswer()` calls. The signature stays the same. New tests in
+The callers are 136 `heldAnswer()` calls in 8 test files. The signature stays the same. New tests in
 `frontend/test/fake-api.test.ts` show the behaviour. `vitest.config.ts` gets one include line for
 `frontend/test/**/*.test.{ts,tsx}`, which is outside the listed scope and is flagged.
 
@@ -82,3 +82,11 @@ total in the full run) has the same cause. It is not on the P3 row, so it is not
   is visible.
 - The exact path counts need an update when a model changes on purpose.
 - #107 rewrites the break runner. If #107 merges first, the records turn runs the report again.
+
+## Revision 2 (2026-11-15, after e2e run 1 and review round 1)
+
+- The long-press wait: dnd-kit replaces `Picked up <name>.` at once with the text for the place
+  under the finger, so e2e run 1 failed (`6bab70c`). Every drag announcement names the bot, so the
+  test waits for a live region with the bot's name. Review round 1 checked that no element with
+  `role="status"` and the name can show before the drag starts.
+- `pageIsQuiet` does its two quiet checks in one call (review round 1, R1-3).

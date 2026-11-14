@@ -30,7 +30,9 @@ export async function watchRequests(page: Page): Promise<void> {
 // tells the page on a zero-delay timer, and React renders. A retry that waits on its own timer
 // has no open request in the meantime, so a test with retries first waits for their count.
 export async function pageIsQuiet(page: Page): Promise<void> {
-  const turn = () =>
+  // One window of two quiet checks in a row, in one call: a request that starts and ends between
+  // two calls would be in neither check.
+  const quiet = () =>
     page.evaluate(async () => {
       const count: unknown = Reflect.get(window, "__requests");
       if (
@@ -41,11 +43,13 @@ export async function pageIsQuiet(page: Page): Promise<void> {
       )
         throw new Error("watchRequests(page) was not called before the page loaded.");
       const before = Number(count.started);
-      for (let n = 0; n < 3; n += 1) await new Promise((resolve) => setTimeout(resolve, 0));
+      const threeTurns = async () => {
+        for (let n = 0; n < 3; n += 1) await new Promise((resolve) => setTimeout(resolve, 0));
+      };
+      await threeTurns();
+      if (Number(count.open) !== 0) return false;
+      await threeTurns();
       return Number(count.open) === 0 && Number(count.started) === before;
     });
-  // Two quiet checks in a row.
-  await expect
-    .poll(async () => (await turn()) && (await turn()), { message: "the page stays quiet" })
-    .toBe(true);
+  await expect.poll(quiet, { message: "the page stays quiet" }).toBe(true);
 }
