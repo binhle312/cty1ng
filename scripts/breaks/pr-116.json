@@ -11,11 +11,11 @@
       "assertion": "expect(router.state.location.pathname, \"still on Designer\").toBe(\"/bots/designer\");",
       "breaks": [
         {
-          "id": "D1-no-mounted-check",
+          "id": "D1-no-place-check",
           "file": "frontend/src/features/bots/bot-page.tsx",
           "edits": [
             {
-              "find": "      if (!mounted.current) return;\n",
+              "find": "      if (router.state.location.pathname !== `/bots/${bot.slug}`) return;\n",
               "replace": ""
             }
           ]
@@ -33,11 +33,11 @@
       "assertion": "expect(router.state.location.pathname, \"still on Skills\").toBe(\"/skills\");",
       "breaks": [
         {
-          "id": "D2-no-mounted-check",
+          "id": "D2-no-place-check",
           "file": "frontend/src/features/bots/bot-page.tsx",
           "edits": [
             {
-              "find": "      if (!mounted.current) return;\n",
+              "find": "      if (router.state.location.pathname !== `/bots/${bot.slug}`) return;\n",
               "replace": ""
             }
           ]
@@ -59,7 +59,7 @@
           "file": "frontend/src/features/bots/bot-page.tsx",
           "edits": [
             {
-              "find": "      void navigate({ to: \"/bots\", replace: true });\n",
+              "find": "      void router.navigate({ to: \"/bots\", replace: true });\n",
               "replace": ""
             }
           ]
@@ -405,58 +405,189 @@
           ]
         }
       ]
+    },
+    {
+      "id": "D4",
+      "claim": "A late Delete success after the owner left and came back to this bot opens the Bots page (the rule is the owner's place, not the old page)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "opens the Bots page when Delete answers after the owner came back to the bot"
+      },
+      "assertion": "expect(router.state.location.pathname, \"back on BA, then the Bots page\").toBe(\"/bots\");",
+      "breaks": [
+        {
+          "id": "D4-mount-check",
+          "file": "frontend/src/features/bots/bot-page.tsx",
+          "edits": [
+            {
+              "find": "  const router = useRouter();\n  const remove",
+              "replace": "  const router = useRouter();\n  const mounted = useRef(true);\n  useEffect(() => {\n    mounted.current = true;\n    return () => {\n      mounted.current = false;\n    };\n  }, []);\n  const remove"
+            },
+            {
+              "find": "      if (router.state.location.pathname !== `/bots/${bot.slug}`) return;\n",
+              "replace": "      if (!mounted.current || router.state.location.pathname !== `/bots/${bot.slug}`) return;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T2",
+      "claim": "After a failed Try again, Try again sends again and shows Creating (the test then also checks the banner and a third Try again; no break covers those steps)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "shows the banner again when Try again gets a server error too"
+      },
+      "assertion": "expect(await screen.findByRole(\"button\", { name: \"Creating\" }), \"sends again\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "T2-spread-after-kind",
+          "file": "frontend/src/features/bots/create-bot-page.tsx",
+          "edits": [
+            {
+              "find": "    setSend({ kind: \"sending\", key: request.key, body: request.body });",
+              "replace": "    setSend({ kind: \"sending\", ...request });"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E9",
+      "claim": "Esc during a mouse drag only cancels the drag",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "only cancels a mouse drag of a pinned bot on Esc"
+      },
+      "assertion": "expect(screen.queryByRole(\"alertdialog\"), \"the mouse drag used the Esc\").toBeNull();",
+      "breaks": [
+        {
+          "id": "E9-no-mouse-mark",
+          "file": "frontend/src/features/bots/drag-setup.ts",
+          "edits": [
+            {
+              "find": "      activationConstraint: { distance: 5 },\n      onActivation: markEscUntilRelease,\n",
+              "replace": "      activationConstraint: { distance: 5 },\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E10",
+      "claim": "After a mouse drag ends with the drop, Esc asks again (the mark ends at the release)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "asks on Esc after a mouse drag of a pinned bot ended with the drop"
+      },
+      "assertion": "expect(screen.getByRole(\"alertdialog\", QUESTION), \"Esc after the drop asks\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "E10-no-release-stop",
+          "file": "frontend/src/features/bots/drag-setup.ts",
+          "edits": [
+            {
+              "find": "  for (const name of RELEASES) window.addEventListener(name, stop, true);\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "claim": "\"caller left\" checks that Esc opened the question (DQ-095)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "caller left: the question goes with the page when the bot leaves the list"
+      },
+      "assertion": "expect(screen.getByRole(\"alertdialog\", QUESTION), \"the question opened\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "Q1-no-ask",
+          "file": "frontend/src/features/bots/bot-page.tsx",
+          "edits": [
+            {
+              "find": "    if (editView(store.get(), { rules, ctx }).unsaved[t].length === 0) return;\n    leave.ask();\n",
+              "replace": "    if (editView(store.get(), { rules, ctx }).unsaved[t].length === 0) return;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W1",
+      "claim": "\"waits for the settings\" reaches the wait for the settings read (DQ-095)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "waits for the retries of the settings, then opens with the last values"
+      },
+      "assertion": "expect(screen.queryByRole(\"heading\", { name: \"New bot\" }), \"the form waits\").toBeNull();",
+      "breaks": [
+        {
+          "id": "W1-no-settings-wait",
+          "file": "frontend/src/features/bots/create-bot-page.tsx",
+          "edits": [
+            {
+              "find": "[settings, models, tools, skills].some((q) => !q.isFetchedAfterMount)",
+              "replace": "[models, tools, skills].some((q) => !q.isFetchedAfterMount)"
+            }
+          ]
+        }
+      ]
     }
   ],
   "exempt": [
     {
       "file": "frontend/src/features/bots/create-bot-page.test.tsx",
       "name": "moves the focus to a request limit out of range when Create finds it",
-      "reason": "Test first: its red run on the code of 97221d3 is in the PR description (Red runs). Not a late, security or order test"
+      "reason": "Test first: its red run on the code of 2cbc24b (before the fix of item 41) is in the PR description (Red runs). Not a late, security or order test"
     },
     {
       "file": "frontend/src/features/bots/create-bot-page.test.tsx",
       "name": "moves the focus to a ticked skill in Trash when Next finds it",
-      "reason": "Test first: its red run on the code of 97221d3 is in the PR description (Red runs). Not a late, security or order test"
+      "reason": "Test first: its red run on the code of 2cbc24b (before the fix of item 41) is in the PR description (Red runs). Not a late, security or order test"
     },
     {
       "file": "frontend/src/features/bots/create-bot-page.test.tsx",
       "name": "moves the focus to Effort when the effort of a Clone is not offered",
-      "reason": "Test first: its red run on the code of 97221d3 is in the PR description (Red runs). Not a late, security or order test"
+      "reason": "Test first: its red run on the code of 2cbc24b (before the fix of item 41) is in the PR description (Red runs). Not a late, security or order test"
     },
     {
       "file": "frontend/src/features/bots/bot-page.test.tsx",
       "name": "moves the focus to a request limit out of range when Save finds it",
-      "reason": "Test first: its red run on the code of 97221d3 is in the PR description (Red runs). Not a late, security or order test"
+      "reason": "Test first: its red run on the code of 2cbc24b (before the fix of item 41) is in the PR description (Red runs). Not a late, security or order test"
     },
     {
       "file": "frontend/src/features/bots/bot-page.test.tsx",
       "name": "asks on Esc when the focus is on the page itself",
-      "reason": "Test first: its red run on the code of 97221d3 is in the PR description (Red runs). Not a late, security or order test"
+      "reason": "Test first: its red run on the code of 19a8f81 (before the fix of item 45) is in the PR description (Red runs). Not a late, security or order test"
     },
     {
       "file": "frontend/src/features/bots/bot-page.test.tsx",
       "name": "asks on Esc when the focus is on the Profile tab",
-      "reason": "Test first: its red run on the code of 97221d3 is in the PR description (Red runs). Not a late, security or order test"
+      "reason": "Test first: its red run on the code of 19a8f81 (before the fix of item 45) is in the PR description (Red runs). Not a late, security or order test"
     },
     {
       "file": "frontend/src/features/bots/bot-page.test.tsx",
       "name": "asks on Esc when the focus is on Discard",
-      "reason": "Test first: its red run on the code of 97221d3 is in the PR description (Red runs). Not a late, security or order test"
+      "reason": "Test first: its red run on the code of 19a8f81 (before the fix of item 45) is in the PR description (Red runs). Not a late, security or order test"
     },
     {
       "file": "frontend/src/features/bots/bot-page.test.tsx",
       "name": "asks on Esc when the focus is on a bot in the side list",
-      "reason": "Test first: its red run on the code of 97221d3 is in the PR description (Red runs). Not a late, security or order test"
+      "reason": "Test first: its red run on the code of 19a8f81 (before the fix of item 45) is in the PR description (Red runs). Not a late, security or order test"
     },
     {
       "file": "frontend/src/features/bots/bot-page.test.tsx",
       "name": "asks on Esc in the side list search when it is empty",
-      "reason": "Test first: its red run on the code of 97221d3 is in the PR description (Red runs). Not a late, security or order test"
-    },
-    {
-      "file": "frontend/src/features/bots/create-bot-page.test.tsx",
-      "name": "shows the banner again when Try again gets a server error too",
-      "reason": "A sequence cell that passes on the code before the fix: the first failure and the failure of Try again go through the same catch, so a break of that catch fails the test at the first failure, before this assertion (the break run of 2026-11-15 gave INVALID). It checks that the fix of item 42 keeps the unknown state after a second failure"
+      "reason": "Test first: its red run on the code of 19a8f81 (before the fix of item 45) is in the PR description (Red runs). Not a late, security or order test"
     }
   ]
 }
