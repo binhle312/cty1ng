@@ -317,7 +317,9 @@ export function createSkillImportService(deps: {
       }
       // Before the claim and before any write (P3 list, item 33): a repeated slug would apply its
       // row twice, and the second one fails as stale_write or slug_taken.
-      const repeated = slugs.find((slug, index) => slugs.indexOf(slug) !== index);
+      // One pass with a set: the list has no length limit (review of #115, R1-1).
+      const seen = new Set<string>();
+      const repeated = slugs.find((slug) => seen.size === seen.add(slug).size);
       if (repeated !== undefined) {
         throw new DomainError("validation_error", `${repeated} is listed twice.`, "slugs");
       }
