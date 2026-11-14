@@ -75,6 +75,25 @@ describe("the diff budget (SKILL_DIFF_MAX_EDITS)", () => {
   });
 });
 
+// Item 33 of the P3 list: a slug listed twice is refused before Apply claims the preview or
+// writes anything.
+describe("apply refuses a slug listed twice", () => {
+  it("refuses a slug listed twice with 422 on slugs", async () => {
+    const preview = await backend.skillImport.preview("skills.zip", [folder("fresh")], OWNER_ID);
+    const error = await failure(
+      backend.skillImport.apply(preview.preview_id, ["fresh", "fresh"], OWNER_ID),
+    );
+    expect(error).toMatchObject({
+      code: "validation_error",
+      field: "slugs",
+      message: "fresh is listed twice.",
+    });
+    expect(await backend.skills.list({ includeDeprecated: false }, OWNER_ID)).toEqual([]);
+    const result = await backend.skillImport.apply(preview.preview_id, ["fresh"], OWNER_ID);
+    expect(result).toMatchObject({ created: 1 });
+  });
+});
+
 describe("preview", () => {
   // Audit 2026-11-05, row 5: one row is invalid, and the other rows of the zip still work.
   it("reports a frontmatter over the limit as an invalid row", async () => {

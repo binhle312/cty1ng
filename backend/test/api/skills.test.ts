@@ -528,6 +528,37 @@ describe("import and export", () => {
     expect(zip.subarray(0, 2).toString()).toBe("PK");
   });
 
+  // Item 33 of the P3 list: only an absent `ids` means every skill.
+  it("export with an empty ids= gives 422 on ids", async () => {
+    await created();
+    const response = await send("GET", "/skills/export?ids=");
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toEqual({ code: "validation_error", field: "ids" });
+  });
+
+  it("export with an id listed twice gives 422 on ids", async () => {
+    const { id } = await created();
+    const response = await send("GET", `/skills/export?ids=${id},${id}`);
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toEqual({ code: "validation_error", field: "ids" });
+  });
+
+  it("export with an empty item in ids gives 422 invalid_id", async () => {
+    const { id } = await created();
+    const response = await send("GET", `/skills/export?ids=${id},`);
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toEqual({ code: "invalid_id", field: "ids" });
+  });
+
+  it("export of two different ids gives a zip named with 2", async () => {
+    const { id } = await created();
+    const other = await send("POST", "/skills", { ...newSkill, slug: "other" });
+    const otherId = z.object({ id: z.string() }).parse(await other.json()).id;
+    const response = await send("GET", `/skills/export?ids=${id},${otherId}`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-disposition")).toMatch(/filename="2-skills-/);
+  });
+
   it("export of an unknown id gives 404; a malformed id 422", async () => {
     expect((await send("GET", "/skills/export?ids=nope")).status).toBe(422);
     const { id } = await created();

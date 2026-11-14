@@ -310,6 +310,12 @@ export function createSkillImportService(deps: {
       if (slugs.length === 0) {
         throw new DomainError("validation_error", "Tick at least one skill to apply.", "slugs");
       }
+      // Before the claim and before any write (P3 list, item 33): a repeated slug would apply its
+      // row twice, and the second one fails as stale_write or slug_taken.
+      const repeated = slugs.find((slug, index) => slugs.indexOf(slug) !== index);
+      if (repeated !== undefined) {
+        throw new DomainError("validation_error", `${repeated} is listed twice.`, "slugs");
+      }
       const picked = slugs.map((slug) => {
         const stored = preview.rows.get(slug);
         if (stored === undefined || !["new", "changed"].includes(stored.row.status)) {

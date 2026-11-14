@@ -390,17 +390,7 @@ export function skillRoutes(deps: {
   return createRouter()
     .openapi(routes.exportSkills, async (c) => {
       const raw = c.req.valid("query").ids;
-      const ids =
-        raw === undefined
-          ? null
-          : raw
-              .split(",")
-              .filter((id) => id !== "")
-              .map((id) => {
-                const parsed = SkillId.safeParse(id);
-                if (!parsed.success) throw new ApiFailure("invalid_id", "Not a skill id.", "ids");
-                return parsed.data;
-              });
+      const ids = raw === undefined ? null : exportIds(raw);
       const { fileName, files } = await skills.exportFiles(ids);
       const zip = await writeSkillZip(files);
       return c.body(zip, 200, {
@@ -537,4 +527,19 @@ export function skillRoutes(deps: {
       await skills.purge(c.req.valid("param").id, OWNER_ID);
       return c.body(null, 204);
     });
+}
+
+// The `ids` of an export (api.md §2). Only an absent `ids` means every skill, so an empty list,
+// an empty item or an id listed twice is refused (P3 list, item 33).
+function exportIds(raw: string): SkillId[] {
+  if (raw === "") throw new ApiFailure("validation_error", "Pick at least one skill.", "ids");
+  const ids = raw.split(",").map((id) => {
+    const parsed = SkillId.safeParse(id);
+    if (!parsed.success) throw new ApiFailure("invalid_id", "Not a skill id.", "ids");
+    return parsed.data;
+  });
+  if (new Set(ids).size !== ids.length) {
+    throw new ApiFailure("validation_error", "This skill is listed twice.", "ids");
+  }
+  return ids;
 }
