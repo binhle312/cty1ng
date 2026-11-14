@@ -357,9 +357,6 @@ describe("edits", () => {
   });
 });
 
-// Item 24 of the P3 list: the changelog has a length limit (SKILL_CHANGELOG_MAX, 500).
-// Item 34 of the P3 list: a version number in the path or the query is only digits with no
-// leading zero; `Number()` read `0x2`, `2.0` or `1e0` as a number before.
 // Review of #115 (R1-3): the limit comes from SKILL_CHANGELOG_MAX, not from a value in the code.
 describe("SKILL_CHANGELOG_MAX set by the environment", () => {
   it("a new version refuses a changelog over a limit set to 120", async () => {
@@ -373,9 +370,13 @@ describe("SKILL_CHANGELOG_MAX set by the environment", () => {
       changelog: "c".repeat(121),
     });
     expect(response.status).toBe(422);
+    expect(await errorOf(response)).toMatchObject({ code: "validation_error", field: "changelog" });
   });
 });
 
+// Item 24 of the P3 list: the changelog has a length limit (SKILL_CHANGELOG_MAX, 500).
+// Item 34 of the P3 list: a version number in the path or the query is only digits with no
+// leading zero; `Number()` read `0x2`, `2.0` or `1e0` as a number before.
 describe("strict version numbers", () => {
   it.each(["0x1", "1.0", "1e0", "+1", "01", " 1", "0b1"])(
     "the version %j in the path gives 422 on version",

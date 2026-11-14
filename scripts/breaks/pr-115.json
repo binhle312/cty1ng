@@ -316,7 +316,7 @@
         "file": "backend/test/api/skills.test.ts",
         "name": "a new version refuses a changelog over a limit set to 120"
       },
-      "assertion": "expect(response.status).toBe(422);\n  });\n});\n\ndescribe(\"strict version numbers\"",
+      "assertion": "expect(response.status).toBe(422);\n    expect(await errorOf(response)).toMatchObject({ code: \"validation_error\", field: \"changelog\" });",
       "breaks": [
         {
           "id": "R3a-a",
@@ -439,6 +439,28 @@
           ]
         }
       ]
+    },
+    {
+      "id": "O1",
+      "claim": "The OpenAPI document shows the tool id key rule of tool_settings",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/api-docs.test.ts",
+        "name": "shows the tool id key rule of tool_settings in the create bot body"
+      },
+      "assertion": "expect(toolSettings[\"propertyNames\"]).toEqual({",
+      "breaks": [
+        {
+          "id": "O1-a",
+          "file": "shared/src/bots.ts",
+          "edits": [
+            {
+              "find": "  .meta({ propertyNames: { type: \"string\", pattern: ToolIdPattern.source } });",
+              "replace": "  .meta({});"
+            }
+          ]
+        }
+      ]
     }
   ],
   "exempt": [
@@ -469,7 +491,7 @@
     },
     {
       "file": "backend/src/app/config.test.ts",
-      "name": "reads SKILL_CHANGELOG_MAX as a positive integer, 500 by default",
+      "name": "reads SKILL_CHANGELOG_MAX as an integer, 500 by default",
       "reason": "Written before its code. The PR records its red run on the code before the change"
     },
     {

@@ -74,7 +74,7 @@ describe("loadConfig", () => {
   });
 
   // Item 24 of the P3 list: architecture.md §8 has the default.
-  it("reads SKILL_CHANGELOG_MAX as a positive integer, 500 by default", () => {
+  it("reads SKILL_CHANGELOG_MAX as an integer, 500 by default", () => {
     expect(loadConfig({}).skillChangelogMax).toBe(500);
     expect(loadConfig({ SKILL_CHANGELOG_MAX: "120" }).skillChangelogMax).toBe(120);
     for (const value of ["0", "-1", "1.5", "abc"]) {

@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { z } from "zod";
+import { ToolIdPattern } from "@cty1ng/shared/catalog";
 import { testBackend } from "../helpers.ts";
 
 // The OpenAPI docs page only when APP_ENV=dev (security.md §2.10), with no inline script, so
@@ -72,6 +73,38 @@ describe("the OpenAPI document", () => {
     expect(response.status).toBe(200);
     const document: unknown = await response.json();
     expect(nullableEnumsWithoutNull(document, "$", [])).toEqual([]);
+  });
+
+  // Item 34 of the P3 list; review of #115 (R2-2): the document shows the key rule of
+  // tool_settings, so a client sees it too.
+  it("shows the tool id key rule of tool_settings in the create bot body", async () => {
+    const response = await backend.request("/api/openapi.json");
+    const document = z
+      .object({
+        paths: z.object({
+          "/api/bots": z.object({
+            post: z.object({
+              requestBody: z.object({
+                content: z.object({
+                  "application/json": z.object({
+                    schema: z.object({
+                      properties: z.object({ tool_settings: z.record(z.string(), z.unknown()) }),
+                    }),
+                  }),
+                }),
+              }),
+            }),
+          }),
+        }),
+      })
+      .parse(await response.json());
+    const toolSettings =
+      document.paths["/api/bots"].post.requestBody.content["application/json"].schema.properties
+        .tool_settings;
+    expect(toolSettings["propertyNames"]).toEqual({
+      type: "string",
+      pattern: ToolIdPattern.source,
+    });
   });
 });
 
