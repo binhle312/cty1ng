@@ -26,23 +26,61 @@ const ApiDocument = z.object({
 
 const Row = z.looseObject({ id: z.string(), row_version: z.number() });
 
+// The backend of the scan test, with three ways to an answer and no other (DQ-154): the test
+// cannot get an answer that the scan did not read. The headers of each answer are scanned, and
+// its body too, as text. The body of the stream never ends, so `stream` scans each part of it
+// that the test reads, before a parse: a parse into frames drops the lines that it does not
+// know. One limit: a zip body is scanned as its bytes, so text inside a packed file is not seen.
+function scannedBackend(env: NodeJS.ProcessEnv) {
+  const backend = testBackend(env);
+  const texts: string[] = [];
+  const scanHead = (response: Response) => {
+    texts.push(JSON.stringify([...response.headers]));
+  };
+  const scan = async (response: Response) => {
+    scanHead(response);
+    texts.push(await response.clone().text());
+    return response;
+  };
+  return {
+    texts,
+    lines: backend.lines,
+    secrets: backend.config.secrets,
+    close: backend.close,
+    request: async (path: string, init?: RequestInit) => scan(await backend.request(path, init)),
+    postTestEvent: async (note: string) => scan(await backend.postTestEvent(note)),
+    // The body that the test reads from: each part goes into one text of the scan as it passes.
+    stream: async (path: string, init?: RequestInit): Promise<ReadableStream<Uint8Array>> => {
+      const response = await backend.request(path, init);
+      scanHead(response);
+      if (response.body === null) throw new Error("The stream has no body.");
+      const at = texts.push("") - 1;
+      const decoder = new TextDecoder();
+      let seen = "";
+      return response.body.pipeThrough(
+        new TransformStream<Uint8Array, Uint8Array>({
+          transform(part, controller) {
+            seen += decoder.decode(part, { stream: true });
+            texts[at] = seen;
+            controller.enqueue(part);
+          },
+        }),
+      );
+    },
+  };
+}
+
 describe("API keys", () => {
   // The scan reads error answers (part 1, an empty body) and success answers (part 2, real
   // requests), so it sees what the services give (audit 2026-11-05, row 9). The success check at
   // the end of part 2 names each operation that never succeeded.
-  it("never appear in an answer of an operation other than the stream, in the stream frames, or in the log", async () => {
-    const backend = testBackend({
+  it("never appear in an answer, in the stream frames, or in the log", async () => {
+    const backend = scannedBackend({
       FAKE_MODEL: "1",
       OPENAI_API_KEY: SENTINEL,
       ANTHROPIC_API_KEY: `${SENTINEL}-2`,
     });
-    const texts: string[] = [];
-    // Scans the headers and the body of an answer. The stream answer does not come here: only its
-    // frames are scanned, and its headers are not (DQ-154).
-    const scan = async (response: Response) => {
-      texts.push(JSON.stringify([...response.headers]), await response.clone().text());
-      return response;
-    };
+    const { texts } = backend;
     const succeeded = new Set<string>();
     // `operation` is the method and the path as the API document writes it, for example
     // `GET /api/skills/{id}`.
@@ -70,7 +108,6 @@ describe("API keys", () => {
           body: options.form ?? (json ? JSON.stringify(options.body) : null),
         },
       );
-      await scan(response);
       if (response.ok) succeeded.add(operation);
       return response;
     };
@@ -282,23 +319,44 @@ describe("API keys", () => {
     ).toEqual([]);
 
     await call("GET /api/nope");
-    await scan(await backend.request("/api/health", { headers: { host: "evil.com" } }));
+    await backend.request("/api/health", { headers: { host: "evil.com" } });
 
-    // 3. The stream: read until the test event comes, so that the check reads real frames.
+    // 3. The stream, from its start: the server sends again the events of the writes above, and
+    // then the test event. The scan reads the text that comes until the test event. The test does
+    // not make a heartbeat come, and it reads no event that these writes do not make.
     const abort = new AbortController();
-    const stream = await backend.request("/api/stream", { signal: abort.signal });
-    if (stream.body === null) throw new Error("The stream has no body.");
-    const frames = collect(readFrames(stream.body));
-    await scan(await backend.postTestEvent("note-for-the-key-test"));
+    const frames = collect(
+      readFrames(
+        await backend.stream("/api/stream", {
+          signal: abort.signal,
+          headers: { "last-event-id": "0" },
+        }),
+      ),
+    );
+    await backend.postTestEvent("note-for-the-key-test");
     const deadline = Date.now() + 2000;
     while (!frames.items.some((frame) => frame.data?.includes("note-for-the-key-test") === true)) {
       if (Date.now() > deadline) throw new Error("The test event did not come on the stream.");
       await sleep(10);
     }
     abort.abort();
+    // The events of the writes came, so the scan read them.
+    expect(frames.items.map((frame) => frame.event)).toEqual(
+      expect.arrayContaining(["skill.created", "bot.created", "bot.updated", "test.ping"]),
+    );
+    // The whole replay came (DQ-273): the events have the ids 1, 2, 3 … with no gap, and no
+    // `reset` came, so the scan read each event of the writes.
+    const replay = frames.items.filter(
+      (frame) => frame.event !== undefined && frame.event !== "ready",
+    );
+    const whole = replay.map((frame, at) => ({
+      id: String(at + 1),
+      event: frame.event === "reset" ? "no reset" : frame.event,
+    }));
+    expect(replay.map(({ id, event }) => ({ id, event }))).toEqual(whole);
     texts.push(JSON.stringify(frames.items));
 
-    expect(backend.config.secrets).toContain(SENTINEL);
+    expect(backend.secrets).toContain(SENTINEL);
     for (const text of [...texts, ...backend.lines]) expect(text).not.toContain("SENTINEL");
     backend.close();
   });

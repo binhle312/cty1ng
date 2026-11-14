@@ -1,0 +1,731 @@
+{
+  "claims": [
+    {
+      "id": "O1",
+      "claim": "GET /skills/{id}: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "GET /skills/{id}: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O1-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O2",
+      "claim": "GET /skills/{id}/versions: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "GET /skills/{id}/versions: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O2-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O3",
+      "claim": "GET /skills/{id}/versions/{version}: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "GET /skills/{id}/versions/{version}: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O3-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O4",
+      "claim": "GET /skills/{id}/diff: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "GET /skills/{id}/diff: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O4-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O5",
+      "claim": "GET /skills/{id}/upgrade-candidates: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "GET /skills/{id}/upgrade-candidates: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O5-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O6",
+      "claim": "GET /skills/export?ids=: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "GET /skills/export?ids=: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O6-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O7",
+      "claim": "GET /bots/{id}: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "GET /bots/{id}: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O7-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O8",
+      "claim": "GET /bots/{id}/clone-template: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "GET /bots/{id}/clone-template: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O8-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O9",
+      "claim": "DELETE /bots/{id}: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "DELETE /bots/{id}: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O9-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O10",
+      "claim": "PATCH /skills/{id}: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "PATCH /skills/{id}: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O10-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O11",
+      "claim": "PATCH /bots/{id}: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "PATCH /bots/{id}: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O11-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O12",
+      "claim": "PUT /bots/{id}/skills/{skill_id}, the bot id: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "PUT /bots/{id}/skills/{skill_id}, the bot id: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O12-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O13",
+      "claim": "PUT /bots/{id}/skills/{skill_id}, the skill id: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "PUT /bots/{id}/skills/{skill_id}, the skill id: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O13-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O14",
+      "claim": "DELETE /bots/{id}/skills/{skill_id}, the skill id: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "DELETE /bots/{id}/skills/{skill_id}, the skill id: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O14-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O15",
+      "claim": "POST /bots, the skill id of a pin: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "POST /bots, the skill id of a pin: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O15-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O16",
+      "claim": "POST /bots, cloned_from_bot_id: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "POST /bots, cloned_from_bot_id: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O16-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O17",
+      "claim": "POST /bots, the skill version id of a pin: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "POST /bots, the skill version id of a pin: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O17-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O18",
+      "claim": "PUT /bots/{id}/skills/{skill_id}, the skill version id of the body: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "PUT /bots/{id}/skills/{skill_id}, the skill version id of the body: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O18-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O19",
+      "claim": "DELETE /bots/{id}/skills/{skill_id}, the bot id: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "DELETE /bots/{id}/skills/{skill_id}, the bot id: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O19-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O20",
+      "claim": "POST /skills/{id}/versions: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "POST /skills/{id}/versions: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O20-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O21",
+      "claim": "POST /skills/{id}/versions/{version}/restore: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "POST /skills/{id}/versions/{version}/restore: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O21-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O22",
+      "claim": "POST /skills/{id}/bots, the skill id: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "POST /skills/{id}/bots, the skill id: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O22-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O23",
+      "claim": "POST /skills/{id}/bots, the skill version id: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "POST /skills/{id}/bots, the skill version id: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O23-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O24",
+      "claim": "POST /skills/{id}/bots, a bot id of the list: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "POST /skills/{id}/bots, a bot id of the list: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O24-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O25",
+      "claim": "POST /skills/{id}/deprecate, the skill id: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "POST /skills/{id}/deprecate, the skill id: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O25-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O26",
+      "claim": "POST /skills/{id}/undeprecate: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "POST /skills/{id}/undeprecate: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O26-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O27",
+      "claim": "POST /skills/{id}/trash: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "POST /skills/{id}/trash: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O27-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O28",
+      "claim": "POST /skills/{id}/restore: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "POST /skills/{id}/restore: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O28-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O29",
+      "claim": "DELETE /skills/{id}: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "DELETE /skills/{id}: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O29-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O30",
+      "claim": "GET /skills/export?ids=, after a real id: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "GET /skills/export?ids=, after a real id: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O30-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O31",
+      "claim": "POST /skills, cloned_from_skill_version_id: an id of the right shape that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "POST /skills, cloned_from_skill_version_id: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(requestOf({ id: odd, ...rows, run: 2 }))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "O31-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P1",
+      "claim": "PUT /bots/pins, when no bot is pinned: a bot id of bot_ids that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "when no bot is pinned: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(pinsWith(odd))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "P1-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P2",
+      "claim": "PUT /bots/pins, when a bot is pinned: a bot id of bot_ids that is no UUID gets the answer of an id that does not exist",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/odd-ids.test.ts",
+        "name": "when a bot is pinned: answers as for an id that does not exist"
+      },
+      "assertion": "expect(await send(pinsWith(odd))).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "P2-main",
+          "file": "backend/src/adapters/db/columns.ts",
+          "edits": [
+            {
+              "find": "      const hex = Buffer.from(TypeID.fromString(value, prefix).toUUIDBytes()).toString(\"hex\");\n      return [\n        hex.slice(0, 8),\n        hex.slice(8, 12),\n        hex.slice(12, 16),\n        hex.slice(16, 20),\n        hex.slice(20),\n      ].join(\"-\");\n",
+              "replace": "      return TypeID.fromString(value, prefix).toUUID();\n"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": []
+}

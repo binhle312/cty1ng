@@ -1,8 +1,9 @@
 import { ConfigError, loadConfig } from "./config.ts";
+import { oneLine } from "./one-line.ts";
 
 // Starts the backend: configuration first, then migrations, then the server and the timed jobs.
 // Any failure before listening stops the process with a clear message and a non-zero exit (M0b
-// plan, decision E).
+// plan, decision E). This includes a port that the server cannot take.
 //
 // Only the settings module is imported up front. The app (the logger, the database, `sharp`,
 // the model SDKs) loads after the settings pass, so a refused start uses about a quarter of the
@@ -13,7 +14,7 @@ async function start(): Promise<void> {
     config = loadConfig(process.env);
   } catch (error) {
     if (!(error instanceof ConfigError)) throw error;
-    process.stderr.write(`cty1ng: ${error.message}\n`);
+    process.stderr.write(`cty1ng: ${oneLine(error.message)}\n`);
     process.exit(1);
   }
 
@@ -50,6 +51,19 @@ async function start(): Promise<void> {
       log.info({ host: info.address, port: info.port, app_env: config.appEnv }, "listening");
     },
   );
+  // The server reports a port that it cannot take (most often: another program uses it) as an
+  // `error` event, after the migrations ran. With no listener, Node ends the process with a
+  // stack trace.
+  server.on("error", (error: NodeJS.ErrnoException) => {
+    const reason = error.code === "EADDRINUSE" ? "another program uses the port" : error.message;
+    log.fatal({ host: config.host, port: config.port, code: error.code }, "cannot listen");
+    process.stderr.write(
+      `cty1ng: cannot listen on ${config.host}:${String(config.port)}: ${reason}\n`,
+    );
+    stopJobs();
+    app.close();
+    process.exit(1);
+  });
 
   const stopJobs = startTimedJobs({
     skills: app.skills,

@@ -33,7 +33,8 @@ Link to the brief and decisions.
 - README.md tables updated for every added, removed, renamed or repurposed file, and the
   descriptions still match what the files do (or "no file changes")
 
-## Review fixes (when a review found something)
+## Defect and review fixes (when a review found something)
+List each defect that this PR repairs and each review fix. For each one, give the general rule, the search of old fixes, and the answer ([bug fix, step 2](bug-fix.md)).
 | Finding | Cause (the rule broken) | Same cause checked in | Same cause as an earlier fix? | Fix | Test |
 | --- | --- | --- | --- | --- | --- |
 | A late Profile answer brings back an old pin | An answer writes fields it does not own | Save answers, pin answers, dialog answers | No | Answers write an allowlist | `bot-edit-form.test` "takes from a save answer only …" |
@@ -52,9 +53,10 @@ the proof shows, and add `Not claimed: …` (owner, 2026-11-11;
 [lesson](../lessons-learned/claim-bigger-than-its-proof.md)). The reviewer tests these claims
 first ([review guide §3](../review-guide.md#3-verify-what-the-evidence-proves)).
 
-In the `Review fixes` table, "Same cause as an earlier fix?" covers earlier PRs too. Name the
-search of the prevention actions ([delivery quality §7](../delivery-quality.md#7-update-and-assess))
-and of the [lessons](../lessons-learned/README.md) in the answer.
+In the `Defect and review fixes` table, "Same cause as an earlier fix?" covers earlier PRs too.
+Name the search of the prevention actions
+([delivery quality §7](../delivery-quality.md#7-update-and-assess)) and of the
+[lessons](../lessons-learned/README.md) in the answer.
 
 ## One home for each fact
 
@@ -88,6 +90,8 @@ review fix, check them against the commit that you push (owner, 2026-11-08, DQ-1
 5. If you correct a claim, search for its old text in all the records, and correct each copy.
 6. Run `gh pr list --state all`. Correct the state of each PR that `docs/status.md` or the active
    audit file names. A PR cannot record its own merge, so the next push does it (owner, 2026-11-10).
+   For a PR that is ready and has no record turn, the record of a later review goes into the next
+   PR.
 7. Measure each ledger row with an id above DQ-202. This command must print nothing:
    `LC_ALL=C awk -F'|' '/^\| DQ-/ { id = substr($2, 5) + 0; if (id > 202 && length($0) > 600) print "DQ-" id, length($0) }' docs/delivery-quality.md`.
    `LC_ALL=C` makes it count bytes, so each machine gives the same result. Make each row that it
@@ -95,4 +99,9 @@ review fix, check them against the commit that you push (owner, 2026-11-08, DQ-1
    is (owner, 2026-11-10).
 8. Run `wc -c < docs/delivery-quality.md`. If the result is larger than the limit in
    [§7 step 6 of the ledger](../delivery-quality.md#7-update-and-assess), write under Follow-ups
-   of the PR description that a move of the closed rows is due. The move is a PR of its own.
+   of the PR description that a move of the closed rows is due. The move is a PR of its own. The
+   one exception is the move of the P3 PRs in
+   [§7 step 6 of the ledger](../delivery-quality.md#7-update-and-assess).
+
+Before you say that a PR is ready: the description has no state line that is older than the head,
+and `docs/status.md` names the PR.

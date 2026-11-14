@@ -121,7 +121,7 @@ Each fix PR updates its row in the same PR. Check `gh pr list --state all`, beca
 | 4 | Bots page | merged: #82 |
 | 5 | Tests only | merged: #86 |
 | 6 | Six tabs | merged: #91 |
-| 7 | Other P3 for M3 | replaced by the P3 PRs (owner, 2026-11-08). The first, records only: #105 |
+| 7 | Other P3 for M3 | replaced by the P3 PRs (owner, 2026-11-08). The first, records only: #105. The fourth, the security tests: #108 |
 
 ## Result
 
@@ -184,14 +184,14 @@ The lead did not check these again, except where a row says so. The others are f
 - **Target (owner, 2026-11-12): before the paid review is turned on** (`security.md` §2.11). The paid security review does not watch the model adapters, `skill.rules.ts`, `bot.rules.ts`, `main.ts`, `compose.ts` and other paths: `.github/workflows/security-review.yml:20`.
 - Refused requests carry no security headers, and the plan and `security.md` disagree: `backend/src/adapters/http/app.ts:61`.
 - The changelog has no length limit, and its regex is quadratic: `backend/src/adapters/http/routes/skills.ts:34`, `backend/src/core/skills/skills.service.ts:584`.
-- No test covers an absolute zip path or a forged entry size, or checks secrets through the CLI: `backend/src/adapters/http/uploads/skill-zip.test.ts`.
+- No test covers an absolute zip path or a forged entry size, or checks secrets through the CLI: `backend/src/adapters/http/uploads/skill-zip.test.ts`. Fixed in #108: two tests in that file, and `backend/test/security/cli-secrets.test.ts`.
 - Guard shapes accepted (owner, 2026-11-06): each guard shape, free or refused, that reviews and audits report. The lists and the rule are in `security.md` §2.13. This row needs no fix or drop answer, and a new shape adds no row.
 
 ### API and realtime
 
-- A TypeID with the right shape gives 500 on most routes, not 422 or 404: `shared/src/ids.ts:7`, `backend/src/adapters/db/columns.ts:11`. **Fix before M3.**
+- **Fixed in #110** (such an id gets the answer of an unknown id, for example 404). A TypeID with the right shape gives 500 on most routes, not 422 or 404: `shared/src/ids.ts:7`, `backend/src/adapters/db/columns.ts:11`. **Fix before M3.**
 - **Fixed in #91** ("Decisions for PR 6", last item). In `make dev`, the stream does not come back after a backend outage longer than the 2 s retry: `frontend/src/lib/realtime/start.ts:14`. **Fix before M3.**
-- **Dropped (owner, 2026-11-12).** The owner's correction of the last words: the page reads again only after the tab was hidden, or after a reload. CLI changes do not wake the server's event stream, so open pages stay old until the next server write, a reconnect or a window focus. Second audit; code read by the lead: `backend/src/core/events/hub.ts:103`.
+- **Dropped (owner, 2026-11-12).** The page shows a CLI change after the next server write, after a reconnect of the stream, when the tab was hidden and becomes visible, or after a reload. The finding of 2026-11-05 was: CLI changes do not wake the server's event stream, so open pages stay old until the next server write, a reconnect or a window focus. Second audit; code read by the lead: `backend/src/core/events/hub.ts:103`.
 - **Dropped for the stream of page start (owner, 2026-11-12);** `realtime-events.md` §3, rule 4, names the gap. An event that commits between the first GET and the first `ready` does not reach the page. The spec has this gap too: `frontend/src/lib/realtime/reducer.ts:34`. Read again on 2026-11-12: since #91, each later stream reads all data after its `ready`; DQ-200 is the open gap of that read. The stream of page start is the exception, so the gap of this bullet stays there (`realtime-events.md` §3, "Stream life", rule 4; `start.test.ts`, "the ready of the stream of page start reads nothing again").
 - `field` in a 422 has two formats: `pins.0.skill_id` and `pins[0]`: `backend/src/adapters/http/router.ts:19`.
 - Repeated items are not refused in import apply and export. An empty `ids=` gives an empty zip: `backend/src/core/skills/skill-import.service.ts:282`, `backend/src/adapters/http/routes/skills.ts:393`.
