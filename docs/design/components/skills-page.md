@@ -167,6 +167,7 @@ over its limit turns `danger`.
 | Slug exists | "This slug exists. Type a different one." |
 | Description over the limit | "The description has 1,047 characters. The limit is 1,024. Make it shorter." |
 | Name or body over the limit | The same pattern, with the limit `skill_name_max` or `skill_body_max` |
+| Changelog over the limit (from the server, in the save bar) | "The changelog has {n} characters. The limit is {max}. Make it shorter." (the limit `SKILL_CHANGELOG_MAX`, `architecture.md` §8) |
 | Text looks like a secret (D39) | "Line 5 looks like an API key. The app does not save secrets in skills. Remove the key." |
 
 A body over `skill_body_warn_lines` lines gets a warning only, in `waiting`: "The
@@ -396,7 +397,9 @@ unsaved), nothing would be lost, so the page goes where the owner asked at once 
   they are."
 - A new skill gets its slug as its name ("becomes v1 · named {slug}"); the owner renames it
   later. Import never renames an existing skill. Each new version has the changelog "Imported
-  from {file}" (`domain-model.md` §3.5).
+  from {file}" (`domain-model.md` §3.5), so a file name that makes it longer than
+  `SKILL_CHANGELOG_MAX` is refused at Preview: "The file name has {n} characters. The limit is
+  {m}. Rename the file."
 - After Apply: toast "Imported 4 changes ✨ 2 new skills, 2 new versions." The new and changed
   skills move to the top of the list. If a skill changed after the preview, the app applies
   nothing and shows "A skill changed after the preview. The app applied nothing. Preview again."

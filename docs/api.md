@@ -16,7 +16,10 @@ Read conventions and errors, then the endpoint group in scope and its referenced
   is an id that does not exist: it gets the answer of an unknown id, for example 404. Timestamps
   are ISO-8601 UTC.
 - Request schemas forbid unknown fields (Zod `.strict()`) so typos and forbidden fields
-  (like `model_id` on bot update) fail loudly with 422.
+  (like `model_id` on bot update) fail loudly with 422. The OpenAPI document and the dev docs page
+  are not Zod routes, and they refuse a query key with the same 422 `validation_error`.
+- A version number in the path or the query (`{version}`, `from`, `to`) is digits with no leading
+  zero, within the safe integer range; `0x2`, `2.0` or `1e0` gets 422 `validation_error`.
 - Lists are cursor-paginated where they can grow: `?before_seq=` / `?limit=` (max 100).
 - Create returns `201` with the created object. Delete/deprecate returns `204` or the updated
   object. Actions return the affected object.
@@ -29,6 +32,9 @@ One shape for every error:
 ```json
 {"error": {"code": "mention_not_member", "message": "Designer is not in this conversation.", "field": "mentions[0]"}}
 ```
+
+`field`, when present, names the field with one format: a dot before a key of an object and `[i]`
+for an index of a list, as in `pins[0].skill_id`, `bots[1]` or `tool_settings.web_fetch`.
 
 Every response has an `X-Request-Id` header. An error body also carries it as `request_id`,
 and the server log line of that request has the same id (`security.md` §2.10). A stale write
@@ -55,11 +61,11 @@ whose page needs the current state to show the conflict also carries `current` (
 | POST | `/skills` | `{slug, name, description, body_md, cloned_from_skill_version_id?}` | creates v1, author = owner; also the Create of a clone (§3.3 of `domain-model.md`): a `cloned_from_skill_version_id` whose skill is in Trash is recorded, and one whose version does not exist gives a skill with no source; neither is an error; a reserved or malformed slug returns 422 `validation_error` with `field: "slug"`, a taken one 409 `slug_taken` |
 | GET | `/skills/{id}` | | includes latest version body |
 | PATCH | `/skills/{id}` | `{name, row_version}` | rename only, creates no version; author only; a likely secret in the name returns 422 `sensitive_data` (`security.md` §2.13) |
-| POST | `/skills/{id}/versions` | `{base_version, description, body_md, changelog?, name?, row_version?}` | author only; creates N+1 and moves no pin: the upgrade card after the save uses `POST /skills/{id}/bots` (M2 spec gap pass, owner 2026-11-01, removes `upgrade_bot_ids`). `name` and `row_version` come together, when the Save also renames: one transaction does both, so a Save never half-succeeds |
+| POST | `/skills/{id}/versions` | `{base_version, description, body_md, changelog?, name?, row_version?}` | author only; creates N+1 and moves no pin: the upgrade card after the save uses `POST /skills/{id}/bots` (M2 spec gap pass, owner 2026-11-01, removes `upgrade_bot_ids`). `name` and `row_version` come together, when the Save also renames: one transaction does both, so a Save never half-succeeds. A `changelog` longer than `SKILL_CHANGELOG_MAX` (`architecture.md` §8) → 422 `validation_error` with `field: "changelog"`, and nothing is saved |
 | GET | `/skills/{id}/versions` | | list, newest first: `id, version, description, changelog, created_by, created_at, bots_using` (live bots that use this version) |
 | GET | `/skills/{id}/versions/{version}` | | one version (used by provenance chips) |
-| GET | `/skills/{id}/diff?from=2&to=5` | | `{description: DiffLine[] \| null, body: DiffLine[]}`, a line diff as JSON; `description` is null when it did not change. `DiffLine {op: "same" \| "add" \| "del", text}`, every line, so the History tab can fold the `same` runs and show them again |
-| POST | `/skills/{id}/versions/{version}/restore` | `{changelog?}` | creates N+1 with that content |
+| GET | `/skills/{id}/diff?from=2&to=5` | | `{description: DiffLine[] \| null, body: DiffLine[]}`, a line diff as JSON; `description` is null when it did not change. `DiffLine {op: "same" \| "add" \| "del", text}`, every line, so the History tab can fold the `same` runs and show them again. A diff that needs more added and removed lines than `SKILL_DIFF_MAX_EDITS` (`architecture.md` §8) shows every old line as `del`, then every new line as `add` (owner, 2026-11-06); the import preview diff of a `changed` row has the same budget |
+| POST | `/skills/{id}/versions/{version}/restore` | `{changelog?}` | creates N+1 with that content; the `changelog` limit is that of `POST /skills/{id}/versions` |
 | GET | `/skills/{id}/upgrade-candidates` | | live bots pinned to older versions (for the save dialog): `[{bot_id, skill_version_id, version, always_load}]` |
 | POST | `/skills/{id}/bots` | `{skill_version_id, bots: [{bot_id, expected_skill_version_id, always_load?}], restore_suggestion?}` | assigns or upgrades the listed bots to that version in one transaction: the upgrade card (C4) and the assign card (C4b) after a save or Create (M2), and the float card after a skill draft is approved (D64, M5c). `expected_skill_version_id` is the version the card showed for that bot, `null` when it had none; a mismatch → 409 `stale_write` and nothing moves; a `bot_id` listed twice → 422 `validation_error` on `bots[i]`. `always_load` left out keeps the bot's value (off for a new assign); a bot in Trash returns 409 `place_in_trash`; a deprecated skill → 422 `skill_deprecated` for a bot that has no pin yet, except with `restore_suggestion: true` under the rule of `domain-model.md` §3.4 (M5b; M2 refuses the field). Returns the moved bots. Emits `bot.updated` per moved bot |
 | POST | `/skills/{id}/deprecate` | `{remove_bot_ids: [], row_version}` | author only; removes the listed pins in the same transaction and emits `bot.updated` per bot (M2). A listed bot that does not use the skill now → 422 `validation_error` with `field: "remove_bot_ids"` (the page is stale) |
@@ -67,9 +73,9 @@ whose page needs the current state to show the conflict also carries `current` (
 | POST | `/skills/{id}/trash` | `{row_version}` | author only; deprecated skills only (409 `not_deprecated`); removes every pin, returns the bots it removed (D49) |
 | POST | `/skills/{id}/restore` | | author only; out of Trash, still deprecated; returns `suggested_bot_ids` (bots not deleted) |
 | DELETE | `/skills/{id}` | | permanent delete of a skill in Trash (**Delete** on the M5b Trash page, D62) |
-| POST | `/skills/import/preview` | zip upload | returns per-skill `new / changed (diff) / unchanged / invalid / conflict` and a `preview_id`; the zip limits are in `security.md` §2.4; any part beside the one `file` gets 422 `validation_error` |
-| POST | `/skills/import/apply` | `{preview_id, slugs: []}` | applies the previewed changes of the ticked slugs only; 409 `stale_write` if anything changed since, 409 `preview_expired` if the preview is gone or used (`domain-model.md` §3.5); an empty list, or a slug that is not `new` or `changed`, gets 422 `validation_error` with `field: "slugs"` and nothing is written |
-| GET | `/skills/export?ids=` | | zip of the latest versions of the picked skills, named `<n>-skills-<UTC timestamp, ISO basic>.zip`; with no `ids` it exports every skill that is not deprecated |
+| POST | `/skills/import/preview` | zip upload | returns per-skill `new / changed (diff) / unchanged / invalid / conflict` and a `preview_id`; the zip limits are in `security.md` §2.4; any part beside the one `file` gets 422 `validation_error`; a file name that makes the changelog "Imported from {file}" longer than `SKILL_CHANGELOG_MAX` gets 422 `validation_error` with `field: "file"` (the name is not shortened) |
+| POST | `/skills/import/apply` | `{preview_id, slugs: []}` | applies the previewed changes of the ticked slugs only; 409 `stale_write` if anything changed since, 409 `preview_expired` if the preview is gone or used (`domain-model.md` §3.5); an empty list, a slug listed twice, or a slug that is not `new` or `changed`, gets 422 `validation_error` with `field: "slugs"` and nothing is written |
+| GET | `/skills/export?ids=` | | zip of the latest versions of the picked skills, named `<n>-skills-<UTC timestamp, ISO basic>.zip`; with no `ids` it exports every skill that is not deprecated. Only an absent `ids` means that: an empty `ids=` or an id listed twice gets 422 `validation_error` with `field: "ids"`, and an empty item (`ids=a,`) or a malformed id gets 422 `invalid_id` |
 
 **Deprecated and trashed skills.** A rename, a new version or a version restore of a deprecated
 skill returns 422 `skill_deprecated`. A skill in Trash returns 404 `not_found` from every

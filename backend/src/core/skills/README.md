@@ -9,11 +9,12 @@ immutable versions, Clone, Deprecate, Trash, and import and export of `SKILL.md`
 | `skill-import.service.ts` | Import preview (kept in memory) and Apply in one transaction, with the full recheck (§3.5) |
 | `skill.rules.ts` | Pure checks of a skill's name, description and body: limits, slug format, the D39 guard |
 | `skill-md.ts` | Parses and writes `SKILL.md` (front matter `name`, `description`, then the body); refuses a front matter over 8,192 characters before the parse |
-| `skill-diff.ts` | The line diff between two versions (`diff` library) |
+| `skill-diff.ts` | The line diff between two versions (`diff` library), with the budget `SKILL_DIFF_MAX_EDITS` |
 | `skills.service.test.ts` | Service tests: versions, Clone, authorship, Trash and purge, the guard on each path, races, invariants 02, 05, 19, 20, 25 |
 | `skill-import.service.test.ts` | Import preview rows and Apply: the recheck, `stale_write`, `preview_expired` |
 | `skill.rules.test.ts` | Tests of `skill.rules.ts` |
 | `skill-md.test.ts` | Tests of `skill-md.ts` |
+| `skill-diff.test.ts` | Tests of `skill-diff.ts`: the diff inside and over the budget |
 
 Start here: `skills.service.ts`. Do not: update or delete a skill version (`AGENTS.md` §5 rule 5);
 only the Trash purge deletes one.

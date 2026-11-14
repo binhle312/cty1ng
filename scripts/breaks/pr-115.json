@@ -1,0 +1,578 @@
+{
+  "claims": [
+    {
+      "id": "L1",
+      "claim": "Inside the budget, the diff keeps the unchanged lines",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/skills/skill-diff.test.ts",
+        "name": "keeps the unchanged lines when the change is inside the budget"
+      },
+      "assertion": "expect(lineDiff({ from: \"a\\nb\\nc\", to: \"a\\nx\\nc\", maxEdits: 2 })).toEqual([",
+      "breaks": [
+        {
+          "id": "L1-a",
+          "file": "backend/src/core/skills/skill-diff.ts",
+          "edits": [
+            {
+              "find": "maxEditLength: texts.maxEdits,",
+              "replace": "maxEditLength: texts.maxEdits - 1,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L2",
+      "claim": "Over the budget, the old text shows as removed and the new text as added",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/skills/skill-diff.test.ts",
+        "name": "shows the old text as removed and the new text as added over the budget"
+      },
+      "assertion": "expect(lineDiff({ from: \"a\\nb\\nc\", to: \"a\\nx\\nc\", maxEdits: 1 })).toEqual([",
+      "breaks": [
+        {
+          "id": "L2-a",
+          "file": "backend/src/core/skills/skill-diff.ts",
+          "edits": [
+            {
+              "find": "maxEditLength: texts.maxEdits,",
+              "replace": "maxEditLength: texts.maxEdits * 10,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L3",
+      "claim": "The two sides of an over-budget diff are the two texts",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/skills/skill-diff.test.ts",
+        "name": "gives a diff whose two sides are the two texts over the budget"
+      },
+      "assertion": "expect(sides(lineDiff({ from, to, maxEdits: 10 }))).toEqual({",
+      "breaks": [
+        {
+          "id": "L3-a",
+          "file": "backend/src/core/skills/skill-diff.ts",
+          "edits": [
+            {
+              "find": "    { value: texts.to, removed: false, added: true, count: 0 },\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L4",
+      "claim": "An empty old text gives no removed line over the budget",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/skills/skill-diff.test.ts",
+        "name": "treats an empty old text over the budget as inside it"
+      },
+      "assertion": "expect(lineDiff({ from: \"\", to: \"a\\nb\", maxEdits: 1 })).toEqual(",
+      "breaks": [
+        {
+          "id": "L4-a",
+          "file": "backend/src/core/skills/skill-diff.ts",
+          "edits": [
+            {
+              "find": "    if (change.value === \"\") continue;\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C1",
+      "claim": "A changelog of exactly SKILL_CHANGELOG_MAX passes the rules",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/skills/skill.rules.test.ts",
+        "name": "accepts a changelog of exactly the limit"
+      },
+      "assertion": "expect(skillTextProblem({ ...good, changelog: \"c\".repeat(500) }, limits)).toBeNull();",
+      "breaks": [
+        {
+          "id": "C1-a",
+          "file": "backend/src/core/skills/skill.rules.ts",
+          "edits": [
+            {
+              "find": "text.changelog.length > limits.changelogMax",
+              "replace": "text.changelog.length >= limits.changelogMax"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C2",
+      "claim": "A new version with a changelog of exactly the limit is saved",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/skills.test.ts",
+        "name": "a new version with a changelog of exactly the limit is saved"
+      },
+      "assertion": "expect(response.status).toBe(201);\n  });\n\n  it(\"a restore with a changelog",
+      "breaks": [
+        {
+          "id": "C2-a",
+          "file": "backend/src/core/skills/skill.rules.ts",
+          "edits": [
+            {
+              "find": "text.changelog.length > limits.changelogMax",
+              "replace": "text.changelog.length >= limits.changelogMax"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C3",
+      "claim": "A file name that makes the import changelog exactly the limit previews",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/skills/skill-import.service.test.ts",
+        "name": "accepts a file name that makes the changelog exactly the limit"
+      },
+      "assertion": "expect(outcome).toBe(name);",
+      "breaks": [
+        {
+          "id": "C3-a",
+          "file": "backend/src/core/skills/skill-import.service.ts",
+          "edits": [
+            {
+              "find": "const fileMax = deps.changelogMax - IMPORTED_FROM.length;",
+              "replace": "const fileMax = deps.changelogMax - IMPORTED_FROM.length - 1;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F1",
+      "claim": "A key of an object stays after a dot in a 422 field",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/bots.test.ts",
+        "name": "names a key of an object in a 422 after a dot: tool_settings.web_fetch"
+      },
+      "assertion": "expect(await errorOf(response)).toMatchObject({\n      code: \"validation_error\",\n      field: \"tool_settings.web_fetch\",",
+      "breaks": [
+        {
+          "id": "F1-a",
+          "file": "backend/src/adapters/http/router.ts",
+          "edits": [
+            {
+              "find": "`${index === 0 ? \"\" : \".\"}${String(part)}`",
+              "replace": "`${index === 0 ? \"\" : \"/\"}${String(part)}`"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T1",
+      "claim": "A turned-off tool id that the model does not offer is still accepted under the key rule",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/bots.test.ts",
+        "name": "accepts a turned-off tool id that the model does not offer"
+      },
+      "assertion": "expect(response.status).toBe(201);\n  });\n\n  // Review of #115 (R1-6): a wrong type",
+      "breaks": [
+        {
+          "id": "T1-a",
+          "file": "shared/src/bots.ts",
+          "edits": [
+            {
+              "find": ".record(z.string().regex(ToolIdPattern), z.boolean())",
+              "replace": ".record(z.string().regex(/^[a-z]+$/), z.boolean())"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "V1",
+      "claim": "The version 1 in the path still answers 200",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/skills.test.ts",
+        "name": "the version 1 in the path still answers 200"
+      },
+      "assertion": "expect((await send(\"GET\", `/skills/${id}/versions/1`)).status).toBe(200);",
+      "breaks": [
+        {
+          "id": "V1-a",
+          "file": "backend/src/adapters/http/routes/skills.ts",
+          "edits": [
+            {
+              "find": "/^[1-9][0-9]*$/.test(value)",
+              "replace": "/^[2-9][0-9]*$/.test(value)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "V2",
+      "claim": "A version above the safe integer range gets 422, not 404",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/skills.test.ts",
+        "name": "a version above the safe integer range gives 422, not 404"
+      },
+      "assertion": "expect(response.status).toBe(422);\n    expect(await errorOf(response)).toEqual({ code: \"validation_error\", field: \"version\" });\n  });\n\n  it.each([\n    [\"from\"",
+      "breaks": [
+        {
+          "id": "V2-a",
+          "file": "backend/src/adapters/http/routes/skills.ts",
+          "edits": [
+            {
+              "find": "  z.number().int().positive(),\n);\nconst VersionParam",
+              "replace": "  z.number().positive(),\n);\nconst VersionParam"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E1",
+      "claim": "An export of two different ids still gives both skills",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/skills.test.ts",
+        "name": "export of two different ids gives a zip named with 2"
+      },
+      "assertion": "expect(response.status).toBe(200);\n    expect(response.headers.get(\"content-disposition\")).toMatch(/filename=\"2-skills-/);",
+      "breaks": [
+        {
+          "id": "E1-a",
+          "file": "backend/src/adapters/http/routes/skills.ts",
+          "edits": [
+            {
+              "find": "if (new Set(ids).size !== ids.length) {",
+              "replace": "if (new Set(ids).size > 1) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "claim": "The OpenAPI document with an empty ? still answers 200",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/api-docs.test.ts",
+        "name": "/api/openapi.json with an empty ? still answers 200"
+      },
+      "assertion": "expect((await dev.request(\"/api/openapi.json?\")).status).toBe(200);",
+      "breaks": [
+        {
+          "id": "Q1-a",
+          "file": "backend/src/adapters/http/router.ts",
+          "edits": [
+            {
+              "find": "if (key !== undefined) {",
+              "replace": "if (key !== undefined || c.req.url.endsWith(\"?\")) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S1",
+      "claim": "The CLI folder reader reads a SKILL.md of exactly SKILL_MD_MAX_BYTES",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/app/skill-commands.test.ts",
+        "name": "reads a SKILL.md of exactly the limit"
+      },
+      "assertion": "expect(lines[0]).toContain(\"The file has no frontmatter between --- lines.\");",
+      "breaks": [
+        {
+          "id": "S1-a",
+          "file": "backend/src/app/skill-folders.ts",
+          "edits": [
+            {
+              "find": "if (stat.size > SKILL_MD_MAX_BYTES) return \"too_large\";",
+              "replace": "if (stat.size >= SKILL_MD_MAX_BYTES) return \"too_large\";"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3a",
+      "claim": "A new version follows SKILL_CHANGELOG_MAX from the environment",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/skills.test.ts",
+        "name": "a new version refuses a changelog over a limit set to 120"
+      },
+      "assertion": "expect(response.status).toBe(422);\n    expect(await errorOf(response)).toMatchObject({ code: \"validation_error\", field: \"changelog\" });",
+      "breaks": [
+        {
+          "id": "R3a-a",
+          "file": "backend/src/app/compose.ts",
+          "edits": [
+            {
+              "find": "    changelogMax: config.skillChangelogMax,\n  });\n  const skillImport",
+              "replace": "    changelogMax: 500,\n  });\n  const skillImport"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3b",
+      "claim": "The import file name limit follows SKILL_CHANGELOG_MAX from the environment",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/skills/skill-import.service.test.ts",
+        "name": "the preview refuses a file name over a limit set to 120"
+      },
+      "assertion": "expect(outcome).toBe(\"file\");",
+      "breaks": [
+        {
+          "id": "R3b-a",
+          "file": "backend/src/app/compose.ts",
+          "edits": [
+            {
+              "find": "    changelogMax: config.skillChangelogMax,\n    previewMinutes",
+              "replace": "    changelogMax: 500,\n    previewMinutes"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L5",
+      "claim": "An empty new text gives no added line over the budget",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/skills/skill-diff.test.ts",
+        "name": "treats an empty new text over the budget as inside it"
+      },
+      "assertion": "expect(lineDiff({ from: \"a\\nb\", to: \"\", maxEdits: 1 })).toEqual(",
+      "breaks": [
+        {
+          "id": "L5-a",
+          "file": "backend/src/core/skills/skill-diff.ts",
+          "edits": [
+            {
+              "find": "    { value: texts.from, removed: true, added: false, count: 0 },\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F2",
+      "claim": "A wrong type inside a list item is named with [i]",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/bots.test.ts",
+        "name": "names a wrong type in a list item with [i]: pins[0].always_load"
+      },
+      "assertion": "expect(await errorOf(response)).toMatchObject({\n      code: \"validation_error\",\n      field: \"pins[0].always_load\",",
+      "breaks": [
+        {
+          "id": "F2-a",
+          "file": "backend/src/adapters/http/router.ts",
+          "edits": [
+            {
+              "find": "typeof part === \"number\" ? `[${String(part)}]`",
+              "replace": "typeof part === \"number\" ? `.${String(part)}`"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K1",
+      "claim": "ToolSettingsBody refuses a key that is not a tool id",
+      "test": {
+        "kind": "vitest",
+        "file": "shared/src/bots.test.ts",
+        "name": "refuses a key that is not a tool id"
+      },
+      "assertion": "expect(ToolSettingsBody.safeParse({ \"Web Fetch\": false }).success).toBe(false);",
+      "breaks": [
+        {
+          "id": "K1-a",
+          "file": "shared/src/bots.ts",
+          "edits": [
+            {
+              "find": ".record(z.string().regex(ToolIdPattern), z.boolean())",
+              "replace": ".record(z.string(), z.boolean())"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K2",
+      "claim": "ToolSettingsBody accepts tool ids as keys",
+      "test": {
+        "kind": "vitest",
+        "file": "shared/src/bots.test.ts",
+        "name": "accepts tool ids as keys"
+      },
+      "assertion": "expect(ToolSettingsBody.safeParse({ web_fetch: true, view_images: false }).success).toBe(true);",
+      "breaks": [
+        {
+          "id": "K2-a",
+          "file": "shared/src/bots.ts",
+          "edits": [
+            {
+              "find": ".record(z.string().regex(ToolIdPattern), z.boolean())",
+              "replace": ".record(z.string().regex(/^[a-z]+$/), z.boolean())"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O1",
+      "claim": "The OpenAPI document shows the tool id key rule of tool_settings",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/api-docs.test.ts",
+        "name": "shows the tool id key rule of tool_settings in the create bot body"
+      },
+      "assertion": "expect(toolSettings[\"propertyNames\"]).toEqual({",
+      "breaks": [
+        {
+          "id": "O1-a",
+          "file": "shared/src/bots.ts",
+          "edits": [
+            {
+              "find": "  .meta({ propertyNames: { type: \"string\", pattern: ToolIdPattern.source } });",
+              "replace": "  .meta({});"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "backend/test/api/api-docs.test.ts",
+      "name": "/api/openapi.json with an empty key (?=1) answers 200",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/app/config.test.ts",
+      "name": "refuses SKILL_CHANGELOG_MAX under 100",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/app/skill-commands.test.ts",
+      "name": "marks a SKILL.md over 1 MB as invalid without reading it",
+      "reason": "Not new: only the number became the constant SKILL_MD_MAX_BYTES (item 31, no change of behaviour); the test passed before and after"
+    },
+    {
+      "file": "backend/src/core/skills/skill.rules.test.ts",
+      "name": "uses the limits it is given (settings)",
+      "reason": "Not new: only `changelogMax` was added to its limits object, for the type; no new assertion"
+    },
+    {
+      "file": "backend/src/app/config.test.ts",
+      "name": "reads SKILL_DIFF_MAX_EDITS as a positive integer, 2000 by default",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/app/config.test.ts",
+      "name": "reads SKILL_CHANGELOG_MAX as an integer, 500 by default",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/core/skills/skill-import.service.test.ts",
+      "name": "a changed row over the budget gets the old body removed and the new body added",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/core/skills/skill-import.service.test.ts",
+      "name": "refuses a slug listed twice with 422 on slugs",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/core/skills/skill-import.service.test.ts",
+      "name": "refuses a file name that makes the changelog one character too long",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/core/skills/skill.rules.test.ts",
+      "name": "refuses a changelog one character over the limit",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/core/skills/skill.rules.test.ts",
+      "name": "checks the changelog length before the guard",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/core/skills/skills.service.test.ts",
+      "name": "diff of two versions over the budget gives the old body removed and the new body added",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/test/api/api-docs.test.ts",
+      "name": "%s?x=1 gives 422 on x",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/test/api/bots.test.ts",
+      "name": "names a list item in a 422 with [i]: pins[0].skill_id",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/test/api/bots.test.ts",
+      "name": "refuses a tool_settings key that is not a tool id with 422",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/test/api/skills.test.ts",
+      "name": "the version %j in the path gives 422 on version",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/test/api/skills.test.ts",
+      "name": "a loose number in the diff %s gives 422",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/test/api/skills.test.ts",
+      "name": "a new version with a changelog one character over the limit gets 422 and saves nothing",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/test/api/skills.test.ts",
+      "name": "a restore with a changelog one character over the limit gets 422 and saves nothing",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/test/api/skills.test.ts",
+      "name": "export with an empty ids= gives 422 on ids",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/test/api/skills.test.ts",
+      "name": "export with an id listed twice gives 422 on ids",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/test/api/skills.test.ts",
+      "name": "export with an empty item in ids gives 422 invalid_id",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import type { SkillId } from "@cty1ng/shared/ids";
 import {
+  formatCount,
   slugProblem,
   type Skill,
   type SkillImportPreview,
@@ -13,12 +14,20 @@ import type { Readers, SkillRecord, UnitOfWork } from "../ports/repositories.ts"
 import { readSettings } from "../settings/settings.service.ts";
 import { lineDiff } from "./skill-diff.ts";
 import { parseSkillMd } from "./skill-md.ts";
-import { skillTextProblem } from "./skill.rules.ts";
+import { skillTextProblem, type SkillTextLimits } from "./skill.rules.ts";
 import type { SkillsService } from "./skills.service.ts";
 
 // Skill import (domain-model.md §3.5, D5): a preview that writes nothing, then an Apply of the
 // ticked rows in one transaction. The zip adapter and the CLI turn a zip or a folder into
 // `ImportFolder`s, so this service never touches files.
+
+// The changelog of each version that an import writes is this text and the file name.
+const IMPORTED_FROM = "Imported from ";
+
+// The largest SKILL.md that an import reads, from a zip or from a folder (security.md §2.4).
+// No valid SKILL.md comes near it (M1 plan, decision 2); a bigger one is an invalid row, unread.
+// A fixed security check, not a setting.
+export const SKILL_MD_MAX_BYTES = 1024 * 1024;
 
 export interface ImportFolder {
   // The top folder name, which must be the skill's slug.
@@ -62,6 +71,9 @@ export function createSkillImportService(deps: {
   readers: Readers;
   skills: SkillsService;
   clock: Clock;
+  // SKILL_DIFF_MAX_EDITS and SKILL_CHANGELOG_MAX (architecture.md §8).
+  diffMaxEdits: number;
+  changelogMax: number;
   previewMinutes: number;
   previewMax: number;
 }) {
@@ -98,7 +110,7 @@ export function createSkillImportService(deps: {
   async function previewRow(
     folder: ImportFolder,
     actor: string,
-    limits: { nameMax: number; bodyMax: number },
+    limits: SkillTextLimits,
   ): Promise<StoredRow> {
     const slug = folder.folder;
     const base = {
@@ -214,8 +226,12 @@ export function createSkillImportService(deps: {
           description:
             latest.description === parsed.description
               ? null
-              : lineDiff(latest.description, parsed.description),
-          body: lineDiff(latest.bodyMd, parsed.bodyMd),
+              : lineDiff({
+                  from: latest.description,
+                  to: parsed.description,
+                  maxEdits: deps.diffMaxEdits,
+                }),
+          body: lineDiff({ from: latest.bodyMd, to: parsed.bodyMd, maxEdits: deps.diffMaxEdits }),
         },
       },
       seen,
@@ -230,8 +246,16 @@ export function createSkillImportService(deps: {
       folders: readonly ImportFolder[],
       actor: string,
     ): Promise<SkillImportPreview> => {
-      // The file name goes into every changelog ("Imported from {file}"), so the guard reads it
-      // (security.md §2.13).
+      // The file name goes into every changelog ("Imported from {file}"), so its length counts
+      // against SKILL_CHANGELOG_MAX (P3 list, item 24), and the guard reads it (security.md §2.13).
+      const fileMax = deps.changelogMax - IMPORTED_FROM.length;
+      if (file.length > fileMax) {
+        throw new DomainError(
+          "validation_error",
+          `The file name has ${formatCount(file.length)} characters. The limit is ${formatCount(fileMax)}. Rename the file.`,
+          "file",
+        );
+      }
       const match = firstSensitive(file);
       if (match !== null) {
         throw new DomainError(
@@ -241,7 +265,11 @@ export function createSkillImportService(deps: {
         );
       }
       const settings = await readSettings(deps.readers.settings);
-      const limits = { nameMax: settings.skill_name_max, bodyMax: settings.skill_body_max };
+      const limits = {
+        nameMax: settings.skill_name_max,
+        bodyMax: settings.skill_body_max,
+        changelogMax: deps.changelogMax,
+      };
       const rows = new Map<string, StoredRow>();
       const sorted = [...folders].sort((a, b) => a.folder.localeCompare(b.folder));
       for (const folder of sorted) {
@@ -287,6 +315,14 @@ export function createSkillImportService(deps: {
       if (slugs.length === 0) {
         throw new DomainError("validation_error", "Tick at least one skill to apply.", "slugs");
       }
+      // Before the claim and before any write (P3 list, item 33): a repeated slug would apply its
+      // row twice, and the second one fails as stale_write or slug_taken.
+      // One pass with a set: the list has no length limit (review of #115, R1-1).
+      const seen = new Set<string>();
+      const repeated = slugs.find((slug) => seen.size === seen.add(slug).size);
+      if (repeated !== undefined) {
+        throw new DomainError("validation_error", `${repeated} is listed twice.`, "slugs");
+      }
       const picked = slugs.map((slug) => {
         const stored = preview.rows.get(slug);
         if (stored === undefined || !["new", "changed"].includes(stored.row.status)) {
@@ -315,7 +351,7 @@ export function createSkillImportService(deps: {
                 "A skill changed after the preview. The app applied nothing. Preview again.",
               );
             }
-            const changelog = `Imported from ${preview.file}`;
+            const changelog = `${IMPORTED_FROM}${preview.file}`;
             if (stored.row.status === "new") {
               ids.push(
                 await deps.skills.createInTx(

@@ -1,4 +1,5 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
+import type { MiddlewareHandler } from "hono";
 import type { HttpEnv } from "./context.ts";
 import { ApiFailure } from "./errors.ts";
 
@@ -13,12 +14,35 @@ export function createRouter() {
         throw new ApiFailure("validation_error", "The request is not valid.");
       // A malformed TypeID or a wrong prefix in the path (api.md §1, D36).
       if (result.target === "param" && String(issue.path.at(-1)).endsWith("id")) {
-        throw new ApiFailure("invalid_id", issue.message, issue.path.map(String).join("."));
+        throw new ApiFailure("invalid_id", issue.message, fieldPath(issue.path));
       }
       // An unknown field (Zod `.strict()`) names the field in `keys`, not in `path`.
       const path = issue.code === "unrecognized_keys" ? [...issue.path, ...issue.keys] : issue.path;
-      const field = path.map(String).join(".");
+      const field = fieldPath(path);
       throw new ApiFailure("validation_error", issue.message, field === "" ? undefined : field);
     },
   });
+}
+
+// The one format of `field` (api.md §1): a dot before a key of an object, `[i]` for an index of a
+// list, as in `pins[0].skill_id`. The services write list items the same way (`bots[1]`).
+function fieldPath(path: readonly PropertyKey[]): string {
+  return path
+    .map((part, index) =>
+      typeof part === "number" ? `[${String(part)}]` : `${index === 0 ? "" : "."}${String(part)}`,
+    )
+    .join("");
+}
+
+// A route that is not a Zod route still refuses a query string (security.md §2.9), with 422
+// `validation_error`, as a Zod route with `NoQuery` does. An empty `?` and an empty key (`?=1`)
+// pass, as there.
+export function noQueryString(): MiddlewareHandler<HttpEnv> {
+  return async (c, next) => {
+    const key = [...new URL(c.req.url).searchParams.keys()].find((name) => name !== "");
+    if (key !== undefined) {
+      throw new ApiFailure("validation_error", `Unrecognized key: "${key}"`, key);
+    }
+    await next();
+  };
 }

@@ -62,6 +62,37 @@ describe("loadConfig", () => {
     },
   );
 
+  // The diff budget (DQ-037, owner 2026-11-06): architecture.md §8 has the default.
+  it("reads SKILL_DIFF_MAX_EDITS as a positive integer, 2000 by default", () => {
+    expect(loadConfig({}).skillDiffMaxEdits).toBe(2000);
+    expect(loadConfig({ SKILL_DIFF_MAX_EDITS: "50" }).skillDiffMaxEdits).toBe(50);
+    for (const value of ["0", "-1", "1.5", "abc"]) {
+      expect(() => loadConfig({ SKILL_DIFF_MAX_EDITS: value }), value).toThrow(
+        /Invalid configuration: SKILL_DIFF_MAX_EDITS: /,
+      );
+    }
+  });
+
+  // Item 24 of the P3 list: architecture.md §8 has the default.
+  it("reads SKILL_CHANGELOG_MAX as an integer, 500 by default", () => {
+    expect(loadConfig({}).skillChangelogMax).toBe(500);
+    expect(loadConfig({ SKILL_CHANGELOG_MAX: "120" }).skillChangelogMax).toBe(120);
+    for (const value of ["0", "-1", "1.5", "abc"]) {
+      expect(() => loadConfig({ SKILL_CHANGELOG_MAX: value }), value).toThrow(
+        /Invalid configuration: SKILL_CHANGELOG_MAX: /,
+      );
+    }
+  });
+
+  // Review of #115 (R1-4): a smaller limit would refuse the app's own texts ("Imported from
+  // {file}", "Restored vN").
+  it("refuses SKILL_CHANGELOG_MAX under 100", () => {
+    expect(() => loadConfig({ SKILL_CHANGELOG_MAX: "99" })).toThrow(
+      /Invalid configuration: SKILL_CHANGELOG_MAX: /,
+    );
+    expect(loadConfig({ SKILL_CHANGELOG_MAX: "100" }).skillChangelogMax).toBe(100);
+  });
+
   it("refuses an ALLOWED_ORIGINS entry that is not an origin", () => {
     expect(() => loadConfig({ ALLOWED_ORIGINS: "http://a.test/path" })).toThrow(/not an origin/);
     expect(() => loadConfig({ ALLOWED_ORIGINS: "*" })).toThrow(/not an origin/);

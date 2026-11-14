@@ -45,6 +45,73 @@ const create = (slug: string, author = OWNER_ID) =>
     author,
   );
 
+describe("the diff budget (SKILL_DIFF_MAX_EDITS)", () => {
+  // DQ-037: one changed row over the budget gets the old body removed and the new body added,
+  // and it still applies.
+  it("a changed row over the budget gets the old body removed and the new body added", async () => {
+    const small = testBackend({ SKILL_DIFF_MAX_EDITS: "1" }, { clock });
+    try {
+      await small.skills.create(
+        { slug: "notes", name: "Skill notes", description: "Use it.", bodyMd: "a\nb" },
+        OWNER_ID,
+      );
+      const preview = await small.skillImport.preview(
+        "skills.zip",
+        [folder("notes", skillMd("notes", "a\nc"))],
+        OWNER_ID,
+      );
+      expect(preview.rows[0]?.status).toBe("changed");
+      expect(preview.rows[0]?.diff?.body).toEqual([
+        { op: "del", text: "a" },
+        { op: "del", text: "b" },
+        { op: "add", text: "a" },
+        { op: "add", text: "c" },
+      ]);
+      const result = await small.skillImport.apply(preview.preview_id, ["notes"], OWNER_ID);
+      expect(result).toMatchObject({ created: 0, new_versions: 1 });
+    } finally {
+      small.close();
+    }
+  });
+});
+
+// Review of #115 (R1-3): the file name limit follows SKILL_CHANGELOG_MAX, not a value in the code.
+describe("SKILL_CHANGELOG_MAX set by the environment", () => {
+  it("the preview refuses a file name over a limit set to 120", async () => {
+    const small = testBackend({ SKILL_CHANGELOG_MAX: "120" }, { clock });
+    try {
+      const outcome = await small.skillImport
+        .preview(`${"f".repeat(103)}.zip`, [folder("fresh")], OWNER_ID)
+        .then(
+          () => "previewed",
+          (error: unknown) => (error instanceof DomainError ? error.field : "not a DomainError"),
+        );
+      expect(outcome).toBe("file");
+    } finally {
+      small.close();
+    }
+  });
+});
+
+// Item 33 of the P3 list: a slug listed twice is refused before Apply claims the preview or
+// writes anything.
+describe("apply refuses a slug listed twice", () => {
+  it("refuses a slug listed twice with 422 on slugs", async () => {
+    const preview = await backend.skillImport.preview("skills.zip", [folder("fresh")], OWNER_ID);
+    const error = await failure(
+      backend.skillImport.apply(preview.preview_id, ["fresh", "fresh"], OWNER_ID),
+    );
+    expect(error).toMatchObject({
+      code: "validation_error",
+      field: "slugs",
+      message: "fresh is listed twice.",
+    });
+    expect(await backend.skills.list({ includeDeprecated: false }, OWNER_ID)).toEqual([]);
+    const result = await backend.skillImport.apply(preview.preview_id, ["fresh"], OWNER_ID);
+    expect(result).toMatchObject({ created: 1 });
+  });
+});
+
 describe("preview", () => {
   // Audit 2026-11-05, row 5: one row is invalid, and the other rows of the zip still work.
   it("reports a frontmatter over the limit as an invalid row", async () => {
@@ -231,6 +298,36 @@ describe("preview", () => {
       backend.skillImport.preview(`${FAKE_KEY}.zip`, [folder("fresh")], OWNER_ID),
     );
     expect(error).toMatchObject({ code: "sensitive_data", field: "file" });
+  });
+
+  // Item 24 of the P3 list: Apply writes "Imported from {file}" as the changelog, so the preview
+  // refuses a file name that makes it longer than SKILL_CHANGELOG_MAX (500; the prefix has 14).
+  it("refuses a file name that makes the changelog one character too long", async () => {
+    const error = await failure(
+      backend.skillImport.preview(`${"f".repeat(483)}.zip`, [folder("fresh")], OWNER_ID),
+    );
+    expect(error).toMatchObject({
+      code: "validation_error",
+      field: "file",
+      message: "The file name has 487 characters. The limit is 486. Rename the file.",
+    });
+  });
+
+  it("accepts a file name that makes the changelog exactly the limit", async () => {
+    const name = `${"f".repeat(482)}.zip`;
+    // The refusal becomes a value, so a failure here prints its text and no stack.
+    const previewing = backend.skillImport.preview(name, [folder("fresh")], OWNER_ID);
+    const outcome = await previewing.then(
+      (preview) => preview.file,
+      (error: unknown) => (error instanceof Error ? error.message : "not an Error"),
+    );
+    expect(outcome).toBe(name);
+    await backend.skillImport.apply((await previewing).preview_id, ["fresh"], OWNER_ID);
+    const [skill] = await backend.skills.list({ includeDeprecated: false }, OWNER_ID);
+    if (skill === undefined) throw new Error("no skill");
+    expect((await backend.skills.versions(skill.id)).at(0)?.changelog).toBe(
+      `Imported from ${name}`,
+    );
   });
 
   // Review of PR #52: the preview did not guard the slug, so the row showed as `new` and Apply

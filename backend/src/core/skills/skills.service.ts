@@ -1,5 +1,5 @@
 import type {
-  DiffLine,
+  SkillDiff,
   Skill,
   SkillDetail,
   SkillVersion,
@@ -39,6 +39,9 @@ export interface SkillsDeps {
   clock: Clock;
   ids: Ids;
   pinsChanged: (tx: Tx, botIds: readonly BotId[]) => Promise<void>;
+  // SKILL_DIFF_MAX_EDITS and SKILL_CHANGELOG_MAX (architecture.md §8).
+  diffMaxEdits: number;
+  changelogMax: number;
 }
 
 export interface UpgradeCandidate {
@@ -155,6 +158,7 @@ export function createSkillsService(deps: SkillsDeps) {
     const problem = skillTextProblem(text, {
       nameMax: settings.skill_name_max,
       bodyMax: settings.skill_body_max,
+      changelogMax: deps.changelogMax,
     });
     if (problem !== null) throw new DomainError(problem.code, problem.message, problem.field);
   }
@@ -320,11 +324,7 @@ export function createSkillsService(deps: SkillsDeps) {
       return versionShape(row, pins.filter((pin) => pin.skillVersionId === row.id).length);
     },
 
-    diff: async (
-      id: SkillId,
-      from: number,
-      to: number,
-    ): Promise<{ description: DiffLine[] | null; body: DiffLine[] }> => {
+    diff: async (id: SkillId, from: number, to: number): Promise<SkillDiff> => {
       await liveSkill(readers.skills, id);
       const [a, b] = await Promise.all([
         readers.skills.version(id, from),
@@ -333,8 +333,10 @@ export function createSkillsService(deps: SkillsDeps) {
       if (a === null || b === null) throw new DomainError("not_found", "No such version.");
       return {
         description:
-          a.description === b.description ? null : lineDiff(a.description, b.description),
-        body: lineDiff(a.bodyMd, b.bodyMd),
+          a.description === b.description
+            ? null
+            : lineDiff({ from: a.description, to: b.description, maxEdits: deps.diffMaxEdits }),
+        body: lineDiff({ from: a.bodyMd, to: b.bodyMd, maxEdits: deps.diffMaxEdits }),
       };
     },
 
