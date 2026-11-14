@@ -10,12 +10,12 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join, relative } from "node:path";
-import type { ImportFolder } from "../core/skills/skill-import.service.ts";
+import { SKILL_MD_MAX_BYTES, type ImportFolder } from "../core/skills/skill-import.service.ts";
 
 // Skill folders on disk for the CLI (api.md §2): `<folder>/<slug>/SKILL.md`. The same rules as
 // the zip (security.md §2.4): only SKILL.md is opened, one over 1 MB is not read, and every other
-// file is listed as skipped. Links are listed, never followed.
-const MAX_SKILL_MD_BYTES = 1024 * 1024;
+// file is listed as skipped. Links are listed, never followed. The limit is the one of the zip,
+// `SKILL_MD_MAX_BYTES`.
 
 export function readSkillFolders(root: string): ImportFolder[] {
   const folders: ImportFolder[] = [];
@@ -48,14 +48,14 @@ function readSkillMd(path: string): Uint8Array | "too_large" | "skipped" {
   try {
     const stat = fstatSync(fd);
     if (!stat.isFile()) return "skipped";
-    if (stat.size > MAX_SKILL_MD_BYTES) return "too_large";
-    const buffer = Buffer.alloc(MAX_SKILL_MD_BYTES + 1);
+    if (stat.size > SKILL_MD_MAX_BYTES) return "too_large";
+    const buffer = Buffer.alloc(SKILL_MD_MAX_BYTES + 1);
     let length = 0;
     for (;;) {
       const read = readSync(fd, buffer, length, buffer.length - length, null);
       if (read === 0) break;
       length += read;
-      if (length > MAX_SKILL_MD_BYTES) return "too_large";
+      if (length > SKILL_MD_MAX_BYTES) return "too_large";
     }
     return new Uint8Array(buffer.subarray(0, length));
   } finally {

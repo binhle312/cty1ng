@@ -24,6 +24,11 @@ import type { SkillsService } from "./skills.service.ts";
 // The changelog of each version that an import writes is this text and the file name.
 const IMPORTED_FROM = "Imported from ";
 
+// The largest SKILL.md that an import reads, from a zip or from a folder (security.md §2.4).
+// No valid SKILL.md comes near it (M1 plan, decision 2); a bigger one is an invalid row, unread.
+// A fixed security check, not a setting.
+export const SKILL_MD_MAX_BYTES = 1024 * 1024;
+
 export interface ImportFolder {
   // The top folder name, which must be the skill's slug.
   folder: string;

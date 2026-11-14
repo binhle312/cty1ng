@@ -3,9 +3,9 @@ import { bodyLimit } from "hono/body-limit";
 import { Bot } from "@cty1ng/shared/bots";
 import { BotId, SkillId, SkillVersionId } from "@cty1ng/shared/ids";
 import {
-  DiffLine,
   Skill,
   SkillDetail,
+  SkillDiff,
   SkillImportPreview,
   SkillImportResult,
   SkillVersion,
@@ -230,10 +230,7 @@ const routes = {
         .strict(),
     },
     responses: {
-      200: json(
-        z.object({ description: z.array(DiffLine).nullable(), body: z.array(DiffLine) }),
-        "A line diff of the descriptions and the bodies",
-      ),
+      200: json(SkillDiff, "A line diff of the descriptions and the bodies"),
     },
   }),
   restoreSkillVersion: createRoute({

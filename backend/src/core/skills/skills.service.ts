@@ -1,5 +1,5 @@
 import type {
-  DiffLine,
+  SkillDiff,
   Skill,
   SkillDetail,
   SkillVersion,
@@ -324,11 +324,7 @@ export function createSkillsService(deps: SkillsDeps) {
       return versionShape(row, pins.filter((pin) => pin.skillVersionId === row.id).length);
     },
 
-    diff: async (
-      id: SkillId,
-      from: number,
-      to: number,
-    ): Promise<{ description: DiffLine[] | null; body: DiffLine[] }> => {
+    diff: async (id: SkillId, from: number, to: number): Promise<SkillDiff> => {
       await liveSkill(readers.skills, id);
       const [a, b] = await Promise.all([
         readers.skills.version(id, from),
