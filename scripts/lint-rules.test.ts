@@ -106,6 +106,11 @@ describe("SQL lint rules: the wider forms", () => {
       "sql imported under its own name",
       'import { sql } from "drizzle-orm";\nexport const one = sql`SELECT 1`;\n',
     ],
+    // Review round 1 of #120 (R1-3): the tagged template of a namespace import.
+    [
+      "db.run with orm.sql``",
+      'import * as orm from "drizzle-orm";\ndeclare const db: any;\ndb.run(orm.sql`SELECT 1`);\n',
+    ],
   ])("allows %s", async (_label, code) => {
     const found = await messages(code, DB_FILE);
     expect(found.filter(isSqlRule)).toEqual([]);
@@ -265,6 +270,11 @@ describe("bot list write rule", () => {
       file: "frontend/src/features/skills/skill-page.tsx",
     },
     {
+      label: "setQueryData with a copy of the key",
+      code: "declare const qc: any;\nqc.setQueryData([...listBotsQueryKey()], []);\n",
+      file: "frontend/src/features/bots/bot-page.tsx",
+    },
+    {
       label: "a write in lib",
       code: "declare const qc: any;\nqc.setQueryData(listBotsQueryKey(), []);\n",
       file: "frontend/src/lib/realtime/reducer.ts",
@@ -280,6 +290,15 @@ describe("bot list write rule", () => {
       file,
     );
     expect(found.some(isBotListRule)).toBe(true);
+  });
+
+  // Review round 1 of #120 (R1-6): a write of another key whose updater reads the bot list.
+  it("allows a write of another key that reads the bot list", async () => {
+    const found = await messages(
+      "declare const qc: any, listBotsQueryKey: any, getBotQueryKey: any;\nqc.setQueryData(getBotQueryKey(), () => qc.getQueryData(listBotsQueryKey()));\n",
+      "frontend/src/features/skills/skill-page.tsx",
+    );
+    expect(found.filter(isBotListRule)).toEqual([]);
   });
 
   it("allows a read of the bot list", async () => {

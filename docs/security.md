@@ -162,14 +162,16 @@ environment, provider-side data handling.
 
 ### 2.8 Database queries (SQL injection)
 
-- All queries go through Drizzle's query builder, which binds parameters. Raw SQL is allowed
-  only through Drizzle's `sql` tagged template, which binds every `${value}`; never built with
-  template strings or `+` on user input. ESLint bans, outside reviewed, commented exceptions:
-  `sql.raw()` (also as `orm.sql.raw()`), an import of `sql` under another name, and a call of
-  `run`, `execute`, `all`, `get` or `values` on `db` or `tx` with any argument but a `sql`
-  tagged template. `eslint-plugin-drizzle` requires a `where` on every `update` and `delete`.
-  Lint does not check a database handle with another name, or `exec`/`prepare` on a
-  better-sqlite3 handle.
+- All queries go through Drizzle's query builder, which binds parameters. Raw SQL is allowed only
+  through Drizzle's `sql` tagged template, which binds every `${value}`; never built with template
+  strings or `+` on user input. ESLint bans, outside reviewed, commented exceptions: `sql.raw()`
+  and `orm.sql.raw()`, an `import { sql as … }`, and a call `db.run`, `db.execute`, `db.all`,
+  `db.get` or `db.values` (also on `tx`, or on a `.db` or `.tx` property such as `this.db`) whose
+  first argument is not a `sql` or `orm.sql` tagged template. `eslint-plugin-drizzle` requires a
+  `where` on every `update` and `delete`. Lint sees only these written forms. It does not see, for
+  example, `sql` or `raw` taken into a variable or by destructuring, a computed member
+  (`sql["raw"]`, `db["run"]`), a re-export, a handle with another name or behind a type cast, or
+  `exec` and `prepare` on a better-sqlite3 handle.
 - Identifiers cannot be bound, so anything that picks a column, sort order or table from a
   request (for example `metric=` and `sort=` on the statistics API) is mapped through an
   allowlist object (`Record<…>` with `satisfies`) in the service; unknown values return 422.

@@ -27,7 +27,7 @@ const SQL_RULES = [
     // names as the drizzle rules below. `map.get("key")` is not SQL. Any argument but a sql``
     // tagged template: a string, a template, a string in a variable, the result of a call.
     selector:
-      "CallExpression:matches([callee.object.name=/^(db|tx)$/], [callee.object.property.name=/^(db|tx)$/])[callee.property.name=/^(run|execute|all|get|values)$/][arguments.length>0]:not([arguments.0.tag.name='sql'])",
+      "CallExpression:matches([callee.object.name=/^(db|tx)$/], [callee.object.property.name=/^(db|tx)$/])[callee.property.name=/^(run|execute|all|get|values)$/][arguments.length>0]:not([arguments.0.tag.name='sql'], [arguments.0.tag.property.name='sql'])",
     message:
       "No SQL from a string (security.md §2.8). Use the query builder or the sql`` tagged template.",
   },
@@ -54,13 +54,21 @@ const RAW_COLOUR_RULES = [
 ];
 
 // The bot list and the settings: only the bot list store writes them (frontend-conventions.md
-// §1); a write from elsewhere is dropped by the next load or answer. The key can be anywhere in the
-// arguments: the filters of `setQueriesData`, or `listBotsOptions().queryKey`. A key in a variable
-// is not seen (frontend-conventions.md §1 says so).
+// §1); a write from elsewhere is dropped by the next load or answer. The rule sees the key as the
+// first argument of `setQueryData`/`setQueriesData` (also as a copy `[...key()]`), as the `queryKey`
+// of its filters, or as `listBotsOptions().queryKey`; a key in a variable is not seen
+// (frontend-conventions.md §1).
+const BOT_LIST_KEY = "[callee.name=/^(listBots|getSettings)(QueryKey|Options)$/]";
+const CACHE_WRITE = "CallExpression[callee.property.name=/^(setQueryData|setQueriesData)$/]";
 const BOT_LIST_WRITE_RULES = [
   {
-    selector:
-      "CallExpression[callee.property.name=/^(setQueryData|setQueriesData)$/] CallExpression[callee.name=/^(listBots|getSettings)(QueryKey|Options)$/]",
+    selector: [
+      `${CACHE_WRITE} > CallExpression.arguments:nth-child(1)${BOT_LIST_KEY}`,
+      `${CACHE_WRITE} > MemberExpression.arguments:nth-child(1)[property.name='queryKey'] > CallExpression.object${BOT_LIST_KEY}`,
+      `${CACHE_WRITE} > ArrayExpression.arguments:nth-child(1) > SpreadElement > CallExpression.argument${BOT_LIST_KEY}`,
+      `${CACHE_WRITE} > ObjectExpression.arguments:nth-child(1) > Property[key.name='queryKey'] > CallExpression.value${BOT_LIST_KEY}`,
+      `${CACHE_WRITE} > ObjectExpression.arguments:nth-child(1) > Property[key.name='queryKey'] > MemberExpression.value[property.name='queryKey'] > CallExpression.object${BOT_LIST_KEY}`,
+    ].join(", "),
     message:
       "Write the bot list and the settings only through features/bots/bot-list-store.ts (frontend-conventions.md §1).",
   },

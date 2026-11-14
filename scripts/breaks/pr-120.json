@@ -59,7 +59,7 @@
           "file": "eslint.config.js",
           "edits": [
             {
-              "find": "[arguments.length>0]:not([arguments.0.tag.name='sql'])",
+              "find": "[arguments.length>0]:not([arguments.0.tag.name='sql'], [arguments.0.tag.property.name='sql'])",
               "replace": "[arguments.0.type=/^(Literal|TemplateLiteral|BinaryExpression)$/]"
             }
           ]
@@ -81,7 +81,7 @@
           "file": "eslint.config.js",
           "edits": [
             {
-              "find": "[arguments.length>0]:not([arguments.0.tag.name='sql'])",
+              "find": "[arguments.length>0]:not([arguments.0.tag.name='sql'], [arguments.0.tag.property.name='sql'])",
               "replace": "[arguments.0.type=/^(Literal|TemplateLiteral|BinaryExpression)$/]"
             }
           ]
@@ -163,7 +163,7 @@
     {
       "file": "scripts/lint-rules.test.ts",
       "name": "allows %s",
-      "reason": "An allow case: it passed before and after the change, so no break can make a red run; the reject tests carry the claims."
+      "reason": "An allow case, not a security claim (testing.md §5 names security, order and late tests): it passed before and after the change. A break that widens a selector could make it fail; no such break is in this list."
     },
     {
       "file": "scripts/lint-rules.test.ts",
@@ -173,7 +173,7 @@
     {
       "file": "scripts/lint-rules.test.ts",
       "name": "allows a read of the bot list",
-      "reason": "An allow case: it passed before and after the change, so no break can make a red run; the reject tests carry the claims."
+      "reason": "An allow case, not a security claim (testing.md §5 names security, order and late tests): it passed before and after the change. A break that widens a selector could make it fail; no such break is in this list."
     },
     {
       "file": "scripts/lint-rules.test.ts",
@@ -204,6 +204,31 @@
       "file": "scripts/e2e-serve.test.ts",
       "name": "does not start a second time for the same marker",
       "reason": "Behaviour that the script had before this PR (a new test of the script itself, item 76): it passed before and after the change."
+    },
+    {
+      "file": "scripts/lint-rules.test.ts",
+      "name": "allows a write of another key that reads the bot list",
+      "reason": "Review round 1 of #120 (R1-6), written before its fix: the red run is in the PR description. An allow case, not a security claim (testing.md §5 names security, order and late tests): it passed before and after the change. A break that widens a selector could make it fail; no such break is in this list."
+    },
+    {
+      "file": "scripts/lib/db-schema.test.ts",
+      "name": "of a column",
+      "reason": "Review round 1 of #120 (R1-1, R1-2), written before its fix: the red run is in the PR description (testing.md §5)."
+    },
+    {
+      "file": "scripts/lib/db-schema.test.ts",
+      "name": "of a table that an index and a foreign key name",
+      "reason": "Review round 1 of #120 (R1-1, R1-2), written before its fix: the red run is in the PR description (testing.md §5)."
+    },
+    {
+      "file": "scripts/lib/db-schema.test.ts",
+      "name": "that adds STRICT",
+      "reason": "Review round 1 of #120 (R1-1, R1-2), written before its fix: the red run is in the PR description (testing.md §5)."
+    },
+    {
+      "file": "scripts/lib/db-schema.test.ts",
+      "name": "that writes a CHECK twice",
+      "reason": "Review round 1 of #120 (R1-1, R1-2), written before its fix: the red run is in the PR description (testing.md §5)."
     }
   ]
 }
