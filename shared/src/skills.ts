@@ -138,10 +138,20 @@ export function copySlug(slug: string, taken: (candidate: string) => boolean): s
   }
 }
 
-// The name of a copy: " (copy)" after the name, which is cut so the whole fits `nameMax`.
+const GRAPHEMES = new Intl.Segmenter("en", { granularity: "grapheme" });
+
+// The name of a copy: " (copy)" after the name, which is cut so the whole fits `nameMax`. The
+// limit counts UTF-16 code units, as `skillFieldProblem` does. The cut keeps whole graphemes, so
+// it never leaves half an emoji, a ZWJ sequence or a flag.
 export function copyName(name: string, nameMax: number): string {
   const suffix = " (copy)";
-  return `${name.slice(0, Math.max(0, nameMax - suffix.length)).trimEnd()}${suffix}`;
+  const room = Math.max(0, nameMax - suffix.length);
+  let kept = "";
+  for (const { segment } of GRAPHEMES.segment(name)) {
+    if (kept.length + segment.length > room) break;
+    kept += segment;
+  }
+  return `${kept.trimEnd()}${suffix}`;
 }
 
 // API shapes (api.md §2, §8). Timestamps are ISO-8601 UTC strings.

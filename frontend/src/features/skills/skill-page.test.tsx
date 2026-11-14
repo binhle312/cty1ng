@@ -594,3 +594,96 @@ describe("Clone while its read of the versions is on its way", () => {
     expect(router.state.location.pathname).toBe("/skills/write-user-stories");
   });
 });
+
+// The bot list of a Deprecate dialog that did not load: Try again reads it again
+// (skills-page.md §2a pattern; P3 list item 61).
+describe("the Deprecate dialog when the bots do not load", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  const FAILED = { status: 500, body: { error: { code: "internal_error", message: "Failed." } } };
+  const click = (element: HTMLElement) => {
+    act(() => {
+      fireEvent.click(element);
+    });
+  };
+
+  async function openDeprecate() {
+    const ba = makeBot(1, "BA", [makePin()]);
+    const server: { bots: () => { status?: number; body?: unknown } } = { bots: () => FAILED };
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: [makeSkill()] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: makeSkill() }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      "GET /api/bots": () => server.bots(),
+    });
+    const { queryClient } = await renderApp("/skills/write-user-stories");
+    click(await screen.findByRole("button", { name: "Skill actions" }, { timeout: 5000 }));
+    click(await screen.findByRole("menuitem", { name: "Deprecate" }));
+    const dialog = await screen.findByRole("alertdialog");
+    const alert = await within(dialog).findByRole("alert");
+    return {
+      queryClient,
+      ba,
+      server,
+      dialog,
+      tryAgain: within(alert).getByRole("button", { name: "Try again" }),
+    };
+  }
+
+  it("shows the bots after Try again", async () => {
+    const { ba, server, dialog, tryAgain } = await openDeprecate();
+    server.bots = () => ({ body: [ba] });
+    click(tryAgain);
+    expect(await within(dialog).findByText("BA"), "the bots after Try again").toBeTruthy();
+  });
+
+  // An order case: a second failure keeps the way to try again. The old code had no button.
+  it("keeps Try again when the bots fail again", async () => {
+    const { dialog, queryClient, tryAgain } = await openDeprecate();
+    click(tryAgain);
+    await waitFor(() => {
+      expect(api?.sent("GET", "/api/bots").length).toBeGreaterThan(1);
+    });
+    await waitFor(() => {
+      expect(queryClient.isFetching()).toBe(0);
+    });
+    const tryAgainAfter = within(dialog).queryByRole("button", { name: "Try again" });
+    expect(tryAgainAfter, "Try again after a second failure").not.toBeNull();
+  });
+});
+
+// The dot of a list row with unsaved changes is an image with a name, so a screen reader reads
+// its label: `aria-label` on an element with no role is not read (P3 list item 64).
+describe("the unsaved changes dot of the skill list", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  it("is an image named Unsaved changes", async () => {
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: [makeSkill()] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: makeSkill() }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      "GET /api/bots": () => ({ body: [] }),
+    });
+    await renderApp("/skills/write-user-stories");
+    await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 });
+    act(() => {
+      fireEvent.change(screen.getByLabelText("Name", { exact: true }), {
+        target: { value: "Write better user stories" },
+      });
+    });
+    expect(
+      await screen.findByRole("img", { name: "Unsaved changes" }),
+      "the dot is an image",
+    ).toBeTruthy();
+  });
+});

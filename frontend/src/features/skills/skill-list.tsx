@@ -166,6 +166,7 @@ function SkillListRow({
         </span>
         {dirty && (
           <span
+            role="img"
             aria-label="Unsaved changes"
             className="size-1.5 shrink-0 rounded-pill bg-primary"
           />

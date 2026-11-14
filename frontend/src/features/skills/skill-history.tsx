@@ -71,14 +71,18 @@ export function SkillHistory({
   return (
     <div className="flex min-h-0 grow gap-6 overflow-y-auto px-8 py-5">
       <div className="w-list-column shrink-0">
-        {versions.isPending ? (
-          <SkeletonArea label="Loading versions">
-            {[0, 1, 2].map((key) => (
-              <Skeleton key={key} className="mb-2 h-12" />
-            ))}
-          </SkeletonArea>
-        ) : versions.isError ? (
-          <p className="text-on-surface-muted">The app could not load the versions.</p>
+        {/* The data first: a failed background refresh keeps the versions (skills-page.md,
+            "A failed background refresh keeps the list"). */}
+        {versions.data === undefined ? (
+          versions.isError ? (
+            <p className="text-on-surface-muted">The app could not load the versions.</p>
+          ) : (
+            <SkeletonArea label="Loading versions">
+              {[0, 1, 2].map((key) => (
+                <Skeleton key={key} className="mb-2 h-12" />
+              ))}
+            </SkeletonArea>
+          )
         ) : (
           <ol aria-label="Versions" className="flex flex-col gap-1">
             {versions.data.map((version) => (
@@ -263,12 +267,14 @@ function DiffPanel({
           </Button>
         )}
       </div>
-      {diff.isPending ? (
-        <SkeletonArea label="Loading the changes">
-          <Skeleton className="h-48" />
-        </SkeletonArea>
-      ) : diff.isError ? (
-        <p className="text-on-surface-muted">The app could not load the changes.</p>
+      {diff.data === undefined ? (
+        diff.isError ? (
+          <p className="text-on-surface-muted">The app could not load the changes.</p>
+        ) : (
+          <SkeletonArea label="Loading the changes">
+            <Skeleton className="h-48" />
+          </SkeletonArea>
+        )
       ) : (
         <>
           {diff.data.description === null ? (
@@ -276,11 +282,20 @@ function DiffPanel({
           ) : (
             <>
               <p className="text-sm text-on-surface-muted">Description</p>
-              <DiffView lines={diff.data.description} label="Description changes" />
+              {/* A key for each pair of each skill: the open folds belong to one diff. */}
+              <DiffView
+                key={`${skill.id}-${String(from)}-${String(to)}`}
+                lines={diff.data.description}
+                label="Description changes"
+              />
             </>
           )}
           <p className="text-sm text-on-surface-muted">Body</p>
-          <DiffView lines={diff.data.body} label="Body changes" />
+          <DiffView
+            key={`${skill.id}-${String(from)}-${String(to)}`}
+            lines={diff.data.body}
+            label="Body changes"
+          />
         </>
       )}
     </div>

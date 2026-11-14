@@ -62,13 +62,14 @@ export function NewSkillPage() {
 // closes it (frontend-conventions.md §5; DQ-180, DQ-191).
 function ClonePage({ from }: { from: string }) {
   const source = useCloneSource(from);
-  // The copy's name is cut to the name limit, so a Clone waits for the settings, once: after
-  // the first answer, success or failure, it never waits again. After a failed load the editor
-  // opens with no limit and the settings error; Create waits for the limits. (A query with no data goes back to pending on each new try, so waiting
-  // on `isPending` would show the skeleton again and again while the settings fail.)
+  // The copy's name is cut to the name limit, so a Clone waits for the settings answer of this
+  // visit, once: after it, success or failure, it never waits again (`isFetchedAfterMount`
+  // cannot go back to false). Settings in the cache from an earlier page do not count: the
+  // limit can have changed since, and the form checks the name against the newest limit
+  // (DQ-090). After a failed load the editor opens with the limit it has, or with no limit and
+  // the settings error; Create waits for the limits.
   const settings = useQuery(getSettingsOptions());
-  const [settingsSettled, setSettingsSettled] = useState(false);
-  if (!settingsSettled && !settings.isPending) setSettingsSettled(true);
+  const settingsSettled = settings.isFetchedAfterMount;
 
   const [opened, setOpened] = useState<CloneSource | null>(null);
   // A good answer of this visit. Data that the cache had before this visit does not count: it
