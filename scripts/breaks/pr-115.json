@@ -140,7 +140,7 @@
         "file": "backend/src/core/skills/skill-import.service.test.ts",
         "name": "accepts a file name that makes the changelog exactly the limit"
       },
-      "assertion": "await expect(previewing).resolves.toMatchObject({ file: name });",
+      "assertion": "expect(outcome).toBe(name);",
       "breaks": [
         {
           "id": "C3-a",
@@ -250,7 +250,7 @@
         "file": "backend/test/api/skills.test.ts",
         "name": "export of two different ids gives a zip named with 2"
       },
-      "assertion": "expect(response.headers.get(\"content-disposition\")).toMatch(/filename=\"2-skills-/);",
+      "assertion": "expect(response.status).toBe(200);\n    expect(response.headers.get(\"content-disposition\")).toMatch(/filename=\"2-skills-/);",
       "breaks": [
         {
           "id": "E1-a",

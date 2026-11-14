@@ -297,8 +297,13 @@ describe("preview", () => {
 
   it("accepts a file name that makes the changelog exactly the limit", async () => {
     const name = `${"f".repeat(482)}.zip`;
+    // The refusal becomes a value, so a failure here prints its text and no stack.
     const previewing = backend.skillImport.preview(name, [folder("fresh")], OWNER_ID);
-    await expect(previewing).resolves.toMatchObject({ file: name });
+    const outcome = await previewing.then(
+      (preview) => preview.file,
+      (error: unknown) => (error instanceof Error ? error.message : "not an Error"),
+    );
+    expect(outcome).toBe(name);
     await backend.skillImport.apply((await previewing).preview_id, ["fresh"], OWNER_ID);
     const [skill] = await backend.skills.list({ includeDeprecated: false }, OWNER_ID);
     if (skill === undefined) throw new Error("no skill");
