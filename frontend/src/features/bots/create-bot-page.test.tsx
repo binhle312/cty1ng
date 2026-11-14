@@ -449,6 +449,37 @@ describe("skills on the Create bot page", () => {
     });
   });
 
+  // DQ-095: the template read has `retry: false`. `render-app.tsx` turns retries off for every
+  // test, so this test turns the app's retries on before the Clone opens.
+  it("reads the template of a Clone once when the bot to copy is not found", async () => {
+    fake = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/models": () => ({ body: [FAKE_SCRIPTED] }),
+      "GET /api/tools": () => ({ body: [] }),
+      "GET /api/skills": () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [SOURCE] }),
+      [`GET /api/bots/${SOURCE.id}/clone-template`]: () => ({
+        status: 404,
+        body: { error: { code: "not_found", message: "No such bot." } },
+      }),
+    });
+    const { router, queryClient } = await renderApp("/bots");
+    queryClient.setDefaultOptions({
+      queries: { ...queryClient.getDefaultOptions().queries, retry: 3, retryDelay: 1 },
+    });
+    await act(() => router.navigate({ to: "/bots/new", search: { from: SOURCE.id } }));
+    expect(
+      await screen.findByText("The app could not find the bot to copy.", undefined, {
+        timeout: 5000,
+      }),
+    ).toBeTruthy();
+    // Retries would have sent more reads by now (1 ms apart).
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(fake.sent("GET", `/api/bots/${SOURCE.id}/clone-template`)).toHaveLength(1);
+  });
+
   it("gives a copied pin back its version when it is unticked and ticked again", async () => {
     fake = skillsApi();
     await renderApp(`/bots/new?from=${SOURCE.id}`);
