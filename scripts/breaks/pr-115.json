@@ -184,15 +184,15 @@
         "file": "backend/test/api/bots.test.ts",
         "name": "accepts a turned-off tool id that the model does not offer"
       },
-      "assertion": "expect(response.status).toBe(201);\n  });\n\n  it(\"names a key of an object",
+      "assertion": "expect(response.status).toBe(201);\n  });\n\n  // Review of #115 (R1-6): a wrong type",
       "breaks": [
         {
           "id": "T1-a",
           "file": "shared/src/bots.ts",
           "edits": [
             {
-              "find": "z.record(z.string().regex(ToolIdPattern), z.boolean())",
-              "replace": "z.record(z.string().regex(/^[a-z]+$/), z.boolean())"
+              "find": ".record(z.string().regex(ToolIdPattern), z.boolean())",
+              "replace": ".record(z.string().regex(/^[a-z]+$/), z.boolean())"
             }
           ]
         }
@@ -279,8 +279,8 @@
           "file": "backend/src/adapters/http/router.ts",
           "edits": [
             {
-              "find": "if (key.done !== true) {",
-              "replace": "if (key.done !== true || c.req.url.endsWith(\"?\")) {"
+              "find": "if (key !== undefined) {",
+              "replace": "if (key !== undefined || c.req.url.endsWith(\"?\")) {"
             }
           ]
         }
@@ -307,9 +307,151 @@
           ]
         }
       ]
+    },
+    {
+      "id": "R3a",
+      "claim": "A new version follows SKILL_CHANGELOG_MAX from the environment",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/skills.test.ts",
+        "name": "a new version refuses a changelog over a limit set to 120"
+      },
+      "assertion": "expect(response.status).toBe(422);\n  });\n});\n\ndescribe(\"strict version numbers\"",
+      "breaks": [
+        {
+          "id": "R3a-a",
+          "file": "backend/src/app/compose.ts",
+          "edits": [
+            {
+              "find": "    changelogMax: config.skillChangelogMax,\n  });\n  const skillImport",
+              "replace": "    changelogMax: 500,\n  });\n  const skillImport"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3b",
+      "claim": "The import file name limit follows SKILL_CHANGELOG_MAX from the environment",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/skills/skill-import.service.test.ts",
+        "name": "the preview refuses a file name over a limit set to 120"
+      },
+      "assertion": "expect(outcome).toBe(\"file\");",
+      "breaks": [
+        {
+          "id": "R3b-a",
+          "file": "backend/src/app/compose.ts",
+          "edits": [
+            {
+              "find": "    changelogMax: config.skillChangelogMax,\n    previewMinutes",
+              "replace": "    changelogMax: 500,\n    previewMinutes"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L5",
+      "claim": "An empty new text gives no added line over the budget",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/skills/skill-diff.test.ts",
+        "name": "treats an empty new text over the budget as inside it"
+      },
+      "assertion": "expect(lineDiff({ from: \"a\\nb\", to: \"\", maxEdits: 1 })).toEqual(",
+      "breaks": [
+        {
+          "id": "L5-a",
+          "file": "backend/src/core/skills/skill-diff.ts",
+          "edits": [
+            {
+              "find": "    { value: texts.from, removed: true, added: false, count: 0 },\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F2",
+      "claim": "A wrong type inside a list item is named with [i]",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/bots.test.ts",
+        "name": "names a wrong type in a list item with [i]: pins[0].always_load"
+      },
+      "assertion": "expect(await errorOf(response)).toMatchObject({\n      code: \"validation_error\",\n      field: \"pins[0].always_load\",",
+      "breaks": [
+        {
+          "id": "F2-a",
+          "file": "backend/src/adapters/http/router.ts",
+          "edits": [
+            {
+              "find": "typeof part === \"number\" ? `[${String(part)}]`",
+              "replace": "typeof part === \"number\" ? `.${String(part)}`"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K1",
+      "claim": "ToolSettingsBody refuses a key that is not a tool id",
+      "test": {
+        "kind": "vitest",
+        "file": "shared/src/bots.test.ts",
+        "name": "refuses a key that is not a tool id"
+      },
+      "assertion": "expect(ToolSettingsBody.safeParse({ \"Web Fetch\": false }).success).toBe(false);",
+      "breaks": [
+        {
+          "id": "K1-a",
+          "file": "shared/src/bots.ts",
+          "edits": [
+            {
+              "find": ".record(z.string().regex(ToolIdPattern), z.boolean())",
+              "replace": ".record(z.string(), z.boolean())"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K2",
+      "claim": "ToolSettingsBody accepts tool ids as keys",
+      "test": {
+        "kind": "vitest",
+        "file": "shared/src/bots.test.ts",
+        "name": "accepts tool ids as keys"
+      },
+      "assertion": "expect(ToolSettingsBody.safeParse({ web_fetch: true, view_images: false }).success).toBe(true);",
+      "breaks": [
+        {
+          "id": "K2-a",
+          "file": "shared/src/bots.ts",
+          "edits": [
+            {
+              "find": ".record(z.string().regex(ToolIdPattern), z.boolean())",
+              "replace": ".record(z.string().regex(/^[a-z]+$/), z.boolean())"
+            }
+          ]
+        }
+      ]
     }
   ],
   "exempt": [
+    {
+      "file": "backend/test/api/api-docs.test.ts",
+      "name": "/api/openapi.json with an empty key (?=1) answers 200",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/app/config.test.ts",
+      "name": "refuses SKILL_CHANGELOG_MAX under 100",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
     {
       "file": "backend/src/app/skill-commands.test.ts",
       "name": "marks a SKILL.md over 1 MB as invalid without reading it",
