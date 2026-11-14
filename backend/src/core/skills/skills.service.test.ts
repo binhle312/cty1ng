@@ -552,7 +552,7 @@ describe("Deprecate, Trash, restore, purge (D49)", () => {
     const result = await failingPurge(b.id).purgeDue(OWNER_ID);
     expect(await backend.readers.skills.byId(c.id)).toBeNull();
     expect(await backend.readers.skills.byId(a.id)).toBeNull();
-    expect(await backend.readers.skills.byId(b.id)).toMatchObject({ trashedAt: expect.any(Date) });
+    expect((await backend.readers.skills.byId(b.id))?.trashedAt).toBeInstanceOf(Date);
     expect(result.purged).toBe(2);
     // The failed skill's transaction rolled back: its rows and its `skill.purged` are gone.
     const written = (await backend.readers.events.after(0, 1000)).slice(before);
