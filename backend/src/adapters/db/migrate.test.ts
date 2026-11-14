@@ -364,7 +364,7 @@ console.log(migrate(openWriter(${JSON.stringify(file)}), ${JSON.stringify(folder
       const applied = await race(file, () =>
         spawn(process.execPath, ["--input-type=module", "-e", script]),
       );
-      expect(applied).toEqual([0, 0, 1]);
+      expect(applied, "a rebuild in a race").toEqual([0, 0, 1]);
       const check = new Database(file);
       expect(check.prepare("SELECT id, skill_id FROM skill_versions").all()).toEqual([
         { id: "v1", skill_id: "s1" },
@@ -409,7 +409,7 @@ console.log(migrate(openWriter(${JSON.stringify(file)}), ${JSON.stringify(folder
     it("leaves foreign_keys on after a failed foreign_key_check", () => {
       const sqlite = withParentAndChild("no action");
       const folder = writeMigrations(parentAndChild("no action"), BROKEN_REFERENCE);
-      expect(() => migrate(sqlite, folder)).toThrow();
+      expect(() => migrate(sqlite, folder)).toThrow(/broken foreign key reference/);
       expect(foreignKeys(sqlite), "after a failed check").toBe(1);
       sqlite.close();
     });
@@ -427,6 +427,23 @@ console.log(migrate(openWriter(${JSON.stringify(file)}), ${JSON.stringify(folder
       expect(() => migrate(sqlite, folder)).toThrow(
         "foreign_keys is 0 after the migrations, not 1",
       );
+      sqlite.close();
+    });
+
+    it("stops with the read-back error, and keeps the first error, when a failed run leaves foreign_keys off", () => {
+      const sqlite = withParentAndChild("no action");
+      const pragma = sqlite.pragma.bind(sqlite);
+      sqlite.pragma = (source: string, options?: Database.PragmaOptions): unknown =>
+        source === "foreign_keys" && options?.simple === true ? 0 : pragma(source, options);
+      const folder = writeMigrations(parentAndChild("no action"), "NOT SQL;");
+      let failure: unknown;
+      try {
+        migrate(sqlite, folder);
+      } catch (error) {
+        failure = error;
+      }
+      expect(String(failure)).toBe("Error: foreign_keys is 0 after the migrations, not 1");
+      expect(failure instanceof Error ? String(failure.cause) : "no cause").toMatch(/syntax error/);
       sqlite.close();
     });
   });
