@@ -69,7 +69,7 @@ bot skills: written ways of working that the bot follows.
   run shows why, with Clone. Tabs:
   - **Profile**: the avatar style and colour, the name, the description and the persona. The big
     avatar and the colour band show a change at once ("Not saved"); Save (or Ctrl+S) applies it
-    from the bot's next run. Discard, or Esc in a field, asks first; Let them go drops the changes.
+    from the bot's next run. Discard, or Esc, asks first; Let them go drops the changes.
   - **Skills**: the bot's skills, the version each uses and Always load. "v3 available" opens
     the changes and Upgrade; the ⋯ menu has Change version (any version, also an older one) and
     Remove; + Add gives the bot more skills at their latest version. Changes save at once:
