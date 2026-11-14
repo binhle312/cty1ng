@@ -621,12 +621,13 @@ describe("the Deprecate dialog when the bots do not load", () => {
       [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
       "GET /api/bots": () => server.bots(),
     });
-    await renderApp("/skills/write-user-stories");
+    const { queryClient } = await renderApp("/skills/write-user-stories");
     click(await screen.findByRole("button", { name: "Skill actions" }, { timeout: 5000 }));
     click(await screen.findByRole("menuitem", { name: "Deprecate" }));
     const dialog = await screen.findByRole("alertdialog");
     const alert = await within(dialog).findByRole("alert");
     return {
+      queryClient,
       ba,
       server,
       dialog,
@@ -643,13 +644,16 @@ describe("the Deprecate dialog when the bots do not load", () => {
 
   // An order case: a second failure keeps the way to try again. The old code had no button.
   it("keeps Try again when the bots fail again", async () => {
-    const { dialog, tryAgain } = await openDeprecate();
+    const { dialog, queryClient, tryAgain } = await openDeprecate();
     click(tryAgain);
     await waitFor(() => {
       expect(api?.sent("GET", "/api/bots").length).toBeGreaterThan(1);
     });
-    const alert = await within(dialog).findByRole("alert");
-    expect(within(alert).getByRole("button", { name: "Try again" })).toBeTruthy();
+    await waitFor(() => {
+      expect(queryClient.isFetching()).toBe(0);
+    });
+    const tryAgainAfter = within(dialog).queryByRole("button", { name: "Try again" });
+    expect(tryAgainAfter, "Try again after a second failure").not.toBeNull();
   });
 });
 

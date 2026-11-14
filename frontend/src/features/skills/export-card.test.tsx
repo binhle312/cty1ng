@@ -48,10 +48,8 @@ describe("the Export card when a skill leaves the list", () => {
 
   it("counts only the ticked skills that are in the list", async () => {
     const card = await openCardThenLoseOne();
-    expect(
-      within(card).queryByRole("button", { name: "Export 2 skills" }),
-      "the button counts the listed skills",
-    ).not.toBeNull();
+    const button = within(card).queryByRole("button", { name: "Export 2 skills" });
+    expect(button, "the button counts the listed skills").not.toBeNull();
   });
 
   it("ticks Select all when every listed skill is ticked", async () => {

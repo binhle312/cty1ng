@@ -50,10 +50,8 @@ describe("the Skills index page and a background refresh", () => {
     const { queryClient, server } = await openEmpty();
     server.list = () => FAILED;
     await refreshAll(queryClient);
-    expect(
-      screen.queryByText("No skills yet"),
-      "the empty state after a failed refresh",
-    ).not.toBeNull();
+    const empty = screen.queryByText("No skills yet");
+    expect(empty, "the empty state after a failed refresh").not.toBeNull();
     expect(screen.queryByText("The app could not load the skills."), "no load error").toBeNull();
   });
 
@@ -66,7 +64,8 @@ describe("the Skills index page and a background refresh", () => {
     await waitFor(() => {
       expect(queryClient.isFetching()).toBeGreaterThan(0);
     });
-    expect(screen.getByText("No skills yet"), "the empty state while it waits").toBeTruthy();
+    const empty = screen.queryByText("No skills yet");
+    expect(empty, "the empty state while it waits").not.toBeNull();
     await held.answer({ body: [] });
   });
 

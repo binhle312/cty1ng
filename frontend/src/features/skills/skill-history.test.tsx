@@ -100,10 +100,8 @@ describe("the History tab and a background refresh", () => {
     await waitFor(() => {
       expect(queryClient.isFetching()).toBeGreaterThan(0);
     });
-    expect(
-      screen.queryByRole("list", { name: "Versions" }),
-      "the versions, waiting",
-    ).not.toBeNull();
+    const list = screen.queryByRole("list", { name: "Versions" });
+    expect(list, "the versions, waiting").not.toBeNull();
     await held.answer({ body: makeVersions(3) });
   });
 

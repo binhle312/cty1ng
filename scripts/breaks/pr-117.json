@@ -1,0 +1,349 @@
+{
+  "claims": [
+    {
+      "id": "S1",
+      "claim": "A Clone with cached settings shows no editor until the settings of this visit answer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/new-skill-page.test.tsx",
+        "name": "shows no editor while the settings of this visit are on their way"
+      },
+      "assertion": "expect(nameValue(), \"the wait for this visit's settings\").toBeNull();",
+      "breaks": [
+        {
+          "id": "S1-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "  const settingsSettled = settings.isFetchedAfterMount;\n",
+              "replace": "  const settingsSettled = !settings.isPending;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "claim": "A Clone cuts the copy's name with the limit of this visit's settings answer, not the cached limit",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/new-skill-page.test.tsx",
+        "name": "cuts the copy's name with the limit of this visit"
+      },
+      "assertion": "expect(nameValue(), \"the name cut to 20\").toBe(\"Write user st (copy)\");",
+      "breaks": [
+        {
+          "id": "S2-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "  const settingsSettled = settings.isFetchedAfterMount;\n",
+              "replace": "  const settingsSettled = !settings.isPending;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S3",
+      "claim": "A Clone whose settings read of this visit fails still opens, with the limit it has",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/new-skill-page.test.tsx",
+        "name": "opens the editor with the limit it has when the settings of this visit fail"
+      },
+      "assertion": "expect(nameValue(), \"the name with the cached limit\").toBe(\"Write user stories (copy)\");",
+      "breaks": [
+        {
+          "id": "S3-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "  const settingsSettled = settings.isFetchedAfterMount;\n",
+              "replace": "  const settingsSettled = settings.isFetchedAfterMount && settings.isSuccess;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S4",
+      "claim": "The Skills index page keeps its empty state when a background refresh fails",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skills-index-page.test.tsx",
+        "name": "keeps the empty state when a background refresh fails"
+      },
+      "assertion": "expect(empty, \"the empty state after a failed refresh\").not.toBeNull();",
+      "breaks": [
+        {
+          "id": "S4-a",
+          "file": "frontend/src/features/skills/skills-index-page.tsx",
+          "edits": [
+            {
+              "find": "  if (skills === undefined) {\n",
+              "replace": "  if (skills === undefined || isError) {\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S5",
+      "claim": "The Skills index page keeps its empty state while a background refresh waits",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skills-index-page.test.tsx",
+        "name": "keeps the empty state while a background refresh waits"
+      },
+      "assertion": "expect(empty, \"the empty state while it waits\").not.toBeNull();",
+      "breaks": [
+        {
+          "id": "S5-a",
+          "file": "frontend/src/features/skills/skills-index-page.tsx",
+          "edits": [
+            {
+              "find": "  const { data: skills, isError, refetch } = useAllSkills();\n",
+              "replace": "  const { data: skills, isError, isFetching, refetch } = useAllSkills();\n"
+            },
+            {
+              "find": "  if (skills === undefined) {\n",
+              "replace": "  if (skills === undefined || isFetching) {\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S6",
+      "claim": "The History tab keeps the versions when a refresh of the versions fails",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-history.test.tsx",
+        "name": "keeps the versions when a refresh of the versions fails"
+      },
+      "assertion": "expect(screen.queryByRole(\"list\", { name: \"Versions\" }), \"the versions\").not.toBeNull();",
+      "breaks": [
+        {
+          "id": "S6-a",
+          "file": "frontend/src/features/skills/skill-history.tsx",
+          "edits": [
+            {
+              "find": "        {versions.data === undefined ? (\n",
+              "replace": "        {versions.data === undefined || versions.isError ? (\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S7",
+      "claim": "The History tab keeps the changes when a refresh of the diff fails",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-history.test.tsx",
+        "name": "keeps the changes when a refresh of the diff fails"
+      },
+      "assertion": "expect(screen.queryByText(\"v1-v3 added\"), \"the changes\").not.toBeNull();",
+      "breaks": [
+        {
+          "id": "S7-a",
+          "file": "frontend/src/features/skills/skill-history.tsx",
+          "edits": [
+            {
+              "find": "      {diff.data === undefined ? (\n",
+              "replace": "      {diff.data === undefined || diff.isError ? (\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S8",
+      "claim": "The History tab keeps the versions while a refresh of the versions waits",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-history.test.tsx",
+        "name": "keeps the versions while a refresh of the versions waits"
+      },
+      "assertion": "expect(list, \"the versions, waiting\").not.toBeNull();",
+      "breaks": [
+        {
+          "id": "S8-a",
+          "file": "frontend/src/features/skills/skill-history.tsx",
+          "edits": [
+            {
+              "find": "        {versions.data === undefined ? (\n",
+              "replace": "        {versions.data === undefined || versions.isFetching ? (\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S9",
+      "claim": "The open folds of a diff close when the pair changes to a pair in the cache",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-history.test.tsx",
+        "name": "closes the open folds when the pair of versions changes"
+      },
+      "assertion": "expect(screen.queryByText(\"v1-v3 line 0\"), \"the fold of the new pair is closed\").toBeNull();",
+      "breaks": [
+        {
+          "id": "S9-a",
+          "file": "frontend/src/features/skills/skill-history.tsx",
+          "edits": [
+            {
+              "find": "            key={`${skill.id}-${String(from)}-${String(to)}`}\n            lines={diff.data.body}\n",
+              "replace": "            lines={diff.data.body}\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S10",
+      "claim": "The Export button counts only the ticked skills that are still in the list",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/export-card.test.tsx",
+        "name": "counts only the ticked skills that are in the list"
+      },
+      "assertion": "expect(button, \"the button counts the listed skills\").not.toBeNull();",
+      "breaks": [
+        {
+          "id": "S10-a",
+          "file": "frontend/src/features/skills/export-card.tsx",
+          "edits": [
+            {
+              "find": "  const count = pickedIds.length;\n",
+              "replace": "  const count = picked.size;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S11",
+      "claim": "Select all is ticked when every listed skill is ticked, after a skill left the list",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/export-card.test.tsx",
+        "name": "ticks Select all when every listed skill is ticked"
+      },
+      "assertion": "expect(selectAll.getAttribute(\"aria-checked\"), \"Select all is ticked\").toBe(\"true\");",
+      "breaks": [
+        {
+          "id": "S11-a",
+          "file": "frontend/src/features/skills/export-card.tsx",
+          "edits": [
+            {
+              "find": "  const count = pickedIds.length;\n",
+              "replace": "  const count = picked.size;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S12",
+      "claim": "A Deprecate dialog whose bots fail again after Try again still offers Try again",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page.test.tsx",
+        "name": "keeps Try again when the bots fail again"
+      },
+      "assertion": "expect(tryAgainAfter, \"Try again after a second failure\").not.toBeNull();",
+      "breaks": [
+        {
+          "id": "S12-a",
+          "file": "frontend/src/features/skills/skill-bot-uses.ts",
+          "edits": [
+            {
+              "find": "  if (bots.isError) return {",
+              "replace": "  if (bots.isError && bots.errorUpdateCount < 2) return {"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "shared/src/skills.test.ts",
+      "name": "does not split a surrogate pair at the cut",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "shared/src/skills.test.ts",
+      "name": "does not split a ZWJ emoji at the cut",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "shared/src/skills.test.ts",
+      "name": "does not split a flag at the cut",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "shared/src/skills.test.ts",
+      "name": "keeps the copy of %j within %i code units",
+      "reason": "A guard: it passed on the code before the change too, so it claims no fix of this PR"
+    },
+    {
+      "file": "frontend/src/features/skills/skills-index-page.test.tsx",
+      "name": "opens the skill that a background refresh brings",
+      "reason": "A guard: it passed on the code before the change too, so it claims no fix of this PR"
+    },
+    {
+      "file": "frontend/src/features/skills/skills-index-page.test.tsx",
+      "name": "shows the load error with Try again when the first load fails",
+      "reason": "A guard: it passed on the code before the change too, so it claims no fix of this PR"
+    },
+    {
+      "file": "frontend/src/features/skills/skill-history.test.tsx",
+      "name": "shows the new versions after a failed refresh and a good one",
+      "reason": "A guard: it passed on the code before the change too, so it claims no fix of this PR"
+    },
+    {
+      "file": "frontend/src/features/skills/skill-history.test.tsx",
+      "name": "shows the load errors when the first loads fail",
+      "reason": "A guard: it passed on the code before the change too, so it claims no fix of this PR"
+    },
+    {
+      "file": "frontend/src/features/skills/skill-history.test.tsx",
+      "name": "is a group named Body changes",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "frontend/src/features/skills/skill-dialogs.test.tsx",
+      "name": "says when the bots did not load",
+      "reason": "Its reason text changed with item 61. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "frontend/src/features/skills/skill-dialogs.test.tsx",
+      "name": "loads the bots again from Try again in the Deprecate dialog",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "frontend/src/features/skills/skill-dialogs.test.tsx",
+      "name": "loads the bots again from Try again in the Remove from bots dialog",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "frontend/src/features/skills/skill-dialogs.test.tsx",
+      "name": "loads the bots again from Try again in the Delete dialog",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "frontend/src/features/skills/skill-page.test.tsx",
+      "name": "shows the bots after Try again",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "frontend/src/features/skills/skill-page.test.tsx",
+      "name": "is an image named Unsaved changes",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    }
+  ]
+}
