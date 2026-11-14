@@ -98,4 +98,5 @@ No migration and no change of the stored value in A or B. The audit also says th
 
 - The one purge loop is `backend/src/core/trash/purge-due.ts` (with `purge-due.test.ts` and a `README.md`), not `backend/src/core/purge-due.ts`: `docs/architecture.md` §4 plans a `trash` folder for D62.
 - Each service gives three functions (the due ids, the delete time of one item or null, the purge). The recheck of `trash_days` is in the shared loop, not in each service. The behaviour is the same.
+- T2 and T3: the fault comes after the row change and the event (an `appendEvent` wrapper in the test), not at the first write (round 1 R1-1).
 - T1 became two tests in `purge-due.test.ts`; T5 became two tests in `timed-jobs.test.ts`. T6 and T7 are in `backend/src/adapters/db/skills-repository.test.ts`. T8 and T9 claim only the event part of invariant 7.
