@@ -11,7 +11,7 @@
       "assertion": "expect(router.state.location.pathname, \"still on Designer\").toBe(\"/bots/designer\");",
       "breaks": [
         {
-          "id": "no-mounted-check",
+          "id": "D1-no-mounted-check",
           "file": "frontend/src/features/bots/bot-page.tsx",
           "edits": [
             {
@@ -33,7 +33,7 @@
       "assertion": "expect(router.state.location.pathname, \"still on Skills\").toBe(\"/skills\");",
       "breaks": [
         {
-          "id": "no-mounted-check",
+          "id": "D2-no-mounted-check",
           "file": "frontend/src/features/bots/bot-page.tsx",
           "edits": [
             {
@@ -55,7 +55,7 @@
       "assertion": "expect(router.state.location.pathname, \"on the Bots page\").toBe(\"/bots\");",
       "breaks": [
         {
-          "id": "no-navigate",
+          "id": "D3-no-navigate",
           "file": "frontend/src/features/bots/bot-page.tsx",
           "edits": [
             {
@@ -77,7 +77,7 @@
       "assertion": "expect(await screen.findByRole(\"button\", { name: \"Creating\" })).toBeTruthy();",
       "breaks": [
         {
-          "id": "spread-after-kind",
+          "id": "T1-spread-after-kind",
           "file": "frontend/src/features/bots/create-bot-page.tsx",
           "edits": [
             {
@@ -99,7 +99,7 @@
       "assertion": "const again = await screen.findByRole(\"alert\");",
       "breaks": [
         {
-          "id": "unknown-to-idle",
+          "id": "T2-unknown-to-idle",
           "file": "frontend/src/features/bots/create-bot-page.tsx",
           "edits": [
             {
@@ -121,7 +121,7 @@
       "assertion": "expect(within(rowOf(NEW.id)).getByText(\"Deprecated\")).toBeTruthy();",
       "breaks": [
         {
-          "id": "no-ticked-deprecated",
+          "id": "S1-no-ticked-deprecated",
           "file": "frontend/src/features/bots/create-bot-page.tsx",
           "edits": [
             {
@@ -143,7 +143,7 @@
       "assertion": "expect(document.querySelectorAll(`li[data-skill=\"${NEW.id}\"]`)).toHaveLength(0);",
       "breaks": [
         {
-          "id": "keep-every-deprecated",
+          "id": "S2-keep-every-deprecated",
           "file": "frontend/src/features/bots/create-bot-page.tsx",
           "edits": [
             {
@@ -165,7 +165,7 @@
       "assertion": "expect(await screen.findByText(\"The bot to copy does not exist.\")).toBeTruthy();",
       "breaks": [
         {
-          "id": "source-as-field",
+          "id": "C1-source-as-field",
           "file": "frontend/src/features/bots/create-bot-page.tsx",
           "edits": [
             {
@@ -187,7 +187,7 @@
       "assertion": "expect(create.getAttribute(\"aria-disabled\"), \"Create is on\").toBe(\"false\");",
       "breaks": [
         {
-          "id": "source-as-field",
+          "id": "C2-source-as-field",
           "file": "frontend/src/features/bots/create-bot-page.tsx",
           "edits": [
             {
@@ -209,7 +209,7 @@
       "assertion": "expect(screen.queryByRole(\"button\", { name: /has an error/ }), \"no step mark\").toBeNull();",
       "breaks": [
         {
-          "id": "source-as-field",
+          "id": "C3-source-as-field",
           "file": "frontend/src/features/bots/create-bot-page.tsx",
           "edits": [
             {
@@ -231,7 +231,7 @@
       "assertion": "expect(fake.sent(\"GET\", `/api/bots/${SOURCE.id}/clone-template`)).toHaveLength(1);",
       "breaks": [
         {
-          "id": "no-retry-false",
+          "id": "R1-no-retry-false",
           "file": "frontend/src/features/bots/create-bot-page.tsx",
           "edits": [
             {
@@ -253,7 +253,7 @@
       "assertion": "expect(screen.queryByRole(\"alertdialog\"), \"the search used the Esc\").toBeNull();",
       "breaks": [
         {
-          "id": "search-no-preventDefault",
+          "id": "E1-search-no-preventDefault",
           "file": "frontend/src/features/bots/bot-side-list.tsx",
           "edits": [
             {
@@ -263,7 +263,7 @@
           ]
         },
         {
-          "id": "no-defaultPrevented",
+          "id": "E1-no-defaultPrevented",
           "file": "frontend/src/features/bots/bot-page.tsx",
           "edits": [
             {
@@ -285,7 +285,7 @@
       "assertion": "expect(screen.queryByRole(\"alertdialog\"), \"the drag used the Esc\").toBeNull();",
       "breaks": [
         {
-          "id": "no-defaultPrevented",
+          "id": "E2-no-defaultPrevented",
           "file": "frontend/src/features/bots/bot-page.tsx",
           "edits": [
             {
@@ -307,7 +307,7 @@
       "assertion": "expect(screen.queryByRole(\"alertdialog\"), \"the menu used the Esc\").toBeNull();",
       "breaks": [
         {
-          "id": "capture-phase",
+          "id": "E3-capture-phase",
           "file": "frontend/src/features/bots/bot-page.tsx",
           "edits": [
             {
@@ -329,7 +329,7 @@
       "assertion": "expect(screen.queryByRole(\"alertdialog\"), \"the dialog used the Esc\").toBeNull();",
       "breaks": [
         {
-          "id": "capture-phase",
+          "id": "E4-capture-phase",
           "file": "frontend/src/features/bots/bot-page.tsx",
           "edits": [
             {
@@ -351,7 +351,7 @@
       "assertion": "expect(screen.getByRole(\"alertdialog\", QUESTION), \"the question stays\").toBeTruthy();",
       "breaks": [
         {
-          "id": "capture-phase",
+          "id": "E5-capture-phase",
           "file": "frontend/src/features/bots/bot-page.tsx",
           "edits": [
             {
@@ -373,7 +373,7 @@
       "assertion": "expect(screen.queryByRole(\"alertdialog\"), \"a repeat asks nothing\").toBeNull();",
       "breaks": [
         {
-          "id": "no-repeat-check",
+          "id": "E6-no-repeat-check",
           "file": "frontend/src/features/bots/bot-page.tsx",
           "edits": [
             {
@@ -395,7 +395,7 @@
       "assertion": "expect(screen.queryByRole(\"alertdialog\"), \"an IME Esc asks nothing\").toBeNull();",
       "breaks": [
         {
-          "id": "no-isComposing-check",
+          "id": "E7-no-isComposing-check",
           "file": "frontend/src/features/bots/bot-page.tsx",
           "edits": [
             {
@@ -417,7 +417,7 @@
       "assertion": "await expect(question, \"Esc outside the form asks\").toBeVisible();",
       "breaks": [
         {
-          "id": "form-only",
+          "id": "E8-form-only",
           "file": "frontend/src/features/bots/bot-page.tsx",
           "edits": [
             {
