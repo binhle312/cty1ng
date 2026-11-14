@@ -27,9 +27,9 @@ const PAGE = `<!doctype html>
 
 const INIT = `window.ui = SwaggerUIBundle({ url: "/api/openapi.json", dom_id: "#swagger-ui" });\n`;
 
+// `/docs/*` also matches `/docs` itself.
 export function apiDocsRoutes() {
   return new Hono<HttpEnv>()
-    // Also matches `/docs` itself.
     .use("/docs/*", noQueryString())
     .get("/docs", (c) => c.html(PAGE))
     .get("/docs/init.js", (c) =>
