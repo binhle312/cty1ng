@@ -97,3 +97,11 @@ to the doc, and a draft PR keeps the owner's decision. **Answer: A**; the URL ch
 
 Q3, part 6. A: Follow-ups line with the list (recommended, reasons in §2). B: remove `export` from
 the 51 names in this PR. **Answer: A** (the Follow-ups line has the counts 51 and 11 and the list).
+
+## 8. Build notes (2026-11-15)
+
+- Part 3: the helper is `plural(n, word)`, not `plural(n, one, many)`. The lint limit is two
+  parameters (`@typescript-eslint/max-params`), and both callers only add an "s". The old
+  `max-params` suppression of `bot-lines.ts` in `eslint-suppressions.json` goes with its copy.
+  So `lib/plural.test.ts` has no case for an explicit plural word.
+- Part 1: the `save-bar.tsx` row of `features/skills/README.md` names the new line.
