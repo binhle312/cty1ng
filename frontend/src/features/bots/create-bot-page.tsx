@@ -392,11 +392,7 @@ function CreateBotView({
         await queryClient.invalidateQueries({ predicate: PIN_QUERIES });
         showToast(`Created ${bot.name} ✨`);
         if (mounted.current) {
-          await navigate({
-            to: "/bots/$slug",
-            params: { slug: bot.slug },
-            search: { tab: "profile" },
-          });
+          await navigate({ to: "/bots/$slug", params: { slug: bot.slug } });
         }
       })
       .catch((error: unknown) => {
