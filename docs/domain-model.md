@@ -648,7 +648,8 @@ Why integers and not semver: compatibility of prose cannot be checked by a machi
   that keep it keep working and show a "deprecated" badge. Reversible by the author.
 - **Delete** is only for a deprecated skill, also while bots use it. In one transaction it
   writes the bot ids of all its pins to `trashed_bot_ids`, deletes those `bot_skills` rows and
-  sets `trashed_at`. The skill and all its versions are one Trash item.
+  sets `trashed_at`. The skill and all its versions are one Trash item. A read of the skill
+  refuses a `trashed_bot_ids` that is not `NULL` or a list of bot ids (P3 item 28).
 - **In Trash:** the skill is in no list or picker, and its slug stays taken, so a restore
   always works. **Restore** clears `trashed_at`; the skill stays deprecated. The app then
   suggests to assign it again to the bots in `trashed_bot_ids` that are not deleted.

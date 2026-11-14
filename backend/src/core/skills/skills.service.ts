@@ -485,10 +485,8 @@ export function createSkillsService(deps: SkillsDeps) {
         assertAuthor(skill, actor);
         // The bots in `trashed_bot_ids` that are still live.
         const suggestedBotIds: BotId[] = [];
-        for (const raw of skill.trashedBotIds ?? []) {
-          const parsed = BotId.safeParse(raw);
-          if (!parsed.success) continue;
-          const bot = await tx.bots.byId(parsed.data);
+        for (const botId of skill.trashedBotIds ?? []) {
+          const bot = await tx.bots.byId(botId);
           if (bot !== null && bot.deletedAt === null) suggestedBotIds.push(bot.id);
         }
         // `trashed_bot_ids` stays until the next delete: the M5b restore rule reads it after
