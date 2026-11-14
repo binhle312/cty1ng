@@ -22,7 +22,7 @@ const BOTS =
 describe("tableClauses", () => {
   it("cuts only at the commas outside brackets and quotes", () => {
     expect(tableClauses(BOTS)).toEqual([
-      'CONSTRAINT "style" CHECK("bots"."style" IN (\'a, b\', \'c\'))',
+      "CONSTRAINT `style` CHECK(`bots`.`style` IN ('a, b', 'c'))",
       "`deleted_at` text",
       "`id` text PRIMARY KEY NOT NULL",
       "`style` text DEFAULT 'a, b' NOT NULL",
@@ -51,6 +51,34 @@ describe("the same schema", () => {
 
   it("with other spaces and line breaks", () => {
     expect(differences([BOTS.replace(/\n\t/g, " ")], [BOTS])).toEqual([]);
+  });
+});
+
+// Review round 1 of #120 (R1-1): drizzle-kit writes RENAME COLUMN and RENAME TO, and SQLite then
+// stores the new names with other quotes, also in the indexes and the foreign keys of other tables.
+describe("the same schema after a rename that drizzle-kit writes", () => {
+  it("of a column", () => {
+    const old = BOTS.replace("`deleted_at` text", "`gone_at` text");
+    expect(
+      differences([old, 'ALTER TABLE `bots` RENAME COLUMN "gone_at" TO "deleted_at";'], [BOTS]),
+    ).toEqual([]);
+  });
+
+  it("of a table that an index and a foreign key name", () => {
+    const parent = (name: string) => `CREATE TABLE \`${name}\` (\`id\` text PRIMARY KEY NOT NULL);`;
+    const child = "CREATE TABLE `child` (`id` text, FOREIGN KEY (`id`) REFERENCES `parent`(`id`));";
+    const index = (name: string) => `CREATE INDEX \`parent_id\` ON \`${name}\` (\`id\`);`;
+    expect(
+      differences(
+        [
+          parent("old_parent"),
+          child.replace("`parent`", "`old_parent`"),
+          index("old_parent"),
+          "ALTER TABLE `old_parent` RENAME TO `parent`;",
+        ],
+        [parent("parent"), child, index("parent")],
+      ),
+    ).toEqual([]);
   });
 });
 
@@ -98,5 +126,20 @@ describe("a hand edit", () => {
     expect(differences([BOTS, "CREATE TABLE `extra` (`x` text);"], [BOTS])).toEqual([
       "extra: the migrations make it, schema.ts does not have it",
     ]);
+  });
+  // Review round 1 of #120 (R1-2): the text after the columns, and a clause written twice.
+  it("that adds STRICT", () => {
+    expect(differences([BOTS.replace(/\);$/, ") STRICT;")], [BOTS])).toEqual([
+      "bots: only the migrations have: table options: STRICT",
+    ]);
+  });
+
+  it("that writes a CHECK twice", () => {
+    const twice = BOTS.replace(
+      /(CONSTRAINT[^\n]*)\n/,
+      '$1,\n\tCONSTRAINT "style2" CHECK("bots"."style" IN (\'a, b\', \'c\'))\n',
+    );
+    const doubled = twice.replace('"style2"', '"style"');
+    expect(differences([doubled], [BOTS])).toHaveLength(1);
   });
 });

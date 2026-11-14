@@ -4,8 +4,9 @@
 //    that no migration holds.
 // 2. The SQL of the migrations builds the schema that schema.ts builds: the committed migrations
 //    run in one database in memory, and a migration that drizzle-kit writes from schema.ts into an
-//    empty folder runs in another (./lib/db-schema.ts compares them). So a hand edit of a committed
-//    migration fails. A data statement that changes no schema is not seen.
+//    empty folder runs in another (./lib/db-schema.ts compares them). So a hand edit that changes
+//    the schema of a committed migration fails. Not seen: a data statement that changes no schema,
+//    and the order of the columns.
 // drizzle-kit needs a relative `out`, so the copies are in a temporary folder inside backend/.
 // node:sqlite is part of Node; the backend's SQLite library does not resolve from scripts/.
 import { spawnSync } from "node:child_process";
