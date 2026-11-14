@@ -70,13 +70,6 @@ export function createSkillsService(deps: SkillsDeps) {
   const { uow, readers, clock } = deps;
   const newVersionId = () => SkillVersionId.parse(deps.ids.newId("skillv"));
 
-  async function liveSkill(reader: SkillsReader, id: SkillId): Promise<SkillRecord> {
-    const skill = await reader.byId(id);
-    // A skill in Trash answers 404 everywhere except restore and the permanent delete (api.md §2).
-    if (skill === null || skill.trashedAt !== null) throw notFound();
-    return skill;
-  }
-
   async function trashedSkill(reader: SkillsReader, id: SkillId): Promise<SkillRecord> {
     const skill = await reader.byId(id);
     if (skill?.trashedAt == null) throw new DomainError("not_found", "No such skill in Trash.");
@@ -366,13 +359,18 @@ export function createSkillsService(deps: SkillsDeps) {
     exportFiles: async (
       ids: readonly SkillId[] | null,
     ): Promise<{ fileName: string; files: { path: string; text: string }[] }> => {
+      // `list` gives each skill with its latest version, so Export all reads each one once.
       const picked =
         ids === null
-          ? (await readers.skills.list({ includeDeprecated: false })).map((row) => row.skill)
-          : await Promise.all(ids.map((id) => liveSkill(readers.skills, id)));
+          ? await readers.skills.list({ includeDeprecated: false })
+          : await Promise.all(
+              ids.map(async (id) => ({
+                skill: await liveSkill(readers.skills, id),
+                latest: await readers.skills.latestVersion(id),
+              })),
+            );
       const files: { path: string; text: string }[] = [];
-      for (const skill of picked) {
-        const latest = await readers.skills.latestVersion(skill.id);
+      for (const { skill, latest } of picked) {
         if (latest === null) continue;
         files.push({
           path: `${skill.slug}/SKILL.md`,
@@ -535,6 +533,14 @@ export function createSkillsService(deps: SkillsDeps) {
 }
 
 export type SkillsService = ReturnType<typeof createSkillsService>;
+
+// The skill, or 404. The skills and the bots services both use it. A skill in Trash answers 404
+// everywhere except restore and the permanent delete (api.md §2).
+export async function liveSkill(reader: SkillsReader, id: SkillId): Promise<SkillRecord> {
+  const skill = await reader.byId(id);
+  if (skill === null || skill.trashedAt !== null) throw notFound();
+  return skill;
+}
 
 function versionRow(
   id: SkillVersionId,

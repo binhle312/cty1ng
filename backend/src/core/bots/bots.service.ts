@@ -23,6 +23,7 @@ import { modelAvailability, type Catalog } from "../catalog/catalog.rules.ts";
 import { DomainError } from "../errors.ts";
 import type { AppendEvent } from "../events/append-event.ts";
 import { appendTrashChanged } from "../events/trash-changed.ts";
+import { liveSkill } from "../skills/skills.service.ts";
 import type { AvatarFiles } from "../ports/avatar-files.ts";
 import type { Clock } from "../ports/clock.ts";
 import type { Ids } from "../ports/ids.ts";
@@ -32,7 +33,6 @@ import type {
   BotsReader,
   Readers,
   SettingsReader,
-  SkillsReader,
   Tx,
   UnitOfWork,
 } from "../ports/repositories.ts";
@@ -739,14 +739,6 @@ export function createBotsService(deps: BotsDeps) {
 }
 
 export type BotsService = ReturnType<typeof createBotsService>;
-
-async function liveSkill(reader: SkillsReader, id: SkillId) {
-  const skill = await reader.byId(id);
-  if (skill === null || skill.trashedAt !== null) {
-    throw new DomainError("not_found", "No such skill.");
-  }
-  return skill;
-}
 
 function pinShape(pin: BotPinView): BotPin {
   return {
