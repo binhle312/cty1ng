@@ -805,9 +805,7 @@ describe("skills on the Create bot page", () => {
     await waitFor(() => {
       expect(fake?.sent("GET", "/api/skills").length).toBeGreaterThan(before);
     });
-    await waitFor(() => {
-      expect(within(rowOf(NEW.id)).getByText("Deprecated")).toBeTruthy();
-    });
+    expect(await within(rowOf(NEW.id)).findByText("Deprecated")).toBeTruthy();
     expect(within(rowOf(NEW.id)).getByText(NEW.name)).toBeTruthy();
     expect(screen.queryByText(/A skill in Trash/)).toBeNull();
   });

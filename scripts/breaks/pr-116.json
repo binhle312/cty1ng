@@ -89,28 +89,6 @@
       ]
     },
     {
-      "id": "T2",
-      "claim": "A Try again that fails again shows the banner again",
-      "test": {
-        "kind": "vitest",
-        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
-        "name": "shows the banner again when Try again gets a server error too"
-      },
-      "assertion": "const again = await screen.findByRole(\"alert\");",
-      "breaks": [
-        {
-          "id": "T2-unknown-to-idle",
-          "file": "frontend/src/features/bots/create-bot-page.tsx",
-          "edits": [
-            {
-              "find": "          setSend({ kind: \"unknown\", key: request.key, body: request.body });",
-              "replace": "          setSend({ kind: \"idle\" });"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "S1",
       "claim": "A ticked skill that another tab deprecates keeps its row with the Deprecated pill",
       "test": {
@@ -118,7 +96,7 @@
         "file": "frontend/src/features/bots/create-bot-page.test.tsx",
         "name": "names a ticked skill that another tab deprecated, with the Deprecated pill"
       },
-      "assertion": "expect(within(rowOf(NEW.id)).getByText(\"Deprecated\")).toBeTruthy();",
+      "assertion": "expect(await within(rowOf(NEW.id)).findByText(\"Deprecated\")).toBeTruthy();",
       "breaks": [
         {
           "id": "S1-no-ticked-deprecated",
@@ -474,6 +452,11 @@
       "file": "frontend/src/features/bots/bot-page.test.tsx",
       "name": "asks on Esc in the side list search when it is empty",
       "reason": "Test first: its red run on the code of 97221d3 is in the PR description (Red runs). Not a late, security or order test"
+    },
+    {
+      "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+      "name": "shows the banner again when Try again gets a server error too",
+      "reason": "A sequence cell that passes on the code before the fix: the first failure and the failure of Try again go through the same catch, so a break of that catch fails the test at the first failure, before this assertion (the break run of 2026-11-15 gave INVALID). It checks that the fix of item 42 keeps the unknown state after a second failure"
     }
   ]
 }
