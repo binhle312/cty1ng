@@ -509,11 +509,6 @@ export function createSkillsService(deps: SkillsDeps) {
         await purgeInTx(tx, id, actor);
       }),
 
-    trashed: async (actor: string) => {
-      const rows = await readers.skills.trashed();
-      return Promise.all(rows.map((skill) => toShape(readers, skill, actor)));
-    },
-
     // The purge job (architecture.md §6.1): each skill whose `trashed_at + trash_days` is at or
     // before now, one per transaction. Returns how many it purged.
     purgeDue: async (actor: string): Promise<number> => {
