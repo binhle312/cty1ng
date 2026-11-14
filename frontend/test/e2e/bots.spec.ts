@@ -523,6 +523,9 @@ test.describe("on a touch screen", ALONE, () => {
     const header = page.getByRole("banner", { name: "Bots" });
     const avatar = header.getByTestId("header-bot").first();
     await expect(avatar).toBeVisible();
+    const slug = await avatar.getAttribute("data-bot");
+    const name = (await bots()).find((bot) => bot.slug === slug)?.name;
+    if (name === undefined) throw new Error("The first avatar has no bot.");
     const from = await avatar.boundingBox();
     const to = await header.getByTestId("pin-zone").boundingBox();
     if (from === null || to === null) throw new Error("The header is not on the screen.");
@@ -534,8 +537,9 @@ test.describe("on a touch screen", ALONE, () => {
       });
     const start = { x: from.x + from.width / 2, y: from.y + from.height / 2 };
     await touch("touchStart", start.x, start.y);
-    // The long press (300 ms) starts the drag, and dnd-kit announces the pick-up.
-    await expect(page.getByText(/^Picked up .+\.$/)).toBeAttached();
+    // The long press (300 ms) starts the drag. dnd-kit then announces each drag step with the
+    // bot's name in its live region ("Picked up …", then the place under the finger).
+    await expect(page.getByRole("status").filter({ hasText: name })).toBeAttached();
     const end = { x: to.x + to.width / 2, y: to.y + to.height / 2 };
     for (let step = 1; step <= 12; step += 1) {
       await touch(

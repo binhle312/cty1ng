@@ -46,13 +46,13 @@
     },
     {
       "id": "T3",
-      "claim": "A long press on a header avatar starts a drag (the pick-up announcement)",
+      "claim": "A long press on a header avatar starts a drag (dnd-kit announces the drag with the bot's name)",
       "test": {
         "kind": "e2e",
         "file": "frontend/test/e2e/bots.spec.ts",
         "name": "a long press on a header avatar starts a drag that pins it"
       },
-      "assertion": "await expect(page.getByText(/^Picked up .+\\.$/)).toBeAttached();",
+      "assertion": "await expect(page.getByRole(\"status\").filter({ hasText: name })).toBeAttached();",
       "breaks": [
         {
           "id": "T3-no-long-press",
