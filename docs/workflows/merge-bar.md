@@ -28,7 +28,7 @@ Harm is small and recoverable when all of these are true:
 At each milestone close, before the next milestone starts, each open P3 (ledger rows and follow-ups) is fixed, or the owner drops it (owner, 2026-11-10).
 
 If the builder and the reviewer disagree about a severity, ask the owner.
-This bar does not change `AGENTS.md` §7, §8 or §9, but step 5 of the section below has an owner's exception with limits for §9 in round 2 (owner, 2026-11-12).
+This bar does not change `AGENTS.md` §7, §8 or §9, but step 5 of the section below has an owner's exception with limits for §9 in round 2 and in a later review (owner, 2026-11-12 and 2026-11-13).
 
 ## When the review of a P3 PR ends
 
@@ -37,6 +37,8 @@ This section is the owner's rule for these PRs (2026-11-12). For them it takes t
 two sentences about a P3 finding at the top of this file, and of "a complete review of the final
 head" in [review guide §6](../review-guide.md#6-apply-the-merge-bar): round 1 is the complete
 review, and round 2 and the check of step 4 read what changed after it.
+For them it also takes the place of step 10 of the
+[when review ends principle](../../.agents/skills/principle-when-review-ends/SKILL.md).
 
 The reason: each review round of #105 found new P3 points, and some came from the fixes of the
 round before it ([round log](../delivery-quality.md#6-review-round-log)).
@@ -44,14 +46,15 @@ round before it ([round log](../delivery-quality.md#6-review-round-log)).
 A round is a review round as the [ledger](../delivery-quality.md#1-counting-rules) counts it, by
 an independent reviewer.
 
-After round 1, a PR takes only these changes:
+After round 1, a PR takes only these changes, and the changes that steps 2, 4 and 5 name:
 
 - A fix of a finding of round 1.
 - The records that the definition of done (`AGENTS.md` §9) and the records check
   ([pull-request.md, "Before each push"](pull-request.md#before-each-push-check-the-records)) ask
   for: the rows of this PR in the ledger and in `docs/status.md`, and the state of other PRs
   ([step 6](pull-request.md#before-each-push-check-the-records)).
-- A merge of `main`, with its conflicts solved and no other change.
+- A merge of `main`, or of the base branch of a stacked PR, with its conflicts solved and no
+  other change.
 
 Limits: a merge record has only the state, the date and the link of the PR. The record of an
 owner answer is new work and goes into the next PR.
@@ -80,11 +83,11 @@ owner answer is new work and goes into the next PR.
    Exception (owner, 2026-11-12 and 2026-11-13): a P3 of round 2 or of a later review that is a
    claim bigger than its proof gets the answer of `AGENTS.md` §9, inside these limits:
 
-   - The builder changes only the places that round 2 found. A wider search is not part of the
-     correction.
+   - The builder changes only the places that the review found. A wider search is not part of
+     the correction.
    - The builder only removes or narrows words, and adds the `Not claimed` line under "Needs
      human review". No new fact, no new rule, and no change of code or tests.
-   - If the correction needs more, the finding gets a ledger row, as each other P3 of round 2.
+   - If the correction needs more, the finding gets a ledger row, as each other P3 of that review.
 
    Steps 2 and 4 do not stop such a correction.
 
@@ -94,8 +97,6 @@ owner answer is new work and goes into the next PR.
    Measure: the check of step 5 reads each row of the PR that starts with "Round 2 correction:". It
    gives one result for each id: correct or wrong.
 
-   - The brief of round 1 of the cleanup PR lists each row that starts with "Round 2
-     correction:". The report gives one result for each id: correct or wrong.
    - For each correction the reviewer asks one question: does the proof in the row cover the
      words of the sentence now? No search for other points in that text.
    - A later finding about a wrong correction writes "fix-induced: yes (the round 2 correction
