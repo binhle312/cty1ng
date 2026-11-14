@@ -62,6 +62,17 @@ describe("loadConfig", () => {
     },
   );
 
+  // The diff budget (DQ-037, owner 2026-11-06): architecture.md §8 has the default.
+  it("reads SKILL_DIFF_MAX_EDITS as a positive integer, 2000 by default", () => {
+    expect(loadConfig({}).skillDiffMaxEdits).toBe(2000);
+    expect(loadConfig({ SKILL_DIFF_MAX_EDITS: "50" }).skillDiffMaxEdits).toBe(50);
+    for (const value of ["0", "-1", "1.5", "abc"]) {
+      expect(() => loadConfig({ SKILL_DIFF_MAX_EDITS: value }), value).toThrow(
+        /Invalid configuration: SKILL_DIFF_MAX_EDITS: /,
+      );
+    }
+  });
+
   it("refuses an ALLOWED_ORIGINS entry that is not an origin", () => {
     expect(() => loadConfig({ ALLOWED_ORIGINS: "http://a.test/path" })).toThrow(/not an origin/);
     expect(() => loadConfig({ ALLOWED_ORIGINS: "*" })).toThrow(/not an origin/);

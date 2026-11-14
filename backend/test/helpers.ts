@@ -130,6 +130,7 @@ export function idleServices() {
     clock: systemClock,
     ids: typeIdIds,
     pinsChanged: bots.emitPinsChanged,
+    diffMaxEdits: 2000,
   });
   return {
     catalog,
@@ -143,6 +144,7 @@ export function idleServices() {
       readers,
       skills,
       clock: systemClock,
+      diffMaxEdits: 2000,
       previewMinutes: 15,
       previewMax: 5,
     }),

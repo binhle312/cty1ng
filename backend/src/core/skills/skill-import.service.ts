@@ -62,6 +62,8 @@ export function createSkillImportService(deps: {
   readers: Readers;
   skills: SkillsService;
   clock: Clock;
+  // SKILL_DIFF_MAX_EDITS (architecture.md §8).
+  diffMaxEdits: number;
   previewMinutes: number;
   previewMax: number;
 }) {
@@ -214,8 +216,12 @@ export function createSkillImportService(deps: {
           description:
             latest.description === parsed.description
               ? null
-              : lineDiff(latest.description, parsed.description),
-          body: lineDiff(latest.bodyMd, parsed.bodyMd),
+              : lineDiff({
+                  from: latest.description,
+                  to: parsed.description,
+                  maxEdits: deps.diffMaxEdits,
+                }),
+          body: lineDiff({ from: latest.bodyMd, to: parsed.bodyMd, maxEdits: deps.diffMaxEdits }),
         },
       },
       seen,

@@ -39,6 +39,8 @@ export interface SkillsDeps {
   clock: Clock;
   ids: Ids;
   pinsChanged: (tx: Tx, botIds: readonly BotId[]) => Promise<void>;
+  // SKILL_DIFF_MAX_EDITS (architecture.md §8).
+  diffMaxEdits: number;
 }
 
 export interface UpgradeCandidate {
@@ -333,8 +335,10 @@ export function createSkillsService(deps: SkillsDeps) {
       if (a === null || b === null) throw new DomainError("not_found", "No such version.");
       return {
         description:
-          a.description === b.description ? null : lineDiff(a.description, b.description),
-        body: lineDiff(a.bodyMd, b.bodyMd),
+          a.description === b.description
+            ? null
+            : lineDiff({ from: a.description, to: b.description, maxEdits: deps.diffMaxEdits }),
+        body: lineDiff({ from: a.bodyMd, to: b.bodyMd, maxEdits: deps.diffMaxEdits }),
       };
     },
 

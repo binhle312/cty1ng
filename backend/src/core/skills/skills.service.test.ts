@@ -164,6 +164,29 @@ describe("create and versions", () => {
   });
 });
 
+describe("the diff budget (SKILL_DIFF_MAX_EDITS)", () => {
+  // DQ-037, owner 2026-11-06: over the budget the old text shows as removed, the new as added.
+  it("diff of two versions over the budget gives the old body removed and the new body added", async () => {
+    const small = testBackend({ SKILL_DIFF_MAX_EDITS: "1" }, { clock });
+    try {
+      const skill = await small.skills.create(input("notes", { bodyMd: "a\nb" }), OWNER_ID);
+      await small.skills.addVersion(
+        skill.id,
+        { baseVersion: 1, description: "Use it when you write notes.", bodyMd: "a\nc" },
+        OWNER_ID,
+      );
+      expect((await small.skills.diff(skill.id, 1, 2)).body).toEqual([
+        { op: "del", text: "a" },
+        { op: "del", text: "b" },
+        { op: "add", text: "a" },
+        { op: "add", text: "c" },
+      ]);
+    } finally {
+      small.close();
+    }
+  });
+});
+
 describe("limits come from the settings", () => {
   it("a lowered skill_name_max refuses a name that fitted before", async () => {
     await backend.settings.update({ skill_name_max: 16 });

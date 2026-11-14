@@ -45,6 +45,36 @@ const create = (slug: string, author = OWNER_ID) =>
     author,
   );
 
+describe("the diff budget (SKILL_DIFF_MAX_EDITS)", () => {
+  // DQ-037: one changed row over the budget gets the old body removed and the new body added,
+  // and it still applies.
+  it("a changed row over the budget gets the old body removed and the new body added", async () => {
+    const small = testBackend({ SKILL_DIFF_MAX_EDITS: "1" }, { clock });
+    try {
+      await small.skills.create(
+        { slug: "notes", name: "Skill notes", description: "Use it.", bodyMd: "a\nb" },
+        OWNER_ID,
+      );
+      const preview = await small.skillImport.preview(
+        "skills.zip",
+        [folder("notes", skillMd("notes", "a\nc"))],
+        OWNER_ID,
+      );
+      expect(preview.rows[0]?.status).toBe("changed");
+      expect(preview.rows[0]?.diff?.body).toEqual([
+        { op: "del", text: "a" },
+        { op: "del", text: "b" },
+        { op: "add", text: "a" },
+        { op: "add", text: "c" },
+      ]);
+      const result = await small.skillImport.apply(preview.preview_id, ["notes"], OWNER_ID);
+      expect(result).toMatchObject({ created: 0, new_versions: 1 });
+    } finally {
+      small.close();
+    }
+  });
+});
+
 describe("preview", () => {
   // Audit 2026-11-05, row 5: one row is invalid, and the other rows of the zip still work.
   it("reports a frontmatter over the limit as an invalid row", async () => {

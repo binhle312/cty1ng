@@ -94,12 +94,14 @@ export function compose(
     clock,
     ids: typeIdIds,
     pinsChanged: bots.emitPinsChanged,
+    diffMaxEdits: config.skillDiffMaxEdits,
   });
   const skillImport = createSkillImportService({
     uow,
     readers,
     skills,
     clock,
+    diffMaxEdits: config.skillDiffMaxEdits,
     previewMinutes: config.importPreviewMinutes,
     previewMax: config.importPreviewMax,
   });
