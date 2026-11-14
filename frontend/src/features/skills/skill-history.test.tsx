@@ -162,3 +162,22 @@ describe("the folds of the History diff", () => {
     expect(screen.queryByText("v1-v3 line 0"), "the fold of the new pair is closed").toBeNull();
   });
 });
+
+// A diff is a group with a name, so a screen reader reads its label: `aria-label` on an element
+// with no role is not read (P3 list item 64).
+describe("the diff of the History tab", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  it("is a group named Body changes", async () => {
+    api = startServer().api;
+    await renderApp("/skills/write-user-stories?tab=history&from=1&to=3");
+    expect(
+      await screen.findByRole("group", { name: "Body changes" }, WAIT),
+      "the diff is a group",
+    ).toBeTruthy();
+  });
+});

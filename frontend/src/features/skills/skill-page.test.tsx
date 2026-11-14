@@ -652,3 +652,34 @@ describe("the Deprecate dialog when the bots do not load", () => {
     expect(within(alert).getByRole("button", { name: "Try again" })).toBeTruthy();
   });
 });
+
+// The dot of a list row with unsaved changes is an image with a name, so a screen reader reads
+// its label: `aria-label` on an element with no role is not read (P3 list item 64).
+describe("the unsaved changes dot of the skill list", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  it("is an image named Unsaved changes", async () => {
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: [makeSkill()] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: makeSkill() }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      "GET /api/bots": () => ({ body: [] }),
+    });
+    await renderApp("/skills/write-user-stories");
+    await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 });
+    act(() => {
+      fireEvent.change(screen.getByLabelText("Name", { exact: true }), {
+        target: { value: "Write better user stories" },
+      });
+    });
+    expect(
+      await screen.findByRole("img", { name: "Unsaved changes" }),
+      "the dot is an image",
+    ).toBeTruthy();
+  });
+});
