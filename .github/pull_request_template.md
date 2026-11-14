@@ -34,7 +34,9 @@ say what the proof shows and add `Not claimed: …` (`docs/workflows/pull-reques
 - README.md tables updated for every added, removed, renamed or repurposed file, and the
   descriptions still match what the files do (or "no file changes")
 
-## Review fixes (when a review found something)
+## Defect and review fixes (when a review found something)
+
+List each defect that this PR repairs and each review fix. For each one, give the general rule, the search of old fixes, and the answer ([bug fix, step 2](https://github.com/binhle312/cty1ng/blob/main/docs/workflows/bug-fix.md)).
 
 | Finding | Cause (the rule broken) | Same cause checked in | Same cause as an earlier fix? | Fix | Test |
 | --- | --- | --- | --- | --- | --- |

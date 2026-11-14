@@ -148,7 +148,7 @@ Merge a PR only when the owner asks you to merge that PR. The merge needs no lin
   items (or "none").
 - Name a principle skill in a PR, a review record or `docs/delivery-quality.md` only if you read
   its `SKILL.md` in that session.
-- Each review fix answers "Same cause as an earlier fix?" in the PR's `Review fixes` table. An
+- Each review fix answers "Same cause as an earlier fix?" in the PR's `Defect and review fixes` table. An
   earlier fix can be in this PR or in an earlier one: search the prevention actions of
   `docs/delivery-quality.md` §7 and the lessons, and name the search in the answer. If the
   answer is yes, stop the patches. Propose a redesign, get the owner's decision, and record it.

@@ -33,7 +33,8 @@ Link to the brief and decisions.
 - README.md tables updated for every added, removed, renamed or repurposed file, and the
   descriptions still match what the files do (or "no file changes")
 
-## Review fixes (when a review found something)
+## Defect and review fixes (when a review found something)
+List each defect that this PR repairs and each review fix. For each one, give the general rule, the search of old fixes, and the answer ([bug fix, step 2](bug-fix.md)).
 | Finding | Cause (the rule broken) | Same cause checked in | Same cause as an earlier fix? | Fix | Test |
 | --- | --- | --- | --- | --- | --- |
 | A late Profile answer brings back an old pin | An answer writes fields it does not own | Save answers, pin answers, dialog answers | No | Answers write an allowlist | `bot-edit-form.test` "takes from a save answer only …" |
@@ -52,9 +53,10 @@ the proof shows, and add `Not claimed: …` (owner, 2026-11-11;
 [lesson](../lessons-learned/claim-bigger-than-its-proof.md)). The reviewer tests these claims
 first ([review guide §3](../review-guide.md#3-verify-what-the-evidence-proves)).
 
-In the `Review fixes` table, "Same cause as an earlier fix?" covers earlier PRs too. Name the
-search of the prevention actions ([delivery quality §7](../delivery-quality.md#7-update-and-assess))
-and of the [lessons](../lessons-learned/README.md) in the answer.
+In the `Defect and review fixes` table, "Same cause as an earlier fix?" covers earlier PRs too.
+Name the search of the prevention actions
+([delivery quality §7](../delivery-quality.md#7-update-and-assess)) and of the
+[lessons](../lessons-learned/README.md) in the answer.
 
 ## One home for each fact
 
