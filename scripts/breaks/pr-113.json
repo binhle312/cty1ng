@@ -16,7 +16,7 @@
           "edits": [
             {
               "find": "function applyPending(sqlite: Database.Database, migrations: MigrationMeta[]): number {\n  sqlite.exec(\"BEGIN IMMEDIATE\");\n",
-              "replace": "function applyPending(sqlite: Database.Database, migrations: MigrationMeta[]): number {\n  // The break: the last applied migration is read before the write lock.\n  const early = sqlite\n    .prepare<[], { created_at: number }>(\n      `SELECT created_at FROM ${MIGRATIONS_TABLE} ORDER BY created_at DESC LIMIT 1`,\n    )\n    .get();\n  sqlite.exec(\"BEGIN IMMEDIATE\");\n"
+              "replace": "function applyPending(sqlite: Database.Database, migrations: MigrationMeta[]): number {\n  // The break: the last applied migration is read before the write lock.\n  sqlite.exec(\n    `CREATE TABLE IF NOT EXISTS ${MIGRATIONS_TABLE} (id INTEGER PRIMARY KEY, hash text NOT NULL, created_at numeric)`,\n  );\n  const early = sqlite\n    .prepare<[], { created_at: number }>(\n      `SELECT created_at FROM ${MIGRATIONS_TABLE} ORDER BY created_at DESC LIMIT 1`,\n    )\n    .get();\n  sqlite.exec(\"BEGIN IMMEDIATE\");\n"
             },
             {
               "find": "      if (last !== undefined && last.created_at >= migration.folderMillis) continue;\n",
