@@ -55,7 +55,9 @@ comment rule (`docs/frontend-conventions.md` §1), and the break runner with its
 a §9 stop still decides the redesign, but the redesign gets its own PR, with its own plan and test
 strategy. The PR that found the repeat waits for it, or makes its claim smaller and records the
 gap in the ledger (`AGENTS.md` §9, `docs/review-guide.md`). The owner did not choose a wider
-limit on all review fixes, because no issue in the data needs it.
+limit on all review fixes, because no issue in the data needs it. On 2026-11-13 the owner
+changed this: "Build the redesign in the PR that found the issue. ... Do not open another PR for
+it" (`AGENTS.md` §9).
 
 **Measure.** For the next three PRs, count the issues of each review and how many came from a
 fix. The goal: no issue from a new mechanism after the first review, at most one issue from a
