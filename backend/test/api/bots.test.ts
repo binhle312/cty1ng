@@ -113,6 +113,19 @@ describe("POST /bots", () => {
     expect(response.status).toBe(201);
   });
 
+  // Review of #115 (R1-6): a wrong type inside a list item gets the same format.
+  it("names a wrong type in a list item with [i]: pins[0].always_load", async () => {
+    const { response } = await createBot({
+      ...newBot,
+      pins: [{ skill_id: "skill_01jb8x6p0afqz8r2m3k5t7v9wx", always_load: "yes" }],
+    });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toMatchObject({
+      code: "validation_error",
+      field: "pins[0].always_load",
+    });
+  });
+
   it("names a key of an object in a 422 after a dot: tool_settings.web_fetch", async () => {
     const { response } = await createBot({ ...newBot, tool_settings: { web_fetch: "on" } });
     expect(response.status).toBe(422);

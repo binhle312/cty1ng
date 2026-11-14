@@ -196,7 +196,10 @@ export const AvatarId = z.string().regex(/^[0-9a-f]{64}$/);
 // The tool switches by tool id: the API bodies, and the `tool_settings` JSON column when the
 // repository reads it back (frontend-conventions.md §1: every boundary value is parsed). Each key
 // has the shape of a catalog tool id (P3 list, item 34).
-export const ToolSettingsBody = z.record(z.string().regex(ToolIdPattern), z.boolean());
+export const ToolSettingsBody = z
+  .record(z.string().regex(ToolIdPattern), z.boolean())
+  // The OpenAPI document shows the key rule too (review of #115, R1-6).
+  .meta({ propertyNames: { type: "string", pattern: ToolIdPattern.source } });
 
 export const BotPin = z
   .object({

@@ -43,6 +43,13 @@ describe("lineDiff", () => {
     });
   });
 
+  // Review of #115 (R1-6): the plan names both empty sides.
+  it("treats an empty new text over the budget as inside it", () => {
+    expect(lineDiff({ from: "a\nb", to: "", maxEdits: 1 })).toEqual(
+      lineDiff({ from: "a\nb", to: "", maxEdits: 100 }),
+    );
+  });
+
   it("treats an empty old text over the budget as inside it", () => {
     expect(lineDiff({ from: "", to: "a\nb", maxEdits: 1 })).toEqual(
       lineDiff({ from: "", to: "a\nb", maxEdits: 100 }),

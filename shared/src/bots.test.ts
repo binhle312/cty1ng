@@ -7,6 +7,7 @@ import {
   cloneNameCandidate,
   isReservedBotSlug,
   normaliseBotName,
+  ToolSettingsBody,
 } from "./bots.ts";
 
 describe("botNameKey (domain-model.md §2 Name key)", () => {
@@ -141,5 +142,16 @@ describe("botFieldProblem (create-bot-page.md §5)", () => {
     expect(botFieldProblem("description", "Turns stories\tinto screens", limits)).toBeNull();
     // The persona is Markdown: line breaks stay allowed.
     expect(botFieldProblem("persona_md", "# Role\nYou are a BA.", limits)).toBeNull();
+  });
+});
+
+// P3 list, item 34; review of #115 (R1-6): a key of tool_settings has the shape of a tool id.
+describe("ToolSettingsBody", () => {
+  it("refuses a key that is not a tool id", () => {
+    expect(ToolSettingsBody.safeParse({ "Web Fetch": false }).success).toBe(false);
+  });
+
+  it("accepts tool ids as keys", () => {
+    expect(ToolSettingsBody.safeParse({ web_fetch: true, view_images: false }).success).toBe(true);
   });
 });
