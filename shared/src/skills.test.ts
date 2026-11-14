@@ -74,6 +74,30 @@ describe("copies (skills-page.md §12)", () => {
     expect(copyName("n".repeat(64), 64)).toHaveLength(64);
     expect(copyName("n".repeat(64), 64).endsWith(" (copy)")).toBe(true);
   });
+
+  // The cut keeps whole graphemes: a name never ends in half an emoji (P3 list item 58).
+  it("does not split a surrogate pair at the cut", () => {
+    expect(copyName("aaaa😀", 12)).toBe("aaaa (copy)");
+  });
+
+  it("does not split a ZWJ emoji at the cut", () => {
+    expect(copyName("ab👨‍👩‍👧", 12)).toBe("ab (copy)");
+  });
+
+  it("does not split a flag at the cut", () => {
+    expect(copyName("abc🇻🇳", 12)).toBe("abc (copy)");
+  });
+
+  // The server counts UTF-16 code units (`skillFieldProblem`), so the copy must fit that count.
+  it.each([
+    ["n".repeat(80), 64],
+    ["Đặc tả yêu cầu người dùng cho dự án mới của nhóm sản phẩm", 20],
+    ["😀".repeat(40), 64],
+    ["a👨‍👩‍👧".repeat(10), 30],
+    ["Notes", 8],
+  ])("keeps the copy of %j within %i code units", (name, max) => {
+    expect(copyName(name, max).length).toBeLessThanOrEqual(max);
+  });
 });
 
 // One set of messages for the editor and the server (skills-page.md §4, §6).
