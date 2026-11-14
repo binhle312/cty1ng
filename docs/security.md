@@ -167,10 +167,11 @@ environment, provider-side data handling.
   strings or `+` on user input. ESLint bans, outside reviewed, commented exceptions: `sql.raw()`
   and `orm.sql.raw()`, an `import { sql as … }`, and a call `db.run`, `db.execute`, `db.all`,
   `db.get` or `db.values` (also on `tx`, or on a `.db` or `.tx` property such as `this.db`) whose
-  first argument is not a `sql` or `orm.sql` tagged template. `eslint-plugin-drizzle` requires a
-  `where` on every `update` and `delete`. Lint sees only these written forms. It does not see, for
-  example, `sql` or `raw` taken into a variable or by destructuring, a computed member
-  (`sql["raw"]`, `db["run"]`), a re-export, a handle with another name or behind a type cast, or
+  first argument is not a tagged template with the tag `sql` or a `sql` property of any object
+  (such as `orm.sql`). `eslint-plugin-drizzle` requires a `where` on every `update` and `delete`.
+  Lint sees only these written forms. It does not see, for example, `sql` or `raw` taken into a
+  variable or by destructuring, a computed member (`sql["raw"]`, `db["run"]`), a re-export, a
+  handle with another name or behind a type cast, a tag named `sql` that is not Drizzle's, or
   `exec` and `prepare` on a better-sqlite3 handle.
 - Identifiers cannot be bound, so anything that picks a column, sort order or table from a
   request (for example `metric=` and `sort=` on the statistics API) is mapped through an
