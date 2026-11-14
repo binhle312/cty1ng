@@ -1,0 +1,144 @@
+{
+  "claims": [
+    {
+      "id": "T10",
+      "claim": "When no migration waits, the runner does not check old references, so an old broken reference does not stop a start",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/adapters/db/migrate.test.ts",
+        "name": "does not check old references when no migration waits"
+      },
+      "assertion": "}).not.toThrow();",
+      "breaks": [
+        {
+          "id": "T10-check-runs-when-nothing-applied",
+          "file": "backend/src/adapters/db/migrate.ts",
+          "edits": [
+            {
+              "find": "    if (applied > 0) {\n",
+              "replace": "    if (applied >= 0) {\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T11",
+      "claim": "foreign_keys is 1 after a successful run",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/adapters/db/migrate.test.ts",
+        "name": "leaves foreign_keys on after a successful run"
+      },
+      "assertion": "expect(foreignKeys(sqlite), \"after a success\").toBe(1);",
+      "breaks": [
+        {
+          "id": "T11-finally-does-not-turn-keys-on",
+          "file": "backend/src/adapters/db/migrate.ts",
+          "edits": [
+            {
+              "find": "  } finally {\n    sqlite.pragma(\"foreign_keys = ON\");\n  }\n  // After a failure, the error stops the start already.\n  const value = sqlite.pragma(\"foreign_keys\", { simple: true });\n  if (value !== 1) throw new Error(`foreign_keys is ${String(value)} after the migrations, not 1`);\n",
+              "replace": "  } finally {\n    // The break: the keys are not turned on, and nothing reads them back.\n  }\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T12",
+      "claim": "foreign_keys is 1 after a failed statement",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/adapters/db/migrate.test.ts",
+        "name": "leaves foreign_keys on after a failed statement"
+      },
+      "assertion": "expect(foreignKeys(sqlite), \"after a failed statement\").toBe(1);",
+      "breaks": [
+        {
+          "id": "T12-finally-does-not-turn-keys-on",
+          "file": "backend/src/adapters/db/migrate.ts",
+          "edits": [
+            {
+              "find": "  } finally {\n    sqlite.pragma(\"foreign_keys = ON\");\n  }\n  // After a failure, the error stops the start already.\n  const value = sqlite.pragma(\"foreign_keys\", { simple: true });\n  if (value !== 1) throw new Error(`foreign_keys is ${String(value)} after the migrations, not 1`);\n",
+              "replace": "  } finally {\n    // The break: the keys are not turned on, and nothing reads them back.\n  }\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T13",
+      "claim": "foreign_keys is 1 after a failed foreign_key_check",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/adapters/db/migrate.test.ts",
+        "name": "leaves foreign_keys on after a failed foreign_key_check"
+      },
+      "assertion": "expect(foreignKeys(sqlite), \"after a failed check\").toBe(1);",
+      "breaks": [
+        {
+          "id": "T13-finally-does-not-turn-keys-on",
+          "file": "backend/src/adapters/db/migrate.ts",
+          "edits": [
+            {
+              "find": "  } finally {\n    sqlite.pragma(\"foreign_keys = ON\");\n  }\n  // After a failure, the error stops the start already.\n  const value = sqlite.pragma(\"foreign_keys\", { simple: true });\n  if (value !== 1) throw new Error(`foreign_keys is ${String(value)} after the migrations, not 1`);\n",
+              "replace": "  } finally {\n    // The break: the keys are not turned on, and nothing reads them back.\n  }\n"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "backend/src/adapters/db/migrate.test.ts",
+      "name": "rebuilds a parent table that has a child row (drizzle-kit's statements, ON DELETE no action)",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "backend/src/adapters/db/migrate.test.ts",
+      "name": "keeps the child row of an ON DELETE cascade key when it rebuilds the parent table",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "backend/src/adapters/db/migrate.test.ts",
+      "name": "keeps the parent id of an ON DELETE set null key when it rebuilds the parent table",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "backend/src/adapters/db/migrate.test.ts",
+      "name": "ignores a PRAGMA foreign_keys=ON line of the migration file before its rebuild",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "backend/src/adapters/db/migrate.test.ts",
+      "name": "stops a migration that deletes a parent row of an ON DELETE cascade key",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "backend/src/adapters/db/migrate.test.ts",
+      "name": "names the table, the row number and the parent table of a broken reference, and no value of the row",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "backend/src/adapters/db/migrate.test.ts",
+      "name": "rolls back an applied migration of the run when the check fails after a later one",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "backend/src/adapters/db/migrate.test.ts",
+      "name": "shows the first 10 broken references and the full count",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "backend/src/adapters/db/migrate.test.ts",
+      "name": "applies a rebuild once and loses no row when three processes race on a database with rows",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "backend/src/adapters/db/migrate.test.ts",
+      "name": "stops when foreign_keys does not read back as 1 after the run",
+      "reason": "Written before the code; the red run is in the PR"
+    }
+  ]
+}
