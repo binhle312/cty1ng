@@ -97,6 +97,11 @@ describe("a query string on the docs routes", () => {
     },
   );
 
+  // Review of #115 (R1-2): a Zod route with NoQuery answers 200 to an empty key, so this does too.
+  it("/api/openapi.json with an empty key (?=1) answers 200", async () => {
+    expect((await dev.request("/api/openapi.json?=1")).status).toBe(200);
+  });
+
   it("/api/openapi.json with an empty ? still answers 200", async () => {
     expect((await dev.request("/api/openapi.json?")).status).toBe(200);
   });

@@ -181,7 +181,7 @@ environment, provider-side data handling.
   in the browser is for usability only.
 - IDs are parsed with their TypeID schema (`shared/src/ids.ts`, D36) before they reach a query.
 - The routes that are not Zod routes (`/api/openapi.json`, the dev `/api/docs` page) refuse a
-  query key with the same 422; an empty `?` passes.
+  query key with the same 422; an empty `?` and an empty key (`?=1`) pass.
 - A key of `tool_settings` has the shape of a catalog tool id (`ToolIdPattern`).
 
 ### 2.10 Errors, debugging and logs
