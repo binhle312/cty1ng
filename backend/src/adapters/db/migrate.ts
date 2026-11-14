@@ -32,16 +32,28 @@ export const MIGRATIONS_FOLDER = resolve(import.meta.dirname, "../../../migratio
 export function migrate(sqlite: Database.Database, migrationsFolder: string): number {
   const migrations = readMigrationFiles({ migrationsFolder });
   sqlite.pragma("foreign_keys = OFF");
-  let applied: number;
+  let failure: unknown;
   try {
-    applied = applyPending(sqlite, migrations);
+    return applyPending(sqlite, migrations);
+  } catch (error) {
+    failure = error;
+    throw error;
   } finally {
-    sqlite.pragma("foreign_keys = ON");
+    keysOn(sqlite, failure);
   }
-  // After a failure, the error stops the start already.
+}
+
+// Turns the keys on and reads the value back, after each end of the run. A value that is not
+// 1 stops the start; the error of a failed run stays as its cause.
+function keysOn(sqlite: Database.Database, failure: unknown): void {
+  sqlite.pragma("foreign_keys = ON");
   const value = sqlite.pragma("foreign_keys", { simple: true });
-  if (value !== 1) throw new Error(`foreign_keys is ${String(value)} after the migrations, not 1`);
-  return applied;
+  if (value !== 1) {
+    throw new Error(
+      `foreign_keys is ${String(value)} after the migrations, not 1`,
+      failure === undefined ? undefined : { cause: failure },
+    );
+  }
 }
 
 function applyPending(sqlite: Database.Database, migrations: MigrationMeta[]): number {
