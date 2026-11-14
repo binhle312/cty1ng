@@ -193,7 +193,7 @@ test("Esc after a click outside the form asks, and Esc in the bot menu closes on
   await page.getByRole("heading", { name: bot.name, level: 1 }).click();
   await expect(name).not.toBeFocused();
   await page.keyboard.press("Escape");
-  await expect(question).toBeVisible();
+  await expect(question, "Esc outside the form asks").toBeVisible();
   await question.getByRole("button", { name: "Stay on this page" }).click();
   await expect(question).toHaveCount(0);
 

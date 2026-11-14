@@ -411,9 +411,8 @@ describe("skills on the Create bot page", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Create" }).textContent).toBe("Create");
     });
-    expect(screen.getByRole("button", { name: "Create" }).getAttribute("aria-disabled")).toBe(
-      "false",
-    );
+    const create = screen.getByRole("button", { name: "Create" });
+    expect(create.getAttribute("aria-disabled"), "Create is on").toBe("false");
   });
 
   it("marks no step after a server error on the source bot", async () => {
@@ -426,7 +425,7 @@ describe("skills on the Create bot page", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Create" }).textContent).toBe("Create");
     });
-    expect(screen.queryByRole("button", { name: /has an error/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /has an error/ }), "no step mark").toBeNull();
   });
 
   it("moves the focus to Effort when the effort of a Clone is not offered", async () => {
@@ -835,7 +834,7 @@ describe("skills on the Create bot page", () => {
       expect(fake?.sent("GET", "/api/skills").length).toBeGreaterThan(before);
     });
     click(box());
-    expect(document.querySelector(`li[data-skill="${NEW.id}"]`)).toBeNull();
+    expect(document.querySelectorAll(`li[data-skill="${NEW.id}"]`)).toHaveLength(0);
   });
 });
 

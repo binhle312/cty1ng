@@ -1257,7 +1257,7 @@ describe("a late Delete answer on the bot page", () => {
     state.bots = [makeBot(2, "Designer")];
     await held.answer({ status: 204 });
     expect(await screen.findByText("BA is in Trash.")).toBeTruthy();
-    expect(router.state.location.pathname).toBe("/bots/designer");
+    expect(router.state.location.pathname, "still on Designer").toBe("/bots/designer");
   });
 
   it("keeps the owner on the other page they opened while Delete waited", async () => {
@@ -1270,7 +1270,7 @@ describe("a late Delete answer on the bot page", () => {
     state.bots = [];
     await held.answer({ status: 204 });
     expect(await screen.findByText("BA is in Trash.")).toBeTruthy();
-    expect(router.state.location.pathname).toBe("/skills");
+    expect(router.state.location.pathname, "still on Skills").toBe("/skills");
   });
 
   it("opens the Bots page when Delete answers after the owner closed its dialog", async () => {
@@ -1282,7 +1282,7 @@ describe("a late Delete answer on the bot page", () => {
     state.bots = [];
     await held.answer({ status: 204 });
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/bots");
+      expect(router.state.location.pathname, "on the Bots page").toBe("/bots");
     });
   });
 });
@@ -1525,7 +1525,7 @@ describe("Esc on the bot page (bot-page.md §4.1, §4.2)", () => {
     await heading();
     type({ label: "Name", text: "Analyst" });
     await esc("Name");
-    expect(screen.getByRole("alertdialog", QUESTION)).toBeTruthy();
+    expect(screen.getByRole("alertdialog", QUESTION), "the question stays").toBeTruthy();
     expect(valueOf("Name")).toBe("Analyst");
   });
 
@@ -1546,7 +1546,7 @@ describe("Esc on the bot page (bot-page.md §4.1, §4.2)", () => {
       key: "Escape",
       repeat: true,
     });
-    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(screen.queryByRole("alertdialog"), "a repeat asks nothing").toBeNull();
     expect(valueOf("Name")).toBe("Analyst");
   });
 
@@ -1631,7 +1631,7 @@ describe("Esc on the bot page (bot-page.md §4.1, §4.2)", () => {
       key: "Escape",
       isComposing: true,
     });
-    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(screen.queryByRole("alertdialog"), "an IME Esc asks nothing").toBeNull();
     expect(valueOf("Name")).toBe("Analyst");
   });
 
@@ -1708,7 +1708,7 @@ describe("Esc on the bot page (bot-page.md §4.1, §4.2)", () => {
     });
     await pressKey(search, { key: "Escape" });
     expect(search instanceof HTMLInputElement && search.value).toBe("");
-    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(screen.queryByRole("alertdialog"), "the search used the Esc").toBeNull();
   });
 
   it("only cancels a keyboard drag of a pinned bot on Esc", async () => {
@@ -1721,7 +1721,7 @@ describe("Esc on the bot page (bot-page.md §4.1, §4.2)", () => {
     });
     await pressKey(qa, { key: " ", code: "Space" });
     await pressKey(qa, { key: "Escape", code: "Escape" });
-    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(screen.queryByRole("alertdialog"), "the drag used the Esc").toBeNull();
     expect(valueOf("Name")).toBe("Analyst");
   });
 
@@ -1735,7 +1735,7 @@ describe("Esc on the bot page (bot-page.md §4.1, §4.2)", () => {
     await waitFor(() => {
       expect(screen.queryByRole("menuitem", { name: "Delete" })).toBeNull();
     });
-    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(screen.queryByRole("alertdialog"), "the menu used the Esc").toBeNull();
   });
 
   it("only closes the Delete dialog on Esc", async () => {
@@ -1749,7 +1749,7 @@ describe("Esc on the bot page (bot-page.md §4.1, §4.2)", () => {
     await waitFor(() => {
       expect(screen.queryByRole("alertdialog", { name: "Delete BA? 🧹" })).toBeNull();
     });
-    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(screen.queryByRole("alertdialog"), "the dialog used the Esc").toBeNull();
   });
 
   // The six orders of testing.md, "Request order and list states", with Esc as the way in.
