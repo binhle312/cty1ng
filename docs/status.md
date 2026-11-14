@@ -29,8 +29,9 @@ The owner's order (2026-11-08, in the [audit file](audits/2026-11-05-repo-audit.
 1. Audit PR 6, six tabs: merged in [#91](https://github.com/binhle312/cty1ng/pull/91) on 2026-11-10. Its follow-up, [#96](https://github.com/binhle312/cty1ng/pull/96), merged on 2026-11-10.
 2. The P3 PRs: every P3 found so far, from one list with no duplicates, in small PRs by area. The M2 close rows of the [#60](https://github.com/binhle312/cty1ng/pull/60) review are on that list.
    The owner approved the list and the order of its PRs on 2026-11-12 ([audit file](audits/2026-11-05-repo-audit.md), "Changed on 2026-11-08"). The first PR, records only, merged in [#105](https://github.com/binhle312/cty1ng/pull/105) on 2026-11-12. A P3 PR gets two review rounds, and it fixes its own open rows before its merge, with no cleanup PR ([merge bar](workflows/merge-bar.md#when-the-review-of-a-p3-pr-ends); owner, 2026-11-12 and 2026-11-13, [#109](https://github.com/binhle312/cty1ng/pull/109) and [#112](https://github.com/binhle312/cty1ng/pull/112)). On 2026-11-14 [#112](https://github.com/binhle312/cty1ng/pull/112) merged into the branch of #109; it reached `main` with #109 on 2026-11-14.
+   The fourth PR of the list, the security tests, is [#108](https://github.com/binhle312/cty1ng/pull/108).
    The fifth PR of the list, an id that is no UUID, merged in [#110](https://github.com/binhle312/cty1ng/pull/110) on 2026-11-14.
-   The eighth PR of the list, a busy port and the CLI stack traces, is [#111](https://github.com/binhle312/cty1ng/pull/111).
+   The eighth PR of the list, a busy port and the CLI stack traces, merged in [#111](https://github.com/binhle312/cty1ng/pull/111) on 2026-11-14.
 3. One style-only PR for the 104 `max-params` places.
 4. The second audit, with the [audit workflow](workflows/audit.md).
 5. Prepare the [M3 part briefs and specification work](development-plan.md#specification-work-before-m3a).
@@ -191,3 +192,4 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-12 | [#105](https://github.com/binhle312/cty1ng/pull/105) merged. |
 | 2026-11-14 | [#109](https://github.com/binhle312/cty1ng/pull/109) merged. |
 | 2026-11-14 | [#110](https://github.com/binhle312/cty1ng/pull/110) merged. |
+| 2026-11-14 | [#111](https://github.com/binhle312/cty1ng/pull/111) merged. |

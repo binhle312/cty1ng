@@ -30,6 +30,27 @@ async function slipZip(): Promise<Buffer> {
   return Buffer.from(zip.toString("latin1").replaceAll("xx/SKILL.md", "../SKILL.md"), "latin1");
 }
 
+// The same swap for a path that starts at the root of the disk.
+async function absolutePathZip(): Promise<Buffer> {
+  const zip = await zipOf([{ path: "xx/SKILL.md", data: "---\nname: x\n---\n" }]);
+  return Buffer.from(zip.toString("latin1").replaceAll("xx/SKILL.md", "/x/SKILL.md"), "latin1");
+}
+
+// A zip whose `SKILL.md` is longer than its headers say. The size is in two places: the local
+// header (4 bytes at offset 22) and the central directory (4 bytes at offset 24).
+async function forgedSizeZip({ real, stated }: { real: number; stated: number }): Promise<Buffer> {
+  const zip = await zipOf([{ path: "notes/SKILL.md", data: Buffer.alloc(real, "x") }]);
+  const local = zip.indexOf(Buffer.from([0x50, 0x4b, 0x03, 0x04]));
+  const central = zip.indexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02]));
+  if (local !== 0 || central === -1) throw new Error("not the zip that the test expects");
+  if (zip.readUInt32LE(local + 22) !== real || zip.readUInt32LE(central + 24) !== real) {
+    throw new Error("the size is not where the test expects it");
+  }
+  zip.writeUInt32LE(stated, local + 22);
+  zip.writeUInt32LE(stated, central + 24);
+  return zip;
+}
+
 async function failureOf(promise: Promise<unknown>): Promise<ApiFailure> {
   const error: unknown = await promise.then(
     () => null,
@@ -116,6 +137,21 @@ describe("readSkillZip", () => {
       code: "invalid_import",
       message: "The zip has a file path outside its folders. The app imports nothing from it.",
     });
+  });
+
+  // Audit 2026-11-05, P3 "Security": the two cases below had no test.
+  it("refuses a zip with an absolute path", async () => {
+    await expect(readSkillZip(await absolutePathZip())).rejects.toMatchObject({
+      code: "invalid_import",
+      message: "The zip has a file path outside its folders. The app imports nothing from it.",
+    });
+  });
+
+  // The limits count the size that a header states, so a header that states too little must not
+  // let more bytes in: 2 MB behind a stated size of 10 bytes, under the 1 MB limit of a SKILL.md.
+  it("refuses a SKILL.md that is longer than the size in its header", async () => {
+    const zip = await forgedSizeZip({ real: 2 * MB, stated: 10 });
+    await expect(readSkillZip(zip)).rejects.toMatchObject({ code: "invalid_import" });
   });
 
   it("refuses a file that is not a zip", async () => {
