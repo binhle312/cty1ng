@@ -4,12 +4,14 @@ import type { AvatarsService } from "../core/bots/avatars.service.ts";
 import type { BotsService } from "../core/bots/bots.service.ts";
 import type { EventPruning } from "../core/events/event-pruning.service.ts";
 import type { SkillsService } from "../core/skills/skills.service.ts";
+import type { PurgeResult } from "../core/trash/purge-due.ts";
 
 // The timed jobs (architecture.md §6.1): the Trash purge (skills, then bots, then unused avatar
 // files), at start and then every
 // PURGE_INTERVAL_HOURS, and the event pruning, at start and then every
 // EVENT_PRUNE_INTERVAL_HOURS. Each job has its own timer; a failed run (or purge step) is logged
-// and the next run tries again, and it never stops the other job or step. Returns a stop
+// and the next run tries again, and it never stops the other job or step. A purge step goes on
+// after a failed item and returns it: the job logs one line for each failed item. Returns a stop
 // function.
 export function startTimedJobs(deps: {
   skills: Pick<SkillsService, "purgeDue">;
@@ -22,10 +24,18 @@ export function startTimedJobs(deps: {
 }): () => void {
   const stops = [
     every(deps.purgeIntervalHours, async () => {
-      // Each step has its own try: a step that fails on every run must not stop the others.
-      const step = async (name: string, work: () => Promise<number>): Promise<number> => {
+      // Each step has its own try: a step that fails on every run must not stop the others. The
+      // read of the due list can still throw.
+      const step = async (
+        name: string,
+        work: () => Promise<PurgeResult<string>>,
+      ): Promise<number> => {
         try {
-          return await work();
+          const result = await work();
+          for (const { id, error } of result.failed) {
+            deps.log.error({ err: error, step: name, id }, "trash purge item failed");
+          }
+          return result.purged;
         } catch (error) {
           deps.log.error({ err: error, step: name }, "trash purge failed");
           return 0;
@@ -33,7 +43,10 @@ export function startTimedJobs(deps: {
       };
       const skills = await step("skills", () => deps.skills.purgeDue(OWNER_ID));
       const bots = await step("bots", () => deps.bots.purgeDue());
-      const avatars = await step("avatars", () => deps.avatars.cleanup());
+      const avatars = await step("avatars", async () => ({
+        purged: await deps.avatars.cleanup(),
+        failed: [],
+      }));
       if (skills + bots + avatars > 0) deps.log.info({ skills, bots, avatars }, "trash purge");
     }),
     every(deps.eventPruneIntervalHours, async () => {

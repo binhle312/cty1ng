@@ -261,6 +261,28 @@ describe("pins", () => {
     expect((await send("DELETE", path)).status).toBe(204);
   });
 
+  // Owner, 2026-11-13 (P3 item 37): a new assign pins the version that the request names.
+  it("PUT pins an older version on a new assign", async () => {
+    const { skill, bot } = await skillWithBot();
+    for (const base of [1, 2, 3]) {
+      await backend.skills.addVersion(
+        skill.id,
+        { baseVersion: base, description: "Use it.", bodyMd: `## Steps v${String(base + 1)}` },
+        OWNER_ID,
+      );
+    }
+    const v2 = (await backend.readers.skills.version(skill.id, 2))?.id ?? "";
+    const path = `/bots/${String(bot.id)}/skills/${skill.id}`;
+    const response = await send("PUT", path, {
+      skill_version_id: v2,
+      always_load: false,
+      expected: null,
+    });
+    expect(await response.json()).toMatchObject({
+      pins: [{ skill_version_id: v2, version: 2, latest_version: 4 }],
+    });
+  });
+
   it("POST /skills/{id}/bots moves the listed bots; the version body has no upgrade_bot_ids", async () => {
     const { skill, bot, v1 } = await skillWithBot();
     const moved = await send("POST", `/skills/${skill.id}/bots`, {

@@ -15,7 +15,6 @@ import type { Ids } from "../ports/ids.ts";
 import type {
   BotsReader,
   Readers,
-  SettingsReader,
   SkillRecord,
   SkillsReader,
   SkillVersionRecord,
@@ -23,6 +22,7 @@ import type {
   UnitOfWork,
 } from "../ports/repositories.ts";
 import { readSettings } from "../settings/settings.service.ts";
+import { purgeDue, type PurgeResult } from "../trash/purge-due.ts";
 import { lineDiff } from "./skill-diff.ts";
 import { serialiseSkillMd } from "./skill-md.ts";
 import { skillTextProblem, type SkillText } from "./skill.rules.ts";
@@ -69,13 +69,6 @@ export interface NewVersionInput {
 export function createSkillsService(deps: SkillsDeps) {
   const { uow, readers, clock } = deps;
   const newVersionId = () => SkillVersionId.parse(deps.ids.newId("skillv"));
-
-  async function liveSkill(reader: SkillsReader, id: SkillId): Promise<SkillRecord> {
-    const skill = await reader.byId(id);
-    // A skill in Trash answers 404 everywhere except restore and the permanent delete (api.md §2).
-    if (skill === null || skill.trashedAt !== null) throw notFound();
-    return skill;
-  }
 
   async function trashedSkill(reader: SkillsReader, id: SkillId): Promise<SkillRecord> {
     const skill = await reader.byId(id);
@@ -366,13 +359,18 @@ export function createSkillsService(deps: SkillsDeps) {
     exportFiles: async (
       ids: readonly SkillId[] | null,
     ): Promise<{ fileName: string; files: { path: string; text: string }[] }> => {
+      // `list` gives each skill with its latest version, so Export all reads each one once.
       const picked =
         ids === null
-          ? (await readers.skills.list({ includeDeprecated: false })).map((row) => row.skill)
-          : await Promise.all(ids.map((id) => liveSkill(readers.skills, id)));
+          ? await readers.skills.list({ includeDeprecated: false })
+          : await Promise.all(
+              ids.map(async (id) => ({
+                skill: await liveSkill(readers.skills, id),
+                latest: await readers.skills.latestVersion(id),
+              })),
+            );
       const files: { path: string; text: string }[] = [];
-      for (const skill of picked) {
-        const latest = await readers.skills.latestVersion(skill.id);
+      for (const { skill, latest } of picked) {
         if (latest === null) continue;
         files.push({
           path: `${skill.slug}/SKILL.md`,
@@ -487,10 +485,8 @@ export function createSkillsService(deps: SkillsDeps) {
         assertAuthor(skill, actor);
         // The bots in `trashed_bot_ids` that are still live.
         const suggestedBotIds: BotId[] = [];
-        for (const raw of skill.trashedBotIds ?? []) {
-          const parsed = BotId.safeParse(raw);
-          if (!parsed.success) continue;
-          const bot = await tx.bots.byId(parsed.data);
+        for (const botId of skill.trashedBotIds ?? []) {
+          const bot = await tx.bots.byId(botId);
           if (bot !== null && bot.deletedAt === null) suggestedBotIds.push(bot.id);
         }
         // `trashed_bot_ids` stays until the next delete: the M5b restore rule reads it after
@@ -509,37 +505,26 @@ export function createSkillsService(deps: SkillsDeps) {
         await purgeInTx(tx, id, actor);
       }),
 
-    trashed: async (actor: string) => {
-      const rows = await readers.skills.trashed();
-      return Promise.all(rows.map((skill) => toShape(readers, skill, actor)));
-    },
-
     // The purge job (architecture.md §6.1): each skill whose `trashed_at + trash_days` is at or
-    // before now, one per transaction. Returns how many it purged.
-    purgeDue: async (actor: string): Promise<number> => {
-      const now = clock.now();
-      const cutoff = async (reader: SettingsReader): Promise<Date> =>
-        new Date(now.getTime() - (await readSettings(reader)).trash_days * 86_400_000);
-      let purged = 0;
-      for (const id of await readers.skills.trashedUntil(await cutoff(readers.settings))) {
-        const done = await uow.run(async (tx) => {
-          const skill = await tx.skills.byId(id);
-          // Restored, purged, or no longer due because trash_days went up, since the list was
-          // read.
-          if (skill?.trashedAt == null || skill.trashedAt > (await cutoff(tx.settings))) {
-            return false;
-          }
-          await purgeInTx(tx, id, actor);
-          return true;
-        });
-        if (done) purged += 1;
-      }
-      return purged;
-    },
+    // before now.
+    purgeDue: (actor: string): Promise<PurgeResult<SkillId>> =>
+      purgeDue(deps, {
+        dueIds: (reader, cutoff) => reader.skills.trashedUntil(cutoff),
+        trashedAt: async (tx, id) => (await tx.skills.byId(id))?.trashedAt ?? null,
+        purge: (tx, id) => purgeInTx(tx, id, actor),
+      }),
   };
 }
 
 export type SkillsService = ReturnType<typeof createSkillsService>;
+
+// The skill, or 404. The skills and the bots services both use it. A skill in Trash answers 404
+// everywhere except restore and the permanent delete (api.md §2).
+export async function liveSkill(reader: SkillsReader, id: SkillId): Promise<SkillRecord> {
+  const skill = await reader.byId(id);
+  if (skill === null || skill.trashedAt !== null) throw notFound();
+  return skill;
+}
 
 function versionRow(
   id: SkillVersionId,

@@ -1,9 +1,19 @@
 import type { CreateBotBody } from "@cty1ng/shared/bots";
 import { BotId, SkillId } from "@cty1ng/shared/ids";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { backendAt, manualClock, newTestId, tempDir, testBackend } from "../../../test/helpers.ts";
+import {
+  backendAt,
+  manualClock,
+  newTestId,
+  tempDir,
+  testBackend,
+  testIds,
+} from "../../../test/helpers.ts";
+import { memoryAvatarFiles } from "../../../test/fakes/avatar-files.ts";
 import { DomainError } from "../errors.ts";
 import { OWNER_ID } from "../owner.ts";
+import type { AppendEvent } from "../events/append-event.ts";
+import { createBotsService } from "./bots.service.ts";
 
 // The bots service on a temporary database (domain-model.md §2, api.md §4). FAKE_MODEL=1 gives
 // the two fake models; the file's real models have no key in tests, so they cannot run.
@@ -687,6 +697,31 @@ describe("skills that touch pins (api.md §2)", () => {
     expect(await backend.skills.summary(notes, OWNER_ID)).toMatchObject({ bots_outdated: 0 });
   });
 
+  // P3 item 30, invariant 7 (the event part): each moved bot gets its `bot.updated`.
+  it("POST /skills/{id}/bots writes bot.updated for each bot that it moves", async () => {
+    const notes = await skill("notes");
+    const first = await create({ name: "A", pins: [{ skill_id: notes, always_load: false }] });
+    const second = await create({ name: "B", pins: [{ skill_id: notes, always_load: false }] });
+    const v1 = first.pins[0]?.skill_version_id ?? null;
+    await backend.skills.addVersion(
+      notes,
+      { baseVersion: 1, description: "v2", bodyMd: "## v2" },
+      OWNER_ID,
+    );
+    const v2 = (await backend.readers.skills.latestVersion(notes))?.id;
+    if (v1 === null || v2 === undefined) throw new Error("versions");
+    const before = (await events()).length;
+    await backend.bots.pinSkillToBots(notes, v2, [
+      { botId: BotId.parse(first.id), expectedSkillVersionId: v1 },
+      { botId: BotId.parse(second.id), expectedSkillVersionId: v1 },
+    ]);
+    // toMatchObject on a list also checks its length: no other event.
+    expect((await events()).slice(before)).toMatchObject([
+      ["bot.updated", { bot: { id: first.id } }],
+      ["bot.updated", { bot: { id: second.id } }],
+    ]);
+  });
+
   it("refuses a bot listed twice with 422, not a false stale_write", async () => {
     const notes = await skill("notes");
     const bot = await create();
@@ -867,9 +902,9 @@ describe("purge (D50)", () => {
     // domain-model.md §2 Clone: a bot in Trash or purged has no clone template.
     expect(await failure(backend.bots.cloneTemplate(id))).toMatchObject({ code: "bot_deleted" });
     clock.advance(29 * DAY);
-    expect(await backend.bots.purgeDue()).toBe(0);
+    expect(await backend.bots.purgeDue()).toEqual({ purged: 0, failed: [] });
     clock.advance(DAY);
-    expect(await backend.bots.purgeDue()).toBe(1);
+    expect(await backend.bots.purgeDue()).toEqual({ purged: 1, failed: [] });
     const row = await backend.readers.bots.byId(id);
     expect(row).toMatchObject({
       name: "BA",
@@ -888,5 +923,64 @@ describe("purge (D50)", () => {
     expect((await create({ name: "ba" })).slug).toBe("ba-2");
     const last = (await events()).filter(([type]) => type === "bot.purged");
     expect(last).toEqual([["bot.purged", { bot_id: id }]]);
+  });
+
+  // P3 item 30, invariant 7 (the event part): a bot purge writes the new Trash count.
+  it("a bot purge writes trash.changed after bot.purged", async () => {
+    const id = BotId.parse((await create()).id);
+    await backend.bots.trash(id);
+    clock.advance(30 * DAY);
+    const before = (await events()).length;
+    await backend.bots.purgeDue();
+    const purgeEvents = (await events()).slice(before);
+    expect(purgeEvents).toEqual([
+      ["bot.purged", { bot_id: id }],
+      ["trash.changed", { counts: { skill: 0, bot: 0 } }],
+    ]);
+  });
+
+  // P3 item 27: the purge of one bot that failed each time kept every later bot in Trash.
+  it("the purge job purges the bots after a bot whose purge fails", async () => {
+    const ids: BotId[] = [];
+    for (const name of ["A", "B", "C"]) {
+      const id = BotId.parse((await create({ name })).id);
+      await backend.bots.trash(id);
+      ids.push(id);
+      clock.advance(1);
+    }
+    const [a, b, c] = ids;
+    if (a === undefined || b === undefined || c === undefined) throw new Error("bots");
+    clock.advance(30 * DAY);
+    // The bots service whose purge of B throws after the tombstone and `bot.purged`, so the
+    // rollback has a row change and an event to undo.
+    const appendEvent: AppendEvent = async (tx, input) => {
+      const seq = await backend.appendEvent(tx, input);
+      if (input.event.type === "bot.purged" && input.event.data.bot_id === b) {
+        throw new Error("disk full");
+      }
+      return seq;
+    };
+    const failing = createBotsService({
+      uow: backend.uow,
+      readers: backend.readers,
+      appendEvent,
+      clock,
+      ids: testIds,
+      catalog: backend.catalog,
+      avatarFiles: memoryAvatarFiles(),
+    });
+    const before = (await events()).length;
+    const result = await failing.purgeDue();
+    expect((await backend.readers.bots.byId(c))?.purgedAt).not.toBeNull();
+    expect((await backend.readers.bots.byId(a))?.purgedAt).not.toBeNull();
+    expect(await backend.readers.bots.byId(b)).toMatchObject({ purgedAt: null });
+    expect(result.purged).toBe(2);
+    // The failed bot's transaction rolled back: its tombstone and its `bot.purged` are gone.
+    expect((await events()).slice(before)).toEqual([
+      ["bot.purged", { bot_id: a }],
+      ["trash.changed", { counts: { skill: 0, bot: 2 } }],
+      ["bot.purged", { bot_id: c }],
+      ["trash.changed", { counts: { skill: 0, bot: 1 } }],
+    ]);
   });
 });

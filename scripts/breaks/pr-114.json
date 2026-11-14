@@ -1,0 +1,377 @@
+{
+  "claims": [
+    {
+      "id": "P27-1",
+      "claim": "The purge loop purges the items after an item that fails",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/trash/purge-due.test.ts",
+        "name": "purges the items after an item that fails"
+      },
+      "assertion": "expect(purged).toEqual([\"a\", \"c\"]);",
+      "breaks": [
+        {
+          "id": "P27-1-a",
+          "file": "backend/src/core/trash/purge-due.ts",
+          "edits": [
+            {
+              "find": "      result.failed.push({ id, error });",
+              "replace": "      result.failed.push({ id, error });\n      break;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P27-2",
+      "claim": "The purge loop returns each failed item with its id and its error",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/trash/purge-due.test.ts",
+        "name": "returns each failed item with its id and its error"
+      },
+      "assertion": "expect(result.failed).toEqual([{ id: \"b\", error }]);",
+      "breaks": [
+        {
+          "id": "P27-2-a",
+          "file": "backend/src/core/trash/purge-due.ts",
+          "edits": [
+            {
+              "find": "      result.failed.push({ id, error });",
+              "replace": "      result.failed.push({ id, error: String(error) });"
+            }
+          ]
+        },
+        {
+          "id": "P27-2-b",
+          "file": "backend/src/core/trash/purge-due.ts",
+          "edits": [
+            {
+              "find": "      result.failed.push({ id, error });",
+              "replace": "      result.failed.push({ id: undefined as unknown as Id, error });"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P27-3",
+      "claim": "The skills purge job purges the skills after a skill whose purge fails",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/skills/skills.service.test.ts",
+        "name": "the purge job purges the skills after a skill whose purge fails"
+      },
+      "assertion": "expect(await backend.readers.skills.byId(c.id)).toBeNull();",
+      "breaks": [
+        {
+          "id": "P27-3-a",
+          "file": "backend/src/core/trash/purge-due.ts",
+          "edits": [
+            {
+              "find": "      result.failed.push({ id, error });",
+              "replace": "      result.failed.push({ id, error });\n      break;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P27-4",
+      "claim": "The bots purge job purges the bots after a bot whose purge fails",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/bots/bots.service.test.ts",
+        "name": "the purge job purges the bots after a bot whose purge fails"
+      },
+      "assertion": "expect((await backend.readers.bots.byId(c))?.purgedAt).not.toBeNull();",
+      "breaks": [
+        {
+          "id": "P27-4-a",
+          "file": "backend/src/core/trash/purge-due.ts",
+          "edits": [
+            {
+              "find": "      result.failed.push({ id, error });",
+              "replace": "      result.failed.push({ id, error });\n      break;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P27-5",
+      "claim": "The timed job logs each failed purge item with its step, its id and its error (as pino err)",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/app/timed-jobs.test.ts",
+        "name": "logs each failed purge item with its step, its id and its error"
+      },
+      "assertion": "expect(failed).toMatchObject([{ step: \"skills\", id: SKILL, err: { message: \"disk full\" } }]);",
+      "breaks": [
+        {
+          "id": "P27-5-step",
+          "file": "backend/src/app/timed-jobs.ts",
+          "edits": [
+            {
+              "find": "{ err: error, step: name, id }",
+              "replace": "{ err: error, step: \"purge\", id }"
+            }
+          ]
+        },
+        {
+          "id": "P27-5-id",
+          "file": "backend/src/app/timed-jobs.ts",
+          "edits": [
+            {
+              "find": "{ err: error, step: name, id }",
+              "replace": "{ err: error, step: name, id: \"\" }"
+            }
+          ]
+        },
+        {
+          "id": "P27-5-err",
+          "file": "backend/src/app/timed-jobs.ts",
+          "edits": [
+            {
+              "find": "{ err: error, step: name, id }",
+              "replace": "{ err: String(error), step: name, id }"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P27-6",
+      "claim": "The timed job counts the purged items of a step that had a failed item",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/app/timed-jobs.test.ts",
+        "name": "counts the purged items of a step that had a failed item"
+      },
+      "assertion": "expect(lines.some((line) => line.includes('\"skills\":2'))).toBe(true);",
+      "breaks": [
+        {
+          "id": "P27-6-a",
+          "file": "backend/src/app/timed-jobs.ts",
+          "edits": [
+            {
+              "find": "          return result.purged;",
+              "replace": "          return result.failed.length === 0 ? result.purged : 0;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P28-1",
+      "claim": "A stored list of bot ids in trashed_bot_ids reads back as that list",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/adapters/db/skills-repository.test.ts",
+        "name": "reads back a list of bot ids"
+      },
+      "assertion": "expect(skill?.trashedBotIds).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "P28-1-a",
+          "file": "backend/src/adapters/db/repositories.ts",
+          "edits": [
+            {
+              "find": "    trashedBotIds: TrashedBotIds.parse(row.trashedBotIds),",
+              "replace": "    trashedBotIds: TrashedBotIds.parse(row.trashedBotIds)?.slice(1) ?? null,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P28-3",
+      "claim": "A stored NULL in trashed_bot_ids reads back as null",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/adapters/db/skills-repository.test.ts",
+        "name": "reads back no value"
+      },
+      "assertion": "expect(skill?.trashedBotIds).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "P28-3-a",
+          "file": "backend/src/adapters/db/repositories.ts",
+          "edits": [
+            {
+              "find": "    trashedBotIds: TrashedBotIds.parse(row.trashedBotIds),",
+              "replace": "    trashedBotIds: TrashedBotIds.parse(row.trashedBotIds) ?? [],"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P28-4",
+      "claim": "A stored empty list in trashed_bot_ids reads back as an empty list",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/adapters/db/skills-repository.test.ts",
+        "name": "reads back an empty list"
+      },
+      "assertion": "expect(skill?.trashedBotIds).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "P28-4-a",
+          "file": "backend/src/adapters/db/repositories.ts",
+          "edits": [
+            {
+              "find": "    trashedBotIds: TrashedBotIds.parse(row.trashedBotIds),",
+              "replace": "    trashedBotIds: TrashedBotIds.parse(row.trashedBotIds)?.length === 0\n      ? null\n      : TrashedBotIds.parse(row.trashedBotIds),"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P28-2",
+      "claim": "A read refuses a trashed_bot_ids string that is not a bot id",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/adapters/db/skills-repository.test.ts",
+        "name": "refuses a string that is not a bot id instead of passing it on as bot ids"
+      },
+      "assertion": "await expect(read()).rejects.toThrow(/expected|Expected/);",
+      "breaks": [
+        {
+          "id": "P28-2-a",
+          "file": "backend/src/adapters/db/repositories.ts",
+          "edits": [
+            {
+              "find": "const TrashedBotIds = z.array(BotId).nullable();",
+              "replace": "const TrashedBotIds = z.array(z.custom<BotId>((value) => typeof value === \"string\")).nullable();"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P30-1",
+      "claim": "POST /skills/{id}/bots writes bot.updated for each bot that it moves (invariant 7, the event part; the same transaction is not claimed)",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/bots/bots.service.test.ts",
+        "name": "POST /skills/{id}/bots writes bot.updated for each bot that it moves"
+      },
+      "assertion": "expect((await events()).slice(before)).toMatchObject([",
+      "breaks": [
+        {
+          "id": "P30-1-a",
+          "file": "backend/src/core/bots/bots.service.ts",
+          "edits": [
+            {
+              "find": "        result.push(await emitBot(tx, \"bot.updated\", bot.id));",
+              "replace": "        result.push(await emitBot(tx, \"bot.restored\", bot.id));"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P30-2",
+      "claim": "A bot purge writes trash.changed after bot.purged (invariant 7, the event part; the same transaction is not claimed)",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/bots/bots.service.test.ts",
+        "name": "a bot purge writes trash.changed after bot.purged"
+      },
+      "assertion": "expect(purgeEvents).toEqual([",
+      "breaks": [
+        {
+          "id": "P30-2-a",
+          "file": "backend/src/core/bots/bots.service.ts",
+          "edits": [
+            {
+              "find": "      conversationId: null,\n    });\n    await appendTrashChanged(tx, deps.appendEvent);\n  }",
+              "replace": "      conversationId: null,\n    });\n  }"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P37-1",
+      "claim": "A new assign with v2 of a skill that has v4 pins v2 (owner, 2026-11-13, item 37)",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/bots.test.ts",
+        "name": "PUT pins an older version on a new assign"
+      },
+      "assertion": "expect(await response.json()).toMatchObject({",
+      "breaks": [
+        {
+          "id": "P37-1-a",
+          "file": "backend/src/core/bots/bots.service.ts",
+          "edits": [
+            {
+              "find": "        skillVersionId: version.id,\n        alwaysLoad: body.always_load,",
+              "replace": "        skillVersionId:\n          current === undefined\n            ? ((await tx.skills.latestVersion(skillId))?.id ?? version.id)\n            : version.id,\n        alwaysLoad: body.always_load,"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "backend/src/app/timed-jobs.test.ts",
+      "name": "runs the bots purge and the avatar cleanup when the skills purge fails",
+      "reason": "Only the fake's result changed to the new { purged, failed } shape; the assertions are the same"
+    },
+    {
+      "file": "backend/src/core/bots/avatars.service.test.ts",
+      "name": "an upload of the same image queued before the cleanup keeps the file",
+      "reason": "The file time is read through list() instead of the removed modifiedAt (item 31); the same assertion"
+    },
+    {
+      "file": "backend/src/core/bots/avatars.service.test.ts",
+      "name": "a cleanup queued before an upload of the same image removes it; the upload publishes it again",
+      "reason": "The file time is read through list() instead of the removed modifiedAt (item 31); the same assertion"
+    },
+    {
+      "file": "backend/src/core/bots/avatars.service.test.ts",
+      "name": "an upload of the same image after the cleanup removed it publishes it again",
+      "reason": "The file time is read through list() instead of the removed modifiedAt (item 31); the same assertion"
+    },
+    {
+      "file": "backend/src/core/bots/avatars.service.test.ts",
+      "name": "a file that a tombstone names stays",
+      "reason": "Only the result of purgeDue changed to { purged, failed }; the assertion is the same"
+    },
+    {
+      "file": "backend/src/core/bots/avatars.service.test.ts",
+      "name": "a failed touch rolls the save back, so the old row still names the file",
+      "reason": "The file time is read through list() instead of the removed modifiedAt (item 31); the same assertion"
+    },
+    {
+      "file": "backend/src/core/bots/bots.service.test.ts",
+      "name": "turns a bot in Trash into a tombstone after trash_days, freeing the name, not the slug",
+      "reason": "Only the result of purgeDue changed to { purged, failed }; the assertion is the same"
+    },
+    {
+      "file": "backend/src/core/skills/skills.service.test.ts",
+      "name": "the purge job deletes only skills in Trash for trash_days or longer",
+      "reason": "Only the result of purgeDue changed to { purged, failed }; the assertion is the same"
+    },
+    {
+      "file": "backend/src/core/skills/skills.service.test.ts",
+      "name": "the purge job rechecks trash_days in each transaction",
+      "reason": "Only the result of purgeDue changed to { purged, failed }; the assertion is the same"
+    },
+    {
+      "file": "backend/src/core/skills/skills.service.test.ts",
+      "name": "the purge job tries a skill whose purge failed again on the next run",
+      "reason": "Written first; its red run is in the PR. The old code also tried the item again on the next run, so no break removes only this step: the test guards that a failed item is not left out for good"
+    },
+    {
+      "file": "backend/test/contracts/avatar-files.test.ts",
+      "name": "when the disk refuses every step, the file left is complete and only the cleanup's",
+      "reason": "The file time is read through list() instead of the removed modifiedAt (item 31); the new assertion is stricter (it checks the whole list)"
+    }
+  ]
+}

@@ -617,7 +617,7 @@ is its `go.mod` line.
 | --- | --- |
 | Author saves an edit | New `skill_versions` row `N+1`, which is now the latest. **No pin moves.** |
 | Save dialog "Also upgrade these bots" | Opens **after** the save has committed `N+1`. Lists the author's bots pinned to older versions, all ticked. **Upgrade** is a separate request (`POST /skills/{id}/bots`) that moves the ticked pins to `N+1` in one transaction; it never creates a version. Skip moves nothing. (M2 spec gap pass, owner 2026-11-01: `POST /skills/{id}/versions` has no `upgrade_bot_ids`.) |
-| Assign a skill to a bot | Pins the latest version (the highest `version`) at that moment. |
+| Assign a skill to a bot | The pages send the latest version (the highest version) that they read. The API pins the version that the request names; it can be each version of that skill. |
 | Upgrade / downgrade on bot detail | Moves that one pin to the chosen version. |
 | Restore old version vK | Creates `N+1` with vK's content (history is append-only). |
 | Clone a bot | Copies pins and `always_load` exactly. |
@@ -648,7 +648,8 @@ Why integers and not semver: compatibility of prose cannot be checked by a machi
   that keep it keep working and show a "deprecated" badge. Reversible by the author.
 - **Delete** is only for a deprecated skill, also while bots use it. In one transaction it
   writes the bot ids of all its pins to `trashed_bot_ids`, deletes those `bot_skills` rows and
-  sets `trashed_at`. The skill and all its versions are one Trash item.
+  sets `trashed_at`. The skill and all its versions are one Trash item. A read of the skill
+  refuses a `trashed_bot_ids` that is not `NULL` or a list of bot ids (P3 item 28).
 - **In Trash:** the skill is in no list or picker, and its slug stays taken, so a restore
   always works. **Restore** clears `trashed_at`; the skill stays deprecated. The app then
   suggests to assign it again to the bots in `trashed_bot_ids` that are not deleted.

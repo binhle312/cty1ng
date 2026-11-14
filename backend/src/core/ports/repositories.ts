@@ -60,7 +60,7 @@ export interface SkillRecord {
   updatedAt: Date;
   deprecatedAt: Date | null;
   trashedAt: Date | null;
-  trashedBotIds: string[] | null;
+  trashedBotIds: BotId[] | null;
 }
 
 // A `skill_versions` row. Never updated (invariant 2).

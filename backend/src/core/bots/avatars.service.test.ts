@@ -38,6 +38,8 @@ const image = (text: string) => new TextEncoder().encode(text);
 const eventTypes = async () =>
   (await backend.readers.events.after(0, 1000)).map((event) => event.type);
 const published = async () => (await files.list()).map((file) => file.name);
+const timeOf = async (name: string) =>
+  (await files.list()).find((file) => file.name === name)?.modifiedAt ?? null;
 
 // Holds the write lock until the returned function runs, so the steps queued behind it run in
 // the order they were queued once it is released.
@@ -154,7 +156,7 @@ describe.each(STORES)("on the $name store", ({ make }) => {
       expect(await cleaning).toBe(0);
       expect(await published()).toEqual([id]);
       expect(await files.read(id)).toEqual(image("one"));
-      expect(await files.modifiedAt(id)).toEqual(clock.now());
+      expect(await timeOf(id)).toEqual(clock.now());
       expect(await files.listStaged()).toEqual([]);
     });
 
@@ -174,7 +176,7 @@ describe.each(STORES)("on the $name store", ({ make }) => {
       expect((await uploading).avatar_id).toBe(id);
       expect(await published()).toEqual([id]);
       expect(await files.read(id)).toEqual(image("one"));
-      expect(await files.modifiedAt(id)).toEqual(clock.now());
+      expect(await timeOf(id)).toEqual(clock.now());
       expect(await files.listStaged()).toEqual([]);
     });
 
@@ -184,7 +186,7 @@ describe.each(STORES)("on the $name store", ({ make }) => {
       expect(await avatars.cleanup()).toBe(1);
       expect((await avatars.upload(image("one"))).avatar_id).toBe(id);
       expect(await published()).toEqual([id]);
-      expect(await files.modifiedAt(id)).toEqual(clock.now());
+      expect(await timeOf(id)).toEqual(clock.now());
     });
 
     it("a file that a tombstone names stays", async () => {
@@ -192,7 +194,7 @@ describe.each(STORES)("on the $name store", ({ make }) => {
       const bot = await botWith(id);
       await bots.trash(BotId.parse(bot.id));
       clock.advance(31 * 24 * HOUR);
-      expect(await bots.purgeDue()).toBe(1);
+      expect(await bots.purgeDue()).toEqual({ purged: 1, failed: [] });
       expect(await avatars.cleanup()).toBe(0);
       expect(await published()).toEqual([id]);
     });
@@ -282,7 +284,7 @@ describe.each(STORES)("on the $name store", ({ make }) => {
       });
       expect(await eventTypes()).toEqual(before);
       // The old file keeps its upload time: the failed save started no grace period.
-      expect(await files.modifiedAt(first)).toEqual(new Date(clock.now().getTime() - HOUR));
+      expect(await timeOf(first)).toEqual(new Date(clock.now().getTime() - HOUR));
     });
 
     it("a save that names the file, queued before the cleanup, keeps it", async () => {
