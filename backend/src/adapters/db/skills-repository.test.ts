@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { BotId, SkillId } from "@cty1ng/shared/ids";
+import { SkillId } from "@cty1ng/shared/ids";
 import type Database from "better-sqlite3";
 import { typeid } from "typeid-js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -39,12 +39,13 @@ function insertTrashedSkill(trashedBotIds: string | null): SkillId {
 
 describe("trashed_bot_ids column (P3 item 28)", () => {
   it.each([
-    { kind: "no value", stored: null, expected: null },
-    { kind: "an empty list", stored: "[]", expected: [] },
-    { kind: "a list of bot ids", stored: JSON.stringify([BOT]), expected: [BotId.parse(BOT)] },
-  ])("reads back $kind", async ({ stored, expected }) => {
+    ["no value", null],
+    ["an empty list", "[]"],
+    ["a list of bot ids", JSON.stringify([BOT])],
+  ])("reads back %s", async (_, stored) => {
     const id = insertTrashedSkill(stored);
     const skill = await sqliteReaders(db).skills.byId(id);
+    const expected: unknown = stored === null ? null : JSON.parse(stored);
     expect(skill?.trashedBotIds).toEqual(expected);
   });
 

@@ -932,7 +932,8 @@ describe("purge (D50)", () => {
     clock.advance(30 * DAY);
     const before = (await events()).length;
     await backend.bots.purgeDue();
-    expect((await events()).slice(before)).toEqual([
+    const purgeEvents = (await events()).slice(before);
+    expect(purgeEvents).toEqual([
       ["bot.purged", { bot_id: id }],
       ["trash.changed", { counts: { skill: 0, bot: 0 } }],
     ]);
