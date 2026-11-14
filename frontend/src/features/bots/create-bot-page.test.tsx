@@ -9,6 +9,7 @@ import {
 } from "../../../test/fake-api.ts";
 import {
   BOT_SETTINGS,
+  type Bot,
   FAKE_SCRIPTED,
   makeBot,
   makeModel,
@@ -310,14 +311,12 @@ const TEMPLATE = {
 
 // GET /skills hides deprecated skills unless the page asks for them, as the server does. The
 // test changes `skills.list` to stand for a change made in another tab.
+// `source.post` answers Create; by default it creates the copy.
 function skillsApi(
   skills = { list: [OLD, NEW] },
-  source = { bot: SOURCE },
-  post: () => { status: number; body: unknown } = () => ({
-    status: 201,
-    body: makeBot(10, "Source (copy)"),
-  }),
+  source: { bot: Bot; post?: () => { status: number; body: unknown } } = { bot: SOURCE },
 ) {
+  const post = source.post ?? (() => ({ status: 201, body: makeBot(10, "Source (copy)") }));
   return fakeApi({
     "GET /api/settings": () => ({ body: BOT_SETTINGS }),
     "GET /api/models": () => ({ body: [makeModel(), FAKE_SCRIPTED] }),
@@ -377,14 +376,14 @@ describe("skills on the Create bot page", () => {
   };
 
   it("shows a server error on the source bot next to Create", async () => {
-    fake = skillsApi(undefined, undefined, () => SOURCE_GONE);
+    fake = skillsApi(undefined, { bot: SOURCE, post: () => SOURCE_GONE });
     await renderApp(`/bots/new?from=${SOURCE.id}`);
     click(await screen.findByRole("button", { name: "Create" }, { timeout: 5000 }));
     expect(await screen.findByText("The bot to copy does not exist.")).toBeTruthy();
   });
 
   it("keeps Create on after a server error on the source bot", async () => {
-    fake = skillsApi(undefined, undefined, () => SOURCE_GONE);
+    fake = skillsApi(undefined, { bot: SOURCE, post: () => SOURCE_GONE });
     await renderApp(`/bots/new?from=${SOURCE.id}`);
     click(await screen.findByRole("button", { name: "Create" }, { timeout: 5000 }));
     await waitFor(() => {
@@ -400,7 +399,7 @@ describe("skills on the Create bot page", () => {
   });
 
   it("marks no step after a server error on the source bot", async () => {
-    fake = skillsApi(undefined, undefined, () => SOURCE_GONE);
+    fake = skillsApi(undefined, { bot: SOURCE, post: () => SOURCE_GONE });
     await renderApp(`/bots/new?from=${SOURCE.id}`);
     click(await screen.findByRole("button", { name: "Create" }, { timeout: 5000 }));
     await waitFor(() => {
