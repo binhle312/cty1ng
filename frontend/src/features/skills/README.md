@@ -11,6 +11,7 @@ Export card. Routes: `src/routes/skills.tsx`.
 | `skill-list.tsx` | The list column: Create, search, Show deprecated, Import, Export, rows |
 | `skills-index-page.tsx` | `/skills`: opens the top skill, or the empty state |
 | `skill-page.tsx` | `/skills/{slug}`: page top, ⋯ menu, deprecated banner, tabs, save |
+| `skill-tabs.ts` | The skill page's tab list, for the route's `?tab=` and the page |
 | `skill-fields.tsx` | The editor fields with counters, errors and the Write/Preview body |
 | `skill-form.ts` | The editor's rules without React: changes, save kind, errors, leave text |
 | `save-bar.tsx` | The save bars: edit, read-only, the "changes not saved" line, and the button with a "why off" tooltip |
