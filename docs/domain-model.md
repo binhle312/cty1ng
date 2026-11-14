@@ -617,7 +617,7 @@ is its `go.mod` line.
 | --- | --- |
 | Author saves an edit | New `skill_versions` row `N+1`, which is now the latest. **No pin moves.** |
 | Save dialog "Also upgrade these bots" | Opens **after** the save has committed `N+1`. Lists the author's bots pinned to older versions, all ticked. **Upgrade** is a separate request (`POST /skills/{id}/bots`) that moves the ticked pins to `N+1` in one transaction; it never creates a version. Skip moves nothing. (M2 spec gap pass, owner 2026-11-01: `POST /skills/{id}/versions` has no `upgrade_bot_ids`.) |
-| Assign a skill to a bot | Pins the latest version (the highest `version`) at that moment. |
+| Assign a skill to a bot | The pages send the latest version (the highest version) that they read. The API pins the version that the request names; it can be each version of that skill. |
 | Upgrade / downgrade on bot detail | Moves that one pin to the chosen version. |
 | Restore old version vK | Creates `N+1` with vK's content (history is append-only). |
 | Clone a bot | Copies pins and `always_load` exactly. |
