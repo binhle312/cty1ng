@@ -262,7 +262,7 @@
           "edits": [
             {
               "find": "  if (bots.isError) return {",
-              "replace": "  if (bots.isError && bots.errorUpdateCount < 2) return {"
+              "replace": "  if (bots.isError && bots.errorUpdateCount < 3) return {"
             }
           ]
         }
