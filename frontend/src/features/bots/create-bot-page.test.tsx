@@ -310,7 +310,14 @@ const TEMPLATE = {
 
 // GET /skills hides deprecated skills unless the page asks for them, as the server does. The
 // test changes `skills.list` to stand for a change made in another tab.
-function skillsApi(skills = { list: [OLD, NEW] }, source = { bot: SOURCE }) {
+function skillsApi(
+  skills = { list: [OLD, NEW] },
+  source = { bot: SOURCE },
+  post: () => { status: number; body: unknown } = () => ({
+    status: 201,
+    body: makeBot(10, "Source (copy)"),
+  }),
+) {
   return fakeApi({
     "GET /api/settings": () => ({ body: BOT_SETTINGS }),
     "GET /api/models": () => ({ body: [makeModel(), FAKE_SCRIPTED] }),
@@ -321,7 +328,7 @@ function skillsApi(skills = { list: [OLD, NEW] }, source = { bot: SOURCE }) {
     },
     "GET /api/bots": () => ({ body: [source.bot] }),
     [`GET /api/bots/${SOURCE.id}/clone-template`]: () => ({ body: TEMPLATE }),
-    "POST /api/bots": () => ({ status: 201, body: makeBot(10, "Source (copy)") }),
+    "POST /api/bots": post,
   });
 }
 
@@ -354,6 +361,55 @@ describe("skills on the Create bot page", () => {
     });
     // `copied_pins` is display data: Create leaves it out (api.md, clone-template).
     expect(fake.sent("POST", "/api/bots")[0]?.body).not.toHaveProperty("copied_pins");
+  });
+
+  // The server refuses a Clone whose source bot was purged meanwhile (bots.service.ts). No step
+  // has that field, so the text shows as an error with no field (plan Q2 A).
+  const SOURCE_GONE = {
+    status: 422,
+    body: {
+      error: {
+        code: "validation_error",
+        message: "The bot to copy does not exist.",
+        field: "cloned_from_bot_id",
+      },
+    },
+  };
+
+  it("shows a server error on the source bot next to Create", async () => {
+    fake = skillsApi(undefined, undefined, () => SOURCE_GONE);
+    await renderApp(`/bots/new?from=${SOURCE.id}`);
+    click(await screen.findByRole("button", { name: "Create" }, { timeout: 5000 }));
+    expect(await screen.findByText("The bot to copy does not exist.")).toBeTruthy();
+  });
+
+  it("keeps Create on after a server error on the source bot", async () => {
+    fake = skillsApi(undefined, undefined, () => SOURCE_GONE);
+    await renderApp(`/bots/new?from=${SOURCE.id}`);
+    click(await screen.findByRole("button", { name: "Create" }, { timeout: 5000 }));
+    await waitFor(() => {
+      expect(fake?.sent("POST", "/api/bots")).toHaveLength(1);
+    });
+    // The answer came: the button says Create again, not Creating.
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Create" }).textContent).toBe("Create");
+    });
+    expect(screen.getByRole("button", { name: "Create" }).getAttribute("aria-disabled")).toBe(
+      "false",
+    );
+  });
+
+  it("marks no step after a server error on the source bot", async () => {
+    fake = skillsApi(undefined, undefined, () => SOURCE_GONE);
+    await renderApp(`/bots/new?from=${SOURCE.id}`);
+    click(await screen.findByRole("button", { name: "Create" }, { timeout: 5000 }));
+    await waitFor(() => {
+      expect(fake?.sent("POST", "/api/bots")).toHaveLength(1);
+    });
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Create" }).textContent).toBe("Create");
+    });
+    expect(screen.queryByRole("button", { name: /has an error/ })).toBeNull();
   });
 
   it("gives a copied pin back its version when it is unticked and ticked again", async () => {

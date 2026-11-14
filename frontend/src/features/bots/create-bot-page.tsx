@@ -411,7 +411,9 @@ function CreateBotView({
         }
         // E3: an input error unlocks the form; the next Create is a new request.
         setSend({ kind: "idle" });
-        if (api.field === undefined) {
+        // The source of a Clone has no field on any step (it is purged meanwhile): the text shows
+        // next to Create, as an error with no field, and blocks nothing (plan Q2 A).
+        if (api.field === undefined || api.field === "cloned_from_bot_id") {
           setGeneralError(api.message);
           return;
         }
