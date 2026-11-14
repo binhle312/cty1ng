@@ -1,0 +1,80 @@
+{
+  "claims": [
+    {
+      "id": "P1",
+      "claim": "On a port that another program uses, the backend closes the database before it exits",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/app/main.test.ts",
+        "name": "closes the database before it exits"
+      },
+      "assertion": "expect(readdirSync(dir.path).filter((name) => name.startsWith(\"app.db\"))).toEqual([\"app.db\"]);",
+      "breaks": [
+        {
+          "id": "P1-a",
+          "file": "backend/src/app/main.ts",
+          "edits": [
+            {
+              "find": "    stopJobs();\n    app.close();\n    process.exit(1);",
+              "replace": "    process.exit(1);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C1",
+      "claim": "A failure of a CLI command of another kind keeps its stack trace",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/app/cli.test.ts",
+        "name": "keeps its stack trace"
+      },
+      "assertion": "expect(run.stderr).toContain(\"\\n    at \");",
+      "breaks": [
+        {
+          "id": "C1-a",
+          "file": "backend/src/app/cli.ts",
+          "edits": [
+            {
+              "find": "  if (error instanceof Error && \"syscall\" in error && \"code\" in error) return error.message;",
+              "replace": "  if (error instanceof Error) return error.message;"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "backend/src/app/cli.test.ts",
+      "name": "$name: prints one line and no stack trace",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/app/main.test.ts",
+      "name": "prints one line on stderr and no stack trace",
+      "reason": "The claim of its name was written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/app/cli.test.ts",
+      "name": "$name: prints one line, with the line break escaped",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/app/main.test.ts",
+      "name": "prints one line, with the line break escaped",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/app/one-line.test.ts",
+      "name": "writes $name as its escaped form",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    },
+    {
+      "file": "backend/src/app/one-line.test.ts",
+      "name": "keeps a text with no control character as it is",
+      "reason": "Written before its code. The PR records its red run on the code before the change"
+    }
+  ]
+}

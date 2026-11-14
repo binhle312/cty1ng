@@ -141,17 +141,20 @@ Merge a PR only when the owner asks you to merge that PR. The merge needs no lin
   register, one row per review round, and each issue with its state and verification evidence.
 - A change the owner can see updates `seed/skills/using-the-app/SKILL.md`, the Guide bot's
   knowledge of the app, in the same PR (M2 plan, decision 14).
+- A PR changes the Guide when a Guide sentence becomes false. It also changes the Guide when the
+  owner gets a new page, command, action or choice. In each other case, the description says
+  "Guide: not changed" with the reason (owner, 2026-11-13).
 - The PR description has: what changed, why, how it was verified, and `Needs human review`
   items (or "none").
 - Name a principle skill in a PR, a review record or `docs/delivery-quality.md` only if you read
   its `SKILL.md` in that session.
-- Each review fix answers "Same cause as an earlier fix?" in the PR's `Review fixes` table. An
+- Each review fix answers "Same cause as an earlier fix?" in the PR's `Defect and review fixes` table. An
   earlier fix can be in this PR or in an earlier one: search the prevention actions of
   `docs/delivery-quality.md` §7 and the lessons, and name the search in the answer. If the
-  answer is yes, stop patching. Propose a redesign, get the owner's decision, and record it.
-  Build the redesign in its own PR, with its own plan and test strategy, not in the PR under
-  review. That PR waits for it, or makes its claim smaller and records the gap in
-  `docs/delivery-quality.md` (owner, 2026-11-09; `docs/lessons-learned/fixes-that-make-new-findings.md`).
+  answer is yes, stop the patches. Propose a redesign, get the owner's decision, and record it.
+  Build the redesign in the PR that found the issue. It has its own plan and test strategy, and
+  the owner approves them. Do not open another PR for it (owner, 2026-11-13). The commits of the
+  redesign get their own review rounds as new work ([merge bar](docs/workflows/merge-bar.md)).
 - One cause has a fixed answer: a review shows that a claim is bigger than its proof. Correct
   the places that the review found, and make the claim smaller: say what you did and what the
   proof shows, then `Not claimed: …`. Put it under `Needs human review`; do not stop to ask. You

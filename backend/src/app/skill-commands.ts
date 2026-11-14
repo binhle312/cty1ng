@@ -88,7 +88,7 @@ export async function restoreSkill(backend: Backend, slug: string, out: Out): Pr
   return 0;
 }
 
-// A refused write prints its message; anything else is a bug and goes up.
+// A refused write prints its message. Another error goes up to cli.ts, because it can be a defect.
 export async function reportDomainErrors(work: () => Promise<number>, out: Out): Promise<number> {
   try {
     return await work();

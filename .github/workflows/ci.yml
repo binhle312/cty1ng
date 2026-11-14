@@ -1,4 +1,4 @@
-# CI gates (docs/testing.md §4). Every gate must pass before a merge.
+# CI gates. Every required gate must pass; `audit` is a signal (docs/testing.md §4).
 name: CI
 
 on:
