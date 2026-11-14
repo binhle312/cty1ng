@@ -1,0 +1,209 @@
+{
+  "claims": [
+    {
+      "id": "S1-namespace-raw",
+      "claim": "Lint refuses sql.raw() called through a namespace import (orm.sql.raw)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/lint-rules.test.ts",
+        "name": "rejects sql.raw() on a namespace import"
+      },
+      "assertion": "expect(namespaceRaw.some(isSqlRule)).toBe(true);",
+      "breaks": [
+        {
+          "id": "S1-member-form-off",
+          "file": "eslint.config.js",
+          "edits": [
+            {
+              "find": "[callee.object.property.name='sql']",
+              "replace": "[callee.object.property.name='sqlx']"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S2-renamed-import",
+      "claim": "Lint refuses an import of sql under another name, so sql.raw() cannot hide behind it",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/lint-rules.test.ts",
+        "name": "rejects an import of sql under another name"
+      },
+      "assertion": "expect(renamedSql.some(isSqlRule)).toBe(true);",
+      "breaks": [
+        {
+          "id": "S2-import-rule-off",
+          "file": "eslint.config.js",
+          "edits": [
+            {
+              "find": "ImportSpecifier[imported.name='sql']",
+              "replace": "ImportSpecifier[imported.name='sqlx']"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S3-variable-argument",
+      "claim": "Lint refuses db.run with a string held in a variable",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/lint-rules.test.ts",
+        "name": "rejects db.run with a string in a variable"
+      },
+      "assertion": "expect(variableArgument.some(isSqlRule)).toBe(true);",
+      "breaks": [
+        {
+          "id": "S3-old-argument-types",
+          "file": "eslint.config.js",
+          "edits": [
+            {
+              "find": "[arguments.length>0]:not([arguments.0.tag.name='sql'])",
+              "replace": "[arguments.0.type=/^(Literal|TemplateLiteral|BinaryExpression)$/]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S4-call-argument",
+      "claim": "Lint refuses tx.all with the result of a call",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/lint-rules.test.ts",
+        "name": "rejects tx.all with the result of a call"
+      },
+      "assertion": "expect(callArgument.some(isSqlRule)).toBe(true);",
+      "breaks": [
+        {
+          "id": "S4-old-argument-types",
+          "file": "eslint.config.js",
+          "edits": [
+            {
+              "find": "[arguments.length>0]:not([arguments.0.tag.name='sql'])",
+              "replace": "[arguments.0.type=/^(Literal|TemplateLiteral|BinaryExpression)$/]"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "scripts/db-check.test.ts",
+      "name": "passes on the committed migrations",
+      "reason": "The green case of the new test file: it passes before and after the change; the two hand-edit tests have red runs in the PR description."
+    },
+    {
+      "file": "scripts/db-check.test.ts",
+      "name": "fails when a migration drops a NOT NULL by hand",
+      "reason": "Test first: its red run on the code before the change is in the PR description (testing.md §5)."
+    },
+    {
+      "file": "scripts/db-check.test.ts",
+      "name": "fails when a migration renames an index by hand",
+      "reason": "Test first: its red run on the code before the change is in the PR description (testing.md §5)."
+    },
+    {
+      "file": "scripts/lib/db-schema.test.ts",
+      "name": "cuts only at the commas outside brackets and quotes",
+      "reason": "A unit test of a new module (scripts/lib/db-schema.ts), written with it; the module had no older version to fail on. The gate's red run is the db-check.test.ts hand-edit run in the PR description."
+    },
+    {
+      "file": "scripts/lib/db-schema.test.ts",
+      "name": "in the same text",
+      "reason": "A unit test of a new module (scripts/lib/db-schema.ts), written with it; the module had no older version to fail on. The gate's red run is the db-check.test.ts hand-edit run in the PR description."
+    },
+    {
+      "file": "scripts/lib/db-schema.test.ts",
+      "name": "with a column that ALTER TABLE added at the end",
+      "reason": "A unit test of a new module (scripts/lib/db-schema.ts), written with it; the module had no older version to fail on. The gate's red run is the db-check.test.ts hand-edit run in the PR description."
+    },
+    {
+      "file": "scripts/lib/db-schema.test.ts",
+      "name": "after a table was made again under another name and renamed",
+      "reason": "A unit test of a new module (scripts/lib/db-schema.ts), written with it; the module had no older version to fail on. The gate's red run is the db-check.test.ts hand-edit run in the PR description."
+    },
+    {
+      "file": "scripts/lib/db-schema.test.ts",
+      "name": "with other spaces and line breaks",
+      "reason": "A unit test of a new module (scripts/lib/db-schema.ts), written with it; the module had no older version to fail on. The gate's red run is the db-check.test.ts hand-edit run in the PR description."
+    },
+    {
+      "file": "scripts/lib/db-schema.test.ts",
+      "name": "of a NOT NULL",
+      "reason": "A unit test of a new module (scripts/lib/db-schema.ts), written with it; the module had no older version to fail on. The gate's red run is the db-check.test.ts hand-edit run in the PR description."
+    },
+    {
+      "file": "scripts/lib/db-schema.test.ts",
+      "name": "of a CHECK",
+      "reason": "A unit test of a new module (scripts/lib/db-schema.ts), written with it; the module had no older version to fail on. The gate's red run is the db-check.test.ts hand-edit run in the PR description."
+    },
+    {
+      "file": "scripts/lib/db-schema.test.ts",
+      "name": "of the columns of an index",
+      "reason": "A unit test of a new module (scripts/lib/db-schema.ts), written with it; the module had no older version to fail on. The gate's red run is the db-check.test.ts hand-edit run in the PR description."
+    },
+    {
+      "file": "scripts/lib/db-schema.test.ts",
+      "name": "of the WHERE of a partial index",
+      "reason": "A unit test of a new module (scripts/lib/db-schema.ts), written with it; the module had no older version to fail on. The gate's red run is the db-check.test.ts hand-edit run in the PR description."
+    },
+    {
+      "file": "scripts/lib/db-schema.test.ts",
+      "name": "that leaves out an object",
+      "reason": "A unit test of a new module (scripts/lib/db-schema.ts), written with it; the module had no older version to fail on. The gate's red run is the db-check.test.ts hand-edit run in the PR description."
+    },
+    {
+      "file": "scripts/lib/db-schema.test.ts",
+      "name": "that adds an object",
+      "reason": "A unit test of a new module (scripts/lib/db-schema.ts), written with it; the module had no older version to fail on. The gate's red run is the db-check.test.ts hand-edit run in the PR description."
+    },
+    {
+      "file": "scripts/lint-rules.test.ts",
+      "name": "allows %s",
+      "reason": "An allow case: it passed before and after the change, so no break can make a red run; the reject tests carry the claims."
+    },
+    {
+      "file": "scripts/lint-rules.test.ts",
+      "name": "rejects $label",
+      "reason": "Test first: its red run on the code before the change is in the PR description (testing.md §5). Not a security rule (frontend-conventions.md §1)."
+    },
+    {
+      "file": "scripts/lint-rules.test.ts",
+      "name": "allows a read of the bot list",
+      "reason": "An allow case: it passed before and after the change, so no break can make a red run; the reject tests carry the claims."
+    },
+    {
+      "file": "scripts/lint-rules.test.ts",
+      "name": "keeps the bot list write rule on every app file but the store",
+      "reason": "Test first: its red run on the code before the change is in the PR description (testing.md §5)."
+    },
+    {
+      "file": "scripts/e2e-serve.test.ts",
+      "name": "marks its own pid once both servers listen",
+      "reason": "Behaviour that the script had before this PR (a new test of the script itself, item 76): it passed before and after the change."
+    },
+    {
+      "file": "scripts/e2e-serve.test.ts",
+      "name": "on SIGTERM, stops both servers and frees the ports",
+      "reason": "Behaviour that the script had before this PR (a new test of the script itself, item 76): it passed before and after the change."
+    },
+    {
+      "file": "scripts/e2e-serve.test.ts",
+      "name": "on SIGHUP, stops both servers",
+      "reason": "Test first: its red run on the code before the change is in the PR description (testing.md §5)."
+    },
+    {
+      "file": "scripts/e2e-serve.test.ts",
+      "name": "when its output is closed, stops both servers",
+      "reason": "Test first: its red run on the code before the change is in the PR description (testing.md §5)."
+    },
+    {
+      "file": "scripts/e2e-serve.test.ts",
+      "name": "does not start a second time for the same marker",
+      "reason": "Behaviour that the script had before this PR (a new test of the script itself, item 76): it passed before and after the change."
+    }
+  ]
+}
