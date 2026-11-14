@@ -15,7 +15,7 @@ export default defineConfig(({ command, mode }) => {
   const dev = command === "serve" ? devSecurity() : undefined;
   return {
     plugins: [react(), tailwindcss()],
-    // Vite puts the nonce on its inline scripts and styles (dev server and `vite preview`).
+    // Vite puts the nonce on its inline scripts and styles (dev server).
     ...(dev === undefined ? {} : { html: { cspNonce: dev.nonce } }),
     // Never 0.0.0.0 (AGENTS.md §8).
     server: {
