@@ -465,7 +465,7 @@ invalid), plus `config/models.yaml` and `config/tools.yaml`.
 | `IMPORT_PREVIEW_MAX` | `5` | Previews kept at once; a new one drops the oldest |
 | `AVATAR_MAX_BYTES` | `2097152` | Largest avatar file (2 MB); the whole upload request may be 64 KB more (`security.md` §2.4). A positive integer |
 | `SKILL_DIFF_MAX_EDITS` | `2000` | The budget of a skill line diff (History, import preview): the most added and removed lines that one diff looks for. Over it, the old text shows as removed and the new text as added (`api.md` §2). The cost grows with the square of the budget (DQ-037). A positive integer |
-| `SKILL_CHANGELOG_MAX` | `500` | The longest changelog of a skill version, in characters, counted before the lines are joined; longer gets 422 `validation_error` on `changelog` (`api.md` §2). The import changelog "Imported from {file}" counts too, so the import preview refuses a longer file name (422 on `file`). A positive integer |
+| `SKILL_CHANGELOG_MAX` | `500` | The longest changelog of a skill version, in characters, counted before the lines are joined; longer gets 422 `validation_error` on `changelog` (`api.md` §2). The import changelog "Imported from {file}" counts too, so the import preview refuses a longer file name (422 on `file`). An integer of at least 100, so that the app's own changelogs fit |
 | `AVATAR_ORPHAN_HOURS` | `24` | An avatar file that no bot row names is deleted by the purge job once it is older than this (`domain-model.md` §2 Avatar files). A positive integer |
 | `APP_ENV` | `dev` | `dev`, `test` or `prod`: app behaviour (OpenAPI docs page only in `dev`, test routes only in `test`) |
 | `FAKE_MODEL` | `0` | `1` wires the fake model and the `fake:scripted` and `fake:effort` catalog entries (`testing.md` §2) |

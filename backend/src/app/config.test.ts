@@ -76,12 +76,21 @@ describe("loadConfig", () => {
   // Item 24 of the P3 list: architecture.md §8 has the default.
   it("reads SKILL_CHANGELOG_MAX as a positive integer, 500 by default", () => {
     expect(loadConfig({}).skillChangelogMax).toBe(500);
-    expect(loadConfig({ SKILL_CHANGELOG_MAX: "80" }).skillChangelogMax).toBe(80);
+    expect(loadConfig({ SKILL_CHANGELOG_MAX: "120" }).skillChangelogMax).toBe(120);
     for (const value of ["0", "-1", "1.5", "abc"]) {
       expect(() => loadConfig({ SKILL_CHANGELOG_MAX: value }), value).toThrow(
         /Invalid configuration: SKILL_CHANGELOG_MAX: /,
       );
     }
+  });
+
+  // Review of #115 (R1-4): a smaller limit would refuse the app's own texts ("Imported from
+  // {file}", "Restored vN").
+  it("refuses SKILL_CHANGELOG_MAX under 100", () => {
+    expect(() => loadConfig({ SKILL_CHANGELOG_MAX: "99" })).toThrow(
+      /Invalid configuration: SKILL_CHANGELOG_MAX: /,
+    );
+    expect(loadConfig({ SKILL_CHANGELOG_MAX: "100" }).skillChangelogMax).toBe(100);
   });
 
   it("refuses an ALLOWED_ORIGINS entry that is not an origin", () => {
