@@ -3,6 +3,7 @@ import { Button } from "../../components/ui/button.tsx";
 import { Dialog, DialogButtons, DialogText } from "../../components/ui/dialog.tsx";
 import { Skeleton, SkeletonArea } from "../../components/ui/skeleton.tsx";
 import { BotNameList, BotPickList, type BotListRow } from "../bots/bot-list.tsx";
+import { LoadError } from "./load-error.tsx";
 import { VersionPill } from "./pills.tsx";
 import { SaveButton } from "./save-bar.tsx";
 import type { BotUse, BotUses } from "./skill-bot-uses.ts";
@@ -46,16 +47,19 @@ function BotsNotReady({ bots }: { bots: BotUses }) {
       ))}
     </SkeletonArea>
   ) : (
-    <p role="alert" className="mt-2 text-danger">
-      The app could not load the bots. Close this card and try again.
-    </p>
+    // The pattern of the bot cards (skills-page.md §2a): what failed, and Try again.
+    <LoadError
+      text="The app could not load the bots."
+      onRetry={bots.retry}
+      className="mt-2 px-0 py-2"
+    />
   );
 }
 
 // Why a confirm button is off while the bots that use the skill are not known (ui-rules B5).
 function botsReason(bots: BotUses): string | null {
   if (bots.kind === "loading") return "Loading the bots that use it.";
-  if (bots.kind === "error") return "The bots did not load. Close this card and try again.";
+  if (bots.kind === "error") return "The bots did not load. Try again first.";
   return null;
 }
 

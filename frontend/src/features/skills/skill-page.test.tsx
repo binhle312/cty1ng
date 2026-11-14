@@ -594,3 +594,61 @@ describe("Clone while its read of the versions is on its way", () => {
     expect(router.state.location.pathname).toBe("/skills/write-user-stories");
   });
 });
+
+// The bot list of a Deprecate dialog that did not load: Try again reads it again
+// (skills-page.md §2a pattern; P3 list item 61).
+describe("the Deprecate dialog when the bots do not load", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  const FAILED = { status: 500, body: { error: { code: "internal_error", message: "Failed." } } };
+  const click = (element: HTMLElement) => {
+    act(() => {
+      fireEvent.click(element);
+    });
+  };
+
+  async function openDeprecate() {
+    const ba = makeBot(1, "BA", [makePin()]);
+    const server: { bots: () => { status?: number; body?: unknown } } = { bots: () => FAILED };
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: [makeSkill()] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: makeSkill() }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      "GET /api/bots": () => server.bots(),
+    });
+    await renderApp("/skills/write-user-stories");
+    click(await screen.findByRole("button", { name: "Skill actions" }, { timeout: 5000 }));
+    click(await screen.findByRole("menuitem", { name: "Deprecate" }));
+    const dialog = await screen.findByRole("alertdialog");
+    const alert = await within(dialog).findByRole("alert");
+    return {
+      ba,
+      server,
+      dialog,
+      tryAgain: within(alert).getByRole("button", { name: "Try again" }),
+    };
+  }
+
+  it("shows the bots after Try again", async () => {
+    const { ba, server, dialog, tryAgain } = await openDeprecate();
+    server.bots = () => ({ body: [ba] });
+    click(tryAgain);
+    expect(await within(dialog).findByText("BA"), "the bots after Try again").toBeTruthy();
+  });
+
+  // An order case: a second failure keeps the way to try again. The old code had no button.
+  it("keeps Try again when the bots fail again", async () => {
+    const { dialog, tryAgain } = await openDeprecate();
+    click(tryAgain);
+    await waitFor(() => {
+      expect(api?.sent("GET", "/api/bots").length).toBeGreaterThan(1);
+    });
+    const alert = await within(dialog).findByRole("alert");
+    expect(within(alert).getByRole("button", { name: "Try again" })).toBeTruthy();
+  });
+});

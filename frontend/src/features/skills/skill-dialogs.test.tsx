@@ -114,7 +114,7 @@ describe("the Deprecate dialog", () => {
     expect(screen.getByRole("alert").textContent).toContain("The app could not load the bots.");
     await tabToReason(
       screen.getByRole("button", { name: "Deprecate" }),
-      "The bots did not load. Close this card and try again.",
+      "The bots did not load. Try again first.",
     );
   });
 
@@ -239,5 +239,36 @@ describe("a confirm button whose reason comes and goes", () => {
     expect(screen.getByRole("button", { name: "Delete skill" })).toBe(button);
     expect(button.getAttribute("aria-disabled")).toBe("true");
     expect(document.activeElement).toBe(button);
+  });
+});
+
+// skills-page.md §2a has the pattern: a bot list that did not load says so, with Try again, which
+// loads the bots again (P3 list item 61).
+describe("the dialogs when the bots did not load", () => {
+  const failed = () => ({ kind: "error" as const, retry: vi.fn() });
+  const tryAgain = () =>
+    within(screen.getByRole("alert")).getByRole("button", { name: "Try again" });
+
+  it("loads the bots again from Try again in the Deprecate dialog", () => {
+    const bots = failed();
+    render(<DeprecateDialog {...base} bots={bots} onCancel={vi.fn()} onConfirm={vi.fn()} />);
+    click(tryAgain());
+    expect(bots.retry, "Deprecate: Try again").toHaveBeenCalledTimes(1);
+  });
+
+  it("loads the bots again from Try again in the Remove from bots dialog", () => {
+    const bots = failed();
+    render(<RemoveFromBotsDialog {...base} bots={bots} onCancel={vi.fn()} onConfirm={vi.fn()} />);
+    click(tryAgain());
+    expect(bots.retry, "Remove from bots: Try again").toHaveBeenCalledTimes(1);
+  });
+
+  it("loads the bots again from Try again in the Delete dialog", () => {
+    const bots = failed();
+    render(
+      <DeleteDialog {...base} trashDays={30} bots={bots} onCancel={vi.fn()} onConfirm={vi.fn()} />,
+    );
+    click(tryAgain());
+    expect(bots.retry, "Delete: Try again").toHaveBeenCalledTimes(1);
   });
 });
