@@ -13,12 +13,22 @@ export function createRouter() {
         throw new ApiFailure("validation_error", "The request is not valid.");
       // A malformed TypeID or a wrong prefix in the path (api.md §1, D36).
       if (result.target === "param" && String(issue.path.at(-1)).endsWith("id")) {
-        throw new ApiFailure("invalid_id", issue.message, issue.path.map(String).join("."));
+        throw new ApiFailure("invalid_id", issue.message, fieldPath(issue.path));
       }
       // An unknown field (Zod `.strict()`) names the field in `keys`, not in `path`.
       const path = issue.code === "unrecognized_keys" ? [...issue.path, ...issue.keys] : issue.path;
-      const field = path.map(String).join(".");
+      const field = fieldPath(path);
       throw new ApiFailure("validation_error", issue.message, field === "" ? undefined : field);
     },
   });
+}
+
+// The one format of `field` (api.md §1): a dot before a key of an object, `[i]` for an index of a
+// list, as in `pins[0].skill_id`. The services write list items the same way (`bots[1]`).
+function fieldPath(path: readonly PropertyKey[]): string {
+  return path
+    .map((part, index) =>
+      typeof part === "number" ? `[${String(part)}]` : `${index === 0 ? "" : "."}${String(part)}`,
+    )
+    .join("");
 }

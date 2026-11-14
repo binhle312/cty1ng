@@ -30,6 +30,9 @@ One shape for every error:
 {"error": {"code": "mention_not_member", "message": "Designer is not in this conversation.", "field": "mentions[0]"}}
 ```
 
+`field`, when present, names the field with one format: a dot before a key of an object and `[i]`
+for an index of a list, as in `pins[0].skill_id`, `bots[1]` or `tool_settings.web_fetch`.
+
 Every response has an `X-Request-Id` header. An error body also carries it as `request_id`,
 and the server log line of that request has the same id (`security.md` §2.10). A stale write
 whose page needs the current state to show the conflict also carries `current` (M2: the pin of

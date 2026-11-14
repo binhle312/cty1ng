@@ -84,6 +84,29 @@ describe("POST /bots", () => {
     expect(await errorOf(response)).toMatchObject({ field });
   });
 
+  // Item 32 of the P3 list: one format for `field` (api.md §1): `[i]` for an index of a list,
+  // a dot before a key of an object.
+  it("names a list item in a 422 with [i]: pins[0].skill_id", async () => {
+    const { response } = await createBot({
+      ...newBot,
+      pins: [{ skill_id: "not-an-id", always_load: false }],
+    });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toMatchObject({
+      code: "validation_error",
+      field: "pins[0].skill_id",
+    });
+  });
+
+  it("names a key of an object in a 422 after a dot: tool_settings.web_fetch", async () => {
+    const { response } = await createBot({ ...newBot, tool_settings: { web_fetch: "on" } });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toMatchObject({
+      code: "validation_error",
+      field: "tool_settings.web_fetch",
+    });
+  });
+
   // The guard on the name and the description (D39), through the route: 422 with the field.
   it.each([
     ["name", { ...newBot, name: `BA ${SECRET}` }],
