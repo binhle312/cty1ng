@@ -1273,6 +1273,24 @@ describe("a late Delete answer on the bot page", () => {
     expect(router.state.location.pathname, "still on Skills").toBe("/skills");
   });
 
+  it("opens the Bots page when Delete answers after the owner came back to the bot", async () => {
+    const { held, routes } = heldDelete();
+    const state = { bots: [makeBot(1, "BA"), makeBot(2, "Designer")] };
+    const { router } = await open(state, { routes });
+    await heading();
+    await closeDialog(await confirmDelete());
+    const side = () => within(screen.getByRole("navigation", { name: "Bots" }));
+    click(side().getByRole("link", { name: "Designer" }));
+    await screen.findByRole("heading", { name: "Designer", level: 1 });
+    click(side().getByRole("link", { name: "BA" }));
+    await screen.findByRole("heading", { name: "BA", level: 1 });
+    state.bots = [makeBot(2, "Designer")];
+    await held.answer({ status: 204 });
+    await waitFor(() => {
+      expect(router.state.location.pathname, "back on BA, then the Bots page").toBe("/bots");
+    });
+  });
+
   it("opens the Bots page when Delete answers after the owner closed its dialog", async () => {
     const { held, routes } = heldDelete();
     const state = { bots: [makeBot(1, "BA")] };
@@ -1725,6 +1743,37 @@ describe("Esc on the bot page (bot-page.md §4.1, §4.2)", () => {
     expect(valueOf("Name")).toBe("Analyst");
   });
 
+  // A mouse drag (dnd-kit's mouse sensor) ends on Esc too, and does not mark the press as used.
+  const mouseDrag = async (link: HTMLElement) => {
+    fireEvent.mouseDown(link, { button: 0, clientX: 10, clientY: 10 });
+    fireEvent.mouseMove(document, { clientX: 10, clientY: 60 });
+    await screen.findByText(/Picked up QA/);
+  };
+
+  it("only cancels a mouse drag of a pinned bot on Esc", async () => {
+    await open({ bots: pinnedBots() });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    const qa = sideLink("QA");
+    await mouseDrag(qa);
+    await pressKey(qa, { key: "Escape", code: "Escape" });
+    await screen.findByText(/Moving QA is cancelled/);
+    expect(screen.queryByRole("alertdialog"), "the mouse drag used the Esc").toBeNull();
+    expect(valueOf("Name")).toBe("Analyst");
+  });
+
+  it("asks on Esc after a mouse drag of a pinned bot ended with the drop", async () => {
+    await open({ bots: pinnedBots() });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    const qa = sideLink("QA");
+    await mouseDrag(qa);
+    fireEvent.mouseUp(document, { button: 0, clientX: 10, clientY: 60 });
+    await screen.findByText(/QA (did not move|dropped at place)/);
+    await pressKey(document.body, { key: "Escape", code: "Escape" });
+    expect(screen.getByRole("alertdialog", QUESTION), "Esc after the drop asks").toBeTruthy();
+  });
+
   it("only closes the bot menu on Esc", async () => {
     await open({ bots: [makeBot(1, "BA")] });
     await heading();
@@ -1790,7 +1839,7 @@ describe("Esc on the bot page (bot-page.md §4.1, §4.2)", () => {
     await heading();
     type({ label: "Name", text: "Analyst" });
     await esc("Name");
-    expect(screen.getByRole("alertdialog", QUESTION)).toBeTruthy();
+    expect(screen.getByRole("alertdialog", QUESTION), "the question opened").toBeTruthy();
     state.bots = [makeBot(2, "Designer")];
     refocus();
     expect(await screen.findByText(/could not find/i)).toBeTruthy();

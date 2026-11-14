@@ -116,7 +116,8 @@ describe("Create on the Create bot page", () => {
       "POST /api/bots": async () => {
         call += 1;
         if (call === 1) return NETWORK_ERROR;
-        return held.promise;
+        if (call === 2) return held.promise;
+        return { status: 201, body: makeBot(1, "BA") };
       },
     });
     return { held, server };
@@ -144,6 +145,8 @@ describe("Create on the Create bot page", () => {
     fake = server;
     const alert = await toUnknown();
     click(within(alert).getByRole("button", { name: "Try again" }));
+    expect(await screen.findByRole("button", { name: "Creating" }), "sends again").toBeTruthy();
+    expect(server.sent("POST", "/api/bots")).toHaveLength(2);
     await held.answer({
       status: 500,
       body: { error: { code: "internal_error", message: "Failed." } },
@@ -151,6 +154,9 @@ describe("Create on the Create bot page", () => {
     const again = await screen.findByRole("alert");
     expect(again.textContent).toContain("Could not confirm whether the bot was created.");
     expect(screen.queryByRole("button", { name: "Creating" })).toBeNull();
+    // The third send creates the bot.
+    click(within(again).getByRole("button", { name: "Try again" }));
+    expect(await screen.findByText("Created BA ✨")).toBeTruthy();
   });
 
   // "Focus the first error" (E1): Create with a problem moves the focus to its field.
@@ -1466,7 +1472,7 @@ describe("the defaults of a new bot", () => {
     await waitFor(() => {
       expect(fake?.sent("GET", "/api/settings")).toHaveLength(3);
     });
-    expect(screen.queryByRole("heading", { name: "New bot" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "New bot" }), "the form waits").toBeNull();
     await lastTry.answer(FAILED);
     await form();
     expect(await limitOnForm()).toBe(String(OLD_LIMIT));

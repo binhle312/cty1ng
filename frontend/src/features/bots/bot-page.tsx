@@ -1,6 +1,6 @@
 import type { CatalogModel } from "@cty1ng/shared/catalog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouter, useSearch } from "@tanstack/react-router";
 import { Activity, ChartColumn, Cpu, Puzzle, UserRound } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Skeleton, SkeletonArea } from "../../components/ui/skeleton.tsx";
@@ -234,8 +234,8 @@ function BotView({
 
   // Ctrl+S or ⌘S saves the tab on screen, and Esc asks (bot-page.md §4.1). One listener on
   // `window`, the last stop of a key press, so a dialog that the press opens cannot see the same
-  // press. A press that a control used (a dialog, a menu or a card closes, a drag ends, a search
-  // clears) has `defaultPrevented`. An Esc that ends an IME composition is the input method's, and a
+  // press. A press that a control used (a dialog, a menu or a card closes, a drag ends: see
+  // `useDragSensors`, a search clears) has `defaultPrevented`. An Esc that ends an IME composition is the input method's, and a
   // held key asks once.
   const keysRef = useRef({ save, escape });
   useEffect(() => {
@@ -271,19 +271,14 @@ function BotView({
   };
 
   // The Delete request goes on after the page goes, for its toast. Its answer opens the Bots page
-  // only while the owner is still on this bot's page: not after they opened another bot or page.
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
+  // only when the owner is on this bot's page now, also after they left and came back; not when
+  // they are on another bot or page. The page of the answer may be a new one, so the router acts.
+  const router = useRouter();
   const remove = useDeleteBot({
     onDeleted: () => {
-      if (!mounted.current) return;
+      if (router.state.location.pathname !== `/bots/${bot.slug}`) return;
       leave.allowLeave();
-      void navigate({ to: "/bots", replace: true });
+      void router.navigate({ to: "/bots", replace: true });
     },
   });
 
