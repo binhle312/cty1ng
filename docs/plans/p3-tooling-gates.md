@@ -52,7 +52,7 @@ run (ESLint prints "There are suppressions left that do not occur anymore", exit
 ### 75 and 76: `e2e:serve` stops on more exits, and a test runs the script
 
 - `scripts/e2e-serve.ts` also stops its server groups on SIGHUP, on an uncaught exception, and on an
-  unhandled rejection. On `exit`, a group that still runs gets SIGTERM (no wait is possible there).
+  unhandled rejection.
 - Seam: `E2E_SERVE_SERVERS` names a JSON file with the web servers; without it, the script reads
   `frontend/playwright.config.ts` as before. `E2E_SERVE_MARKER` exists already.
 - `scripts/e2e-serve.test.ts` spawns the script with fixture servers on free ports, never 8100 or
@@ -84,6 +84,13 @@ value in `eslint.config.js`).
 - Process tests under load: each spawn takes about 1 s; every wait has a deadline inside the 20 s
   test timeout.
 - A future migration shape that the unit tests do not cover could make a false difference.
+
+## Changes during the build (2026-11-15)
+
+- No last step on `exit`: nothing in the script calls `process.exit` before its stop has ended, so
+  that step covered no path. Removed before the build commit.
+- The process test runs the script with `node`, not through pnpm and tsx. Not claimed: how pnpm
+  and tsx pass a signal on.
 
 ## Open questions
 
