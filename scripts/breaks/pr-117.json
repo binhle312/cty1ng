@@ -306,11 +306,11 @@
           "edits": [
             {
               "find": "  const { data: skills, isError, refetch } = useAllSkills();\n",
-              "replace": "  const { data: skills, isError, refetch, dataUpdateCount } = useAllSkills();\n"
+              "replace": "  const { data: skills, isError, refetch, isFetchedAfterMount } = useAllSkills();\n"
             },
             {
               "find": "  if (top !== undefined) {\n",
-              "replace": "  if (top !== undefined && dataUpdateCount < 2) {\n"
+              "replace": "  if (top !== undefined && !isFetchedAfterMount) {\n"
             }
           ]
         }
