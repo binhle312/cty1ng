@@ -263,6 +263,30 @@ describe("preview", () => {
     expect(error).toMatchObject({ code: "sensitive_data", field: "file" });
   });
 
+  // Item 24 of the P3 list: Apply writes "Imported from {file}" as the changelog, so the preview
+  // refuses a file name that makes it longer than SKILL_CHANGELOG_MAX (500; the prefix has 14).
+  it("refuses a file name that makes the changelog one character too long", async () => {
+    const error = await failure(
+      backend.skillImport.preview(`${"f".repeat(483)}.zip`, [folder("fresh")], OWNER_ID),
+    );
+    expect(error).toMatchObject({
+      code: "validation_error",
+      field: "file",
+      message: "The file name has 487 characters. The limit is 486. Rename the file.",
+    });
+  });
+
+  it("accepts a file name that makes the changelog exactly the limit", async () => {
+    const name = `${"f".repeat(482)}.zip`;
+    const preview = await backend.skillImport.preview(name, [folder("fresh")], OWNER_ID);
+    await backend.skillImport.apply(preview.preview_id, ["fresh"], OWNER_ID);
+    const [skill] = await backend.skills.list({ includeDeprecated: false }, OWNER_ID);
+    if (skill === undefined) throw new Error("no skill");
+    expect((await backend.skills.versions(skill.id)).at(0)?.changelog).toBe(
+      `Imported from ${name}`,
+    );
+  });
+
   // Review of PR #52: the preview did not guard the slug, so the row showed as `new` and Apply
   // then refused it and rolled back the valid rows too.
   it("a new skill whose slug looks like a secret is invalid", async () => {

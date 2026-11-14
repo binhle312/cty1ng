@@ -95,6 +95,7 @@ export function compose(
     ids: typeIdIds,
     pinsChanged: bots.emitPinsChanged,
     diffMaxEdits: config.skillDiffMaxEdits,
+    changelogMax: config.skillChangelogMax,
   });
   const skillImport = createSkillImportService({
     uow,
@@ -102,6 +103,7 @@ export function compose(
     skills,
     clock,
     diffMaxEdits: config.skillDiffMaxEdits,
+    changelogMax: config.skillChangelogMax,
     previewMinutes: config.importPreviewMinutes,
     previewMax: config.importPreviewMax,
   });

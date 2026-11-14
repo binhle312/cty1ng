@@ -4,7 +4,7 @@ import { skillTextProblem } from "./skill.rules.ts";
 // Built at run time (testing.md §3, "Fake secrets").
 const FAKE_KEY = ["sk", "proj", "abcdefghijklmnop1234"].join("-");
 
-const limits = { nameMax: 64, bodyMax: 20_000 };
+const limits = { nameMax: 64, bodyMax: 20_000, changelogMax: 500 };
 const good = { slug: "notes", name: "Notes", description: "Use it.", bodyMd: "## Steps" };
 
 describe("skillTextProblem (skills-page.md §6)", () => {
@@ -46,9 +46,10 @@ describe("skillTextProblem (skills-page.md §6)", () => {
   });
 
   it("uses the limits it is given (settings)", () => {
-    expect(skillTextProblem({ name: "n".repeat(20) }, { nameMax: 16, bodyMax: 1000 })?.field).toBe(
-      "name",
-    );
+    expect(
+      skillTextProblem({ name: "n".repeat(20) }, { nameMax: 16, bodyMax: 1000, changelogMax: 500 })
+        ?.field,
+    ).toBe("name");
   });
 
   it("refuses a likely secret in any field and names the body line", () => {
@@ -79,6 +80,27 @@ describe("skillTextProblem (skills-page.md §6)", () => {
         "The changelog looks like a password. The app does not save secrets in skills. Remove it.",
     });
     expect(skillTextProblem({ ...good, changelog: "" }, limits)).toBeNull();
+  });
+
+  // Item 24 of the P3 list: the changelog has a length limit (SKILL_CHANGELOG_MAX).
+  it("accepts a changelog of exactly the limit", () => {
+    expect(skillTextProblem({ ...good, changelog: "c".repeat(500) }, limits)).toBeNull();
+  });
+
+  it("refuses a changelog one character over the limit", () => {
+    expect(skillTextProblem({ ...good, changelog: "c".repeat(501) }, limits)).toEqual({
+      code: "validation_error",
+      field: "changelog",
+      message: "The changelog has 501 characters. The limit is 500. Make it shorter.",
+    });
+  });
+
+  it("checks the changelog length before the guard", () => {
+    const long = `password: hunter22 ${" ".repeat(500)}`;
+    expect(skillTextProblem({ ...good, changelog: long }, limits)).toMatchObject({
+      code: "validation_error",
+      field: "changelog",
+    });
   });
 
   it("checks only the fields it is given", () => {

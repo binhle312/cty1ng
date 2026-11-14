@@ -73,6 +73,17 @@ describe("loadConfig", () => {
     }
   });
 
+  // Item 24 of the P3 list: architecture.md §8 has the default.
+  it("reads SKILL_CHANGELOG_MAX as a positive integer, 500 by default", () => {
+    expect(loadConfig({}).skillChangelogMax).toBe(500);
+    expect(loadConfig({ SKILL_CHANGELOG_MAX: "80" }).skillChangelogMax).toBe(80);
+    for (const value of ["0", "-1", "1.5", "abc"]) {
+      expect(() => loadConfig({ SKILL_CHANGELOG_MAX: value }), value).toThrow(
+        /Invalid configuration: SKILL_CHANGELOG_MAX: /,
+      );
+    }
+  });
+
   it("refuses an ALLOWED_ORIGINS entry that is not an origin", () => {
     expect(() => loadConfig({ ALLOWED_ORIGINS: "http://a.test/path" })).toThrow(/not an origin/);
     expect(() => loadConfig({ ALLOWED_ORIGINS: "*" })).toThrow(/not an origin/);

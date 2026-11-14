@@ -545,7 +545,7 @@ skill_versions                                            -- no UPDATE; DELETE o
   version       INTEGER NOT NULL                          -- 1, 2, 3 … per skill
   description   TEXT NOT NULL                             -- ≤ 1,024 chars, required, shown to the bot
   body_md       TEXT NOT NULL                             -- ≤ skill_body_max (§10) chars, required
-  changelog     TEXT NULL                                 -- one line, optional
+  changelog     TEXT NULL                                 -- one line, optional; ≤ SKILL_CHANGELOG_MAX chars (architecture.md §8)
   created_by    TEXT NOT NULL
   skill_draft_id TEXT NULL REFERENCES skill_drafts(id)    -- set when approved from a bot's draft (D41); M5c adds it, see below
   created_at

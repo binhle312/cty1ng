@@ -357,6 +357,44 @@ describe("edits", () => {
   });
 });
 
+// Item 24 of the P3 list: the changelog has a length limit (SKILL_CHANGELOG_MAX, 500).
+describe("the changelog limit", () => {
+  const version = (changelog: string) => ({
+    base_version: 1,
+    description: newSkill.description,
+    body_md: "## Steps\n\n1. Write more.",
+    changelog,
+  });
+  const versionCount = async (id: string) => {
+    const json: unknown = await (await send("GET", `/skills/${id}/versions`)).json();
+    return Array.isArray(json) ? json.length : -1;
+  };
+
+  it("a new version with a changelog one character over the limit gets 422 and saves nothing", async () => {
+    const { id } = await created();
+    const response = await send("POST", `/skills/${id}/versions`, version("c".repeat(501)));
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toEqual({ code: "validation_error", field: "changelog" });
+    expect(await versionCount(id)).toBe(1);
+  });
+
+  it("a new version with a changelog of exactly the limit is saved", async () => {
+    const { id } = await created();
+    const response = await send("POST", `/skills/${id}/versions`, version("c".repeat(500)));
+    expect(response.status).toBe(201);
+  });
+
+  it("a restore with a changelog one character over the limit gets 422 and saves nothing", async () => {
+    const { id } = await created();
+    const response = await send("POST", `/skills/${id}/versions/1/restore`, {
+      changelog: "c".repeat(501),
+    });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toEqual({ code: "validation_error", field: "changelog" });
+    expect(await versionCount(id)).toBe(1);
+  });
+});
+
 describe("Deprecate, Trash, restore, delete", () => {
   it("runs the whole cycle with the right codes", async () => {
     const { id } = await created();

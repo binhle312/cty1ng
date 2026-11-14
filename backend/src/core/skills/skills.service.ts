@@ -39,8 +39,9 @@ export interface SkillsDeps {
   clock: Clock;
   ids: Ids;
   pinsChanged: (tx: Tx, botIds: readonly BotId[]) => Promise<void>;
-  // SKILL_DIFF_MAX_EDITS (architecture.md §8).
+  // SKILL_DIFF_MAX_EDITS and SKILL_CHANGELOG_MAX (architecture.md §8).
   diffMaxEdits: number;
+  changelogMax: number;
 }
 
 export interface UpgradeCandidate {
@@ -157,6 +158,7 @@ export function createSkillsService(deps: SkillsDeps) {
     const problem = skillTextProblem(text, {
       nameMax: settings.skill_name_max,
       bodyMax: settings.skill_body_max,
+      changelogMax: deps.changelogMax,
     });
     if (problem !== null) throw new DomainError(problem.code, problem.message, problem.field);
   }
