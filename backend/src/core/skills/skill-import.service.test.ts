@@ -77,6 +77,24 @@ describe("the diff budget (SKILL_DIFF_MAX_EDITS)", () => {
 
 // Item 33 of the P3 list: a slug listed twice is refused before Apply claims the preview or
 // writes anything.
+// Review of #115 (R1-3): the file name limit follows SKILL_CHANGELOG_MAX, not a value in the code.
+describe("SKILL_CHANGELOG_MAX set by the environment", () => {
+  it("the preview refuses a file name over a limit set to 120", async () => {
+    const small = testBackend({ SKILL_CHANGELOG_MAX: "120" }, { clock });
+    try {
+      const outcome = await small.skillImport
+        .preview(`${"f".repeat(103)}.zip`, [folder("fresh")], OWNER_ID)
+        .then(
+          () => "previewed",
+          (error: unknown) => (error instanceof DomainError ? error.field : "not a DomainError"),
+        );
+      expect(outcome).toBe("file");
+    } finally {
+      small.close();
+    }
+  });
+});
+
 describe("apply refuses a slug listed twice", () => {
   it("refuses a slug listed twice with 422 on slugs", async () => {
     const preview = await backend.skillImport.preview("skills.zip", [folder("fresh")], OWNER_ID);
