@@ -469,6 +469,18 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
     expect(fake?.sent("PATCH", `/api/bots/${BA_ID}`)).toHaveLength(0);
   });
 
+  it("moves the focus to a request limit out of range when Save finds it", async () => {
+    await open({ bots: [makeBot(1, "BA")] }, { path: "/bots/ba?tab=model" });
+    await heading();
+    type({ label: "Model requests per run", text: "0" });
+    click(screen.getAllByRole("button", { name: "Save" }).at(-1) ?? document.body);
+    const limit = screen.getByLabelText("Model requests per run", { exact: true });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(limit);
+    });
+    expect(fake?.sent("PATCH", `/api/bots/${BA_ID}`)).toHaveLength(0);
+  });
+
   it("shows an avatar change on the page top before Save: band, Not saved, the bar's line", async () => {
     const ba = makeBot(1, "BA");
     await open({ bots: [ba] });

@@ -139,15 +139,33 @@ describe("Create on the Create bot page", () => {
     await held.answer({ status: 201, body: makeBot(1, "BA") });
   });
 
-  it("shows the banner again when Try again fails on the way too", async () => {
+  it("shows the banner again when Try again gets a server error too", async () => {
     const { held, server } = tryAgainApi();
     fake = server;
     const alert = await toUnknown();
     click(within(alert).getByRole("button", { name: "Try again" }));
-    await held.answer(NETWORK_ERROR);
+    await held.answer({
+      status: 500,
+      body: { error: { code: "internal_error", message: "Failed." } },
+    });
     const again = await screen.findByRole("alert");
     expect(again.textContent).toContain("Could not confirm whether the bot was created.");
     expect(screen.queryByRole("button", { name: "Creating" })).toBeNull();
+  });
+
+  // "Focus the first error" (E1): Create with a problem moves the focus to its field.
+  it("moves the focus to a request limit out of range when Create finds it", async () => {
+    fake = api([{ status: 201, body: makeBot(1, "BA") }]);
+    await renderApp("/bots/new");
+    await screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+    await fillToModelStep();
+    type("Model requests per run", "0");
+    click(screen.getByRole("button", { name: "Create" }));
+    const limit = screen.getByLabelText("Model requests per run", { exact: true });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(limit);
+    });
+    expect(fake.sent("POST", "/api/bots")).toHaveLength(0);
   });
 
   it("keeps the page while the outcome is not known: Back does nothing (UI-5.6)", async () => {
@@ -409,6 +427,26 @@ describe("skills on the Create bot page", () => {
       expect(screen.getByRole("button", { name: "Create" }).textContent).toBe("Create");
     });
     expect(screen.queryByRole("button", { name: /has an error/ })).toBeNull();
+  });
+
+  it("moves the focus to Effort when the effort of a Clone is not offered", async () => {
+    const lowOnly = makeModel({ id: "fake:low", label: "Fake low", efforts: ["low"] });
+    fake = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/models": () => ({ body: [lowOnly] }),
+      "GET /api/tools": () => ({ body: [] }),
+      "GET /api/skills": () => ({ body: [OLD] }),
+      "GET /api/bots": () => ({ body: [SOURCE] }),
+      [`GET /api/bots/${SOURCE.id}/clone-template`]: () => ({
+        body: { ...TEMPLATE, model_id: lowOnly.id, effort: "high" },
+      }),
+    });
+    await renderApp(`/bots/new?from=${SOURCE.id}`);
+    click(await screen.findByRole("button", { name: "Create" }, { timeout: 5000 }));
+    const effort = screen.getByLabelText("Effort", { exact: true });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(effort);
+    });
   });
 
   it("gives a copied pin back its version when it is unticked and ticked again", async () => {
@@ -687,6 +725,33 @@ describe("skills on the Create bot page", () => {
     expect(screen.getByText("0 ticked")).toBeTruthy();
     click(screen.getByRole("button", { name: "Next" }));
     expect(await screen.findByLabelText("Model", { exact: true })).toBeTruthy();
+  });
+
+  it("moves the focus to a ticked skill in Trash when Next finds it", async () => {
+    const skills = { list: [NEW] };
+    fake = skillsApi(skills);
+    await renderApp("/bots/new");
+    await screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+    type("Name", "BA");
+    type("Description", "Writes stories.");
+    click(screen.getByRole("button", { name: "Next" }));
+    type("Persona", "You are the BA.");
+    click(screen.getByRole("button", { name: "Next" }));
+    const box = () => within(rowOf(NEW.id)).getByRole("checkbox");
+    click(await waitFor(box));
+    const before = fake.sent("GET", "/api/skills").length;
+    skills.list = [];
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/skills").length).toBeGreaterThan(before);
+    });
+    click(screen.getByRole("button", { name: "Next" }));
+    await waitFor(() => {
+      expect(document.activeElement).toBe(box());
+    });
   });
 
   it("names a ticked skill that another tab deprecated, with the Deprecated pill", async () => {
