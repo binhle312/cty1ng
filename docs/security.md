@@ -164,9 +164,12 @@ environment, provider-side data handling.
 
 - All queries go through Drizzle's query builder, which binds parameters. Raw SQL is allowed
   only through Drizzle's `sql` tagged template, which binds every `${value}`; never built with
-  template strings or `+` on user input. ESLint bans `sql.raw()` and `db.run`/`db.execute` with
-  a string argument outside reviewed, commented exceptions, and `eslint-plugin-drizzle`
-  requires a `where` on every `update` and `delete`.
+  template strings or `+` on user input. ESLint bans, outside reviewed, commented exceptions:
+  `sql.raw()` (also as `orm.sql.raw()`), an import of `sql` under another name, and a call of
+  `run`, `execute`, `all`, `get` or `values` on `db` or `tx` with any argument but a `sql`
+  tagged template. `eslint-plugin-drizzle` requires a `where` on every `update` and `delete`.
+  Lint does not check a database handle with another name, or `exec`/`prepare` on a
+  better-sqlite3 handle.
 - Identifiers cannot be bound, so anything that picks a column, sort order or table from a
   request (for example `metric=` and `sort=` on the statistics API) is mapped through an
   allowlist object (`Record<…>` with `satisfies`) in the service; unknown values return 422.

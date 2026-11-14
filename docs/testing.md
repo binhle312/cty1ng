@@ -316,7 +316,8 @@ theme-switch leak test.
 
 ## 4. CI gates
 
-All must be green to merge: ESLint (including the security rules in `security.md` §2.8),
+All must be green to merge: ESLint (including the security rules in `security.md` §2.8; a
+warning fails it too: `--max-warnings 0`),
 Prettier, `tsc`, dependency-cruiser import rules (D35), Vitest, `db:check` (Drizzle schema
 matches the migrations, and the migration SQL builds that schema, so a hand edit of a migration
 fails; a data statement that changes no schema is not checked), Playwright (a test that passes only on its second try fails the job:
