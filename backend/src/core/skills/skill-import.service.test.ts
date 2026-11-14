@@ -297,8 +297,9 @@ describe("preview", () => {
 
   it("accepts a file name that makes the changelog exactly the limit", async () => {
     const name = `${"f".repeat(482)}.zip`;
-    const preview = await backend.skillImport.preview(name, [folder("fresh")], OWNER_ID);
-    await backend.skillImport.apply(preview.preview_id, ["fresh"], OWNER_ID);
+    const previewing = backend.skillImport.preview(name, [folder("fresh")], OWNER_ID);
+    await expect(previewing).resolves.toMatchObject({ file: name });
+    await backend.skillImport.apply((await previewing).preview_id, ["fresh"], OWNER_ID);
     const [skill] = await backend.skills.list({ includeDeprecated: false }, OWNER_ID);
     if (skill === undefined) throw new Error("no skill");
     expect((await backend.skills.versions(skill.id)).at(0)?.changelog).toBe(
