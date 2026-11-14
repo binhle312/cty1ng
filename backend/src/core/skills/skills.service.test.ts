@@ -4,7 +4,7 @@ import type { SkillId } from "@cty1ng/shared/ids";
 import { manualClock, newTestId, testBackend, testIds } from "../../../test/helpers.ts";
 import { DomainError } from "../errors.ts";
 import { OWNER_ID } from "../owner.ts";
-import type { UnitOfWork } from "../ports/repositories.ts";
+import type { AppendEvent } from "../events/append-event.ts";
 import { createSkillsService } from "./skills.service.ts";
 
 // Built at run time (testing.md §3, "Fake secrets").
@@ -513,25 +513,20 @@ describe("Deprecate, Trash, restore, purge (D49)", () => {
   });
 
   // P3 item 27: the purge of one skill that failed each time kept every later skill in Trash.
-  // The skills service with a purge that throws for `bad`, as a bad row would.
+  // The skills service whose purge of `bad` throws after it deleted the rows and wrote
+  // `skill.purged`, so the rollback has a row and an event to undo.
   function failingPurge(bad: SkillId) {
-    const uow: UnitOfWork = {
-      run: (work) =>
-        backend.uow.run((tx) =>
-          work({
-            ...tx,
-            skills: {
-              ...tx.skills,
-              purge: (id) =>
-                id === bad ? Promise.reject(new Error("disk full")) : tx.skills.purge(id),
-            },
-          }),
-        ),
+    const appendEvent: AppendEvent = async (tx, input) => {
+      const seq = await backend.appendEvent(tx, input);
+      if (input.event.type === "skill.purged" && input.event.data.skill_id === bad) {
+        throw new Error("disk full");
+      }
+      return seq;
     };
     return createSkillsService({
-      uow,
+      uow: backend.uow,
       readers: backend.readers,
-      appendEvent: backend.appendEvent,
+      appendEvent,
       clock,
       ids: testIds,
       pinsChanged: backend.bots.emitPinsChanged,
@@ -557,9 +552,9 @@ describe("Deprecate, Trash, restore, purge (D49)", () => {
     const result = await failingPurge(b.id).purgeDue(OWNER_ID);
     expect(await backend.readers.skills.byId(c.id)).toBeNull();
     expect(await backend.readers.skills.byId(a.id)).toBeNull();
-    expect((await backend.readers.skills.byId(b.id))?.trashedAt).not.toBeNull();
+    expect(await backend.readers.skills.byId(b.id)).toMatchObject({ trashedAt: expect.any(Date) });
     expect(result.purged).toBe(2);
-    // The failed skill's transaction rolled back: no event names it.
+    // The failed skill's transaction rolled back: its rows and its `skill.purged` are gone.
     const written = (await backend.readers.events.after(0, 1000)).slice(before);
     expect(written.map((event) => [event.type, event.payload])).toEqual([
       ["skill.purged", { skill_id: a.id }],

@@ -12,7 +12,7 @@ import {
 import { memoryAvatarFiles } from "../../../test/fakes/avatar-files.ts";
 import { DomainError } from "../errors.ts";
 import { OWNER_ID } from "../owner.ts";
-import type { UnitOfWork } from "../ports/repositories.ts";
+import type { AppendEvent } from "../events/append-event.ts";
 import { createBotsService } from "./bots.service.ts";
 
 // The bots service on a temporary database (domain-model.md §2, api.md §4). FAKE_MODEL=1 gives
@@ -697,7 +697,7 @@ describe("skills that touch pins (api.md §2)", () => {
     expect(await backend.skills.summary(notes, OWNER_ID)).toMatchObject({ bots_outdated: 0 });
   });
 
-  // P3 item 30, invariant 7: the change and its event in one transaction.
+  // P3 item 30, invariant 7 (the event part): each moved bot gets its `bot.updated`.
   it("POST /skills/{id}/bots writes bot.updated for each bot that it moves", async () => {
     const notes = await skill("notes");
     const first = await create({ name: "A", pins: [{ skill_id: notes, always_load: false }] });
@@ -925,7 +925,7 @@ describe("purge (D50)", () => {
     expect(last).toEqual([["bot.purged", { bot_id: id }]]);
   });
 
-  // P3 item 30, invariant 7: the Trash count changes in the purge's transaction.
+  // P3 item 30, invariant 7 (the event part): a bot purge writes the new Trash count.
   it("a bot purge writes trash.changed after bot.purged", async () => {
     const id = BotId.parse((await create()).id);
     await backend.bots.trash(id);
@@ -951,24 +951,19 @@ describe("purge (D50)", () => {
     const [a, b, c] = ids;
     if (a === undefined || b === undefined || c === undefined) throw new Error("bots");
     clock.advance(30 * DAY);
-    // The bots service with a purge that throws for B, as a bad row would.
-    const uow: UnitOfWork = {
-      run: (work) =>
-        backend.uow.run((tx) =>
-          work({
-            ...tx,
-            bots: {
-              ...tx.bots,
-              tombstone: (id, now) =>
-                id === b ? Promise.reject(new Error("disk full")) : tx.bots.tombstone(id, now),
-            },
-          }),
-        ),
+    // The bots service whose purge of B throws after the tombstone and `bot.purged`, so the
+    // rollback has a row change and an event to undo.
+    const appendEvent: AppendEvent = async (tx, input) => {
+      const seq = await backend.appendEvent(tx, input);
+      if (input.event.type === "bot.purged" && input.event.data.bot_id === b) {
+        throw new Error("disk full");
+      }
+      return seq;
     };
     const failing = createBotsService({
-      uow,
+      uow: backend.uow,
       readers: backend.readers,
-      appendEvent: backend.appendEvent,
+      appendEvent,
       clock,
       ids: testIds,
       catalog: backend.catalog,
@@ -980,7 +975,7 @@ describe("purge (D50)", () => {
     expect((await backend.readers.bots.byId(a))?.purgedAt).not.toBeNull();
     expect(await backend.readers.bots.byId(b)).toMatchObject({ purgedAt: null });
     expect(result.purged).toBe(2);
-    // The failed bot's transaction rolled back: no event names it.
+    // The failed bot's transaction rolled back: its tombstone and its `bot.purged` are gone.
     expect((await events()).slice(before)).toEqual([
       ["bot.purged", { bot_id: a }],
       ["trash.changed", { counts: { skill: 0, bot: 2 } }],

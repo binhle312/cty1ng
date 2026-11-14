@@ -41,6 +41,16 @@
               "replace": "      result.failed.push({ id, error: String(error) });"
             }
           ]
+        },
+        {
+          "id": "P27-2-b",
+          "file": "backend/src/core/trash/purge-due.ts",
+          "edits": [
+            {
+              "find": "      result.failed.push({ id, error });",
+              "replace": "      result.failed.push({ id: undefined as unknown as Id, error });"
+            }
+          ]
         }
       ]
     },
@@ -175,6 +185,50 @@
       ]
     },
     {
+      "id": "P28-3",
+      "claim": "A stored NULL in trashed_bot_ids reads back as null",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/adapters/db/skills-repository.test.ts",
+        "name": "reads back no value"
+      },
+      "assertion": "expect(skill?.trashedBotIds).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "P28-3-a",
+          "file": "backend/src/adapters/db/repositories.ts",
+          "edits": [
+            {
+              "find": "    trashedBotIds: TrashedBotIds.parse(row.trashedBotIds),",
+              "replace": "    trashedBotIds: TrashedBotIds.parse(row.trashedBotIds) ?? [],"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P28-4",
+      "claim": "A stored empty list in trashed_bot_ids reads back as an empty list",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/adapters/db/skills-repository.test.ts",
+        "name": "reads back an empty list"
+      },
+      "assertion": "expect(skill?.trashedBotIds).toEqual(expected);",
+      "breaks": [
+        {
+          "id": "P28-4-a",
+          "file": "backend/src/adapters/db/repositories.ts",
+          "edits": [
+            {
+              "find": "    trashedBotIds: TrashedBotIds.parse(row.trashedBotIds),",
+              "replace": "    trashedBotIds: TrashedBotIds.parse(row.trashedBotIds)?.length === 0\n      ? null\n      : TrashedBotIds.parse(row.trashedBotIds),"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "P28-2",
       "claim": "A read refuses a trashed_bot_ids string that is not a bot id",
       "test": {
@@ -198,7 +252,7 @@
     },
     {
       "id": "P30-1",
-      "claim": "POST /skills/{id}/bots writes bot.updated for each bot that it moves (invariant 7)",
+      "claim": "POST /skills/{id}/bots writes bot.updated for each bot that it moves (invariant 7, the event part; the same transaction is not claimed)",
       "test": {
         "kind": "vitest",
         "file": "backend/src/core/bots/bots.service.test.ts",
@@ -220,7 +274,7 @@
     },
     {
       "id": "P30-2",
-      "claim": "A bot purge writes trash.changed after bot.purged (invariant 7)",
+      "claim": "A bot purge writes trash.changed after bot.purged (invariant 7, the event part; the same transaction is not claimed)",
       "test": {
         "kind": "vitest",
         "file": "backend/src/core/bots/bots.service.test.ts",
@@ -317,7 +371,7 @@
     {
       "file": "backend/test/contracts/avatar-files.test.ts",
       "name": "when the disk refuses every step, the file left is complete and only the cleanup's",
-      "reason": "The file time is read through list() instead of the removed modifiedAt (item 31); the same assertion"
+      "reason": "The file time is read through list() instead of the removed modifiedAt (item 31); the new assertion is stricter (it checks the whole list)"
     }
   ]
 }
