@@ -81,8 +81,8 @@ value in `eslint.config.js`).
 
 ## Risks
 
-- Process tests under load: each spawn takes about 1 s; every wait has a deadline inside the 20 s
-  test timeout.
+- Process tests under load: each spawn takes about 1 s; each wait has its own deadline and label, and
+  the waits of one test add up to less than its 20 s limit (review round 1 of #120, R1-8).
 - A future migration shape that the unit tests do not cover could make a false difference.
 
 ## Changes during the build (2026-11-15)

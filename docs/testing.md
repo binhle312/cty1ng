@@ -286,7 +286,7 @@ closed terminal, or an error that nothing catches, such as a line printed after 
 read it is gone), it stops every process in each group and waits until they have stopped, so no old
 server stays on the ports. A group that is still running after `E2E_SERVE_STOP_MS` (default
 10000 ms) is killed. A hard kill of the script (SIGKILL) cannot be caught: its servers stay on the
-ports until you stop them. `scripts/e2e-serve.test.ts` runs the script with fixture servers on free
+ports until you stop them. SIGHUP stops it also when it runs under `nohup`. `scripts/e2e-serve.test.ts` runs the script with fixture servers on free
 ports (`E2E_SERVE_SERVERS`), not on 8100 and 8101.
 
 ### Test helpers

@@ -148,17 +148,35 @@ async function startServe(): Promise<Serve> {
   return { child, marker, ports, output: () => text, exited };
 }
 
+// Each wait has its own deadline and label, and one test's waits add up to less than its 20 s
+// limit, so a slow run fails with the name of what it waited for (review round 1 of #120, R1-8).
 async function waitFor(check: () => boolean, label: string): Promise<void> {
-  const deadline = Date.now() + 12_000;
+  const deadline = Date.now() + 8_000;
   while (!check()) {
     if (Date.now() > deadline) throw new Error(`timed out waiting for ${label}`);
     await sleep(50);
   }
 }
 
+async function within<T>(promise: Promise<T>, label: string): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const late = new Promise<never>((_done, fail) => {
+    timer = setTimeout(() => {
+      fail(new Error(`timed out waiting for ${label}`));
+    }, 4_000);
+  });
+  try {
+    return await Promise.race([promise, late]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function ready(serve: Serve): Promise<void> {
-  await waitFor(() => serve.output().includes("e2e:serve: ready"), "e2e:serve: ready");
-  await waitFor(() => groups.length === 2, "two server groups");
+  await waitFor(
+    () => serve.output().includes("e2e:serve: ready") && groups.length === 2,
+    "e2e:serve: ready and two server groups",
+  );
 }
 
 function signal(serve: Serve, name: NodeJS.Signals): void {
@@ -172,14 +190,14 @@ describe("pnpm e2e:serve", () => {
     await ready(serve);
     expect(readFileSync(serve.marker, "utf8")).toBe(String(serve.child.pid));
     signal(serve, "SIGTERM");
-    await serve.exited;
+    await within(serve.exited, "the exit");
   });
 
   it("on SIGTERM, stops both servers and frees the ports", { timeout: 20_000 }, async () => {
     const serve = await startServe();
     await ready(serve);
     signal(serve, "SIGTERM");
-    expect((await serve.exited).code).toBe(143);
+    expect((await within(serve.exited, "the exit")).code).toBe(143);
     expect(existsSync(serve.marker)).toBe(false);
     expect(groups.map(groupAlive)).toEqual([false, false]);
     expect(await Promise.all(serve.ports.map(portFree))).toEqual([true, true]);
@@ -189,7 +207,7 @@ describe("pnpm e2e:serve", () => {
     const serve = await startServe();
     await ready(serve);
     signal(serve, "SIGHUP");
-    await serve.exited;
+    await within(serve.exited, "the exit");
     const afterHangUp = groups.map(groupAlive);
     expect(afterHangUp).toEqual([false, false]);
   });
@@ -201,11 +219,11 @@ describe("pnpm e2e:serve", () => {
     // Each request makes a fixture print a line; ask until the script has stopped.
     serve.child.stdout?.destroy();
     const runs = () => serve.child.exitCode === null && serve.child.signalCode === null;
-    for (let tries = 0; runs() && tries < 100; tries += 1) {
+    for (let tries = 0; runs() && tries < 40; tries += 1) {
       get(`http://127.0.0.1:${String(serve.ports[0])}/`).on("error", () => undefined);
       await sleep(100);
     }
-    await serve.exited;
+    await within(serve.exited, "the exit");
     const afterClosedOutput = groups.map(groupAlive);
     expect(afterClosedOutput).toEqual([false, false]);
   });
@@ -213,15 +231,29 @@ describe("pnpm e2e:serve", () => {
   it("does not start a second time for the same marker", { timeout: 20_000 }, async () => {
     const first = await startServe();
     await ready(first);
+    // The same fixture servers: if the marker check ever failed, they would only meet busy free
+    // ports, never start the servers of the Playwright config (review round 1 of #120, R1-4).
     const second = spawn(process.execPath, [SCRIPT], {
-      env: { ...process.env, E2E_SERVE_MARKER: first.marker },
+      env: {
+        ...process.env,
+        E2E_SERVE_SERVERS: join(folder, "servers.json"),
+        E2E_SERVE_MARKER: first.marker,
+      },
       stdio: ["ignore", "ignore", "pipe"],
     });
     started.push(second);
-    const code = await new Promise<number | null>((done) => second.on("exit", done));
+    let errors = "";
+    second.stderr.on("data", (chunk: Buffer) => {
+      errors += chunk.toString();
+    });
+    const code = await within(
+      new Promise<number | null>((done) => second.on("exit", done)),
+      "the exit of the second start",
+    );
+    expect(errors).toContain("e2e:serve: it already runs for this checkout");
     expect(code).toBe(1);
     expect(readFileSync(first.marker, "utf8")).toBe(String(first.child.pid));
     signal(first, "SIGTERM");
-    await first.exited;
+    await within(first.exited, "the exit of the first");
   });
 });
