@@ -24,6 +24,7 @@ import { DomainError } from "../errors.ts";
 import type { AppendEvent } from "../events/append-event.ts";
 import { appendTrashChanged } from "../events/trash-changed.ts";
 import { liveSkill } from "../skills/skills.service.ts";
+import { purgeDue } from "../trash/purge-due.ts";
 import type { AvatarFiles } from "../ports/avatar-files.ts";
 import type { Clock } from "../ports/clock.ts";
 import type { Ids } from "../ports/ids.ts";
@@ -32,7 +33,6 @@ import type {
   BotRecord,
   BotsReader,
   Readers,
-  SettingsReader,
   Tx,
   UnitOfWork,
 } from "../ports/repositories.ts";
@@ -702,23 +702,17 @@ export function createBotsService(deps: BotsDeps) {
   }
 
   // The purge job (architecture.md §6.1): each bot whose `deleted_at + trash_days` is at or
-  // before now, one per transaction.
-  async function purgeDue(): Promise<number> {
-    const now = clock.now();
-    const cutoff = async (reader: SettingsReader): Promise<Date> =>
-      new Date(now.getTime() - (await readSettings(reader)).trash_days * 86_400_000);
-    let purged = 0;
-    for (const id of await readers.bots.trashedUntil(await cutoff(readers.settings))) {
-      const done = await uow.run(async (tx) => {
+  // before now. Returns how many it purged.
+  function purgeDueBots(): Promise<number> {
+    return purgeDue(deps, {
+      dueIds: (reader, cutoff) => reader.bots.trashedUntil(cutoff),
+      // A purged bot keeps its `deleted_at` (a tombstone), so it is no longer in Trash.
+      trashedAt: async (tx, id) => {
         const bot = await tx.bots.byId(id);
-        if (bot?.deletedAt == null || bot.purgedAt !== null) return false;
-        if (bot.deletedAt > (await cutoff(tx.settings))) return false;
-        await purgeInTx(tx, id);
-        return true;
-      });
-      if (done) purged += 1;
-    }
-    return purged;
+        return bot === null || bot.purgedAt !== null ? null : bot.deletedAt;
+      },
+      purge: purgeInTx,
+    });
   }
 
   return {
@@ -734,7 +728,7 @@ export function createBotsService(deps: BotsDeps) {
     removePin,
     pinSkillToBots,
     emitPinsChanged,
-    purgeDue,
+    purgeDue: purgeDueBots,
   };
 }
 
