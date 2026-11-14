@@ -101,6 +101,54 @@ describe("Create on the Create bot page", () => {
     expect(await screen.findByText("Created BA ✨")).toBeTruthy();
   });
 
+  // Try again (E4, E5): the resend is a send like the first one. A held answer shows the state
+  // while it waits; the outcome of the resend ends the wait.
+  const tryAgainApi = () => {
+    const held = heldAnswer();
+    let call = 0;
+    const server = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/models": () => ({ body: [makeModel(), FAKE_SCRIPTED] }),
+      "GET /api/tools": () => ({ body: [] }),
+      "GET /api/skills": () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [] }),
+      "POST /api/bots": async () => {
+        call += 1;
+        if (call === 1) return NETWORK_ERROR;
+        return held.promise;
+      },
+    });
+    return { held, server };
+  };
+  const toUnknown = async () => {
+    await renderApp("/bots/new");
+    await screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+    await fillToModelStep();
+    click(screen.getByRole("button", { name: "Create" }));
+    return screen.findByRole("alert");
+  };
+
+  it("shows Creating while Try again waits for its answer (E4)", async () => {
+    const { held, server } = tryAgainApi();
+    fake = server;
+    const alert = await toUnknown();
+    click(within(alert).getByRole("button", { name: "Try again" }));
+    expect(await screen.findByRole("button", { name: "Creating" })).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
+    await held.answer({ status: 201, body: makeBot(1, "BA") });
+  });
+
+  it("shows the banner again when Try again fails on the way too", async () => {
+    const { held, server } = tryAgainApi();
+    fake = server;
+    const alert = await toUnknown();
+    click(within(alert).getByRole("button", { name: "Try again" }));
+    await held.answer(NETWORK_ERROR);
+    const again = await screen.findByRole("alert");
+    expect(again.textContent).toContain("Could not confirm whether the bot was created.");
+    expect(screen.queryByRole("button", { name: "Creating" })).toBeNull();
+  });
+
   it("keeps the page while the outcome is not known: Back does nothing (UI-5.6)", async () => {
     fake = api([NETWORK_ERROR]);
     await renderApp("/bots/new");
@@ -584,6 +632,59 @@ describe("skills on the Create bot page", () => {
     expect(screen.getByText("0 ticked")).toBeTruthy();
     click(screen.getByRole("button", { name: "Next" }));
     expect(await screen.findByLabelText("Model", { exact: true })).toBeTruthy();
+  });
+
+  it("names a ticked skill that another tab deprecated, with the Deprecated pill", async () => {
+    const skills = { list: [NEW] };
+    fake = skillsApi(skills);
+    await renderApp("/bots/new");
+    await screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+    type("Name", "BA");
+    type("Description", "Writes stories.");
+    click(screen.getByRole("button", { name: "Next" }));
+    type("Persona", "You are the BA.");
+    click(screen.getByRole("button", { name: "Next" }));
+    click(await waitFor(() => within(rowOf(NEW.id)).getByRole("checkbox")));
+    // Another tab deprecates the skill; the list (with deprecated skills) comes again.
+    const before = fake.sent("GET", "/api/skills").length;
+    skills.list = [{ ...NEW, deprecated: true, deprecated_at: "2026-11-15T00:00:00.000Z" }];
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/skills").length).toBeGreaterThan(before);
+    });
+    await waitFor(() => {
+      expect(within(rowOf(NEW.id)).getByText("Deprecated")).toBeTruthy();
+    });
+    expect(within(rowOf(NEW.id)).getByText(NEW.name)).toBeTruthy();
+    expect(screen.queryByText(/A skill in Trash/)).toBeNull();
+  });
+
+  it("drops the row of a deprecated skill when the owner unticks it", async () => {
+    const skills = { list: [NEW] };
+    fake = skillsApi(skills);
+    await renderApp("/bots/new");
+    await screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+    type("Name", "BA");
+    type("Description", "Writes stories.");
+    click(screen.getByRole("button", { name: "Next" }));
+    type("Persona", "You are the BA.");
+    click(screen.getByRole("button", { name: "Next" }));
+    const box = () => within(rowOf(NEW.id)).getByRole("checkbox");
+    click(await waitFor(box));
+    const before = fake.sent("GET", "/api/skills").length;
+    skills.list = [{ ...NEW, deprecated: true, deprecated_at: "2026-11-15T00:00:00.000Z" }];
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/skills").length).toBeGreaterThan(before);
+    });
+    click(box());
+    expect(document.querySelector(`li[data-skill="${NEW.id}"]`)).toBeNull();
   });
 });
 
