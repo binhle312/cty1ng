@@ -59,7 +59,7 @@
           "file": "frontend/src/features/bots/bot-page.tsx",
           "edits": [
             {
-              "find": "      void router.navigate({ to: \"/bots\", replace: true });\n",
+              "find": "      void router.navigate({ to: \"/bots\", replace: true, ignoreBlocker: true });\n",
               "replace": ""
             }
           ]
@@ -434,7 +434,7 @@
     },
     {
       "id": "T2",
-      "claim": "After a failed Try again, Try again sends again and shows Creating (the test then also checks the banner and a third Try again; no break covers those steps)",
+      "claim": "After a failed Try again, Try again shows Creating (the test then also checks two POSTs, the banner and a third Try again; no break covers those steps)",
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/bots/create-bot-page.test.tsx",
@@ -493,6 +493,50 @@
             {
               "find": "  for (const name of RELEASES) window.addEventListener(name, stop, true);\n",
               "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D5",
+      "claim": "A late Delete success after a return with unsaved changes opens the Bots page past the new page's leave question",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "opens the Bots page when Delete answers after a return with unsaved changes"
+      },
+      "assertion": "expect(router.state.location.pathname, \"the bot in Trash keeps no edits\").toBe(\"/bots\");",
+      "breaks": [
+        {
+          "id": "D5-blocker-asks",
+          "file": "frontend/src/features/bots/bot-page.tsx",
+          "edits": [
+            {
+              "find": "      void router.navigate({ to: \"/bots\", replace: true, ignoreBlocker: true });",
+              "replace": "      void router.navigate({ to: \"/bots\", replace: true });"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E11",
+      "claim": "After a tab change cancelled a mouse drag, Esc asks again (the mark ends at the tab change)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "asks on Esc after a tab change cancelled a mouse drag of a pinned bot"
+      },
+      "assertion": "expect(screen.getByRole(\"alertdialog\", QUESTION), \"Esc after the tab change asks\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "E11-no-tab-change-stop",
+          "file": "frontend/src/features/bots/drag-setup.ts",
+          "edits": [
+            {
+              "find": "const RELEASES = [\"mouseup\", \"touchend\", \"touchcancel\", \"visibilitychange\"] as const;",
+              "replace": "const RELEASES = [\"mouseup\", \"touchend\", \"touchcancel\"] as const;"
             }
           ]
         }

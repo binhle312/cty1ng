@@ -272,13 +272,14 @@ function BotView({
 
   // The Delete request goes on after the page goes, for its toast. Its answer opens the Bots page
   // only when the owner is on this bot's page now, also after they left and came back; not when
-  // they are on another bot or page. The page of the answer may be a new one, so the router acts.
+  // they are on another bot or page. The page of the answer may be a new one, so the router acts,
+  // past the leave question of that page too: a bot in Trash keeps no edits.
   const router = useRouter();
   const remove = useDeleteBot({
     onDeleted: () => {
       if (router.state.location.pathname !== `/bots/${bot.slug}`) return;
       leave.allowLeave();
-      void router.navigate({ to: "/bots", replace: true });
+      void router.navigate({ to: "/bots", replace: true, ignoreBlocker: true });
     },
   });
 

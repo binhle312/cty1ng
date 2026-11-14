@@ -1291,6 +1291,25 @@ describe("a late Delete answer on the bot page", () => {
     });
   });
 
+  it("opens the Bots page when Delete answers after a return with unsaved changes", async () => {
+    const { held, routes } = heldDelete();
+    const state = { bots: [makeBot(1, "BA"), makeBot(2, "Designer")] };
+    const { router } = await open(state, { routes });
+    await heading();
+    await closeDialog(await confirmDelete());
+    const side = () => within(screen.getByRole("navigation", { name: "Bots" }));
+    click(side().getByRole("link", { name: "Designer" }));
+    await screen.findByRole("heading", { name: "Designer", level: 1 });
+    click(side().getByRole("link", { name: "BA" }));
+    await screen.findByRole("heading", { name: "BA", level: 1 });
+    type({ label: "Name", text: "Analyst" });
+    state.bots = [makeBot(2, "Designer")];
+    await held.answer({ status: 204 });
+    await waitFor(() => {
+      expect(router.state.location.pathname, "the bot in Trash keeps no edits").toBe("/bots");
+    });
+  });
+
   it("opens the Bots page when Delete answers after the owner closed its dialog", async () => {
     const { held, routes } = heldDelete();
     const state = { bots: [makeBot(1, "BA")] };
@@ -1772,6 +1791,18 @@ describe("Esc on the bot page (bot-page.md §4.1, §4.2)", () => {
     await screen.findByText(/QA (did not move|dropped at place)/);
     await pressKey(document.body, { key: "Escape", code: "Escape" });
     expect(screen.getByRole("alertdialog", QUESTION), "Esc after the drop asks").toBeTruthy();
+  });
+
+  it("asks on Esc after a tab change cancelled a mouse drag of a pinned bot", async () => {
+    await open({ bots: pinnedBots() });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    await mouseDrag(sideLink("QA"));
+    // The button comes up in the other tab, so this window gets no mouseup.
+    fireEvent(document, new Event("visibilitychange", { bubbles: true }));
+    await screen.findByText(/Moving QA is cancelled/);
+    await pressKey(document.body, { key: "Escape", code: "Escape" });
+    expect(screen.getByRole("alertdialog", QUESTION), "Esc after the tab change asks").toBeTruthy();
   });
 
   it("only closes the bot menu on Esc", async () => {

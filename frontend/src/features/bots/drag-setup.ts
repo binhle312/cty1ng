@@ -39,7 +39,9 @@ export function useDragSensors() {
   );
 }
 
-const RELEASES = ["mouseup", "touchend", "touchcancel"] as const;
+// A tab change also ends the drag, and the button may come up in the other tab, with no mouseup
+// here.
+const RELEASES = ["mouseup", "touchend", "touchcancel", "visibilitychange"] as const;
 
 function markEscUntilRelease() {
   const onKey = (event: KeyboardEvent) => {
