@@ -39,8 +39,10 @@ environment, provider-side data handling.
 - Response headers: `Content-Security-Policy: default-src 'self'; img-src 'self' data:;
   object-src 'none'; frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`,
   `Referrer-Policy: no-referrer`. Every answer of the app has them, also a refusal of the Host
-  or Origin check. An answer that Node makes before the app runs, such as its `400` for an
-  HTTP/1.1 request with no `Host`, has none.
+  or Origin check. An answer that the server makes before the app runs has none: Node's `400`
+  for an HTTP/1.1 request with no `Host`, and the empty `400` of `@hono/node-server` for a
+  `Host` that is not a valid URL authority (such as `a b`, `evil.com@x` or `127.0.0.1:8000/x`)
+  or a backslash in the path.
 - The request path, in order: request id, access log, the response headers, Host check, Origin
   check, CORS, body limit (1 MB, or the limit of an upload route), the route. The error handler
   answers with the code and the request id, never a stack (§2.10).
@@ -428,8 +430,10 @@ computer (owner, 2026-10-28):
 ## 3. Security tests (must exist)
 
 - Host header `evil.com` → 403 `host_rejected`; missing or duplicate Host → 400; `Origin: https://evil.com` on POST → 403; no Origin on POST →
-  403; correct origin → passes. Each of these refusals has the response headers of §2.1, also
-  on a real socket. The dev page has its CSP and the nonce on each inline script.
+  403; correct origin → passes. Each of these refusals that the app makes has the response
+  headers of §2.1. On a real socket, the tests send two `Host` headers, an HTTP/1.0 request with
+  no `Host`, and an absolute URL with a foreign `Host`. The dev page has its CSP and the nonce
+  on each inline script.
 - Startup with `HOST=0.0.0.0` fails.
 - Markdown XSS corpus (script tags, event handlers, `javascript:` links, SVG) renders inert
   (Vitest).
