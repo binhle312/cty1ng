@@ -49,7 +49,7 @@ would conflict), or anything in the same `*.rules.ts` file at the same time.
 | --- | --- |
 | Agent wants to change a decision | It adds a `proposed` file in `docs/decisions/` and stops for the owner |
 | Brief is ambiguous | Builder asks; owner answers in the brief (so the answer is kept) |
-| CI red on main | Fix main first; no slice merges onto a red main |
+| A required check is red on main ([testing.md §4](../testing.md#4-ci-gates)) | Fix main first; no slice merges onto a red main |
 | Agents disagree in review | Owner decides; if it is a design question, record it in `docs/decisions/` |
 | Owner sees a problem in how a slice was built (slow, too many questions, surprises) | Record project evidence in `docs/lessons-learned/` and quality evidence in `docs/delivery-quality.md`; link or update the reusable principle and its project application |
 | Slice too big | Split the brief into parts (M3a, M3b), each mergeable; UI and infrastructure go in different parts ([slice size](planning.md#slice-size)) |
