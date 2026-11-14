@@ -2,6 +2,7 @@ import { expect, type Locator, type Page, test } from "@playwright/test";
 import { createClient } from "../../src/lib/api/generated/client/index.ts";
 import { createBot, listBots, setPinnedBots } from "../../src/lib/api/generated/sdk.gen.ts";
 import { watchCsp } from "./csp.ts";
+import { pageIsQuiet, watchRequests } from "./quiet.ts";
 
 // The Bots page, the header roster and the avatar parts of the Create page (M2b). The servers
 // keep one database for every file, and pins are one list for the whole app, so the tests of
@@ -272,6 +273,7 @@ test(
       release = resolve;
     });
     let first = true;
+    await watchRequests(page);
     await page.route("**/api/avatars", async (route) => {
       if (route.request().method() === "POST" && first) {
         first = false;
@@ -303,9 +305,9 @@ test(
     );
     release();
     await answered;
-    // Give the page a moment to act on the late answer.
-    await page.waitForTimeout(300);
-    await expect(crop).toBeVisible();
+    // The page read the late answer and acted on it.
+    await pageIsQuiet(page);
+    await expect(crop, "B's crop card after A's late answer").toBeVisible();
     await expect(page.getByRole("radio", { name: "Your image" })).toHaveCount(0);
   },
 );
@@ -477,6 +479,7 @@ test(
 test("a drop below the header changes no pin", ALONE, async ({ page }) => {
   const tag = tagged();
   await makeBot(`Drop ${tag}`);
+  await watchRequests(page);
   await page.goto("/skills");
   const header = page.getByRole("banner", { name: "Bots" });
   await expect(header.getByTestId("header-bot").first()).toBeVisible();
@@ -493,7 +496,8 @@ test("a drop below the header changes no pin", ALONE, async ({ page }) => {
   // Far below the pin zone: the pin zone is still the nearest drop target there.
   await page.mouse.move(zone.x + zone.width / 2, 450, { steps: 12 });
   await page.mouse.up();
-  await page.waitForTimeout(300);
+  // A pin save would be a request of the page: the drop is over when the page is quiet.
+  await pageIsQuiet(page);
   expect(pinRequests).toEqual([]);
   expect((await bots()).filter((bot) => bot.pinned_position !== null)).toEqual([]);
 });
@@ -530,8 +534,8 @@ test.describe("on a touch screen", ALONE, () => {
       });
     const start = { x: from.x + from.width / 2, y: from.y + from.height / 2 };
     await touch("touchStart", start.x, start.y);
-    // Longer than the 300 ms long press.
-    await page.waitForTimeout(500);
+    // The long press (300 ms) starts the drag, and dnd-kit announces the pick-up.
+    await expect(page.getByText(/^Picked up .+\.$/)).toBeAttached();
     const end = { x: to.x + to.width / 2, y: to.y + to.height / 2 };
     for (let step = 1; step <= 12; step += 1) {
       await touch(
