@@ -34,8 +34,9 @@ function fieldPath(path: readonly PropertyKey[]): string {
     .join("");
 }
 
-// A route that is not a Zod route still refuses a query string (security.md §2.9), with the
-// answer of a Zod route with `NoQuery`. An empty `?` and an empty key (`?=1`) pass, as there.
+// A route that is not a Zod route still refuses a query string (security.md §2.9), with 422
+// `validation_error`, as a Zod route with `NoQuery` does. An empty `?` and an empty key (`?=1`)
+// pass, as there.
 export function noQueryString(): MiddlewareHandler<HttpEnv> {
   return async (c, next) => {
     const key = [...new URL(c.req.url).searchParams.keys()].find((name) => name !== "");
