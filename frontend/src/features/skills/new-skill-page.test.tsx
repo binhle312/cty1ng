@@ -221,6 +221,46 @@ describe("the Clone page and the reads of its source", () => {
     });
   });
 
+  // DQ-090: a second visit has the settings of an earlier page in the cache. The copy's name is
+  // cut with the limit of this visit's answer, so the form checks it against the same limit.
+  describe("the name limit of a Clone", () => {
+    async function cloneWithNewLimit() {
+      const server = startServer();
+      // The new skill page reads the settings, so the cache has them (limit 64).
+      const { router, queryClient } = await renderApp("/skills/new");
+      await screen.findByLabelText("Name", { exact: true }, WAIT);
+      const settings = heldAnswer();
+      server.settings = settings.promise;
+      await act(() => router.navigate({ to: "/skills/new", search: { from: versionId(3) } }));
+      await waitFor(() => {
+        expect(sourceStatus(queryClient)).toBe("success");
+      });
+      return settings;
+    }
+
+    it("shows no editor while the settings of this visit are on their way", async () => {
+      await cloneWithNewLimit();
+      expect(nameValue(), "the wait for this visit's settings").toBeNull();
+    });
+
+    it("cuts the copy's name with the limit of this visit", async () => {
+      const settings = await cloneWithNewLimit();
+      await settings.answer({ body: { ...BOT_SETTINGS, skill_name_max: 20 } });
+      await waitFor(() => {
+        expect(nameValue(), "the name cut to 20").toBe("Write user st (copy)");
+      });
+    });
+
+    // A guard, not a fix claim: the old code passed it too.
+    it("opens the editor with the limit it has when the settings of this visit fail", async () => {
+      const settings = await cloneWithNewLimit();
+      await settings.answer(FAILED);
+      await waitFor(() => {
+        expect(nameValue(), "the name with the cached limit").toBe("Write user stories (copy)");
+      });
+    });
+  });
+
   // The cache still has the source of the first visit. The page does not open from it.
   describe("a second visit, with no read on its way", () => {
     async function leave() {
