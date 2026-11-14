@@ -434,13 +434,13 @@
     },
     {
       "id": "T2",
-      "claim": "After a failed Try again, Try again shows Creating (the test then also checks two POSTs, the banner and a third Try again; no break covers those steps)",
+      "claim": "After a failed Create, Try again shows Creating (the test then also checks two POSTs, the banner after a failed Try again and a third Try again; no break covers those steps)",
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/bots/create-bot-page.test.tsx",
         "name": "shows the banner again when Try again gets a server error too"
       },
-      "assertion": "expect(await screen.findByRole(\"button\", { name: \"Creating\" }), \"sends again\").toBeTruthy();",
+      "assertion": "expect(await screen.findByRole(\"button\", { name: \"Creating\" }), \"shows Creating\").toBeTruthy();",
       "breaks": [
         {
           "id": "T2-spread-after-kind",

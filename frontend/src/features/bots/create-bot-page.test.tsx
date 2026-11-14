@@ -145,7 +145,7 @@ describe("Create on the Create bot page", () => {
     fake = server;
     const alert = await toUnknown();
     click(within(alert).getByRole("button", { name: "Try again" }));
-    expect(await screen.findByRole("button", { name: "Creating" }), "sends again").toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Creating" }), "shows Creating").toBeTruthy();
     expect(server.sent("POST", "/api/bots")).toHaveLength(2);
     await held.answer({
       status: 500,
