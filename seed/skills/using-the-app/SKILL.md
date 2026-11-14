@@ -40,6 +40,8 @@ bot skills: written ways of working that the bot follows.
 - **Skills page**: make a skill, edit it (a Save of the description or text makes a new version;
   a rename alone does not), see its history and compare two versions, restore an old version,
   clone it, deprecate it, and delete a deprecated skill to Trash. Import and export `SKILL.md` folders as a zip.
+  The list hides deprecated skills until "Show deprecated" is ticked; this browser keeps the tick.
+  A deprecated skill is read-only; "Make active again" in its banner makes it a normal skill again.
   A Clone that is open keeps its text if the source skill goes to Trash, and Create still makes the copy.
   An import marks a `SKILL.md` as invalid if the file is over 1 MB or its frontmatter has more than 8,192 characters.
 - **Secrets in text**: the app does not save a skill or a bot's text if the text looks like a secret,
