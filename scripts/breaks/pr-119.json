@@ -81,8 +81,8 @@
           "file": "frontend/src/features/skills/skill-page.tsx",
           "edits": [
             {
-              "find": "if (skills.data === undefined) {",
-              "replace": "if (skills.data === undefined || skills.isError) {"
+              "find": "if (row === undefined && skills.isError) {",
+              "replace": "if (skills.isError) {"
             }
           ]
         }
