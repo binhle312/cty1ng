@@ -255,8 +255,18 @@ function BotView({
     });
   };
 
+  // The Delete request goes on after the page goes, for its toast. Its answer opens the Bots page
+  // only while the owner is still on this bot's page: not after they opened another bot or page.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const remove = useDeleteBot({
     onDeleted: () => {
+      if (!mounted.current) return;
       leave.allowLeave();
       void navigate({ to: "/bots", replace: true });
     },

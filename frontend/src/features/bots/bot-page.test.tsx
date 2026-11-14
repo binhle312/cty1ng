@@ -1212,6 +1212,81 @@ describe("the Profile save bar (bot-page.md §4.1)", () => {
   });
 });
 
+// Delete from the page top (bots.md UI-4.3): a success opens the Bots page, but only while the
+// owner is still on this bot's page. The request goes on after the page goes, for its toast.
+describe("a late Delete answer on the bot page", () => {
+  const heldDelete = () => {
+    const held = heldAnswer();
+    return {
+      held,
+      routes: {
+        [`DELETE /api/bots/${BA_ID}`]: async () => {
+          const answer = await held.promise;
+          return answer;
+        },
+      },
+    };
+  };
+  const confirmDelete = async () => {
+    click(screen.getByRole("button", { name: "BA actions" }));
+    click(await screen.findByRole("menuitem", { name: "Delete" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Delete BA? 🧹" });
+    click(within(dialog).getByRole("button", { name: "Delete bot" }));
+    return dialog;
+  };
+  // The dialog is modal: the owner closes it to go elsewhere while the request waits.
+  const closeDialog = async (dialog: HTMLElement) => {
+    click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+    });
+  };
+
+  it("keeps the owner on the other bot they opened while Delete waited", async () => {
+    const { held, routes } = heldDelete();
+    const state = { bots: [makeBot(1, "BA"), makeBot(2, "Designer")] };
+    const { router } = await open(state, { routes });
+    await heading();
+    await closeDialog(await confirmDelete());
+    click(
+      within(screen.getByRole("navigation", { name: "Bots" })).getByRole("link", {
+        name: "Designer",
+      }),
+    );
+    await screen.findByRole("heading", { name: "Designer", level: 1 });
+    state.bots = [makeBot(2, "Designer")];
+    await held.answer({ status: 204 });
+    expect(await screen.findByText("BA is in Trash.")).toBeTruthy();
+    expect(router.state.location.pathname).toBe("/bots/designer");
+  });
+
+  it("keeps the owner on the other page they opened while Delete waited", async () => {
+    const { held, routes } = heldDelete();
+    const state = { bots: [makeBot(1, "BA")] };
+    const { router } = await open(state, { routes });
+    await heading();
+    await closeDialog(await confirmDelete());
+    await act(() => router.navigate({ to: "/skills" }));
+    state.bots = [];
+    await held.answer({ status: 204 });
+    expect(await screen.findByText("BA is in Trash.")).toBeTruthy();
+    expect(router.state.location.pathname).toBe("/skills");
+  });
+
+  it("opens the Bots page when Delete answers after the owner closed its dialog", async () => {
+    const { held, routes } = heldDelete();
+    const state = { bots: [makeBot(1, "BA")] };
+    const { router } = await open(state, { routes });
+    await heading();
+    await closeDialog(await confirmDelete());
+    state.bots = [];
+    await held.answer({ status: 204 });
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/bots");
+    });
+  });
+});
+
 describe("the side list (bot-page.md E2, pin.md §2)", () => {
   const pinned = [
     makeBot(1, "BA", [], { pinned_position: 1 }),
