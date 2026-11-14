@@ -1649,6 +1649,109 @@ describe("Esc on the bot page (bot-page.md §4.1, §4.2)", () => {
     expect(valueOf("Name")).toBe("Analyst");
   });
 
+  // Esc on the whole bot page (Q13 A, DQ-089): with unsaved changes it asks wherever the focus
+  // is. A control that uses the Esc itself (a dialog, a menu, a drag, a search with text) keeps it.
+  const pinnedBots = () => [
+    makeBot(1, "BA", [], { pinned_position: 1 }),
+    makeBot(2, "QA", [], { pinned_position: 2 }),
+  ];
+  const sideLink = (name: string) =>
+    within(screen.getByRole("navigation", { name: "Bots" })).getByRole("link", { name });
+
+  it("asks on Esc when the focus is on the page itself", async () => {
+    await open({ bots: [makeBot(1, "BA")] });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    await pressKey(document.body, { key: "Escape" });
+    expect(screen.getByRole("alertdialog", QUESTION)).toBeTruthy();
+  });
+
+  it("asks on Esc when the focus is on the Profile tab", async () => {
+    await open({ bots: [makeBot(1, "BA")] });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    await pressKey(screen.getByRole("tab", { name: /Profile/ }), { key: "Escape" });
+    expect(screen.getByRole("alertdialog", QUESTION)).toBeTruthy();
+  });
+
+  it("asks on Esc when the focus is on Discard", async () => {
+    await open({ bots: [makeBot(1, "BA")] });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    await pressKey(screen.getByRole("button", { name: "Discard" }), { key: "Escape" });
+    expect(screen.getByRole("alertdialog", QUESTION)).toBeTruthy();
+  });
+
+  it("asks on Esc when the focus is on a bot in the side list", async () => {
+    await open({ bots: [makeBot(1, "BA"), makeBot(2, "QA")] });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    await pressKey(sideLink("QA"), { key: "Escape" });
+    expect(screen.getByRole("alertdialog", QUESTION)).toBeTruthy();
+  });
+
+  it("asks on Esc in the side list search when it is empty", async () => {
+    await open({ bots: [makeBot(1, "BA")] });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    await pressKey(screen.getByRole("searchbox", { name: "Search bots" }), { key: "Escape" });
+    expect(screen.getByRole("alertdialog", QUESTION)).toBeTruthy();
+  });
+
+  it("only clears the side list search on Esc when it has text", async () => {
+    await open({ bots: [makeBot(1, "BA")] });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    const search = screen.getByRole("searchbox", { name: "Search bots" });
+    act(() => {
+      fireEvent.change(search, { target: { value: "B" } });
+    });
+    await pressKey(search, { key: "Escape" });
+    expect(search instanceof HTMLInputElement && search.value).toBe("");
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+
+  it("only cancels a keyboard drag of a pinned bot on Esc", async () => {
+    await open({ bots: pinnedBots() });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    const qa = sideLink("QA");
+    act(() => {
+      qa.focus();
+    });
+    await pressKey(qa, { key: " ", code: "Space" });
+    await pressKey(qa, { key: "Escape", code: "Escape" });
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(valueOf("Name")).toBe("Analyst");
+  });
+
+  it("only closes the bot menu on Esc", async () => {
+    await open({ bots: [makeBot(1, "BA")] });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    click(screen.getByRole("button", { name: "BA actions" }));
+    const item = await screen.findByRole("menuitem", { name: "Delete" });
+    await pressKey(item, { key: "Escape" });
+    await waitFor(() => {
+      expect(screen.queryByRole("menuitem", { name: "Delete" })).toBeNull();
+    });
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+
+  it("only closes the Delete dialog on Esc", async () => {
+    await open({ bots: [makeBot(1, "BA")] });
+    await heading();
+    type({ label: "Name", text: "Analyst" });
+    click(screen.getByRole("button", { name: "BA actions" }));
+    click(await screen.findByRole("menuitem", { name: "Delete" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Delete BA? 🧹" });
+    await pressKey(within(dialog).getByRole("button", { name: "Cancel" }), { key: "Escape" });
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog", { name: "Delete BA? 🧹" })).toBeNull();
+    });
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+
   // The six orders of testing.md, "Request order and list states", with Esc as the way in.
   it("late answer: the question closes when the Save answers and nothing is unsaved", async () => {
     const { held, routes } = heldPatch();

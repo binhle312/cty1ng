@@ -2,7 +2,7 @@ import type { CatalogModel } from "@cty1ng/shared/catalog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { Activity, ChartColumn, Cpu, Puzzle, UserRound } from "lucide-react";
-import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Skeleton, SkeletonArea } from "../../components/ui/skeleton.tsx";
 import { Tab, TabsList, TabsPanel, TabsRoot } from "../../components/ui/tabs.tsx";
 import { readApiError } from "../../lib/api/api-error.ts";
@@ -225,18 +225,33 @@ function BotView({
     return other === null ? null : TAB_NAMES[other];
   };
 
-  // Ctrl+S or ⌘S saves the tab on screen (bot-page.md §4.1).
-  const saveRef = useRef(save);
+  // Esc asks first, like the Discard of the tab on screen (bot-page.md §4.1), wherever the focus is
+  // on the page. The state now, not the one of this render, as for Save.
+  const escape = (t: EditTab) => {
+    if (editView(store.get(), { rules, ctx }).unsaved[t].length === 0) return;
+    leave.ask();
+  };
+
+  // Ctrl+S or ⌘S saves the tab on screen, and Esc asks (bot-page.md §4.1). One listener on
+  // `window`, the last stop of a key press, so a dialog that the press opens cannot see the same
+  // press. A press that a control used (a dialog, a menu or a card closes, a drag ends, a search
+  // clears) has `defaultPrevented`. An Esc that ends an IME composition is the input method's, and a
+  // held key asks once.
+  const keysRef = useRef({ save, escape });
   useEffect(() => {
-    saveRef.current = save;
+    keysRef.current = { save, escape };
   });
   useEffect(() => {
     if (tab !== "profile" && tab !== "model") return undefined;
     const onKey = (event: globalThis.KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
         event.preventDefault();
-        saveRef.current(tab);
+        keysRef.current.save(tab);
+        return;
       }
+      if (event.key !== "Escape" || event.repeat) return;
+      if (event.defaultPrevented || event.isComposing) return;
+      keysRef.current.escape(tab);
     };
     window.addEventListener("keydown", onKey);
     return () => {
@@ -281,18 +296,6 @@ function BotView({
     onLeaveField: (field) => {
       store.dispatch({ type: "fieldLeft", field });
     },
-  };
-  // Esc asks first, like Discard (bot-page.md §4.1). Only a key pressed in the edit form: a popover
-  // or a dialog closes on its own Esc. An Esc that ends an IME composition is the input method's,
-  // and a held key asks once. The question opens before this key press ends, and a dialog closes
-  // on any Esc that reaches `document`, so the press stops here (frontend-conventions.md §5).
-  const escToDiscard = (t: EditTab) => (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== "Escape" || event.repeat) return;
-    if (event.defaultPrevented || event.nativeEvent.isComposing) return;
-    if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target)) return;
-    if (view.unsaved[t].length === 0) return;
-    event.stopPropagation();
-    leave.ask();
   };
   const discard = () => {
     leave.ask();
@@ -355,11 +358,7 @@ function BotView({
           </Tab>
         </TabsList>
         <TabsPanel value="profile" className="flex min-h-0 grow flex-col">
-          <div
-            id="bot-edit"
-            onKeyDown={escToDiscard("profile")}
-            className="min-h-0 grow overflow-y-auto px-8 py-5"
-          >
+          <div id="bot-edit" className="min-h-0 grow overflow-y-auto px-8 py-5">
             <div className="flex max-w-3xl flex-col gap-4">
               <div
                 ref={appearance}
@@ -396,11 +395,7 @@ function BotView({
           <BotSkillsTab bot={bot} />
         </TabsPanel>
         <TabsPanel value="model" className="flex min-h-0 grow flex-col">
-          <div
-            id="bot-edit"
-            onKeyDown={escToDiscard("model")}
-            className="min-h-0 grow overflow-y-auto px-8 py-5"
-          >
+          <div id="bot-edit" className="min-h-0 grow overflow-y-auto px-8 py-5">
             <div className="flex max-w-3xl flex-col gap-4">
               <ToolsSection
                 {...stepProps}
