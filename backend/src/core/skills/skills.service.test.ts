@@ -1,8 +1,11 @@
 import { SkillVersionId } from "@cty1ng/shared/ids";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { manualClock, newTestId, testBackend } from "../../../test/helpers.ts";
+import type { SkillId } from "@cty1ng/shared/ids";
+import { manualClock, newTestId, testBackend, testIds } from "../../../test/helpers.ts";
 import { DomainError } from "../errors.ts";
 import { OWNER_ID } from "../owner.ts";
+import type { UnitOfWork } from "../ports/repositories.ts";
+import { createSkillsService } from "./skills.service.ts";
 
 // Built at run time (testing.md §3, "Fake secrets").
 const FAKE_KEY = ["sk", "proj", "abcdefghijklmnop1234"].join("-");
@@ -490,9 +493,9 @@ describe("Deprecate, Trash, restore, purge (D49)", () => {
     await backend.skills.trash(late.id, { rowVersion: 2 }, OWNER_ID);
 
     clock.advance(DAY - 1);
-    expect(await backend.skills.purgeDue(OWNER_ID)).toBe(0);
+    expect(await backend.skills.purgeDue(OWNER_ID)).toEqual({ purged: 0, failed: [] });
     clock.advance(1);
-    expect(await backend.skills.purgeDue(OWNER_ID)).toBe(1);
+    expect(await backend.skills.purgeDue(OWNER_ID)).toEqual({ purged: 1, failed: [] });
     expect(await backend.readers.skills.byId(early.id)).toBeNull();
     expect(await backend.readers.skills.byId(late.id)).not.toBeNull();
   });
@@ -505,8 +508,73 @@ describe("Deprecate, Trash, restore, purge (D49)", () => {
     clock.advance(31 * DAY);
     const job = backend.skills.purgeDue(OWNER_ID);
     await backend.settings.update({ trash_days: 90 });
-    expect(await job).toBe(0);
+    expect(await job).toEqual({ purged: 0, failed: [] });
     expect(await backend.readers.skills.byId(skill.id)).not.toBeNull();
+  });
+
+  // P3 item 27: the purge of one skill that failed each time kept every later skill in Trash.
+  // The skills service with a purge that throws for `bad`, as a bad row would.
+  function failingPurge(bad: SkillId) {
+    const uow: UnitOfWork = {
+      run: (work) =>
+        backend.uow.run((tx) =>
+          work({
+            ...tx,
+            skills: {
+              ...tx.skills,
+              purge: (id) =>
+                id === bad ? Promise.reject(new Error("disk full")) : tx.skills.purge(id),
+            },
+          }),
+        ),
+    };
+    return createSkillsService({
+      uow,
+      readers: backend.readers,
+      appendEvent: backend.appendEvent,
+      clock,
+      ids: testIds,
+      pinsChanged: backend.bots.emitPinsChanged,
+    });
+  }
+
+  async function dueSkills(...slugs: string[]) {
+    const skills = [];
+    for (const slug of slugs) {
+      const skill = await deprecated(slug);
+      await backend.skills.trash(skill.id, { rowVersion: 2 }, OWNER_ID);
+      skills.push(skill);
+      clock.advance(1);
+    }
+    clock.advance(30 * DAY);
+    return skills;
+  }
+
+  it("the purge job purges the skills after a skill whose purge fails", async () => {
+    const [a, b, c] = await dueSkills("a", "b", "c");
+    if (a === undefined || b === undefined || c === undefined) throw new Error("skills");
+    const before = (await backend.readers.events.after(0, 1000)).length;
+    const result = await failingPurge(b.id).purgeDue(OWNER_ID);
+    expect(await backend.readers.skills.byId(c.id)).toBeNull();
+    expect(await backend.readers.skills.byId(a.id)).toBeNull();
+    expect((await backend.readers.skills.byId(b.id))?.trashedAt).not.toBeNull();
+    expect(result.purged).toBe(2);
+    // The failed skill's transaction rolled back: no event names it.
+    const written = (await backend.readers.events.after(0, 1000)).slice(before);
+    expect(written.map((event) => [event.type, event.payload])).toEqual([
+      ["skill.purged", { skill_id: a.id }],
+      ["trash.changed", { counts: { skill: 2, bot: 0 } }],
+      ["skill.purged", { skill_id: c.id }],
+      ["trash.changed", { counts: { skill: 1, bot: 0 } }],
+    ]);
+  });
+
+  it("the purge job tries a skill whose purge failed again on the next run", async () => {
+    const [skill] = await dueSkills("notes");
+    if (skill === undefined) throw new Error("skill");
+    expect((await failingPurge(skill.id).purgeDue(OWNER_ID)).failed).toHaveLength(1);
+    expect(await backend.skills.purgeDue(OWNER_ID)).toEqual({ purged: 1, failed: [] });
+    expect(await backend.readers.skills.byId(skill.id)).toBeNull();
   });
 });
 

@@ -22,7 +22,7 @@ import type {
   UnitOfWork,
 } from "../ports/repositories.ts";
 import { readSettings } from "../settings/settings.service.ts";
-import { purgeDue } from "../trash/purge-due.ts";
+import { purgeDue, type PurgeResult } from "../trash/purge-due.ts";
 import { lineDiff } from "./skill-diff.ts";
 import { serialiseSkillMd } from "./skill-md.ts";
 import { skillTextProblem, type SkillText } from "./skill.rules.ts";
@@ -508,8 +508,8 @@ export function createSkillsService(deps: SkillsDeps) {
       }),
 
     // The purge job (architecture.md §6.1): each skill whose `trashed_at + trash_days` is at or
-    // before now. Returns how many it purged.
-    purgeDue: (actor: string): Promise<number> =>
+    // before now.
+    purgeDue: (actor: string): Promise<PurgeResult<SkillId>> =>
       purgeDue(deps, {
         dueIds: (reader, cutoff) => reader.skills.trashedUntil(cutoff),
         trashedAt: async (tx, id) => (await tx.skills.byId(id))?.trashedAt ?? null,

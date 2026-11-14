@@ -24,7 +24,7 @@ import { DomainError } from "../errors.ts";
 import type { AppendEvent } from "../events/append-event.ts";
 import { appendTrashChanged } from "../events/trash-changed.ts";
 import { liveSkill } from "../skills/skills.service.ts";
-import { purgeDue } from "../trash/purge-due.ts";
+import { purgeDue, type PurgeResult } from "../trash/purge-due.ts";
 import type { AvatarFiles } from "../ports/avatar-files.ts";
 import type { Clock } from "../ports/clock.ts";
 import type { Ids } from "../ports/ids.ts";
@@ -702,8 +702,8 @@ export function createBotsService(deps: BotsDeps) {
   }
 
   // The purge job (architecture.md §6.1): each bot whose `deleted_at + trash_days` is at or
-  // before now. Returns how many it purged.
-  function purgeDueBots(): Promise<number> {
+  // before now.
+  function purgeDueBots(): Promise<PurgeResult<BotId>> {
     return purgeDue(deps, {
       dueIds: (reader, cutoff) => reader.bots.trashedUntil(cutoff),
       // A purged bot keeps its `deleted_at` (a tombstone), so it is no longer in Trash.

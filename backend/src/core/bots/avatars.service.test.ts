@@ -194,7 +194,7 @@ describe.each(STORES)("on the $name store", ({ make }) => {
       const bot = await botWith(id);
       await bots.trash(BotId.parse(bot.id));
       clock.advance(31 * 24 * HOUR);
-      expect(await bots.purgeDue()).toBe(1);
+      expect(await bots.purgeDue()).toEqual({ purged: 1, failed: [] });
       expect(await avatars.cleanup()).toBe(0);
       expect(await published()).toEqual([id]);
     });

@@ -58,9 +58,9 @@ Changed tests of steps 2 to 5 (the `modifiedAt` reads): `exempt` with the reason
 
 ## 4. Open questions for the chief
 
-Q1 and Q2: open, answer from the chief (the chief asks consultants). Steps 6 and 7 wait for the answer. Q3: answered.
+Q1 and Q2: answered by the chief with consultants, 2026-11-15 (two consultants agreed; option A for both). Q3: answered.
 
-**Q1 (item 27): what does the purge do after one item fails?** Open, answer from the chief. No document decides it. `architecture.md` §6.1 says "Purges each item … One item per transaction, with its event" and "a failed run (or purge step) is logged and the next run tries again". Example: skills A, B, C are due; B fails each time (a bad row). Today A goes, B fails, C stays in Trash on every run, past `trash_days` (D62 says "never shorter", "up to one interval longer").
+**Q1 (item 27): what does the purge do after one item fails?** Answered: A (the chief with consultants, 2026-11-15). Notes of the answer: keep the step try in `timed-jobs.ts` (the read of the due list can still throw); catch outside `uow.run` for each item; log the error as pino `err`, one line per failed item with the step and the id; the info line keeps the real counts; a test runs the job a second time and checks that it tries the failed item again; the checks inside each transaction stay. A does not make sure that an item that keeps failing goes by its deadline: the failed item stays in Trash, and the log shows it. No document decides it. `architecture.md` §6.1 says "Purges each item … One item per transaction, with its event" and "a failed run (or purge step) is logged and the next run tries again". Example: skills A, B, C are due; B fails each time (a bad row). Today A goes, B fails, C stays in Trash on every run, past `trash_days` (D62 says "never shorter", "up to one interval longer").
 
 | Option | What happens | Gain | Cost / risk |
 | --- | --- | --- | --- |
@@ -72,7 +72,7 @@ Events (`AGENTS.md` §5 rule 3), same in A and B: the failed item's transaction 
 The new sentence in §6.1 (A): "When one item fails, the job logs it with its id and goes on with the next item; the failed item stays in Trash, and the next run tries it again."
 Not in scope: the avatar cleanup (`avatars.service.ts:63-78`) has the same shape (one transaction for all files); item 27 names only the two loops.
 
-**Q2 (item 28): what does a read do with a bad stored value?** Open, answer from the chief.
+**Q2 (item 28): what does a read do with a bad stored value?** Answered: A (the chief with consultants, 2026-11-15). The risk is bigger than A below says: `list()` reads every row through `toSkill` (`repositories.ts:147`, `:161`), so one bad row makes the whole Skill Hub list, Export all and the Trash list answer 500. The undo: `UPDATE skills SET trashed_bot_ids = NULL WHERE id = ?`. Valid values stay valid: `null` and an empty list. No stored data changes. The restore loses only its `safeParse` skip, and keeps its check that each bot still exists and is live. Tests: `{}`, `[1]`, `["not-a-typeid"]` are refused, and one row reads back as `BotId[]`.
 - A (recommended): refuse it (Zod `parse`, an error), as `tool_settings` does (`bots-repository.ts:229`, its test `bots-repository.test.ts:47-55`). `SkillRecord.trashedBotIds` becomes `BotId[] | null`, and the restore loses its `safeParse` skip. Risk: one bad row makes each read of that skill fail (500). The app never writes such a value, and no real database exists (owner, 2026-11-13).
 - B: drop the bad entries on read (a value that is not a list reads as `null`). The reads never fail; a bad value is silent.
 No migration and no change of the stored value in A or B. The audit also says the column "holds TypeIDs" (D36 stores UUIDs in the database). Changing that changes stored values: not in this PR; I write it as `Not claimed` and name it for the owner.

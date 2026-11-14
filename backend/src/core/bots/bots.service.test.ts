@@ -1,9 +1,19 @@
 import type { CreateBotBody } from "@cty1ng/shared/bots";
 import { BotId, SkillId } from "@cty1ng/shared/ids";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { backendAt, manualClock, newTestId, tempDir, testBackend } from "../../../test/helpers.ts";
+import {
+  backendAt,
+  manualClock,
+  newTestId,
+  tempDir,
+  testBackend,
+  testIds,
+} from "../../../test/helpers.ts";
+import { memoryAvatarFiles } from "../../../test/fakes/avatar-files.ts";
 import { DomainError } from "../errors.ts";
 import { OWNER_ID } from "../owner.ts";
+import type { UnitOfWork } from "../ports/repositories.ts";
+import { createBotsService } from "./bots.service.ts";
 
 // The bots service on a temporary database (domain-model.md §2, api.md §4). FAKE_MODEL=1 gives
 // the two fake models; the file's real models have no key in tests, so they cannot run.
@@ -867,9 +877,9 @@ describe("purge (D50)", () => {
     // domain-model.md §2 Clone: a bot in Trash or purged has no clone template.
     expect(await failure(backend.bots.cloneTemplate(id))).toMatchObject({ code: "bot_deleted" });
     clock.advance(29 * DAY);
-    expect(await backend.bots.purgeDue()).toBe(0);
+    expect(await backend.bots.purgeDue()).toEqual({ purged: 0, failed: [] });
     clock.advance(DAY);
-    expect(await backend.bots.purgeDue()).toBe(1);
+    expect(await backend.bots.purgeDue()).toEqual({ purged: 1, failed: [] });
     const row = await backend.readers.bots.byId(id);
     expect(row).toMatchObject({
       name: "BA",
@@ -888,5 +898,55 @@ describe("purge (D50)", () => {
     expect((await create({ name: "ba" })).slug).toBe("ba-2");
     const last = (await events()).filter(([type]) => type === "bot.purged");
     expect(last).toEqual([["bot.purged", { bot_id: id }]]);
+  });
+
+  // P3 item 27: the purge of one bot that failed each time kept every later bot in Trash.
+  it("the purge job purges the bots after a bot whose purge fails", async () => {
+    const ids: BotId[] = [];
+    for (const name of ["A", "B", "C"]) {
+      const id = BotId.parse((await create({ name })).id);
+      await backend.bots.trash(id);
+      ids.push(id);
+      clock.advance(1);
+    }
+    const [a, b, c] = ids;
+    if (a === undefined || b === undefined || c === undefined) throw new Error("bots");
+    clock.advance(30 * DAY);
+    // The bots service with a purge that throws for B, as a bad row would.
+    const uow: UnitOfWork = {
+      run: (work) =>
+        backend.uow.run((tx) =>
+          work({
+            ...tx,
+            bots: {
+              ...tx.bots,
+              tombstone: (id, now) =>
+                id === b ? Promise.reject(new Error("disk full")) : tx.bots.tombstone(id, now),
+            },
+          }),
+        ),
+    };
+    const failing = createBotsService({
+      uow,
+      readers: backend.readers,
+      appendEvent: backend.appendEvent,
+      clock,
+      ids: testIds,
+      catalog: backend.catalog,
+      avatarFiles: memoryAvatarFiles(),
+    });
+    const before = (await events()).length;
+    const result = await failing.purgeDue();
+    expect((await backend.readers.bots.byId(c))?.purgedAt).not.toBeNull();
+    expect((await backend.readers.bots.byId(a))?.purgedAt).not.toBeNull();
+    expect(await backend.readers.bots.byId(b)).toMatchObject({ purgedAt: null });
+    expect(result.purged).toBe(2);
+    // The failed bot's transaction rolled back: no event names it.
+    expect((await events()).slice(before)).toEqual([
+      ["bot.purged", { bot_id: a }],
+      ["trash.changed", { counts: { skill: 0, bot: 2 } }],
+      ["bot.purged", { bot_id: c }],
+      ["trash.changed", { counts: { skill: 0, bot: 1 } }],
+    ]);
   });
 });
