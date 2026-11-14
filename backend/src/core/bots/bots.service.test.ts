@@ -697,6 +697,31 @@ describe("skills that touch pins (api.md §2)", () => {
     expect(await backend.skills.summary(notes, OWNER_ID)).toMatchObject({ bots_outdated: 0 });
   });
 
+  // P3 item 30, invariant 7: the change and its event in one transaction.
+  it("POST /skills/{id}/bots writes bot.updated for each bot that it moves", async () => {
+    const notes = await skill("notes");
+    const first = await create({ name: "A", pins: [{ skill_id: notes, always_load: false }] });
+    const second = await create({ name: "B", pins: [{ skill_id: notes, always_load: false }] });
+    const v1 = first.pins[0]?.skill_version_id ?? null;
+    await backend.skills.addVersion(
+      notes,
+      { baseVersion: 1, description: "v2", bodyMd: "## v2" },
+      OWNER_ID,
+    );
+    const v2 = (await backend.readers.skills.latestVersion(notes))?.id;
+    if (v1 === null || v2 === undefined) throw new Error("versions");
+    const before = (await events()).length;
+    await backend.bots.pinSkillToBots(notes, v2, [
+      { botId: BotId.parse(first.id), expectedSkillVersionId: v1 },
+      { botId: BotId.parse(second.id), expectedSkillVersionId: v1 },
+    ]);
+    // toMatchObject on a list also checks its length: no other event.
+    expect((await events()).slice(before)).toMatchObject([
+      ["bot.updated", { bot: { id: first.id } }],
+      ["bot.updated", { bot: { id: second.id } }],
+    ]);
+  });
+
   it("refuses a bot listed twice with 422, not a false stale_write", async () => {
     const notes = await skill("notes");
     const bot = await create();
@@ -898,6 +923,19 @@ describe("purge (D50)", () => {
     expect((await create({ name: "ba" })).slug).toBe("ba-2");
     const last = (await events()).filter(([type]) => type === "bot.purged");
     expect(last).toEqual([["bot.purged", { bot_id: id }]]);
+  });
+
+  // P3 item 30, invariant 7: the Trash count changes in the purge's transaction.
+  it("a bot purge writes trash.changed after bot.purged", async () => {
+    const id = BotId.parse((await create()).id);
+    await backend.bots.trash(id);
+    clock.advance(30 * DAY);
+    const before = (await events()).length;
+    await backend.bots.purgeDue();
+    expect((await events()).slice(before)).toEqual([
+      ["bot.purged", { bot_id: id }],
+      ["trash.changed", { counts: { skill: 0, bot: 0 } }],
+    ]);
   });
 
   // P3 item 27: the purge of one bot that failed each time kept every later bot in Trash.
