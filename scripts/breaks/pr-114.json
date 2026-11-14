@@ -190,7 +190,7 @@
           "edits": [
             {
               "find": "const TrashedBotIds = z.array(BotId).nullable();",
-              "replace": "const TrashedBotIds = z.array(z.string()).nullable();"
+              "replace": "const TrashedBotIds = z.array(z.custom<BotId>((value) => typeof value === \"string\")).nullable();"
             }
           ]
         }
