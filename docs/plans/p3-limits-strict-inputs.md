@@ -35,7 +35,7 @@ Approval: chief agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 que
 
 **Homes (Q12 A).** Two environment variables in `backend/src/app/config.ts`, wired in `compose.ts` into the skills service and the import service:
 - `SKILL_DIFF_MAX_EDITS`, default `2000` (positive integer; the owner's 2026-11-06 text names 2,000).
-- `SKILL_CHANGELOG_MAX`, default `500` for now (positive integer; waits for the chief's answer to Q3).
+- `SKILL_CHANGELOG_MAX`, default `500` (positive integer; section 7, Q3).
 Defaults are written one time, in the table of `docs/architecture.md` §8. The rules that use them (`domain-model.md` §3.x skill history and import, `api.md` rows) name the variable, not the value.
 
 ### PR 10 part
@@ -85,7 +85,6 @@ No order or race case: the changes are pure checks on one request. Break list: o
 - The export change must stay in the route (#114 rewrites the service function). The import apply check is in `skill-import.service.ts` apply; #114 changes `:261` of the same file: a text conflict is possible, solved in a records turn.
 - PR E changes `create-bot-form.ts`; with the bracket format I do not touch it.
 - `ToolSettingsBody` is also the read parser of stored JSON: a stored key that breaks `ToolIdPattern` would fail a read (500). Stored values are written only as effective results of catalog ids (pattern-checked by the catalog schema), and there is no real data before M3.
-- A CLI import from a folder whose path makes `Imported from {path}` longer than 500 characters is refused at preview (a path of about 486+ characters).
 - `SkillDiff` from shared may change the generated client (`additionalProperties: false`); then `pnpm gen:api` output is committed.
 
 ## 5. Open questions (with my recommendation)
@@ -105,3 +104,12 @@ No order or race case: the changes are pure checks on one request. Break list: o
 - Q4: A, the limit only.
 - Q5: A, brackets for indexes and dots for keys; `router.ts` only; `create-bot-form.ts` untouched.
 - Q2, Q3 (changelog default), Q6, Q7: with the consultants. Items 33, 34 and 31 wait for these answers.
+
+## 7. Answers (chief, arena 3, 2026-11-15 01:2x +07)
+
+Two consultants agreed with the plan on all four questions. The answers are in the chief's folder `tmp/owner/night-2026-11-15/arena3/`.
+
+- Q2 (item 33): as written. Only an absent `ids` means "all"; `ids=` (empty) → 422. The import check for repeated slugs runs before any claim or write.
+- Q3 (changelog): 500 characters (`domain-model.md` and `skills-page.md` §5: "one line"). A long file name gets 422 on `file`; it is not shortened. The length check runs before the lines are joined, on every path, and the file-name check counts characters the same way. The CLI passes the folder's base name, not the full path, so a long parent path uses none of the limit (the risk line about CLI paths is removed). Follow-up for the records turn: M5 `propose_skill` takes a changelog with no stated limit (`conversation-rules.md` §7, "Text only").
+- Q6 (item 34): yes. The numbers are `version` and the diff `from`/`to` (`routes/skills.ts:32`, `:221`). One more test: an integer above the safe range gets 422, not 404 or 500. `ToolIdPattern` is exported from `shared/src/catalog.ts`, with a comment: a change needs a check of the stored data, because the read parser of the stored JSON uses it. An empty `?` passes, as with `NoQuery`; the refusal has the common 422 shape.
+- Q7 (item 31): yes. One fixed `SKILL_MD_MAX_BYTES` in `core/`; `MAX_BODY_BYTES` stays separate. `security.md` §2.4 gets one line: the CLI folder reader uses the same limit. `skill-commands.test.ts` uses the constant (the limit and the limit + 1). Upload code: flagged under `Needs human review`.
