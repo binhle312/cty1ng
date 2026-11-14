@@ -333,6 +333,16 @@
           ]
         },
         {
+          "id": "R36-dev-csp-script-no-nonce",
+          "file": "frontend/vite.config.ts",
+          "edits": [
+            {
+              "find": "    `script-src 'self' 'nonce-${nonce}'`,",
+              "replace": "    \"script-src 'self'\","
+            }
+          ]
+        },
+        {
           "id": "R36-dev-csp-style-no-nonce",
           "file": "frontend/vite.config.ts",
           "edits": [
@@ -421,27 +431,27 @@
       ]
     },
     {
-      "id": "R36-nonce-per-start",
-      "claim": "Each start of the dev server makes a new nonce",
+      "id": "R36-nonce-per-run",
+      "claim": "Each run of the dev config makes a new random nonce",
       "test": {
         "kind": "vitest",
         "file": "scripts/dev-proxy.test.ts",
-        "name": "each start of the dev server makes a new nonce"
+        "name": "each run of the dev config makes a new random nonce"
       },
       "assertion": "expect({ valid: nonce.test(first ?? \"\"), changed: first !== second }).toEqual({",
       "breaks": [
         {
-          "id": "R36-nonce-once-per-module",
+          "id": "R36-nonce-fixed-literal",
           "file": "frontend/vite.config.ts",
           "edits": [
             {
-              "find": "function devSecurity() {\n  const nonce = randomBytes(16).toString(\"base64\");",
-              "replace": "const DEV_NONCE = randomBytes(16).toString(\"base64\");\nfunction devSecurity() {\n  const nonce = DEV_NONCE;"
+              "find": "  const nonce = randomBytes(16).toString(\"base64\");",
+              "replace": "  const nonce = \"AAAAAAAAAAAAAAAAAAAAAA==\";"
             }
           ]
         },
         {
-          "id": "R36-nonce-per-start-no-cspNonce",
+          "id": "R36-nonce-per-run-no-cspNonce",
           "file": "frontend/vite.config.ts",
           "edits": [
             {

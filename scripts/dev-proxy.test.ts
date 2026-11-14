@@ -159,15 +159,15 @@ describe("Vite dev proxy", () => {
   });
 });
 
-// The nonce of the dev page (security.md §2.1): a new one at each start of the dev server, and
-// none in the production build.
+// The nonce of the dev page (security.md §2.1): a new random one at each run of the config (Vite
+// runs it at each start of the dev server), and none in the production build.
 describe("Vite config nonce", () => {
   const configFor = (command: "serve" | "build") => {
     if (typeof viteConfig !== "function") throw new Error("vite.config.ts exports no function");
     return viteConfig({ command, mode: command === "serve" ? "development" : "production" });
   };
 
-  it("each start of the dev server makes a new nonce", () => {
+  it("each run of the dev config makes a new random nonce", () => {
     const first = configFor("serve").html?.cspNonce;
     const second = configFor("serve").html?.cspNonce;
     const nonce = /^[A-Za-z0-9+/]{22}==$/;
