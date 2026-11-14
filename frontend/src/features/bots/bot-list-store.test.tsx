@@ -419,8 +419,9 @@ describe("a row's actions after its change", () => {
     expect(result.current({ botId: other, skillId: SKILL_ID })).toBe(false);
   });
 
-  // `invalidateQueries` cuts a load on its way short, and a second cut ends the older refresh
-  // (lib/api/query-reads.ts). The row depends on `refreshQueries`, so this holds it.
+  // `invalidateQueries` cuts a load on its way short. The row waits for the newest list. Since
+  // TanStack Query 5.105.2 the library follows each newer load, so this test also passes with a
+  // plain `invalidateQueries()` in place of `refreshQueries` (lib/api/query-reads.ts).
   it.each([1, 2])(
     "stay off when %i newer refreshes cut the refresh short, until the newest list comes",
     async (cuts) => {

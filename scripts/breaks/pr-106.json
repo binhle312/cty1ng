@@ -1,0 +1,115 @@
+{
+  "claims": [
+    {
+      "id": "W1",
+      "claim": "After Create, the bot Create page does not move before the newest bot list came",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "stays on the Create page until the newest bot list comes"
+      },
+      "assertion": "expect(router.state.location.pathname, \"before the newest list\").toBe(\"/bots/new\");",
+      "breaks": [
+        {
+          "id": "W1-a",
+          "file": "frontend/src/features/bots/create-bot-page.tsx",
+          "edits": [
+            {
+              "find": "        await queryClient.invalidateQueries({ predicate: PIN_QUERIES });\n",
+              "replace": "        void queryClient.invalidateQueries({ predicate: PIN_QUERIES });\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W2",
+      "claim": "After Create, the new skill page does not move before the newest skill list came",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page.test.tsx",
+        "name": "stays on the Create page until the newest list comes"
+      },
+      "assertion": "expect(router.state.location.pathname, \"before the newest list\").toBe(\"/skills/new\");",
+      "breaks": [
+        {
+          "id": "W2-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "      await queryClient.invalidateQueries({ queryKey: allSkillsOptions().queryKey });\n",
+              "replace": "      void queryClient.invalidateQueries({ queryKey: allSkillsOptions().queryKey });\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W3",
+      "claim": "A skill page whose skill is not in the cached list shows no Page not found while a newer list loads",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page.test.tsx",
+        "name": "shows no Page not found while a newer list loads"
+      },
+      "assertion": "expect(screen.queryByText(\"Page not found\"), \"while the list loads\").toBeNull();",
+      "breaks": [
+        {
+          "id": "W3-a",
+          "file": "frontend/src/features/skills/skill-page.tsx",
+          "edits": [
+            {
+              "find": "  if (row === undefined && skills.isFetching) return <SkillEditorSkeleton />;\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W4",
+      "claim": "After a cut that gives the old list back and a new load, refreshQueries ends only after the new list",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/api/query-reads.test.ts",
+        "name": "ends only after the new list when a cut gives the old list back"
+      },
+      "assertion": "expect(ended, \"before the new list\").toBe(false);",
+      "breaks": [
+        {
+          "id": "W4-a",
+          "file": "frontend/src/lib/api/query-reads.ts",
+          "edits": [
+            {
+              "find": "  await loadsEnded(queryClient, filters);\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W5",
+      "claim": "refreshQueries removes its cache listener when it ends",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/api/query-reads.test.ts",
+        "name": "leaves no listener on the cache after it ends"
+      },
+      "assertion": "expect(queryClient.getQueryCache().hasListeners()).toBe(false);",
+      "breaks": [
+        {
+          "id": "W5-a",
+          "file": "frontend/src/lib/api/query-reads.ts",
+          "edits": [
+            {
+              "find": "      stop();\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": []
+}

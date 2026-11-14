@@ -74,9 +74,9 @@ describe("the skill page when a refresh of the list fails", () => {
   });
 });
 
-// A Create moves to the new skill when the list refresh ends. A live event in that time cancels
-// the refresh again, and TanStack Query joins only one cancelled refresh, so the wait could end on
-// the old list and show Page not found (found by the M2c e2e run). The page waits for the list.
+// A Create moves to the new skill when the newest list came (frontend-conventions.md §5; owner,
+// 2026-11-12). A live event in that time cuts the refresh and starts a newer load, and the wait
+// follows it. Before TanStack Query 5.105.2 the wait ended at the second cut, on the old list.
 describe("the skill page after Create while live events refresh the list", () => {
   let api: ReturnType<typeof fakeApi> | null = null;
   afterEach(() => {
@@ -84,7 +84,7 @@ describe("the skill page after Create while live events refresh the list", () =>
     api = null;
   });
 
-  it("shows the new skill, not Page not found", async () => {
+  it("stays on the Create page until the newest list comes", async () => {
     const created = makeSkill({ latest_version: { ...makeSkill().latest_version, version: 1 } });
     const held: ReturnType<typeof heldAnswer>[] = [];
     api = fakeApi({
@@ -129,11 +129,66 @@ describe("the skill page after Create while live events refresh the list", () =>
         expect(held).toHaveLength(count);
       });
     }
+    // The move comes in the same step as the end of the wait, so one timer step shows it.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(router.state.location.pathname, "before the newest list").toBe("/skills/new");
+    expect(screen.queryByText("Page not found")).toBeNull();
+    // Only the newest load gets an answer: the two cut loads never do.
+    await held.at(-1)?.answer({ body: [created] });
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/skills/write-user-stories");
     });
+    expect(
+      await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 }),
+    ).toBeTruthy();
     expect(screen.queryByText("Page not found")).toBeNull();
-    for (const answer of held) await answer.answer({ body: [created] });
+  });
+});
+
+// A move to a skill that the list in the cache does not have, while a newer list loads: the
+// newer list can have the skill, so Page not found waits for it.
+describe("the skill page while a newer list loads", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  it("shows no Page not found while a newer list loads", async () => {
+    const skill = makeSkill({ latest_version: { ...makeSkill().latest_version, version: 1 } });
+    const held: ReturnType<typeof heldAnswer>[] = [];
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      // The first list has no skill; the next load waits.
+      "GET /api/skills": () => {
+        if (api?.sent("GET", "/api/skills").length === 1) return { body: [] };
+        const answer = heldAnswer();
+        held.push(answer);
+        return answer.promise;
+      },
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: skill }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(1) }),
+      "GET /api/bots": () => ({ body: [] }),
+    });
+    const { router, queryClient } = await renderApp("/skills");
+    await waitFor(() => {
+      expect(api?.sent("GET", "/api/skills").length).toBeGreaterThan(0);
+    });
+    act(() => {
+      void queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES });
+      void router.navigate({ to: "/skills/$slug", params: { slug: "write-user-stories" } });
+    });
+    await waitFor(() => {
+      expect(held).toHaveLength(1);
+    });
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/skills/write-user-stories");
+    });
+    expect(screen.queryByText("Page not found"), "while the list loads").toBeNull();
+    expect(screen.getByRole("status", { name: "Loading the skill" })).toBeTruthy();
+    await held[0]?.answer({ body: [skill] });
     expect(
       await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 }),
     ).toBeTruthy();

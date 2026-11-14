@@ -386,9 +386,9 @@ function CreateBotView({
     })
       .then(async ({ data: bot }) => {
         leave.allowLeave();
-        // The bot page finds the bot in the list, so the list is refreshed before it opens
-        // (frontend-conventions.md §5). Live events can end this wait early; the page then shows
-        // its skeleton until the newest list comes.
+        // The bot page finds the bot in the list, so Create waits for the newest list before
+        // it moves (frontend-conventions.md §5). A live event in that time starts a newer load,
+        // and this wait follows it.
         await queryClient.invalidateQueries({ predicate: PIN_QUERIES });
         showToast(`Created ${bot.name} ✨`);
         if (mounted.current) {

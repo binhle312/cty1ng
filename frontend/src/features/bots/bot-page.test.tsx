@@ -2731,8 +2731,9 @@ describe("the Skills tab (bot-page.md §7)", () => {
     expect(isOff(screen.getByRole("switch", { name: "Always load Zeta" }))).toBe(false);
   });
 
-  // Live events can cut the refresh after a move short again and again. TanStack Query ends an
-  // `invalidateQueries` that was cut twice, with the old list still in place.
+  // Live events can cut the refresh after a move short again and again. The row waits for the
+  // newest list. Since TanStack Query 5.105.2 the library follows each newer load, so this test
+  // also passes with a plain `invalidateQueries()` in place of `refreshQueries`.
   it("keeps the row's actions off when two newer loads cut the refresh short", async () => {
     const refreshed = heldAnswer();
     const [zeta] = pins;

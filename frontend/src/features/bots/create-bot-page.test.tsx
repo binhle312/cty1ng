@@ -134,6 +134,61 @@ describe("Create on the Create bot page", () => {
     expect(fake.sent("POST", "/api/bots")).toHaveLength(1);
   });
 
+  // The wait after Create (frontend-conventions.md §5; owner, 2026-11-12): the bot page finds the
+  // bot in the list, so Create moves after the newest list came. A live event in that time starts
+  // a newer load, and the wait follows it.
+  it("stays on the Create page until the newest bot list comes", async () => {
+    const bot = makeBot(1, "BA");
+    const held: ReturnType<typeof heldAnswer>[] = [];
+    let created = false;
+    fake = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/models": () => ({ body: [makeModel(), FAKE_SCRIPTED] }),
+      "GET /api/tools": () => ({ body: [] }),
+      "GET /api/skills": () => ({ body: [] }),
+      // The list from before Create has no bot; each load after Create waits.
+      "GET /api/bots": () => {
+        if (!created) return { body: [] };
+        const answer = heldAnswer();
+        held.push(answer);
+        return answer.promise;
+      },
+      "POST /api/bots": () => {
+        created = true;
+        return { status: 201, body: bot };
+      },
+    });
+    const { router, queryClient } = await renderApp("/bots/new");
+    await screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+    await fillToModelStep();
+    click(screen.getByRole("button", { name: "Create" }));
+    await waitFor(() => {
+      expect(held).toHaveLength(1);
+    });
+    // Two live events while the refresh waits: each one cuts the load and starts a newer one.
+    for (const count of [2, 3]) {
+      act(() => {
+        void queryClient.invalidateQueries({ predicate: BOT_QUERIES });
+      });
+      await waitFor(() => {
+        expect(held).toHaveLength(count);
+      });
+    }
+    // The move and the toast come in the same step as the end of the wait, so one timer step
+    // shows them.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(router.state.location.pathname, "before the newest list").toBe("/bots/new");
+    expect(screen.queryByText("Created BA ✨"), "before the newest list").toBeNull();
+    // Only the newest load gets an answer: the two cut loads never do.
+    await held.at(-1)?.answer({ body: [bot] });
+    expect(await screen.findByText("Created BA ✨")).toBeTruthy();
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/bots/ba");
+    });
+  });
+
   it("shows a taken name on Basics and sends the next Create with a new key (E1, E3)", async () => {
     fake = api([
       {

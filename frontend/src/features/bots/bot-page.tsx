@@ -53,7 +53,7 @@ export function BotPage() {
     return <BotPageSkeleton />;
   }
   const bot = bots.data.find((b) => b.slug === slug);
-  // A refresh on its way may bring the bot (a Create or a rename moves here first): "could not
+  // A refresh on its way may bring the bot (a rename moves here first): "could not
   // find" waits for the newest list, as the skill page does.
   if (bot === undefined && bots.isFetching) return <BotPageSkeleton />;
   // A refresh that failed is not a missing bot: the list did not load (bot-page.md, URLs).

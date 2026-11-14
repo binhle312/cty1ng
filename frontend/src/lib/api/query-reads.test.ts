@@ -3,9 +3,11 @@ import { afterEach, describe, expect, it } from "vitest";
 import { readNewest, refreshQueries } from "./query-reads.ts";
 
 // These run the real TanStack Query: the behaviour they hold is the library's, and a mock would
-// only repeat what the helpers assume. A load that a newer load cuts short gives up its promise to
-// the newer load, once. If that load is cut too, the first caller gets a `CancelledError`, or an
-// `invalidateQueries` that ended, with the old data still in the list.
+// only repeat what the helpers assume. Since 5.105.2, a load that a newer load cuts short gives
+// its promise to the newer load at each cut, so the tests of 0 to 3 cuts also pass with the plain
+// library calls. The tests below hold two cases where a helper does work: a cut that gives the old
+// list back and then a new load (`refreshQueries`), and a query that leaves the cache during a
+// read (`readNewest`).
 const KEY = ["things"];
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -108,11 +110,37 @@ describe("refreshQueries", () => {
     expect(queryClient.getQueryData(KEY)).toEqual(["old"]);
   });
 
+  // `invalidateQueries()` follows a cut by a newer load, but not this cut: `cancelQueries()` gives
+  // the old list back to the code that waits, and a new load starts after it. The second step of
+  // the helper waits for that load.
+  const cutWithTheOldList = (queryClient: QueryClient) => {
+    void queryClient.cancelQueries({ queryKey: KEY });
+    void queryClient.invalidateQueries({ queryKey: KEY });
+  };
+
+  it("ends only after the new list when a cut gives the old list back", async () => {
+    const { queryClient, loads } = list();
+    let ended = false;
+    void refreshQueries(queryClient, { queryKey: KEY }).then(() => {
+      ended = true;
+    });
+    await settle();
+    cutWithTheOldList(queryClient);
+    await settle();
+    expect(loads).toHaveLength(2);
+    expect(ended, "before the new list").toBe(false);
+    loads.at(-1)?.answer(["new"]);
+    await settle();
+    expect(queryClient.getQueryData(KEY)).toEqual(["new"]);
+    expect(ended).toBe(true);
+  });
+
   it("leaves no listener on the cache after it ends", async () => {
-    const { queryClient, loads, cut } = list();
+    const { queryClient, loads } = list();
     void refreshQueries(queryClient, { queryKey: KEY });
     await settle();
-    await cut(2);
+    cutWithTheOldList(queryClient);
+    await settle();
     expect(queryClient.getQueryCache().hasListeners()).toBe(true);
     loads.at(-1)?.answer(["new"]);
     await settle();

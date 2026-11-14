@@ -449,7 +449,9 @@ describe("the assign card after Create (C4b)", () => {
   });
 
   // On a busy server live events can cut the card's read of the bots short again and again. Only a
-  // read that fails ends in the toast (e2e J4 found this).
+  // read that fails ends in the toast (e2e J4 found this). Since TanStack Query 5.105.2 the
+  // library follows each newer load, so this test also passes with a plain read in place of
+  // `readNewest`.
   it("opens the card when two newer loads cut its read of the bots short", async () => {
     const list = heldAnswer();
     let holdList = false;
