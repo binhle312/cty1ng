@@ -38,7 +38,16 @@ environment, provider-side data handling.
 - The SSE endpoint applies the same Host/Origin checks.
 - Response headers: `Content-Security-Policy: default-src 'self'; img-src 'self' data:;
   object-src 'none'; frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`,
-  `Referrer-Policy: no-referrer`.
+  `Referrer-Policy: no-referrer`. Every answer of the app has them, also a refusal of the Host
+  or Origin check. An answer that Node makes before the app runs, such as its `400` for an
+  HTTP/1.1 request with no `Host`, has none.
+- The request path, in order: request id, access log, the response headers, Host check, Origin
+  check, CORS, body limit (1 MB, or the limit of an upload route), the route. The error handler
+  answers with the code and the request id, never a stack (§2.10).
+- The dev page (`make dev`, the Vite dev server) has the same headers. Its CSP adds a nonce to
+  `script-src` and `style-src` for the inline React refresh script and the `<style>` tags of
+  the Vite client. The dev server makes a new nonce at each start, and the production build
+  has none (`frontend/vite.config.ts`).
 - The CSP stays without `'unsafe-inline'` and `'unsafe-eval'`. So the frontend has no inline
   script or style (the no-flash theme script is a file), runs Zod without its `new Function`
   fast path (`frontend/public/zod-init.js`, a file that runs before any module, and
@@ -419,7 +428,8 @@ computer (owner, 2026-10-28):
 ## 3. Security tests (must exist)
 
 - Host header `evil.com` → 403 `host_rejected`; missing or duplicate Host → 400; `Origin: https://evil.com` on POST → 403; no Origin on POST →
-  403; correct origin → passes.
+  403; correct origin → passes. Each of these refusals has the response headers of §2.1, also
+  on a real socket. The dev page has its CSP and the nonce on each inline script.
 - Startup with `HOST=0.0.0.0` fails.
 - Markdown XSS corpus (script tags, event handlers, `javascript:` links, SVG) renders inert
   (Vitest).
