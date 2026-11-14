@@ -15,7 +15,7 @@ export default defineConfig(({ command, mode }) => {
   const dev = command === "serve" ? devSecurity() : undefined;
   return {
     plugins: [react(), tailwindcss()],
-    // Vite puts the nonce on its inline scripts and styles (dev server only).
+    // Vite puts the nonce on its inline scripts and styles (dev server and `vite preview`).
     ...(dev === undefined ? {} : { html: { cspNonce: dev.nonce } }),
     // Never 0.0.0.0 (AGENTS.md §8).
     server: {
@@ -50,8 +50,10 @@ export default defineConfig(({ command, mode }) => {
 
 // security.md §2.1 on the dev page: the production CSP, with a nonce for the inline React
 // refresh script and the `<style>` tags of the Vite client. Never 'unsafe-inline'. A new nonce at
-// each start of the dev server; the production build gets none, and the backend sends its own
-// CSP (`backend/src/adapters/http/middleware.ts`).
+// each start of the dev server. `vite preview` also runs with `command === "serve"`, and Vite
+// uses `server.headers` when `preview.headers` is not set, so it sends the same headers. The
+// production build gets no nonce, and the backend sends its own CSP
+// (`backend/src/adapters/http/middleware.ts`).
 function devSecurity() {
   const nonce = randomBytes(16).toString("base64");
   const csp = [

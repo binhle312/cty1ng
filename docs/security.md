@@ -49,7 +49,8 @@ environment, provider-side data handling.
 - The dev page (`make dev`, the Vite dev server) has the same headers. Its CSP adds a nonce to
   `script-src` and `style-src` for the inline React refresh script and the `<style>` tags of
   the Vite client. The dev server makes a new nonce at each start, and the production build
-  has none (`frontend/vite.config.ts`).
+  has none (`frontend/vite.config.ts`). `vite preview` sends the same headers as the dev
+  server.
 - The CSP stays without `'unsafe-inline'` and `'unsafe-eval'`. So the frontend has no inline
   script or style (the no-flash theme script is a file), runs Zod without its `new Function`
   fast path (`frontend/public/zod-init.js`, a file that runs before any module, and
