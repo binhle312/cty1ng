@@ -358,6 +358,42 @@ describe("edits", () => {
 });
 
 // Item 24 of the P3 list: the changelog has a length limit (SKILL_CHANGELOG_MAX, 500).
+// Item 34 of the P3 list: a version number in the path or the query is only digits with no
+// leading zero; `Number()` read `0x2`, `2.0` or `1e0` as a number before.
+describe("strict version numbers", () => {
+  it.each(["0x1", "1.0", "1e0", "+1", "01", " 1", "0b1"])(
+    "the version %j in the path gives 422 on version",
+    async (version) => {
+      const { id } = await created();
+      const response = await send("GET", `/skills/${id}/versions/${encodeURIComponent(version)}`);
+      expect(response.status).toBe(422);
+      expect(await errorOf(response)).toEqual({ code: "validation_error", field: "version" });
+    },
+  );
+
+  it("the version 1 in the path still answers 200", async () => {
+    const { id } = await created();
+    expect((await send("GET", `/skills/${id}/versions/1`)).status).toBe(200);
+  });
+
+  it("a version above the safe integer range gives 422, not 404", async () => {
+    const { id } = await created();
+    const response = await send("GET", `/skills/${id}/versions/9007199254740993`);
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toEqual({ code: "validation_error", field: "version" });
+  });
+
+  it.each([
+    ["from", "from=0x1&to=1"],
+    ["to", "from=1&to=1.0"],
+  ])("a loose number in the diff %s gives 422", async (field, query) => {
+    const { id } = await created();
+    const response = await send("GET", `/skills/${id}/diff?${query}`);
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toEqual({ code: "validation_error", field });
+  });
+});
+
 describe("the changelog limit", () => {
   const version = (changelog: string) => ({
     base_version: 1,

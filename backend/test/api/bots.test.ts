@@ -98,6 +98,21 @@ describe("POST /bots", () => {
     });
   });
 
+  // Item 34 of the P3 list: a key of tool_settings has the shape of a catalog tool id.
+  it("refuses a tool_settings key that is not a tool id with 422", async () => {
+    const { response } = await createBot({ ...newBot, tool_settings: { "Not An Id": false } });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toMatchObject({
+      code: "validation_error",
+      field: "tool_settings.Not An Id",
+    });
+  });
+
+  it("accepts a turned-off tool id that the model does not offer", async () => {
+    const { response } = await createBot({ ...newBot, tool_settings: { not_offered: false } });
+    expect(response.status).toBe(201);
+  });
+
   it("names a key of an object in a 422 after a dot: tool_settings.web_fetch", async () => {
     const { response } = await createBot({ ...newBot, tool_settings: { web_fetch: "on" } });
     expect(response.status).toBe(422);

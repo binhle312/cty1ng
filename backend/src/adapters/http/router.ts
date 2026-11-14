@@ -1,4 +1,5 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
+import type { MiddlewareHandler } from "hono";
 import type { HttpEnv } from "./context.ts";
 import { ApiFailure } from "./errors.ts";
 
@@ -31,4 +32,16 @@ function fieldPath(path: readonly PropertyKey[]): string {
       typeof part === "number" ? `[${String(part)}]` : `${index === 0 ? "" : "."}${String(part)}`,
     )
     .join("");
+}
+
+// A route that is not a Zod route still refuses a query string (security.md §2.9), with the
+// answer of a Zod route with `NoQuery`. An empty `?` passes, as there.
+export function noQueryString(): MiddlewareHandler<HttpEnv> {
+  return async (c, next) => {
+    const key = new URL(c.req.url).searchParams.keys().next();
+    if (key.done !== true) {
+      throw new ApiFailure("validation_error", `Unrecognized key: "${key.value}"`, key.value);
+    }
+    await next();
+  };
 }

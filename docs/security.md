@@ -180,6 +180,9 @@ environment, provider-side data handling.
   limits and enums; the server validates even what the form already checked. Form validation
   in the browser is for usability only.
 - IDs are parsed with their TypeID schema (`shared/src/ids.ts`, D36) before they reach a query.
+- The routes that are not Zod routes (`/api/openapi.json`, the dev `/api/docs` page) refuse a
+  query key with the same 422; an empty `?` passes.
+- A key of `tool_settings` has the shape of a catalog tool id (`ToolIdPattern`).
 
 ### 2.10 Errors, debugging and logs
 

@@ -1,4 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
+import { z } from "zod";
 import { testBackend } from "../helpers.ts";
 
 // The OpenAPI docs page only when APP_ENV=dev (security.md §2.10), with no inline script, so
@@ -71,5 +72,32 @@ describe("the OpenAPI document", () => {
     expect(response.status).toBe(200);
     const document: unknown = await response.json();
     expect(nullableEnumsWithoutNull(document, "$", [])).toEqual([]);
+  });
+});
+
+// Item 34 of the P3 list: the document and the docs page are not Zod routes, so they refused no
+// query string (security.md §2.9). An empty `?` passes, as on a Zod route with no query.
+const ErrorBody = z.object({ error: z.object({ code: z.string(), field: z.string().optional() }) });
+
+describe("a query string on the docs routes", () => {
+  const dev = testBackend({ APP_ENV: "dev" });
+  afterAll(() => {
+    dev.close();
+  });
+
+  it.each(["/api/openapi.json", "/api/docs", "/api/docs/init.js"])(
+    "%s?x=1 gives 422 on x",
+    async (path) => {
+      const response = await dev.request(`${path}?x=1`);
+      expect(response.status).toBe(422);
+      expect(ErrorBody.parse(await response.json()).error).toEqual({
+        code: "validation_error",
+        field: "x",
+      });
+    },
+  );
+
+  it("/api/openapi.json with an empty ? still answers 200", async () => {
+    expect((await dev.request("/api/openapi.json?")).status).toBe(200);
   });
 });

@@ -29,7 +29,13 @@ const json = <T extends z.ZodType>(schema: T, description: string) => ({
   content: { "application/json": { schema } },
 });
 const IdParam = z.object({ id: SkillId });
-const VersionParam = z.object({ id: SkillId, version: z.coerce.number().int().positive() });
+// A version number in the path or the query: digits with no leading zero, never what `Number()`
+// also reads, such as `0x2`, `2.0` or `1e0` (P3 list, item 34). The OpenAPI type stays `integer`.
+const VersionNumber = z.preprocess(
+  (value) => (typeof value === "string" && /^[1-9][0-9]*$/.test(value) ? Number(value) : value),
+  z.number().int().positive(),
+);
+const VersionParam = z.object({ id: SkillId, version: VersionNumber });
 const RowVersion = z.number().int().positive();
 const Changelog = z.string().optional();
 // A route that takes no query string still refuses one (security.md §2.9).
@@ -218,8 +224,8 @@ const routes = {
       params: IdParam,
       query: z
         .object({
-          from: z.coerce.number().int().positive(),
-          to: z.coerce.number().int().positive(),
+          from: VersionNumber,
+          to: VersionNumber,
         })
         .strict(),
     },

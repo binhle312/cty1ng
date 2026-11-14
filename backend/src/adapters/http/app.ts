@@ -16,7 +16,7 @@ import {
   requestId,
   securityHeaders,
 } from "./middleware.ts";
-import { createRouter } from "./router.ts";
+import { createRouter, noQueryString } from "./router.ts";
 import { apiDocsRoutes } from "./routes/api-docs.ts";
 import { AVATAR_UPLOAD_PATHS, avatarRoutes } from "./routes/avatars.ts";
 import { botRoutes } from "./routes/bots.ts";
@@ -82,6 +82,7 @@ export function createHttpApp(deps: HttpDeps) {
   if (deps.apiDocs) api.route("/", apiDocsRoutes());
   app.route("/api", api);
 
+  app.use("/api/openapi.json", noQueryString());
   app.doc31("/api/openapi.json", { openapi: "3.1.0", info: OPENAPI_INFO });
   if (deps.frontendDir !== null) app.use(frontendFiles(deps.frontendDir));
   return app;

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CASE_FOLDING } from "./case-folding.ts";
-import { Effort, UnavailableReason } from "./catalog.ts";
+import { Effort, ToolIdPattern, UnavailableReason } from "./catalog.ts";
 import { BotId, SkillId, SkillVersionId } from "./ids.ts";
 import { formatCount, trimSlug } from "./skills.ts";
 
@@ -194,8 +194,9 @@ export const AvatarColour = z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Use a colour 
 export const AvatarId = z.string().regex(/^[0-9a-f]{64}$/);
 
 // The tool switches by tool id: the API bodies, and the `tool_settings` JSON column when the
-// repository reads it back (frontend-conventions.md §1: every boundary value is parsed).
-export const ToolSettingsBody = z.record(z.string(), z.boolean());
+// repository reads it back (frontend-conventions.md §1: every boundary value is parsed). Each key
+// has the shape of a catalog tool id (P3 list, item 34).
+export const ToolSettingsBody = z.record(z.string().regex(ToolIdPattern), z.boolean());
 
 export const BotPin = z
   .object({

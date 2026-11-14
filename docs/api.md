@@ -16,7 +16,10 @@ Read conventions and errors, then the endpoint group in scope and its referenced
   is an id that does not exist: it gets the answer of an unknown id, for example 404. Timestamps
   are ISO-8601 UTC.
 - Request schemas forbid unknown fields (Zod `.strict()`) so typos and forbidden fields
-  (like `model_id` on bot update) fail loudly with 422.
+  (like `model_id` on bot update) fail loudly with 422. The OpenAPI document and the dev docs page
+  are not Zod routes, and they refuse a query key the same way.
+- A version number in the path or the query (`{version}`, `from`, `to`) is digits with no leading
+  zero, within the safe integer range; `0x2`, `2.0` or `1e0` gets 422 `validation_error`.
 - Lists are cursor-paginated where they can grow: `?before_seq=` / `?limit=` (max 100).
 - Create returns `201` with the created object. Delete/deprecate returns `204` or the updated
   object. Actions return the affected object.
