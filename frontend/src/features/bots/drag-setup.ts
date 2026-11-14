@@ -18,15 +18,41 @@ import { type RefObject, useCallback } from "react";
 // the mouse sensor, a touch is only the touch sensor's: a long press starts the drag, a short
 // tap is a click, and a swipe scrolls. The keyboard picks up and drops with Space only, because
 // Enter opens the bot (or its card).
+//
+// A mouse or touch press ends on Esc too, but dnd-kit does not mark that Esc as used. So from the
+// press until the release, a capture listener marks it, and the bot page does not also ask
+// (bot-page.md §4.1).
 export function useDragSensors() {
   return useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 300, tolerance: 5 } }),
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: 5 },
+      onActivation: markEscUntilRelease,
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 300, tolerance: 5 },
+      onActivation: markEscUntilRelease,
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
       keyboardCodes: { start: ["Space"], cancel: ["Escape"], end: ["Space"] },
     }),
   );
+}
+
+const RELEASES = ["mouseup", "touchend", "touchcancel"] as const;
+
+function markEscUntilRelease() {
+  const onKey = (event: KeyboardEvent) => {
+    if (event.key !== "Escape" && event.code !== "Escape") return;
+    event.preventDefault();
+    stop();
+  };
+  const stop = () => {
+    window.removeEventListener("keydown", onKey, true);
+    for (const name of RELEASES) window.removeEventListener(name, stop, true);
+  };
+  window.addEventListener("keydown", onKey, true);
+  for (const name of RELEASES) window.addEventListener(name, stop, true);
 }
 
 // The drop place decides (HD5): a pointer outside the area is over nothing, so the drop changes

@@ -1,0 +1,593 @@
+{
+  "claims": [
+    {
+      "id": "D1",
+      "claim": "A late Delete success leaves the owner on the other bot they opened",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "keeps the owner on the other bot they opened while Delete waited"
+      },
+      "assertion": "expect(router.state.location.pathname, \"still on Designer\").toBe(\"/bots/designer\");",
+      "breaks": [
+        {
+          "id": "D1-no-place-check",
+          "file": "frontend/src/features/bots/bot-page.tsx",
+          "edits": [
+            {
+              "find": "      if (router.state.location.pathname !== `/bots/${bot.slug}`) return;\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D2",
+      "claim": "A late Delete success leaves the owner on the other page they opened",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "keeps the owner on the other page they opened while Delete waited"
+      },
+      "assertion": "expect(router.state.location.pathname, \"still on Skills\").toBe(\"/skills\");",
+      "breaks": [
+        {
+          "id": "D2-no-place-check",
+          "file": "frontend/src/features/bots/bot-page.tsx",
+          "edits": [
+            {
+              "find": "      if (router.state.location.pathname !== `/bots/${bot.slug}`) return;\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D3",
+      "claim": "A Delete success while the owner stays on the bot page (dialog closed) still opens the Bots page",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "opens the Bots page when Delete answers after the owner closed its dialog"
+      },
+      "assertion": "expect(router.state.location.pathname, \"on the Bots page\").toBe(\"/bots\");",
+      "breaks": [
+        {
+          "id": "D3-no-navigate",
+          "file": "frontend/src/features/bots/bot-page.tsx",
+          "edits": [
+            {
+              "find": "      void router.navigate({ to: \"/bots\", replace: true });\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T1",
+      "claim": "Try again shows the sending state",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "shows Creating while Try again waits for its answer (E4)"
+      },
+      "assertion": "expect(await screen.findByRole(\"button\", { name: \"Creating\" })).toBeTruthy();",
+      "breaks": [
+        {
+          "id": "T1-spread-after-kind",
+          "file": "frontend/src/features/bots/create-bot-page.tsx",
+          "edits": [
+            {
+              "find": "    setSend({ kind: \"sending\", key: request.key, body: request.body });",
+              "replace": "    setSend({ kind: \"sending\", ...request });"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S1",
+      "claim": "A ticked skill that another tab deprecates keeps its row with the Deprecated pill",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "names a ticked skill that another tab deprecated, with the Deprecated pill"
+      },
+      "assertion": "expect(await within(rowOf(NEW.id)).findByText(\"Deprecated\")).toBeTruthy();",
+      "breaks": [
+        {
+          "id": "S1-no-ticked-deprecated",
+          "file": "frontend/src/features/bots/create-bot-page.tsx",
+          "edits": [
+            {
+              "find": "|| ticked.has(skill.id))",
+              "replace": ")"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "claim": "Unticked, the row of a deprecated skill goes",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "drops the row of a deprecated skill when the owner unticks it"
+      },
+      "assertion": "expect(document.querySelectorAll(`li[data-skill=\"${NEW.id}\"]`)).toHaveLength(0);",
+      "breaks": [
+        {
+          "id": "S2-keep-every-deprecated",
+          "file": "frontend/src/features/bots/create-bot-page.tsx",
+          "edits": [
+            {
+              "find": "|| ticked.has(skill.id))",
+              "replace": "|| true)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C1",
+      "claim": "A server error on the source of a Clone shows its text",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "shows a server error on the source bot next to Create"
+      },
+      "assertion": "expect(await screen.findByText(\"The bot to copy does not exist.\")).toBeTruthy();",
+      "breaks": [
+        {
+          "id": "C1-source-as-field",
+          "file": "frontend/src/features/bots/create-bot-page.tsx",
+          "edits": [
+            {
+              "find": "if (api.field === undefined || api.field === \"cloned_from_bot_id\") {",
+              "replace": "if (api.field === undefined) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C2",
+      "claim": "A server error on the source of a Clone keeps Create on",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "keeps Create on after a server error on the source bot"
+      },
+      "assertion": "expect(create.getAttribute(\"aria-disabled\"), \"Create is on\").toBe(\"false\");",
+      "breaks": [
+        {
+          "id": "C2-source-as-field",
+          "file": "frontend/src/features/bots/create-bot-page.tsx",
+          "edits": [
+            {
+              "find": "if (api.field === undefined || api.field === \"cloned_from_bot_id\") {",
+              "replace": "if (api.field === undefined) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C3",
+      "claim": "A server error on the source of a Clone marks no step",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "marks no step after a server error on the source bot"
+      },
+      "assertion": "expect(screen.queryByRole(\"button\", { name: /has an error/ }), \"no step mark\").toBeNull();",
+      "breaks": [
+        {
+          "id": "C3-source-as-field",
+          "file": "frontend/src/features/bots/create-bot-page.tsx",
+          "edits": [
+            {
+              "find": "if (api.field === undefined || api.field === \"cloned_from_bot_id\") {",
+              "replace": "if (api.field === undefined) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R1",
+      "claim": "The Clone template is read once when its bot is not found (retry: false, DQ-095)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "reads the template of a Clone once when the bot to copy is not found"
+      },
+      "assertion": "expect(fake.sent(\"GET\", `/api/bots/${SOURCE.id}/clone-template`)).toHaveLength(1);",
+      "breaks": [
+        {
+          "id": "R1-no-retry-false",
+          "file": "frontend/src/features/bots/create-bot-page.tsx",
+          "edits": [
+            {
+              "find": "    retry: false,\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E1",
+      "claim": "Esc in the side list Search with text only clears it (the Search uses up the Esc; the page skips a used press, DQ-095)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "only clears the side list search on Esc when it has text"
+      },
+      "assertion": "expect(screen.queryByRole(\"alertdialog\"), \"the search used the Esc\").toBeNull();",
+      "breaks": [
+        {
+          "id": "E1-search-no-preventDefault",
+          "file": "frontend/src/features/bots/bot-side-list.tsx",
+          "edits": [
+            {
+              "find": "            event.preventDefault();\n            setQuery(\"\");",
+              "replace": "            setQuery(\"\");"
+            }
+          ]
+        },
+        {
+          "id": "E1-no-defaultPrevented",
+          "file": "frontend/src/features/bots/bot-page.tsx",
+          "edits": [
+            {
+              "find": "      if (event.defaultPrevented || event.isComposing) return;",
+              "replace": "      if (event.isComposing) return;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2",
+      "claim": "Esc during a keyboard drag only cancels the drag (defaultPrevented, DQ-095)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "only cancels a keyboard drag of a pinned bot on Esc"
+      },
+      "assertion": "expect(screen.queryByRole(\"alertdialog\"), \"the drag used the Esc\").toBeNull();",
+      "breaks": [
+        {
+          "id": "E2-no-defaultPrevented",
+          "file": "frontend/src/features/bots/bot-page.tsx",
+          "edits": [
+            {
+              "find": "      if (event.defaultPrevented || event.isComposing) return;",
+              "replace": "      if (event.isComposing) return;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E3",
+      "claim": "Esc in the bot menu only closes the menu",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "only closes the bot menu on Esc"
+      },
+      "assertion": "expect(screen.queryByRole(\"alertdialog\"), \"the menu used the Esc\").toBeNull();",
+      "breaks": [
+        {
+          "id": "E3-capture-phase",
+          "file": "frontend/src/features/bots/bot-page.tsx",
+          "edits": [
+            {
+              "find": "    window.addEventListener(\"keydown\", onKey);",
+              "replace": "    window.addEventListener(\"keydown\", onKey, true);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E4",
+      "claim": "Esc in the Delete dialog only closes the dialog",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "only closes the Delete dialog on Esc"
+      },
+      "assertion": "expect(screen.queryByRole(\"alertdialog\"), \"the dialog used the Esc\").toBeNull();",
+      "breaks": [
+        {
+          "id": "E4-capture-phase",
+          "file": "frontend/src/features/bots/bot-page.tsx",
+          "edits": [
+            {
+              "find": "    window.addEventListener(\"keydown\", onKey);",
+              "replace": "    window.addEventListener(\"keydown\", onKey, true);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E5",
+      "claim": "The question that Esc opens does not close on the same press",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "asks on Esc in a changed field, and the question stays"
+      },
+      "assertion": "expect(screen.getByRole(\"alertdialog\", QUESTION), \"the question stays\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "E5-capture-phase",
+          "file": "frontend/src/features/bots/bot-page.tsx",
+          "edits": [
+            {
+              "find": "    window.addEventListener(\"keydown\", onKey);",
+              "replace": "    window.addEventListener(\"keydown\", onKey, true);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E6",
+      "claim": "A key repeat of Esc asks nothing",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "does not ask on a key repeat: a held Esc asks once"
+      },
+      "assertion": "expect(screen.queryByRole(\"alertdialog\"), \"a repeat asks nothing\").toBeNull();",
+      "breaks": [
+        {
+          "id": "E6-no-repeat-check",
+          "file": "frontend/src/features/bots/bot-page.tsx",
+          "edits": [
+            {
+              "find": "      if (event.key !== \"Escape\" || event.repeat) return;",
+              "replace": "      if (event.key !== \"Escape\") return;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E7",
+      "claim": "An Esc that ends an IME composition asks nothing",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "asks nothing when Esc only ends an IME composition"
+      },
+      "assertion": "expect(screen.queryByRole(\"alertdialog\"), \"an IME Esc asks nothing\").toBeNull();",
+      "breaks": [
+        {
+          "id": "E7-no-isComposing-check",
+          "file": "frontend/src/features/bots/bot-page.tsx",
+          "edits": [
+            {
+              "find": "      if (event.defaultPrevented || event.isComposing) return;",
+              "replace": "      if (event.defaultPrevented) return;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E8",
+      "claim": "In a real browser, Esc asks after a click outside the form",
+      "test": {
+        "kind": "e2e",
+        "file": "frontend/test/e2e/bot-page.spec.ts",
+        "name": "Esc after a click outside the form asks, and Esc in the bot menu closes only the menu"
+      },
+      "assertion": "await expect(question, \"Esc outside the form asks\").toBeVisible();",
+      "breaks": [
+        {
+          "id": "E8-form-only",
+          "file": "frontend/src/features/bots/bot-page.tsx",
+          "edits": [
+            {
+              "find": "      if (event.key !== \"Escape\" || event.repeat) return;",
+              "replace": "      if (event.key !== \"Escape\" || event.repeat) return;\n      if (!(event.target instanceof Node) || !document.getElementById(\"bot-edit\")?.contains(event.target)) return;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D4",
+      "claim": "A late Delete success after the owner left and came back to this bot opens the Bots page (the rule is the owner's place, not the old page)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "opens the Bots page when Delete answers after the owner came back to the bot"
+      },
+      "assertion": "expect(router.state.location.pathname, \"back on BA, then the Bots page\").toBe(\"/bots\");",
+      "breaks": [
+        {
+          "id": "D4-mount-check",
+          "file": "frontend/src/features/bots/bot-page.tsx",
+          "edits": [
+            {
+              "find": "  const router = useRouter();\n  const remove",
+              "replace": "  const router = useRouter();\n  const mounted = useRef(true);\n  useEffect(() => {\n    mounted.current = true;\n    return () => {\n      mounted.current = false;\n    };\n  }, []);\n  const remove"
+            },
+            {
+              "find": "      if (router.state.location.pathname !== `/bots/${bot.slug}`) return;\n",
+              "replace": "      if (!mounted.current || router.state.location.pathname !== `/bots/${bot.slug}`) return;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T2",
+      "claim": "After a failed Try again, Try again sends again and shows Creating (the test then also checks the banner and a third Try again; no break covers those steps)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "shows the banner again when Try again gets a server error too"
+      },
+      "assertion": "expect(await screen.findByRole(\"button\", { name: \"Creating\" }), \"sends again\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "T2-spread-after-kind",
+          "file": "frontend/src/features/bots/create-bot-page.tsx",
+          "edits": [
+            {
+              "find": "    setSend({ kind: \"sending\", key: request.key, body: request.body });",
+              "replace": "    setSend({ kind: \"sending\", ...request });"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E9",
+      "claim": "Esc during a mouse drag only cancels the drag",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "only cancels a mouse drag of a pinned bot on Esc"
+      },
+      "assertion": "expect(screen.queryByRole(\"alertdialog\"), \"the mouse drag used the Esc\").toBeNull();",
+      "breaks": [
+        {
+          "id": "E9-no-mouse-mark",
+          "file": "frontend/src/features/bots/drag-setup.ts",
+          "edits": [
+            {
+              "find": "      activationConstraint: { distance: 5 },\n      onActivation: markEscUntilRelease,\n",
+              "replace": "      activationConstraint: { distance: 5 },\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E10",
+      "claim": "After a mouse drag ends with the drop, Esc asks again (the mark ends at the release)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "asks on Esc after a mouse drag of a pinned bot ended with the drop"
+      },
+      "assertion": "expect(screen.getByRole(\"alertdialog\", QUESTION), \"Esc after the drop asks\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "E10-no-release-stop",
+          "file": "frontend/src/features/bots/drag-setup.ts",
+          "edits": [
+            {
+              "find": "  for (const name of RELEASES) window.addEventListener(name, stop, true);\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "claim": "\"caller left\" checks that Esc opened the question (DQ-095)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/bot-page.test.tsx",
+        "name": "caller left: the question goes with the page when the bot leaves the list"
+      },
+      "assertion": "expect(screen.getByRole(\"alertdialog\", QUESTION), \"the question opened\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "Q1-no-ask",
+          "file": "frontend/src/features/bots/bot-page.tsx",
+          "edits": [
+            {
+              "find": "    if (editView(store.get(), { rules, ctx }).unsaved[t].length === 0) return;\n    leave.ask();\n",
+              "replace": "    if (editView(store.get(), { rules, ctx }).unsaved[t].length === 0) return;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W1",
+      "claim": "\"waits for the settings\" reaches the wait for the settings read (DQ-095)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "waits for the retries of the settings, then opens with the last values"
+      },
+      "assertion": "expect(screen.queryByRole(\"heading\", { name: \"New bot\" }), \"the form waits\").toBeNull();",
+      "breaks": [
+        {
+          "id": "W1-no-settings-wait",
+          "file": "frontend/src/features/bots/create-bot-page.tsx",
+          "edits": [
+            {
+              "find": "[settings, models, tools, skills].some((q) => !q.isFetchedAfterMount)",
+              "replace": "[models, tools, skills].some((q) => !q.isFetchedAfterMount)"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+      "name": "moves the focus to a request limit out of range when Create finds it",
+      "reason": "Test first: its red run on the code of 2cbc24b (before the fix of item 41) is in the PR description (Red runs). Not a late, security or order test"
+    },
+    {
+      "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+      "name": "moves the focus to a ticked skill in Trash when Next finds it",
+      "reason": "Test first: its red run on the code of 2cbc24b (before the fix of item 41) is in the PR description (Red runs). Not a late, security or order test"
+    },
+    {
+      "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+      "name": "moves the focus to Effort when the effort of a Clone is not offered",
+      "reason": "Test first: its red run on the code of 2cbc24b (before the fix of item 41) is in the PR description (Red runs). Not a late, security or order test"
+    },
+    {
+      "file": "frontend/src/features/bots/bot-page.test.tsx",
+      "name": "moves the focus to a request limit out of range when Save finds it",
+      "reason": "Test first: its red run on the code of 2cbc24b (before the fix of item 41) is in the PR description (Red runs). Not a late, security or order test"
+    },
+    {
+      "file": "frontend/src/features/bots/bot-page.test.tsx",
+      "name": "asks on Esc when the focus is on the page itself",
+      "reason": "Test first: its red run on the code of 19a8f81 (before the fix of item 45) is in the PR description (Red runs). Not a late, security or order test"
+    },
+    {
+      "file": "frontend/src/features/bots/bot-page.test.tsx",
+      "name": "asks on Esc when the focus is on the Profile tab",
+      "reason": "Test first: its red run on the code of 19a8f81 (before the fix of item 45) is in the PR description (Red runs). Not a late, security or order test"
+    },
+    {
+      "file": "frontend/src/features/bots/bot-page.test.tsx",
+      "name": "asks on Esc when the focus is on Discard",
+      "reason": "Test first: its red run on the code of 19a8f81 (before the fix of item 45) is in the PR description (Red runs). Not a late, security or order test"
+    },
+    {
+      "file": "frontend/src/features/bots/bot-page.test.tsx",
+      "name": "asks on Esc when the focus is on a bot in the side list",
+      "reason": "Test first: its red run on the code of 19a8f81 (before the fix of item 45) is in the PR description (Red runs). Not a late, security or order test"
+    },
+    {
+      "file": "frontend/src/features/bots/bot-page.test.tsx",
+      "name": "asks on Esc in the side list search when it is empty",
+      "reason": "Test first: its red run on the code of 19a8f81 (before the fix of item 45) is in the PR description (Red runs). Not a late, security or order test"
+    }
+  ]
+}

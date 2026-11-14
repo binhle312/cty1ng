@@ -66,7 +66,11 @@ export function BotSideList({ bots, currentId }: { bots: BotRow[]; currentId: st
             setQuery(event.target.value);
           }}
           onKeyDown={(event) => {
-            if (event.key === "Escape") setQuery("");
+            // With text, Esc clears it and is used up: the bot page's Esc does not ask too
+            // (bot-page.md §4.1). An empty box leaves the Esc to the page.
+            if (event.key !== "Escape" || query === "") return;
+            event.preventDefault();
+            setQuery("");
           }}
           placeholder="Search"
           aria-label="Search bots"

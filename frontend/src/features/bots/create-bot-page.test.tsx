@@ -9,6 +9,7 @@ import {
 } from "../../../test/fake-api.ts";
 import {
   BOT_SETTINGS,
+  type Bot,
   FAKE_SCRIPTED,
   makeBot,
   makeModel,
@@ -99,6 +100,78 @@ describe("Create on the Create bot page", () => {
     expect(keyOf(second)).toBe(keyOf(first));
     expect(second?.body).toEqual(first?.body);
     expect(await screen.findByText("Created BA ✨")).toBeTruthy();
+  });
+
+  // Try again (E4, E5): the resend is a send like the first one. A held answer shows the state
+  // while it waits; the outcome of the resend ends the wait.
+  const tryAgainApi = () => {
+    const held = heldAnswer();
+    let call = 0;
+    const server = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/models": () => ({ body: [makeModel(), FAKE_SCRIPTED] }),
+      "GET /api/tools": () => ({ body: [] }),
+      "GET /api/skills": () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [] }),
+      "POST /api/bots": async () => {
+        call += 1;
+        if (call === 1) return NETWORK_ERROR;
+        if (call === 2) return held.promise;
+        return { status: 201, body: makeBot(1, "BA") };
+      },
+    });
+    return { held, server };
+  };
+  const toUnknown = async () => {
+    await renderApp("/bots/new");
+    await screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+    await fillToModelStep();
+    click(screen.getByRole("button", { name: "Create" }));
+    return screen.findByRole("alert");
+  };
+
+  it("shows Creating while Try again waits for its answer (E4)", async () => {
+    const { held, server } = tryAgainApi();
+    fake = server;
+    const alert = await toUnknown();
+    click(within(alert).getByRole("button", { name: "Try again" }));
+    expect(await screen.findByRole("button", { name: "Creating" })).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
+    await held.answer({ status: 201, body: makeBot(1, "BA") });
+  });
+
+  it("shows the banner again when Try again gets a server error too", async () => {
+    const { held, server } = tryAgainApi();
+    fake = server;
+    const alert = await toUnknown();
+    click(within(alert).getByRole("button", { name: "Try again" }));
+    expect(await screen.findByRole("button", { name: "Creating" }), "sends again").toBeTruthy();
+    expect(server.sent("POST", "/api/bots")).toHaveLength(2);
+    await held.answer({
+      status: 500,
+      body: { error: { code: "internal_error", message: "Failed." } },
+    });
+    const again = await screen.findByRole("alert");
+    expect(again.textContent).toContain("Could not confirm whether the bot was created.");
+    expect(screen.queryByRole("button", { name: "Creating" })).toBeNull();
+    // The third send creates the bot.
+    click(within(again).getByRole("button", { name: "Try again" }));
+    expect(await screen.findByText("Created BA ✨")).toBeTruthy();
+  });
+
+  // "Focus the first error" (E1): Create with a problem moves the focus to its field.
+  it("moves the focus to a request limit out of range when Create finds it", async () => {
+    fake = api([{ status: 201, body: makeBot(1, "BA") }]);
+    await renderApp("/bots/new");
+    await screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+    await fillToModelStep();
+    type("Model requests per run", "0");
+    click(screen.getByRole("button", { name: "Create" }));
+    const limit = screen.getByLabelText("Model requests per run", { exact: true });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(limit);
+    });
+    expect(fake.sent("POST", "/api/bots")).toHaveLength(0);
   });
 
   it("keeps the page while the outcome is not known: Back does nothing (UI-5.6)", async () => {
@@ -262,7 +335,12 @@ const TEMPLATE = {
 
 // GET /skills hides deprecated skills unless the page asks for them, as the server does. The
 // test changes `skills.list` to stand for a change made in another tab.
-function skillsApi(skills = { list: [OLD, NEW] }, source = { bot: SOURCE }) {
+// `source.post` answers Create; by default it creates the copy.
+function skillsApi(
+  skills = { list: [OLD, NEW] },
+  source: { bot: Bot; post?: () => { status: number; body: unknown } } = { bot: SOURCE },
+) {
+  const post = source.post ?? (() => ({ status: 201, body: makeBot(10, "Source (copy)") }));
   return fakeApi({
     "GET /api/settings": () => ({ body: BOT_SETTINGS }),
     "GET /api/models": () => ({ body: [makeModel(), FAKE_SCRIPTED] }),
@@ -273,7 +351,7 @@ function skillsApi(skills = { list: [OLD, NEW] }, source = { bot: SOURCE }) {
     },
     "GET /api/bots": () => ({ body: [source.bot] }),
     [`GET /api/bots/${SOURCE.id}/clone-template`]: () => ({ body: TEMPLATE }),
-    "POST /api/bots": () => ({ status: 201, body: makeBot(10, "Source (copy)") }),
+    "POST /api/bots": post,
   });
 }
 
@@ -306,6 +384,105 @@ describe("skills on the Create bot page", () => {
     });
     // `copied_pins` is display data: Create leaves it out (api.md, clone-template).
     expect(fake.sent("POST", "/api/bots")[0]?.body).not.toHaveProperty("copied_pins");
+  });
+
+  // The server refuses a Clone whose source bot was purged meanwhile (bots.service.ts). No step
+  // has that field, so the text shows as an error with no field (plan Q2 A).
+  const SOURCE_GONE = {
+    status: 422,
+    body: {
+      error: {
+        code: "validation_error",
+        message: "The bot to copy does not exist.",
+        field: "cloned_from_bot_id",
+      },
+    },
+  };
+
+  it("shows a server error on the source bot next to Create", async () => {
+    fake = skillsApi(undefined, { bot: SOURCE, post: () => SOURCE_GONE });
+    await renderApp(`/bots/new?from=${SOURCE.id}`);
+    click(await screen.findByRole("button", { name: "Create" }, { timeout: 5000 }));
+    expect(await screen.findByText("The bot to copy does not exist.")).toBeTruthy();
+  });
+
+  it("keeps Create on after a server error on the source bot", async () => {
+    fake = skillsApi(undefined, { bot: SOURCE, post: () => SOURCE_GONE });
+    await renderApp(`/bots/new?from=${SOURCE.id}`);
+    click(await screen.findByRole("button", { name: "Create" }, { timeout: 5000 }));
+    await waitFor(() => {
+      expect(fake?.sent("POST", "/api/bots")).toHaveLength(1);
+    });
+    // The answer came: the button says Create again, not Creating.
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Create" }).textContent).toBe("Create");
+    });
+    const create = screen.getByRole("button", { name: "Create" });
+    expect(create.getAttribute("aria-disabled"), "Create is on").toBe("false");
+  });
+
+  it("marks no step after a server error on the source bot", async () => {
+    fake = skillsApi(undefined, { bot: SOURCE, post: () => SOURCE_GONE });
+    await renderApp(`/bots/new?from=${SOURCE.id}`);
+    click(await screen.findByRole("button", { name: "Create" }, { timeout: 5000 }));
+    await waitFor(() => {
+      expect(fake?.sent("POST", "/api/bots")).toHaveLength(1);
+    });
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Create" }).textContent).toBe("Create");
+    });
+    expect(screen.queryByRole("button", { name: /has an error/ }), "no step mark").toBeNull();
+  });
+
+  it("moves the focus to Effort when the effort of a Clone is not offered", async () => {
+    const lowOnly = makeModel({ id: "fake:low", label: "Fake low", efforts: ["low"] });
+    fake = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/models": () => ({ body: [lowOnly] }),
+      "GET /api/tools": () => ({ body: [] }),
+      "GET /api/skills": () => ({ body: [OLD] }),
+      "GET /api/bots": () => ({ body: [SOURCE] }),
+      [`GET /api/bots/${SOURCE.id}/clone-template`]: () => ({
+        body: { ...TEMPLATE, model_id: lowOnly.id, effort: "high" },
+      }),
+    });
+    await renderApp(`/bots/new?from=${SOURCE.id}`);
+    click(await screen.findByRole("button", { name: "Create" }, { timeout: 5000 }));
+    const effort = screen.getByLabelText("Effort", { exact: true });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(effort);
+    });
+  });
+
+  // DQ-095: the template read has `retry: false`. `render-app.tsx` turns retries off for every
+  // test, so this test turns the app's retries on before the Clone opens.
+  it("reads the template of a Clone once when the bot to copy is not found", async () => {
+    fake = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/models": () => ({ body: [FAKE_SCRIPTED] }),
+      "GET /api/tools": () => ({ body: [] }),
+      "GET /api/skills": () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [SOURCE] }),
+      [`GET /api/bots/${SOURCE.id}/clone-template`]: () => ({
+        status: 404,
+        body: { error: { code: "not_found", message: "No such bot." } },
+      }),
+    });
+    const { router, queryClient } = await renderApp("/bots");
+    queryClient.setDefaultOptions({
+      queries: { ...queryClient.getDefaultOptions().queries, retry: 3, retryDelay: 1 },
+    });
+    await act(() => router.navigate({ to: "/bots/new", search: { from: SOURCE.id } }));
+    expect(
+      await screen.findByText("The app could not find the bot to copy.", undefined, {
+        timeout: 5000,
+      }),
+    ).toBeTruthy();
+    // Retries would have sent more reads by now (1 ms apart).
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(fake.sent("GET", `/api/bots/${SOURCE.id}/clone-template`)).toHaveLength(1);
   });
 
   it("gives a copied pin back its version when it is unticked and ticked again", async () => {
@@ -584,6 +761,84 @@ describe("skills on the Create bot page", () => {
     expect(screen.getByText("0 ticked")).toBeTruthy();
     click(screen.getByRole("button", { name: "Next" }));
     expect(await screen.findByLabelText("Model", { exact: true })).toBeTruthy();
+  });
+
+  it("moves the focus to a ticked skill in Trash when Next finds it", async () => {
+    const skills = { list: [NEW] };
+    fake = skillsApi(skills);
+    await renderApp("/bots/new");
+    await screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+    type("Name", "BA");
+    type("Description", "Writes stories.");
+    click(screen.getByRole("button", { name: "Next" }));
+    type("Persona", "You are the BA.");
+    click(screen.getByRole("button", { name: "Next" }));
+    const box = () => within(rowOf(NEW.id)).getByRole("checkbox");
+    click(await waitFor(box));
+    const before = fake.sent("GET", "/api/skills").length;
+    skills.list = [];
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/skills").length).toBeGreaterThan(before);
+    });
+    click(screen.getByRole("button", { name: "Next" }));
+    await waitFor(() => {
+      expect(document.activeElement).toBe(box());
+    });
+  });
+
+  it("names a ticked skill that another tab deprecated, with the Deprecated pill", async () => {
+    const skills = { list: [NEW] };
+    fake = skillsApi(skills);
+    await renderApp("/bots/new");
+    await screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+    type("Name", "BA");
+    type("Description", "Writes stories.");
+    click(screen.getByRole("button", { name: "Next" }));
+    type("Persona", "You are the BA.");
+    click(screen.getByRole("button", { name: "Next" }));
+    click(await waitFor(() => within(rowOf(NEW.id)).getByRole("checkbox")));
+    // Another tab deprecates the skill; the list (with deprecated skills) comes again.
+    const before = fake.sent("GET", "/api/skills").length;
+    skills.list = [{ ...NEW, deprecated: true, deprecated_at: "2026-11-15T00:00:00.000Z" }];
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/skills").length).toBeGreaterThan(before);
+    });
+    expect(await within(rowOf(NEW.id)).findByText("Deprecated")).toBeTruthy();
+    expect(within(rowOf(NEW.id)).getByText(NEW.name)).toBeTruthy();
+    expect(screen.queryByText(/A skill in Trash/)).toBeNull();
+  });
+
+  it("drops the row of a deprecated skill when the owner unticks it", async () => {
+    const skills = { list: [NEW] };
+    fake = skillsApi(skills);
+    await renderApp("/bots/new");
+    await screen.findByRole("heading", { name: "New bot" }, { timeout: 5000 });
+    type("Name", "BA");
+    type("Description", "Writes stories.");
+    click(screen.getByRole("button", { name: "Next" }));
+    type("Persona", "You are the BA.");
+    click(screen.getByRole("button", { name: "Next" }));
+    const box = () => within(rowOf(NEW.id)).getByRole("checkbox");
+    click(await waitFor(box));
+    const before = fake.sent("GET", "/api/skills").length;
+    skills.list = [{ ...NEW, deprecated: true, deprecated_at: "2026-11-15T00:00:00.000Z" }];
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitFor(() => {
+      expect(fake?.sent("GET", "/api/skills").length).toBeGreaterThan(before);
+    });
+    click(box());
+    expect(document.querySelectorAll(`li[data-skill="${NEW.id}"]`)).toHaveLength(0);
   });
 });
 
@@ -1217,7 +1472,7 @@ describe("the defaults of a new bot", () => {
     await waitFor(() => {
       expect(fake?.sent("GET", "/api/settings")).toHaveLength(3);
     });
-    expect(screen.queryByRole("heading", { name: "New bot" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "New bot" }), "the form waits").toBeNull();
     await lastTry.answer(FAILED);
     await form();
     expect(await limitOnForm()).toBe(String(OLD_LIMIT));
