@@ -242,8 +242,8 @@ describe("a confirm button whose reason comes and goes", () => {
   });
 });
 
-// skills-page.md §2a has the pattern: a bot list that did not load says so, with Try again, which
-// loads the bots again (P3 list item 61).
+// skills-page.md §7 ("The bot list of a card") has the pattern: a bot list that did not load
+// says so, with Try again, which loads the bots again (P3 list item 61).
 describe("the dialogs when the bots did not load", () => {
   const failed = () => ({ kind: "error" as const, retry: vi.fn() });
   const tryAgain = () =>

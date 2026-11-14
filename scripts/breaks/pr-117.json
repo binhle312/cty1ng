@@ -267,6 +267,98 @@
           ]
         }
       ]
+    },
+    {
+      "id": "S13",
+      "claim": "The History tab shows the new versions after a failed refresh and a good one",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-history.test.tsx",
+        "name": "shows the new versions after a failed refresh and a good one"
+      },
+      "assertion": "expect(await screen.findByText(\"A newer note\"), \"the new versions\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "S13-a",
+          "file": "frontend/src/features/skills/skill-history.tsx",
+          "edits": [
+            {
+              "find": "        {versions.data === undefined ? (\n",
+              "replace": "        {versions.data === undefined || versions.errorUpdateCount > 0 ? (\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S14",
+      "claim": "The Skills index page opens the skill that a background refresh brings",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skills-index-page.test.tsx",
+        "name": "opens the skill that a background refresh brings"
+      },
+      "assertion": "expect(router.state.location.pathname).toBe(\"/skills/write-user-stories\");",
+      "breaks": [
+        {
+          "id": "S14-a",
+          "file": "frontend/src/features/skills/skills-index-page.tsx",
+          "edits": [
+            {
+              "find": "  const { data: skills, isError, refetch } = useAllSkills();\n",
+              "replace": "  const { data: skills, isError, refetch, dataUpdateCount } = useAllSkills();\n"
+            },
+            {
+              "find": "  if (top !== undefined) {\n",
+              "replace": "  if (top !== undefined && dataUpdateCount < 2) {\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S15",
+      "claim": "A Clone shows no editor while a failed settings read of this visit retries",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/new-skill-page.test.tsx",
+        "name": "shows no editor while a failed settings read of this visit retries"
+      },
+      "assertion": "expect(nameValue(), \"no editor during the retry\").toBeNull();",
+      "breaks": [
+        {
+          "id": "S15-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "  const settingsSettled = settings.isFetchedAfterMount;\n",
+              "replace": "  const settingsSettled = !settings.isPending;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S16",
+      "claim": "A Clone cuts the copy's name with the limit of a good retry of this visit's settings read",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/new-skill-page.test.tsx",
+        "name": "cuts the copy's name with the limit of a good retry"
+      },
+      "assertion": "expect(nameValue(), \"the name cut by the retry's limit\").toBe(\"Write user st (copy)\");",
+      "breaks": [
+        {
+          "id": "S16-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "  const settingsSettled = settings.isFetchedAfterMount;\n",
+              "replace": "  const settingsSettled = !settings.isPending;\n"
+            }
+          ]
+        }
+      ]
     }
   ],
   "exempt": [
@@ -292,17 +384,7 @@
     },
     {
       "file": "frontend/src/features/skills/skills-index-page.test.tsx",
-      "name": "opens the skill that a background refresh brings",
-      "reason": "A guard: it passed on the code before the change too, so it claims no fix of this PR"
-    },
-    {
-      "file": "frontend/src/features/skills/skills-index-page.test.tsx",
       "name": "shows the load error with Try again when the first load fails",
-      "reason": "A guard: it passed on the code before the change too, so it claims no fix of this PR"
-    },
-    {
-      "file": "frontend/src/features/skills/skill-history.test.tsx",
-      "name": "shows the new versions after a failed refresh and a good one",
       "reason": "A guard: it passed on the code before the change too, so it claims no fix of this PR"
     },
     {

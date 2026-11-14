@@ -29,20 +29,25 @@ describe("the Clone page and the reads of its source", () => {
   const DRAFT = "## Steps\n1. My own first step.";
   const FAILED = { status: 500, body: { error: { code: "internal_error", message: "Failed." } } };
   const CLONE_URL = `/skills/new?from=${versionId(3)}`;
+  type Answer = Awaited<ReturnType<typeof heldAnswer>["promise"]>;
 
   // The fake server. `listed` is what a read of the skill list answers; `fails` makes it fail;
   // `next`, when set, answers the next read of the list, one time; `settings`, when set,
-  // answers the next read of the settings, one time.
+  // answers the next read of the settings, one time; `settingsQueue` answers the next reads of
+  // the settings in order, before `settings`.
   function startServer() {
     const server: {
       listed: unknown[];
       fails: boolean;
       next: ReturnType<typeof heldAnswer>["promise"] | null;
       settings: ReturnType<typeof heldAnswer>["promise"] | null;
-    } = { listed: [makeSkill()], fails: false, next: null, settings: null };
+      settingsQueue: (Answer | Promise<Answer>)[];
+    } = { listed: [makeSkill()], fails: false, next: null, settings: null, settingsQueue: [] };
     const [v3] = makeVersions(3);
     api = fakeApi({
       "GET /api/settings": () => {
+        const queued = server.settingsQueue.shift();
+        if (queued !== undefined) return queued;
         const { settings } = server;
         server.settings = null;
         return settings ?? { body: BOT_SETTINGS };
@@ -257,6 +262,42 @@ describe("the Clone page and the reads of its source", () => {
       await settings.answer(FAILED);
       await waitFor(() => {
         expect(nameValue(), "the name with the cached limit").toBe("Write user stories (copy)");
+      });
+      expect(screen.queryByText(/The limit is/), "no over-limit error").toBeNull();
+    });
+
+    // The app retries a failed read (`createQueryClient`), and `isFetchedAfterMount` waits for
+    // the retries: about 7 s with the app's retries when the settings keep failing (DQ-092; the
+    // owner accepted that wait on 2026-11-07). `render-app.tsx` turns retries off, so these
+    // tests set their own (frontend-conventions.md §5).
+    async function cloneWithRetry() {
+      const server = startServer();
+      const { router, queryClient } = await renderApp("/skills/new");
+      await screen.findByLabelText("Name", { exact: true }, WAIT);
+      queryClient.setDefaultOptions({ queries: { retry: 1, retryDelay: 200 } });
+      const retry = heldAnswer();
+      server.settingsQueue = [FAILED, retry.promise];
+      const before = api?.sent("GET", "/api/settings").length ?? 0;
+      await act(() => router.navigate({ to: "/skills/new", search: { from: versionId(3) } }));
+      await waitFor(() => {
+        expect(sourceStatus(queryClient)).toBe("success");
+      });
+      await waitFor(() => {
+        expect(api?.sent("GET", "/api/settings").length).toBe(before + 2);
+      });
+      return retry;
+    }
+
+    it("shows no editor while a failed settings read of this visit retries", async () => {
+      await cloneWithRetry();
+      expect(nameValue(), "no editor during the retry").toBeNull();
+    });
+
+    it("cuts the copy's name with the limit of a good retry", async () => {
+      const retry = await cloneWithRetry();
+      await retry.answer({ body: { ...BOT_SETTINGS, skill_name_max: 20 } });
+      await waitFor(() => {
+        expect(nameValue(), "the name cut by the retry's limit").toBe("Write user st (copy)");
       });
     });
   });

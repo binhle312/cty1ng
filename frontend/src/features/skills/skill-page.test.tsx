@@ -596,7 +596,7 @@ describe("Clone while its read of the versions is on its way", () => {
 });
 
 // The bot list of a Deprecate dialog that did not load: Try again reads it again
-// (skills-page.md §2a pattern; P3 list item 61).
+// (the pattern of skills-page.md §7, "The bot list of a card"; P3 list item 61).
 describe("the Deprecate dialog when the bots do not load", () => {
   let api: ReturnType<typeof fakeApi> | null = null;
   afterEach(() => {

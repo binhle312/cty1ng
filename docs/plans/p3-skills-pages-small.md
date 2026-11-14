@@ -108,3 +108,21 @@ Each other new test records its red run on the old code; those go to `exempt` wi
    ZWJ emoji or a flag can still change at the cut).
 3. Item 64. A (recommended): `role="img"` on the dot, `role="group"` on the diff. B: replace the
    dot's `aria-label` with `sr-only` text.
+
+## Build notes after review round 1 (2026-11-15)
+
+The build differs from the test strategy above in these places (review round 1, R1-5, R1-6):
+
+- **57**: the failure case checks the name and that no over-limit error shows. Two tests with their
+  own retries were added: the editor waits while a failed settings read retries, and a good retry
+  cuts the name with its limit. With the app's retries, a settings read that keeps failing holds the
+  skeleton for about 7 s (DQ-092; the owner accepted that wait on 2026-11-07).
+- **61**: the wiring test opens the Deprecate dialog, not the Delete dialog. The three dialogs share
+  the changed parts (`BotsNotReady`, `botsReason`), and a component test covers each dialog.
+- **62**: no test sends the Export request. The old code already sent only the listed ids, so such a
+  test could not fail on the old code.
+- **63**: the test goes back to a pair that is in the cache. A pair that is not in the cache shows
+  its skeleton first, so its diff view mounts again, and the first form of the test passed on the
+  old code. Only the Body diff key is tested.
+- **61 cite**: the pattern of the bot cards is in skills-page.md §7, "The bot list of a card" (line
+  ~200), not in §2a as "Fix per item" says.

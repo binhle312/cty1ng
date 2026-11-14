@@ -47,7 +47,8 @@ function BotsNotReady({ bots }: { bots: BotUses }) {
       ))}
     </SkeletonArea>
   ) : (
-    // The pattern of the bot cards (skills-page.md §2a): what failed, and Try again.
+    // The pattern of the bot cards (skills-page.md §7, "The bot list of a card"): what failed,
+    // and Try again.
     <LoadError
       text="The app could not load the bots."
       onRetry={bots.retry}

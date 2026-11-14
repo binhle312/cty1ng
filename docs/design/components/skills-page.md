@@ -492,9 +492,9 @@ the changes marked "owner, 2026-10-31".
   never Page not found. A failed background refresh keeps the list and the editor on the data
   they have, with the unsaved text (second review of #54). The same holds for the empty state of
   `/skills` and for the versions and the diff of the History tab (P3 list items 59, 60).
-- The Deprecate, Remove from bots and Delete dialogs take the pattern of the bot cards (§2a) for
-  their bot list: when it does not load, "The app could not load the bots." with **Try again**,
-  which reads the bots again (P3 list item 61).
+- The Deprecate, Remove from bots and Delete dialogs take the pattern of the bot cards (§7, "The
+  bot list of a card") for their bot list: when it does not load, "The app could not load the
+  bots." with **Try again**, which reads the bots again (P3 list item 61).
 - Text typed while a Save is pending stays as a change after the Save: only the text the
   request sent counts as saved.
 - A Clone whose source does not load: "The app could not load the skill to copy." and **Try
