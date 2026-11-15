@@ -53,6 +53,17 @@ const RAW_COLOUR_RULES = [
   },
 ];
 
+// time-format.md §1: a relative time updates while the page is visible. A component that reads
+// the clock with `new Date()` in a render shows a time that does not update; it asks `useNow()`
+// (lib/now.ts). A date made from a value (`new Date(iso)`) is fine. `Date.now()` is not seen.
+const CLOCK_RULES = [
+  {
+    selector: "NewExpression[callee.name='Date'][arguments.length=0]",
+    message:
+      "Use useNow() (lib/now.ts) for the time now: a time read in a render does not update (design/components/time-format.md §1).",
+  },
+];
+
 // The bot list and the settings: only the bot list store writes them (frontend-conventions.md
 // §1); a write from elsewhere is dropped by the next load or answer. The rule sees the key as the
 // first argument of `setQueryData`/`setQueriesData` (also as a copy `[...key()]`), as the `queryKey`
@@ -205,7 +216,13 @@ export default tseslint.config(
     files: ["frontend/src/components/**/*.{ts,tsx}", "frontend/src/features/**/*.{ts,tsx}"],
     ignores: ["**/*.test.{ts,tsx}"],
     rules: {
-      "no-restricted-syntax": ["error", ...SQL_RULES, ...RAW_COLOUR_RULES, ...QUERY_CLIENT_RULES],
+      "no-restricted-syntax": [
+        "error",
+        ...SQL_RULES,
+        ...RAW_COLOUR_RULES,
+        ...QUERY_CLIENT_RULES,
+        ...CLOCK_RULES,
+      ],
     },
   },
   {
@@ -219,6 +236,7 @@ export default tseslint.config(
         ...RAW_COLOUR_RULES,
         ...BOT_LIST_WRITE_RULES,
         ...QUERY_CLIENT_RULES,
+        ...CLOCK_RULES,
       ],
     },
   },

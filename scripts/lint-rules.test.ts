@@ -193,6 +193,49 @@ describe("query client lint rules", () => {
   });
 });
 
+// time-format.md §1: a relative time updates while the page is visible, so a component asks
+// useNow() (lib/now.ts) for the time and does not read the clock in a render.
+describe("clock lint rule", () => {
+  const isClockRule = (m: string) => m.includes("useNow");
+  const now = "export const t = new Date();\n";
+
+  it.each([
+    { label: "a component", file: "frontend/src/components/ui/time-text.tsx" },
+    { label: "a feature", file: "frontend/src/features/bots/bot-page-top.tsx" },
+    { label: "the bot list store", file: "frontend/src/features/bots/bot-list-store.ts" },
+  ])("rejects new Date() with no argument in $label", async ({ file }) => {
+    const found = await messages(now, file);
+    expect(found.filter(isClockRule), "messages about useNow").toHaveLength(1);
+  });
+
+  it.each([
+    { label: "a date from a text", code: 'export const t = new Date("2026-11-15");\n' },
+    { label: "a date from a number", code: "export const t = new Date(0);\n" },
+  ])("allows $label in a feature", async ({ code }) => {
+    const found = await messages(code, "frontend/src/features/bots/bot-page-top.tsx");
+    expect(found.filter(isClockRule), "messages about useNow").toEqual([]);
+  });
+
+  it("allows new Date() in lib, where the clock is", async () => {
+    const found = await messages(now, "frontend/src/lib/now.ts");
+    expect(found.filter(isClockRule), "messages about useNow in lib").toEqual([]);
+  });
+
+  it("allows new Date() in a test", async () => {
+    const found = await messages(now, "frontend/src/features/bots/bot-page.test.tsx");
+    expect(found.filter(isClockRule), "messages about useNow in a test").toEqual([]);
+  });
+
+  // Not claimed: the rule does not see Date.now() (the plan of PR 17 says so).
+  it("does not see Date.now()", async () => {
+    const found = await messages(
+      "export const t = Date.now();\n",
+      "frontend/src/features/bots/bot-page-top.tsx",
+    );
+    expect(found.filter(isClockRule), "messages about useNow for Date.now()").toEqual([]);
+  });
+});
+
 // For one file, the last block that sets `no-restricted-syntax` wins, so a block can drop the
 // rules of an earlier one (review of `78d01fb`: `bot-list-store.ts` lost the query client rules).
 // This reads the real config of each file.
@@ -237,6 +280,14 @@ describe("each file gets its rule sets", () => {
     const missing: string[] = [];
     for (const file of files.filter(inUi)) {
       if (!(await selectorsOf(file)).includes("No raw colours")) missing.push(file);
+    }
+    expect(missing).toEqual([]);
+  });
+
+  it("keeps the clock rule on every components and features file", async () => {
+    const missing: string[] = [];
+    for (const file of files.filter((f) => inUi(f) && !isTest(f))) {
+      if (!(await selectorsOf(file)).includes("useNow")) missing.push(file);
     }
     expect(missing).toEqual([]);
   });
