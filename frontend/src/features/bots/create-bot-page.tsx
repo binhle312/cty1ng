@@ -377,7 +377,8 @@ function CreateBotView({
   const sendRequest = (request: { key: string; body: CreateBotBody }) => {
     if (inFlight.current) return;
     inFlight.current = true;
-    setSend({ kind: "sending", ...request });
+    // Try again passes the `unknown` send itself, so the kind comes after its fields.
+    setSend({ kind: "sending", key: request.key, body: request.body });
     setGeneralError(null);
     createBot({
       body: request.body,
@@ -405,12 +406,14 @@ function CreateBotView({
         const api = readApiError(error);
         if (api === null || api.code === "internal_error") {
           // E5: the outcome is not known. The form stays read-only with the same request.
-          setSend({ kind: "unknown", ...request });
+          setSend({ kind: "unknown", key: request.key, body: request.body });
           return;
         }
         // E3: an input error unlocks the form; the next Create is a new request.
         setSend({ kind: "idle" });
-        if (api.field === undefined) {
+        // The source of a Clone has no field on any step (it is purged meanwhile): the text shows
+        // next to Create, as an error with no field, and blocks nothing (plan Q2 A).
+        if (api.field === undefined || api.field === "cloned_from_bot_id") {
           setGeneralError(api.message);
           return;
         }
@@ -583,9 +586,9 @@ function CreateBotView({
 type CopiedPin = GetBotCloneTemplateResponse["copied_pins"][number];
 
 // The rows of step 3 (§3, §6): every skill that is not deprecated, the copied pins of a Clone
-// (with the copied version, deprecated or in Trash), and every ticked skill, also one that left
-// the list (another tab moved it to Trash), so it can be unticked. The rows do not depend on
-// the ticks of the moment, except for a skill that left: unticked, its row goes.
+// (with the copied version, deprecated or in Trash), and every ticked skill, also one that another
+// tab deprecated or moved to Trash, so it can be unticked. The rows do not depend on the ticks of
+// the moment, except for such a skill: unticked, its row goes.
 function skillChoicesOf({
   skills,
   form,
@@ -602,8 +605,9 @@ function skillChoicesOf({
       ? null
       : { skill_version_id: from.skill_version_id, always_load: from.always_load };
   };
+  const ticked = new Set(form.pins.map((pin) => pin.skill_id));
   const rows: SkillChoice[] = skills
-    .filter((skill) => !skill.deprecated || copied.has(skill.id))
+    .filter((skill) => !skill.deprecated || copied.has(skill.id) || ticked.has(skill.id))
     .map((skill) => {
       const pin = copied.get(skill.id);
       return {

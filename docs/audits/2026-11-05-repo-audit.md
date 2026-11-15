@@ -199,17 +199,17 @@ The lead did not check these again, except where a row says so. The others are f
 
 ### Bots pages
 
-- A late Delete answer moves the owner off the page they went to: `frontend/src/features/bots/delete-bot-dialog.tsx:38`.
-- "Focus the first error" does nothing for fields with no `aria-invalid`: `frontend/src/features/bots/create-bot-steps.tsx:739`.
-- Try again never shows the sending state: `frontend/src/features/bots/create-bot-page.tsx:366`.
-- A server error on `cloned_from_bot_id` shows on no step and blocks Create: `frontend/src/features/bots/create-bot-form.ts:110`.
-- A ticked skill that another tab deprecates shows as "A skill in Trash": `frontend/src/features/bots/create-bot-page.tsx:592`.
+- A late Delete answer moves the owner off the page they went to: `frontend/src/features/bots/delete-bot-dialog.tsx:38`. Fixed in #116 (item 40).
+- "Focus the first error" does nothing for fields with no `aria-invalid`: `frontend/src/features/bots/create-bot-steps.tsx:739`. Fixed in #116 (item 41).
+- Try again never shows the sending state: `frontend/src/features/bots/create-bot-page.tsx:366`. Fixed in #116 (item 42).
+- A server error on `cloned_from_bot_id` shows on no step and blocks Create: `frontend/src/features/bots/create-bot-form.ts:110`. Fixed in #116 (item 43).
+- A ticked skill that another tab deprecates shows as "A skill in Trash": `frontend/src/features/bots/create-bot-page.tsx:592`. Fixed in #116 (item 44). The page text "Deprecated skills are not in the list." is now false for such a skill (DQ-411, open).
 
 ### Found during PR 4
 
 - **Fixed in #84. P2 (owner, 2026-11-08); its own PR after PR 4.** After the browser reports that it is offline, the first visit to a Clone page, a bot page or `/bots/new` stays loading until the browser is online again. TanStack Query pauses reads, and the app runs on 127.0.0.1. Run with an `offline` event on `8c2278f` and on the branch; real Wi-Fi off is not tested: `frontend/src/main.tsx:15`.
-- Esc on the bot page does nothing when the focus is outside the edit form, for example after a click on a blank area, on Discard or on a tab. Run on `8c2278f` and on the branch: `frontend/src/features/bots/bot-page.tsx:279`.
-- Two older Esc checks and one older option have no test that fails without them: `contains`, `defaultPrevented` and the template's `retry: false` (DQ-095).
+- Esc on the bot page does nothing when the focus is outside the edit form, for example after a click on a blank area, on Discard or on a tab. Run on `8c2278f` and on the branch: `frontend/src/features/bots/bot-page.tsx:279`. Fixed in #116 (item 45, DQ-089).
+- Two older Esc checks and one older option have no test that fails without them: `contains`, `defaultPrevented` and the template's `retry: false` (DQ-095). Fixed in #116 (item 46).
 - A live event during a first-load read joins that read, so the form can open with a value from before the event. The next change has the same result, because an open form keeps its first answer (DQ-107).
 - When a read of the Create form keeps failing, each live event for that list starts the retries again. With an event every 3 s for 21 s, the form opened at 25.1 s (DQ-109).
 - `heldAnswer` waits on the client that `watchQueryClient` set last, and nothing checks it. A test with its own client and no call gets the old race back (DQ-115).
