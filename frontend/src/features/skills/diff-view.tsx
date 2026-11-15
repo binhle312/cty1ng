@@ -11,6 +11,7 @@ export function DiffView({ lines, label }: { lines: DiffLine[]; label: string })
   const chunks = foldDiff(lines);
   return (
     <div
+      role="group"
       aria-label={label}
       className="overflow-hidden rounded-control border border-outline-strong bg-surface py-1.5 font-mono text-sm"
     >

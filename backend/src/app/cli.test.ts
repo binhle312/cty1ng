@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { tempDir } from "../../test/helpers.ts";
 
 // The `skills` and `bots` commands end a failure that the owner can correct with one line and
@@ -106,5 +106,35 @@ describe("a failure of a CLI command of another kind", () => {
     expect(run.error?.message ?? null, "the child could not run or hit the time limit").toBeNull();
     expect(run.status).toBe(1);
     expect(run.stderr).toContain("\n    at ");
+  });
+});
+
+// A failed run that also leaves the foreign keys off throws the read-back error, with the first
+// error as its cause (migrate.ts). The real case needs a ROLLBACK that throws, so this test runs
+// the command in this process with a database module that throws such a chain (DQ-315).
+describe("db migrate, a failure with a cause", () => {
+  const argv = process.argv;
+  afterEach(() => {
+    process.argv = argv;
+    process.exitCode = undefined;
+    vi.restoreAllMocks();
+    vi.doUnmock("./database.ts");
+    vi.resetModules();
+  });
+
+  it("prints the first error too, on one line", async () => {
+    const first = new Error("The migrations leave 1 broken foreign key reference");
+    vi.doMock("./database.ts", () => ({
+      openDatabase: () => {
+        throw new Error("foreign_keys is 0 after the migrations, not 1", { cause: first });
+      },
+    }));
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    process.argv = [argv[0] ?? "node", "cli.ts", "db", "migrate"];
+    await import("./cli.ts");
+    expect(process.exitCode).toBe(1);
+    expect(stderr.mock.calls.map(([text]) => String(text))).toEqual([
+      "Migration failed: foreign_keys is 0 after the migrations, not 1; cause: The migrations leave 1 broken foreign key reference\n",
+    ]);
   });
 });

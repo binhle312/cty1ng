@@ -4,7 +4,7 @@ Brief: p3 list item 68 (list PR 21), `docs/status.md:94` on `origin/main` (`9722
 cleanup with the same texts and screens" (repository review of 2026-11-10, #94).
 Checkpoint: none (a refactor inside existing modules; no shared state, no new module boundary, no
 new screen or text).
-Approval: chief agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); owner review pending. Revision 1. Decisions: Q1 B, Q2 A, Q3 A (§7)
+Approval: chief agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15. Revision 1. Decisions: Q1 B, Q2 A, Q3 A (§7)
 
 ## 1. The item, checked on `origin/main` (`97221d3`)
 
