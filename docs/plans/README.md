@@ -42,6 +42,9 @@ Plans up to M2 started as PR comments or PR descriptions. The header of each fil
 | `p3-shell-error-boundary.md` | P3 list PR 16 (items 65 and 66, errors that keep the shell) | Approved 2026-11-15, revision 2 |
 | `dq-180-clone-draft.md` | DQ-180, the Clone draft (before audit PR 6) | Approved 2026-11-10 |
 | `dq-198-closed-dialog-read.md` | DQ-198, a closed dialog and the read of all data (after audit PR 6) | Owner, 2026-11-10 |
+| `p3-skills-pages-small.md` | P3 list PR 15, Skills pages small fixes (items 57 to 64) | Chief agent, 2026-11-15, under the owner's order of 2026-11-14; accepted by the owner, 2026-11-15 |
+| `p3-bots-pages.md` | P3 PR E: items 40 to 46 (Bots pages, small fixes; bot page Esc) | Chief agent, 2026-11-15, revision 1; accepted by the owner, 2026-11-15 |
+| `p3-frontend-cleanup.md` | P3 PR K (list PR 21, item 68): frontend cleanup with the same texts and screens | Chief agent, 2026-11-15, under the owner's order of 2026-11-14; accepted by the owner, 2026-11-15 |
 
 If the task names a plan, open it. Otherwise, find the slice in [status.md](../status.md), then open its plan.
 For current behaviour, read the owning documents.

@@ -9,6 +9,7 @@ Helpers the whole app uses.
 | `time-format.ts` | "5 min ago" under a day, else local ISO time; the full time for tooltips (`time-format.md` §1) |
 | `cn.ts` | Joins Tailwind classes; knows our token names |
 | `sets.ts` | Set changes for React state: flip an item, or put it in or out |
+| `plural.ts` | A count and its word: "1 new skill", "2 new skills" |
 | `zod-config.ts` | Zod without its `new Function` fast path, which the CSP blocks |
 | `api/` | The generated API client and its setup |
 | `realtime/` | The event stream and the reducer (`docs/realtime-events.md` §1a, §3) |
