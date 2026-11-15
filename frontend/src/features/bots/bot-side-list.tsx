@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { buttonVariants } from "../../components/ui/button.tsx";
 import { PinBadge } from "../../components/ui/pin-badge.tsx";
 import { cn } from "../../lib/cn.ts";
+import { useNow } from "../../lib/now.ts";
 import { BotAvatar } from "./bot-avatar.tsx";
 import { matchesSearch, statusText } from "./bot-lines.ts";
 import { othersOf, pinnedOf, withPin, withoutPin } from "./bot-order.ts";
@@ -27,7 +28,7 @@ export function BotSideList({ bots, currentId }: { bots: BotRow[]; currentId: st
   const pinnedIds = pinnedOf(bots).map((bot) => bot.id);
   const pinned = pinnedOf(bots).filter((bot) => matchesSearch(bot, query));
   const others = othersOf(bots).filter((bot) => matchesSearch(bot, query));
-  const now = new Date();
+  const now = useNow();
   const row = (bot: BotRow) => (
     <BotSideRow
       key={bot.id}
