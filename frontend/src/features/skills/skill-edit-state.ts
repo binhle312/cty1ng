@@ -34,8 +34,8 @@ import {
 // - The answer makes the sent text the saved text and moves the base up. Text typed while it
 //   waited stays a change. A failure asks for a toast when nothing on the page shows it.
 // - Discard is off while a Save waits (Q2). Otherwise it puts back the saved text of this edit,
-//   which after a Save is the text of that Save, and the base stays (DQ-072). In a conflict it
-//   takes the server text and base.
+//   which after a Save is the text of that Save, and the base stays (DQ-072). In a conflict the
+//   first rule then takes the server text and base.
 // - The base and the server data only go up.
 
 export interface EditState {
@@ -138,16 +138,8 @@ function next(state: EditState, event: EditEvent): EditState {
     case "discarded": {
       if (state.sending !== null) return state;
       const cleared = { ...state, changelog: "", saveError: null };
-      if (isNewer({ point: state.server.point, than: state.base })) {
-        // A conflict: Discard loads the newest text.
-        const { point } = state.server;
-        return {
-          ...cleared,
-          form: newForm(state.server.fields, false),
-          base: point,
-          taken: point,
-        };
-      }
+      // The saved text of this edit comes back. In a conflict, the edit then has no changes, so
+      // `takeServerText` loads the newest text and base right after this event.
       return { ...cleared, form: discard(state.form) };
     }
     case "baseMoved":

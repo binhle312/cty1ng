@@ -257,8 +257,8 @@
           "file": "frontend/src/features/skills/skill-edit-state.ts",
           "edits": [
             {
-              "find": "      if (isNewer({ point: state.server.point, than: state.base })) {\n        // A conflict",
-              "replace": "      if (state.left) {\n        // A conflict"
+              "find": "    dirty: isDirty(state.form),",
+              "replace": "    dirty: true,"
             }
           ]
         }
