@@ -94,6 +94,7 @@ change under `Needs human review`). B: leave it, Follow-ups line (zero risk; the
 for one tab). Recommend A: the spec and the route comment already say "no `tab`", so the code moves
 to the doc, and a draft PR keeps the owner's decision. **Answer: A**; the URL change goes under
 `Needs human review`, and the header-bot-card test gets its red run on `origin/main`.
+The owner approved the URL change on 2026-11-15 ("122-A: A (approve)").
 
 Q3, part 6. A: Follow-ups line with the list (recommended, reasons in §2). B: remove `export` from
 the 51 names in this PR. **Answer: A** (the Follow-ups line has the counts 51 and 11 and the list).
