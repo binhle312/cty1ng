@@ -700,7 +700,8 @@ rename it. Import never renames an existing skill. Each created version has the 
 **The preview (M1 spec gap pass, owner 2026-10-30).** The server keeps a preview in memory, not
 in the database, for `IMPORT_PREVIEW_MINUTES` (default 15), and keeps at most
 `IMPORT_PREVIEW_MAX` (default 5) previews; a new one drops the oldest
-(`architecture.md` §8). A restart loses every preview. For each row the preview records what it
+(`architecture.md` §8). A restart loses every preview. The preview id (`preview_id`) comes from the
+ids port, as a TypeID with the prefix `simp` (D36, owner 2026-11-15). For each row the preview records what it
 saw: the skill id (or that the slug was free), the skill's `row_version`, its latest version,
 and its author, deprecated and Trash state. Apply checks all of these again inside its
 transaction, so a skill that was deleted and made again with the same slug, renamed, or
@@ -708,6 +709,8 @@ deprecated after the preview is caught; a version number alone would miss that. 
 
 - Any recorded value changed → 409 `stale_write`; nothing is written.
 - The preview is unknown, expired or already applied → 409 `preview_expired`; nothing is written.
+  An id that is not a `simp` TypeID gets the same answer: the body takes any string, and such an id
+  names no preview.
 - A successful Apply removes the preview, so a second Apply of the same `preview_id` returns
   `preview_expired`.
 

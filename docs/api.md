@@ -67,8 +67,8 @@ whose page needs the current state to show the conflict also carries `current` (
 | POST | `/skills/{id}/trash` | `{row_version}` | author only; deprecated skills only (409 `not_deprecated`); removes every pin, returns the bots it removed (D49) |
 | POST | `/skills/{id}/restore` | | author only; out of Trash, still deprecated; returns `suggested_bot_ids` (bots not deleted) |
 | DELETE | `/skills/{id}` | | permanent delete of a skill in Trash (**Delete** on the M5b Trash page, D62) |
-| POST | `/skills/import/preview` | zip upload | returns per-skill `new / changed (diff) / unchanged / invalid / conflict` and a `preview_id`; the zip limits are in `security.md` §2.4; any part beside the one `file` gets 422 `validation_error` |
-| POST | `/skills/import/apply` | `{preview_id, slugs: []}` | applies the previewed changes of the ticked slugs only; 409 `stale_write` if anything changed since, 409 `preview_expired` if the preview is gone or used (`domain-model.md` §3.5); an empty list, or a slug that is not `new` or `changed`, gets 422 `validation_error` with `field: "slugs"` and nothing is written |
+| POST | `/skills/import/preview` | zip upload | returns per-skill `new / changed (diff) / unchanged / invalid / conflict` and a `preview_id` (a `simp` TypeID, D36); the zip limits are in `security.md` §2.4; any part beside the one `file` gets 422 `validation_error` |
+| POST | `/skills/import/apply` | `{preview_id, slugs: []}` | applies the previewed changes of the ticked slugs only; 409 `stale_write` if anything changed since, 409 `preview_expired` if the preview is gone or used, or if `preview_id` is not a `simp` TypeID (`domain-model.md` §3.5); an empty list, or a slug that is not `new` or `changed`, gets 422 `validation_error` with `field: "slugs"` and nothing is written |
 | GET | `/skills/export?ids=` | | zip of the latest versions of the picked skills, named `<n>-skills-<UTC timestamp, ISO basic>.zip`; with no `ids` it exports every skill that is not deprecated |
 
 **Deprecated and trashed skills.** A rename, a new version or a version restore of a deprecated

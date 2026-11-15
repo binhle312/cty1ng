@@ -100,6 +100,7 @@ export function compose(
     readers,
     skills,
     clock,
+    ids: typeIdIds,
     previewMinutes: config.importPreviewMinutes,
     previewMax: config.importPreviewMax,
   });

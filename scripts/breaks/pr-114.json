@@ -315,6 +315,72 @@
           ]
         }
       ]
+    },
+    {
+      "id": "P29-1",
+      "claim": "The import preview id is a `simp` TypeID (item 29, D36)",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/skills/skill-import.service.test.ts",
+        "name": "gives the preview a `simp` TypeID"
+      },
+      "assertion": "expect(SkillImportPreviewId.safeParse(preview.preview_id).success).toBe(true);",
+      "breaks": [
+        {
+          "id": "P29-1-a",
+          "file": "backend/src/core/skills/skill-import.service.ts",
+          "edits": [
+            {
+              "find": "const id = SkillImportPreviewId.parse(deps.ids.newId(\"simp\"));",
+              "replace": "const id = SkillImportPreviewId.parse(deps.ids.newId(\"simp\")).toUpperCase() as never;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P29-2",
+      "claim": "The import preview id holds a UUIDv7 from the ids port, not a random UUID (item 29, D22)",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/skills.test.ts",
+        "name": "preview then apply"
+      },
+      "assertion": "expect(typeIdToUuid(String(previewId)).charAt(14)).toBe(\"7\");",
+      "breaks": [
+        {
+          "id": "P29-2-a",
+          "file": "backend/src/core/skills/skill-import.service.ts",
+          "edits": [
+            {
+              "find": "const id = SkillImportPreviewId.parse(deps.ids.newId(\"simp\"));",
+              "replace": "const id = SkillImportPreviewId.parse(`simp_${\"0\".repeat(26)}`);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P29-3",
+      "claim": "shared/ids has a schema for the `simp` prefix that rejects another prefix (item 29, D36)",
+      "test": {
+        "kind": "vitest",
+        "file": "shared/src/ids.test.ts",
+        "name": "has a schema for the skill import preview (`simp`)"
+      },
+      "assertion": "expect(SkillImportPreviewId.safeParse(`simp_${SUFFIX}`).success).toBe(true);",
+      "breaks": [
+        {
+          "id": "P29-3-a",
+          "file": "shared/src/ids.ts",
+          "edits": [
+            {
+              "find": "typeId(\"simp\", \"SkillImportPreviewId\")",
+              "replace": "typeId(\"skill\", \"SkillImportPreviewId\")"
+            }
+          ]
+        }
+      ]
     }
   ],
   "exempt": [
@@ -372,6 +438,11 @@
       "file": "backend/test/contracts/avatar-files.test.ts",
       "name": "when the disk refuses every step, the file left is complete and only the cleanup's",
       "reason": "The file time is read through list() instead of the removed modifiedAt (item 31); the new assertion is stricter (it checks the whole list)"
+    },
+    {
+      "file": "backend/test/api/skills.test.ts",
+      "name": "apply with %s gives 409 preview_expired",
+      "reason": "Pins the answer that the route gave before item 29 (any string that names no preview gets 409 preview_expired); it passed before the fix, so no break can make it fail from the fix"
     }
   ]
 }

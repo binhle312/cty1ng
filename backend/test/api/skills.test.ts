@@ -2,7 +2,9 @@ import Database from "better-sqlite3";
 import yazl from "yazl";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
+import { SkillImportPreviewId } from "@cty1ng/shared/ids";
 import { SKILL_ZIP } from "../../src/adapters/http/uploads/skill-zip.ts";
+import { typeIdToUuid } from "../../src/adapters/ids/typeid-ids.ts";
 import { OWNER_ID } from "../../src/core/owner.ts";
 import { ORIGIN, testBackend } from "../helpers.ts";
 
@@ -407,6 +409,9 @@ describe("import and export", () => {
     expect(json).toMatchObject({ file: "team.zip", rows: [{ slug: "fresh", status: "new" }] });
     const previewId =
       typeof json === "object" && json !== null && "preview_id" in json ? json.preview_id : null;
+    expect(SkillImportPreviewId.safeParse(previewId).success).toBe(true);
+    // A random UUID is version 4; the ids port makes a UUIDv7 (D22).
+    expect(typeIdToUuid(String(previewId)).charAt(14)).toBe("7");
     const applied = await send("POST", "/skills/import/apply", {
       preview_id: previewId,
       slugs: ["fresh"],
@@ -418,6 +423,19 @@ describe("import and export", () => {
     });
     expect(again.status).toBe(409);
     expect((await errorOf(again)).code).toBe("preview_expired");
+  });
+
+  // D36 and api.md: the preview id is a `simp` TypeID, and an id that is unknown, or not a `simp`
+  // TypeID at all, gets the same 409 `preview_expired` (the body takes any string, so a bad id is
+  // not a 422).
+  it.each([
+    ["a well-formed `simp` id that is unknown", "simp_01jb8x6p0afqz8r2m3k5t7v9wx"],
+    ["an id with another prefix", "skill_01jb8x6p0afqz8r2m3k5t7v9wx"],
+    ["a bare UUID", "0190b2a4-6f3c-4a1e-9b2d-3c4d5e6f7a8b"],
+  ])("apply with %s gives 409 preview_expired", async (_label, previewId) => {
+    const res = await send("POST", "/skills/import/apply", { preview_id: previewId, slugs: ["x"] });
+    expect(res.status).toBe(409);
+    expect((await errorOf(res)).code).toBe("preview_expired");
   });
 
   it("a zip of exactly 5 MB passes; one byte more gives 413", async () => {
