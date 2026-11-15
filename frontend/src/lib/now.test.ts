@@ -216,15 +216,41 @@ describe("the shared clock", () => {
     expect(listener, "calls after a late visible event").not.toHaveBeenCalled();
   });
 
-  it("a subscriber that unsubscribes in a tick does not skip the others", () => {
+  it("a subscriber that another subscriber removes in a tick is not called", () => {
     const { clock, tick } = setup();
+    let stopSecond = () => {};
+    clock.subscribe(() => {
+      stopSecond();
+    });
+    const second = vi.fn();
+    stopSecond = clock.subscribe(second);
+    tick();
+    expect(second, "calls of the removed subscriber").not.toHaveBeenCalled();
+  });
+
+  it("a subscriber that leaves and joins again in a tick is called once", () => {
+    const { clock, tick } = setup();
+    let calls = 0;
+    let stop = () => {};
+    // At most 3 joins, so a loop that visits the new entry again ends with a wrong count.
+    const again = () => {
+      calls += 1;
+      stop();
+      if (calls <= 3) stop = clock.subscribe(again);
+    };
+    stop = clock.subscribe(again);
+    tick();
+    expect(calls, "calls in one tick").toBe(1);
+  });
+
+  it("the last subscriber that leaves in a visible event leaves no timer", () => {
+    const { clock, show } = setup();
     const stop = clock.subscribe(() => {
       stop();
     });
-    const other = vi.fn();
-    clock.subscribe(other);
-    tick();
-    expect(other, "calls of the other subscriber").toHaveBeenCalledTimes(1);
+    show(false);
+    show(true);
+    expect(vi.getTimerCount(), "timers after the last subscriber left").toBe(0);
   });
 
   it("the first read after a long time with no subscriber gives the new time", () => {

@@ -287,7 +287,10 @@ describe("each file gets its rule sets", () => {
   it("keeps the clock rule on every components and features file", async () => {
     const missing: string[] = [];
     for (const file of files.filter((f) => inUi(f) && !isTest(f))) {
-      if (!(await selectorsOf(file)).includes("useNow")) missing.push(file);
+      // The selector itself, not a word that the message also contains.
+      if (!(await selectorsOf(file)).includes("NewExpression[callee.name='Date']")) {
+        missing.push(file);
+      }
     }
     expect(missing).toEqual([]);
   });

@@ -423,6 +423,72 @@
       ]
     },
     {
+      "id": "N20",
+      "claim": "A subscriber that another subscriber removes in a tick is not called",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "a subscriber that another subscriber removes in a tick is not called"
+      },
+      "assertion": "expect(second, \"calls of the removed subscriber\").not.toHaveBeenCalled();",
+      "breaks": [
+        {
+          "id": "N20-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "      if (listeners.has(listener)) listener();\n",
+              "replace": "      listener();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N21",
+      "claim": "A subscriber that leaves and joins again in a tick is called once",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "a subscriber that leaves and joins again in a tick is called once"
+      },
+      "assertion": "expect(calls, \"calls in one tick\").toBe(1);",
+      "breaks": [
+        {
+          "id": "N21-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "    for (const listener of [...listeners]) {\n      if (listeners.has(listener)) listener();\n    }\n",
+              "replace": "    for (const listener of listeners) {\n      listener();\n    }\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N22",
+      "claim": "The last subscriber that leaves in a visible event leaves no timer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "the last subscriber that leaves in a visible event leaves no timer"
+      },
+      "assertion": "expect(vi.getTimerCount(), \"timers after the last subscriber left\").toBe(0);",
+      "breaks": [
+        {
+          "id": "N22-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "listeners.size === 0 || ",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "T1",
       "claim": "A mounted time keeps its text while the page is hidden",
       "test": {
@@ -508,11 +574,6 @@
     {
       "file": "frontend/src/lib/now.test.ts",
       "name": "now gives the same object before the first subscriber",
-      "reason": "Written before the code; the red run is in the PR"
-    },
-    {
-      "file": "frontend/src/lib/now.test.ts",
-      "name": "a subscriber that unsubscribes in a tick does not skip the others",
       "reason": "Written before the code; the red run is in the PR"
     },
     {

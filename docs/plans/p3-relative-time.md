@@ -209,3 +209,26 @@ order, a stale snapshot). `scripts/breaks/pr-<n>.json` holds only U2, U6, U8, U9
 U13, C6 (one claim, one break each: drop the stop on `hidden`, drop the refresh on `visible`, drop
 `removeEventListener`, drop the stale check, ...). Other tests get a recorded red run. Cost: one
 `check:breaks` run (heavy slot).
+
+## Build notes (2026-11-15, after review round 1): where the build differs from this plan
+
+The plan is a record, not a spec. The build differs in these places:
+
+- Test C5 ("unmount during a tick: no React warning") was removed: no break of `now.ts` can make it
+  fail, because React gives no warning for an update to an unmounted store reader. "Leaves no timer
+  when it is gone" stays, with a break.
+- The component tests are in `bot-relative-times.test.tsx` (the status line of the bot page top and of
+  the side list) and `skill-pin-dialogs.test.tsx` (Change version), not in `bot-page.test.tsx` and
+  `skill-dialogs.test.tsx`. `TimeText` got `time-text.test.tsx`.
+- Some tests of the table are split so that each test has one claim (for example U2 is four tests).
+- The break list `scripts/breaks/pr-125.json` has a claim for each test that proves an order, state or
+  stale-time case, not only the eight named above (25 claims at the end of round 1). The other tests
+  are `exempt` with their reason.
+- U11 ("a listener that unsubscribes during a tick does not break the others") first passed on a
+  plain loop over the set, so it proved nothing. Round 1 replaced it with three tests: another
+  subscriber removes one in a tick, one leaves and joins again in a tick, and the last subscriber
+  leaves in a `visible` event. Each has a break.
+- The comment of `createClock` says what the clock does for a text that is already on screen when a
+  laptop wakes: it is made again at the next tick or at the `visibilitychange` event, not at once.
+- The value of the tick is written in `time-format.md` §1 only. `frontend-conventions.md` and
+  `lib/README.md` point to it.

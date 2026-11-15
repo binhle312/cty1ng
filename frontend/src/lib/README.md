@@ -7,7 +7,7 @@ Helpers the whole app uses.
 | `storage.ts` | Browser storage read with a schema, in try/catch; the app works without it |
 | `log.ts` | The logger: silent in production, ids and event names only |
 | `time-format.ts` | "5 min ago" under a day, else local ISO time; the full time for tooltips (`time-format.md` §1) |
-| `now.ts` | The one clock that makes relative times again each 30 s while the page is visible (`useNow()`; `time-format.md` §1) |
+| `now.ts` | The one clock that makes relative times again while the page is visible (`useNow()`; the interval is in `time-format.md` §1) |
 | `cn.ts` | Joins Tailwind classes; knows our token names |
 | `sets.ts` | Set changes for React state: flip an item, or put it in or out |
 | `plural.ts` | A count and its word: "1 new skill", "2 new skills" |

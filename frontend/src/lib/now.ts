@@ -14,12 +14,14 @@ export interface Clock {
   now: () => Date;
 }
 
-// One timer for all readers of the time. It runs only while a reader listens and the page is
-// visible; the last reader to leave clears it and the page listener. `now()` gives the same
-// `Date` between ticks, because React needs a stable snapshot (a new `Date` on each read makes
-// React render again and again). It takes a new one only when the saved one is more than one
-// tick away from the clock, in either direction: a page that opens after a long time, a laptop
-// that slept, or a clock that moved back must never show an old time.
+// A timer that the readers of the time share (`now.test.ts`, "three subscribers share one
+// timer"). It runs only while a reader listens and the page is visible; the last reader to leave
+// clears it and the page listener. `now()` gives the same `Date` between ticks, because React
+// needs a stable snapshot (a new `Date` on each read makes React render again and again). It
+// takes a new one only when the saved one is more than one tick away from the clock, in either
+// direction, so a read after a long idle time or after the clock moved back is never old. A text
+// that is already on screen when a laptop wakes is made again at the next tick or at the
+// `visibilitychange` event, not at once.
 export function createClock({
   tickMs = NOW_TICK_MS,
   page = document,
@@ -75,7 +77,7 @@ export function createClock({
   };
 }
 
-// The one clock of the app.
+// The clock that `useNow` reads.
 export const appClock = createClock();
 
 // The time now, up to one tick old while the page is visible. The component renders again at
