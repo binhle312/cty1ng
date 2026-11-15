@@ -7,7 +7,7 @@ import type { Logger } from "pino";
 import type { HttpEnv } from "./context.ts";
 import { ApiFailure } from "./errors.ts";
 
-// The request path of security.md §2.1, in order (M0b plan §4).
+// The middleware of the request path of security.md §2.1. `app.ts` puts them in order.
 
 // First: every response and log line of a request has the same id (security.md §2.10). The id
 // is always made here; a client-sent X-Request-Id is ignored.
@@ -72,7 +72,8 @@ export function originCheck(allowedOrigins: readonly string[]): MiddlewareHandle
   };
 }
 
-// The headers of security.md §2.1. HSTS is off: the app runs on plain http on loopback.
+// The headers of security.md §2.1, on every answer, refusals too. HSTS is off: the app runs on
+// plain http on loopback.
 export function securityHeaders(): MiddlewareHandler<HttpEnv> {
   return secureHeaders({
     contentSecurityPolicy: {

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createClient } from "../../src/lib/api/generated/client/index.ts";
 import { createBot } from "../../src/lib/api/generated/sdk.gen.ts";
 import { watchCsp } from "./csp.ts";
+import { pageIsQuiet, watchRequests } from "./quiet.ts";
 import { skipAssignCard, skipUpgradeCard } from "./skill-cards.ts";
 import { readZip } from "./zip.ts";
 
@@ -844,6 +845,7 @@ test("a failed background refresh keeps the editor and its unsaved text", async 
   context,
 }) => {
   const skill = unique("Refresh fails");
+  await watchRequests(page);
   await createSkill(page, skill);
   await page.getByRole("tab", { name: "Write" }).click();
   await fill(page, "Description", "My unsaved description.");
@@ -868,8 +870,8 @@ test("a failed background refresh keeps the editor and its unsaved text", async 
   await other.getByRole("button", { name: "Save", exact: true }).click();
   await expect(other.getByText("Saved ✨")).toBeVisible();
   await expect.poll(() => failures, { timeout: 15_000 }).toBeGreaterThanOrEqual(4);
-  // Give the page time to show the failure; the old page replaced the editor here.
-  await page.waitForTimeout(500);
+  // The page took the last failure; the old page replaced the editor here.
+  await pageIsQuiet(page);
   await expect(page.getByText("The app could not load the skills.")).toHaveCount(0);
   await expect(page.getByLabel("Description", { exact: true })).toHaveValue(
     "My unsaved description.",

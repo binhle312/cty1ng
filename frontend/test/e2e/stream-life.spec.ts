@@ -7,6 +7,7 @@ import {
   listSkillVersions,
   trashSkill,
 } from "../../src/lib/api/generated/sdk.gen.ts";
+import { pageIsQuiet, watchRequests } from "./quiet.ts";
 
 // realtime-events.md §3, "Stream life" (audit of 2026-11-05, row 14). The browser allows six
 // connections for each host, so only a visible tab holds the stream.
@@ -132,6 +133,7 @@ test("a Clone draft stays when the tab returns after its source went to Trash", 
   const [version] = versions.data ?? [];
   if (version === undefined) throw new Error("no version");
 
+  await watchRequests(page);
   const stream = page.waitForResponse("**/api/stream");
   await page.goto(`/skills/new?from=${version.id}`);
   await expect(page.getByLabel("Name", { exact: true })).toHaveValue(`${skill.name} (copy)`);
@@ -162,8 +164,8 @@ test("a Clone draft stays when the tab returns after its source went to Trash", 
   await setVisible(page, true);
   await newStream;
   await listRead;
-  // Time for the page to close the editor, when it does.
-  await page.waitForTimeout(500);
+  // The page took each answer of the read after ready, and closed the editor if it does.
+  await pageIsQuiet(page);
   await expect(description, "the draft after the return").toHaveValue("My draft, not saved.");
 });
 
