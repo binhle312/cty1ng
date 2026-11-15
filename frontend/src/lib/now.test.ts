@@ -105,12 +105,19 @@ describe("the shared clock", () => {
     expect(listening(), "page listeners after the last unsubscribe").toBe(0);
   });
 
-  it("an unsubscribe that is not the last keeps the timer and the page listener", () => {
-    const { clock, listening } = setup();
+  it("an unsubscribe that is not the last keeps the timer", () => {
+    const { clock } = setup();
     const stopA = clock.subscribe(vi.fn());
     clock.subscribe(vi.fn());
     stopA();
     expect(vi.getTimerCount(), "timers after the first unsubscribe").toBe(1);
+  });
+
+  it("an unsubscribe that is not the last keeps the page listener", () => {
+    const { clock, listening } = setup();
+    const stopA = clock.subscribe(vi.fn());
+    clock.subscribe(vi.fn());
+    stopA();
     expect(listening(), "page listeners after the first unsubscribe").toBe(1);
   });
 
@@ -171,7 +178,7 @@ describe("the shared clock", () => {
     expect(vi.getTimerCount(), "timers after two visible events").toBe(1);
   });
 
-  it("visible, hidden and visible again in a row end with one timer", () => {
+  it("a page that flips hidden and visible again ends with one timer", () => {
     const { clock, show } = setup();
     clock.subscribe(vi.fn());
     show(false);

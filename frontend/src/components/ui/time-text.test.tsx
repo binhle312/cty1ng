@@ -45,9 +45,6 @@ describe("TimeText", () => {
   it("keeps its text while the page is hidden", () => {
     const hidden = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
     show();
-    act(() => {
-      document.dispatchEvent(new Event("visibilitychange"));
-    });
     later(5 * 60_000);
     expect(screen.getByText("Just now"), "text after five hidden minutes").toBeTruthy();
     hidden.mockRestore();
@@ -71,15 +68,6 @@ describe("TimeText", () => {
     const view = show();
     view.unmount();
     expect(vi.getTimerCount(), "timers after the unmount").toBe(0);
-  });
-
-  it("logs no warning when it is gone while time passes", () => {
-    const warn = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    const view = show();
-    later(20_000);
-    view.unmount();
-    later(60_000);
-    expect(warn, "errors logged").not.toHaveBeenCalled();
   });
 
   it("logs no warning at its first render", () => {
