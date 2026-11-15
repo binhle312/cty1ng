@@ -9,7 +9,7 @@ UI parts. `docs/architecture.md` §4; TypeScript rules in `docs/frontend-convent
 | `tsconfig.json` | Names the two type-check configs, so that the editor and ESLint find the config of each file |
 | `tsconfig.app.json` | Type-check settings for the browser code in `src/`: no Node types, so `process` or a `node:` import fails |
 | `tsconfig.test.json` | Type-check settings for the tests and the config files, with the Node types |
-| `vite.config.ts` | Dev server on 127.0.0.1:5173 that forwards `/api` to the backend; the production build |
+| `vite.config.ts` | Dev server on 127.0.0.1:5173 that forwards `/api` to the backend and sends the headers of `docs/security.md` §2.1 (a nonce for each start); the production build |
 | `index.html` | The page: loads the no-flash theme script, then the app |
 | `playwright.config.ts` | End-to-end tests against the production build that the backend serves |
 | `public/` | Files served as they are |

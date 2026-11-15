@@ -2,6 +2,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { freePort, readFrames, testServer } from "../backend/test/helpers.ts";
+import viteConfig from "../frontend/vite.config.ts";
 
 // M0c plan, decision A: in development the Vite dev server forwards `/api/*` to the backend.
 // This runs the real dev server (frontend/vite.config.ts) in front of a real backend and checks
@@ -88,6 +89,46 @@ describe("Vite dev proxy", () => {
     abort.abort();
   });
 
+  // security.md §2.1, item 36 of the P3 list: the dev page has the production CSP. Vite's React
+  // refresh script and the styles of its client are inline, so they get a nonce.
+  it("the dev page sends the production CSP with a nonce for scripts and styles", async () => {
+    const response = await fetch(`${base}/`);
+    expect(response.headers.get("content-security-policy") ?? "no CSP").toMatch(
+      /^default-src 'self'; script-src 'self' 'nonce-([A-Za-z0-9+/]{22}==)'; style-src 'self' 'nonce-\1'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'$/,
+    );
+  });
+
+  it("the dev page sends the other headers of security.md §2.1", async () => {
+    const response = await fetch(`${base}/`);
+    const other = ["x-content-type-options", "referrer-policy"].map((name) => [
+      name,
+      response.headers.get(name),
+    ]);
+    expect(Object.fromEntries(other)).toEqual({
+      "x-content-type-options": "nosniff",
+      "referrer-policy": "no-referrer",
+    });
+  });
+
+  it("each inline script of the dev page has the nonce of the CSP", async () => {
+    const response = await fetch(`${base}/`);
+    const nonce = /'nonce-([^']+)'/.exec(response.headers.get("content-security-policy") ?? "");
+    const html = await response.text();
+    const inline = [...html.matchAll(/<script(?![^>]*\ssrc=)[^>]*>/g)].map((tag) => tag[0]);
+    expect(inline.length).toBeGreaterThan(0);
+    const scriptNonces = inline.map((tag) => /\snonce="([^"]*)"/.exec(tag)?.[1]);
+    expect(scriptNonces).toEqual(inline.map(() => nonce?.[1] ?? "no nonce in the CSP"));
+  });
+
+  // The Vite client reads this meta to put the nonce on the `<style>` tags that it adds.
+  it("the dev page gives the Vite client the nonce for its styles", async () => {
+    const response = await fetch(`${base}/`);
+    const nonce = /'nonce-([^']+)'/.exec(response.headers.get("content-security-policy") ?? "");
+    const html = await response.text();
+    const meta = /<meta property="csp-nonce" nonce="([^"]*)"/.exec(html);
+    expect(meta?.[1]).toBe(nonce?.[1] ?? "no nonce in the CSP");
+  });
+
   // realtime-events.md §3, rule for `make dev`: without this the browser keeps a dead stream
   // that looks open, and gets no live events until a reload. Last in the file: it stops the
   // backend.
@@ -115,5 +156,29 @@ describe("Vite dev proxy", () => {
     })();
     const late = new Promise<string>((r) => setTimeout(r, 2_000, "still open after 2 s"));
     expect(await Promise.race([ended, late])).toBe("ended");
+  });
+});
+
+// The nonce of the dev page (security.md §2.1): a new random one at each run of the config (Vite
+// runs it at each start of the dev server), and none in the production build.
+describe("Vite config nonce", () => {
+  const configFor = (command: "serve" | "build") => {
+    if (typeof viteConfig !== "function") throw new Error("vite.config.ts exports no function");
+    return viteConfig({ command, mode: command === "serve" ? "development" : "production" });
+  };
+
+  it("each run of the dev config makes a new random nonce", () => {
+    const first = configFor("serve").html?.cspNonce;
+    const second = configFor("serve").html?.cspNonce;
+    const nonce = /^[A-Za-z0-9+/]{22}==$/;
+    expect({ valid: nonce.test(first ?? ""), changed: first !== second }).toEqual({
+      valid: true,
+      changed: true,
+    });
+  });
+
+  it("the production build has no nonce", () => {
+    const build = configFor("build");
+    expect(build.html?.cspNonce).toBeUndefined();
   });
 });
