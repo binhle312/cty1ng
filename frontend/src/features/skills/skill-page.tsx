@@ -661,12 +661,13 @@ function useSkillEditStore(fields: FormFields, point: SavedPoint) {
   useLayoutEffect(() => {
     store.dispatch({ type: "serverData", fields, point });
   });
-  // A layout cleanup runs in the commit that removes the page, so no answer lands in between.
-  useLayoutEffect(
-    () => () => {
+  // A layout cleanup runs in the commit that removes the page, so no answer lands in between. The
+  // setup runs again when the page stays after a cleanup (StrictMode in the development build).
+  useLayoutEffect(() => {
+    store.dispatch({ type: "entered" });
+    return () => {
       store.dispatch({ type: "left" });
-    },
-    [store],
-  );
+    };
+  }, [store]);
   return { state, store };
 }

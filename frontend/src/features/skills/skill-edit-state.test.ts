@@ -83,6 +83,11 @@ describe("the skill editor while a Save waits (table 52)", () => {
       "Could not save Write user stories. Try again.",
     ]);
   });
+
+  it("shows a failed Save in the save bar after a cleanup that kept the page", () => {
+    const state = run([{ type: "left" }, { type: "entered" }, failed("internal_error")], saving());
+    expect(state.toasts, "no toast while the page shows").toEqual([]);
+  });
 });
 
 describe("Discard (table 53)", () => {

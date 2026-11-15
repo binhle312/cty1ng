@@ -258,8 +258,9 @@ function DiffPanel({
     ...restoreSkillVersionMutation(),
     mutationKey: restoreKey(skill.id),
     // The answers stay for the life of the browser tab, so the rule above has no hidden timer
-    // (the default would drop them after 5 minutes). Each is one skill row, one for each Restore
-    // that succeeded in this tab; a reload removes them, and no code removes them before that.
+    // (the default would drop them after 5 minutes). The query client keeps one entry for each
+    // Restore of this skill sent in this tab, also a failed one with its error; a success holds one
+    // skill row. A reload removes them, and no code removes them before that.
     gcTime: Infinity,
     onSuccess: async (saved) => {
       showToast(`Saved v${String(saved.latest_version.version)} ✨`);

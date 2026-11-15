@@ -69,6 +69,9 @@ export type EditEvent =
   // that the request was sent from: the base moves only while the edit holds that data, so the move
   // never hides a change made in another place. Without it, the page checked that before.
   | { type: "baseMoved"; point: SavedPoint; startedAt?: number }
+  // The page is on screen: at its first mount, and again after a cleanup that did not remove it
+  // (React's StrictMode runs one in the development build).
+  | { type: "entered" }
   | { type: "left" };
 
 export function initialEditState(fields: SkillFields, point: SavedPoint): EditState {
@@ -145,6 +148,8 @@ function next(state: EditState, event: EditEvent): EditState {
     case "baseMoved":
       if (event.startedAt !== undefined && state.base.rowVersion < event.startedAt) return state;
       return { ...state, base: newer(event.point, state.base) };
+    case "entered":
+      return state.left ? { ...state, left: false } : state;
     case "left":
       return { ...state, left: true };
     default: {

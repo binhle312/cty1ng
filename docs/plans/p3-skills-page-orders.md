@@ -287,7 +287,7 @@ Break list: `exempt` (its invariant throws in the model's check, outside the nam
 | C17 | 56 | sends no second Delete from the dialog of a return visit while the first waits | red |
 | C18 | 56 | moves to /skills when the first Delete succeeds while the return visit's dialog is open | guard |
 | C19 | 56 | turns Delete skill on in the return visit's dialog when the first Delete fails | guard |
-| C20 | two requests | keeps the base when a Save answer comes after a Make active answer (the other order of the existing test) | guard |
+| C20 | two requests | shows no conflict when a Save answer comes after a Make active answer (the other order of the existing test; renamed after review round 1: it proves no conflict, not the base) | guard |
 
 The other must-win cells already have tests on main and stay: row 1a, the failure toasts after a leave, no Restore move after a leave or another tab, Restore and Make active failure toasts, the existing Delete rows.
 Not tested by a new test: loading, error and empty states (no new query read on these screens); e2e (the orders need held answers).

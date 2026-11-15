@@ -731,6 +731,15 @@ describe("a request that fails after the owner left", () => {
   });
 
   it("shows a failed Save in the save bar, with no toast, while the owner stays", async () => {
+    await failedSaveWhileStaying({ strict: false });
+  });
+
+  // The development build mounts each page two times (`<StrictMode>` in `main.tsx`).
+  it("shows a failed Save in the save bar in the development build's StrictMode", async () => {
+    await failedSaveWhileStaying({ strict: true });
+  });
+
+  async function failedSaveWhileStaying({ strict }: { strict: boolean }) {
     const held = heldAnswer();
     const skill = makeSkill();
     api = fakeApi({
@@ -741,7 +750,7 @@ describe("a request that fails after the owner left", () => {
       "GET /api/bots": () => ({ body: [] }),
       [VERSION_ROUTE]: () => held.promise,
     });
-    await renderApp("/skills/write-user-stories");
+    await renderApp("/skills/write-user-stories", { strict });
     await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 });
     click(screen.getByRole("tab", { name: "Write" }));
     typeBody(NEW_BODY);
@@ -755,7 +764,7 @@ describe("a request that fails after the owner left", () => {
     });
     expect(await screen.findByText("Something failed.")).toBeTruthy();
     expect(screen.queryByText("Could not save Write user stories. Try again.")).toBeNull();
-  });
+  }
 
   it("row 6: says when a Create fails", async () => {
     const held = heldAnswer();
@@ -1489,7 +1498,7 @@ describe("Make active again and its refresh", () => {
     expect(api?.sent("POST", ACTIVATE_PATH), "the requests after a new Deprecate").toHaveLength(2);
   });
 
-  it("keeps the base when a Save answer comes after a Make active answer", async () => {
+  it("shows no conflict when a Save answer comes after a Make active answer", async () => {
     const save = heldAnswer();
     const { held, server, queryClient } = await activateSent({
       [VERSION_ROUTE]: () => save.promise,

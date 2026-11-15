@@ -401,6 +401,50 @@
       ]
     },
     {
+      "id": "U17",
+      "claim": "A cleanup that keeps the page (StrictMode) does not make a failed Save a toast",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-edit-state.test.ts",
+        "name": "shows a failed Save in the save bar after a cleanup that kept the page"
+      },
+      "assertion": "expect(state.toasts, \"no toast while the page shows\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "U17-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "      return state.left ? { ...state, left: false } : state;",
+              "replace": "      return state;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C21",
+      "claim": "In the development build's StrictMode, a failed Save shows in the save bar, with no toast",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "shows a failed Save in the save bar in the development build's StrictMode"
+      },
+      "assertion": "expect(await screen.findByText(\"Something failed.\")).toBeTruthy();",
+      "breaks": [
+        {
+          "id": "C21-a",
+          "file": "frontend/src/features/skills/skill-page.tsx",
+          "edits": [
+            {
+              "find": "    store.dispatch({ type: \"entered\" });\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "C3",
       "claim": "The bar says \"1 change not saved\" while a Save waits and the text is typed back",
       "test": {
@@ -800,11 +844,11 @@
     },
     {
       "id": "C20",
-      "claim": "A Make active answer before a Save answer does not end the Save's work (passes on main)",
+      "claim": "A Make active answer before a Save answer leaves no conflict after both answers (passes on main)",
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
-        "name": "keeps the base when a Save answer comes after a Make active answer"
+        "name": "shows no conflict when a Save answer comes after a Make active answer"
       },
       "assertion": "expect(screen.queryByText(CONFLICT_TEXT), \"a conflict after both answers\").toBeNull();",
       "breaks": [
