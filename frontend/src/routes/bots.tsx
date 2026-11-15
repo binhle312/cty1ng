@@ -27,7 +27,7 @@ export const createBotRoute = createRoute({
   pendingComponent: PageSkeleton,
 }).lazy(() => import("./bots.lazy.tsx").then((module) => module.CreateRoute));
 
-// `?tab=profile` … (bot-page.md §1): a reload keeps the tab. Profile has no `tab`.
+// `?tab=skills` … (bot-page.md §1): a reload keeps the tab. Profile has no `tab`.
 const BotSearch = z.object({
   tab: z.enum(BOT_TABS).optional().catch(undefined),
 });
