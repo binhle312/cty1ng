@@ -105,10 +105,6 @@ export function saveKind(form: SkillForm): SaveKind {
   return changed.every((field) => field === "name") ? "rename" : "version";
 }
 
-export function changesLine(count: number): string {
-  return count === 1 ? "1 change not saved" : `${String(count)} changes not saved`;
-}
-
 // One message per field, or null. The slug is checked only for a new skill.
 export function fieldProblems(
   form: SkillForm,

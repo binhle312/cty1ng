@@ -59,7 +59,9 @@ steps, rules with reasons, output, example.
 Optional. Rows in the bot-list card pattern: tick box, name, description, latest version, and a
 search box. A ticked row moves to the top and shows the **Always load** switch, off by default
 (D16). The list has a fixed height of about 7 rows and scrolls inside the card. Deprecated skills
-are not in the list. Each ticked skill gets its latest version.
+are not in the list, except a ticked skill that another tab deprecated: it keeps its row, with its
+name and the Deprecated pill, until the owner unticks it, and Create shows the server's problem
+under it (P3 PR E, Q3 A, 2026-11-15). Each ticked skill gets its latest version.
 
 Loading: one `GET /skills` returns every skill with name, description and latest version (no
 bodies, no paging). The search filters in the browser. A Clone asks with `include_deprecated=true`,
@@ -172,7 +174,7 @@ job (D55).
 | --- | --- | --- |
 | E1 | A field is wrong | A red message under the field, with the fix in the words. A size error shows at once (the counter turns red). A taken name shows when the owner leaves the field, checked against the bot list that the page has. This check is only a hint: names in Trash stay taken but are not in that list, so the server's 409 `name_taken` on Create is the real check and shows under Name on step 1 as an E3 error: "{name} is taken by another bot, maybe one in Trash. Pick another name." (M2 spec gap pass, owner 2026-11-01) An empty required field shows after Next. Next stays on: a click with errors keeps the owner on the step and moves focus to the first error |
 | E2 | Persona over the limit | The owner can keep typing (nothing is cut). "Too long by {n} characters. Move long procedures into a skill." Empty: "Write a persona. The bot needs it to work." after Next |
-| E3 | The server finds problems on Create | Nothing is created and the input stays. Steps with a problem get a red "!" in the stepper; their preview sections get a red (!) icon. A click opens that step, where the message is under the field. Create is off (40 %) until they are fixed |
+| E3 | The server finds problems on Create | Nothing is created and the input stays. Steps with a problem get a red "!" in the stepper; their preview sections get a red (!) icon. A click opens that step, where the message is under the field. Create is off (40 %) until they are fixed. A problem with the source of a Clone (`cloned_from_bot_id`, the bot to copy is gone) has no field on a step: its message shows next to Create, no step gets a "!", and Create stays on (P3 PR E, Q2 A, 2026-11-15) |
 | E4 | Sending | Create is off with a spinner and "Creating". Back is off and the form is read-only. The preview card has no current section and no Edit links; its pill says Creating. A double click sends one request |
 | E5 | Create failed (no connection, server error) | A red banner under the stepper: "Could not confirm whether the bot was created. Your input is kept." and Try again (owner, 2026-11-02: the app does not know if the bot was created, so the banner does not say it failed). No stack trace and no internal text. Try again sends the same request with the same retry key, so a retry never makes two bots (`../../api.md` §4). Until the outcome is known, the page keeps that request as sent and the form stays read-only: Try again resends it unchanged, so an edit cannot ride on the old key. When the answer comes, a bot that was created opens as after Create; an input error unlocks the form, and the next Create is a new request with a new key (`../../domain-model.md` §2 Idempotency; M2 spec gap pass, owner 2026-11-01) |
 | E6 | Leave with input | Cancel, ← Back, the rail or a header bot opens "Leave without creating? {name} is not created. What you typed in the 4 steps is lost." with Stay and **Leave** (`danger`). Esc = Stay. With nothing typed, the owner leaves at once. No draft is saved. The browser's own question covers a closed tab or a reload |

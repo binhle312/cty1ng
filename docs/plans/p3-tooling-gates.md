@@ -2,7 +2,7 @@
 
 Brief: P3 list of 2026-11-12, part 2, items 73, 74, 75 and 76 (part 5, PR 19), approved by the owner on 2026-11-12
 Checkpoint: none (tooling only; no UI, no code design)
-Approval: chief agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); owner review pending
+Approval: chief agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15
 
 ## Items and their state on `main` (`97221d3`)
 

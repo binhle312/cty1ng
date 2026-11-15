@@ -28,6 +28,7 @@ UI parts. `docs/architecture.md` §4; TypeScript rules in `docs/frontend-convent
 | `test/setup.ts` | Vitest setup for component tests |
 | `test/render-app.tsx` | Renders the real app on an in-memory address |
 | `test/fake-api.ts` | The fake network for component tests: routes, recorded requests, held answers |
+| `test/fake-api.test.ts` | Tests of `heldAnswer`: it fails without the query client of the test (DQ-115) |
 | `test/fixtures.ts` | Typed API answers that the component tests share |
 | `test/press-key.ts` | A keydown with the event order of a browser (audit row 1) |
 | `test/sequences.ts` | Drivers for sequence tests of a pure state module (`docs/testing.md` §3) |

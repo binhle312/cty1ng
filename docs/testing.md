@@ -298,6 +298,7 @@ ports (`E2E_SERVE_SERVERS`), not on 8100 and 8101.
 | `pressKey(target, init)` | `frontend/test/press-key.ts` | Component tests: a keydown with the event order of a browser, outside `act()`. React finishes its work before the event reaches `document`. Use it when a key press opens or closes something. It does not need focus on the target, it sends no keyup, and it is a repeat only if `init` asks. So test focus in Playwright. |
 | `watchCsp(page)` | `frontend/test/e2e/csp.ts` | End-to-end tests: collects every CSP violation of a page; assert that the list is empty. |
 | `readZip(buffer)` | `frontend/test/e2e/zip.ts` | End-to-end tests: the files of a downloaded zip (the skill export), by name. |
+| `watchRequests(page)`, `pageIsQuiet(page)` | `frontend/test/e2e/quiet.ts` | End-to-end tests: before a check that something did not happen, wait until the page has no open request and starts none for some turns of its event loop (not a fixed time). Call `watchRequests` before the page loads. A retry delay has no open request, so wait for the count of retries first. |
 
 **Loops on microtasks.** A loop that awaits only resolved promises (a reader that returns
 `Promise.resolve`) never lets a timer run, so Vitest's own timeout cannot stop it and the test

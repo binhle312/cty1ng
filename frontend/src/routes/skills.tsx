@@ -1,6 +1,7 @@
 import { createRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { PageSkeleton } from "../features/placeholder/page-skeleton.tsx";
+import { SKILL_TABS } from "../features/skills/skill-tabs.ts";
 import { rootRoute } from "./root.tsx";
 
 // The Skills page (skills-page.md §1): `/skills`, `/skills/new`, `/skills/import` and
@@ -38,12 +39,10 @@ export const importSkillsRoute = createRoute({
 // compared versions.
 const Version = z.coerce.number().int().positive().optional().catch(undefined);
 const SkillSearch = z.object({
-  tab: z.enum(["skill", "bots", "history"]).optional().catch(undefined),
+  tab: z.enum(SKILL_TABS).optional().catch(undefined),
   from: Version,
   to: Version,
 });
-export type SkillSearch = z.infer<typeof SkillSearch>;
-export type SkillTab = NonNullable<SkillSearch["tab"]>;
 
 export const skillRoute = createRoute({
   getParentRoute: () => skillsRoute,
