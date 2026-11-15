@@ -34,7 +34,8 @@ The page loads the list with `include_deprecated=true` and finds the skill id fr
 it, so the URL of a deprecated skill works after a reload; **Show deprecated** only filters the
 rows on screen. The API takes ids.
 `new` and `import` are reserved slugs (`domain-model.md` §3.1). An unknown or trashed slug shows
-the not-found state of the shell. A reload or a closed browser tab with unsaved changes asks the
+the not-found state of the shell (Page not found) beside the list column; the shell and the list
+stay (P3 list item 66). A reload or a closed browser tab with unsaved changes asks the
 browser's own "Leave site?" question; nothing else of an unsaved edit is kept.
 
 ## 2. Layout: list and skill page side by side (bot page layout)
