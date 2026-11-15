@@ -180,10 +180,12 @@ describe("the error screen of a page", () => {
     fault.index = true;
     await renderApp("/skills");
     await errorHeading();
+    const beforeClick = fault.indexRenders;
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     });
     await pause(100);
+    expect(fault.indexRenders, "renders of the page on Try again").toBeGreaterThan(beforeClick);
     expect(await errorHeading()).toBeTruthy();
     const settled = fault.indexRenders;
     await pause(300);
@@ -297,8 +299,9 @@ describe("the error screen in the Skills page", () => {
     act(() => {
       fireEvent.click(screen.getByRole("link", { name: "Home" }));
     });
+    // A leave question that stayed would stop the move.
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/");
+      expect(router.state.location.pathname, "moved with no leave question").toBe("/");
     });
     expect(screen.queryByRole("alertdialog"), "a leave question").toBeNull();
   });

@@ -210,6 +210,11 @@ Build details that follow from the probes:
   review".
 - The test helper `test/render-app.tsx` takes the error options from `router.ts`; it does not
   switch to `createAppRouter`, because `defaultPreload: "intent"` could change other tests.
+- After review round 1 (2026-11-15), part 10 matches the build: T6 has no late answer (the late
+  answer is in T11); T8 recovers before the clicks; T8 and T10 are exempt from the break list
+  ("Not claimed" in the PR); T7, T13 and E1 have their breaks. The e2e tests came after the code,
+  so they have breaks. The app has dark colours only (`themes/command.css`), so the light axe run
+  checks the dark colours.
 
 ## 10. Test strategy as built
 
@@ -224,12 +229,12 @@ shell, the query client and the fake network stay real. A test that throws on pu
 | T3 | A page that throws shows the error screen inside the shell | yes | no |
 | T4 | The error screen never shows the error message | yes | yes (security) |
 | T5 | The error goes to the log with its name, without its message | yes | yes (security) |
-| T6 | Try again renders the page again (with an answer that comes late) | yes | no |
-| T7 | Try again while the page still throws shows the error screen again, with no loop | yes | yes (order) |
-| T8 | A double click on Try again ends on the page when the page recovers between the clicks | yes | yes (order) |
+| T6 | Try again renders the page again | yes | no |
+| T7 | Try again while the page still throws shows the error screen again, with no loop | yes | yes (order): two claims, "again" and "no loop" |
+| T8 | A double click on Try again ends on the page (the page recovers before the clicks) | yes | exempt: an order case of the router itself; "Not claimed" in the PR |
 | T9 | Go to Home leaves the error screen | yes | no |
-| T10 | A rail link leaves the error screen; coming back renders the page again | yes | yes (order) |
-| T11 | A list refresh while the error screen shows keeps it, with no loop | yes | yes (order) |
+| T10 | A rail link leaves the error screen; coming back renders the page again | yes | exempt: an order case of the router itself; "Not claimed" in the PR |
+| T11 | A list answer that comes late, while the error screen shows, keeps it, with no new render | yes | yes (order) |
 | T12 | An error in the skill page keeps the Skills list column | yes | no |
 | T13 | An error removes unsaved text with no leave question | yes | yes (state) |
 | T14 | An error in the shell fills the window with the error screen | yes | no |
@@ -237,5 +242,5 @@ shell, the query client and the fake network stay real. A test that throws on pu
 | T16 | A failed roster chunk writes one log line, and the rail links still work | yes | no |
 | T17 | A failed roster chunk follows a new bot list, with no second log line | yes | yes (order) |
 | T18 | Guard: Page not found still shows inside the shell for an unknown URL and `/c/bad-id` | no (a guard) | exempt: the router's own behaviour |
-| E1 | A failed Skills chunk shows the error screen in the shell; after the chunk comes back, Try again shows the Skills page | yes | no |
-| E2 | The error screen has no axe violation, light and dark | yes | no |
+| E1 | A failed Skills chunk shows the error screen in the shell; after the chunk comes back, Try again shows the Skills page | yes (late test) | yes: the app's screen, the shell, and Try again |
+| E2 | The error screen has no axe violation, light and dark | yes (late test) | yes: a contrast break in each mode |

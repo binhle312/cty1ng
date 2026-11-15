@@ -218,7 +218,9 @@ review after M3.
 - The error screen has the layout of Page not found: the heading "Something went wrong", the
   line "The app could not show this page. Try again, or go to Home.", and two secondary
   buttons, **Try again** and **Go to Home**. It is an alert for screen readers. It never shows
-  the error itself, and the log gets only the kind of error (`../security.md` §2.10).
+  the error itself, and the app's log (`frontend/src/lib/log.ts`) gets only the kind of error
+  (`../security.md` §2.10). React and the router still write the whole error to the browser
+  console.
 - A page that fails keeps the rail, bar 2, the user panel and the header. On the Skills page, a
   skill page that fails keeps the list column.
 - **Try again** loads the page again, also a page whose code failed to load. If the page fails
