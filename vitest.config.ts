@@ -29,7 +29,7 @@ export default defineConfig({
           environment: "jsdom",
           testTimeout: TEST_TIMEOUT_MS,
           setupFiles: ["frontend/test/setup.ts"],
-          include: ["frontend/src/**/*.test.{ts,tsx}"],
+          include: ["frontend/src/**/*.test.{ts,tsx}", "frontend/test/**/*.test.{ts,tsx}"],
         },
       },
     ],

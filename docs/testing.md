@@ -281,10 +281,13 @@ change run `pnpm build` before `pnpm e2e`; after a backend change, restart the s
 Each `pnpm e2e` and `pnpm e2e:serve` makes its data folder in the system temp folder (`cty1ng-e2e-*`)
 and removes it when it ends, after its servers have stopped, also after a failed run. A hard kill
 (SIGKILL) leaves the folder behind.
-Each server runs as its own process group. When you stop the script (Ctrl+C or SIGTERM), it
-stops every process in each group and waits until they have stopped, so no old server stays on
-the ports. A group that is still running after `E2E_SERVE_STOP_MS` (default 10000 ms) is
-killed.
+Each server runs as its own process group. When the script stops (Ctrl+C, SIGTERM, SIGHUP from a
+closed terminal, or an error that nothing catches, such as a line printed after the terminal that
+read it is gone), it stops every process in each group and waits until they have stopped, so no old
+server stays on the ports. A group that is still running after `E2E_SERVE_STOP_MS` (default
+10000 ms) is killed. A hard kill of the script (SIGKILL) cannot be caught: its servers stay on the
+ports until you stop them. SIGHUP stops it also when it runs under `nohup`. `scripts/e2e-serve.test.ts` runs the script with fixture servers on free
+ports (`E2E_SERVE_SERVERS`), not on 8100 and 8101.
 
 ### Test helpers
 
@@ -295,6 +298,7 @@ killed.
 | `pressKey(target, init)` | `frontend/test/press-key.ts` | Component tests: a keydown with the event order of a browser, outside `act()`. React finishes its work before the event reaches `document`. Use it when a key press opens or closes something. It does not need focus on the target, it sends no keyup, and it is a repeat only if `init` asks. So test focus in Playwright. |
 | `watchCsp(page)` | `frontend/test/e2e/csp.ts` | End-to-end tests: collects every CSP violation of a page; assert that the list is empty. |
 | `readZip(buffer)` | `frontend/test/e2e/zip.ts` | End-to-end tests: the files of a downloaded zip (the skill export), by name. |
+| `watchRequests(page)`, `pageIsQuiet(page)` | `frontend/test/e2e/quiet.ts` | End-to-end tests: before a check that something did not happen, wait until the page has no open request and starts none for some turns of its event loop (not a fixed time). Call `watchRequests` before the page loads. A retry delay has no open request, so wait for the count of retries first. |
 
 **Loops on microtasks.** A loop that awaits only resolved promises (a reader that returns
 `Promise.resolve`) never lets a timer run, so Vitest's own timeout cannot stop it and the test
@@ -316,9 +320,9 @@ theme-switch leak test.
 
 ## 4. CI gates
 
-All must be green to merge: ESLint (including the security rules in `security.md` §2.8),
-Prettier, `tsc`, dependency-cruiser import rules (D35), Vitest, `db:check` (Drizzle schema
-matches the migrations), Playwright (a test that passes only on its second try fails the job:
+All must be green to merge: ESLint (including the security rules in `security.md` §2.8; a
+warning fails it too: `--max-warnings 0`),
+Prettier, `tsc`, dependency-cruiser import rules (D35), Vitest, `db:check` (Drizzle schema matches the migrations, and the migration SQL builds that schema, so a hand edit that changes the schema of a migration fails; not checked: a data statement that changes no schema, and the order of the columns), Playwright (a test that passes only on its second try fails the job:
 `failOnFlakyTests`), generated-client freshness, event-type list match,
 `check:index` (folder indexes complete, `architecture.md` §4.2), the bundle budget
 (`pnpm build`, then `pnpm check:bundle`), CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also run the automated security review when it is on;

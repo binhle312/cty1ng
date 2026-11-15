@@ -170,7 +170,7 @@ The lead did not check these again, except where a row says so. The others are f
 
 ### Backend and data
 
-- A migration that rebuilds a parent table with rows fails at startup. `PRAGMA foreign_keys=OFF` does nothing in a transaction: `backend/src/adapters/db/migrate.ts:20`. No shipped migration does this today. **Fix before M3.**
+- A migration that rebuilds a parent table with rows fails at startup. `PRAGMA foreign_keys=OFF` does nothing in a transaction: `backend/src/adapters/db/migrate.ts:20`. No shipped migration does this today. **Fix before M3.** New fact (2026-11-13): with `ON DELETE cascade` or `ON DELETE set null`, the runner of today loses data with no error. `main` has no such key: the six foreign keys of the migration files (two in `0001_skills.sql`, four in `0002_bots.sql`) each have `ON DELETE no action`. Fixed in #113: the runner turns foreign keys off before its transaction, checks the references before the commit, and turns the keys on again.
 - A description that ends in two newlines changes after export and import: `backend/src/core/skills/skill-md.ts:21`. Fixed in #73.
 - A new assign can pin an older version, and the docs do not agree on the rule: `backend/src/core/bots/bots.service.ts:579`.
 - One purge item that fails blocks all later items: `backend/src/core/skills/skills.service.ts:526`, `backend/src/core/bots/bots.service.ts:711`.
@@ -199,22 +199,22 @@ The lead did not check these again, except where a row says so. The others are f
 
 ### Bots pages
 
-- A late Delete answer moves the owner off the page they went to: `frontend/src/features/bots/delete-bot-dialog.tsx:38`.
-- "Focus the first error" does nothing for fields with no `aria-invalid`: `frontend/src/features/bots/create-bot-steps.tsx:739`.
-- Try again never shows the sending state: `frontend/src/features/bots/create-bot-page.tsx:366`.
-- A server error on `cloned_from_bot_id` shows on no step and blocks Create: `frontend/src/features/bots/create-bot-form.ts:110`.
-- A ticked skill that another tab deprecates shows as "A skill in Trash": `frontend/src/features/bots/create-bot-page.tsx:592`.
+- A late Delete answer moves the owner off the page they went to: `frontend/src/features/bots/delete-bot-dialog.tsx:38`. Fixed in #116 (item 40).
+- "Focus the first error" does nothing for fields with no `aria-invalid`: `frontend/src/features/bots/create-bot-steps.tsx:739`. Fixed in #116 (item 41).
+- Try again never shows the sending state: `frontend/src/features/bots/create-bot-page.tsx:366`. Fixed in #116 (item 42).
+- A server error on `cloned_from_bot_id` shows on no step and blocks Create: `frontend/src/features/bots/create-bot-form.ts:110`. Fixed in #116 (item 43).
+- A ticked skill that another tab deprecates shows as "A skill in Trash": `frontend/src/features/bots/create-bot-page.tsx:592`. Fixed in #116 (item 44). The page text "Deprecated skills are not in the list." is now false for such a skill (DQ-411, open).
 
 ### Found during PR 4
 
 - **Fixed in #84. P2 (owner, 2026-11-08); its own PR after PR 4.** After the browser reports that it is offline, the first visit to a Clone page, a bot page or `/bots/new` stays loading until the browser is online again. TanStack Query pauses reads, and the app runs on 127.0.0.1. Run with an `offline` event on `8c2278f` and on the branch; real Wi-Fi off is not tested: `frontend/src/main.tsx:15`.
-- Esc on the bot page does nothing when the focus is outside the edit form, for example after a click on a blank area, on Discard or on a tab. Run on `8c2278f` and on the branch: `frontend/src/features/bots/bot-page.tsx:279`.
-- Two older Esc checks and one older option have no test that fails without them: `contains`, `defaultPrevented` and the template's `retry: false` (DQ-095).
+- Esc on the bot page does nothing when the focus is outside the edit form, for example after a click on a blank area, on Discard or on a tab. Run on `8c2278f` and on the branch: `frontend/src/features/bots/bot-page.tsx:279`. Fixed in #116 (item 45, DQ-089).
+- Two older Esc checks and one older option have no test that fails without them: `contains`, `defaultPrevented` and the template's `retry: false` (DQ-095). Fixed in #116 (item 46).
 - A live event during a first-load read joins that read, so the form can open with a value from before the event. The next change has the same result, because an open form keeps its first answer (DQ-107).
 - When a read of the Create form keeps failing, each live event for that list starts the retries again. With an event every 3 s for 21 s, the form opened at 25.1 s (DQ-109).
 - `heldAnswer` waits on the client that `watchQueryClient` set last, and nothing checks it. A test with its own client and no call gets the old race back (DQ-115).
 - Create waits for its refresh of the lists before it moves to the new bot. When the skill read keeps failing, the form stays disabled for about 7 s (DQ-108).
-- The skill Clone cuts the name with a cached limit. The form checks the name against the current limit. From reading the code: `frontend/src/features/skills/new-skill-page.tsx:160`.
+- The skill Clone cuts the name with a cached limit. The form checks the name against the current limit. From reading the code: `frontend/src/features/skills/new-skill-page.tsx:160`. Fixed in #117 (item 57, DQ-090).
 
 Correction to row 1: `act()` is not the only thing that hides the failure. A bare `dispatchEvent` hides it too, so removing `act()` alone gives a test that passes on the old code (run on `8c2278f`). `pressKey` makes React finish its work where a browser does.
 
@@ -225,13 +225,13 @@ Correction to row 1: `act()` is not the only thing that hides the failure. A bar
 ### Skills pages and shell
 
 - **Fixed in #78.** Late answers from Restore, Import and Trash move the owner off the page they went to. Both audits found the Import case: `frontend/src/features/skills/skill-history.tsx:223`, `import-page.tsx:119`, `skill-page.tsx:352`.
-- Skill Clone can split an emoji, and the saved name then holds "�". The Clone form shows the name first, so the owner can correct it. Second audit; checked through the API by the lead: `shared/src/skills.ts:142`.
+- Skill Clone can split an emoji, and the saved name then holds "�". The Clone form shows the name first, so the owner can correct it. Second audit; checked through the API by the lead: `shared/src/skills.ts:142`. Fixed in #117 (item 58).
 - An unknown skill URL loses the whole shell: `frontend/src/features/skills/skill-page.tsx:101`.
 - **Fixed in #78.** If the owner types an edit back during a conflict, the bar says "saved" over old text: `frontend/src/features/skills/skill-page.tsx:131`.
-- A failed background refresh replaces the History tab: `frontend/src/features/skills/skill-history.tsx:79`, `:262`.
-- "Close this card and try again" does not try again: `frontend/src/features/skills/skill-dialogs.tsx:50`.
+- A failed background refresh replaces the History tab: `frontend/src/features/skills/skill-history.tsx:79`, `:262`. Fixed in #117 (item 59). The Skills index page has the same fault: fixed in #117 (item 60).
+- "Close this card and try again" does not try again: `frontend/src/features/skills/skill-dialogs.tsx:50`. Fixed in #117 (item 61). Owner, 2026-11-15 (117-B: A): the Try again button in the three dialogs is approved; the texts wait for the UI review after M3.
 - The app has no error boundary, so a failed lazy chunk replaces the whole app: `frontend/src/router.ts:8`, `frontend/src/features/shell/top-header.tsx:11`. **Fix before M3.**
-- The Export card counts a skill that left the list: `frontend/src/features/skills/export-card.tsx:74`.
+- The Export card counts a skill that left the list: `frontend/src/features/skills/export-card.tsx:74`. Fixed in #117 (item 62).
 
 ### Tests and tooling
 

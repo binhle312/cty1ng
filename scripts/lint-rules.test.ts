@@ -56,6 +56,67 @@ describe("SQL lint rules", () => {
   });
 });
 
+// Item 74 of the P3 list: the forms that the first SQL rules did not see. Each case has its own
+// assertion line, so a break of one selector fails only its own test (scripts/breaks/).
+describe("SQL lint rules: the wider forms", () => {
+  const isSqlRule = (m: string) => m.startsWith("no-restricted-syntax");
+
+  it("rejects sql.raw() on a namespace import", async () => {
+    const namespaceRaw = await messages(
+      'import * as orm from "drizzle-orm";\ndeclare const id: string;\norm.sql.raw(id);\n',
+      DB_FILE,
+    );
+    expect(namespaceRaw.some(isSqlRule)).toBe(true);
+  });
+
+  it("rejects an import of sql under another name", async () => {
+    const renamedSql = await messages(
+      'import { sql as s } from "drizzle-orm";\ndeclare const id: string;\ns.raw(id);\n',
+      DB_FILE,
+    );
+    expect(renamedSql.some(isSqlRule)).toBe(true);
+  });
+
+  it("rejects db.run with a string in a variable", async () => {
+    const variableArgument = await messages(
+      "declare const db: any, query: string;\ndb.run(query);\n",
+      DB_FILE,
+    );
+    expect(variableArgument.some(isSqlRule)).toBe(true);
+  });
+
+  it("rejects tx.all with the result of a call", async () => {
+    const callArgument = await messages(
+      "declare const tx: any, build: () => string;\ntx.all(build());\n",
+      DB_FILE,
+    );
+    expect(callArgument.some(isSqlRule)).toBe(true);
+  });
+
+  it.each([
+    [
+      "the sql`` tagged template on this.db",
+      "declare const sql: any, repo: any;\nrepo.db.get(sql`SELECT 1`);\n",
+    ],
+    [
+      "a Map key from a template",
+      "declare const k: string;\nnew Map<string, number>().get(`${k}:x`);\n",
+    ],
+    [
+      "sql imported under its own name",
+      'import { sql } from "drizzle-orm";\nexport const one = sql`SELECT 1`;\n',
+    ],
+    // Review round 1 of #120 (R1-3): the tagged template of a namespace import.
+    [
+      "db.run with orm.sql``",
+      'import * as orm from "drizzle-orm";\ndeclare const db: any;\ndb.run(orm.sql`SELECT 1`);\n',
+    ],
+  ])("allows %s", async (_label, code) => {
+    const found = await messages(code, DB_FILE);
+    expect(found.filter(isSqlRule)).toEqual([]);
+  });
+});
+
 describe("raw colour lint rules", () => {
   it.each([
     ["a hex colour", 'export const c = "#F5B544";'],
@@ -180,14 +241,72 @@ describe("each file gets its rule sets", () => {
     expect(missing).toEqual([]);
   });
 
-  it("keeps the bot list write rule on every app file in components and features but the store", async () => {
+  it("keeps the bot list write rule on every app file but the store", async () => {
     const missing: string[] = [];
     for (const file of files.filter(
-      (f) => inUi(f) && !isTest(f) && !f.endsWith("features/bots/bot-list-store.ts"),
+      (f) => !isTest(f) && !f.endsWith("features/bots/bot-list-store.ts"),
     )) {
-      if (!(await selectorsOf(file)).includes("listBotsQueryKey")) missing.push(file);
+      if (!(await selectorsOf(file)).includes("(listBots|getSettings)(QueryKey|Options)")) {
+        missing.push(file);
+      }
     }
     expect(missing).toEqual([]);
+  });
+});
+
+// frontend-conventions.md §1: only the bot list store writes the bot list and the settings.
+describe("bot list write rule", () => {
+  const isBotListRule = (m: string) => m.includes("bot-list-store.ts");
+
+  it.each([
+    {
+      label: "setQueriesData with the key in its filters",
+      code: "declare const qc: any;\nqc.setQueriesData({ queryKey: listBotsQueryKey() }, []);\n",
+      file: "frontend/src/features/bots/bot-page.tsx",
+    },
+    {
+      label: "setQueryData with the key of the generated options",
+      code: "declare const qc: any;\nqc.setQueryData(getSettingsOptions().queryKey, {});\n",
+      file: "frontend/src/features/skills/skill-page.tsx",
+    },
+    {
+      label: "setQueryData with a copy of the key",
+      code: "declare const qc: any;\nqc.setQueryData([...listBotsQueryKey()], []);\n",
+      file: "frontend/src/features/bots/bot-page.tsx",
+    },
+    {
+      label: "a write in lib",
+      code: "declare const qc: any;\nqc.setQueryData(listBotsQueryKey(), []);\n",
+      file: "frontend/src/lib/realtime/reducer.ts",
+    },
+    {
+      label: "a write in routes",
+      code: "declare const qc: any;\nqc.setQueryData(listBotsQueryKey(), []);\n",
+      file: "frontend/src/routes/bots.tsx",
+    },
+  ])("rejects $label", async ({ code, file }) => {
+    const found = await messages(
+      `declare const listBotsQueryKey: any, getSettingsOptions: any;\n${code}`,
+      file,
+    );
+    expect(found.some(isBotListRule)).toBe(true);
+  });
+
+  // Review round 1 of #120 (R1-6): a write of another key whose updater reads the bot list.
+  it("allows a write of another key that reads the bot list", async () => {
+    const found = await messages(
+      "declare const qc: any, listBotsQueryKey: any, getBotQueryKey: any;\nqc.setQueryData(getBotQueryKey(), () => qc.getQueryData(listBotsQueryKey()));\n",
+      "frontend/src/features/skills/skill-page.tsx",
+    );
+    expect(found.filter(isBotListRule)).toEqual([]);
+  });
+
+  it("allows a read of the bot list", async () => {
+    const found = await messages(
+      "declare const qc: any, listBotsQueryKey: any;\nqc.getQueryData(listBotsQueryKey());\n",
+      "frontend/src/features/bots/bot-page.tsx",
+    );
+    expect(found.filter(isBotListRule)).toEqual([]);
   });
 });
 

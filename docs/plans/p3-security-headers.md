@@ -2,7 +2,7 @@
 
 Brief: items 35 and 36 of the P3 list that the owner approved on 2026-11-12 (list PR 11, "Security headers")
 Checkpoint: none (security-sensitive code: flagged under `Needs human review`, `AGENTS.md` §7)
-Approval: chief agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); owner review pending. Revision 1. Dev policy: option A (a nonce for each start of the dev server).
+Approval: chief agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15. Revision 1. Dev policy: option A (a nonce for each start of the dev server).
 
 ## Items
 

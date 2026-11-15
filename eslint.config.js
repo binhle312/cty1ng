@@ -9,16 +9,25 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 // security.md §2.8: SQL is built only by Drizzle's query builder or its `sql` tagged template.
+// What these rules do not see is in security.md §2.8 too.
 const SQL_RULES = [
   {
-    selector: "CallExpression[callee.object.name='sql'][callee.property.name='raw']",
+    // `sql.raw` and `orm.sql.raw`. The next rule keeps the name `sql` for each named import.
+    selector:
+      "CallExpression[callee.property.name='raw']:matches([callee.object.name='sql'], [callee.object.property.name='sql'])",
     message: "sql.raw() does not bind values (security.md §2.8). Use the sql`` tagged template.",
   },
   {
+    selector: "ImportSpecifier[imported.name='sql'][local.name!='sql']",
+    message:
+      "Import sql under its own name, so that the sql.raw() rule sees it (security.md §2.8).",
+  },
+  {
     // Only calls on the database handle: `db`/`tx`, bare or as a property (`this.db`), the same
-    // names as the drizzle rules below. `map.get("key")` is not SQL.
+    // names as the drizzle rules below. `map.get("key")` is not SQL. Any argument but a sql``
+    // tagged template: a string, a template, a string in a variable, the result of a call.
     selector:
-      "CallExpression:matches([callee.object.name=/^(db|tx)$/], [callee.object.property.name=/^(db|tx)$/])[callee.property.name=/^(run|execute|all|get|values)$/][arguments.0.type=/^(Literal|TemplateLiteral|BinaryExpression)$/]",
+      "CallExpression:matches([callee.object.name=/^(db|tx)$/], [callee.object.property.name=/^(db|tx)$/])[callee.property.name=/^(run|execute|all|get|values)$/][arguments.length>0]:not([arguments.0.tag.name='sql'], [arguments.0.tag.property.name='sql'])",
     message:
       "No SQL from a string (security.md §2.8). Use the query builder or the sql`` tagged template.",
   },
@@ -45,11 +54,21 @@ const RAW_COLOUR_RULES = [
 ];
 
 // The bot list and the settings: only the bot list store writes them (frontend-conventions.md
-// §1); a write from elsewhere is dropped by the next load or answer.
+// §1); a write from elsewhere is dropped by the next load or answer. The rule sees the key as the
+// first argument of `setQueryData`/`setQueriesData` (also as a copy `[...key()]`), as the `queryKey`
+// of its filters, or as `listBotsOptions().queryKey`; a key in a variable is not seen
+// (frontend-conventions.md §1).
+const BOT_LIST_KEY = "[callee.name=/^(listBots|getSettings)(QueryKey|Options)$/]";
+const CACHE_WRITE = "CallExpression[callee.property.name=/^(setQueryData|setQueriesData)$/]";
 const BOT_LIST_WRITE_RULES = [
   {
-    selector:
-      "CallExpression[callee.property.name=/^(setQueryData|setQueriesData)$/] > CallExpression.arguments[callee.name=/^(listBotsQueryKey|getSettingsQueryKey)$/]",
+    selector: [
+      `${CACHE_WRITE} > CallExpression.arguments:nth-child(1)${BOT_LIST_KEY}`,
+      `${CACHE_WRITE} > MemberExpression.arguments:nth-child(1)[property.name='queryKey'] > CallExpression.object${BOT_LIST_KEY}`,
+      `${CACHE_WRITE} > ArrayExpression.arguments:nth-child(1) > SpreadElement > CallExpression.argument${BOT_LIST_KEY}`,
+      `${CACHE_WRITE} > ObjectExpression.arguments:nth-child(1) > Property[key.name='queryKey'] > CallExpression.value${BOT_LIST_KEY}`,
+      `${CACHE_WRITE} > ObjectExpression.arguments:nth-child(1) > Property[key.name='queryKey'] > MemberExpression.value[property.name='queryKey'] > CallExpression.object${BOT_LIST_KEY}`,
+    ].join(", "),
     message:
       "Write the bot list and the settings only through features/bots/bot-list-store.ts (frontend-conventions.md §1).",
   },
@@ -156,12 +175,22 @@ export default tseslint.config(
   // every rule set that its files need. `scripts/lint-rules.test.ts` checks each file.
   {
     // Tests that check the library or one store make their own client; the app's code does not.
+    // The store gets its rules from the blocks of features below, without the bot list rule.
     files: ["frontend/src/**/*.{ts,tsx}"],
     ignores: ["**/*.test.{ts,tsx}", "frontend/src/lib/api/query-client.ts"],
     rules: {
-      "no-restricted-syntax": ["error", ...SQL_RULES, ...QUERY_CLIENT_RULES],
+      "no-restricted-syntax": [
+        "error",
+        ...SQL_RULES,
+        ...QUERY_CLIENT_RULES,
+        ...BOT_LIST_WRITE_RULES,
+      ],
       "@typescript-eslint/no-restricted-imports": ["error", QUERY_CLIENT_IMPORT_RULE],
     },
+  },
+  {
+    files: ["frontend/src/lib/api/query-client.ts"],
+    rules: { "no-restricted-syntax": ["error", ...SQL_RULES, ...BOT_LIST_WRITE_RULES] },
   },
   {
     files: [
