@@ -354,7 +354,7 @@ INSERT INTO skill_versions (id, skill_id, version, description, body_md, created
       sqlite.close();
     });
 
-    it("applies a rebuild once and loses no row when three processes race on a database with rows", async () => {
+    it("applies a rebuild once when three processes race on a database with rows", async () => {
       const file = join(dir.path, "app.db");
       realDatabaseWithRows(file).close();
       const folder = withExtraMigration("9999_rebuild_skills", REAL_REBUILD);

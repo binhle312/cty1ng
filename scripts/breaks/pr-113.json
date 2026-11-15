@@ -6,7 +6,7 @@
       "test": {
         "kind": "vitest",
         "file": "backend/src/adapters/db/migrate.test.ts",
-        "name": "applies a rebuild once and loses no row when three processes race on a database with rows"
+        "name": "applies a rebuild once when three processes race on a database with rows"
       },
       "assertion": "expect(applied, \"a rebuild in a race\").toEqual([0, 0, 1]);",
       "breaks": [

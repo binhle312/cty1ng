@@ -124,7 +124,7 @@ code and record its failure on `main`.
 | 6 | A migration leaves a broken reference: the run stops; the message has the table, the row number, the parent table and the count; it does not have a value of the row | The run fails with another message (`FOREIGN KEY constraint failed`) |
 | 7 | Two waiting migrations, and the check fails after the second: the first is rolled back too | As test 6 |
 | 8 | More than 10 broken references: the message shows 10 and the full count | As test 6 |
-| 9 | Three processes start at the same time on a database with rows, and the new migration is a rebuild: it is applied one time, and no row is lost | `FOREIGN KEY constraint failed` |
+| 9 | Three processes start at the same time on a database with rows, and the new migration is a rebuild: it is applied one time (owner, 2026-11-15: narrowed from "and no row is lost", DQ-319) | `FOREIGN KEY constraint failed` |
 | 10 | Nothing waits, and the database has an old broken reference: the run passes and applies 0 (the check does not run) | Passes on `main`: not a claim; it holds the choice of part 2 |
 | 11 | `foreign_keys` is 1 after a success | Passes on `main` |
 | 12 | `foreign_keys` is 1 after a failed statement | Passes on `main` |
