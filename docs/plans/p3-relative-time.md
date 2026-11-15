@@ -133,9 +133,12 @@ Two rules of `now()` that the design needed, found by a probe in a scratch folde
 - The age is the absolute difference between `Date.now()` and the saved time. A system time that
   moves back (a test, a clock change) would otherwise keep an old `Date`. Test U13.
 
-The Q1 and Q2 answers (section 5) are the recommended options. The real size of Q2: five blocks of
-`eslint.config.js` repeat their rule sets, and `scripts/lint-rules.test.ts` checks each file, so
-the guard is about 25 lines of config and 20 lines of test, not "about 10 lines".
+The Q1 and Q2 answers (section 5) are the recommended options. The real size of Q2 (measured on
+the built PR, `git diff --stat`): the rule set and two blocks of `eslint.config.js` (the blocks
+repeat their rule sets, and `scripts/lint-rules.test.ts` checks each file) take 19 added lines, and
+the tests in `scripts/lint-rules.test.ts` take 51 lines, not "about 10 lines" in total. An earlier
+text of this revision said "about 25 lines of config and 20 of test"; that came from reading the
+file, not from the build.
 
 ## Why the tick is a rule and not a setting (`AGENTS.md` §10)
 
