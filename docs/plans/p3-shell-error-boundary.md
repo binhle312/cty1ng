@@ -4,8 +4,8 @@ Brief: none. The source is items 65 ("Fix before M3") and 66 of the P3 list (the
 2026-11-05, "A, Skills"), with the M0 plan's promise of a route error boundary
 (`M0-skeleton.md:120`).
 Checkpoint: plan (`AGENTS.md` §7: the UI design of a new screen and its texts; the roster fallback).
-Approval: the owner, 2026-11-15 (revision 2, answer "P-16: approve" in the owner's answers of
-2026-11-15 12:15). The answers to Q1 to Q3 are the plan's recommendations, by the chief agent's
+Approval: accepted by the owner, 2026-11-15 ("P-16: approve"; revision 2, in the owner's answers
+of 2026-11-15 12:15). The answers to Q1 to Q3 are the plan's recommendations, by the chief agent's
 reading of that approval (part 7); the PR lists this under "Needs human review".
 
 
