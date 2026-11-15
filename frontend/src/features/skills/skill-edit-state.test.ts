@@ -122,6 +122,15 @@ describe("Discard (table 53)", () => {
 });
 
 describe("the base of the edit", () => {
+  it("moves no base for an action sent from data that the edit does not hold", () => {
+    const state = run([
+      typed("Mine."),
+      data("Theirs.", V4),
+      { type: "baseMoved", point: V5, startedAt: 2 },
+    ]);
+    expect(state.base, "the base after the answer").toEqual(V3);
+  });
+
   it("keeps the base when a late action answer is older", () => {
     const state = run([data("New text.", V5), { type: "baseMoved", point: V4 }]);
     expect(state.base, "the base after an older answer").toEqual(V5);

@@ -25,7 +25,7 @@ import {
   undeprecateSkillMutation,
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import type { GetSkillResponse } from "../../lib/api/generated/types.gen.ts";
-import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
+import { PIN_QUERIES, SKILL_QUERIES } from "../../lib/api/operation-queries.ts";
 import { readNewest, refreshQueries } from "../../lib/api/query-reads.ts";
 import { sendPinChanges } from "../bots/bot-list-store.ts";
 import { upgradeCardAfterSave } from "./after-save-cards.tsx";
@@ -64,6 +64,7 @@ import { createToastStore } from "./toast-store.ts";
 type SkillDetail = GetSkillResponse;
 
 const trashKey = (slug: string) => ["trash-skill", slug];
+const activateKey = (id: string) => ["undeprecate-skill", id];
 
 // `/skills/{slug}` (skills-page.md §1, §2). The page finds the skill id from the slug in the list,
 // which holds deprecated skills too, so a deprecated skill's URL opens after a reload. An unknown
@@ -306,8 +307,24 @@ function SkillView({ skill }: { skill: SkillDetail }) {
       failed: (error) => (error instanceof Error ? error.message : apiErrorText(error)),
     });
   };
+  // Make active again: the Delete pattern. The query client holds the request and its refresh, so
+  // the button stays off until the refresh ends, also after a leave and a return, and a click
+  // cannot send it twice (DQ-073). A failed refresh ends the wait too: a click then sends the old
+  // `row_version`, and the server refuses it with a toast.
+  const activating = useIsMutating({ mutationKey: activateKey(skill.id) }) > 0;
   const undeprecate = useMutation({
     ...undeprecateSkillMutation(),
+    mutationKey: activateKey(skill.id),
+    onSuccess: async (result, variables) => {
+      // The base moves before the refresh, so the new data is no conflict; only if the edit holds
+      // the data that the request started from (`skill-edit-state.ts`).
+      store.dispatch({
+        type: "baseMoved",
+        point: pointOf(result),
+        startedAt: variables.body.row_version,
+      });
+      await refreshQueries(queryClient, { predicate: SKILL_QUERIES });
+    },
     onError: (error) => {
       showToast(apiErrorText(error));
     },
@@ -381,15 +398,17 @@ function SkillView({ skill }: { skill: SkillDetail }) {
       {skill.deprecated && (
         <DeprecatedBanner
           skill={skill}
-          pending={undeprecate.isPending}
+          pending={activating}
           onRemoveFromBots={() => {
             openDialog({ kind: "remove" });
           }}
           onActivate={() => {
-            undeprecate.mutate(
-              { path: { id: skill.id }, body: { row_version: skill.row_version } },
-              { onSuccess: moveBase(!view.serverAhead) },
-            );
+            // The query client counts at once, before the page renders again.
+            if (queryClient.isMutating({ mutationKey: activateKey(skill.id) }) > 0) return;
+            undeprecate.mutate({
+              path: { id: skill.id },
+              body: { row_version: skill.row_version },
+            });
           }}
         />
       )}

@@ -65,9 +65,10 @@ export type EditEvent =
   | { type: "saveFailed"; error: unknown }
   | { type: "serverData"; fields: SkillFields; point: SavedPoint }
   | { type: "discarded" }
-  // A Deprecate or a Make active again of this page answered, while the edit was based on the
-  // newest data when the action started.
-  | { type: "baseMoved"; point: SavedPoint }
+  // A Deprecate or a Make active again of this page answered. `startedAt` is the `row_version`
+  // that the request was sent from: the base moves only while the edit holds that data, so the move
+  // never hides a change made in another place. Without it, the page checked that before.
+  | { type: "baseMoved"; point: SavedPoint; startedAt?: number }
   | { type: "left" };
 
 export function initialEditState(fields: SkillFields, point: SavedPoint): EditState {
@@ -150,6 +151,7 @@ function next(state: EditState, event: EditEvent): EditState {
       return { ...cleared, form: discard(state.form) };
     }
     case "baseMoved":
+      if (event.startedAt !== undefined && state.base.rowVersion < event.startedAt) return state;
       return { ...state, base: newer(event.point, state.base) };
     case "left":
       return { ...state, left: true };

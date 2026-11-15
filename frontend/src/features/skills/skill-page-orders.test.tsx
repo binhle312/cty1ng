@@ -1268,3 +1268,125 @@ describe("orders that overlap two skill actions", () => {
     expect(await screen.findByRole("heading", { name: "No skills yet" })).toBeTruthy();
   });
 });
+
+describe("Make active again and its refresh", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  const ACTIVATE_PATH = `/api/skills/${SKILL_ID}/undeprecate`;
+  const deprecated = (row_version: number) =>
+    makeSkill({ deprecated: true, deprecated_at: "2026-10-21T10:00:00.000Z", row_version });
+
+  // Opens a deprecated skill and sends Make active again. `server.reads` holds or fails the
+  // reads of the skill after the answer.
+  async function activateSent(extra: Record<string, Handler> = {}) {
+    const held = heldAnswer();
+    const heldRead = heldAnswer();
+    const server: { skill: ReturnType<typeof makeSkill>; reads: "good" | "held" | "failed" } = {
+      skill: deprecated(2),
+      reads: "good",
+    };
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: [server.skill] }),
+      [`GET /api/skills/${SKILL_ID}`]: () =>
+        server.reads === "good"
+          ? { body: server.skill }
+          : server.reads === "held"
+            ? heldRead.promise
+            : { status: 500, body: { error: { code: "internal_error", message: "Failed." } } },
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      [`GET /api/skills/${SKILL_ID}/upgrade-candidates`]: () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [] }),
+      [`POST ${ACTIVATE_PATH}`]: () => held.promise,
+      ...extra,
+    });
+    const app = await renderApp("/skills/write-user-stories");
+    click(await screen.findByRole("button", { name: "Make active again" }, { timeout: 5000 }));
+    await waitFor(() => {
+      expect(api?.sent("POST", ACTIVATE_PATH)).toHaveLength(1);
+    });
+    return { ...app, held, heldRead, server };
+  }
+
+  const clickActivate = async () => {
+    click(screen.getByRole("button", { name: "Make active again" }));
+    await settle();
+  };
+
+  it("sends no second Make active again after the owner leaves and comes back while it waits", async () => {
+    const { router } = await activateSent();
+    await act(() => router.navigate({ to: "/bots" }));
+    await act(() =>
+      router.navigate({ to: "/skills/$slug", params: { slug: "write-user-stories" } }),
+    );
+    await screen.findByRole("button", { name: "Make active again" });
+    await clickActivate();
+    expect(api?.sent("POST", ACTIVATE_PATH), "the requests after a return").toHaveLength(1);
+  });
+
+  it("sends no second Make active again while the refresh after its answer is on its way", async () => {
+    const { held, server } = await activateSent();
+    server.reads = "held";
+    await held.answer({ status: 200, body: makeSkill({ row_version: 3 }) });
+    await clickActivate();
+    expect(api?.sent("POST", ACTIVATE_PATH), "the requests during the refresh").toHaveLength(1);
+  });
+
+  it("turns Make active again on when the refresh after its answer fails", async () => {
+    const { held, server } = await activateSent();
+    server.reads = "failed";
+    await held.answer({ status: 200, body: makeSkill({ row_version: 3 }) });
+    await settle();
+    await clickActivate();
+    expect(api?.sent("POST", ACTIVATE_PATH), "the requests after a failed refresh").toHaveLength(2);
+  });
+
+  it("turns Make active again on after a new Deprecate that comes after the refresh", async () => {
+    const { held, server, queryClient } = await activateSent();
+    server.skill = makeSkill({ row_version: 3 });
+    await held.answer({ status: 200, body: server.skill });
+    // The live event of the change.
+    await act(() => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES }));
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Make active again" })).toBeNull();
+    });
+    server.skill = deprecated(4);
+    await act(() => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES }));
+    await screen.findByRole("button", { name: "Make active again" });
+    await clickActivate();
+    expect(api?.sent("POST", ACTIVATE_PATH), "the requests after a new Deprecate").toHaveLength(2);
+  });
+
+  it("keeps the base when a Save answer comes after a Make active answer", async () => {
+    const save = heldAnswer();
+    const { held, server, queryClient } = await activateSent({
+      [VERSION_ROUTE]: () => save.promise,
+    });
+    server.skill = makeSkill({ row_version: 3 });
+    await act(() => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES }));
+    await settle();
+    click(screen.getByRole("tab", { name: "Write" }));
+    typeBody("First.");
+    click(screen.getByRole("button", { name: "Save as v4" }));
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/versions`)).toHaveLength(1);
+    });
+    await held.answer({ status: 200, body: makeSkill({ row_version: 3 }) });
+    const v4Skill = makeSkill({
+      latest_version: { ...makeSkill().latest_version, version: 4 },
+      row_version: 4,
+      body_md: "First.",
+    });
+    await save.answer({ status: 201, body: v4Skill });
+    server.skill = v4Skill;
+    await act(() => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES }));
+    await settle();
+    typeBody("Next edit.");
+    await settle();
+    expect(screen.queryByText(CONFLICT_TEXT), "a conflict after both answers").toBeNull();
+  });
+});
