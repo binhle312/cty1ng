@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { findSensitive, firstSensitive, ibanValid, luhn } from "./sensitive-data.rules.ts";
 
+// The time of the fastest of up to 3 runs of `work`. It stops at the first run under the limit.
+function fastestRun(work: () => void, limitMs: number): number {
+  let fastest = Number.POSITIVE_INFINITY;
+  for (let run = 0; run < 3 && fastest >= limitMs; run += 1) {
+    const start = performance.now();
+    work();
+    fastest = Math.min(fastest, performance.now() - start);
+  }
+  return fastest;
+}
+
 // Built at run time (testing.md §3, "Fake secrets").
 const FAKE_KEY = ["sk", "proj", "abcdefghijklmnop1234"].join("-");
 
@@ -47,12 +58,18 @@ describe("findSensitive (D39)", () => {
   // Text over a length limit is scanned before the limit check (M2 plan §4), so the scan must
   // stay linear: each detector reads a line once, not once per candidate. Before the fix, this
   // line took about 10 s and blocked the server; now it takes a few milliseconds.
+  // The limit is checked on the fastest of up to 3 runs: a busy machine slows one run, a slow scan
+  // is slow on every run. Margin, measured on 2026-11-15 (16 cores): 35 ms alone, 148 ms for the
+  // fastest of 3 runs under 24 busy processes, so the limit is 6.7 times the busy case.
   it("scans a 1 MB line of short code-like words in well under a second", () => {
     const line = "ABC123 ".repeat(150_000);
-    const start = performance.now();
     expect(findSensitive(line)).toEqual([]);
     expect(findSensitive(`passport ${line}`)).toHaveLength(150_000);
-    expect(performance.now() - start).toBeLessThan(1_000);
+    const fastest = fastestRun(() => {
+      findSensitive(line);
+      findSensitive(`passport ${line}`);
+    }, 1_000);
+    expect(fastest).toBeLessThan(1_000);
     expect(firstSensitive(`passport ${line}`)).toEqual({
       kind: "passport",
       line: 1,

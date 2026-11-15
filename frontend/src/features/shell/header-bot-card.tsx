@@ -37,7 +37,6 @@ export function HeaderBotCard({ bot, onPin }: { bot: BotRow; onPin: () => void }
               <Link
                 to="/bots/$slug"
                 params={{ slug: bot.slug }}
-                search={{ tab: "profile" }}
                 target="_blank"
                 aria-label={`${bot.name} settings, opens in a new tab`}
                 className="flex size-5 items-center justify-center rounded-pill text-on-surface-muted outline-none hover:bg-surface-bubble hover:text-on-surface focus-visible:outline-2 focus-visible:outline-primary"

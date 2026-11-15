@@ -10,9 +10,11 @@ import { useSkillsPage } from "./skills-context.tsx";
 // state before the first skill (§3). A deprecated skill at the top opens only when nothing
 // else is there.
 export function SkillsIndexPage() {
-  const { data: skills, isPending, isError, refetch } = useAllSkills();
-  if (isPending) return <SkillEditorSkeleton />;
-  if (isError) {
+  const { data: skills, isError, refetch } = useAllSkills();
+  // The data first: a failed background refresh keeps the page on the data it has
+  // (skills-page.md, "A failed background refresh keeps the list").
+  if (skills === undefined) {
+    if (!isError) return <SkillEditorSkeleton />;
     return <LoadError text="The app could not load the skills." onRetry={() => void refetch()} />;
   }
   const top = skills.find((skill) => !skill.deprecated) ?? skills[0];
