@@ -1,0 +1,841 @@
+{
+  "claims": [
+    {
+      "id": "U1",
+      "claim": "A Save on its way counts as a change when the text is typed back",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-edit-state.test.ts",
+        "name": "counts the Save's change while it waits and the text is typed back"
+      },
+      "assertion": "expect(view(state).changes, \"the Save's change\").toEqual([\"body_md\"]);",
+      "breaks": [
+        {
+          "id": "U1-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "        (sending !== null && sending.sent[field] !== form.saved[field])),",
+              "replace": "        false),"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "U2",
+      "claim": "Save is off with \"Saving.\" while a Save waits",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-edit-state.test.ts",
+        "name": "keeps Save off with \"Saving.\" while a Save waits"
+      },
+      "assertion": "expect(view(state).saveReason, \"the Save reason while it waits\").toBe(\"Saving.\");",
+      "breaks": [
+        {
+          "id": "U2-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "    sending !== null\n      ? \"Saving.\"",
+              "replace": "    false\n      ? \"Saving.\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "U3",
+      "claim": "Leaving asks while a Save waits and the text is typed back",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-edit-state.test.ts",
+        "name": "asks before leaving while a Save waits and the text is typed back"
+      },
+      "assertion": "expect(view(state).leaveAsks, \"the leave question while a Save waits\").toBe(true);",
+      "breaks": [
+        {
+          "id": "U3-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "    leaveAsks: changes.length > 0,",
+              "replace": "    leaveAsks: changes.filter((field) => form.current[field] !== form.saved[field]).length > 0,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "U4",
+      "claim": "A Save on its way with its own text counts one change, not two",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-edit-state.test.ts",
+        "name": "counts one change while a Save waits with its own text"
+      },
+      "assertion": "expect(view(saving()).changes, \"the change of the sent text\").toEqual([\"body_md\"]);",
+      "breaks": [
+        {
+          "id": "U4-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "  const changes = EDITOR_FIELDS.filter(\n    (field) =>\n      field !== \"slug\" &&\n      (form.current[field] !== form.saved[field] ||\n        (sending !== null && sending.sent[field] !== form.saved[field])),\n  );",
+              "replace": "  const changes = [\n    ...EDITOR_FIELDS.filter((field) => field !== \"slug\" && form.current[field] !== form.saved[field]),\n    ...EDITOR_FIELDS.filter(\n      (field) => field !== \"slug\" && sending !== null && sending.sent[field] !== form.saved[field],\n    ),\n  ];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "U5",
+      "claim": "The Save's own data does not replace text typed back while the Save waits",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-edit-state.test.ts",
+        "name": "keeps text typed back when the Save's own data comes first"
+      },
+      "assertion": "expect(state.form.current.body_md, \"the text typed back\").toBe(\"Old text.\");",
+      "breaks": [
+        {
+          "id": "U5-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "    saving: state.sending !== null,",
+              "replace": "    saving: false,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "U6",
+      "claim": "After a success, text typed back during the Save is a change",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-edit-state.test.ts",
+        "name": "counts text typed back as a change after the Save succeeds"
+      },
+      "assertion": "expect(view(state).changes, \"text typed back after the answer\").toEqual([\"body_md\"]);",
+      "breaks": [
+        {
+          "id": "U6-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "        form: markSaved(state.form, sending.sent),\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "U7",
+      "claim": "After a failed Save with text typed back, all changes are saved",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-edit-state.test.ts",
+        "name": "says all is saved after a failed Save with text typed back"
+      },
+      "assertion": "expect(view(state).allSaved, \"all saved after the failure\").toBe(true);",
+      "breaks": [
+        {
+          "id": "U7-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "      const after = { ...state, sending: null };",
+              "replace": "      const after = { ...state };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "U8",
+      "claim": "A failed Save with text typed back asks for a toast",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-edit-state.test.ts",
+        "name": "asks for a toast when a Save fails with text typed back"
+      },
+      "assertion": "expect(state.toasts, \"the toast of the lost Save\").toEqual([",
+      "breaks": [
+        {
+          "id": "U8-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "      if (!state.left && isDirty(state.form)) {",
+              "replace": "      if (!state.left) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "U9",
+      "claim": "Discard after an answered Save puts back the text of that Save",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-edit-state.test.ts",
+        "name": "puts back the text of the answered Save on Discard"
+      },
+      "assertion": "expect(state.form.current.body_md, \"the text after Discard\").toBe(\"New text.\");",
+      "breaks": [
+        {
+          "id": "U9-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "      return { ...cleared, form: discard(state.form) };",
+              "replace": "      return { ...cleared, form: newForm(state.server.fields, false) };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "U10",
+      "claim": "Discard after an answered Save keeps its base",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-edit-state.test.ts",
+        "name": "keeps the base of the answered Save on Discard"
+      },
+      "assertion": "expect(state.base, \"the base after Discard\").toEqual(V4);",
+      "breaks": [
+        {
+          "id": "U10-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "      return { ...cleared, form: discard(state.form) };",
+              "replace": "      return { ...cleared, form: discard(state.form), base: state.server.point };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "U11",
+      "claim": "Discard, an edit and the Save's own data give no conflict",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-edit-state.test.ts",
+        "name": "shows no conflict after Discard, an edit and the Save's own data"
+      },
+      "assertion": "expect(view(state).conflict, \"the conflict after the refresh\").toBe(false);",
+      "breaks": [
+        {
+          "id": "U11-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "      return { ...cleared, form: discard(state.form) };",
+              "replace": "      return { ...cleared, form: discard(state.form), base: state.server.point };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "U12",
+      "claim": "Discard in a conflict takes the server text and base",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-edit-state.test.ts",
+        "name": "takes the server text and base on Discard during a conflict"
+      },
+      "assertion": "expect({ text: state.form.current.body_md, base: state.base }, \"Discard in a conflict\").toEqual(",
+      "breaks": [
+        {
+          "id": "U12-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "      if (isNewer({ point: state.server.point, than: state.base })) {\n        // A conflict",
+              "replace": "      if (state.left) {\n        // A conflict"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "U13",
+      "claim": "Discard changes nothing while a Save waits",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-edit-state.test.ts",
+        "name": "changes nothing on Discard while a Save waits"
+      },
+      "assertion": "expect(run([{ type: \"discarded\" }], before), \"the state after Discard\").toBe(before);",
+      "breaks": [
+        {
+          "id": "U13-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "      if (state.sending !== null) return state;\n      const cleared",
+              "replace": "      const cleared"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "U14",
+      "claim": "The Discard reason is \"Saving.\" while a Save waits",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-edit-state.test.ts",
+        "name": "gives \"Saving.\" as the Discard reason while a Save waits"
+      },
+      "assertion": "expect(view(saving()).discardReason, \"the Discard reason\").toBe(\"Saving.\");",
+      "breaks": [
+        {
+          "id": "U14-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "    discardReason: sending === null ? null : \"Saving.\",",
+              "replace": "    discardReason: null,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "U15",
+      "claim": "An action answer moves no base when the edit does not hold the data it was sent from",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-edit-state.test.ts",
+        "name": "moves no base for an action sent from data that the edit does not hold"
+      },
+      "assertion": "expect(state.base, \"the base after the answer\").toEqual(V3);",
+      "breaks": [
+        {
+          "id": "U15-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "      if (event.startedAt !== undefined && state.base.rowVersion < event.startedAt) return state;\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "U16",
+      "claim": "An older action answer never moves the base down",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-edit-state.test.ts",
+        "name": "keeps the base when a late action answer is older"
+      },
+      "assertion": "expect(state.base, \"the base after an older answer\").toEqual(V5);",
+      "breaks": [
+        {
+          "id": "U16-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "      return { ...state, base: newer(event.point, state.base) };",
+              "replace": "      return { ...state, base: event.point };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C1",
+      "claim": "A late Import Apply success keeps the newer file B",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "keeps file B when the Apply of file A succeeds after B was picked"
+      },
+      "assertion": "expect(screen.queryByText(/^b\\.zip · 1 folder/), \"the preview of file B\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "C1-a",
+          "file": "frontend/src/features/skills/skills-layout.tsx",
+          "edits": [
+            {
+              "find": "        setImportFile((current) => (current === file ? null : current));",
+              "replace": "        setImportFile(null);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C2",
+      "claim": "A late Import Apply failure keeps the newer file B (passes on main)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "keeps file B when the Apply of file A fails after B was picked"
+      },
+      "assertion": "expect(screen.queryByText(/^b\\.zip · 1 folder/), \"B's preview after A failed\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "C2-a",
+          "file": "frontend/src/features/skills/import-page.tsx",
+          "edits": [
+            {
+              "find": "  const { clearImportFile } = useSkillsPage();",
+              "replace": "  const { clearImportFile, importFile } = useSkillsPage();"
+            },
+            {
+              "find": "      const code = readApiError(error)?.code;",
+              "replace": "      if (importFile !== null) clearImportFile(importFile);\n      const code = readApiError(error)?.code;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C3",
+      "claim": "The bar says \"1 change not saved\" while a Save waits and the text is typed back",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "says \"1 change not saved\" while a Save waits and the text is typed back"
+      },
+      "assertion": "expect(line, \"the change of the Save on its way\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "C3-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "        (sending !== null && sending.sent[field] !== form.saved[field])),",
+              "replace": "        false),"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C4",
+      "claim": "Leaving asks while a Save waits and the text is typed back",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "asks before leaving while a Save waits and the text is typed back"
+      },
+      "assertion": "expect(question, \"the leave question while a Save waits\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "C4-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "    leaveAsks: changes.length > 0,",
+              "replace": "    leaveAsks: changes.filter((field) => form.current[field] !== form.saved[field]).length > 0,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C5",
+      "claim": "Discard after an answered Save with a slow refresh puts back the Save's text",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "puts back the text of an answered Save on Discard while its refresh is slow"
+      },
+      "assertion": "expect(bodyText(), \"the text after Discard\").toBe(NEW_BODY);",
+      "breaks": [
+        {
+          "id": "C5-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "      return { ...cleared, form: discard(state.form) };",
+              "replace": "      return { ...cleared, form: newForm(state.server.fields, false) };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C6",
+      "claim": "Discard, an edit and the slow refresh of a Save show no conflict",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "shows no conflict after Discard, an edit and the slow refresh of a Save"
+      },
+      "assertion": "expect(screen.queryByText(CONFLICT_TEXT), \"the conflict after the slow refresh\").toBeNull();",
+      "breaks": [
+        {
+          "id": "C6-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "      return { ...cleared, form: discard(state.form) };",
+              "replace": "      return { ...cleared, form: discard(state.form), base: state.server.point };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C7",
+      "claim": "After Discard and a failed refresh, the next Save sends the answered Save's base",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "sends the base of the answered Save after Discard when the refresh fails"
+      },
+      "assertion": "expect(second?.body, \"the base of the second Save\").toMatchObject({ base_version: 4 });",
+      "breaks": [
+        {
+          "id": "C7-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "      return { ...cleared, form: discard(state.form) };",
+              "replace": "      return { ...cleared, form: discard(state.form), base: state.server.point };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C8",
+      "claim": "Discard is off while a Save waits",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "keeps Discard off while a Save waits"
+      },
+      "assertion": "expect(bodyText(), \"the text after a click on Discard while a Save waits\").toBe(NEW_BODY);",
+      "breaks": [
+        {
+          "id": "C8-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "      if (state.sending !== null) return state;\n      const cleared",
+              "replace": "      const cleared"
+            },
+            {
+              "find": "    discardReason: sending === null ? null : \"Saving.\",",
+              "replace": "    discardReason: null,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C9",
+      "claim": "No second Make active again after a leave and a return while it waits",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "sends no second Make active again after the owner leaves and comes back while it waits"
+      },
+      "assertion": "expect(api?.sent(\"POST\", ACTIVATE_PATH), \"the requests after a return\").toHaveLength(1);",
+      "breaks": [
+        {
+          "id": "C9-a",
+          "file": "frontend/src/features/skills/skill-page.tsx",
+          "edits": [
+            {
+              "find": "          pending={activating}",
+              "replace": "          pending={undeprecate.isPending}"
+            },
+            {
+              "find": "            if (queryClient.isMutating({ mutationKey: activateKey(skill.id) }) > 0) return;\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C10",
+      "claim": "No second Make active again while the refresh after its answer waits",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "sends no second Make active again while the refresh after its answer is on its way"
+      },
+      "assertion": "expect(api?.sent(\"POST\", ACTIVATE_PATH), \"the requests during the refresh\").toHaveLength(1);",
+      "breaks": [
+        {
+          "id": "C10-a",
+          "file": "frontend/src/features/skills/skill-page.tsx",
+          "edits": [
+            {
+              "find": "      await refreshQueries(queryClient, { predicate: SKILL_QUERIES });\n    },\n    onError: (error) => {\n      showToast(apiErrorText(error));\n    },\n  });\n  const trash",
+              "replace": "      void refreshQueries(queryClient, { predicate: SKILL_QUERIES });\n    },\n    onError: (error) => {\n      showToast(apiErrorText(error));\n    },\n  });\n  const trash"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C11",
+      "claim": "A failed refresh after Make active again turns the button on (passes on main)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "turns Make active again on when the refresh after its answer fails"
+      },
+      "assertion": "expect(api?.sent(\"POST\", ACTIVATE_PATH), \"the requests after a failed refresh\").toHaveLength(2);",
+      "breaks": [
+        {
+          "id": "C11-a",
+          "file": "frontend/src/features/skills/skill-page.tsx",
+          "edits": [
+            {
+              "find": "      await refreshQueries(queryClient, { predicate: SKILL_QUERIES });\n    },\n    onError: (error) => {\n      showToast(apiErrorText(error));\n    },\n  });\n  const trash",
+              "replace": "      await refreshQueries(queryClient, { predicate: SKILL_QUERIES });\n      // Wait for a good read.\n      if (queryClient.getQueryState(getSkillOptions({ path: { id: skill.id } }).queryKey)?.status === \"error\") {\n        await new Promise<void>(() => undefined);\n      }\n    },\n    onError: (error) => {\n      showToast(apiErrorText(error));\n    },\n  });\n  const trash"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C12",
+      "claim": "Make active again reads no old answer after a new Deprecate (passes on main)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "turns Make active again on after a new Deprecate that comes after the refresh"
+      },
+      "assertion": "expect(api?.sent(\"POST\", ACTIVATE_PATH), \"the requests after a new Deprecate\").toHaveLength(2);",
+      "breaks": [
+        {
+          "id": "C12-a",
+          "file": "frontend/src/features/skills/skill-page.tsx",
+          "edits": [
+            {
+              "find": "import { useIsMutating, useMutation, useQuery, useQueryClient } from \"@tanstack/react-query\";",
+              "replace": "import {\n  useIsMutating,\n  useMutation,\n  useMutationState,\n  useQuery,\n  useQueryClient,\n} from \"@tanstack/react-query\";"
+            },
+            {
+              "find": "  const activating = useIsMutating({ mutationKey: activateKey(skill.id) }) > 0;",
+              "replace": "  const oldAnswers = useMutationState({\n    filters: { mutationKey: activateKey(skill.id), status: \"success\" },\n  }).length;\n  const activating = useIsMutating({ mutationKey: activateKey(skill.id) }) > 0 || oldAnswers > 0;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C13",
+      "claim": "No second Restore after a tab change and back while the first waits",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "sends no second Restore after a tab change and back while the first waits"
+      },
+      "assertion": "expect(api?.sent(\"POST\", RESTORE_V2_PATH), \"a second Restore\").toHaveLength(0);",
+      "breaks": [
+        {
+          "id": "C13-a",
+          "file": "frontend/src/features/skills/skill-history.tsx",
+          "edits": [
+            {
+              "find": "aria-disabled={restoring}",
+              "replace": "aria-disabled={restore.isPending}"
+            },
+            {
+              "find": "    if (queryClient.isMutating({ mutationKey: restoreKey(skill.id) }) > 0) return;",
+              "replace": "    if (restore.isPending) return;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C14",
+      "claim": "No Restore after a tab change and back while the refresh after the answer waits",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "sends no Restore after a tab change and back while the refresh after the answer is on its way"
+      },
+      "assertion": "expect(api?.sent(\"POST\", RESTORE_V2_PATH), \"a Restore during the refresh\").toHaveLength(0);",
+      "breaks": [
+        {
+          "id": "C14-a",
+          "file": "frontend/src/features/skills/skill-history.tsx",
+          "edits": [
+            {
+              "find": "aria-disabled={restoring}",
+              "replace": "aria-disabled={restore.isPending}"
+            },
+            {
+              "find": "    if (queryClient.isMutating({ mutationKey: restoreKey(skill.id) }) > 0) return;",
+              "replace": "    if (restore.isPending) return;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C15",
+      "claim": "No Restore offer after a failed refresh, a leave and a return",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "offers no Restore after a failed refresh, a leave and a return"
+      },
+      "assertion": "expect(offer, \"the offer after a failed refresh\").toBeNull();",
+      "breaks": [
+        {
+          "id": "C15-a",
+          "file": "frontend/src/features/skills/skill-history.tsx",
+          "edits": [
+            {
+              "find": "from < latest && latest >= restoredTo;",
+              "replace": "from < latest;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C16",
+      "claim": "A Restore answer keeps the pair that the owner picked",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "keeps the pair the owner picked when a Restore answer comes"
+      },
+      "assertion": "expect(router.state.location.search, \"the pair after the answer\").toEqual({",
+      "breaks": [
+        {
+          "id": "C16-a",
+          "file": "frontend/src/features/skills/skill-history.tsx",
+          "edits": [
+            {
+              "find": "          if (router.state.location.href === sentFrom) onRestored();",
+              "replace": "          onRestored();"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C17",
+      "claim": "No second Delete from the dialog of a return visit while the first waits",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "sends no second Delete from the dialog of a return visit while the first waits"
+      },
+      "assertion": "expect(api?.sent(\"POST\", `/api/skills/${SKILL_ID}/trash`), \"a second Delete\").toHaveLength(1);",
+      "breaks": [
+        {
+          "id": "C17-a",
+          "file": "frontend/src/features/skills/skill-page.tsx",
+          "edits": [
+            {
+              "find": "        pending={trashing}",
+              "replace": "        pending={trash.isPending}"
+            },
+            {
+              "find": "    if (queryClient.isMutating({ mutationKey: trashKey(skill.slug) }) > 0) return;\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C18",
+      "claim": "The first Delete's answer moves to /skills while the return visit's dialog is open (passes on main)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "moves to /skills when the first Delete succeeds while the return visit's dialog is open"
+      },
+      "assertion": "expect(router.state.location.pathname, \"the page after the answer\").toBe(\"/skills\");",
+      "breaks": [
+        {
+          "id": "C18-a",
+          "file": "frontend/src/features/skills/skill-page.tsx",
+          "edits": [
+            {
+              "find": "      if (router.state.location.pathname === `/skills/${skill.slug}`) {",
+              "replace": "      if (onPage.current && router.state.location.pathname === `/skills/${skill.slug}`) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C19",
+      "claim": "A failed first Delete turns Delete skill on in the return visit's dialog (passes on main)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "turns Delete skill on in the return visit's dialog when the first Delete fails"
+      },
+      "assertion": "expect(sent, \"the Delete after a failure\").toHaveLength(2);",
+      "breaks": [
+        {
+          "id": "C19-a",
+          "file": "frontend/src/features/skills/skill-page.tsx",
+          "edits": [
+            {
+              "find": "    mutationKey: trashKey(skill.slug),",
+              "replace": "    mutationKey: trashKey(skill.slug),\n    onError: () => new Promise<void>(() => undefined),"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C20",
+      "claim": "A Make active answer before a Save answer does not end the Save's work (passes on main)",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
+        "name": "keeps the base when a Save answer comes after a Make active answer"
+      },
+      "assertion": "expect(screen.queryByText(CONFLICT_TEXT), \"a conflict after both answers\").toBeNull();",
+      "breaks": [
+        {
+          "id": "C20-a",
+          "file": "frontend/src/features/skills/skill-edit-state.ts",
+          "edits": [
+            {
+              "find": "      return { ...state, base: newer(event.point, state.base) };",
+              "replace": "      return { ...state, base: newer(event.point, state.base), sending: null };"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "frontend/src/features/skills/skill-edit-sequences.test.ts",
+      "name": "every order of a Save, its answer, another place, loads, Discard and typing",
+      "reason": "Every-order test: its invariants throw in the model's check, outside the named test, so the runner would call a break INVALID (as for bot-edit-sequences in pr-119). The PR records six hand breaks of skill-edit-state.ts, each caught (tmp record seq-hand-breaks.txt): Discard while a Save waits, the base following an older answer, Save on in a conflict, a Save on its way not counted, leave ignoring it, Discard moving the base down. Invariant 1 has no break of its own (Not claimed)."
+    },
+    {
+      "file": "frontend/src/features/skills/skill-edit-sequences.test.ts",
+      "name": "every order with two Saves and a late answer of an older action",
+      "reason": "Every-order test: its invariants throw in the model's check, outside the named test, so the runner would call a break INVALID (as for bot-edit-sequences in pr-119). The PR records six hand breaks of skill-edit-state.ts, each caught (tmp record seq-hand-breaks.txt): Discard while a Save waits, the base following an older answer, Save on in a conflict, a Save on its way not counted, leave ignoring it, Discard moving the base down. Invariant 1 has no break of its own (Not claimed)."
+    },
+    {
+      "file": "frontend/src/features/skills/skill-edit-sequences.test.ts",
+      "name": "random orders from a seed, with two Saves and another place",
+      "reason": "Every-order test: its invariants throw in the model's check, outside the named test, so the runner would call a break INVALID (as for bot-edit-sequences in pr-119). The PR records six hand breaks of skill-edit-state.ts, each caught (tmp record seq-hand-breaks.txt): Discard while a Save waits, the base following an older answer, Save on in a conflict, a Save on its way not counted, leave ignoring it, Discard moving the base down. Invariant 1 has no break of its own (Not claimed)."
+    }
+  ]
+}

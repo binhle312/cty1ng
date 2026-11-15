@@ -218,10 +218,8 @@ describe("the skill editor, a Save and a live refresh", () => {
     await openEditor();
     await sendSave();
     typeBody(OLD_BODY);
-    expect(
-      screen.queryByText("1 change not saved"),
-      "the change of the Save on its way",
-    ).toBeTruthy();
+    const line = screen.queryByText("1 change not saved");
+    expect(line, "the change of the Save on its way").toBeTruthy();
   });
 
   it("asks before leaving while a Save waits and the text is typed back", async () => {
@@ -232,10 +230,8 @@ describe("the skill editor, a Save and a live refresh", () => {
       void router.navigate({ to: "/bots" });
     });
     await settle();
-    expect(
-      screen.queryByRole("alertdialog", { name: "Leave without saving? 👀" }),
-      "the leave question while a Save waits",
-    ).toBeTruthy();
+    const question = screen.queryByRole("alertdialog", { name: "Leave without saving? 👀" });
+    expect(question, "the leave question while a Save waits").toBeTruthy();
   });
 
   it("puts back the text of an answered Save on Discard while its refresh is slow", async () => {
@@ -509,9 +505,9 @@ describe("Delete of a deprecated skill", () => {
     const { trash, server, router } = await returnVisitDialog();
     server.list = [];
     await trash.answer({ status: 200, body: { skill_id: SKILL_ID, removed_bot_ids: [] } });
-    expect(await screen.findByText("Write user stories is in Trash.")).toBeTruthy();
     await settle();
     expect(router.state.location.pathname, "the page after the answer").toBe("/skills");
+    expect(await screen.findByText("Write user stories is in Trash.")).toBeTruthy();
   });
 
   it("turns Delete skill on in the return visit's dialog when the first Delete fails", async () => {
@@ -523,10 +519,8 @@ describe("Delete of a deprecated skill", () => {
     await settle();
     click(within(dialog).getByRole("button", { name: "Delete skill" }));
     await settle();
-    expect(
-      api?.sent("POST", `/api/skills/${SKILL_ID}/trash`),
-      "the Delete after a failure",
-    ).toHaveLength(2);
+    const sent = api?.sent("POST", `/api/skills/${SKILL_ID}/trash`);
+    expect(sent, "the Delete after a failure").toHaveLength(2);
   });
 
   it("keeps the wait until the page has moved, and an older list load cannot bring the skill back", async () => {
@@ -1200,10 +1194,8 @@ describe("a Restore whose answer comes late", () => {
     );
     await screen.findByRole("list", { name: "Versions" });
     await settle();
-    expect(
-      screen.queryByRole("button", { name: /^Restore v/ }),
-      "the offer after a failed refresh",
-    ).toBeNull();
+    const offer = screen.queryByRole("button", { name: /^Restore v/ });
+    expect(offer, "the offer after a failed refresh").toBeNull();
   });
 
   it("keeps the pair the owner picked when a Restore answer comes", async () => {
