@@ -242,5 +242,5 @@ shell, the query client and the fake network stay real. A test that throws on pu
 | T16 | A failed roster chunk writes one log line, and the rail links still work | yes | no |
 | T17 | A failed roster chunk follows a new bot list, with no second log line | yes | yes (order) |
 | T18 | Guard: Page not found still shows inside the shell for an unknown URL and `/c/bad-id` | no (a guard) | exempt: the router's own behaviour |
-| E1 | A failed Skills chunk shows the error screen in the shell; after the chunk comes back, Try again shows the Skills page | yes (late test) | yes: the app's screen, the shell, and Try again |
-| E2 | The error screen has no axe violation, light and dark | yes (late test) | yes: a contrast break in each mode |
+| E1 | A failed Skills chunk shows the error screen in the shell; after the chunk comes back, Try again shows the Skills page | yes (late test) | yes: claims E1 (the app's screen), E1b (the shell) and E2 (Try again) of the break list |
+| E2 | The error screen has no axe violation, light and dark | yes (late test) | yes: claims A-light and A-dark of the break list, a contrast break in each mode |
