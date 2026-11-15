@@ -199,11 +199,6 @@
       "count": 1
     }
   },
-  "frontend/src/features/skills/skill-page.tsx": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
   "frontend/src/lib/log.ts": {
     "@typescript-eslint/max-params": {
       "count": 1

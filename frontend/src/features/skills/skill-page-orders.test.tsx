@@ -57,18 +57,21 @@ describe("the skill editor, a Save and a live refresh", () => {
 
   // Starts on a skill with v3, with the Write tab open. `server` is what the next read answers.
   async function openEditor() {
-    const server = { skill: makeSkill() };
+    const server = { skill: makeSkill(), reads: "good" };
     const held = heldAnswer();
     api = fakeApi({
       "GET /api/settings": () => ({ body: BOT_SETTINGS }),
       "GET /api/skills": () => ({ body: [server.skill] }),
-      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: server.skill }),
+      [`GET /api/skills/${SKILL_ID}`]: () =>
+        server.reads === "good"
+          ? { body: server.skill }
+          : { status: 500, body: { error: { code: "internal_error", message: "Failed." } } },
       [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
       [`GET /api/skills/${SKILL_ID}/upgrade-candidates`]: () => ({ body: [] }),
       "GET /api/bots": () => ({ body: [] }),
       [VERSION_ROUTE]: () => held.promise,
     });
-    const { queryClient } = await renderApp("/skills/write-user-stories");
+    const { queryClient, router } = await renderApp("/skills/write-user-stories");
     await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 });
     click(screen.getByRole("tab", { name: "Write" }));
     // A live event: every skill query reads again. Ends when the page shows the new version.
@@ -77,8 +80,16 @@ describe("the skill editor, a Save and a live refresh", () => {
       await act(() => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES }));
       await settle();
     };
-    return { held, refresh };
+    return { held, refresh, router, server, queryClient };
   }
+
+  const sendSave = async () => {
+    typeBody(NEW_BODY);
+    click(screen.getByRole("button", { name: "Save as v4" }));
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/versions`)).toHaveLength(1);
+    });
+  };
 
   it("row 1a: keeps text typed back during a Save when a refresh comes first", async () => {
     const { held, refresh } = await openEditor();
@@ -194,23 +205,78 @@ describe("the skill editor, a Save and a live refresh", () => {
     expect(screen.queryByText("Something failed.")).toBeNull();
   });
 
-  it("says when a Save fails after Discard", async () => {
-    const { held } = await openEditor();
-    typeBody(NEW_BODY);
-    click(screen.getByRole("button", { name: "Save as v4" }));
-    await waitFor(() => {
-      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/versions`)).toHaveLength(1);
+  it("keeps Discard off while a Save waits", async () => {
+    await openEditor();
+    await sendSave();
+    const discard = screen.getByRole("button", { name: "Discard" });
+    click(discard);
+    expect(bodyText(), "the text after a click on Discard while a Save waits").toBe(NEW_BODY);
+    expect(discard.getAttribute("aria-disabled")).toBe("true");
+  });
+
+  it('says "1 change not saved" while a Save waits and the text is typed back', async () => {
+    await openEditor();
+    await sendSave();
+    typeBody(OLD_BODY);
+    expect(
+      screen.queryByText("1 change not saved"),
+      "the change of the Save on its way",
+    ).toBeTruthy();
+  });
+
+  it("asks before leaving while a Save waits and the text is typed back", async () => {
+    const { router } = await openEditor();
+    await sendSave();
+    typeBody(OLD_BODY);
+    act(() => {
+      void router.navigate({ to: "/bots" });
     });
-    click(screen.getByRole("button", { name: "Discard" }));
-    await held.answer({
-      status: 500,
-      body: { error: { code: "internal_error", message: "Something failed." } },
-    });
-    expect(await screen.findByText("Could not save Write user stories. Try again.")).toBeTruthy();
-    expect(bodyText()).toBe(OLD_BODY);
-    typeBody("A new edit.");
     await settle();
-    expect(screen.queryByText("Something failed.")).toBeNull();
+    expect(
+      screen.queryByRole("alertdialog", { name: "Leave without saving? 👀" }),
+      "the leave question while a Save waits",
+    ).toBeTruthy();
+  });
+
+  it("puts back the text of an answered Save on Discard while its refresh is slow", async () => {
+    const { held } = await openEditor();
+    await sendSave();
+    await held.answer({ status: 201, body: v4() });
+    await settle();
+    typeBody("Another edit.");
+    click(screen.getByRole("button", { name: "Discard" }));
+    expect(bodyText(), "the text after Discard").toBe(NEW_BODY);
+  });
+
+  it("shows no conflict after Discard, an edit and the slow refresh of a Save", async () => {
+    const { held, refresh } = await openEditor();
+    await sendSave();
+    await held.answer({ status: 201, body: v4() });
+    await settle();
+    typeBody("Another edit.");
+    click(screen.getByRole("button", { name: "Discard" }));
+    typeBody("A third edit.");
+    await refresh(v4());
+    expect(screen.queryByText(CONFLICT_TEXT), "the conflict after the slow refresh").toBeNull();
+  });
+
+  it("sends the base of the answered Save after Discard when the refresh fails", async () => {
+    const { held, server, queryClient } = await openEditor();
+    await sendSave();
+    await held.answer({ status: 201, body: v4() });
+    await settle();
+    typeBody("Another edit.");
+    click(screen.getByRole("button", { name: "Discard" }));
+    server.reads = "failed";
+    await act(() => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES }));
+    await settle();
+    typeBody("A third edit.");
+    click(screen.getByRole("button", { name: /^Save as/ }));
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/versions`)).toHaveLength(2);
+    });
+    const second = api?.sent("POST", `/api/skills/${SKILL_ID}/versions`)[1];
+    expect(second?.body, "the base of the second Save").toMatchObject({ base_version: 4 });
   });
 
   it("shows no conflict when the refresh after a Save has not come", async () => {
