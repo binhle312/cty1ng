@@ -36,7 +36,8 @@ Read the conventions, affected entities, and applicable invariants. Follow links
   point into another conversation on purpose (for example D58's Send to conversation) uses a
   plain foreign key and says why.
 - SQLite runs in WAL mode with `foreign_keys=ON` and `busy_timeout = 5000`; writes use
-  `BEGIN IMMEDIATE` (`architecture.md` §11).
+  `BEGIN IMMEDIATE` (`architecture.md` §11). The migration runner turns the keys off while it
+  applies migrations (`architecture.md` §10, guardrail 3).
 - Rows edited from forms (`bots`, `skills`, `conversations`) carry `row_version INTEGER NOT NULL
   DEFAULT 1` for optimistic locking; a stale write returns 409 `stale_write`
   (`architecture.md` §11).

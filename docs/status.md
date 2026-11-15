@@ -29,9 +29,10 @@ The owner's order (2026-11-08, in the [audit file](audits/2026-11-05-repo-audit.
 1. Audit PR 6, six tabs: merged in [#91](https://github.com/binhle312/cty1ng/pull/91) on 2026-11-10. Its follow-up, [#96](https://github.com/binhle312/cty1ng/pull/96), merged on 2026-11-10.
 2. The P3 PRs: every P3 found so far, from one list with no duplicates, in small PRs by area. The M2 close rows of the [#60](https://github.com/binhle312/cty1ng/pull/60) review are on that list.
    The owner approved the list and the order of its PRs on 2026-11-12 ([audit file](audits/2026-11-05-repo-audit.md), "Changed on 2026-11-08"). The first PR, records only, merged in [#105](https://github.com/binhle312/cty1ng/pull/105) on 2026-11-12. A P3 PR gets two review rounds, and it fixes its own open rows before its merge, with no cleanup PR ([merge bar](workflows/merge-bar.md#when-the-review-of-a-p3-pr-ends); owner, 2026-11-12 and 2026-11-13, [#109](https://github.com/binhle312/cty1ng/pull/109) and [#112](https://github.com/binhle312/cty1ng/pull/112)). On 2026-11-14 [#112](https://github.com/binhle312/cty1ng/pull/112) merged into the branch of #109; it reached `main` with #109 on 2026-11-14.
-   The second PR of the list, the update of `@tanstack/react-query` to 5.107.1, is [#106](https://github.com/binhle312/cty1ng/pull/106).
+   The second PR of the list, the update of `@tanstack/react-query` to 5.107.1, merged in [#106](https://github.com/binhle312/cty1ng/pull/106) on 2026-11-14.
    The fourth PR of the list, the security tests, merged in [#108](https://github.com/binhle312/cty1ng/pull/108) on 2026-11-14.
    The fifth PR of the list, an id that is no UUID, merged in [#110](https://github.com/binhle312/cty1ng/pull/110) on 2026-11-14.
+   The sixth PR of the list, the migration runner (audit item 22), is the draft [#113](https://github.com/binhle312/cty1ng/pull/113). Its records were written on 2026-11-15; the owner answered DQ-315, DQ-318 and DQ-319 on 2026-11-15 (DQ-315 is fixed in the PR); it waits for the merge.
    The eighth PR of the list, a busy port and the CLI stack traces, merged in [#111](https://github.com/binhle312/cty1ng/pull/111) on 2026-11-14.
 3. One style-only PR for the 104 `max-params` places.
 4. The second audit, with the [audit workflow](workflows/audit.md).
@@ -194,3 +195,4 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-14 | [#110](https://github.com/binhle312/cty1ng/pull/110) merged. |
 | 2026-11-14 | [#111](https://github.com/binhle312/cty1ng/pull/111) merged. |
 | 2026-11-14 | [#108](https://github.com/binhle312/cty1ng/pull/108) merged. |
+| 2026-11-14 | [#106](https://github.com/binhle312/cty1ng/pull/106) merged. |

@@ -40,9 +40,7 @@ async function run(args: readonly string[]): Promise<number> {
       process.stdout.write(`${applied} migration(s) applied\n`);
       return 0;
     } catch (error) {
-      process.stderr.write(
-        `${oneLine(`Migration failed: ${error instanceof ConfigError || error instanceof Error ? error.message : "unknown error"}`)}\n`,
-      );
+      process.stderr.write(`${oneLine(`Migration failed: ${withCauses(error)}`)}\n`);
       return 1;
     }
   }
@@ -62,6 +60,21 @@ async function run(args: readonly string[]): Promise<number> {
   }
   process.stderr.write(`${USAGE}\n`);
   return 2;
+}
+
+// The message of a failure and of each cause after it. A failed run that also leaves the foreign
+// keys off throws the read-back error, and the first error is its cause (migrate.ts, DQ-315).
+// The set stops a chain that points back to an earlier error.
+function withCauses(error: unknown): string {
+  const parts: string[] = [];
+  const seen = new Set<unknown>();
+  let current = error;
+  while (current instanceof Error && !seen.has(current)) {
+    seen.add(current);
+    parts.push(current.message);
+    current = current.cause;
+  }
+  return parts.length === 0 ? "unknown error" : parts.join("; cause: ");
 }
 
 // The one line for a failure that the owner can correct: a bad setting, or a path that the
