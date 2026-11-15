@@ -13,6 +13,8 @@ interface CheckboxProps {
   children?: ReactNode;
   label?: string;
   className?: string;
+  // The choice has a problem: screen readers say so, and "focus the first error" finds it.
+  invalid?: boolean;
 }
 
 export function Checkbox({
@@ -22,12 +24,14 @@ export function Checkbox({
   children,
   label,
   className,
+  invalid = false,
 }: CheckboxProps) {
   const box = (
     <BaseCheckbox.Root
       checked={checked}
       disabled={disabled}
       aria-label={label}
+      aria-invalid={invalid || undefined}
       onCheckedChange={(next) => {
         onChange(next);
       }}
