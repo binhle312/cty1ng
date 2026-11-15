@@ -687,3 +687,45 @@ describe("the unsaved changes dot of the skill list", () => {
     ).toBeTruthy();
   });
 });
+
+// Item 66 of the P3 list: an unknown skill shows the not-found state inside the shell
+// (skills-page.md §1). The rail, the header and the Skills list column stay.
+describe("the skill page for a skill that is not there", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  it("shows Page not found with the rail, the header and the list column for an unknown slug", async () => {
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [] }),
+    });
+    await renderApp("/skills/nothing");
+    expect(await screen.findByText("Page not found", {}, { timeout: 5000 })).toBeTruthy();
+    expect(screen.queryByRole("navigation", { name: "Projects" }), "the rail").not.toBeNull();
+    expect(screen.queryByRole("banner", { name: "Bots" }), "the header").not.toBeNull();
+    expect(screen.queryByRole("navigation", { name: "Skills" }), "the list column").not.toBeNull();
+  });
+
+  it("shows Page not found in the Skills page when a refresh removes the open skill", async () => {
+    let gone = false;
+    const skill = makeSkill();
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: gone ? [] : [skill] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: skill }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(1) }),
+      "GET /api/bots": () => ({ body: [] }),
+    });
+    const { queryClient } = await renderApp("/skills/write-user-stories");
+    await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 });
+    gone = true;
+    await act(() => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES }));
+    expect(await screen.findByText("Page not found", {}, { timeout: 5000 })).toBeTruthy();
+    expect(screen.queryByRole("navigation", { name: "Projects" }), "the rail").not.toBeNull();
+    expect(screen.queryByRole("navigation", { name: "Skills" }), "the list column").not.toBeNull();
+  });
+});

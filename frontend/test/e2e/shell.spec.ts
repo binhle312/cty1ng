@@ -88,7 +88,8 @@ test.describe("app shell", () => {
       "/skills/no-such-skill",
     ]) {
       await page.goto(path);
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText("Page not found");
+      // On the Skills page, Page not found shows beside the list column and its "Skills" heading.
+      await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();
     }
   });
 
