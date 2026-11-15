@@ -1054,6 +1054,7 @@ describe("a Restore whose answer comes late", () => {
   });
 
   const RESTORE_PATH = `/api/skills/${SKILL_ID}/versions/1/restore`;
+  const RESTORE_V2_PATH = `/api/skills/${SKILL_ID}/versions/2/restore`;
   const OTHER_ID = typeId("skill", 2);
   const other = makeSkill({ id: OTHER_ID, slug: "other-skill", name: "Other skill" });
   const restored = {
@@ -1064,13 +1065,23 @@ describe("a Restore whose answer comes late", () => {
     }),
   };
 
+  // `server.reads` holds or fails the reads of the skill, as for a slow or failed refresh.
   async function restoreSent() {
     const held = heldAnswer();
-    const server = { skill: makeSkill() };
+    const heldRead = heldAnswer();
+    const server: { skill: ReturnType<typeof makeSkill>; reads: "good" | "held" | "failed" } = {
+      skill: makeSkill(),
+      reads: "good",
+    };
     api = fakeApi({
       "GET /api/settings": () => ({ body: BOT_SETTINGS }),
       "GET /api/skills": () => ({ body: [server.skill, other] }),
-      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: server.skill }),
+      [`GET /api/skills/${SKILL_ID}`]: () =>
+        server.reads === "good"
+          ? { body: server.skill }
+          : server.reads === "held"
+            ? heldRead.promise
+            : { status: 500, body: { error: { code: "internal_error", message: "Failed." } } },
       [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
       [`GET /api/skills/${SKILL_ID}/upgrade-candidates`]: () => ({ body: [] }),
       [`GET /api/skills/${SKILL_ID}/diff`]: () => ({
@@ -1081,6 +1092,7 @@ describe("a Restore whose answer comes late", () => {
       [`GET /api/skills/${OTHER_ID}/upgrade-candidates`]: () => ({ body: [] }),
       "GET /api/bots": () => ({ body: [] }),
       [`POST ${RESTORE_PATH}`]: () => held.promise,
+      [`POST ${RESTORE_V2_PATH}`]: () => held.promise,
     });
     const app = await renderApp("/skills/write-user-stories?tab=history&from=1&to=3");
     click(await screen.findByRole("button", { name: "Restore v1" }, { timeout: 5000 }));
@@ -1089,6 +1101,80 @@ describe("a Restore whose answer comes late", () => {
     });
     return { ...app, held, server };
   }
+
+  // A tab change and back: History opens with the default pair, v2 → v3.
+  const tabsAndBack = async () => {
+    click(screen.getByRole("tab", { name: "Skill" }));
+    // The Skill tab is open, and the History panel is gone.
+    await screen.findByRole("tab", { name: "Write" });
+    expect(screen.queryByRole("list", { name: "Versions" })).toBeNull();
+    click(screen.getByRole("tab", { name: /^History/ }));
+    await screen.findByRole("list", { name: "Versions" });
+    await settle();
+  };
+
+  it("sends no second Restore after a tab change and back while the first waits", async () => {
+    await restoreSent();
+    await tabsAndBack();
+    const offer = screen.queryByRole("button", { name: /^Restore v/ });
+    if (offer !== null) click(offer);
+    await settle();
+    expect(api?.sent("POST", RESTORE_V2_PATH), "a second Restore").toHaveLength(0);
+  });
+
+  it("sends no Restore after a tab change and back while the refresh after the answer is on its way", async () => {
+    const { held, server } = await restoreSent();
+    server.reads = "held";
+    await held.answer(restored);
+    await screen.findByText("Saved v4 ✨");
+    await tabsAndBack();
+    const offer = screen.queryByRole("button", { name: /^Restore v/ });
+    if (offer !== null) click(offer);
+    await settle();
+    expect(api?.sent("POST", RESTORE_V2_PATH), "a Restore during the refresh").toHaveLength(0);
+  });
+
+  it("offers no Restore after a failed refresh, a leave and a return", async () => {
+    const { held, server, router } = await restoreSent();
+    server.reads = "failed";
+    await held.answer(restored);
+    await screen.findByText("Saved v4 ✨");
+    await settle();
+    await act(() => router.navigate({ to: "/bots" }));
+    await act(() =>
+      router.navigate({
+        to: "/skills/$slug",
+        params: { slug: "write-user-stories" },
+        search: { tab: "history" },
+      }),
+    );
+    await screen.findByRole("list", { name: "Versions" });
+    await settle();
+    expect(
+      screen.queryByRole("button", { name: /^Restore v/ }),
+      "the offer after a failed refresh",
+    ).toBeNull();
+  });
+
+  it("keeps the pair the owner picked when a Restore answer comes", async () => {
+    const { held, router } = await restoreSent();
+    const versions = screen.getByRole("list", { name: "Versions" });
+    // Newest first: v3, v2, v1.
+    const v2 = within(versions).getAllByRole("button")[1];
+    if (v2 === undefined) throw new Error("no v2 row");
+    click(v2);
+    await waitFor(() => {
+      expect(router.state.location.search).toEqual({ tab: "history", from: 2, to: 3 });
+    });
+    await held.answer(restored);
+    await screen.findByText("Saved v4 ✨");
+    await settle();
+    expect(router.state.location.search, "the pair after the answer").toEqual({
+      tab: "history",
+      from: 2,
+      to: 3,
+    });
+  });
 
   it("offers no other Restore until the data shows the restored version", async () => {
     const { held, queryClient, server } = await restoreSent();
