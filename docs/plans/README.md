@@ -44,6 +44,7 @@ Plans up to M2 started as PR comments or PR descriptions. The header of each fil
 | `p3-skills-pages-small.md` | P3 list PR 15, Skills pages small fixes (items 57 to 64) | Chief agent, 2026-11-15, under the owner's order of 2026-11-14; accepted by the owner, 2026-11-15 |
 | `p3-bots-pages.md` | P3 PR E: items 40 to 46 (Bots pages, small fixes; bot page Esc) | Chief agent, 2026-11-15, revision 1; accepted by the owner, 2026-11-15 |
 | `p3-frontend-cleanup.md` | P3 PR K (list PR 21, item 68): frontend cleanup with the same texts and screens | Chief agent, 2026-11-15, under the owner's order of 2026-11-14; accepted by the owner, 2026-11-15 |
+| `p3-tests-only.md` | P3 PR 18, tests only (items 70, 71, 72) | Chief agent, 2026-11-15, under the owner's order of 2026-11-14; accepted by the owner, 2026-11-15 |
 
 If the task names a plan, open it. Otherwise, find the slice in [status.md](../status.md), then open its plan.
 For current behaviour, read the owning documents.

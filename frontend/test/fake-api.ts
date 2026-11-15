@@ -18,9 +18,14 @@ export interface RecordedRequest {
 type Answer = { status?: number; body?: unknown } | undefined;
 
 // The query client of the page under test. `heldAnswer` asks it when the page took an answer.
+// `forgetQueryClient` runs after each test (`setup.ts`), so a client never stays for the next test
+// (DQ-115).
 let pageClient: QueryClient | null = null;
 export function watchQueryClient(client: QueryClient) {
   pageClient = client;
+}
+export function forgetQueryClient() {
+  pageClient = null;
 }
 
 const nextTimerStep = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -30,13 +35,9 @@ const SETTLE_LIMIT_MS = 500;
 
 // TanStack Query tells the page through its own timer, which starts when the read or the write
 // ends. So wait for that end, with its retries, and then for one timer step after it.
-async function pageTookTheAnswer() {
+async function pageTookTheAnswer(client: QueryClient) {
   const end = Date.now() + SETTLE_LIMIT_MS;
-  while (
-    pageClient !== null &&
-    pageClient.isFetching() + pageClient.isMutating() > 0 &&
-    Date.now() < end
-  ) {
+  while (client.isFetching() + client.isMutating() > 0 && Date.now() < end) {
     await nextTimerStep();
   }
   await nextTimerStep();
@@ -52,11 +53,19 @@ export function heldAnswer() {
   return {
     promise,
     answer: async (value: Answer) => {
+      // Without the page's client the wait checks nothing, and a check that something did not
+      // happen passes for the wrong reason (DQ-115).
+      const client = pageClient;
+      if (client === null) {
+        throw new Error(
+          "heldAnswer needs the query client of this test: call watchQueryClient (renderApp does).",
+        );
+      }
       await act(async () => {
         give(value);
         await promise;
       });
-      await act(pageTookTheAnswer);
+      await act(() => pageTookTheAnswer(client));
     },
   };
 }
