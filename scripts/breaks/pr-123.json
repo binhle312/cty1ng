@@ -1,0 +1,306 @@
+{
+  "claims": [
+    {
+      "id": "S1",
+      "claim": "The error screen never shows the error message",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/placeholder/error-page.test.tsx",
+        "name": "never shows the error message"
+      },
+      "assertion": "expect(document.body.textContent, \"the thrown message\").not.toContain(THROWN);",
+      "breaks": [
+        {
+          "id": "S1-a",
+          "file": "frontend/src/features/placeholder/error-page.tsx",
+          "edits": [
+            {
+              "find": "export function ErrorPage() {\n",
+              "replace": "export function ErrorPage({ error }: { error: unknown }) {\n"
+            },
+            {
+              "find": "        The app could not show this page. Try again, or go to Home.\n",
+              "replace": "        {String(error)}\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "claim": "The log line of a caught error has no error message",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/placeholder/error-page.test.tsx",
+        "name": "keeps the error message out of the log"
+      },
+      "assertion": "expect(JSON.stringify(logError.mock.calls), \"the log fields\").not.toContain(THROWN);",
+      "breaks": [
+        {
+          "id": "S2-a",
+          "file": "frontend/src/features/placeholder/error-page.tsx",
+          "edits": [
+            {
+              "find": "  log.error(event, { name: error instanceof Error ? error.name : typeof error });\n",
+              "replace": "  log.error(event, {\n    name: error instanceof Error ? error.name : typeof error,\n    message: String(error),\n  });\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O1",
+      "claim": "Try again while the page still throws ends on the error screen with no loop",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/placeholder/error-page.test.tsx",
+        "name": "shows the error screen again, with no loop, when the page still throws on Try again"
+      },
+      "assertion": "expect(fault.indexRenders, \"renders of the page after the error screen came back\").toBe(\n      settled,\n    );",
+      "breaks": [
+        {
+          "id": "O1-a",
+          "file": "frontend/src/features/placeholder/error-page.tsx",
+          "edits": [
+            {
+              "find": "import { Link, useRouter } from \"@tanstack/react-router\";\n",
+              "replace": "import { Link, useRouter } from \"@tanstack/react-router\";\nimport { useEffect } from \"react\";\n"
+            },
+            {
+              "find": "  const router = useRouter();\n",
+              "replace": "  const router = useRouter();\n  useEffect(() => {\n    void router.invalidate();\n  });\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O2",
+      "claim": "A list answer that comes while the error screen shows does not render the page again",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/placeholder/error-page.test.tsx",
+        "name": "keeps the error screen, with no new render, when a list answer comes while it shows"
+      },
+      "assertion": "expect(fault.indexRenders, \"renders of the page after the answer\").toBe(before);",
+      "breaks": [
+        {
+          "id": "O2-a",
+          "file": "frontend/src/features/placeholder/error-page.tsx",
+          "edits": [
+            {
+              "find": "import { Link, useRouter } from \"@tanstack/react-router\";\n",
+              "replace": "import { useIsFetching } from \"@tanstack/react-query\";\nimport { Link, useRouter } from \"@tanstack/react-router\";\nimport { useEffect, useRef } from \"react\";\n"
+            },
+            {
+              "find": "  const router = useRouter();\n",
+              "replace": "  const router = useRouter();\n  const fetching = useIsFetching();\n  const was = useRef(fetching);\n  useEffect(() => {\n    if (was.current > 0 && fetching === 0) void router.invalidate();\n    was.current = fetching;\n  }, [fetching, router]);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "O3",
+      "claim": "A failed roster follows a new bot list with no second log line",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/shell/roster-load-failed.test.tsx",
+        "name": "follows a new bot list with no second log line"
+      },
+      "assertion": "expect(logError.mock.calls, \"the log lines\").toHaveLength(1);",
+      "breaks": [
+        {
+          "id": "O3-a",
+          "file": "frontend/src/features/shell/top-header.tsx",
+          "edits": [
+            {
+              "find": "            getResetKey={() => \"roster\"}\n",
+              "replace": "            getResetKey={() => all}\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E1",
+      "claim": "A failed page chunk shows the app's error screen inside the shell",
+      "test": {
+        "kind": "e2e",
+        "file": "frontend/test/e2e/error-page.spec.ts",
+        "name": "shows in the shell when a page's code fails, and Try again loads the page"
+      },
+      "assertion": "await expect(alert.getByRole(\"heading\", { name: \"Something went wrong\" })).toBeVisible();",
+      "breaks": [
+        {
+          "id": "E1-a",
+          "file": "frontend/src/router.ts",
+          "edits": [
+            {
+              "find": "    defaultPendingMinMs: 0,\n    ...routerErrorOptions,\n",
+              "replace": "    defaultPendingMinMs: 0,\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2",
+      "claim": "Try again loads a page chunk that failed before",
+      "test": {
+        "kind": "e2e",
+        "file": "frontend/test/e2e/error-page.spec.ts",
+        "name": "shows in the shell when a page's code fails, and Try again loads the page"
+      },
+      "assertion": "await expect(page.getByRole(\"navigation\", { name: \"Skills\" })).toBeVisible();",
+      "breaks": [
+        {
+          "id": "E2-a",
+          "file": "frontend/src/features/placeholder/error-page.tsx",
+          "edits": [
+            {
+              "find": "onClick={() => void router.invalidate()}",
+              "replace": "onClick={() => undefined}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A-light",
+      "claim": "The error screen has no axe violation in the light mode",
+      "test": {
+        "kind": "e2e",
+        "file": "frontend/test/e2e/error-page.spec.ts",
+        "name": "has no axe violations in the light mode"
+      },
+      "assertion": "expect((await new AxeBuilder({ page }).analyze()).violations, \"light\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "A-light-a",
+          "file": "frontend/src/features/placeholder/error-page.tsx",
+          "edits": [
+            {
+              "find": "      <p className=\"mt-1 text-on-surface-muted\">\n",
+              "replace": "      <p className=\"mt-1 text-surface\">\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A-dark",
+      "claim": "The error screen has no axe violation in the dark mode",
+      "test": {
+        "kind": "e2e",
+        "file": "frontend/test/e2e/error-page.spec.ts",
+        "name": "has no axe violations in the dark mode"
+      },
+      "assertion": "expect((await new AxeBuilder({ page }).analyze()).violations, \"dark\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "A-dark-a",
+          "file": "frontend/src/features/placeholder/error-page.tsx",
+          "edits": [
+            {
+              "find": "      <p className=\"mt-1 text-on-surface-muted\">\n",
+              "replace": "      <p className=\"mt-1 text-surface\">\n"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "frontend/src/features/skills/skill-page.test.tsx",
+      "name": "shows Page not found with the rail, the header and the list column for an unknown slug",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/features/skills/skill-page.test.tsx",
+      "name": "shows Page not found in the Skills page when a refresh removes the open skill",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/features/placeholder/error-page.test.tsx",
+      "name": "shows the error screen inside the shell when a page throws",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/features/placeholder/error-page.test.tsx",
+      "name": "writes a caught error to the log",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/features/placeholder/error-page.test.tsx",
+      "name": "renders the page again on Try again",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/features/placeholder/error-page.test.tsx",
+      "name": "leaves the error screen on Go to Home",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/features/placeholder/error-page.test.tsx",
+      "name": "keeps the Skills list column when the skill page throws",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/features/placeholder/error-page.test.tsx",
+      "name": "drops unsaved text with no leave question when the skill page throws",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/features/placeholder/error-page.test.tsx",
+      "name": "fills the window when the shell throws",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/features/placeholder/error-page.test.tsx",
+      "name": "ends on the page after a double click on Try again",
+      "reason": "Written before the code, the red run is in the PR. An order case of the router itself (a new match resets the boundary; invalidate runs again); no edit of this PR's code fails it alone. Not claimed: a break"
+    },
+    {
+      "file": "frontend/src/features/placeholder/error-page.test.tsx",
+      "name": "leaves the error screen on a rail link, and shows the page on the way back",
+      "reason": "Written before the code, the red run is in the PR. An order case of the router itself (a new match resets the boundary; invalidate runs again); no edit of this PR's code fails it alone. Not claimed: a break"
+    },
+    {
+      "file": "frontend/src/features/placeholder/error-page.test.tsx",
+      "name": "shows Page not found inside the shell for an unknown address",
+      "reason": "A guard of the router's own behaviour (plan part 8, probe 1): it passes before and after the change; no code of this PR can break it alone"
+    },
+    {
+      "file": "frontend/src/features/placeholder/error-page.test.tsx",
+      "name": "shows Page not found inside the shell for a conversation id that is not valid",
+      "reason": "A guard of the router's own behaviour (plan part 8, probe 1): it passes before and after the change; no code of this PR can break it alone"
+    },
+    {
+      "file": "frontend/src/features/shell/roster-load-failed.test.tsx",
+      "name": "shows the avatars with no busy flag and no drag text",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/features/shell/roster-load-failed.test.tsx",
+      "name": "writes one log line",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/features/shell/roster-load-failed.test.tsx",
+      "name": "keeps the rail links working",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/test/e2e/shell.spec.ts",
+      "name": "shows Page not found for an unknown page, a conversation id of the wrong kind and an unknown skill",
+      "reason": "An existing test: only its heading locator changed, because Page not found now shows beside the Skills list and its own h1 (item 66); the red run of item 66 is T1 and T2"
+    },
+    {
+      "file": "frontend/test/e2e/skills.spec.ts",
+      "name": "deprecate, open after a reload, make active, deprecate and delete",
+      "reason": "An existing test: only its heading locator changed, because Page not found now shows beside the Skills list and its own h1 (item 66); the red run of item 66 is T1 and T2"
+    }
+  ]
+}
