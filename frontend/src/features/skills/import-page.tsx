@@ -6,6 +6,7 @@ import { Checkbox } from "../../components/ui/checkbox.tsx";
 import { Skeleton, SkeletonArea } from "../../components/ui/skeleton.tsx";
 import { showToast } from "../../components/ui/toast.tsx";
 import { apiErrorText, readApiError } from "../../lib/api/api-error.ts";
+import { plural } from "../../lib/plural.ts";
 import {
   applySkillImportMutation,
   previewSkillImportMutation,
@@ -212,10 +213,6 @@ function ImportPreview({
       </SaveBarFrame>
     </>
   );
-}
-
-function plural(n: number, word: string): string {
-  return n === 1 ? `1 ${word}` : `${String(n)} ${word}s`;
 }
 
 const STATUS_PILL = {

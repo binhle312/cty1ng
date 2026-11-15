@@ -1,5 +1,5 @@
 import { Button } from "../../components/ui/button.tsx";
-import { SaveBarFrame, SaveButton } from "../skills/save-bar.tsx";
+import { changesLine, SaveBarFrame, SaveButton } from "../skills/save-bar.tsx";
 import type { SaveBarState } from "./bot-edit-state.ts";
 
 // The save bar of the Profile and Model tabs (bot-page.md §4.1, PF2, PF3). It is always there, so
@@ -48,9 +48,7 @@ export function BotSaveBar({
           <span className="flex grow flex-col">
             <span className="flex items-center gap-2">
               <span aria-hidden className="size-2 rounded-pill bg-waiting" />
-              {state.count === 1
-                ? "1 change not saved"
-                : `${String(state.count)} changes not saved`}
+              {changesLine(state.count)}
             </span>
             {state.avatar && (
               <span className="text-sm text-on-surface-muted">

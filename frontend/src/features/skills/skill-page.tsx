@@ -71,9 +71,9 @@ import {
   useEditorSettings,
 } from "./skill-queries.ts";
 import { useSkillsPage } from "./skills-context.tsx";
+import { SKILL_TABS, type SkillTab } from "./skill-tabs.ts";
 
 type SkillDetail = GetSkillResponse;
-type TabName = "skill" | "bots" | "history";
 
 const trashKey = (slug: string) => ["trash-skill", slug];
 
@@ -394,8 +394,8 @@ function SkillView({ skill }: { skill: SkillDetail }) {
     });
   };
 
-  const tab: TabName = search.tab ?? "skill";
-  const setTab = (next: TabName) => {
+  const tab: SkillTab = search.tab ?? "skill";
+  const setTab = (next: SkillTab) => {
     void navigate({ search: { tab: next === "skill" ? undefined : next } });
   };
 
@@ -454,7 +454,7 @@ function SkillView({ skill }: { skill: SkillDetail }) {
       <TabsRoot
         value={tab}
         onValueChange={(value) => {
-          setTab(value === "bots" ? "bots" : value === "history" ? "history" : "skill");
+          setTab(SKILL_TABS.find((name) => name === value) ?? "skill");
         }}
         className="flex min-h-0 grow flex-col"
       >

@@ -260,6 +260,8 @@ describe("Create on the Create bot page", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/bots/ba");
     });
+    // The Profile tab has no `tab` in its URL (bot-page.md, URLs).
+    expect(router.state.location.search).toEqual({});
   });
 
   it("shows a taken name on Basics and sends the next Create with a new key (E1, E3)", async () => {

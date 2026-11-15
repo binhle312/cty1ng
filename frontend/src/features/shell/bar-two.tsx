@@ -1,6 +1,5 @@
 import { Ellipsis, House, MessagesSquare, Plus } from "lucide-react";
-import { MenuPopup, MenuRoot, MenuTrigger } from "../../components/ui/menu.tsx";
-import { Menu as BaseMenu } from "@base-ui/react/menu";
+import { MenuItem, MenuPopup, MenuRoot, MenuTrigger } from "../../components/ui/menu.tsx";
 import { VARIANTS } from "../../themes/variants.ts";
 import { TurnedOff } from "./turned-off.tsx";
 
@@ -36,15 +35,12 @@ export function BarTwo({ onHide }: { onHide: () => void }) {
             <Ellipsis aria-hidden size={16} />
           </MenuTrigger>
           <MenuPopup side="bottom" align="end" sideOffset={4} label="Home menu">
-            <BaseMenu.Item
-              onClick={onHide}
-              className="flex h-control cursor-default items-center gap-2 rounded-control px-2 outline-none select-none data-highlighted:bg-surface-bubble"
-            >
+            <MenuItem onClick={onHide}>
               <span className="grow">Hide bar</span>
               {VARIANTS.command.keyboardHints && (
                 <kbd className="font-mono text-xs text-on-surface-muted">Ctrl+B</kbd>
               )}
-            </BaseMenu.Item>
+            </MenuItem>
           </MenuPopup>
         </MenuRoot>
       </div>
