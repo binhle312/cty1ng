@@ -2,7 +2,7 @@
 
 Brief: the P3 list before M3 (owner, 2026-11-08; list approved 2026-11-12), list PR 9: items 27, 28, 29, 30, five parts of item 31, and the docs of item 37 (owner, 2026-11-13, question 12)
 Checkpoint: none (the P3 list: "Needs the owner before code: no")
-Approval: chief agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); owner review pending
+Approval: chief agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15
 
 ## 1. What I found on `origin/main` (`97221d3`, 2026-11-15, read)
 
@@ -10,7 +10,7 @@ Approval: chief agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 que
 | --- | --- | --- |
 | 27. One purge item that fails blocks all later items | Still there | `backend/src/core/skills/skills.service.ts:524-536`, `backend/src/core/bots/bots.service.ts:711-719`: no catch around `uow.run`. `backend/src/app/timed-jobs.ts:25-32` catches only per step, so the later items of the step wait. A failure that repeats keeps them in Trash on each run |
 | 28. `trashed_bot_ids` is not parsed on read | Still there | `backend/src/adapters/db/schema.ts:48` (`$type<string[]>()`, no check), `backend/src/adapters/db/repositories.ts:267-276` (`toSkill` passes the value as it is). The restore skips a bad entry (`skills.service.ts:490-495`), but a stored value that is not a list goes into `for … of` |
-| 29. The import preview id does not use the ids port | Still there; not addressed in this PR: needs a D36 prefix (Q3) | `backend/src/core/skills/skill-import.service.ts:261`: `globalThis.crypto.randomUUID()` (UUIDv4, no TypeID prefix) |
+| 29. The import preview id does not use the ids port | Still there when the plan was written. Built in this PR after the owner chose the prefix `simp` (Q3, owner, 2026-11-15) | `backend/src/core/skills/skill-import.service.ts:261`: `globalThis.crypto.randomUUID()` (UUIDv4, no TypeID prefix) |
 | 30. Invariant 7: no test of `bot.updated` on `POST /skills/{id}/bots`, or of `trash.changed` on a bot purge | Still there, both parts | `bots.service.test.ts:889-890` keeps only `bot.purged`; the success test of `pinSkillToBots` (`:659-687`) checks no event. Code: `bots.service.ts:680`, `:701` |
 | 31a. The service method `trashed` has no caller | Still there | `skills.service.ts:512-515`; no caller in `backend/src` or the tests (the CLI reads `readers.skills.trashed()`, not the service) |
 | 31b. Export all reads each latest version again | Still there | `skills.service.ts:369-376`: `list()` gives `latest`, then `latestVersion()` reads it again |
@@ -33,7 +33,7 @@ Not mine: the 1 MB limit and `SkillDiff` (list PR 10).
 8. **30.** Two tests (they pass on `main`: break claims).
 9. **37.** One commit: the owner's words in `docs/domain-model.md` and `docs/api.md`, and one API test (passes on `main`: break claim).
 10. The break list `scripts/breaks/pr-<n>.json` and its report.
-Item 29 is not addressed: it needs a D36 prefix (section 4, Q3).
+11. **29.** Built after the owner's answer of 2026-11-15 (Q3): the prefix `simp` in `shared/src/ids.ts` and D36, the id from the ids port, tests first (section 7).
 
 ## 3. Tests and test strategy
 
@@ -77,7 +77,7 @@ Not in scope: the avatar cleanup (`avatars.service.ts:63-78`) has the same shape
 - B: drop the bad entries on read (a value that is not a list reads as `null`). The reads never fail; a bad value is silent.
 No migration and no change of the stored value in A or B. The audit also says the column "holds TypeIDs" (D36 stores UUIDs in the database). Changing that changes stored values: not in this PR; I write it as `Not claimed` and name it for the owner.
 
-**Q3 (item 29): the fix needs a TypeID prefix that D36 does not have.** Answered: A (the chief, 2026-11-15). `docs/decisions/` is the owner's (`AGENTS.md` §7), so the prefix is the owner's choice. The PR names it under `Needs human review`: the owner picks a prefix (for example `simp`); then the fix is one line and one test. D36: every id outside the database is a TypeID, and its table lists each prefix. The ids port only makes TypeIDs (`newId(prefix)`). My scope says: no change to `docs/decisions/`.
+**Q3 (item 29): the fix needs a TypeID prefix that D36 does not have.** Answered: A (the chief, 2026-11-15). Then the owner, 2026-11-15: "29: simp": the prefix is `simp`, and item 29 is built in this PR (section 7). `docs/decisions/` is the owner's (`AGENTS.md` §7), so the prefix is the owner's choice. The PR names it under `Needs human review`: the owner picks a prefix (for example `simp`); then the fix is one line and one test. D36: every id outside the database is a TypeID, and its table lists each prefix. The ids port only makes TypeIDs (`newId(prefix)`). My scope says: no change to `docs/decisions/`.
 - A (recommended): no code tonight. The PR names item 29 under `Needs human review`: "the owner picks a prefix (for example `simp`) for D36; then the fix is one line, `deps.ids.newId("simp")`, and one test".
 - B: the chief allows a D36 line now; I add the prefix to `shared/src/ids.ts`, use the ids port, and flag the D36 line for the owner.
 - C: add a `newUuid()` to the ids port (UUIDv7, no prefix). Changes a port and its contract suite, and the API id still has no prefix (against D36).
@@ -100,3 +100,4 @@ No migration and no change of the stored value in A or B. The audit also says th
 - Each service gives three functions (the due ids, the delete time of one item or null, the purge). The recheck of `trash_days` is in the shared loop, not in each service. The behaviour is the same.
 - T2 and T3: the fault comes after the row change and the event (an `appendEvent` wrapper in the test), not at the first write (round 1 R1-1).
 - T1 became two tests in `purge-due.test.ts`; T5 became two tests in `timed-jobs.test.ts`. T6 and T7 are in `backend/src/adapters/db/skills-repository.test.ts`. T8 and T9 claim only the event part of invariant 7.
+- Item 29 (owner, 2026-11-15, prefix `simp`): `skill-import.service.ts` takes the preview id from `deps.ids.newId("simp")` and parses it with `SkillImportPreviewId` (`shared/src/ids.ts`). The apply body keeps `preview_id: z.string()`: an id that is not a `simp` TypeID names no preview and gets 409 `preview_expired`, as `docs/api.md` says (a 422 would change the answer that the route gives today). D36, `domain-model.md` §3.5 and `api.md` name the id.

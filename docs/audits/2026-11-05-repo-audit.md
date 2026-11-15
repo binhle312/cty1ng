@@ -175,7 +175,7 @@ The lead did not check these again, except where a row says so. The others are f
 - **Decided and written in #114** (owner, 2026-11-13, question 12: the API pins the version that the request names; docs and one API test): A new assign can pin an older version, and the docs do not agree on the rule: `backend/src/core/bots/bots.service.ts:579`.
 - **Fixed in #114** (the purge goes on after a failed item, logs it with its id, and tries it again on the next run): One purge item that fails blocks all later items: `backend/src/core/skills/skills.service.ts:526`, `backend/src/core/bots/bots.service.ts:711`.
 - **Fixed in #114** (the repository parses it on read; the stored TypeID form is not changed): `trashed_bot_ids` is not parsed on read and holds TypeIDs: `backend/src/adapters/db/repositories.ts:267`.
-- The import preview id does not use the ids port: `backend/src/core/skills/skill-import.service.ts:253`.
+- **Fixed in #114** (the id comes from the ids port with the TypeID prefix `simp`, which the owner chose on 2026-11-15; D36 lists it): The import preview id does not use the ids port: `backend/src/core/skills/skill-import.service.ts:253`.
 
 ### Security
 
