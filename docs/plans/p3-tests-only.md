@@ -86,7 +86,7 @@ total in the full run) has the same cause. It is not on the P3 row, so it is not
 ## Revision 2 (2026-11-15, after e2e run 1 and review round 1)
 
 - The long-press wait: dnd-kit replaces `Picked up <name>.` at once with the text for the place
-  under the finger, so e2e run 1 failed (`6bab70c`). Every drag announcement names the bot, so the
+  under the finger, so e2e run 1 on `502d539` failed (`6bab70c` is the fix). Every drag announcement names the bot, so the
   test waits for a live region with the bot's name. Review round 1 checked that no element with
   `role="status"` and the name can show before the drag starts.
 - `pageIsQuiet` does its two quiet checks in one call (review round 1, R1-3).
