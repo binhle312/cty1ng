@@ -768,6 +768,60 @@ describe("a request that fails after the owner left", () => {
       await settle();
       expect(router.state.location.pathname).toBe("/bots");
     });
+
+    // Applies the preview of file A, then picks file B while the Apply waits (DQ-070). Each
+    // preview answer names its own file and id, so B's preview is a new preview.
+    async function applyThenPickAnother() {
+      const held = heldAnswer();
+      let previews = 0;
+      api = fakeApi({
+        "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+        "GET /api/skills": () => ({ body: [] }),
+        "GET /api/bots": () => ({ body: [] }),
+        "POST /api/skills/import/preview": () => {
+          previews += 1;
+          const name = previews === 1 ? "a.zip" : "b.zip";
+          return { body: { ...preview, preview_id: `preview-${String(previews)}`, file: name } };
+        },
+        "POST /api/skills/import/apply": () => held.promise,
+      });
+      await renderApp("/skills");
+      const input = await screen.findByLabelText("Choose a zip to import", {}, { timeout: 5000 });
+      const pick = (name: string) => {
+        act(() => {
+          fireEvent.change(input, {
+            target: { files: [new File(["zip"], name, { type: "application/zip" })] },
+          });
+        });
+      };
+      pick("a.zip");
+      click(await screen.findByRole("button", { name: "Apply 1 change" }));
+      await waitFor(() => {
+        expect(api?.sent("POST", "/api/skills/import/apply")).toHaveLength(1);
+      });
+      pick("b.zip");
+      await screen.findByText(/^b\.zip · 1 folder/);
+      return held;
+    }
+
+    it("keeps file B when the Apply of file A succeeds after B was picked", async () => {
+      const held = await applyThenPickAnother();
+      await held.answer({ status: 200, body: { created: 1, new_versions: 0, skills: [] } });
+      expect(await screen.findByText(/^Imported 1 change/)).toBeTruthy();
+      await settle();
+      expect(screen.queryByText(/^b\.zip · 1 folder/), "the preview of file B").toBeTruthy();
+    });
+
+    it("keeps file B when the Apply of file A fails after B was picked", async () => {
+      const held = await applyThenPickAnother();
+      await held.answer({
+        status: 500,
+        body: { error: { code: "internal_error", message: "Something failed." } },
+      });
+      expect(await screen.findByText("Could not apply the import. Try again.")).toBeTruthy();
+      await settle();
+      expect(screen.queryByText(/^b\.zip · 1 folder/), "B's preview after A failed").toBeTruthy();
+    });
   });
 });
 

@@ -20,8 +20,10 @@ export function SkillsLayout() {
       setDirtySlug,
       importFile,
       chooseImportFile: () => fileInput.current?.click(),
-      clearImportFile: () => {
-        setImportFile(null);
+      // Only the file that the import page was given: a late Apply of an older file leaves a newer
+      // pick alone (DQ-070).
+      clearImportFile: (file) => {
+        setImportFile((current) => (current === file ? null : current));
       },
       showBotCard,
     }),
