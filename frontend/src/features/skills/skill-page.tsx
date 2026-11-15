@@ -350,8 +350,13 @@ function SkillView({ skill }: { skill: SkillDetail }) {
       }
     },
   });
+  // The Delete wait of the query client, as in `SkillPage`: a Delete of an earlier visit keeps the
+  // dialog of this visit off ("Deleting the skill."), so no second request goes (DQ-081).
+  const trashing = useIsMutating({ mutationKey: trashKey(skill.slug) }) > 0;
   const trashSkill = () => {
     if (dialog === null) return;
+    // The query client counts at once, before the page renders again.
+    if (queryClient.isMutating({ mutationKey: trashKey(skill.slug) }) > 0) return;
     runInDialog({
       dialog,
       request: trash.mutateAsync({
@@ -536,13 +541,10 @@ function SkillView({ skill }: { skill: SkillDetail }) {
         skillName={skill.name}
         trashDays={settings.trashDays}
         bots={bots}
-        pending={trash.isPending}
+        pending={trashing}
         error={dialogError}
         onCancel={closeDialog}
-        onConfirm={() => {
-          if (trash.isPending) return;
-          trashSkill();
-        }}
+        onConfirm={trashSkill}
       />
       {leaveDialog}
     </>

@@ -479,6 +479,56 @@ describe("Delete of a deprecated skill", () => {
     expect(screen.queryByText("Page not found")).toBeNull();
   });
 
+  // Sends a Delete, leaves and comes back while it waits, and opens the dialog of the return visit.
+  async function returnVisitDialog() {
+    const trash = heldAnswer();
+    const server = { list: [deprecated] };
+    const app = await clickDelete({
+      list: () => ({ body: server.list }),
+      trash: () => trash.promise,
+    });
+    await act(() => app.router.navigate({ to: "/bots" }));
+    await settle();
+    await act(() =>
+      app.router.navigate({ to: "/skills/$slug", params: { slug: "write-user-stories" } }),
+    );
+    click(await screen.findByRole("button", { name: "Skill actions" }));
+    click(await screen.findByRole("menuitem", { name: "Delete skill" }));
+    const dialog = await screen.findByRole("alertdialog");
+    return { ...app, trash, server, dialog };
+  }
+
+  it("sends no second Delete from the dialog of a return visit while the first waits", async () => {
+    const { dialog } = await returnVisitDialog();
+    click(within(dialog).getByRole("button", { name: "Delete skill" }));
+    await settle();
+    expect(api?.sent("POST", `/api/skills/${SKILL_ID}/trash`), "a second Delete").toHaveLength(1);
+  });
+
+  it("moves to /skills when the first Delete succeeds while the return visit's dialog is open", async () => {
+    const { trash, server, router } = await returnVisitDialog();
+    server.list = [];
+    await trash.answer({ status: 200, body: { skill_id: SKILL_ID, removed_bot_ids: [] } });
+    expect(await screen.findByText("Write user stories is in Trash.")).toBeTruthy();
+    await settle();
+    expect(router.state.location.pathname, "the page after the answer").toBe("/skills");
+  });
+
+  it("turns Delete skill on in the return visit's dialog when the first Delete fails", async () => {
+    const { trash, dialog } = await returnVisitDialog();
+    await trash.answer({
+      status: 500,
+      body: { error: { code: "internal_error", message: "Something failed." } },
+    });
+    await settle();
+    click(within(dialog).getByRole("button", { name: "Delete skill" }));
+    await settle();
+    expect(
+      api?.sent("POST", `/api/skills/${SKILL_ID}/trash`),
+      "the Delete after a failure",
+    ).toHaveLength(2);
+  });
+
   it("keeps the wait until the page has moved, and an older list load cannot bring the skill back", async () => {
     const trash = heldAnswer();
     const older = heldAnswer();
