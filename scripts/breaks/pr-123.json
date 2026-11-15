@@ -67,8 +67,12 @@
               "replace": "import { Link, useRouter } from \"@tanstack/react-router\";\nimport { useEffect } from \"react\";\n"
             },
             {
+              "find": "export function ErrorPage() {\n",
+              "replace": "let loops = 0;\nexport function ErrorPage() {\n"
+            },
+            {
               "find": "  const router = useRouter();\n",
-              "replace": "  const router = useRouter();\n  useEffect(() => {\n    void router.invalidate();\n  });\n"
+              "replace": "  const router = useRouter();\n  useEffect(() => {\n    if (loops < 8) {\n      loops += 1;\n      setTimeout(() => void router.invalidate(), 150);\n    }\n  });\n"
             }
           ]
         }
