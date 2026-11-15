@@ -214,7 +214,7 @@ The lead did not check these again, except where a row says so. The others are f
 - When a read of the Create form keeps failing, each live event for that list starts the retries again. With an event every 3 s for 21 s, the form opened at 25.1 s (DQ-109).
 - `heldAnswer` waits on the client that `watchQueryClient` set last, and nothing checks it. A test with its own client and no call gets the old race back (DQ-115).
 - Create waits for its refresh of the lists before it moves to the new bot. When the skill read keeps failing, the form stays disabled for about 7 s (DQ-108).
-- The skill Clone cuts the name with a cached limit. The form checks the name against the current limit. From reading the code: `frontend/src/features/skills/new-skill-page.tsx:160`.
+- The skill Clone cuts the name with a cached limit. The form checks the name against the current limit. From reading the code: `frontend/src/features/skills/new-skill-page.tsx:160`. Fixed in #117 (item 57, DQ-090).
 
 Correction to row 1: `act()` is not the only thing that hides the failure. A bare `dispatchEvent` hides it too, so removing `act()` alone gives a test that passes on the old code (run on `8c2278f`). `pressKey` makes React finish its work where a browser does.
 
@@ -225,13 +225,13 @@ Correction to row 1: `act()` is not the only thing that hides the failure. A bar
 ### Skills pages and shell
 
 - **Fixed in #78.** Late answers from Restore, Import and Trash move the owner off the page they went to. Both audits found the Import case: `frontend/src/features/skills/skill-history.tsx:223`, `import-page.tsx:119`, `skill-page.tsx:352`.
-- Skill Clone can split an emoji, and the saved name then holds "�". The Clone form shows the name first, so the owner can correct it. Second audit; checked through the API by the lead: `shared/src/skills.ts:142`.
+- Skill Clone can split an emoji, and the saved name then holds "�". The Clone form shows the name first, so the owner can correct it. Second audit; checked through the API by the lead: `shared/src/skills.ts:142`. Fixed in #117 (item 58).
 - An unknown skill URL loses the whole shell: `frontend/src/features/skills/skill-page.tsx:101`.
 - **Fixed in #78.** If the owner types an edit back during a conflict, the bar says "saved" over old text: `frontend/src/features/skills/skill-page.tsx:131`.
-- A failed background refresh replaces the History tab: `frontend/src/features/skills/skill-history.tsx:79`, `:262`.
-- "Close this card and try again" does not try again: `frontend/src/features/skills/skill-dialogs.tsx:50`.
+- A failed background refresh replaces the History tab: `frontend/src/features/skills/skill-history.tsx:79`, `:262`. Fixed in #117 (item 59). The Skills index page has the same fault: fixed in #117 (item 60).
+- "Close this card and try again" does not try again: `frontend/src/features/skills/skill-dialogs.tsx:50`. Fixed in #117 (item 61). Owner, 2026-11-15 (117-B: A): the Try again button in the three dialogs is approved; the texts wait for the UI review after M3.
 - The app has no error boundary, so a failed lazy chunk replaces the whole app: `frontend/src/router.ts:8`, `frontend/src/features/shell/top-header.tsx:11`. **Fix before M3.**
-- The Export card counts a skill that left the list: `frontend/src/features/skills/export-card.tsx:74`.
+- The Export card counts a skill that left the list: `frontend/src/features/skills/export-card.tsx:74`. Fixed in #117 (item 62).
 
 ### Tests and tooling
 
