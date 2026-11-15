@@ -165,6 +165,11 @@
       "file": "backend/src/adapters/db/migrate.test.ts",
       "name": "stops with the read-back error, and keeps the first error, when a failed run leaves foreign_keys off",
       "reason": "Written before its fix (round 1, R1-1); the red run is in the PR"
+    },
+    {
+      "file": "backend/src/app/cli.test.ts",
+      "name": "prints the first error too, on one line",
+      "reason": "Written before its fix; the red run is in the PR"
     }
   ]
 }
