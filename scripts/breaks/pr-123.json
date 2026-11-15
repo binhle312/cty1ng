@@ -186,7 +186,7 @@
           "edits": [
             {
               "find": "      <p className=\"mt-1 text-on-surface-muted\">\n",
-              "replace": "      <p className=\"mt-1 text-surface\">\n"
+              "replace": "      <p className=\"mt-1 text-surface-raised\">\n"
             }
           ]
         }
@@ -208,7 +208,7 @@
           "edits": [
             {
               "find": "      <p className=\"mt-1 text-on-surface-muted\">\n",
-              "replace": "      <p className=\"mt-1 text-surface\">\n"
+              "replace": "      <p className=\"mt-1 text-surface-raised\">\n"
             }
           ]
         }
