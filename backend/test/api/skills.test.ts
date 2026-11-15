@@ -425,9 +425,10 @@ describe("import and export", () => {
     expect((await errorOf(again)).code).toBe("preview_expired");
   });
 
-  // D36 and api.md: the preview id is a `simp` TypeID, and an id that is unknown, or not a `simp`
-  // TypeID at all, gets the same 409 `preview_expired` (the body takes any string, so a bad id is
-  // not a 422).
+  // The preview id is a `simp` TypeID. An id that names no preview, or is not a `simp` TypeID, gets
+  // 409 `preview_expired`: the route has taken any string since M1 (`sql-injection.test.ts` pins
+  // it). D36 (2026-11-04) says a bad id in a JSON body gives 422 `validation_error`; that conflict
+  // is DQ-332 (the owner decides). This test pins the answer of today, not a decided rule.
   it.each([
     ["a well-formed `simp` id that is unknown", "simp_01jb8x6p0afqz8r2m3k5t7v9wx"],
     ["an id with another prefix", "skill_01jb8x6p0afqz8r2m3k5t7v9wx"],

@@ -33,7 +33,7 @@ Not mine: the 1 MB limit and `SkillDiff` (list PR 10).
 8. **30.** Two tests (they pass on `main`: break claims).
 9. **37.** One commit: the owner's words in `docs/domain-model.md` and `docs/api.md`, and one API test (passes on `main`: break claim).
 10. The break list `scripts/breaks/pr-<n>.json` and its report.
-11. **29.** Built after the owner's answer of 2026-11-15 (Q3): the prefix `simp` in `shared/src/ids.ts` and D36, the id from the ids port, tests first (section 7).
+11. **29.** Built after the owner's answer of 2026-11-15 (Q3): the prefix `simp` in `shared/src/ids.ts` and D36, the id from the ids port. The tests T11 to T13 were written first; their red run is in the description (section 7).
 
 ## 3. Tests and test strategy
 
@@ -51,6 +51,7 @@ Each new test is written before its code, and I record its red run (command, fai
 | T8 | `bots.service.test.ts`: `pinSkillToBots` that moves two bots writes two `bot.updated` events with those bot ids | invariant 7 | green on main: claim, break = skip the `emitBot` call at `bots.service.ts:680` |
 | T9 | `bots.service.test.ts`: a bot purge writes `trash.changed` after `bot.purged` | invariant 7 | green on main: claim, break = skip `appendTrashChanged` in the bot `purgeInTx` |
 | T10 | `backend/test/api/bots.test.ts`: a new assign with v2 of a skill that has v4 pins v2 | item 37 | green on main: claim, break = `setPin` pins the latest version |
+| T11 | `skill-import.service.test.ts`, `ids.test.ts` and `skills.test.ts` (item 29, added after the owner chose `simp`): the preview id is a `simp` TypeID and holds a UUIDv7; an id that names no preview gets 409 `preview_expired` | item 29 | red for the two id checks (the id was a random UUID); the 409 test passes on the old code: exempt |
 
 Order and race cases: T1 to T4 are the order cases of item 27 (the failed item does not change the order or the result of the others; the next run tries it again). The races that exist (a skill restored, or `trash_days` raised, between the list and the transaction: `skills.service.test.ts:500-509`) stay green through the one loop; T1 also checks that an item that is no longer due is skipped and not counted.
 
@@ -77,9 +78,9 @@ Not in scope: the avatar cleanup (`avatars.service.ts:63-78`) has the same shape
 - B: drop the bad entries on read (a value that is not a list reads as `null`). The reads never fail; a bad value is silent.
 No migration and no change of the stored value in A or B. The audit also says the column "holds TypeIDs" (D36 stores UUIDs in the database). Changing that changes stored values: not in this PR; I write it as `Not claimed` and name it for the owner.
 
-**Q3 (item 29): the fix needs a TypeID prefix that D36 does not have.** Answered: A (the chief, 2026-11-15). Then the owner, 2026-11-15: "29: simp": the prefix is `simp`, and item 29 is built in this PR (section 7). `docs/decisions/` is the owner's (`AGENTS.md` §7), so the prefix is the owner's choice. The PR names it under `Needs human review`: the owner picks a prefix (for example `simp`); then the fix is one line and one test. D36: every id outside the database is a TypeID, and its table lists each prefix. The ids port only makes TypeIDs (`newId(prefix)`). My scope says: no change to `docs/decisions/`.
-- A (recommended): no code tonight. The PR names item 29 under `Needs human review`: "the owner picks a prefix (for example `simp`) for D36; then the fix is one line, `deps.ids.newId("simp")`, and one test".
-- B: the chief allows a D36 line now; I add the prefix to `shared/src/ids.ts`, use the ids port, and flag the D36 line for the owner.
+**Q3 (item 29): the fix needs a TypeID prefix that D36 does not have.** History of the plan: the chief answered A on 2026-11-15, as written below. Then the owner, 2026-11-15: "29: simp": the prefix is `simp`, and item 29 is built in this PR (section 7). The text below is the question as it was before that answer. `docs/decisions/` is the owner's (`AGENTS.md` §7), so the prefix was the owner's choice. D36: every id outside the database is a TypeID, and its table lists each prefix. The ids port only makes TypeIDs (`newId(prefix)`). My scope then said: no change to `docs/decisions/`; the owner's answer allows the one D36 row.
+- A (recommended then, answered): no code tonight. The PR names item 29 under `Needs human review`: "the owner picks a prefix (for example `simp`) for D36; then the fix is one line, `deps.ids.newId("simp")`, and one test".
+- B (not taken): the chief allows a D36 line now; I add the prefix to `shared/src/ids.ts`, use the ids port, and flag the D36 line for the owner.
 - C: add a `newUuid()` to the ids port (UUIDv7, no prefix). Changes a port and its contract suite, and the API id still has no prefix (against D36).
 
 
@@ -93,6 +94,7 @@ No migration and no change of the stored value in A or B. The audit also says th
 
 - The break report uses the runner of `origin/main`; if #107 merges first, the records turn runs it again.
 - Item 28 does not change the stored form of `trashed_bot_ids` (TypeID strings in JSON).
+- Item 29: the red run of T11 is in the description, not on a commit before the fix (the tests and the fix are in one commit). The response schema `SkillImportPreview` keeps `preview_id: z.string()`, so the OpenAPI document and the generated client do not carry the `simp` shape (a stricter schema changes the public API shape; frontend fixtures use `"preview-1"`).
 
 ## 7. What the build changed (2026-11-15, round 1 finding R1-8)
 
@@ -100,4 +102,4 @@ No migration and no change of the stored value in A or B. The audit also says th
 - Each service gives three functions (the due ids, the delete time of one item or null, the purge). The recheck of `trash_days` is in the shared loop, not in each service. The behaviour is the same.
 - T2 and T3: the fault comes after the row change and the event (an `appendEvent` wrapper in the test), not at the first write (round 1 R1-1).
 - T1 became two tests in `purge-due.test.ts`; T5 became two tests in `timed-jobs.test.ts`. T6 and T7 are in `backend/src/adapters/db/skills-repository.test.ts`. T8 and T9 claim only the event part of invariant 7.
-- Item 29 (owner, 2026-11-15, prefix `simp`): `skill-import.service.ts` takes the preview id from `deps.ids.newId("simp")` and parses it with `SkillImportPreviewId` (`shared/src/ids.ts`). The apply body keeps `preview_id: z.string()`: an id that is not a `simp` TypeID names no preview and gets 409 `preview_expired`, as `docs/api.md` says (a 422 would change the answer that the route gives today). D36, `domain-model.md` §3.5 and `api.md` name the id.
+- Item 29 (owner, 2026-11-15, prefix `simp`): `skill-import.service.ts` takes the preview id from `deps.ids.newId("simp")` and parses it with `SkillImportPreviewId` (`shared/src/ids.ts`). The apply body keeps `preview_id: z.string()`: an id that is not a `simp` TypeID names no preview and gets 409 `preview_expired`, as it did before (a 422 would change the answer that the route gives today). This conflicts with D36 (2026-11-04) and `api.md` §1, which give 422 `validation_error` for a bad id in a JSON body: finding C2-1, DQ-332, the owner decides (keep the 409 and write the exception, or parse the body with the schema and answer 422). D36, `domain-model.md` §3.5 and `api.md` name the id.
