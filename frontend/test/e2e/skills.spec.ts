@@ -381,7 +381,7 @@ test("deprecate, open after a reload, make active, deprecate and delete", async 
     0,
   );
   await page.goto(`/skills/${skill.slug}`);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Page not found");
+  await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();
 });
 
 test("Delete lists the bots that use the skill and removes it from them (M2a)", async ({
