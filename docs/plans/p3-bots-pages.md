@@ -2,7 +2,7 @@
 
 Brief: items 40 to 46 of the owner's P3 list of 2026-11-12 (list PR 12 "Bots pages, small fixes" and list PR 13 "Bot page Esc"); DQ-089 and DQ-095 in [delivery-quality.md](../delivery-quality.md)
 Checkpoint: none (no new screen, no code design); the Esc rule is a behaviour change, flagged for the owner
-Approval: chief agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); owner review pending. Q13 A (Esc on the whole bot page) was decided by arena 1, not by the owner. Revision 1.
+Approval: chief agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15 ("CHIEF: accept"). Q13 A (Esc on the whole bot page) was decided by arena 1; the owner approved it on 2026-11-15 ("116-A: A (approve all three)"), with the `invalid` prop of the check box (Q1 A) and the `ignoreBlocker` move after a late Delete (round 2, R2-1). Revision 1.
 
 The code was read at `origin/main` = `97221d3`. "Read" means from reading the code; each item
 gets a test that fails before its fix.
@@ -119,7 +119,7 @@ Break list `scripts/breaks/pr-<n>.json` (owner rule: late, security, order/race)
 4. Overlap with PR C (item 32) in `create-bot-page.tsx` catch block: my change is two lines there, `create-bot-form.ts` unchanged.
 5. `docs/frontend-conventions.md` §5 row "A key press that opens a dialog" names `bot-page.tsx` as the example of `stopPropagation`. After the change bot-page.tsx is no longer that example. The row stays true for React handlers; it does not change here (Q6).
 
-## 7. Decisions (chief agent, 2026-11-15, revision 1; owner review pending)
+## 7. Decisions (chief agent, 2026-11-15, revision 1; accepted by the owner, 2026-11-15)
 
 - **Q13 A (arena 1):** Esc works on the whole bot page: with unsaved changes it asks to discard,
   wherever the focus is. An open dialog or menu keeps its own Esc.
