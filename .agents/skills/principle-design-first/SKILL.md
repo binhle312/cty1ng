@@ -1,6 +1,6 @@
 ---
 name: principle-design-first
-description: Decide and review the code design before a change adds shared state, a module boundary, a multi-screen flow, or a requirement that changes a design.
+description: Use when a change adds shared state, a new module, adapter, tool or script, a flow across screens, or a new requirement that breaks a rule of the current design. Use it also when the request says to write the code now. Decide and review the code design before the code.
 ---
 
 # Design first

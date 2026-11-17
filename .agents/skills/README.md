@@ -30,7 +30,7 @@ Read the matching skill before its phase of work.
 | Folder | Read when |
 | --- | --- |
 | `principle-resolve-unknowns/` | Resolve unclear requirements and test unfamiliar dependencies before the implementation depends on them. |
-| `principle-design-first/` | Decide and review the code design before a change adds shared state, a module boundary, a multi-screen flow, or a requirement that changes a design. |
+| `principle-design-first/` | Use when a change adds shared state, a new module, adapter, tool or script, a flow across screens, or a new requirement that breaks a rule of the current design. Use it also when the request says to write the code now. Decide and review the code design before the code. |
 | `principle-remove-first/` | Remove unused code, checks, and text before you add a feature, refactor, or rewrite, then build on the simpler base. |
 | `principle-split-changes/` | Split a plan when independent concerns or separate approval needs make it hard to review or recover. |
 | `principle-when-review-ends/` | Set the merge bar and failure scope before a build, or when each review round still finds issues. |
