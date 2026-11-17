@@ -1,6 +1,9 @@
 ---
 name: principle-state-and-order
 description: Use when requests overlap, answers arrive late, or state survives navigation, locks, retries, or live events. Model the states and events first.
+metadata:
+  author: binhle312
+  tags: [principle]
 ---
 
 # Model state and order

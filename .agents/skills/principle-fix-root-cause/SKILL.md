@@ -1,6 +1,9 @@
 ---
 name: principle-fix-root-cause
 description: Use when you fix a bug or a failure, when review fixes repeat, or when several paths enforce one rule. Find the first wrong decision.
+metadata:
+  author: Lauren Tan (pstack; adapted)
+  tags: [principle]
 ---
 
 # Fix the root cause

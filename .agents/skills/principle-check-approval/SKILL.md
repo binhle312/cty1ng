@@ -1,6 +1,9 @@
 ---
 name: principle-check-approval
 description: Use when a fix changes approved behaviour, scope, a contract, or a protected operation such as a migration. Check that an approval covers it.
+metadata:
+  author: binhle312
+  tags: [principle]
 ---
 
 # Check approval

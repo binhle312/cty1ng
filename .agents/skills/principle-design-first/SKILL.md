@@ -1,6 +1,9 @@
 ---
 name: principle-design-first
 description: Use when a change adds shared state, a new module, adapter, tool or script, a flow across screens, or a new requirement that breaks a rule of the current design. Use it also when the request says to write the code now. Decide and review the code design before the code.
+metadata:
+  author: Lauren Tan (pstack; adapted)
+  tags: [principle]
 ---
 
 # Design first

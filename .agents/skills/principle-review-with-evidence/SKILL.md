@@ -1,6 +1,9 @@
 ---
 name: principle-review-with-evidence
 description: Use when you review code, a PR or a fix. Check each requirement, plan promise and boundary against the code and its evidence.
+metadata:
+  author: binhle312
+  tags: [principle]
 ---
 
 # Review with evidence

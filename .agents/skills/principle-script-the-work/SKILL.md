@@ -1,6 +1,9 @@
 ---
 name: principle-script-the-work
 description: Use when an edit, analysis or check covers many places or is hard to check by eye. Write a script that a reviewer can rerun.
+metadata:
+  author: Lauren Tan (pstack; adapted)
+  tags: [principle]
 ---
 
 # Script the work

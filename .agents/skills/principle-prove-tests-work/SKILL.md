@@ -1,6 +1,9 @@
 ---
 name: principle-prove-tests-work
 description: Use when a test is evidence for an acceptance criterion, a bug fix, concurrency, or a mocked integration. Prove that the test can fail.
+metadata:
+  author: binhle312
+  tags: [principle]
 ---
 
 # Prove that tests work

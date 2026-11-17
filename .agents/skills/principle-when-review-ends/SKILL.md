@@ -1,6 +1,9 @@
 ---
 name: principle-when-review-ends
 description: Use before a build, or when each review round still finds issues. Set the merge bar and the failure scope with the owner.
+metadata:
+  author: binhle312
+  tags: [principle]
 ---
 
 # Decide when review ends

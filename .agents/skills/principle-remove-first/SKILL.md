@@ -1,6 +1,9 @@
 ---
 name: principle-remove-first
 description: Use before you add a feature, refactor, or rewrite. Remove unused code, checks, and text first, then build on the simpler base.
+metadata:
+  author: Lauren Tan (pstack; adapted)
+  tags: [principle]
 ---
 
 # Remove first
