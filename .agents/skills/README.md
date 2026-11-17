@@ -16,6 +16,7 @@ Before you add, update, or delete a principle:
 5. Before deletion, preserve any rule still needed and update its callers.
 6. Keep the content short, simple, and direct. Use ASD-STE100 style at the project's 80% target.
 7. Use active voice, familiar words, and one instruction per sentence. Limit instructions to 20 words and descriptions to 25.
+   A description can be longer when a live test shows that the longer text loads the skill more often (owner, 2026-11-17).
 8. Keep the trigger, essential actions, and completion evidence. Remove repeated explanations.
 9. Run the STE checker (`scripts/ste_check.py` of the `ste-writing` skill) and the skill validator (`scripts/quick_validate.py` of the `skill-creator` skill).
    Both skills are user-level tools; they are not in this repository. Inspect flagged text for technical terms and accuracy.
