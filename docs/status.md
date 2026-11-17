@@ -228,4 +228,4 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-15 | [#121](https://github.com/binhle312/cty1ng/pull/121) merged. |
 | 2026-11-15 | [#118](https://github.com/binhle312/cty1ng/pull/118) merged. |
 | 2026-11-15 | [#123](https://github.com/binhle312/cty1ng/pull/123) merged. |
-| 2026-11-17 | `principle-design-first`: the description names its triggers. Draft [#126](https://github.com/binhle312/cty1ng/pull/126). |
+| 2026-11-17 | Principle skills: each description starts with its trigger. Draft [#126](https://github.com/binhle312/cty1ng/pull/126). |
