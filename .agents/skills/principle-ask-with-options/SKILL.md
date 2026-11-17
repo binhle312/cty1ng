@@ -1,6 +1,9 @@
 ---
 name: principle-ask-with-options
 description: Use before you ask a person a question or for a decision. Give a real example, options with gain, cost and risk, and a recommendation.
+metadata:
+  author: binhle312
+  tags: [principle]
 ---
 
 # Ask with options
