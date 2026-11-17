@@ -1,6 +1,6 @@
 ---
 name: principle-automate-checks
-description: Replace repeated corrections with enforcement, or put judgment rules in one authoritative place.
+description: Use when the same correction or review issue repeats, or a rule has several copies. Add a check, or give the rule one home.
 ---
 
 # Automate repeated checks

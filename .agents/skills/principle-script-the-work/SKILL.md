@@ -1,6 +1,6 @@
 ---
 name: principle-script-the-work
-description: Write a script that does or proves non-trivial edits, analyses, or checks, so that a reviewer can rerun the work.
+description: Use when an edit, analysis or check covers many places or is hard to check by eye. Write a script that a reviewer can rerun.
 ---
 
 # Script the work

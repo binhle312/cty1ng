@@ -1,6 +1,6 @@
 ---
 name: principle-state-and-order
-description: Model transitions when requests overlap, replies arrive late, or state survives navigation, locks, retries, or live events.
+description: Use when requests overlap, answers arrive late, or state survives navigation, locks, retries, or live events. Model the states and events first.
 ---
 
 # Model state and order

@@ -1,6 +1,6 @@
 ---
 name: principle-remove-first
-description: Remove unused code, checks, and text before you add a feature, refactor, or rewrite, then build on the simpler base.
+description: Use before you add a feature, refactor, or rewrite. Remove unused code, checks, and text first, then build on the simpler base.
 ---
 
 # Remove first

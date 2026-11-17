@@ -1,6 +1,6 @@
 ---
 name: principle-prove-tests-work
-description: Verify tests used as evidence for acceptance, bug fixes, concurrency, or mocked integrations.
+description: Use when a test is evidence for an acceptance criterion, a bug fix, concurrency, or a mocked integration. Prove that the test can fail.
 ---
 
 # Prove that tests work

@@ -29,22 +29,22 @@ Read the matching skill before its phase of work.
 
 | Folder | Read when |
 | --- | --- |
-| `principle-resolve-unknowns/` | Resolve unclear requirements and test unfamiliar dependencies before the implementation depends on them. |
+| `principle-resolve-unknowns/` | Use before a build when a requirement is unclear or a library, API or tool is unfamiliar. Resolve unknowns before code depends on them. |
 | `principle-design-first/` | Use when a change adds shared state, a new module, adapter, tool or script, a flow across screens, or a new requirement that breaks a rule of the current design. Use it also when the request says to write the code now. Decide and review the code design before the code. |
-| `principle-remove-first/` | Remove unused code, checks, and text before you add a feature, refactor, or rewrite, then build on the simpler base. |
-| `principle-split-changes/` | Split a plan when independent concerns or separate approval needs make it hard to review or recover. |
-| `principle-when-review-ends/` | Set the merge bar and failure scope before a build, or when each review round still finds issues. |
-| `principle-state-and-order/` | Model transitions when requests overlap, replies arrive late, or state survives navigation, locks, retries, or live events. |
-| `principle-fix-root-cause/` | Trace a failure to its first wrong decision, or repair a shared cause when review fixes repeat or several paths enforce one rule. |
-| `principle-prove-tests-work/` | Verify tests used as evidence for acceptance, bug fixes, concurrency, or mocked integrations. |
-| `principle-review-with-evidence/` | Review code or fixes against each requirement, approved plan promise, and implementation boundary. |
-| `principle-verify-delivery/` | Verify the final revision before handoff and report the scope and result of each check. |
+| `principle-remove-first/` | Use before you add a feature, refactor, or rewrite. Remove unused code, checks, and text first, then build on the simpler base. |
+| `principle-split-changes/` | Use when a plan or PR mixes independent outcomes, needs separate approvals, or grows during fixes. Split it into changes with one outcome each. |
+| `principle-when-review-ends/` | Use before a build, or when each review round still finds issues. Set the merge bar and the failure scope with the owner. |
+| `principle-state-and-order/` | Use when requests overlap, answers arrive late, or state survives navigation, locks, retries, or live events. Model the states and events first. |
+| `principle-fix-root-cause/` | Use when you fix a bug or a failure, when review fixes repeat, or when several paths enforce one rule. Find the first wrong decision. |
+| `principle-prove-tests-work/` | Use when a test is evidence for an acceptance criterion, a bug fix, concurrency, or a mocked integration. Prove that the test can fail. |
+| `principle-review-with-evidence/` | Use when you review code, a PR or a fix. Check each requirement, plan promise and boundary against the code and its evidence. |
+| `principle-verify-delivery/` | Use before a handoff, a push to a PR, or a report that work is complete. Verify the final revision and report each check. |
 | `principle-ask-with-options/` | Use before you ask a person a question or for a decision. Give a real example, options with gain, cost and risk, and a recommendation. |
 | `principle-answer-first/` | Use when a person asks about your work, such as "why X?" or "did you do Y?". Answer and give your view before you act. |
-| `principle-check-approval/` | Check authority when a fix changes approved behaviour, scope, contracts, or protected operations. |
-| `principle-automate-checks/` | Replace repeated corrections with enforcement, or put judgment rules in one authoritative place. |
-| `principle-script-the-work/` | Write a script that does or proves non-trivial edits, analyses, or checks, so that a reviewer can rerun the work. |
-| `principle-safe-test-data/` | Create synthetic fixtures when tests or examples need values that resemble credentials or private data. |
+| `principle-check-approval/` | Use when a fix changes approved behaviour, scope, a contract, or a protected operation such as a migration. Check that an approval covers it. |
+| `principle-automate-checks/` | Use when the same correction or review issue repeats, or a rule has several copies. Add a check, or give the rule one home. |
+| `principle-script-the-work/` | Use when an edit, analysis or check covers many places or is hard to check by eye. Write a script that a reviewer can rerun. |
+| `principle-safe-test-data/` | Use when a test, fixture or example needs a value that looks like a credential, key, token or private data. Build a synthetic value. |
 | `ui-ux-pro-max/` | Work on interface design; follow the project design rules. |
 | `typescript-best-practices/` | Write or review TypeScript; `docs/frontend-conventions.md` wins where they differ (see its `SOURCE.md`). |
 | `arena/` | Owner only, with `/arena`: run candidates in parallel on one task, pick a base, and graft the best parts. |

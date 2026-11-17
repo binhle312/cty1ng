@@ -1,6 +1,6 @@
 ---
 name: principle-check-approval
-description: Check authority when a fix changes approved behaviour, scope, contracts, or protected operations.
+description: Use when a fix changes approved behaviour, scope, a contract, or a protected operation such as a migration. Check that an approval covers it.
 ---
 
 # Check approval

@@ -1,6 +1,6 @@
 ---
 name: principle-review-with-evidence
-description: Review code or fixes against each requirement, approved plan promise, and implementation boundary.
+description: Use when you review code, a PR or a fix. Check each requirement, plan promise and boundary against the code and its evidence.
 ---
 
 # Review with evidence
