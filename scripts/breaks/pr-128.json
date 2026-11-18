@@ -1,0 +1,177 @@
+{
+  "claims": [
+    {
+      "id": "C1",
+      "claim": "compileProblems compiles a broken file in a later project of its package when an earlier project does not read it (R1-2)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/lib/breaks-static.test.ts",
+        "name": "compiles a broken file in each project of its package, also when only the second one reads it"
+      },
+      "assertion": "expect(second).toEqual([]);",
+      "breaks": [
+        {
+          "id": "C1-first-project-only",
+          "file": "scripts/lib/breaks-static.ts",
+          "edits": [
+            {
+              "find": "for (const name of projectsOf(step.file, at.read)) {",
+              "replace": "for (const name of projectsOf(step.file, at.read).slice(0, 1)) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C2",
+      "claim": "compileProblems puts back the text of a broken file before the next break (R1-2)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/lib/breaks-static.test.ts",
+        "name": "puts back the text of a broken file before the next break"
+      },
+      "assertion": "expect(restored).toEqual([]);",
+      "breaks": [
+        {
+          "id": "C2-text-kept",
+          "file": "scripts/lib/breaks-static.ts",
+          "edits": [
+            {
+              "find": "      known.texts.delete(path);\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C3",
+      "claim": "check:breaks:static fails a list that is valid JSON but not valid by the schema (R1-5)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-breaks-static.test.ts",
+        "name": "fails a list that is valid JSON but not a break list"
+      },
+      "assertion": "expect(shape.stderr).toContain(`${LIST}: not a valid break list`);",
+      "breaks": [
+        {
+          "id": "C3-no-schema",
+          "file": "scripts/check-breaks-static.ts",
+          "edits": [
+            {
+              "find": "BreakList.parse(",
+              "replace": "BreakList.catch({ claims: [], exempt: [] }).parse("
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "passes a PR with no list, and says that the list is missing",
+      "reason": "Test first: the message part was red on the stub. Not claimed: a red run of mine for the exit code. The review of round 1 made a missing list exit 1 (M13) and the test failed (tmp/reviews/ci-break-static-1.md)"
+    },
+    {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "passes a list whose claims link, cover the PR's tests and compile",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "fails a list whose assertion the test file has two times (DQ-517)",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "fails a list that has no claim for a new test file that git does not track yet",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "finds the tests of the PR from the base that `--base` names",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "fails a list with a break that does not compile",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "fails a list that is not valid JSON",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "accepts a list that links each changed test to a claim",
+      "reason": "Written first, but it passed on the stub (it expects no problem). Not claimed: a red run of mine. The review of round 1 broke the code by hand (M8) and the test failed (tmp/reviews/ci-break-static-1.md)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "refuses an assertion that the test file has two times (DQ-517)",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "refuses a test that the PR changes when no claim and no exemption names it (DQ-515)",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "refuses an assertion outside its named test (DQ-515)",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "counts each test of a new test file, and no test whose lines the PR did not touch",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "takes an exemption in place of a claim",
+      "reason": "Written first, but it passed on the stub (it expects no problem). Not claimed: a red run of mine. The review of round 1 broke the code by hand (M3) and the test failed (tmp/reviews/ci-break-static-1.md)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "checks only the given claims and no coverage for a part of the list (`--only`)",
+      "reason": "Written first, but it passed on the stub (it expects no problem). Not claimed: a red run of mine. The review of round 1 broke the code by hand (M4 and M5) and the test failed (tmp/reviews/ci-break-static-1.md)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "accepts a break that compiles, also with a variable that it leaves unused",
+      "reason": "Written first; it passed on the stub. Its red run: without the unused-variable override it fails with TS6133 (PR description)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "gives the TypeScript error of a break that does not compile (DQ-439, DQ-448)",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "refuses a break of a TypeScript file that no project compiles",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "does not compile a break of a file that is not TypeScript",
+      "reason": "Written first, but it passed on the stub (it expects no problem). Not claimed: a red run of mine. The review of round 1 broke the code by hand (M14) and the test failed (tmp/reviews/ci-break-static-1.md)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "reads the packages that pnpm links, with no false errors on code that the break keeps",
+      "reason": "Written first; it passed on the stub. Its red run: without realpath in the host it fails with TS7006 (PR description). Round 1 adds a check that its edit applies"
+    },
+    {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "reads a list given by its absolute path",
+      "reason": "Round 1 fix (R1-4), test first: red on d0e84b2, before the fix (PR description)"
+    },
+    {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "refuses an option before the list, with the usage line",
+      "reason": "Round 1 fix (R1-4), test first: red on d0e84b2, before the fix (PR description)"
+    }
+  ]
+}
