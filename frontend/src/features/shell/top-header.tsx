@@ -31,7 +31,7 @@ export function TopHeader() {
           // React.lazy keeps the failure, so the key never changes: a reset would only fail again.
           <CatchBoundary
             getResetKey={() => "roster"}
-            errorComponent={() => <RosterStandIn bots={all} failed />}
+            errorComponent={RosterFailed}
             onCatch={(error) => {
               logError("roster_load_failed", error);
             }}
@@ -70,6 +70,15 @@ function AddSlot() {
       </span>
     </Link>
   );
+}
+
+// The stand-in after the chunk failed. A component of its own, not a function in the render: a new
+// function is a new component type, so React would mount the avatars again at each header render
+// (DQ-500). The boundary passes `error` and `reset`, not the bots, so it reads them from the
+// shared query.
+function RosterFailed() {
+  const bots = useBots().data;
+  return bots === undefined ? null : <RosterStandIn bots={bots} failed />;
 }
 
 // The roster before its chunk has loaded: the same layout, with nothing to press yet. After the

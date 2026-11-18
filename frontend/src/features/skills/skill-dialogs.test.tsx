@@ -23,11 +23,18 @@ const base = { open: true, skillName: "Write user stories", pending: false, erro
 const render = (ui: ReactElement) => renderBare(<TooltipProvider>{ui}</TooltipProvider>);
 
 // ui-rules B5: an off button says why. The owner reaches it with Tab, so the test does too.
-async function tabToReason(button: HTMLElement, reason: string) {
+// UI-2 B (owner, 2026-11-18, item 61): the reason that a confirm button gives when the bots that
+// use the skill did not load.
+const NOT_LOADED_REASON = "The app must know which bots use this skill. Try again first.";
+
+async function tabTo(button: HTMLElement) {
   const user = userEvent.setup();
   for (let step = 0; step < 10 && document.activeElement !== button; step += 1) await user.tab();
   expect(document.activeElement).toBe(button);
   expect(button.getAttribute("aria-disabled")).toBe("true");
+}
+async function tabToReason(button: HTMLElement, reason: string) {
+  await tabTo(button);
   expect(await screen.findByText(reason)).toBeTruthy();
 }
 
@@ -112,10 +119,8 @@ describe("the Deprecate dialog", () => {
       />,
     );
     expect(screen.getByRole("alert").textContent).toContain("The app could not load the bots.");
-    await tabToReason(
-      screen.getByRole("button", { name: "Deprecate" }),
-      "The bots did not load. Try again first.",
-    );
+    await tabTo(screen.getByRole("button", { name: "Deprecate" }));
+    expect(await screen.findByText(NOT_LOADED_REASON), "the reason of Deprecate").toBeTruthy();
   });
 
   it("says why it is off while the change saves", async () => {
@@ -270,5 +275,27 @@ describe("the dialogs when the bots did not load", () => {
     );
     click(tryAgain());
     expect(bots.retry, "Delete: Try again").toHaveBeenCalledTimes(1);
+  });
+
+  it("gives the new reason on the confirm button of the Remove from bots dialog", async () => {
+    render(
+      <RemoveFromBotsDialog {...base} bots={failed()} onCancel={vi.fn()} onConfirm={vi.fn()} />,
+    );
+    await tabTo(screen.getByRole("button", { name: /^Remove from / }));
+    expect(await screen.findByText(NOT_LOADED_REASON), "the reason of Remove").toBeTruthy();
+  });
+
+  it("gives the new reason on the confirm button of the Delete dialog", async () => {
+    render(
+      <DeleteDialog
+        {...base}
+        trashDays={30}
+        bots={failed()}
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+      />,
+    );
+    await tabTo(screen.getByRole("button", { name: "Delete skill" }));
+    expect(await screen.findByText(NOT_LOADED_REASON), "the reason of Delete").toBeTruthy();
   });
 });

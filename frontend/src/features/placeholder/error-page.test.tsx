@@ -20,6 +20,7 @@ const fault = vi.hoisted(() => {
     history: false,
     fields: false,
     header: false,
+    importPage: false,
     indexRenders: 0,
     listeners,
     subscribe: (listener: () => void) => {
@@ -37,6 +38,15 @@ vi.mock("../skills/skills-index-page.tsx", async (importOriginal) => {
     return <real.SkillsIndexPage />;
   }
   return { ...real, SkillsIndexPage: FaultyIndexPage };
+});
+
+vi.mock("../skills/import-page.tsx", async (importOriginal) => {
+  const real = await importOriginal<typeof import("../skills/import-page.tsx")>();
+  function FaultyImportPage() {
+    if (fault.importPage) throw new Error(THROWN);
+    return <real.ImportPage />;
+  }
+  return { ...real, ImportPage: FaultyImportPage };
 });
 
 vi.mock("../skills/skill-history.tsx", async (importOriginal) => {
@@ -97,6 +107,7 @@ afterEach(() => {
   fault.history = false;
   fault.fields = false;
   fault.header = false;
+  fault.importPage = false;
   fault.indexRenders = 0;
 });
 
@@ -333,5 +344,95 @@ describe("Page not found with the route error boundaries", () => {
     expect(await screen.findByText("Page not found")).toBeTruthy();
     expect(rail(), "the rail").not.toBeNull();
     expect(screen.queryByRole("heading", { name: "Something went wrong" })).toBeNull();
+  });
+});
+
+// UI-3 A (owner, 2026-11-18, #123): inside the Skills page the list column has the h1 "Skills", so
+// the error screen and Page not found beside it are h2. They show in the same place as before:
+// beside the list column, inside the shell. Everywhere else they are h1.
+describe("the headings of the error screen and Page not found", () => {
+  const h1 = () => screen.getAllByRole("heading", { level: 1 }).map((node) => node.textContent);
+  const listColumn = () => screen.queryByRole("navigation", { name: "Skills" });
+  const errorH2 = () => screen.queryByRole("heading", { name: "Something went wrong", level: 2 });
+  const notFoundH2 = () => screen.queryByRole("heading", { name: "Page not found", level: 2 });
+
+  it("makes the error screen of a Skills page an h2 beside the list column", async () => {
+    noSkills();
+    fault.index = true;
+    await renderApp("/skills");
+    await waitFor(() => {
+      expect(errorH2(), "the error screen").not.toBeNull();
+    });
+    expect(listColumn(), "the list column").not.toBeNull();
+    expect(listColumn()?.contains(errorH2()), "the screen is beside the column").toBe(false);
+    expect(rail(), "the rail").not.toBeNull();
+    expect(h1(), "the h1 headings of the error screen").toEqual(["Skills"]);
+    expect(screen.getByRole("button", { name: "Try again" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Go to Home" })).toBeTruthy();
+  });
+
+  // One test for each child route of the Skills page: each has its own errorComponent.
+  it("makes the error screen of a skill an h2 beside the list column", async () => {
+    oneSkill();
+    fault.history = true;
+    await renderApp("/skills/write-user-stories?tab=history");
+    await waitFor(() => {
+      expect(errorH2(), "the error screen of a skill").not.toBeNull();
+    });
+    expect(h1(), "the h1 headings of a skill").toEqual(["Skills"]);
+  });
+
+  it("makes the error screen of the new skill page an h2 beside the list column", async () => {
+    noSkills();
+    fault.fields = true;
+    await renderApp("/skills/new");
+    await waitFor(() => {
+      expect(errorH2(), "the error screen of the new skill page").not.toBeNull();
+    });
+    expect(h1(), "the h1 headings of the new skill page").toEqual(["Skills"]);
+  });
+
+  it("makes the error screen of the import page an h2 beside the list column", async () => {
+    noSkills();
+    fault.importPage = true;
+    await renderApp("/skills/import");
+    await waitFor(() => {
+      expect(errorH2(), "the error screen of the import page").not.toBeNull();
+    });
+    expect(h1(), "the h1 headings of the import page").toEqual(["Skills"]);
+  });
+
+  it("makes Page not found of an unknown skill an h2 beside the list column", async () => {
+    noSkills();
+    await renderApp("/skills/nothing-here");
+    await waitFor(() => {
+      expect(notFoundH2(), "the unknown skill").not.toBeNull();
+    });
+    expect(listColumn(), "the list column").not.toBeNull();
+    expect(h1(), "the h1 headings of the unknown skill").toEqual(["Skills"]);
+  });
+
+  it("makes Page not found of a Clone with no source an h2 beside the list column", async () => {
+    noSkills();
+    await renderApp("/skills/new?from=nothing-here");
+    await waitFor(() => {
+      expect(notFoundH2(), "the Clone with no source").not.toBeNull();
+    });
+    expect(h1(), "the h1 headings of the Clone").toEqual(["Skills"]);
+  });
+
+  it("keeps the h1 of Page not found outside the Skills page", async () => {
+    noSkills();
+    await renderApp("/nothing");
+    expect(await screen.findByRole("heading", { name: "Page not found", level: 1 })).toBeTruthy();
+  });
+
+  it("keeps the h1 of the error screen outside the Skills page", async () => {
+    noSkills();
+    fault.header = true;
+    await renderApp("/");
+    expect(
+      await screen.findByRole("heading", { name: "Something went wrong", level: 1 }),
+    ).toBeTruthy();
   });
 });

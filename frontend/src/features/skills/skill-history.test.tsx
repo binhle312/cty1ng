@@ -124,6 +124,48 @@ describe("the History tab and a background refresh", () => {
     expect(await screen.findByText(VERSIONS_FAILED, {}, WAIT)).toBeTruthy();
     expect(await screen.findByText(CHANGES_FAILED, {}, WAIT)).toBeTruthy();
   });
+
+  // skills-page.md ("The bot list of a card" pattern): a load error is an alert with Try again.
+  // DQ-442. The first read fails and the next answers well.
+  async function openFailed(which: "versions" | "diff") {
+    const started = startServer();
+    api = started.api;
+    if (which === "versions") started.server.versions = () => FAILED;
+    else started.server.diff = () => FAILED;
+    await renderApp("/skills/write-user-stories?tab=history&from=1&to=3");
+    return started.server;
+  }
+  const tryAgain = () => screen.getByRole("button", { name: "Try again" });
+
+  it("gives the load error of the versions an alert", async () => {
+    await openFailed("versions");
+    const message = await screen.findByText(VERSIONS_FAILED, {}, WAIT);
+    expect(message.closest("[role='alert']"), "the alert of the versions").not.toBeNull();
+  });
+
+  it("loads the versions again from Try again", async () => {
+    const server = await openFailed("versions");
+    await screen.findByText(VERSIONS_FAILED, {}, WAIT);
+    server.versions = () => ({ body: makeVersions(3) });
+    fireEvent.click(tryAgain());
+    expect(await screen.findByRole("list", { name: "Versions" }, WAIT)).toBeTruthy();
+    expect(screen.queryByText(VERSIONS_FAILED), "the error").toBeNull();
+  });
+
+  it("gives the load error of the changes an alert", async () => {
+    await openFailed("diff");
+    const message = await screen.findByText(CHANGES_FAILED, {}, WAIT);
+    expect(message.closest("[role='alert']"), "the alert of the changes").not.toBeNull();
+  });
+
+  it("loads the changes again from Try again", async () => {
+    const server = await openFailed("diff");
+    await screen.findByText(CHANGES_FAILED, {}, WAIT);
+    server.diff = (from, to) => ({ body: diffOf(`v${String(from)}-v${String(to)}`) });
+    fireEvent.click(tryAgain());
+    expect(await screen.findByText("v1-v3 added", {}, WAIT)).toBeTruthy();
+    expect(screen.queryByText(CHANGES_FAILED), "the error").toBeNull();
+  });
 });
 
 // The folds of a diff belong to one pair of versions (P3 list item 63).

@@ -24,6 +24,7 @@ import { SKILL_QUERIES } from "../../lib/api/operation-queries.ts";
 import { refreshQueries } from "../../lib/api/query-reads.ts";
 import { cn } from "../../lib/cn.ts";
 import { DiffView } from "./diff-view.tsx";
+import { LoadError } from "./load-error.tsx";
 import { VersionPill } from "./pills.tsx";
 import type { SkillRow } from "./skill-queries.ts";
 
@@ -88,7 +89,11 @@ export function SkillHistory({
             "A failed background refresh keeps the list"). */}
         {versions.data === undefined ? (
           versions.isError ? (
-            <p className="text-on-surface-muted">The app could not load the versions.</p>
+            <LoadError
+              text="The app could not load the versions."
+              onRetry={() => void versions.refetch()}
+              className="px-0 py-0"
+            />
           ) : (
             <SkeletonArea label="Loading versions">
               {[0, 1, 2].map((key) => (
@@ -309,7 +314,11 @@ function DiffPanel({
       </div>
       {diff.data === undefined ? (
         diff.isError ? (
-          <p className="text-on-surface-muted">The app could not load the changes.</p>
+          <LoadError
+            text="The app could not load the changes."
+            onRetry={() => void diff.refetch()}
+            className="px-0 py-0"
+          />
         ) : (
           <SkeletonArea label="Loading the changes">
             <Skeleton className="h-48" />

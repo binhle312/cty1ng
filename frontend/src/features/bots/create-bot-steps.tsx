@@ -460,7 +460,7 @@ export function SkillsStep({
         </ul>
         <p className="mt-2 text-sm text-on-surface-muted">
           Always load: the bot reads the whole skill in every run. Off: it reads only the
-          description and loads the skill when it needs it. Deprecated skills are not in the list.
+          description and loads the skill when it needs it. You cannot add deprecated skills.
         </p>
       </div>
     </StepCard>
