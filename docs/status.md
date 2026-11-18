@@ -159,6 +159,7 @@ A slice can also be `blocked` (say on what in Notes).
 ## Done
 
 Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10). The first row has no PR of its own. The detail is in the PR.
+`pnpm check:status` fails in CI when a PR merged into `main` since its start date has no link in a row here; the next PR adds the row ([testing.md §4](testing.md#4-ci-gates)).
 
 | Date | What |
 | --- | --- |
@@ -174,10 +175,12 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-10-30 | Prototype references and `porting-guide.md` removed (owner); its lessons moved to `testing.md` §3. [#45](https://github.com/binhle312/cty1ng/pull/45) |
 | 2026-10-30 | M0 merged: tooling, backend, frontend shell, design snapshot. [#46](https://github.com/binhle312/cty1ng/pull/46), [#48](https://github.com/binhle312/cty1ng/pull/48), [#49](https://github.com/binhle312/cty1ng/pull/49), [#50](https://github.com/binhle312/cty1ng/pull/50) |
 | 2026-10-30 | M1 spec gap pass: 28 gaps answered; D6 and D36 amended. [#51](https://github.com/binhle312/cty1ng/pull/51) |
+| 2026-10-30 | [#47](https://github.com/binhle312/cty1ng/pull/47) merged. |
 | 2026-10-31 | M1 plan approved; M1a built and merged; M1c added. [#52](https://github.com/binhle312/cty1ng/pull/52) |
 | 2026-10-31 | M1b built: the Skills page. [#54](https://github.com/binhle312/cty1ng/pull/54) |
 | 2026-10-31 | M1b merged. [#54](https://github.com/binhle312/cty1ng/pull/54) |
 | 2026-10-31 | M1c built: event pruning, and one SQLite writer for each file. [#55](https://github.com/binhle312/cty1ng/pull/55) |
+| 2026-10-31 | [#53](https://github.com/binhle312/cty1ng/pull/53) merged. |
 | 2026-11-01 | M1c merged; M1 is complete. [#55](https://github.com/binhle312/cty1ng/pull/55) |
 | 2026-11-01 | M2 plan approved: Gemini joins Anthropic, Guide seed bot, split M2a/M2b/M2c. [#57](https://github.com/binhle312/cty1ng/pull/57) |
 | 2026-11-01 | M2a review items approved: migration 0002, upload code, Guide persona, tool lines. [#57](https://github.com/binhle312/cty1ng/pull/57) |
@@ -193,10 +196,18 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-04 | Docs audit answers: the owner answered all the questions; no feature is built. [#65](https://github.com/binhle312/cty1ng/pull/65) |
 | 2026-11-04 | M2 close fixes; the owner dropped DQ-018, DQ-019 and the remaining gaps of DQ-021. [#66](https://github.com/binhle312/cty1ng/pull/66) |
 | 2026-11-04 | Two flaky e2e tests fixed: `csp.spec.ts` and J1. [#70](https://github.com/binhle312/cty1ng/pull/70) |
+| 2026-11-04 | [#62](https://github.com/binhle312/cty1ng/pull/62) merged. |
+| 2026-11-04 | [#60](https://github.com/binhle312/cty1ng/pull/60) merged. |
+| 2026-11-04 | [#67](https://github.com/binhle312/cty1ng/pull/67) merged. |
 | 2026-11-05 | Repository audit recorded, with the owner's seven decisions. [#71](https://github.com/binhle312/cty1ng/pull/71) |
+| 2026-11-05 | [#72](https://github.com/binhle312/cty1ng/pull/72) merged. |
+| 2026-11-05 | [#75](https://github.com/binhle312/cty1ng/pull/75) merged. |
 | 2026-11-06 | Audit PR 3, the Skills page, merged; `takesServerText` is the one rule for server text. [#78](https://github.com/binhle312/cty1ng/pull/78) |
 | 2026-11-06 | Principle skill `principle-ask-with-options` merged. [#79](https://github.com/binhle312/cty1ng/pull/79) |
 | 2026-11-06 | `principle-ask-with-options` also requires Simplified Technical English at 80%. [#80](https://github.com/binhle312/cty1ng/pull/80) |
+| 2026-11-06 | [#73](https://github.com/binhle312/cty1ng/pull/73) merged. |
+| 2026-11-06 | [#76](https://github.com/binhle312/cty1ng/pull/76) merged. |
+| 2026-11-06 | [#77](https://github.com/binhle312/cty1ng/pull/77) merged. |
 | 2026-11-07 | Audit PR 4, the Bots page, merged; two new process rules. [#82](https://github.com/binhle312/cty1ng/pull/82) |
 | 2026-11-08 | Audit method added: `docs/workflows/audit.md`. [#83](https://github.com/binhle312/cty1ng/pull/83) |
 | 2026-11-08 | DQ-088 fixed: reads and saves run when the browser says it is offline. [#84](https://github.com/binhle312/cty1ng/pull/84) |
@@ -204,6 +215,7 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-09 | Skill `arena` added; `principle-remove-first` gets two rules. [#87](https://github.com/binhle312/cty1ng/pull/87) |
 | 2026-11-09 | Principle skill `principle-answer-first` added. [#89](https://github.com/binhle312/cty1ng/pull/89) |
 | 2026-11-09 | Audit PR 5, tests only, merged on 2026-11-10; break lists with `pnpm check:breaks`. [#86](https://github.com/binhle312/cty1ng/pull/86) |
+| 2026-11-09 | [#81](https://github.com/binhle312/cty1ng/pull/81) merged. |
 | 2026-11-10 | EGM trial workflow added: `docs/workflows/egm.md`. [#90](https://github.com/binhle312/cty1ng/pull/90) |
 | 2026-11-10 | Skill `arena` gets a Claude Fable 5.2 seat for Fable areas. [#93](https://github.com/binhle312/cty1ng/pull/93) |
 | 2026-11-10 | A Clone draft stays when its source skill goes away (DQ-180). [#92](https://github.com/binhle312/cty1ng/pull/92) |
@@ -236,3 +248,8 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-15 | [#118](https://github.com/binhle312/cty1ng/pull/118) merged. |
 | 2026-11-15 | [#123](https://github.com/binhle312/cty1ng/pull/123) merged. |
 | 2026-11-17 | Principle skills: each description starts with its trigger. Merged in [#126](https://github.com/binhle312/cty1ng/pull/126). |
+| 2026-11-18 | [#125](https://github.com/binhle312/cty1ng/pull/125) merged. |
+| 2026-11-18 | [#124](https://github.com/binhle312/cty1ng/pull/124) merged. |
+| 2026-11-18 | [#114](https://github.com/binhle312/cty1ng/pull/114) merged. |
+| 2026-11-18 | [#115](https://github.com/binhle312/cty1ng/pull/115) merged. |
+| 2026-11-18 | [#130](https://github.com/binhle312/cty1ng/pull/130) merged. |
