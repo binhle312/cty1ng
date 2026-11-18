@@ -207,3 +207,28 @@ Design: `../design/components/user-panel.md`.
 - UI-1.23 (M5): With the left bar collapsed and a total cap set, the menu header shows
   "{name} · {n}% left today", the percent in the battery colour for that level. With no cap it
   shows the name only. No dot on the collapsed avatar.
+
+## Errors (UI-1, continued)
+
+When a part of the app fails to render, or the code of a page fails to load, only that part
+shows the error screen; the shell around it stays (P3 list item 65; plan
+`../plans/p3-shell-error-boundary.md`, approved 2026-11-15). The texts wait for the owner's UI
+review after M3.
+
+- The error screen has the layout of Page not found: the heading "Something went wrong", the
+  line "The app could not show this page. Try again, or go to Home.", and two secondary
+  buttons, **Try again** and **Go to Home**. It is an alert for screen readers. It never shows
+  the error itself, and the app's log (`frontend/src/lib/log.ts`) gets only the kind of error
+  (`../security.md` §2.10). React and the router still write the whole error to the browser
+  console.
+- A page that fails keeps the rail, bar 2, the user panel and the header. On the Skills page, a
+  skill page that fails keeps the list column.
+- **Try again** loads the page again, also a page whose code failed to load. If the page fails
+  again, the error screen shows again, with no loop. **Go to Home**, a link in the shell and a
+  link in the Skills list also leave the error screen. A refresh of data does not leave it.
+- Unsaved text in the part that failed is lost. No leave question shows, because the question
+  goes with the page.
+- When the shell itself fails, the error screen fills the window.
+- When the code of the header roster fails to load, the header shows the bot avatars in their
+  places, with no drag, no pin and no "Drag a bot here to pin it" slot, until a browser reload.
+  The rest of the app works.

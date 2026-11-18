@@ -105,6 +105,11 @@ bot skills: written ways of working that the bot follows.
   copied from the bot as it is now: persona, skills at the same versions, tools and Advanced. The name gets "(copy)" and
   the colour is a free one; bot memory starts empty. Change the model or the effort here: this is
   the way to try a bot on another model.
+- **When a page fails**: only that page shows "Something went wrong", and the left bar and the
+  header stay. Try again loads the page again; Go to Home or any link in the left bar leaves it.
+  Text that was not saved on that page is lost. If the header cannot load its drag and drop, it
+  shows the avatars with nothing to press until the browser reloads the app. An address of a
+  skill that does not exist shows Page not found beside the list of skills.
 - **Many tabs**: the app works in as many browser tabs as the owner opens. Only a tab that the
   owner can see updates live; a tab in the background shows the newest data when the owner
   returns to it.

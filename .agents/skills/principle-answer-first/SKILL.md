@@ -1,6 +1,9 @@
 ---
 name: principle-answer-first
 description: Use when a person asks about your work, such as "why X?" or "did you do Y?". Answer and give your view before you act.
+metadata:
+  author: binhle312
+  tags: [principle]
 ---
 
 # Answer first
