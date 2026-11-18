@@ -91,6 +91,7 @@ For example, a plan may put all cleanup under a write lock. Check these as separ
 
 A locked recheck can make early enumeration safe. That does not make it match a plan that requires enumeration inside the lock.
 Record the difference and its rationale. The builder either follows the contract or gets approval for a documented change.
+An approved change of the design is a revision of the plan ([plans rule 6](plans/README.md#rules)); another difference goes under `Differences from the plan` in the PR description.
 A reviewer's recommendation is not approval of that change.
 
 **Complete when:** every difference has both a compliance result and a separate safety result, with a clear next action.

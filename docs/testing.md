@@ -324,8 +324,12 @@ All must be green to merge: ESLint (including the security rules in `security.md
 warning fails it too: `--max-warnings 0`),
 Prettier, `tsc`, dependency-cruiser import rules (D35), Vitest, `db:check` (Drizzle schema matches the migrations, and the migration SQL builds that schema, so a hand edit that changes the schema of a migration fails; not checked: a data statement that changes no schema, and the order of the columns), Playwright (a test that passes only on its second try fails the job:
 `failOnFlakyTests`), generated-client freshness, event-type list match,
-`check:index` (folder indexes complete, `architecture.md` §4.2), the bundle budget
-(`pnpm build`, then `pnpm check:bundle`), CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also run the automated security review when it is on;
+`check:index` (folder indexes complete, `architecture.md` §4.2), `check:status` (each PR merged into `main` since the start date in
+`scripts/lib/check-status.ts` has a link in a Done row of `docs/status.md`; it reads the merges of
+`HEAD^1`: the base of the PR's test merge, or `main` before the merge on a push, so a PR never needs
+its own row), the bundle budget
+(`pnpm build`, then `pnpm check:bundle`), the static rules of the PR's break list
+(`check:breaks static`, [§5](#5-evidence-in-prs)), CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also run the automated security review when it is on;
 it is off for now (`security.md` §2.11).
 
 `pnpm audit --audit-level high` also runs on each PR (`security.md` §2.11). A red `audit` check
@@ -337,7 +341,8 @@ until the check is green.
 GitHub requires nine checks before a merge into `main` (ruleset "Protected main"; owner,
 2026-11-12): `lint`, `typecheck`, `test`, `check:index`, `check:events`, `db:check`,
 `gen:api fresh`, `build + check:bundle` and `e2e`. The check `audit` is not one of them: the
-rule above is for the person who merges. The same ruleset has its own rules for CodeQL alerts, code quality, test coverage
+rule above is for the person who merges. The check `check:breaks static` is not one of them either:
+the owner chose to keep it optional (2026-11-18, q4 Q2 B); the chief checks it before each merge. The same ruleset has its own rules for CodeQL alerts, code quality, test coverage
 and open review threads. A branch does not have to be up to date with `main` before its merge.
 
 ## 5. Evidence in PRs
@@ -383,7 +388,10 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
 ([check-breaks.ts](../scripts/check-breaks.ts)):
 
 1. It copies HEAD and the local changes to a temporary folder with its own install. The
-   checkout does not change, and e2e tests use the copy's own build and servers.
+   checkout does not change, and e2e tests use the copy's own build and servers. When it applies
+   the changes, git does not look for a repository above the temporary folder (a folder path with
+   `:` is the exception: git cannot take it as its limit). Before the install, the runner stops
+   with the file names if a changed or new file in the copy differs from the checkout.
 2. It refuses a list with a missing link: a claim with no break, a test file or assertion text
    that is not there exactly once, an assertion outside the named test, or a break that edits a
    test or a test helper (a `test/` folder, `*.test.*`, `*.spec.*`) instead of the code.
@@ -403,6 +411,16 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
    not resolve. Otherwise a failure at the line of the assertion text is `caught`.
 6. The report names the commit, a hash of the local changes, the base, each command and each
    result, with the first line of the failure message of each caught break.
+
+**The CI job `check:breaks static` (owner, 2026-11-18, DQ-517 D and DQ-448 B).** On each PR,
+it runs `pnpm check:breaks:static scripts/breaks/pr-<n>.json --base HEAD^1`
+([check-breaks-static.ts](../scripts/check-breaks-static.ts)) on the merge commit of the PR. It
+applies the rules of steps 2 and 3 with the same code as the runner, and a cheap compile check:
+for each break of a TypeScript file, the errors of the broken file in each project of step 5.
+It needs no app and no copy, and runs no test. A PR with no list passes: the list is needed
+only for the tests above, and the job cannot tell them. Not checked here: that a break is caught
+(only `pnpm check:breaks` shows it), an error that a break causes in another file, and the lists
+of earlier PRs.
 
 **What `caught` proves (owner, 2026-11-09, DQ-168).** The compile check of the project passed,
 the run printed no new error that names the broken file, and the test failed at the assertion

@@ -7,7 +7,9 @@ Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-th
 
 Make small commits and test first. For each behaviour in the strategy, observe
 the expected test failure before you write the code, then refactor with tests green.
-Add cases found during the build to the strategy and test them first too.
+A case found during the build gets its test first too. The PR description names it under
+`Differences from the plan`; a case that changes the design is a change of the plan
+([plans rule 6](../plans/README.md#rules)).
 Follow [the fast test loop](../testing.md#fast-loop-while-building) while fixing.
 Use [the evidence rules](../testing.md#5-evidence-in-prs) for a test written after its fix.
 
