@@ -1,5 +1,6 @@
-import { focusManager } from "@tanstack/react-query";
-import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { focusManager, QueryClientProvider } from "@tanstack/react-query";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import { fakeApi, heldAnswer } from "../../../test/fake-api.ts";
 import {
@@ -14,7 +15,11 @@ import {
   versionId,
 } from "../../../test/fixtures.ts";
 import { renderApp } from "../../../test/render-app.tsx";
+import { TooltipProvider } from "../../components/ui/tooltip.tsx";
+import { createQueryClient } from "../../lib/api/query-client.ts";
 import { listBotsQueryKey } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
+
+import { AfterSaveCardHost } from "./after-save-cards.tsx";
 
 // The bot cards after a save (skills-page.md §7): C4 after "Save as vN", C4b after Create. When
 // no bot fits, only the toast shows.
@@ -55,6 +60,20 @@ const v4 = makeSkill({
   latest_version: { ...makeSkill().latest_version, version: 4 },
   row_version: 2,
 });
+
+// Q2 A (owner, 2026-11-18): when the bots did not load, the button says what the card needs. The
+// owner reaches the reason with Tab, so the test does too.
+async function tabToReason(button: HTMLElement, reason: string) {
+  const user = userEvent.setup();
+  for (let step = 0; step < 10 && document.activeElement !== button; step += 1) await user.tab();
+  expect(document.activeElement).toBe(button);
+  expect(button.getAttribute("aria-disabled")).toBe("true");
+  expect(await screen.findByText(reason)).toBeTruthy();
+}
+const BOTS_FAILED = {
+  status: 500,
+  body: { error: { code: "internal_error", message: "Failed." } },
+};
 
 // `bots` are the server's bots, BA alone unless a test gives more, or a route that answers the
 // bot list.
@@ -145,6 +164,7 @@ describe("the upgrade card after a save (C4, UI-7.4)", () => {
     expect(await within(card).findByText("The app could not load the bots.")).toBeTruthy();
     const upgrade = within(card).getByRole("button", { name: "Upgrade" });
     expect(upgrade.getAttribute("aria-disabled")).toBe("true");
+    await tabToReason(upgrade, "The app must know which bots use this skill. Try again first.");
     botsFail = false;
     click(within(card).getByRole("button", { name: "Try again" }));
     const box = await within(card).findByRole("checkbox", { name: /BA/ });
@@ -452,6 +472,35 @@ describe("the assign card after Create (C4b)", () => {
   // read that fails ends in the toast (e2e J4 found this). Since TanStack Query 5.105.2 the
   // library follows each newer load, so this test also passes with a plain read in place of
   // `readNewest`.
+  // Create reads the bots before it opens the card, so the card has them. A card whose own read
+  // fails (its data gone from the cache) shows the error, so the card is mounted with no data.
+  it("says, when the bots did not load, that the Assign card needs to know the bots", async () => {
+    api = fakeApi({ "GET /api/bots": () => BOTS_FAILED });
+    render(
+      <QueryClientProvider client={createQueryClient({ retry: false })}>
+        <TooltipProvider>
+          <AfterSaveCardHost
+            card={{
+              kind: "assign",
+              skillId: SKILL_ID,
+              skillName: "Write user stories",
+              versionId: versionId(1),
+            }}
+            onClose={() => undefined}
+          />
+        </TooltipProvider>
+      </QueryClientProvider>,
+    );
+    const card = await screen.findByRole("dialog", {
+      name: "Created ✨ Add Write user stories to bots?",
+    });
+    await within(card).findByText("The app could not load the bots.");
+    await tabToReason(
+      within(card).getByRole("button", { name: "Assign" }),
+      "The app must know which bots can get this skill. Try again first.",
+    );
+  });
+
   it("opens the card when two newer loads cut its read of the bots short", async () => {
     const list = heldAnswer();
     let holdList = false;

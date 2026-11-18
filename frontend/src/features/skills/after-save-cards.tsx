@@ -217,10 +217,15 @@ function BotsOfCard({ bots, children }: { bots: BotsLoad; children: ReactNode })
   );
 }
 
-// Why the card's button is off while its bots are not there.
-function botsOffReason(bots: BotsLoad): string | null {
+// Why the card's button is off while its bots are not there. When the list failed, the reason says
+// what the card needs the bots for (Q2 A, owner, 2026-11-18).
+const BOTS_NEEDED = {
+  upgrade: "The app must know which bots use this skill. Try again first.",
+  assign: "The app must know which bots can get this skill. Try again first.",
+};
+function botsOffReason(bots: BotsLoad, card: keyof typeof BOTS_NEEDED): string | null {
   if (bots.data !== undefined) return null;
-  return bots.isError ? "The bots did not load. Try again first." : "Loading the bots.";
+  return bots.isError ? BOTS_NEEDED[card] : "Loading the bots.";
 }
 
 // C4 (UI-7.4): every box starts ticked, so one click upgrades every bot (owner, 2026-10-23).
@@ -286,7 +291,8 @@ function UpgradeCard({
           disabledReason={
             pending
               ? "Upgrading the bots."
-              : (botsOffReason(bots) ?? (chosen.length === 0 ? "Tick a bot first." : null))
+              : (botsOffReason(bots, "upgrade") ??
+                (chosen.length === 0 ? "Tick a bot first." : null))
           }
           onClick={() => {
             send({
@@ -365,7 +371,8 @@ function AssignCard({
           disabledReason={
             pending
               ? "Assigning the skill."
-              : (botsOffReason(bots) ?? (chosen.length === 0 ? "Tick a bot first." : null))
+              : (botsOffReason(bots, "assign") ??
+                (chosen.length === 0 ? "Tick a bot first." : null))
           }
           onClick={() => {
             send({
