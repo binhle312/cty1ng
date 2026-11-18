@@ -15,7 +15,8 @@ import {
   sql,
 } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
-import { ConversationId, SkillId, SkillVersionId } from "@cty1ng/shared/ids";
+import { BotId, ConversationId, SkillId, SkillVersionId } from "@cty1ng/shared/ids";
+import { z } from "zod";
 import type {
   EventsWriter,
   PersistedEvent,
@@ -263,11 +264,16 @@ function oneSkill(row: typeof skills.$inferSelect | undefined): SkillRecord | nu
   return row === undefined ? null : toSkill(row);
 }
 
+// The JSON column of the bots that used a skill when it went to Trash (P3 item 28). A stored
+// value that is not a list of bot ids is refused, as `tool_settings` is.
+const TrashedBotIds = z.array(BotId).nullable();
+
 // Parsed at the boundary: the TypeID columns give plain strings.
 function toSkill(row: typeof skills.$inferSelect): SkillRecord {
   return {
     ...row,
     id: SkillId.parse(row.id),
+    trashedBotIds: TrashedBotIds.parse(row.trashedBotIds),
     clonedFromSkillVersionId:
       row.clonedFromSkillVersionId === null
         ? null

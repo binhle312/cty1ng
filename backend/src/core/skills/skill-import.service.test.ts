@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { SkillImportPreviewId } from "@cty1ng/shared/ids";
 import { manualClock, testBackend } from "../../../test/helpers.ts";
 import { DomainError } from "../errors.ts";
 import { OWNER_ID } from "../owner.ts";
@@ -46,6 +47,14 @@ const create = (slug: string, author = OWNER_ID) =>
   );
 
 describe("preview", () => {
+  // Audit 2026-11-05, item 29 (D22, D36): the id comes from the ids port, not from
+  // `crypto.randomUUID()`. The UUIDv7 part is checked in `test/api/skills.test.ts`, which may
+  // import the ids adapter.
+  it("gives the preview a `simp` TypeID", async () => {
+    const preview = await backend.skillImport.preview("skills.zip", [folder("fresh")], OWNER_ID);
+    expect(SkillImportPreviewId.safeParse(preview.preview_id).success).toBe(true);
+  });
+
   // Audit 2026-11-05, row 5: one row is invalid, and the other rows of the zip still work.
   it("reports a frontmatter over the limit as an invalid row", async () => {
     const large = `---\nname: large\ndescription: d\n# ${"x".repeat(8_192)}\n---\nBody`;

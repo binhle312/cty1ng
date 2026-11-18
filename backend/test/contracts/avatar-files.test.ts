@@ -164,7 +164,7 @@ describe("disk failures", () => {
     await expect(disk.files.publish(staged, T1)).rejects.toThrow("injected");
     expect(await disk.files.read(A)).toEqual(image);
     expect(await disk.files.listStaged()).toEqual([]);
-    expect(await disk.files.modifiedAt(A)).toEqual(T1);
+    expect(await disk.files.list()).toEqual([{ name: A, modifiedAt: T1 }]);
     disk.remove();
   });
 });
