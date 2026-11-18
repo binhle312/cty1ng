@@ -78,9 +78,33 @@ afterEach(() => {
 });
 
 describe("check:breaks:static", () => {
-  it("passes a PR with no list, and says that the list is missing", () => {
+  it("fails a PR with no list when the PR adds a test", () => {
     const run = check(LIST, "--base", base);
-    expect(run.stdout).toContain(`no break list ${LIST}`);
+    expect(run.stderr).toContain(`no break list ${LIST}`);
+    expect(run.stderr).toContain('app/a.test.ts:1: the test "adds" has no claim');
+    expect(run.status).toBe(1);
+  });
+
+  it("fails a PR with no list when the PR changes a line of an existing test", () => {
+    const doubles = 'it("doubles", () => {\n  expect(2 * 2).toBe(4);\n});\n';
+    write("app/a.test.ts", `${TEST_ADDS}${doubles}`);
+    git("add", ".");
+    git("commit", "--quiet", "-m", "the tests");
+    const tests = git("rev-parse", "HEAD");
+    write("app/a.test.ts", `${TEST_ADDS}${doubles.replace("2 * 2", "2 + 2")}`);
+    git("add", ".");
+    git("commit", "--quiet", "-m", "the PR");
+    const run = check(LIST, "--base", tests);
+    expect(run.stderr).toContain('app/a.test.ts:5: the test "doubles" has no claim');
+    expect(run.stderr).not.toContain('the test "adds"');
+    expect(run.status).toBe(1);
+  });
+
+  it("passes a PR with no list when the PR adds or changes no test", () => {
+    write("app/a.test.ts", "");
+    write("app/a.ts", "export const add = (a: number, b: number): number => b + a;\n");
+    const run = check(LIST, "--base", base);
+    expect(run.stdout).toContain(`no break list ${LIST}, and the PR adds or changes no test`);
     expect(run.status).toBe(0);
   });
 
@@ -100,6 +124,19 @@ describe("check:breaks:static", () => {
     const run = check(LIST, "--base", base);
     expect(run.stderr).toContain("C1: the assertion is found more than once");
     expect(run.status).toBe(1);
+  });
+
+  it("fails a list with an exemption that has no reason", () => {
+    write(
+      "app/a.test.ts",
+      `${TEST_ADDS}it("adds once more", () => {\n  expect(add(2, 2)).toBe(4);\n});\n`,
+    );
+    for (const reason of ["  ", ""]) {
+      write(LIST, list({ exempt: [{ file: "app/a.test.ts", name: "adds once more", reason }] }));
+      const run = check(LIST, "--base", base);
+      expect(run.stderr).toContain("an exemption needs a reason");
+      expect(run.status).toBe(1);
+    }
   });
 
   it("fails a list that has no claim for a new test file that git does not track yet", () => {

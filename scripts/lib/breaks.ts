@@ -27,10 +27,14 @@ const Claim = z
     breaks: z.array(Break),
   })
   .strict();
-// A test that the PR adds or changes, but that needs no break list (testing.md §5): for example
-// a test written first, with its red run in the PR.
+// A test that the PR adds or changes, but that needs no breaks (testing.md §5): for example a
+// test written first, with its red run in the PR. The reviewer reads the reason.
 const Exempt = z
-  .object({ file: z.string().min(1), name: z.string().min(1), reason: z.string().min(1) })
+  .object({
+    file: z.string().min(1),
+    name: z.string().min(1),
+    reason: z.string().regex(/\S/, "an exemption needs a reason"),
+  })
   .strict();
 export const BreakList = z
   .object({ claims: z.array(Claim), exempt: z.array(Exempt).default([]) })

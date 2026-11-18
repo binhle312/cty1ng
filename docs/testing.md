@@ -399,8 +399,8 @@ so a step after it proves nothing. Give each step its own test, and start the ca
 its result on the old code. A step that passes on the old code is not a claim: the PR names it
 and gives the reason, such as "reads no new data" (owner, 2026-11-08, DQ-117).
 
-**Break lists (owner, 2026-11-09).** A break list makes break evidence repeatable. A PR needs
-one only for these tests:
+**Break lists (owner, 2026-11-09; a list for each PR that changes a test: owner, 2026-11-18,
+q5 Q1 A).** A break list makes break evidence repeatable. Breaks are needed only for these tests:
 
 - tests added after the code that they check (an audit, or a bug fix whose test came later);
 - security tests;
@@ -408,6 +408,27 @@ one only for these tests:
 
 For other work, test first: the PR records the red run of each new test on the code before the
 change. A reviewer can ask for a break of any claim that they doubt, and it goes into the list.
+
+Each PR that adds or changes a test has `scripts/breaks/pr-<n>.json`. Each such test (step 3
+below says how the tools find them) is a claim with breaks, or an entry of `exempt` with its
+reason. A PR whose tests all have a red run writes only exemptions:
+
+```json
+{
+  "claims": [],
+  "exempt": [
+    {
+      "file": "backend/test/api/bots.test.ts",
+      "name": "names one unknown key in field and message",
+      "reason": "test first: red run in the PR"
+    }
+  ]
+}
+```
+
+The reason is not empty or only spaces. An exemption is the author's decision, and the reviewer reads each one:
+a test of the three cases above needs a claim with breaks, and its exemption is wrong whatever its
+reason.
 Claim no more than the breaks prove: a test name or a PR line that claims a step needs that
 step's own break. **One claim per test name** (owner, 2026-11-09): a name with "and" gets a break
 for each part, or it becomes two tests. A check that a test makes but its name does not claim
@@ -426,9 +447,19 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
 2. It refuses a list with a missing link: a claim with no break, a test file or assertion text
    that is not there exactly once, an assertion outside the named test, or a break that edits a
    test or a test helper (a `test/` folder, `*.test.*`, `*.spec.*`) instead of the code.
-3. It refuses a list that misses a test of the PR: each test that the PR adds or changes since
-   its base (`git merge-base HEAD origin/main`, or `--base`) needs a claim, or an entry in
-   `exempt` with its reason. With `--only`, the list runs in part, and this check does not run.
+3. It refuses a list that misses a test of the PR: each test that the PR adds or changes since its
+   base (`git merge-base HEAD origin/main`, or `--base`) needs a claim, or an entry in `exempt`
+   with its reason. With `--only`, the list runs in part, and this check does not run. A test
+   counts when a line that the PR adds or changes is inside its call (`it`, `test`, with the
+   modifiers `only`, `skip`, `concurrent`, `fails`, `fixme`, `slow`, and `it.each(rows)(...)`) in a
+   file named `*.test.*` or `*.spec.*`; each test of a new file counts, but a file that git sees as
+   renamed marks only its changed lines. A change outside the test calls (a `describe` line, a
+   `beforeEach`, a helper or a fixture, a file with another name) marks no test. In `exempt`,
+   `name` is the name as written, with `%s` for `it.each`. Two known gaps (DQ-161; the plan of #107
+   changes this reader for the runner, not yet for the CI job): lines that the PR only removes mark
+   the line before them, so a test that ends just above a removed test counts too (an exemption
+   names it); and a test whose name is not a plain string (a template with `${…}`, a variable) is
+   not read.
 4. Each test must pass with no break first.
 5. Each break runs alone. First, `tsc` must compile each project of the package of the broken
    file (an unused variable is allowed). The frontend has two: its `tsconfig.json` only points
@@ -448,8 +479,10 @@ it runs `pnpm check:breaks:static scripts/breaks/pr-<n>.json --base HEAD^1`
 ([check-breaks-static.ts](../scripts/check-breaks-static.ts)) on the merge commit of the PR. It
 applies the rules of steps 2 and 3 with the same code as the runner, and a cheap compile check:
 for each break of a TypeScript file, the errors of the broken file in each project of step 5.
-It needs no app and no copy, and runs no test. A PR with no list passes: the list is needed
-only for the tests above, and the job cannot tell them. Not checked here: that a break is caught
+It needs no app and no copy, and runs no test. A PR with no list passes only when it adds or
+changes no test; else the job reads the missing list as empty and names each test that has no
+claim and no exemption. The job checks that each test has a line and that each reason is not
+empty; it cannot tell if a reason is true. Not checked here: that a break is caught
 (only `pnpm check:breaks` shows it), an error that a break causes in another file, and the lists
 of earlier PRs.
 
