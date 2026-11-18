@@ -90,6 +90,9 @@ review fix, check them against the commit that you push (owner, 2026-11-08, DQ-1
 5. If you correct a claim, search for its old text in all the records, and correct each copy.
 6. Run `gh pr list --state all`. Correct the state of each PR that `docs/status.md` or the active
    audit file names. A PR cannot record its own merge, so the next push does it (owner, 2026-11-10).
+   `pnpm check:status` lists each merged PR with no Done row, and gives the row to add; CI runs it.
+   Merge `origin/main` into the branch first: the local run reads the merges of `origin/main` but
+   the branch's own `docs/status.md`, so on an older branch it asks for rows that `main` already has.
    For a PR that is ready and has no record turn, the record of a later review goes into the next
    PR.
 7. Measure each ledger row with an id above DQ-202. This command must print nothing:
