@@ -1,0 +1,26 @@
+{
+  "claims": [
+    {
+      "id": "G1-slow-scan",
+      "claim": "A scan that is slow in every run (over 1,000 ms on a 1 MB line) fails the test, also with the fastest of 3 runs",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/guard/sensitive-data.rules.test.ts",
+        "name": "scans each 1 MB line of the new forms in well under a second"
+      },
+      "assertion": "expect(fastest, `line ${index + 1} of the new forms`).toBeLessThan(1_000);",
+      "breaks": [
+        {
+          "id": "G1-wait-in-every-call",
+          "file": "backend/src/core/guard/sensitive-data.rules.ts",
+          "edits": [
+            {
+              "find": "export function findSensitive(text: string): SensitiveMatch[] {\n  return [...scan(text)];\n}",
+              "replace": "export function findSensitive(text: string): SensitiveMatch[] {\n  const until = performance.now() + 1_100;\n  while (performance.now() < until) {\n    // wait\n  }\n  return [...scan(text)];\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
