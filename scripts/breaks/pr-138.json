@@ -1,0 +1,45 @@
+{
+  "claims": [],
+  "exempt": [
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "rejects $label",
+      "reason": "test first: red run 1 (a stub checker that finds nothing) fails each of the 8 cases; the checker is in the test file, so no break of app code applies. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "counts the appClock call of lib/now.ts as the one allowed call",
+      "reason": "test first: red run 1 (a stub checker that returns 0 allowed calls) fails it. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "allows lib/now.ts with the declaration and the appClock call",
+      "reason": "It passes on the stub checker of red run 1, so it has no red run of its own: it guards against a checker that rejects too much, and the other tests need it to fail for a checker that rejects everything. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "allows a call in $label",
+      "reason": "It passes on the stub checker of red run 1, so it has no red run of its own: it guards against a checker that reads test files. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "allows a comment that names createClock",
+      "reason": "It passes on the stub checker of red run 1, so it has no red run of its own: it guards against a checker that reads comments as code. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "finds the files",
+      "reason": "test first: red run 4 (the glob changed to a folder that does not exist) fails it. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "has the appClock call in lib/now.ts",
+      "reason": "test first: red run 1 (the stub) and red run 4 (the glob changed to a folder that does not exist) fail it. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "makes one clock",
+      "reason": "test first: red run 2 (a second createClock call added to lib/log.ts) and red run 3 (a second call added to lib/now.ts) fail it. Not a late, security, order or race test"
+    }
+  ]
+}
