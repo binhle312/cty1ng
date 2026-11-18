@@ -41,11 +41,14 @@ bot skills: written ways of working that the bot follows.
   a rename alone does not), see its history and compare two versions, restore an old version,
   clone it, deprecate it, and delete a deprecated skill to Trash. Import and export `SKILL.md` folders as a zip.
   The list hides deprecated skills until "Show deprecated" is ticked; this browser keeps the tick.
-  A deprecated skill is read-only; "Make active again" in its banner makes it a normal skill again.
+  A deprecated skill is read-only. Its banner has "Make active again", which makes it a normal skill
+  again, and "Remove from bots", which takes it off the bots that still use it; "Remove from bots"
+  is hidden when no bot uses the skill.
   A Clone that is open keeps its text if the source skill goes to Trash, and Create still makes the copy.
   A Clone names the copy "<name> (copy)", cut to fit the name limit in the settings now; the cut never splits an emoji.
   When the Deprecate, Remove from bots or Delete card cannot load the bots, **Try again** in the card loads them again.
   If a refresh fails in the background, the History tab and the empty Skills page keep what they show.
+  When the History tab cannot load the versions or the changes, **Try again** loads them again.
   An import marks a `SKILL.md` as invalid if the file is over 1 MB or its frontmatter has more than 8,192 characters.
 - **Secrets in text**: the app does not save a skill or a bot's text if the text looks like a secret,
   such as a password or an API key with its value. This also applies to a placeholder password.

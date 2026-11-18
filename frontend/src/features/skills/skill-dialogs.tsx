@@ -60,7 +60,7 @@ function BotsNotReady({ bots }: { bots: BotUses }) {
 // Why a confirm button is off while the bots that use the skill are not known (ui-rules B5).
 function botsReason(bots: BotUses): string | null {
   if (bots.kind === "loading") return "Loading the bots that use it.";
-  if (bots.kind === "error") return "The bots did not load. Try again first.";
+  if (bots.kind === "error") return "The app must know which bots use this skill. Try again first.";
   return null;
 }
 

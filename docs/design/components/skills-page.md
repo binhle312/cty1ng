@@ -208,8 +208,9 @@ card. Nothing is lost: the Bots tab still offers the change.
 **The bot list of a card** (review of 571375a, 2026-11-03): until the bots come, the card shows
 loading shapes ("Loading the bots", `aria-busy`), never an empty list. When they do not load, it
 says "The app could not load the bots." with **Try again**, and Upgrade or Assign stays off
-("Loading the bots." / "The bots did not load. Try again first."). A later load that fails keeps
-the bots shown.
+("Loading the bots."; when they did not load, Upgrade says "The app must know which bots use
+this skill. Try again first." and Assign says "The app must know which bots can get this skill.
+Try again first.", owner, 2026-11-18, Q2 A). A later load that fails keeps the bots shown.
 
 **The cards against the five order questions** (M2c audit, 2026-11-03; [implementation workflow](../../workflows/implementation.md#self-check)). Tests are in `after-save-cards.test.tsx`. The rules are in two pure modules:
 `after-save-card-state.ts` (which card shows) and `dialog-request-state.ts` (a card's request),
@@ -574,7 +575,7 @@ the changes marked "owner, 2026-10-31".
   "Tick a bot first.", "Loading the versions.", "The versions did not load. Try again first.",
   "Adding the bots.", "Saving the change.", "v{n} no longer exists. Cancel and pick another
   version." The Deprecate, Remove from bots and Delete dialogs (§10.1, §10.3, §11): "Loading
-  the bots that use it.", "The bots did not load. Try again first.", "Deprecating
+  the bots that use it.", "The app must know which bots use this skill. Try again first.", "Deprecating
   the skill.", "Removing the skill from the bots.", "No bot uses this skill.", "Tick a bot
   first.", "Deleting the skill."
 - A long diff in the upgrade card (SK3) scrolls inside the card, so Cancel and Upgrade stay in

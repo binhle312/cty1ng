@@ -4,10 +4,10 @@ import { BOT_TABS } from "../features/bots/bot-tabs.ts";
 import { PageSkeleton } from "../features/placeholder/page-skeleton.tsx";
 import { rootRoute } from "./root.tsx";
 
-// `/bots`, `/bots/new` and `/bots/{slug}` (bot-page.md §1, create-bot-page.md §7). The pages
-// belong to the whole app, so bar 2 is hidden. `new` is a page, so it is a reserved bot slug. The
-// Bots page, the Create page and the bot page (the crop and colour cards) are lazy routes:
-// bots.lazy.tsx.
+// `/bots`, `/bots/new` and `/bots/{slug}` (the URL table in the intro of bot-page.md;
+// create-bot-page.md, "URLs"). The pages belong to the whole app, so bar 2 is hidden. `new` is a
+// page, so it is a reserved bot slug. The Bots page, the Create page and the bot page (the crop
+// and colour cards) are lazy routes: bots.lazy.tsx.
 export const botsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/bots",
@@ -27,7 +27,8 @@ export const createBotRoute = createRoute({
   pendingComponent: PageSkeleton,
 }).lazy(() => import("./bots.lazy.tsx").then((module) => module.CreateRoute));
 
-// `?tab=skills` … (bot-page.md §1): a reload keeps the tab. Profile has no `tab`.
+// `?tab=skills` … (the URL table in the intro of bot-page.md): a reload keeps the tab. Profile has
+// no `tab`.
 const BotSearch = z.object({
   tab: z.enum(BOT_TABS).optional().catch(undefined),
 });

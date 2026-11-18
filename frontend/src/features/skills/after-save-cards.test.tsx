@@ -1,5 +1,6 @@
-import { focusManager } from "@tanstack/react-query";
-import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { focusManager, QueryClientProvider } from "@tanstack/react-query";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import { fakeApi, heldAnswer } from "../../../test/fake-api.ts";
 import {
@@ -14,7 +15,11 @@ import {
   versionId,
 } from "../../../test/fixtures.ts";
 import { renderApp } from "../../../test/render-app.tsx";
+import { TooltipProvider } from "../../components/ui/tooltip.tsx";
+import { createQueryClient } from "../../lib/api/query-client.ts";
 import { listBotsQueryKey } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
+
+import { AfterSaveCardHost } from "./after-save-cards.tsx";
 
 // The bot cards after a save (skills-page.md §7): C4 after "Save as vN", C4b after Create. When
 // no bot fits, only the toast shows.
@@ -55,6 +60,21 @@ const v4 = makeSkill({
   latest_version: { ...makeSkill().latest_version, version: 4 },
   row_version: 2,
 });
+
+// Q2 A (owner, 2026-11-18): when the bots did not load, the button says what the card needs. The
+// owner reaches the reason with Tab, so the test does too.
+async function tabTo(button: HTMLElement) {
+  const user = userEvent.setup();
+  for (let step = 0; step < 10 && document.activeElement !== button; step += 1) await user.tab();
+  expect(document.activeElement).toBe(button);
+  expect(button.getAttribute("aria-disabled")).toBe("true");
+}
+const UPGRADE_REASON = "The app must know which bots use this skill. Try again first.";
+const ASSIGN_REASON = "The app must know which bots can get this skill. Try again first.";
+const BOTS_FAILED = {
+  status: 500,
+  body: { error: { code: "internal_error", message: "Failed." } },
+};
 
 // `bots` are the server's bots, BA alone unless a test gives more, or a route that answers the
 // bot list.
@@ -150,6 +170,19 @@ describe("the upgrade card after a save (C4, UI-7.4)", () => {
     const box = await within(card).findByRole("checkbox", { name: /BA/ });
     expect(box.getAttribute("aria-checked")).toBe("true");
     expect(within(card).queryByText("The app could not load the bots.")).toBeNull();
+  });
+
+  it("says, when the bots did not load, that the Upgrade card needs to know the bots", async () => {
+    await saveV4(
+      [{ bot_id: ba.id, skill_version_id: versionId(3), version: 3, always_load: true }],
+      () => BOTS_FAILED,
+    );
+    const card = await screen.findByRole("dialog", {
+      name: "Saved v4 ✨ Also upgrade these bots to v4?",
+    });
+    await within(card).findByText("The app could not load the bots.");
+    await tabTo(within(card).getByRole("button", { name: "Upgrade" }));
+    expect(await screen.findByText(UPGRADE_REASON), "the reason of Upgrade").toBeTruthy();
   });
 
   it("shows loading shapes, not an empty list, while the bots load", async () => {
@@ -446,6 +479,33 @@ describe("the assign card after Create (C4b)", () => {
       skill_version_id: versionId(1),
       bots: [{ bot_id: fresh.id, expected_skill_version_id: null }],
     });
+  });
+
+  // Create reads the bots before it opens the card, so the card has them. A card whose own read
+  // fails (its data gone from the cache) shows the error, so the card is mounted with no data.
+  it("says, when the bots did not load, that the Assign card needs to know the bots", async () => {
+    api = fakeApi({ "GET /api/bots": () => BOTS_FAILED });
+    render(
+      <QueryClientProvider client={createQueryClient({ retry: false })}>
+        <TooltipProvider>
+          <AfterSaveCardHost
+            card={{
+              kind: "assign",
+              skillId: SKILL_ID,
+              skillName: "Write user stories",
+              versionId: versionId(1),
+            }}
+            onClose={() => undefined}
+          />
+        </TooltipProvider>
+      </QueryClientProvider>,
+    );
+    const card = await screen.findByRole("dialog", {
+      name: "Created ✨ Add Write user stories to bots?",
+    });
+    await within(card).findByText("The app could not load the bots.");
+    await tabTo(within(card).getByRole("button", { name: "Assign" }));
+    expect(await screen.findByText(ASSIGN_REASON), "the reason of Assign").toBeTruthy();
   });
 
   // On a busy server live events can cut the card's read of the bots short again and again. Only a

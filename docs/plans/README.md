@@ -64,9 +64,11 @@ Plans up to M2 started as PR comments or PR descriptions. The header of each fil
 | `p3-skills-page-orders.md` | P3 list PR 14, Skills page orders (items 51 to 56) | Accepted by the owner, 2026-11-15 ("P-14: approve"), revision 2; Q1 takes the plan's answer (chief agent's reading, owner review pending); Q2 approved by the owner, 2026-11-18 (UI-4: A) |
 | `p3-relative-time.md` | P3 list PR 17 (item 67): relative times that update | Accepted by the owner, 2026-11-15 (P-17: approve), revision 3; Q1 and Q2 by the chief agent's reading |
 | `p3-limits-strict-inputs.md` | P3 PR C: list PR 7 (diff and changelog limits) and list PR 10 (API strict inputs) | Chief agent, 2026-11-15, revision 1; accepted by the owner, 2026-11-15 |
+| `p3-ci-break-static.md` | DQ-517 D and DQ-448 B: a CI check of the break list rules | Plan OK by the chief agent, 2026-11-18, against the owner's answers DQ-517 D and DQ-448 B; revision 1 |
 | `p3-runner-tmpdir.md` | DQ-618: the break runner keeps the local changes when TMPDIR is inside a git repository | Plan OK by the chief agent, 2026-11-18, against the owner's answer q3 Q1 A, revision 1; owner review pending |
 | `p3-check-status.md` | DQ-571: a CI check that each merged PR has its Done row in `docs/status.md` | Plan OK by the chief agent, 2026-11-18, against the owner's answer q2 Q2 A, revision 1; owner review pending |
 | `p3-plans-design-only.md` | Owner's answer q2 Q1 A: plans hold the design and the owner's decisions; build facts go only in the PR description | Chief agent, 2026-11-18, against the owner's answer q2 Q1 A, revision 2; owner review pending |
+| `p3-small-owner-answers.md` | Small fixes from the owner's answers of 2026-11-18 (DQ-442, DQ-500, DQ-485, DQ-411, item 61, #123, DQ-426) | UI texts and scope: the owner's answers of 2026-11-18; plan OK by the chief agent, 2026-11-18; item 8 approved by the owner, 2026-11-18 (Q2 A) |
 | `p3-flaky-bots-drop.md` | The flaky e2e test of the pinned card drop line (`bots.spec.ts:101`, CI run 44228267962) | Plan OK by the chief agent, 2026-11-18 (owner rule: fix the flaky test at its cause), revision 2; owner review pending |
 
 If the task names a plan, open it. Otherwise, find the slice in [status.md](../status.md), then open its plan.

@@ -4,6 +4,7 @@ Brief: the chief's task of 2026-11-18. The test `bots.spec.ts:101` "the keyboard
 Checkpoint: none. There is no new screen, no new text and no code design. The fix is a behaviour fix inside the existing keyboard move (`pin.md` §2).
 Approval: plan OK by the chief agent, 2026-11-18 (owner rule: fix the flaky test at its cause). Revision 2 adds the chief's three conditions: a guard test of the private parts, a fallback to dnd-kit's own behaviour, and the upstream search (section 3).
 Revision 3, 2026-11-18: the review round 1 changes of §3 and §4 item 5, approved by the chief agent; owner review pending.
+Owner decision, 2026-11-18 (q4 Q7 A), on revision 3: §4 item 7 "The criterion is met by the drop-line evidence (99 of 99 under load, twice; 100 of 100 without load)."
 
 ## 1. Evidence
 

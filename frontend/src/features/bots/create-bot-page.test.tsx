@@ -618,6 +618,16 @@ describe("skills on the Create bot page", () => {
     });
   });
 
+  // UI-1 A (owner, 2026-11-18, DQ-411): the note of step 3 says what the owner cannot do.
+  it("says on step 3 that deprecated skills cannot be added", async () => {
+    fake = skillsApi();
+    await renderApp(`/bots/new?from=${SOURCE.id}`);
+    await screen.findByRole("button", { name: "Create" }, { timeout: 5000 });
+    openStep(/Skills/);
+    expect(await screen.findByText(/You cannot add deprecated skills\./)).toBeTruthy();
+    expect(screen.queryByText(/Deprecated skills are not in the list/)).toBeNull();
+  });
+
   it("shows each Clone's own copied versions when the page moves to another source", async () => {
     // A second source bot pins the same skill at v2; its template copies v2.
     const other = makeBot(11, "Other", [
