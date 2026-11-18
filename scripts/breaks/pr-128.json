@@ -32,6 +32,11 @@
       "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
     },
     {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "fails a list that is not valid JSON",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
       "file": "scripts/lib/breaks-static.test.ts",
       "name": "accepts a list that links each changed test to a claim",
       "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
