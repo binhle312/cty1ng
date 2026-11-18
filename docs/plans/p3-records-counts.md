@@ -12,9 +12,9 @@ texts; no shared state, module boundary or screen flow)
 Approval: plan OK by the chief agent, 2026-11-18, against the owner's answers q4 Q3 A and Q6 A,
 revision 2 (the chief's answers to the three open questions are in the sections below); owner
 review pending
-Revision 3, chief agent, 2026-11-18, under q4 Q3 A ("the ledger rows are the home") and Q6 A: the
-"Same cause?" answer and its search move into the ledger row, with one sentence of `AGENTS.md` §9
-(the owner merges this PR)
+Revision 3, chief agent, 2026-11-18 (option a, under q4 Q3 A: "the ledger rows are the home"):
+the "Same cause?" answer and its search move into the ledger row; `AGENTS.md` §9 line: owner
+review pending
 
 ## The cause
 

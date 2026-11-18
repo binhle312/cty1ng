@@ -33,7 +33,11 @@ if (values.write && stray.length === 0) {
       console.log(`records:counts: wrote ${file.path}`);
     }
   }
-  report("records:counts", [...written.problems, ...checkCounts(written.files)]);
+  // With a structure problem nothing is written, and the problems are the whole report.
+  report(
+    "records:counts",
+    written.problems.length > 0 ? written.problems : checkCounts(written.files),
+  );
 } else {
   report("records:counts", [...stray, ...checkCounts(files)]);
 }

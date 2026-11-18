@@ -306,6 +306,45 @@ describe("structure problems", () => {
     expect(writeCounts(files(fixture)).files, "no write").toEqual(files(fixture));
   });
 
+  it("reports a row with no state word, and a row whose discovery PR is not in the form / #N /", () => {
+    const fixture = onePr({
+      issues: [
+        issue({ id: 1, pr: 10, state: "Open" }),
+        issue({ id: 2, pr: 10, state: "open (owner)" }),
+        issue({ id: 3, pr: 10 }).replace("/ #10 / round 1", "/ [#10](x) / round 1"),
+        issue({ id: 4, pr: 10 }).replace("/ #10 / round 1", "/ #10, round 1"),
+      ],
+    });
+    expect(checkCounts(files(fixture)), "malformed rows").toEqual([
+      `${MAIN}: DQ-001 has no state cell (open, partial, fixed, dropped, withdrawn or unknown).`,
+      `${MAIN}: DQ-002 has no state cell (open, partial, fixed, dropped, withdrawn or unknown).`,
+      `${MAIN}: DQ-003 names a PR in its "Found date / discovery PR / round" cell, but not as "/ #N /".`,
+      `${MAIN}: DQ-004 names a PR in its "Found date / discovery PR / round" cell, but not as "/ #N /".`,
+    ]);
+  });
+
+  it("reports only the structure problem, with no stale cell counted from broken rows", () => {
+    const fixture = onePr({ archiveIssues: [issue({ id: 2, pr: 10 })] });
+    expect(checkCounts(files(fixture)), "a double row, no stale cell").toEqual([
+      `${dq(2)} is in 2 rows (${MAIN}, ${ARCHIVE}): each id has one row.`,
+    ]);
+  });
+
+  it("reports two milestone rows of the script with the same first word", () => {
+    const [main, archive] = files(onePr());
+    const second = `| Audit 2027-01-10 | — | ${MARKER} | 0 itemized | 0 | 0 in the 0 rows that record it; 0 rows do not record it | 0 logged |`;
+    const text = (main?.text ?? "").replace(
+      auditRow(onePr().audit),
+      `${auditRow(onePr().audit)}\n${second}`,
+    );
+    expect(
+      checkCounts([{ path: MAIN, text }, archive ?? { path: ARCHIVE, text: "" }]),
+      "two Audit rows",
+    ).toEqual([
+      `Two rows of the milestone view count the ledger milestone "Audit": "${AUDIT}", "Audit 2027-01-10". Give each a first word of its own.`,
+    ]);
+  });
+
   it("reports a table that no file has, and a table that two files have", () => {
     const [main, archive] = files(onePr());
     const noRegister = {

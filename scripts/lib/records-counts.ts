@@ -27,6 +27,8 @@ type Issue = {
   path: string;
   milestone: string;
   discoveryPr: number | undefined;
+  // The discovery cell names a PR (`#N`), in the form `/ #N /` or not.
+  foundNamesPr: boolean;
   state: State | undefined;
   escaped: "yes" | "no" | "unrecorded";
 };
@@ -105,6 +107,7 @@ function parseIssue(input: { path: string; line: string }): Issue | undefined {
     path: input.path,
     milestone: (cells[1] ?? "").split(/[\s/]/)[0] ?? "",
     discoveryPr: numberOf(/\/ #(\d+) \//.exec(cells[2] ?? "")?.[1]),
+    foundNamesPr: /#\d/.test(cells[2] ?? ""),
     state: cells.slice(3).find((cell): cell is State => STATES.some((state) => state === cell)),
     escaped: /escaped: yes/.test(last) ? "yes" : recorded ? "no" : "unrecorded",
   };
@@ -256,6 +259,28 @@ function structureProblems(ledger: Ledger): string[] {
       problems.push(
         `${dq(id)} is in ${where.length} rows (${where.join(", ")}): each id has one row.`,
       );
+  for (const issue of ledger.issues) {
+    if (issue.state === undefined)
+      problems.push(
+        `${issue.path}: ${dq(issue.id)} has no state cell (open, partial, fixed, dropped, withdrawn or unknown).`,
+      );
+    if (issue.foundNamesPr && issue.discoveryPr === undefined)
+      problems.push(
+        `${issue.path}: ${dq(issue.id)} names a PR in its "Found date / discovery PR / round" cell, but not as "/ #N /".`,
+      );
+  }
+  const keys = new Map<string, string[]>();
+  for (const row of ledger.milestones.rows) {
+    if (!(row.cells[2] ?? "").endsWith(OWNED_MARKER)) continue;
+    const name = row.cells[0] ?? "";
+    const key = name.split(" ")[0] ?? "";
+    keys.set(key, [...(keys.get(key) ?? []), name]);
+  }
+  for (const [key, names] of keys)
+    if (names.length > 1)
+      problems.push(
+        `Two rows of the milestone view count the ledger milestone "${key}": ${names.map((n) => `"${n}"`).join(", ")}. Give each a first word of its own.`,
+      );
   const registered = new Set(ledger.register.rows.flatMap((row) => registerPr(row) ?? []));
   for (const row of ledger.milestones.rows) {
     if (!(row.cells[2] ?? "").endsWith(OWNED_MARKER)) continue;
@@ -313,7 +338,10 @@ function answerProblems(files: readonly LedgerFile[]): string[] {
 export function checkCounts(files: readonly LedgerFile[]): string[] {
   const { ledger, problems } = readLedger(files);
   if (ledger === undefined) return problems;
-  return [...structureProblems(ledger), ...answerProblems(files), ...staleProblems(ledger)];
+  // A stale cell counted from broken rows would mislead, and `--write` refuses to write then.
+  const structure = structureProblems(ledger);
+  if (structure.length > 0) return [...structure, ...answerProblems(files)];
+  return [...answerProblems(files), ...staleProblems(ledger)];
 }
 
 // The files with each owned cell written from the rows. With a structure problem, no file changes.
