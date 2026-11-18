@@ -1,0 +1,640 @@
+{
+  "claims": [
+    {
+      "id": "N1",
+      "claim": "The tick of the app is 30 seconds",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "the tick of the app is 30 seconds"
+      },
+      "assertion": "expect(NOW_TICK_MS, \"the tick of the app\").toBe(30_000);",
+      "breaks": [
+        {
+          "id": "N1-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "export const NOW_TICK_MS = 30_000;",
+              "replace": "export const NOW_TICK_MS = 60_000;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N2",
+      "claim": "Now moves by one tick at each tick",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "now moves by one tick at each tick"
+      },
+      "assertion": "expect(clock.now().getTime() - before, \"move of now in one tick\").toBe(TICK);",
+      "breaks": [
+        {
+          "id": "N2-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "  const tick = () => {\n    take();\n",
+              "replace": "  const tick = () => {\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N3",
+      "claim": "The last unsubscribe clears the timer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "the last unsubscribe clears the timer"
+      },
+      "assertion": "expect(vi.getTimerCount(), \"timers after the last unsubscribe\").toBe(0);",
+      "breaks": [
+        {
+          "id": "N3-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "        stop();\n        page.removeEventListener(\"visibilitychange\", onVisibility);\n",
+              "replace": "        page.removeEventListener(\"visibilitychange\", onVisibility);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N4",
+      "claim": "The last unsubscribe removes the page listener",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "the last unsubscribe removes the page listener"
+      },
+      "assertion": "expect(listening(), \"page listeners after the last unsubscribe\").toBe(0);",
+      "breaks": [
+        {
+          "id": "N4-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "        page.removeEventListener(\"visibilitychange\", onVisibility);\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N5",
+      "claim": "An unsubscribe that is not the last keeps the timer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "an unsubscribe that is not the last keeps the timer"
+      },
+      "assertion": "expect(vi.getTimerCount(), \"timers after the first unsubscribe\").toBe(1);",
+      "breaks": [
+        {
+          "id": "N5-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "        if (listeners.size > 0) return;\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N6",
+      "claim": "An unsubscribe that is not the last keeps the page listener",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "an unsubscribe that is not the last keeps the page listener"
+      },
+      "assertion": "expect(listening(), \"page listeners after the first unsubscribe\").toBe(1);",
+      "breaks": [
+        {
+          "id": "N6-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "        if (listeners.size > 0) return;\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N7",
+      "claim": "A hidden page runs no timer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "a hidden page runs no timer"
+      },
+      "assertion": "expect(vi.getTimerCount(), \"timers on a hidden page\").toBe(0);",
+      "breaks": [
+        {
+          "id": "N7-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": " || page.visibilityState !== \"visible\") return;",
+              "replace": ") return;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N8",
+      "claim": "A page that turns hidden stops the timer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "a page that turns hidden stops the timer"
+      },
+      "assertion": "expect(vi.getTimerCount(), \"timers after the page turned hidden\").toBe(0);",
+      "breaks": [
+        {
+          "id": "N8-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "    } else {\n      stop();\n    }\n",
+              "replace": "    }\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N9",
+      "claim": "A hidden page calls nobody while time passes",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "a hidden page calls nobody while time passes"
+      },
+      "assertion": "expect(listener, \"calls in five hidden minutes\").not.toHaveBeenCalled();",
+      "breaks": [
+        {
+          "id": "N9-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "    } else {\n      stop();\n    }\n",
+              "replace": "    }\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N10",
+      "claim": "A page that turns visible calls each subscriber at once",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "a page that turns visible calls each subscriber at once"
+      },
+      "assertion": "expect(listener, \"calls at the visible event\").toHaveBeenCalledTimes(1);",
+      "breaks": [
+        {
+          "id": "N10-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "      tick();\n      start();\n",
+              "replace": "      start();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N11",
+      "claim": "A page that turns visible starts the ticks again",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "a page that turns visible starts the ticks again"
+      },
+      "assertion": "expect(listener, \"calls after the visible event and one tick\").toHaveBeenCalledTimes(2);",
+      "breaks": [
+        {
+          "id": "N11-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "      tick();\n      start();\n",
+              "replace": "      tick();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N12",
+      "claim": "A subscriber on a hidden page starts its timer when the page turns visible",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "a subscriber on a hidden page waits for the page to be visible"
+      },
+      "assertion": "expect(vi.getTimerCount(), \"timers after the page turned visible\").toBe(1);",
+      "breaks": [
+        {
+          "id": "N12-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "      tick();\n      start();\n",
+              "replace": "      tick();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N13",
+      "claim": "A repeated visible event keeps one timer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "a repeated visible event keeps one timer"
+      },
+      "assertion": "expect(vi.getTimerCount(), \"timers after two visible events\").toBe(1);",
+      "breaks": [
+        {
+          "id": "N13-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "if (timer !== null || listeners.size === 0 ||",
+              "replace": "if (listeners.size === 0 ||"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N14",
+      "claim": "A page that flips hidden and visible again ends with one timer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "a page that flips hidden and visible again ends with one timer"
+      },
+      "assertion": "expect(vi.getTimerCount(), \"timers after a fast flip\").toBe(1);",
+      "breaks": [
+        {
+          "id": "N14-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "    clearInterval(timer);\n    timer = null;\n",
+              "replace": "    clearInterval(timer);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N15",
+      "claim": "A page that ends hidden after a fast flip has no timer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "a page that ends hidden after a fast flip has no timer"
+      },
+      "assertion": "expect(vi.getTimerCount(), \"timers after a fast flip that ends hidden\").toBe(0);",
+      "breaks": [
+        {
+          "id": "N15-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "    } else {\n      stop();\n    }\n",
+              "replace": "    }\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N16",
+      "claim": "An unsubscribe on a hidden page removes the page listener",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "an unsubscribe on a hidden page removes the page listener"
+      },
+      "assertion": "expect(listening(), \"page listeners after the unsubscribe\").toBe(0);",
+      "breaks": [
+        {
+          "id": "N16-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "        page.removeEventListener(\"visibilitychange\", onVisibility);\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N17",
+      "claim": "A visible event after the last unsubscribe starts no timer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "a visible event after the last unsubscribe starts nothing"
+      },
+      "assertion": "expect(vi.getTimerCount(), \"timers after a late visible event\").toBe(0);",
+      "breaks": [
+        {
+          "id": "N17-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "        page.removeEventListener(\"visibilitychange\", onVisibility);\n",
+              "replace": ""
+            },
+            {
+              "find": "if (timer !== null || listeners.size === 0 ||",
+              "replace": "if (timer !== null ||"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N18",
+      "claim": "The first read after a long time with no subscriber gives the new time",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "the first read after a long time with no subscriber gives the new time"
+      },
+      "assertion": "expect(clock.now().getTime() - before.getTime(), \"age of the first read\").toBe(10 * 60_000);",
+      "breaks": [
+        {
+          "id": "N18-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "      if (Math.abs(Date.now() - current.getTime()) > tickMs) take();\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N19",
+      "claim": "The first read after the system time moved back gives the new time",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "the first read after the system time moved back gives the new time"
+      },
+      "assertion": "expect(clock.now().getTime(), \"read after a move back\").toBe(earlier.getTime());",
+      "breaks": [
+        {
+          "id": "N19-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "Math.abs(Date.now() - current.getTime())",
+              "replace": "(Date.now() - current.getTime())"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N20",
+      "claim": "A subscriber that another subscriber removes in a tick is not called",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "a subscriber that another subscriber removes in a tick is not called"
+      },
+      "assertion": "expect(second, \"calls of the removed subscriber\").not.toHaveBeenCalled();",
+      "breaks": [
+        {
+          "id": "N20-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "      if (listeners.has(listener)) listener();\n",
+              "replace": "      listener();\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N21",
+      "claim": "A subscriber that leaves and joins again in a tick is called once",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "a subscriber that leaves and joins again in a tick is called once"
+      },
+      "assertion": "expect(calls, \"calls in one tick\").toBe(1);",
+      "breaks": [
+        {
+          "id": "N21-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "    for (const listener of [...listeners]) {\n      if (listeners.has(listener)) listener();\n    }\n",
+              "replace": "    for (const listener of listeners) {\n      listener();\n    }\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N22",
+      "claim": "The last subscriber that leaves in a visible event leaves no timer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/lib/now.test.ts",
+        "name": "the last subscriber that leaves in a visible event leaves no timer"
+      },
+      "assertion": "expect(vi.getTimerCount(), \"timers after the last subscriber left\").toBe(0);",
+      "breaks": [
+        {
+          "id": "N22-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "listeners.size === 0 || ",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T1",
+      "claim": "A mounted time keeps its text while the page is hidden",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/components/ui/time-text.test.tsx",
+        "name": "keeps its text while the page is hidden"
+      },
+      "assertion": "expect(screen.getByText(\"Just now\"), \"text after five hidden minutes\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "T1-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": " || page.visibilityState !== \"visible\") return;",
+              "replace": ") return;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T2",
+      "claim": "A time that is gone leaves no timer",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/components/ui/time-text.test.tsx",
+        "name": "leaves no timer when it is gone"
+      },
+      "assertion": "expect(vi.getTimerCount(), \"timers after the unmount\").toBe(0);",
+      "breaks": [
+        {
+          "id": "T2-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "        stop();\n        page.removeEventListener(\"visibilitychange\", onVisibility);\n",
+              "replace": "        page.removeEventListener(\"visibilitychange\", onVisibility);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T3",
+      "claim": "The first render makes no getSnapshot warning",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/components/ui/time-text.test.tsx",
+        "name": "logs no warning at its first render"
+      },
+      "assertion": "expect(warn, \"errors logged at the first render\").not.toHaveBeenCalled();",
+      "breaks": [
+        {
+          "id": "T3-a",
+          "file": "frontend/src/lib/now.ts",
+          "edits": [
+            {
+              "find": "      if (Math.abs(Date.now() - current.getTime()) > tickMs) take();",
+              "replace": "      if (timer === null || Math.abs(Date.now() - current.getTime()) > tickMs) take();"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "frontend/src/lib/now.test.ts",
+      "name": "three subscribers share one timer",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/lib/now.test.ts",
+      "name": "each subscriber is called once for each tick",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/lib/now.test.ts",
+      "name": "now gives the same object between ticks",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/lib/now.test.ts",
+      "name": "now gives the same object before the first subscriber",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/components/ui/time-text.test.tsx",
+      "name": "starts as Just now",
+      "reason": "Passes on the old code by design: it is the start state of the next test. Not claimed"
+    },
+    {
+      "file": "frontend/src/components/ui/time-text.test.tsx",
+      "name": "turns Just now into 1 min ago when a minute passes",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/components/ui/time-text.test.tsx",
+      "name": "shows the new time at once when the page turns visible",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/features/skills/skill-pin-dialogs.test.tsx",
+      "name": "turns the time of a version into 1 min ago when a minute passes",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/features/bots/bot-relative-times.test.tsx",
+      "name": "in the top of the bot page turns into 1 min ago when a minute passes",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "frontend/src/features/bots/bot-relative-times.test.tsx",
+      "name": "in the side list turns into 1 min ago when a minute passes",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "scripts/lint-rules.test.ts",
+      "name": "rejects new Date() with no argument in $label",
+      "reason": "Written before the code; the red run is in the PR"
+    },
+    {
+      "file": "scripts/lint-rules.test.ts",
+      "name": "keeps the clock rule on every components and features file",
+      "reason": "Written before the code. The red run (red-part4.txt) is of the first assertion, which looked for the word useNow. The assertion now looks for the selector; a scratch run of round 2 shows it fails when a block keeps the message with another selector and when CLOCK_RULES is dropped"
+    },
+    {
+      "file": "scripts/lint-rules.test.ts",
+      "name": "allows $label in a feature",
+      "reason": "Passes on the old config by design: it guards a rule that fires too much. Not claimed"
+    },
+    {
+      "file": "scripts/lint-rules.test.ts",
+      "name": "allows new Date() in lib, where the clock is",
+      "reason": "Passes on the old config by design: it guards a rule that fires too much. Not claimed"
+    },
+    {
+      "file": "scripts/lint-rules.test.ts",
+      "name": "allows new Date() in a test",
+      "reason": "Passes on the old config by design: it guards a rule that fires too much. Not claimed"
+    },
+    {
+      "file": "scripts/lint-rules.test.ts",
+      "name": "does not see Date.now()",
+      "reason": "Documents a known gap of the rule (the plan says so). Not claimed"
+    }
+  ]
+}
