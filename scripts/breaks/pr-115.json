@@ -345,8 +345,8 @@
           "file": "backend/src/app/compose.ts",
           "edits": [
             {
-              "find": "    changelogMax: config.skillChangelogMax,\n    previewMinutes",
-              "replace": "    changelogMax: 500,\n    previewMinutes"
+              "find": "    changelogMax: config.skillChangelogMax,\n    ids: typeIdIds,\n    previewMinutes",
+              "replace": "    changelogMax: 500,\n    ids: typeIdIds,\n    previewMinutes"
             }
           ]
         }
