@@ -1,9 +1,15 @@
-import { DndContext } from "@dnd-kit/core";
+import {
+  DndContext,
+  KeyboardSensor,
+  type KeyboardSensorProps,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { pressKeyNow } from "../../../test/press-key.ts";
-import { useDragSensors } from "./drag-setup.ts";
+import { attachAtOnce, keyboardSensorParts, useDragSensors } from "./drag-setup.ts";
 
 // The keyboard drag of the pinned bots (pin.md §2; the Bots page, the bot page's side list and the
 // header roster share `useDragSensors`): each key after the pick-up key goes to the drag, however
@@ -14,9 +20,9 @@ import { useDragSensors } from "./drag-setup.ts";
 const LEFT: Record<string, number> = { a: 0, b: 300 };
 
 function Item({ id }: { id: string }) {
-  const sortable = useSortable({ id });
+  const { setNodeRef, listeners } = useSortable({ id });
   return (
-    <button type="button" ref={sortable.setNodeRef} data-item={id} {...sortable.listeners}>
+    <button type="button" ref={setNodeRef} data-item={id} {...listeners}>
       {id}
     </button>
   );
@@ -25,7 +31,7 @@ function Item({ id }: { id: string }) {
 interface Seen {
   over: (string | null)[];
   ends: (string | null)[];
-  cancels: number;
+  cancels: (string | null)[];
 }
 
 function Lists({ seen }: { seen: Seen }) {
@@ -35,9 +41,7 @@ function Lists({ seen }: { seen: Seen }) {
       sensors={sensors}
       onDragOver={({ over }) => seen.over.push(over === null ? null : String(over.id))}
       onDragEnd={({ over }) => seen.ends.push(over === null ? null : String(over.id))}
-      onDragCancel={() => {
-        seen.cancels += 1;
-      }}
+      onDragCancel={({ over }) => seen.cancels.push(over === null ? null : String(over.id))}
     >
       <SortableContext items={["a", "b"]}>
         <Item id="a" />
@@ -49,7 +53,7 @@ function Lists({ seen }: { seen: Seen }) {
 
 // Renders the two items and focuses "a", as a person who tabs to it.
 function renderLists(): { seen: Seen; first: HTMLElement } {
-  const seen: Seen = { over: [], ends: [], cancels: 0 };
+  const seen: Seen = { over: [], ends: [], cancels: [] };
   render(<Lists seen={seen} />);
   const first = screen.getByRole("button", { name: "a" });
   act(() => {
@@ -64,6 +68,15 @@ const focused = (): Element => document.activeElement ?? document.body;
 const SPACE = { key: " ", code: "Space" };
 const ARROW_RIGHT = { key: "ArrowRight", code: "ArrowRight" };
 const ESCAPE = { key: "Escape", code: "Escape" };
+
+// The move is on the page: in a browser, it renders before the next key comes.
+const overSecond = (seen: Seen) =>
+  waitFor(() => {
+    expect(seen.over.at(-1)).toBe("b");
+  });
+
+// One zero timer: dnd-kit's own timer of the pick-up has run after this.
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 beforeEach(() => {
   vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function rect(
@@ -93,7 +106,102 @@ describe("the keyboard drag of useDragSensors", () => {
     pressKeyNow(first, SPACE);
     pressKeyNow(focused(), ESCAPE);
     await waitFor(() => {
-      expect(seen.cancels, "the Esc right after Space cancelled the drag").toBe(1);
+      expect(seen.cancels.length, "the Esc right after Space cancelled the drag").toBe(1);
     });
+  });
+});
+
+describe("the keyboard sensor of useDragSensors", () => {
+  it("does not drop the item on the Space that picks it up", async () => {
+    const { seen, first } = renderLists();
+    pressKeyNow(first, SPACE);
+    await settle();
+    expect(seen.ends, "the pick-up Space dropped the item").toEqual([]);
+    pressKeyNow(focused(), ARROW_RIGHT);
+    await overSecond(seen);
+    pressKeyNow(focused(), SPACE);
+    await waitFor(() => {
+      expect(seen.ends).toEqual(["b"]);
+    });
+  });
+
+  it("leaves no keydown listener on document after the drag ends", async () => {
+    const add = vi.spyOn(document, "addEventListener");
+    const remove = vi.spyOn(document, "removeEventListener");
+    const keydowns = (spy: typeof add) => spy.mock.calls.filter(([name]) => name === "keydown");
+    const { seen, first } = renderLists();
+    pressKeyNow(first, SPACE);
+    pressKeyNow(focused(), ARROW_RIGHT);
+    await overSecond(seen);
+    pressKeyNow(focused(), SPACE);
+    await waitFor(() => {
+      expect(seen.ends).toEqual(["b"]);
+    });
+    await settle();
+    expect(keydowns(add).length, "keydown listeners added").toBeGreaterThan(0);
+    const left = keydowns(add).filter(
+      ([, listener]) => !keydowns(remove).some(([, removed]) => removed === listener),
+    );
+    expect(left, "a keydown listener stayed on document").toEqual([]);
+  });
+
+  it("finds each private part it uses on the installed dnd-kit sensor", async () => {
+    const made: object[] = [];
+    // dnd-kit's own sensor, unchanged, as the installed version builds it.
+    class Watched extends KeyboardSensor {
+      constructor(props: KeyboardSensorProps) {
+        super(props);
+        made.push(this);
+      }
+    }
+    function Watch() {
+      const sensors = useSensors(
+        useSensor(Watched, {
+          keyboardCodes: { start: ["Space"], cancel: ["Escape"], end: ["Space"] },
+        }),
+      );
+      return (
+        <DndContext sensors={sensors}>
+          <SortableContext items={["a", "b"]}>
+            <Item id="a" />
+            <Item id="b" />
+          </SortableContext>
+        </DndContext>
+      );
+    }
+    render(<Watch />);
+    const first = screen.getByRole("button", { name: "a" });
+    act(() => {
+      first.focus();
+    });
+    pressKeyNow(first, SPACE);
+    await settle();
+    const sensor = made[0];
+    if (sensor === undefined) throw new Error("No keyboard sensor was made.");
+    expect(
+      typeof Reflect.get(KeyboardSensor.prototype, "attach"),
+      "dnd-kit's sensor has no attach to replace",
+    ).toBe("function");
+    expect(keyboardSensorParts(sensor).missing, "parts missing in the installed dnd-kit").toEqual(
+      [],
+    );
+    pressKeyNow(focused(), ESCAPE);
+  });
+
+  it("falls back to dnd-kit's own attach when a part is missing", () => {
+    const fallback = vi.fn();
+    const sensor = { props: { event: {} } };
+    expect(() => {
+      attachAtOnce(sensor, fallback);
+    }).not.toThrow();
+    expect(fallback, "the fallback did not run").toHaveBeenCalledTimes(1);
+    expect(fallback.mock.contexts[0]).toBe(sensor);
+    expect(keyboardSensorParts(sensor).missing).toEqual([
+      "handleStart",
+      "handleKeyDown",
+      "handleCancel",
+      "listeners.add",
+      "windowListeners.add",
+    ]);
   });
 });
