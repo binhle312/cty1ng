@@ -18,7 +18,7 @@ review pending
 Revision 4, 2026-11-18 (review round 2 of #135): the test strategy rows of revision 3 and of the
 checks that the reviews added; the answer check also covers rows found after 2026-11-18 and needs
 the whole form; a row with more or fewer cells than its header is a problem (the chief agent's
-note on DQ-573). Approval: the chief agent, pending
+note on DQ-573). Approval: the chief agent, 2026-11-18; owner review pending
 
 ## The cause
 
