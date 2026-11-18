@@ -134,7 +134,8 @@ describe("POST /bots", () => {
     });
   });
 
-  // R1-1 of PR 134: an empty key names no field, so the answer has no `field` (api.md §1).
+  // R1-1 of PR 134: an empty key at the root names no field, so the answer has no `field`
+  // (api.md §1). Inside an object the answer is not covered here.
   it("gives no field for an unknown key that is empty", async () => {
     const { response } = await createBot({ ...newBot, "": 1 });
     expect(response.status).toBe(422);

@@ -59,7 +59,8 @@ message (`field: "unknown"` at `bots.test.ts:77`, `pins[0].skill_id`, `tool_sett
 `errors-and-limits.test.ts` for the `_test/events` route). The order of keys: `field` is the first key that Zod reports, in the order that JavaScript lists
 the keys of the object (integer-like keys first, in ascending order, then the other keys in the
 order of the body). The two-key test uses two keys that are not integer-like and asserts the order.
-An unknown key that is empty names no field, so the answer has no `field`; a test covers it.
+An unknown key that is empty at the root of the body names no field, so the answer has no `field`;
+a test covers it. Inside an object the path still ends with a dot (`inner.`), as on `main`.
 
 Proof that the tests can fail: run the three new tests on `main` (no fix) and record the red run in
 the PR description. The two-key case and the message of each case must fail there; the one-key
