@@ -486,7 +486,7 @@
     {
       "file": "backend/test/security/sql-injection.test.ts",
       "name": "changes nothing as an import's preview id or slug, and as the zip's file name",
-      "reason": "The test runs three times (one per injection string), and the runner needs one outcome for a claim. Its new apply cases (422 for the injection string, 409 for a well-formed unknown `simp` id) are the same routes as P29-4 and P29-5, which have breaks. A hand break of the same two edits was caught in this test (hand-breaks-dq332.txt)"
+      "reason": "The test runs three times (one per injection string), and the runner needs one outcome for a claim. Its new apply cases (422 for the injection string, 409 for a well-formed unknown `simp` id) are the same routes as P29-4 and P29-5, which have breaks. A hand break of the same two edits made the file fail 3 tests under each break, one for each injection string (a count of failures in this file; not a named test, and the evidence is not in the repository)"
     }
   ]
 }
