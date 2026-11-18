@@ -13,7 +13,10 @@ export type Effort = z.infer<typeof Effort>;
 // Key variables end in `_API_KEY`, so log redaction finds every one (security.md §2.6).
 const KeyEnvName = z.string().regex(/^[A-Z][A-Z0-9_]*_API_KEY$/);
 const ModelIdPattern = /^[a-z0-9-]+:[A-Za-z0-9._-]+$/;
-const ToolIdPattern = /^[a-z][a-z0-9_]*$/;
+// Also the key rule of `tool_settings` in the API bodies and of the stored JSON that the bots
+// repository reads (bots.ts, `ToolSettingsBody`). A change needs a check of the stored data first,
+// or a saved bot can fail its read.
+export const ToolIdPattern = /^[a-z][a-z0-9_]*$/;
 
 const Price = z.number().nonnegative();
 export const PriceOverride = z
