@@ -67,6 +67,7 @@ Plans up to M2 started as PR comments or PR descriptions. The header of each fil
 | `p3-runner-tmpdir.md` | DQ-618: the break runner keeps the local changes when TMPDIR is inside a git repository | Plan OK by the chief agent, 2026-11-18, against the owner's answer q3 Q1 A, revision 1; owner review pending |
 | `p3-check-status.md` | DQ-571: a CI check that each merged PR has its Done row in `docs/status.md` | Plan OK by the chief agent, 2026-11-18, against the owner's answer q2 Q2 A, revision 1; owner review pending |
 | `p3-plans-design-only.md` | Owner's answer q2 Q1 A: plans hold the design and the owner's decisions; build facts go only in the PR description | Chief agent, 2026-11-18, against the owner's answer q2 Q1 A, revision 2; owner review pending |
+| `p3-records-counts.md` | Owner's answers q4 Q3 A and Q6 A: one home for record facts; a records script writes the counts | Plan OK by the chief agent, 2026-11-18, against the owner's answers q4 Q3 A and Q6 A, revision 2; owner review pending |
 
 If the task names a plan, open it. Otherwise, find the slice in [status.md](../status.md), then open its plan.
 For current behaviour, read the owning documents.
