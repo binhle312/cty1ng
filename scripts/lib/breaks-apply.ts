@@ -31,7 +31,7 @@ function state(path: string): State {
   try {
     file = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   } catch (error) {
-    const code = (error as NodeJS.ErrnoException).code;
+    const code = error instanceof Error && "code" in error ? error.code : undefined;
     if (code === "ENOENT" || code === "ENOTDIR") return { kind: "absent" };
     if (code === "ELOOP") return { kind: "link", target: readlinkSync(path) };
     throw error;
