@@ -1,0 +1,95 @@
+{
+  "claims": [],
+  "exempt": [
+    {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "passes a PR with no list, and says that the list is missing",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "passes a list whose claims link, cover the PR's tests and compile",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "fails a list whose assertion the test file has two times (DQ-517)",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "fails a list that has no claim for a new test file that git does not track yet",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "finds the tests of the PR from the base that `--base` names",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "fails a list with a break that does not compile",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "accepts a list that links each changed test to a claim",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "refuses an assertion that the test file has two times (DQ-517)",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "refuses a test that the PR changes when no claim and no exemption names it (DQ-515)",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "refuses an assertion outside its named test (DQ-515)",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "counts each test of a new test file, and no test whose lines the PR did not touch",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "takes an exemption in place of a claim",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "checks only the given claims and no coverage for a part of the list (`--only`)",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "accepts a break that compiles, also with a variable that it leaves unused",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "gives the TypeScript error of a break that does not compile (DQ-439, DQ-448)",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "refuses a break of a TypeScript file that no project compiles",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "does not compile a break of a file that is not TypeScript",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    },
+    {
+      "file": "scripts/lib/breaks-static.test.ts",
+      "name": "reads the packages that pnpm links, with no false errors on code that the break keeps",
+      "reason": "Test first: the red run on the stub is in the PR description (testing.md \u00a75)"
+    }
+  ]
+}
