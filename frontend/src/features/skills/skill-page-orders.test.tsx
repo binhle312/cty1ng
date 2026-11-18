@@ -731,15 +731,6 @@ describe("a request that fails after the owner left", () => {
   });
 
   it("shows a failed Save in the save bar, with no toast, while the owner stays", async () => {
-    await failedSaveWhileStaying({ strict: false });
-  });
-
-  // The development build mounts each page two times (`<StrictMode>` in `main.tsx`).
-  it("shows a failed Save in the save bar in the development build's StrictMode", async () => {
-    await failedSaveWhileStaying({ strict: true });
-  });
-
-  async function failedSaveWhileStaying({ strict }: { strict: boolean }) {
     const held = heldAnswer();
     const skill = makeSkill();
     api = fakeApi({
@@ -750,7 +741,7 @@ describe("a request that fails after the owner left", () => {
       "GET /api/bots": () => ({ body: [] }),
       [VERSION_ROUTE]: () => held.promise,
     });
-    await renderApp("/skills/write-user-stories", { strict });
+    await renderApp("/skills/write-user-stories");
     await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 });
     click(screen.getByRole("tab", { name: "Write" }));
     typeBody(NEW_BODY);
@@ -764,7 +755,35 @@ describe("a request that fails after the owner left", () => {
     });
     expect(await screen.findByText("Something failed.")).toBeTruthy();
     expect(screen.queryByText("Could not save Write user stories. Try again.")).toBeNull();
-  }
+  });
+
+  // The development build mounts each page two times (`<StrictMode>` in `main.tsx`).
+  it("shows a failed Save in the save bar in the development build's StrictMode", async () => {
+    const held = heldAnswer();
+    const skill = makeSkill();
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: [skill] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: skill }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      "GET /api/bots": () => ({ body: [] }),
+      [VERSION_ROUTE]: () => held.promise,
+    });
+    await renderApp("/skills/write-user-stories", { strict: true });
+    await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 });
+    click(screen.getByRole("tab", { name: "Write" }));
+    typeBody(NEW_BODY);
+    click(screen.getByRole("button", { name: "Save as v4" }));
+    await waitFor(() => {
+      expect(api?.sent("POST", `/api/skills/${SKILL_ID}/versions`)).toHaveLength(1);
+    });
+    await held.answer({
+      status: 500,
+      body: { error: { code: "internal_error", message: "Something failed." } },
+    });
+    expect(await screen.findByText("Something failed.")).toBeTruthy();
+    expect(screen.queryByText("Could not save Write user stories. Try again.")).toBeNull();
+  });
 
   it("row 6: says when a Create fails", async () => {
     const held = heldAnswer();
