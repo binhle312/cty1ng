@@ -17,8 +17,9 @@ timed test of the file and left this one.
 ## Fix
 
 - Use `fastestRun(() => { findSensitive(line); }, 1_000)` for each line. A burst of load slows
-  one run. A slow scan (catastrophic backtracking, a quadratic loop) is slow in every run, so the
-  fastest of 3 is still over the limit and the test fails.
+  one run. A slow scan (a quadratic loop, a wait) is slow in every run, so the fastest of 3 is still
+  over the limit and the test fails. A scan that is slow only in its first run (for example a
+  regular expression before V8 compiles it) passes: see "Not claimed".
 - The assertion stays in the test body, not in the helper, and has its own text with the line
   number: `expect(fastest, ...).toBeLessThan(1_000)`.
 - The limit stays at 1,000 ms. The build measures the time of the slowest line alone and under
@@ -37,8 +38,8 @@ is not a late test.
 
 | Case | How it is proved |
 | --- | --- |
-| A slow scan still fails the test | Break in `sensitive-data.rules.ts`: `findSensitive` waits 1.1 s in each call (a value changes, nothing throws). Each of the 3 runs is over the limit, so the assertion of the line fails. This is the claim in the break list. 3 runs of 1.1 s stay inside the 20 s test timeout |
-| A busy machine does not fail the test | Break (not in the list, because the runner counts only a failure): `findSensitive` waits 1.1 s only in the first call of each line, or one call of each three. The old test fails, the new test passes. Both runs are in the PR description. This is the red run of the defect, on the old test |
+| A slow scan still fails the test | Two breaks in `sensitive-data.rules.ts` (a value changes, nothing throws), both in the break list: `findSensitive` waits 1.1 s in each call (the assertion of line 1 fails), and it waits 1.1 s only for the last line (the loop reaches line 48 and the message names it). Each of the 3 runs is over the limit. 3 runs of 1.1 s stay inside the 20 s test timeout |
+| One slow run on a busy machine does not fail the test | Break (not in the list, because the runner counts only a failure): `findSensitive` waits 1.1 s only in the first call of each of the first 3 lines. The old test fails, the new test passes. Both runs are in the PR description. This is the red run of the defect, on the old test. A wait on the first call of all 48 lines is not used: its 53 s total is over the 20 s test timeout, a second limit that the test shares |
 | The old test fails on one slow run | The same one-slow-run break on the old test file: red. Same run as above |
 | Time alone and in a full run | Time of the test alone, and in 3 full `pnpm test` runs (the JSON reporter gives the time of the test) |
 | Margin | The slowest line alone and with 24 busy processes, fastest of 3 |
@@ -51,11 +52,19 @@ each line one time. The loop keeps the first failing line in the message.
 - That the limit is right for each machine: the limit stays 1,000 ms for a 1 MB line, and a very
   slow CI runner can still fail it. Not run on CI before the push.
 - That a slow scan that is slower on only some of the 3 runs fails: a scan that is fast in one run
-  of three passes. This is the cost of the fastest-of-3 rule, as in #119.
+  of three passes. This is the cost of the fastest-of-3 rule, as in #119. One known case: V8
+  interprets a regular expression in its first run and compiles it after that, so a backtracking
+  regular expression can be slow in its first run only. Not claimed: that the test catches it.
+- That a busy machine never fails the test: the test has a second limit, the 20 s test timeout.
+  Slow runs that add up to more than 20 s (about 18 lines with one slow run each) still fail it.
 - The first timed test (`scans a 1 MB line of short code-like words`) is not changed.
 - A timing test cannot prove a linear scan; it proves that no line of the list takes over 1 s on
   the fastest of 3 runs.
 
 ## Open questions
 
-None.
+The cause is the same as DQ-044 (#73) and item 72 (#119): this is a third fix of a one-run time
+limit. `AGENTS.md` §9 asks for the owner's decision on a redesign when a cause repeats. This PR
+applies the helper of #119, which the row DQ-455 names ("fits it"). A timing-free check was
+rejected in #119 (its plan: the growth ratio was 2.7 to 12.0 under load). The owner decides if a
+redesign is wanted.

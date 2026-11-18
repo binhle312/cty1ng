@@ -2,7 +2,7 @@
   "claims": [
     {
       "id": "G1-slow-scan",
-      "claim": "A scan that is slow in every run (over 1,000 ms on a 1 MB line) fails the test, also with the fastest of 3 runs",
+      "claim": "A scan that is slow in every run (over 1,000 ms on a 1 MB line) fails the test, also with the fastest of 3 runs; the loop reaches the last line and its message names the line",
       "test": {
         "kind": "vitest",
         "file": "backend/src/core/guard/sensitive-data.rules.test.ts",
@@ -17,6 +17,16 @@
             {
               "find": "export function findSensitive(text: string): SensitiveMatch[] {\n  return [...scan(text)];\n}",
               "replace": "export function findSensitive(text: string): SensitiveMatch[] {\n  const until = performance.now() + 1_100;\n  while (performance.now() < until) {\n    // wait\n  }\n  return [...scan(text)];\n}"
+            }
+          ]
+        },
+        {
+          "id": "G1-wait-on-last-line",
+          "file": "backend/src/core/guard/sensitive-data.rules.ts",
+          "edits": [
+            {
+              "find": "export function findSensitive(text: string): SensitiveMatch[] {\n  return [...scan(text)];\n}",
+              "replace": "export function findSensitive(text: string): SensitiveMatch[] {\n  if (text.startsWith(\"pwd=/a)\")) {\n    const until = performance.now() + 1_100;\n    while (performance.now() < until) {\n      // wait\n    }\n  }\n  return [...scan(text)];\n}"
             }
           ]
         }
