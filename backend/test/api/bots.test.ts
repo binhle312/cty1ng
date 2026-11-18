@@ -40,6 +40,7 @@ const AnyObject = z.record(z.string(), z.unknown());
 const ErrorBody = z.object({
   error: z.object({
     code: z.string(),
+    message: z.string(),
     field: z.string().optional(),
     current: z.unknown().optional(),
   }),
@@ -96,6 +97,72 @@ describe("POST /bots", () => {
       code: "validation_error",
       field: "pins[0].skill_id",
     });
+  });
+
+  // DQ-385 (api.md §1): `field` is the first unknown key, never the keys joined with a dot, which
+  // the format reads as a key inside a key. The message names every unknown key.
+  it("names one unknown key in field and message", async () => {
+    const { response } = await createBot({ ...newBot, nmae: "x" });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toMatchObject({
+      code: "validation_error",
+      field: "nmae",
+      message: "Unknown field: nmae.",
+    });
+  });
+
+  it("names the first of two unknown keys in field and both in the message", async () => {
+    const { response } = await createBot({ ...newBot, nmae: "x", colr: "y" });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toMatchObject({
+      code: "validation_error",
+      field: "nmae",
+      message: "Unknown fields: nmae, colr.",
+    });
+  });
+
+  it("names the full path to an unknown key inside a list item", async () => {
+    const { response } = await createBot({
+      ...newBot,
+      pins: [{ skill_id: "skill_01jb8x6p0afqz8r2m3k5t7v9wx", always_load: false, extra: 1 }],
+    });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toMatchObject({
+      code: "validation_error",
+      field: "pins[0].extra",
+      message: "Unknown field: extra.",
+    });
+  });
+
+  // R1-1 of PR 134: an empty key at the root names no field, so the answer has no `field`
+  // (api.md §1). Inside an object the answer is not covered here.
+  it("gives no field for an unknown key that is empty", async () => {
+    const { response } = await createBot({ ...newBot, "": 1 });
+    expect(response.status).toBe(422);
+    const error = await errorOf(response);
+    expect(error).toMatchObject({ code: "validation_error" });
+    expect(error).not.toHaveProperty("field");
+  });
+
+  // DQ-735 (the chief's decision inside the owner's answer q4 Q4 A): a key with a character
+  // outside letters, digits, `_`, `$` and `-` is written as a JSON string in the message, so a
+  // comma or a quote in a key is not read as a separator. `field` keeps the raw key.
+  it("writes an empty unknown key as an empty JSON string in the message", async () => {
+    const { response } = await createBot({ ...newBot, "": 1 });
+    expect(await errorOf(response)).toMatchObject({ message: 'Unknown field: "".' });
+  });
+
+  it("writes an unknown key with a comma as a JSON string in the message", async () => {
+    const { response } = await createBot({ ...newBot, "a, b": 1, c: 2 });
+    expect(await errorOf(response)).toMatchObject({
+      field: "a, b",
+      message: 'Unknown fields: "a, b", c.',
+    });
+  });
+
+  it("writes an unknown key with a quote as a JSON string in the message", async () => {
+    const { response } = await createBot({ ...newBot, 'c"d': 1 });
+    expect(await errorOf(response)).toMatchObject({ message: 'Unknown field: "c\\"d".' });
   });
 
   // Item 34 of the P3 list: a key of tool_settings has the shape of a catalog tool id.
