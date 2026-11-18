@@ -27,9 +27,10 @@ others: a script writes every count, and the other records link to the row that 
 1. **The script rule gives the hand counts of the register.** For each register row with the
    milestone "Audit 2026-11-05": the rows whose discovery PR (column 3, `… / #N / …`) is the PR, of
    any milestone and not `withdrawn`; open = `open` or `partial`; escaped = `escaped: yes` in the
-   last cell; rounds = the round rows of the PR in the two round tables. From #105 to #133 (25
-   rows) the four numbers equal the hand cells, with one difference: #114 says 2 escaped (DQ-541,
-   DQ-542), and both rows say `escaped: no`. #73 to #96 count another way (the fixing PR, or the
+   last cell; rounds = the round rows of the PR in the two round tables. From #105 to #133 (23
+   rows) the four numbers equal the hand cells, with two differences: #114 says 2 escaped (DQ-541,
+   DQ-542), and both rows say `escaped: no`; #124 says 0 escaped, and DQ-508 (milestone `unknown`)
+   says `escaped: yes`. #73 to #96 count another way (the fixing PR, or the
    audit as the discoverer), so their cells are history.
 2. **The Audit row.** The ledger rows with milestone `Audit`, not withdrawn, give 438 unique, 48
    open, escaped 13 in 411 rows that record it and 27 that do not: the row as it is. Its PR list is
@@ -95,7 +96,7 @@ others: a script writes every count, and the other records link to the row that 
   ledger row, so the script writes the four count cells: "Unique issues" `15 (DQ-372 to DQ-386)`,
   "Open issues" `4 (DQ-374, DQ-381, DQ-385, DQ-386)` or `0`, "Escaped issues" in the same form,
   "Review rounds" `3`. A run of three or more ids is a range; two are listed. #105 to #133 get
-  `Ledger` in this PR (probe 1), and later PRs at their creation (§7 step 1). Rows with `Partial`
+  `Ledger` in this PR (probe 1; 23 register rows on `main`), and later PRs at their creation (§7 step 1). Rows with `Partial`
   or `Unmeasured` keep their hand cells as history.
 - The text that the old cells added ("it also fixes DQ-037", the heads of the reviews) has its home
   in the fix cell of that row and in the round log. The build checks each such text against its

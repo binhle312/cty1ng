@@ -327,7 +327,8 @@ Prettier, `tsc`, dependency-cruiser import rules (D35), Vitest, `db:check` (Driz
 `check:index` (folder indexes complete, `architecture.md` §4.2), `check:status` (each PR merged into `main` since the start date in
 `scripts/lib/check-status.ts` has a link in a Done row of `docs/status.md`; it reads the merges of
 `HEAD^1`: the base of the PR's test merge, or `main` before the merge on a push, so a PR never needs
-its own row), the bundle budget
+its own row), `records:counts` (the Audit row of `delivery-quality.md` §2 and the count cells of
+each `Ledger` row of its register are what the ledger rows give), the bundle budget
 (`pnpm build`, then `pnpm check:bundle`), CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also run the automated security review when it is on;
 it is off for now (`security.md` §2.11).
 

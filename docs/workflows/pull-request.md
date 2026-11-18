@@ -37,12 +37,17 @@ Link to the brief and decisions.
 - README.md tables updated for every added, removed, renamed or repurposed file, and the
   descriptions still match what the files do (or "no file changes")
 
+## Records
+Ledger rows DQ-a to DQ-b, the round rows of this PR in §6 and its register row, in
+`docs/delivery-quality.md`. `pnpm records:counts` passes (CI). This description holds no state,
+count, fix commit or round result: the rows hold them.
+
 ## Defect and review fixes (when a review found something)
-List each defect that this PR repairs and each review fix. For each one, give the general rule, the search of old fixes, and the answer ([bug fix, step 2](bug-fix.md)).
-| Finding | Cause (the rule broken) | Same cause checked in | Same cause as an earlier fix? | Fix | Test |
-| --- | --- | --- | --- | --- | --- |
-| A late Profile answer brings back an old pin | An answer writes fields it does not own | Save answers, pin answers, dialog answers | No | Answers write an allowlist | `bot-edit-form.test` "takes from a save answer only …" |
-| A late dialog answer brings back an old pin | An answer writes fields it does not own | Every answer that writes the form | Yes, the row above. Owner's decision: redesign, with one owner for the form state | The form state has one owner | `bot-edit-form.test` "takes from a dialog answer only …" |
+List each defect that this PR repairs and each review fix. For each one, give the general rule, the search of old fixes, and the answer ([bug fix, step 2](bug-fix.md)). The fix and the test are in the ledger row of the id.
+| Finding | Cause (the rule broken) | Same cause checked in | Same cause as an earlier fix? |
+| --- | --- | --- | --- |
+| DQ-a | An answer writes fields it does not own | Save answers, pin answers, dialog answers; `grep -n "writes fields" docs/delivery-quality*.md`: no hit | No |
+| DQ-b | An answer writes fields it does not own | Every answer that writes the form | Yes, DQ-a. Owner's decision: redesign, with one owner for the form state |
 
 ## Follow-ups (not done here)
 - ...
@@ -67,8 +72,17 @@ Name the search of the prevention actions
 Each fact has one home, and other records link to it (decided by the builder at the owner's request, 2026-11-09, DQ-152). The PR body
 states no state, count or result that a file or a tool owns:
 
-- The state of an issue or a prevention action lives only in its row of
-  `docs/delivery-quality.md`. The PR body names the id.
+- The state, the fix commit and the test of an issue, and the state of a prevention action, live
+  only in its row of `docs/delivery-quality.md`. The PR body names the id in its `Records` section
+  and in the `Defect and review fixes` table; it does not repeat them (owner, 2026-11-18, q4 Q3 A).
+- The result of a review round lives only in its row of the round log.
+- The counts of the Audit row and of each `Ledger` row of the register: `pnpm records:counts --write`
+  writes them from the rows, and CI checks them. Nobody types them, in the ledger or in the body.
+- The "Same cause as an earlier fix?" answer and its search live in the `Defect and review fixes`
+  table (`AGENTS.md` §9). The search is a command or a list of the places read, with its hits. A
+  ledger row does not repeat the answer; its last cell links the related ids.
+- A `docs/status.md` line of a PR has its state, its date and its link. It has no list of files, no
+  count and no claim that a test or a row owns.
 - The results of a script live in its output. The PR body pastes the output unchanged, with the
   commit that it names. It does not retype numbers from it. `pnpm check:breaks --report <file>`
   writes such a report.
@@ -108,7 +122,9 @@ review fix, check them against the commit that you push (owner, 2026-11-08, DQ-1
    `LC_ALL=C` makes it count bytes, so each machine gives the same result. Make each row that it
    prints shorter, also when the PR only adds a fix to the row. A row up to DQ-202 can stay as it
    is (owner, 2026-11-10).
-8. Run `wc -c < docs/delivery-quality.md`. If the result is larger than the limit in
+8. After the merge of `origin/main`, run `pnpm records:counts --write`, and commit what it
+   writes. CI runs `pnpm records:counts` and fails when a count is stale.
+9. Run `wc -c < docs/delivery-quality.md`. If the result is larger than the limit in
    [§7 step 6 of the ledger](../delivery-quality.md#7-update-and-assess), write under Follow-ups
    of the PR description that a move of the closed rows is due. The move is a PR of its own. The
    one exception is the move of the P3 PRs in
