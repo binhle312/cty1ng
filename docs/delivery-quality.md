@@ -58,10 +58,9 @@ If any PR lacks full coverage, show the known subtotal with its coverage, or kee
 Add a row for each later milestone when its first PR enters the record.
 `pnpm records:counts --write` writes the Audit row from the rows of the ledger files, and CI
 fails when the row is stale (§7, step 5). The notes on the count of each PR that this section held
-before #135 are in git history: `git show 5605954:docs/delivery-quality.md`, lines 59 to 84, the
-note of #128 in `git show f78f013:docs/delivery-quality.md` (line 83), and the note of #129 in
-`git show 79e3a05:docs/delivery-quality.md` (line 84), and the note of #132 in
-`git show 1d81188:docs/delivery-quality.md` (line 85).
+before #135 are in git history: `git show 5605954:docs/delivery-quality.md`, lines 59 to 84. The
+notes that later merges of `main` brought (#128, #129, #132, #134) are in the commits that this
+command lists: `git log --oneline -G '^#[0-9]+ added ' origin/main -- docs/delivery-quality.md`.
 
 **M2 close check (2026-11-04).** Population: all five baseline PRs are merged, and #66 is the sixth.
 #60, #61, #62, #63 and #64 have no milestone in the slice register, so they are outside it.

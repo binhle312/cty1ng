@@ -22,7 +22,7 @@ not finished (lesson `full-gate-before-the-report.md`).
 **Spec walk.** Before the PR, the builder reads each section of the slice's spec against the
 code, not only the acceptance criteria, and tests the edge cases in `docs/testing.md` §3 ("Edge
 cases each slice tests"). The PR lists the sections checked (lesson
-`self-review-against-the-spec.md`), and it has one edge case table for each changed screen ([PR template](pull-request.md)).
+`self-review-against-the-spec.md`), and it has one edge case table for each changed screen ([PR template](../../.github/pull_request_template.md)).
 **Order and list-state checks.** Before the push, check every request on each changed
 screen with locks, live events or late answers. Cover all six cases in
 [Request order and list states](../testing.md#request-order-and-list-states), including requests away from the reported finding.
@@ -32,7 +32,7 @@ does not need to read that file (lesson `check-every-order-before-the-push.md`).
 **Delivery records.** After review or fixes, update [delivery quality](../delivery-quality.md#7-update-and-assess).
 At handoff, reconcile the PR's issues, review rounds, and verification evidence there.
 [Status](../status.md) owns milestone state and next work.
-**Evidence.** Fill the PR template in [pull-request.md](pull-request.md) using [testing.md §5](../testing.md#5-evidence-in-prs).
+**Evidence.** Fill the [PR template](../../.github/pull_request_template.md) by the rules of [pull-request.md](pull-request.md), using [testing.md §5](../testing.md#5-evidence-in-prs).
 Before each push, also after a review fix, do [the records check](pull-request.md#before-each-push-check-the-records).
 Add new library pitfalls, lint patterns or test-helper guidance to their owning document:
 `docs/frontend-conventions.md` §5 or `docs/testing.md`.

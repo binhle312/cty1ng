@@ -366,6 +366,18 @@ describe("structure problems", () => {
     ]);
   });
 
+  it("reports a round row and a register row with more or fewer cells than their header", () => {
+    const fixture = onePr({
+      rounds: [round(10).replace("| none | none |", "| none | none | stray |")],
+      registerRows: [register({ pr: 10, cells: ["2 (DQ-001, DQ-002)", "1 (DQ-002)", "0"] })],
+    });
+    const problems = checkCounts(files(fixture)).filter((p) => p.includes("cells"));
+    expect(problems, "round and register cell counts").toEqual([
+      `${MAIN}:${lineIn(files(fixture), "| [#10](" + LINK + "/10) / round")}: the row [#10](${LINK}/10) / round 1 has 10 cells; its header has 9. Fix the stray or missing "|".`,
+      `${MAIN}:${lineIn(files(fixture), "| [#10](" + LINK + "/10) | ")}: the row [#10](${LINK}/10) has 7 cells; its header has 8. Fix the stray or missing "|".`,
+    ]);
+  });
+
   it("reports a table that no file has, and a table that two files have", () => {
     const [main, archive] = files(onePr());
     const noRegister = {
@@ -432,6 +444,7 @@ describe("the Same cause answer of a row", () => {
     ["the word search with no command and hits", "Same cause: no (no search done)"],
     ["a word other than yes or no", "Same cause: maybe (search: `grep -n x`: no hit)"],
     ["a small first letter", "same cause: no (search: `grep -n x`: no hit)"],
+    ["a search with no hits", "Same cause: no (search: `grep -n x`)"],
   ])("reports %s", (_name, fix) => {
     expect(checkCounts(files(rows(`\`abc1234\`: the fix. ${fix}`))), fix).toEqual([NO_ANSWER(751)]);
   });

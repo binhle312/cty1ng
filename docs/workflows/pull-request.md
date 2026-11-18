@@ -1,59 +1,24 @@
 # Write a PR description
 
-Use this template when you prepare an authorized draft PR. Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
+The template is [`.github/pull_request_template.md`](../../.github/pull_request_template.md). GitHub
+puts it into each new PR, and it is the one home of the sections and their order (owner,
+2026-11-18, q4 Q3 A: one home for each fact). This file holds the rules for what goes into them.
+Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
 
-```markdown
-## What
-One paragraph.
+## Examples of filled rows
 
-## Why
-Link to the brief and decisions.
+The template has empty rows. These rows show the level of detail:
 
-## Acceptance criteria
-| AC | Evidence |
+| Section | Example row |
 | --- | --- |
-| UI-2.4 | `e2e/header-drag.spec.ts` "drop adds bot": expects the bot chip in the header after the drop; + screenshot |
-| conversation-rules §1 table | `decide-runs.rules.test.ts` "human message: …" rows: one row per table line |
-| Each default has one home (a claim with no test) | The search script in this description and its output on `abc1234`; the 21 places that it printed now point to the home. **Not claimed:** that no copy stays |
-
-## Edge cases (one table for each changed screen, `testing.md` §3)
-| Case | Test, or why the row does not apply |
-| --- | --- |
-| The same action twice | `bots.spec` "a second Clone …" |
-| Keyboard only | Does not apply: this PR adds no control |
-
-## Differences from the plan
-- Test strategy T1 became two tests in `purge-due.test.ts`. Reason: one claim per test name
-- (or "none")
-
-## Needs human review
-- Migration `0003_skill_versions` (new tables, no data change)
-- (or "none")
-
-## Docs updated
-- docs/domain-model.md §3 (added changelog column)
-
-## Folder indexes
-- README.md tables updated for every added, removed, renamed or repurposed file, and the
-  descriptions still match what the files do (or "no file changes")
-
-## Records
-Ledger rows DQ-a to DQ-b, the round rows of this PR in §6 and its register row, in
-`docs/delivery-quality.md`. `pnpm records:counts` passes (CI). This description holds no state,
-count, fix commit or round result: the rows hold them.
-
-## Defect and review fixes (when a review found something)
-List the ledger row of each defect that this PR repairs and of each review fix. The row holds the
-general rule, the fix, the test, and the "Same cause as an earlier fix?" answer with its search
-([bug fix, step 2](bug-fix.md); `AGENTS.md` §9).
-| Row | Finding |
-| --- | --- |
-| DQ-a | A late Profile answer brings back an old pin |
-| DQ-b | A late dialog answer brings back an old pin (the row names DQ-a and the owner's decision) |
-
-## Follow-ups (not done here)
-- ...
-```
+| Acceptance criteria | `UI-2.4` → `e2e/header-drag.spec.ts` "drop adds bot": expects the bot chip in the header after the drop; + screenshot |
+| Acceptance criteria | `conversation-rules §1 table` → `decide-runs.rules.test.ts` "human message: …" rows: one row per table line |
+| Acceptance criteria, a claim with no test | "Each default has one home" → the search script in the description and its output on `abc1234`; the 21 places that it printed now point to the home. **Not claimed:** that no copy stays |
+| Edge cases | "The same action twice" → `bots.spec` "a second Clone …"; "Keyboard only" → "Does not apply: this PR adds no control" |
+| Differences from the plan | Test strategy T1 became two tests in `purge-due.test.ts`. Reason: one claim per test name |
+| Needs human review | Migration `0003_skill_versions` (new tables, no data change) |
+| Docs updated | `docs/domain-model.md` §3 (added changelog column) |
+| Defect and review fixes | `DQ-a` → "A late Profile answer brings back an old pin"; `DQ-b` → "A late dialog answer brings back an old pin" (the row names DQ-a and the owner's decision) |
 
 ## A claim fits its proof
 
