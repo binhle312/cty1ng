@@ -430,7 +430,7 @@
         "file": "frontend/src/features/skills/skill-page-orders.test.tsx",
         "name": "shows a failed Save in the save bar in the development build's StrictMode"
       },
-      "assertion": "expect(await screen.findByText(\"Something failed.\")).toBeTruthy();",
+      "assertion": "expect(await screen.findByText(\"Something failed.\"), \"the save bar in StrictMode\").toBeTruthy();",
       "breaks": [
         {
           "id": "C21-a",

@@ -781,7 +781,7 @@ describe("a request that fails after the owner left", () => {
       status: 500,
       body: { error: { code: "internal_error", message: "Something failed." } },
     });
-    expect(await screen.findByText("Something failed.")).toBeTruthy();
+    expect(await screen.findByText("Something failed."), "the save bar in StrictMode").toBeTruthy();
     expect(screen.queryByText("Could not save Write user stories. Try again.")).toBeNull();
   });
 
