@@ -23,6 +23,10 @@ const base = { open: true, skillName: "Write user stories", pending: false, erro
 const render = (ui: ReactElement) => renderBare(<TooltipProvider>{ui}</TooltipProvider>);
 
 // ui-rules B5: an off button says why. The owner reaches it with Tab, so the test does too.
+// UI-2 B (owner, 2026-11-18, item 61): the reason that a confirm button gives when the bots that
+// use the skill did not load.
+const NOT_LOADED_REASON = "The app must know which bots use this skill. Try again first.";
+
 async function tabToReason(button: HTMLElement, reason: string) {
   const user = userEvent.setup();
   for (let step = 0; step < 10 && document.activeElement !== button; step += 1) await user.tab();
@@ -112,10 +116,7 @@ describe("the Deprecate dialog", () => {
       />,
     );
     expect(screen.getByRole("alert").textContent).toContain("The app could not load the bots.");
-    await tabToReason(
-      screen.getByRole("button", { name: "Deprecate" }),
-      "The bots did not load. Try again first.",
-    );
+    await tabToReason(screen.getByRole("button", { name: "Deprecate" }), NOT_LOADED_REASON);
   });
 
   it("says why it is off while the change saves", async () => {
@@ -270,5 +271,23 @@ describe("the dialogs when the bots did not load", () => {
     );
     click(tryAgain());
     expect(bots.retry, "Delete: Try again").toHaveBeenCalledTimes(1);
+  });
+
+  it("gives the new reason on the confirm button of the Remove from bots and Delete dialogs", async () => {
+    const remove = render(
+      <RemoveFromBotsDialog {...base} bots={failed()} onCancel={vi.fn()} onConfirm={vi.fn()} />,
+    );
+    await tabToReason(screen.getByRole("button", { name: /^Remove from / }), NOT_LOADED_REASON);
+    remove.unmount();
+    render(
+      <DeleteDialog
+        {...base}
+        trashDays={30}
+        bots={failed()}
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+      />,
+    );
+    await tabToReason(screen.getByRole("button", { name: "Delete skill" }), NOT_LOADED_REASON);
   });
 });

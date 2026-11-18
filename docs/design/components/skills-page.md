@@ -571,7 +571,7 @@ the changes marked "owner, 2026-10-31".
   "Tick a bot first.", "Loading the versions.", "The versions did not load. Try again first.",
   "Adding the bots.", "Saving the change.", "v{n} no longer exists. Cancel and pick another
   version." The Deprecate, Remove from bots and Delete dialogs (§10.1, §10.3, §11): "Loading
-  the bots that use it.", "The bots did not load. Try again first.", "Deprecating
+  the bots that use it.", "The app must know which bots use this skill. Try again first.", "Deprecating
   the skill.", "Removing the skill from the bots.", "No bot uses this skill.", "Tick a bot
   first.", "Deleting the skill."
 - A long diff in the upgrade card (SK3) scrolls inside the card, so Cancel and Upgrade stay in
