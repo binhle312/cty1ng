@@ -19,6 +19,10 @@ Revision 4, 2026-11-18 (review round 2 of #135): the test strategy rows of revis
 checks that the reviews added; the answer check also covers rows found after 2026-11-18 and needs
 the whole form; a row with more or fewer cells than its header is a problem (the chief agent's
 note on DQ-573). Approval: the chief agent, 2026-11-18; owner review pending
+Revision 5, 2026-11-18 (DQ-753, a same cause as DQ-356): the PR template has one home,
+`.github/pull_request_template.md`, which GitHub needs; `pull-request.md` keeps the rules and
+example rows and links to it. No test: the change removes a copy, so there is nothing to compare.
+Approval: the chief agent, 2026-11-18, under q4 Q3 A (one home for each fact); owner review pending
 
 ## The cause
 
@@ -120,7 +124,7 @@ home goes into its ledger row first. This removes 13,935 bytes and three wrong s
 
 ### How a PR description links its rows (`docs/workflows/pull-request.md`)
 
-- The template gets a section `## Records`: "Ledger rows DQ-a to DQ-b, the round rows of #N in
+- The template (`.github/pull_request_template.md`, its one home from revision 5) gets a section `## Records`: "Ledger rows DQ-a to DQ-b, the round rows of #N in
   §6 and the register row (`docs/delivery-quality.md`). `pnpm records:counts` passes (CI). This
   description holds no state, count, fix commit or round result."
 - The `Defect and review fixes` table names the rows. The row holds the cause, the fix, the test
