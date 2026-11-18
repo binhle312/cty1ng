@@ -7,11 +7,12 @@ import {
   readFileSync,
   rmSync,
   statSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { applyPatch, changesMissing } from "./breaks-apply.ts";
 
 const git = (cwd: string, ...args: string[]) =>
@@ -22,9 +23,13 @@ const git = (cwd: string, ...args: string[]) =>
 
 let root: string;
 let repo: string;
+let outer: string;
 let copy: string;
 
 beforeEach(() => {
+  // No git settings of the user or the system (core.autocrlf, commit.gpgsign) in these repositories.
+  vi.stubEnv("GIT_CONFIG_GLOBAL", "/dev/null");
+  vi.stubEnv("GIT_CONFIG_NOSYSTEM", "1");
   root = mkdtempSync(join(tmpdir(), "breaks-apply-"));
   // The checkout: a committed state, then local changes of three kinds.
   repo = join(root, "repo");
@@ -39,7 +44,7 @@ beforeEach(() => {
   rmSync(join(repo, "gone.ts"));
   chmodSync(join(repo, "run.sh"), 0o755);
   // The copy of HEAD, inside another git repository (a TMPDIR inside a checkout).
-  const outer = join(root, "outer");
+  outer = join(root, "outer");
   mkdirSync(outer);
   git(outer, "init", "-q");
   copy = join(outer, "tmp", "check-breaks-copy");
@@ -48,6 +53,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   rmSync(root, { recursive: true, force: true });
 });
 
@@ -60,6 +66,19 @@ describe("applyPatch", () => {
     expect(readFileSync(join(copy, "app/code.ts"), "utf8")).toBe("export const a = 2;\n");
     expect(existsSync(join(copy, "gone.ts"))).toBe(false);
     expect(executable(join(copy, "run.sh"))).toBe(true);
+  });
+
+  it("puts a tracked edit into the copy when GIT_DIR and GIT_WORK_TREE name the outer repository", () => {
+    vi.stubEnv("GIT_DIR", join(outer, ".git"));
+    vi.stubEnv("GIT_WORK_TREE", outer);
+    const patch = execFileSync("git", ["diff", "HEAD", "--binary"], {
+      cwd: repo,
+      env: { ...process.env, GIT_DIR: join(repo, ".git"), GIT_WORK_TREE: repo },
+    });
+
+    applyPatch(copy, patch);
+
+    expect(readFileSync(join(copy, "app/code.ts"), "utf8")).toBe("export const a = 2;\n");
   });
 });
 
@@ -95,6 +114,22 @@ describe("changesMissing", () => {
     writeFileSync(join(repo, "app/new.ts"), "export const n = 1;\n");
 
     expect(changesMissing({ repo, copy, files: [...files, "app/new.ts"] })).toEqual(["app/new.ts"]);
+  });
+
+  it("names a link whose target differs", () => {
+    changeCopy();
+    symlinkSync("app/code.ts", join(repo, "link.ts"));
+    symlinkSync("gone.ts", join(copy, "link.ts"));
+
+    expect(changesMissing({ repo, copy, files: [...files, "link.ts"] })).toEqual(["link.ts"]);
+  });
+
+  it("names a file that is a folder in the checkout", () => {
+    changeCopy();
+    rmSync(join(repo, "app/code.ts"));
+    mkdirSync(join(repo, "app/code.ts"));
+
+    expect(changesMissing({ repo, copy, files })).toEqual(["app/code.ts"]);
   });
 
   it("names nothing when the copy has every change", () => {

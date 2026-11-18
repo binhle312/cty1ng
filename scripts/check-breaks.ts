@@ -3,6 +3,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  copyFileSync,
   lstatSync,
   mkdirSync,
   mkdtempSync,
@@ -87,9 +88,10 @@ execFileSync("tar", ["-x", "-C", copy], {
   input: execFileSync("git", ["archive", "HEAD"], { maxBuffer: 2 ** 30 }),
 });
 if (patch.length > 0) applyPatch(copy, patch);
+// A copy of the file keeps its executable bit.
 for (const file of untracked) {
   mkdirSync(join(copy, dirname(file)), { recursive: true });
-  writeFileSync(join(copy, file), readFileSync(file));
+  copyFileSync(file, join(copy, file));
 }
 // The copy must have each local change; else the run would test HEAD under a hash of the changes.
 const missing = changesMissing({
