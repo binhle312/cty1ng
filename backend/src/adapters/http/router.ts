@@ -25,10 +25,16 @@ export function createRouter() {
       const message =
         unknown === undefined
           ? issue.message
-          : `Unknown ${unknown.length === 1 ? "field" : "fields"}: ${unknown.join(", ")}.`;
+          : `Unknown ${unknown.length === 1 ? "field" : "fields"}: ${unknown.map(keyName).join(", ")}.`;
       throw new ApiFailure("validation_error", message, field === "" ? undefined : field);
     },
   });
+}
+
+// A key in the message of an unknown field (api.md §1): plain when it is made of letters, digits,
+// `_`, `$` and `-`, else a JSON string, so a comma or a quote in a key is not read as a separator.
+function keyName(key: string): string {
+  return /^[A-Za-z0-9_$-]+$/.test(key) ? key : JSON.stringify(key);
 }
 
 // The one format of `field` (api.md §1): a dot before a key of an object, `[i]` for an index of a

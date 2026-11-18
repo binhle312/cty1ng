@@ -19,8 +19,10 @@ Read conventions and errors, then the endpoint group in scope and its referenced
   (like `model_id` on bot update) fail loudly with 422 `validation_error`. When the first problem
   of the body is unknown fields in one object, `field` is the first unknown key with its full path
   (`pins[0].extra`), and the message names every unknown key (`Unknown fields: nmae, colr.`; one
-  key: `Unknown field: nmae.`). Unknown keys of one object are not joined into `field`, because
-  `a.b` means the key `b` inside `a`. The OpenAPI document and the dev docs page are not Zod
+  key: `Unknown field: nmae.`). A key that has a character other than a letter, a digit, `_`, `$`
+  or `-` is written as a JSON string in the message (`Unknown fields: "a, b", c.`), so a comma in a
+  key is not read as a separator; `field` keeps the raw key. Unknown keys of one object are not
+  joined into `field`, because `a.b` means the key `b` inside `a`. The OpenAPI document and the dev docs page are not Zod
   routes, and they refuse a query key with the same 422 `validation_error`.
 - A version number in the path or the query (`{version}`, `from`, `to`) is digits with no leading
   zero, within the safe integer range; `0x2`, `2.0` or `1e0` gets 422 `validation_error`.

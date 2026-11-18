@@ -144,6 +144,27 @@ describe("POST /bots", () => {
     expect(error).not.toHaveProperty("field");
   });
 
+  // DQ-735 (the chief's decision inside the owner's answer q4 Q4 A): a key with a character
+  // outside letters, digits, `_`, `$` and `-` is written as a JSON string in the message, so a
+  // comma or a quote in a key is not read as a separator. `field` keeps the raw key.
+  it("writes an empty unknown key as an empty JSON string in the message", async () => {
+    const { response } = await createBot({ ...newBot, "": 1 });
+    expect(await errorOf(response)).toMatchObject({ message: 'Unknown field: "".' });
+  });
+
+  it("writes an unknown key with a comma as a JSON string in the message", async () => {
+    const { response } = await createBot({ ...newBot, "a, b": 1, c: 2 });
+    expect(await errorOf(response)).toMatchObject({
+      field: "a, b",
+      message: 'Unknown fields: "a, b", c.',
+    });
+  });
+
+  it("writes an unknown key with a quote as a JSON string in the message", async () => {
+    const { response } = await createBot({ ...newBot, 'c"d': 1 });
+    expect(await errorOf(response)).toMatchObject({ message: 'Unknown field: "c\\"d".' });
+  });
+
   // Item 34 of the P3 list: a key of tool_settings has the shape of a catalog tool id.
   it("refuses a tool_settings key that is not a tool id with 422", async () => {
     const { response } = await createBot({ ...newBot, tool_settings: { "Not An Id": false } });
