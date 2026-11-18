@@ -13,7 +13,7 @@ Approval: plan OK by the chief agent, 2026-11-18, against the owner's answer q2 
 A PR cannot record its own merge, so the next PR adds the Done row of the PR before it
 ([pull-request.md, step 6](../workflows/pull-request.md#before-each-push-check-the-records)).
 Only a person checks it, and three times a hand-written Done row was wrong or missing (DQ-207,
-DQ-212, DQ-565; DQ-571 names the same cause). Example: #125 merged on 2026-11-18 at 08:47 (+07:00), and on `main` today
+DQ-212, DQ-565; DQ-571 names the same cause; DQ-565 and DQ-571 are on #127's branch). Example: #125 merged on 2026-11-18 at 08:47 (+07:00), and on `main` today
 (`6a43404`) the Done table still has no row for it (#127 adds one). The same check finds 15 more
 gaps (probe 3).
 
@@ -132,6 +132,15 @@ counted outside `## Done`.
 - A PR merged into another PR's branch (#95, #112) is not a PR merged into `main`, and the check
   does not ask for its row.
 - The job does not stop a merge unless the owner makes it a required check.
+
+## Changes during the build (2026-11-18)
+
+- The test "a link outside the Done table" puts the link in a section after the Done table, not in
+  `## Slices`: a `## Slices` row has no date, so it is a broken row there and counted no link even
+  with the section bounds removed. A dated row after the Done table needs the end bound.
+- The test of "the PR of the commit itself" came in the round 1 fix commit (R1-2): a merge of #4 on
+  top, and `readHistory(repo, "HEAD^1")` lists #3 and #1. It tests `readHistory` with `HEAD^1`; no
+  test reads the `--history HEAD^1` line of `ci.yml`.
 
 ## Open questions
 

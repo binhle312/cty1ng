@@ -165,6 +165,11 @@ describe("readHistory", () => {
     git("merge", "-q", "--no-ff", "two", "-m", "Merge pull request #2 from owner/two");
     git("checkout", "-q", "main");
     git("merge", "-q", "--no-ff", "three", "-m", "Merge pull request #3 from owner/three");
+    // #4: the merge that a push to main checks; CI reads HEAD^1, the history before it.
+    git("checkout", "-q", "-b", "four");
+    git("commit", "-q", "--allow-empty", "-m", "four");
+    git("checkout", "-q", "main");
+    git("merge", "-q", "--no-ff", "four", "-m", "Merge pull request #4 from owner/four");
   });
   afterEach(() => {
     rmSync(repo, { recursive: true, force: true });
@@ -173,7 +178,13 @@ describe("readHistory", () => {
   it("does not list a PR merged into another PR's branch", () => {
     const history = readHistory(repo, "HEAD");
     const prs = mergedPrs(history.log).map((m) => m.pr);
-    expect(prs, "PRs on the first-parent line").toEqual([3, 1]);
+    expect(prs, "PRs on the first-parent line").toEqual([4, 3, 1]);
+  });
+
+  it("does not list the merge of HEAD when it reads HEAD^1", () => {
+    const history = readHistory(repo, "HEAD^1");
+    const prs = mergedPrs(history.log).map((m) => m.pr);
+    expect(prs, "PRs before the merge of HEAD").toEqual([3, 1]);
   });
 
   it("reports a shallow clone", () => {

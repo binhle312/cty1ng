@@ -1,7 +1,8 @@
 // `pnpm check:status [--history <rev>]`: each PR merged into `main` on or after the start date
 // has a Done row in docs/status.md. `--history` names the commit whose merged PRs need a row:
 // `origin/main` by default (what a PR needs, after a `git fetch`); CI passes `HEAD^1`, the base of
-// the PR's test merge, or `main` before the merge on a push (testing.md §4).
+// the PR's test merge, or `main` before the merge on a push (testing.md §4). Locally, merge
+// `origin/main` into the branch first: the Done rows come from the branch's own docs/status.md.
 import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { SINCE, checkStatus, mergedPrs } from "./lib/check-status.ts";

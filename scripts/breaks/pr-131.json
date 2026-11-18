@@ -309,6 +309,28 @@
       ]
     },
     {
+      "id": "S16",
+      "claim": "With HEAD^1, the merge of HEAD itself is not listed (a PR never needs its own row)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "does not list the merge of HEAD when it reads HEAD^1"
+      },
+      "assertion": "expect(prs, \"PRs before the merge of HEAD\")",
+      "breaks": [
+        {
+          "id": "S16-a",
+          "file": "scripts/lib/check-status-git.ts",
+          "edits": [
+            {
+              "find": "rev, \"--\"",
+              "replace": "\"HEAD\", \"--\""
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "S15",
       "claim": "A shallow clone is a problem",
       "test": {
