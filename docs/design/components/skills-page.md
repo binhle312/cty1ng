@@ -150,7 +150,11 @@ example "Write user stories". Write one here, or import SKILL.md folders." and t
 - No changes: "All changes are saved." and **Save as v{n+1}** (disabled).
 - With changes: a `primary` dot, "{n} changes not saved", a one-line box "What changed? One
   line, optional" (the changelog, shown in History), **Discard** and **Save as v{n+1}**.
-- Discard puts back the saved text.
+- Discard puts back the saved text. After a Save whose refresh has not come, that is the text of
+  the Save, and the edit keeps that Save as its base. While a Save is on its way, Discard is off
+  with the tooltip "Saving." ([the editor and its requests](#the-editor-and-its-requests)).
+- While a Save is on its way, its change counts as not saved, also when the text is typed back:
+  the bar says "1 change not saved", Save is off ("Saving."), and leaving asks first.
 - **A rename only** (M1 spec gap pass, owner 2026-10-30): the display name is not versioned
   (`domain-model.md` §3.1). When only the name changed, the button is **Save** (no version) and
   the changelog box is hidden. When the name and the description or the body changed, **Save as
@@ -300,6 +304,9 @@ shows in two places. No label ends in "…" (`buttons.md`).
     hidden when no bot uses the skill.
 - The editor is read-only. The save bar says "Deprecated skills are read-only. Make it active
   again to edit it."
+- **Make active again** is off from the click until the refresh after its answer ends, also
+  after the owner leaves and comes back. A refresh that fails ends the wait too: a click then
+  gets the server's answer.
 - Bots that still use it show the Deprecated pill on their pages (M2).
 
 ### 10.3 Remove from bots (D2b)
@@ -325,7 +332,8 @@ with the tooltip "Tick a bot first." (§ Texts added in the M1b build).
   when the list refresh is slow or a live event takes the skill from the list first. Page not
   found does not show, and the toast stays. If this Delete fails and the skill is gone from the
   list, Page not found shows. An owner who already went to another page stays there, and an owner
-  who comes back during the Delete sees the same wait (audit row 3).
+  who comes back during the Delete sees the same wait (audit row 3). In the dialog of that return
+  visit, **Delete skill** is off ("Deleting the skill.") until the first Delete ends.
 - Trash keeps the list of bots that used the skill. A restore suggests to assign it again to
   those bots that are still active, never to bots in Trash. The Trash page round (M5b) draws
   this card.
@@ -362,6 +370,12 @@ The History tab replaces the round 8 floating panel (round 16).
   in `success`, removed lines in `danger` with a strike, unchanged lines folded as "{n} lines
   with no change · Show"). **Restore v{k}** (secondary) makes a new version with the old text.
 - **Compare** under the list picks any two versions.
+- **Restore v{k}** is off from the click until the refresh after its answer ends, also after a
+  tab change or a leave and a return. After the answer, the panel offers no Restore until the
+  data shows the restored version (a Restore sends no `row_version`, so a second one would save
+  one more version); after a failed refresh, until a read shows it or the browser reloads. The
+  answer opens the newest pair only while the page still shows the pair that the Restore was sent
+  from.
 
 ## 14. Leave with unsaved changes (C6)
 
@@ -402,6 +416,8 @@ unsaved), nothing would be lost, so the page goes where the owner asked at once 
   skills move to the top of the list. If a skill changed after the preview, the app applies
   nothing and shows "A skill changed after the preview. The app applied nothing. Preview again."
   with **Preview again** (409).
+- An Apply clears only its own file. If the owner picks another zip while it waits, the answer
+  shows its toast and the preview of the new zip stays.
 
 ## 16. Export (D6, UI-7.8)
 
@@ -429,6 +445,30 @@ unsaved), nothing would be lost, so the page goes where the owner asked at once 
   the bot's line, **Cancel** and **✓ Approve as v{N}** (primary). Approve checks like Save
   (§6), goes back to the conversation and opens the float card (§7, D64).
 - The slug of a new skill can be changed here. A taken slug shows the §6 error.
+
+## The editor and its requests
+
+The state table of P3 PR 14 (owner approval 2026-11-15, `docs/plans/p3-skills-page-orders.md`).
+The editor's rules are in `features/skills/skill-edit-state.ts`; the request waits are in the
+query client. "Must win" is what the page shows and keeps.
+
+| # | State | Event | Must win |
+| --- | --- | --- | --- |
+| Import | Apply of file A on its way | the owner picks file B, then A answers or fails | the toast; B's preview stays |
+| Save | Save on its way (sent S, saved O) | text typed back to O | "1 change not saved"; Save off ("Saving."); leaving asks |
+| Save | Save on its way | the Save's own data comes, then its answer | the text typed back stays, and counts as a change |
+| Save | Save on its way, text typed back | the Save fails | a toast; "All changes are saved." |
+| Discard | Save answered, refresh not come | Discard | the text of this Save; the base stays, so a later edit shows no false conflict and a Save sends this base |
+| Discard | conflict (the server is newer than the base) | Discard | the server text and base |
+| Discard | Save on its way | Discard | off ("Saving.") |
+| Make active again | on its way, or answered with its refresh on its way | a click, also after a leave and a return | off: no second request |
+| Make active again | answered | the refresh fails | on; a click gets `stale_write` and the toast |
+| Make active again | refreshed | deprecated again | on: no old answer is read |
+| Restore | on its way, or answered with its refresh on its way | a tab change and back, then a click | off: no second request |
+| Restore | refresh failed | a tab change, or a leave and a return | no Restore until a read shows the new version |
+| Restore | on its way | the owner picks another pair, then the answer | the pick stays; the toast |
+| Delete | Delete of visit 1 on its way | the dialog of visit 2 confirms | Delete skill off ("Deleting the skill."); no request |
+| Delete | Delete of visit 1 on its way | it fails while the dialog of visit 2 is open | the toast; the button turns on |
 
 ## Requirement changes (this PR)
 

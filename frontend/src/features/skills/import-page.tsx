@@ -82,6 +82,7 @@ export function ImportPage() {
       <ImportPreview
         key={preview.data.preview_id}
         preview={preview.data}
+        file={importFile}
         onPreviewAgain={() => {
           mutate({ body: { file: importFile } });
         }}
@@ -101,16 +102,22 @@ const canApply = (row: ImportRow) => row.status === "new" || row.status === "cha
 
 function ImportPreview({
   preview,
+  file,
   onPreviewAgain,
 }: {
   preview: Preview;
+  file: File;
   onPreviewAgain: () => void;
 }) {
   const navigate = useNavigate();
   const { clearImportFile } = useSkillsPage();
   const onPage = useOnPage();
+  // The file of this preview. Each preview mounts its own panel (the key), so the file is fixed
+  // here; a later pick makes a new preview and a new panel.
+  const [previewFile] = useState(file);
   const leave = () => {
-    clearImportFile();
+    // A late Apply clears only its own file, not a file that the owner picked after it (DQ-070).
+    clearImportFile(previewFile);
     // An Apply that ends after the owner left does not move the page that the owner went to.
     if (onPage.current) void navigate({ to: "/skills" });
   };

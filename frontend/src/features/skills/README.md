@@ -14,6 +14,7 @@ Export card. Routes: `src/routes/skills.tsx`.
 | `skill-tabs.ts` | The skill page's tab list, for the route's `?tab=` and the page |
 | `skill-fields.tsx` | The editor fields with counters, errors and the Write/Preview body |
 | `skill-form.ts` | The editor's rules without React: changes, save kind, errors, leave text |
+| `skill-edit-state.ts` | The skill page editor's state (pure): the form, the base, the Save on its way, Discard, conflicts and what the save bar shows |
 | `save-bar.tsx` | The save bars: edit, read-only, the "changes not saved" line, and the button with a "why off" tooltip |
 | `save-error.ts` | Puts a failed save under its field or in the save bar |
 | `leave-guard.tsx` | Leave without saving: the dialog and the browser's own question; the bot page and Create bot use it with their own place and words |
