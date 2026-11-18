@@ -71,6 +71,7 @@ Plans up to M2 started as PR comments or PR descriptions. The header of each fil
 | `p3-plans-design-only.md` | Owner's answer q2 Q1 A: plans hold the design and the owner's decisions; build facts go only in the PR description | Chief agent, 2026-11-18, against the owner's answer q2 Q1 A, revision 2; owner review pending |
 | `p3-small-owner-answers.md` | Small fixes from the owner's answers of 2026-11-18 (DQ-442, DQ-500, DQ-485, DQ-411, item 61, #123, DQ-426) | UI texts and scope: the owner's answers of 2026-11-18; plan OK by the chief agent, 2026-11-18; item 8 approved by the owner, 2026-11-18 (Q2 A) |
 | `p3-flaky-bots-drop.md` | The flaky e2e test of the pinned card drop line (`bots.spec.ts:101`, CI run 44228267962) | Plan OK by the chief agent, 2026-11-18 (owner rule: fix the flaky test at its cause), revision 2; owner review pending |
+| `p3-clock-one-timer.md` | DQ-537, a check that the app keeps one clock timer | Chief agent, 2026-11-18, against the owner's answer q5 Q4 A; owner review pending |
 
 If the task names a plan, open it. Otherwise, find the slice in [status.md](../status.md), then open its plan.
 For current behaviour, read the owning documents.
