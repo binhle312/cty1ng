@@ -307,6 +307,72 @@
           ]
         }
       ]
+    },
+    {
+      "id": "S15",
+      "claim": "The error screen of a skill is an h2",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/placeholder/error-page.test.tsx",
+        "name": "makes the error screen of a skill an h2 beside the list column"
+      },
+      "assertion": "expect(errorH2(), \"the error screen of a skill\").not.toBeNull();",
+      "breaks": [
+        {
+          "id": "S15-a",
+          "file": "frontend/src/routes/skills.lazy.tsx",
+          "edits": [
+            {
+              "find": "  component: SkillPage,\n  errorComponent: SkillsPageError,",
+              "replace": "  component: SkillPage,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S16",
+      "claim": "The error screen of the new skill page is an h2",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/placeholder/error-page.test.tsx",
+        "name": "makes the error screen of the new skill page an h2 beside the list column"
+      },
+      "assertion": "expect(errorH2(), \"the error screen of the new skill page\").not.toBeNull();",
+      "breaks": [
+        {
+          "id": "S16-a",
+          "file": "frontend/src/routes/skills.lazy.tsx",
+          "edits": [
+            {
+              "find": "  component: NewSkillPage,\n  errorComponent: SkillsPageError,",
+              "replace": "  component: NewSkillPage,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S17",
+      "claim": "The error screen of the import page is an h2",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/placeholder/error-page.test.tsx",
+        "name": "makes the error screen of the import page an h2 beside the list column"
+      },
+      "assertion": "expect(errorH2(), \"the error screen of the import page\").not.toBeNull();",
+      "breaks": [
+        {
+          "id": "S17-a",
+          "file": "frontend/src/routes/skills.lazy.tsx",
+          "edits": [
+            {
+              "find": "  component: ImportPage,\n  errorComponent: SkillsPageError,",
+              "replace": "  component: ImportPage,"
+            }
+          ]
+        }
+      ]
     }
   ],
   "exempt": [

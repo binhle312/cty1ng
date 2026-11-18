@@ -142,7 +142,7 @@ function BotPageMenu({
   );
 }
 
-// A slug that no live bot has (bot-page.md §1): unknown, or a bot in Trash.
+// A slug that no live bot has (the intro of bot-page.md): unknown, or a bot in Trash.
 export function BotNotFound() {
   return (
     <div role="alert" className="flex items-center gap-4 px-8 py-6">

@@ -481,10 +481,6 @@ describe("the assign card after Create (C4b)", () => {
     });
   });
 
-  // On a busy server live events can cut the card's read of the bots short again and again. Only a
-  // read that fails ends in the toast (e2e J4 found this). Since TanStack Query 5.105.2 the
-  // library follows each newer load, so this test also passes with a plain read in place of
-  // `readNewest`.
   // Create reads the bots before it opens the card, so the card has them. A card whose own read
   // fails (its data gone from the cache) shows the error, so the card is mounted with no data.
   it("says, when the bots did not load, that the Assign card needs to know the bots", async () => {
@@ -512,6 +508,10 @@ describe("the assign card after Create (C4b)", () => {
     expect(await screen.findByText(ASSIGN_REASON), "the reason of Assign").toBeTruthy();
   });
 
+  // On a busy server live events can cut the card's read of the bots short again and again. Only a
+  // read that fails ends in the toast (e2e J4 found this). Since TanStack Query 5.105.2 the
+  // library follows each newer load, so this test also passes with a plain read in place of
+  // `readNewest`.
   it("opens the card when two newer loads cut its read of the bots short", async () => {
     const list = heldAnswer();
     let holdList = false;
