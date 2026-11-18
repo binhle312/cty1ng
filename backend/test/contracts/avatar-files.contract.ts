@@ -24,6 +24,9 @@ export function avatarFilesContract(name: string, setup: () => AvatarFilesFixtur
     afterEach(() => {
       fixture.close();
     });
+    // The time of one published file, or null when it is gone.
+    const timeOf = async (name: string) =>
+      (await files.list()).find((file) => file.name === name)?.modifiedAt ?? null;
 
     it("a staged file is not published until publish", async () => {
       const staged = await files.stage(A, bytes("one"));
@@ -34,13 +37,13 @@ export function avatarFilesContract(name: string, setup: () => AvatarFilesFixtur
       expect(await files.exists(A)).toBe(true);
       expect(await files.read(A)).toEqual(bytes("one"));
       expect(await files.listStaged()).toEqual([]);
-      expect(await files.modifiedAt(A)).toEqual(T1);
+      expect(await timeOf(A)).toEqual(T1);
     });
 
     it("publishing the same image again refreshes the time and drops the staged copy", async () => {
       await files.publish(await files.stage(A, bytes("one")), T1);
       await files.publish(await files.stage(A, bytes("one")), T2);
-      expect(await files.modifiedAt(A)).toEqual(T2);
+      expect(await timeOf(A)).toEqual(T2);
       expect(await files.listStaged()).toEqual([]);
       expect((await files.list()).map((file) => file.name)).toEqual([A]);
     });
@@ -52,7 +55,7 @@ export function avatarFilesContract(name: string, setup: () => AvatarFilesFixtur
       await files.publish(second, T2);
       expect((await files.list()).map((file) => file.name)).toEqual([A]);
       expect(await files.read(A)).toEqual(bytes("one"));
-      expect(await files.modifiedAt(A)).toEqual(T2);
+      expect(await timeOf(A)).toEqual(T2);
       expect(await files.listStaged()).toEqual([]);
     });
 
@@ -79,7 +82,7 @@ export function avatarFilesContract(name: string, setup: () => AvatarFilesFixtur
     it("touch sets the time, and does nothing for a missing file", async () => {
       await files.publish(await files.stage(A, bytes("one")), T1);
       await files.touch(A, T2);
-      expect(await files.modifiedAt(A)).toEqual(T2);
+      expect(await timeOf(A)).toEqual(T2);
       await files.touch(B, T2);
       expect(await files.exists(B)).toBe(false);
     });
@@ -93,7 +96,7 @@ export function avatarFilesContract(name: string, setup: () => AvatarFilesFixtur
       await files.removeStaged(staged.token);
       expect(await files.list()).toEqual([]);
       expect(await files.listStaged()).toEqual([]);
-      expect(await files.modifiedAt(A)).toBeNull();
+      expect(await timeOf(A)).toBeNull();
     });
   });
 }

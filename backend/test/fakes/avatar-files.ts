@@ -58,7 +58,6 @@ export function memoryAvatarFiles(now: () => Date = () => new Date()): FakeAvata
       Promise.resolve([...published].map(([name, entry]) => ({ name, modifiedAt: entry.time }))),
     listStaged: () =>
       Promise.resolve([...staged].map(([name, entry]) => ({ name, modifiedAt: entry.time }))),
-    modifiedAt: (avatarId) => Promise.resolve(published.get(avatarId)?.time ?? null),
     remove: (avatarId) => {
       published.delete(avatarId);
       return Promise.resolve();

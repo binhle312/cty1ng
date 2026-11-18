@@ -212,8 +212,8 @@ Design: `../design/components/user-panel.md`.
 
 When a part of the app fails to render, or the code of a page fails to load, only that part
 shows the error screen; the shell around it stays (P3 list item 65; plan
-`../plans/p3-shell-error-boundary.md`, approved 2026-11-15). The texts wait for the owner's UI
-review after M3.
+`../plans/p3-shell-error-boundary.md`, approved 2026-11-15). The owner kept the texts and the
+buttons of the error screen on 2026-11-18 (UI-3 A).
 
 - The error screen has the layout of Page not found: the heading "Something went wrong", the
   line "The app could not show this page. Try again, or go to Home.", and two secondary

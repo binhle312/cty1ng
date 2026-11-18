@@ -155,7 +155,6 @@ export function diskAvatarFiles(folder: string, calls: Partial<DiskCalls> = {}):
       }),
     list: () => attempt(() => listMatching(PUBLISHED)),
     listStaged: () => attempt(() => listMatching(STAGED)),
-    modifiedAt: (avatarId) => attempt(() => timeOf(finalPath(avatarId))),
     remove: (avatarId) =>
       attempt(() => {
         fs.rmSync(finalPath(avatarId), { force: true });

@@ -15,7 +15,7 @@ Decision: Every id keeps the UUIDv7 value from D22. In the database it is stored
 | `skills` | `skill` | | `run_steps` | `step` |
 | `skill_versions` | `skillv` | | `model_requests` | `mreq` |
 | `conversations` | `conv` | | `handoffs` | `handoff` |
-| `messages` | `msg` | | | |
+| `messages` | `msg` | | the skill import preview (in memory, no table) | `simp` (owner, 2026-11-15) |
 
 A new table picks its prefix in the same PR that adds it, and this table is updated with it. Proposed with
 D37 and D38: `proj` (projects), `mem` (memory items). With D41: `skilld` (skill drafts). With D51: `fb` (reply feedback), `stest` (skill test cases, amendment 2026-10-27).
@@ -52,3 +52,4 @@ Consequences:
 Implemented in: `../domain-model.md` §1, `../api.md` §1, `../frontend-conventions.md`,
 `../architecture.md` §2, `../tasks/M0-skeleton.md`.
 Amended 2026-11-10 (owner): the `Amends:` line names D22, so that the "Changed by" cell of D22 points to this entry. No rule changes.
+Amended 2026-11-15 (owner): the skill import preview id (`preview_id`, `domain-model.md` §3.5) is a TypeID with the prefix `simp`. It is not a table: the preview lives in memory. The ids port makes it, as for every other id.

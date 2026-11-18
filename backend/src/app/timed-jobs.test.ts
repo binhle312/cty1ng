@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { memoryLogger } from "../../test/helpers.ts";
+import { BotId, SkillId } from "@cty1ng/shared/ids";
+import { memoryLogger, newTestId } from "../../test/helpers.ts";
+import type { PurgeResult } from "../core/trash/purge-due.ts";
 import { startTimedJobs } from "./timed-jobs.ts";
 
 afterEach(() => {
@@ -7,11 +9,12 @@ afterEach(() => {
 });
 
 const HOUR = 3_600_000;
+const SKILL = SkillId.parse(newTestId("skill"));
 
 function start(
   options: {
-    purgeDue?: () => Promise<number>;
-    botsPurgeDue?: () => Promise<number>;
+    purgeDue?: () => Promise<PurgeResult<SkillId>>;
+    botsPurgeDue?: () => Promise<PurgeResult<BotId>>;
     cleanup?: () => Promise<number>;
     pruneDue?: () => Promise<number>;
     purgeIntervalHours?: number;
@@ -19,9 +22,11 @@ function start(
   } = {},
 ) {
   const { log, lines } = memoryLogger();
-  const purgeDue = vi.fn(options.purgeDue ?? (() => Promise.resolve(0)));
+  const purgeDue = vi.fn(options.purgeDue ?? (() => Promise.resolve({ purged: 0, failed: [] })));
   const pruneDue = vi.fn(options.pruneDue ?? (() => Promise.resolve(0)));
-  const botsPurgeDue = vi.fn(options.botsPurgeDue ?? (() => Promise.resolve(0)));
+  const botsPurgeDue = vi.fn(
+    options.botsPurgeDue ?? (() => Promise.resolve({ purged: 0, failed: [] })),
+  );
   const cleanup = vi.fn(options.cleanup ?? (() => Promise.resolve(0)));
   const stop = startTimedJobs({
     skills: { purgeDue },
@@ -112,7 +117,7 @@ describe("startTimedJobs", () => {
     vi.useFakeTimers();
     const { botsPurgeDue, cleanup, stop, lines } = start({
       purgeDue: () => Promise.reject(new Error("bad row")),
-      botsPurgeDue: () => Promise.resolve(1),
+      botsPurgeDue: () => Promise.resolve({ purged: 1, failed: [] }),
       cleanup: () => Promise.reject(new Error("disk")),
     });
     await vi.advanceTimersByTimeAsync(0);
@@ -123,6 +128,32 @@ describe("startTimedJobs", () => {
     expect(failed[0]).toContain('"step":"skills"');
     expect(failed[1]).toContain('"step":"avatars"');
     expect(lines.some((line) => line.includes('"bots":1'))).toBe(true);
+    stop();
+  });
+
+  // P3 item 27: a purge step goes on after a failed item and returns it; the job logs it.
+  it("logs each failed purge item with its step, its id and its error", async () => {
+    vi.useFakeTimers();
+    const { stop, lines } = start({
+      purgeDue: () =>
+        Promise.resolve({ purged: 2, failed: [{ id: SKILL, error: new Error("disk full") }] }),
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    const failed = lines
+      .filter((line) => line.includes("trash purge item failed"))
+      .map((line): unknown => JSON.parse(line));
+    expect(failed).toMatchObject([{ step: "skills", id: SKILL, err: { message: "disk full" } }]);
+    stop();
+  });
+
+  it("counts the purged items of a step that had a failed item", async () => {
+    vi.useFakeTimers();
+    const { stop, lines } = start({
+      purgeDue: () =>
+        Promise.resolve({ purged: 2, failed: [{ id: SKILL, error: new Error("disk full") }] }),
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(lines.some((line) => line.includes('"skills":2'))).toBe(true);
     stop();
   });
 

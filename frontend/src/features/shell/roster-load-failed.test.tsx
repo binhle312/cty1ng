@@ -116,4 +116,28 @@ describe("the header when the roster chunk fails to load", () => {
     expect(header().querySelector("[aria-busy]")).toBeNull();
     expect(logError.mock.calls, "the log lines").toHaveLength(1);
   });
+
+  // DQ-500: the stand-in of a failed roster is one component, so a new bot list updates it and
+  // does not mount it again.
+  it("keeps the avatars that it shows when a new bot list comes", async () => {
+    const fake = serve([
+      [BA, QA],
+      [BA, QA, UX],
+    ]);
+    await renderApp("/");
+    await failedRoster();
+    const first = header().querySelector("svg");
+    expect(first, "the first avatar").not.toBeNull();
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitFor(() => {
+      expect(fake.sent("GET", "/api/bots").length).toBeGreaterThanOrEqual(2);
+    });
+    await waitFor(() => {
+      expect(avatarsShown()).toBe(3);
+    });
+    expect(first?.isConnected, "the first avatar is the same element").toBe(true);
+  });
 });

@@ -2,7 +2,9 @@ import Database from "better-sqlite3";
 import yazl from "yazl";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
+import { SkillImportPreviewId } from "@cty1ng/shared/ids";
 import { SKILL_ZIP } from "../../src/adapters/http/uploads/skill-zip.ts";
+import { typeIdToUuid } from "../../src/adapters/ids/typeid-ids.ts";
 import { OWNER_ID } from "../../src/core/owner.ts";
 import { ORIGIN, testBackend } from "../helpers.ts";
 
@@ -357,6 +359,97 @@ describe("edits", () => {
   });
 });
 
+// Review of #115 (R1-3): the limit comes from SKILL_CHANGELOG_MAX, not from a value in the code.
+describe("SKILL_CHANGELOG_MAX set by the environment", () => {
+  it("a new version refuses a changelog over a limit set to 120", async () => {
+    backend.close();
+    backend = testBackend({ SKILL_CHANGELOG_MAX: "120" });
+    const { id } = await created();
+    const response = await send("POST", `/skills/${id}/versions`, {
+      base_version: 1,
+      description: newSkill.description,
+      body_md: "## Steps\n\n1. Write more.",
+      changelog: "c".repeat(121),
+    });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toMatchObject({ code: "validation_error", field: "changelog" });
+  });
+});
+
+// Item 24 of the P3 list: the changelog has a length limit (SKILL_CHANGELOG_MAX, 500).
+// Item 34 of the P3 list: a version number in the path or the query is only digits with no
+// leading zero; `Number()` read `0x2`, `2.0` or `1e0` as a number before.
+describe("strict version numbers", () => {
+  it.each(["0x1", "1.0", "1e0", "+1", "01", " 1", "0b1"])(
+    "the version %j in the path gives 422 on version",
+    async (version) => {
+      const { id } = await created();
+      const response = await send("GET", `/skills/${id}/versions/${encodeURIComponent(version)}`);
+      expect(response.status).toBe(422);
+      expect(await errorOf(response)).toEqual({ code: "validation_error", field: "version" });
+    },
+  );
+
+  it("the version 1 in the path still answers 200", async () => {
+    const { id } = await created();
+    expect((await send("GET", `/skills/${id}/versions/1`)).status).toBe(200);
+  });
+
+  it("a version above the safe integer range gives 422, not 404", async () => {
+    const { id } = await created();
+    const response = await send("GET", `/skills/${id}/versions/9007199254740993`);
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toEqual({ code: "validation_error", field: "version" });
+  });
+
+  it.each([
+    ["from", "from=0x1&to=1"],
+    ["to", "from=1&to=1.0"],
+  ])("a loose number in the diff %s gives 422", async (field, query) => {
+    const { id } = await created();
+    const response = await send("GET", `/skills/${id}/diff?${query}`);
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toEqual({ code: "validation_error", field });
+  });
+});
+
+describe("the changelog limit", () => {
+  const version = (changelog: string) => ({
+    base_version: 1,
+    description: newSkill.description,
+    body_md: "## Steps\n\n1. Write more.",
+    changelog,
+  });
+  const versionCount = async (id: string) => {
+    const json: unknown = await (await send("GET", `/skills/${id}/versions`)).json();
+    return Array.isArray(json) ? json.length : -1;
+  };
+
+  it("a new version with a changelog one character over the limit gets 422 and saves nothing", async () => {
+    const { id } = await created();
+    const response = await send("POST", `/skills/${id}/versions`, version("c".repeat(501)));
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toEqual({ code: "validation_error", field: "changelog" });
+    expect(await versionCount(id)).toBe(1);
+  });
+
+  it("a new version with a changelog of exactly the limit is saved", async () => {
+    const { id } = await created();
+    const response = await send("POST", `/skills/${id}/versions`, version("c".repeat(500)));
+    expect(response.status).toBe(201);
+  });
+
+  it("a restore with a changelog one character over the limit gets 422 and saves nothing", async () => {
+    const { id } = await created();
+    const response = await send("POST", `/skills/${id}/versions/1/restore`, {
+      changelog: "c".repeat(501),
+    });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toEqual({ code: "validation_error", field: "changelog" });
+    expect(await versionCount(id)).toBe(1);
+  });
+});
+
 describe("Deprecate, Trash, restore, delete", () => {
   it("runs the whole cycle with the right codes", async () => {
     const { id } = await created();
@@ -407,6 +500,9 @@ describe("import and export", () => {
     expect(json).toMatchObject({ file: "team.zip", rows: [{ slug: "fresh", status: "new" }] });
     const previewId =
       typeof json === "object" && json !== null && "preview_id" in json ? json.preview_id : null;
+    expect(SkillImportPreviewId.safeParse(previewId).success).toBe(true);
+    // A random UUID is version 4; the ids port makes a UUIDv7 (D22).
+    expect(typeIdToUuid(String(previewId)).charAt(14)).toBe("7");
     const applied = await send("POST", "/skills/import/apply", {
       preview_id: previewId,
       slugs: ["fresh"],
@@ -418,6 +514,37 @@ describe("import and export", () => {
     });
     expect(again.status).toBe(409);
     expect((await errorOf(again)).code).toBe("preview_expired");
+  });
+
+  // The preview id is a `simp` TypeID (D36). A malformed id (wrong prefix, bad shape) gets 422
+  // `validation_error` with `field`, like every bad id in a JSON body (`api.md` §1; DQ-332, owner
+  // 2026-11-18). A well-formed id that names no preview keeps 409 `preview_expired`.
+  it("apply with a preview id that is no `simp` TypeID gives 422 validation_error", async () => {
+    const malformed = [
+      "skill_01jb8x6p0afqz8r2m3k5t7v9wx", // another prefix
+      "0190b2a4-6f3c-4a1e-9b2d-3c4d5e6f7a8b", // a bare UUID
+      "simp_01jb8x6p0a", // too short
+    ];
+    for (const previewId of malformed) {
+      const res = await send("POST", "/skills/import/apply", {
+        preview_id: previewId,
+        slugs: ["x"],
+      });
+      expect(res.status, previewId).toBe(422);
+      expect(await errorOf(res), previewId).toEqual({
+        code: "validation_error",
+        field: "preview_id",
+      });
+    }
+  });
+
+  it("apply with a well-formed `simp` id that names no preview gives 409 preview_expired", async () => {
+    const res = await send("POST", "/skills/import/apply", {
+      preview_id: "simp_01jb8x6p0afqz8r2m3k5t7v9wx",
+      slugs: ["x"],
+    });
+    expect(res.status).toBe(409);
+    expect((await errorOf(res)).code).toBe("preview_expired");
   });
 
   it("a zip of exactly 5 MB passes; one byte more gives 413", async () => {
@@ -488,6 +615,37 @@ describe("import and export", () => {
     );
     const zip = Buffer.from(await response.arrayBuffer());
     expect(zip.subarray(0, 2).toString()).toBe("PK");
+  });
+
+  // Item 33 of the P3 list: only an absent `ids` means every skill.
+  it("export with an empty ids= gives 422 on ids", async () => {
+    await created();
+    const response = await send("GET", "/skills/export?ids=");
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toEqual({ code: "validation_error", field: "ids" });
+  });
+
+  it("export with an id listed twice gives 422 on ids", async () => {
+    const { id } = await created();
+    const response = await send("GET", `/skills/export?ids=${id},${id}`);
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toEqual({ code: "validation_error", field: "ids" });
+  });
+
+  it("export with an empty item in ids gives 422 invalid_id", async () => {
+    const { id } = await created();
+    const response = await send("GET", `/skills/export?ids=${id},`);
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toEqual({ code: "invalid_id", field: "ids" });
+  });
+
+  it("export of two different ids gives a zip named with 2", async () => {
+    const { id } = await created();
+    const other = await send("POST", "/skills", { ...newSkill, slug: "other" });
+    const otherId = z.object({ id: z.string() }).parse(await other.json()).id;
+    const response = await send("GET", `/skills/export?ids=${id},${otherId}`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-disposition")).toMatch(/filename="2-skills-/);
   });
 
   it("export of an unknown id gives 404; a malformed id 422", async () => {

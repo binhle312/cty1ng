@@ -31,7 +31,8 @@ Every slice has a plan before its code, checkpointed or not (owner, 2026-11-04).
 The builder reads the brief and the documents it lists, then writes a short plan (files to
 touch, migrations, tests to add, risks) in `docs/plans/<slice>-<name>.md`. The file goes in a
 draft PR, so the owner reviews it there and the repository keeps it for reference. The rules
-for the file are in [plans/README.md](../plans/README.md).
+for the file are in [plans/README.md](../plans/README.md). The plan holds the design and the
+owner's decisions; the build facts go in the PR description (rule 6 there).
 For M3 and later parts, the EGM design step comes before the plan ([egm.md](egm.md)).
 
 ### Risk probes first

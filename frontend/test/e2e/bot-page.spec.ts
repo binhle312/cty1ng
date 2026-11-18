@@ -99,7 +99,7 @@ test("J4: a skill save offers the upgrade, the bot keeps v1, and the bot page up
   await expect(row).toContainText("v2");
   await expect(row.getByRole("button", { name: "v2 available" })).toHaveCount(0);
 
-  // A reload keeps the bot and the tab (bot-page.md §1).
+  // A reload keeps the bot and the tab (the intro of bot-page.md).
   await page.reload();
   await expect(page.getByRole("tab", { name: /Skills/ })).toHaveAttribute("aria-selected", "true");
   await expect(page.locator(`tr[data-skill="${skill.slug}"]`)).toContainText("v2");

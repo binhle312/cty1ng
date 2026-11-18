@@ -84,6 +84,57 @@ describe("POST /bots", () => {
     expect(await errorOf(response)).toMatchObject({ field });
   });
 
+  // Item 32 of the P3 list: one format for `field` (api.md §1): `[i]` for an index of a list,
+  // a dot before a key of an object.
+  it("names a list item in a 422 with [i]: pins[0].skill_id", async () => {
+    const { response } = await createBot({
+      ...newBot,
+      pins: [{ skill_id: "not-an-id", always_load: false }],
+    });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toMatchObject({
+      code: "validation_error",
+      field: "pins[0].skill_id",
+    });
+  });
+
+  // Item 34 of the P3 list: a key of tool_settings has the shape of a catalog tool id.
+  it("refuses a tool_settings key that is not a tool id with 422", async () => {
+    const { response } = await createBot({ ...newBot, tool_settings: { "Not An Id": false } });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toMatchObject({
+      code: "validation_error",
+      field: "tool_settings.Not An Id",
+    });
+  });
+
+  it("accepts a turned-off tool id that the model does not offer", async () => {
+    const { response } = await createBot({ ...newBot, tool_settings: { not_offered: false } });
+    expect(response.status).toBe(201);
+  });
+
+  // Review of #115 (R1-6): a wrong type inside a list item gets the same format.
+  it("names a wrong type in a list item with [i]: pins[0].always_load", async () => {
+    const { response } = await createBot({
+      ...newBot,
+      pins: [{ skill_id: "skill_01jb8x6p0afqz8r2m3k5t7v9wx", always_load: "yes" }],
+    });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toMatchObject({
+      code: "validation_error",
+      field: "pins[0].always_load",
+    });
+  });
+
+  it("names a key of an object in a 422 after a dot: tool_settings.web_fetch", async () => {
+    const { response } = await createBot({ ...newBot, tool_settings: { web_fetch: "on" } });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toMatchObject({
+      code: "validation_error",
+      field: "tool_settings.web_fetch",
+    });
+  });
+
   // The guard on the name and the description (D39), through the route: 422 with the field.
   it.each([
     ["name", { ...newBot, name: `BA ${SECRET}` }],
@@ -259,6 +310,28 @@ describe("pins", () => {
     });
     expect((await send("DELETE", path)).status).toBe(204);
     expect((await send("DELETE", path)).status).toBe(204);
+  });
+
+  // Owner, 2026-11-13 (P3 item 37): a new assign pins the version that the request names.
+  it("PUT pins an older version on a new assign", async () => {
+    const { skill, bot } = await skillWithBot();
+    for (const base of [1, 2, 3]) {
+      await backend.skills.addVersion(
+        skill.id,
+        { baseVersion: base, description: "Use it.", bodyMd: `## Steps v${String(base + 1)}` },
+        OWNER_ID,
+      );
+    }
+    const v2 = (await backend.readers.skills.version(skill.id, 2))?.id ?? "";
+    const path = `/bots/${String(bot.id)}/skills/${skill.id}`;
+    const response = await send("PUT", path, {
+      skill_version_id: v2,
+      always_load: false,
+      expected: null,
+    });
+    expect(await response.json()).toMatchObject({
+      pins: [{ skill_version_id: v2, version: 2, latest_version: 4 }],
+    });
   });
 
   it("POST /skills/{id}/bots moves the listed bots; the version body has no upgrade_bot_ids", async () => {

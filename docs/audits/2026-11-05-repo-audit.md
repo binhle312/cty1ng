@@ -172,10 +172,10 @@ The lead did not check these again, except where a row says so. The others are f
 
 - A migration that rebuilds a parent table with rows fails at startup. `PRAGMA foreign_keys=OFF` does nothing in a transaction: `backend/src/adapters/db/migrate.ts:20`. No shipped migration does this today. **Fix before M3.** New fact (2026-11-13): with `ON DELETE cascade` or `ON DELETE set null`, the runner of today loses data with no error. `main` has no such key: the six foreign keys of the migration files (two in `0001_skills.sql`, four in `0002_bots.sql`) each have `ON DELETE no action`. Fixed in #113: the runner turns foreign keys off before its transaction, checks the references before the commit, and turns the keys on again.
 - A description that ends in two newlines changes after export and import: `backend/src/core/skills/skill-md.ts:21`. Fixed in #73.
-- A new assign can pin an older version, and the docs do not agree on the rule: `backend/src/core/bots/bots.service.ts:579`.
-- One purge item that fails blocks all later items: `backend/src/core/skills/skills.service.ts:526`, `backend/src/core/bots/bots.service.ts:711`.
-- `trashed_bot_ids` is not parsed on read and holds TypeIDs: `backend/src/adapters/db/repositories.ts:267`.
-- The import preview id does not use the ids port: `backend/src/core/skills/skill-import.service.ts:253`.
+- **Decided and written in #114** (owner, 2026-11-13, question 12: the API pins the version that the request names; docs and one API test): A new assign can pin an older version, and the docs do not agree on the rule: `backend/src/core/bots/bots.service.ts:579`.
+- **Fixed in #114** (the purge goes on after a failed item, logs it with its id, and tries it again on the next run): One purge item that fails blocks all later items: `backend/src/core/skills/skills.service.ts:526`, `backend/src/core/bots/bots.service.ts:711`.
+- **Fixed in #114** (the repository parses it on read; the stored TypeID form is not changed): `trashed_bot_ids` is not parsed on read and holds TypeIDs: `backend/src/adapters/db/repositories.ts:267`.
+- **Fixed in #114** (the id comes from the ids port with the TypeID prefix `simp`, which the owner chose on 2026-11-15; D36 lists it; the apply body answers 422 `validation_error` for a malformed `preview_id`, owner, 2026-11-18): The import preview id does not use the ids port: `backend/src/core/skills/skill-import.service.ts:253`.
 
 ### Security
 

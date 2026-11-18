@@ -1,6 +1,9 @@
 import yauzl from "yauzl";
 import yazl from "yazl";
-import type { ImportFolder } from "../../../core/skills/skill-import.service.ts";
+import {
+  SKILL_MD_MAX_BYTES,
+  type ImportFolder,
+} from "../../../core/skills/skill-import.service.ts";
 import { ApiFailure } from "../errors.ts";
 
 // Skill zips (security.md §2.4, M1 plan P3). Fixed security checks, not settings.
@@ -10,8 +13,8 @@ export const SKILL_ZIP = {
   multipartOverheadBytes: 64 * 1024,
   maxEntries: 200,
   maxTotalUncompressedBytes: 20 * 1024 * 1024,
-  // No valid SKILL.md comes near this (M1 plan, decision 2); a bigger one is `invalid`, unread.
-  maxSkillMdBytes: 1024 * 1024,
+  // The one SKILL.md limit of the zip and the CLI folders.
+  maxSkillMdBytes: SKILL_MD_MAX_BYTES,
 } as const;
 
 // Reads a skill zip into folders. Only `<folder>/SKILL.md` is opened; every other file is

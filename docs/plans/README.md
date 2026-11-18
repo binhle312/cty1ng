@@ -17,11 +17,23 @@ A plan is a record, not spec. If a plan and an owning document differ, the ownin
 4. Commit each revision to the same file. Git history keeps the old revisions.
 5. When the owner approves, write the date, the revision and the owner's decisions in the file.
    Do this before the first build commit.
-6. If the owner approves a change after that, add a dated section to the file.
-   A new plan in the same slice, such as a redesign after a review, gets its own file.
+6. After the approval, a change of the design or a new owner decision needs its approval. Change
+   the design text in place, and add a line under `Approval:` with the date, the revision and who
+   approved it. A correction that changes no design and no decision, such as a typo, a link or a
+   claim made smaller (not a criterion: `AGENTS.md` §9), needs no approval. A new plan in the same
+   slice, such as a redesign after a review, gets its own file.
+   A plan holds no build facts: the red runs, the test names and counts as built, the proof logs
+   and commands, and each difference between the plan and the build. They go only in the PR
+   description ([pull-request.md](../workflows/pull-request.md#one-home-for-each-fact)). A
+   difference that changes the design or an owner decision is a change of the plan, and it needs
+   the approval first.
 7. Put a change in behaviour in the owning document, in the same PR.
 8. Add the file to the table below in the same commit. `pnpm check:index` fails if the table and
    the folder differ.
+
+Plans written before rule 6 (#133), also the plans of PRs that were open then, can have a section
+of build facts, such as "What the build changed" or "Build notes". That section is history, and
+nobody keeps it up to date.
 
 ## Plans
 
@@ -42,6 +54,7 @@ Plans up to M2 started as PR comments or PR descriptions. The header of each fil
 | `p3-shell-error-boundary.md` | P3 list PR 16 (items 65 and 66, errors that keep the shell) | Accepted by the owner, 2026-11-15 ("P-16: approve"), revision 2 |
 | `dq-180-clone-draft.md` | DQ-180, the Clone draft (before audit PR 6) | Approved 2026-11-10 |
 | `dq-198-closed-dialog-read.md` | DQ-198, a closed dialog and the read of all data (after audit PR 6) | Owner, 2026-11-10 |
+| `p3-backend-data-purge.md` | P3 list PR 9 (items 27 to 31, the docs of item 37) | Chief agent, 2026-11-15; accepted by the owner, 2026-11-15 |
 | `p3-security-headers.md` | P3 PR 11, security headers (items 35, 36) | Chief agent, 2026-11-15, revision 1; accepted by the owner, 2026-11-15 |
 | `p3-skills-pages-small.md` | P3 list PR 15, Skills pages small fixes (items 57 to 64) | Chief agent, 2026-11-15, under the owner's order of 2026-11-14; accepted by the owner, 2026-11-15 |
 | `p3-bots-pages.md` | P3 PR E: items 40 to 46 (Bots pages, small fixes; bot page Esc) | Chief agent, 2026-11-15, revision 1; accepted by the owner, 2026-11-15 |
@@ -50,6 +63,13 @@ Plans up to M2 started as PR comments or PR descriptions. The header of each fil
 | `p3-tooling-gates.md` | P3 list PR 19, tooling gates (items 73 to 76) | Chief agent, 2026-11-15; accepted by the owner, 2026-11-15 |
 | `p3-skills-page-orders.md` | P3 list PR 14, Skills page orders (items 51 to 56) | Accepted by the owner, 2026-11-15 ("P-14: approve"), revision 2; Q1 takes the plan's answer (chief agent's reading, owner review pending); Q2 approved by the owner, 2026-11-18 (UI-4: A) |
 | `p3-relative-time.md` | P3 list PR 17 (item 67): relative times that update | Accepted by the owner, 2026-11-15 (P-17: approve), revision 3; Q1 and Q2 by the chief agent's reading |
+| `p3-limits-strict-inputs.md` | P3 PR C: list PR 7 (diff and changelog limits) and list PR 10 (API strict inputs) | Chief agent, 2026-11-15, revision 1; accepted by the owner, 2026-11-15 |
+| `p3-ci-break-static.md` | DQ-517 D and DQ-448 B: a CI check of the break list rules | Plan OK by the chief agent, 2026-11-18, against the owner's answers DQ-517 D and DQ-448 B; revision 1 |
+| `p3-runner-tmpdir.md` | DQ-618: the break runner keeps the local changes when TMPDIR is inside a git repository | Plan OK by the chief agent, 2026-11-18, against the owner's answer q3 Q1 A, revision 1; owner review pending |
+| `p3-check-status.md` | DQ-571: a CI check that each merged PR has its Done row in `docs/status.md` | Plan OK by the chief agent, 2026-11-18, against the owner's answer q2 Q2 A, revision 1; owner review pending |
+| `p3-plans-design-only.md` | Owner's answer q2 Q1 A: plans hold the design and the owner's decisions; build facts go only in the PR description | Chief agent, 2026-11-18, against the owner's answer q2 Q1 A, revision 2; owner review pending |
+| `p3-small-owner-answers.md` | Small fixes from the owner's answers of 2026-11-18 (DQ-442, DQ-500, DQ-485, DQ-411, item 61, #123, DQ-426) | UI texts and scope: the owner's answers of 2026-11-18; plan OK by the chief agent, 2026-11-18; item 8 approved by the owner, 2026-11-18 (Q2 A) |
+| `p3-flaky-bots-drop.md` | The flaky e2e test of the pinned card drop line (`bots.spec.ts:101`, CI run 44228267962) | Plan OK by the chief agent, 2026-11-18 (owner rule: fix the flaky test at its cause), revision 2; owner review pending |
 
 If the task names a plan, open it. Otherwise, find the slice in [status.md](../status.md), then open its plan.
 For current behaviour, read the owning documents.

@@ -1,8 +1,11 @@
 import { SkillVersionId } from "@cty1ng/shared/ids";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { manualClock, newTestId, testBackend } from "../../../test/helpers.ts";
+import type { SkillId } from "@cty1ng/shared/ids";
+import { manualClock, newTestId, testBackend, testIds } from "../../../test/helpers.ts";
 import { DomainError } from "../errors.ts";
 import { OWNER_ID } from "../owner.ts";
+import type { AppendEvent } from "../events/append-event.ts";
+import { createSkillsService } from "./skills.service.ts";
 
 // Built at run time (testing.md §3, "Fake secrets").
 const FAKE_KEY = ["sk", "proj", "abcdefghijklmnop1234"].join("-");
@@ -161,6 +164,29 @@ describe("create and versions", () => {
       { op: "del", text: "b" },
       { op: "add", text: "c" },
     ]);
+  });
+});
+
+describe("the diff budget (SKILL_DIFF_MAX_EDITS)", () => {
+  // DQ-037, owner 2026-11-06: over the budget the old text shows as removed, the new as added.
+  it("diff of two versions over the budget gives the old body removed and the new body added", async () => {
+    const small = testBackend({ SKILL_DIFF_MAX_EDITS: "1" }, { clock });
+    try {
+      const skill = await small.skills.create(input("notes", { bodyMd: "a\nb" }), OWNER_ID);
+      await small.skills.addVersion(
+        skill.id,
+        { baseVersion: 1, description: "Use it when you write notes.", bodyMd: "a\nc" },
+        OWNER_ID,
+      );
+      expect((await small.skills.diff(skill.id, 1, 2)).body).toEqual([
+        { op: "del", text: "a" },
+        { op: "del", text: "b" },
+        { op: "add", text: "a" },
+        { op: "add", text: "c" },
+      ]);
+    } finally {
+      small.close();
+    }
   });
 });
 
@@ -490,9 +516,9 @@ describe("Deprecate, Trash, restore, purge (D49)", () => {
     await backend.skills.trash(late.id, { rowVersion: 2 }, OWNER_ID);
 
     clock.advance(DAY - 1);
-    expect(await backend.skills.purgeDue(OWNER_ID)).toBe(0);
+    expect(await backend.skills.purgeDue(OWNER_ID)).toEqual({ purged: 0, failed: [] });
     clock.advance(1);
-    expect(await backend.skills.purgeDue(OWNER_ID)).toBe(1);
+    expect(await backend.skills.purgeDue(OWNER_ID)).toEqual({ purged: 1, failed: [] });
     expect(await backend.readers.skills.byId(early.id)).toBeNull();
     expect(await backend.readers.skills.byId(late.id)).not.toBeNull();
   });
@@ -505,8 +531,70 @@ describe("Deprecate, Trash, restore, purge (D49)", () => {
     clock.advance(31 * DAY);
     const job = backend.skills.purgeDue(OWNER_ID);
     await backend.settings.update({ trash_days: 90 });
-    expect(await job).toBe(0);
+    expect(await job).toEqual({ purged: 0, failed: [] });
     expect(await backend.readers.skills.byId(skill.id)).not.toBeNull();
+  });
+
+  // P3 item 27: the purge of one skill that failed each time kept every later skill in Trash.
+  // The skills service whose purge of `bad` throws after it deleted the rows and wrote
+  // `skill.purged`, so the rollback has a row and an event to undo.
+  function failingPurge(bad: SkillId) {
+    const appendEvent: AppendEvent = async (tx, input) => {
+      const seq = await backend.appendEvent(tx, input);
+      if (input.event.type === "skill.purged" && input.event.data.skill_id === bad) {
+        throw new Error("disk full");
+      }
+      return seq;
+    };
+    return createSkillsService({
+      uow: backend.uow,
+      readers: backend.readers,
+      appendEvent,
+      clock,
+      ids: testIds,
+      pinsChanged: backend.bots.emitPinsChanged,
+      diffMaxEdits: 2000,
+      changelogMax: 500,
+    });
+  }
+
+  async function dueSkills(...slugs: string[]) {
+    const skills = [];
+    for (const slug of slugs) {
+      const skill = await deprecated(slug);
+      await backend.skills.trash(skill.id, { rowVersion: 2 }, OWNER_ID);
+      skills.push(skill);
+      clock.advance(1);
+    }
+    clock.advance(30 * DAY);
+    return skills;
+  }
+
+  it("the purge job purges the skills after a skill whose purge fails", async () => {
+    const [a, b, c] = await dueSkills("a", "b", "c");
+    if (a === undefined || b === undefined || c === undefined) throw new Error("skills");
+    const before = (await backend.readers.events.after(0, 1000)).length;
+    const result = await failingPurge(b.id).purgeDue(OWNER_ID);
+    expect(await backend.readers.skills.byId(c.id)).toBeNull();
+    expect(await backend.readers.skills.byId(a.id)).toBeNull();
+    expect((await backend.readers.skills.byId(b.id))?.trashedAt).toBeInstanceOf(Date);
+    expect(result.purged).toBe(2);
+    // The failed skill's transaction rolled back: its rows and its `skill.purged` are gone.
+    const written = (await backend.readers.events.after(0, 1000)).slice(before);
+    expect(written.map((event) => [event.type, event.payload])).toEqual([
+      ["skill.purged", { skill_id: a.id }],
+      ["trash.changed", { counts: { skill: 2, bot: 0 } }],
+      ["skill.purged", { skill_id: c.id }],
+      ["trash.changed", { counts: { skill: 1, bot: 0 } }],
+    ]);
+  });
+
+  it("the purge job tries a skill whose purge failed again on the next run", async () => {
+    const [skill] = await dueSkills("notes");
+    if (skill === undefined) throw new Error("skill");
+    expect((await failingPurge(skill.id).purgeDue(OWNER_ID)).failed).toHaveLength(1);
+    expect(await backend.skills.purgeDue(OWNER_ID)).toEqual({ purged: 1, failed: [] });
+    expect(await backend.readers.skills.byId(skill.id)).toBeNull();
   });
 });
 

@@ -3,6 +3,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  copyFileSync,
   lstatSync,
   mkdirSync,
   mkdtempSync,
@@ -14,27 +15,25 @@ import {
 import { createConnection } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { applyPatch, changesMissing } from "./lib/breaks-apply.ts";
 import {
   applyEdits,
   BreakList,
   cell,
   type Claim,
   changedLines,
-  coverageProblems,
   firstTscError,
   lineOf,
   newErrorLines,
   projectsOf,
-  linkProblems,
   listsFile,
-  type TestCall,
-  testCalls,
   playwrightOutcomes,
   type TestOutcome,
   verdict,
   type Verdict,
   vitestOutcomes,
 } from "./lib/breaks.ts";
+import { prProblems } from "./lib/breaks-static.ts";
 
 const args = process.argv.slice(2);
 const listPath = args[0];
@@ -85,11 +84,25 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 execFileSync("tar", ["-x", "-C", copy], {
   input: execFileSync("git", ["archive", "HEAD"], { maxBuffer: 2 ** 30 }),
 });
-if (patch.length > 0)
-  execFileSync("git", ["apply", "--whitespace=nowarn"], { cwd: copy, input: patch });
+if (patch.length > 0) applyPatch(copy, patch);
+// A copy of the file keeps its executable bit.
 for (const file of untracked) {
   mkdirSync(join(copy, dirname(file)), { recursive: true });
-  writeFileSync(join(copy, file), readFileSync(file));
+  copyFileSync(file, join(copy, file));
+}
+// The copy must have each local change; else the run would test HEAD under a hash of the changes.
+const missing = changesMissing({
+  repo: ".",
+  copy,
+  files: [
+    ...git("diff", "HEAD", "--name-only", "--no-renames", "-z").split("\0"),
+    ...untracked,
+  ].filter((file) => file !== ""),
+});
+if (missing.length > 0) {
+  for (const file of missing) console.error(file);
+  console.error("the copy does not have these local changes");
+  process.exit(1);
 }
 // The local store first; the registry only for a package that the store does not have.
 execFileSync("pnpm", ["install", "--frozen-lockfile", "--prefer-offline", "--silent"], {
@@ -108,23 +121,15 @@ const list = BreakList.parse(JSON.parse(read(listPath) ?? "null"));
 const claims = list.claims.filter(
   (claim) => claim.id.includes(only) || claim.breaks.some((step) => step.id.includes(only)),
 );
-// The tests of the PR (all of a new file), with the lines that the PR touched.
-const testsOfPr = new Map<string, TestCall[]>();
-const testFile = /\.(test|spec)\.[cm]?[jt]sx?$/;
-for (const file of [...changed.keys(), ...untracked].filter((path) => testFile.test(path))) {
-  const text = read(file);
-  if (text === null) continue;
-  const lines = changed.get(file);
-  const calls = testCalls(text, file).filter(
-    (call) => lines === undefined || [...lines].some((at) => call.start <= at && at <= call.end),
-  );
-  testsOfPr.set(file, calls);
-}
-// With --only, the list runs in part, so it cannot be complete.
-const problems = [
-  ...linkProblems({ claims }, read),
-  ...(only === "" ? coverageProblems(list, testsOfPr) : []),
-];
+// The links of the claims; with --only, the list runs in part, so it cannot be complete.
+const problems = prProblems({
+  list,
+  claims,
+  complete: only === "",
+  changed,
+  newFiles: untracked,
+  read,
+});
 if (problems.length > 0) {
   for (const problem of problems) console.error(problem);
   process.exit(1);

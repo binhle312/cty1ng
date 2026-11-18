@@ -30,6 +30,8 @@ export const ProjectId = typeId("proj", "ProjectId");
 export const MemoryItemId = typeId("mem", "MemoryItemId");
 export const MemoryProposalId = typeId("mprop", "MemoryProposalId");
 export const FeedbackId = typeId("fb", "FeedbackId");
+// Not a table: the skill import preview lives in memory (D36, amended 2026-11-15).
+export const SkillImportPreviewId = typeId("simp", "SkillImportPreviewId");
 
 export type BotId = z.infer<typeof BotId>;
 export type SkillId = z.infer<typeof SkillId>;
@@ -47,3 +49,4 @@ export type ProjectId = z.infer<typeof ProjectId>;
 export type MemoryItemId = z.infer<typeof MemoryItemId>;
 export type MemoryProposalId = z.infer<typeof MemoryProposalId>;
 export type FeedbackId = z.infer<typeof FeedbackId>;
+export type SkillImportPreviewId = z.infer<typeof SkillImportPreviewId>;
