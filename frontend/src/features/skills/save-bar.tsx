@@ -62,6 +62,8 @@ interface EditSaveBarProps {
   changelog: string;
   onChangelog: (text: string) => void;
   onDiscard: () => void;
+  // Why Discard is off (a Save on its way), or null.
+  discardReason: string | null;
   onSave: () => void;
   // Why Save is off (an error in a field, a save in progress), or null.
   blockedReason: string | null;
@@ -108,7 +110,12 @@ export function EditSaveBar(props: EditSaveBarProps) {
           className="h-9 min-w-0 grow rounded-control border border-outline-strong bg-surface px-2.5 outline-none placeholder:text-on-surface-muted focus:border-primary"
         />
       )}
-      <Button onClick={props.onDiscard}>Discard</Button>
+      <SaveButton
+        label="Discard"
+        kind="secondary"
+        disabledReason={props.discardReason}
+        onClick={props.onDiscard}
+      />
       <SaveButton label={label} disabledReason={reason} onClick={props.onSave} />
     </SaveBarFrame>
   );

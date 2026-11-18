@@ -52,7 +52,7 @@ Each new test is written before its code, and I record its red run (command, fai
 | T9 | `bots.service.test.ts`: a bot purge writes `trash.changed` after `bot.purged` | invariant 7 | green on main: claim, break = skip `appendTrashChanged` in the bot `purgeInTx` |
 | T10 | `backend/test/api/bots.test.ts`: a new assign with v2 of a skill that has v4 pins v2 | item 37 | green on main: claim, break = `setPin` pins the latest version |
 | T11 | `skill-import.service.test.ts`, `ids.test.ts` and `skills.test.ts` (item 29, added after the owner chose `simp`): the preview id is a `simp` TypeID and holds a UUIDv7; an id that names no preview gets 409 `preview_expired` (changed by T14) | item 29 | red for the two id checks (the id was a random UUID); the 409 test passes on the old code (replaced by T14 on 2026-11-18) |
-| T14 | `backend/test/api/skills.test.ts` and `backend/test/security/sql-injection.test.ts` (DQ-332, owner, 2026-11-18): a `preview_id` that is no `simp` TypeID (other prefix, bare UUID, too short, an injection string) gets 422 `validation_error` with `field: "preview_id"`; a well-formed `simp` id that names no preview gets 409 `preview_expired` | item 29, DQ-332 | red on the old route for the 422 cases ("expected 409 to be 422", 6 tests); the 409 cases pass on both; the red run is in the description |
+| T14 | `backend/test/api/skills.test.ts` and `backend/test/security/sql-injection.test.ts` (DQ-332, owner, 2026-11-18): a `preview_id` that is no `simp` TypeID (other prefix, bare UUID, too short, an injection string) gets 422 `validation_error` with `field: "preview_id"`; a well-formed `simp` id that names no preview gets 409 `preview_expired` | item 29, DQ-332 | red on the old route for the 422 cases ("expected 409 to be 422"); the 409 cases pass on both; the red run is in the PR description |
 
 Order and race cases: T1 to T4 are the order cases of item 27 (the failed item does not change the order or the result of the others; the next run tries it again). The races that exist (a skill restored, or `trash_days` raised, between the list and the transaction: `skills.service.test.ts:500-509`) stay green through the one loop; T1 also checks that an item that is no longer due is skipped and not counted.
 
@@ -95,7 +95,7 @@ No migration and no change of the stored value in A or B. The audit also says th
 
 - The break report uses the runner of `origin/main`; if #107 merges first, the records turn runs it again.
 - Item 28 does not change the stored form of `trashed_bot_ids` (TypeID strings in JSON).
-- Item 29: the red run of T11 is in the description, not on a commit before the fix (the tests and the fix are in one commit). The response schema `SkillImportPreview` keeps `preview_id: z.string()`, so the OpenAPI document and the generated client do not carry the `simp` shape (a stricter schema changes the public API shape; frontend fixtures use `"preview-1"`).
+- Item 29: the red run of T11 is in the description, not on a commit before the fix (the tests and the fix are in one commit). What the generated client carries: see the PR description.
 
 ## 7. What the build changed (2026-11-15, round 1 finding R1-8)
 
