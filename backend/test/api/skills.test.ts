@@ -425,16 +425,26 @@ describe("import and export", () => {
     expect((await errorOf(again)).code).toBe("preview_expired");
   });
 
-  // The preview id is a `simp` TypeID. An id that names no preview, or is not a `simp` TypeID, gets
-  // 409 `preview_expired`: the route has taken any string since M1 (`sql-injection.test.ts` pins
-  // it). D36 (2026-11-04) says a bad id in a JSON body gives 422 `validation_error`; that conflict
-  // is DQ-332 (the owner decides). This test pins the answer of today, not a decided rule.
+  // The preview id is a `simp` TypeID (D36). A malformed id (wrong prefix, bad shape) gets 422
+  // `validation_error` with `field`, like every bad id in a JSON body (`api.md` §1; DQ-332, owner
+  // 2026-11-18). A well-formed id that names no preview keeps 409 `preview_expired`.
   it.each([
-    ["a well-formed `simp` id that is unknown", "simp_01jb8x6p0afqz8r2m3k5t7v9wx"],
     ["an id with another prefix", "skill_01jb8x6p0afqz8r2m3k5t7v9wx"],
     ["a bare UUID", "0190b2a4-6f3c-4a1e-9b2d-3c4d5e6f7a8b"],
-  ])("apply with %s gives 409 preview_expired", async (_label, previewId) => {
+    ["a `simp` id that is too short", "simp_01jb8x6p0a"],
+  ])("apply with %s gives 422 validation_error", async (_label, previewId) => {
     const res = await send("POST", "/skills/import/apply", { preview_id: previewId, slugs: ["x"] });
+    expect(res.status).toBe(422);
+    const error = await errorOf(res);
+    expect(error.code).toBe("validation_error");
+    expect(error.field).toBe("preview_id");
+  });
+
+  it("apply with a well-formed `simp` id that names no preview gives 409 preview_expired", async () => {
+    const res = await send("POST", "/skills/import/apply", {
+      preview_id: "simp_01jb8x6p0afqz8r2m3k5t7v9wx",
+      slugs: ["x"],
+    });
     expect(res.status).toBe(409);
     expect((await errorOf(res)).code).toBe("preview_expired");
   });

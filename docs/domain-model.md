@@ -709,8 +709,10 @@ deprecated after the preview is caught; a version number alone would miss that. 
 
 - Any recorded value changed → 409 `stale_write`; nothing is written.
 - The preview is unknown, expired or already applied → 409 `preview_expired`; nothing is written.
-  An id that is not a `simp` TypeID gets the same answer: the body takes any string, and such an id
-  names no preview.
+  This is the answer for a well-formed `simp` TypeID that names no live preview.
+- `preview_id` is not a `simp` TypeID (wrong prefix or shape) → 422 `validation_error` with
+  `field: "preview_id"`, the answer of every bad id in a JSON body (D36, `api.md` §1; owner,
+  2026-11-18); nothing is written.
 - A successful Apply removes the preview, so a second Apply of the same `preview_id` returns
   `preview_expired`.
 
