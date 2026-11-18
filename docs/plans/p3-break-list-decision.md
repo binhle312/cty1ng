@@ -108,7 +108,7 @@ records the red run (`docs/testing.md` §5). The CLI tests use the small git rep
 | --- | --- | --- |
 | A PR that adds a test and has no list fails, and the job names the test | New CLI test "fails a PR with no list when the PR adds a test" (it also checks the line that names the test) | Red: the old code exits 0 with "no break list". It takes the place of the test "passes a PR with no list, and says that the list is missing", whose rule the owner changed |
 | A PR that changes a line of an existing test and has no list fails | New CLI test "fails a PR with no list when the PR changes a line of an existing test" (the test is in the base commit; the PR commit changes one line; `--base` names the base) | Red: the old code exits 0 |
-| A PR that adds or changes no test passes with no list | New CLI test "passes a PR with no list when the PR adds or changes no test" (the PR changes only `app/a.ts`) | Green on the old code (kept behaviour, a test after the code): a claim with a break in `pr-136.json`, for example the case with no list always fails |
+| A PR that adds or changes no test passes with no list | New CLI test "passes a PR with no list when the PR adds or changes no test" (the PR changes only `app/a.ts`) | Its exit 0 is kept behaviour (a test after the code): a claim with a break in `pr-136.json`, for example the case with no list always fails. Its red run on the old code shows only its new message text |
 | An exemption with an empty or blank reason fails | New CLI test "fails a list with an exemption that has no reason" (the reasons `""` and `"  "`) | Red at `"  "`: the old schema (`min(1)`) takes a blank reason |
 | A claim still works | The CLI test "passes a list whose claims link, cover the PR's tests and compile" and the unit test "takes an exemption in place of a claim", unchanged | They run in the full suite |
 | #136 passes the new check | `pnpm check:breaks:static scripts/breaks/pr-136.json` on the laptop and the job on the pushed head | 0 problems |
@@ -126,5 +126,9 @@ No order or race case: the job is one synchronous run on one checkout.
 - GitHub does not block a merge when the job is red: it stays optional (owner, q4 Q2 B), and the
   chief checks it before each merge.
 - The job checks only the list of the open PR, not the lists of merged PRs.
+- The reader of the changed tests keeps two gaps (round 1 of the redesign, R1-1 and R1-2; the
+  runner redesign of #107, DQ-161, removes them): lines that the PR only removes mark the line
+  before them, so a test just above a removed test counts too; and a test whose name is not a
+  plain string (a template with `${…}`, a variable) is not read.
 - The time of the job in CI after this change comes from the job run of this PR; it was not
   measured before.

@@ -395,7 +395,7 @@ reason. A PR whose tests all have a red run writes only exemptions:
 }
 ```
 
-The reason is not empty. An exemption is the author's decision, and the reviewer reads each one:
+The reason is not empty or only spaces. An exemption is the author's decision, and the reviewer reads each one:
 a test of the three cases above needs a claim with breaks, and its exemption is wrong whatever its
 reason.
 Claim no more than the breaks prove: a test name or a PR line that claims a step needs that
@@ -419,6 +419,14 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
 3. It refuses a list that misses a test of the PR: each test that the PR adds or changes since
    its base (`git merge-base HEAD origin/main`, or `--base`) needs a claim, or an entry in
    `exempt` with its reason. With `--only`, the list runs in part, and this check does not run.
+   A test counts when a line that the PR adds or changes is inside its call (`it`, `test`, their
+   modifiers, `it.each(rows)(...)`) in a file named `*.test.*` or `*.spec.*`; each test of a new
+   file counts. A change outside the test calls (a `describe` line, a `beforeEach`, a helper or a
+   fixture, a file with another name) marks no test. In `exempt`, `name` is the name as written,
+   with `%s` for `it.each`. Two known gaps, until the runner redesign of #107 (DQ-161): lines that
+   the PR only removes mark the line before them, so a test that ends just above a removed test
+   counts too (an exemption names it); and a test whose name is not a plain string (a template
+   with `${…}`, a variable) is not read.
 4. Each test must pass with no break first.
 5. Each break runs alone. First, `tsc` must compile each project of the package of the broken
    file (an unused variable is allowed). The frontend has two: its `tsconfig.json` only points
