@@ -119,7 +119,9 @@ describe("changesMissing", () => {
   it("names a link whose target differs", () => {
     changeCopy();
     symlinkSync("app/code.ts", join(repo, "link.ts"));
-    symlinkSync("gone.ts", join(copy, "link.ts"));
+    // Another target with the same bytes: only the target, not the content, tells them apart.
+    writeFileSync(join(copy, "same.ts"), "export const a = 2;\n");
+    symlinkSync("same.ts", join(copy, "link.ts"));
 
     expect(changesMissing({ repo, copy, files: [...files, "link.ts"] })).toEqual(["link.ts"]);
   });
