@@ -75,6 +75,7 @@ Red run (the PR description records it):
 3. The tree test fails when I add a second call to `lib/now.ts`.
 4. The two guard tests fail when the glob reads a folder that does not exist.
 5. The "allows" tests fail on a checker that forbids every text `createClock`, comments included.
+6. The cases that a review adds fail on the checker that came before them.
 
 I remove the added lines after each run.
 
@@ -104,5 +105,7 @@ Break list: not needed (`docs/testing.md` §5: not a late, security or order tes
   holds that, as before.
 - A use of the function through a name that the code builds at run time (`n[key]`,
   `"create" + "Clock"`) or a dynamic `import()` with a computed key.
+- A second copy of `now.ts` in memory (an import with a query string, or a reload of the module in
+  development): it makes a second clock with no use of the name `createClock`.
 - A use outside `frontend/src/`, and a use in a test file (allowed).
 - Feedback at lint time or in the editor: the check runs in `pnpm test`.
