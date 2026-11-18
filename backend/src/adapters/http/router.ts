@@ -18,15 +18,15 @@ export function createRouter() {
       }
       // An unknown field (Zod `.strict()`) names its keys in `keys`, not in `path`. `field` is the
       // first unknown key with its full path; the message names every unknown key (api.md §1).
-      if (issue.code === "unrecognized_keys") {
-        throw new ApiFailure(
-          "validation_error",
-          `Unknown ${issue.keys.length === 1 ? "field" : "fields"}: ${issue.keys.join(", ")}.`,
-          fieldPath([...issue.path, ...issue.keys.slice(0, 1)]),
-        );
-      }
-      const field = fieldPath(issue.path);
-      throw new ApiFailure("validation_error", issue.message, field === "" ? undefined : field);
+      const unknown = issue.code === "unrecognized_keys" ? issue.keys : undefined;
+      const field = fieldPath(
+        unknown === undefined ? issue.path : [...issue.path, ...unknown.slice(0, 1)],
+      );
+      const message =
+        unknown === undefined
+          ? issue.message
+          : `Unknown ${unknown.length === 1 ? "field" : "fields"}: ${unknown.join(", ")}.`;
+      throw new ApiFailure("validation_error", message, field === "" ? undefined : field);
     },
   });
 }

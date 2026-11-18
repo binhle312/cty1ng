@@ -134,6 +134,15 @@ describe("POST /bots", () => {
     });
   });
 
+  // R1-1 of PR 134: an empty key names no field, so the answer has no `field` (api.md §1).
+  it("gives no field for an unknown key that is empty", async () => {
+    const { response } = await createBot({ ...newBot, "": 1 });
+    expect(response.status).toBe(422);
+    const error = await errorOf(response);
+    expect(error).toMatchObject({ code: "validation_error" });
+    expect(error).not.toHaveProperty("field");
+  });
+
   // Item 34 of the P3 list: a key of tool_settings has the shape of a catalog tool id.
   it("refuses a tool_settings key that is not a tool id with 422", async () => {
     const { response } = await createBot({ ...newBot, tool_settings: { "Not An Id": false } });

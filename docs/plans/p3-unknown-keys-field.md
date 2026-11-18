@@ -56,9 +56,10 @@ existing 422 tests there do. Each case asserts `status`, `code`, `field` and `me
 
 Beyond these: the existing tests keep passing, which shows that other issues keep their field and
 message (`field: "unknown"` at `bots.test.ts:77`, `pins[0].skill_id`, `tool_settings.<key>`, and
-`errors-and-limits.test.ts` for the `_test/events` route). The order of keys: `field` is the first
-key that Zod reports, which is the order of the body, so the test sends the keys in a fixed order and
-asserts it.
+`errors-and-limits.test.ts` for the `_test/events` route). The order of keys: `field` is the first key that Zod reports, in the order that JavaScript lists
+the keys of the object (integer-like keys first, in ascending order, then the other keys in the
+order of the body). The two-key test uses two keys that are not integer-like and asserts the order.
+An unknown key that is empty names no field, so the answer has no `field`; a test covers it.
 
 Proof that the tests can fail: run the three new tests on `main` (no fix) and record the red run in
 the PR description. The two-key case and the message of each case must fail there; the one-key
@@ -80,7 +81,10 @@ a late, security or order or race test (owner, 2026-11-09, `docs/testing.md` §5
 - That a body with several unknown keys in different objects names each of them: `field` names
   the first unknown key that Zod reports; the message of that object lists its keys only (one issue
   of Zod at a time, as for every other validation error today).
-- That `noQueryString()` gives the same message as a Zod route (DQ-382 already says so).
+- That an unknown key is named when the body has another problem: Zod gives one issue at a time,
+  and an invalid value that it reports first hides the unknown keys.
+- That `noQueryString()` gives the same message as a Zod route (DQ-382 already says so); for one
+  query key the two texts now differ too (`Unknown field: foo.` and `Unrecognized key: "foo"`).
 - A limit on the length of the message: it names every key as Zod's message did before, and the body
   limit of 1 MB still applies.
 
