@@ -149,6 +149,8 @@ describe("compileProblems", () => {
           target: "ES2022",
           module: "ESNext",
           moduleResolution: "Bundler",
+          // No DOM: its types would make each check about two times slower.
+          lib: ["ES2022"],
           types: [],
         },
         include: ["app/**/*.ts"],
@@ -193,7 +195,7 @@ describe("compileProblems", () => {
   });
 
   it("compiles a broken file in each project of its package, also when only the second one reads it", () => {
-    const options = { strict: true, noEmit: true, target: "ES2022", types: [] };
+    const options = { strict: true, noEmit: true, target: "ES2022", lib: ["ES2022"], types: [] };
     write(
       "tsconfig.json",
       JSON.stringify({
