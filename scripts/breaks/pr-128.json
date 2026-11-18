@@ -2,7 +2,7 @@
   "claims": [
     {
       "id": "C1",
-      "claim": "compileProblems compiles a broken file in each project that projectsOf gives, not only the first (R1-2)",
+      "claim": "compileProblems compiles a broken file in a later project of its package when an earlier project does not read it (R1-2)",
       "test": {
         "kind": "vitest",
         "file": "scripts/lib/breaks-static.test.ts",
