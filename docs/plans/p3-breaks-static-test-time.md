@@ -6,6 +6,7 @@ out in the full `pnpm test` (20 s limit) and passes when its file runs alone. Fo
 of #135 and #134 (two full runs of two).
 Checkpoint: none (a change of one test file; no UI, no migration, no public API, no code design)
 Approval: plan OK by the chief agent, 2026-11-18 (revision 1), with four conditions: break 1 (no `realpath`) and break 2 (the fixture check) each give a recorded red run; a comment at the fixture names the real case; the Not claimed line names where the real layout is still exercised; the test time alone and in three full runs. Owner review pending
+Approval: revision 2, 2026-11-18: `lib: ["ES2022"]` in the fixture tsconfigs, and the break list (round 1 review, R1-1 and R1-2); the chief agent accepted the `lib` change ("Good find on `lib`"); owner review pending
 
 ## The cause, with numbers
 
@@ -61,8 +62,12 @@ find text is in the file once. It also removes the link to `b` and asserts the T
 the test shows that the layout depends on the second package (not claimed by the test name; a
 check of the fixture).
 
-No change to `scripts/lib/breaks-static.ts`, to the CLI, to `vitest.config.ts`, or to a time
-limit.
+The fixture tsconfig of the `compileProblems` tests, and the options of the two-project test, get
+`lib: ["ES2022"]`: no fixture uses the DOM types of the default lib, and each check parses them
+again (revision 2).
+
+No change to the behaviour of `scripts/lib/breaks-static.ts`, to the CLI, to `vitest.config.ts`,
+or to a time limit.
 
 Options not chosen:
 
@@ -87,7 +92,7 @@ cost of the check by its design, not the defect of this PR; it is not changed he
 
 | Behaviour | Test | Proof |
 | --- | --- | --- |
-| The check reads the packages that pnpm links, with no false error on code that the break keeps | The changed test, on the small layout | Break: remove the `realpath` line of the host in `breaks-static.ts`; the test fails at its assertion with TS7006 (by hand in a scratch copy, as the test is changed after the code) |
+| The check reads the packages that pnpm links, with no false error on code that the break keeps | The changed test, on the small layout | Break: remove the `realpath` line of the host in `breaks-static.ts`; the test fails at its assertion with TS7006. The test is changed after the code, so the PR has a break list (`docs/testing.md` §5) with this break, and with the claim of the two-project test, whose fixture options change |
 | The test passes in the full suite with a clear margin | The time of the test alone and in three full `pnpm test` runs, each in the heavy slot | Before: 25.9 s and 32.0 s in the suite. Target: under 2 s in each full run (a margin of 10 times) |
 | The static check still catches what it caught | `pnpm check:breaks:static` on the old proof commits of #128 (the DQ-439, DQ-448, DQ-515 and DQ-517 cases) | The same problems as #128's description; the library code does not change, so this is a regression check of the test change only |
 

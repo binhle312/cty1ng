@@ -256,10 +256,12 @@ describe("compileProblems", () => {
     // The edit must apply, or the break is not compiled at all (DQ-613).
     expect(lineOf(readRoot("app/use.ts") ?? "", kept)).toBe(2);
     const claims = [breakOf({ file: "app/use.ts", find: kept, replace: kept })];
-    expect(compileProblems({ claims, root, read: readRoot })).toEqual([]);
+    const linked = compileProblems({ claims, root, read: readRoot });
+    expect(linked).toEqual([]);
     // The layout needs `b`: without its link, the same break gets the false error.
     rmSync(linkOfB);
-    expect(compileProblems({ claims, root, read: readRoot })).toEqual([
+    const unlinked = compileProblems({ claims, root, read: readRoot });
+    expect(unlinked).toEqual([
       "C1-a: the break does not compile: app/use.ts:2 TS7006 Parameter 'item' implicitly has an 'any' type.",
     ]);
   });

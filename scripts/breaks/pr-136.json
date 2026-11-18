@@ -1,0 +1,59 @@
+{
+  "claims": [
+    {
+      "id": "C1",
+      "claim": "compileProblems reads the packages that pnpm links by their real path: a package that a linked package imports resolves, so the kept code gets no false TS7006",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/lib/breaks-static.test.ts",
+        "name": "reads the packages that pnpm links, with no false errors on code that the break keeps"
+      },
+      "assertion": "expect(linked).toEqual([]);",
+      "breaks": [
+        {
+          "id": "C1-no-realpath",
+          "file": "scripts/lib/breaks-static.ts",
+          "edits": [
+            {
+              "find": "    realpath: (path) => (ts.sys.realpath === undefined ? path : ts.sys.realpath(path)),\n",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "C1-realpath-is-the-path",
+          "file": "scripts/lib/breaks-static.ts",
+          "edits": [
+            {
+              "find": "realpath: (path) => (ts.sys.realpath === undefined ? path : ts.sys.realpath(path)),",
+              "replace": "realpath: (path) => path,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C2",
+      "claim": "compileProblems compiles a broken file in a later project of its package when an earlier project does not read it (the claim C1 of #128; this PR changes the options of its fixture)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/lib/breaks-static.test.ts",
+        "name": "compiles a broken file in each project of its package, also when only the second one reads it"
+      },
+      "assertion": "expect(second).toEqual([]);",
+      "breaks": [
+        {
+          "id": "C2-first-project-only",
+          "file": "scripts/lib/breaks-static.ts",
+          "edits": [
+            {
+              "find": "for (const name of projectsOf(step.file, at.read)) {",
+              "replace": "for (const name of projectsOf(step.file, at.read).slice(0, 1)) {"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": []
+}
