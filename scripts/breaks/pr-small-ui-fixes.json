@@ -156,7 +156,7 @@
     },
     {
       "id": "S8",
-      "claim": "The Remove from bots dialog gives the new reason when the bots did not load",
+      "claim": "The Remove from bots dialog gives the new reason when the bots did not load (shares the break of S7: the three dialogs use one function, botsReason)",
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/skills/skill-dialogs.test.tsx",
@@ -178,7 +178,7 @@
     },
     {
       "id": "S9",
-      "claim": "The Delete dialog gives the new reason when the bots did not load",
+      "claim": "The Delete dialog gives the new reason when the bots did not load (shares the break of S7: the three dialogs use one function, botsReason)",
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/skills/skill-dialogs.test.tsx",
