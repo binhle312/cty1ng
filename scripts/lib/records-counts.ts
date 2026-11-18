@@ -145,7 +145,7 @@ function readLedger(files: readonly LedgerFile[]): { ledger?: Ledger; problems: 
       );
     return tables[0];
   });
-  problems.push(...splitTables(files));
+  problems.push(...splitTables(files), ...cellCountProblems(files));
   const [milestones, register] = found;
   if (problems.length > 0 || milestones === undefined || register === undefined)
     return { problems };
@@ -229,6 +229,24 @@ function ownedCells(ledger: Ledger): Owned[] {
     });
   }
   return owned;
+}
+
+const ISSUE_HEADER = "| Issue ID |";
+
+// A row with more or fewer cells than its header: a stray or missing `|` moves each later cell,
+// so the state, the discovery PR or the escaped value would be read from the wrong cell.
+function cellCountProblems(files: readonly LedgerFile[]): string[] {
+  const headers = [ISSUE_HEADER, ROUND_HEADER, ...Object.values(TABLES).map((t) => t.header)];
+  return headers.flatMap((header) =>
+    tablesWithHeader({ files, header }).flatMap((table) =>
+      table.rows
+        .filter((row) => row.cells.length !== table.headers.length)
+        .map(
+          (row) =>
+            `${row.path}:${row.line + 1}: the row ${row.cells[0] ?? ""} has ${row.cells.length} cells; its header has ${table.headers.length}. Fix the stray or missing "|".`,
+        ),
+    ),
+  );
 }
 
 // A table row after a line that is not a table line starts a new table, and with no header row
@@ -316,19 +334,26 @@ function staleProblems(ledger: Ledger): string[] {
   return problems;
 }
 
-// The first id whose row must hold its "Same cause?" answer with the search (AGENTS.md §9; owner,
-// 2026-11-18, q4 Q3 A: the ledger rows are the home). Older rows put it in the PR description.
+// The rows that must hold their "Same cause?" answer with the search (AGENTS.md §9; owner,
+// 2026-11-18, q4 Q3 A: the ledger rows are the home): from DQ-751 on, and each row found after the
+// rule began, since an id below DQ-751 can still be free. Older rows put the answer in the PR
+// description. A withdrawn row has no fix to answer for.
 const FIRST_ANSWERED_ID = 751;
-const ANSWER = /Same cause: (yes|no)\b[^|]*\bsearch\b/;
+const LAST_UNANSWERED_DATE = "2026-11-18";
+// `Same cause: yes|no (search: <command or places>: <hits>)`; an escaped `\|` may be in the search.
+const ANSWER = /Same cause: (yes|no) \(search: (?:[^|\\]|\\.)+?: (?:[^|\\]|\\.)+\)/;
 
 function answerProblems(files: readonly LedgerFile[]): string[] {
   return files.flatMap((file) =>
     file.text.split("\n").flatMap((line) => {
       const id = numberOf(ISSUE_ROW.exec(line)?.[1]);
-      if (id === undefined || id < FIRST_ANSWERED_ID || ANSWER.test(cellsOf(line)[8] ?? ""))
-        return [];
+      if (id === undefined) return [];
+      const cells = cellsOf(line);
+      const found = (cells[2] ?? "").slice(0, 10);
+      const asked = id >= FIRST_ANSWERED_ID || found > LAST_UNANSWERED_DATE;
+      if (!asked || cells.slice(3).includes("withdrawn") || ANSWER.test(cells[8] ?? "")) return [];
       return [
-        `${file.path}: ${dq(id)} has no "Same cause: yes|no (search: …)" in its "Fix and verification" cell (AGENTS.md §9; each row from ${dq(FIRST_ANSWERED_ID)} on).`,
+        `${file.path}: ${dq(id)} has no "Same cause: yes|no (search: …)" in its "Fix and verification" cell (AGENTS.md §9; each row from ${dq(FIRST_ANSWERED_ID)} on or found after ${LAST_UNANSWERED_DATE}).`,
       ];
     }),
   );

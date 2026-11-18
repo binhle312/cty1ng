@@ -25,6 +25,10 @@ function dq(id: number): string {
   return `DQ-${String(id).padStart(3, "0")}`;
 }
 
+function lineIn(ledger: { path: string; text: string }[], start: string): number {
+  return (ledger[0]?.text ?? "").split("\n").findIndex((line) => line.startsWith(start)) + 1;
+}
+
 function issue(row: Issue): string {
   const { id, pr, state = "fixed", milestone = "Audit", escaped = "escaped: no" } = row;
   const found = pr === "audit" ? "audit / audit" : `#${pr} / round 1`;
@@ -345,6 +349,23 @@ describe("structure problems", () => {
     ]);
   });
 
+  it("reports a row with more or fewer cells than its header", () => {
+    const fixture = onePr({
+      issues: [
+        issue({ id: 1, pr: 10 }).replace("| Review |", "| Review | stray |"),
+        issue({ id: 2, pr: 10, state: "open" }).replace("| — |", "|"),
+      ],
+    });
+    const problems = checkCounts(files(fixture));
+    expect(
+      problems.filter((p) => p.includes("cells")),
+      "cell counts",
+    ).toEqual([
+      `${MAIN}:${lineIn(files(fixture), "| DQ-001 |")}: the row DQ-001 has 11 cells; its header has 10. Fix the stray or missing "|".`,
+      `${MAIN}:${lineIn(files(fixture), "| DQ-002 |")}: the row DQ-002 has 9 cells; its header has 10. Fix the stray or missing "|".`,
+    ]);
+  });
+
   it("reports a table that no file has, and a table that two files have", () => {
     const [main, archive] = files(onePr());
     const noRegister = {
@@ -369,8 +390,12 @@ describe("structure problems", () => {
 
 describe("the Same cause answer of a row", () => {
   // The rows of #100 from DQ-751 on, with a fix cell; the other cells are right.
-  function rows(fix: string, id = 751): Fixture {
-    const row = issue({ id, pr: 100 }).replace("| Fix |", `| ${fix} |`);
+  function rows(
+    fix: string,
+    options: { id?: number; change?: (row: string) => string } = {},
+  ): Fixture {
+    const { id = 751, change = (row: string) => row } = options;
+    const row = change(issue({ id, pr: 100 }).replace("| Fix |", `| ${fix} |`));
     return onePr({
       registerRows: [
         register({ pr: 10, cells: ["2 (DQ-001, DQ-002)", "1 (DQ-002)", "0", "1"] }),
@@ -389,14 +414,72 @@ describe("the Same cause answer of a row", () => {
 
   it("reports a row from DQ-751 on whose fix cell has no answer with a search", () => {
     expect(checkCounts(files(rows("`abc1234`: the fix. Same cause? No"))), "no search").toEqual([
-      `${MAIN}: DQ-751 has no "Same cause: yes|no (search: …)" in its "Fix and verification" cell (AGENTS.md §9; each row from DQ-751 on).`,
+      `${MAIN}: DQ-751 has no "Same cause: yes|no (search: …)" in its "Fix and verification" cell (AGENTS.md §9; each row from DQ-751 on or found after 2026-11-18).`,
     ]);
   });
 
   it("passes a row that answers with a search, and an older row with no answer", () => {
     const answered = "`abc1234`: the fix. Same cause: no (search: `grep -n split`: no hit)";
     expect(checkCounts(files(rows(answered))), "an answer with a search").toEqual([]);
-    expect(checkCounts(files(rows("`abc1234`: the fix", 750))), "DQ-750").toEqual([]);
+    expect(checkCounts(files(rows("`abc1234`: the fix", { id: 750 }))), "DQ-750").toEqual([]);
+  });
+
+  const NO_ANSWER = (id: number) =>
+    `${MAIN}: ${dq(id)} has no "Same cause: yes|no (search: …)" in its "Fix and verification" cell (AGENTS.md §9; each row from DQ-751 on or found after 2026-11-18).`;
+
+  it.each([
+    ["an answer with no search", "Same cause: no"],
+    ["the word search with no command and hits", "Same cause: no (no search done)"],
+    ["a word other than yes or no", "Same cause: maybe (search: `grep -n x`: no hit)"],
+    ["a small first letter", "same cause: no (search: `grep -n x`: no hit)"],
+  ])("reports %s", (_name, fix) => {
+    expect(checkCounts(files(rows(`\`abc1234\`: the fix. ${fix}`))), fix).toEqual([NO_ANSWER(751)]);
+  });
+
+  it("reads the answer only in the Fix and verification cell", () => {
+    const inRelated = (row: string) =>
+      row.replace("Related: none;", "Related: none. Same cause: no (search: `grep -n x`: no hit);");
+    expect(
+      checkCounts(files(rows("`abc1234`: the fix", { id: 751, change: inRelated }))),
+      "answer in Related",
+    ).toEqual([NO_ANSWER(751)]);
+  });
+
+  it("passes a search that has an escaped pipe", () => {
+    const answer = '`abc1234`: the fix. Same cause: no (search: `grep -E "a\\|b"`: no hit)';
+    expect(checkCounts(files(rows(answer))), "escaped pipe").toEqual([]);
+  });
+
+  it("reports a row below DQ-751 found after 2026-11-18, and skips a withdrawn row", () => {
+    const later = (row: string) => row.replace("| 2026-11-18 /", "| 2026-11-19 /");
+    expect(
+      checkCounts(files(rows("`abc1234`: the fix", { id: 700, change: later }))),
+      "DQ-700 found later",
+    ).toEqual([NO_ANSWER(700)]);
+    const withdrawn = files(
+      rows("Withdrawn: not a defect", {
+        id: 751,
+        change: (row) => row.replace("| fixed |", "| withdrawn |"),
+      }),
+    );
+    expect(
+      checkCounts(withdrawn).filter((p) => p.includes("Same cause")),
+      "withdrawn",
+    ).toEqual([]);
+  });
+
+  it("lists the answer problems next to a structure problem", () => {
+    const [main, archive] = files(rows("`abc1234`: the fix"));
+    const row = (main?.text ?? "").split("\n").find((line) => line.startsWith("| DQ-751 |")) ?? "";
+    const archiveText = (archive?.text ?? "").replace(/(\| --- \|[^\n]*\n)/, `$1${row}\n`);
+    expect(
+      checkCounts([main ?? { path: MAIN, text: "" }, { path: ARCHIVE, text: archiveText }]),
+      "a double row and two rows with no answer",
+    ).toEqual([
+      `DQ-751 is in 2 rows (${MAIN}, ${ARCHIVE}): each id has one row.`,
+      NO_ANSWER(751),
+      NO_ANSWER(751).replace(MAIN, ARCHIVE),
+    ]);
   });
 });
 

@@ -83,8 +83,9 @@ states no state, count or result that a file or a tool owns:
 - The "Same cause as an earlier fix?" answer and its search live in the "Fix and verification"
   cell of the ledger row, in the form `Same cause: yes|no (search: <command or places>: <hits>)`
   (`AGENTS.md` §9). For a yes, the row names the earlier fix and the owner's decision. The
-  `Defect and review fixes` section of the body names the rows. `pnpm records:counts` fails on a row
-  from DQ-751 on with no such answer; it does not check that the search is right.
+  `Defect and review fixes` section of the body names the rows. `pnpm records:counts` fails on a
+  row from DQ-751 on, or found after 2026-11-18, that is not `withdrawn` and has no answer in this
+  form. It does not check that the search is right, or that a yes names the earlier fix.
 - A `docs/status.md` line of a PR has its state, its date and its link. It has no list of files, no
   count and no claim that a test or a row owns.
 - The results of a script live in its output. The PR body pastes the output unchanged, with the

@@ -15,6 +15,10 @@ review pending
 Revision 3, chief agent, 2026-11-18 (option a, under q4 Q3 A: "the ledger rows are the home"):
 the "Same cause?" answer and its search move into the ledger row; `AGENTS.md` §9 line: owner
 review pending
+Revision 4, 2026-11-18 (review round 2 of #135): the test strategy rows of revision 3 and of the
+checks that the reviews added; the answer check also covers rows found after 2026-11-18 and needs
+the whole form; a row with more or fewer cells than its header is a problem (the chief agent's
+note on DQ-573). Approval: the chief agent, pending
 
 ## The cause
 
@@ -56,7 +60,7 @@ others: a script writes every count, and the other records link to the row that 
 | Counts of a PR (unique, open, escaped, rounds) | Register row (by hand); §2 paragraph; PR description ("two round rows") | Register row of a PR with coverage `Ledger`, written by the script |
 | State, fix commit and test of an issue | Ledger row; §2 paragraph ("fixed in `c8923ef`"); the Fix and Test columns of the description table; `docs/status.md` lines | Ledger row only; the description names the id |
 | Result of a review round | Round row; description ("round 2 confirmed …"); §2 paragraph | Round row only |
-| "Same cause as an earlier fix?" answer and its search | Description table (`AGENTS.md` §9) and the Fix cell of the ledger row | The ledger row only, checked from DQ-751 on by the script (revision 3; `AGENTS.md` §9); the description names the rows |
+| "Same cause as an earlier fix?" answer and its search | Description table (`AGENTS.md` §9) and the Fix cell of the ledger row | The ledger row only, checked by the script from DQ-751 on and for rows found after 2026-11-18 (revisions 3 and 4; `AGENTS.md` §9); the description names the rows |
 | What a merged PR delivered | `docs/status.md` line (with file lists and claims, DQ-668, DQ-712) | `docs/status.md`: the state and a link, no file list, no count, no claim that a test owns |
 | Owner answers, reserved id ranges | §2 paragraphs, ledger rows, `plans/README.md` | The ledger row of the issue; the plan approval in `plans/README.md`; a range needs no record (each PR greps the branches) |
 
@@ -166,6 +170,12 @@ No break list: these tests come before the code, and none is a security or an or
 | One id in two rows is a problem | The same id in both files | Same |
 | A file outside the list with `| DQ-` rows is a problem; a missing table heading is a problem | Fixture map of files | Same |
 | Ids: three or more in a run are a range, two are listed | `DQ-1, DQ-2, DQ-3, DQ-7, DQ-8` | Same |
+| A row whose state cell is not a state word, or whose discovery cell names a PR not as `/ #N /`, is a problem (review round 1) | Four rows | Before the code: no problem |
+| With a structure problem, the check lists only the structure and answer problems, no stale cell; `--write` prints them once | A double id | Same |
+| Two milestone rows of the script with one first word are a problem | A second `Audit …` row | Same |
+| A row with more or fewer cells than its header is a problem (revision 4) | One row with a stray cell, one with a missing cell | Same |
+| The answer (revision 3, 4): a row from DQ-751 on, or found after 2026-11-18, needs `Same cause: yes\|no (search: <command or places>: <hits>)` in its "Fix and verification" cell; an answer with no search, the word search alone, another word, a small first letter, and an answer in another cell are each a problem; a search with an escaped pipe passes; DQ-750 found on 2026-11-18 and a `withdrawn` row are not asked | One row each | Same |
+| Both kinds in one report: a structure problem and the answer problems | A double DQ-751 with no answer | Same |
 
 Real runs, recorded in the description: (1) the check on the files of `main` after the `Ledger`
 markers, before `--write`: it lists the stale cells; (2) a scratch copy with one count changed by
@@ -177,8 +187,9 @@ files, each difference checked against its rows.
 - The script does not check that a row is true (its state against the commit, its test). The
   reviewer checks that.
 - It does not read PR descriptions or `docs/status.md`; the link rule there is a written rule.
-- It checks that a row from DQ-751 on has a "Same cause" answer with the word "search"; it does
-  not check that the search is right or complete (revision 3).
+- It checks that a row from DQ-751 on, or found after 2026-11-18, has a "Same cause" answer in the
+  form `Same cause: yes|no (search: …: …)`; it does not check that the search is right or complete,
+  or that a yes names the earlier fix (revisions 3 and 4).
 - It does not check the 600-byte limit of a row (pull-request.md step 7; about 120 rows are over it
   on `main`) or the file size (§7 step 6).
 - Rows of a PR branch count only after that branch merges. Two PRs that merge one after the other
