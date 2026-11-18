@@ -15,7 +15,7 @@
           "file": "frontend/src/features/bots/drag-setup.ts",
           "edits": [
             {
-              "find": "    useSensor(PromptKeyboardSensor, {",
+              "find": "    useSensor(AtOnceKeyboardSensor, {",
               "replace": "    useSensor(KeyboardSensor, {"
             }
           ]
@@ -47,7 +47,7 @@
           "file": "frontend/src/features/bots/drag-setup.ts",
           "edits": [
             {
-              "find": "    useSensor(PromptKeyboardSensor, {",
+              "find": "    useSensor(AtOnceKeyboardSensor, {",
               "replace": "    useSensor(KeyboardSensor, {"
             }
           ]
@@ -132,13 +132,13 @@
     },
     {
       "id": "K6-fallback",
-      "claim": "A sensor with a missing part falls back to dnd-kit's own attach",
+      "claim": "A sensor with a missing part falls back to dnd-kit's own attach (through the real prototype attach)",
       "test": {
         "kind": "vitest",
         "file": "frontend/src/features/bots/drag-setup.test.tsx",
         "name": "falls back to dnd-kit's own attach when a part is missing"
       },
-      "assertion": "expect(fallback, \"the fallback did not run\").toHaveBeenCalledTimes(1);",
+      "assertion": "expect(onStart, \"dnd-kit's own attach did not run\").toHaveBeenCalledTimes(1);",
       "breaks": [
         {
           "id": "K6-no-fallback",
@@ -149,9 +149,25 @@
               "replace": ""
             }
           ]
+        },
+        {
+          "id": "K6-wiring-without-fallback",
+          "file": "frontend/src/features/bots/drag-setup.ts",
+          "edits": [
+            {
+              "find": "    attachAtOnce(this, dndKitAttach);\n",
+              "replace": "    attachAtOnce(this, undefined);\n"
+            }
+          ]
         }
       ]
     }
   ],
-  "exempt": []
+  "exempt": [
+    {
+      "file": "frontend/src/features/bots/drag-setup.test.tsx",
+      "name": "replaces an attach that is still the one of dnd-kit 6.3.1",
+      "reason": "It compares the installed library with a fixed copy of its attach; no app code decides the result, so no break of the code applies. Its red run (expected text changed by hand, then put back) is in the PR description. Not an order test"
+    }
+  ]
 }

@@ -18,7 +18,7 @@ import { type RefObject, useCallback } from "react";
 // the mouse sensor, a touch is only the touch sensor's: a long press starts the drag, a short
 // tap is a click, and a swipe scrolls. The keyboard picks up and drops with Space only, because
 // Enter opens the bot (or its card). The keyboard sensor hears each key after the pick-up key, however
-// soon it comes (`PromptKeyboardSensor` below).
+// soon it comes (`AtOnceKeyboardSensor` below).
 //
 // A mouse or touch press ends on Esc too, but dnd-kit does not mark that Esc as used. So from the
 // press until the release, a capture listener marks it, and the bot page does not also ask
@@ -33,7 +33,7 @@ export function useDragSensors() {
       activationConstraint: { delay: 300, tolerance: 5 },
       onActivation: markEscUntilRelease,
     }),
-    useSensor(PromptKeyboardSensor, {
+    useSensor(AtOnceKeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
       keyboardCodes: { start: ["Space"], cancel: ["Escape"], end: ["Space"] },
     }),
@@ -41,17 +41,19 @@ export function useDragSensors() {
 }
 
 // dnd-kit's keyboard sensor (`@dnd-kit/core` 6.3.1, `attach` in `dist/core.esm.js:1154-1159`) adds
-// its keydown listener in a zero timer after the pick-up key. Chrome runs a key that it already
-// holds before that timer, so an arrow or Esc pressed while the pick-up renders was lost (the flaky
-// e2e test of the drop line, CI run 44228267962). This sensor is dnd-kit's with one change: its
+// its keydown listener in a zero timer after the pick-up key. Chrome can run a key that it already
+// holds before that timer (in a probe, 19 of 30 times), and then that key was lost: an arrow or Esc
+// pressed while the pick-up renders did nothing (the flaky e2e test of the drop line, CI run
+// 44228267962). This sensor is dnd-kit's with one change: its
 // `attach` adds the listener at once. The pick-up key still goes on to `document` after that, so
 // the listener skips that one event, or it would drop the item at once (this is why dnd-kit waits).
-export class PromptKeyboardSensor extends KeyboardSensor {}
+export class AtOnceKeyboardSensor extends KeyboardSensor {}
 
 const dndKitAttach: unknown = Reflect.get(KeyboardSensor.prototype, "attach");
 
-// `attach` is private in dnd-kit's types, so it is replaced on the prototype.
-Object.defineProperty(PromptKeyboardSensor.prototype, "attach", {
+// `attach` is private in dnd-kit's types, so it is replaced on the prototype. `drag-setup.test.tsx`
+// checks that the installed `attach` is still the 6.3.1 one that this replaces.
+Object.defineProperty(AtOnceKeyboardSensor.prototype, "attach", {
   value: function attach(this: object) {
     attachAtOnce(this, dndKitAttach);
   },
@@ -124,7 +126,7 @@ function fieldOf(owner: unknown, name: string): unknown {
 
 // dnd-kit's `attach` with the listener added at once. If a part is missing, the sensor falls back
 // to dnd-kit's own `attach`: the drag works, and only a key that comes very soon is lost again.
-export function attachAtOnce(sensor: object, fallback: unknown): void {
+function attachAtOnce(sensor: object, fallback: unknown): void {
   const { parts } = keyboardSensorParts(sensor);
   if (parts === null) {
     if (typeof fallback === "function") Reflect.apply(fallback, sensor, []);

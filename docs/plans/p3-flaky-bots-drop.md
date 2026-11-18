@@ -21,7 +21,7 @@ Base: `origin/main` = `1dd7a01` for the runs, then `6a43404` after a fast-forwar
 
 ## 2. Cause: (b), the app
 
-The first wrong decision: the keyboard sensor that `drag-setup.ts` chooses for every drag (Bots page, bot page side list, header roster) starts to listen for keys one task after the pick-up key. A key that the browser already holds when the Space task ends is lost. Chrome runs a held key before that timer (P4: 19 of 30).
+The first wrong decision: the keyboard sensor that `drag-setup.ts` chooses for every drag (Bots page, bot page side list, header roster) starts to listen for keys one task after the pick-up key. A key that the browser already holds when the Space task ends can be lost: Chrome can run a held key before that timer (P4: 19 of 30; in probe P3 the timer ran first, 10 of 10).
 
 A person can be in that state. The window is the time of the Space task: 15 to 26 ms on this 16-thread laptop with no load, and longer on a slower machine or a long list. Rule (one sentence): each key that comes after the pick-up key goes to the drag, in order, however soon it comes.
 
@@ -67,3 +67,9 @@ Rejected: (1) a `pnpm patch` of `@dnd-kit/core`. It is the same change, but in t
 - Why a key that comes during a later long task (probe P3: a 200 ms task after Space, keys 60 ms after Space) passed 10 of 10. Chrome ran dnd-kit's timer first there. I did not find which Chrome rule decides this order.
 - Browsers other than Chromium: not run.
 - The CI run itself does not show why its ArrowRight came before the timer. The trace shows only that the key had no effect while the drag was active.
+
+## 7. 2026-11-18, after review round 1
+
+- Item 7 of section 4: the real test, 100 runs in one series under 16 busy processes, passed 98 of 100 on `c5437b2`. Neither failure was at the drop line (PR description). Each run makes 2 bots and only unpins them, so the bot list grows over one series, and both failures came late (runs 87 and 96). So item 7 runs again as 4 series of 25 under the same load, each with fresh servers and a fresh database. The 98 of 100 series stays in the record. Under `Needs human review` because it changes how an approved criterion is measured.
+- The fallback test runs the real prototype `attach` (review F2). A new test compares the installed `attach` with the 6.3.1 body, so an update that changes it fails `pnpm test` (review F3). This check is in the test only: the production build minifies dnd-kit, so the text cannot be compared at run time.
+- The sensor is `AtOnceKeyboardSensor` ("prompt" is the bot's model prompt in this product; review F5).

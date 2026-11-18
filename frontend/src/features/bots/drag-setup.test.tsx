@@ -9,7 +9,7 @@ import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { pressKeyNow } from "../../../test/press-key.ts";
-import { attachAtOnce, keyboardSensorParts, useDragSensors } from "./drag-setup.ts";
+import { AtOnceKeyboardSensor, keyboardSensorParts, useDragSensors } from "./drag-setup.ts";
 
 // The keyboard drag of the pinned bots (pin.md §2; the Bots page, the bot page's side list and the
 // header roster share `useDragSensors`): each key after the pick-up key goes to the drag, however
@@ -74,6 +74,13 @@ const overSecond = (seen: Seen) =>
   waitFor(() => {
     expect(seen.over.at(-1)).toBe("b");
   });
+
+// The body of `attach` in `@dnd-kit/core` 6.3.1 (`dist/core.esm.js:1154-1159`), with no white
+// space. `AtOnceKeyboardSensor` replaces it; when an update changes it, compare the two again.
+const ATTACH_6_3_1 =
+  "attach(){this.handleStart();this.windowListeners.add(EventName.Resize,this.handleCancel);" +
+  "this.windowListeners.add(EventName.VisibilityChange,this.handleCancel);" +
+  "setTimeout(()=>this.listeners.add(EventName.Keydown,this.handleKeyDown));}";
 
 // One zero timer: dnd-kit's own timer of the pick-up has run after this.
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -188,20 +195,36 @@ describe("the keyboard sensor of useDragSensors", () => {
     pressKeyNow(focused(), ESCAPE);
   });
 
-  it("falls back to dnd-kit's own attach when a part is missing", () => {
-    const fallback = vi.fn();
-    const sensor = { props: { event: {} } };
+  it("falls back to dnd-kit's own attach when a part is missing", async () => {
+    // A sensor with no pick-up event, which only the at-once attach needs. With every other part,
+    // dnd-kit's own attach can run: it starts the drag at once and listens after a timer.
+    const onStart = vi.fn();
+    const added: string[] = [];
+    const sensor = {
+      props: { activeNode: { node: { current: null } }, onStart },
+      listeners: { add: (name: string) => added.push(name) },
+      windowListeners: { add: () => undefined },
+      handleKeyDown: () => undefined,
+      handleCancel: () => undefined,
+    };
+    Object.setPrototypeOf(sensor, AtOnceKeyboardSensor.prototype);
+    expect(keyboardSensorParts(sensor).missing).toEqual(["props.event"]);
+    const attach: unknown = Reflect.get(sensor, "attach");
+    if (typeof attach !== "function") throw new Error("The sensor has no attach.");
     expect(() => {
-      attachAtOnce(sensor, fallback);
+      Reflect.apply(attach, sensor, []);
     }).not.toThrow();
-    expect(fallback, "the fallback did not run").toHaveBeenCalledTimes(1);
-    expect(fallback.mock.contexts[0]).toBe(sensor);
-    expect(keyboardSensorParts(sensor).missing).toEqual([
-      "handleStart",
-      "handleKeyDown",
-      "handleCancel",
-      "listeners.add",
-      "windowListeners.add",
-    ]);
+    expect(onStart, "dnd-kit's own attach did not run").toHaveBeenCalledTimes(1);
+    expect(added, "the fallback listened at once").toEqual([]);
+    await settle();
+    expect(added).toEqual(["keydown"]);
+  });
+
+  it("replaces an attach that is still the one of dnd-kit 6.3.1", () => {
+    const attach: unknown = Reflect.get(KeyboardSensor.prototype, "attach");
+    const body = typeof attach === "function" ? attach.toString().replace(/\s+/g, "") : "";
+    expect(body, "dnd-kit's attach changed: compare AtOnceKeyboardSensor with it").toBe(
+      ATTACH_6_3_1,
+    );
   });
 });
