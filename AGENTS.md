@@ -92,6 +92,7 @@ make dev                        # backend on 127.0.0.1:8000, frontend on 127.0.0
 - Implement work inside an approved task brief (`docs/tasks/`).
 - Write and run tests; fix failing tests caused by your change.
 - Fix review findings. §7 still applies to a fix that needs approval, such as a new UI text or a migration. §9 applies to a fix with the same cause as an earlier fix.
+- A review finding is a finding on the diff of the PR. A defect in other code gets a ledger row or a `Not claimed` line, not a fix in that PR.
 - Refactor inside one module when it keeps behaviour and tests green.
 - Update documentation to match your change.
 
@@ -109,6 +110,8 @@ make dev                        # backend on 127.0.0.1:8000, frontend on 127.0.0
   screens or a new requirement that changes an existing design: a one-page design in the plan,
   before any code ([planning workflow](docs/workflows/planning.md#code-design-checkpoint)).
 - Anything outside the current task's scope.
+
+An agent never gives an approval of this list in the owner's place, also when the owner is away. If an approval is missing, the work that needs it stops, and the other work goes on.
 
 Mark these in the PR description under a heading `Needs human review` with one line each.
 

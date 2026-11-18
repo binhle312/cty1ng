@@ -16,6 +16,8 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
    └──────────── next slice ◀────────────────┘
 ```
 
+Before unattended work, the lead agent lists each approval of `AGENTS.md` §7 that the work can need. The owner answers the list before the work starts.
+
 ## Roles
 
 | Who | Does | Does not |
