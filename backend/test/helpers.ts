@@ -143,6 +143,7 @@ export function idleServices() {
       readers,
       skills,
       clock: systemClock,
+      ids: typeIdIds,
       previewMinutes: 15,
       previewMax: 5,
     }),

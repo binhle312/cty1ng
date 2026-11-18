@@ -197,7 +197,7 @@ export const zPreviewSkillImportResponse = z.object({
 });
 
 export const zApplySkillImportBody = z.object({
-    preview_id: z.string(),
+    preview_id: z.string().regex(/^simp_[0-7][0-9a-hjkmnp-tv-z]{25}$/),
     slugs: z.array(z.string())
 });
 
