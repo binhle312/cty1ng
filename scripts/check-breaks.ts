@@ -22,21 +22,18 @@ import {
   cell,
   type Claim,
   changedLines,
-  coverageProblems,
   firstTscError,
   lineOf,
   newErrorLines,
   projectsOf,
-  linkProblems,
   listsFile,
-  type TestCall,
-  testCalls,
   playwrightOutcomes,
   type TestOutcome,
   verdict,
   type Verdict,
   vitestOutcomes,
 } from "./lib/breaks.ts";
+import { prProblems } from "./lib/breaks-static.ts";
 
 const args = process.argv.slice(2);
 const listPath = args[0];
@@ -124,23 +121,15 @@ const list = BreakList.parse(JSON.parse(read(listPath) ?? "null"));
 const claims = list.claims.filter(
   (claim) => claim.id.includes(only) || claim.breaks.some((step) => step.id.includes(only)),
 );
-// The tests of the PR (all of a new file), with the lines that the PR touched.
-const testsOfPr = new Map<string, TestCall[]>();
-const testFile = /\.(test|spec)\.[cm]?[jt]sx?$/;
-for (const file of [...changed.keys(), ...untracked].filter((path) => testFile.test(path))) {
-  const text = read(file);
-  if (text === null) continue;
-  const lines = changed.get(file);
-  const calls = testCalls(text, file).filter(
-    (call) => lines === undefined || [...lines].some((at) => call.start <= at && at <= call.end),
-  );
-  testsOfPr.set(file, calls);
-}
-// With --only, the list runs in part, so it cannot be complete.
-const problems = [
-  ...linkProblems({ claims }, read),
-  ...(only === "" ? coverageProblems(list, testsOfPr) : []),
-];
+// The links of the claims; with --only, the list runs in part, so it cannot be complete.
+const problems = prProblems({
+  list,
+  claims,
+  complete: only === "",
+  changed,
+  newFiles: untracked,
+  read,
+});
 if (problems.length > 0) {
   for (const problem of problems) console.error(problem);
   process.exit(1);

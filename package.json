@@ -20,6 +20,7 @@
     "check:status": "tsx scripts/check-status.ts",
     "records:counts": "tsx scripts/records-counts.ts",
     "check:breaks": "tsx scripts/check-breaks.ts",
+    "check:breaks:static": "tsx scripts/check-breaks-static.ts",
     "check:bundle": "tsx scripts/check-bundle.ts",
     "gen:api": "tsx scripts/gen-api.ts",
     "gen:case-folding": "tsx scripts/gen-case-folding.ts",

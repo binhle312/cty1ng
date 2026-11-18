@@ -60,6 +60,35 @@ jobs:
       - name: pnpm audit (high and critical)
         run: pnpm audit --audit-level high || (sleep 20 && pnpm audit --audit-level high)
 
+  # The rules of the PR's break list that need no test run (testing.md §5): each assertion once and
+  # inside its named test, a claim or an exemption for each test that the PR changes, and each
+  # break compiles in its file. A PR with no list passes. No break runs here.
+  break-list:
+    name: check:breaks static
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Two commits: the merge commit of the PR and its first parent, the base branch.
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install pnpm (version from packageManager)
+        run: npm install -g "$(node -p "require('./package.json').packageManager")"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check the break list of the PR
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: pnpm check:breaks:static "scripts/breaks/pr-${PR_NUMBER}.json" --base HEAD^1
+
   # Each PR merged into main has a Done row in docs/status.md (testing.md §4). HEAD^1 is the base
   # of the PR's test merge, or main before the merge on a push: a PR never needs its own row.
   status:
