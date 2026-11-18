@@ -553,6 +553,8 @@ describe("Deprecate, Trash, restore, purge (D49)", () => {
       clock,
       ids: testIds,
       pinsChanged: backend.bots.emitPinsChanged,
+      diffMaxEdits: 2000,
+      changelogMax: 500,
     });
   }
 
