@@ -1,6 +1,9 @@
 ---
 name: principle-resolve-unknowns
-description: Resolve unclear requirements and test unfamiliar dependencies before the implementation depends on them.
+description: Use before a build when a requirement is unclear or a library, API or tool is unfamiliar. Resolve unknowns before code depends on them.
+metadata:
+  author: binhle312
+  tags: [principle]
 ---
 
 # Resolve unknowns before the build
