@@ -3,6 +3,7 @@
 Brief: the chief's task of 2026-11-18. The test `bots.spec.ts:101` "the keyboard moves a pinned card and the drop line shows" failed once in CI run 44228267962 (PR #124, head `3dfb86b`, attempt 1), then passed on the retry. No ledger row names it (searched `docs/delivery-quality.md` on `main` and all origin branches).
 Checkpoint: none. There is no new screen, no new text and no code design. The fix is a behaviour fix inside the existing keyboard move (`pin.md` §2).
 Approval: plan OK by the chief agent, 2026-11-18 (owner rule: fix the flaky test at its cause). Revision 2 adds the chief's three conditions: a guard test of the private parts, a fallback to dnd-kit's own behaviour, and the upstream search (section 3).
+Revision 3, 2026-11-18: the review round 1 changes of §3 and §4 item 5, approved by the chief agent; owner review pending.
 
 ## 1. Evidence
 
@@ -33,9 +34,9 @@ Search scope: every `useSensor` in `frontend/src` (one place: `drag-setup.ts`). 
 
 In `frontend/src/features/bots/drag-setup.ts`, `useDragSensors` uses a keyboard sensor that is dnd-kit's `KeyboardSensor` with one change. It adds its keydown listener at once and skips only the event that started the drag. (That same event still bubbles to `document`, so without the skip, Space would drop the item at once. This is why dnd-kit waits a task.)
 
-- A subclass replaces `attach` and gets dnd-kit's private parts (`handleStart`, `handleKeyDown`, `handleCancel`, `listeners.add`, `windowListeners.add`, `props.event`) through `Reflect.get` with a type check. The lint rule forbids `as` casts. A code comment says why the subclass exists: the lost key, dnd-kit 6.3.1, `core.esm.js:1154-1159`.
+- A subclass, `AtOnceKeyboardSensor`, replaces `attach` and gets dnd-kit's private parts (`handleStart`, `handleKeyDown`, `handleCancel`, `listeners.add`, `windowListeners.add`, `props.event`) through `Reflect.get` with a type check. The lint rule forbids `as` casts. A code comment says why the subclass exists: the lost key, dnd-kit 6.3.1, `core.esm.js:1154-1159`.
 - If a part is missing or is not a function at run time (a dnd-kit update renamed it), the sensor falls back to dnd-kit's own `attach`: the keyboard drag works as before, with the lost key. It does not throw.
-- A guard test builds the sensor on the installed `@dnd-kit/core` and fails with the name of each missing part. So a Dependabot bump that renames a part fails `pnpm test`, not silently.
+- A guard test builds the sensor on the installed `@dnd-kit/core` and fails with the name of each missing part. So a Dependabot bump that renames a part fails `pnpm test`, not silently. A second test compares the installed `attach` with the 6.3.1 body, so an update that changes `attach` also fails `pnpm test`. This check is in the test only: the production build minifies dnd-kit, so the text cannot be compared at run time.
 - The new listener is in `this.listeners`, so dnd-kit's `detach` removes it as before. There is no timer, so no listener can come after the drag ended.
 - The new text, the screen and the keys are not changed. Esc, the Space drop, Alt+arrows, the mouse and touch work as before.
 
@@ -49,7 +50,7 @@ Rejected: (1) a `pnpm patch` of `@dnd-kit/core`. It is the same change, but in t
 2. Unit: the Space that picks up does not drop. After the pick-up, the drag is still active, and a later Space drops it on the item it is over (`onDragEnd` once, with the right `over`).
 3. Unit: Esc right after the pick-up cancels (`onDragCancel` once).
 4. Unit: after the drag ends, the sensor leaves no keydown listener on `document` (the adds and removes of `keydown` on `document` balance).
-5. Unit, guard: each private part that the sensor uses is on the installed dnd-kit sensor, with the right type. And a sensor with a missing part falls back to dnd-kit's own behaviour (the drag still starts, and an arrow after one timer still moves).
+5. Unit, guard: each private part that the sensor uses is on the installed dnd-kit sensor, with the right type, and the installed `attach` is the 6.3.1 body. A sensor with a missing part falls back, through the real prototype `attach`, to dnd-kit's own `attach`: dnd-kit's `onStart` runs, and its `keydown` listener comes after one timer.
 6. The e2e test `bots.spec.ts:101` does not change.
 7. **Repeat runs after the fix** (e2e slot): the real test with `--repeat-each=100` under the same CPU load (16 busy processes), and probe P4 with `--repeat-each=100`. Both must pass all runs. Before the fix, P4 failed 19 of 30.
 8. Break list `scripts/breaks/pr-<n>.json` (an order test): each unit claim gets a break in `drag-setup.ts` (back to dnd-kit's own `KeyboardSensor`; no skip of the start event; no listener removal on detach where the claim needs it). Run with `TMPDIR=/home/binh/projects/personal/cty1ng-breaks-tmp/flaky-bots-drop`.
@@ -68,9 +69,3 @@ Rejected: (1) a `pnpm patch` of `@dnd-kit/core`. It is the same change, but in t
 - Browsers other than Chromium: not run.
 - The CI run itself does not show why its ArrowRight came before the timer. The trace shows only that the key had no effect while the drag was active.
 
-## 7. 2026-11-18, after review round 1
-
-- Item 7 of section 4 stays as written. Its result on `c5437b2`: **not met**, 98 of 100 under 16 busy processes. Neither failure was at the drop line: in run 87 a test API call hung before the page opened; in run 96 `GET /api/bots` took 6.6 s, after the drop line passed and the save answered. An extra measure, not a replacement: 4 series of 25 under the same load, each with fresh servers and a fresh database. Reason: each run makes 2 bots and only unpins them, so the bot list grows over one series, and both failures came late (runs 87 and 96). Its result on `72c1652`: 99 of 100 (series of 24, 25, 25, 25 passed). The one failure (series 1, run 24) came before the first key: the browser took 10 s to start, then `first.focus()` did not end in the 30 s of the test. The drop-line check passed in each run that reached it: 99 of 99 in the series of 100, and 99 of 99 in the 4 series. The owner decides if the criterion is met by the drop-line evidence (`Needs human review`, `AGENTS.md` §9).
-- The fallback test runs the real prototype `attach` (review F2). A new test compares the installed `attach` with the 6.3.1 body, so an update that changes it fails `pnpm test` (review F3). This check is in the test only: the production build minifies dnd-kit, so the text cannot be compared at run time.
-- The sensor is `AtOnceKeyboardSensor` ("prompt" is the bot's model prompt in this product; review F5).
-- Item 5 of section 4 claims more than its test shows (review round 2, N3). The fallback test shows that dnd-kit's own `attach` runs (its `onStart` is called once) and adds a `keydown` listener after one timer. It presses no arrow, and it does not check that the listener is `handleKeyDown`.
