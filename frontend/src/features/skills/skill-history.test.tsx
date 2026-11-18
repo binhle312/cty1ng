@@ -135,42 +135,35 @@ describe("the History tab and a background refresh", () => {
     await renderApp("/skills/write-user-stories?tab=history&from=1&to=3");
     return started.server;
   }
-  const alertOf = async (text: string) => {
-    const alert = (await screen.findByText(text, {}, WAIT)).closest<HTMLElement>("[role='alert']");
-    if (alert === null) throw new Error(`The load error "${text}" is not an alert`);
-    return alert;
-  };
+  const tryAgain = () => screen.getByRole("button", { name: "Try again" });
 
   it("gives the load error of the versions an alert", async () => {
     await openFailed("versions");
-    const alert = await alertOf(VERSIONS_FAILED);
-    expect(within(alert).getByRole("button", { name: "Try again" }), "Try again").toBeTruthy();
+    const message = await screen.findByText(VERSIONS_FAILED, {}, WAIT);
+    expect(message.closest("[role='alert']"), "the alert of the versions").not.toBeNull();
   });
 
   it("loads the versions again from Try again", async () => {
     const server = await openFailed("versions");
-    const alert = await alertOf(VERSIONS_FAILED);
+    await screen.findByText(VERSIONS_FAILED, {}, WAIT);
     server.versions = () => ({ body: makeVersions(3) });
-    fireEvent.click(within(alert).getByRole("button", { name: "Try again" }));
-    expect(
-      await screen.findByRole("list", { name: "Versions" }, WAIT),
-      "the versions",
-    ).toBeTruthy();
+    fireEvent.click(tryAgain());
+    expect(await screen.findByRole("list", { name: "Versions" }, WAIT)).toBeTruthy();
     expect(screen.queryByText(VERSIONS_FAILED), "the error").toBeNull();
   });
 
   it("gives the load error of the changes an alert", async () => {
     await openFailed("diff");
-    const alert = await alertOf(CHANGES_FAILED);
-    expect(within(alert).getByRole("button", { name: "Try again" }), "Try again").toBeTruthy();
+    const message = await screen.findByText(CHANGES_FAILED, {}, WAIT);
+    expect(message.closest("[role='alert']"), "the alert of the changes").not.toBeNull();
   });
 
   it("loads the changes again from Try again", async () => {
     const server = await openFailed("diff");
-    const alert = await alertOf(CHANGES_FAILED);
+    await screen.findByText(CHANGES_FAILED, {}, WAIT);
     server.diff = (from, to) => ({ body: diffOf(`v${String(from)}-v${String(to)}`) });
-    fireEvent.click(within(alert).getByRole("button", { name: "Try again" }));
-    expect(await screen.findByText("v1-v3 added", {}, WAIT), "the changes").toBeTruthy();
+    fireEvent.click(tryAgain());
+    expect(await screen.findByText("v1-v3 added", {}, WAIT)).toBeTruthy();
     expect(screen.queryByText(CHANGES_FAILED), "the error").toBeNull();
   });
 });

@@ -69,6 +69,8 @@ async function tabTo(button: HTMLElement) {
   expect(document.activeElement).toBe(button);
   expect(button.getAttribute("aria-disabled")).toBe("true");
 }
+const UPGRADE_REASON = "The app must know which bots use this skill. Try again first.";
+const ASSIGN_REASON = "The app must know which bots can get this skill. Try again first.";
 const BOTS_FAILED = {
   status: 500,
   body: { error: { code: "internal_error", message: "Failed." } },
@@ -180,10 +182,7 @@ describe("the upgrade card after a save (C4, UI-7.4)", () => {
     });
     await within(card).findByText("The app could not load the bots.");
     await tabTo(within(card).getByRole("button", { name: "Upgrade" }));
-    expect(
-      await screen.findByText("The app must know which bots use this skill. Try again first."),
-      "the reason of Upgrade",
-    ).toBeTruthy();
+    expect(await screen.findByText(UPGRADE_REASON), "the reason of Upgrade").toBeTruthy();
   });
 
   it("shows loading shapes, not an empty list, while the bots load", async () => {
@@ -510,10 +509,7 @@ describe("the assign card after Create (C4b)", () => {
     });
     await within(card).findByText("The app could not load the bots.");
     await tabTo(within(card).getByRole("button", { name: "Assign" }));
-    expect(
-      await screen.findByText("The app must know which bots can get this skill. Try again first."),
-      "the reason of Assign",
-    ).toBeTruthy();
+    expect(await screen.findByText(ASSIGN_REASON), "the reason of Assign").toBeTruthy();
   });
 
   it("opens the card when two newer loads cut its read of the bots short", async () => {

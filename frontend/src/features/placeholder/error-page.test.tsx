@@ -342,16 +342,18 @@ describe("Page not found with the route error boundaries", () => {
 describe("the headings of the error screen and Page not found", () => {
   const h1 = () => screen.getAllByRole("heading", { level: 1 }).map((node) => node.textContent);
   const listColumn = () => screen.queryByRole("navigation", { name: "Skills" });
+  const errorH2 = () => screen.findByRole("heading", { name: "Something went wrong", level: 2 });
+  const notFoundH2 = () => screen.findByRole("heading", { name: "Page not found", level: 2 });
 
   it("makes the error screen of a Skills page an h2 beside the list column", async () => {
     noSkills();
     fault.index = true;
     await renderApp("/skills");
-    const heading = await screen.findByRole("heading", { name: "Something went wrong", level: 2 });
+    expect(await errorH2(), "the error screen").toBeTruthy();
     expect(listColumn(), "the list column").not.toBeNull();
-    expect(listColumn()?.contains(heading), "the screen is not in the list column").toBe(false);
+    expect(listColumn()?.contains(await errorH2()), "the screen is beside the column").toBe(false);
     expect(rail(), "the rail").not.toBeNull();
-    expect(h1(), "the h1 headings").toEqual(["Skills"]);
+    expect(h1(), "the h1 headings of the error screen").toEqual(["Skills"]);
     expect(screen.getByRole("button", { name: "Try again" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Go to Home" })).toBeTruthy();
   });
@@ -359,16 +361,16 @@ describe("the headings of the error screen and Page not found", () => {
   it("makes Page not found of an unknown skill an h2 beside the list column", async () => {
     noSkills();
     await renderApp("/skills/nothing-here");
-    expect(await screen.findByRole("heading", { name: "Page not found", level: 2 })).toBeTruthy();
+    expect(await notFoundH2(), "the unknown skill").toBeTruthy();
     expect(listColumn(), "the list column").not.toBeNull();
-    expect(h1(), "the h1 headings").toEqual(["Skills"]);
+    expect(h1(), "the h1 headings of the unknown skill").toEqual(["Skills"]);
   });
 
   it("makes Page not found of a Clone with no source an h2 beside the list column", async () => {
     noSkills();
     await renderApp("/skills/new?from=nothing-here");
-    expect(await screen.findByRole("heading", { name: "Page not found", level: 2 })).toBeTruthy();
-    expect(h1(), "the h1 headings").toEqual(["Skills"]);
+    expect(await notFoundH2(), "the Clone with no source").toBeTruthy();
+    expect(h1(), "the h1 headings of the Clone").toEqual(["Skills"]);
   });
 
   it("keeps the h1 of Page not found outside the Skills page", async () => {
