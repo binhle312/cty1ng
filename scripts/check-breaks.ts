@@ -14,6 +14,7 @@ import {
 import { createConnection } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { applyPatch, changesMissing } from "./lib/breaks-apply.ts";
 import {
   applyEdits,
   BreakList,
@@ -85,11 +86,24 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 execFileSync("tar", ["-x", "-C", copy], {
   input: execFileSync("git", ["archive", "HEAD"], { maxBuffer: 2 ** 30 }),
 });
-if (patch.length > 0)
-  execFileSync("git", ["apply", "--whitespace=nowarn"], { cwd: copy, input: patch });
+if (patch.length > 0) applyPatch(copy, patch);
 for (const file of untracked) {
   mkdirSync(join(copy, dirname(file)), { recursive: true });
   writeFileSync(join(copy, file), readFileSync(file));
+}
+// The copy must have each local change; else the run would test HEAD under a hash of the changes.
+const missing = changesMissing({
+  repo: ".",
+  copy,
+  files: [
+    ...git("diff", "HEAD", "--name-only", "--no-renames", "-z").split("\0"),
+    ...untracked,
+  ].filter((file) => file !== ""),
+});
+if (missing.length > 0) {
+  for (const file of missing) console.error(file);
+  console.error("the copy does not have these local changes");
+  process.exit(1);
 }
 // The local store first; the registry only for a package that the store does not have.
 execFileSync("pnpm", ["install", "--frozen-lockfile", "--prefer-offline", "--silent"], {
