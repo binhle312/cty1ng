@@ -1,0 +1,334 @@
+{
+  "claims": [
+    {
+      "id": "S1",
+      "claim": "A merge commit subject is a merged PR",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "reads a merge commit subject as a merged PR"
+      },
+      "assertion": "expect(mergedPrs(merge(7, \"2026-11-01\")), \"merge commit\")",
+      "breaks": [
+        {
+          "id": "S1-a",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "/^Merge pull request #(\\d+) from /",
+              "replace": "/^Merge pull-request #(\\d+) from /"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "claim": "A squash merge subject is a merged PR",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "reads a squash merge subject as a merged PR"
+      },
+      "assertion": "expect(mergedPrs(log), \"squash merge\")",
+      "breaks": [
+        {
+          "id": "S2-a",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": " ?? /\\(#(\\d+)\\)$/.exec(subject)?.[1];",
+              "replace": " ?? undefined;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S3",
+      "claim": "A commit that is not a PR merge is skipped",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "skips a commit that is not a PR merge"
+      },
+      "assertion": "expect(mergedPrs(log), \"other commits\")",
+      "breaks": [
+        {
+          "id": "S3-a",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "/\\(#(\\d+)\\)$/",
+              "replace": "/#(\\d+)/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S4",
+      "claim": "Each link of a Done row counts",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "counts each link of a Done row with several links"
+      },
+      "assertion": "expect(doneRows(md).prs, \"links of the Done rows\")",
+      "breaks": [
+        {
+          "id": "S4-a",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "for (const match of line.matchAll(LINK_PATTERN)) prs.add(Number(match[1]));",
+              "replace": "for (const match of line.matchAll(LINK_PATTERN)) {\n      prs.add(Number(match[1]));\n      break;\n    }"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S5",
+      "claim": "A link in a section after the Done table does not count",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "does not count a link in a section after the Done table"
+      },
+      "assertion": "expect(doneRows(md).prs, \"links after Done\")",
+      "breaks": [
+        {
+          "id": "S5-a",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "const next = rest.search(/^## /m);",
+              "replace": "const next = -1;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S6",
+      "claim": "A broken Done row is a problem",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "reports a broken Done row"
+      },
+      "assertion": "expect(doneRows(md).problems, \"problems of a broken row\")",
+      "breaks": [
+        {
+          "id": "S6-a",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "      problems.push(`docs/status.md Done row is not \"| YYYY-MM-DD | … |\": ${line}`);\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S7",
+      "claim": "A broken Done row counts no link",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "counts no link of a broken Done row"
+      },
+      "assertion": "expect(doneRows(md).prs, \"links of a broken row\")",
+      "breaks": [
+        {
+          "id": "S7-a",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "${line}`);\n      continue;\n",
+              "replace": "${line}`);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S8",
+      "claim": "A status file with no Done section is a problem",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "reports a status file with no Done section"
+      },
+      "assertion": "expect(doneRows(\"# Status\\n\\n## Slices\\n\").problems, \"no Done section\")",
+      "breaks": [
+        {
+          "id": "S8-a",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "problems: [\"docs/status.md has no ## Done section\"]",
+              "replace": "problems: []"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S9",
+      "claim": "A merged PR with no Done row fails with the row to add",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "gives the row to add for a merged PR with no Done row"
+      },
+      "assertion": "expect(checkStatus({ merged, statusMd: status([]), since: SINCE }), \"missing row\")",
+      "breaks": [
+        {
+          "id": "S9-a",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": ".filter((m) => m.date >= input.since && !done.prs.has(m.pr))",
+              "replace": ".filter((m) => m.date > \"9999\")"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S10",
+      "claim": "A merged PR with a link in a Done row passes",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "passes when the merged PR has a link in a Done row"
+      },
+      "assertion": "expect(checkStatus({ merged, statusMd: md, since: SINCE }), \"row present\")",
+      "breaks": [
+        {
+          "id": "S10-a",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "&& !done.prs.has(m.pr))",
+              "replace": "&& m.pr > 0)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S11",
+      "claim": "A PR merged before the start date is ignored",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "ignores a PR merged before the start date"
+      },
+      "assertion": "expect(checkStatus({ merged, statusMd: status([]), since: SINCE }), \"before start\")",
+      "breaks": [
+        {
+          "id": "S11-a",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "m.date >= input.since && ",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S12",
+      "claim": "A PR merged on the start date counts",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "counts a PR merged on the start date"
+      },
+      "assertion": "expect(prs, \"on the start date\")",
+      "breaks": [
+        {
+          "id": "S12-a",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "m.date >= input.since",
+              "replace": "m.date > input.since"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S13",
+      "claim": "The check fails with the problem of a broken Done row",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "fails with the problem of a broken Done row"
+      },
+      "assertion": "expect(checkStatus({ merged, statusMd: md, since: SINCE }), \"broken row\")",
+      "breaks": [
+        {
+          "id": "S13-a",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "return [...done.problems, ...missing];",
+              "replace": "return missing;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S14",
+      "claim": "A PR merged into another PR's branch is not listed",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "does not list a PR merged into another PR's branch"
+      },
+      "assertion": "expect(prs, \"PRs on the first-parent line\")",
+      "breaks": [
+        {
+          "id": "S14-a",
+          "file": "scripts/lib/check-status-git.ts",
+          "edits": [
+            {
+              "find": "git(\"log\", \"--first-parent\", ",
+              "replace": "git(\"log\", "
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S15",
+      "claim": "A shallow clone is a problem",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "reports a shallow clone"
+      },
+      "assertion": "expect(readHistory(shallow, \"HEAD\").problems, \"shallow clone\")",
+      "breaks": [
+        {
+          "id": "S15-a",
+          "file": "scripts/lib/check-status-git.ts",
+          "edits": [
+            {
+              "find": ".trim() !== \"false\"",
+              "replace": ".trim() === \"maybe\""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
