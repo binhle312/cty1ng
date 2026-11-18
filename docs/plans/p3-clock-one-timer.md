@@ -8,7 +8,7 @@ Approval: chief agent, 2026-11-18, against the owner's answer q5 Q4 A (the owner
 
 `docs/design/components/time-format.md` §1 says: "The frontend keeps one timer for all of them
 (`frontend/src/lib/now.ts`)." Today this is true: `createClock` is called once outside the tests,
-at `now.ts:81` (`export const appClock = createClock()`). The test "three subscribers share one
+in `now.ts` (`export const appClock = createClock()`). The test "three subscribers share one
 timer" holds the rule for the readers of one clock. Nothing stops a second `createClock()` call, and
 a second clock is a second timer, so the sentence of §1 would become false with no sign (DQ-537).
 The owner keeps §1 as it is and asks for a check.
@@ -17,18 +17,20 @@ The owner keeps §1 as it is and asks for a check.
 
 A test fails when a non-test file of `frontend/src/` uses the name `createClock` anywhere but in two
 places of `frontend/src/lib/now.ts`: the declaration of the function, and the one call that is the
-value of `appClock`. Test files may call `createClock` (`now.test.ts` makes its own clocks).
+value of the top-level `const appClock` (a clock made in a function would be made again at each
+call). Test files may call `createClock` (`now.test.ts` makes its own clocks).
 
 The test reads the files as syntax trees with the TypeScript compiler (`ts.createSourceFile`, no
 program), which is already a dev dependency of the root package. It looks at the name, not at the
 call: an import, an alias (`import { createClock as c }`), a re-export, a property of a namespace
-import (`n.createClock`) and `n["createClock"]` all fail. Comments are not code and do not fail.
+import (`n.createClock`) and `n["createClock"]`, `Reflect.get(n, "createClock")` and a string key in a destructuring all fail:
+any string with that text counts. Comments are not code and do not fail.
 
 The check is stricter than "called" in the owner's words: an alias or a re-export is a way to call the function, and a check on calls alone passes it.
 
 Why name and not call: a rule that sees only the call `createClock()` passes
-`import { createClock as c }` followed by `c()`. The name check has one false positive: another
-function with the same name. Its fix is to rename that function.
+`import { createClock as c }` followed by `c()`. Any other code that uses the name
+`createClock` (a function, a variable, a key) fails too. Its fix is to rename it.
 
 ## Lint rule or test (the choice)
 
@@ -53,7 +55,8 @@ of the name that the rule does not allow. Snippet tests give it a path and a tex
 | A call in a feature file | rejected |
 | An aliased import (`import { createClock as c }`) | rejected |
 | A property of a namespace import (`n.createClock()`) | rejected |
-| `n["createClock"]` | rejected |
+| `n["createClock"]`, a string key in a destructuring, a computed key, `Reflect.get(n, "createClock")`, a string name in an import specifier | rejected |
+| `const appClock = createClock();` inside a function in `lib/now.ts` | rejected (only the top-level `const` counts) |
 | A re-export (`export { createClock } from "./now.ts"`) | rejected |
 | `export const appClock = createClock();` in another file than `lib/now.ts` | rejected (the path counts, not the name of the value) |
 | `export const appClock2 = createClock();` in `lib/now.ts` | rejected (only the value `appClock` counts) |
@@ -70,11 +73,13 @@ Red run (the PR description records it):
 1. The snippet tests fail on a stub checker that finds nothing (before the code).
 2. The tree test fails when I add a second `createClock()` call to a non-test file.
 3. The tree test fails when I add a second call to `lib/now.ts`.
+4. The two guard tests fail when the glob reads a folder that does not exist.
+5. The "allows" tests fail on a checker that forbids every text `createClock`, comments included.
 
 I remove the added lines after each run.
 
 Break list: not needed (`docs/testing.md` §5: not a late, security or order test). The PR still has
-`scripts/breaks/pr-<n>.json`, with every new test in `exempt`; each reason names its red run (1, 2 or 3 above), so that
+`scripts/breaks/pr-<n>.json`, with every new test in `exempt`; each reason names its red run, so that
 `check:breaks static` passes (#136). No break runs.
 
 ## Files
@@ -83,7 +88,7 @@ Break list: not needed (`docs/testing.md` §5: not a late, security or order tes
 - `frontend/src/lib/now.ts`: one comment line names the test as the check of "one clock" (a comment
   with a check behind it, `frontend-conventions.md` §1). No code change.
 - `docs/frontend-conventions.md` §1, row "The time now comes from `useNow()`": one sentence says
-  that a test fails on a second `createClock` use, and what it does not see.
+  that a test fails on a second `createClock` use, and what it does not see (a timer that `createClock` does not make, a name built at run time).
 - `docs/design/components/time-format.md` §1: **not changed** (the owner keeps it).
 - `docs/plans/README.md`: the row of this plan. `docs/status.md`: the line of this PR.
 - `docs/delivery-quality.md` (records step): DQ-537 `fixed`, the rows of this PR (DQ-821 to DQ-840
@@ -97,7 +102,7 @@ Break list: not needed (`docs/testing.md` §5: not a late, security or order tes
   timer".
 - That the readers of `appClock` share one timer: the test "three subscribers share one timer"
   holds that, as before.
-- A use of the function through a computed name (`n[name]`) or a dynamic `import()` with a computed
-  key.
+- A use of the function through a name that the code builds at run time (`n[key]`,
+  `"create" + "Clock"`) or a dynamic `import()` with a computed key.
 - A use outside `frontend/src/`, and a use in a test file (allowed).
 - Feedback at lint time or in the editor: the check runs in `pnpm test`.

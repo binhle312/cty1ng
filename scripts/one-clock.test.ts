@@ -9,7 +9,8 @@ import { describe, expect, it } from "vitest";
 // Tests make their own clocks (`now.test.ts`) and are not checked.
 //
 // The check sees the name `createClock`, not only a call. An alias (`import { createClock as c }`)
-// or a re-export is a way to call the function, and a check on calls alone passes both.
+// or a re-export is a way to call the function, and a check on calls alone passes both. The name
+// as a string (`n["createClock"]`, `Reflect.get(n, "createClock")`) counts too.
 
 const ROOT = resolve(import.meta.dirname, "..");
 const NOW_FILE = "frontend/src/lib/now.ts";
@@ -24,15 +25,11 @@ interface ClockUses {
 }
 
 // A name is a use when it is an identifier (a declaration, a call, an import, an alias, a property,
-// an export) or the string key of an element access. A comment is not code and is not read.
+// an export) or a string with that text (a key, an argument, a name in a specifier). A comment is
+// not code and is not read.
 function isClockName(node: ts.Node): boolean {
   if (ts.isIdentifier(node)) return node.text === CLOCK_NAME;
-  return (
-    ts.isStringLiteralLike(node) &&
-    node.text === CLOCK_NAME &&
-    ts.isElementAccessExpression(node.parent) &&
-    node.parent.argumentExpression === node
-  );
+  return ts.isStringLiteralLike(node) && node.text === CLOCK_NAME;
 }
 
 // `lib/now.ts` owns two uses: the declaration, and the call that is the value of `appClock`.
@@ -41,15 +38,19 @@ function isDeclaration(node: ts.Node): boolean {
     ts.isIdentifier(node) && ts.isFunctionDeclaration(node.parent) && node.parent.name === node
   );
 }
+// The call must be the value of a top-level `const appClock`: a clock made in a function would be
+// made again at each call.
 function isAppClockCall(node: ts.Node): boolean {
   const call = node.parent;
+  if (!ts.isCallExpression(call) || call.expression !== node) return false;
+  const declaration = call.parent;
+  if (!ts.isVariableDeclaration(declaration) || declaration.initializer !== call) return false;
+  if (!ts.isIdentifier(declaration.name) || declaration.name.text !== APP_CLOCK) return false;
+  const list = declaration.parent;
   return (
-    ts.isCallExpression(call) &&
-    call.expression === node &&
-    ts.isVariableDeclaration(call.parent) &&
-    call.parent.initializer === call &&
-    ts.isIdentifier(call.parent.name) &&
-    call.parent.name.text === APP_CLOCK
+    (list.flags & ts.NodeFlags.Const) !== 0 &&
+    ts.isVariableStatement(list.parent) &&
+    ts.isSourceFile(list.parent.parent)
   );
 }
 
@@ -117,6 +118,36 @@ describe("the checker for the one clock", () => {
       lines: [2],
     },
     {
+      label: "a call under the name appClock inside a function in lib/now.ts",
+      path: NOW_FILE,
+      text: `export function createClock() { return 1; }\nexport function useNow() {\n  const appClock = createClock();\n  return appClock;\n}\n`,
+      lines: [3],
+    },
+    {
+      label: "a string key in a destructuring",
+      path: "frontend/src/lib/other.ts",
+      text: `import * as now from "./now.ts";\nexport const { "createClock": make } = now;\n`,
+      lines: [2],
+    },
+    {
+      label: "a computed key in a destructuring",
+      path: "frontend/src/lib/other.ts",
+      text: `import * as now from "./now.ts";\nexport const { ["createClock"]: make } = now;\n`,
+      lines: [2],
+    },
+    {
+      label: "a string name read with Reflect.get",
+      path: "frontend/src/lib/other.ts",
+      text: `import * as now from "./now.ts";\nexport const make = Reflect.get(now, "createClock");\n`,
+      lines: [2],
+    },
+    {
+      label: "a string name in an import specifier",
+      path: "frontend/src/lib/other.ts",
+      text: `import { "createClock" as make } from "./now.ts";\nexport const c = make();\n`,
+      lines: [1],
+    },
+    {
       label: "a re-export",
       path: "frontend/src/lib/index.ts",
       text: `export { createClock } from "./now.ts";\n`,
@@ -134,7 +165,7 @@ describe("the checker for the one clock", () => {
     );
   });
 
-  it("allows lib/now.ts with the declaration and the appClock call", () => {
+  it("allows the real shape of lib/now.ts", () => {
     const text = `export function createClock() { return 1; }\nexport const appClock = createClock();\n`;
     expect(clockNameUses(NOW_FILE, text).forbidden, "forbidden uses").toEqual([]);
   });
@@ -166,7 +197,7 @@ describe("the app's code", () => {
   );
   const uses = files.map((file) => clockNameUses(file, readFileSync(resolve(ROOT, file), "utf8")));
 
-  // Guard: a wrong glob would read nothing and pass. 133 files today.
+  // Guard: a wrong glob would read nothing and pass. The app has far more than 100 such files.
   it("finds the files", () => {
     expect(files.length, "files read").toBeGreaterThan(100);
   });

@@ -4,7 +4,7 @@
     {
       "file": "scripts/one-clock.test.ts",
       "name": "rejects $label",
-      "reason": "test first: red run 1 (a stub checker that finds nothing) fails each of the 8 cases; the checker is in the test file, so no break of app code applies. Not a late, security, order or race test"
+      "reason": "test first: red run 1 (a stub checker that finds nothing) fails each case; the 5 cases that round 1 added failed on the checker of `e623fc2` (red run 6). The checker is in the test file, so no break of app code applies. Not a late, security, order or race test"
     },
     {
       "file": "scripts/one-clock.test.ts",
@@ -13,18 +13,18 @@
     },
     {
       "file": "scripts/one-clock.test.ts",
-      "name": "allows lib/now.ts with the declaration and the appClock call",
-      "reason": "It passes on the stub checker of red run 1, so it has no red run of its own: it guards against a checker that rejects too much, and the other tests need it to fail for a checker that rejects everything. Not a late, security, order or race test"
+      "name": "allows the real shape of lib/now.ts",
+      "reason": "Red run 5 (a checker that forbids every text `createClock`) fails it; it passes on the stub of red run 1. Not a late, security, order or race test"
     },
     {
       "file": "scripts/one-clock.test.ts",
       "name": "allows a call in $label",
-      "reason": "It passes on the stub checker of red run 1, so it has no red run of its own: it guards against a checker that reads test files. Not a late, security, order or race test"
+      "reason": "Red run 5 (a checker that forbids every text `createClock`) fails it; it passes on the stub of red run 1. Not a late, security, order or race test"
     },
     {
       "file": "scripts/one-clock.test.ts",
       "name": "allows a comment that names createClock",
-      "reason": "It passes on the stub checker of red run 1, so it has no red run of its own: it guards against a checker that reads comments as code. Not a late, security, order or race test"
+      "reason": "Red run 5 (a checker that forbids every text `createClock`, comments included) fails it; it passes on the stub of red run 1. Not a late, security, order or race test"
     },
     {
       "file": "scripts/one-clock.test.ts",
