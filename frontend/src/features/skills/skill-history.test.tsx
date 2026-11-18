@@ -124,6 +124,36 @@ describe("the History tab and a background refresh", () => {
     expect(await screen.findByText(VERSIONS_FAILED, {}, WAIT)).toBeTruthy();
     expect(await screen.findByText(CHANGES_FAILED, {}, WAIT)).toBeTruthy();
   });
+
+  // skills-page.md ("The bot list of a card" pattern): a load error is an alert with Try again.
+  // DQ-442.
+  it.each([
+    ["versions", VERSIONS_FAILED],
+    ["changes", CHANGES_FAILED],
+  ])("gives the load error of the %s an alert and Try again", async (which, text) => {
+    const started = startServer();
+    api = started.api;
+    const good = started.server;
+    const failing = which === "versions" ? "versions" : "diff";
+    if (failing === "versions") started.server.versions = () => FAILED;
+    else started.server.diff = () => FAILED;
+    await renderApp("/skills/write-user-stories?tab=history&from=1&to=3");
+    const alert = (await screen.findByText(text, {}, WAIT)).closest("[role='alert']");
+    expect(alert, "the alert of " + which).not.toBeNull();
+    const retry = within(alert as HTMLElement).getByRole("button", { name: "Try again" });
+    // The next read answers well, so Try again shows the data.
+    if (failing === "versions") good.versions = () => ({ body: makeVersions(3) });
+    else good.diff = (from, to) => ({ body: diffOf(`v${String(from)}-v${String(to)}`) });
+    fireEvent.click(retry);
+    await waitFor(() => {
+      expect(screen.queryByText(text), "the error after Try again").toBeNull();
+    }, WAIT);
+    if (failing === "versions") {
+      expect(await screen.findByRole("list", { name: "Versions" }, WAIT)).toBeTruthy();
+    } else {
+      expect(await screen.findByText("v1-v3 added", {}, WAIT)).toBeTruthy();
+    }
+  });
 });
 
 // The folds of a diff belong to one pair of versions (P3 list item 63).
