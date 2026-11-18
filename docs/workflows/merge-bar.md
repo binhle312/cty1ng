@@ -30,8 +30,6 @@ At each milestone close, before the next milestone starts, each open P3 (ledger 
 If the builder and the reviewer disagree about a severity, ask the owner.
 This bar does not change `AGENTS.md` §7, §8 or §9, but step 5 of the section below has an owner's exception with limits for §9 in round 2 and in a later review (owner, 2026-11-12 and 2026-11-13).
 
-A review ends by this merge bar, not when a round finds nothing. Write the records one time, after the last check. A report starts with each open issue.
-
 ## When the review of a P3 PR ends
 
 A P3 PR is one of the P3 PRs before M3 ([status](../status.md#next), item 2).
