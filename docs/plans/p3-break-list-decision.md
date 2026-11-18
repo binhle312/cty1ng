@@ -59,11 +59,11 @@ changed test is a claim with breaks, or an exemption with a reason, for example 
 3. **What CI cannot check:** that a reason is true. An exemption is the author's decision, and
    the reviewer reads each exemption line. A test of the three cases (late, security, order or
    race) needs a claim with breaks; its exemption is wrong, whatever its reason.
-4. **"Changed test"** is found by the code that the job runs already (step 3 of §5): each test
-   call (`it`, `test`, their modifiers, `it.each(rows)(...)`) of a `*.test.*` or `*.spec.*` file
-   with a line that the PR adds or changes since its base (`git diff --unified=0` from the merge
-   base of HEAD and `--base`; in CI the merge commit of the PR and `HEAD^1`), and each test of a
-   new file that git does not track (only on a laptop). No new detection code.
+4. **"Changed test"** is found by the code that the job runs already (step 3 of §5): each test call
+   (`it`, `test`, with the modifiers of `testCalls`, `it.each(rows)(...)`) of a `*.test.*` or
+   `*.spec.*` file with a line that the PR adds or changes since its base (`git diff --unified=0`
+   from the merge base of HEAD and `--base`; in CI the merge commit of the PR and `HEAD^1`), and
+   each test of a new file that git does not track (only on a laptop). No new detection code.
 5. **Files.** `scripts/check-breaks-static.ts` (the case with no list: an empty list in place of
    the exit 0), `scripts/lib/breaks.ts` (the reason rule), `.github/workflows/ci.yml` (the
    comment of the job only), `docs/testing.md` §5 (the text below), `scripts/breaks/pr-136.json`
@@ -126,9 +126,9 @@ No order or race case: the job is one synchronous run on one checkout.
 - GitHub does not block a merge when the job is red: it stays optional (owner, q4 Q2 B), and the
   chief checks it before each merge.
 - The job checks only the list of the open PR, not the lists of merged PRs.
-- The reader of the changed tests keeps two gaps (round 1 of the redesign, R1-1 and R1-2; the
-  runner redesign of #107, DQ-161, removes them): lines that the PR only removes mark the line
-  before them, so a test just above a removed test counts too; and a test whose name is not a
-  plain string (a template with `${…}`, a variable) is not read.
+- The reader of the changed tests keeps two gaps (round 1 of the redesign, R1-1 and R1-2; DQ-161:
+  the plan of #107 changes this reader for the runner, not yet for the CI job): lines that the PR
+  only removes mark the line before them, so a test just above a removed test counts too; and a
+  test whose name is not a plain string (a template with `${…}`, a variable) is not read.
 - The time of the job in CI after this change comes from the job run of this PR; it was not
   measured before.

@@ -416,17 +416,19 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
 2. It refuses a list with a missing link: a claim with no break, a test file or assertion text
    that is not there exactly once, an assertion outside the named test, or a break that edits a
    test or a test helper (a `test/` folder, `*.test.*`, `*.spec.*`) instead of the code.
-3. It refuses a list that misses a test of the PR: each test that the PR adds or changes since
-   its base (`git merge-base HEAD origin/main`, or `--base`) needs a claim, or an entry in
-   `exempt` with its reason. With `--only`, the list runs in part, and this check does not run.
-   A test counts when a line that the PR adds or changes is inside its call (`it`, `test`, their
-   modifiers, `it.each(rows)(...)`) in a file named `*.test.*` or `*.spec.*`; each test of a new
-   file counts. A change outside the test calls (a `describe` line, a `beforeEach`, a helper or a
-   fixture, a file with another name) marks no test. In `exempt`, `name` is the name as written,
-   with `%s` for `it.each`. Two known gaps, until the runner redesign of #107 (DQ-161): lines that
-   the PR only removes mark the line before them, so a test that ends just above a removed test
-   counts too (an exemption names it); and a test whose name is not a plain string (a template
-   with `${…}`, a variable) is not read.
+3. It refuses a list that misses a test of the PR: each test that the PR adds or changes since its
+   base (`git merge-base HEAD origin/main`, or `--base`) needs a claim, or an entry in `exempt`
+   with its reason. With `--only`, the list runs in part, and this check does not run. A test
+   counts when a line that the PR adds or changes is inside its call (`it`, `test`, with the
+   modifiers `only`, `skip`, `concurrent`, `fails`, `fixme`, `slow`, and `it.each(rows)(...)`) in a
+   file named `*.test.*` or `*.spec.*`; each test of a new file counts, but a file that git sees as
+   renamed marks only its changed lines. A change outside the test calls (a `describe` line, a
+   `beforeEach`, a helper or a fixture, a file with another name) marks no test. In `exempt`,
+   `name` is the name as written, with `%s` for `it.each`. Two known gaps (DQ-161; the plan of #107
+   changes this reader for the runner, not yet for the CI job): lines that the PR only removes mark
+   the line before them, so a test that ends just above a removed test counts too (an exemption
+   names it); and a test whose name is not a plain string (a template with `${…}`, a variable) is
+   not read.
 4. Each test must pass with no break first.
 5. Each break runs alone. First, `tsc` must compile each project of the package of the broken
    file (an unused variable is allowed). The frontend has two: its `tsconfig.json` only points
