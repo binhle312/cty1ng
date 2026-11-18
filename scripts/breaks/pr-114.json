@@ -388,9 +388,9 @@
       "test": {
         "kind": "vitest",
         "file": "backend/test/api/skills.test.ts",
-        "name": "apply with %s gives 422 validation_error"
+        "name": "apply with a preview id that is no `simp` TypeID gives 422 validation_error"
       },
-      "assertion": "expect(res.status).toBe(422);",
+      "assertion": "expect(res.status, previewId).toBe(422);",
       "breaks": [
         {
           "id": "P29-4-a",
@@ -416,50 +416,6 @@
       "breaks": [
         {
           "id": "P29-5-a",
-          "file": "backend/src/core/skills/skill-import.service.ts",
-          "edits": [
-            {
-              "find": "      const preview = previews.get(previewId);",
-              "replace": "      const preview = previews.get(previewId);\n      if (preview === undefined) throw new DomainError(\"validation_error\", \"x\", \"preview_id\");"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "P29-6",
-      "claim": "An injection string as the preview id of apply is refused with 422 validation_error (DQ-332)",
-      "test": {
-        "kind": "vitest",
-        "file": "backend/test/security/sql-injection.test.ts",
-        "name": "changes nothing as an import's preview id or slug, and as the zip's file name"
-      },
-      "assertion": "expect(unknownPreview.status).toBe(422);",
-      "breaks": [
-        {
-          "id": "P29-6-a",
-          "file": "backend/src/adapters/http/routes/skills.ts",
-          "edits": [
-            {
-              "find": "              .object({ preview_id: SkillImportPreviewId, slugs: z.array(z.string()) })",
-              "replace": "              .object({ preview_id: z.string(), slugs: z.array(z.string()) })"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "P29-7",
-      "claim": "A well-formed `simp` preview id that names no preview still gets 409 preview_expired in the security test (DQ-332)",
-      "test": {
-        "kind": "vitest",
-        "file": "backend/test/security/sql-injection.test.ts",
-        "name": "changes nothing as an import's preview id or slug, and as the zip's file name"
-      },
-      "assertion": "expect(wellFormed.status).toBe(409);",
-      "breaks": [
-        {
-          "id": "P29-7-a",
           "file": "backend/src/core/skills/skill-import.service.ts",
           "edits": [
             {
@@ -526,6 +482,11 @@
       "file": "backend/test/contracts/avatar-files.test.ts",
       "name": "when the disk refuses every step, the file left is complete and only the cleanup's",
       "reason": "The file time is read through list() instead of the removed modifiedAt (item 31); the new assertion is stricter (it checks the whole list)"
+    },
+    {
+      "file": "backend/test/security/sql-injection.test.ts",
+      "name": "changes nothing as an import's preview id or slug, and as the zip's file name",
+      "reason": "The test runs three times (one per injection string), and the runner needs one outcome for a claim. Its new apply cases (422 for the injection string, 409 for a well-formed unknown `simp` id) are the same routes as P29-4 and P29-5, which have breaks. A hand break of the same two edits was caught in this test (hand-breaks-dq332.txt)"
     }
   ]
 }

@@ -428,16 +428,23 @@ describe("import and export", () => {
   // The preview id is a `simp` TypeID (D36). A malformed id (wrong prefix, bad shape) gets 422
   // `validation_error` with `field`, like every bad id in a JSON body (`api.md` §1; DQ-332, owner
   // 2026-11-18). A well-formed id that names no preview keeps 409 `preview_expired`.
-  it.each([
-    ["an id with another prefix", "skill_01jb8x6p0afqz8r2m3k5t7v9wx"],
-    ["a bare UUID", "0190b2a4-6f3c-4a1e-9b2d-3c4d5e6f7a8b"],
-    ["a `simp` id that is too short", "simp_01jb8x6p0a"],
-  ])("apply with %s gives 422 validation_error", async (_label, previewId) => {
-    const res = await send("POST", "/skills/import/apply", { preview_id: previewId, slugs: ["x"] });
-    expect(res.status).toBe(422);
-    const error = await errorOf(res);
-    expect(error.code).toBe("validation_error");
-    expect(error.field).toBe("preview_id");
+  it("apply with a preview id that is no `simp` TypeID gives 422 validation_error", async () => {
+    const malformed = [
+      "skill_01jb8x6p0afqz8r2m3k5t7v9wx", // another prefix
+      "0190b2a4-6f3c-4a1e-9b2d-3c4d5e6f7a8b", // a bare UUID
+      "simp_01jb8x6p0a", // too short
+    ];
+    for (const previewId of malformed) {
+      const res = await send("POST", "/skills/import/apply", {
+        preview_id: previewId,
+        slugs: ["x"],
+      });
+      expect(res.status, previewId).toBe(422);
+      expect(await errorOf(res), previewId).toEqual({
+        code: "validation_error",
+        field: "preview_id",
+      });
+    }
   });
 
   it("apply with a well-formed `simp` id that names no preview gives 409 preview_expired", async () => {
