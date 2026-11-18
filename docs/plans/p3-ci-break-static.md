@@ -51,7 +51,7 @@ push. A CI job runs them on each push of a PR.
   `fetch-depth: 2`; the job runs `pnpm check:breaks:static scripts/breaks/pr-$PR.json --base HEAD^1`
   (`HEAD^1` of the merge commit of GitHub is the base branch, so the diff is the change of the PR).
   The PR number comes from `github.event.pull_request.number` through an environment variable.
-  It runs on each PR: with no list it passes in a few seconds, so it can be a required check.
+  It runs on each PR: with no list it passes in a few seconds. It stays an optional check: the chief checks it before each merge (owner, 2026-11-18, q4 Q2 B).
 
 ### Failure paths
 
@@ -124,3 +124,5 @@ race.
 2. Required check: the owner's setting in the ruleset "Protected main". Recommendation: make
    `check:breaks static` required (it always reports, so a PR without a list is not blocked).
    This PR does not change the ruleset.
+   Answer: the owner chose to keep it optional (2026-11-18, q4 Q2 B); the chief checks it before
+   each merge.

@@ -89,6 +89,30 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: pnpm check:breaks:static "scripts/breaks/pr-${PR_NUMBER}.json" --base HEAD^1
 
+  # Each PR merged into main has a Done row in docs/status.md (testing.md §4). HEAD^1 is the base
+  # of the PR's test merge, or main before the merge on a push: a PR never needs its own row.
+  status:
+    name: check:status
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # The whole history: a shallow clone would hide merges.
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install pnpm (version from packageManager)
+        run: npm install -g "$(node -p "require('./package.json').packageManager")"
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm check:status --history HEAD^1
+
   # M0 AC5: the committed client is what `pnpm gen:api` makes from the backend's OpenAPI.
   api-client:
     name: gen:api fresh

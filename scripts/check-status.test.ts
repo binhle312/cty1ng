@@ -1,0 +1,201 @@
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { checkStatus, doneRows, mergedPrs } from "./lib/check-status.ts";
+import { readHistory } from "./lib/check-status-git.ts";
+
+const LINK = "https://github.com/binhle312/cty1ng/pull";
+const SINCE = "2026-10-30";
+
+// One line of `git log --first-parent --format=%H%x09%cI%x09%s`.
+function logLine(sha: string, line: { date: string; subject: string }): string {
+  const { date, subject } = line;
+  return `${sha}\t${date}T10:00:00+07:00\t${subject}`;
+}
+
+function merge(pr: number, date: string): string {
+  return logLine(sha(pr), { date, subject: `Merge pull request #${pr} from owner/branch-${pr}` });
+}
+
+function sha(pr: number): string {
+  return String(pr).padStart(40, "a");
+}
+
+function status(doneLines: string[]): string {
+  return [
+    "# Status",
+    "",
+    "## Slices",
+    "",
+    "## Done",
+    "",
+    "Each row has a date.",
+    "",
+    "| Date | What |",
+    "| --- | --- |",
+    ...doneLines,
+    "",
+  ].join("\n");
+}
+
+function row(date: string, ...prs: number[]): string {
+  return `| ${date} | ${prs.map((pr) => `[#${pr}](${LINK}/${pr})`).join(", ")} merged. |`;
+}
+
+describe("mergedPrs", () => {
+  it("reads a merge commit subject as a merged PR", () => {
+    expect(mergedPrs(merge(7, "2026-11-01")), "merge commit").toEqual([
+      { pr: 7, date: "2026-11-01", sha: sha(7) },
+    ]);
+  });
+
+  it("reads a squash merge subject as a merged PR", () => {
+    const log = logLine("b".repeat(40), {
+      date: "2026-10-29",
+      subject: "Add the ERDs by domain (#9)",
+    });
+    expect(mergedPrs(log), "squash merge").toEqual([
+      { pr: 9, date: "2026-10-29", sha: "b".repeat(40) },
+    ]);
+  });
+
+  it("skips a commit that is not a PR merge", () => {
+    const log = [
+      logLine("c".repeat(40), { date: "2026-10-21", subject: "Initial commit" }),
+      logLine("d".repeat(40), { date: "2026-11-02", subject: "Merge branch 'main' into x" }),
+      logLine("e".repeat(40), { date: "2026-11-02", subject: "Fix #12 in the list" }),
+    ].join("\n");
+    expect(mergedPrs(log), "other commits").toEqual([]);
+  });
+});
+
+describe("doneRows", () => {
+  it("counts each link of a Done row with several links", () => {
+    const md = status([row("2026-11-01", 7), row("2026-11-02", 8, 10)]);
+    expect(doneRows(md).prs, "links of the Done rows").toEqual(new Set([7, 8, 10]));
+  });
+
+  it("does not count a link in a section after the Done table", () => {
+    const md = `${status([])}\n## Notes\n\n| 2026-11-01 | [#7](${LINK}/7) merged. |\n`;
+    expect(doneRows(md).prs, "links after Done").toEqual(new Set());
+  });
+
+  it("reports a broken Done row", () => {
+    const md = status([`| [#7](${LINK}/7) merged. |`]);
+    expect(doneRows(md).problems, "problems of a broken row").toEqual([
+      `docs/status.md Done row is not "| YYYY-MM-DD | … |": | [#7](${LINK}/7) merged. |`,
+    ]);
+  });
+
+  it("counts no link of a broken Done row", () => {
+    const md = status([`| 18 Nov | [#7](${LINK}/7) merged. |`]);
+    expect(doneRows(md).prs, "links of a broken row").toEqual(new Set());
+  });
+
+  it("reports a status file with no Done section", () => {
+    expect(doneRows("# Status\n\n## Slices\n").problems, "no Done section").toEqual([
+      "docs/status.md has no ## Done section",
+    ]);
+  });
+});
+
+describe("checkStatus", () => {
+  it("gives the row to add for a merged PR with no Done row", () => {
+    const merged = mergedPrs(merge(125, "2026-11-18"));
+    expect(checkStatus({ merged, statusMd: status([]), since: SINCE }), "missing row").toEqual([
+      `#125 (merged 2026-11-18, aaaaaaa) has no Done row in docs/status.md. Add: | 2026-11-18 | [#125](${LINK}/125) merged. |`,
+    ]);
+  });
+
+  it("passes when the merged PR has a link in a Done row", () => {
+    const merged = mergedPrs(merge(125, "2026-11-18"));
+    const md = status([row("2026-11-18", 125)]);
+    expect(checkStatus({ merged, statusMd: md, since: SINCE }), "row present").toEqual([]);
+  });
+
+  it("ignores a PR merged before the start date", () => {
+    const merged = mergedPrs(merge(44, "2026-10-29"));
+    expect(checkStatus({ merged, statusMd: status([]), since: SINCE }), "before start").toEqual([]);
+  });
+
+  it("counts a PR merged on the start date", () => {
+    const merged = mergedPrs(merge(45, "2026-10-30"));
+    const problems = checkStatus({ merged, statusMd: status([]), since: SINCE });
+    const prs = problems.map((p) => p.split(" ")[0]);
+    expect(prs, "on the start date").toEqual(["#45"]);
+  });
+
+  it("fails with the problem of a broken Done row", () => {
+    const md = status([row("2026-11-18", 125), "| 18 Nov | x |"]);
+    const merged = mergedPrs(merge(125, "2026-11-18"));
+    expect(checkStatus({ merged, statusMd: md, since: SINCE }), "broken row").toEqual([
+      'docs/status.md Done row is not "| YYYY-MM-DD | … |": | 18 Nov | x |',
+    ]);
+  });
+});
+
+describe("readHistory", () => {
+  let repo: string;
+  const env = {
+    ...process.env,
+    GIT_AUTHOR_NAME: "t",
+    GIT_AUTHOR_EMAIL: "t@example.invalid",
+    GIT_COMMITTER_NAME: "t",
+    GIT_COMMITTER_EMAIL: "t@example.invalid",
+  };
+  const git = (...args: string[]): string =>
+    execFileSync("git", args, { cwd: repo, env, encoding: "utf8" });
+
+  beforeEach(() => {
+    repo = mkdtempSync(join(tmpdir(), "check-status-"));
+    git("init", "-q", "-b", "main");
+    git("commit", "-q", "--allow-empty", "-m", "Initial commit");
+    // #1: a branch merged into main.
+    git("checkout", "-q", "-b", "one");
+    git("commit", "-q", "--allow-empty", "-m", "one");
+    git("checkout", "-q", "main");
+    git("merge", "-q", "--no-ff", "one", "-m", "Merge pull request #1 from owner/one");
+    // #2 merges into the branch of #3, not into main; then #3 merges into main.
+    git("checkout", "-q", "-b", "three");
+    git("checkout", "-q", "-b", "two");
+    git("commit", "-q", "--allow-empty", "-m", "two");
+    git("checkout", "-q", "three");
+    git("merge", "-q", "--no-ff", "two", "-m", "Merge pull request #2 from owner/two");
+    git("checkout", "-q", "main");
+    git("merge", "-q", "--no-ff", "three", "-m", "Merge pull request #3 from owner/three");
+    // #4: the merge that a push to main checks; CI reads HEAD^1, the history before it.
+    git("checkout", "-q", "-b", "four");
+    git("commit", "-q", "--allow-empty", "-m", "four");
+    git("checkout", "-q", "main");
+    git("merge", "-q", "--no-ff", "four", "-m", "Merge pull request #4 from owner/four");
+  });
+  afterEach(() => {
+    rmSync(repo, { recursive: true, force: true });
+  });
+
+  it("does not list a PR merged into another PR's branch", () => {
+    const history = readHistory(repo, "HEAD");
+    const prs = mergedPrs(history.log).map((m) => m.pr);
+    expect(prs, "PRs on the first-parent line").toEqual([4, 3, 1]);
+  });
+
+  it("does not list the merge of HEAD when it reads HEAD^1", () => {
+    const history = readHistory(repo, "HEAD^1");
+    const prs = mergedPrs(history.log).map((m) => m.pr);
+    expect(prs, "PRs before the merge of HEAD").toEqual([3, 1]);
+  });
+
+  it("reports a shallow clone", () => {
+    const shallow = mkdtempSync(join(tmpdir(), "check-status-shallow-"));
+    try {
+      execFileSync("git", ["clone", "-q", "--depth", "1", `file://${repo}`, shallow], { env });
+      expect(readHistory(shallow, "HEAD").problems, "shallow clone").toEqual([
+        "the clone is shallow, so merges can be missing: fetch the whole history (fetch-depth: 0)",
+      ]);
+    } finally {
+      rmSync(shallow, { recursive: true, force: true });
+    }
+  });
+});

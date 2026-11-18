@@ -45,8 +45,11 @@ The owner's order (2026-11-08, in the [audit file](audits/2026-11-05-repo-audit.
    The seventeenth PR of the list, relative times (item 67), merged in [#125](https://github.com/binhle312/cty1ng/pull/125) on 2026-11-18. A relative time ("Just now") is made again while a page stays open: one shared clock, `useNow()` in `frontend/src/lib/now.ts`, ticks at the interval of `time-format.md` §1 while the page is visible, and four call sites read it (`TimeText`, the bot status line, the skill pin dialog and the change-version dialog); `pnpm lint` fails on `new Date()` with no argument in `components/` and `features/`. The owner approved the plan on 2026-11-15 ("P-17: approve"). DQ-523 to DQ-540: sixteen fixed; DQ-537 (`time-format.md` §1 says "one timer for all of them", and no check bans a second clock) and DQ-540 (a nit in the plan's Build notes) stay open: the owner decides.
    The eighth PR of the list, a busy port and the CLI stack traces, merged in [#111](https://github.com/binhle312/cty1ng/pull/111) on 2026-11-14.
    The ninth PR of the list, backend data and purge, merged in [#114](https://github.com/binhle312/cty1ng/pull/114) on 2026-11-18. Its records were written on 2026-11-15 and 2026-11-18; the owner answered: item 29 is built in the PR (prefix `simp`), DQ-331 is `fixed` (no new rule), and DQ-332 is `fixed` (2026-11-18, option B: the apply body answers 422 `validation_error` for a malformed `preview_id`, 409 for a well-formed unknown one). Check 3 found DQ-541 to DQ-543 (DQ-543 fixed in words; DQ-541 and DQ-542 fixed by the owner's answer Q1 A, 2026-11-18). The five reviews of the PR were used.
-   The seventh and tenth PRs of the list (list PR 7 and list PR 10: items 23, 24, 31 to 34), the limits and the strict inputs, are the draft [#115](https://github.com/binhle312/cty1ng/pull/115). `diffLines` has a budget (`SKILL_DIFF_MAX_EDITS`, default 2000; DQ-037 fixed); a changelog over `SKILL_CHANGELOG_MAX` (default 500) gets 422; a 422 `field` writes a list index as `[i]`; import apply and export refuse repeated items, and `ids=` is refused; version numbers, the docs query and the `tool_settings` keys are parsed strictly; one `SKILL_MD_MAX_BYTES`. The owner answered on 2026-11-15: the public API answers, the `field` format, the two defaults, the upload code and the input validation are approved (115-D: A); no redesign for DQ-374 (115-A: B) or DQ-381 (115-B: B), and the order of the DQ-381 fix test is accepted (115-C: A); the plan approval of the chief agent is accepted ("CHIEF: accept"). DQ-372 to DQ-386: eleven fixed; DQ-374, DQ-381, DQ-385 and DQ-386 stay open. Waiting on: the owner's merge.
-   The CI check of the break runner's static rules (owner, 2026-11-18: "DQ-517: D", "DQ-448: B") is the draft [#128](https://github.com/binhle312/cty1ng/pull/128). The CI job `check:breaks static` runs `pnpm check:breaks:static` on the list of each PR: the link and coverage rules of the runner (one copy, `scripts/lib/breaks-static.ts`) and a compile check of each broken file; a PR with no list passes. The plan is OK by the chief agent (owner review pending). DQ-448 is fixed; DQ-611 to DQ-617 and DQ-619 to DQ-625 are fixed; DQ-626 to DQ-630 (P3, from check 4, the last check) wait for the owner; DQ-618 (the runner on `main` drops local changes when TMPDIR is inside a git repository) is open, with its home in its row. Waiting on: the owner's review of the plan, the choice to make the job a required check (the owner's ruleset), and the merge.
+   The seventh and tenth PRs of the list (list PR 7 and list PR 10: items 23, 24, 31 to 34), the limits and the strict inputs, merged in [#115](https://github.com/binhle312/cty1ng/pull/115) on 2026-11-18. `diffLines` has a budget (`SKILL_DIFF_MAX_EDITS`, default 2000; DQ-037 fixed); a changelog over `SKILL_CHANGELOG_MAX` (default 500) gets 422; a 422 `field` writes a list index as `[i]`; import apply and export refuse repeated items, and `ids=` is refused; version numbers, the docs query and the `tool_settings` keys are parsed strictly; one `SKILL_MD_MAX_BYTES`. The owner answered on 2026-11-15: the public API answers, the `field` format, the two defaults, the upload code and the input validation are approved (115-D: A); no redesign for DQ-374 (115-A: B) or DQ-381 (115-B: B), and the order of the DQ-381 fix test is accepted (115-C: A); the plan approval of the chief agent is accepted ("CHIEF: accept"). DQ-372 to DQ-386: eleven fixed; DQ-374, DQ-381, DQ-385 and DQ-386 stay open.
+   The break runner keeps the local changes when TMPDIR is inside a git repository (owner, 2026-11-18, q3 Q1 A) merged in [#130](https://github.com/binhle312/cty1ng/pull/130) on 2026-11-18. `git apply` in the copy runs with `GIT_CEILING_DIRECTORIES`, so git does not use a repository above the copy; before the install, the runner stops with the file names if a changed or new file in the copy differs from the checkout. When #107 merges, its copy code replaces this. The plan is OK by the chief agent (owner review pending). DQ-651 to DQ-662 are fixed; DQ-663 and DQ-664 (older runner defects) and DQ-665 to DQ-670 (records slips found by the step 5 check; the owner decides) are open, with their homes in their rows. The three reviews of the PR end here. Waiting on: the owner's review of the plan and the owner's answer for DQ-665 to DQ-670.
+   The `check:status` CI check (owner, 2026-11-18, q2 Q2 A; the home of DQ-571, which is on #127's branch) merged in [#131](https://github.com/binhle312/cty1ng/pull/131) on 2026-11-18: CI fails when a PR merged into `main` since the start date has no Done row. The plan is OK by the chief agent (owner review pending). DQ-681 to DQ-687 and DQ-690 are fixed; DQ-688, DQ-689, DQ-691 and DQ-692 (records slips found by the step 5 check; the owner decides) are open. The three reviews of the PR end here. Waiting on: the owner's review of the plan, the owner's answers in its Needs human review (a required check, rebase merges, a check of status lines, `AGENTS.md` §4) and for DQ-688, DQ-689, DQ-691, DQ-692.
+   Plans hold the design and the owner's decisions; build facts go only in the PR description (owner, 2026-11-18, q2 Q1 A): merged in [#133](https://github.com/binhle312/cty1ng/pull/133) on 2026-11-18, docs only (`docs/plans/README.md` rule 6, `planning.md`, `pull-request.md`, the PR template). Revision 2 of the plan is OK by the chief agent (owner review pending). DQ-701 to DQ-710 are fixed; the cause of DQ-541 and DQ-542 is removed; DQ-711 to DQ-713 (records slips found by the step 5 check; the owner decides) are open. The three reviews of the PR end here. Waiting on: the owner's review of the plan, the owner's answers in its Needs human review and for DQ-711 to DQ-713, and the merge.
+   The CI check of the break runner's static rules (owner, 2026-11-18: "DQ-517: D", "DQ-448: B") is the draft [#128](https://github.com/binhle312/cty1ng/pull/128). The CI job `check:breaks static` runs `pnpm check:breaks:static` on the list of each PR: the link and coverage rules of the runner (one copy, `scripts/lib/breaks-static.ts`) and a compile check of each broken file; a PR with no list passes. The plan is OK by the chief agent (owner review pending). DQ-448 is fixed; DQ-611 to DQ-625 are fixed (DQ-618 by [#130](https://github.com/binhle312/cty1ng/pull/130): the same defect as DQ-651); DQ-626 to DQ-630 (P3, from check 4, the last check) stay open with the home "records redesign" (owner, 2026-11-18, q4 Q1 A). The job stays an optional check; the chief checks it before each merge (owner, 2026-11-18, q4 Q2 B). Waiting on: the owner's review of the plan, and the chief's merge (owner, 2026-11-18, q4 Q1 A).
 3. One style-only PR for the 104 `max-params` places.
 4. The second audit, with the [audit workflow](workflows/audit.md).
 5. Prepare the [M3 part briefs and specification work](development-plan.md#specification-work-before-m3a).
@@ -82,7 +85,7 @@ A P3 that has a DQ id is not in this table. Its state lives only in its row of t
 
 | Item | Found in | Target |
 | --- | --- | --- |
-| Q1 A redesign (owner 2026-11-18): plans hold the design and the owner's decisions only; build facts only in the PR description; a small docs PR (`planning.md`, `pull-request.md`) | Owner answer Q1 A, 2026-11-18 ([#114](https://github.com/binhle312/cty1ng/pull/114), DQ-541, DQ-542) | A small docs PR |
+| Q1 A redesign (owner 2026-11-18): plans hold the design and the owner's decisions only; build facts only in the PR description; a small docs PR (`planning.md`, `pull-request.md`) | Owner answer Q1 A, 2026-11-18 ([#114](https://github.com/binhle312/cty1ng/pull/114), DQ-541, DQ-542) | [#133](https://github.com/binhle312/cty1ng/pull/133) |
 | `pnpm e2e:serve` can die and leave its servers on the ports: a closed stdout (`EPIPE`) or SIGHUP stops the script without stopping them, and the marker stays. It fails safe, but its message says to stop a script that no longer runs, and no doc says to delete `.e2e-serve`. Stop the servers on those exits, and correct the message | [#60](https://github.com/binhle312/cty1ng/pull/60) review | The P3 PRs before M3 (owner, 2026-11-08) |
 | No test runs `scripts/e2e-serve.ts` itself, so its guard and signal wiring have only manual evidence | [#60](https://github.com/binhle312/cty1ng/pull/60) review | The P3 PRs before M3 (owner, 2026-11-08) |
 | Temporary CLI `skills trash` and `skills restore` (M1 spec gap pass, owner 2026-10-30): remove them when the Trash page exists | [#51](https://github.com/binhle312/cty1ng/pull/51) | M5b |
@@ -159,6 +162,7 @@ A slice can also be `blocked` (say on what in Notes).
 ## Done
 
 Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10). The first row has no PR of its own. The detail is in the PR.
+`pnpm check:status` fails in CI when a PR merged into `main` since its start date has no link in a row here; the next PR adds the row ([testing.md §4](testing.md#4-ci-gates)).
 
 | Date | What |
 | --- | --- |
@@ -174,10 +178,12 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-10-30 | Prototype references and `porting-guide.md` removed (owner); its lessons moved to `testing.md` §3. [#45](https://github.com/binhle312/cty1ng/pull/45) |
 | 2026-10-30 | M0 merged: tooling, backend, frontend shell, design snapshot. [#46](https://github.com/binhle312/cty1ng/pull/46), [#48](https://github.com/binhle312/cty1ng/pull/48), [#49](https://github.com/binhle312/cty1ng/pull/49), [#50](https://github.com/binhle312/cty1ng/pull/50) |
 | 2026-10-30 | M1 spec gap pass: 28 gaps answered; D6 and D36 amended. [#51](https://github.com/binhle312/cty1ng/pull/51) |
+| 2026-10-30 | [#47](https://github.com/binhle312/cty1ng/pull/47) merged. |
 | 2026-10-31 | M1 plan approved; M1a built and merged; M1c added. [#52](https://github.com/binhle312/cty1ng/pull/52) |
 | 2026-10-31 | M1b built: the Skills page. [#54](https://github.com/binhle312/cty1ng/pull/54) |
 | 2026-10-31 | M1b merged. [#54](https://github.com/binhle312/cty1ng/pull/54) |
 | 2026-10-31 | M1c built: event pruning, and one SQLite writer for each file. [#55](https://github.com/binhle312/cty1ng/pull/55) |
+| 2026-10-31 | [#53](https://github.com/binhle312/cty1ng/pull/53) merged. |
 | 2026-11-01 | M1c merged; M1 is complete. [#55](https://github.com/binhle312/cty1ng/pull/55) |
 | 2026-11-01 | M2 plan approved: Gemini joins Anthropic, Guide seed bot, split M2a/M2b/M2c. [#57](https://github.com/binhle312/cty1ng/pull/57) |
 | 2026-11-01 | M2a review items approved: migration 0002, upload code, Guide persona, tool lines. [#57](https://github.com/binhle312/cty1ng/pull/57) |
@@ -193,10 +199,18 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-04 | Docs audit answers: the owner answered all the questions; no feature is built. [#65](https://github.com/binhle312/cty1ng/pull/65) |
 | 2026-11-04 | M2 close fixes; the owner dropped DQ-018, DQ-019 and the remaining gaps of DQ-021. [#66](https://github.com/binhle312/cty1ng/pull/66) |
 | 2026-11-04 | Two flaky e2e tests fixed: `csp.spec.ts` and J1. [#70](https://github.com/binhle312/cty1ng/pull/70) |
+| 2026-11-04 | [#62](https://github.com/binhle312/cty1ng/pull/62) merged. |
+| 2026-11-04 | [#60](https://github.com/binhle312/cty1ng/pull/60) merged. |
+| 2026-11-04 | [#67](https://github.com/binhle312/cty1ng/pull/67) merged. |
 | 2026-11-05 | Repository audit recorded, with the owner's seven decisions. [#71](https://github.com/binhle312/cty1ng/pull/71) |
+| 2026-11-05 | [#72](https://github.com/binhle312/cty1ng/pull/72) merged. |
+| 2026-11-05 | [#75](https://github.com/binhle312/cty1ng/pull/75) merged. |
 | 2026-11-06 | Audit PR 3, the Skills page, merged; `takesServerText` is the one rule for server text. [#78](https://github.com/binhle312/cty1ng/pull/78) |
 | 2026-11-06 | Principle skill `principle-ask-with-options` merged. [#79](https://github.com/binhle312/cty1ng/pull/79) |
 | 2026-11-06 | `principle-ask-with-options` also requires Simplified Technical English at 80%. [#80](https://github.com/binhle312/cty1ng/pull/80) |
+| 2026-11-06 | [#73](https://github.com/binhle312/cty1ng/pull/73) merged. |
+| 2026-11-06 | [#76](https://github.com/binhle312/cty1ng/pull/76) merged. |
+| 2026-11-06 | [#77](https://github.com/binhle312/cty1ng/pull/77) merged. |
 | 2026-11-07 | Audit PR 4, the Bots page, merged; two new process rules. [#82](https://github.com/binhle312/cty1ng/pull/82) |
 | 2026-11-08 | Audit method added: `docs/workflows/audit.md`. [#83](https://github.com/binhle312/cty1ng/pull/83) |
 | 2026-11-08 | DQ-088 fixed: reads and saves run when the browser says it is offline. [#84](https://github.com/binhle312/cty1ng/pull/84) |
@@ -204,6 +218,7 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-09 | Skill `arena` added; `principle-remove-first` gets two rules. [#87](https://github.com/binhle312/cty1ng/pull/87) |
 | 2026-11-09 | Principle skill `principle-answer-first` added. [#89](https://github.com/binhle312/cty1ng/pull/89) |
 | 2026-11-09 | Audit PR 5, tests only, merged on 2026-11-10; break lists with `pnpm check:breaks`. [#86](https://github.com/binhle312/cty1ng/pull/86) |
+| 2026-11-09 | [#81](https://github.com/binhle312/cty1ng/pull/81) merged. |
 | 2026-11-10 | EGM trial workflow added: `docs/workflows/egm.md`. [#90](https://github.com/binhle312/cty1ng/pull/90) |
 | 2026-11-10 | Skill `arena` gets a Claude Fable 5.2 seat for Fable areas. [#93](https://github.com/binhle312/cty1ng/pull/93) |
 | 2026-11-10 | A Clone draft stays when its source skill goes away (DQ-180). [#92](https://github.com/binhle312/cty1ng/pull/92) |
@@ -236,3 +251,10 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-15 | [#118](https://github.com/binhle312/cty1ng/pull/118) merged. |
 | 2026-11-15 | [#123](https://github.com/binhle312/cty1ng/pull/123) merged. |
 | 2026-11-17 | Principle skills: each description starts with its trigger. Merged in [#126](https://github.com/binhle312/cty1ng/pull/126). |
+| 2026-11-18 | [#125](https://github.com/binhle312/cty1ng/pull/125) merged. |
+| 2026-11-18 | [#124](https://github.com/binhle312/cty1ng/pull/124) merged. |
+| 2026-11-18 | [#114](https://github.com/binhle312/cty1ng/pull/114) merged. |
+| 2026-11-18 | [#115](https://github.com/binhle312/cty1ng/pull/115) merged. |
+| 2026-11-18 | [#130](https://github.com/binhle312/cty1ng/pull/130) merged. |
+| 2026-11-18 | [#131](https://github.com/binhle312/cty1ng/pull/131) merged. |
+| 2026-11-18 | [#133](https://github.com/binhle312/cty1ng/pull/133) merged. |

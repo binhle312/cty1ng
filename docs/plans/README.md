@@ -17,11 +17,23 @@ A plan is a record, not spec. If a plan and an owning document differ, the ownin
 4. Commit each revision to the same file. Git history keeps the old revisions.
 5. When the owner approves, write the date, the revision and the owner's decisions in the file.
    Do this before the first build commit.
-6. If the owner approves a change after that, add a dated section to the file.
-   A new plan in the same slice, such as a redesign after a review, gets its own file.
+6. After the approval, a change of the design or a new owner decision needs its approval. Change
+   the design text in place, and add a line under `Approval:` with the date, the revision and who
+   approved it. A correction that changes no design and no decision, such as a typo, a link or a
+   claim made smaller (not a criterion: `AGENTS.md` §9), needs no approval. A new plan in the same
+   slice, such as a redesign after a review, gets its own file.
+   A plan holds no build facts: the red runs, the test names and counts as built, the proof logs
+   and commands, and each difference between the plan and the build. They go only in the PR
+   description ([pull-request.md](../workflows/pull-request.md#one-home-for-each-fact)). A
+   difference that changes the design or an owner decision is a change of the plan, and it needs
+   the approval first.
 7. Put a change in behaviour in the owning document, in the same PR.
 8. Add the file to the table below in the same commit. `pnpm check:index` fails if the table and
    the folder differ.
+
+Plans written before rule 6 (#133), also the plans of PRs that were open then, can have a section
+of build facts, such as "What the build changed" or "Build notes". That section is history, and
+nobody keeps it up to date.
 
 ## Plans
 
@@ -53,6 +65,9 @@ Plans up to M2 started as PR comments or PR descriptions. The header of each fil
 | `p3-relative-time.md` | P3 list PR 17 (item 67): relative times that update | Accepted by the owner, 2026-11-15 (P-17: approve), revision 3; Q1 and Q2 by the chief agent's reading |
 | `p3-limits-strict-inputs.md` | P3 PR C: list PR 7 (diff and changelog limits) and list PR 10 (API strict inputs) | Chief agent, 2026-11-15, revision 1; accepted by the owner, 2026-11-15 |
 | `p3-ci-break-static.md` | DQ-517 D and DQ-448 B: a CI check of the break list rules | Plan OK by the chief agent, 2026-11-18, against the owner's answers DQ-517 D and DQ-448 B; revision 1 |
+| `p3-runner-tmpdir.md` | DQ-618: the break runner keeps the local changes when TMPDIR is inside a git repository | Plan OK by the chief agent, 2026-11-18, against the owner's answer q3 Q1 A, revision 1; owner review pending |
+| `p3-check-status.md` | DQ-571: a CI check that each merged PR has its Done row in `docs/status.md` | Plan OK by the chief agent, 2026-11-18, against the owner's answer q2 Q2 A, revision 1; owner review pending |
+| `p3-plans-design-only.md` | Owner's answer q2 Q1 A: plans hold the design and the owner's decisions; build facts go only in the PR description | Chief agent, 2026-11-18, against the owner's answer q2 Q1 A, revision 2; owner review pending |
 
 If the task names a plan, open it. Otherwise, find the slice in [status.md](../status.md), then open its plan.
 For current behaviour, read the owning documents.
