@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BotId, MessageId, SkillId, SkillVersionId } from "./ids.ts";
+import { BotId, MessageId, SkillId, SkillImportPreviewId, SkillVersionId } from "./ids.ts";
 
 const SUFFIX = "01jb8x6p0afqz8r2m3k5t7v9wx";
 
@@ -26,5 +26,14 @@ describe("TypeID schemas (D36)", () => {
     expect(SkillId.safeParse(`skillv_${SUFFIX}`).success).toBe(false);
     expect(SkillVersionId.safeParse(`skillv_${SUFFIX}`).success).toBe(true);
     expect(MessageId.safeParse(`bot_${SUFFIX}`).success).toBe(false);
+  });
+
+  // D36, amended 2026-11-15 (owner): the skill import preview is in memory, with prefix `simp`.
+  it("has a schema for the skill import preview (`simp`)", () => {
+    expect(SkillImportPreviewId.safeParse(`simp_${SUFFIX}`).success).toBe(true);
+    expect(SkillImportPreviewId.safeParse(`skill_${SUFFIX}`).success).toBe(false);
+    expect(SkillImportPreviewId.safeParse("0190b2a4-6f3c-4a1e-9b2d-3c4d5e6f7a8b").success).toBe(
+      false,
+    );
   });
 });

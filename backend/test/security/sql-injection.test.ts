@@ -253,8 +253,19 @@ describe.each(INJECTIONS)("the text %s", (text) => {
       path: "/skills/import/apply",
       body: { preview_id: text, slugs: ["fresh"] },
     });
-    expect(unknownPreview.status).toBe(409);
-    expect(ErrorBody.parse(await unknownPreview.json()).error.code).toBe("preview_expired");
+    // An injection string is no `simp` TypeID: 422, like every bad id in a JSON body (DQ-332).
+    expect(unknownPreview.status).toBe(422);
+    const refusal = ErrorBody.parse(await unknownPreview.json()).error;
+    expect(refusal.code).toBe("validation_error");
+    expect(refusal.field).toBe("preview_id");
+    // A well-formed `simp` id that names no preview keeps 409.
+    const wellFormed = await send({
+      method: "POST",
+      path: "/skills/import/apply",
+      body: { preview_id: "simp_01jb8x6p0afqz8r2m3k5t7v9wx", slugs: ["fresh"] },
+    });
+    expect(wellFormed.status).toBe(409);
+    expect(ErrorBody.parse(await wellFormed.json()).error.code).toBe("preview_expired");
     const unknownSlug = await send({
       method: "POST",
       path: "/skills/import/apply",

@@ -618,7 +618,7 @@ is its `go.mod` line.
 | --- | --- |
 | Author saves an edit | New `skill_versions` row `N+1`, which is now the latest. **No pin moves.** |
 | Save dialog "Also upgrade these bots" | Opens **after** the save has committed `N+1`. Lists the author's bots pinned to older versions, all ticked. **Upgrade** is a separate request (`POST /skills/{id}/bots`) that moves the ticked pins to `N+1` in one transaction; it never creates a version. Skip moves nothing. (M2 spec gap pass, owner 2026-11-01: `POST /skills/{id}/versions` has no `upgrade_bot_ids`.) |
-| Assign a skill to a bot | Pins the latest version (the highest `version`) at that moment. |
+| Assign a skill to a bot | The pages send the latest version (the highest version) that they read. The API pins the version that the request names; it can be each version of that skill. |
 | Upgrade / downgrade on bot detail | Moves that one pin to the chosen version. |
 | Restore old version vK | Creates `N+1` with vK's content (history is append-only). |
 | Clone a bot | Copies pins and `always_load` exactly. |
@@ -649,7 +649,8 @@ Why integers and not semver: compatibility of prose cannot be checked by a machi
   that keep it keep working and show a "deprecated" badge. Reversible by the author.
 - **Delete** is only for a deprecated skill, also while bots use it. In one transaction it
   writes the bot ids of all its pins to `trashed_bot_ids`, deletes those `bot_skills` rows and
-  sets `trashed_at`. The skill and all its versions are one Trash item.
+  sets `trashed_at`. The skill and all its versions are one Trash item. A read of the skill
+  refuses a `trashed_bot_ids` that is not `NULL` or a list of bot ids (P3 item 28).
 - **In Trash:** the skill is in no list or picker, and its slug stays taken, so a restore
   always works. **Restore** clears `trashed_at`; the skill stays deprecated. The app then
   suggests to assign it again to the bots in `trashed_bot_ids` that are not deleted.
@@ -699,7 +700,8 @@ rename it. Import never renames an existing skill. Each created version has the 
 **The preview (M1 spec gap pass, owner 2026-10-30).** The server keeps a preview in memory, not
 in the database, for `IMPORT_PREVIEW_MINUTES` (default 15), and keeps at most
 `IMPORT_PREVIEW_MAX` (default 5) previews; a new one drops the oldest
-(`architecture.md` §8). A restart loses every preview. For each row the preview records what it
+(`architecture.md` §8). A restart loses every preview. The preview id (`preview_id`) comes from the
+ids port, as a TypeID with the prefix `simp` (D36, owner 2026-11-15). For each row the preview records what it
 saw: the skill id (or that the slug was free), the skill's `row_version`, its latest version,
 and its author, deprecated and Trash state. Apply checks all of these again inside its
 transaction, so a skill that was deleted and made again with the same slug, renamed, or
@@ -707,6 +709,10 @@ deprecated after the preview is caught; a version number alone would miss that. 
 
 - Any recorded value changed → 409 `stale_write`; nothing is written.
 - The preview is unknown, expired or already applied → 409 `preview_expired`; nothing is written.
+  This is the answer for a well-formed `simp` TypeID that names no live preview.
+- `preview_id` is not a `simp` TypeID (wrong prefix or shape) → 422 `validation_error` with
+  `field: "preview_id"`, the answer of every bad id in a JSON body (D36, `api.md` §1; owner,
+  2026-11-18); nothing is written.
 - A successful Apply removes the preview, so a second Apply of the same `preview_id` returns
   `preview_expired`.
 
