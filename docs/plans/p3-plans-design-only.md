@@ -6,7 +6,7 @@ changes docs/workflows/planning.md and pull-request.md (and removes the 'What th
 step)."
 Checkpoint: none beyond the owner's design answer q2 Q1 A (workflow docs only; no code, no screen)
 Approval: chief agent, 2026-11-18, against the owner's answer q2 Q1 A; owner review pending
-Revision 2, 2026-11-18: the round 1 findings (`implementation.md`, the review guide, a correction in rule 6, the plans of open PRs); approval: waiting (chief agent)
+Revision 2, 2026-11-18: the round 1 findings (`implementation.md`, the review guide, a correction in rule 6, the plans of open PRs); approved: chief agent, 2026-11-18, against q2 Q1 A; owner review pending
 
 ## The cause
 
@@ -41,7 +41,7 @@ Remove first, then add only what the rule needs.
 1. `docs/plans/README.md` (the one home of the rule):
    - Replace rule 6 with: after the approval, a change of the design or a new owner decision
      needs its approval. A correction that changes no design and no decision (a typo, a link, a
-     claim made smaller) needs none. The builder changes the design text in place (git history keeps the
+     claim made smaller, not a criterion) needs none. The builder changes the design text in place (git history keeps the
      old text, rule 4) and adds one dated revision line under `Approval:` that names who
      approved it. A plan holds no build facts: the red runs, the test names and counts as built,
      the proof logs and the commands, and each difference between the plan and the build go only
