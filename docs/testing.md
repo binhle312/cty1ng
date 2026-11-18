@@ -324,7 +324,10 @@ All must be green to merge: ESLint (including the security rules in `security.md
 warning fails it too: `--max-warnings 0`),
 Prettier, `tsc`, dependency-cruiser import rules (D35), Vitest, `db:check` (Drizzle schema matches the migrations, and the migration SQL builds that schema, so a hand edit that changes the schema of a migration fails; not checked: a data statement that changes no schema, and the order of the columns), Playwright (a test that passes only on its second try fails the job:
 `failOnFlakyTests`), generated-client freshness, event-type list match,
-`check:index` (folder indexes complete, `architecture.md` §4.2), the bundle budget
+`check:index` (folder indexes complete, `architecture.md` §4.2), `check:status` (each PR merged into `main` since the start date in
+`scripts/lib/check-status.ts` has a link in a Done row of `docs/status.md`; it reads the merges of
+`HEAD^1`: the base of the PR's test merge, or `main` before the merge on a push, so a PR never needs
+its own row), the bundle budget
 (`pnpm build`, then `pnpm check:bundle`), CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also run the automated security review when it is on;
 it is off for now (`security.md` §2.11).
 
