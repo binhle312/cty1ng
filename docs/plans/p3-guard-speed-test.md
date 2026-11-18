@@ -4,6 +4,12 @@ Brief: DQ-455 in [delivery-quality.md](../delivery-quality.md) (the home was not
 Checkpoint: none (one test changes; no product code, no UI, no new module)
 Approval: chief agent, 2026-11-18, under the owner's order of 2026-11-14 (P3 questions to consultants); owner review pending. The chief agent asked for two proofs in the PR: the time of the test with the 1.1 s break (it must be far from the 20 s test timeout) and the normal time in the full suite
 
+Revision 2 (2026-11-18, after review round 1; approved by the chief agent, 2026-11-18): a second
+break (the last line), the red-run break of the first 3 lines, and the goal "one slow run does not
+fail the test" in place of "a busy machine does not fail the test". The old words came from the
+chief agent's brief, not from an owner-approved criterion. The owner's decision on a redesign is
+open (see "Open questions").
+
 Code read at `origin/main` = `74a1ff2`.
 
 ## Cause

@@ -489,10 +489,12 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
       `pwd=/a${")".repeat(1_000_000)}!`,
     ];
     // One limit per line, because a shared limit fails on a busy machine. Each line is timed on
-    // the fastest of up to 3 runs: a busy machine slows one run, and a scan that is slow (a quadratic
-    // pattern takes many seconds on one of these lines) is slow on each run. Margin, measured on 2026-11-18
-    // (16 cores, 5 runs): the slowest line took 26 to 33 ms alone as the fastest of 3 runs, and 163
-    // to 287 ms under 24 busy processes, so the limit is 3.5 times the busy case.
+    // the fastest of up to 3 runs: a busy machine slows one run. A wait or a quadratic pattern is
+    // slow on each run, so it fails. A scan that is slow only in its first run (a regular expression
+    // before V8 compiles it) passes: see "Not claimed" in docs/plans/p3-guard-speed-test.md.
+    // Margin, measured on 2026-11-18 (16 cores, 5 runs): the slowest line took 26 to 33 ms alone
+    // as the fastest of 3 runs, and 163 to 287 ms under 24 busy processes, so the limit is 3.5
+    // times the busy case.
     for (const [index, line] of lines.entries()) {
       const fastest = fastestRun(() => {
         findSensitive(line);
