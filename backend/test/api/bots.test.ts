@@ -276,10 +276,13 @@ describe("/bots/{id}", () => {
     // The guard runs before the limits (M2 plan §4), so the scan must stay linear.
     // The time is the fastest of up to 3 runs of the same request (backend/test/timed.ts): a busy
     // machine slows one run, a slow scan is slow on every run. The request is refused before any
-    // write, so a run changes no state; the check after the runs proves that. Margin, measured on
+    // write, so a run changes no state that the next run reads (row_version: a write would make
+    // run 2 answer 409). The bot read after the runs shows its text and row_version unchanged.
+    // Not checked: a row in another table. Margin, measured on
     // 2026-11-18 (16 cores, 5 runs): one request took 42 to 59 ms alone and up to 292 ms under 24
     // busy processes, so the limit is 6.8 times the busy case.
     const { bot } = await createBot();
+    const limitMs = 2_000;
     const responses: Response[] = [];
     const fastest = await fastestRunAsync(async () => {
       const response = await send("PATCH", `/bots/${String(bot.id)}`, {
@@ -289,8 +292,8 @@ describe("/bots/{id}", () => {
       });
       expect(response.status).toBe(422);
       responses.push(response);
-    }, 2_000);
-    expect(fastest, "the PATCH of 1 MB: the fastest of up to 3 runs").toBeLessThan(2_000);
+    }, limitMs);
+    expect(fastest, "the PATCH of 1 MB: the fastest of up to 3 runs").toBeLessThan(limitMs);
     for (const response of responses) {
       expect(await errorOf(response)).toMatchObject({
         code: "validation_error",

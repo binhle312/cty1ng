@@ -263,7 +263,12 @@ export default tseslint.config(
     },
   },
   {
-    files: ["backend/src/**/*.test.ts", "backend/test/**/*.ts", "scripts/**/*.test.ts"],
+    files: [
+      "backend/src/**/*.test.ts",
+      "backend/test/**/*.ts",
+      "scripts/**/*.test.ts",
+      "scripts/fixtures/**/*.ts",
+    ],
     ignores: ["backend/test/timed.ts"],
     rules: { "no-restricted-properties": ["error", ...TIMED_BACKEND] },
   },

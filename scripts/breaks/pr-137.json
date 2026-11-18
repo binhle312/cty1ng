@@ -8,7 +8,7 @@
         "file": "backend/src/core/guard/sensitive-data.rules.test.ts",
         "name": "scans each 1 MB line of the new forms in well under a second"
       },
-      "assertion": "expect(fastest, `line ${index + 1} of the new forms`).toBeLessThan(1_000);",
+      "assertion": "expect(fastest, `line ${index + 1} of the new forms`).toBeLessThan(limitMs);",
       "breaks": [
         {
           "id": "G1-wait-in-every-call",
@@ -33,6 +33,28 @@
       ]
     },
     {
+      "id": "G0-slow-scan-short-words",
+      "claim": "A scan that is slow on every run (over 1,000 ms for the 1 MB line of short code-like words) fails the test, also with the fastest of 3 runs",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/guard/sensitive-data.rules.test.ts",
+        "name": "scans a 1 MB line of short code-like words in well under a second"
+      },
+      "assertion": "expect(fastest).toBeLessThan(limitMs);",
+      "breaks": [
+        {
+          "id": "G0-wait-for-the-line",
+          "file": "backend/src/core/guard/sensitive-data.rules.ts",
+          "edits": [
+            {
+              "find": "export function findSensitive(text: string): SensitiveMatch[] {\n  return [...scan(text)];\n}",
+              "replace": "export function findSensitive(text: string): SensitiveMatch[] {\n  if (text.startsWith(\"ABC123 \")) {\n    const until = performance.now() + 1_100;\n    while (performance.now() < until) {\n      // wait\n    }\n  }\n  return [...scan(text)];\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "T1-skill-md-keys-slow",
       "claim": "A parse that is slow on every run (over 500 ms for 40,000 keys) fails the test, also with the fastest of 3 runs",
       "test": {
@@ -40,7 +62,7 @@
         "file": "backend/src/core/skills/skill-md.test.ts",
         "name": "reports 40,000 keys at once, with no parse"
       },
-      "assertion": "expect(fastest, \"40,000 keys: the fastest of up to 3 runs\").toBeLessThan(500);",
+      "assertion": "expect(fastest, \"40,000 keys: the fastest of up to 3 runs\").toBeLessThan(limitMs);",
       "breaks": [
         {
           "id": "T1-wait-in-too-large-path",
@@ -62,7 +84,7 @@
         "file": "backend/src/core/skills/skill-md.test.ts",
         "name": "finds no closing --- line in a 1 MB file quickly"
       },
-      "assertion": "expect(fastest, \"1 MB with no closing line: the fastest of up to 3 runs\").toBeLessThan(500);",
+      "assertion": "expect(fastest, \"1 MB, no closing line: fastest of up to 3\").toBeLessThan(limitMs);",
       "breaks": [
         {
           "id": "T2-wait-in-no-frontmatter-path",
@@ -84,7 +106,7 @@
         "file": "backend/test/api/bots.test.ts",
         "name": "PATCH refuses a 1 MB description on its length, fast, after the guard scan"
       },
-      "assertion": "expect(fastest, \"the PATCH of 1 MB: the fastest of up to 3 runs\").toBeLessThan(2_000);",
+      "assertion": "expect(fastest, \"the PATCH of 1 MB: the fastest of up to 3 runs\").toBeLessThan(limitMs);",
       "breaks": [
         {
           "id": "B1-wait-for-long-text",

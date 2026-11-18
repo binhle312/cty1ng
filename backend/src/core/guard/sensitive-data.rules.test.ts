@@ -55,11 +55,12 @@ describe("findSensitive (D39)", () => {
     const line = "ABC123 ".repeat(150_000);
     expect(findSensitive(line)).toEqual([]);
     expect(findSensitive(`passport ${line}`)).toHaveLength(150_000);
+    const limitMs = 1_000;
     const fastest = fastestRun(() => {
       findSensitive(line);
       findSensitive(`passport ${line}`);
-    }, 1_000);
-    expect(fastest).toBeLessThan(1_000);
+    }, limitMs);
+    expect(fastest).toBeLessThan(limitMs);
     expect(firstSensitive(`passport ${line}`)).toEqual({
       kind: "passport",
       line: 1,
@@ -485,11 +486,12 @@ describe("findSensitive: prefixed names, the JSON form and long hex", () => {
     // Margin, measured on 2026-11-18 (16 cores, 5 runs): the slowest line took 26 to 33 ms alone
     // as the fastest of 3 runs, and 163 to 287 ms under 24 busy processes, so the limit is 3.5
     // times the busy case.
+    const limitMs = 1_000;
     for (const [index, line] of lines.entries()) {
       const fastest = fastestRun(() => {
         findSensitive(line);
-      }, 1_000);
-      expect(fastest, `line ${index + 1} of the new forms`).toBeLessThan(1_000);
+      }, limitMs);
+      expect(fastest, `line ${index + 1} of the new forms`).toBeLessThan(limitMs);
     }
   });
 });

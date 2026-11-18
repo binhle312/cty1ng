@@ -80,10 +80,11 @@ describe("SKILL.md", () => {
       // slows one run, a slow parse is slow on every run. Margin, measured on 2026-11-18 (16 cores,
       // 5 runs): one run took 1 to 2 ms alone and up to 15 ms under 24 busy processes, so the limit
       // is 33 times the busy case.
+      const limitMs = 500;
       const fastest = fastestRun(() => {
         expect(parseSkillMd(text)).toEqual(tooLarge);
-      }, 500);
-      expect(fastest, "40,000 keys: the fastest of up to 3 runs").toBeLessThan(500);
+      }, limitMs);
+      expect(fastest, "40,000 keys: the fastest of up to 3 runs").toBeLessThan(limitMs);
     });
 
     // The largest export: the longest slug and description, and every character of the
@@ -118,12 +119,13 @@ describe("SKILL.md", () => {
       // The fastest of up to 3 runs, as in the test of 40,000 keys. Margin, measured on 2026-11-18
       // (16 cores, 5 runs): one run took 3 to 11 ms alone and up to 27 ms under 24 busy processes,
       // so the limit is 18 times the busy case.
+      const limitMs = 500;
       const fastest = fastestRun(() => {
         expect(parseSkillMd(text)).toEqual({
           invalid: "The file has no frontmatter between --- lines.",
         });
-      }, 500);
-      expect(fastest, "1 MB with no closing line: the fastest of up to 3 runs").toBeLessThan(500);
+      }, limitMs);
+      expect(fastest, "1 MB, no closing line: fastest of up to 3").toBeLessThan(limitMs);
     });
   });
 

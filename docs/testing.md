@@ -320,19 +320,26 @@ on a busy machine fails such a test with nothing wrong: it happened three times 
 (DQ-044, item 72, DQ-455). The helper takes the fastest of up to 3 runs, and stops at the first run
 under the limit. Work that is slow on every run is still over the limit. Rules for a timed test:
 
-- The assertion stays in the test: `expect(fastest, "label").toBeLessThan(limitMs)`. The label
-  names the case, and it is unique in the file (a break list needs it).
+- The assertion stays in the test: `expect(fastest, "label").toBeLessThan(limitMs)`. The test
+  holds the limit in one constant and gives it to the helper and to the assertion: a helper limit
+  above the assertion's limit would stop at a run that the assertion refuses. The label names the
+  case. When the test has a claim in a break list, the label is unique in the file (the list needs
+  the assertion text exactly once).
 - `work` gives the same result on each run and changes no state that the next run reads. A
   request that the server refuses before any write is fine, and the test checks the state after the
-  runs (`backend/test/api/bots.test.ts`, the 1 MB PATCH). Work that writes needs fresh state for each
-  run, or it does not use the helper.
+  runs (`backend/test/api/bots.test.ts`, the 1 MB PATCH: the bot keeps its text and `row_version`;
+  a row in another table is not checked). Work that writes needs fresh state for each run, or it
+  does not use the helper.
 - A correctness check can be inside `work`: an error is not retried, so it fails the test at once.
 - The limit has a measured margin in a comment: the time alone, and under load (24 busy processes),
   as the guard tests have.
 - `pnpm lint` fails a test file that reads `performance.now` (`no-restricted-properties` in
-  `eslint.config.js`): in `backend/` and `scripts/` the message names the helper; in `frontend/` and
-  `shared/` it says to add a helper for that package first, because they may not import `backend/`.
-  Not seen by the rule: other clocks (`Date.now()`), and an alias of `performance`.
+  `eslint.config.js`): in `backend/` and `scripts/` (tests, and the fixtures of `scripts/fixtures/`)
+  the message names the helper; in `frontend/` and `shared/` it says to add a helper for that
+  package first, because they may not import `backend/`. Not seen by the rule: other clocks
+  (`Date.now()`, `process.hrtime`, `new Date().getTime()`), `performance.mark()` and `measure()`,
+  `globalThis.performance.now()`, an alias or an import of `performance` under another name, and a
+  key in a variable (`performance[key]()`).
 - Not claimed: a scan that is slow only in its first run (for example a regular expression that V8
   interprets once and then compiles) passes, because the fastest run is the one that counts.
 

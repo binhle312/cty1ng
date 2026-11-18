@@ -4,7 +4,9 @@
 // slow on every run is over the limit on the fastest run too. `pnpm lint` fails a test file that
 // reads `performance.now` outside this file.
 //
-// The test keeps its own assertion: `expect(fastest, "label").toBeLessThan(limitMs)`.
+// The test keeps its own assertion: `expect(fastest, "label").toBeLessThan(limitMs)`. It passes
+// the same `limitMs` to both: a constant in the test. A helper limit above the assertion's limit
+// would stop at a run that the assertion refuses, and one slow run would fail the test again.
 // An error that `work` throws or rejects with is not retried.
 // `work` gives the same result each run and changes no state that the next run reads.
 //

@@ -403,6 +403,7 @@ describe("timed test lint rule", () => {
     { label: "a backend API test", file: "backend/test/api/bots.test.ts" },
     { label: "a file in backend/test", file: "backend/test/some-helper.ts" },
     { label: "a script test", file: "scripts/check-bundle.test.ts" },
+    { label: "a script fixture", file: "scripts/fixtures/e2e-fresh-run/write.pw.ts" },
   ])(
     "rejects one run timed with performance.now in $label, and names the helper",
     async ({ file }) => {
@@ -456,6 +457,16 @@ describe("timed test lint rule", () => {
       label: "an alias of performance",
       code: "const p = performance;\nexport const t = p.now();\n",
     },
+    {
+      label: "a key in a variable",
+      code: 'const key = "now" as const;\nexport const t = performance[key]();\n',
+    },
+    {
+      label: "an import of performance under another name",
+      code: 'import { performance as perf } from "node:perf_hooks";\nexport const t = perf.now();\n',
+    },
+    { label: "performance.mark()", code: 'export const t = performance.mark("a");\n' },
+    { label: "process.hrtime.bigint()", code: "export const t = process.hrtime.bigint();\n" },
   ])("does not see $label", async ({ code }) => {
     const found = await messages(code, "backend/test/api/bots.test.ts");
     expect(found.filter(isTimedRule), "messages of the rule").toEqual([]);
