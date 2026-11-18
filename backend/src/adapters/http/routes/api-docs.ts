@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
 import type { HttpEnv } from "../context.ts";
+import { noQueryString } from "../router.ts";
 
 // The OpenAPI docs page, only when APP_ENV=dev (security.md §2.10). Swagger UI is served from
 // the swagger-ui-dist package, and the page loads it with no inline script or style, so the
@@ -26,8 +27,10 @@ const PAGE = `<!doctype html>
 
 const INIT = `window.ui = SwaggerUIBundle({ url: "/api/openapi.json", dom_id: "#swagger-ui" });\n`;
 
+// `/docs/*` also matches `/docs` itself.
 export function apiDocsRoutes() {
   return new Hono<HttpEnv>()
+    .use("/docs/*", noQueryString())
     .get("/docs", (c) => c.html(PAGE))
     .get("/docs/init.js", (c) =>
       c.body(INIT, 200, { "Content-Type": "text/javascript; charset=utf-8" }),

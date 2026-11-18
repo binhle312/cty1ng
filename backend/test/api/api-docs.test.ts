@@ -1,4 +1,6 @@
 import { afterAll, describe, expect, it } from "vitest";
+import { z } from "zod";
+import { ToolIdPattern } from "@cty1ng/shared/catalog";
 import { testBackend } from "../helpers.ts";
 
 // The OpenAPI docs page only when APP_ENV=dev (security.md §2.10), with no inline script, so
@@ -71,5 +73,69 @@ describe("the OpenAPI document", () => {
     expect(response.status).toBe(200);
     const document: unknown = await response.json();
     expect(nullableEnumsWithoutNull(document, "$", [])).toEqual([]);
+  });
+
+  // Item 34 of the P3 list; review of #115 (R2-2): the document shows the key rule of
+  // tool_settings, so a client sees it too.
+  it("shows the tool id key rule of tool_settings in the create bot body", async () => {
+    const response = await backend.request("/api/openapi.json");
+    const document = z
+      .object({
+        paths: z.object({
+          "/api/bots": z.object({
+            post: z.object({
+              requestBody: z.object({
+                content: z.object({
+                  "application/json": z.object({
+                    schema: z.object({
+                      properties: z.object({ tool_settings: z.record(z.string(), z.unknown()) }),
+                    }),
+                  }),
+                }),
+              }),
+            }),
+          }),
+        }),
+      })
+      .parse(await response.json());
+    const toolSettings =
+      document.paths["/api/bots"].post.requestBody.content["application/json"].schema.properties
+        .tool_settings;
+    expect(toolSettings["propertyNames"]).toEqual({
+      type: "string",
+      pattern: ToolIdPattern.source,
+    });
+  });
+});
+
+// Item 34 of the P3 list: the document and the docs page are not Zod routes, so they refused no
+// query string (security.md §2.9). An empty `?` passes, as on a Zod route with no query.
+const ErrorBody = z.object({ error: z.object({ code: z.string(), field: z.string().optional() }) });
+
+describe("a query string on the docs routes", () => {
+  const dev = testBackend({ APP_ENV: "dev" });
+  afterAll(() => {
+    dev.close();
+  });
+
+  it.each(["/api/openapi.json", "/api/docs", "/api/docs/init.js"])(
+    "%s?x=1 gives 422 on x",
+    async (path) => {
+      const response = await dev.request(`${path}?x=1`);
+      expect(response.status).toBe(422);
+      expect(ErrorBody.parse(await response.json()).error).toEqual({
+        code: "validation_error",
+        field: "x",
+      });
+    },
+  );
+
+  // Review of #115 (R1-2): a Zod route with NoQuery answers 200 to an empty key, so this does too.
+  it("/api/openapi.json with an empty key (?=1) answers 200", async () => {
+    expect((await dev.request("/api/openapi.json?=1")).status).toBe(200);
+  });
+
+  it("/api/openapi.json with an empty ? still answers 200", async () => {
+    expect((await dev.request("/api/openapi.json?")).status).toBe(200);
   });
 });

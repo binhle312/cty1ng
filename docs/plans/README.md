@@ -51,6 +51,7 @@ Plans up to M2 started as PR comments or PR descriptions. The header of each fil
 | `p3-tooling-gates.md` | P3 list PR 19, tooling gates (items 73 to 76) | Chief agent, 2026-11-15; accepted by the owner, 2026-11-15 |
 | `p3-skills-page-orders.md` | P3 list PR 14, Skills page orders (items 51 to 56) | Accepted by the owner, 2026-11-15 ("P-14: approve"), revision 2; Q1 takes the plan's answer (chief agent's reading, owner review pending); Q2 approved by the owner, 2026-11-18 (UI-4: A) |
 | `p3-relative-time.md` | P3 list PR 17 (item 67): relative times that update | Accepted by the owner, 2026-11-15 (P-17: approve), revision 3; Q1 and Q2 by the chief agent's reading |
+| `p3-limits-strict-inputs.md` | P3 PR C: list PR 7 (diff and changelog limits) and list PR 10 (API strict inputs) | Chief agent, 2026-11-15, revision 1; accepted by the owner, 2026-11-15 |
 | `p3-ci-break-static.md` | DQ-517 D and DQ-448 B: a CI check of the break list rules | Plan OK by the chief agent, 2026-11-18, against the owner's answers DQ-517 D and DQ-448 B; revision 1 |
 
 If the task names a plan, open it. Otherwise, find the slice in [status.md](../status.md), then open its plan.

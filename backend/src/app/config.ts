@@ -32,6 +32,10 @@ const Env = z.object({
   IMPORT_PREVIEW_MAX: z.coerce.number().int().min(1).default(5),
   AVATAR_MAX_BYTES: z.coerce.number().int().positive().default(2_097_152),
   AVATAR_ORPHAN_HOURS: z.coerce.number().int().positive().default(24),
+  SKILL_DIFF_MAX_EDITS: z.coerce.number().int().positive().default(2000),
+  // At least 100, so that the app's own changelogs ("Imported from {file}", "Restored vN") fit
+  // (review of #115, R1-4).
+  SKILL_CHANGELOG_MAX: z.coerce.number().int().min(100).default(500),
 });
 
 export interface Config {
@@ -62,6 +66,10 @@ export interface Config {
   // (domain-model.md §2 Avatar files).
   avatarMaxBytes: number;
   avatarOrphanHours: number;
+  // The budget of a skill line diff: the most added and removed lines it looks for (DQ-037).
+  skillDiffMaxEdits: number;
+  // The longest changelog of a skill version, in characters (P3 list, item 24).
+  skillChangelogMax: number;
   // Values of every `*_API_KEY` variable, for log redaction only (security.md §2.6).
   secrets: readonly string[];
   // Names of the `*_API_KEY` variables that are set and not empty: a catalog model is available
@@ -135,6 +143,8 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     importPreviewMax: e.IMPORT_PREVIEW_MAX,
     avatarMaxBytes: e.AVATAR_MAX_BYTES,
     avatarOrphanHours: e.AVATAR_ORPHAN_HOURS,
+    skillDiffMaxEdits: e.SKILL_DIFF_MAX_EDITS,
+    skillChangelogMax: e.SKILL_CHANGELOG_MAX,
     secrets: apiKeys.map(([, value]) => value),
     keysSet: new Set(apiKeys.map(([name]) => name)),
     modelsFile: resolve(REPO_ROOT, "config/models.yaml"),
