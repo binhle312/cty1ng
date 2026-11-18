@@ -22,7 +22,8 @@ note on DQ-573). Approval: the chief agent, 2026-11-18; owner review pending
 Revision 5, 2026-11-18 (DQ-753, a same cause as DQ-356): the PR template has one home,
 `.github/pull_request_template.md`, which GitHub needs; `pull-request.md` keeps the rules and
 example rows and links to it. No test: the change removes a copy, so there is nothing to compare.
-Approval: the chief agent, 2026-11-18, under q4 Q3 A (one home for each fact); owner review pending
+Approval: the chief agent, 2026-11-18, by the rule "one home for each fact" (DQ-152, 2026-11-09);
+q4 Q3 A does not name the template, so the owner's review is pending
 
 ## The cause
 

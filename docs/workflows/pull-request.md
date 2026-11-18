@@ -1,8 +1,9 @@
 # Write a PR description
 
 The template is [`.github/pull_request_template.md`](../../.github/pull_request_template.md). GitHub
-puts it into each new PR, and it is the one home of the sections and their order (owner,
-2026-11-18, q4 Q3 A: one home for each fact). This file holds the rules for what goes into them.
+puts it into each new PR, and it is the one home of the sections and their order (DQ-753, by the
+rule [one home for each fact](#one-home-for-each-fact); owner review pending). This file holds the
+rules for what goes into them.
 Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
 
 ## Examples of filled rows

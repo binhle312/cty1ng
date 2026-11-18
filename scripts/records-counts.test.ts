@@ -378,6 +378,14 @@ describe("structure problems", () => {
     ]);
   });
 
+  it("reports a milestone view row with more cells than its header", () => {
+    const fixture = onePr({ audit: [...onePr().audit, "stray"] });
+    const problems = checkCounts(files(fixture)).filter((p) => p.includes("cells"));
+    expect(problems, "milestone view cell count").toEqual([
+      `${MAIN}:${lineIn(files(fixture), "| Audit 2026-11-05 |")}: the row Audit 2026-11-05 has 8 cells; its header has 7. Fix the stray or missing "|".`,
+    ]);
+  });
+
   it("reports a table that no file has, and a table that two files have", () => {
     const [main, archive] = files(onePr());
     const noRegister = {
