@@ -18,7 +18,7 @@ export function applyPatch(copy: string, patch: Buffer): void {
 }
 
 type State =
-  | { kind: "absent" | "folder" | "other" }
+  | { kind: "absent" | "other" }
   | { kind: "link"; target: string }
   | { kind: "file"; executable: boolean; content: Buffer };
 
@@ -38,7 +38,7 @@ function state(path: string): State {
   }
   try {
     const stats = fstatSync(file);
-    if (stats.isDirectory()) return { kind: "folder" };
+    // A folder, a pipe or a device: not a file that a change can give.
     if (!stats.isFile()) return { kind: "other" };
     return { kind: "file", executable: (stats.mode & 0o111) !== 0, content: readFileSync(file) };
   } finally {

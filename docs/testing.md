@@ -383,10 +383,10 @@ shared helper, so each claim fails at its own line. `pnpm check:breaks <list>` r
 ([check-breaks.ts](../scripts/check-breaks.ts)):
 
 1. It copies HEAD and the local changes to a temporary folder with its own install. The
-   checkout does not change, and e2e tests use the copy's own build and servers. Git cannot use
-   a repository around the temporary folder when it applies the changes. Before the install, the
-   runner stops with the file names if a changed or new file in the copy differs from the
-   checkout.
+   checkout does not change, and e2e tests use the copy's own build and servers. When it applies
+   the changes, git does not look for a repository above the temporary folder (a folder path with
+   `:` is the exception: git cannot take it as its limit). Before the install, the runner stops
+   with the file names if a changed or new file in the copy differs from the checkout.
 2. It refuses a list with a missing link: a claim with no break, a test file or assertion text
    that is not there exactly once, an assertion outside the named test, or a break that edits a
    test or a test helper (a `test/` folder, `*.test.*`, `*.spec.*`) instead of the code.

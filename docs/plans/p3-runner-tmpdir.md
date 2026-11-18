@@ -54,8 +54,8 @@ needs that relative path and depends on where git finds a repository. Not chosen
 3. `docs/testing.md` §5, step 1: one sentence for the apply and the check.
 
 Why a check and not only the environment: the check does not depend on how git finds a
-repository. Any other way to lose an edit (a git setting, a future git change, a file that
-`git archive` leaves out) stops the run with the file names.
+repository. Another way to lose an edit (a git setting, a future git change, a file that
+`git archive` leaves out) stops the run: the check names the file, or `git apply` fails.
 
 ## Test strategy (`scripts/lib/breaks-apply.test.ts`, test first)
 
