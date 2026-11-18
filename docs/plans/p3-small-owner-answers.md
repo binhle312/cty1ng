@@ -47,7 +47,9 @@ one `h1`. If the test shows any change beyond the heading level, I stop and tell
 
 ## 2. Test strategy, as built (revision 2)
 
-Rules: each test was written first and was red on `aa85cb9`, then green after the fix. No test is
+Rules: each test was written first and was red on `aa85cb9`, then green after the fix. The
+tests of S15 to S17 (the three more child routes) were added in round 1, after the code; they are
+also red on `aa85cb9`. No test is
 disabled or deleted. The break runner wants one claim for each test name and the assertion on one
 line inside the test, so the tests are small and each has one claim.
 
