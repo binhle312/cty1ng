@@ -21,6 +21,10 @@ say what the proof shows and add `Not claimed: …` (`docs/workflows/pull-reques
 | --- | --- |
 | | |
 
+## Differences from the plan
+
+- Each difference between the approved plan and the build, with the reason (or "none")
+
 ## Needs human review
 
 - (or "none")
