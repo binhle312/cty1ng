@@ -43,11 +43,13 @@ Ledger rows DQ-a to DQ-b, the round rows of this PR in §6 and its register row,
 count, fix commit or round result: the rows hold them.
 
 ## Defect and review fixes (when a review found something)
-List each defect that this PR repairs and each review fix. For each one, give the general rule, the search of old fixes, and the answer ([bug fix, step 2](bug-fix.md)). The fix and the test are in the ledger row of the id.
-| Finding | Cause (the rule broken) | Same cause checked in | Same cause as an earlier fix? |
-| --- | --- | --- | --- |
-| DQ-a | An answer writes fields it does not own | Save answers, pin answers, dialog answers; `grep -n "writes fields" docs/delivery-quality*.md`: no hit | No |
-| DQ-b | An answer writes fields it does not own | Every answer that writes the form | Yes, DQ-a. Owner's decision: redesign, with one owner for the form state |
+List the ledger row of each defect that this PR repairs and of each review fix. The row holds the
+general rule, the fix, the test, and the "Same cause as an earlier fix?" answer with its search
+([bug fix, step 2](bug-fix.md); `AGENTS.md` §9).
+| Row | Finding |
+| --- | --- |
+| DQ-a | A late Profile answer brings back an old pin |
+| DQ-b | A late dialog answer brings back an old pin (the row names DQ-a and the owner's decision) |
 
 ## Follow-ups (not done here)
 - ...
@@ -62,7 +64,7 @@ the proof shows, and add `Not claimed: …` (owner, 2026-11-11;
 [lesson](../lessons-learned/claim-bigger-than-its-proof.md)). The reviewer tests these claims
 first ([review guide §3](../review-guide.md#3-verify-what-the-evidence-proves)).
 
-In the `Defect and review fixes` table, "Same cause as an earlier fix?" covers earlier PRs too.
+In a ledger row, "Same cause as an earlier fix?" covers earlier PRs too.
 Name the search of the prevention actions
 ([delivery quality §7](../delivery-quality.md#7-update-and-assess)) and of the
 [lessons](../lessons-learned/README.md) in the answer.
@@ -78,9 +80,11 @@ states no state, count or result that a file or a tool owns:
 - The result of a review round lives only in its row of the round log.
 - The counts of the Audit row and of each `Ledger` row of the register: `pnpm records:counts --write`
   writes them from the rows, and CI checks them. Nobody types them, in the ledger or in the body.
-- The "Same cause as an earlier fix?" answer and its search live in the `Defect and review fixes`
-  table (`AGENTS.md` §9). The search is a command or a list of the places read, with its hits. A
-  ledger row does not repeat the answer; its last cell links the related ids.
+- The "Same cause as an earlier fix?" answer and its search live in the "Fix and verification"
+  cell of the ledger row, in the form `Same cause: yes|no (search: <command or places>: <hits>)`
+  (`AGENTS.md` §9). For a yes, the row names the earlier fix and the owner's decision. The
+  `Defect and review fixes` section of the body names the rows. `pnpm records:counts` fails on a row
+  from DQ-751 on with no such answer; it does not check that the search is right.
 - A `docs/status.md` line of a PR has its state, its date and its link. It has no list of files, no
   count and no claim that a test or a row owns.
 - The results of a script live in its output. The PR body pastes the output unchanged, with the

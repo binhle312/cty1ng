@@ -291,11 +291,29 @@ function staleProblems(ledger: Ledger): string[] {
   return problems;
 }
 
+// The first id whose row must hold its "Same cause?" answer with the search (AGENTS.md §9; owner,
+// 2026-11-18, q4 Q3 A: the ledger rows are the home). Older rows put it in the PR description.
+const FIRST_ANSWERED_ID = 751;
+const ANSWER = /Same cause: (yes|no)\b[^|]*\bsearch\b/;
+
+function answerProblems(files: readonly LedgerFile[]): string[] {
+  return files.flatMap((file) =>
+    file.text.split("\n").flatMap((line) => {
+      const id = numberOf(ISSUE_ROW.exec(line)?.[1]);
+      if (id === undefined || id < FIRST_ANSWERED_ID || ANSWER.test(cellsOf(line)[8] ?? ""))
+        return [];
+      return [
+        `${file.path}: ${dq(id)} has no "Same cause: yes|no (search: …)" in its "Fix and verification" cell (AGENTS.md §9; each row from ${dq(FIRST_ANSWERED_ID)} on).`,
+      ];
+    }),
+  );
+}
+
 // Every problem: the structure of the files, then each owned cell that differs from the rows.
 export function checkCounts(files: readonly LedgerFile[]): string[] {
   const { ledger, problems } = readLedger(files);
   if (ledger === undefined) return problems;
-  return [...structureProblems(ledger), ...staleProblems(ledger)];
+  return [...structureProblems(ledger), ...answerProblems(files), ...staleProblems(ledger)];
 }
 
 // The files with each owned cell written from the rows. With a structure problem, no file changes.

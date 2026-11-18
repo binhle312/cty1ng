@@ -328,6 +328,39 @@ describe("structure problems", () => {
   });
 });
 
+describe("the Same cause answer of a row", () => {
+  // The rows of #100 from DQ-751 on, with a fix cell; the other cells are right.
+  function rows(fix: string, id = 751): Fixture {
+    const row = issue({ id, pr: 100 }).replace("| Fix |", `| ${fix} |`);
+    return onePr({
+      registerRows: [
+        register({ pr: 10, cells: ["2 (DQ-001, DQ-002)", "1 (DQ-002)", "0", "1"] }),
+        register({ pr: 100, cells: [`1 (${dq(id)})`, "0", "0", "0"] }),
+      ],
+      audit: [
+        "#10, #100 (the register rows of this milestone)",
+        "3 itemized",
+        "1 (1 `open`)",
+        "0 in the 3 rows that record it; 0 rows do not record it",
+        "1 logged",
+      ],
+      issues: [issue({ id: 1, pr: 10 }), issue({ id: 2, pr: 10, state: "open" }), row],
+    });
+  }
+
+  it("reports a row from DQ-751 on whose fix cell has no answer with a search", () => {
+    expect(checkCounts(files(rows("`abc1234`: the fix. Same cause? No"))), "no search").toEqual([
+      `${MAIN}: DQ-751 has no "Same cause: yes|no (search: …)" in its "Fix and verification" cell (AGENTS.md §9; each row from DQ-751 on).`,
+    ]);
+  });
+
+  it("passes a row that answers with a search, and an older row with no answer", () => {
+    const answered = "`abc1234`: the fix. Same cause: no (search: `grep -n split`: no hit)";
+    expect(checkCounts(files(rows(answered))), "an answer with a search").toEqual([]);
+    expect(checkCounts(files(rows("`abc1234`: the fix", 750))), "DQ-750").toEqual([]);
+  });
+});
+
 describe("strayLedgerFiles", () => {
   it("reports a docs file outside the list that holds ledger rows, and not a file that only quotes an id", () => {
     const docs: LedgerFile[] = [

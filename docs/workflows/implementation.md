@@ -49,7 +49,7 @@ review` (`AGENTS.md` §7; lesson `flag-ui-choices-in-review-fixes.md`).
 **Merge bar.** Each finding has a severity. Only P1 and P2 block the merge; a P3 gets its
 ledger row, or a follow-up row if it has no DQ id ([merge bar](merge-bar.md)).
 **Fix the cause.** Apply the [root cause principle](../../.agents/skills/principle-fix-root-cause/SKILL.md).
-Record the search scope in the PR's "Same cause checked in" column ([PR template](pull-request.md)).
+Record the search scope in the "Same cause" answer of the ledger row ([one home for each fact](pull-request.md#one-home-for-each-fact)).
 If a finding has the same cause as an earlier fix, stop patching ([AGENTS.md §9](../../AGENTS.md#9-definition-of-done-every-pr)).
 
 ## Keep docs current

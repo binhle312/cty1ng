@@ -12,6 +12,9 @@ texts; no shared state, module boundary or screen flow)
 Approval: plan OK by the chief agent, 2026-11-18, against the owner's answers q4 Q3 A and Q6 A,
 revision 2 (the chief's answers to the three open questions are in the sections below); owner
 review pending
+Revision 3, chief agent, 2026-11-18, under q4 Q3 A ("the ledger rows are the home") and Q6 A: the
+"Same cause?" answer and its search move into the ledger row, with one sentence of `AGENTS.md` §9
+(the owner merges this PR)
 
 ## The cause
 
@@ -53,7 +56,7 @@ others: a script writes every count, and the other records link to the row that 
 | Counts of a PR (unique, open, escaped, rounds) | Register row (by hand); §2 paragraph; PR description ("two round rows") | Register row of a PR with coverage `Ledger`, written by the script |
 | State, fix commit and test of an issue | Ledger row; §2 paragraph ("fixed in `c8923ef`"); the Fix and Test columns of the description table; `docs/status.md` lines | Ledger row only; the description names the id |
 | Result of a review round | Round row; description ("round 2 confirmed …"); §2 paragraph | Round row only |
-| "Same cause as an earlier fix?" answer and its search | Description table (`AGENTS.md` §9) and the Fix cell of the ledger row | Description table only (`AGENTS.md` §9 unchanged); the row's last cell links the related ids |
+| "Same cause as an earlier fix?" answer and its search | Description table (`AGENTS.md` §9) and the Fix cell of the ledger row | The ledger row only, checked from DQ-751 on by the script (revision 3; `AGENTS.md` §9); the description names the rows |
 | What a merged PR delivered | `docs/status.md` line (with file lists and claims, DQ-668, DQ-712) | `docs/status.md`: the state and a link, no file list, no count, no claim that a test owns |
 | Owner answers, reserved id ranges | §2 paragraphs, ledger rows, `plans/README.md` | The ledger row of the issue; the plan approval in `plans/README.md`; a range needs no record (each PR greps the branches) |
 
@@ -116,12 +119,11 @@ home goes into its ledger row first. This removes 13,935 bytes and three wrong s
 - The template gets a section `## Records`: "Ledger rows DQ-a to DQ-b, the round rows of #N in
   §6 and the register row (`docs/delivery-quality.md`). `pnpm records:counts` passes (CI). This
   description holds no state, count, fix commit or round result."
-- The `Defect and review fixes` table keeps Finding (now the id), Cause, Same cause checked in
-  (the search command and its hits) and Same cause as an earlier fix?. It drops Fix and Test: the
-  row has them. `AGENTS.md` §9 stays as it is: the answer is in that table.
-- "One home for each fact" adds: the script writes the counts and nobody types them; a ledger row
-  does not repeat the "Same cause?" answer (its last cell links the related ids); a `status.md`
-  line has the state and the link of the PR, with no file list, count or claim.
+- The `Defect and review fixes` table names the rows. The row holds the cause, the fix, the test
+  and the "Same cause?" answer with its search (revision 3; `AGENTS.md` §9 changes one sentence).
+- "One home for each fact" adds: the script writes the counts and nobody types them; the ledger
+  row holds the "Same cause?" answer with its search (revision 3); a `status.md` line has the
+  state and the link of the PR, with no file list, count or claim.
 - "Before each push" adds a step: after the merge of `origin/main`, run
   `pnpm records:counts --write`; CI runs the check.
 
@@ -175,6 +177,8 @@ files, each difference checked against its rows.
 - The script does not check that a row is true (its state against the commit, its test). The
   reviewer checks that.
 - It does not read PR descriptions or `docs/status.md`; the link rule there is a written rule.
+- It checks that a row from DQ-751 on has a "Same cause" answer with the word "search"; it does
+  not check that the search is right or complete (revision 3).
 - It does not check the 600-byte limit of a row (pull-request.md step 7; about 120 rows are over it
   on `main`) or the file size (§7 step 6).
 - Rows of a PR branch count only after that branch merges. Two PRs that merge one after the other
