@@ -18,6 +18,7 @@
     "check:index": "tsx scripts/check-index.ts",
     "check:events": "tsx scripts/check-events.ts",
     "check:status": "tsx scripts/check-status.ts",
+    "records:counts": "tsx scripts/records-counts.ts",
     "check:breaks": "tsx scripts/check-breaks.ts",
     "check:bundle": "tsx scripts/check-bundle.ts",
     "gen:api": "tsx scripts/gen-api.ts",
