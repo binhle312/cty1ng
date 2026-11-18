@@ -17,21 +17,23 @@ A plan is a record, not spec. If a plan and an owning document differ, the ownin
 4. Commit each revision to the same file. Git history keeps the old revisions.
 5. When the owner approves, write the date, the revision and the owner's decisions in the file.
    Do this before the first build commit.
-6. After the approval, change the plan only for a change of the design or a new owner decision,
-   with its approval. Change the design text in place, and add a line under `Approval:` with the
-   date, the revision and who approved it. A new plan in the same slice, such as a redesign after a
+6. After the approval, a change of the design or a new owner decision needs its approval. Change
+   the design text in place, and add a line under `Approval:` with the date, the revision and who
+   approved it. A correction that changes no design and no decision, such as a typo, a link or a
+   claim made smaller, needs no approval. A new plan in the same slice, such as a redesign after a
    review, gets its own file.
-   A plan holds no build facts: the red runs, the test names and counts as built, the proof logs,
-   and each difference between the plan and the build. They go only in the PR description
-   ([pull-request.md](../workflows/pull-request.md#one-home-for-each-fact)). A difference that
-   changes the design or an owner decision is a change of the plan, and it needs the approval
-   first.
+   A plan holds no build facts: the red runs, the test names and counts as built, the proof logs
+   and commands, and each difference between the plan and the build. They go only in the PR
+   description ([pull-request.md](../workflows/pull-request.md#one-home-for-each-fact)). A
+   difference that changes the design or an owner decision is a change of the plan, and it needs
+   the approval first.
 7. Put a change in behaviour in the owning document, in the same PR.
 8. Add the file to the table below in the same commit. `pnpm check:index` fails if the table and
    the folder differ.
 
-Plans merged before rule 6 (2026-11-18) can have a section of build facts, such as "What the
-build changed" or "Build notes". That section is history, and nobody keeps it up to date.
+Plans written before rule 6 (#133), also the plans of PRs that were open then, can have a section
+of build facts, such as "What the build changed" or "Build notes". That section is history, and
+nobody keeps it up to date.
 
 ## Plans
 
