@@ -1,0 +1,324 @@
+{
+  "claims": [
+    {
+      "id": "S1",
+      "claim": "The History tab gives the load error of the versions an alert",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-history.test.tsx",
+        "name": "gives the load error of the versions an alert"
+      },
+      "assertion": "expect(message.closest(\"[role='alert']\"), \"the alert of the versions\").not.toBeNull();",
+      "breaks": [
+        {
+          "id": "S1-a",
+          "file": "frontend/src/features/skills/load-error.tsx",
+          "edits": [
+            {
+              "find": "<div role=\"alert\" className",
+              "replace": "<div role=\"note\" className"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "claim": "Try again of the versions loads them again",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-history.test.tsx",
+        "name": "loads the versions again from Try again"
+      },
+      "assertion": "expect(await screen.findByRole(\"list\", { name: \"Versions\" }, WAIT)).toBeTruthy();",
+      "breaks": [
+        {
+          "id": "S2-a",
+          "file": "frontend/src/features/skills/skill-history.tsx",
+          "edits": [
+            {
+              "find": "onRetry={() => void versions.refetch()}",
+              "replace": "onRetry={() => undefined}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S3",
+      "claim": "The History tab gives the load error of the changes an alert",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-history.test.tsx",
+        "name": "gives the load error of the changes an alert"
+      },
+      "assertion": "expect(message.closest(\"[role='alert']\"), \"the alert of the changes\").not.toBeNull();",
+      "breaks": [
+        {
+          "id": "S3-a",
+          "file": "frontend/src/features/skills/load-error.tsx",
+          "edits": [
+            {
+              "find": "<div role=\"alert\" className",
+              "replace": "<div role=\"note\" className"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S4",
+      "claim": "Try again of the changes loads them again",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-history.test.tsx",
+        "name": "loads the changes again from Try again"
+      },
+      "assertion": "expect(await screen.findByText(\"v1-v3 added\", {}, WAIT)).toBeTruthy();",
+      "breaks": [
+        {
+          "id": "S4-a",
+          "file": "frontend/src/features/skills/skill-history.tsx",
+          "edits": [
+            {
+              "find": "onRetry={() => void diff.refetch()}",
+              "replace": "onRetry={() => undefined}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S5",
+      "claim": "The stand-in of a failed roster keeps its avatars when a new bot list comes",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/shell/roster-load-failed.test.tsx",
+        "name": "keeps the avatars that it shows when a new bot list comes"
+      },
+      "assertion": "expect(first?.isConnected, \"the first avatar is the same element\").toBe(true);",
+      "breaks": [
+        {
+          "id": "S5-a",
+          "file": "frontend/src/features/shell/top-header.tsx",
+          "edits": [
+            {
+              "find": "errorComponent={RosterFailed}",
+              "replace": "errorComponent={() => <RosterFailed />}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S6",
+      "claim": "Step 3 says that deprecated skills cannot be added",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/bots/create-bot-page.test.tsx",
+        "name": "says on step 3 that deprecated skills cannot be added"
+      },
+      "assertion": "expect(await screen.findByText(/You cannot add deprecated skills\\./)).toBeTruthy();",
+      "breaks": [
+        {
+          "id": "S6-a",
+          "file": "frontend/src/features/bots/create-bot-steps.tsx",
+          "edits": [
+            {
+              "find": "You cannot add deprecated skills.",
+              "replace": "Deprecated skills are not in the list."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S7",
+      "claim": "The Deprecate dialog gives the new reason when the bots did not load",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-dialogs.test.tsx",
+        "name": "says when the bots did not load"
+      },
+      "assertion": "expect(await screen.findByText(NOT_LOADED_REASON), \"the reason of Deprecate\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "S7-a",
+          "file": "frontend/src/features/skills/skill-dialogs.tsx",
+          "edits": [
+            {
+              "find": "  if (bots.kind === \"error\") return \"The app must know which bots use this skill. Try again first.\";",
+              "replace": "  if (bots.kind === \"error\") return \"The bots did not load. Try again first.\";"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S8",
+      "claim": "The Remove from bots dialog gives the new reason when the bots did not load",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-dialogs.test.tsx",
+        "name": "gives the new reason on the confirm button of the Remove from bots dialog"
+      },
+      "assertion": "expect(await screen.findByText(NOT_LOADED_REASON), \"the reason of Remove\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "S8-a",
+          "file": "frontend/src/features/skills/skill-dialogs.tsx",
+          "edits": [
+            {
+              "find": "  if (bots.kind === \"error\") return \"The app must know which bots use this skill. Try again first.\";",
+              "replace": "  if (bots.kind === \"error\") return \"The bots did not load. Try again first.\";"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S9",
+      "claim": "The Delete dialog gives the new reason when the bots did not load",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/skill-dialogs.test.tsx",
+        "name": "gives the new reason on the confirm button of the Delete dialog"
+      },
+      "assertion": "expect(await screen.findByText(NOT_LOADED_REASON), \"the reason of Delete\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "S9-a",
+          "file": "frontend/src/features/skills/skill-dialogs.tsx",
+          "edits": [
+            {
+              "find": "  if (bots.kind === \"error\") return \"The app must know which bots use this skill. Try again first.\";",
+              "replace": "  if (bots.kind === \"error\") return \"The bots did not load. Try again first.\";"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S10",
+      "claim": "The error screen of a Skills page is an h2",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/placeholder/error-page.test.tsx",
+        "name": "makes the error screen of a Skills page an h2 beside the list column"
+      },
+      "assertion": "expect(await errorH2(), \"the error screen\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "S10-a",
+          "file": "frontend/src/routes/skills.lazy.tsx",
+          "edits": [
+            {
+              "find": "  component: SkillsIndexPage,\n  errorComponent: SkillsPageError,",
+              "replace": "  component: SkillsIndexPage,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S11",
+      "claim": "Page not found of an unknown skill is an h2",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/placeholder/error-page.test.tsx",
+        "name": "makes Page not found of an unknown skill an h2 beside the list column"
+      },
+      "assertion": "expect(await notFoundH2(), \"the unknown skill\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "S11-a",
+          "file": "frontend/src/features/skills/skill-page.tsx",
+          "edits": [
+            {
+              "find": "<NotFoundPage level={2} />",
+              "replace": "<NotFoundPage />"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S12",
+      "claim": "Page not found of a Clone with no source is an h2",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/placeholder/error-page.test.tsx",
+        "name": "makes Page not found of a Clone with no source an h2 beside the list column"
+      },
+      "assertion": "expect(await notFoundH2(), \"the Clone with no source\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "S12-a",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "<NotFoundPage level={2} />",
+              "replace": "<NotFoundPage />"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S13",
+      "claim": "The Upgrade card gives its reason when the bots did not load",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/after-save-cards.test.tsx",
+        "name": "says, when the bots did not load, that the Upgrade card needs to know the bots"
+      },
+      "assertion": "expect(await screen.findByText(UPGRADE_REASON), \"the reason of Upgrade\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "S13-a",
+          "file": "frontend/src/features/skills/after-save-cards.tsx",
+          "edits": [
+            {
+              "find": "botsOffReason(bots, \"upgrade\")",
+              "replace": "botsOffReason(bots, \"assign\")"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S14",
+      "claim": "The Assign card gives its reason when the bots did not load",
+      "test": {
+        "kind": "vitest",
+        "file": "frontend/src/features/skills/after-save-cards.test.tsx",
+        "name": "says, when the bots did not load, that the Assign card needs to know the bots"
+      },
+      "assertion": "expect(await screen.findByText(ASSIGN_REASON), \"the reason of Assign\").toBeTruthy();",
+      "breaks": [
+        {
+          "id": "S14-a",
+          "file": "frontend/src/features/skills/after-save-cards.tsx",
+          "edits": [
+            {
+              "find": "botsOffReason(bots, \"assign\")",
+              "replace": "botsOffReason(bots, \"upgrade\")"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "frontend/src/features/placeholder/error-page.test.tsx",
+      "name": "keeps the h1 of Page not found outside the Skills page",
+      "reason": "Passes on the old code: it guards the default level 1 (no behaviour change claimed)"
+    },
+    {
+      "file": "frontend/src/features/placeholder/error-page.test.tsx",
+      "name": "keeps the h1 of the error screen outside the Skills page",
+      "reason": "Passes on the old code: it guards the default level 1 (no behaviour change claimed)"
+    }
+  ]
+}
