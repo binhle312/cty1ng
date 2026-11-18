@@ -104,9 +104,9 @@ the check fail with a message; none passes in silence.
 | A merged PR with a link in a Done row passes, also in a row with several links | Fixture with the link | Same |
 | A squash merge `… (#9)` is a merged PR | Fixture | Same |
 | A PR merged before the start date is ignored; a PR merged on the start date counts | Two fixture merges, `since` between and on them | Same |
-| A link outside the Done table does not count | The link only in `## Slices` | Same |
+| A link outside the Done table does not count | A dated row with the link in a section after the Done table (a `## Slices` row has no date, so it is a broken row and counts no link even without the section bounds) | Same |
 | A broken Done row is a problem and counts no link; no `## Done` is a problem | Fixtures | Same |
-| A PR that is not merged into `main` is ignored: a `Merge pull request` on a side branch, and the PR of the commit itself | A temporary git repo: `main` with a `--no-ff` merge of #1, a branch that merges #2 into it before it merges as #3, and a commit on top; `readHistory(repo, "HEAD^1")` returns #1 and #3, not #2 or the top | Same |
+| A PR that is not merged into `main` is ignored: a `Merge pull request` on a side branch, and the PR of the commit itself | A temporary git repo: `main` with a `--no-ff` merge of #1, a branch that merges #2 into it before it merges as #3, and a merge of #4 on top; `readHistory(repo, "HEAD")` returns #4, #3 and #1, not #2; `readHistory(repo, "HEAD^1")` returns #3 and #1. No test reads the `--history HEAD^1` line of `ci.yml` | Same |
 | A shallow clone is a problem | `git clone --depth 1` of the temporary repo | Same |
 
 The real red run: `pnpm check:status` on the status.md of `main` must list the 16 PRs of probe 3
@@ -132,15 +132,6 @@ counted outside `## Done`.
 - A PR merged into another PR's branch (#95, #112) is not a PR merged into `main`, and the check
   does not ask for its row.
 - The job does not stop a merge unless the owner makes it a required check.
-
-## Changes during the build (2026-11-18)
-
-- The test "a link outside the Done table" puts the link in a section after the Done table, not in
-  `## Slices`: a `## Slices` row has no date, so it is a broken row there and counted no link even
-  with the section bounds removed. A dated row after the Done table needs the end bound.
-- The test of "the PR of the commit itself" came in the round 1 fix commit (R1-2): a merge of #4 on
-  top, and `readHistory(repo, "HEAD^1")` lists #3 and #1. It tests `readHistory` with `HEAD^1`; no
-  test reads the `--history HEAD^1` line of `ci.yml`.
 
 ## Open questions
 
