@@ -5,7 +5,7 @@ Checkpoint: none (test helper and lint config only; no product code, no UI; the 
 Approval: Owner, 2026-11-18, q5 Q5 A (the design); plan review: chief agent, 2026-11-18 (with two changes: the rule covers the frontend and shared tests too, and this plan has its own file); owner review pending
 
 Revision 2 (2026-11-18, after review round 1 of the redesign; no change of the owner's decision):
-the plan text now matches the build in five places: the status of the bots test is checked inside
+the plan text now matches the build in six places: the status of the bots test is checked inside
 `work` and its error body after the runs (R1-3); the break of the PATCH test is in `firstSensitive`,
 the function that the save paths call (R1-3); the words about the state that the PATCH test
 checks are smaller (R1-4); each test holds its limit in one constant that the helper and the

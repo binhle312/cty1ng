@@ -40,7 +40,7 @@
         "file": "backend/src/core/guard/sensitive-data.rules.test.ts",
         "name": "scans a 1 MB line of short code-like words in well under a second"
       },
-      "assertion": "expect(fastest).toBeLessThan(limitMs);",
+      "assertion": "expect(fastest, \"short code-like words: fastest of up to 3\").toBeLessThan(limitMs);",
       "breaks": [
         {
           "id": "G0-wait-for-the-line",
@@ -170,7 +170,7 @@
     {
       "file": "scripts/lint-rules.test.ts",
       "name": "allows it in $label",
-      "reason": "test first: the red run is in the PR description"
+      "reason": "records what the rule leaves alone: the cases pass with no rule, so they have no red run (the cases that the rule must refuse have one, in the PR description)"
     },
     {
       "file": "scripts/lint-rules.test.ts",
@@ -180,7 +180,7 @@
     {
       "file": "scripts/lint-rules.test.ts",
       "name": "does not see $label",
-      "reason": "test first: the red run is in the PR description"
+      "reason": "records what the rule leaves alone: the cases pass with no rule, so they have no red run (the cases that the rule must refuse have one, in the PR description)"
     }
   ]
 }

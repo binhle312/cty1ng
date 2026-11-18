@@ -60,7 +60,7 @@ describe("findSensitive (D39)", () => {
       findSensitive(line);
       findSensitive(`passport ${line}`);
     }, limitMs);
-    expect(fastest).toBeLessThan(limitMs);
+    expect(fastest, "short code-like words: fastest of up to 3").toBeLessThan(limitMs);
     expect(firstSensitive(`passport ${line}`)).toEqual({
       kind: "passport",
       line: 1,
