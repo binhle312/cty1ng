@@ -1,8 +1,8 @@
 # Small fixes from the owner's answers of 2026-11-18
 
-Brief: the owner's answers of 2026-11-18 to DQ-442, DQ-500, DQ-485, DQ-411 (UI-1), item 61 (UI-2), #123 (UI-3) and DQ-426; no task brief exists
+Brief: the owner's answers of 2026-11-18 to DQ-442, DQ-500, DQ-485, DQ-411 (UI-1), item 61 (UI-2), #123 (UI-3), DQ-426 and the after-save cards (Q2 A); no task brief exists
 Checkpoint: none (seven small changes; the owner gave each answer and each text)
-Approval: UI texts and scope: the owner's answers of 2026-11-18. Plan OK by the chief agent, 2026-11-18, against the owner's answers (DQ-442 B, DQ-500 C, DQ-485 C, DQ-426 A, UI-1 A, UI-2 B, UI-3 A).
+Approval: UI texts and scope: the owner's answers of 2026-11-18. Plan OK by the chief agent, 2026-11-18, against the owner's answers (DQ-442 B, DQ-500 C, DQ-485 C, DQ-426 A, UI-1 A, UI-2 B, UI-3 A). Item 8 approved by the owner, 2026-11-18 (after-save cards, Q2 A).
 
 Code read at `origin/main` = `aa85cb9` (#124 merged). I read each place; I have not run the wrong
 behaviour yet. The red runs are in the build step.
@@ -23,14 +23,10 @@ the table).
 | 5 | Item 61 / UI-2 B | `skill-dialogs.tsx:63`: "The bots did not load. Try again first." | The reason becomes "The app must know which bots use this skill. Try again first." The error text "The app could not load the bots." stays. `skills-page.md:574` gives the old reason for the Deprecate, Remove from bots and Delete dialogs: update it | `skill-dialogs.tsx`, `skills-page.md` |
 | 6 | #123 / UI-3 A | `error-page.tsx` and `not-found-page.tsx` have an `h1`. Inside the Skills page they show beside the list column with its `h1` "Skills": two `h1` | Both components take `level?: 1 \| 2` (default 1). The Skills page uses `2`: `skill-page.tsx:106` and `new-skill-page.tsx:94` (Page not found), and the four lazy child routes of `skills.lazy.tsx` get an `errorComponent` that renders `<ErrorPage level={2} />`. Texts and buttons stay. Remove the Follow-ups row of #123 from `status.md` (the row that says "Two `h1` headings on the Skills page") | `error-page.tsx`, `not-found-page.tsx`, `skill-page.tsx`, `new-skill-page.tsx`, `routes/skills.lazy.tsx`, `docs/status.md` |
 | 7 | DQ-426 A | The Guide line "A deprecated skill is read-only; "Make active again" in its banner ..." does not name "Remove from bots" | The Guide names "Make active again", "Remove from bots" (hidden when no bot uses the skill; `skills-page.md` §10.2) and "Show deprecated" | `seed/skills/using-the-app/SKILL.md` |
+| 8 | After-save cards, Q2 A | `after-save-cards.tsx` `botsOffReason`: "The bots did not load. Try again first." for both cards | Upgrade card: "The app must know which bots use this skill. Try again first." Assign card: "The app must know which bots can get this skill. Try again first." "Loading the bots." stays. `skills-page.md` "The bot list of a card" gives both texts. No ledger row: the owner's decision | `after-save-cards.tsx`, `skills-page.md` |
 
 Not claimed, and not in this PR:
 
-- The after-save cards (`after-save-cards.tsx:223`, `skills-page.md:210`) use the same old reason
-  "The bots did not load. Try again first.". The owner's answer 5 names the dialogs of
-  `skill-dialogs.tsx` only. I keep the cards as they are. The chief agent asks the owner on
-  2026-11-18 (same reason in the cards: yes or no). If yes, it joins this PR as item 8 before the
-  PR opens. If no, it is the owner's decision, not a finding. No ledger row now.
 - Error screens outside the Skills page keep their `h1`.
 - A route-level `notFoundComponent` for an unknown address below `/skills` (for example
   `/skills/a/b`) is not changed.
@@ -63,6 +59,7 @@ their expected text in the same commit as the code (they are the red tests of it
 | 4 | `create-bot-page.test.tsx`, one new test | Step 3 shows "You cannot add deprecated skills." and does not show "Deprecated skills are not in the list." | The old sentence is shown |
 | 5 | `skill-dialogs.test.tsx:117`, expected text changed | The Deprecate dialog with a bot list that did not load: the alert says "The app could not load the bots." and the focused confirm button gives the new reason. I add the Remove from bots and the Delete dialogs to the same test if they use `botsReason` (check in the build) | The old reason is shown |
 | 6 | `error-page.test.tsx`, one new test; `not-found-page.test.tsx` (new, small); `skill-page.test.tsx` and `new-skill-page.test.tsx`, one assertion each | (a) At `/skills`, the index page throws: the list column is still shown, exactly one `h1` ("Skills") and the error screen is an `h2` with the same text and buttons. (b) `/skills/unknown`: one `h1`, "Page not found" is an `h2`. (c) The Clone page with no source: the same. (d) Outside the Skills page (a throw at `/`) the heading stays an `h1` (default). (e) The component test: `level={2}` gives an `h2`, no level gives an `h1` | Two `h1` today |
+| 8 | `after-save-cards.test.tsx`, two tests | Upgrade: the existing failed-list test now also reads the reason on the focused Upgrade button. Assign: the card mounted with a failed bot read, the focused Assign button gives its reason | The old reason is shown |
 | 7 | none (a Guide sentence) | The Guide text is read by `check:index`/lint only. Proof: the seed file diff and a reading against `skills-page.md` §10.2 | n/a |
 
 Order and timing cases: only item 2 and item 1 have any. Item 2: the node identity test is the
@@ -85,6 +82,7 @@ each test of the table above where a value change is clear, and write the red ru
 | S5 | item 6 Skills page one `h1` | `skill-page.tsx`: `level={1}` |
 | S6 | item 6 error screen in the Skills page | `skills.lazy.tsx`: remove the `errorComponent` |
 | S7 | item 4 note text | `create-bot-steps.tsx`: the old sentence |
+| S8 | item 8 Upgrade and Assign reasons | `after-save-cards.tsx`: the Assign text for the Upgrade card |
 
 The full `pnpm check:breaks scripts/breaks/pr-<n>.json` runs before the push with the TMPDIR line
 of the chief (outside every git repository). 0 problems is the bar. No test change is pushed
@@ -108,11 +106,10 @@ before the runner checked it.
 
 - UI texts: approved by the owner, 2026-11-18 (DQ-442 B: Try again and `role="alert"`, no new
   text; DQ-411 UI-1 A: "You cannot add deprecated skills."; item 61 UI-2 B: "The app must know
-  which bots use this skill. Try again first."; #123 UI-3 A: heading level).
+  which bots use this skill. Try again first."; #123 UI-3 A: heading level; after-save cards, Q2 A: the Upgrade and Assign reasons).
 - Scope: the owner's answers of 2026-11-18 (DQ-500 C, DQ-485 C, DQ-426 A).
 - No migration, no dependency, no public API change, no security code.
 
 ## 6. Open questions
 
-None for the owner. Question for the chief: the after-save cards keep the old reason text (see
-section 1, "Not claimed"). I plan a ledger row, not a fix.
+None.
