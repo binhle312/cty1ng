@@ -206,7 +206,7 @@
         "file": "frontend/src/features/placeholder/error-page.test.tsx",
         "name": "makes the error screen of a Skills page an h2 beside the list column"
       },
-      "assertion": "expect(await errorH2(), \"the error screen\").toBeTruthy();",
+      "assertion": "expect(errorH2(), \"the error screen\").not.toBeNull();",
       "breaks": [
         {
           "id": "S10-a",
@@ -228,7 +228,7 @@
         "file": "frontend/src/features/placeholder/error-page.test.tsx",
         "name": "makes Page not found of an unknown skill an h2 beside the list column"
       },
-      "assertion": "expect(await notFoundH2(), \"the unknown skill\").toBeTruthy();",
+      "assertion": "expect(notFoundH2(), \"the unknown skill\").not.toBeNull();",
       "breaks": [
         {
           "id": "S11-a",
@@ -250,7 +250,7 @@
         "file": "frontend/src/features/placeholder/error-page.test.tsx",
         "name": "makes Page not found of a Clone with no source an h2 beside the list column"
       },
-      "assertion": "expect(await notFoundH2(), \"the Clone with no source\").toBeTruthy();",
+      "assertion": "expect(notFoundH2(), \"the Clone with no source\").not.toBeNull();",
       "breaks": [
         {
           "id": "S12-a",
