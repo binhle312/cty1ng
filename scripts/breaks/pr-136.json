@@ -53,7 +53,45 @@
           ]
         }
       ]
+    },
+    {
+      "id": "C3",
+      "claim": "check:breaks:static passes a PR with no list when the PR adds or changes no test (the kept case of the redesign of DQ-782)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-breaks-static.test.ts",
+        "name": "passes a PR with no list when the PR adds or changes no test"
+      },
+      "assertion": "expect(run.stdout).toContain(`no break list ${LIST}, and the PR adds or changes no test`);",
+      "breaks": [
+        {
+          "id": "C3-no-list-always-fails",
+          "file": "scripts/check-breaks-static.ts",
+          "edits": [
+            {
+              "find": "  if (problems.length === 0) {\n",
+              "replace": "  if (problems.length < 0) {\n"
+            }
+          ]
+        }
+      ]
     }
   ],
-  "exempt": []
+  "exempt": [
+    {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "fails a PR with no list when the PR adds a test",
+      "reason": "test first: red run on 5c2ca54 in the PR"
+    },
+    {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "fails a PR with no list when the PR changes a line of an existing test",
+      "reason": "test first: red run on 5c2ca54 in the PR"
+    },
+    {
+      "file": "scripts/check-breaks-static.test.ts",
+      "name": "fails a list with an exemption that has no reason",
+      "reason": "test first: red run on 5c2ca54 in the PR"
+    }
+  ]
 }
