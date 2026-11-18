@@ -77,7 +77,9 @@ describe("SKILL.md", () => {
       const keys = Array.from({ length: 40_000 }, (_, index) => `key${String(index)}: 1`);
       const text = `---\nname: a\ndescription: d\n${keys.join("\n")}\n---\n`;
       // The limit is checked on the fastest of up to 3 runs (backend/test/timed.ts): a busy machine
-      // slows one run, a slow parse is slow on every run.
+      // slows one run, a slow parse is slow on every run. Margin, measured on 2026-11-18 (16 cores,
+      // 5 runs): one run took 1 to 2 ms alone and up to 15 ms under 24 busy processes, so the limit
+      // is 33 times the busy case.
       const fastest = fastestRun(() => {
         expect(parseSkillMd(text)).toEqual(tooLarge);
       }, 500);
@@ -113,7 +115,9 @@ describe("SKILL.md", () => {
 
     it("finds no closing --- line in a 1 MB file quickly", () => {
       const text = `---\n${"\n--".repeat(330_000)}`;
-      // The fastest of up to 3 runs, as in the test of 40,000 keys.
+      // The fastest of up to 3 runs, as in the test of 40,000 keys. Margin, measured on 2026-11-18
+      // (16 cores, 5 runs): one run took 3 to 11 ms alone and up to 27 ms under 24 busy processes,
+      // so the limit is 18 times the busy case.
       const fastest = fastestRun(() => {
         expect(parseSkillMd(text)).toEqual({
           invalid: "The file has no frontmatter between --- lines.",
