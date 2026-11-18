@@ -6,11 +6,14 @@ import { log } from "../../lib/log.ts";
 // The router puts it in the place of the failed route, so the shell around it stays. It never
 // shows the error itself (AGENTS.md §8). Try again loads the routes again: the router makes new
 // matches, so the boundary resets, and a lazy page chunk that failed loads again.
-export function ErrorPage() {
+// `level` is the heading level: 1, or 2 where another heading already is the h1 of the page (beside
+// the list column of the Skills page; UI-3 A, owner, 2026-11-18).
+export function ErrorPage({ level = 1 }: { level?: 1 | 2 }) {
   const router = useRouter();
+  const Heading = level === 1 ? "h1" : "h2";
   return (
     <div role="alert" className="px-8 py-6">
-      <h1 className="text-xl font-semibold">Something went wrong</h1>
+      <Heading className="text-xl font-semibold">Something went wrong</Heading>
       <p className="mt-1 text-on-surface-muted">
         The app could not show this page. Try again, or go to Home.
       </p>

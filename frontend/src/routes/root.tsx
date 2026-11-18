@@ -9,5 +9,5 @@ export const rootRoute = createRootRoute({
       <Outlet />
     </AppShell>
   ),
-  notFoundComponent: NotFoundPage,
+  notFoundComponent: () => <NotFoundPage />,
 });
