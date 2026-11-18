@@ -40,6 +40,7 @@ const AnyObject = z.record(z.string(), z.unknown());
 const ErrorBody = z.object({
   error: z.object({
     code: z.string(),
+    message: z.string(),
     field: z.string().optional(),
     current: z.unknown().optional(),
   }),
@@ -95,6 +96,41 @@ describe("POST /bots", () => {
     expect(await errorOf(response)).toMatchObject({
       code: "validation_error",
       field: "pins[0].skill_id",
+    });
+  });
+
+  // DQ-385 (api.md §1): `field` is the first unknown key, never the keys joined with a dot, which
+  // the format reads as a key inside a key. The message names every unknown key.
+  it("names one unknown key in field and message", async () => {
+    const { response } = await createBot({ ...newBot, nmae: "x" });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toMatchObject({
+      code: "validation_error",
+      field: "nmae",
+      message: "Unknown field: nmae.",
+    });
+  });
+
+  it("names the first of two unknown keys in field and both in the message", async () => {
+    const { response } = await createBot({ ...newBot, nmae: "x", colr: "y" });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toMatchObject({
+      code: "validation_error",
+      field: "nmae",
+      message: "Unknown fields: nmae, colr.",
+    });
+  });
+
+  it("names the full path to an unknown key inside a list item", async () => {
+    const { response } = await createBot({
+      ...newBot,
+      pins: [{ skill_id: "skill_01jb8x6p0afqz8r2m3k5t7v9wx", always_load: false, extra: 1 }],
+    });
+    expect(response.status).toBe(422);
+    expect(await errorOf(response)).toMatchObject({
+      code: "validation_error",
+      field: "pins[0].extra",
+      message: "Unknown field: extra.",
     });
   });
 

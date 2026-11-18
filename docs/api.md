@@ -16,8 +16,12 @@ Read conventions and errors, then the endpoint group in scope and its referenced
   is an id that does not exist: it gets the answer of an unknown id, for example 404. Timestamps
   are ISO-8601 UTC.
 - Request schemas forbid unknown fields (Zod `.strict()`) so typos and forbidden fields
-  (like `model_id` on bot update) fail loudly with 422. The OpenAPI document and the dev docs page
-  are not Zod routes, and they refuse a query key with the same 422 `validation_error`.
+  (like `model_id` on bot update) fail loudly with 422 `validation_error`. With unknown fields in one
+  object, `field` is the first unknown key with its full path (`pins[0].extra`), and the message
+  names every unknown key (`Unknown fields: nmae, colr.`; one key: `Unknown field: nmae.`). Unknown
+  keys of one object are not joined into `field`, because `a.b` means the key `b` inside `a`. The
+  OpenAPI document and the dev docs page are not Zod routes, and they refuse a query key with the
+  same 422 `validation_error`.
 - A version number in the path or the query (`{version}`, `from`, `to`) is digits with no leading
   zero, within the safe integer range; `0x2`, `2.0` or `1e0` gets 422 `validation_error`.
 - Lists are cursor-paginated where they can grow: `?before_seq=` / `?limit=` (max 100).

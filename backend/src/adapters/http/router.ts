@@ -16,9 +16,16 @@ export function createRouter() {
       if (result.target === "param" && String(issue.path.at(-1)).endsWith("id")) {
         throw new ApiFailure("invalid_id", issue.message, fieldPath(issue.path));
       }
-      // An unknown field (Zod `.strict()`) names the field in `keys`, not in `path`.
-      const path = issue.code === "unrecognized_keys" ? [...issue.path, ...issue.keys] : issue.path;
-      const field = fieldPath(path);
+      // An unknown field (Zod `.strict()`) names its keys in `keys`, not in `path`. `field` is the
+      // first unknown key with its full path; the message names every unknown key (api.md §1).
+      if (issue.code === "unrecognized_keys") {
+        throw new ApiFailure(
+          "validation_error",
+          `Unknown ${issue.keys.length === 1 ? "field" : "fields"}: ${issue.keys.join(", ")}.`,
+          fieldPath([...issue.path, ...issue.keys.slice(0, 1)]),
+        );
+      }
+      const field = fieldPath(issue.path);
       throw new ApiFailure("validation_error", issue.message, field === "" ? undefined : field);
     },
   });
