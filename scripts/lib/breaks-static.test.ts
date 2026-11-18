@@ -1,6 +1,6 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type BreakList, type Claim, lineOf } from "./breaks.ts";
 import { compileProblems, prProblems } from "./breaks-static.ts";
@@ -149,6 +149,8 @@ describe("compileProblems", () => {
           target: "ES2022",
           module: "ESNext",
           moduleResolution: "Bundler",
+          // No DOM: its types would make each check about two times slower.
+          lib: ["ES2022"],
           types: [],
         },
         include: ["app/**/*.ts"],
@@ -193,7 +195,7 @@ describe("compileProblems", () => {
   });
 
   it("compiles a broken file in each project of its package, also when only the second one reads it", () => {
-    const options = { strict: true, noEmit: true, target: "ES2022", types: [] };
+    const options = { strict: true, noEmit: true, target: "ES2022", lib: ["ES2022"], types: [] };
     write(
       "tsconfig.json",
       JSON.stringify({
@@ -229,22 +231,38 @@ describe("compileProblems", () => {
   });
 
   it("reads the packages that pnpm links, with no false errors on code that the break keeps", () => {
-    // Without the real path of each link, this page of the repository gets false errors
-    // (TS7006) from the types of its query library: the probe of the plan.
-    const repo = resolve(import.meta.dirname, "../..");
-    const page = "frontend/src/features/skills/skill-page.tsx";
-    const text = readFileSync(join(repo, page), "utf8");
-    const first = text.split("\n")[0] ?? "";
-    // The edit must apply, or the break is not compiled at all.
-    expect(lineOf(text, first)).toBe(1);
-    const readRepo = (path: string) => {
-      try {
-        return readFileSync(join(repo, path), "utf8");
-      } catch {
-        return null;
-      }
+    // A small copy of the layout of pnpm. The real case: without the real path of each link,
+    // `frontend/src/features/skills/skill-page.tsx:76` gets TS7006, because the query library
+    // that a linked package imports does not resolve. Here `a` is a link into the store, and
+    // `b`, which `a` imports, is found only from the real folder of `a`. If `b` does not
+    // resolve, `each` is `any`, and the kept code gets the same false error. The real frontend
+    // made this test take about 4 s alone, and over 20 s in the full suite.
+    const store = "node_modules/.pnpm";
+    const pack = (name: string, types: string) => {
+      const folder = `${store}/${name}@1.0.0/node_modules/${name}`;
+      write(
+        `${folder}/package.json`,
+        JSON.stringify({ name, version: "1.0.0", types: "index.d.ts" }),
+      );
+      write(`${folder}/index.d.ts`, types);
     };
-    const claims = [breakOf({ file: page, find: first, replace: first })];
-    expect(compileProblems({ claims, root: repo, read: readRepo })).toEqual([]);
+    pack("a", 'export { each } from "b";\n');
+    pack("b", "export declare function each(f: (item: { size: number }) => void): void;\n");
+    const linkOfB = join(root, `${store}/a@1.0.0/node_modules/b`);
+    symlinkSync("../../b@1.0.0/node_modules/b", linkOfB, "dir");
+    symlinkSync(".pnpm/a@1.0.0/node_modules/a", join(root, "node_modules/a"), "dir");
+    const kept = "each((item) => item.size);";
+    write("app/use.ts", `import { each } from "a";\n${kept}\n`);
+    // The edit must apply, or the break is not compiled at all (DQ-613).
+    expect(lineOf(readRoot("app/use.ts") ?? "", kept)).toBe(2);
+    const claims = [breakOf({ file: "app/use.ts", find: kept, replace: kept })];
+    const linked = compileProblems({ claims, root, read: readRoot });
+    expect(linked).toEqual([]);
+    // The layout needs `b`: without its link, the same break gets the false error.
+    rmSync(linkOfB);
+    const unlinked = compileProblems({ claims, root, read: readRoot });
+    expect(unlinked).toEqual([
+      "C1-a: the break does not compile: app/use.ts:2 TS7006 Parameter 'item' implicitly has an 'any' type.",
+    ]);
   });
 });
