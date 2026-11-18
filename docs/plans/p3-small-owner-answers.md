@@ -1,11 +1,11 @@
 # Small fixes from the owner's answers of 2026-11-18
 
 Brief: the owner's answers of 2026-11-18 to DQ-442, DQ-500, DQ-485, DQ-411 (UI-1), item 61 (UI-2), #123 (UI-3), DQ-426 and the after-save cards (Q2 A); no task brief exists
-Checkpoint: none (seven small changes; the owner gave each answer and each text)
+Checkpoint: none (eight small changes; the owner gave each answer and each text)
 Approval: UI texts and scope: the owner's answers of 2026-11-18. Plan OK by the chief agent, 2026-11-18, against the owner's answers (DQ-442 B, DQ-500 C, DQ-485 C, DQ-426 A, UI-1 A, UI-2 B, UI-3 A). Item 8 approved by the owner, 2026-11-18 (after-save cards, Q2 A).
 
-Code read at `origin/main` = `aa85cb9` (#124 merged). I read each place; I have not run the wrong
-behaviour yet. The red runs are in the build step.
+Code read at `origin/main` = `aa85cb9` (#124 merged). I read each place; The red runs are in the PR
+description. Revision 2 (2026-11-18, after round 1) replaces sections 2 and 3 with what was built.
 
 Nothing outside this scope enters the PR. A finding outside it gets a ledger row, not a fix.
 
@@ -18,10 +18,10 @@ the table).
 | --- | --- | --- | --- | --- |
 | 1 | DQ-442 B | `skill-history.tsx:91` and `:312`: a `<p>` with the load error, no **Try again**, no `role="alert"` | Use `LoadError` (the pattern of the skill dialogs and the bot cards) with `versions.refetch()` and `diff.refetch()`. The texts stay: "The app could not load the versions." and "The app could not load the changes." | `skill-history.tsx` |
 | 2 | DQ-500 C | `top-header.tsx:34`: `errorComponent={() => <RosterStandIn bots={all} failed />}` is a new function type on each header render, so React mounts the stand-in again each time | A module-level `RosterFailed` component that reads the bots with `useBots()` (the query is shared; `errorComponent` gets only `error` and `reset`) | `top-header.tsx` |
-| 3 | DQ-485 C | `routes/bots.tsx:30` cites "bot-page.md §1"; `bot-tabs.ts:1` cites "§1". The URL table is in the unnumbered intro of `bot-page.md`; the tab list is §3 | Comments only. Cite the headings by name: "the URL table in the intro of bot-page.md" and "bot-page.md, Tabs". The cite in `routes/bots.tsx:7` ("bot-page.md §1, create-bot-page.md §7") is the same wrong cite for the URLs, so I correct that line too (the chief agent said yes, 2026-11-18) | `routes/bots.tsx`, `features/bots/bot-tabs.ts` |
+| 3 | DQ-485 C | `routes/bots.tsx:30` cites "bot-page.md §1"; `bot-tabs.ts:1` cites "§1". The URL table is in the unnumbered intro of `bot-page.md`; the tab list is §3 | Comments only. Cite the headings by name: "the URL table in the intro of bot-page.md" and "bot-page.md, Tabs". The cite in `routes/bots.tsx:7` ("bot-page.md §1, create-bot-page.md §7") is the same wrong cite for the URLs, so I correct that line too (the chief agent said yes, 2026-11-18) | `routes/bots.tsx`, `features/bots/bot-tabs.ts`, and (round 1, same wrong cite) `features/bots/bot-page-top.tsx`, `test/e2e/bot-page.spec.ts` |
 | 4 | DQ-411 / UI-1 A | `create-bot-steps.tsx:463`: "... Deprecated skills are not in the list." | The last sentence becomes "You cannot add deprecated skills." `create-bot-page.md` step 3 states the fact (`:61-64`) and does not quote the note; I do not change it unless the build finds a quote (then I change the quote) | `create-bot-steps.tsx` |
 | 5 | Item 61 / UI-2 B | `skill-dialogs.tsx:63`: "The bots did not load. Try again first." | The reason becomes "The app must know which bots use this skill. Try again first." The error text "The app could not load the bots." stays. `skills-page.md:574` gives the old reason for the Deprecate, Remove from bots and Delete dialogs: update it | `skill-dialogs.tsx`, `skills-page.md` |
-| 6 | #123 / UI-3 A | `error-page.tsx` and `not-found-page.tsx` have an `h1`. Inside the Skills page they show beside the list column with its `h1` "Skills": two `h1` | Both components take `level?: 1 \| 2` (default 1). The Skills page uses `2`: `skill-page.tsx:106` and `new-skill-page.tsx:94` (Page not found), and the four lazy child routes of `skills.lazy.tsx` get an `errorComponent` that renders `<ErrorPage level={2} />`. Texts and buttons stay. Remove the Follow-ups row of #123 from `status.md` (the row that says "Two `h1` headings on the Skills page") | `error-page.tsx`, `not-found-page.tsx`, `skill-page.tsx`, `new-skill-page.tsx`, `routes/skills.lazy.tsx`, `docs/status.md` |
+| 6 | #123 / UI-3 A | `error-page.tsx` and `not-found-page.tsx` have an `h1`. Inside the Skills page they show beside the list column with its `h1` "Skills": two `h1` | Both components take `level?: 1 \| 2` (default 1). The Skills page uses `2`: `skill-page.tsx:106` and `new-skill-page.tsx:94` (Page not found), and the four lazy child routes of `skills.lazy.tsx` get an `errorComponent` that renders `<ErrorPage level={2} />`. Texts and buttons stay. Remove the Follow-ups row of #123 from `status.md` (the row that says "Two `h1` headings on the Skills page") | `error-page.tsx`, `not-found-page.tsx`, `skill-page.tsx`, `new-skill-page.tsx`, `routes/skills.lazy.tsx`, `routes/root.tsx` (a wrapper, for the types), `test/e2e/shell.spec.ts`, `test/e2e/skills.spec.ts`, `docs/status.md` |
 | 7 | DQ-426 A | The Guide line "A deprecated skill is read-only; "Make active again" in its banner ..." does not name "Remove from bots" | The Guide names "Make active again", "Remove from bots" (hidden when no bot uses the skill; `skills-page.md` §10.2) and "Show deprecated" | `seed/skills/using-the-app/SKILL.md` |
 | 8 | After-save cards, Q2 A | `after-save-cards.tsx` `botsOffReason`: "The bots did not load. Try again first." for both cards | Upgrade card: "The app must know which bots use this skill. Try again first." Assign card: "The app must know which bots can get this skill. Try again first." "Loading the bots." stays. `skills-page.md` "The bot list of a card" gives both texts. No ledger row: the owner's decision | `after-save-cards.tsx`, `skills-page.md` |
 
@@ -45,48 +45,33 @@ Proof, not a reading: the tests of item 6 check that the list column (the "Skill
 search box) is still in the document when a child route fails, and that the screen has exactly
 one `h1`. If the test shows any change beyond the heading level, I stop and tell the chief.
 
-## 2. Test strategy (one red test for each behaviour change)
+## 2. Test strategy, as built (revision 2)
 
-Rules: each test is written first and shown red on `aa85cb9`, then green after the fix. I record
-each red run. No test is disabled or deleted. The two existing tests that read an old text change
-their expected text in the same commit as the code (they are the red tests of items 5).
+Rules: each test was written first and was red on `aa85cb9`, then green after the fix. No test is
+disabled or deleted. The break runner wants one claim for each test name and the assertion on one
+line inside the test, so the tests are small and each has one claim.
 
-| Item | Test (file) | Case | Red before the fix because |
+| Item | Tests (file) | Case | Red before the fix because |
 | --- | --- | --- | --- |
-| 1 | `skill-history.test.tsx`, two new tests | Versions fail: `role="alert"` holds "The app could not load the versions."; **Try again** loads them again and the list shows. The same for the changes (diff). Edge case: **Try again** while the answer is slow does not show the error twice; a failed background refresh with data still shows the list (existing tests stay green) | No alert, no button |
-| 2 | `roster-load-failed.test.tsx`, one new test | The roster chunk fails; take the first avatar element; a new bot list arrives (focus refetch with a third bot); the first avatar element is still in the document (`isConnected`) and no second log line | The inline component is a new type, so React mounts the avatars again and the old node is detached |
-| 3 | none | Comments only. Proof: `rg` for the old cites returns nothing; a reading of `bot-page.md` headings | n/a |
-| 4 | `create-bot-page.test.tsx`, one new test | Step 3 shows "You cannot add deprecated skills." and does not show "Deprecated skills are not in the list." | The old sentence is shown |
-| 5 | `skill-dialogs.test.tsx:117`, expected text changed | The Deprecate dialog with a bot list that did not load: the alert says "The app could not load the bots." and the focused confirm button gives the new reason. I add the Remove from bots and the Delete dialogs to the same test if they use `botsReason` (check in the build) | The old reason is shown |
-| 6 | `error-page.test.tsx`, one new test; `not-found-page.test.tsx` (new, small); `skill-page.test.tsx` and `new-skill-page.test.tsx`, one assertion each | (a) At `/skills`, the index page throws: the list column is still shown, exactly one `h1` ("Skills") and the error screen is an `h2` with the same text and buttons. (b) `/skills/unknown`: one `h1`, "Page not found" is an `h2`. (c) The Clone page with no source: the same. (d) Outside the Skills page (a throw at `/`) the heading stays an `h1` (default). (e) The component test: `level={2}` gives an `h2`, no level gives an `h1` | Two `h1` today |
-| 8 | `after-save-cards.test.tsx`, two tests | Upgrade: the existing failed-list test now also reads the reason on the focused Upgrade button. Assign: the card mounted with a failed bot read, the focused Assign button gives its reason | The old reason is shown |
-| 7 | none (a Guide sentence) | The Guide text is read by `check:index`/lint only. Proof: the seed file diff and a reading against `skills-page.md` §10.2 | n/a |
+| 1 | `skill-history.test.tsx`: "gives the load error of the versions an alert", "loads the versions again from Try again", and the same two for the changes | The first read fails: the error is an alert; Try again loads the data and the error goes | A plain `<p>`, no button |
+| 2 | `roster-load-failed.test.tsx`: "keeps the avatars that it shows when a new bot list comes" | The roster chunk fails; a new bot list arrives; the first avatar element is still in the document | The inline component is a new type, so React mounts the avatars again |
+| 3, 7 | none | Comments and Guide text | n/a |
+| 4 | `create-bot-page.test.tsx`: "says on step 3 that deprecated skills cannot be added" | The note shows the new sentence | The old sentence |
+| 5 | `skill-dialogs.test.tsx`: "says when the bots did not load" (Deprecate), "... Remove from bots dialog", "... Delete dialog" | The focused confirm button gives the new reason | The old reason |
+| 6 | `error-page.test.tsx`, describe "the headings of the error screen and Page not found": the error screen of the index, of a skill, of the new skill page and of the import page; Page not found of an unknown skill and of a Clone with no source; two guards of the default level 1 (the unknown address and a header that throws) | Each is an h2 beside the list column (the column stays, one h1 "Skills", the screen is not inside the column); the guards keep h1. e2e: `shell.spec.ts` and `skills.spec.ts` expect h2 for the unknown skill | Two h1; the guards pass on the old code |
+| 8 | `after-save-cards.test.tsx`: "... the Upgrade card needs to know the bots", "... the Assign card needs to know the bots" | The focused button gives its own reason. The Assign test mounts the card with a failed read of its own: Create reads the bots before the card opens, so the error state has no normal path | The old reason |
 
-Order and timing cases: only item 2 and item 1 have any. Item 2: the node identity test is the
-order case (a list change after the failure). Item 1: Try again then a second failure keeps one
-alert (the `LoadError` replaces the text).
+## 3. Break list, as built (`scripts/breaks/pr-129.json`)
 
-## 3. Break list (`scripts/breaks/pr-<n>.json`)
-
-A claim for each new or changed test, each with one break that changes a value (the runner rule:
-a break changes a value, it does not throw; owner, 2026-11-09). Only the late, security and
-order/race tests need a break list by `AGENTS.md` and the break-list scope rule; I add a claim for
-each test of the table above where a value change is clear, and write the red run for the rest.
-
-| Claim | Test | Break (value change) |
-| --- | --- | --- |
-| S1 | item 2 node identity | `top-header.tsx`: use the inline `errorComponent` again |
-| S2 | item 1 versions alert + Try again | `skill-history.tsx`: `onRetry` calls `versions.refetch` of another query (a no-op) |
-| S3 | item 1 changes alert + Try again | same for `diff.refetch` |
-| S4 | item 5 reason text | `skill-dialogs.tsx`: the old text |
-| S5 | item 6 Skills page one `h1` | `skill-page.tsx`: `level={1}` |
-| S6 | item 6 error screen in the Skills page | `skills.lazy.tsx`: remove the `errorComponent` |
-| S7 | item 4 note text | `create-bot-steps.tsx`: the old sentence |
-| S8 | item 8 Upgrade and Assign reasons | `after-save-cards.tsx`: the Assign text for the Upgrade card |
-
-The full `pnpm check:breaks scripts/breaks/pr-<n>.json` runs before the push with the TMPDIR line
-of the chief (outside every git repository). 0 problems is the bar. No test change is pushed
-before the runner checked it.
+17 claims, S1 to S17, one for each new or changed test with a clear value change, and each with
+one break that changes a value (the runner rule: a break changes a value, it does not throw).
+S1 to S4: the History alert (the `role` of `LoadError`) and Try again (`onRetry` does nothing).
+S5: the inline `errorComponent`. S6: the old sentence. S7 to S9: the old reason (one break for the
+three dialogs, because they share `botsReason`). S10 to S12 and S15 to S17: no `errorComponent`
+for one child route, or no `level={2}` for Page not found. S13 and S14: the other card's reason.
+The two guards of the default level are exempt, because they pass on the old code. The full
+`pnpm check:breaks scripts/breaks/pr-129.json` runs before each push of a test change, with the
+TMPDIR line of the chief (outside every git repository). 0 problems is the bar.
 
 ## 4. Docs and records
 
