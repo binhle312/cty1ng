@@ -594,3 +594,138 @@ describe("Clone while its read of the versions is on its way", () => {
     expect(router.state.location.pathname).toBe("/skills/write-user-stories");
   });
 });
+
+// The bot list of a Deprecate dialog that did not load: Try again reads it again
+// (the pattern of skills-page.md §7, "The bot list of a card"; P3 list item 61).
+describe("the Deprecate dialog when the bots do not load", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  const FAILED = { status: 500, body: { error: { code: "internal_error", message: "Failed." } } };
+  const click = (element: HTMLElement) => {
+    act(() => {
+      fireEvent.click(element);
+    });
+  };
+
+  async function openDeprecate() {
+    const ba = makeBot(1, "BA", [makePin()]);
+    const server: { bots: () => { status?: number; body?: unknown } } = { bots: () => FAILED };
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: [makeSkill()] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: makeSkill() }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      "GET /api/bots": () => server.bots(),
+    });
+    const { queryClient } = await renderApp("/skills/write-user-stories");
+    click(await screen.findByRole("button", { name: "Skill actions" }, { timeout: 5000 }));
+    click(await screen.findByRole("menuitem", { name: "Deprecate" }));
+    const dialog = await screen.findByRole("alertdialog");
+    const alert = await within(dialog).findByRole("alert");
+    return {
+      queryClient,
+      ba,
+      server,
+      dialog,
+      tryAgain: within(alert).getByRole("button", { name: "Try again" }),
+    };
+  }
+
+  it("shows the bots after Try again", async () => {
+    const { ba, server, dialog, tryAgain } = await openDeprecate();
+    server.bots = () => ({ body: [ba] });
+    click(tryAgain);
+    expect(await within(dialog).findByText("BA"), "the bots after Try again").toBeTruthy();
+  });
+
+  // An order case: a second failure keeps the way to try again. The old code had no button.
+  it("keeps Try again when the bots fail again", async () => {
+    const { dialog, queryClient, tryAgain } = await openDeprecate();
+    click(tryAgain);
+    await waitFor(() => {
+      expect(api?.sent("GET", "/api/bots").length).toBeGreaterThan(1);
+    });
+    await waitFor(() => {
+      expect(queryClient.isFetching()).toBe(0);
+    });
+    const tryAgainAfter = within(dialog).queryByRole("button", { name: "Try again" });
+    expect(tryAgainAfter, "Try again after a second failure").not.toBeNull();
+  });
+});
+
+// The dot of a list row with unsaved changes is an image with a name, so a screen reader reads
+// its label: `aria-label` on an element with no role is not read (P3 list item 64).
+describe("the unsaved changes dot of the skill list", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  it("is an image named Unsaved changes", async () => {
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: [makeSkill()] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: makeSkill() }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(3) }),
+      "GET /api/bots": () => ({ body: [] }),
+    });
+    await renderApp("/skills/write-user-stories");
+    await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 });
+    act(() => {
+      fireEvent.change(screen.getByLabelText("Name", { exact: true }), {
+        target: { value: "Write better user stories" },
+      });
+    });
+    expect(
+      await screen.findByRole("img", { name: "Unsaved changes" }),
+      "the dot is an image",
+    ).toBeTruthy();
+  });
+});
+
+// Item 66 of the P3 list: an unknown skill shows the not-found state inside the shell
+// (skills-page.md §1). The rail, the header and the Skills list column stay.
+describe("the skill page for a skill that is not there", () => {
+  let api: ReturnType<typeof fakeApi> | null = null;
+  afterEach(() => {
+    api?.restore();
+    api = null;
+  });
+
+  it("shows Page not found with the rail, the header and the list column for an unknown slug", async () => {
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: [] }),
+      "GET /api/bots": () => ({ body: [] }),
+    });
+    await renderApp("/skills/nothing");
+    expect(await screen.findByText("Page not found", {}, { timeout: 5000 })).toBeTruthy();
+    expect(screen.queryByRole("navigation", { name: "Projects" }), "the rail").not.toBeNull();
+    expect(screen.queryByRole("banner", { name: "Bots" }), "the header").not.toBeNull();
+    expect(screen.queryByRole("navigation", { name: "Skills" }), "the list column").not.toBeNull();
+  });
+
+  it("shows Page not found in the Skills page when a refresh removes the open skill", async () => {
+    let gone = false;
+    const skill = makeSkill();
+    api = fakeApi({
+      "GET /api/settings": () => ({ body: BOT_SETTINGS }),
+      "GET /api/skills": () => ({ body: gone ? [] : [skill] }),
+      [`GET /api/skills/${SKILL_ID}`]: () => ({ body: skill }),
+      [`GET /api/skills/${SKILL_ID}/versions`]: () => ({ body: makeVersions(1) }),
+      "GET /api/bots": () => ({ body: [] }),
+    });
+    const { queryClient } = await renderApp("/skills/write-user-stories");
+    await screen.findByRole("heading", { name: "Write user stories" }, { timeout: 5000 });
+    gone = true;
+    await act(() => queryClient.invalidateQueries({ predicate: SKILL_OR_BOT_QUERIES }));
+    expect(await screen.findByText("Page not found", {}, { timeout: 5000 })).toBeTruthy();
+    expect(screen.queryByRole("navigation", { name: "Projects" }), "the rail").not.toBeNull();
+    expect(screen.queryByRole("navigation", { name: "Skills" }), "the list column").not.toBeNull();
+  });
+});

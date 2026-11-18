@@ -52,15 +52,17 @@ export interface HttpDeps {
 
 export const OPENAPI_INFO = { title: "cty1ng", version: "0.0.0" };
 
-// The Hono app. Middleware order is the request path of the M0b plan §4.
+// The Hono app. Middleware order is the request path of security.md §2.1.
 export function createHttpApp(deps: HttpDeps) {
   const app = createRouter();
 
   app.use(requestId(deps.log));
   app.use(accessLog());
+  // Before the Host and Origin checks, so that their refusals get the headers too: the error
+  // handler makes the answer at the check, and this middleware adds the headers to it.
+  app.use(securityHeaders());
   app.use(hostCheck(deps.allowedHosts));
   app.use(originCheck(deps.allowedOrigins));
-  app.use(securityHeaders());
   app.use(corsForAllowedOrigins(deps.allowedOrigins));
   // Upload routes set their own limit (security.md §2.4); every other route keeps 1 MB.
   app.use(maxBody([...SKILL_UPLOAD_PATHS, ...AVATAR_UPLOAD_PATHS]));

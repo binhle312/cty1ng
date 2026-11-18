@@ -1,7 +1,7 @@
 import { useIsMutating, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { notFound, useNavigate, useParams, useRouter, useSearch } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouter, useSearch } from "@tanstack/react-router";
 import { Bot, Ellipsis, FileText, History } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from "react";
 import {
   MenuItem,
   MenuPopup,
@@ -25,9 +25,10 @@ import {
   undeprecateSkillMutation,
 } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import type { GetSkillResponse } from "../../lib/api/generated/types.gen.ts";
-import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
+import { PIN_QUERIES, SKILL_QUERIES } from "../../lib/api/operation-queries.ts";
 import { readNewest, refreshQueries } from "../../lib/api/query-reads.ts";
 import { sendPinChanges } from "../bots/bot-list-store.ts";
+import { NotFoundPage } from "../placeholder/not-found-page.tsx";
 import { upgradeCardAfterSave } from "./after-save-cards.tsx";
 import { useDialogRequests } from "./dialog-requests.ts";
 import { LoadError } from "./load-error.tsx";
@@ -36,31 +37,18 @@ import { useLeaveGuard } from "./leave-guard.tsx";
 import { useOnPage } from "./on-page.ts";
 import { Pill, VersionPill } from "./pills.tsx";
 import { EditSaveBar, ReadOnlySaveBar } from "./save-bar.tsx";
-import {
-  CLONE_LOAD_FAILED,
-  CONFLICT_TEXT,
-  lostSaveText,
-  saveErrorOf,
-  type SaveError,
-} from "./save-error.ts";
+import { CLONE_LOAD_FAILED } from "./save-error.ts";
 import { useBotUses } from "./skill-bot-uses.ts";
 import { SkillBotsTab } from "./skill-bots-tab.tsx";
 import { DeleteDialog, DeprecateDialog, RemoveFromBotsDialog } from "./skill-dialogs.tsx";
 import { SkillEditorSkeleton } from "./skill-editor-skeleton.tsx";
 import { SkillFields } from "./skill-fields.tsx";
+import { editReducer, editView, initialEditState } from "./skill-edit-state.ts";
 import {
-  changedFields,
   fieldProblems,
-  hasProblem,
-  isDirty,
-  isNewer,
-  markSaved,
+  type SavedPoint,
   type SkillFields as FormFields,
-  leaveText,
-  newForm,
   saveKind,
-  takesServerText,
-  setField,
 } from "./skill-form.ts";
 import { SkillHistory } from "./skill-history.tsx";
 import {
@@ -71,11 +59,13 @@ import {
   useEditorSettings,
 } from "./skill-queries.ts";
 import { useSkillsPage } from "./skills-context.tsx";
+import { SKILL_TABS, type SkillTab } from "./skill-tabs.ts";
+import { createToastStore } from "./toast-store.ts";
 
 type SkillDetail = GetSkillResponse;
-type TabName = "skill" | "bots" | "history";
 
 const trashKey = (slug: string) => ["trash-skill", slug];
+const activateKey = (id: string) => ["undeprecate-skill", id];
 
 // `/skills/{slug}` (skills-page.md §1, §2). The page finds the skill id from the slug in the list,
 // which holds deprecated skills too, so a deprecated skill's URL opens after a reload. An unknown
@@ -110,9 +100,10 @@ export function SkillPage() {
       <LoadError text="The app could not load the skills." onRetry={() => void skills.refetch()} />
     );
   }
-  // The shell's Page not found replaces the whole Skills page (skills-page.md §1).
-  // eslint-disable-next-line @typescript-eslint/only-throw-error -- the router's way to show Page not found
-  if (row === undefined) throw notFound();
+  // Page not found in the Skills page, beside the list column (skills-page.md §1). A `notFound()`
+  // thrown here would pass the route error boundaries and replace the shell
+  // (frontend-conventions.md §5).
+  if (row === undefined) return <NotFoundPage />;
   if (detail.isPending) return <SkillEditorSkeleton />;
   if (detail.data === undefined) {
     return <LoadError text={apiErrorText(detail.error)} onRetry={() => void detail.refetch()} />;
@@ -134,23 +125,10 @@ function SkillView({ skill }: { skill: SkillDetail }) {
     description: skill.latest_version.description,
     body_md: skill.body_md,
   };
-  const [form, setForm] = useState(() => newForm(saved, false));
-  // The saved state that the edit started from. Saves send it, so the server refuses a save
-  // over a change made in another place (409 `stale_write`) instead of overwriting it.
   const server = { version: skill.latest_version.version, rowVersion: skill.row_version };
-  const [base, setBase] = useState(server);
-  // After this page's own save, the text it sent is the saved text, based on the result.
-  const savedHere = (
-    result: { latest_version: { version: number }; row_version: number },
-    sent: FormFields,
-    note: string,
-  ) => {
-    setBase({ version: result.latest_version.version, rowVersion: result.row_version });
-    setForm((current) => markSaved(current, sent));
-    setChangelog((current) => (current.trim() === note ? "" : current));
-  };
-  const [changelog, setChangelog] = useState("");
-  const [saveError, setSaveError] = useState<SaveError | null>(null);
+  // The editor's state and rules (`skill-edit-state.ts`): the form, the base that saves send, the
+  // Save on its way, the save error and the changelog.
+  const { state: edit, store } = useSkillEditStore(saved, server);
   // A request that ends after its dialog closed (Cancel, Esc) never closes or writes into a newer
   // dialog; its failure shows as a toast instead (`dialog-request-state.ts`).
   const {
@@ -163,14 +141,13 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   const bots = useBotUses(skill.id);
 
   const onPage = useOnPage();
+  // The answers go to the store, which acts on the editor as it is now, also after the owner left.
+  const savedHere = (result: { latest_version: { version: number }; row_version: number }) => {
+    store.dispatch({ type: "saveAnswered", point: pointOf(result) });
+  };
   const onError = (error: unknown) => {
-    // The save bar shows an error only while the form has changes. An owner who left, typed the
-    // text back or clicked Discard gets a toast, because nothing else shows the failure.
-    if (onPage.current && isDirty(form)) {
-      setSaveError(saveErrorOf(error));
-    } else {
-      showToast(lostSaveText({ name: skill.name, error }));
-    }
+    // The save bar shows the error while the form has changes; otherwise a toast does.
+    store.dispatch({ type: "saveFailed", error });
     // A stale save: load the newest version now. The edit stays, and the conflict shows.
     if (readApiError(error)?.code === "stale_write") {
       void queryClient.invalidateQueries({
@@ -181,7 +158,8 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   };
   const rename = useMutation({
     ...renameSkillMutation(),
-    onSuccess: () => {
+    onSuccess: (result) => {
+      savedHere(result);
       showToast("Saved ✨");
     },
     onError,
@@ -189,32 +167,19 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   const saveVersion = useMutation({
     ...createSkillVersionMutation(),
     onSuccess: (result) => {
+      savedHere(result);
       // The upgrade card (§7.1), or only the toast when no bot uses an older version. The save
       // bar does not wait for it.
       showBotCard(upgradeCardAfterSave(queryClient, result));
     },
     onError,
   });
-  const saving = rename.isPending || saveVersion.isPending;
-  // The server data that the editor text last came from.
-  const [taken, setTaken] = useState(server);
-  if (takesServerText({ server, base, taken, saving, dirty: isDirty(form) })) {
-    setTaken(server);
-    setForm(newForm(saved, false));
-    setBase(server);
-    // An error was about the text that this replaces.
-    setSaveError(null);
-  }
-  // The server has a change that this edit did not start from.
-  const serverAhead = isNewer({ point: server, than: base });
-  const conflict = serverAhead && !saving;
   const readOnly = skill.deprecated || !skill.is_author;
-  const changes = changedFields(form);
+  const problems = fieldProblems(edit.form, settings.limits);
+  const view = editView(edit, { limitsReason: limitsReason(settings), problems });
   // Unsaved text is protected also when the skill turns read-only under it (deprecated in
   // another place): the text stays on screen, and leaving asks first.
-  const dirty = changes.length > 0;
-  const kind = saveKind(form);
-  const problems = fieldProblems(form, settings.limits);
+  const dirty = view.leaveAsks;
   const latest = server.version;
 
   useEffect(() => {
@@ -226,43 +191,36 @@ function SkillView({ skill }: { skill: SkillDetail }) {
 
   const { allowLeave, dialog: leaveDialog } = useLeaveGuard({
     dirty,
-    text: leaveText(form, skill.name),
+    text: view.leaveText(skill.name),
   });
 
   const save = () => {
-    setSaveError(null);
+    const now = store.get();
+    if (now.sending !== null) return;
     // The text this request sends; typing goes on while it is pending.
-    const sent = form.current;
-    const note = changelog.trim();
+    const sent = now.form.current;
+    const { base } = now;
+    const note = now.changelog.trim();
+    const kind = saveKind(now.form);
+    store.dispatch({ type: "saveSent" });
     if (kind === "rename") {
-      rename.mutate(
-        { path: { id: skill.id }, body: { name: sent.name, row_version: base.rowVersion } },
-        {
-          onSuccess: (result) => {
-            savedHere(result, sent, note);
-          },
-        },
-      );
+      rename.mutate({
+        path: { id: skill.id },
+        body: { name: sent.name, row_version: base.rowVersion },
+      });
       return;
     }
-    const renamed = sent.name !== form.saved.name;
-    saveVersion.mutate(
-      {
-        path: { id: skill.id },
-        body: {
-          base_version: base.version,
-          description: sent.description,
-          body_md: sent.body_md,
-          ...(note === "" ? {} : { changelog: note }),
-          ...(renamed ? { name: sent.name, row_version: base.rowVersion } : {}),
-        },
+    const renamed = sent.name !== now.form.saved.name;
+    saveVersion.mutate({
+      path: { id: skill.id },
+      body: {
+        base_version: base.version,
+        description: sent.description,
+        body_md: sent.body_md,
+        ...(note === "" ? {} : { changelog: note }),
+        ...(renamed ? { name: sent.name, row_version: base.rowVersion } : {}),
       },
-      {
-        onSuccess: (result) => {
-          savedHere(result, sent, note);
-        },
-      },
-    );
+    });
   };
 
   const exportSkill = useExportSkills();
@@ -288,18 +246,15 @@ function SkillView({ skill }: { skill: SkillDetail }) {
   // move would hide a change made in another place, and Save would overwrite it.
   const moveBase =
     (inSync: boolean) => (result: { latest_version: { version: number }; row_version: number }) => {
-      if (inSync) {
-        const next = { version: result.latest_version.version, rowVersion: result.row_version };
-        // A late answer can be older than a Save that ended first, and the base only goes up.
-        setBase((current) => (isNewer({ point: next, than: current }) ? next : current));
-      }
+      // A late answer can be older than a Save that ended first, and the base only goes up.
+      if (inSync) store.dispatch({ type: "baseMoved", point: pointOf(result) });
     };
   // A change of pins moves both sides: the bot list and the skill queries fetch again.
   const refreshPins = () => refreshQueries(queryClient, { predicate: PIN_QUERIES });
   const deprecate = useMutation(deprecateSkillMutation());
   const deprecateSkill = (removeBotIds: string[]) => {
     if (dialog === null) return;
-    const inSync = !serverAhead;
+    const inSync = !view.serverAhead;
     runInDialog({
       dialog,
       // Also after a failure, the lists refresh: a 422 on remove_bot_ids means the bot list here
@@ -354,8 +309,24 @@ function SkillView({ skill }: { skill: SkillDetail }) {
       failed: (error) => (error instanceof Error ? error.message : apiErrorText(error)),
     });
   };
+  // Make active again: the Delete pattern. The query client holds the request and its refresh, so
+  // the button stays off until the refresh ends, also after a leave and a return, and a click
+  // cannot send it twice (DQ-073). A failed refresh ends the wait too: a click then sends the old
+  // `row_version`, and the server refuses it with a toast.
+  const activating = useIsMutating({ mutationKey: activateKey(skill.id) }) > 0;
   const undeprecate = useMutation({
     ...undeprecateSkillMutation(),
+    mutationKey: activateKey(skill.id),
+    onSuccess: async (result, variables) => {
+      // The base moves before the refresh, so the new data is no conflict; only if the edit holds
+      // the data that the request started from (`skill-edit-state.ts`).
+      store.dispatch({
+        type: "baseMoved",
+        point: pointOf(result),
+        startedAt: variables.body.row_version,
+      });
+      await refreshQueries(queryClient, { predicate: SKILL_QUERIES });
+    },
     onError: (error) => {
       showToast(apiErrorText(error));
     },
@@ -381,8 +352,13 @@ function SkillView({ skill }: { skill: SkillDetail }) {
       }
     },
   });
+  // The Delete wait of the query client, as in `SkillPage`: a Delete of an earlier visit keeps the
+  // dialog of this visit off ("Deleting the skill."), so no second request goes (DQ-081).
+  const trashing = useIsMutating({ mutationKey: trashKey(skill.slug) }) > 0;
   const trashSkill = () => {
     if (dialog === null) return;
+    // The query client counts at once, before the page renders again.
+    if (queryClient.isMutating({ mutationKey: trashKey(skill.slug) }) > 0) return;
     runInDialog({
       dialog,
       request: trash.mutateAsync({
@@ -394,20 +370,10 @@ function SkillView({ skill }: { skill: SkillDetail }) {
     });
   };
 
-  const tab: TabName = search.tab ?? "skill";
-  const setTab = (next: TabName) => {
+  const tab: SkillTab = search.tab ?? "skill";
+  const setTab = (next: SkillTab) => {
     void navigate({ search: { tab: next === "skill" ? undefined : next } });
   };
-
-  const blockedReason = saving
-    ? "Saving."
-    : limitsReason(settings) !== null
-      ? limitsReason(settings)
-      : conflict
-        ? "This skill changed in another place."
-        : hasProblem(problems) || saveError?.field != null
-          ? "Fix the errors first."
-          : null;
 
   return (
     <>
@@ -439,22 +405,24 @@ function SkillView({ skill }: { skill: SkillDetail }) {
       {skill.deprecated && (
         <DeprecatedBanner
           skill={skill}
-          pending={undeprecate.isPending}
+          pending={activating}
           onRemoveFromBots={() => {
             openDialog({ kind: "remove" });
           }}
           onActivate={() => {
-            undeprecate.mutate(
-              { path: { id: skill.id }, body: { row_version: skill.row_version } },
-              { onSuccess: moveBase(!serverAhead) },
-            );
+            // The query client counts at once, before the page renders again.
+            if (queryClient.isMutating({ mutationKey: activateKey(skill.id) }) > 0) return;
+            undeprecate.mutate({
+              path: { id: skill.id },
+              body: { row_version: skill.row_version },
+            });
           }}
         />
       )}
       <TabsRoot
         value={tab}
         onValueChange={(value) => {
-          setTab(value === "bots" ? "bots" : value === "history" ? "history" : "skill");
+          setTab(SKILL_TABS.find((name) => name === value) ?? "skill");
         }}
         className="flex min-h-0 grow flex-col"
       >
@@ -487,14 +455,13 @@ function SkillView({ skill }: { skill: SkillDetail }) {
           )}
           <div className="min-h-0 grow overflow-y-auto px-8 py-5">
             <SkillFields
-              form={form}
+              form={edit.form}
               onChange={(field, value) => {
-                setForm((current) => setField(current, field, value));
-                if (saveError?.field === field) setSaveError(null);
+                store.dispatch({ type: "typed", field, value });
               }}
               settings={settings}
               problems={problems}
-              serverError={saveError?.field == null ? null : saveError}
+              serverError={view.fieldError}
               readOnly={readOnly}
             />
           </div>
@@ -513,23 +480,20 @@ function SkillView({ skill }: { skill: SkillDetail }) {
             />
           ) : (
             <EditSaveBar
-              changes={changes.length}
-              renameOnly={kind === "rename"}
+              changes={view.changes.length}
+              renameOnly={view.kind === "rename"}
               nextVersion={latest + 1}
-              changelog={changelog}
-              onChangelog={setChangelog}
-              onDiscard={() => {
-                // Discard puts back the saved text: the newest one, also after a conflict.
-                setForm(newForm(saved, false));
-                setBase(server);
-                setChangelog("");
-                setSaveError(null);
+              changelog={edit.changelog}
+              onChangelog={(text) => {
+                store.dispatch({ type: "changelogTyped", text });
               }}
+              onDiscard={() => {
+                store.dispatch({ type: "discarded" });
+              }}
+              discardReason={view.discardReason}
               onSave={save}
-              blockedReason={blockedReason}
-              error={
-                conflict ? CONFLICT_TEXT : saveError?.field === null ? saveError.message : null
-              }
+              blockedReason={view.saveReason}
+              error={view.error}
             />
           )}
         </TabsPanel>
@@ -579,13 +543,10 @@ function SkillView({ skill }: { skill: SkillDetail }) {
         skillName={skill.name}
         trashDays={settings.trashDays}
         bots={bots}
-        pending={trash.isPending}
+        pending={trashing}
         error={dialogError}
         onCancel={closeDialog}
-        onConfirm={() => {
-          if (trash.isPending) return;
-          trashSkill();
-        }}
+        onConfirm={trashSkill}
       />
       {leaveDialog}
     </>
@@ -683,4 +644,32 @@ function DeprecatedBanner({
       )}
     </div>
   );
+}
+
+const pointOf = (result: { latest_version: { version: number }; row_version: number }) => ({
+  version: result.latest_version.version,
+  rowVersion: result.row_version,
+});
+
+// The edit state of one skill page, outside React (`toast-store.ts`). A late answer sends its event
+// here and changes the state as it is now, also after the page is gone, and its toast shows at
+// once. Each render sends the server data before the browser paints (the same data changes
+// nothing). Leaving the page makes a failure of a Save on its way a toast.
+function useSkillEditStore(fields: FormFields, point: SavedPoint) {
+  const [store] = useState(() =>
+    createToastStore({ initial: initialEditState(fields, point), reduce: editReducer }),
+  );
+  const state = useSyncExternalStore(store.subscribe, store.get);
+  useLayoutEffect(() => {
+    store.dispatch({ type: "serverData", fields, point });
+  });
+  // A layout cleanup runs in the commit that removes the page, so no answer lands in between. The
+  // setup runs again when the page stays after a cleanup (StrictMode in the development build).
+  useLayoutEffect(() => {
+    store.dispatch({ type: "entered" });
+    return () => {
+      store.dispatch({ type: "left" });
+    };
+  }, [store]);
+  return { state, store };
 }

@@ -57,7 +57,7 @@ test("J1 step 1 and J4: create a skill, bot BA with it, a clone with another mod
   await expect(preview.getByTestId("preview-pill")).toHaveText("Ready to create");
   await page.getByRole("button", { name: "Create", exact: true }).click();
   await expect(page.getByText(`Created ${name} ✨`)).toBeVisible();
-  await expect(page).toHaveURL(new RegExp(`/bots/ba-${tag}\\?tab=profile$`));
+  await expect(page).toHaveURL(new RegExp(`/bots/ba-${tag}$`));
   await expect(
     page.getByRole("banner", { name: "Bots" }).getByRole("button", { name }),
   ).toBeVisible();

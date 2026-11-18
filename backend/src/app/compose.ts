@@ -104,6 +104,7 @@ export function compose(
     clock,
     diffMaxEdits: config.skillDiffMaxEdits,
     changelogMax: config.skillChangelogMax,
+    ids: typeIdIds,
     previewMinutes: config.importPreviewMinutes,
     previewMax: config.importPreviewMax,
   });

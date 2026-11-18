@@ -409,6 +409,7 @@ export function SkillsStep({
                 <Checkbox
                   checked={pick !== undefined}
                   disabled={readOnly}
+                  invalid={problem !== null}
                   onChange={(on) => {
                     toggle(skill, on);
                   }}
@@ -532,6 +533,7 @@ export function ModelStep({
               id={effortId}
               value={form.effort ?? ""}
               disabled={readOnly}
+              aria-invalid={errorOf("effort") !== null}
               onChange={(event) => {
                 const effort = model.efforts.find((e) => e === event.target.value);
                 if (effort !== undefined) update((f) => ({ ...f, effort }));
@@ -637,6 +639,7 @@ export function AdvancedSection({
           />
           <NumberBox
             label="History share in percent"
+            invalid={errorOf("history_share_pct") !== null}
             unit="%"
             value={form.history_share_pct}
             readOnly={readOnly}
@@ -657,6 +660,7 @@ export function AdvancedSection({
           </p>
           <NumberBox
             label="Model requests per run"
+            invalid={errorOf("request_limit") !== null}
             value={form.request_limit}
             min={BOT_VALUE_RANGES.request_limit.min}
             max={BOT_VALUE_RANGES.request_limit.max}
@@ -673,6 +677,7 @@ export function AdvancedSection({
           <p className="text-sm text-on-surface-muted">In characters. A longer reply is cut.</p>
           <NumberBox
             label="Longest reply in characters"
+            invalid={errorOf("max_reply_chars") !== null}
             unit="characters"
             value={form.max_reply_chars}
             min={BOT_VALUE_RANGES.max_reply_chars.min}
@@ -718,6 +723,7 @@ function NumberBox({
   readOnly,
   onChange,
   className,
+  invalid,
 }: {
   label: string;
   unit?: string;
@@ -727,6 +733,8 @@ function NumberBox({
   readOnly: boolean;
   onChange: (value: number) => void;
   className?: string;
+  // Its field has an error, for screen readers and "focus the first error".
+  invalid: boolean;
 }) {
   const [text, setText] = useState<string | null>(null);
   return (
@@ -739,6 +747,7 @@ function NumberBox({
       <input
         type="number"
         aria-label={label}
+        aria-invalid={invalid}
         value={text ?? String(value)}
         min={min}
         max={max}

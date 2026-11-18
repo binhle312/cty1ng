@@ -147,6 +147,7 @@ export function idleServices() {
       clock: systemClock,
       diffMaxEdits: 2000,
       changelogMax: 500,
+      ids: typeIdIds,
       previewMinutes: 15,
       previewMax: 5,
     }),

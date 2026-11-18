@@ -71,7 +71,10 @@ function ExportCardBody({
 }) {
   const [picked, setPicked] = useState(() => new Set(skills.map((skill) => skill.id)));
   const exportMutation = useExportSkills();
-  const count = picked.size;
+  // Only the listed skills count: a picked skill can leave the list while the card is open
+  // (Deprecate or Delete in another tab).
+  const pickedIds = skills.filter((skill) => picked.has(skill.id)).map((skill) => skill.id);
+  const count = pickedIds.length;
   const allPicked = count === skills.length && count > 0;
   const toggle = (id: string, on: boolean) => {
     setPicked((current) => withItem({ set: current, item: id, on }));
@@ -84,10 +87,7 @@ function ExportCardBody({
       aria-disabled={count === 0 || exportMutation.isPending}
       onClick={() => {
         if (count === 0 || exportMutation.isPending) return;
-        exportMutation.mutate(
-          skills.filter((skill) => picked.has(skill.id)).map((skill) => skill.id),
-          { onSuccess: onClose },
-        );
+        exportMutation.mutate(pickedIds, { onSuccess: onClose });
       }}
     >
       {label}

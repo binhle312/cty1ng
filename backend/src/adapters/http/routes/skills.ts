@@ -1,7 +1,7 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { bodyLimit } from "hono/body-limit";
 import { Bot } from "@cty1ng/shared/bots";
-import { BotId, SkillId, SkillVersionId } from "@cty1ng/shared/ids";
+import { BotId, SkillId, SkillImportPreviewId, SkillVersionId } from "@cty1ng/shared/ids";
 import {
   Skill,
   SkillDetail,
@@ -94,7 +94,9 @@ const routes = {
         required: true,
         content: {
           "application/json": {
-            schema: z.object({ preview_id: z.string(), slugs: z.array(z.string()) }).strict(),
+            schema: z
+              .object({ preview_id: SkillImportPreviewId, slugs: z.array(z.string()) })
+              .strict(),
           },
         },
       },

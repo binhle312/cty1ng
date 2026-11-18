@@ -1,10 +1,11 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { CatchBoundary, Link, useRouterState } from "@tanstack/react-router";
 import { Pin, Plus } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { cn } from "../../lib/cn.ts";
 import { BotAvatar } from "../bots/bot-avatar.tsx";
 import { othersOf, pinnedOf } from "../bots/bot-order.ts";
 import { type BotRow, useBots } from "../bots/bot-queries.ts";
+import { logError } from "../placeholder/error-page.tsx";
 
 // The interactive roster loads in its own chunk, so @dnd-kit is not in the first load
 // (frontend-conventions.md §4). Until it is there, the same avatars stand in the same places.
@@ -26,9 +27,19 @@ export function TopHeader() {
         {all === undefined ? null : all.length === 0 ? (
           <AddSlot />
         ) : (
-          <Suspense fallback={<RosterStandIn bots={all} />}>
-            <Roster bots={all} />
-          </Suspense>
+          // If the chunk fails, the avatars stay with nothing to press (app-shell.md, "Errors").
+          // React.lazy keeps the failure, so the key never changes: a reset would only fail again.
+          <CatchBoundary
+            getResetKey={() => "roster"}
+            errorComponent={() => <RosterStandIn bots={all} failed />}
+            onCatch={(error) => {
+              logError("roster_load_failed", error);
+            }}
+          >
+            <Suspense fallback={<RosterStandIn bots={all} />}>
+              <Roster bots={all} />
+            </Suspense>
+          </CatchBoundary>
         )}
       </div>
     </header>
@@ -61,25 +72,34 @@ function AddSlot() {
   );
 }
 
-// The roster before its chunk has loaded: the same layout, with nothing to press yet.
-function RosterStandIn({ bots }: { bots: readonly BotRow[] }) {
+// The roster before its chunk has loaded: the same layout, with nothing to press yet. After the
+// chunk failed (`failed`), nothing is on its way and nothing can be dragged, so the busy flag and
+// the drag slot go.
+function RosterStandIn({ bots, failed = false }: { bots: readonly BotRow[]; failed?: boolean }) {
   const pinned = pinnedOf(bots);
   const avatars = (list: readonly BotRow[]) =>
     list.map((bot) => (
       <BotAvatar key={bot.id} bot={bot} badge={bot.available ? null : "cannot_run"} />
     ));
   return (
-    <div aria-busy="true" className="flex w-full min-w-0 justify-center overflow-hidden">
+    <div
+      aria-busy={failed ? undefined : true}
+      className="flex w-full min-w-0 justify-center overflow-hidden"
+    >
       <div className="mx-auto flex w-max items-center gap-2 px-1 py-2">
         {pinned.length === 0 ? (
-          <span className="flex h-avatar shrink-0 items-center gap-1.5 rounded-pill border-dashed-slot border-outline-strong px-3 text-on-surface-muted">
-            <Pin aria-hidden size={13} />
-            Drag a bot here to pin it
-          </span>
+          failed ? null : (
+            <span className="flex h-avatar shrink-0 items-center gap-1.5 rounded-pill border-dashed-slot border-outline-strong px-3 text-on-surface-muted">
+              <Pin aria-hidden size={13} />
+              Drag a bot here to pin it
+            </span>
+          )
         ) : (
           <span className="flex shrink-0 items-center gap-2">{avatars(pinned)}</span>
         )}
-        <span aria-hidden className="mx-1 h-6 w-px shrink-0 bg-outline-strong" />
+        {failed && pinned.length === 0 ? null : (
+          <span aria-hidden className="mx-1 h-6 w-px shrink-0 bg-outline-strong" />
+        )}
         <span className="flex shrink-0 items-center gap-2">{avatars(othersOf(bots))}</span>
       </div>
     </div>

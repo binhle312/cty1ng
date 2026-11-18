@@ -13,6 +13,11 @@ export function SaveBarFrame({ children }: { children: ReactNode }) {
   );
 }
 
+// The count line of a save bar with changes: the skill editor and the bot page's tabs.
+export function changesLine(count: number): string {
+  return count === 1 ? "1 change not saved" : `${String(count)} changes not saved`;
+}
+
 // A button that is off says why in a tooltip (ui-rules B5). It stays focusable, so the
 // tooltip also shows on keyboard focus. The pin cards use it too (skill-pin-dialogs.tsx).
 export function SaveButton({
@@ -57,6 +62,8 @@ interface EditSaveBarProps {
   changelog: string;
   onChangelog: (text: string) => void;
   onDiscard: () => void;
+  // Why Discard is off (a Save on its way), or null.
+  discardReason: string | null;
   onSave: () => void;
   // Why Save is off (an error in a field, a save in progress), or null.
   blockedReason: string | null;
@@ -80,7 +87,7 @@ export function EditSaveBar(props: EditSaveBarProps) {
     <SaveBarFrame>
       <span className="flex shrink-0 items-center gap-2">
         <span aria-hidden className="size-2 rounded-pill bg-primary" />
-        {props.changes === 1 ? "1 change not saved" : `${String(props.changes)} changes not saved`}
+        {changesLine(props.changes)}
       </span>
       {props.error !== null && <span className="text-sm text-danger">{props.error}</span>}
       {props.renameOnly ? (
@@ -103,7 +110,12 @@ export function EditSaveBar(props: EditSaveBarProps) {
           className="h-9 min-w-0 grow rounded-control border border-outline-strong bg-surface px-2.5 outline-none placeholder:text-on-surface-muted focus:border-primary"
         />
       )}
-      <Button onClick={props.onDiscard}>Discard</Button>
+      <SaveButton
+        label="Discard"
+        kind="secondary"
+        disabledReason={props.discardReason}
+        onClick={props.onDiscard}
+      />
       <SaveButton label={label} disabledReason={reason} onClick={props.onSave} />
     </SaveBarFrame>
   );

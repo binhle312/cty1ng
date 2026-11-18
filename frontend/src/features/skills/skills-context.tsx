@@ -12,8 +12,9 @@ export interface SkillsPageState {
   importFile: File | null;
   // Opens the browser's file picker; a picked zip opens the import page.
   chooseImportFile: () => void;
-  // After Apply or Cancel, so a later visit to the import page starts with no file.
-  clearImportFile: () => void;
+  // After Apply or Cancel, so a later visit to the import page starts with no file. It clears
+  // `file` only while that file is still the picked one.
+  clearImportFile: (file: File) => void;
   // The card a save asks for, while it is still being read (null: the read showed a toast).
   showBotCard: (card: Promise<AfterSaveCard | null>) => void;
 }

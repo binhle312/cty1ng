@@ -1,4 +1,4 @@
-import type { SkillId } from "@cty1ng/shared/ids";
+import { SkillImportPreviewId, type SkillId } from "@cty1ng/shared/ids";
 import {
   formatCount,
   slugProblem,
@@ -10,6 +10,7 @@ import {
 import { DomainError } from "../errors.ts";
 import { firstSensitive, sensitiveLabel } from "../guard/sensitive-data.rules.ts";
 import type { Clock } from "../ports/clock.ts";
+import type { Ids } from "../ports/ids.ts";
 import type { Readers, SkillRecord, UnitOfWork } from "../ports/repositories.ts";
 import { readSettings } from "../settings/settings.service.ts";
 import { lineDiff } from "./skill-diff.ts";
@@ -74,6 +75,7 @@ export function createSkillImportService(deps: {
   // SKILL_DIFF_MAX_EDITS and SKILL_CHANGELOG_MAX (architecture.md §8).
   diffMaxEdits: number;
   changelogMax: number;
+  ids: Ids;
   previewMinutes: number;
   previewMax: number;
 }) {
@@ -286,7 +288,7 @@ export function createSkillImportService(deps: {
         if (oldest === undefined) break;
         previews.delete(oldest);
       }
-      const id = globalThis.crypto.randomUUID();
+      const id = SkillImportPreviewId.parse(deps.ids.newId("simp"));
       previews.set(id, {
         id,
         actor,

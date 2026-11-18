@@ -105,10 +105,6 @@ export function saveKind(form: SkillForm): SaveKind {
   return changed.every((field) => field === "name") ? "rename" : "version";
 }
 
-export function changesLine(count: number): string {
-  return count === 1 ? "1 change not saved" : `${String(count)} changes not saved`;
-}
-
 // One message per field, or null. The slug is checked only for a new skill.
 export function fieldProblems(
   form: SkillForm,
@@ -163,7 +159,12 @@ const FIELD_WORDS: Record<SkillTextField, string> = {
 // The Leave without saving text names the changed fields (§14): "You changed the description
 // and the body of Write user stories."
 export function leaveText(form: SkillForm, skillName: string): string {
-  const words = changedFields(form).map((field) => FIELD_WORDS[field]);
+  return leaveTextFor(changedFields(form), skillName);
+}
+
+// The same text for a list of fields: the skill page also names the fields of a Save on its way.
+export function leaveTextFor(fields: readonly SkillTextField[], skillName: string): string {
+  const words = fields.map((field) => FIELD_WORDS[field]);
   const list =
     words.length <= 1
       ? (words[0] ?? "")

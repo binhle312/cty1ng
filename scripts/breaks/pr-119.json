@@ -1,0 +1,161 @@
+{
+  "claims": [
+    {
+      "id": "T1",
+      "claim": "After a late upload answer that comes after Cancel, the next image's crop card stays open (the wait sees the page act on the answer)",
+      "test": {
+        "kind": "e2e",
+        "file": "frontend/test/e2e/bots.spec.ts",
+        "name": "an upload that ends after Cancel does not replace the next image"
+      },
+      "assertion": "await expect(crop, \"B's crop card after A's late answer\").toBeVisible();",
+      "breaks": [
+        {
+          "id": "T1-late-answer-taken",
+          "file": "frontend/src/features/bots/crop-card.tsx",
+          "edits": [
+            {
+              "find": "if (!closed.current) onUploaded({",
+              "replace": "onUploaded({"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T2",
+      "claim": "A drop below the header sends no pin save (the wait sees a save that the drop would start)",
+      "test": {
+        "kind": "e2e",
+        "file": "frontend/test/e2e/bots.spec.ts",
+        "name": "a drop below the header changes no pin"
+      },
+      "assertion": "expect(pinRequests).toEqual([]);",
+      "breaks": [
+        {
+          "id": "T2-drop-outside-pins",
+          "file": "frontend/src/features/shell/header-roster.tsx",
+          "edits": [
+            {
+              "find": "      case \"none\":\n        break;\n",
+              "replace": "      case \"none\":\n        save(withPin(pinnedIds, String(active.id)));\n        break;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T3",
+      "claim": "A long press on a header avatar starts a drag (dnd-kit announces the drag with the bot's name)",
+      "test": {
+        "kind": "e2e",
+        "file": "frontend/test/e2e/bots.spec.ts",
+        "name": "a long press on a header avatar starts a drag that pins it"
+      },
+      "assertion": "await expect(page.getByRole(\"status\").filter({ hasText: name })).toBeAttached();",
+      "breaks": [
+        {
+          "id": "T3-no-long-press",
+          "file": "frontend/src/features/bots/drag-setup.ts",
+          "edits": [
+            {
+              "find": "delay: 300",
+              "replace": "delay: 60_000"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T4",
+      "claim": "A failed background refresh does not replace the editor with the error (the wait sees the page take the last failure)",
+      "test": {
+        "kind": "e2e",
+        "file": "frontend/test/e2e/skills.spec.ts",
+        "name": "a failed background refresh keeps the editor and its unsaved text"
+      },
+      "assertion": "await expect(page.getByText(\"The app could not load the skills.\")).toHaveCount(0);",
+      "breaks": [
+        {
+          "id": "T4-error-on-refresh",
+          "file": "frontend/src/features/skills/skill-page.tsx",
+          "edits": [
+            {
+              "find": "if (row === undefined && skills.isError) {",
+              "replace": "if (skills.isError) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T5",
+      "claim": "A Clone draft stays after the read that follows ready finds its source in Trash (the wait sees each read of the clone source end)",
+      "test": {
+        "kind": "e2e",
+        "file": "frontend/test/e2e/stream-life.spec.ts",
+        "name": "a Clone draft stays when the tab returns after its source went to Trash"
+      },
+      "assertion": "await expect(description, \"the draft after the return\").toHaveValue(\"My draft, not saved.\");",
+      "breaks": [
+        {
+          "id": "T5-editor-closes",
+          "file": "frontend/src/features/skills/new-skill-page.tsx",
+          "edits": [
+            {
+              "find": "if (opened !== null) {",
+              "replace": "if (opened !== null && source.data !== null) {"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "frontend/test/fake-api.test.ts",
+      "name": "fails when the test set no query client",
+      "reason": "A test of a test helper: the runner refuses a break in test/. The PR records its red run: 2 of 3 fail on the old fake-api.ts (promise resolved instead of rejecting)"
+    },
+    {
+      "file": "frontend/test/fake-api.test.ts",
+      "name": "takes the answer when the test set its query client",
+      "reason": "A test of a test helper: the runner refuses a break in test/. The PR records its red run: 2 of 3 fail on the old fake-api.ts (promise resolved instead of rejecting)"
+    },
+    {
+      "file": "frontend/test/fake-api.test.ts",
+      "name": "fails when only an earlier test set the query client",
+      "reason": "A test of a test helper: the runner refuses a break in test/. The PR records its red run: 2 of 3 fail on the old fake-api.ts (promise resolved instead of rejecting)"
+    },
+    {
+      "file": "backend/src/core/guard/sensitive-data.rules.test.ts",
+      "name": "scans a 1 MB line of short code-like words in well under a second",
+      "reason": "Not a late, security or order test. The PR records its red run: with every long scan 1.2 s slower it fails at the limit (2,432 ms); with only one slow run it passes"
+    },
+    {
+      "file": "frontend/src/features/bots/bot-edit-sequences.test.ts",
+      "name": "every order of a Save, its answer, another place, loads, Discard and typing",
+      "reason": "Not a late, security or order test. The PR records its red run: one more step of depth gives 24,006 paths, and the count assertion fails"
+    },
+    {
+      "file": "frontend/src/features/bots/bot-edit-sequences.test.ts",
+      "name": "every order of a Save of a name that another bot has",
+      "reason": "Not a late, security or order test. The PR records its red run: one more step of depth gives 24,006 paths, and the count assertion fails"
+    },
+    {
+      "file": "frontend/src/features/bots/bot-edit-sequences.test.ts",
+      "name": "every order of a Save of a name the server stores in another form",
+      "reason": "Not a late, security or order test. The PR records its red run: one more step of depth gives 24,006 paths, and the count assertion fails"
+    },
+    {
+      "file": "frontend/src/features/bots/bot-edit-sequences.test.ts",
+      "name": "every order with both tabs and two Saves",
+      "reason": "Not a late, security or order test. The PR records its red run: one more step of depth gives 24,006 paths, and the count assertion fails"
+    },
+    {
+      "file": "frontend/src/features/bots/bot-edit-sequences.test.ts",
+      "name": "every order with both tabs and another place that changes the name and the limit",
+      "reason": "Not a late, security or order test. The PR records its red run: one more step of depth gives 24,006 paths, and the count assertion fails"
+    }
+  ]
+}
