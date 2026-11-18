@@ -1,6 +1,9 @@
 ---
 name: principle-safe-test-data
-description: Create synthetic fixtures when tests or examples need values that resemble credentials or private data.
+description: Use when a test, fixture or example needs a value that looks like a credential, key, token or private data. Build a synthetic value.
+metadata:
+  author: binhle312
+  tags: [principle]
 ---
 
 # Use safe test data

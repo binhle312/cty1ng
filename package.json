@@ -10,7 +10,7 @@
     "dev": "pnpm -r --parallel --if-present dev",
     "build": "pnpm --filter @cty1ng/frontend build",
     "start": "tsx scripts/start.ts",
-    "lint": "eslint . && prettier --check . && pnpm lint:imports",
+    "lint": "eslint . --max-warnings 0 && prettier --check . && pnpm lint:imports",
     "lint:imports": "tsx scripts/lint-imports.ts",
     "format": "prettier --write .",
     "typecheck": "tsc -p . && pnpm -r --if-present typecheck",

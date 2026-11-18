@@ -1,5 +1,6 @@
 import { formatFullTime, formatTime } from "../../lib/time-format.ts";
 import { cn } from "../../lib/cn.ts";
+import { useNow } from "../../lib/now.ts";
 import { Tooltip } from "./tooltip.tsx";
 
 // A time on a page ("5 min ago", "2026-10-21 14:05") with the full time and UTC offset in a
@@ -7,6 +8,7 @@ import { Tooltip } from "./tooltip.tsx";
 // the keyboard (UI-2.2). Do not put it inside a button or a label: one control in another is
 // not allowed.
 export function TimeText({ iso, className }: { iso: string; className?: string }) {
+  const now = useNow();
   return (
     <Tooltip label={formatFullTime(iso)} side="top">
       <time
@@ -17,7 +19,7 @@ export function TimeText({ iso, className }: { iso: string; className?: string }
           className,
         )}
       >
-        {formatTime(iso, new Date())}
+        {formatTime(iso, now)}
       </time>
     </Tooltip>
   );

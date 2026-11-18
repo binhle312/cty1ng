@@ -77,6 +77,73 @@ describe("Origin check", () => {
   });
 });
 
+// security.md §2.1, item 35 of the P3 list: a refused request gets the headers of every other
+// answer. The status and the code stay those of the checks above.
+const SECURITY_HEADERS = {
+  "content-security-policy":
+    "default-src 'self'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'",
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "no-referrer",
+};
+const EVIL = "https://evil.com";
+
+describe("refused requests carry the security headers", () => {
+  it.each(
+    (
+      [
+        [
+          "a malformed Host",
+          () => backend.request("/api/health", { headers: { host: "a b" } }),
+          400,
+          "bad_request",
+        ],
+        [
+          "a foreign Host",
+          () => backend.request("/api/health", { headers: { host: "evil.com" } }),
+          403,
+          "host_rejected",
+        ],
+        [
+          "the stream with a foreign Host",
+          () => backend.request("/api/stream", { headers: { host: "evil.com" } }),
+          403,
+          "host_rejected",
+        ],
+        ["a POST with a foreign Origin", () => post({ origin: EVIL }), 403, "origin_rejected"],
+        ["a POST with no Origin", () => post({}), 403, "origin_rejected"],
+        [
+          "a GET with a foreign Origin",
+          () => backend.request("/api/health", { headers: { origin: EVIL } }),
+          403,
+          "origin_rejected",
+        ],
+        [
+          "the stream with a foreign Origin",
+          () => backend.request("/api/stream", { headers: { origin: EVIL } }),
+          403,
+          "origin_rejected",
+        ],
+        [
+          "a preflight from a foreign Origin",
+          () =>
+            backend.request("/api/_test/events", {
+              method: "OPTIONS",
+              headers: { origin: EVIL, "access-control-request-method": "POST" },
+            }),
+          403,
+          "origin_rejected",
+        ],
+      ] as const
+    ).map(([label, send, status, errorCode]) => [label, { send, status, errorCode }] as const),
+  )("%s gets the security headers", async (_label, { send, status, errorCode }) => {
+    const response = await send();
+    expect(response.status).toBe(status);
+    expect(await code(response)).toContain(`"code":"${errorCode}"`);
+    const sent = Object.keys(SECURITY_HEADERS).map((name) => [name, response.headers.get(name)]);
+    expect(Object.fromEntries(sent)).toEqual(SECURITY_HEADERS);
+  });
+});
+
 describe("Host check", () => {
   it.each(["evil.com", "evil.com:8000", "127.0.0.1:9999", "localhost"])(
     "refuses Host %s with 403 host_rejected",
@@ -149,6 +216,41 @@ describe("Host check on the wire", () => {
     );
     expect(response).toMatch(/^HTTP\/1\.1 403/);
     expect(response).toContain("host_rejected");
+  });
+
+  // Item 35 of the P3 list, on a real socket. Node's own 400 for an HTTP/1.1 request with no
+  // Host comes before the app, so it cannot have them.
+  it.each(
+    (
+      [
+        [
+          "two Host headers",
+          (host: string) =>
+            `GET /api/health HTTP/1.1\r\nHost: ${host}\r\nHost: ${host}\r\nConnection: close\r\n\r\n`,
+          400,
+        ],
+        ["HTTP/1.0 with no Host", () => "GET /api/health HTTP/1.0\r\n\r\n", 400],
+        [
+          "an absolute URL with a foreign Host",
+          (host: string) =>
+            `GET http://${host}/api/health HTTP/1.1\r\nHost: evil.com\r\nConnection: close\r\n\r\n`,
+          403,
+        ],
+      ] as const
+    ).map(([label, request, status]) => [label, { request, status }] as const),
+  )("on the wire, %s gets the security headers", async (_label, { request, status }) => {
+    const response = await raw(request(`127.0.0.1:${server.port}`));
+    expect(response).toMatch(new RegExp(`^HTTP/1\\.\\d ${String(status)} `));
+    const head = response.split("\r\n\r\n")[0] ?? "";
+    const lines = head.split("\r\n").slice(1);
+    const all = new Map(
+      lines.map((line) => {
+        const at = line.indexOf(":");
+        return [line.slice(0, at).toLowerCase(), line.slice(at + 1).trim()];
+      }),
+    );
+    const onWire = Object.keys(SECURITY_HEADERS).map((name) => [name, all.get(name) ?? null]);
+    expect(Object.fromEntries(onWire)).toEqual(SECURITY_HEADERS);
   });
 });
 

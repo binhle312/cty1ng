@@ -34,7 +34,8 @@ The page loads the list with `include_deprecated=true` and finds the skill id fr
 it, so the URL of a deprecated skill works after a reload; **Show deprecated** only filters the
 rows on screen. The API takes ids.
 `new` and `import` are reserved slugs (`domain-model.md` §3.1). An unknown or trashed slug shows
-the not-found state of the shell. A reload or a closed browser tab with unsaved changes asks the
+the not-found state of the shell (Page not found) beside the list column; the shell and the list
+stay (P3 list item 66). A reload or a closed browser tab with unsaved changes asks the
 browser's own "Leave site?" question; nothing else of an unsaved edit is kept.
 
 ## 2. Layout: list and skill page side by side (bot page layout)
@@ -490,7 +491,11 @@ the changes marked "owner, 2026-10-31".
   texts added by audit PR 3" for when it waits.
 - A list or skill that does not load: "The app could not load the skills." and **Try again**,
   never Page not found. A failed background refresh keeps the list and the editor on the data
-  they have, with the unsaved text (second review of #54).
+  they have, with the unsaved text (second review of #54). The same holds for the empty state of
+  `/skills` and for the versions and the diff of the History tab (P3 list items 59, 60).
+- The Deprecate, Remove from bots and Delete dialogs take the pattern of the bot cards (§7, "The
+  bot list of a card") for their bot list: when it does not load, "The app could not load the
+  bots." with **Try again**, which reads the bots again (P3 list item 61).
 - Text typed while a Save is pending stays as a change after the Save: only the text the
   request sent counts as saved.
 - A Clone whose source does not load: "The app could not load the skill to copy." and **Try
@@ -526,7 +531,7 @@ the changes marked "owner, 2026-10-31".
   "Tick a bot first.", "Loading the versions.", "The versions did not load. Try again first.",
   "Adding the bots.", "Saving the change.", "v{n} no longer exists. Cancel and pick another
   version." The Deprecate, Remove from bots and Delete dialogs (§10.1, §10.3, §11): "Loading
-  the bots that use it.", "The bots did not load. Close this card and try again.", "Deprecating
+  the bots that use it.", "The bots did not load. Try again first.", "Deprecating
   the skill.", "Removing the skill from the bots.", "No bot uses this skill.", "Tick a bot
   first.", "Deleting the skill."
 - A long diff in the upgrade card (SK3) scrolls inside the card, so Cancel and Upgrade stay in

@@ -1,5 +1,5 @@
 import { useIsMutating, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { notFound, useNavigate, useParams, useRouter, useSearch } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouter, useSearch } from "@tanstack/react-router";
 import { Bot, Ellipsis, FileText, History } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -28,6 +28,7 @@ import type { GetSkillResponse } from "../../lib/api/generated/types.gen.ts";
 import { PIN_QUERIES } from "../../lib/api/operation-queries.ts";
 import { readNewest, refreshQueries } from "../../lib/api/query-reads.ts";
 import { sendPinChanges } from "../bots/bot-list-store.ts";
+import { NotFoundPage } from "../placeholder/not-found-page.tsx";
 import { upgradeCardAfterSave } from "./after-save-cards.tsx";
 import { useDialogRequests } from "./dialog-requests.ts";
 import { LoadError } from "./load-error.tsx";
@@ -71,9 +72,9 @@ import {
   useEditorSettings,
 } from "./skill-queries.ts";
 import { useSkillsPage } from "./skills-context.tsx";
+import { SKILL_TABS, type SkillTab } from "./skill-tabs.ts";
 
 type SkillDetail = GetSkillResponse;
-type TabName = "skill" | "bots" | "history";
 
 const trashKey = (slug: string) => ["trash-skill", slug];
 
@@ -110,9 +111,10 @@ export function SkillPage() {
       <LoadError text="The app could not load the skills." onRetry={() => void skills.refetch()} />
     );
   }
-  // The shell's Page not found replaces the whole Skills page (skills-page.md §1).
-  // eslint-disable-next-line @typescript-eslint/only-throw-error -- the router's way to show Page not found
-  if (row === undefined) throw notFound();
+  // Page not found in the Skills page, beside the list column (skills-page.md §1). A `notFound()`
+  // thrown here would pass the route error boundaries and replace the shell
+  // (frontend-conventions.md §5).
+  if (row === undefined) return <NotFoundPage />;
   if (detail.isPending) return <SkillEditorSkeleton />;
   if (detail.data === undefined) {
     return <LoadError text={apiErrorText(detail.error)} onRetry={() => void detail.refetch()} />;
@@ -394,8 +396,8 @@ function SkillView({ skill }: { skill: SkillDetail }) {
     });
   };
 
-  const tab: TabName = search.tab ?? "skill";
-  const setTab = (next: TabName) => {
+  const tab: SkillTab = search.tab ?? "skill";
+  const setTab = (next: SkillTab) => {
     void navigate({ search: { tab: next === "skill" ? undefined : next } });
   };
 
@@ -454,7 +456,7 @@ function SkillView({ skill }: { skill: SkillDetail }) {
       <TabsRoot
         value={tab}
         onValueChange={(value) => {
-          setTab(value === "bots" ? "bots" : value === "history" ? "history" : "skill");
+          setTab(SKILL_TABS.find((name) => name === value) ?? "skill");
         }}
         className="flex min-h-0 grow flex-col"
       >

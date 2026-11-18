@@ -6,7 +6,7 @@ The Hono app (`docs/api.md`). Handlers parse input, call one service and map the
 | File | What it is for |
 | --- | --- |
 | `app.ts` | The app: middleware in request-path order, routes, the OpenAPI document |
-| `middleware.ts` | Request id, access log, Host and Origin checks, security headers, CORS, body limit (`docs/security.md` §2.1) |
+| `middleware.ts` | The middleware of the request path; `docs/security.md` §2.1 gives the order |
 | `errors.ts` | `ApiFailure`, the one error shape, the generic error handler (no stack to the client) |
 | `router.ts` | Makes every router, so all routes validate the same way (422 `validation_error`) |
 | `context.ts` | The values every handler reads from the context: request id, logger |

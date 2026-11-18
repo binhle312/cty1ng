@@ -40,7 +40,12 @@ bot skills: written ways of working that the bot follows.
 - **Skills page**: make a skill, edit it (a Save of the description or text makes a new version;
   a rename alone does not), see its history and compare two versions, restore an old version,
   clone it, deprecate it, and delete a deprecated skill to Trash. Import and export `SKILL.md` folders as a zip.
+  The list hides deprecated skills until "Show deprecated" is ticked; this browser keeps the tick.
+  A deprecated skill is read-only; "Make active again" in its banner makes it a normal skill again.
   A Clone that is open keeps its text if the source skill goes to Trash, and Create still makes the copy.
+  A Clone names the copy "<name> (copy)", cut to fit the name limit in the settings now; the cut never splits an emoji.
+  When the Deprecate, Remove from bots or Delete card cannot load the bots, **Try again** in the card loads them again.
+  If a refresh fails in the background, the History tab and the empty Skills page keep what they show.
   An import marks a `SKILL.md` as invalid if the file is over 1 MB or its frontmatter has more than 8,192 characters.
 - **Secrets in text**: the app does not save a skill or a bot's text if the text looks like a secret,
   such as a password or an API key with its value. This also applies to a placeholder password.
@@ -69,7 +74,7 @@ bot skills: written ways of working that the bot follows.
   run shows why, with Clone. Tabs:
   - **Profile**: the avatar style and colour, the name, the description and the persona. The big
     avatar and the colour band show a change at once ("Not saved"); Save (or Ctrl+S) applies it
-    from the bot's next run. Discard, or Esc in a field, asks first; Let them go drops the changes.
+    from the bot's next run. Discard, or Esc, asks first; Let them go drops the changes.
   - **Skills**: the bot's skills, the version each uses and Always load. "v3 available" opens
     the changes and Upgrade; the ⋯ menu has Change version (any version, also an older one) and
     Remove; + Add gives the bot more skills at their latest version. Changes save at once:
@@ -100,6 +105,11 @@ bot skills: written ways of working that the bot follows.
   copied from the bot as it is now: persona, skills at the same versions, tools and Advanced. The name gets "(copy)" and
   the colour is a free one; bot memory starts empty. Change the model or the effort here: this is
   the way to try a bot on another model.
+- **When a page fails**: only that page shows "Something went wrong", and the left bar and the
+  header stay. Try again loads the page again; Go to Home or any link in the left bar leaves it.
+  Text that was not saved on that page is lost. If the header cannot load its drag and drop, it
+  shows the avatars with nothing to press until the browser reloads the app. An address of a
+  skill that does not exist shows Page not found beside the list of skills.
 - **Many tabs**: the app works in as many browser tabs as the owner opens. Only a tab that the
   owner can see updates live; a tab in the background shows the newest data when the owner
   returns to it.

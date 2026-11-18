@@ -1,6 +1,9 @@
 ---
 name: principle-split-changes
-description: Split a plan when independent concerns or separate approval needs make it hard to review or recover.
+description: Use when a plan or PR mixes independent outcomes, needs separate approvals, or grows during fixes. Split it into changes with one outcome each.
+metadata:
+  author: binhle312
+  tags: [principle]
 ---
 
 # Split changes

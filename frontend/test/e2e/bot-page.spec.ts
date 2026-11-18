@@ -179,6 +179,33 @@ test("Esc in a changed field asks, a second Esc stays with the text, and Let the
   await expect(question).toHaveCount(0);
 });
 
+// DQ-089, Q13 A: Esc asks wherever the focus is on the page, and the bot menu keeps its own Esc.
+test("Esc after a click outside the form asks, and Esc in the bot menu closes only the menu", async ({
+  page,
+}) => {
+  const bot = await makeBot(`Esc outside ${tagged()}`);
+  await page.goto(`/bots/${bot.slug}`);
+  const name = page.getByLabel("Name", { exact: true });
+  await name.fill("Changed");
+  const question = page.getByRole("alertdialog", { name: "Leave without saving? 👀" });
+
+  // A click on the bot name, which takes no focus: the focus leaves the form.
+  await page.getByRole("heading", { name: bot.name, level: 1 }).click();
+  await expect(name).not.toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(question, "Esc outside the form asks").toBeVisible();
+  await question.getByRole("button", { name: "Stay on this page" }).click();
+  await expect(question).toHaveCount(0);
+
+  await page.getByRole("button", { name: `${bot.name} actions` }).click();
+  const remove = page.getByRole("menuitem", { name: "Delete" });
+  await expect(remove).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(remove).toHaveCount(0);
+  await expect(question).toHaveCount(0);
+  await expect(name).toHaveValue("Changed");
+});
+
 test("Esc on the Model tab asks, and Esc in the Custom colour card closes only the card", async ({
   page,
 }) => {

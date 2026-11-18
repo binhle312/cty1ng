@@ -1,6 +1,9 @@
 ---
 name: principle-verify-delivery
-description: Verify the final revision before handoff and report the scope and result of each check.
+description: Use before a handoff, a push to a PR, or a report that work is complete. Verify the final revision and report each check.
+metadata:
+  author: binhle312
+  tags: [principle]
 ---
 
 # Verify delivery

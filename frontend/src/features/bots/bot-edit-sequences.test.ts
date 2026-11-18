@@ -495,12 +495,15 @@ function editModel({
   };
 }
 
-// Every order is a tree of thousands of paths; under a full parallel run it needs more than the
-// default 5 seconds.
-describe("Profile and Model edit sequences", { timeout: 30_000 }, () => {
+// Every order is a tree of thousands of paths. The size of the work is a count, not a time: each
+// tree test checks its exact number of paths, and the random test has a fixed number of runs and
+// steps. A model change that grows the work fails at the count. The time limit only stops a hang:
+// measured on 2026-11-15 (16 cores), the slowest test took 1.7 s alone and 11.9 s in a full
+// `pnpm test`, so 60 s is 5 times the full run.
+describe("Profile and Model edit sequences", { timeout: 60_000 }, () => {
   it("every order of a Save, its answer, another place, loads, Discard and typing", () => {
     const paths = everyOrder(editModel({ saves: 1, others: 1, names: ["BA", "X"], limits: [] }), 7);
-    expect(paths).toBeGreaterThan(1000);
+    expect(paths).toBe(6_271);
   });
 
   it("every order of a Save of a name that another bot has", () => {
@@ -508,7 +511,7 @@ describe("Profile and Model edit sequences", { timeout: 30_000 }, () => {
       editModel({ saves: 1, others: 1, names: ["BA", "X", TAKEN], limits: [] }),
       6,
     );
-    expect(paths).toBeGreaterThan(1000);
+    expect(paths).toBe(8_858);
   });
 
   // The server stores the name trimmed and collapsed, so its name is not the text that was sent.
@@ -517,7 +520,7 @@ describe("Profile and Model edit sequences", { timeout: 30_000 }, () => {
       editModel({ saves: 1, others: 1, names: ["BA", " X  "], limits: [] }),
       7,
     );
-    expect(paths).toBeGreaterThan(1000);
+    expect(paths).toBe(6_454);
   });
 
   it("every order with both tabs and two Saves", () => {
@@ -525,7 +528,7 @@ describe("Profile and Model edit sequences", { timeout: 30_000 }, () => {
       editModel({ saves: 2, others: 0, names: ["BA", "X"], limits: [10, 20] }),
       6,
     );
-    expect(paths).toBeGreaterThan(1000);
+    expect(paths).toBe(3_292);
   });
 
   it("every order with both tabs and another place that changes the name and the limit", () => {
@@ -533,7 +536,7 @@ describe("Profile and Model edit sequences", { timeout: 30_000 }, () => {
       editModel({ saves: 1, others: 2, names: ["BA", "X"], limits: [10, 20] }),
       6,
     );
-    expect(paths).toBeGreaterThan(1000);
+    expect(paths).toBe(17_565);
   });
 
   it("random orders from a seed, with both tabs and another place", () => {

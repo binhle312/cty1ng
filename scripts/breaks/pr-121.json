@@ -1,0 +1,489 @@
+{
+  "claims": [
+    {
+      "id": "R35-a-malformed-host",
+      "claim": "A refusal of a malformed Host carries the CSP, nosniff and no-referrer of security.md §2.1",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/host-origin.test.ts",
+        "name": "a malformed Host gets the security headers"
+      },
+      "assertion": "expect(Object.fromEntries(sent)).toEqual(SECURITY_HEADERS);",
+      "breaks": [
+        {
+          "id": "R35-a-malformed-host-after-checks",
+          "file": "backend/src/adapters/http/app.ts",
+          "edits": [
+            {
+              "find": "  app.use(securityHeaders());\n  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n",
+              "replace": "  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n  app.use(securityHeaders());\n"
+            }
+          ]
+        },
+        {
+          "id": "R35-a-malformed-host-between-checks",
+          "file": "backend/src/adapters/http/app.ts",
+          "edits": [
+            {
+              "find": "  app.use(securityHeaders());\n  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n",
+              "replace": "  app.use(hostCheck(deps.allowedHosts));\n  app.use(securityHeaders());\n  app.use(originCheck(deps.allowedOrigins));\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R35-a-foreign-host",
+      "claim": "A refusal of a foreign Host carries the CSP, nosniff and no-referrer of security.md §2.1",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/host-origin.test.ts",
+        "name": "a foreign Host gets the security headers"
+      },
+      "assertion": "expect(Object.fromEntries(sent)).toEqual(SECURITY_HEADERS);",
+      "breaks": [
+        {
+          "id": "R35-a-foreign-host-after-checks",
+          "file": "backend/src/adapters/http/app.ts",
+          "edits": [
+            {
+              "find": "  app.use(securityHeaders());\n  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n",
+              "replace": "  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n  app.use(securityHeaders());\n"
+            }
+          ]
+        },
+        {
+          "id": "R35-a-foreign-host-between-checks",
+          "file": "backend/src/adapters/http/app.ts",
+          "edits": [
+            {
+              "find": "  app.use(securityHeaders());\n  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n",
+              "replace": "  app.use(hostCheck(deps.allowedHosts));\n  app.use(securityHeaders());\n  app.use(originCheck(deps.allowedOrigins));\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R35-the-stream-with-a-foreign-host",
+      "claim": "A refusal of the stream with a foreign Host carries the CSP, nosniff and no-referrer of security.md §2.1",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/host-origin.test.ts",
+        "name": "the stream with a foreign Host gets the security headers"
+      },
+      "assertion": "expect(Object.fromEntries(sent)).toEqual(SECURITY_HEADERS);",
+      "breaks": [
+        {
+          "id": "R35-the-stream-with-a-foreign-host-after-checks",
+          "file": "backend/src/adapters/http/app.ts",
+          "edits": [
+            {
+              "find": "  app.use(securityHeaders());\n  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n",
+              "replace": "  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n  app.use(securityHeaders());\n"
+            }
+          ]
+        },
+        {
+          "id": "R35-the-stream-with-a-foreign-host-between-checks",
+          "file": "backend/src/adapters/http/app.ts",
+          "edits": [
+            {
+              "find": "  app.use(securityHeaders());\n  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n",
+              "replace": "  app.use(hostCheck(deps.allowedHosts));\n  app.use(securityHeaders());\n  app.use(originCheck(deps.allowedOrigins));\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R35-a-post-with-a-foreign-origin",
+      "claim": "A refusal of a POST with a foreign Origin carries the CSP, nosniff and no-referrer of security.md §2.1",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/host-origin.test.ts",
+        "name": "a POST with a foreign Origin gets the security headers"
+      },
+      "assertion": "expect(Object.fromEntries(sent)).toEqual(SECURITY_HEADERS);",
+      "breaks": [
+        {
+          "id": "R35-a-post-with-a-foreign-origin-after-checks",
+          "file": "backend/src/adapters/http/app.ts",
+          "edits": [
+            {
+              "find": "  app.use(securityHeaders());\n  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n",
+              "replace": "  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n  app.use(securityHeaders());\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R35-a-post-with-no-origin",
+      "claim": "A refusal of a POST with no Origin carries the CSP, nosniff and no-referrer of security.md §2.1",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/host-origin.test.ts",
+        "name": "a POST with no Origin gets the security headers"
+      },
+      "assertion": "expect(Object.fromEntries(sent)).toEqual(SECURITY_HEADERS);",
+      "breaks": [
+        {
+          "id": "R35-a-post-with-no-origin-after-checks",
+          "file": "backend/src/adapters/http/app.ts",
+          "edits": [
+            {
+              "find": "  app.use(securityHeaders());\n  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n",
+              "replace": "  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n  app.use(securityHeaders());\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R35-a-get-with-a-foreign-origin",
+      "claim": "A refusal of a GET with a foreign Origin carries the CSP, nosniff and no-referrer of security.md §2.1",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/host-origin.test.ts",
+        "name": "a GET with a foreign Origin gets the security headers"
+      },
+      "assertion": "expect(Object.fromEntries(sent)).toEqual(SECURITY_HEADERS);",
+      "breaks": [
+        {
+          "id": "R35-a-get-with-a-foreign-origin-after-checks",
+          "file": "backend/src/adapters/http/app.ts",
+          "edits": [
+            {
+              "find": "  app.use(securityHeaders());\n  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n",
+              "replace": "  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n  app.use(securityHeaders());\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R35-the-stream-with-a-foreign-origin",
+      "claim": "A refusal of the stream with a foreign Origin carries the CSP, nosniff and no-referrer of security.md §2.1",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/host-origin.test.ts",
+        "name": "the stream with a foreign Origin gets the security headers"
+      },
+      "assertion": "expect(Object.fromEntries(sent)).toEqual(SECURITY_HEADERS);",
+      "breaks": [
+        {
+          "id": "R35-the-stream-with-a-foreign-origin-after-checks",
+          "file": "backend/src/adapters/http/app.ts",
+          "edits": [
+            {
+              "find": "  app.use(securityHeaders());\n  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n",
+              "replace": "  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n  app.use(securityHeaders());\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R35-a-preflight-from-a-foreign-origin",
+      "claim": "A refusal of a preflight from a foreign Origin carries the CSP, nosniff and no-referrer of security.md §2.1",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/host-origin.test.ts",
+        "name": "a preflight from a foreign Origin gets the security headers"
+      },
+      "assertion": "expect(Object.fromEntries(sent)).toEqual(SECURITY_HEADERS);",
+      "breaks": [
+        {
+          "id": "R35-a-preflight-from-a-foreign-origin-after-checks",
+          "file": "backend/src/adapters/http/app.ts",
+          "edits": [
+            {
+              "find": "  app.use(securityHeaders());\n  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n",
+              "replace": "  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n  app.use(securityHeaders());\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R35-wire-two-host-headers",
+      "claim": "On a real socket, the refusal of two Host headers carries the security headers",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/host-origin.test.ts",
+        "name": "on the wire, two Host headers gets the security headers"
+      },
+      "assertion": "expect(Object.fromEntries(onWire)).toEqual(SECURITY_HEADERS);",
+      "breaks": [
+        {
+          "id": "R35-wire-two-host-headers-after-checks",
+          "file": "backend/src/adapters/http/app.ts",
+          "edits": [
+            {
+              "find": "  app.use(securityHeaders());\n  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n",
+              "replace": "  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n  app.use(securityHeaders());\n"
+            }
+          ]
+        },
+        {
+          "id": "R35-wire-two-host-headers-between-checks",
+          "file": "backend/src/adapters/http/app.ts",
+          "edits": [
+            {
+              "find": "  app.use(securityHeaders());\n  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n",
+              "replace": "  app.use(hostCheck(deps.allowedHosts));\n  app.use(securityHeaders());\n  app.use(originCheck(deps.allowedOrigins));\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R35-wire-http1.0-with-no-host",
+      "claim": "On a real socket, the refusal of HTTP/1.0 with no Host carries the security headers",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/host-origin.test.ts",
+        "name": "on the wire, HTTP/1.0 with no Host gets the security headers"
+      },
+      "assertion": "expect(Object.fromEntries(onWire)).toEqual(SECURITY_HEADERS);",
+      "breaks": [
+        {
+          "id": "R35-wire-http1.0-with-no-host-after-checks",
+          "file": "backend/src/adapters/http/app.ts",
+          "edits": [
+            {
+              "find": "  app.use(securityHeaders());\n  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n",
+              "replace": "  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n  app.use(securityHeaders());\n"
+            }
+          ]
+        },
+        {
+          "id": "R35-wire-http1.0-with-no-host-between-checks",
+          "file": "backend/src/adapters/http/app.ts",
+          "edits": [
+            {
+              "find": "  app.use(securityHeaders());\n  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n",
+              "replace": "  app.use(hostCheck(deps.allowedHosts));\n  app.use(securityHeaders());\n  app.use(originCheck(deps.allowedOrigins));\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R35-wire-an-absolute-url-with-a-foreign-host",
+      "claim": "On a real socket, the refusal of an absolute URL with a foreign Host carries the security headers",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/security/host-origin.test.ts",
+        "name": "on the wire, an absolute URL with a foreign Host gets the security headers"
+      },
+      "assertion": "expect(Object.fromEntries(onWire)).toEqual(SECURITY_HEADERS);",
+      "breaks": [
+        {
+          "id": "R35-wire-an-absolute-url-with-a-foreign-host-after-checks",
+          "file": "backend/src/adapters/http/app.ts",
+          "edits": [
+            {
+              "find": "  app.use(securityHeaders());\n  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n",
+              "replace": "  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n  app.use(securityHeaders());\n"
+            }
+          ]
+        },
+        {
+          "id": "R35-wire-an-absolute-url-with-a-foreign-host-between-checks",
+          "file": "backend/src/adapters/http/app.ts",
+          "edits": [
+            {
+              "find": "  app.use(securityHeaders());\n  app.use(hostCheck(deps.allowedHosts));\n  app.use(originCheck(deps.allowedOrigins));\n",
+              "replace": "  app.use(hostCheck(deps.allowedHosts));\n  app.use(securityHeaders());\n  app.use(originCheck(deps.allowedOrigins));\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R36-dev-csp",
+      "claim": "The dev page sends the production CSP, with a nonce in script-src and style-src",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/dev-proxy.test.ts",
+        "name": "the dev page sends the production CSP with a nonce for scripts and styles"
+      },
+      "assertion": "expect(response.headers.get(\"content-security-policy\") ?? \"no CSP\").toMatch(",
+      "breaks": [
+        {
+          "id": "R36-dev-csp-no-headers",
+          "file": "frontend/vite.config.ts",
+          "edits": [
+            {
+              "find": "...(dev === undefined ? {} : { headers: dev.headers }),",
+              "replace": "...(dev === undefined ? {} : {}),"
+            }
+          ]
+        },
+        {
+          "id": "R36-dev-csp-no-frame-ancestors",
+          "file": "frontend/vite.config.ts",
+          "edits": [
+            {
+              "find": "    \"object-src 'none'\",\n    \"frame-ancestors 'none'\",\n",
+              "replace": "    \"object-src 'none'\",\n"
+            }
+          ]
+        },
+        {
+          "id": "R36-dev-csp-script-no-nonce",
+          "file": "frontend/vite.config.ts",
+          "edits": [
+            {
+              "find": "    `script-src 'self' 'nonce-${nonce}'`,",
+              "replace": "    \"script-src 'self'\","
+            }
+          ]
+        },
+        {
+          "id": "R36-dev-csp-style-no-nonce",
+          "file": "frontend/vite.config.ts",
+          "edits": [
+            {
+              "find": "    `style-src 'self' 'nonce-${nonce}'`,",
+              "replace": "    \"style-src 'self' 'unsafe-inline'\","
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R36-dev-other-headers",
+      "claim": "The dev page sends nosniff and no-referrer",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/dev-proxy.test.ts",
+        "name": "the dev page sends the other headers of security.md §2.1"
+      },
+      "assertion": "expect(Object.fromEntries(other)).toEqual({",
+      "breaks": [
+        {
+          "id": "R36-dev-no-referrer-policy",
+          "file": "frontend/vite.config.ts",
+          "edits": [
+            {
+              "find": "      \"Referrer-Policy\": \"no-referrer\",\n",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "R36-dev-no-nosniff",
+          "file": "frontend/vite.config.ts",
+          "edits": [
+            {
+              "find": "      \"X-Content-Type-Options\": \"nosniff\",\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R36-dev-inline-script-nonce",
+      "claim": "Each inline script of the dev page has the nonce of the CSP",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/dev-proxy.test.ts",
+        "name": "each inline script of the dev page has the nonce of the CSP"
+      },
+      "assertion": "expect(scriptNonces).toEqual(inline.map(() => nonce?.[1] ?? \"no nonce in the CSP\"));",
+      "breaks": [
+        {
+          "id": "R36-dev-script-no-cspNonce",
+          "file": "frontend/vite.config.ts",
+          "edits": [
+            {
+              "find": "...(dev === undefined ? {} : { html: { cspNonce: dev.nonce } }),",
+              "replace": "...(dev === undefined ? {} : {}),"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R36-dev-style-nonce-meta",
+      "claim": "The dev page gives the Vite client the nonce of the CSP for its styles",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/dev-proxy.test.ts",
+        "name": "the dev page gives the Vite client the nonce for its styles"
+      },
+      "assertion": "expect(meta?.[1]).toBe(nonce?.[1] ?? \"no nonce in the CSP\");",
+      "breaks": [
+        {
+          "id": "R36-dev-meta-no-cspNonce",
+          "file": "frontend/vite.config.ts",
+          "edits": [
+            {
+              "find": "...(dev === undefined ? {} : { html: { cspNonce: dev.nonce } }),",
+              "replace": "...(dev === undefined ? {} : {}),"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R36-nonce-per-run",
+      "claim": "Each run of the dev config makes a new random nonce",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/dev-proxy.test.ts",
+        "name": "each run of the dev config makes a new random nonce"
+      },
+      "assertion": "expect({ valid: nonce.test(first ?? \"\"), changed: first !== second }).toEqual({",
+      "breaks": [
+        {
+          "id": "R36-nonce-fixed-literal",
+          "file": "frontend/vite.config.ts",
+          "edits": [
+            {
+              "find": "  const nonce = randomBytes(16).toString(\"base64\");",
+              "replace": "  const nonce = \"AAAAAAAAAAAAAAAAAAAAAA==\";"
+            }
+          ]
+        },
+        {
+          "id": "R36-nonce-per-run-no-cspNonce",
+          "file": "frontend/vite.config.ts",
+          "edits": [
+            {
+              "find": "...(dev === undefined ? {} : { html: { cspNonce: dev.nonce } }),",
+              "replace": "...(dev === undefined ? {} : {}),"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R36-build-no-nonce",
+      "claim": "The production build has no nonce",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/dev-proxy.test.ts",
+        "name": "the production build has no nonce"
+      },
+      "assertion": "expect(build.html?.cspNonce).toBeUndefined();",
+      "breaks": [
+        {
+          "id": "R36-build-gets-nonce",
+          "file": "frontend/vite.config.ts",
+          "edits": [
+            {
+              "find": "const dev = command === \"serve\" ? devSecurity() : undefined;",
+              "replace": "const dev = command === \"build\" || command === \"serve\" ? devSecurity() : undefined;"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": []
+}

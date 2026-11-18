@@ -8,6 +8,7 @@ import { TimeText } from "../../components/ui/time-text.tsx";
 import { getSkillDiffOptions } from "../../lib/api/generated/@tanstack/react-query.gen.ts";
 import type { ListSkillVersionsResponse } from "../../lib/api/generated/types.gen.ts";
 import { cn } from "../../lib/cn.ts";
+import { useNow } from "../../lib/now.ts";
 import { formatTime } from "../../lib/time-format.ts";
 import { BotPickList } from "../bots/bot-list.tsx";
 import { LoadError } from "./load-error.tsx";
@@ -336,6 +337,7 @@ export function ChangeVersionDialog({
   onPick: (version: VersionRow) => void;
 }) {
   const cancel = useRef<HTMLButtonElement>(null);
+  const now = useNow();
   return (
     <Dialog open={open} onClose={onClose} title="Change version" defaultButton={cancel}>
       <DialogText>Pick the version that {botName} uses.</DialogText>
@@ -370,7 +372,7 @@ export function ChangeVersionDialog({
                     {noteOf(version)}
                     <span className="block text-sm text-on-surface-muted">
                       {current && `${botName} uses this · `}
-                      {formatTime(version.created_at, new Date())}
+                      {formatTime(version.created_at, now)}
                     </span>
                   </span>
                   {index === 0 && <span className="text-sm text-success">latest</span>}

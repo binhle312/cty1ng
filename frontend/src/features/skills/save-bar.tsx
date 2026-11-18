@@ -13,6 +13,11 @@ export function SaveBarFrame({ children }: { children: ReactNode }) {
   );
 }
 
+// The count line of a save bar with changes: the skill editor and the bot page's tabs.
+export function changesLine(count: number): string {
+  return count === 1 ? "1 change not saved" : `${String(count)} changes not saved`;
+}
+
 // A button that is off says why in a tooltip (ui-rules B5). It stays focusable, so the
 // tooltip also shows on keyboard focus. The pin cards use it too (skill-pin-dialogs.tsx).
 export function SaveButton({
@@ -80,7 +85,7 @@ export function EditSaveBar(props: EditSaveBarProps) {
     <SaveBarFrame>
       <span className="flex shrink-0 items-center gap-2">
         <span aria-hidden className="size-2 rounded-pill bg-primary" />
-        {props.changes === 1 ? "1 change not saved" : `${String(props.changes)} changes not saved`}
+        {changesLine(props.changes)}
       </span>
       {props.error !== null && <span className="text-sm text-danger">{props.error}</span>}
       {props.renameOnly ? (

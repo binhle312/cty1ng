@@ -3,6 +3,7 @@ import { createMemoryHistory, createRouter, RouterProvider } from "@tanstack/rea
 import { act, render } from "@testing-library/react";
 import { TooltipProvider } from "../src/components/ui/tooltip.tsx";
 import { createQueryClient } from "../src/lib/api/query-client.ts";
+import { routerErrorOptions } from "../src/router.ts";
 import { routeTree } from "../src/routes/route-tree.ts";
 import { watchQueryClient } from "./fake-api.ts";
 
@@ -14,6 +15,8 @@ export async function renderApp(path = "/") {
     history: createMemoryHistory({ initialEntries: [path] }),
     defaultPendingMs: 0,
     defaultPendingMinMs: 0,
+    // The app's error screen (router.ts), so a test sees what the owner sees when a page fails.
+    ...routerErrorOptions,
   });
   // The app's query client (DQ-088). A failed request fails at once: the error state shows
   // without TanStack Query's retries.

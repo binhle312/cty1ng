@@ -1,4 +1,5 @@
 import type { Effort, UnavailableReason } from "@cty1ng/shared/catalog";
+import { plural } from "../../lib/plural.ts";
 import { formatTime } from "../../lib/time-format.ts";
 import type { BotRow } from "./bot-queries.ts";
 
@@ -83,12 +84,8 @@ export function modelLine(bot: Pick<BotRow, "model_label" | "model_id" | "effort
   return bot.effort === null ? model : `${model} · ${EFFORT_LABELS[bot.effort]}`;
 }
 
-function plural(n: number, one: string, many: string): string {
-  return `${String(n)} ${n === 1 ? one : many}`;
-}
-
 export function countText(n: number, noun: "skill" | "project" | "conversation"): string {
-  return plural(n, noun, `${noun}s`);
+  return plural(n, noun);
 }
 
 // The search of the Bots page (bots-page.md §7): name, slug, description and model label.

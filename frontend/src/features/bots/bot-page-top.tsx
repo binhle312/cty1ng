@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Ellipsis, Lock } from "lucide-react";
 import { Button } from "../../components/ui/button.tsx";
+import { useNow } from "../../lib/now.ts";
 import {
   MenuItem,
   MenuPopup,
@@ -35,6 +36,7 @@ export function BotPageTop({
   onDelete: () => void;
 }) {
   const navigate = useNavigate();
+  const now = useNow();
   const avatar = {
     avatar_style: form.avatar_style,
     avatar_colour: form.avatar_colour,
@@ -84,7 +86,7 @@ export function BotPageTop({
               className="mt-1.5 flex items-center gap-1.5 rounded-xs text-sm text-on-surface-muted hover:text-on-surface focus-visible:outline-2 focus-visible:outline-primary"
             >
               <span aria-hidden className="size-1.5 rounded-pill bg-on-surface-muted" />
-              {statusText(bot, new Date())}
+              {statusText(bot, now)}
             </button>
           </div>
         </div>
