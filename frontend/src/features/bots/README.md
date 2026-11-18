@@ -37,7 +37,8 @@ the parts that the header and the Skills page share.
 | `crop-card.tsx` | Choosing an avatar image: type and size checks, the round crop card, the upload |
 | `custom-colour-card.tsx` | The Custom colour card: box, hue bar, R G B and Hex |
 | `delete-bot-dialog.tsx` | Delete a bot to Trash: the dialog and its toast |
-| `drag-setup.ts` | The drag sensors (mouse, long-press touch, Space) and the drop-area check shared by the header and the Pinned group |
+| `drag-setup.ts` | The drag sensors (mouse, long-press touch, Space) and the drop-area check shared by the header and the Pinned group; the keyboard sensor hears each key after the pick-up key, however soon it comes |
+| `drag-setup.test.tsx` | The keyboard sensor: keys right after the pick-up, the pick-up Space, no listener left, the fallback, and its checks of dnd-kit's private parts and `attach` |
 | `pinned-sort.tsx` | Reordering the pinned bots (pin.md §2): drag and Alt+← / Alt+→, for the Bots grid and the side list |
 | `tools-list.tsx` | The Tools list of step 4: internal and provider tools, pairs, gates |
 
