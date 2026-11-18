@@ -2,7 +2,7 @@
 
 Brief: the owner's answers of 2026-11-18 to DQ-442, DQ-500, DQ-485, DQ-411 (UI-1), item 61 (UI-2), #123 (UI-3) and DQ-426; no task brief exists
 Checkpoint: none (seven small changes; the owner gave each answer and each text)
-Approval: UI texts and scope: the owner's answers of 2026-11-18. The plan itself waits for the chief agent's "plan OK" (the chief checks it against the owner's answers).
+Approval: UI texts and scope: the owner's answers of 2026-11-18. Plan OK by the chief agent, 2026-11-18, against the owner's answers (DQ-442 B, DQ-500 C, DQ-485 C, DQ-426 A, UI-1 A, UI-2 B, UI-3 A).
 
 Code read at `origin/main` = `aa85cb9` (#124 merged). I read each place; I have not run the wrong
 behaviour yet. The red runs are in the build step.
@@ -18,7 +18,7 @@ the table).
 | --- | --- | --- | --- | --- |
 | 1 | DQ-442 B | `skill-history.tsx:91` and `:312`: a `<p>` with the load error, no **Try again**, no `role="alert"` | Use `LoadError` (the pattern of the skill dialogs and the bot cards) with `versions.refetch()` and `diff.refetch()`. The texts stay: "The app could not load the versions." and "The app could not load the changes." | `skill-history.tsx` |
 | 2 | DQ-500 C | `top-header.tsx:34`: `errorComponent={() => <RosterStandIn bots={all} failed />}` is a new function type on each header render, so React mounts the stand-in again each time | A module-level `RosterFailed` component that reads the bots with `useBots()` (the query is shared; `errorComponent` gets only `error` and `reset`) | `top-header.tsx` |
-| 3 | DQ-485 C | `routes/bots.tsx:30` cites "bot-page.md §1"; `bot-tabs.ts:1` cites "§1". The URL table is in the unnumbered intro of `bot-page.md`; the tab list is §3 | Comments only. Cite the headings by name: "the URL table in the intro of bot-page.md" and "bot-page.md, Tabs". The cite in `routes/bots.tsx:7` ("bot-page.md §1, create-bot-page.md §7") is the same wrong cite for the URLs, so I correct that line too (the chief decides in "plan OK" if not) | `routes/bots.tsx`, `features/bots/bot-tabs.ts` |
+| 3 | DQ-485 C | `routes/bots.tsx:30` cites "bot-page.md §1"; `bot-tabs.ts:1` cites "§1". The URL table is in the unnumbered intro of `bot-page.md`; the tab list is §3 | Comments only. Cite the headings by name: "the URL table in the intro of bot-page.md" and "bot-page.md, Tabs". The cite in `routes/bots.tsx:7` ("bot-page.md §1, create-bot-page.md §7") is the same wrong cite for the URLs, so I correct that line too (the chief agent said yes, 2026-11-18) | `routes/bots.tsx`, `features/bots/bot-tabs.ts` |
 | 4 | DQ-411 / UI-1 A | `create-bot-steps.tsx:463`: "... Deprecated skills are not in the list." | The last sentence becomes "You cannot add deprecated skills." `create-bot-page.md` step 3 states the fact (`:61-64`) and does not quote the note; I do not change it unless the build finds a quote (then I change the quote) | `create-bot-steps.tsx` |
 | 5 | Item 61 / UI-2 B | `skill-dialogs.tsx:63`: "The bots did not load. Try again first." | The reason becomes "The app must know which bots use this skill. Try again first." The error text "The app could not load the bots." stays. `skills-page.md:574` gives the old reason for the Deprecate, Remove from bots and Delete dialogs: update it | `skill-dialogs.tsx`, `skills-page.md` |
 | 6 | #123 / UI-3 A | `error-page.tsx` and `not-found-page.tsx` have an `h1`. Inside the Skills page they show beside the list column with its `h1` "Skills": two `h1` | Both components take `level?: 1 \| 2` (default 1). The Skills page uses `2`: `skill-page.tsx:106` and `new-skill-page.tsx:94` (Page not found), and the four lazy child routes of `skills.lazy.tsx` get an `errorComponent` that renders `<ErrorPage level={2} />`. Texts and buttons stay. Remove the Follow-ups row of #123 from `status.md` (the row that says "Two `h1` headings on the Skills page") | `error-page.tsx`, `not-found-page.tsx`, `skill-page.tsx`, `new-skill-page.tsx`, `routes/skills.lazy.tsx`, `docs/status.md` |
@@ -28,11 +28,26 @@ Not claimed, and not in this PR:
 
 - The after-save cards (`after-save-cards.tsx:223`, `skills-page.md:210`) use the same old reason
   "The bots did not load. Try again first.". The owner's answer 5 names the dialogs of
-  `skill-dialogs.tsx` only. I keep the cards as they are and write a ledger row (a question for
-  the owner: same text for the cards?).
+  `skill-dialogs.tsx` only. I keep the cards as they are. The chief agent asks the owner on
+  2026-11-18 (same reason in the cards: yes or no). If yes, it joins this PR as item 8 before the
+  PR opens. If no, it is the owner's decision, not a finding. No ledger row now.
 - Error screens outside the Skills page keep their `h1`.
 - A route-level `notFoundComponent` for an unknown address below `/skills` (for example
   `/skills/a/b`) is not changed.
+
+### Item 6: where the screens show (chief's condition, 2026-11-18)
+
+Today: a child route of `/skills` that throws has its own match, so its error boundary is the
+child's. The router's `defaultErrorComponent` renders in that match, in the `Outlet` of
+`SkillsLayout` (`skills-layout.tsx:44`, a `section` beside `SkillList`). So the list column stays
+and the error screen shows beside it. `errorComponent` on a lazy child route sets the component of
+the same boundary of the same match: the place does not change, only the component and so the
+heading level. `NotFoundPage` is returned by the page itself, so its place does not change at all.
+An error of the layout itself (or of the chunk) still goes to the default `ErrorPage` with `h1`:
+there is no list column then, so one `h1` is right.
+Proof, not a reading: the tests of item 6 check that the list column (the "Skills" `h1`, the
+search box) is still in the document when a child route fails, and that the screen has exactly
+one `h1`. If the test shows any change beyond the heading level, I stop and tell the chief.
 
 ## 2. Test strategy (one red test for each behaviour change)
 
@@ -47,7 +62,7 @@ their expected text in the same commit as the code (they are the red tests of it
 | 3 | none | Comments only. Proof: `rg` for the old cites returns nothing; a reading of `bot-page.md` headings | n/a |
 | 4 | `create-bot-page.test.tsx`, one new test | Step 3 shows "You cannot add deprecated skills." and does not show "Deprecated skills are not in the list." | The old sentence is shown |
 | 5 | `skill-dialogs.test.tsx:117`, expected text changed | The Deprecate dialog with a bot list that did not load: the alert says "The app could not load the bots." and the focused confirm button gives the new reason. I add the Remove from bots and the Delete dialogs to the same test if they use `botsReason` (check in the build) | The old reason is shown |
-| 6 | `error-page.test.tsx`, one new test; `not-found-page.test.tsx` (new, small); `skill-page.test.tsx` and `new-skill-page.test.tsx`, one assertion each | (a) At `/skills`, the index page throws: one `h1` ("Skills") and the error screen is an `h2` with the same text and buttons. (b) `/skills/unknown`: one `h1`, "Page not found" is an `h2`. (c) The Clone page with no source: the same. (d) Outside the Skills page (a throw at `/`) the heading stays an `h1` (default). (e) The component test: `level={2}` gives an `h2`, no level gives an `h1` | Two `h1` today |
+| 6 | `error-page.test.tsx`, one new test; `not-found-page.test.tsx` (new, small); `skill-page.test.tsx` and `new-skill-page.test.tsx`, one assertion each | (a) At `/skills`, the index page throws: the list column is still shown, exactly one `h1` ("Skills") and the error screen is an `h2` with the same text and buttons. (b) `/skills/unknown`: one `h1`, "Page not found" is an `h2`. (c) The Clone page with no source: the same. (d) Outside the Skills page (a throw at `/`) the heading stays an `h1` (default). (e) The component test: `level={2}` gives an `h2`, no level gives an `h1` | Two `h1` today |
 | 7 | none (a Guide sentence) | The Guide text is read by `check:index`/lint only. Proof: the seed file diff and a reading against `skills-page.md` §10.2 | n/a |
 
 Order and timing cases: only item 2 and item 1 have any. Item 2: the node identity test is the
