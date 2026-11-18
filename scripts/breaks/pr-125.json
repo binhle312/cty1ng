@@ -614,7 +614,7 @@
     {
       "file": "scripts/lint-rules.test.ts",
       "name": "keeps the clock rule on every components and features file",
-      "reason": "Written before the code; the red run is in the PR"
+      "reason": "Written before the code. The red run (red-part4.txt) is of the first assertion, which looked for the word useNow. The assertion now looks for the selector; a scratch run of round 2 shows it fails when a block keeps the message with another selector and when CLOCK_RULES is dropped"
     },
     {
       "file": "scripts/lint-rules.test.ts",

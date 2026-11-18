@@ -28,7 +28,7 @@ const later = (ms: number) => {
   });
 };
 
-// time-format.md §1: a relative time updates at least each 30 seconds while the page is visible.
+// time-format.md §1: a relative time updates while the page is visible (the tick has its value there).
 // One claim for each test: `scripts/breaks/pr-125.json` has a break for the order and race tests.
 describe("TimeText", () => {
   it("starts as Just now", () => {

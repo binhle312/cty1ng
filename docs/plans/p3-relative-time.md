@@ -230,5 +230,5 @@ The plan is a record, not a spec. The build differs in these places:
   leaves in a `visible` event. Each has a break.
 - The comment of `createClock` says what the clock does for a text that is already on screen when a
   laptop wakes: it is made again at the next tick or at the `visibilitychange` event, not at once.
-- The value of the tick is written in `time-format.md` §1 only. `frontend-conventions.md` and
-  `lib/README.md` point to it.
+- The home of the tick value is `time-format.md` §1. `frontend-conventions.md` and `lib/README.md`
+  point to it. This plan and the U14 test of `now.test.ts` also write the value; they are not the spec.

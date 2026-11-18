@@ -36,7 +36,7 @@ const later = (ms: number) => {
   });
 };
 
-// time-format.md §1: a relative time updates at least each 30 seconds while the page is visible.
+// time-format.md §1: a relative time updates while the page is visible (the tick has its value there).
 describe("the status line of a bot", () => {
   it("in the top of the bot page turns into 1 min ago when a minute passes", async () => {
     const top = await openBotPage();
