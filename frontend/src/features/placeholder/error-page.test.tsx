@@ -335,3 +335,54 @@ describe("Page not found with the route error boundaries", () => {
     expect(screen.queryByRole("heading", { name: "Something went wrong" })).toBeNull();
   });
 });
+
+// UI-3 A (owner, 2026-11-18, #123): inside the Skills page the list column has the h1 "Skills", so
+// the error screen and Page not found beside it are h2. They show in the same place as before:
+// beside the list column, inside the shell. Everywhere else they are h1.
+describe("the headings of the error screen and Page not found", () => {
+  const h1 = () => screen.getAllByRole("heading", { level: 1 }).map((node) => node.textContent);
+  const listColumn = () => screen.queryByRole("navigation", { name: "Skills" });
+
+  it("makes the error screen of a Skills page an h2 beside the list column", async () => {
+    noSkills();
+    fault.index = true;
+    await renderApp("/skills");
+    const heading = await screen.findByRole("heading", { name: "Something went wrong", level: 2 });
+    expect(listColumn(), "the list column").not.toBeNull();
+    expect(listColumn()?.contains(heading), "the screen is not in the list column").toBe(false);
+    expect(rail(), "the rail").not.toBeNull();
+    expect(h1(), "the h1 headings").toEqual(["Skills"]);
+    expect(screen.getByRole("button", { name: "Try again" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Go to Home" })).toBeTruthy();
+  });
+
+  it("makes Page not found of an unknown skill an h2 beside the list column", async () => {
+    noSkills();
+    await renderApp("/skills/nothing-here");
+    expect(await screen.findByRole("heading", { name: "Page not found", level: 2 })).toBeTruthy();
+    expect(listColumn(), "the list column").not.toBeNull();
+    expect(h1(), "the h1 headings").toEqual(["Skills"]);
+  });
+
+  it("makes Page not found of a Clone with no source an h2 beside the list column", async () => {
+    noSkills();
+    await renderApp("/skills/new?from=nothing-here");
+    expect(await screen.findByRole("heading", { name: "Page not found", level: 2 })).toBeTruthy();
+    expect(h1(), "the h1 headings").toEqual(["Skills"]);
+  });
+
+  it("keeps the h1 of Page not found outside the Skills page", async () => {
+    noSkills();
+    await renderApp("/nothing");
+    expect(await screen.findByRole("heading", { name: "Page not found", level: 1 })).toBeTruthy();
+  });
+
+  it("keeps the h1 of the error screen outside the Skills page", async () => {
+    noSkills();
+    fault.header = true;
+    await renderApp("/");
+    expect(
+      await screen.findByRole("heading", { name: "Something went wrong", level: 1 }),
+    ).toBeTruthy();
+  });
+});

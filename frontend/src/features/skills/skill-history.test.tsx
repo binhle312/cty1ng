@@ -138,9 +138,10 @@ describe("the History tab and a background refresh", () => {
     if (failing === "versions") started.server.versions = () => FAILED;
     else started.server.diff = () => FAILED;
     await renderApp("/skills/write-user-stories?tab=history&from=1&to=3");
-    const alert = (await screen.findByText(text, {}, WAIT)).closest("[role='alert']");
-    expect(alert, "the alert of " + which).not.toBeNull();
-    const retry = within(alert as HTMLElement).getByRole("button", { name: "Try again" });
+    const message = await screen.findByText(text, {}, WAIT);
+    const alert = message.closest<HTMLElement>("[role='alert']");
+    if (alert === null) throw new Error(`The load error of the ${which} is not an alert`);
+    const retry = within(alert).getByRole("button", { name: "Try again" });
     // The next read answers well, so Try again shows the data.
     if (failing === "versions") good.versions = () => ({ body: makeVersions(3) });
     else good.diff = (from, to) => ({ body: diffOf(`v${String(from)}-v${String(to)}`) });
