@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { tempDir, testBackend } from "../../test/helpers.ts";
 import { OWNER_ID } from "../core/owner.ts";
+import { SKILL_MD_MAX_BYTES } from "../core/skills/skill-import.service.ts";
 import { exportSkills, importSkills, listTrash, restoreSkill } from "./skill-commands.ts";
 
 // The `skills` CLI commands (api.md §2) on a temporary database and folder.
@@ -69,9 +70,18 @@ describe("skills import", () => {
 
   it("marks a SKILL.md over 1 MB as invalid without reading it", async () => {
     mkdirSync(join(dir.path, "big"));
-    writeFileSync(join(dir.path, "big", "SKILL.md"), "x".repeat(1024 * 1024 + 1));
+    writeFileSync(join(dir.path, "big", "SKILL.md"), "x".repeat(SKILL_MD_MAX_BYTES + 1));
     expect(await importSkills(backend, dir.path, false, out)).toBe(1);
     expect(lines[0]).toBe("invalid   big                          SKILL.md is larger than 1 MB.");
+  });
+
+  // P3 list, item 31: the folder reader and the zip reader share one limit.
+  it("reads a SKILL.md of exactly the limit", async () => {
+    mkdirSync(join(dir.path, "fits"));
+    writeFileSync(join(dir.path, "fits", "SKILL.md"), "x".repeat(SKILL_MD_MAX_BYTES));
+    await importSkills(backend, dir.path, false, out);
+    // Read and parsed: the reason comes from the parse, not from the size check.
+    expect(lines[0]).toContain("The file has no frontmatter between --- lines.");
   });
 
   it("exits 1 when a row is invalid or a conflict, and still imports the good rows", async () => {

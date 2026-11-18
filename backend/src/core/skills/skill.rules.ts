@@ -1,4 +1,5 @@
 import {
+  formatCount,
   skillFieldProblem,
   slugFieldProblem,
   type SkillLimits,
@@ -13,6 +14,10 @@ import { firstSensitive, sensitiveLabel } from "../guard/sensitive-data.rules.ts
 // (design/components/skills-page.md §4, §6); the secret check is here only.
 
 export type { SkillLimits };
+
+// The editor limits, plus the changelog limit SKILL_CHANGELOG_MAX (architecture.md §8), which only
+// the server checks.
+export type SkillTextLimits = SkillLimits & { changelogMax: number };
 
 export interface SkillProblem {
   code: ErrorCode;
@@ -39,7 +44,7 @@ const NOUN: Record<SkillProblem["field"], string> = {
 
 // The first problem, in field order, or null. Only the fields that are given are checked. The
 // guard (D39, security.md §2.13) reads every saved field: the slug and the changelog too.
-export function skillTextProblem(text: SkillText, limits: SkillLimits): SkillProblem | null {
+export function skillTextProblem(text: SkillText, limits: SkillTextLimits): SkillProblem | null {
   if (text.slug !== undefined) {
     const problem = slugTextProblem(text.slug);
     if (problem !== null) return problem;
@@ -53,6 +58,14 @@ export function skillTextProblem(text: SkillText, limits: SkillLimits): SkillPro
     if (value === undefined) continue;
     const message = skillFieldProblem(field, value, limits);
     if (message !== null) return { code: "validation_error", field, message };
+  }
+  // Before the guard, and before the service joins the lines of the changelog (P3 list, item 24).
+  if (text.changelog !== undefined && text.changelog.length > limits.changelogMax) {
+    return {
+      code: "validation_error",
+      field: "changelog",
+      message: `The changelog has ${formatCount(text.changelog.length)} characters. The limit is ${formatCount(limits.changelogMax)}. Make it shorter.`,
+    };
   }
   const guarded: [SkillProblem["field"], string | undefined][] = [
     ["slug", text.slug],
