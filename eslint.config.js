@@ -121,6 +121,28 @@ const QUERY_CLIENT_IMPORT_RULE = {
   ],
 };
 
+// docs/testing.md §3, "Timed tests" (owner, 2026-11-18, q5 Q5 A): a test times work only with the
+// helper of backend/test/timed.ts. One run timed with `performance.now` fails on a busy machine
+// with nothing wrong. The rule reads the form `performance.now` only; it does not see another clock
+// or an alias of `performance` (docs/plans/p3-timed-tests.md, "Not claimed"). It is another rule
+// from `no-restricted-syntax`, so the "last block wins" note below does not apply to it.
+const TIMED_BACKEND = [
+  {
+    object: "performance",
+    property: "now",
+    message:
+      "Time work with fastestRun of backend/test/timed.ts, not one run with performance.now: one slow run on a busy machine fails the test (docs/testing.md §3, Timed tests).",
+  },
+];
+const TIMED_OTHER = [
+  {
+    object: "performance",
+    property: "now",
+    message:
+      "Timed tests use the helper of docs/testing.md; add a helper for this package first (docs/testing.md §3, Timed tests).",
+  },
+];
+
 export default tseslint.config(
   {
     ignores: [
@@ -239,6 +261,21 @@ export default tseslint.config(
         ...CLOCK_RULES,
       ],
     },
+  },
+  {
+    files: ["backend/src/**/*.test.ts", "backend/test/**/*.ts", "scripts/**/*.test.ts"],
+    ignores: ["backend/test/timed.ts"],
+    rules: { "no-restricted-properties": ["error", ...TIMED_BACKEND] },
+  },
+  {
+    // The frontend and shared packages may not import backend/, so they have no helper yet. A
+    // test there that needs a timer adds one first; the rule has no exception for them.
+    files: [
+      "frontend/**/*.{test,spec}.{ts,tsx}",
+      "frontend/test/**/*.{ts,tsx}",
+      "shared/**/*.test.ts",
+    ],
+    rules: { "no-restricted-properties": ["error", ...TIMED_OTHER] },
   },
   {
     // The repository scripts are command-line tools: they print their results.

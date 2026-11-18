@@ -1,16 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { fastestRun } from "../../../test/timed.ts";
 import { findSensitive, firstSensitive, ibanValid, luhn } from "./sensitive-data.rules.ts";
-
-// The time of the fastest of up to 3 runs of `work`. It stops at the first run under the limit.
-function fastestRun(work: () => void, limitMs: number): number {
-  let fastest = Number.POSITIVE_INFINITY;
-  for (let run = 0; run < 3 && fastest >= limitMs; run += 1) {
-    const start = performance.now();
-    work();
-    fastest = Math.min(fastest, performance.now() - start);
-  }
-  return fastest;
-}
 
 // Built at run time (testing.md §3, "Fake secrets").
 const FAKE_KEY = ["sk", "proj", "abcdefghijklmnop1234"].join("-");

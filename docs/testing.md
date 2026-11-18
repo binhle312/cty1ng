@@ -299,6 +299,7 @@ ports (`E2E_SERVE_SERVERS`), not on 8100 and 8101.
 | `watchCsp(page)` | `frontend/test/e2e/csp.ts` | End-to-end tests: collects every CSP violation of a page; assert that the list is empty. |
 | `readZip(buffer)` | `frontend/test/e2e/zip.ts` | End-to-end tests: the files of a downloaded zip (the skill export), by name. |
 | `watchRequests(page)`, `pageIsQuiet(page)` | `frontend/test/e2e/quiet.ts` | End-to-end tests: before a check that something did not happen, wait until the page has no open request and starts none for some turns of its event loop (not a fixed time). Call `watchRequests` before the page loads. A retry delay has no open request, so wait for the count of retries first. |
+| `fastestRun(work, limitMs)`, `fastestRunAsync(work, limitMs)` | `backend/test/timed.ts` | Backend and script tests: the time in ms of the fastest of up to 3 runs of `work` (the second form awaits a promise). It stops at the first run under `limitMs`. The test asserts on the number: `expect(fastest, "label").toBeLessThan(limitMs)`. See "Timed tests" below. |
 
 **Loops on microtasks.** A loop that awaits only resolved promises (a reader that returns
 `Promise.resolve`) never lets a timer run, so Vitest's own timeout cannot stop it and the test
@@ -312,6 +313,29 @@ the value at run time, for example `["sk", "proj", "abcdefghijklmnop1234"].join(
 a short value that the guard catches and a scanner does not (lesson
 `no-real-looking-secrets-in-tests.md`).
 
+**Timed tests** (owner, 2026-11-18, q5 Q5 A). A test that checks that work is fast (so that a
+catastrophic regular expression or a quadratic loop is caught) times it with `fastestRun` or
+`fastestRunAsync` of `backend/test/timed.ts`, never with one run and `performance.now`. One slow run
+on a busy machine fails such a test with nothing wrong: it happened three times in the guard tests
+(DQ-044, item 72, DQ-455). The helper takes the fastest of up to 3 runs, and stops at the first run
+under the limit. Work that is slow on every run is still over the limit. Rules for a timed test:
+
+- The assertion stays in the test: `expect(fastest, "label").toBeLessThan(limitMs)`. The label
+  names the case, and it is unique in the file (a break list needs it).
+- `work` gives the same result on each run and changes no state that the next run reads. A
+  request that the server refuses before any write is fine, and the test checks the state after the
+  runs (`backend/test/api/bots.test.ts`, the 1 MB PATCH). Work that writes needs fresh state for each
+  run, or it does not use the helper.
+- A correctness check can be inside `work`: an error is not retried, so it fails the test at once.
+- The limit has a measured margin in a comment: the time alone, and under load (24 busy processes),
+  as the guard tests have.
+- `pnpm lint` fails a test file that reads `performance.now` (`no-restricted-properties` in
+  `eslint.config.js`): in `backend/` and `scripts/` the message names the helper; in `frontend/` and
+  `shared/` it says to add a helper for that package first, because they may not import `backend/`.
+  Not seen by the rule: other clocks (`Date.now()`), and an alias of `performance`.
+- Not claimed: a scan that is slow only in its first run (for example a regular expression that V8
+  interprets once and then compiles) passes, because the fastest run is the one that counts.
+
 ### Themes (D30)
 
 From M0, per `design/themes.md` §5: a token contrast test (WCAG AA), axe checks in every theme
@@ -320,8 +344,8 @@ theme-switch leak test.
 
 ## 4. CI gates
 
-All must be green to merge: ESLint (including the security rules in `security.md` §2.8; a
-warning fails it too: `--max-warnings 0`),
+All must be green to merge: ESLint (including the security rules in `security.md` §2.8 and the rule for
+timed tests, [§3](#test-helpers); a warning fails it too: `--max-warnings 0`),
 Prettier, `tsc`, dependency-cruiser import rules (D35), Vitest, `db:check` (Drizzle schema matches the migrations, and the migration SQL builds that schema, so a hand edit that changes the schema of a migration fails; not checked: a data statement that changes no schema, and the order of the columns), Playwright (a test that passes only on its second try fails the job:
 `failOnFlakyTests`), generated-client freshness, event-type list match,
 `check:index` (folder indexes complete, `architecture.md` §4.2), `check:status` (each PR merged into `main` since the start date in

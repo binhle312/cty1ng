@@ -31,6 +31,134 @@
           ]
         }
       ]
+    },
+    {
+      "id": "T1-skill-md-keys-slow",
+      "claim": "A parse that is slow on every run (over 500 ms for 40,000 keys) fails the test, also with the fastest of 3 runs",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/skills/skill-md.test.ts",
+        "name": "reports 40,000 keys at once, with no parse"
+      },
+      "assertion": "expect(fastest, \"40,000 keys: the fastest of up to 3 runs\").toBeLessThan(500);",
+      "breaks": [
+        {
+          "id": "T1-wait-in-too-large-path",
+          "file": "backend/src/core/skills/skill-md.ts",
+          "edits": [
+            {
+              "find": "  if (yaml.length > FRONTMATTER_MAX_CHARS) {\n    return { invalid: \"The frontmatter has more than 8,192 characters.\" };",
+              "replace": "  if (yaml.length > FRONTMATTER_MAX_CHARS) {\n    const until = performance.now() + 600;\n    while (performance.now() < until) {\n      // wait\n    }\n    return { invalid: \"The frontmatter has more than 8,192 characters.\" };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T2-skill-md-no-closing-slow",
+      "claim": "A parse that is slow on every run (over 500 ms for a 1 MB file with no closing --- line) fails the test, also with the fastest of 3 runs",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/src/core/skills/skill-md.test.ts",
+        "name": "finds no closing --- line in a 1 MB file quickly"
+      },
+      "assertion": "expect(fastest, \"1 MB with no closing line: the fastest of up to 3 runs\").toBeLessThan(500);",
+      "breaks": [
+        {
+          "id": "T2-wait-in-no-frontmatter-path",
+          "file": "backend/src/core/skills/skill-md.ts",
+          "edits": [
+            {
+              "find": "  if (match === null) return { invalid: \"The file has no frontmatter between --- lines.\" };",
+              "replace": "  if (match === null) {\n    const until = performance.now() + 600;\n    while (performance.now() < until) {\n      // wait\n    }\n    return { invalid: \"The file has no frontmatter between --- lines.\" };\n  }"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B1-patch-1mb-slow",
+      "claim": "A guard scan that is slow on every run (over 2,000 ms for the 1 MB description of the PATCH) fails the test, also with the fastest of 3 runs",
+      "test": {
+        "kind": "vitest",
+        "file": "backend/test/api/bots.test.ts",
+        "name": "PATCH refuses a 1 MB description on its length, fast, after the guard scan"
+      },
+      "assertion": "expect(fastest, \"the PATCH of 1 MB: the fastest of up to 3 runs\").toBeLessThan(2_000);",
+      "breaks": [
+        {
+          "id": "B1-wait-for-long-text",
+          "file": "backend/src/core/guard/sensitive-data.rules.ts",
+          "edits": [
+            {
+              "find": "export function firstSensitive(text: string): SensitiveMatch | null {\n  const next = scan(text).next();",
+              "replace": "export function firstSensitive(text: string): SensitiveMatch | null {\n  if (text.length > 500_000) {\n    const until = performance.now() + 2100;\n    while (performance.now() < until) {\n      // wait\n    }\n  }\n  const next = scan(text).next();"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "backend/test/timed.test.ts",
+      "name": "runs up to 3 times",
+      "reason": "test first: the red run is in the PR description"
+    },
+    {
+      "file": "backend/test/timed.test.ts",
+      "name": "stops at the first run under the limit",
+      "reason": "test first: the red run is in the PR description"
+    },
+    {
+      "file": "backend/test/timed.test.ts",
+      "name": "stops at the first run under the limit, after a slow run",
+      "reason": "test first: the red run is in the PR description"
+    },
+    {
+      "file": "backend/test/timed.test.ts",
+      "name": "runs 3 times when each run is over the limit, and returns the fastest",
+      "reason": "test first: the red run is in the PR description"
+    },
+    {
+      "file": "backend/test/timed.test.ts",
+      "name": "never starts a fourth run",
+      "reason": "test first: the red run is in the PR description"
+    },
+    {
+      "file": "backend/test/timed.test.ts",
+      "name": "does not retry an error: the test ends at once",
+      "reason": "test first: the red run is in the PR description"
+    },
+    {
+      "file": "backend/test/timed.test.ts",
+      "name": "does not retry a rejection: the test ends at once",
+      "reason": "test first: the red run is in the PR description"
+    },
+    {
+      "file": "scripts/lint-rules.test.ts",
+      "name": "rejects one run timed with performance.now in $label, and names the helper",
+      "reason": "test first: the red run is in the PR description"
+    },
+    {
+      "file": "scripts/lint-rules.test.ts",
+      "name": "rejects it in $label, and says to add a helper for the package first",
+      "reason": "test first: the red run is in the PR description"
+    },
+    {
+      "file": "scripts/lint-rules.test.ts",
+      "name": "allows it in $label",
+      "reason": "test first: the red run is in the PR description"
+    },
+    {
+      "file": "scripts/lint-rules.test.ts",
+      "name": "sees $label",
+      "reason": "test first: the red run is in the PR description"
+    },
+    {
+      "file": "scripts/lint-rules.test.ts",
+      "name": "does not see $label",
+      "reason": "test first: the red run is in the PR description"
     }
   ]
 }
