@@ -128,6 +128,27 @@ describe("check:breaks:static", () => {
     expect(run.status).toBe(1);
   });
 
+  it("reads a list given by its absolute path", () => {
+    write(LIST, list());
+    const absolute = check(join(repo, LIST), "--base", base);
+    expect(absolute.stdout).toContain("0 problems");
+    expect(absolute.status).toBe(0);
+  });
+
+  it("refuses an option before the list, with the usage line", () => {
+    write(LIST, list());
+    const early = check("--base", base, LIST);
+    expect(early.status).toBe(2);
+    expect(early.stderr).toContain("usage:");
+  });
+
+  it("fails a list that is valid JSON but not a break list", () => {
+    write(LIST, JSON.stringify({ claims: [{ id: 1 }], exempt: [] }));
+    const shape = check(LIST, "--base", base);
+    expect(shape.stderr).toContain(`${LIST}: not a valid break list`);
+    expect(shape.status).toBe(1);
+  });
+
   it("fails a list that is not valid JSON", () => {
     write(LIST, "{ claims: ");
     const run = check(LIST, "--base", base);

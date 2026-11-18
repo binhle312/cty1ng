@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { BreakList, Claim } from "./breaks.ts";
+import { type BreakList, type Claim, lineOf } from "./breaks.ts";
 import { compileProblems, prProblems } from "./breaks-static.ts";
 
 // The static rules of a break list (testing.md §5): what `pnpm check:breaks` refuses before it
@@ -192,12 +192,51 @@ describe("compileProblems", () => {
     expect(compileProblems({ claims, root, read: readRoot })).toEqual([]);
   });
 
+  it("compiles a broken file in each project of its package, also when only the second one reads it", () => {
+    const options = { strict: true, noEmit: true, target: "ES2022", types: [] };
+    write(
+      "tsconfig.json",
+      JSON.stringify({
+        files: [],
+        references: [{ path: "./tsconfig.one.json" }, { path: "./tsconfig.two.json" }],
+      }),
+    );
+    write("tsconfig.one.json", JSON.stringify({ compilerOptions: options, include: ["app/a.ts"] }));
+    write(
+      "tsconfig.two.json",
+      JSON.stringify({ compilerOptions: options, include: ["other/c.ts"] }),
+    );
+    const claims = [breakOf({ file: "other/c.ts", find: "1", replace: "2" })];
+    const second = compileProblems({ claims, root, read: readRoot });
+    expect(second).toEqual([]);
+  });
+
+  it("puts back the text of a broken file before the next break", () => {
+    write("app/b.ts", 'import { add } from "./a";\nexport const two = add(1, 1);\n');
+    const rename = breakOf({
+      file: "app/a.ts",
+      find: "export const add",
+      replace: "export const plus",
+    });
+    const call: Claim = {
+      ...claim({ id: "C2" }),
+      breaks: [
+        { id: "C2-a", file: "app/b.ts", edits: [{ find: "add(1, 1)", replace: "add(1, 2)" }] },
+      ],
+    };
+    const restored = compileProblems({ claims: [rename, call], root, read: readRoot });
+    expect(restored).toEqual([]);
+  });
+
   it("reads the packages that pnpm links, with no false errors on code that the break keeps", () => {
     // Without the real path of each link, this page of the repository gets false errors
     // (TS7006) from the types of its query library: the probe of the plan.
     const repo = resolve(import.meta.dirname, "../..");
     const page = "frontend/src/features/skills/skill-page.tsx";
-    const first = readFileSync(join(repo, page), "utf8").split("\n")[0] ?? "";
+    const text = readFileSync(join(repo, page), "utf8");
+    const first = text.split("\n")[0] ?? "";
+    // The edit must apply, or the break is not compiled at all.
+    expect(lineOf(text, first)).toBe(1);
     const readRepo = (path: string) => {
       try {
         return readFileSync(join(repo, path), "utf8");

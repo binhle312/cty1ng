@@ -3,18 +3,22 @@
 // each PR. It runs no test: only `pnpm check:breaks` shows that a break is caught.
 import { execFileSync } from "node:child_process";
 import { existsSync, lstatSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { BreakList, changedLines } from "./lib/breaks.ts";
 import { compileProblems, prProblems } from "./lib/breaks-static.ts";
 
 const args = process.argv.slice(2);
-const listPath = args[0];
+const listArg = args[0];
 const at = args.indexOf("--base");
 const baseRef = at === -1 ? "origin/main" : args[at + 1];
-if (listPath === undefined || baseRef === undefined) {
+// The list comes first: an option in its place would read as a missing list, and pass.
+if (listArg === undefined || listArg.startsWith("--") || baseRef === undefined) {
   console.error("usage: pnpm check:breaks:static <list.json> [--base <ref>]");
   process.exit(2);
 }
+const root = process.cwd();
+// A path from the root of the checkout, also when the list is given by its absolute path.
+const listPath = relative(root, resolve(root, listArg));
 
 if (!existsSync(listPath)) {
   console.log(
@@ -23,7 +27,6 @@ if (!existsSync(listPath)) {
   process.exit(0);
 }
 
-const root = process.cwd();
 const git = (...gitArgs: string[]) =>
   execFileSync("git", gitArgs, { encoding: "utf8", maxBuffer: 2 ** 30 });
 // As in the runner: the tests that the PR adds or changes since its base, with the local
