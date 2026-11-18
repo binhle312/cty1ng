@@ -74,3 +74,4 @@ Plans up to M2 started as PR comments or PR descriptions. The header of each fil
 
 If the task names a plan, open it. Otherwise, find the slice in [status.md](../status.md), then open its plan.
 For current behaviour, read the owning documents.
+| `p3-guard-speed-test.md` | DQ-455, the 1 MB line test of the guard | Chief agent, 2026-11-18, under the owner's order of 2026-11-14; owner review pending |
