@@ -8,6 +8,14 @@ import { flushSync } from "react-dom";
 // effects, and a dispatch from a script keeps the stack full until it ends. So this press flushes
 // React after React's own listeners, where the browser would, and outside `act()`.
 export async function pressKey(target: Element, init: KeyboardEventInit): Promise<void> {
+  pressKeyNow(target, init);
+  // What the press did settles: a dialog that closes in the same event is gone after this.
+  await new Promise((resolve) => setTimeout(resolve, 50));
+}
+
+// The same press, with no wait after it: no timer runs before the next line. A second press right
+// after it is a key that the browser held while the page handled the first one.
+export function pressKeyNow(target: Element, init: KeyboardEventInit): void {
   const before: unknown = Reflect.get(globalThis, "IS_REACT_ACT_ENVIRONMENT");
   Reflect.set(globalThis, "IS_REACT_ACT_ENVIRONMENT", false);
   const flush = () => {
@@ -18,8 +26,6 @@ export async function pressKey(target: Element, init: KeyboardEventInit): Promis
     target.dispatchEvent(
       new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init }),
     );
-    // What the press did settles: a dialog that closes in the same event is gone after this.
-    await new Promise((resolve) => setTimeout(resolve, 50));
   } finally {
     document.body.removeEventListener("keydown", flush);
     Reflect.set(globalThis, "IS_REACT_ACT_ENVIRONMENT", before);
