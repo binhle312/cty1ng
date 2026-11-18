@@ -22,6 +22,9 @@ Link to the brief and decisions.
 | The same action twice | `bots.spec` "a second Clone …" |
 | Keyboard only | Does not apply: this PR adds no control |
 
+## Differences from the plan
+- Test strategy T1 became two tests in `purge-due.test.ts`: one claim per test name (or "none")
+
 ## Needs human review
 - Migration `0003_skill_versions` (new tables, no data change)
 - (or "none")
@@ -69,6 +72,9 @@ states no state, count or result that a file or a tool owns:
   commit that it names. It does not retype numbers from it. `pnpm check:breaks --report <file>`
   writes such a report.
 - What a test does lives in the test. The PR body names the test or the break id.
+- A build fact lives only in the PR description: the red runs, the test names and counts as
+  built, the proof logs, and each difference from the plan. The plan holds the design and the
+  owner's decisions ([plans rule 6](../plans/README.md#rules)).
 
 A new ledger row is short: one sentence for the finding and its cause, and a fix of a commit
 plus a test or a break id. The whole row has 600 bytes or less (step 7 of the check below; owner, 2026-11-11).
