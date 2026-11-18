@@ -91,7 +91,7 @@ function ClonePage({ from }: { from: string }) {
     }
     return <SkillEditorSkeleton />;
   }
-  return <NotFoundPage />;
+  return <NotFoundPage level={2} />;
 }
 
 // The version a Clone copies. The URL holds only the version id, so after a reload the page

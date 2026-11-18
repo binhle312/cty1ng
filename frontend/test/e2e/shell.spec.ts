@@ -81,16 +81,15 @@ test.describe("app shell", () => {
   test("shows Page not found for an unknown page, a conversation id of the wrong kind and an unknown skill", async ({
     page,
   }) => {
-    for (const path of [
-      "/no/such/page",
-      "/c/bot_01h455vb4pex5vsknk084sn02q",
-      "/c/123",
-      "/skills/no-such-skill",
-    ]) {
+    for (const path of ["/no/such/page", "/c/bot_01h455vb4pex5vsknk084sn02q", "/c/123"]) {
       await page.goto(path);
-      // On the Skills page, Page not found shows beside the list column and its "Skills" heading.
       await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();
     }
+    // On the Skills page, Page not found shows beside the list column and its "Skills" h1, so it
+    // is an h2 (UI-3 A, owner, 2026-11-18): the page has one h1.
+    await page.goto("/skills/no-such-skill");
+    await expect(page.getByRole("heading", { level: 2, name: "Page not found" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Skills");
   });
 
   test("keeps an unknown API path an API error", async ({ request }) => {

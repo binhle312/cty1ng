@@ -103,7 +103,7 @@ export function SkillPage() {
   // Page not found in the Skills page, beside the list column (skills-page.md §1). A `notFound()`
   // thrown here would pass the route error boundaries and replace the shell
   // (frontend-conventions.md §5).
-  if (row === undefined) return <NotFoundPage />;
+  if (row === undefined) return <NotFoundPage level={2} />;
   if (detail.isPending) return <SkillEditorSkeleton />;
   if (detail.data === undefined) {
     return <LoadError text={apiErrorText(detail.error)} onRetry={() => void detail.refetch()} />;
