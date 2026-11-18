@@ -385,6 +385,21 @@
       "file": "frontend/src/features/placeholder/error-page.test.tsx",
       "name": "keeps the h1 of the error screen outside the Skills page",
       "reason": "Passes on the old code: it guards the default level 1 (no behaviour change claimed)"
+    },
+    {
+      "file": "frontend/test/e2e/bot-page.spec.ts",
+      "name": "J4: a skill save offers the upgrade, the bot keeps v1, and the bot page upgrades it",
+      "reason": "Only a comment in the test changed (a cite by heading name, DQ-485); no assertion changed"
+    },
+    {
+      "file": "frontend/test/e2e/shell.spec.ts",
+      "name": "shows Page not found for an unknown page, a conversation id of the wrong kind and an unknown skill",
+      "reason": "The expected heading level of the unknown skill changed from 1 to 2 (UI-3 A). The same behaviour has a claim in the unit test of S11. Old specs failed on CI on 6ca8170 (the red run); the e2e run of this PR is the green run. Not claimed: a break of the e2e test"
+    },
+    {
+      "file": "frontend/test/e2e/skills.spec.ts",
+      "name": "deprecate, open after a reload, make active, deprecate and delete",
+      "reason": "The expected heading level of the deleted skill's address changed from 1 to 2 (UI-3 A), same behaviour as S11. Old spec failed on CI on 6ca8170 (the red run); the e2e run of this PR is the green run. Not claimed: a break of the e2e test"
     }
   ]
 }
