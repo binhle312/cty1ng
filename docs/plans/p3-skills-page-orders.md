@@ -2,7 +2,7 @@
 
 Brief: P3 list of 2026-11-12, items 51 to 56 (PR 14); the owner asked for a plan and a state table before code (P3 list part 9)
 Checkpoint: plan (code design and state table, owner, 2026-11-12)
-Approval: accepted by the owner, 2026-11-15 ("P-14: approve"), revision 2 (owner answers of 2026-11-15 12:15). The open questions take the plan's recommendations (the chief agent's reading of "approve"; owner review pending): Q1 = B (one pure module `skill-edit-state.ts`), Q2 = A (Discard is off while a Save waits, tooltip "Saving."); the second Restore after a tab change is in scope.
+Approval: accepted by the owner, 2026-11-15 ("P-14: approve"), revision 2 (owner answers of 2026-11-15 12:15). The open questions take the plan's recommendations: Q1 = B (one pure module `skill-edit-state.ts`; the chief agent's reading of "approve", owner review pending), Q2 = A (Discard is off while a Save waits, tooltip "Saving."; approved by the owner, 2026-11-18, "UI-4: A"); the second Restore after a tab change is in scope.
 
 Code read at `origin/main` = `97221d3` (#106 merged). Each defect is still there. The line
 numbers moved since the P3 list (`ec41c39`). I read the code; I did not run the wrong behaviour.

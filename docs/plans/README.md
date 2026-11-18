@@ -48,7 +48,7 @@ Plans up to M2 started as PR comments or PR descriptions. The header of each fil
 | `p3-frontend-cleanup.md` | P3 PR K (list PR 21, item 68): frontend cleanup with the same texts and screens | Chief agent, 2026-11-15, under the owner's order of 2026-11-14; accepted by the owner, 2026-11-15 |
 | `p3-tests-only.md` | P3 PR 18, tests only (items 70, 71, 72) | Chief agent, 2026-11-15, under the owner's order of 2026-11-14; accepted by the owner, 2026-11-15 |
 | `p3-tooling-gates.md` | P3 list PR 19, tooling gates (items 73 to 76) | Chief agent, 2026-11-15; accepted by the owner, 2026-11-15 |
-| `p3-skills-page-orders.md` | P3 list PR 14, Skills page orders (items 51 to 56) | Accepted by the owner, 2026-11-15 ("P-14: approve"), revision 2; Q1 and Q2 take the plan's answers (chief agent's reading, owner review pending) |
+| `p3-skills-page-orders.md` | P3 list PR 14, Skills page orders (items 51 to 56) | Accepted by the owner, 2026-11-15 ("P-14: approve"), revision 2; Q1 takes the plan's answer (chief agent's reading, owner review pending); Q2 approved by the owner, 2026-11-18 (UI-4: A) |
 | `p3-relative-time.md` | P3 list PR 17 (item 67): relative times that update | Accepted by the owner, 2026-11-15 (P-17: approve), revision 3; Q1 and Q2 by the chief agent's reading |
 
 If the task names a plan, open it. Otherwise, find the slice in [status.md](../status.md), then open its plan.
