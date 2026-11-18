@@ -63,12 +63,11 @@ const v4 = makeSkill({
 
 // Q2 A (owner, 2026-11-18): when the bots did not load, the button says what the card needs. The
 // owner reaches the reason with Tab, so the test does too.
-async function tabToReason(button: HTMLElement, reason: string) {
+async function tabTo(button: HTMLElement) {
   const user = userEvent.setup();
   for (let step = 0; step < 10 && document.activeElement !== button; step += 1) await user.tab();
   expect(document.activeElement).toBe(button);
   expect(button.getAttribute("aria-disabled")).toBe("true");
-  expect(await screen.findByText(reason)).toBeTruthy();
 }
 const BOTS_FAILED = {
   status: 500,
@@ -164,12 +163,27 @@ describe("the upgrade card after a save (C4, UI-7.4)", () => {
     expect(await within(card).findByText("The app could not load the bots.")).toBeTruthy();
     const upgrade = within(card).getByRole("button", { name: "Upgrade" });
     expect(upgrade.getAttribute("aria-disabled")).toBe("true");
-    await tabToReason(upgrade, "The app must know which bots use this skill. Try again first.");
     botsFail = false;
     click(within(card).getByRole("button", { name: "Try again" }));
     const box = await within(card).findByRole("checkbox", { name: /BA/ });
     expect(box.getAttribute("aria-checked")).toBe("true");
     expect(within(card).queryByText("The app could not load the bots.")).toBeNull();
+  });
+
+  it("says, when the bots did not load, that the Upgrade card needs to know the bots", async () => {
+    await saveV4(
+      [{ bot_id: ba.id, skill_version_id: versionId(3), version: 3, always_load: true }],
+      () => BOTS_FAILED,
+    );
+    const card = await screen.findByRole("dialog", {
+      name: "Saved v4 ✨ Also upgrade these bots to v4?",
+    });
+    await within(card).findByText("The app could not load the bots.");
+    await tabTo(within(card).getByRole("button", { name: "Upgrade" }));
+    expect(
+      await screen.findByText("The app must know which bots use this skill. Try again first."),
+      "the reason of Upgrade",
+    ).toBeTruthy();
   });
 
   it("shows loading shapes, not an empty list, while the bots load", async () => {
@@ -495,10 +509,11 @@ describe("the assign card after Create (C4b)", () => {
       name: "Created ✨ Add Write user stories to bots?",
     });
     await within(card).findByText("The app could not load the bots.");
-    await tabToReason(
-      within(card).getByRole("button", { name: "Assign" }),
-      "The app must know which bots can get this skill. Try again first.",
-    );
+    await tabTo(within(card).getByRole("button", { name: "Assign" }));
+    expect(
+      await screen.findByText("The app must know which bots can get this skill. Try again first."),
+      "the reason of Assign",
+    ).toBeTruthy();
   });
 
   it("opens the card when two newer loads cut its read of the bots short", async () => {

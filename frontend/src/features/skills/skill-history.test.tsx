@@ -126,34 +126,52 @@ describe("the History tab and a background refresh", () => {
   });
 
   // skills-page.md ("The bot list of a card" pattern): a load error is an alert with Try again.
-  // DQ-442.
-  it.each([
-    ["versions", VERSIONS_FAILED],
-    ["changes", CHANGES_FAILED],
-  ])("gives the load error of the %s an alert and Try again", async (which, text) => {
+  // DQ-442. The first read fails and the next answers well.
+  async function openFailed(which: "versions" | "diff") {
     const started = startServer();
     api = started.api;
-    const good = started.server;
-    const failing = which === "versions" ? "versions" : "diff";
-    if (failing === "versions") started.server.versions = () => FAILED;
+    if (which === "versions") started.server.versions = () => FAILED;
     else started.server.diff = () => FAILED;
     await renderApp("/skills/write-user-stories?tab=history&from=1&to=3");
-    const message = await screen.findByText(text, {}, WAIT);
-    const alert = message.closest<HTMLElement>("[role='alert']");
-    if (alert === null) throw new Error(`The load error of the ${which} is not an alert`);
-    const retry = within(alert).getByRole("button", { name: "Try again" });
-    // The next read answers well, so Try again shows the data.
-    if (failing === "versions") good.versions = () => ({ body: makeVersions(3) });
-    else good.diff = (from, to) => ({ body: diffOf(`v${String(from)}-v${String(to)}`) });
-    fireEvent.click(retry);
-    await waitFor(() => {
-      expect(screen.queryByText(text), "the error after Try again").toBeNull();
-    }, WAIT);
-    if (failing === "versions") {
-      expect(await screen.findByRole("list", { name: "Versions" }, WAIT)).toBeTruthy();
-    } else {
-      expect(await screen.findByText("v1-v3 added", {}, WAIT)).toBeTruthy();
-    }
+    return started.server;
+  }
+  const alertOf = async (text: string) => {
+    const alert = (await screen.findByText(text, {}, WAIT)).closest<HTMLElement>("[role='alert']");
+    if (alert === null) throw new Error(`The load error "${text}" is not an alert`);
+    return alert;
+  };
+
+  it("gives the load error of the versions an alert", async () => {
+    await openFailed("versions");
+    const alert = await alertOf(VERSIONS_FAILED);
+    expect(within(alert).getByRole("button", { name: "Try again" }), "Try again").toBeTruthy();
+  });
+
+  it("loads the versions again from Try again", async () => {
+    const server = await openFailed("versions");
+    const alert = await alertOf(VERSIONS_FAILED);
+    server.versions = () => ({ body: makeVersions(3) });
+    fireEvent.click(within(alert).getByRole("button", { name: "Try again" }));
+    expect(
+      await screen.findByRole("list", { name: "Versions" }, WAIT),
+      "the versions",
+    ).toBeTruthy();
+    expect(screen.queryByText(VERSIONS_FAILED), "the error").toBeNull();
+  });
+
+  it("gives the load error of the changes an alert", async () => {
+    await openFailed("diff");
+    const alert = await alertOf(CHANGES_FAILED);
+    expect(within(alert).getByRole("button", { name: "Try again" }), "Try again").toBeTruthy();
+  });
+
+  it("loads the changes again from Try again", async () => {
+    const server = await openFailed("diff");
+    const alert = await alertOf(CHANGES_FAILED);
+    server.diff = (from, to) => ({ body: diffOf(`v${String(from)}-v${String(to)}`) });
+    fireEvent.click(within(alert).getByRole("button", { name: "Try again" }));
+    expect(await screen.findByText("v1-v3 added", {}, WAIT), "the changes").toBeTruthy();
+    expect(screen.queryByText(CHANGES_FAILED), "the error").toBeNull();
   });
 });
 
