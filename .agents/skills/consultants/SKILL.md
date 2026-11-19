@@ -1,0 +1,73 @@
+---
+name: consultants
+description: Ask two or more strong models to grill a recommendation on open decisions before the owner decides. Use when the owner asks for consultants, or names this skill.
+disable-model-invocation: true
+---
+
+# Consultants
+
+Use consultants when the owner needs a decision with real trade-offs. Each consultant reads the
+same open questions alone and grills your recommendation. You answer each point. The owner decides.
+The repository's approval rules still apply: a consultant's view is advice, not an approval.
+
+## Models
+
+Every consultant uses a model from this table, at effort `high` and standard speed.
+Use only the models in the table. Do not use `xhigh`, a lower effort, or fast mode.
+
+| Model            | From Claude Code                                                                       | From Codex                                         |
+| ---------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Claude Opus 5.5  | `Agent` tool with `model: "opus"` and `effort: "high"`                                 | `claude -p --model claude-opus-5-5 --effort high`  |
+| Claude Fable 5.2 | `Agent` tool with `model: "fable"` and `effort: "high"`                                | `claude -p --model claude-fable-5-2 --effort high` |
+| GPT-6 Astra      | `codex exec -m gpt-6-astra -c model_reasoning_effort="high" -c service_tier="default"` | The same `codex exec` command                      |
+
+From Codex, `claude -p` needs network access. If it fails in the sandbox, ask the owner for network access.
+
+No consultant is a weaker model than the model whose work it reads.
+A small or fast model (for example a Sonnet or Haiku model) is never a consultant.
+
+### Add a model
+
+The owner may add a model later. Candidates that the owner named: a Gemini model, and
+Anthropic Mythos 5.2. Neither has a row yet, because no command for it is tested.
+
+To add a row:
+
+1. The owner names the model.
+2. Find its exact model id and the command that starts it from Claude Code and from Codex.
+3. Find the setting for its reasoning effort, and set it to high. If the model has no effort
+   setting, write "no effort setting" in its row.
+4. Run one short probe task with the command, and check that the answer comes from that model.
+5. Add the row to the table, and record the probe result in the change that adds it.
+
+### Choose the consultants
+
+The default is two consultants from two model families: one Opus 5.5 and one GPT-6 Astra.
+Two families catch different errors.
+
+- Add Fable 5.2 only when the owner names it for this decision.
+- The owner can name other models from the table.
+- If only one model family is available, tell the owner before you start, and use two
+  consultants of that family.
+
+## Steps
+
+1. Write one list file of the open decisions. For each decision, give:
+   - the decision in one sentence, and the facts with their sources;
+   - the options, with the gain, the cost and the risk of each;
+   - your recommendation, how sure you are, and what would change it.
+2. In one message, start each consultant read-only and in the background, at effort `high`.
+   Each consultant reads the same list file and answers alone. It does not see the other answers.
+3. Tell each consultant to grill your recommendation, and to return:
+   - the hardest questions for you, with why each one matters;
+   - its own pick for each decision, how sure it is, and the fact that would change its pick;
+   - each claim in the list that is wrong or bigger than its proof;
+   - any option that the list misses.
+4. Save each answer in a file next to the list file.
+5. Answer each question and each claim in writing. Accept it and change the decision, or reject
+   it with a reason.
+6. Give the owner each decision with your final recommendation, where the consultants agree,
+   where they disagree, and the points that you rejected with your reasons.
+
+The work is complete when each consultant answered, each of its points has your written answer,
+and the owner has the decisions.

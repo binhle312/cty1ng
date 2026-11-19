@@ -82,7 +82,7 @@ From M3 on, P3 findings are fixed at the end of each milestone, before the next 
 | Approve the M3 schema design for D46 (auto title) before it is written. The generated SQL is approved in the slice PR | M3 plan |
 | Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a schema design approval (initial schema for M3 and M7). The generated SQL is approved in the slice PR | M3 and M7 plans |
 | Approve the M5b schema design: `projects.instructions_md`, `instructions_version`, `colour`, `pinned_position`, goal ≤ 500 chars, `memory_items.seen_at`, `memory_proposals` and the `model_requests` change (D63) (initial schema for M5b, `domain-model.md` §14). Claude Code stops for this approval before it writes them. The generated SQL is approved in the M5b PR | M5b plan |
-| Merge draft [#141](https://github.com/binhle312/cty1ng/pull/141), the arena skill: consult mode and a model rule (owner, 2026-11-19). It changes how consultants are chosen, so the owner merges it | The owner's merge |
+| Merge draft [#141](https://github.com/binhle312/cty1ng/pull/141), the `consultants` skill split from the `arena` skill, and a model rule (owner, 2026-11-19). It changes how consultants are chosen, so the owner merges it | The owner's merge |
 
 ## Follow-ups
 
