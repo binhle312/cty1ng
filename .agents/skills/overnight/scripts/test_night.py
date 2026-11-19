@@ -9,6 +9,7 @@ write command in test mode also prints the event it refused; `refused()` writes 
 a copy of the journal and asserts that `check` names the same code on the same event (parity).
 """
 
+import ast
 import importlib.util
 import json
 import os
@@ -20,8 +21,9 @@ import sys
 import tempfile
 import textwrap
 import time
+import random
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 sys.dont_write_bytecode = True
 
@@ -34,7 +36,7 @@ OPT = "--match-head-commit"
 ITEMS = [("PR 1", "commit", OPT), ("PR 2", "commit", OPT), ("PR 3", "commit", OPT), ("PR 12", "commit", OPT),
          ("org/one#3", "commit", OPT), ("org/two#3", "commit", OPT), ("notice", "no-commit"), ("PR 4", "owner")]
 WRITE_COMMANDS = {"new", "go", "log", "report", "close", "repair"}
-STATE_CODES = {"NO_GO", "INTENT_NO_RESULT", "GAP", "STOP_NOT_CLOSED", "REPORT_FILE"}
+STATE_CODES = {"NO_GO", "INTENT_NO_RESULT", "GAP", "STOP_NOT_CLOSED", "REPORT_FILE", "CUT_UNRECORDED"}
 # The state codes that a correct test night can leave: an unfinished night. A test that expects a gap says so.
 UNFINISHED = {"NO_GO", "INTENT_NO_RESULT", "STOP_NOT_CLOSED"}
 # A final code means: do not retry. Pinned, because SKILL.md tells the agent to act on the class.
@@ -47,7 +49,7 @@ PRE_EVENT_CODES = {
     "NO_NIGHT", "BAD_ARGUMENT", "WORDS_FILE", "WORDS_AS_ARGUMENT", "ARG_NOT_FOR_KIND", "ITEM_MISSING", "ITEM_LINE",
     "EVENT_ID", "RESULT_FIELDS", "PAGECHECK_FIELDS", "CARD_MISSING", "CARD_NO_BLOCK", "CARD_TWO_BLOCKS",
     "CARD_OPEN_FENCE", "MAX_GAP_ENV", "FAKE_CLOCK_NO_TEST", "FAKE_CLOCK_FORM", "LOCK_HELD", "LOCK_STALE", "TORN_LINE",
-    "BAD_LINE", "SCHEMA", "REPAIR_NOTHING", "ID_NOT_REPORT", "WRITE_FAILED", "INTERNAL"}
+    "BAD_LINE", "SCHEMA", "REPAIR_NOTHING", "ID_NOT_REPORT", "WRITE_FAILED", "INTERNAL", "STOP_NO_OFFSET"}
 
 
 def env_for(at=T0, test_mode=True, fake=True, extra=None):
@@ -319,7 +321,10 @@ class Base(unittest.TestCase):
         self.assertEqual(exit_code, 3, out)
         self.assertEqual(code_of(out), [code], out)
         self.assertNotIn("Traceback", out)
-        if command not in WRITE_COMMANDS or not test_mode:
+        if command not in WRITE_COMMANDS:
+            return
+        if not test_mode:
+            self.assertNotIn("REFUSED EVENT", out, "only test mode prints the refused entry")
             return
         found = re.search(r"REFUSED EVENT: (\{.*\})", out)
         self.assertEqual(found is not None, code not in PRE_EVENT_CODES,
@@ -470,11 +475,20 @@ class StartTests(Base):
         self.ok(run(self.dir, *go_args(heartbeat="20"), "--gap-min", "40", at=at("22:01"), env={"NIGHT_MAX_GAP_MIN": "45"}))
         self.assertEqual((self.events()[-1]["gap_min"], self.events()[-1]["max_gap_min"]), (40, 45))
 
-    def test_bare_time_of_day_is_the_next_such_time(self):
+    def test_a_time_of_day_with_its_offset_is_the_next_such_time(self):
         new(self.dir)
         card(self.dir)
-        self.ok(run(self.dir, "go", "--stop", "06:00", "--goal", "set", "--rehearsal", "passed", at=at("22:01")))
-        self.assertEqual(self.events()[-1]["stop"], "2026-01-11T06:00:00+00:00")
+        self.ok(run(self.dir, "go", "--stop", "06:00+07:00", "--goal", "set", "--rehearsal", "passed", at=at("22:01")))
+        self.assertEqual(self.events()[-1]["stop"], "2026-01-10T23:00:00+00:00")
+
+    def test_a_stop_time_with_no_offset_is_refused(self):
+        """The host zone is not the card's zone: 06:00 in Bangkok is not 06:00 on a UTC host (P2-5)."""
+        new(self.dir)
+        card(self.dir)
+        for stop in ("06:00", "2026-01-11T06:00", "2026-01-11 06:00"):
+            with self.subTest(stop=stop):
+                self.refused("go", "--stop", stop, "--goal", "set", "--rehearsal", "passed", at=at("22:01"),
+                             env={"TZ": "Asia/Bangkok"}, code="STOP_NO_OFFSET")
 
 
 class PhaseTests(Base):
@@ -969,6 +983,12 @@ class CheckTests(Base):
             "an unknown field": ({"t": at("22:10"), "kind": "alive", "note": "x"}, "SCHEMA"),
             "reopen on a note": ({"t": at("22:10"), "kind": "aware", "text": "x", "reopen": "PR 3"}, "SCHEMA"),
             "no time": ({"kind": "alive"}, "SCHEMA"),
+            "denied with no item": ({"t": at("22:10"), "kind": "denied", "command": "m", "blocks": "x"}, "SCHEMA"),
+            "hold with no item": ({"t": at("22:10"), "kind": "hold", "text": "x"}, "SCHEMA"),
+            "pagecheck with no report": ({"t": at("22:10"), "kind": "pagecheck", "name": "truth", "outcome": "pass"}, "SCHEMA"),
+            "close with no reason": ({"t": at("22:10"), "kind": "close"}, "SCHEMA"),
+            "repair with no side file": ({"t": at("22:10"), "kind": "repair", "bytes": 3}, "SCHEMA"),
+            "text that is not UTF-8": ({"t": at("22:10"), "kind": "alive", "text": "\udcff"}, "SCHEMA"),
             "no kind": ({"t": at("22:10")}, "SCHEMA"),
         }
         for name, (row, expected) in cases.items():
@@ -1143,6 +1163,22 @@ HOOK = textwrap.dedent("""
             wait_for(marker + ".go")
             return real_fsync(fd)
         os.fsync = fsync
+    elif mode == "short-write":  # the first write of a journal entry writes only 5 bytes, as a full disk can
+        real_write, short = os.write, [True]
+        def write(fd, data):
+            if short[0] and bytes(data[:6]) == b'{"id":' and len(data) > 5:
+                short[0] = False
+                note("short")
+                return real_write(fd, bytes(data[:5]))
+            return real_write(fd, data)
+        os.write = write
+    elif mode == "die-after-truncate":  # a crash right after the repair cut the journal
+        real_truncate = os.truncate
+        def truncate(path, length):
+            real_truncate(path, length)
+            note("cut")
+            os._exit(9)
+        os.truncate = truncate
     elif mode == "hold-replace":  # hold before the rename of report.md: the entry is in the journal
         def replace(a, b):
             note("held")
@@ -1318,6 +1354,266 @@ class RaceTests(Hooked):
             with self.subTest(command=command):
                 self.refused(*command, at=at("22:10"), env={"NIGHT_LOCK_WAIT_S": "0.2"}, code="LOCK_STALE")
         os.remove(lock)
+
+
+class CrashTests(Hooked):
+    """Findings of the consultant review of b315b63 (P2-3, P2-4)."""
+
+    def test_a_short_write_of_the_journal_is_finished_or_refused(self):
+        started(self.dir)
+        marker, (proc,) = self.hooked("short-write", ["log", "alive", "x"], at("22:10"))
+        out, err = proc.communicate(timeout=60)
+        self.wait_markers(marker, "short")
+        self.assertEqual(proc.returncode, 0, out + err)
+        self.assertEqual([e["kind"] for e in self.events()][-1], "alive")
+
+    def test_a_refused_repair_leaves_the_journal_as_it_was(self):
+        self.hand_edit = True
+        started(self.dir)
+        self.ok(run(self.dir, "log", "alive", "x", at=at("22:10")))
+        with open(os.path.join(self.dir, "journal.jsonl"), "a", encoding="utf-8") as handle:
+            handle.write('{"id": 4, "t"')
+        before = journal_bytes(self.dir)
+        code, out = run(self.dir, "repair", at=at("22:05"))  # no parity copy: the event is judged on the cut journal
+        self.assertEqual((code, code_of(out)), (3, ["TIME_BACK"]), out)
+        self.assertEqual(journal_bytes(self.dir), before, "a refused repair changed the journal")
+        self.assertEqual([f for f in os.listdir(self.dir) if f.startswith("journal.cut-")], [])
+        self.ok(run(self.dir, "repair", at=at("22:11")))
+        self.assertEqual(self.events()[-1]["kind"], "repair")
+        self.assertEqual(run(self.dir, "check", at=at("22:12"))[0], 0)
+
+    def test_a_crash_after_the_repair_cut_is_found_and_recorded(self):
+        started(self.dir)
+        with open(os.path.join(self.dir, "journal.jsonl"), "a", encoding="utf-8") as handle:
+            handle.write('{"id": 3, "t"')
+        marker, (proc,) = self.hooked("die-after-truncate", ["repair"], at("22:10"))
+        proc.communicate(timeout=60)
+        self.wait_markers(marker, "cut")
+        os.remove(os.path.join(self.dir, "journal.lock"))
+        code, out = run(self.dir, "check", at=at("22:11"))
+        self.assertEqual((code, code_of(out)), (1, ["CUT_UNRECORDED"]), out)
+        self.ok(run(self.dir, "repair", at=at("22:11")))
+        self.assertEqual(self.events()[-1]["cut_file"], "journal.cut-1.txt")
+        self.assertEqual(run(self.dir, "check", at=at("22:12"))[0], 0)
+
+
+class AdvisorThreeTests(Base):
+    """Findings of advisor point 3 (review of b315b63): each test kills a mutant that lived."""
+
+    def test_the_closed_record_shows_a_failed_page_check_and_the_reason_of_the_close(self):
+        started(self.dir)
+        self.ok(run(self.dir, "report", at=at("22:10")))  # E3
+        self.ok(run(self.dir, "log", "pagecheck", "--name", "truth", "--outcome", "fail", "--report", "E3", "two numbers",
+                    at=at("22:11")))
+        self.ok(run(self.dir, "close", "--reason", "nothing-left", "--without-page", "no page tool", at=at("22:12")))
+        after = part(read_report(self.dir), "## After E3", "## Permissions")
+        self.assertIn("check truth of E3: fail; two numbers", after)
+        self.assertIn("reason nothing-left; no checked page: no page tool", after)
+
+    def test_a_close_reason_of_spaces_or_nothing_does_not_skip_the_page_checks(self):
+        started(self.dir)
+        self.ok(run(self.dir, "report", at=at("22:10")))
+        for reason in (" ", ""):
+            with self.subTest(reason=reason):
+                self.refused("close", "--reason", "nothing-left", "--without-page", reason, at=at("22:11"), code="PAGE_CHECKS")
+
+    def test_each_part_of_the_report_shows_its_rows(self):
+        started(self.dir)
+        self.ok(intent(self.dir, "PR 1", at("22:10")))  # E3
+        self.ok(run(self.dir, "log", "result", "--of", "3", "--outcome", "done", "merged", at=at("22:11")))
+        self.ok(intent(self.dir, "PR 2", at("22:12")))  # E5
+        self.ok(run(self.dir, "log", "result", "--of", "5", "--outcome", "failed", "conflict", at=at("22:13")))
+        self.ok(run(self.dir, "log", "aware", "a note for you", "--item", "PR 2", at=at("22:14")))
+        self.ok(run(self.dir, "log", "hold", "owner-only file", "--item", "PR 12", at=at("22:15")))
+        self.ok(intent(self.dir, "PR 3", at("22:16")))  # E9, no result
+        with open(os.path.join(self.dir, "journal.jsonl"), "a", encoding="utf-8") as handle:
+            handle.write('{"id": 10, "t"')
+        self.ok(run(self.dir, "repair", at=at("22:17")))  # E10
+        self.ok(run(self.dir, "report", at=at("22:18")))  # E11
+        report = read_report(self.dir)
+        self.assertIn("Go: 2026-01-10T22:01:00+00:00. Stop time: 2026-01-11T06:00:00+00:00", report)
+        self.assertIn("| org/one#3 | commit |", part(report, "## Items", "## Needs you"))
+        needs = part(report, "## Needs you", "## My errors")
+        self.assertIn("| PR 12 | held: owner-only file |", needs)
+        self.assertIn("| PR 3 | intent with no result |", needs)
+        self.assertIn("| PR 1 | gh pr merge", part(report, "## Done and not reversible", "## Failed"))
+        self.assertIn("merged", part(report, "## Done and not reversible", "## Failed"))
+        self.assertIn("conflict", part(report, "## Failed", "## Owner messages"))
+        self.assertIn("| PR 2 | a note for you |", part(report, "## Notes for the owner", "## Stops and gaps"))
+        self.assertIn("repair at E10: 14 cut bytes moved to journal.cut-1.txt", part(report, "## Stops and gaps", "## Decisions"))
+        counts = part(report, "## Counts (report E11)", "## Permissions")
+        self.assertIn("| intent | 3 |", counts)
+        self.assertIn("| report | 1 |", counts)
+        self.assertNotIn("## After", report)
+
+    def test_a_stop_time_in_a_wrong_form_has_a_code(self):
+        new(self.dir)
+        card(self.dir)
+        for stop in ("tomorrow", "25:00+07:00", "2026-13-01T06:00+07:00"):
+            with self.subTest(stop=stop):
+                self.refused("go", "--stop", stop, "--goal", "set", "--rehearsal", "passed", at=at("22:01"), code="STOP_NO_OFFSET")
+
+    def test_a_hand_written_commit_row_with_no_option_gives_codes_not_a_crash(self):
+        self.hand_edit = True
+        write(self.dir, journal(go_at(items=[["PR 1", "commit"]]), {**INTENT, "t": at("22:10"), "item": "PR 1"},
+                                result("22:11", 3)))
+        code, out = run(self.dir, "check", at=at("22:12"))
+        self.assertEqual(code, 1, out)
+        self.assertIn("HEAD_OPTION_MISSING", code_of(out))
+        self.assertNotIn("INTERNAL", out)
+        self.ok(run(self.dir, "status", at=at("22:12")))
+
+    def test_random_journals_that_pass_the_schema_crash_nothing(self):
+        """A fixed-seed fuzz of the fold, the views and the rules (advisor point 3, F5)."""
+        m, rng = night_module(), random.Random(1)
+        start = datetime(2026, 1, 10, 22, 0, tzinfo=timezone.utc)
+        names = ["PR 1", "PR 2", "notice", "PR 4", "ghost"]
+        rows = [["PR 1", "commit", OPT], ["PR 1", "commit"], ["PR 2", "commit", "--m"], ["notice", "no-commit"],
+                ["PR 4", "owner"], ["PR 4", "owner", "--x"], ["pr 1", "owner"], ["", "owner"], ["a|b", "merge"]]
+
+        def value(spec, n):
+            if isinstance(spec, tuple):
+                return rng.choice(spec)
+            return {"str": lambda: rng.choice(names + ["", " ", "x", SHA, merge("PR 1")]),
+                    "int": lambda: rng.choice([0, 1, 2, 3, n, n - 1, 30, 60, 600, -1]),
+                    "bool": lambda: rng.choice([True, False]),
+                    "time": lambda: (start + timedelta(minutes=rng.choice([-5, 30, 600]))).isoformat(),
+                    "row": lambda: rng.choice(rows), "rows": lambda: rng.sample(rows, rng.randint(0, 4)),
+                    "counts": lambda: rng.choice([{}, {"new": 1}, {"new": 1, "go": 1, "report": 1}])}[spec]()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            for _ in range(2000):
+                when, entries = start, []
+                for i in range(1, rng.randint(2, 12) + 1):
+                    kind = "new" if i == 1 and rng.random() < 0.9 else ("go" if i == 2 and rng.random() < 0.8
+                                                                        else rng.choice(m.KINDS))
+                    when += timedelta(minutes=rng.choice([0, 1, 1, 5, 90, -3]))
+                    entry = {"id": i if rng.random() < 0.97 else i + 1, "t": when.isoformat(), "kind": kind}
+                    for name, spec in m.FIELDS[kind].items():
+                        if name in m.REQUIRED.get(kind, ()) or rng.random() < 0.6:
+                            entry[name] = value(spec, i)
+                    if kind == "intent" and rng.random() < 0.7:
+                        entry["item"] = rng.choice(names[:4])
+                    if m.schema_problem(entry) is None:
+                        entries.append(entry)
+                if not entries:
+                    continue
+                night = m.fold(entries)
+                now = start + timedelta(hours=3)
+                m.status_data(night, now)
+                m.state_problems(night, tmp, now, True)
+                if night.reports:
+                    m.render(entries)
+                for name in names[:4]:
+                    m.judge(night, {"id": night.last["id"] + 1, "t": (start + timedelta(hours=2)).isoformat(),
+                                    "kind": "intent", "item": name, "command": merge(name), "head": SHA})
+
+    def test_status_of_a_closed_night_prints_the_close_line_and_the_last_entry(self):
+        started(self.dir)
+        self.ok(run(self.dir, "report", at=at("22:10")))
+        self.ok(run(self.dir, "close", "--reason", "nothing-left", "--without-page", "x", at=at("22:11")))
+        out = self.ok(run(self.dir, "status", at=at("22:12")))
+        self.assertIn("E4 NIGHT CLOSED night-", out)
+        self.assertIn("last: E4 close 2026-01-10T22:11:00+00:00", out)
+
+    def test_a_write_error_after_the_append_names_the_entry(self):
+        self.expect = {"REPORT_FILE"}
+        started(self.dir)
+        os.makedirs(os.path.join(self.dir, "report.md"))
+        code, out = run(self.dir, "report", at=at("22:10"))
+        self.assertEqual((code, code_of(out)), (3, ["WRITE_FAILED"]), out)
+        self.assertIn("entry E3 is in the journal: run `render`", out)
+        self.assertEqual(self.events()[-1]["kind"], "report")
+        os.rmdir(os.path.join(self.dir, "report.md"))
+        self.ok(run(self.dir, "render", at=at("22:11")))
+        self.expect = set()
+
+    def test_an_intent_with_an_empty_command_is_refused(self):
+        started(self.dir)
+        self.refused("log", "intent", "--item", "notice", "--command", "  ", "--no-head", "x", at=at("22:10"),
+                     code="INTENT_FIELDS")
+
+    def test_a_reopen_name_is_stripped(self):
+        started(self.dir)
+        self.ok(run(self.dir, "log", "denied", "--item", "PR 3", "--command", "m", "--blocks", "x", at=at("22:10")))
+        self.ok(amend(self.dir, "yes: PR 3", "--reopen", " PR 3 ", when=at("22:11")))
+        self.ok(intent(self.dir, "PR 3", at("22:12")))
+
+    def test_a_name_with_a_delete_character_is_refused(self):
+        self.ok(new(self.dir))
+        card(self.dir, raw="PR\x7f9 | owner")
+        self.refused("items", code="ITEM_NAME")
+
+    def test_status_shows_the_stop_its_passing_and_the_entries_that_make_the_report_old(self):
+        started(self.dir, stop="2026-01-10T23:00")
+        self.ok(run(self.dir, "report", at=at("22:10")))
+        self.ok(run(self.dir, "log", "aware", "x", at=at("22:11")))
+        data = json.loads(self.ok(run(self.dir, "status", "--json", at=at("22:12"))))
+        self.assertEqual((data["stop"], data["stop_passed"], data["report_old_by"]),
+                         ("2026-01-10T23:00:00+00:00", False, ["E4"]))
+        data = json.loads(self.ok(run(self.dir, "status", "--json", at=at("23:01"))))
+        self.assertTrue(data["stop_passed"])
+
+    def test_the_time_from_new_to_go_is_no_gap(self):
+        self.ok(new(self.dir, when=at("20:00")))
+        card(self.dir)
+        self.ok(run(self.dir, *go_args(), at=at("22:01")))
+        self.assertEqual(run(self.dir, "check", at=at("22:02"))[0], 0)
+
+    def test_a_tilde_fence_holds_the_items_and_go_prints_them(self):
+        self.ok(new(self.dir))
+        with open(os.path.join(self.dir, "card.md"), "a", encoding="utf-8") as handle:
+            handle.write("\n~~~night-items\nPR 1 | commit | --match-head-commit\nPR 4 | owner\n~~~\n")
+        out = self.ok(run(self.dir, *go_args(), at=at("22:01")))
+        self.assertIn("  PR 1 | commit | --match-head-commit\n  PR 4 | owner", out)
+
+    def test_a_second_go_by_hand_does_not_change_the_stop_time(self):
+        self.hand_edit = True
+        write(self.dir, journal(go_at(), go_at("22:05", stop=at("23:00"))))
+        data = json.loads(self.ok(run(self.dir, "status", "--json", at=at("22:10"))))
+        self.assertEqual(data["stop"], "2026-01-11T06:00:00+00:00")
+
+    def test_a_fake_clock_with_no_test_mode_stops_each_command(self):
+        self.ok(new(self.dir))
+        card(self.dir)
+        for command in (["items"], ["status"]):
+            with self.subTest(command=command):
+                self.refused(*command, test_mode=False, code="FAKE_CLOCK_NO_TEST")
+
+    def test_a_card_that_is_a_folder_has_a_code(self):
+        os.makedirs(os.path.join(self.dir, "card.md"))
+        self.refused("items", code="CARD_MISSING")
+
+
+    def test_outside_test_mode_a_refusal_prints_no_entry(self):
+        self.ok(run(self.dir, "new", "--words-file", words_file(self.dir, "w"), test_mode=False, fake=False))
+        self.refused("new", "--words-file", words_file(self.dir, "w"), test_mode=False, fake=False, code="NEW_TWICE")
+
+    def test_output_that_the_terminal_cannot_show_is_escaped(self):
+        os.makedirs(self.dir)
+        card(self.dir, raw="Caf\u00e9 | owner")
+        done = subprocess.run([sys.executable, "-X", "utf8=0", "-I", NIGHT, "items", "--dir", self.dir],
+                              capture_output=True, env=env_for(extra={"LC_ALL": "C"}), check=False, timeout=60)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertIn(b"Caf\\xe9 | owner", done.stdout)
+
+    def test_a_new_entry_with_a_bad_shape_is_refused_before_the_rules(self):
+        os.makedirs(self.dir)
+        m = night_module()
+        with self.assertRaises(m.Refused) as caught:
+            m.write_entry(self.dir, "new", {"run": 5})
+        self.assertEqual(caught.exception.code, "SCHEMA")
+        self.assertIsNone(journal_bytes(self.dir))
+
+    def test_a_report_file_that_is_a_folder_is_a_check_code(self):
+        started(self.dir)
+        self.ok(run(self.dir, "report", at=at("22:10")))
+        os.remove(os.path.join(self.dir, "report.md"))
+        os.makedirs(os.path.join(self.dir, "report.md"))
+        code, out = run(self.dir, "check", at=at("22:11"))
+        self.assertEqual((code, code_of(out)), (1, ["REPORT_FILE"]), out)
+        os.rmdir(os.path.join(self.dir, "report.md"))
+        self.ok(run(self.dir, "render", at=at("22:11")))
 
 
 class BoundaryTests(Base):
@@ -1620,6 +1916,34 @@ STUB = "import sys\nprint('check: OK')\nsys.exit(0)\n"
 
 
 class MetaTests(unittest.TestCase):
+    def test_each_journal_read_is_under_the_lock(self):
+        """A read outside the lock can act on a journal that another process changes (DQ-917, advisor point 3 F13)."""
+        with open(NIGHT, encoding="utf-8") as handle:
+            tree = ast.parse(handle.read())
+        # read_journal is the read itself; the read() of cmd_repair runs inside the lock of write_entry.
+        free = {"read_journal", "read"}
+        found = []
+
+        def walk(node, function, locked):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                function, locked = node.name, False
+                for default in node.args.defaults:
+                    walk(default, "<default>", True)  # a default names the function; it is not a call
+                for child in node.body:
+                    walk(child, function, locked)
+                return
+            if isinstance(node, ast.With) and any(isinstance(i.context_expr, ast.Call) and
+                                                  getattr(i.context_expr.func, "id", "") == "Lock" for i in node.items):
+                locked = True
+            if (isinstance(node, ast.Call) and getattr(node.func, "id", "") in ("read_journal", "journal_bytes")
+                    and not locked and function not in free):
+                found.append(f"{function} line {node.lineno}")
+            for child in ast.iter_child_nodes(node):
+                walk(child, function, locked)
+
+        walk(tree, "<module>", False)
+        self.assertEqual(found, [])
+
     def test_the_pre_event_codes_of_the_script_are_the_pinned_ones(self):
         self.assertEqual(set(night_module().PRE_EVENT_CODES), PRE_EVENT_CODES)
 
@@ -1641,6 +1965,22 @@ class MetaTests(unittest.TestCase):
         missing = [code for code in codes
                    if not re.search(rf'code="{code}"|"{code}"\)|\["{code}"[\],]|"{code}": ', source)]
         self.assertEqual(missing, [], "codes with no test that asserts them")
+
+    def test_the_mutant_runner_counts_no_kill_when_the_suite_cannot_run(self):
+        """A script that fails at import makes each test fail: that is no proof of a kill (P2-6)."""
+        with tempfile.TemporaryDirectory() as tmp:
+            broken = os.path.join(tmp, "night.py")
+            with open(NIGHT, encoding="utf-8") as handle:
+                source = handle.read()
+            with open(broken, "w", encoding="utf-8") as handle:
+                handle.write("import no_such_module_for_this_test\n" + source)
+            env = {"PATH": os.environ.get("PATH", ""), "NIGHT_PY": broken}
+            done = subprocess.run([sys.executable, "-I", os.path.join(HERE, "mutants.py"), "a bad line is skipped"],
+                                  capture_output=True, text=True, env=env, check=False, timeout=600)
+        out = done.stdout + done.stderr
+        self.assertNotIn("KILLED", out)
+        self.assertIn("BASELINE FAILED", out)
+        self.assertEqual(done.returncode, 2, out)
 
     def test_show_red_fails_when_a_broken_journal_passes(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -3,8 +3,10 @@
 
 Each mutant changes one rule of night.py (one text replace). The runner writes the changed copy
 to a temp folder, runs test_night.py on it (NIGHT_PY, stop at the first failure), and prints the
-first test that fails. A mutant that no test kills SURVIVED. Exit 1 if a mutant survives or if its
-old text is not in night.py exactly one time (then the list needs an update after a code change).
+first test that fails. A mutant that no test kills SURVIVED. A run that fails with no failing test
+is BAD, not a kill. The suite must pass on night.py first (the baseline), or no mutant runs (exit 2).
+Exit 1 if a mutant is not killed, or if its old text is not in night.py exactly one time (then the
+list needs an update after a code change).
 NIGHT_PY names another night.py to mutate.
 A race mutant runs RACE_ROUNDS times. The test hook slows each journal append, so one round is enough.
 An entry can be a list of (old, new) pairs: several edits make one mutant.
@@ -23,10 +25,8 @@ MUTANTS = [
     # Lock and order (score: lock not exclusive; check before the lock).
     ("lock not exclusive", "os.O_CREAT | os.O_EXCL | os.O_WRONLY", "os.O_CREAT | os.O_WRONLY"),
     ("decide before the lock",
-     "    with Lock(folder):\n        extra = prepare() if prepare else {}\n        entries = read_journal(folder) or []\n"
-     "        now, fake = clock()\n        night = fold(entries)\n",
-     "    entries = read_journal(folder) or []\n    night = fold(entries)\n    with Lock(folder):\n"
-     "        extra = prepare() if prepare else {}\n        now, fake = clock()\n"),
+     "    with Lock(folder):\n        entries = read(folder) or []\n        now, fake = clock()\n        night = fold(entries)\n",
+     "    entries = read(folder) or []\n    night = fold(entries)\n    with Lock(folder):\n        now, fake = clock()\n"),
     ("a dead lock is removed", 'return Refused("LOCK_STALE", f"process {pid} is not running. {repair}")',
      'return os.remove(self.path) or Refused("LOCK_STALE", f"process {pid} is not running. {repair}")'),
     ("a dead lock looks held", 'except ProcessLookupError:\n            return Refused("LOCK_STALE"',
@@ -36,7 +36,7 @@ MUTANTS = [
     ("a cut line is read", 'if data and not data.endswith(b"\\n"):', "if False:"),
     ("an unknown field is allowed", "return f\"field {name!r} is not a field of {entry['kind']}\"", "continue"),
     ("field types are not checked", "if not fits(fields[name], value):", "if False:"),
-    ("a bad argument byte passes", 'value.encode("utf-8")', 'value.encode("utf-8", "surrogateescape")'),
+    ('a bad argument byte passes', [('for value in raw:\n            value.encode("utf-8")', 'for value in raw:\n            value.encode("utf-8", "surrogateescape")')]),
     # Clock.
     ("a fake clock without test mode", 'if not test_mode():\n        raise Refused("FAKE_CLOCK_NO_TEST")',
      'if False:\n        raise Refused("FAKE_CLOCK_NO_TEST")'),
@@ -64,9 +64,9 @@ MUTANTS = [
     ("no item name rule", 'if not name or name != name.strip() or "|" in name or any(ord(c) < 32 or ord(c) == 127 for c in name):',
      "if not name:"),
     ("no item option rule", "elif (kind == \"commit\") != bool(rest) or (rest and not OPTION.fullmatch(rest[0])):", "elif False:"),
-    ("duplicate names pass", "        if key in seen:\n", "        if False:\n"),
-    ("add-item of a card name", "        if name_key(row[0]) in known:\n", "        if False:\n"),
-    ("an empty items block", 'if not entry["items"]:', "if False:"),
+    ('duplicate names pass', [('        seen.setdefault(name_key(name), name)\n', '        seen.setdefault(name_key(name), name) if same != "ITEM_DUPLICATE" else None\n')]),
+    ('add-item of a card name', [('found, seen = [], {name_key(name): name for name in known}', 'found, seen = [], {}')]),
+    ('an empty items block', [('found = rows_problems(entry["items"]) if entry["items"] else [("ITEMS_EMPTY", "")]', 'found = rows_problems(entry["items"])')]),
     ("two items blocks", "if len(blocks) > 1:", "if False:"),
     ("a fence closes another fence", "elif stripped and set(stripped) == {fence[0]} and len(stripped) >= len(fence):",
      "elif stripped.startswith(fence[0] * 3):"),
@@ -204,9 +204,7 @@ ADVISOR = [('A1 check misses a second final result (code declared pre-event, no 
  ('B20 an entry time with no offset passes the schema',
   [('    return value if value.tzinfo else None\n\n\ndef parse_stop',
     '    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)\n\n\ndef parse_stop')]),
- ('B26 add-item skips the name rule',
-  [('found.extend(p for p in row_problems(row, {}) if p[0] != "ITEM_DUPLICATE")',
-    'found.extend(p for p in row_problems(row, {}) if p[0] not in ("ITEM_DUPLICATE", "ITEM_NAME"))')]),
+ ('B26 add-item skips the name rule', [('found.extend(rows_problems([entry["add_item"]], night.items, "ITEM_ON_CARD"))', 'found.extend(p for p in rows_problems([entry["add_item"]], night.items, "ITEM_ON_CARD") if p[0] != "ITEM_NAME")')]),
  ('B27 an empty item name passes',
   [('if not name or name != name.strip() or "|" in name or', 'if name != name.strip() or "|" in name or')]),
  ('B27b an item name with | passes',
@@ -220,21 +218,7 @@ ADVISOR = [('A1 check misses a second final result (code declared pre-event, no 
  ('B33 an old lock of a live process is held, not stale', [('        if age > stale:\n', '        if False:\n')]),
  ('B34 process id 0 counts as a live process',
   [('if not text.isdigit() or int(text) <= 0:', 'if not text.isdigit():')]),
- ('B35 render takes no lock',
-  [('    need_night(args.dir)\n'
-    '    with Lock(args.dir):\n'
-    '        entries = read_journal(args.dir) or []\n'
-    '        night = fold(entries)\n'
-    '        if not night.reports:\n'
-    '            raise Refused("REPORT_NONE_YET")\n'
-    '        write_file(args.dir, REPORT, render(entries))',
-    '    need_night(args.dir)\n'
-    '    if True:\n'
-    '        entries = read_journal(args.dir) or []\n'
-    '        night = fold(entries)\n'
-    '        if not night.reports:\n'
-    '            raise Refused("REPORT_NONE_YET")\n'
-    '        write_file(args.dir, REPORT, render(entries))')]),
+ ('B35 render takes no lock', [('    with Lock(args.dir):\n        entries = read_journal(args.dir) or []\n        night = fold(entries)\n        if not night.reports:\n            raise Refused("REPORT_NONE_YET")\n        write_file(args.dir, REPORT, render(entries))', '    if True:\n        entries = read_journal(args.dir) or []\n        night = fold(entries)\n        if not night.reports:\n            raise Refused("REPORT_NONE_YET")\n        write_file(args.dir, REPORT, render(entries))')]),
  ('B35b status and check take no lock',
   [('    with Lock(folder):\n'
     '        entries = read_journal(folder) or []\n'
@@ -242,10 +226,10 @@ ADVISOR = [('A1 check misses a second final result (code declared pre-event, no 
     '    night = fold(entries)',
     '    entries = read_journal(folder) or []\n    now, fake = clock()\n    night = fold(entries)')]),
  ('B36 repair cuts one full entry too',
-  [('        keep = data.rfind(b"\\n") + 1\n        number',
-    '        keep = data.rfind(b"\\n", 0, data.rfind(b"\\n")) + 1\n        number')]),
+  [('        keep = data.rfind(b"\\n") + 1 if data and',
+    '        keep = data.rfind(b"\\n", 0, data.rfind(b"\\n")) + 1 if data and')]),
  ('B37 each repair writes the same side file',
-  [('        cut_name = f"journal.cut-{number}.txt"', '        cut_name = "journal.cut-1.txt"')]),
+  [('            plan.update(name=f"journal.cut-{number}.txt"', '            plan.update(name="journal.cut-1.txt"')]),
  ('B39 report.md: only the first line is compared',
   [('        if current != render(night.entries):',
     '        if current is None or current.splitlines()[:1] != render(night.entries).splitlines()[:1]:')]),
@@ -259,8 +243,7 @@ ADVISOR = [('A1 check misses a second final result (code declared pre-event, no 
  ('B48 error and reserve take any item',
   [('ITEM_EVENTS = ("intent", "denied", "hold", "wait", "decision", "aware", "error", "reserve")',
     'ITEM_EVENTS = ("intent", "denied", "hold", "wait", "decision", "aware")')]),
- ('B52 check on a folder with no journal says OK',
-  [('def read_for_view(folder):\n    need_night(folder)\n', 'def read_for_view(folder):\n')]),
+ ('B52 check on a folder with no journal says OK', [('if args.command_name not in ("new", "items"):', 'if args.command_name not in ("new", "items", "check"):')]),
  ('B53 an empty lock file is stale with no wait',
   [('                if time.monotonic() >= end:\n                    raise self.refusal() from None',
     '                if time.monotonic() >= end or os.path.getsize(self.path) == 0:\n'
@@ -286,16 +269,7 @@ ADVISOR = [('A1 check misses a second final result (code declared pre-event, no 
  ('B61 a gap in the journal stops each intent',
   [('    if night.faults:\n        return [("JOURNAL_FAULTS"',
     '    if night.faults or gaps(night):\n        return [("JOURNAL_FAULTS"')]),
- ('B67 items prints the rows with no checks',
-  [('    for row in rows:\n'
-    '        for code, detail in row_problems(row, {}):\n'
-    '            raise Refused(code, detail)\n'
-    '        if name_key(row[0]) in seen:\n'
-    '            raise Refused("ITEM_DUPLICATE", f"{row[0]!r} and {seen[name_key(row[0])]!r}")\n'
-    '        seen[name_key(row[0])] = row[0]\n'
-    '    if not rows:\n'
-    '        raise Refused("ITEMS_EMPTY")\n',
-    '')]),
+ ('B67 items prints the rows with no checks', [('    for code, detail in rows_problems(rows) if rows else [("ITEMS_EMPTY", "")]:\n        raise Refused(code, detail)\n', '')]),
  ('C1 the report shows no gaps of an open night',
   [('    stops = [gap_text(night, gap) for gap in gaps(night)]',
     '    stops = [gap_text(night, gap) for gap in gaps(night)] if closed else []')]),
@@ -316,7 +290,7 @@ ADVISOR = [('A1 check misses a second final result (code declared pre-event, no 
  ('C9 new overwrites an existing card.md',
   [('        if not os.path.exists(os.path.join(args.dir, CARD)):\n', '        if True:\n')]),
  ('C10 the journal write has no fsync',
-  [('            os.write(handle, data)\n            os.fsync(handle)', '            os.write(handle, data)')]),
+  [('                rest = rest[written:]\n            os.fsync(handle)', '                rest = rest[written:]')]),
  ('C11 the close NOTE lists no open rows',
   [('        notes.extend(f"{row[0]}: {row[1]} ({row[4]})" for row in needs_you(night))\n', '')]),
  ('C12 the close NOTE lists no gaps',
@@ -337,12 +311,8 @@ ADVISOR = [('A1 check misses a second final result (code declared pre-event, no 
     '    elif False:\n        pass')]),
  ('D1 an empty words file passes',
   [('    return [("WORDS_EMPTY", "")] if not entry["words"].strip() else []', '    return []')]),
- ('D2 an unknown item kind passes',
-  [('    if kind not in ITEM_KINDS:\n        found.append(("ITEM_KIND", f"{name!r} has kind {kind!r}"))\n    elif',
-    '    if False:\n        pass\n    elif')]),
- ('D3 an intent needs no command',
-  [('    if "command" not in entry:\n        return [("INTENT_FIELDS", "")]\n    command = entry["command"]',
-    '    command = entry.get("command", "")')]),
+ ('D2 an unknown item kind passes', [('        if kind not in ITEM_KINDS:\n            found.append(("ITEM_KIND", f"{name!r} has kind {kind!r}"))\n        elif', '        if False:\n            pass\n        elif')]),
+ ('D3 an intent needs no command', [('    if not entry.get("command", "").strip():\n        return [("INTENT_FIELDS", "")]\n    command = entry["command"]', '    command = entry.get("command", "")')]),
  ('D4 a page check and a close need no report', [('        found.append(("REPORT_NONE_YET", ""))', '        pass')]),
  ('D5 an open intent is no problem in check',
   [('    found += [(e["id"], "INTENT_NO_RESULT", f"{e[\'item\']}: `{e.get(\'command\', \'\')}`") for e in '
@@ -355,7 +325,7 @@ ADVISOR = [('A1 check misses a second final result (code declared pre-event, no 
   [('    return value in spec if isinstance(spec, tuple) else TYPES[spec](value)',
     '    return True if isinstance(spec, tuple) else TYPES[spec](value)')]),
  ('D10 repair writes an empty side file',
-  [('                handle.write(data[keep:])', '                handle.write(b"")')]),
+  [('                handle.write(plan["cut"])', '                handle.write(b"")')]),
  ('D11 a fake time with no offset passes',
   [('    if value.tzinfo is None:\n        raise Refused("FAKE_CLOCK_FORM", repr(fake))',
     '    if False:\n        raise Refused("FAKE_CLOCK_FORM", repr(fake))')]),
@@ -391,14 +361,8 @@ ADVISOR = [('A1 check misses a second final result (code declared pre-event, no 
   [('        length = minutes(timeline[-1]["t"], iso(until))',
     '        length = minutes(timeline[-1]["t"], iso(min(until, entry_time(night.go["stop"]))))')]),
  ('the clock is read before the lock',
-  [('    with Lock(folder):\n'
-    '        extra = prepare() if prepare else {}\n'
-    '        entries = read_journal(folder) or []\n'
-    '        now, fake = clock()',
-    '    now, fake = clock()\n'
-    '    with Lock(folder):\n'
-    '        extra = prepare() if prepare else {}\n'
-    '        entries = read_journal(folder) or []')]),
+  [('    with Lock(folder):\n        entries = read(folder) or []\n        now, fake = clock()',
+    '    now, fake = clock()\n    with Lock(folder):\n        entries = read(folder) or []')]),
  ('gaps are counted after the close',
   [('    end = night.close["id"] if night.close else night.last["id"]', '    end = night.last["id"]')]),
  ('the report shows no rule faults',
@@ -407,16 +371,124 @@ ADVISOR = [('A1 check misses a second final result (code declared pre-event, no 
  ('the lock times come from the environment outside test mode',
   [('    if not test_mode():\n        return default\n    try:', '    try:')])]
 MUTANTS += [(name, edits) for name, edits in ADVISOR]
+
+# Advisor point 3 (review of b315b63): its mutants that lived, ported to the fixed code (P1, P2 dropped: the local stop forms are gone).
+ADVISOR3 = [('P3 a hold needs no reason text',
+  [('if kind in ("hold", "wait", "decision", "aware", "error") and not',
+    'if kind in ("wait", "decision", "aware", "error") and not')]),
+ ('P4 a DEL character in an item name passes', [(' or ord(c) == 127', '')]),
+ ('P5 report.md shows no done rows', [('table(outcome_rows("done"),', 'table([],')]),
+ ('P6 report.md shows no failed rows', [('table(outcome_rows("failed"),', 'table([],')]),
+ ('P7 report.md shows no notes for the owner', [('table(notes, [', 'table([], [')]),
+ ('P8 report.md shows no decisions to check',
+  [('if e["kind"] == "decision" and e.get("check")]', 'if e["kind"] == "decision" and e.get("check") and False]')]),
+ ('P9 report.md shows no items', [('table(items, ["Name"', 'table([], ["Name"')]),
+ ('P10 report.md shows no frozen counts', [('table(sorted(report["counts"].items()),', 'table([],')]),
+ ('P11 needs-you has no held rows',
+  [('    for item, entry in night.held.items():\n        rows.append((item, "held: "',
+    '    for item, entry in {}.items():\n        rows.append((item, "held: "')]),
+ ('P12 needs-you has no rows for intents with no result',
+  [('    for entry in night.open_intents():\n        rows.append((entry["item"], "intent with no result"',
+    '    for entry in []:\n        rows.append((entry["item"], "intent with no result"')]),
+ ('P13 go prints no item rows',
+  [('    for row in rows:\n        print("  " + " | ".join(row))',
+    '    for row in []:\n        print("  " + " | ".join(row))')]),
+ ('P14 the --reopen name is not stripped',
+  [('fields["reopen"] = args.reopen.strip() if', 'fields["reopen"] = args.reopen if')]),
+ ('P15 a second new by hand replaces the run, the words and the test flag',
+  [('if kind == "new" and night.phase == "none":', 'if kind == "new":')]),
+ ('P16 a second go by hand replaces the stop time',
+  [('elif kind == "go" and night.go is None:', 'elif kind == "go":')]),
+ ('P19 output streams keep strict errors',
+  [('    for stream in (sys.stdout, sys.stderr):\n        stream.reconfigure(errors="backslashreplace")\n', '')]),
+ ('P22 report.md does not show a repair',
+  [('for e in night.entries if e["kind"] == "repair"]', 'for e in night.entries if False]')]),
+ ('P25 status never says that the stop time has passed',
+  [('"stop_passed": stop_passed(night, now),', '"stop_passed": False,')]),
+ ('P26 status never lists what made the report old',
+  [('"report_old_by": [f"E{e[\'id\']}" for e in night.made_old_by] if newest else [],', '"report_old_by": [],')]),
+ ('P32a a hold or a denied row with no item passes the schema',
+  [('"denied": ("item",),\n    "hold": ("item",), ', '\n    ')]),
+ ('P32b a close with no reason, a repair with no fields and a page check with no fields pass the schema',
+  [('"pagecheck": ("name", "outcome", "report"), ', ''),
+   ('    "close": ("reason",), "repair": ("cut_file", "bytes"),\n', '')]),
+ ('P60 the time from new to go counts as a gap',
+  [('timeline = [e for e in night.entries if night.go["id"] <= e["id"] <= end]',
+    'timeline = [e for e in night.entries if e["id"] <= end]')]),
+ ('P61 the refused entry also prints outside test mode',
+  [('if refusal.event is not None and test_mode():', 'if refusal.event is not None:')]),
+ ('P62 the new entry is not checked against the schema',
+  [('        problem = schema_problem(entry)\n'
+    '        if problem:\n'
+    '            raise Refused("SCHEMA", f"the new entry: {problem}")\n',
+    '')]),
+ ('P64 a tilde fence is not a fence',
+  [('FENCE = re.compile(r"^(`{3,}|~{3,})(.*)$")', 'FENCE = re.compile(r"^(`{3,})(.*)$")')]),
+ ('P65 status shows no stop time', [('"stop": night.go["stop"] if night.go else None, ', '"stop": None, ')]),
+ ('P66 the go line of report.md is always Go: none',
+  [('f"Rehearsal: {go[\'rehearsal\']}.\\n" if go else "Go: none.\\n",',
+    'f"Rehearsal: {go[\'rehearsal\']}.\\n" if False else "Go: none.\\n",')]),
+ ('P21 the closed record lists no entries after the report',
+  [('table([(f"E{e[\'id\']}", e["kind"], e["t"], after_text(e)) for e in later],', 'table([],')]),
+ ('P63 a close reason of spaces skips the page checks',
+  [('if not found and not entry.get("without_page", "").strip():', 'if not found and not entry.get("without_page"):')]),
+ ('F1 the closed record does not show what a page check says',
+  [('        return f"check {entry[\'name\']} of E{entry[\'report\']}: {entry[\'outcome\']}"',
+    '        return f"check {entry[\'name\']}"')]),
+ ('F5 a commit row with no option is not refused at intent',
+  [('        if option is None:  # only a hand-written journal', '        if False:  # only a hand-written journal')]),
+ ('F5 text that is not UTF-8 passes the schema',
+  [('        value.encode("utf-8")\n    except UnicodeEncodeError:\n        return False\n    return True',
+    '        pass\n    except UnicodeEncodeError:\n        return False\n    return True')]),
+ ('F6 a write error after the append does not name the entry',
+  [('                if refusal.code == "WRITE_FAILED":', '                if False:')]),
+ ('F6 status of a closed night prints no close line',
+  [('        "closed": f"E{night.close[\'id\']} NIGHT CLOSED',
+    '        "closed": None and f"E{night.close[\'id\']} NIGHT CLOSED')]),
+ ('F8 an intent with a command of spaces passes',
+  [('    if not entry.get("command", "").strip():', '    if "command" not in entry:')]),
+ ('F12 status shows no last entry', [('        "last": f"E{night.last', '        "last": None and f"E{night.last')]),
+ ('F14 a fake clock with no test mode runs commands that read no time',
+  [('        clock()  # NIGHT_FAKE_NOW', '        pass  # NIGHT_FAKE_NOW')]),
+ ('F15 a card that is a folder crashes',
+  [('            text = handle.read()\n    except (OSError, UnicodeDecodeError):',
+    '            text = handle.read()\n    except (FileNotFoundError, UnicodeDecodeError):')]),
+ ('F16 a report file that is a folder crashes check',
+  [('                current = handle.read()\n        except (OSError, UnicodeDecodeError):',
+    '                current = handle.read()\n        except (FileNotFoundError, UnicodeDecodeError):')])]
+MUTANTS += ADVISOR3
+# The consultant review of b315b63 (P2-3 to P2-5).
+MUTANTS += [('a short write is not finished', [('            rest = memoryview(data)\n            while rest:', '            rest = memoryview(data)\n            while False:'),
+    ('            os.fsync(handle)\n        finally:\n            os.close(handle)\n        if first:', '            os.write(handle, data)\n            os.fsync(handle)\n        finally:\n            os.close(handle)\n        if first:')]),
+    ('repair cuts before the rules', [('        found = judge(night, entry)\n        if found:', '        if before_append:\n            before_append()\n        found = judge(night, entry)\n        if found:')]),
+    ('a cut file with no entry is not found', [('        found += [(night.last["id"], "CUT_UNRECORDED", name) for name in unrecorded_cuts(folder, night)]', '        pass')]),
+    ('repair does not record a side file', [('            missing = unrecorded_cuts(folder, fold(entries))', '            missing = []')]),
+    ('a stop with no offset takes the zone of this computer', [('    if value.tzinfo is None:\n        raise Refused("STOP_NO_OFFSET", repr(text))', '    if value.tzinfo is None:\n        value = value.astimezone()')]),
+    ('a time of day takes the zone of this computer', [('            today = now.astimezone(offset).replace(', '            today = now.astimezone().replace(')])]
 RACES = {"lock not exclusive", "decide before the lock"}
 
 
 def first_failure(output):
-    match = re.search(r"^(?:FAIL|ERROR): (\S+) \((\S+)\)", output, re.MULTILINE)
-    return match.group(2) if match else "(no test name in the output)"
+    """The first failing test, or None when the run failed before a test failed (a crash of the runner)."""
+    match = re.search(r"^(?:FAIL|ERROR): (test_\S+) \((\S+)\)", output, re.MULTILINE)
+    return match.group(2) if match else None
+
+
+def run_suite(text):
+    """Run test_night.py on a copy of night.py with `text`; stop at the first failure."""
+    with tempfile.TemporaryDirectory() as tmp:
+        copy = os.path.join(tmp, "night.py")
+        with open(copy, "w", encoding="utf-8") as handle:
+            handle.write(text)
+        env = {"PATH": os.environ.get("PATH", ""), "NIGHT_PY": copy}
+        done = subprocess.run([sys.executable, "-I", os.path.join(HERE, "test_night.py"), "-f"],
+                              capture_output=True, text=True, env=env, check=False, timeout=1800)
+    return done.returncode, done.stdout + done.stderr
 
 
 def run_mutant(name, edits, source):
-    """`edits` is a list of (old, new) pairs; each old text must be in night.py exactly one time."""
+    """`edits` is a list of (old, new) pairs; each old text must be in night.py exactly one time.
+    A kill is a named test that fails; a run that fails with no failing test is BAD, not a kill."""
     if not edits:
         return "BAD", "the mutant has no edit"
     changed = source
@@ -425,22 +497,23 @@ def run_mutant(name, edits, source):
         if count != 1:
             return "BAD", f"an old text is in night.py {count} times"
         changed = changed.replace(old, new)
-    with tempfile.TemporaryDirectory() as tmp:
-        copy = os.path.join(tmp, "night.py")
-        with open(copy, "w", encoding="utf-8") as handle:
-            handle.write(changed)
-        env = {"PATH": os.environ.get("PATH", ""), "NIGHT_PY": copy}
-        for _ in range(RACE_ROUNDS if name in RACES else 1):
-            done = subprocess.run([sys.executable, "-I", os.path.join(HERE, "test_night.py"), "-f"],
-                                  capture_output=True, text=True, env=env, check=False, timeout=1800)
-            if done.returncode != 0:
-                return "KILLED", first_failure(done.stdout + done.stderr)
+    for _ in range(RACE_ROUNDS if name in RACES else 1):
+        code, output = run_suite(changed)
+        if code != 0:
+            test = first_failure(output)
+            return ("KILLED", test) if test else ("BAD", "the run failed, but no test failed")
     return "SURVIVED", "no test failed"
 
 
 def main(names):
     with open(os.environ.get("NIGHT_PY", os.path.join(HERE, "night.py")), encoding="utf-8") as handle:
         source = handle.read()
+    code, output = run_suite(source)  # a kill means something only if the suite passes on night.py itself
+    if code != 0:
+        print(f"BASELINE FAILED: the suite fails on night.py with no mutant ({first_failure(output) or 'no test name'}); "
+              "no mutant ran", flush=True)
+        return 2
+    print("BASELINE OK: the suite passes on night.py", flush=True)
     chosen = [m for m in MUTANTS if not names or m[0] in names]
     bad = 0
     for mutant in chosen:

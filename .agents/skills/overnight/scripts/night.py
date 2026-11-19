@@ -22,6 +22,7 @@ journal cannot be read). Each refusal and problem has a code: see CODES.
 """
 
 import argparse
+import errno
 import json
 import os
 import re
@@ -92,7 +93,9 @@ CODES = {
     "TORN_LINE": ("fix", "the journal ends in a cut line (no newline at its end); run `repair`"),
     "BAD_LINE": ("final", "a journal line is not one JSON object"),
     "SCHEMA": ("final", "a journal entry has a bad shape"),
-    "REPAIR_NOTHING": ("fix", "the journal ends with a full line: there is nothing to repair"),
+    "REPAIR_NOTHING": ("fix", "the journal ends with a full line and each side file has its entry: there is nothing to repair"),
+    "STOP_NO_OFFSET": ("fix", "--stop needs its offset: `YYYY-MM-DDTHH:MM+07:00` or `HH:MM+07:00` (the zone of the card, "
+                              "not of this computer)"),
     "ID_NOT_REPORT": ("fix", "this entry is not a report entry"),
     "WRITE_FAILED": ("final", "a file write failed"),
     "INTERNAL": ("final", "an unexpected error in night.py; run `check` and tell the owner"),
@@ -156,14 +159,15 @@ CODES = {
     "GAP": ("fix", "a silent stretch is longer than the gap alarm"),
     "STOP_NOT_CLOSED": ("fix", "the stop time has passed and the night is not closed: close it"),
     "REPORT_FILE": ("fix", "report.md does not match the journal: run `render`"),
+    "CUT_UNRECORDED": ("fix", "a side file of cut bytes has no repair entry (a crash after the cut): run `repair`"),
 }
 PRE_EVENT_CODES = frozenset((
     "NO_NIGHT", "BAD_ARGUMENT", "WORDS_FILE", "WORDS_AS_ARGUMENT", "ARG_NOT_FOR_KIND", "ITEM_MISSING", "ITEM_LINE",
     "EVENT_ID", "RESULT_FIELDS", "PAGECHECK_FIELDS", "CARD_MISSING", "CARD_NO_BLOCK", "CARD_TWO_BLOCKS",
     "CARD_OPEN_FENCE", "MAX_GAP_ENV", "FAKE_CLOCK_NO_TEST", "FAKE_CLOCK_FORM", "LOCK_HELD", "LOCK_STALE", "TORN_LINE",
-    "BAD_LINE", "SCHEMA", "REPAIR_NOTHING", "ID_NOT_REPORT", "WRITE_FAILED", "INTERNAL",
+    "BAD_LINE", "SCHEMA", "REPAIR_NOTHING", "ID_NOT_REPORT", "WRITE_FAILED", "INTERNAL", "STOP_NO_OFFSET",
 ))
-STATE_CODES = frozenset(("NO_GO", "INTENT_NO_RESULT", "GAP", "STOP_NOT_CLOSED", "REPORT_FILE"))
+STATE_CODES = frozenset(("NO_GO", "INTENT_NO_RESULT", "GAP", "STOP_NOT_CLOSED", "REPORT_FILE", "CUT_UNRECORDED"))
 CLASS_TEXT = {"final": "final: do not retry", "fix": "correct it and run again"}
 
 
@@ -218,15 +222,24 @@ def entry_time(text):
 
 
 def parse_stop(text, now):
-    """--stop: HH:MM (the next such local time), a local date and time, or ISO with a zone."""
+    """--stop: a date and time with its offset, or HH:MM with its offset (the next such time).
+    The zone of this computer is never used: it need not be the zone of the card."""
     text = text.strip()
-    if re.fullmatch(r"\d{1,2}:\d{2}", text):
-        hour, minute = (int(part) for part in text.split(":"))
-        today = now.astimezone().replace(hour=hour, minute=minute, second=0, microsecond=0)
+    clock_only = re.fullmatch(r"(\d{1,2}):(\d{2})(Z|[+-]\d{2}:\d{2})", text)
+    if clock_only:
+        hour, minute, zone = int(clock_only.group(1)), int(clock_only.group(2)), clock_only.group(3)
+        offset = timezone.utc if zone == "Z" else datetime.strptime(zone.replace(":", ""), "%z").tzinfo
+        try:
+            today = now.astimezone(offset).replace(hour=hour, minute=minute, second=0, microsecond=0)
+        except ValueError:
+            raise Refused("STOP_NO_OFFSET", repr(text)) from None
         return (today if today > now else today + timedelta(days=1)).astimezone(timezone.utc)
-    value = datetime.fromisoformat(text)
+    try:
+        value = datetime.fromisoformat(text)
+    except ValueError:
+        raise Refused("STOP_NO_OFFSET", repr(text)) from None
     if value.tzinfo is None:
-        value = value.astimezone()
+        raise Refused("STOP_NO_OFFSET", repr(text))
     return value.astimezone(timezone.utc)
 
 
@@ -309,18 +322,29 @@ def is_int(value):
     return isinstance(value, int) and not isinstance(value, bool)
 
 
+def is_text(value):
+    """A str that can be written as UTF-8 (JSON allows a lone surrogate, which no file can hold)."""
+    if not isinstance(value, str):
+        return False
+    try:
+        value.encode("utf-8")
+    except UnicodeEncodeError:
+        return False
+    return True
+
+
 def is_row(value):
-    return isinstance(value, list) and len(value) in (2, 3) and all(isinstance(part, str) for part in value)
+    return isinstance(value, list) and len(value) in (2, 3) and all(is_text(part) for part in value)
 
 
 TYPES = {
-    "str": lambda v: isinstance(v, str),
+    "str": is_text,
     "int": is_int,
     "bool": lambda v: isinstance(v, bool),
     "time": lambda v: entry_time(v) is not None,
     "row": is_row,
     "rows": lambda v: isinstance(v, list) and all(is_row(row) for row in v),
-    "counts": lambda v: isinstance(v, dict) and all(isinstance(k, str) and is_int(n) for k, n in v.items()),
+    "counts": lambda v: isinstance(v, dict) and all(is_text(k) and is_int(n) for k, n in v.items()),
 }
 FIELDS = {
     "new": {"run": "str", "words": "str", "test": "bool", "format": (FORMAT,)},
@@ -378,17 +402,28 @@ def schema_problem(entry):
     return f"missing field {missing[0]!r}" if missing else None
 
 
+def journal_bytes(folder):
+    try:
+        with open(journal_path(folder), "rb") as handle:
+            return handle.read()
+    except FileNotFoundError:
+        return None
+
+
 def read_journal(folder):
     """All entries, or None if there is no journal. A cut, broken or bad-shaped line refuses."""
     path = journal_path(folder)
-    try:
-        with open(path, "rb") as handle:
-            data = handle.read()
-    except FileNotFoundError:
+    data = journal_bytes(folder)
+    if data is None:
         return None
     if data and not data.endswith(b"\n"):
         tail = len(data) - (data.rfind(b"\n") + 1)
         raise Refused("TORN_LINE", f"{tail} bytes after the last newline of {path}")
+    return parse_lines(data)
+
+
+def parse_lines(data):
+    """The entries of whole lines. A broken or bad-shaped line refuses."""
     entries = []
     for number, raw in enumerate(data.split(b"\n")[:-1], 1):
         try:
@@ -410,7 +445,12 @@ def append(folder, entry, first):
     try:
         handle = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
         try:
-            os.write(handle, data)
+            rest = memoryview(data)
+            while rest:  # os.write can write fewer bytes than it gets (a full disk, a signal)
+                written = os.write(handle, rest)
+                if written <= 0:
+                    raise OSError(errno.EIO, "the write stopped before the end of the entry")
+                rest = rest[written:]
             os.fsync(handle)
         finally:
             os.close(handle)
@@ -605,36 +645,27 @@ def rule_item_on_card(night, entry):
     return []
 
 
-def row_problems(row, known):
-    """The problems of one card row; `known` maps name keys of the names already on the card."""
-    name, kind, rest = row[0], row[1], row[2:]
-    found = []
-    if not name or name != name.strip() or "|" in name or any(ord(c) < 32 or ord(c) == 127 for c in name):
-        found.append(("ITEM_NAME", repr(name)))
-    if kind not in ITEM_KINDS:
-        found.append(("ITEM_KIND", f"{name!r} has kind {kind!r}"))
-    elif (kind == "commit") != bool(rest) or (rest and not OPTION.fullmatch(rest[0])):
-        found.append(("ITEM_OPTION", f"{' | '.join(row)}"))
-    if name_key(name) in known:
-        found.append(("ITEM_DUPLICATE" if known is not None and not isinstance(known, dict) else "ITEM_ON_CARD",
-                      f"{name!r} and {known[name_key(name)]!r}" if isinstance(known, dict) else repr(name)))
+def rows_problems(rows, known=(), same="ITEM_DUPLICATE"):
+    """The problems of card rows. `known` holds the names already on the card; `same` is the code for a name twice."""
+    found, seen = [], {name_key(name): name for name in known}
+    for row in rows:
+        name, kind, rest = row[0], row[1], row[2:]
+        if not name or name != name.strip() or "|" in name or any(ord(c) < 32 or ord(c) == 127 for c in name):
+            found.append(("ITEM_NAME", repr(name)))
+        if kind not in ITEM_KINDS:
+            found.append(("ITEM_KIND", f"{name!r} has kind {kind!r}"))
+        elif (kind == "commit") != bool(rest) or (rest and not OPTION.fullmatch(rest[0])):
+            found.append(("ITEM_OPTION", f"{' | '.join(row)}"))
+        if name_key(name) in seen:
+            found.append((same, f"{name!r} and {seen[name_key(name)]!r}"))
+        seen.setdefault(name_key(name), name)
     return found
 
 
 def rule_go(night, entry):
     if entry["kind"] != "go":
         return []
-    found = []
-    if not entry["items"]:
-        found.append(("ITEMS_EMPTY", ""))
-    seen = {}
-    for row in entry["items"]:
-        for code, detail in row_problems(row, {}):
-            found.append((code, detail))
-        key = name_key(row[0])
-        if key in seen:
-            found.append(("ITEM_DUPLICATE", f"{row[0]!r} and {seen[key]!r}"))
-        seen.setdefault(key, row[0])
+    found = rows_problems(entry["items"]) if entry["items"] else [("ITEMS_EMPTY", "")]
     if entry_time(entry["stop"]) <= entry_time(entry["t"]):
         found.append(("GO_STOP_NOT_FUTURE", f"stop {entry['stop']}, now {entry['t']}"))
     if entry["heartbeat_min"] <= 0:
@@ -656,11 +687,7 @@ def rule_amend(night, entry):
         if entry["reopen"] not in night.denied and entry["reopen"] not in night.held:
             found.append(("REOPEN_NOT_BLOCKED", repr(entry["reopen"])))
     if "add_item" in entry:
-        row = entry["add_item"]
-        found.extend(p for p in row_problems(row, {}) if p[0] != "ITEM_DUPLICATE")
-        known = {name_key(name): name for name in night.items}
-        if name_key(row[0]) in known:
-            found.append(("ITEM_ON_CARD", f"{row[0]!r} and {known[name_key(row[0])]!r}"))
+        found.extend(rows_problems([entry["add_item"]], night.items, "ITEM_ON_CARD"))
     return found
 
 
@@ -683,12 +710,14 @@ def rule_intent(night, entry):
             return [("OPEN_INTENT", f"E{latest} at {before['t']}: `{before.get('command', '')}` has no result")]
         if last_result["outcome"] == "unknown":
             return [("UNKNOWN_RESULT", f"E{last_result['id']} on E{latest} is unknown")]
-    if "command" not in entry:
+    if not entry.get("command", "").strip():
         return [("INTENT_FIELDS", "")]
     command = entry["command"]
     if kind == "commit":
         if "head" not in entry or "no_head" in entry:
             return [("COMMIT_NEEDS_HEAD", repr(item))]
+        if option is None:  # only a hand-written journal has a commit row with no option (go refuses it)
+            return [("HEAD_OPTION_MISSING", f"the card row of {item!r} names no head-match option")]
         if not FULL_SHA.fullmatch(entry["head"]):
             return [("HEAD_FORM", repr(entry["head"]))]
         if not re.search(rf"(?<![\w-]){re.escape(option)}(?:=|\s+){entry['head']}(?![0-9A-Fa-f])", command):
@@ -755,7 +784,7 @@ def rule_report_close(night, entry):
         if pending:
             return [("CLOSE_OPEN_INTENT", ", ".join(f"E{e['id']} {e['item']}" for e in pending))]
         found = report_fresh(night, [])
-        if not found and not entry.get("without_page"):
+        if not found and not entry.get("without_page", "").strip():
             checks = night.pagechecks.get(night.newest_report()["id"], {})
             missing = [name for name in PAGE_CHECKS if checks.get(name) != "pass"]
             if missing:
@@ -864,6 +893,15 @@ def fenced(text):
     return f"{fence}text\n{text}\n{fence}"
 
 
+def after_text(entry):
+    """The facts of an entry after the report, for the closed record (a failed check must show)."""
+    if entry["kind"] == "pagecheck":
+        return f"check {entry['name']} of E{entry['report']}: {entry['outcome']}" + (f"; {entry['text']}" if "text" in entry else "")
+    if entry["kind"] == "close":
+        return f"reason {entry['reason']}" + (f"; no checked page: {entry['without_page']}" if "without_page" in entry else "")
+    return " ".join(str(entry[k]) for k in ("item", "text") if k in entry)
+
+
 def render(entries):
     """report.md for the newest report, from the journal alone (no clock, no environment)."""
     full = fold(entries)
@@ -918,8 +956,8 @@ def render(entries):
     ]
     later = [e for e in night.entries if e["id"] > report["id"]]
     if closed and later:
-        text += [f"## After E{report['id']}\n", table([(f"E{e['id']}", e["kind"], e["t"]) for e in later],
-                                                      ["Entry", "Kind", "Time"])]
+        text += [f"## After E{report['id']}\n", table([(f"E{e['id']}", e["kind"], e["t"], after_text(e)) for e in later],
+                                                      ["Entry", "Kind", "Time", "What it says"])]
     text += ["## Permissions\n", permissions + "\n"]
     return "\n".join(text)
 
@@ -930,11 +968,13 @@ def state_problems(night, folder, now, gap_to_now):
     found += [(gap[0], "GAP", gap_text(night, gap)) for gap in gaps(night, now if gap_to_now else None)]
     if stop_passed(night, now):
         found.append((night.last["id"], "STOP_NOT_CLOSED", f"stop {night.go['stop']}"))
+    if night.last is not None:
+        found += [(night.last["id"], "CUT_UNRECORDED", name) for name in unrecorded_cuts(folder, night)]
     if night.reports:
         try:
             with open(os.path.join(folder, REPORT), encoding="utf-8") as handle:
                 current = handle.read()
-        except (FileNotFoundError, UnicodeDecodeError):
+        except (OSError, UnicodeDecodeError):
             current = None
         if current != render(night.entries):
             found.append((night.newest_report()["id"], "REPORT_FILE", "missing" if current is None else "different"))
@@ -956,7 +996,7 @@ def parse_card(folder):
     try:
         with open(path, encoding="utf-8") as handle:
             text = handle.read()
-    except (FileNotFoundError, UnicodeDecodeError):
+    except (OSError, UnicodeDecodeError):
         raise Refused("CARD_MISSING", path) from None
     blocks, fence, info, body = [], None, None, []
     for line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
@@ -1002,16 +1042,16 @@ def need_night(folder):
         raise Refused("NO_NIGHT", folder)
 
 
-def write_entry(folder, kind, fields, then=None, prepare=None):
-    """Lock, `prepare()`, read, clock, fold, build, judge, append, then `then(night, entry)`, all under the lock.
-    The clock is read after the wait for the lock, so the entry time is never before an earlier entry."""
+def write_entry(folder, kind, fields, then=None, read=read_journal, before_append=None):
+    """Lock, read, clock, fold, build, judge, `before_append()`, append, then `then(night, entry)`, all under the lock.
+    The clock is read after the wait for the lock, so the entry time is never before an earlier entry.
+    `before_append` runs only after the rules pass, so a refused command changes no file."""
     with Lock(folder):
-        extra = prepare() if prepare else {}
-        entries = read_journal(folder) or []
+        entries = read(folder) or []
         now, fake = clock()
         night = fold(entries)
         entry = {"id": night.last["id"] + 1 if night.last else 1, "t": iso(now), "kind": kind}
-        given = dict(fields(night, now) if callable(fields) else fields, **extra)
+        given = fields(night, now) if callable(fields) else fields
         entry.update({k: v for k, v in given.items() if v is not None})
         if fake:
             entry["fake_clock"] = True
@@ -1021,10 +1061,17 @@ def write_entry(folder, kind, fields, then=None, prepare=None):
         found = judge(night, entry)
         if found:
             raise Refused(found[0][0], found[0][1], event=entry)
+        if before_append:
+            before_append()
         append(folder, entry, first=not entries)
         apply(night, entry)
         if then:
-            then(night, entry)
+            try:
+                then(night, entry)
+            except Refused as refusal:
+                if refusal.code == "WRITE_FAILED":
+                    refusal.detail += f"; entry E{entry['id']} is in the journal: run `render`"
+                raise
     return entry
 
 
@@ -1048,15 +1095,8 @@ def cmd_new(args):
 
 def cmd_items(args):
     rows = parse_card(args.dir)
-    seen = {}
-    for row in rows:
-        for code, detail in row_problems(row, {}):
-            raise Refused(code, detail)
-        if name_key(row[0]) in seen:
-            raise Refused("ITEM_DUPLICATE", f"{row[0]!r} and {seen[name_key(row[0])]!r}")
-        seen[name_key(row[0])] = row[0]
-    if not rows:
-        raise Refused("ITEMS_EMPTY")
+    for code, detail in rows_problems(rows) if rows else [("ITEMS_EMPTY", "")]:
+        raise Refused(code, detail)
     for row in rows:
         print(" | ".join(row))
 
@@ -1071,7 +1111,6 @@ def max_gap_env():
 
 
 def cmd_go(args):
-    need_night(args.dir)
     limit = max_gap_env()
     rows = parse_card(args.dir)
     gap = args.gap_min if args.gap_min is not None else 2 * args.heartbeat_min
@@ -1087,18 +1126,9 @@ def cmd_go(args):
         print("  " + " | ".join(row))
 
 
-ALLOWED = {
-    "alive": {"text"}, "reserve": {"text", "item"}, "aware": {"text", "item"}, "error": {"text", "item"},
-    "decision": {"text", "item", "source", "check", "resolves"},
-    "intent": {"item", "command", "head", "no_head"},
-    "result": {"of", "outcome", "blocks", "text"},
-    "denied": {"item", "command", "blocks", "text"},
-    "hold": {"item", "text"}, "wait": {"item", "text"},
-    "amend": {"words_file", "reopen", "add_item"}, "answer": {"words_file"},
-    "pagecheck": {"name", "outcome", "report", "text"},
-}
-OPTIONS = ("text", "item", "command", "head", "no_head", "of", "outcome", "blocks", "source", "check", "resolves",
-           "words_file", "reopen", "add_item", "name", "report")
+# The options of each log kind are its fields (FIELDS); the owner's words come in through --words-file.
+ALLOWED = {kind: {"words_file" if name == "words" else name for name in FIELDS[kind]} for kind in LOG_KINDS}
+OPTIONS = sorted(set().union(*ALLOWED.values()))
 
 
 def log_fields(args):
@@ -1109,7 +1139,8 @@ def log_fields(args):
     given = [name for name in OPTIONS if getattr(args, name) not in (None, False)]
     extra = [name for name in given if name not in ALLOWED[kind]]
     if extra:
-        raise Refused("ARG_NOT_FOR_KIND", f"{kind} does not take --{extra[0].replace('_', '-')}")
+        raise Refused("ARG_NOT_FOR_KIND", f"{kind} does not take " + ("a text" if extra[0] == "text" else
+                                                                       f"--{extra[0].replace('_', '-')}"))
     if kind in ("intent", "denied", "hold", "wait") and args.item is None:
         raise Refused("ITEM_MISSING", kind)
     fields = {"text": args.text, "item": args.item.strip() if args.item is not None else None,
@@ -1134,7 +1165,6 @@ def log_fields(args):
 
 def cmd_log(args):
     fields = log_fields(args)
-    need_night(args.dir)
     entry = write_entry(args.dir, args.kind, fields)
     print(f"E{entry['id']} {args.kind}" + (f" {entry['item']}" if entry.get("item") else ""))
     if "add_item" in entry:
@@ -1143,7 +1173,6 @@ def cmd_log(args):
 
 
 def cmd_report(args):
-    need_night(args.dir)
 
     def write(night, entry):
         write_file(args.dir, REPORT, render(night.entries))
@@ -1152,7 +1181,6 @@ def cmd_report(args):
 
 
 def cmd_render(args):
-    need_night(args.dir)
     with Lock(args.dir):
         entries = read_journal(args.dir) or []
         night = fold(entries)
@@ -1163,47 +1191,70 @@ def cmd_render(args):
 
 
 def cmd_close(args):
-    need_night(args.dir)
-    notes = []
+    notes, state = [], {}
 
     def write(night, entry):
+        state["night"] = night
         write_file(args.dir, REPORT, render(night.entries))
         notes.extend(f"{row[0]}: {row[1]} ({row[4]})" for row in needs_you(night))
         notes.extend(gap_text(night, gap) for gap in gaps(night))
     entry = write_entry(args.dir, "close", {"reason": args.reason, "without_page": args.without_page}, write)
-    night = fold(read_journal(args.dir))
+    night = state["night"]
     for line in notes:
         print(f"NOTE: {line} (it is on the report)")
     print(f"E{entry['id']} NIGHT CLOSED {night.run} reason {args.reason}" + (" TEST JOURNAL" if night.test else ""))
 
 
+def cut_files(folder):
+    return sorted(name for name in os.listdir(folder) if re.fullmatch(r"journal\.cut-\d+\.txt", name))
+
+
+def unrecorded_cuts(folder, night):
+    recorded = {e["cut_file"] for e in night.entries if e["kind"] == "repair"}
+    return [name for name in cut_files(folder) if name not in recorded]
+
+
 def cmd_repair(args):
-    need_night(args.dir)
+    """Move a cut last line to a side file and record it, or record a side file that a crash left with no entry.
+    The rules run before any file changes; the side file is written before the cut, so a crash loses no byte."""
     path = journal_path(args.dir)
+    plan = {}
+
+    def read(folder):
+        data = journal_bytes(folder) or b""
+        keep = data.rfind(b"\n") + 1 if data and not data.endswith(b"\n") else len(data)
+        entries = parse_lines(data[:keep])
+        if keep < len(data):
+            number = 1 + max((int(re.search(r"\d+", n).group()) for n in cut_files(folder)), default=0)
+            plan.update(name=f"journal.cut-{number}.txt", cut=data[keep:], keep=keep)
+        else:
+            missing = unrecorded_cuts(folder, fold(entries))
+            if not missing:
+                raise Refused("REPAIR_NOTHING")
+            plan.update(name=missing[0], cut=None)
+        return entries
+
+    def fields(night, now):
+        size = len(plan["cut"]) if plan["cut"] is not None else os.path.getsize(os.path.join(args.dir, plan["name"]))
+        return {"cut_file": plan["name"], "bytes": size}
 
     def cut():
-        with open(path, "rb") as handle:
-            data = handle.read()
-        if not data or data.endswith(b"\n"):
-            raise Refused("REPAIR_NOTHING")
-        keep = data.rfind(b"\n") + 1
-        number = 1 + sum(1 for name in os.listdir(args.dir) if name.startswith("journal.cut-"))
-        cut_name = f"journal.cut-{number}.txt"
+        if plan["cut"] is None:
+            return
         try:
-            with open(os.path.join(args.dir, cut_name), "wb") as handle:
-                handle.write(data[keep:])
+            with open(os.path.join(args.dir, plan["name"]), "wb") as handle:
+                handle.write(plan["cut"])
                 handle.flush()
                 os.fsync(handle.fileno())
-            os.truncate(path, keep)
+            sync_folder(args.dir)
+            os.truncate(path, plan["keep"])
         except OSError as error:
             raise Refused("WRITE_FAILED", f"{path}: {error.strerror}") from None
-        return {"cut_file": cut_name, "bytes": len(data) - keep}
-    entry = write_entry(args.dir, "repair", {}, prepare=cut)
-    print(f"E{entry['id']} repair: {entry['bytes']} bytes moved to {entry['cut_file']}")
+    entry = write_entry(args.dir, "repair", fields, read=read, before_append=cut)
+    print(f"E{entry['id']} repair: {entry['bytes']} bytes in {entry['cut_file']}")
 
 
 def read_for_view(folder):
-    need_night(folder)
     with Lock(folder):
         entries = read_journal(folder) or []
         now, fake = clock()
@@ -1231,6 +1282,8 @@ def status_data(night, now):
     newest = night.newest_report()
     return {
         "run": night.run, "phase": night.phase, "test": night.test,
+        "last": f"E{night.last['id']} {night.last['kind']} {night.last['t']}" if night.last else None,
+        "closed": f"E{night.close['id']} NIGHT CLOSED {night.run} reason {night.close['reason']}" if night.close else None,
         "stop": night.go["stop"] if night.go else None, "items": items,
         "open_intents": short(night.open_intents()),
         "open_denials": short(night.denied.values(), night.item_of),
@@ -1339,6 +1392,9 @@ def main(argv=None):
         print(line_for("BAD_ARGUMENT"), file=sys.stderr)
         return 3
     try:
+        clock()  # NIGHT_FAKE_NOW with no test mode stops each command, also one that reads no time
+        if args.command_name not in ("new", "items"):
+            need_night(args.dir)
         return HANDLERS[args.command_name](args) or 0
     except Refused as refusal:
         print(line_for(refusal.code, refusal.detail), file=sys.stderr)

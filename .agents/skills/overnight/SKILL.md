@@ -16,7 +16,7 @@ it makes the morning report honest.
 
 Files in this skill folder (`<skill>` below):
 
-- `scripts/night.py`: the journal of one night. Run it with `python3 -I`. It takes each time from the clock. Each refusal has a code. A `final` code means: do not retry. A `fix` code means: correct the input and run again.
+- `scripts/night.py`: the journal of one night. Run it with `python3 -I`. It takes each time from the clock. Each refusal has a code. A `final` code means: do not run the same command again; do the repair step of section 9 first, if it has one. A `fix` code means: correct the input and run again.
 - `scripts/test_night.py` and `scripts/mutants.py`: the tests, and the proof that they can fail. Run both after a change to night.py.
 - `references/night-card.md`: the card template, the read-back, the `/goal` line and the heartbeat prompt.
 - `references/morning-report.md`: the report parts, the question rules and the three checks.
@@ -76,7 +76,7 @@ Keep the owner's part under 10 minutes.
 You cannot run `/goal`: it is a built-in command. So the read-back ends with the exact `/goal` line
 from `references/night-card.md`. The owner sends that line. That message is the go. Nothing else is a go.
 
-1. At the go, run `night.py go --dir <night> --stop "<YYYY-MM-DD HH:MM>" --goal set --rehearsal passed|owner-override|none`. Use `none` when the card has no row for an action that cannot be undone. Then night.py refuses each intent. `go` reads the items from the `night-items` block of `card.md`. After the go, the journal holds the items: a later change to `card.md` does not change them.
+1. At the go, run `night.py go --dir <night> --stop "<YYYY-MM-DDTHH:MM+HH:MM>" --goal set --rehearsal passed|owner-override|none`. Give the offset of the zone on the card (for example `+07:00`), not the zone of this computer: night.py refuses a stop time with no offset. Use `none` when the card has no row for an action that cannot be undone. Then night.py refuses each intent. `go` reads the items from the `night-items` block of `card.md`. After the go, the journal holds the items: a later change to `card.md` does not change them.
 2. If the owner says only "go" or "yes", show the `/goal` line again and wait. Start no night work, also if the owner leaves. The night starts only with the `/goal` line.
 3. One exception: the harness has no `/goal` command. Then say so in the read-back, and write it on the card: "Session goal: none in this harness. The heartbeat is the only wake source." The go is the owner's own "go" after that read-back. Use `--goal no-goal-command`.
 4. If the go message changes the card (for example, another stop time in the `/goal` line), the owner's words win. Log the change with `log amend` (section 5), use the new value in `go`, and read back the change in one line.
@@ -156,7 +156,7 @@ The journal must show the owner that you were alive, and why you waited.
 
 - A resume of the same session (`--resume`, `--continue`) restores the session goal and the scheduled tasks. A new session restores neither. It has no session goal, because only the owner can send the `/goal` line. It works with the heartbeat only, and the report says so.
 - After a resume, or after `/overnight continue <card file>`:
-  1. Read the card and `night.py status`. If a command died after its write, `status` shows its entry.
+  1. Read the card and `night.py status`. Its `last` line shows the newest entry, also when a command died after its write. If the night is closed, `status` prints the `NIGHT CLOSED` line: print it in the conversation, so that the session goal can end.
   2. For each open intent, check the real state, and log its result.
   3. A denial stays a denial.
   4. If the stop time has passed, close and report only.
@@ -164,9 +164,12 @@ The journal must show the owner that you were alive, and why you waited.
   6. Log an `aware` line about the gap, and about a missing session goal.
 - Repairs, each by its code:
   - `TORN_LINE`: run `night.py repair`. It moves the cut line to a side file and logs it.
+  - `CUT_UNRECORDED` in `check`: a crash came after the cut of a repair. Run `night.py repair` again. It logs the side file.
   - `LOCK_STALE`: check that no night.py runs (`ps -p <pid>`). Then remove the lock file by hand, and run `night.py check`. night.py never removes a lock.
   - `REPORT_FILE` in `check`: run `night.py render`. It writes `report.md` again from the journal.
   - `JOURNAL_FAULTS`: the journal breaks a rule, for example after a hand edit. Take no new action. Report it under "My errors".
+  - `WRITE_FAILED`: if the message names an entry, that entry is in the journal; run `night.py render`. If not, the write did not happen; check the disk, then run the command again.
+  - `BAD_LINE`, `SCHEMA` or `INTERNAL`: night.py cannot read the journal. Take no more actions. Tell the owner in the conversation, with the output. The night cannot close: at the stop time, delete the scheduled tasks and stop.
 - If `/overnight continue` does not load this skill, read this file by its path. The handoff names the path.
 
 ## 10. Safety stops: never alone at night
@@ -193,7 +196,7 @@ The night has three ends: the goal is met, nothing is left that you may do, or t
 3. Delete the heartbeat and the stop task.
 4. Stop the helpers that you started, each with a handoff.
 5. Run `night.py report`. It adds report entry E<n> with its counts, and writes `report.md`. Make the morning page from report E<n>, and name E<n> on the page. Do its three checks (`references/morning-report.md`). Log each one with `night.py log pagecheck --name mechanics|truth|counts --outcome pass|fail --report E<n>`. If a later entry makes the report old, run `report` again and check the new page.
-6. Run `night.py close --reason goal-met|nothing-left|stop-time`. It writes `report.md` again: the counts of report E<n>, the entries after E<n>, the gaps, and the end of the night permissions. Then `report.md` is the record, and night.py refuses `report`. It prints `NIGHT CLOSED <run id>`. If it prints a `NOTE` (for example, a gap before the close), add the note at the top of the page.
+6. Run `night.py close --reason goal-met|nothing-left|stop-time`. It writes `report.md` again: the counts of report E<n>, the entries after E<n>, the gaps, and the end of the night permissions. Then `report.md` is the record, and night.py refuses `report`. It prints `NIGHT CLOSED <run id>`. Its `NOTE` lines repeat the open rows and the gaps. They are in `report.md`. Put them on the page before the checks, from `night.py status` (step 5), so that the page needs no change after the close.
 
 Night permissions end at the close. A permission that must last is a standing rule in the owner's
 own words, in the project's memory. Send at most one notice, and only if the card allows it.

@@ -17,7 +17,7 @@ a branch, a file), never by a class such as "the good PRs".
 Done test: <one measurable end, for example "PR 1 and PR 3 merged, PR 2 has a fix commit">
 
 ## Times
-Stop time: <YYYY-MM-DD HH:MM and zone>
+Stop time: <YYYY-MM-DD HH:MM and zone, with its offset, for example +07:00>
 Report ready by: <time>
 Wake me if: <a list of events, or "never">
 
@@ -110,7 +110,7 @@ print in the conversation. The condition can have up to 4,000 characters.
 Template (replace each `<...>`):
 
 ```text
-/goal Night <run id> is closed: the conversation shows the line "NIGHT CLOSED <run id>" from night.py close. Close the night when each work-list item is done or waits for the owner on the checked morning report, or when a printed date shows <stop time> or later. Do only the actions that the night card at <card path> permits.
+/goal Night <run id> is closed: the conversation shows the line "NIGHT CLOSED <run id>" from night.py close or night.py status. Close the night when each work-list item is done or waits for the owner on the checked morning report, or when a printed date shows <stop time> or later. Do only the actions that the night card at <card path> permits.
 ```
 
 Rules for the line:
