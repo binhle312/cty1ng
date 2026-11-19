@@ -11,25 +11,31 @@ import { describe, expect, it } from "vitest";
 // The check sees the name `createClock`, not only a call. An alias (`import { createClock as c }`)
 // or a re-export is a way to call the function, and a check on calls alone passes both. The name
 // as a string (`n["createClock"]`, `Reflect.get(n, "createClock")`) counts too.
+//
+// The timer is held the same way (owner, 2026-11-19, Q2 B): `setInterval` is used in `lib/now.ts`
+// and nowhere else in the app's code. Any use of the name is allowed in `lib/now.ts`.
 
 const ROOT = resolve(import.meta.dirname, "..");
 const NOW_FILE = "frontend/src/lib/now.ts";
 const CLOCK_NAME = "createClock";
 const APP_CLOCK = "appClock";
+const INTERVAL_NAME = "setInterval";
 
 interface ClockUses {
   // `path:line` of each use that the rule forbids.
   forbidden: string[];
   // The calls that the rule allows: the value of `appClock` in `lib/now.ts`.
   allowedCalls: number;
+  // The calls `setInterval(…)` in `lib/now.ts`, where any use of the name is allowed.
+  intervalCalls: number;
 }
 
 // A name is a use when it is an identifier (a declaration, a call, an import, an alias, a property,
-// an export) or a string with that text (a key, an argument, a name in a specifier). A comment is
-// not code and is not read.
-function isClockName(node: ts.Node): boolean {
-  if (ts.isIdentifier(node)) return node.text === CLOCK_NAME;
-  return ts.isStringLiteralLike(node) && node.text === CLOCK_NAME;
+// an export, a type query) or a string with that text (a key, an argument, a name in a specifier).
+// A comment is not code and is not read.
+function isName(node: ts.Node, name: string): boolean {
+  if (ts.isIdentifier(node)) return node.text === name;
+  return ts.isStringLiteralLike(node) && node.text === name;
 }
 
 // `lib/now.ts` owns two uses: the declaration, and the call that is the value of `appClock`.
@@ -55,19 +61,28 @@ function isAppClockCall(node: ts.Node): boolean {
 }
 
 function clockNameUses(path: string, text: string): ClockUses {
-  const result: ClockUses = { forbidden: [], allowedCalls: 0 };
+  const result: ClockUses = { forbidden: [], allowedCalls: 0, intervalCalls: 0 };
   if (isTest(path)) return result;
   const kind = path.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true, kind);
+  const forbid = (node: ts.Node): void => {
+    const line = source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
+    result.forbidden.push(`${path}:${line}`);
+  };
   const visit = (node: ts.Node): void => {
-    if (isClockName(node)) {
+    if (isName(node, CLOCK_NAME)) {
       if (path === NOW_FILE && isDeclaration(node)) {
         // The declaration is allowed and is not a call.
       } else if (path === NOW_FILE && isAppClockCall(node)) {
         result.allowedCalls += 1;
       } else {
-        const line = source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
-        result.forbidden.push(`${path}:${line}`);
+        forbid(node);
+      }
+    } else if (isName(node, INTERVAL_NAME)) {
+      // Any use is allowed in `lib/now.ts`; only the calls are counted, for the guard.
+      if (path !== NOW_FILE) forbid(node);
+      else if (ts.isCallExpression(node.parent) && node.parent.expression === node) {
+        result.intervalCalls += 1;
       }
     }
     ts.forEachChild(node, visit);
@@ -183,6 +198,112 @@ describe("the checker for the one clock", () => {
     expect(clockNameUses(path, text).forbidden, "forbidden uses").toEqual([]);
   });
 
+  // DQ-537, revision 3 (owner, 2026-11-19, Q2 B): the timer itself. `setInterval` is used only in
+  // `lib/now.ts`. The rule reads the name here too: `window.setInterval`, an alias and a string
+  // key are ways to call it.
+  it.each([
+    {
+      label: "a call in a feature",
+      path: "frontend/src/features/bots/bot-page.tsx",
+      text: `export const t = setInterval(() => {}, 1000);\n`,
+      lines: [1],
+    },
+    {
+      label: "a property of window",
+      path: "frontend/src/lib/other.ts",
+      text: `export const t = window.setInterval(() => {}, 1000);\n`,
+      lines: [1],
+    },
+    {
+      label: "a property of globalThis",
+      path: "frontend/src/lib/other.ts",
+      text: `export const t = globalThis.setInterval(() => {}, 1000);\n`,
+      lines: [1],
+    },
+    {
+      label: "a property of self",
+      path: "frontend/src/lib/other.ts",
+      text: `export const t = self.setInterval(() => {}, 1000);\n`,
+      lines: [1],
+    },
+    {
+      label: "a string key of window",
+      path: "frontend/src/lib/other.ts",
+      text: `export const t = window["setInterval"](() => {}, 1000);\n`,
+      lines: [1],
+    },
+    {
+      label: "an alias",
+      path: "frontend/src/lib/other.ts",
+      text: `const make = setInterval;\nexport const t = make(() => {}, 1000);\n`,
+      lines: [1],
+    },
+    {
+      label: "a string key in a destructuring",
+      path: "frontend/src/lib/other.ts",
+      text: `export const { "setInterval": make } = window;\n`,
+      lines: [1],
+    },
+    {
+      label: "a string name read with Reflect.get",
+      path: "frontend/src/lib/other.ts",
+      text: `export const make = Reflect.get(window, "setInterval");\n`,
+      lines: [1],
+    },
+    {
+      label: "an import specifier",
+      path: "frontend/src/lib/other.ts",
+      text: `import { setInterval } from "node:timers";\nexport const t = setInterval(() => {}, 1000);\n`,
+      lines: [1, 2],
+    },
+    {
+      label: "a type query in another file than lib/now.ts",
+      path: "frontend/src/lib/other.ts",
+      text: `export let t: ReturnType<typeof setInterval> | null = null;\n`,
+      lines: [1],
+    },
+  ])("rejects setInterval as $label", ({ path, text, lines }) => {
+    expect(clockNameUses(path, text).forbidden, "forbidden uses").toEqual(
+      lines.map((line) => `${path}:${line}`),
+    );
+  });
+
+  it("allows setInterval anywhere in lib/now.ts and counts its calls", () => {
+    // The owner's words: outside now.ts. Inside it the check counts the calls, not their place.
+    const text = [
+      `export let t: ReturnType<typeof setInterval> | null = null;`,
+      `export function start() { t = setInterval(() => {}, 1000); }`,
+      `export const second = setInterval(() => {}, 1000);`,
+      ``,
+    ].join("\n");
+    const uses = clockNameUses(NOW_FILE, text);
+    expect(uses.forbidden, "forbidden uses").toEqual([]);
+    expect(uses.intervalCalls, "setInterval calls in lib/now.ts").toBe(2);
+  });
+
+  it("allows the timers that are not setInterval", () => {
+    const text = `const a = setTimeout(() => {}, 1);\nclearTimeout(a);\nconst b = requestAnimationFrame(() => {});\nclearInterval(b);\n`;
+    expect(
+      clockNameUses("frontend/src/features/bots/other.tsx", text).forbidden,
+      "forbidden uses",
+    ).toEqual([]);
+  });
+
+  it.each([
+    { label: "a .test.ts file", path: "frontend/src/lib/other.test.ts" },
+    { label: "a .test.tsx file", path: "frontend/src/features/bots/other.test.tsx" },
+  ])("allows setInterval in $label", ({ path }) => {
+    const text = `export const t = setInterval(() => {}, 1000);\n`;
+    expect(clockNameUses(path, text).forbidden, "forbidden uses").toEqual([]);
+  });
+
+  it("allows a comment that names setInterval", () => {
+    const text = `// setInterval makes a timer.\n/* setInterval */\nexport const x = 1;\n`;
+    expect(clockNameUses("frontend/src/lib/other.ts", text).forbidden, "forbidden uses").toEqual(
+      [],
+    );
+  });
+
   it("allows a comment that names createClock", () => {
     const text = `// createClock makes a clock.\n/* createClock */\nexport const x = 1;\n`;
     expect(clockNameUses("frontend/src/lib/other.ts", text).forbidden, "forbidden uses").toEqual(
@@ -208,6 +329,14 @@ describe("the app's code", () => {
       uses.reduce((sum, use) => sum + use.allowedCalls, 0),
       "allowed calls",
     ).toBe(1);
+  });
+
+  // Guard: a renamed or moved timer would leave 0 calls, and the rule would hold nothing.
+  it("has a setInterval call in lib/now.ts", () => {
+    expect(
+      uses.reduce((sum, use) => sum + use.intervalCalls, 0),
+      "setInterval calls in lib/now.ts",
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it("makes one clock", () => {

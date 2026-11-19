@@ -98,9 +98,9 @@ Break list: not needed (`docs/testing.md` §5: not a late, security or order tes
 
 ## Not claimed
 
-- A second timer that `createClock` does not make: a component with its own `setInterval`, or a copy
-  of the clock under another name. The check holds one use of the name `createClock`, not "no other
-  timer".
+- A second timer that `createClock` does not make and that `setInterval` does not start (revision 3
+  below): a copy of the clock under another name, a `setTimeout` loop. The check holds one use of
+  the name `createClock` and no `setInterval` outside `lib/now.ts`, not "no other timer".
 - That the readers of `appClock` share one timer: the test "three subscribers share one timer"
   holds that, as before.
 - A use of the function through a name that the code builds at run time (`n[key]`,
@@ -109,3 +109,87 @@ Break list: not needed (`docs/testing.md` §5: not a late, security or order tes
   development): it makes a second clock with no use of the name `createClock`.
 - A use outside `frontend/src/`, and a use in a test file (allowed).
 - Feedback at lint time or in the editor: the check runs in `pnpm test`.
+
+## Revision 3 (2026-11-19): `setInterval` outside `lib/now.ts`
+
+Brief: the owner's answer of 2026-11-19 (morning page, Q2, choice "B"): "Accept the fix of da1ed3c
+and also fail the test when frontend code calls `setInterval` outside now.ts; built in #138 before
+its merge (plan revision, test first, one review check); then the chief merges #138."
+Approval: chief agent, 2026-11-19, against the owner's answer Q2 B (one change: the chief locks the
+scope to the owner's words, so any use of `setInterval` inside `lib/now.ts` is allowed); owner review pending
+
+### The cause
+
+The first revision does not see a timer that `createClock` does not make, such as a `setInterval` in
+a component (the first "Not claimed" line). Such a timer is a second timer, and the sentence of
+`time-format.md` §1 would be false with no sign. Today `setInterval` occurs only in `lib/now.ts` in
+the non-test code of `frontend/src/` (line 30 as a type, line 50 as the one call; `grep`, head `5e43585`).
+
+### The check
+
+The same test file, the same walk of the tree. A non-test file of `frontend/src/` fails when it uses
+the name `setInterval` anywhere but in `frontend/src/lib/now.ts`. Any use inside `lib/now.ts` is
+allowed: the check does not count the calls there and does not look at their place (scope lock of the
+owner's words; the single call of `createClock` stays held by the one-clock rule and by the test
+"three subscribers share one timer").
+
+The check reads the name, as for `createClock`, and so it is stricter than "calls": an identifier
+or a string with that text counts. `window.setInterval`, `globalThis.setInterval`, `self.setInterval`,
+`window["setInterval"]`, an alias (`const make = setInterval`), a key in a destructuring,
+`Reflect.get(window, "setInterval")`, an import specifier (`import { setInterval } from "node:timers"`)
+and `typeof setInterval` in another file all fail. Not names of the rule: `setTimeout`,
+`clearInterval`, `requestAnimationFrame`, a comment, and a test file (`*.test.ts`, `*.test.tsx`).
+
+The result of the checker gets a second counter, `intervalCalls`: the calls `setInterval(…)` (the
+callee is the identifier) in `lib/now.ts`. A guard in the tree test asserts that it is at least 1: a
+renamed or moved timer would leave 0 and the check would pass with nothing to hold.
+
+### Test strategy (before code)
+
+TDD, unit level, one claim in each test name. New snippet cases (a path and a text):
+
+| Case | Expected |
+| --- | --- |
+| `setInterval(…)` in a feature file | rejected |
+| `window.setInterval(…)`, `globalThis.setInterval(…)`, `self.setInterval(…)` | rejected |
+| `window["setInterval"](…)` | rejected |
+| An alias: `const make = setInterval;` | rejected |
+| A string key in a destructuring: `const { "setInterval": make } = window;` | rejected |
+| `Reflect.get(window, "setInterval")` | rejected |
+| `import { setInterval } from "node:timers";` | rejected |
+| `ReturnType<typeof setInterval>` in another file than `lib/now.ts` | rejected |
+| `setInterval(…)` in `lib/now.ts`, also a second one and one outside a function | allowed (counted in `intervalCalls`) |
+| `setTimeout(…)` and `clearInterval(…)` in a feature file | allowed |
+| A comment that names `setInterval` | allowed |
+| A call in `foo.test.ts` and in `foo.test.tsx` | allowed |
+
+Tree tests: "makes one clock" also covers `setInterval`, and a new guard "has a setInterval call in
+lib/now.ts" asserts `intervalCalls` is at least 1.
+
+Red runs (the PR description records them; I remove the added lines after each run):
+
+1. The new snippet cases that reject fail on the checker of `5e43585` (it does not read the name `setInterval`).
+2. The tree test fails when I add `setInterval(…)` to a non-test file (`lib/log.ts`).
+3. The new guard fails when the call in `lib/now.ts` is renamed, and when the glob reads a folder that does not exist.
+4. The new "allows" cases fail on a checker that forbids every text `setInterval` (comments and `lib/now.ts` included) every timer name (`setTimeout` too), or a checker that does not skip test files.
+5. A case that a review adds fails on the checker before it.
+
+Break list: not needed (`docs/testing.md` §5). Each new test goes into `exempt` of
+`scripts/breaks/pr-138.json`; each reason names its red run.
+
+### Files
+
+`scripts/one-clock.test.ts`, this plan, the sentence of `docs/frontend-conventions.md` §1 that says
+the test does not see a `setInterval` in a component, `scripts/breaks/pr-138.json`,
+`docs/delivery-quality.md`, `docs/status.md`. Not changed: `lib/now.ts`, `time-format.md` §1,
+product code, the Guide ("Guide: not changed": the owner sees no change).
+
+### Not claimed (revision 3)
+
+- A second timer made inside `lib/now.ts`: any use of `setInterval` there is allowed.
+- A `setTimeout` loop (a timer that starts itself again), `requestAnimationFrame`, a Web Worker and
+  its timer, and a timer inside a library. `setTimeout` is used today for one-shot waits
+  (`skeleton.tsx`, `pinned-sort.tsx`, `realtime/start.ts`) and stays allowed.
+- A name that the code builds at run time (`window["set" + "Interval"]`).
+- A use outside `frontend/src/` (`frontend/index.html`, `public/`), and a use in a test file.
+- That the readers of `appClock` share one timer: the test "three subscribers share one timer".
