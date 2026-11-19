@@ -26,6 +26,7 @@ Do not use fast mode.
 | Claude Sonnet 5.5 | Everyday                                    | `Agent` tool with `model: "sonnet"` and `effort: "<e>"`      | `claude -p --model claude-sonnet-5-5 --effort <e>`                                        |
 | GPT-6.2 Sol       | Everyday; near Astra on code, lower price   | `codex exec -m gpt-6.2-sol -c model_reasoning_effort="<e>" -c service_tier="default"`   | The same `codex exec` command                                  |
 | Claude Haiku 5.5  | Simple, fast generation                     | `Agent` tool with `model: "haiku"` and `effort: "<e>"`       | `claude -p --model claude-haiku-5-5 --effort <e>`                                         |
+| GPT-6.1 Terra     | Fast and cheap: screens, images, forms, office tasks; long context | `codex exec -m gpt-6.1-terra -c model_reasoning_effort="<e>" -c service_tier="default"` | The same `codex exec` command |
 
 From Codex, `claude -p` needs network access. If it fails in the sandbox, ask the owner for network access.
 
@@ -37,12 +38,13 @@ owner's instructions for that run give.
 
 | Task difficulty                                                        | Seats (model and effort)                                          |
 | ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Simple: a known pattern, mostly generation (text, tests, small code)   | Haiku 5.5 or Sonnet 5.5, and GPT-6.2 Sol, at `medium`             |
+| Simple: a known pattern, mostly generation (text, tests, small code)   | Haiku 5.5 or Sonnet 5.5, and GPT-6.2 Sol or GPT-6.1 Terra, at `medium` |
 | Normal: a feature or a fix with some judgment                          | Sonnet 5.5 or Opus 5.5, and GPT-6.2 Sol, at `high`                |
 | Hard: architecture, security, a design that is expensive to change     | Opus 5.5 and GPT-6.2 Astra, at `high` or `xhigh`                  |
 
 - Use two model families when the task needs judgment. They make different errors.
 - Add Fable 5.2 only when the owner names it for this arena.
+- For a task that reads screenshots, images or very long files, consider GPT-6.1 Terra as one seat.
 - Give the reason for each choice in one line, for example: "Opus high: the task changes one module boundary."
 
 The judge is never a weaker model than the strongest seat. An everyday or simple model never
