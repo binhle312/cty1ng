@@ -16,8 +16,8 @@ it makes the morning report honest.
 
 Files in this skill folder (`<skill>` below):
 
-- `scripts/night.py`: the journal of one night. Run it with `python3 -I`. It takes each time from the clock. Each refusal has a code. A `final` code means: do not run the same command again; do the repair step of section 9 first, if it has one. A `fix` code means: correct the input and run again.
-- `scripts/test_night.py` and `scripts/mutants.py`: the tests, and the proof that they can fail. Run both after a change to night.py.
+- `scripts/night.py`: the journal of one night. Run it with `python3 -I`. It imports `night_format.py`, `night_rules.py`, `night_report.py` and `night_files.py` from its folder, so copy the whole folder. It takes each time from the clock. Each refusal has a code. A `final` code means: do not run the same command again; do the repair step of section 9 first, if it has one. A `fix` code means: correct the input and run again.
+- `scripts/run_tests.py` (it runs the `test_*.py` files) and `scripts/mutants.py` (its list: `mutant_list.py`): the tests, and the proof that they can fail. Run both after a change to night.py or its modules. No file in `scripts/` has more than 600 lines.
 - `references/night-card.md`: the card template, the read-back, the `/goal` line and the heartbeat prompt.
 - `references/morning-report.md`: the report parts, the question rules and the three checks.
 - `references/rehearsal.md`: the daytime test of this skill, with planted traps.
