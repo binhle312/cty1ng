@@ -38,16 +38,23 @@ say what the proof shows and add `Not claimed: …` (`docs/workflows/pull-reques
 - README.md tables updated for every added, removed, renamed or repurposed file, and the
   descriptions still match what the files do (or "no file changes")
 
+## Records
+
+Ledger rows DQ-… to DQ-…, the round rows of this PR in §6 and its register row, in
+`docs/delivery-quality.md`. `pnpm records:counts` passes (CI). This description holds no state,
+count, fix commit or round result: the rows hold them.
+
 ## Defect and review fixes (when a review found something)
 
-List each defect that this PR repairs and each review fix. For each one, give the general rule, the search of old fixes, and the answer ([bug fix, step 2](https://github.com/binhle312/cty1ng/blob/main/docs/workflows/bug-fix.md)).
+List the ledger row of each defect that this PR repairs and of each review fix. The row holds the
+general rule, the fix, the test, and `Same cause: yes|no (search: `<pattern>`: <hits>)`
+([bug fix, step 2](https://github.com/binhle312/cty1ng/blob/main/docs/workflows/bug-fix.md);
+`AGENTS.md` §9). The search covers earlier PRs: the prevention actions of
+`docs/delivery-quality.md` §7 and the lessons.
 
-| Finding | Cause (the rule broken) | Same cause checked in | Same cause as an earlier fix? | Fix | Test |
-| --- | --- | --- | --- | --- | --- |
-| | | | | | |
-
-"Same cause as an earlier fix?" covers earlier PRs too: name the search of the prevention actions
-(`docs/delivery-quality.md` §7) and of the lessons in the answer.
+| Row | Finding |
+| --- | --- |
+| | |
 
 ## Follow-ups (not done here)
 

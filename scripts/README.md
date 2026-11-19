@@ -10,6 +10,7 @@ code is in `lib/`.
 | `check-memory.ts` | `pnpm check:memory`: the chief memory in `.agents/memories/` (fields, index, privacy, sizes); `--write`, `--local` |
 | `check-events.ts` | `pnpm check:events`: the event table of `docs/realtime-events.md` §4 matches `shared/` |
 | `check-status.ts` | `pnpm check:status`: each merged PR has a Done row in `docs/status.md` |
+| `records-counts.ts` | `pnpm records:counts`: the counts of `docs/delivery-quality.md` §2 come from the ledger rows; `--write` |
 | `check-bundle.ts` | `pnpm check:bundle`: the first-load bundle budget, after `pnpm build` |
 | `check-breaks.ts` | `pnpm check:breaks <list>`: runs the break list of a PR (`docs/testing.md` §5); run by hand |
 | `check-breaks-static.ts` | `pnpm check:breaks:static <list>`: the break-list rules that need no test run; CI runs it |

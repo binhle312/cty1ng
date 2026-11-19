@@ -11,6 +11,7 @@ The code behind the repository scripts. The tests sit next to the files. A file 
 | `check-events.ts` | The checks of `pnpm check:events` |
 | `check-status.ts` | The checks of `pnpm check:status` (pure) |
 | `check-status-git.ts` | Reads the first-parent git history for `pnpm check:status` |
+| `records-counts.ts` | The counts of `pnpm records:counts`: the ledger rows give the Audit row and the register cells |
 | `check-bundle.ts` | The bundle budget, measured on a production build |
 | `breaks.ts` | The break list of a PR: claims, breaks, links, coverage (pure) |
 | `breaks-static.ts` | The break-list rules that need no test run (the runner and the CI job) |

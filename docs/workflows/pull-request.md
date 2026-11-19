@@ -1,52 +1,25 @@
 # Write a PR description
 
-Use this template when you prepare an authorized draft PR. Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
+The template is [`.github/pull_request_template.md`](../../.github/pull_request_template.md). GitHub
+puts it into each new PR, and it is the one home of the sections and their order (DQ-753, by the
+rule [one home for each fact](#one-home-for-each-fact); owner review pending). This file holds the
+rules for what goes into them.
+Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
 
-```markdown
-## What
-One paragraph.
+## Examples of filled rows
 
-## Why
-Link to the brief and decisions.
+The template has empty rows. These rows show the level of detail:
 
-## Acceptance criteria
-| AC | Evidence |
+| Section | Example row |
 | --- | --- |
-| UI-2.4 | `e2e/header-drag.spec.ts` "drop adds bot": expects the bot chip in the header after the drop; + screenshot |
-| conversation-rules §1 table | `decide-runs.rules.test.ts` "human message: …" rows: one row per table line |
-| Each default has one home (a claim with no test) | The search script in this description and its output on `abc1234`; the 21 places that it printed now point to the home. **Not claimed:** that no copy stays |
-
-## Edge cases (one table for each changed screen, `testing.md` §3)
-| Case | Test, or why the row does not apply |
-| --- | --- |
-| The same action twice | `bots.spec` "a second Clone …" |
-| Keyboard only | Does not apply: this PR adds no control |
-
-## Differences from the plan
-- Test strategy T1 became two tests in `purge-due.test.ts`. Reason: one claim per test name
-- (or "none")
-
-## Needs human review
-- Migration `0003_skill_versions` (new tables, no data change)
-- (or "none")
-
-## Docs updated
-- docs/domain-model.md §3 (added changelog column)
-
-## Folder indexes
-- README.md tables updated for every added, removed, renamed or repurposed file, and the
-  descriptions still match what the files do (or "no file changes")
-
-## Defect and review fixes (when a review found something)
-List each defect that this PR repairs and each review fix. For each one, give the general rule, the search of old fixes, and the answer ([bug fix, step 2](bug-fix.md)).
-| Finding | Cause (the rule broken) | Same cause checked in | Same cause as an earlier fix? | Fix | Test |
-| --- | --- | --- | --- | --- | --- |
-| A late Profile answer brings back an old pin | An answer writes fields it does not own | Save answers, pin answers, dialog answers | No | Answers write an allowlist | `bot-edit-form.test` "takes from a save answer only …" |
-| A late dialog answer brings back an old pin | An answer writes fields it does not own | Every answer that writes the form | Yes, the row above. Owner's decision: redesign, with one owner for the form state | The form state has one owner | `bot-edit-form.test` "takes from a dialog answer only …" |
-
-## Follow-ups (not done here)
-- ...
-```
+| Acceptance criteria | `UI-2.4` → `e2e/header-drag.spec.ts` "drop adds bot": expects the bot chip in the header after the drop; + screenshot |
+| Acceptance criteria | `conversation-rules §1 table` → `decide-runs.rules.test.ts` "human message: …" rows: one row per table line |
+| Acceptance criteria, a claim with no test | "Each default has one home" → the search script in the description and its output on `abc1234`; the 21 places that it printed now point to the home. **Not claimed:** that no copy stays |
+| Edge cases | "The same action twice" → `bots.spec` "a second Clone …"; "Keyboard only" → "Does not apply: this PR adds no control" |
+| Differences from the plan | Test strategy T1 became two tests in `purge-due.test.ts`. Reason: one claim per test name |
+| Needs human review | Migration `0003_skill_versions` (new tables, no data change) |
+| Docs updated | `docs/domain-model.md` §3 (added changelog column) |
+| Defect and review fixes | `DQ-a` → "A late Profile answer brings back an old pin"; `DQ-b` → "A late dialog answer brings back an old pin" (the row names DQ-a and the owner's decision) |
 
 ## A claim fits its proof
 
@@ -57,7 +30,7 @@ the proof shows, and add `Not claimed: …` (owner, 2026-11-11;
 [lesson](../lessons-learned/claim-bigger-than-its-proof.md)). The reviewer tests these claims
 first ([review guide §3](../review-guide.md#3-verify-what-the-evidence-proves)).
 
-In the `Defect and review fixes` table, "Same cause as an earlier fix?" covers earlier PRs too.
+In a ledger row, "Same cause as an earlier fix?" covers earlier PRs too.
 Name the search of the prevention actions
 ([delivery quality §7](../delivery-quality.md#7-update-and-assess)) and of the
 [lessons](../lessons-learned/README.md) in the answer.
@@ -67,8 +40,32 @@ Name the search of the prevention actions
 Each fact has one home, and other records link to it (decided by the builder at the owner's request, 2026-11-09, DQ-152). The PR body
 states no state, count or result that a file or a tool owns:
 
-- The state of an issue or a prevention action lives only in its row of
-  `docs/delivery-quality.md`. The PR body names the id.
+- The state, the fix commit and the test of an issue, and the state of a prevention action, live
+  only in its row of `docs/delivery-quality.md`. The PR body names the id in its `Records` section
+  and in the `Defect and review fixes` table; it does not repeat them (owner, 2026-11-18, q4 Q3 A).
+- The result of a review round lives only in its row of the round log.
+- The counts of the Audit row and of each `Ledger` row of the register: `pnpm records:counts --write`
+  writes them from the rows, and CI checks them. Nobody types them, in the ledger or in the body.
+- The "Same cause as an earlier fix?" answer and its search live in the "Fix and verification"
+  cell of the ledger row (`AGENTS.md` §9). The `Defect and review fixes` section of the body names
+  the rows. The form (owner, 2026-11-19, morning Q4 A):
+  `Same cause: no (search: `<pattern>`: <hits>)` or
+  `Same cause: yes (search: `<pattern>`: <hits>; §9: <step>)`.
+  - The pattern is one `grep -E` pattern; write `\|` for `|` in the table. It stands for
+    `grep -n -i -E '<pattern>' docs/delivery-quality.md docs/delivery-quality-archive.md docs/lessons-learned/*.md`:
+    the ledger, its §7 prevention actions and the lessons. It has no backtick, no backslash
+    before a letter or a digit (`\d`, `\w`, `\b`, `\<`), no `[[` and no `(?`, so that grep and
+    the script read it in one way.
+  - The hits name the ids that the answer rests on (or `none`), with no `;` or `)`. Each cited id
+    is in a line that the pattern finds, other than the row itself.
+  - The §9 step of a yes is `owner, <YYYY-MM-DD>, <page> Q<n> <option>` (the owner's decision),
+    `proposal DQ-<n>` (the row of the redesign proposal, not the row itself) or
+    `fixed answer (AGENTS.md §9, owner 2026-11-11)` (a claim bigger than its proof).
+  - `pnpm records:counts` checks each row from DQ-853 on that is not `withdrawn`, and the form of
+    DQ-751 to DQ-777. It does not check the choice of the words (the reviewer does), that `none`
+    or a no is true, or that a decision named in a step exists.
+- A `docs/status.md` line of a PR has its state, its date and its link. It has no list of files, no
+  count and no claim that a test or a row owns.
 - The results of a script live in its output. The PR body pastes the output unchanged, with the
   commit that it names. It does not retype numbers from it. `pnpm check:breaks --report <file>`
   writes such a report.
@@ -108,7 +105,9 @@ review fix, check them against the commit that you push (owner, 2026-11-08, DQ-1
    `LC_ALL=C` makes it count bytes, so each machine gives the same result. Make each row that it
    prints shorter, also when the PR only adds a fix to the row. A row up to DQ-202 can stay as it
    is (owner, 2026-11-10).
-8. Run `wc -c < docs/delivery-quality.md`. If the result is larger than the limit in
+8. After the merge of `origin/main`, run `pnpm records:counts --write`, and commit what it
+   writes. CI runs `pnpm records:counts` and fails when a count is stale.
+9. Run `wc -c < docs/delivery-quality.md`. If the result is larger than the limit in
    [§7 step 6 of the ledger](../delivery-quality.md#7-update-and-assess), write under Follow-ups
    of the PR description that a move of the closed rows is due. The move is a PR of its own. The
    one exception is the move of the P3 PRs in

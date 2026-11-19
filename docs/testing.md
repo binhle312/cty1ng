@@ -214,7 +214,7 @@ a slice tests these cases where they apply. The test strategy names them before 
 | An answer comes late | A save or toggle answer that comes after a newer change, a Discard or leaving the page does not undo it |
 | A value changes and changes back | On, then off in another tab: the page cannot tell from the value alone that it changed |
 
-For each changed screen, the PR names a test for each row of this table, or says why the row does not apply ([PR template](workflows/pull-request.md)). A rule with no check did not stop DQ-085 (owner, 2026-11-06).
+For each changed screen, the PR names a test for each row of this table, or says why the row does not apply ([PR template](../.github/pull_request_template.md)). A rule with no check did not stop DQ-085 (owner, 2026-11-06).
 
 **State table cells.** A screen with a state table ([state table](workflows/planning.md#state-table-for-stateful-screens)) tests its pure
 state module (`frontend-conventions.md` §1): one unit test per cell of the table. It also runs
@@ -358,7 +358,11 @@ Prettier, `tsc`, dependency-cruiser import rules (D35), Vitest, `db:check` (Driz
 `check:index` (folder indexes complete, `architecture.md` §4.2), `check:status` (each PR merged into `main` since the start date in
 `scripts/lib/check-status.ts` has a link in a Done row of `docs/status.md`; it reads the merges of
 `HEAD^1`: the base of the PR's test merge, or `main` before the merge on a push, so a PR never needs
-its own row), the bundle budget
+its own row), `records:counts` (the Audit row of `delivery-quality.md` §2 and the count cells of
+each `Ledger` row of its register are what the ledger rows give; the ledger tables are whole, each
+row has the cells of its header, each id has one row, and each row from DQ-853 on that is not
+`withdrawn` holds its `Same cause` answer: its search pattern finds each id that it cites, and a yes
+names its §9 step; [pull-request.md](workflows/pull-request.md#one-home-for-each-fact)), the bundle budget
 (`pnpm build`, then `pnpm check:bundle`), the static rules of the PR's break list
 (`check:breaks static`, [§5](#5-evidence-in-prs)), CodeQL (`security.md` §2.11). PRs touching security-sensitive paths also run the automated security review when it is on;
 it is off for now (`security.md` §2.11).
