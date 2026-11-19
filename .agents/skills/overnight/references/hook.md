@@ -4,6 +4,13 @@ The hook is optional. It checks each Bash command before Claude Code runs it. Wh
 
 The skill never changes a settings file. Only the owner adds the hook to the settings.
 
+Do not add the hook yet. A review found these problems, and they are not fixed:
+
+- The hook blocks the `night.py log intent` call for a guarded command, because that call has the guarded words. With the hook, the agent cannot log the intent in the same session.
+- The hook reads the raw text of the command, not the words that the shell and the tool read. A quote or a backslash inside a word (`gi''t push`), an attached option (`-XPUT`, `--field=x`), an alias option (`git -c alias.p=push p`), a variable or a path gets past the guard.
+- The hook trusts an intent that night.py refuses (a journal with faults). It allows an open intent after a hold, a deny or the stop time. It mixes the intents of all open nights under `--nights`, and it finds nights only in `--nights` and one level below.
+- If a journal cannot be read, the hook keeps only the fixed word sets, and a read error can end the hook with exit 1, which does not block.
+
 ## 1. Setup (the owner)
 
 1. Find two absolute paths: the skill folder (`<skill>`), and the folder of the nights (`<nights>`). `<nights>` is the folder that holds the night folders, or one night folder.
@@ -37,7 +44,7 @@ If the settings have no hook, the read-back says "no command hook".
   - `gh` and `api` with a write: `-X` or `--method` with a method that is not `GET`, or `-f`, `-F`, `--field`, `--raw-field`, `--input`.
 - A guarded command must have no shell syntax and must be equal to the command of an open intent. Else the hook blocks it, and Claude Code shows the reason.
 - The guard also blocks some harmless commands, for example `git tag -l`. That is the safe side.
-- If a journal cannot be read, or the `--nights` folder does not exist, the hook blocks each guarded command and allows the others.
+- If a journal cannot be read, or the `--nights` folder does not exist, the hook blocks each command that has a fixed word set (the second and third items above). It does not block the commands that only a card row guards.
 - If a module of night.py is not next to the hook, the hook blocks each command. Copy the whole `scripts` folder.
 
 ## 3. Check it (before the first night with the hook)
@@ -58,3 +65,5 @@ Record the date, the version of the skill folder and the result in the project, 
 - An action that has none of the guarded word sets.
 - The folder where the command runs. A `git` row has no repository in its words, so the same words in another folder act on another repository. A `gh` row names `-R owner/repo`.
 - An environment value that an earlier command of the session set.
+- A shell option that changes how words expand, for example `EXTENDED_GLOB` in zsh, where `^name` is a pattern.
+- The problems at the top of this file.

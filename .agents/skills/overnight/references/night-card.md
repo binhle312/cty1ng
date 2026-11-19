@@ -70,7 +70,7 @@ Rules for the items block:
 - The third column is the exact command. A slot is a whole word: `{head}` (the full 40-character head) or `{run}` (a CI run id). There are no other slots.
 - `commit`: an action on a commit (a merge, a tag, a release). Its command has `{head}` one time, after the head-match option that the documentation of the tool names, and no `--` word. With no such option, the item gets no `commit` row.
 - `no-commit`: an action that acts on no commit. Its command has no `{head}` and no sha. `owner`: the item stays for the owner, has no command, and night.py refuses each action on it. Notes and `wait` rows can name each item.
-- A `gh` command names `-R owner/repo`. A command has no shell syntax and no environment word before it: night.py refuses the row at the go.
+- A `gh` command names `-R owner/repo`. A command has no shell syntax and no environment word before it: night.py refuses the row at the go. night.py does not check a second repository option, `env` or a path in front of the command, the option that takes `{head}`, or the place of `{run}`. Check these at the read-back.
 - A night action that the card must foresee gets its own row, for example a rerun of a failed CI run: `CI 12 | no-commit | gh run rerun {run} --failed -R org/app`. A `{run}` row can rerun any run of that repository.
 - After the go, only an owner order adds an item (`log amend --add-item`).
 
