@@ -387,3 +387,88 @@ describe("query client import rule", () => {
     expect(found.filter((m) => m.includes("no-restricted-imports"))).toEqual([]);
   });
 });
+
+// docs/testing.md §3, "Timed tests" (owner, 2026-11-18, q5 Q5 A): a test times work only with
+// `fastestRun` of backend/test/timed.ts, not with one run and `performance.now`. One slow run on a
+// busy machine fails such a test with nothing wrong (DQ-044, item 72, DQ-455).
+describe("timed test lint rule", () => {
+  const isTimedRule = (m: string) => m.startsWith("no-restricted-properties");
+  const oneRun =
+    "export const run = (work: () => void) => {\n  const start = performance.now();\n  work();\n  return performance.now() - start;\n};\n";
+  const HELPER_MESSAGE = "backend/test/timed.ts";
+  const OTHER_MESSAGE = "add a helper for this package first";
+
+  it.each([
+    { label: "a backend source test", file: "backend/src/core/skills/skill-md.test.ts" },
+    { label: "a backend API test", file: "backend/test/api/bots.test.ts" },
+    { label: "a file in backend/test", file: "backend/test/some-helper.ts" },
+    { label: "a script test", file: "scripts/check-bundle.test.ts" },
+    { label: "a script fixture", file: "scripts/fixtures/e2e-fresh-run/write.pw.ts" },
+  ])(
+    "rejects one run timed with performance.now in $label, and names the helper",
+    async ({ file }) => {
+      const found = (await messages(oneRun, file)).filter(isTimedRule);
+      expect(found, "messages of the rule, one for each use").toHaveLength(2);
+      expect(found[0]).toContain(HELPER_MESSAGE);
+    },
+  );
+
+  it.each([
+    { label: "a frontend test", file: "frontend/src/features/bots/bot-page.test.tsx" },
+    { label: "a frontend end-to-end test", file: "frontend/test/e2e/bots.spec.ts" },
+    { label: "a frontend test helper", file: "frontend/test/render-app.tsx" },
+    { label: "a shared test", file: "shared/src/bots.test.ts" },
+  ])("rejects it in $label, and says to add a helper for the package first", async ({ file }) => {
+    const found = (await messages(oneRun, file)).filter(isTimedRule);
+    expect(found, "messages of the rule, one for each use").toHaveLength(2);
+    expect(found[0]).toContain(OTHER_MESSAGE);
+    expect(found[0]).not.toContain(HELPER_MESSAGE);
+  });
+
+  it.each([
+    { label: "the helper itself", file: "backend/test/timed.ts" },
+    {
+      label: "a backend source file that times a request",
+      file: "backend/src/adapters/http/middleware.ts",
+    },
+    { label: "a script that is not a test", file: "scripts/check-bundle.ts" },
+    { label: "a frontend file that is not a test", file: "frontend/src/lib/now.ts" },
+  ])("allows it in $label", async ({ file }) => {
+    expect((await messages(oneRun, file)).filter(isTimedRule), "messages of the rule").toEqual([]);
+  });
+
+  it.each([
+    { label: "the call", code: "export const t = performance.now();\n" },
+    { label: "the string key", code: 'export const t = performance["now"]();\n' },
+    { label: "a destructured now", code: "export const { now } = performance;\n" },
+  ])("sees $label", async ({ code }) => {
+    const found = await messages(code, "backend/test/api/bots.test.ts");
+    expect(found.filter(isTimedRule), "messages of the rule").toHaveLength(1);
+  });
+
+  // Not claimed (docs/plans/p3-timed-tests.md): the rule reads the form `performance.now` only.
+  it.each([
+    { label: "Date.now()", code: "export const t = Date.now();\n" },
+    {
+      label: "globalThis.performance.now()",
+      code: "export const t = globalThis.performance.now();\n",
+    },
+    {
+      label: "an alias of performance",
+      code: "const p = performance;\nexport const t = p.now();\n",
+    },
+    {
+      label: "a key in a variable",
+      code: 'const key = "now" as const;\nexport const t = performance[key]();\n',
+    },
+    {
+      label: "an import of performance under another name",
+      code: 'import { performance as perf } from "node:perf_hooks";\nexport const t = perf.now();\n',
+    },
+    { label: "performance.mark()", code: 'export const t = performance.mark("a");\n' },
+    { label: "process.hrtime.bigint()", code: "export const t = process.hrtime.bigint();\n" },
+  ])("does not see $label", async ({ code }) => {
+    const found = await messages(code, "backend/test/api/bots.test.ts");
+    expect(found.filter(isTimedRule), "messages of the rule").toEqual([]);
+  });
+});
