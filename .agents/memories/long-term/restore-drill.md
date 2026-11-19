@@ -57,9 +57,11 @@ memory, then run the missed questions again in a new session.
     Key: one decision per question, a real example, options with gain, cost and risk, the expert
     recommendation first; several questions go on one HTML page of the `decision-pages` skill,
     after consultants saw them as one list. Source: R-017, R-011, R-016, R-015.
-11. Which PRs are open now, and what does each wait for?
-    Key: as `state.md` says at the drill (today #139: drill, gates, owner's merge; #107: the
-    owner's answers R1 to R11), and a live check with `gh pr list`. Source: `state.md`.
+11. Which PRs are open now, what does each wait for, and where do you read it?
+    Key: `docs/status.md` ("Next", "Waiting on the owner") as it is at the drill, and a
+    live check with `gh pr list` (a session with no shell names the command). `state.md` keeps
+    no wait state; it adds only the DQ ranges and the model of a leader. Source: `restore.md`
+    step 4, `state.md`.
 12. What is the next free DQ id?
     Key: the ranges in `state.md` (today #139 has DQ-878 to DQ-899, and a new range starts at
     DQ-920), after a check of the ledger files and the open PRs.

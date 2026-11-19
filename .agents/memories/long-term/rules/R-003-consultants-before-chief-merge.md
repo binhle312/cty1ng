@@ -8,6 +8,7 @@ orders: [67, 80]
 ends: never
 supersedes: []
 amends: [R-002]
+owner-merges: true
 ---
 Rule: Before you merge a PR yourself, give the PR, its open rows and the merge bar to two consultants. Merge only if they find no blocker. A memory promotion PR needs no consultants: CI and the privacy check are its bar (R-005).
 Owner said: "always check with consultants about the PRs" (2026-11-18)

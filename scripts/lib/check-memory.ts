@@ -72,7 +72,10 @@ const RULE_FIELDS = [
   "supersedes",
   "amends",
 ] as const;
-const RULE_FIELD_SET = new Set<string>(RULE_FIELDS);
+// `owner-merges: true` marks a rule about merges, approvals or permissions: a PR that changes it is
+// not a promotion PR, and the owner merges it (`isPromotion` of `check-status.ts`).
+const OWNER_MERGES = "owner-merges";
+const RULE_FIELD_SET = new Set<string>([...RULE_FIELDS, OWNER_MERGES]);
 const STATUSES = ["active", "replaced", "ended", "disputed"];
 const SCOPES = ["chief", "leaders", "all-agents"];
 const RULE_ID = /^R-\d{3}$/;
@@ -220,6 +223,12 @@ function fieldProblems(rule: Rule): string[] {
       problems.push(`${path}: the file name must be "${id}-<words>.md"`);
     }
   }
+  const ownerMerges = fields.get(OWNER_MERGES);
+  if (ownerMerges !== undefined && ownerMerges !== "true") {
+    problems.push(
+      `${path}: field \`${OWNER_MERGES}\` is "${ownerMerges}"; write true, or leave the field out`,
+    );
+  }
   const title = fields.get("title");
   if (title !== undefined && (title === "" || title.includes("|"))) {
     problems.push(`${path}: field \`title\` must be one sentence with no "|"`);
@@ -346,6 +355,18 @@ function linkProblems(rules: readonly Rule[]): string[] {
     }
     for (const target of rule.supersedes) supersededBy.set(target, rule.id ?? "");
     next.set(rule.id ?? "", [...rule.supersedes, ...rule.amends]);
+  }
+  // A rule that replaces or amends a rule of the owner's merges is one too: without the field, a
+  // promotion PR could change that rule through a new file.
+  for (const rule of byId.values()) {
+    if (rule.fields.has(OWNER_MERGES)) continue;
+    for (const target of [...rule.supersedes, ...rule.amends]) {
+      if (byId.get(target)?.fields.has(OWNER_MERGES) === true) {
+        problems.push(
+          `${rule.path}: it changes ${target}, which has \`${OWNER_MERGES}: true\`, so it needs the field too`,
+        );
+      }
+    }
   }
   const reported = new Set<string>();
   for (const rule of byId.values()) {

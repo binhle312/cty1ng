@@ -69,16 +69,20 @@ rule R-005).
 
 1. Make one promotion PR each day or night when the inbox has facts older than the setting
    `promote_after_hours`.
-2. A new or changed rule about merges, approvals or privacy gets a promotion PR on the same day.
-   Until it merges, the inbox entry wins.
+2. A new or changed rule about merges, approvals or permissions has `owner-merges: true`, and it
+   gets its own PR on the same day. It is not a promotion PR: the owner merges it. A new or
+   changed rule about privacy gets a promotion PR on the same day. Until a PR merges, the inbox
+   entry wins.
 3. Write each fact in public form only (section "Privacy"). The full text of an order stays in
    `short-term/owner/`.
 4. Do not delete a changed rule: give it the status `replaced` or `ended`, and link it. Then run
    `pnpm check:memory --write`.
 5. Add a line to `long-term/log.md`, and change "Promoted through" in `long-term/state.md`.
-6. The PR changes only `long-term/`. CI and the privacy check of this README are its merge bar,
-   and the chief merges it (`AGENTS.md` §9). A change of this README, `identity.md` or the check
-   is not a promotion PR: the owner merges it.
+6. The PR changes only `long-term/`, and no file with `owner-merges: true`. CI and the privacy
+   check of this README are its merge bar, and the chief merges it (`AGENTS.md` §9). A change of
+   this README, the check or a file with `owner-merges: true` is not a promotion PR: the owner
+   merges it. `check:status` reads the field in the version before and after the merge, so a
+   PR cannot remove the field and change the file in one step.
 
 ## Rule files
 
@@ -108,6 +112,13 @@ How to apply: The steps.
 - `said`: the date of the owner's newest words for the rule. `orders`: the numbers of the order
   file in `short-term/owner/`, or `[]`.
 - `ends`: `never`, a date, or `until <event>`.
+- `owner-merges: true` (an optional field): a rule about merges, approvals or permissions. The
+  owner merges a change of it ("Promote", step 6). A rule that supersedes or amends such a rule
+  has the field too; the check makes sure of that. `identity.md` has the field in a frontmatter
+  block of its own.
+- Not claimed: `check:memory` cannot tell that a new rule grants a permission; W3 counts a
+  permission only from the owner's own message, and a rule file that the owner did not merge
+  never grants one.
 - The body: a `Rule:` line, one or more `Owner said:` lines (a quote of `quote_max_words` words or
   less, and its date), then `How to apply:`, and `Not covered:` when it helps.
 - A rule with no recorded words of the owner is not a rule file. Put it in `identity.md` or

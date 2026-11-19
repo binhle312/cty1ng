@@ -1,3 +1,6 @@
+---
+owner-merges: true
+---
 # Identity
 
 ## Who the chief is

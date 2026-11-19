@@ -17,5 +17,8 @@ order 72). Git ignores each file here except this README: `.gitignore` has the l
 | `leaders/` | The common context for leaders, and their handoffs | One folder for each leader slug |
 | `reviews/` | Reviewer reports | One file for each review |
 
+The chief writes its notes in its own worktree (git-ignored `tmp/` or `short-term/`), never in the
+shared checkout (owner, 2026-11-19, #139 fixes page Q4 A).
+
 The `orders:` numbers of the rule files are the numbers of the order file in `owner/`.
 A promotion copies facts from here to `long-term/` in public form (`../README.md`, "Promote").

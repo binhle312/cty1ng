@@ -11,7 +11,7 @@ The code behind the repository scripts. The tests sit next to the files. A file 
 | `check-memory-local.ts` | The machine part of `pnpm check:memory`: the git file lists of the memory (`-z`), the exclude lines (`--local --fix`) and a read that allows a missing file |
 | `check-events.ts` | The checks of `pnpm check:events` |
 | `check-status.ts` | The checks of `pnpm check:status` (pure) |
-| `check-status-git.ts` | Reads the first-parent git history and the files of a merge (`-z`, `--no-renames`) for `pnpm check:status` |
+| `check-status-git.ts` | Reads the first-parent git history and the files of a merge (`-z`, `--no-renames`), with the text of each long-term file before and after the merge, for `pnpm check:status` |
 | `records-counts.ts` | The counts of `pnpm records:counts`: the ledger rows give the Audit row and the register cells |
 | `check-bundle.ts` | The bundle budget, measured on a production build |
 | `breaks.ts` | The break list of a PR: claims, breaks, links, coverage (pure) |
@@ -28,3 +28,6 @@ The code behind the repository scripts. The tests sit next to the files. A file 
 
 Start here: the script in `../` that calls the file. Do not: read files, run git or use the clock
 in a file that says "pure"; its caller passes those inputs.
+
+Do not: check a file path and then open the path again (CodeQL `js/file-system-race`). Open the
+file one time, and read and write through that handle (owner, 2026-11-19, #139 fixes page Q3 A).

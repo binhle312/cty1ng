@@ -509,8 +509,8 @@
           "file": "scripts/lib/check-status.ts",
           "edits": [
             {
-              "find": "files.every((file) => file.startsWith(PROMOTION_FOLDER))",
-              "replace": "files.some((file) => file.startsWith(PROMOTION_FOLDER))"
+              "find": "files.every((file) => file.path.startsWith(PROMOTION_FOLDER))",
+              "replace": "files.some((file) => file.path.startsWith(PROMOTION_FOLDER))"
             }
           ]
         }
@@ -845,6 +845,104 @@
           ]
         }
       ]
+    },
+    {
+      "id": "S2-owner-merges",
+      "claim": "check:status does not skip a PR that changes a file with owner-merges in the version before or after the merge (late test: the skip must not let the chief merge an owner rule)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "does not skip a PR when a file has owner-merges before or after the merge"
+      },
+      "assertion": "expect(prs, `owner-merges ${when}`).toEqual([\"#140\"]);",
+      "breaks": [
+        {
+          "id": "S2-no-field",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "return files.length > 0 && inFolder && !ownerFile;",
+              "replace": "return files.length > 0 && inFolder;"
+            }
+          ]
+        },
+        {
+          "id": "S2-head-only",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "files.some((file) => file.texts.some(ownerMerges))",
+              "replace": "files.some((file) => file.texts.slice(-1).some(ownerMerges))"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S3-body",
+      "claim": "ownerMerges reads the field only in the frontmatter, with the value true (the test passes on the stub, so a break proves it)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "does not read the field in the body or with another value"
+      },
+      "assertion": "expect(ownerMerges(\"---\\nid: R-002\\n---\\nowner-merges: true\\n\"), \"body\").toBe(false);",
+      "breaks": [
+        {
+          "id": "S3-whole-text",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "return /^owner-merges: ?true\\s*$/m.test(front);",
+              "replace": "return /^owner-merges: ?true\\s*$/m.test(text);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "G4-texts",
+      "claim": "check:status reads the text of a long-term file before and after the merge (late test: a PR that removes the field must not count as a promotion)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "gives the text of a long-term file before and after the merge"
+      },
+      "assertion": "expect(merge.changes, \"texts of the merge\").toEqual([",
+      "breaks": [
+        {
+          "id": "G4-head-only",
+          "file": "scripts/lib/check-status-git.ts",
+          "edits": [
+            {
+              "find": "[`${sha}^1`, sha]",
+              "replace": "[sha]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L2-successor",
+      "claim": "check:memory names a rule that changes an owner-merges rule without the field (security: a new file must not take over an owner rule)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names a rule that changes a rule with owner-merges and has no field"
+      },
+      "assertion": "\"a new rule without the field\").toEqual([",
+      "breaks": [
+        {
+          "id": "L2-no-check",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "byId.get(target)?.fields.has(OWNER_MERGES) === true",
+              "replace": "false"
+            }
+          ]
+        }
+      ]
     }
   ],
   "exempt": [
@@ -947,6 +1045,21 @@
       "file": "scripts/check-memory.test.ts",
       "name": "names a loop of supersedes and amends",
       "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "passes the field owner-merges: true",
+      "reason": "test first: the red run of the owner-merges patch (the field was not a rule field); not a security, late or order test"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names an owner-merges value that is not true",
+      "reason": "test first: the red run of the owner-merges patch; not a security, late or order test"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "passes a rule that changes a rule with owner-merges and has the field too",
+      "reason": "test first: the red run of the owner-merges patch (the field was not a rule field); not a security, late or order test"
     },
     {
       "file": "scripts/check-memory.test.ts",
@@ -1072,6 +1185,16 @@
       "file": "scripts/check-status.test.ts",
       "name": "skips a memory promotion PR: each changed file is in long-term memory",
       "reason": "test first: red run in the PR (the skip and mergeFiles did not exist)"
+    },
+    {
+      "file": "scripts/check-status.test.ts",
+      "name": "reads the field in the frontmatter",
+      "reason": "test first: the red run of the owner-merges patch (ownerMerges was a stub); not a security, late or order test"
+    },
+    {
+      "file": "scripts/check-status.test.ts",
+      "name": "gives owner-merges: true to identity.md and each rule about merges",
+      "reason": "test first: the red run of the owner-merges patch (the files had no field); a content test, not a security, late or order test"
     },
     {
       "file": "scripts/check-status.test.ts",

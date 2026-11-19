@@ -8,6 +8,7 @@ orders: [37]
 ends: never
 supersedes: []
 amends: []
+owner-merges: true
 ---
 Rule: Merge a PR only when the owner's message asks you to merge that PR.
 Owner said: "Don't merge other PRs without my permission" (2026-11-14)

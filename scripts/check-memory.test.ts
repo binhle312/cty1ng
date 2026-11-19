@@ -280,6 +280,33 @@ describe("checkRules: links between rules", () => {
     ]);
   });
 
+  it("passes the field owner-merges: true", () => {
+    const fields = { ...R2_FIELDS, "owner-merges": "true" };
+    expect(rulesWith(R2, rule(fields)), "owner-merges").toEqual([]);
+  });
+
+  it("names an owner-merges value that is not true", () => {
+    const fields = { ...R2_FIELDS, "owner-merges": "yes" };
+    expect(rulesWith(R2, rule(fields)), "owner-merges: yes").toEqual([
+      `${R2}: field \`owner-merges\` is "yes"; write true, or leave the field out`,
+    ]);
+  });
+
+  it("names a rule that changes a rule with owner-merges and has no field", () => {
+    const files = tree({ [R1]: rule({ ...R1_FIELDS, "owner-merges": "true" }) });
+    expect(checkRules(files, LIMITS), "a new rule without the field").toEqual([
+      `${R2}: it changes R-001, which has \`owner-merges: true\`, so it needs the field too`,
+    ]);
+  });
+
+  it("passes a rule that changes a rule with owner-merges and has the field too", () => {
+    const files = tree({
+      [R1]: rule({ ...R1_FIELDS, "owner-merges": "true" }),
+      [R2]: rule({ ...R2_FIELDS, "owner-merges": "true" }),
+    });
+    expect(checkRules(files, LIMITS), "both rules have the field").toEqual([]);
+  });
+
   it("names a superseded rule that is still active", () => {
     expect(rulesWith(R1, rule({ ...R1_FIELDS, status: "active" })), "active").toEqual([
       `${R1}: R-002 supersedes R-001, so its status must be replaced, not active`,

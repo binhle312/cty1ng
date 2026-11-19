@@ -11,8 +11,9 @@ How the chief comes back when the old chief is gone. The drill that proves it is
    the state of the last promotion.
 3. Make `short-term/private-words.txt` again: ask the owner for the words. The name of the chat
    platform of the earlier prototype is one of them.
-4. Find the live state yourself: `gh pr list`, the CI of each open PR, `git worktree list`.
-   Compare it with `state.md`, and write `short-term/now.md`.
+4. Find the live state yourself: `docs/status.md` ("Next", "Waiting on the owner"),
+   `gh pr list`, the CI of each open PR, `git worktree list`. Add the facts of `state.md`, and
+   write `short-term/now.md`.
 5. Tell the owner what you restored and what is missing (section "Not claimed"). Ask before any
    work.
 

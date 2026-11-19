@@ -12,8 +12,10 @@ to it. Check a version fact before you trust it.
 - Each PR branch has its own worktree next to the main checkout, `../cty1ng-<slug>`. Other
   sessions switch the branch of the main checkout, so read `git status -sb` before each write
   there (L-18).
-- Git ignores the `tmp/` folder, and it exists only in the main checkout. Give leaders absolute
-  paths into it.
+- Git ignores the `tmp/` folder. The method files are in the `tmp/` folder of the main checkout;
+  give leaders absolute paths into it. The chief writes its notes in its own worktree
+  (git-ignored `tmp/` or `short-term/`), never in the shared checkout (owner, 2026-11-19, #139
+  fixes page Q4 A).
 - The e2e servers use the fixed ports 8100 and 8101, so only one e2e run works at a time.
 - `pnpm check:breaks` needs a TMPDIR outside every git repository: `../cty1ng-breaks-tmp/<slug>`.
 - The CI job `e2e` can fail at "Install Chromium for Playwright" with a DNS error in the runner.

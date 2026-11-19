@@ -55,8 +55,22 @@ export function doneRows(statusMd: string): { prs: Set<number>; problems: string
 // an ordinary PR.
 export const PROMOTION_FOLDER = ".agents/memories/long-term/";
 
-export function isPromotion(files: readonly string[]): boolean {
-  return files.length > 0 && files.every((file) => file.startsWith(PROMOTION_FOLDER));
+// A changed file of a merged PR, with its text before and after the merge (a missing version has
+// no text).
+export type ChangedFile = { path: string; texts: readonly string[] };
+
+// `owner-merges: true` in the frontmatter: the owner merges a change of the file (AGENTS.md §9).
+export function ownerMerges(text: string): boolean {
+  const front = /^---\n([\s\S]*?)\n---(\n|$)/.exec(text)?.[1] ?? "";
+  return /^owner-merges: ?true\s*$/m.test(front);
+}
+
+// The field counts in the version before and after the merge, so a promotion PR cannot remove the
+// field and change the file in one step.
+export function isPromotion(files: readonly ChangedFile[]): boolean {
+  const inFolder = files.every((file) => file.path.startsWith(PROMOTION_FOLDER));
+  const ownerFile = files.some((file) => file.texts.some(ownerMerges));
+  return files.length > 0 && inFolder && !ownerFile;
 }
 
 // `changedFiles` gives the files of a merged PR; the caller reads them from git, and only for a PR
@@ -65,7 +79,7 @@ export function checkStatus(input: {
   merged: readonly Merged[];
   statusMd: string;
   since: string;
-  changedFiles?: (merged: Merged) => readonly string[];
+  changedFiles?: (merged: Merged) => readonly ChangedFile[];
 }): string[] {
   const done = doneRows(input.statusMd);
   const changedFiles = input.changedFiles;

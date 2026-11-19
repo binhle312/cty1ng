@@ -83,6 +83,7 @@ From M3 on, P3 findings are fixed at the end of each milestone, before the next 
 | Approve the M3 schema design for D46 (auto title) before it is written. The generated SQL is approved in the slice PR | M3 plan |
 | Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a schema design approval (initial schema for M3 and M7). The generated SQL is approved in the slice PR | M3 and M7 plans |
 | Approve the M5b schema design: `projects.instructions_md`, `instructions_version`, `colour`, `pinned_position`, goal ≤ 500 chars, `memory_items.seen_at`, `memory_proposals` and the `model_requests` change (D63) (initial schema for M5b, `domain-model.md` §14). Claude Code stops for this approval before it writes them. The generated SQL is approved in the M5b PR | M5b plan |
+| Draft [#107](https://github.com/binhle312/cty1ng/pull/107), the redesign of the break runner (five gaps): the owner's answers R1 to R11 | The #107 work |
 | The proposal DQ-866 of [#135](https://github.com/binhle312/cty1ng/pull/135) (merged on 2026-11-19) waits for the owner, with the #107 questions (its home is #107) | The owner's #107 answers |
 
 ## Follow-ups

@@ -8,6 +8,7 @@ orders: [68]
 ends: until #107 merges
 supersedes: []
 amends: []
+owner-merges: true
 ---
 Rule: The CI job `check:breaks static` cannot read a test whose name is a template (DQ-795). Before each merge, check by hand if the PR changes `backend/src/adapters/http/uploads/skill-zip.test.ts:123` or `frontend/test/e2e/shell.spec.ts:73`. If it does, the break list of the PR must name that test.
 Owner said: "Q5: A" (2026-11-19)
