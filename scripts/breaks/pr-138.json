@@ -1,0 +1,75 @@
+{
+  "claims": [],
+  "exempt": [
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "rejects $label",
+      "reason": "test first: red run 1 (a stub checker that finds nothing) fails each case; the 5 cases that round 1 added failed on the checker of `e623fc2` (red run 6). The checker is in the test file, so no break of app code applies. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "counts the appClock call of lib/now.ts as the one allowed call",
+      "reason": "test first: red run 1 (a stub checker that returns 0 allowed calls) fails it. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "allows the real shape of lib/now.ts",
+      "reason": "Red run 5 (a checker that forbids every text `createClock`) fails it; it passes on the stub of red run 1. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "allows a call in $label",
+      "reason": "Red run 5 (a checker that forbids every text `createClock`) fails it; it passes on the stub of red run 1. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "allows a comment that names createClock",
+      "reason": "Red run 5 (a checker that forbids every text `createClock`, comments included) fails it; it passes on the stub of red run 1. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "finds the files",
+      "reason": "test first: red run 4 (the glob changed to a folder that does not exist) fails it. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "has the appClock call in lib/now.ts",
+      "reason": "test first: red run 1 (the stub) and red run 4 (the glob changed to a folder that does not exist) fail it. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "makes one clock",
+      "reason": "test first: red run 2 (a second createClock call added to lib/log.ts) and red run 3 (a second call added to lib/now.ts) fail it; red run Q2B-2 (`setInterval` added to lib/log.ts) fails it. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "rejects setInterval as $label",
+      "reason": "test first: red run Q2B-1 (the checker of `5e43585`, which does not read the name `setInterval`) fails each of its 10 cases. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "allows setInterval anywhere in lib/now.ts and counts its calls",
+      "reason": "test first: red run Q2B-1 (the checker of `5e43585` has no `intervalCalls`) fails it; red run Q2B-4a (a checker that forbids every text `setInterval`, `lib/now.ts` included) fails it. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "allows the timers that are not setInterval",
+      "reason": "red run Q2B-4b (a checker that forbids `setTimeout` in place of `setInterval`) fails it; it passes on the checker of `5e43585`. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "allows setInterval in $label",
+      "reason": "red run Q2B-4c (a checker that does not skip test files, so it forbids `setInterval` in them) fails both cases; it passes on the checker of `5e43585`. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "allows a comment that names setInterval",
+      "reason": "red run Q2B-4a (a checker that forbids every text `setInterval`, comments included) fails it; it passes on the checker of `5e43585`. Not a late, security, order or race test"
+    },
+    {
+      "file": "scripts/one-clock.test.ts",
+      "name": "has a setInterval call in lib/now.ts",
+      "reason": "test first: red run Q2B-1 (no `intervalCalls`) fails it; red run Q2B-3 (the call in `lib/now.ts` written `window.setInterval`, and the glob on a folder that does not exist) fails it. Not a late, security, order or race test"
+    }
+  ]
+}
