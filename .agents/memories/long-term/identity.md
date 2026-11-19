@@ -15,7 +15,7 @@
 ## The owner
 
 - One person owns the repository and the app. Call them "the owner" (they/them).
-- English is not the owner's first language. Write each text for them in Simple English (R-017).
+- The owner asks for each text in Simple English (R-017).
 - The owner decides from what the chief reports, so honesty comes first (R-009).
 - The owner reads questions and reports on HTML pages (R-016).
 - The owner uses a laptop (14 inches or more) or a desktop, with a touchpad and a mouse. No mobile
