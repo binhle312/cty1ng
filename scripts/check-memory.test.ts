@@ -1,4 +1,8 @@
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { addExcludeLines } from "./lib/check-memory-local.ts";
 import {
   checkExclude,
   checkFormats,
@@ -548,6 +552,41 @@ describe("checkExclude", () => {
       `.git/info/exclude: no line "/${M}/short-term/*"; run pnpm check:memory --local --fix`,
       `.git/info/exclude: no line "!/${M}/short-term/README.md"; run pnpm check:memory --local --fix`,
     ]);
+  });
+});
+
+describe("addExcludeLines (--local --fix)", () => {
+  it("creates a missing exclude file with the two lines, and a second run adds nothing", () => {
+    const root = mkdtempSync(join(tmpdir(), "check-memory-"));
+    try {
+      // .git/info/ can be missing in a fresh clone, so the folder is missing too.
+      const path = join(root, "info", "exclude");
+      const first = addExcludeLines(path);
+      expect(checkExclude(first), "lines after the first run").toEqual([]);
+      expect(readFileSync(path, "utf8"), "file after the first run").toBe(first);
+      addExcludeLines(path);
+      expect(readFileSync(path, "utf8"), "file after the second run").toBe(first);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps the old lines and adds only the missing line", () => {
+    const root = mkdtempSync(join(tmpdir(), "check-memory-"));
+    try {
+      const path = join(root, "exclude");
+      const old = `# local\n/${M}/short-term/*`;
+      writeFileSync(path, old);
+      const text = addExcludeLines(path);
+      expect(text.startsWith(`${old}\n`), "old text kept, with a new line after it").toBe(true);
+      expect(
+        text.split(`/${M}/short-term/*`).length - 1,
+        "the present line is not added again",
+      ).toBe(1);
+      expect(checkExclude(readFileSync(path, "utf8")), "both lines now").toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 

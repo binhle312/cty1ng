@@ -8,6 +8,7 @@ The code behind the repository scripts. The tests sit next to the files. A file 
 | `check-index.ts` | The checks of `pnpm check:index`: folder indexes, story ranges, decisions metadata |
 | `check-design.ts` | The design snapshot colours against the token file (called by `check-index.ts`) |
 | `check-memory.ts` | The checks of `pnpm check:memory`: the chief memory fields, rules index, privacy, sizes |
+| `check-memory-local.ts` | The machine part of `pnpm check:memory --local`: the exclude lines (`--fix`) and a read that allows a missing file |
 | `check-events.ts` | The checks of `pnpm check:events` |
 | `check-status.ts` | The checks of `pnpm check:status` (pure) |
 | `check-status-git.ts` | Reads the first-parent git history for `pnpm check:status` |
@@ -26,4 +27,5 @@ The code behind the repository scripts. The tests sit next to the files. A file 
 | `workspace.ts` | The package folders of `pnpm-workspace.yaml` |
 
 Start here: the script in `../` that calls the file. Do not: read files, run git or use the clock
-in a file that says "pure"; its caller passes those inputs.
+in a file that says "pure"; its caller passes those inputs. Do not check a path and then write
+it: open the file one time and read and write through that handle (CodeQL `js/file-system-race`).

@@ -4,11 +4,10 @@
 // --local  also checks this machine: the short-term lines in `.git/info/exclude` (`--fix` adds
 //          them) and the words of `short-term/private-words.txt`. Run it before each push.
 import { execFileSync } from "node:child_process";
-import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import {
-  EXCLUDE_LINES,
   MEMORY_DIR,
   RULES_INDEX,
   SHORT_TERM,
@@ -17,6 +16,7 @@ import {
   checkPrivateWords,
   rulesIndex,
 } from "./lib/check-memory.ts";
+import { addExcludeLines, readIfExists } from "./lib/check-memory-local.ts";
 import { report } from "./lib/report.ts";
 
 const { values } = parseArgs({
@@ -37,7 +37,9 @@ const paths = lines(
 );
 const files = new Map<string, string>();
 for (const path of paths) {
-  if (existsSync(path)) files.set(path, readFileSync(path, "utf8"));
+  // A tracked file that was deleted in the work tree is not part of the memory any more.
+  const text = readIfExists(path);
+  if (text !== undefined) files.set(path, text);
 }
 
 if (values.write) {
@@ -52,19 +54,14 @@ const warnings: string[] = [];
 
 if (values.local) {
   const exclude = join(git("rev-parse", "--git-common-dir").trim(), "info", "exclude");
-  let text = existsSync(exclude) ? readFileSync(exclude, "utf8") : "";
-  if (values.fix && checkExclude(text).length > 0) {
-    const missing = EXCLUDE_LINES.filter((line) => !text.split("\n").includes(line));
-    const block = `\n# The chief's short-term memory (${MEMORY_DIR}/README.md)\n${missing.join("\n")}\n`;
-    appendFileSync(exclude, block);
-    text += block;
-  }
+  const text = values.fix ? addExcludeLines(exclude) : (readIfExists(exclude) ?? "");
   problems.push(...checkExclude(text));
   const wordsFile = `${SHORT_TERM}/private-words.txt`;
-  if (existsSync(wordsFile)) {
-    problems.push(...checkPrivateWords(files, lines(readFileSync(wordsFile, "utf8"))));
-  } else {
+  const words = readIfExists(wordsFile);
+  if (words === undefined) {
     warnings.push(`${wordsFile} does not exist, so no private word was checked`);
+  } else {
+    problems.push(...checkPrivateWords(files, lines(words)));
   }
 }
 
