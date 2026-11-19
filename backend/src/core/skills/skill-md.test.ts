@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { fastestRun } from "../../../test/timed.ts";
 import { parseSkillMd, serialiseSkillMd } from "./skill-md.ts";
 
 describe("SKILL.md", () => {
@@ -75,9 +76,15 @@ describe("SKILL.md", () => {
     it("reports 40,000 keys at once, with no parse", () => {
       const keys = Array.from({ length: 40_000 }, (_, index) => `key${String(index)}: 1`);
       const text = `---\nname: a\ndescription: d\n${keys.join("\n")}\n---\n`;
-      const start = performance.now();
-      expect(parseSkillMd(text)).toEqual(tooLarge);
-      expect(performance.now() - start).toBeLessThan(500);
+      // The limit is checked on the fastest of up to 3 runs (backend/test/timed.ts): a busy machine
+      // slows one run, a slow parse is slow on every run. Margin, measured on 2026-11-18 (16 cores,
+      // 5 runs): one run took 1 to 2 ms alone and up to 15 ms under 24 busy processes, so the limit
+      // is 33 times the busy case.
+      const limitMs = 500;
+      const fastest = fastestRun(() => {
+        expect(parseSkillMd(text)).toEqual(tooLarge);
+      }, limitMs);
+      expect(fastest, "40,000 keys: the fastest of up to 3 runs").toBeLessThan(limitMs);
     });
 
     // The largest export: the longest slug and description, and every character of the
@@ -108,11 +115,17 @@ describe("SKILL.md", () => {
     });
 
     it("finds no closing --- line in a 1 MB file quickly", () => {
-      const start = performance.now();
-      expect(parseSkillMd(`---\n${"\n--".repeat(330_000)}`)).toEqual({
-        invalid: "The file has no frontmatter between --- lines.",
-      });
-      expect(performance.now() - start).toBeLessThan(500);
+      const text = `---\n${"\n--".repeat(330_000)}`;
+      // The fastest of up to 3 runs, as in the test of 40,000 keys. Margin, measured on 2026-11-18
+      // (16 cores, 5 runs): one run took 3 to 11 ms alone and up to 27 ms under 24 busy processes,
+      // so the limit is 18 times the busy case.
+      const limitMs = 500;
+      const fastest = fastestRun(() => {
+        expect(parseSkillMd(text)).toEqual({
+          invalid: "The file has no frontmatter between --- lines.",
+        });
+      }, limitMs);
+      expect(fastest, "1 MB, no closing line: fastest of up to 3").toBeLessThan(limitMs);
     });
   });
 

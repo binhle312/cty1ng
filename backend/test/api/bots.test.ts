@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { OWNER_ID } from "../../src/core/owner.ts";
 import { ORIGIN, testBackend } from "../helpers.ts";
+import { fastestRunAsync } from "../timed.ts";
 
 // The bots routes (api.md §4) and the skill routes that touch pins (api.md §2): status codes,
 // error codes, headers and strict bodies. The service rules have their own tests.
@@ -273,19 +274,34 @@ describe("/bots/{id}", () => {
 
   it("PATCH refuses a 1 MB description on its length, fast, after the guard scan", async () => {
     // The guard runs before the limits (M2 plan §4), so the scan must stay linear.
+    // The time is the fastest of up to 3 runs of the same request (backend/test/timed.ts): a busy
+    // machine slows one run, a slow scan is slow on every run. The request is refused before any
+    // write, so a run changes no state that the next run reads (row_version: a write would make
+    // run 2 answer 409). The bot read after the runs shows its text and row_version unchanged.
+    // Not checked: a row in another table. Margin, measured on
+    // 2026-11-18 (16 cores, 5 runs): one request took 42 to 59 ms alone and up to 292 ms under 24
+    // busy processes, so the limit is 6.8 times the busy case.
     const { bot } = await createBot();
-    const start = performance.now();
-    const response = await send("PATCH", `/bots/${String(bot.id)}`, {
-      row_version: 1,
-      // Just under the 1 MB body limit (security.md §2.7).
-      description: "ABC123 ".repeat(140_000),
-    });
-    expect(performance.now() - start).toBeLessThan(2_000);
-    expect(response.status).toBe(422);
-    expect(await errorOf(response)).toMatchObject({
-      code: "validation_error",
-      field: "description",
-    });
+    const limitMs = 2_000;
+    const responses: Response[] = [];
+    const fastest = await fastestRunAsync(async () => {
+      const response = await send("PATCH", `/bots/${String(bot.id)}`, {
+        row_version: 1,
+        // Just under the 1 MB body limit (security.md §2.7).
+        description: "ABC123 ".repeat(140_000),
+      });
+      expect(response.status).toBe(422);
+      responses.push(response);
+    }, limitMs);
+    expect(fastest, "the PATCH of 1 MB: the fastest of up to 3 runs").toBeLessThan(limitMs);
+    for (const response of responses) {
+      expect(await errorOf(response)).toMatchObject({
+        code: "validation_error",
+        field: "description",
+      });
+    }
+    const now = await json(await send("GET", `/bots/${String(bot.id)}`));
+    expect(now).toMatchObject({ description: newBot.description, row_version: 1 });
   });
 
   it("PATCH saves, and a stale row_version gets 409", async () => {
