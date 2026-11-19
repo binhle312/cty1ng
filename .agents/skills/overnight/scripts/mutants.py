@@ -19,7 +19,8 @@ import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-MODULES = ("night.py", "night_format.py", "night_rules.py", "night_report.py", "night_files.py")
+MODULES = ("night.py", "night_format.py", "night_rules.py", "night_report.py", "night_files.py",
+           "night_hook.py")
 RACE_ROUNDS = 1  # the hook slows each append, so one round shows a race (advisor point 2)
 
 sys.dont_write_bytecode = True  # no __pycache__ in the skill folder

@@ -21,6 +21,7 @@ Files in this skill folder (`<skill>` below):
 - `references/night-card.md`: the card template, the read-back, the `/goal` line and the heartbeat prompt.
 - `references/morning-report.md`: the report parts, the question rules and the three checks.
 - `references/rehearsal.md`: the daytime test of this skill, with planted traps.
+- `scripts/night_hook.py` and `references/hook.md`: the optional command hook. Only the owner adds it to the settings.
 
 ## 1. Who starts a night
 
@@ -69,7 +70,7 @@ Keep the owner's part under 10 minutes.
    - A row holds the exact command, with the slots `{head}` and `{run}` (rules: `references/night-card.md` §1). A `commit` row gives `{head}` after the head-match option that the documentation of the tool names. If the tool has no such option, write no `commit` row: there is no merge at night. An action that the card does not foresee, for example a CI rerun, needs its own row or an owner order.
    - A row for an action that cannot be undone needs a passed rehearsal of this skill (`references/rehearsal.md`). The project must record it, and this skill folder must have no change after that record. If there is no such record, write no such row, unless the owner overrides this in their own words. Quote those words on the card.
 6. **Machine.** The owner confirms the power supply and no sleep. Check the free memory and disk.
-7. **Read-back.** Run `night.py items --dir <night>`. If it refuses, correct the block. Show the card on one screen with the rows that `items` printed (the template is in `references/night-card.md`). The goal and the stop time are necessary. If the owner gives no stop time, put your proposal in the read-back. The go accepts the card as you read it back, with that stop time. A read-back with no stop time cannot get a go.
+7. **Read-back.** Run `night.py items --dir <night>`. If it refuses, correct the block. Show the card on one screen with the rows that `items` printed (the template is in `references/night-card.md`). Say if the project settings run `night_hook.py`; if not, say "no command hook". The goal and the stop time are necessary. If the owner gives no stop time, put your proposal in the read-back. The go accepts the card as you read it back, with that stop time. A read-back with no stop time cannot get a go.
 
 ## 4. Go and the session goal
 
@@ -107,7 +108,7 @@ from `references/night-card.md`. The owner sends that line. That message is the 
 2. Check the state now: the head, the checks, the merge state, and the condition of the row.
 3. Get the reviews that the card or the project names. A "no blocker" answer is evidence, not permission. A new head needs new checks.
 4. Run `night.py log intent --item <exact card name> --command "<exact command>" --head <the full 40-character reviewed head>`. The command is the command of its row, word for word, with the head in `{head}` and a run id in `{run}`. night.py refuses a command that is not its row (`COMMAND_NOT_ROW`), shell syntax (`COMMAND_SHELL`), a short head, a denied or held item, an `owner` item, an open intent, and an intent after the stop time. If night.py refuses, stop: do not change the command to pass. For a `no-commit` item, use `--no-head "<reason>"` and no head.
-5. Do the action with exactly that command. night.py checks the command in the journal, not the command that runs: type it the same. night.py cannot see that the tool does the head check and the action in one step.
+5. Do the action with exactly that command. night.py checks the command in the journal, not the command that runs: type it the same. If the project added the command hook (`references/hook.md`), the hook blocks a guarded command that is not the open intent. night.py cannot see that the tool does the head check and the action in one step.
 6. Run `night.py log result --of <intent id> --outcome done|failed|unknown "<evidence>"`. For a denial, see section 7.
 7. Check the result. If the main branch breaks, do no more actions of this type tonight. Put it first on the report.
 

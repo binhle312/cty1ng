@@ -90,6 +90,8 @@ Items (from night.py items, each with its exact command):
 - PR 2 no-commit: gh pr comment 2 -R org/app --body-file notes/pr2.md
 - PR 4 owner
 
+Command hook: <on (references/hook.md) | no command hook>.
+
 I may:
 - P1: merge PR 1 and PR 3, if <condition>. Ends at the close.
 Nothing else outside my scratch files.

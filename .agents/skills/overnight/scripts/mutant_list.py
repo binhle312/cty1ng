@@ -476,3 +476,33 @@ APRIME = [('A1 a shell character passes in a word', [('bad = sorted(set(word) & 
     'found.extend(p for p in rows_problems([entry["add_item"]], night.items, "ITEM_ON_CARD") if p[0] not in '
     '("ITEM_COMMAND", "COMMAND_SHELL"))')])]
 MUTANTS += APRIME
+
+# The command hook (owner, 2026-11-19, designs-139-140 Q4 A).
+HOOK = [('H1 the hook allows each command', [('    reason = decide(command, args.nights)', '    reason = None')]),
+ ('H2 a guarded command need not equal an open intent',
+  [('            if shlex.split(entry["command"]) == words:', '            if True:')]),
+ ('H3 shell syntax passes the hook',
+  [('    if problem:\n        return f"a guarded command has shell syntax',
+    '    if False:\n        return f"a guarded command has shell syntax')]),
+ ('H4 a missing nights folder allows each command', [('    if not os.path.isdir(root):', '    if False:')]),
+ ('H5 a journal that cannot be read allows each command',
+  [('        if guarded(command, []):\n            return f"a night journal cannot be read',
+    '        if False:\n            return f"a night journal cannot be read')]),
+ ('H6 git push is not guarded', [('ALWAYS = (("git", "push"),', 'ALWAYS = (("git", "pushx"),')]),
+ ('H7 a gh api write is not guarded', [('    if "gh" in words and "api" in words:', '    if False:')]),
+ ('H8 the first words of a row are not guarded',
+  [('            if len(prefix) >= 2 and has_all(words, prefix):', '            if False:')]),
+ ('H9 a closed night is still open', [('        if night.go and not night.close:', '        if night.go:')]),
+ ('H10 a night before its go is open', [('        if night.go and not night.close:', '        if not night.close:')]),
+ ('H11 the words of an intent match in any order',
+  [('            if shlex.split(entry["command"]) == words:',
+    '            if sorted(shlex.split(entry["command"])) == sorted(words):')]),
+ ('H12 a bad hook input allows the command',
+  [('        print("night hook: the hook input is not the input of a Bash tool call", file=sys.stderr)\n'
+    '        return 2',
+    '        print("night hook: the hook input is not the input of a Bash tool call", file=sys.stderr)\n'
+    '        return 0')]),
+ ('H13 the guard needs the words in a row',
+  [('    return set(needed) <= set(words)',
+    '    return any(tuple(words[i:i + len(needed)]) == tuple(needed) for i in range(len(words)))')])]
+MUTANTS += HOOK

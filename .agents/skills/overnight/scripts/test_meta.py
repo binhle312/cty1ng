@@ -80,7 +80,7 @@ class MetaTests(unittest.TestCase):
         """A script that fails at import makes each test fail: that is no proof of a kill (P2-6)."""
         with tempfile.TemporaryDirectory() as tmp:
             broken = os.path.join(tmp, "night.py")
-            for part in NIGHT_MODULES:
+            for part in NIGHT_MODULES + ("night_hook",):  # each file that the runner mutates
                 shutil.copy(os.path.join(os.path.dirname(NIGHT), part + ".py"), tmp)
             with open(NIGHT, encoding="utf-8") as handle:
                 source = handle.read()
