@@ -64,12 +64,13 @@ You cannot run `/goal`: it is a built-in command. So the read-back ends with the
 from `references/night-card.md`. The owner sends that line. That message is the go.
 
 1. At the go, run `night.py go --dir <night> --stop "<YYYY-MM-DD HH:MM>" --goal set`.
-2. If the owner says only "go", ask one time for the `/goal` line. If the owner has left, use `--goal not-set`, and work with the heartbeat only.
-3. Make the heartbeat with the scheduled-task tool (in Claude Code: `CronCreate`). Use a recurring prompt at the heartbeat interval, on minutes away from :00 and :30. Use the heartbeat prompt of `references/night-card.md`.
-4. Make a one-time task one minute after the stop time, with the prompt "Stop time: close the night."
-5. With no go, there is no night. Keep the day rules, and take no night permission.
+2. If the owner says only "go", ask for the `/goal` line in the same turn. If the owner has left, use `--goal not-set`, and work with the heartbeat only.
+3. If the go message changes the card (for example, another stop time in the `/goal` line), the owner's words win. Log the change with `log amend`, use the new value in `go`, and read back the change in one line.
+4. Make the heartbeat with the scheduled-task tool (in Claude Code: `CronCreate`). Use a recurring prompt at the heartbeat interval, on minutes away from :00 and :30. Use the heartbeat prompt of `references/night-card.md`.
+5. Make a one-time task one minute after the stop time, with the prompt "Stop time: close the night."
+6. With no go, there is no night. Keep the project's usual rules, and take no night permission.
 
-## 5. Owner messages after the go
+## 5. Owner messages after the read-back
 
 - An order of the owner is an amendment. Log it with the exact words (`night.py log amend "<words>"`). Read it back in one line. Never replace the first words.
 - A question of the owner is not an order. Answer it, and log it (`log aware`). Then give the exact words that make it an order, for example: "Reply `yes: merge #12 after the bar`, and I will do it."
@@ -95,14 +96,17 @@ from `references/night-card.md`. The owner sends that line. That message is the 
 6. Run `night.py log result --of <intent id> --outcome done|failed|unknown "<evidence>"`.
 7. Check the result. If the main branch breaks, do no more actions of this type tonight. Put it first on the report.
 
-**Unknown result.** After a timeout or a crash, check the real state before you try again. If the
-state stays unknown, stop that item and report it. night.py refuses a new intent for that item until
-you log a new result.
+**Unknown result.** After a timeout or a crash, check the real state before you try again. A tool
+can finish an action late, so check again after a short wait before you log `failed`. If the state
+stays unknown, stop that item and report it. night.py refuses a new intent for that item until you
+log a new result for the same intent (`log result --of <intent id>`). A new try goes through all
+the steps above again.
 
 **The card at night.** You may make the card smaller, never wider. If you find that a row is wrong
 (for example, its item changes a file that a written rule keeps for the owner), remove the row in
 the card's "Amendments" part. Log `night.py log hold --item <item> "<reason>"`, so that night.py
-refuses an intent for it. Log the miss as your error.
+refuses an intent for it. Log the miss as your error. Do not undo alone what you already did on that
+item: report it under "My errors", and let the owner decide.
 
 **Records.** Write each entry when it happens. Never type a time in a text, because night.py writes
 the time. Give each item one name, the name on the card (for example `PR 12`). Reserve shared ids or names in the journal before you use them. When you find your own
