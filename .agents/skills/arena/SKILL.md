@@ -1,20 +1,26 @@
 ---
 name: arena
-description: Run two or more candidates on one task, pick a base, and graft the best parts of the others into it. Owner starts it with /arena.
+description: Run two or more seats on one task. Build mode makes candidates and grafts the best parts into a base; consult mode answers open decisions and grills the agent's recommendation. Owner starts it with /arena.
 disable-model-invocation: true
 ---
 
 # Arena
 
-Use an arena when one attempt at a non-trivial artifact can lock in the wrong shape.
-The arena gives a better first version. The repository's plan, approval and review rules still apply.
+Use an arena when one attempt can lock in the wrong shape: a non-trivial artifact, or a decision
+with real trade-offs. The repository's plan, approval and review rules still apply.
 
-If the session has a task list tool, open one entry for each phase before you start a seat:
-Frame, Fan out, Judge, Pick, Graft, Verify.
+The arena has two modes:
+
+- **Build**: each seat makes a candidate artifact. Follow Phases A to F.
+- **Consult**: each seat answers a list of open decisions and grills your recommendation.
+  Follow [Consult mode](#consult-mode).
+
+If the session has a task list tool, open one entry for each phase before you start a seat.
 
 ## Models
 
-Every seat and the judge use one of these three models, at effort `high`:
+Every seat, consultant and judge uses a model from this table, at effort `high` and standard speed.
+Use only the models in the table. Do not use `xhigh`, a lower effort, or fast mode.
 
 | Model            | From Claude Code                                                                       | From Codex                                         |
 | ---------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------- |
@@ -22,8 +28,24 @@ Every seat and the judge use one of these three models, at effort `high`:
 | Claude Fable 5.2 | `Agent` tool with `model: "fable"` and `effort: "high"`                                | `claude -p --model claude-fable-5-2 --effort high` |
 | GPT-6 Astra      | `codex exec -m gpt-6-astra -c model_reasoning_effort="high" -c service_tier="default"` | The same `codex exec` command                      |
 
-Use only these three models at effort `high` and standard speed. Do not use `xhigh` or fast mode.
 From Codex, `claude -p` needs network access. If it fails in the sandbox, ask the owner for network access.
+
+No seat, consultant or judge is a weaker model than the model whose work it reads.
+A small or fast model (for example a Sonnet or Haiku model) never takes a seat.
+
+### Add a model
+
+The owner may add a model later. Candidates that the owner named: a Gemini model, and
+Anthropic Mythos 5.2. Neither has a row yet, because no command for it is tested.
+
+To add a row:
+
+1. The owner names the model for the arena.
+2. Find its exact model id and the command that starts it from Claude Code and from Codex.
+3. Find the setting for its reasoning effort, and set it to high. If the model has no effort
+   setting, write "no effort setting" in its row.
+4. Run one short probe task with the command, and check that the answer comes from that model.
+5. Add the row to the table, and record the probe result in the change that adds it.
 
 ### Fable areas
 
@@ -40,6 +62,36 @@ A Fable area is a subject where Anthropic names Fable 5.2 as its strongest model
 - the design of objects for the real world or the screen: 3D, hardware, motion and robotics.
 
 A task in cybersecurity or biology keeps the default seats, because Anthropic's safeguards limit Fable 5.2 there.
+
+The owner starts each arena, so a Fable seat in a Fable area runs on the owner's word.
+Outside an arena, use Fable 5.2 only when the owner names it for the task.
+
+## Consult mode
+
+Use consult mode when the owner asks the arena to advise on decisions, not to build an artifact.
+The consultants sharpen your recommendation before it reaches the owner. The owner decides.
+
+1. Write one list file of the open decisions. For each decision, give:
+   - the decision in one sentence, and the facts with their sources;
+   - the options, with the gain, the cost and the risk of each;
+   - your recommendation, how sure you are, and what would change it.
+2. Choose the consultants. The default is two: one Opus 5.5 and one GPT-6 Astra.
+   Add a Fable 5.2 consultant when the decision is in a Fable area.
+   The owner can name other models from the table.
+3. In one message, start each consultant read-only and in the background, at effort `high`.
+   Each consultant reads the same list file and answers alone. It does not see the other answers.
+4. Tell each consultant to grill your recommendation, and to return:
+   - the hardest questions for you, with why each one matters;
+   - its own pick for each decision, how sure it is, and the fact that would change its pick;
+   - each claim in the list that is wrong or bigger than its proof;
+   - any option that the list misses.
+5. Answer each question and each claim in writing. Accept it and change the decision, or reject
+   it with a reason.
+6. Give the owner each decision with your final recommendation, where the consultants agree,
+   where they disagree, and the points that you rejected with your reasons.
+
+The step is complete when each consultant answered and each of its points has your written
+answer.
 
 ## Phase A: Frame
 

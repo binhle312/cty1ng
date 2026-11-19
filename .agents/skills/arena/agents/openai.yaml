@@ -1,5 +1,5 @@
 interface:
   display_name: "Arena"
-  short_description: "Run candidates in parallel, pick a base, graft the best parts"
+  short_description: "Run seats in parallel: build and graft candidates, or consult on decisions"
 policy:
   allow_implicit_invocation: false
