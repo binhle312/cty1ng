@@ -1,0 +1,497 @@
+{
+  "claims": [
+    {
+      "id": "L1-old-hits",
+      "claim": "The old form (DQ-751 to DQ-777) needs the hits part: a search with no hits is a problem (late test of check 3, DQ-770)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "reports %s"
+      },
+      "assertion": "expect(checkCounts(files(rows(`\\`abc1234\\`: the fix. ${fix}`))), fix).toEqual([NO_ANSWER(751)]);",
+      "breaks": [
+        {
+          "id": "L1-no-hits-part",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "const OLD_ANSWER = /Same cause: (yes|no) \\(search: (?:[^|\\\\]|\\\\.)+?: (?:[^|\\\\]|\\\\.)+\\)/;",
+              "replace": "const OLD_ANSWER = /Same cause: (yes|no) \\(search: (?:[^|\\\\]|\\\\.)+\\)/;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L2-round-register-cells",
+      "claim": "A round row and a register row with more or fewer cells than their header are problems (late test of check 3, DQ-770)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "reports a round row and a register row with more or fewer cells than their header"
+      },
+      "assertion": "expect(problems, \"round and register cell counts\").toEqual([",
+      "breaks": [
+        {
+          "id": "L2-no-round-header",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "const headers = [ISSUE_HEADER, ROUND_HEADER, ...Object.values(TABLES).map((t) => t.header)];",
+              "replace": "const headers = [ISSUE_HEADER, ...Object.values(TABLES).map((t) => t.header)];"
+            }
+          ]
+        },
+        {
+          "id": "L2-no-register-header",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "const headers = [ISSUE_HEADER, ROUND_HEADER, ...Object.values(TABLES).map((t) => t.header)];",
+              "replace": "const headers = [ISSUE_HEADER, ROUND_HEADER, TABLES.milestones.header];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L3-milestone-cells",
+      "claim": "A milestone view row with more cells than its header is a problem (late test of review 4, M5)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "reports a milestone view row with more cells than its header"
+      },
+      "assertion": "expect(problems, \"milestone view cell count\").toEqual([",
+      "breaks": [
+        {
+          "id": "L3-no-milestone-header",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "const headers = [ISSUE_HEADER, ROUND_HEADER, ...Object.values(TABLES).map((t) => t.header)];",
+              "replace": "const headers = [ISSUE_HEADER, ROUND_HEADER, TABLES.register.header];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P1-old-answer-passes",
+      "claim": "An old-form answer with a search and hits passes (a pass case: green in red run 2)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "passes a row that answers with a search, and an older row with no answer"
+      },
+      "assertion": "expect(checkCounts(files(rows(answered))), \"an answer with a search\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "P1-no-backtick-in-search",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "const OLD_ANSWER = /Same cause: (yes|no) \\(search: (?:[^|\\\\]|\\\\.)+?: (?:[^|\\\\]|\\\\.)+\\)/;",
+              "replace": "const OLD_ANSWER = /Same cause: (yes|no) \\(search: (?:[^|\\\\`]|\\\\.)+?: (?:[^|\\\\]|\\\\.)+\\)/;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P2-older-row-not-checked",
+      "claim": "A row below DQ-751 is not checked (a pass case: green in red run 2)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "passes a row that answers with a search, and an older row with no answer"
+      },
+      "assertion": "expect(checkCounts(files(rows(\"`abc1234`: the fix\", { id: 750 }))), \"DQ-750\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "P2-first-750",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "const OLD_FORM = { first: 751, last: 777 };",
+              "replace": "const OLD_FORM = { first: 750, last: 777 };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P3-old-escaped-pipe",
+      "claim": "An old-form search with an escaped pipe passes (a pass case: green in red run 4)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "passes a search that has an escaped pipe"
+      },
+      "assertion": "expect(checkCounts(files(rows(answer))), \"escaped pipe\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "P3-no-escapes",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "const OLD_ANSWER = /Same cause: (yes|no) \\(search: (?:[^|\\\\]|\\\\.)+?: (?:[^|\\\\]|\\\\.)+\\)/;",
+              "replace": "const OLD_ANSWER = /Same cause: (yes|no) \\(search: [^|]+?: (?:[^|\\\\]|\\\\.)+\\)/;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q1-cited-in-hit",
+      "claim": "A cited id in a hit line other than the row passes (a pass case: green on 65cda0a)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "passes a cited id that a hit line other than the row has"
+      },
+      "assertion": "expect(check(\"Same cause: no (search: `a slip`: DQ-001, other causes)\"), \"DQ-001\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "Q1-no-hit-counts",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "(hit) => hit.path !== row.path || hit.line !== row.line,",
+              "replace": "() => false,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q2-alternation",
+      "claim": "An escaped pipe in the pattern is an alternation (a pass case: green on 65cda0a)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "reads an escaped pipe as an alternation"
+      },
+      "assertion": "\"alternation\",",
+      "breaks": [
+        {
+          "id": "Q2-pipe-kept",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "const pattern = written.replaceAll(\"\\\\|\", \"|\");",
+              "replace": "const pattern = written;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q3-any-case",
+      "claim": "The search matches in any case (a pass case: green on 65cda0a)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "matches in any case"
+      },
+      "assertion": "expect(check(\"Same cause: no (search: `A SLIP`: DQ-002)\"), \"any case\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "Q3-case",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "const regex = new RegExp(pattern, \"i\");",
+              "replace": "const regex = new RegExp(pattern);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q4-archive-hit",
+      "claim": "A hit in the archive counts (a pass case: green on 65cda0a)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "counts a hit in the archive"
+      },
+      "assertion": "expect(check(\"Same cause: no (search: `zebra`: DQ-003)\"), \"archive\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "Q4-main-file-only",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "const searched = [...files, ...lessons];",
+              "replace": "const searched = [...files.slice(0, 1), ...lessons];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q5-none",
+      "claim": "The word none as the hits passes (a pass case: green on 65cda0a)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "passes none as the hits"
+      },
+      "assertion": "expect(check(\"Same cause: no (search: `wombat`: none)\"), \"none\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "Q5-hits-need-an-id",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "const ANSWER = /Same cause: (yes|no) \\(search: `([^`]*)`: ([^;)]*)(\\)|; §9: )/;",
+              "replace": "const ANSWER = /Same cause: (yes|no) \\(search: `([^`]*)`: (DQ-[^;)]*)(\\)|; §9: )/;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q6-yes-steps",
+      "claim": "A yes with each of the three §9 steps passes (a pass case: green on 65cda0a)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "passes a yes with %s as its step"
+      },
+      "assertion": "expect(check(`Same cause: yes (search: \\`a slip\\`: DQ-001; §9: ${step})`), step).toEqual([]);",
+      "breaks": [
+        {
+          "id": "Q6-no-owner-step",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  /^owner, \\d{4}-\\d{2}-\\d{2}, [\\w-]+ Q\\d+ [A-Z]\\)/,\n",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "Q6-no-proposal-step",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  /^proposal DQ-(\\d+)\\)/,\n",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "Q6-no-fixed-answer-step",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  /^fixed answer \\(AGENTS\\.md §9, owner 2026-11-11\\)\\)/,\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q7-withdrawn",
+      "claim": "A withdrawn row from DQ-853 on is not checked (a pass case: green on 65cda0a)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "skips a withdrawn row"
+      },
+      "assertion": ".filter((p) => p.startsWith(`${MAIN}: DQ-853`)),",
+      "breaks": [
+        {
+          "id": "Q7-withdrawn-checked",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "      if (cells.slice(3).includes(\"withdrawn\")) return [];\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "passes when each owned cell is what the rows give",
+      "reason": "test first: red run 1 in the PR (the module did not exist)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "fails on a stale Audit count, and names the file, the row, the cell and both values",
+      "reason": "test first: red run 1 in the PR (the module did not exist)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "counts the rows and the rounds of the archive file",
+      "reason": "test first: red run 1 in the PR (the module did not exist)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "skips a withdrawn row, counts a dropped row as unique and not open, and a partial row as open",
+      "reason": "test first: red run 1 in the PR (the module did not exist)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "counts escaped yes, records no, and does not record unknown or a missing value",
+      "reason": "test first: red run 1 in the PR (the module did not exist)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "fixes a stale count, and a second write changes nothing",
+      "reason": "test first: red run 1 in the PR (the module did not exist)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "writes a Ledger register row by discovery PR, of any milestone, and keeps a Partial row as it is",
+      "reason": "test first: red run 1 in the PR (the module did not exist)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "writes the Audit PR list from the register and adds the rounds of those PRs only",
+      "reason": "test first: red run 1 in the PR (the module did not exist)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "changes no file when only a problem is found",
+      "reason": "test first: red run 1 in the PR (the module did not exist)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports an Audit row whose discovery PR has no register row, with the row to add",
+      "reason": "test first: red run 1 in the PR (the module did not exist)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "does not ask for a register row for rows that the audit itself found",
+      "reason": "test first: red run 1 in the PR (the module did not exist)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports one id in two rows, across the files",
+      "reason": "test first: red run 1 in the PR (the module did not exist)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports a table that a blank line splits, and writes nothing then",
+      "reason": "test first: red run 1 in the PR (the module did not exist)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports a table that no file has, and a table that two files have",
+      "reason": "test first: red run 1 in the PR (the module did not exist)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports a docs file outside the list that holds ledger rows, and not a file that only quotes an id",
+      "reason": "test first: red run 1 in the PR (the module did not exist)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "writes a run of three or more ids as a range, and lists two",
+      "reason": "test first: red run 1 in the PR (the module did not exist)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports a row from DQ-751 on whose fix cell has no answer with a search",
+      "reason": "test first: red run 2 in the PR (1 failed, 17 passed); the message changed in 4b87d44, red on 65cda0a"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports a row with no state word, and a row whose discovery PR is not in the form / #N /",
+      "reason": "test first: red run 3 in the PR (3 failed)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports only the structure problem, with no stale cell counted from broken rows",
+      "reason": "test first: red run 3 in the PR (3 failed)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports two milestone rows of the script with the same first word",
+      "reason": "test first: red run 3 in the PR (3 failed)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports a row with more or fewer cells than its header",
+      "reason": "test first: red run 4 in the PR (9 failed)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reads the answer only in the Fix and verification cell",
+      "reason": "test first: red run 4 in the PR (9 failed); the message changed in 4b87d44, red on 65cda0a"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "lists the answer problems next to a structure problem",
+      "reason": "test first: red run 4 in the PR (9 failed); the message changed in 4b87d44, red on 65cda0a"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "checks no row after DQ-777 and before DQ-853, nor a row found after 2026-11-18 below DQ-853, and skips a withdrawn row",
+      "reason": "test first: red run on 65cda0a in the PR (25 failed, 32 passed)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports a row from DQ-853 on in the old form",
+      "reason": "test first: red run on 65cda0a in the PR (25 failed, 32 passed)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports the text of #137's DQ-849, a yes with no search pattern and no step",
+      "reason": "test first: red run on 65cda0a in the PR (25 failed, 32 passed)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports a cited id that only the row's own line has",
+      "reason": "test first: red run on 65cda0a in the PR (25 failed, 32 passed)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports a cited id that no hit line has",
+      "reason": "test first: red run on 65cda0a in the PR (25 failed, 32 passed)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reads a cited id as a whole id",
+      "reason": "test first: red run on 65cda0a in the PR (25 failed, 32 passed)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "counts a hit in a lesson",
+      "reason": "test first: red run on 65cda0a in the PR (25 failed, 32 passed)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports a backtick in the pattern",
+      "reason": "test first: red run on 65cda0a in the PR (25 failed, 32 passed)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports $name",
+      "reason": "test first: red run on 65cda0a in the PR (25 failed, 32 passed)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports a yes with no step",
+      "reason": "test first: red run on 65cda0a in the PR (25 failed, 32 passed)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports a proposal that is no row, and a proposal that is the row itself",
+      "reason": "test first: red run on 65cda0a in the PR (25 failed, 32 passed)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "gives the hit lines of grep -n -i -E for each pattern",
+      "reason": "test first: red run on 65cda0a in the PR (25 failed, 32 passed)"
+    }
+  ]
+}

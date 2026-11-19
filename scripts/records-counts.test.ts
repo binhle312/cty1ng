@@ -682,33 +682,29 @@ describe("searchLines and grep", () => {
   ];
   const grep = spawnSync("grep", ["--version"], { encoding: "utf8" });
 
-  it.skipIf(grep.error !== undefined)(
-    "gives the hit lines of grep -n -i -E for each pattern",
-    () => {
-      const dir = mkdtempSync(join(tmpdir(), "records-grep-"));
-      try {
-        const path = join(dir, "ledger.md");
-        writeFileSync(path, TEXT);
-        for (const pattern of PATTERNS) {
-          expect(patternProblem(pattern), pattern).toBeUndefined();
-          const out = spawnSync("grep", ["-n", "-i", "-E", "--", pattern, path], {
-            encoding: "utf8",
-          });
-          const want = out.stdout
-            .split("\n")
-            .filter((line) => line !== "")
-            .map((line) => Number(line.slice(0, line.indexOf(":"))));
-          const got = searchLines(pattern, [{ path, text: TEXT }]).map((hit) => hit.line);
-          expect(got, pattern).toEqual(want);
-        }
-      } finally {
-        rmSync(dir, { recursive: true, force: true });
+  it("gives the hit lines of grep -n -i -E for each pattern", (context) => {
+    if (grep.error !== undefined) {
+      context.skip("no grep on this machine, so the parity of the lib and grep is not checked");
+    }
+    const dir = mkdtempSync(join(tmpdir(), "records-grep-"));
+    try {
+      const path = join(dir, "ledger.md");
+      writeFileSync(path, TEXT);
+      for (const pattern of PATTERNS) {
+        expect(patternProblem(pattern), pattern).toBeUndefined();
+        const out = spawnSync("grep", ["-n", "-i", "-E", "--", pattern, path], {
+          encoding: "utf8",
+        });
+        const want = out.stdout
+          .split("\n")
+          .filter((line) => line !== "")
+          .map((line) => Number(line.slice(0, line.indexOf(":"))));
+        const got = searchLines(pattern, [{ path, text: TEXT }]).map((hit) => hit.line);
+        expect(got, pattern).toEqual(want);
       }
-    },
-  );
-
-  it.runIf(grep.error !== undefined)("is skipped: no grep on this machine", () => {
-    console.warn("records-counts.test.ts: no grep, so the grep parity test did not run");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 
