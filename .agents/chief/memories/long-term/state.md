@@ -16,7 +16,8 @@ each PR waits for in `docs/status.md` ("Next", "Waiting on the owner") and with
 | PR | What | DQ range | Other fact |
 | --- | --- | --- | --- |
 | #139 | The chief's restore kit: the `decision-pages` skill, this memory, `pnpm check:memory`, the `AGENTS.md` words | DQ-878 to DQ-899, DQ-935 to DQ-959 (it used DQ-876 and DQ-877 before the ranges) | — |
-| #107 | The redesign of the break runner (five gaps) | — | Its leader runs on Fable 5.2, effort `high` (the owner's word). |
+| #107 | The redesign of the break runner (five gaps) | — | No leader runs now. |
+| #141 | The `consultants` and `arena` skills (the split of the arena skill) | — | — |
 | #140 | The `overnight` skill: owner-started night work with a night card | DQ-900 to DQ-934, DQ-960 to DQ-979 | — |
 
 ## The chief's queue
@@ -27,9 +28,13 @@ each PR waits for in `docs/status.md` ("Next", "Waiting on the owner") and with
    of the owner that a rule quotes, before the first chief merge of a memory PR (chief,
    2026-11-19, plan v3 Q2). Run `pnpm check:memory --local --fix` (the new folder path), and give
    the owner the filled cron line of rule R-037.
-2. The `chief` skill PR: the method and the tools, with an exam (owner, 2026-11-19, arena Q5 A).
-3. The `overnight` skill (arena Q6 A and Q7 A): draft #140, with its own leader.
-4. Then the order of `docs/status.md`, "Next".
+2. The final rules into this memory, then their install by the owner (owner, 2026-11-19, orders 110 to 112).
+3. The chief's mistakes: a way to stop the rule breaks (order 121).
+4. The token audit of the agent workflow (order 106).
+5. The theme C files into the `decision-pages` skill (order 107).
+6. The `chief` skill PR: the method and the tools, with an exam (owner, 2026-11-19, arena Q5 A).
+7. The `overnight` skill (arena Q6 A and Q7 A): draft #140, with its own leader.
+8. Then the order of `docs/status.md`, "Next".
 
 ## Parked
 
@@ -40,4 +45,4 @@ each PR waits for in `docs/status.md` ("Next", "Waiting on the owner") and with
 
 - DQ: the chief gives each open PR a range (the table "Open PRs"). A new range starts at
   DQ-980. Check first: the highest id in `docs/delivery-quality*.md` and in the open PRs.
-- Rule: R-038. Lesson: L-30. Owner order: 124.
+- Rule: R-038. Lesson: L-30. Owner order: 126 (check the log at the merge).

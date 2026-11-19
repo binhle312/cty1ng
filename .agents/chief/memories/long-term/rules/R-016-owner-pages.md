@@ -4,7 +4,7 @@ title: Questions and reports for the owner are HTML decision pages made with the
 status: active
 scope: chief
 said: 2026-11-19
-orders: [34, 45, 51, 56, 58, 76, 93]
+orders: [34, 45, 51, 56, 58, 76, 93, 107, 118]
 ends: never
 supersedes: []
 amends: []
@@ -17,3 +17,4 @@ How to apply:
 No gate: a format.
 The skill does not load by itself: read `.agents/skills/decision-pages/SKILL.md` and follow it (owner, 2026-11-19, order 93).
 First, the consultants read the questions as one list (R-015). Then one question on each step, with the counts Total, Answered and Remaining. The question, a real example and the gain, cost and risk of each option on the left; the answers on the right; "Copy my answers" at the end. Each question has its own real options. Charts only when they show the status of the work. Pass the lint and the verify of the skill, and look at the screenshots before you send. Remove a question when it is decided.
+The look: the theme C that the owner approved, with the system font (owner, 2026-11-19, orders 107 and 118). Until the theme C files are in the skill, the chief's page kit holds them.
