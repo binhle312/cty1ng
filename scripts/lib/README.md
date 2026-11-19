@@ -27,5 +27,4 @@ The code behind the repository scripts. The tests sit next to the files. A file 
 | `workspace.ts` | The package folders of `pnpm-workspace.yaml` |
 
 Start here: the script in `../` that calls the file. Do not: read files, run git or use the clock
-in a file that says "pure"; its caller passes those inputs. Do not check a path and then write
-it: open the file one time and read and write through that handle (CodeQL `js/file-system-race`).
+in a file that says "pure"; its caller passes those inputs.
