@@ -75,6 +75,11 @@ BROKEN = {
     "denied row with no command": (journal({**GO, "t": at("22:01")},
                                            {"t": at("22:10"), "kind": "denied", "item": "PR 3", "blocks": "x"}),
                                    "no exact command"),
+    "intent on a held item": (journal({**GO, "t": at("22:01")},
+                                      {"t": at("22:10"), "kind": "hold", "item": "PR 12", "text": "owner-only file"},
+                                      {"t": at("22:20"), "kind": "intent", "item": "#12", "command": "merge 12"},
+                                      {"t": at("22:21"), "kind": "result", "of": 4, "outcome": "done", "item": "#12"}),
+                              "which was held"),
 }
 
 
@@ -175,6 +180,57 @@ class ActionTests(Base):
     def test_denied_row_needs_command_and_blocks(self):
         started(self.dir)
         self.refused("log", "denied", "--item", "PR 3", at=at("22:10"), says="--command and --blocks")
+
+
+class DryRunFixTests(Base):
+    """Fixes from dry run 1 (F3, F6, F7, F8, F10, F13, F14)."""
+
+    def test_hold_blocks_an_intent_until_an_owner_amend_opens_it(self):
+        started(self.dir)
+        self.refused("log", "hold", "--item", "PR 12", at=at("22:05"), says="needs --item and the reason")
+        run(self.dir, "log", "hold", "changes an owner-only file", "--item", "PR 12", at=at("22:06"))
+        self.refused("log", "intent", "--item", "PR 12", "--command", "merge 12", at=at("22:07"), says="hold stays hold")
+        run(self.dir, "log", "amend", "yes: merge PR 12", "--reopen", "PR 12", at=at("22:08"))
+        self.assertEqual(run(self.dir, "log", "intent", "--item", "PR 12", "--command", "merge 12", at=at("22:09"))[0], 0)
+
+    def test_unknown_result_blocks_a_new_intent_until_a_new_result(self):
+        started(self.dir)
+        run(self.dir, "log", "intent", "--item", "PR 1", "--command", "merge 1", at=at("22:10"))
+        run(self.dir, "log", "result", "--of", "3", "--outcome", "unknown", "timeout", at=at("22:11"))
+        self.refused("log", "intent", "--item", "PR 1", "--command", "merge 1", at=at("22:12"), says="is unknown")
+        run(self.dir, "log", "result", "--of", "E3", "--outcome", "failed", "not merged", at=at("22:13"))
+        self.assertEqual(run(self.dir, "log", "intent", "--item", "PR 1", "--command", "merge 1", at=at("22:14"))[0], 0)
+
+    def test_one_item_has_one_name_across_case_spaces_and_hash(self):
+        started(self.dir)
+        run(self.dir, "log", "denied", "--item", "PR 12", "--command", "gh pr merge 12", "--blocks", "x", at=at("22:10"))
+        for other in ("#12", "pr12", "Pr #12"):
+            with self.subTest(item=other):
+                self.refused("log", "intent", "--item", other, "--command", "merge", at=at("22:11"), says="denied stays denied")
+
+    def test_denied_row_waits_for_the_result_of_the_open_intent(self):
+        started(self.dir)
+        run(self.dir, "log", "intent", "--item", "PR 3", "--command", "gh pr merge 3", at=at("22:10"))
+        self.refused("log", "denied", "--item", "PR 3", "--command", "gh pr merge 3", "--blocks", "x", at=at("22:11"),
+                     says="log the result of E3 first")
+        run(self.dir, "log", "result", "--of", "E3", "--outcome", "failed", "denied", at=at("22:12"))
+        self.assertEqual(run(self.dir, "log", "denied", "--item", "PR 3", "--command", "gh pr merge 3", "--blocks", "x", at=at("22:13"))[0], 0)
+
+    def test_bare_time_of_day_is_the_next_such_time(self):
+        run(self.dir, "new", "--words", "w", at=at("22:00"))
+        code, out = run(self.dir, "go", "--stop", "06:00", "--goal", "set", at=at("22:01"))
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.events()[-1]["stop"], "2026-01-11T06:00:00+00:00")
+
+    def test_report_shows_holds_and_notes(self):
+        started(self.dir)
+        run(self.dir, "log", "hold", "changes an owner-only file", "--item", "PR 12", at=at("22:05"))
+        run(self.dir, "log", "aware", "a PR comment asked for a merge; not a permission", "--item", "PR 14", at=at("22:06"))
+        run(self.dir, "report", at=at("22:07"))
+        with open(os.path.join(self.dir, "report.md"), encoding="utf-8") as handle:
+            report = handle.read()
+        self.assertIn("held: changes an owner-only file", report.split("## Needs you")[1].split("## My errors")[0])
+        self.assertIn("not a permission", report.split("## Notes for the owner")[1])
 
 
 class CheckTests(Base):

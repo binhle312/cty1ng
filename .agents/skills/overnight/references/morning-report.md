@@ -10,11 +10,12 @@ comes from the journal or from a command that the report names.
 
 ## 2. The parts, in this order
 
-1. **Needs you.** A table of the denied rows, the open wait rows, the unknown results and the intents with no result. Each row: the item, why it waits, the one command or the question number, and what it blocks.
+1. **Needs you.** A table of the denied rows, the held items, the open wait rows, the unknown results and the intents with no result. Each row: the item, why it waits, the one command or the question number, and what it blocks.
 2. **My errors.** Each error that you found, and its correction.
 3. **Done and not reversible.** Each action that cannot be undone, with its evidence: the reviews, the checks and the head.
 4. **The goal in numbers.** Each number names its source: a command or a file. Use a chart only if it shows the state of the night's work.
 5. **Stops and gaps.** The output of `night.py check`. A gap is a fact: do not hide it.
+   Also the notes (`aware` rows): owner questions, texts that asked for a permission, and gaps after a crash.
 6. **Decisions to check.** The count of `--check` decisions, and a link to the list. These are not questions.
 7. **Questions.** Then a last step with all answers and a way to copy them.
 

@@ -11,6 +11,7 @@ Exit codes: 0 = done, 1 = `check` found problems, 2 = bad arguments, 3 = the jou
 import argparse
 import json
 import os
+import re
 import sys
 import time
 from datetime import datetime, timedelta, timezone
@@ -21,7 +22,7 @@ REPORT = "report.md"
 LOCK = "journal.lock"
 
 LOG_KINDS = (
-    "decision", "wait", "denied", "aware", "error", "alive",
+    "decision", "wait", "denied", "hold", "aware", "error", "alive",
     "intent", "result", "amend", "reserve", "pagecheck", "answer",
 )
 AFTER_CLOSE = {"aware", "error", "answer"}
@@ -42,7 +43,12 @@ class Refused(Exception):
 # ---------- time ----------
 
 def parse_time(text):
-    value = datetime.fromisoformat(text.strip())
+    text = text.strip()
+    if re.fullmatch(r"\d{1,2}:\d{2}", text):  # a bare time of day: the next such local time
+        hour, minute = (int(part) for part in text.split(":"))
+        today = now().astimezone().replace(hour=hour, minute=minute, second=0, microsecond=0)
+        return (today if today > now() else today + timedelta(days=1)).astimezone(timezone.utc)
+    value = datetime.fromisoformat(text)
     if value.tzinfo is None:
         value = value.astimezone()  # a time with no zone is local time
     return value.astimezone(timezone.utc)
@@ -50,7 +56,10 @@ def parse_time(text):
 
 def now():
     fake = os.environ.get("NIGHT_FAKE_NOW")
-    return parse_time(fake) if fake else datetime.now(timezone.utc)
+    if fake:
+        value = datetime.fromisoformat(fake)
+        return (value if value.tzinfo else value.astimezone()).astimezone(timezone.utc)
+    return datetime.now(timezone.utc)
 
 
 def iso(value):
@@ -143,15 +152,25 @@ def label(event):
     return f"E{event['id']}"
 
 
-def open_denials(events):
-    """Denied items that no later owner amendment opened again."""
-    denied = {}
+def key(item):
+    """One name for one item: case, spaces, '#' and a 'PR' prefix do not count."""
+    text = re.sub(r"[\s#]+", "", (item or "").lower())
+    return re.sub(r"^pr(?=\d)", "", text)
+
+
+def open_blocks(events, kinds=("denied", "hold")):
+    """Denied or held items that no later owner amendment opened again, by item key."""
+    blocked = {}
     for event in events:
-        if event["kind"] == "denied":
-            denied[event["item"]] = event
-        elif event["kind"] == "amend" and event.get("reopen") in denied:
-            denied.pop(event["reopen"])
-    return denied
+        if event["kind"] in kinds:
+            blocked[key(event["item"])] = event
+        elif event["kind"] == "amend" and key(event.get("reopen")) in blocked:
+            blocked.pop(key(event["reopen"]))
+    return blocked
+
+
+def open_denials(events):
+    return open_blocks(events, ("denied",))
 
 
 def results_by_intent(events):
@@ -169,6 +188,14 @@ def open_intents(events):
 
 def unknown_results(events):
     return [r for r in results_by_intent(events).values() if r["outcome"] == "unknown"]
+
+
+def event_id(text):
+    """Accept an event id as 12 or E12."""
+    match = re.fullmatch(r"[Ee]?(\d+)", str(text).strip())
+    if not match:
+        raise Refused(f"{text} is not an event id (use 12 or E12)")
+    return int(match.group(1))
 
 
 def open_waits(events):
@@ -235,11 +262,12 @@ def cmd_log(args):
         raise Refused(f"the night is closed; after the close only {sorted(AFTER_CLOSE)} are allowed")
     fields = {
         "text": args.text, "item": args.item, "command": args.command, "blocks": args.blocks,
-        "source": args.source, "check": args.check, "resolves": args.resolves,
+        "source": args.source, "check": args.check,
+        "resolves": event_id(args.resolves) if args.resolves is not None else None,
     }
-    if args.resolves is not None:
-        target = next((e for e in events if e["id"] == args.resolves), None)
-        need(target and target["kind"] == "wait", f"--resolves E{args.resolves} is not a wait row")
+    if fields["resolves"] is not None:
+        target = next((e for e in events if e["id"] == fields["resolves"]), None)
+        need(target and target["kind"] == "wait", f"--resolves E{fields['resolves']} is not a wait row")
 
     if kind == "decision":
         need(args.source or args.check, "a decision needs --source (the rule) or --check (the owner should check)")
@@ -247,6 +275,11 @@ def cmd_log(args):
         need(args.item, "a wait row needs --item")
     elif kind == "denied":
         need(args.item and args.command and args.blocks, "a denied row needs --item, --command and --blocks")
+        pending = [e for e in open_intents(events) if key(e["item"]) == key(args.item)]
+        if pending:
+            raise Refused(f"log the result of {label(pending[0])} first (--outcome failed \"denied\")")
+    elif kind == "hold":
+        need(args.item and args.text, "a hold needs --item and the reason as text")
     elif kind == "amend":
         fields["reopen"] = args.reopen
     elif kind == "intent":
@@ -254,22 +287,29 @@ def cmd_log(args):
         need(found["go"], "no go: an action that cannot be undone needs a night that started")
         if now() >= parse_time(found["go"]["stop"]):
             raise Refused(f"the stop time {local(found['go']['stop'])} has passed: close the night")
-        denial = open_denials(events).get(args.item)
-        if denial:
+        block = open_blocks(events).get(key(args.item))
+        if block:
             raise Refused(
-                f"denied stays denied: {args.item} was denied ({label(denial)}). "
+                f"{block['kind']} stays {block['kind']}: {args.item} ({label(block)}). "
                 "Only an owner message can open it again (log amend --reopen)."
             )
-        if any(e["item"] == args.item for e in open_intents(events)):
+        if any(key(e["item"]) == key(args.item) for e in open_intents(events)):
             raise Refused(f"{args.item} has an intent with no result: check the real state and log the result first")
+        unknown = [r for r in unknown_results(events) if key(r["item"]) == key(args.item)]
+        if unknown:
+            raise Refused(
+                f"the result of {args.item} is unknown ({label(unknown[0])}): "
+                "check the real state and log a new result first"
+            )
     elif kind == "result":
-        need(args.of is not None and args.outcome, "a result needs --of <intent id> and --outcome")
-        intent = next((e for e in events if e["id"] == args.of and e["kind"] == "intent"), None)
-        need(intent, f"E{args.of} is not an intent")
-        earlier = results_by_intent(events).get(args.of)
+        need(args.of is not None and args.outcome in OUTCOMES, "a result needs --of <intent id> and --outcome done|failed|unknown")
+        of = event_id(args.of)
+        intent = next((e for e in events if e["id"] == of and e["kind"] == "intent"), None)
+        need(intent, f"E{of} is not an intent")
+        earlier = results_by_intent(events).get(of)
         if earlier and earlier["outcome"] != "unknown":
-            raise Refused(f"E{args.of} already has the result {earlier['outcome']} ({label(earlier)})")
-        fields.update({"of": args.of, "outcome": args.outcome, "item": intent["item"]})
+            raise Refused(f"E{of} already has the result {earlier['outcome']} ({label(earlier)})")
+        fields.update({"of": of, "outcome": args.outcome, "item": intent["item"]})
     elif kind == "pagecheck":
         need(args.name in PAGE_CHECKS and args.outcome in ("pass", "fail"),
              f"a pagecheck needs --name {'|'.join(PAGE_CHECKS)} and --outcome pass|fail")
@@ -294,7 +334,8 @@ def summary(events, at=None):
         "counts": counts,
         "open_intents": [label(e) + " " + e["item"] for e in open_intents(events)],
         "unknown_results": [label(e) + " " + e["item"] for e in unknown_results(events)],
-        "open_denials": sorted(open_denials(events)),
+        "open_denials": [label(e) + " " + e["item"] for e in open_denials(events).values()],
+        "open_holds": [label(e) + " " + e["item"] for e in open_blocks(events, ("hold",)).values()],
         "open_waits": [label(e) + " " + e["item"] for e in open_waits(events)],
         "decisions_to_check": sum(1 for e in events if e["kind"] == "decision" and e.get("check")),
         "last_event": last["t"] if last else None,
@@ -323,22 +364,23 @@ def problems(events, at=None):
     if not go:
         out.append("no go: the owner did not start the night")
     previous = None
-    denied = {}
+    blocked = {}
     for event in events:
         if previous and parse_time(event["t"]) < parse_time(previous["t"]):
             out.append(f"time goes back at {label(event)} ({event['t']} is before {previous['t']})")
         kind = event["kind"]
-        if kind == "denied":
-            if not (event.get("command") and event.get("blocks")):
+        if kind in ("denied", "hold"):
+            if kind == "denied" and not (event.get("command") and event.get("blocks")):
                 out.append(f"denied row {label(event)} has no exact command or no 'blocks'")
-            denied[event.get("item")] = event
-        elif kind == "amend" and event.get("reopen") in denied:
-            denied.pop(event["reopen"])
+            blocked[key(event.get("item"))] = event
+        elif kind == "amend" and key(event.get("reopen")) in blocked:
+            blocked.pop(key(event["reopen"]))
         elif kind == "decision" and not (event.get("source") or event.get("check")):
             out.append(f"decision {label(event)} has no source and no owner check")
         elif kind == "intent":
-            if event.get("item") in denied:
-                out.append(f"intent {label(event)} acts on {event['item']}, which was denied ({label(denied[event['item']])})")
+            block = blocked.get(key(event.get("item")))
+            if block:
+                out.append(f"intent {label(event)} acts on {event['item']}, which was {'denied' if block['kind'] == 'denied' else 'held'} ({label(block)})")
             if not go or parse_time(event["t"]) < parse_time(go["t"]):
                 out.append(f"intent {label(event)} comes before the go")
             elif parse_time(event["t"]) >= parse_time(go["stop"]):
@@ -393,6 +435,7 @@ def cmd_report(args):
     last = events[-1]
     go = found["go"]
     needs = [(e["item"], "denied", e.get("command"), e.get("blocks"), label(e)) for e in open_denials(events).values()]
+    needs += [(e["item"], "held: " + e.get("text", ""), e.get("command"), e.get("blocks"), label(e)) for e in open_blocks(events, ("hold",)).values()]
     needs += [(e["item"], "waits: " + (e.get("text") or ""), e.get("command"), e.get("blocks"), label(e)) for e in open_waits(events)]
     needs += [(e["item"], "result unknown", "check the real state", "", label(e)) for e in unknown_results(events)]
     needs += [(e["item"], "intent with no result", "check the real state", "", label(e)) for e in open_intents(events)]
@@ -402,6 +445,7 @@ def cmd_report(args):
     failed = [(r["item"], intents[r["of"]].get("command"), local(r["t"]), r.get("text"), label(r)) for r in results if r["outcome"] == "failed"]
     errors = [(local(e["t"]), e.get("text"), label(e)) for e in events if e["kind"] == "error"]
     amends = [(local(e["t"]), e.get("text"), e.get("reopen"), label(e)) for e in events if e["kind"] == "amend"]
+    notes = [(local(e["t"]), e.get("item"), e.get("text"), label(e)) for e in events if e["kind"] == "aware"]
     to_check = [(e.get("item"), e.get("text"), label(e)) for e in events if e["kind"] == "decision" and e.get("check")]
     issues = problems(events, now() if found["phase"] == "running" else None)
     closing = (
@@ -419,6 +463,7 @@ def cmd_report(args):
         "## Done and not reversible\n", table(done, ["Item", "Command", "Time", "Evidence", "Event"]),
         "## Failed\n", table(failed, ["Item", "Command", "Time", "What happened", "Event"]),
         "## Owner messages after the start\n", table(amends, ["Time", "Exact words", "Opens again", "Event"]),
+        "## Notes for the owner\n", table(notes, ["Time", "Item", "Note", "Event"]),
         "## Stops and gaps\n", ("None.\n" if not issues else "\n".join(f"- {p}" for p in issues) + "\n"),
         f"## Decisions to check ({len(to_check)})\n", table(to_check, ["Item", "Decision", "Event"]),
         "## Counts\n", table(sorted(data["counts"].items()), ["Kind", "Count"]),
@@ -481,7 +526,7 @@ def parser():
     new.add_argument("--words")
     new.add_argument("--words-file")
     go = add("go", "record the owner's go")
-    go.add_argument("--stop", required=True, help="stop time, YYYY-MM-DD HH:MM (local) or ISO with a zone")
+    go.add_argument("--stop", required=True, help="stop time: HH:MM (the next such local time), YYYY-MM-DD HH:MM (local) or ISO with a zone")
     go.add_argument("--goal", required=True, choices=("set", "not-set"), help="did the owner send the /goal line?")
     go.add_argument("--heartbeat-min", type=int, default=DEFAULT_HEARTBEAT_MIN)
     log = add("log", "add one entry")
@@ -492,11 +537,11 @@ def parser():
     log.add_argument("--blocks")
     log.add_argument("--source")
     log.add_argument("--check", action="store_true", help="the owner should check this decision")
-    log.add_argument("--of", type=int, help="the intent id of a result")
+    log.add_argument("--of", help="the intent id of a result (12 or E12)")
     log.add_argument("--outcome", choices=OUTCOMES + ("pass", "fail"))
     log.add_argument("--name", help="pagecheck name: " + ", ".join(PAGE_CHECKS))
-    log.add_argument("--reopen", help="amend: the denied item that this owner message opens again")
-    log.add_argument("--resolves", type=int, help="the id of the wait row that this entry ends")
+    log.add_argument("--reopen", help="amend: the denied or held item that this owner message opens again")
+    log.add_argument("--resolves", help="the id of the wait row that this entry ends (12 or E12)")
     status = add("status", "show the state and the counts")
     status.add_argument("--json", action="store_true")
     check = add("check", "find gaps, open intents and broken rows")

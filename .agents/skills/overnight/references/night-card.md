@@ -48,6 +48,7 @@ Wake me if: <a list of events, or "never">
 
 ## Amendments
 <time from night.py, exact owner words, the one-line read-back>
+<each row that you removed at night, with the id of its hold row; the card only gets smaller>
 ```
 
 ## 2. The read-back
