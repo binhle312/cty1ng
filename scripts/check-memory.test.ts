@@ -545,10 +545,8 @@ describe("checkTracked", () => {
 
 describe("checkExclude", () => {
   it("names a missing ignore line", () => {
-    expect(
-      checkExclude("# git ls-files --others --exclude-from=.git/info/exclude\n"),
-      "none",
-    ).toEqual([
+    const problems = checkExclude("# git ls-files --others --exclude-from=.git/info/exclude\n");
+    expect(problems, "both lines missing").toEqual([
       `.git/info/exclude: no line "/${M}/short-term/*"; run pnpm check:memory --local --fix`,
       `.git/info/exclude: no line "!/${M}/short-term/README.md"; run pnpm check:memory --local --fix`,
     ]);
@@ -556,37 +554,51 @@ describe("checkExclude", () => {
 });
 
 describe("addExcludeLines (--local --fix)", () => {
-  it("creates a missing exclude file with the two lines, and a second run adds nothing", () => {
-    const root = mkdtempSync(join(tmpdir(), "check-memory-"));
+  // Each test works in its own temporary folder; .git/info/ can be missing in a fresh clone.
+  function inTempFolder(test: (folder: string) => void): void {
+    const folder = mkdtempSync(join(tmpdir(), "check-memory-"));
     try {
-      // .git/info/ can be missing in a fresh clone, so the folder is missing too.
-      const path = join(root, "info", "exclude");
-      const first = addExcludeLines(path);
-      expect(checkExclude(first), "lines after the first run").toEqual([]);
-      expect(readFileSync(path, "utf8"), "file after the first run").toBe(first);
-      addExcludeLines(path);
-      expect(readFileSync(path, "utf8"), "file after the second run").toBe(first);
+      test(folder);
     } finally {
-      rmSync(root, { recursive: true, force: true });
+      rmSync(folder, { recursive: true, force: true });
     }
+  }
+
+  it("creates a missing exclude file with the two lines", () => {
+    inTempFolder((folder) => {
+      const path = join(folder, "info", "exclude");
+      addExcludeLines(path);
+      expect(checkExclude(readFileSync(path, "utf8")), "new file").toEqual([]);
+    });
   });
 
-  it("keeps the old lines and adds only the missing line", () => {
-    const root = mkdtempSync(join(tmpdir(), "check-memory-"));
-    try {
-      const path = join(root, "exclude");
-      const old = `# local\n/${M}/short-term/*`;
-      writeFileSync(path, old);
-      const text = addExcludeLines(path);
-      expect(text.startsWith(`${old}\n`), "old text kept, with a new line after it").toBe(true);
-      expect(
-        text.split(`/${M}/short-term/*`).length - 1,
-        "the present line is not added again",
-      ).toBe(1);
-      expect(checkExclude(readFileSync(path, "utf8")), "both lines now").toEqual([]);
-    } finally {
-      rmSync(root, { recursive: true, force: true });
-    }
+  it("adds nothing on a second run", () => {
+    inTempFolder((folder) => {
+      const path = join(folder, "info", "exclude");
+      const first = addExcludeLines(path);
+      addExcludeLines(path);
+      expect(readFileSync(path, "utf8"), "file after the second run").toBe(first);
+    });
+  });
+
+  it("keeps the old text of the file", () => {
+    inTempFolder((folder) => {
+      const path = join(folder, "exclude");
+      writeFileSync(path, "# local");
+      addExcludeLines(path);
+      expect(readFileSync(path, "utf8").startsWith("# local\n"), "old text first").toBe(true);
+    });
+  });
+
+  it("adds only the missing line", () => {
+    inTempFolder((folder) => {
+      const path = join(folder, "exclude");
+      writeFileSync(path, `/${M}/short-term/*\n`);
+      const copies = addExcludeLines(path)
+        .split("\n")
+        .filter((line) => line === `/${M}/short-term/*`);
+      expect(copies, "one copy").toHaveLength(1);
+    });
   });
 });
 

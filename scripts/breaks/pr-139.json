@@ -1,0 +1,727 @@
+{
+  "claims": [
+    {
+      "id": "P1-linux-home",
+      "claim": "A Linux home folder path is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds a Linux home folder path"
+      },
+      "assertion": "\"home path\").toEqual([",
+      "breaks": [
+        {
+          "id": "P1-no-home",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\/home\\/[A-Za-z0-9._-]|\\/Users\\/",
+              "replace": "/\\/Users\\/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P2-macos-home",
+      "claim": "A macOS home folder path is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds a macOS home folder path"
+      },
+      "assertion": "\"Users path\").toEqual([",
+      "breaks": [
+        {
+          "id": "P2-no-users",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "|\\/Users\\/[A-Za-z0-9._-]|",
+              "replace": "|"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P3-tilde",
+      "claim": "A path from the home folder (tilde) is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds a path from the home folder"
+      },
+      "assertion": "\"tilde path\").toEqual([",
+      "breaks": [
+        {
+          "id": "P3-no-tilde",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "|~\\/|",
+              "replace": "|"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P4-email",
+      "claim": "An email address is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds an email address"
+      },
+      "assertion": "\"email\").toEqual([",
+      "breaks": [
+        {
+          "id": "P4-long-tld",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "\\.[A-Za-z]{2,}/,",
+              "replace": "\\.[A-Za-z]{20,}/,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P5-uuid",
+      "claim": "A uuid is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds a uuid"
+      },
+      "assertion": "\"uuid\").toEqual([",
+      "breaks": [
+        {
+          "id": "P5-uuid-13",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "[0-9a-f]{12}\\b/i",
+              "replace": "[0-9a-f]{13}\\b/i"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P6-job-id",
+      "claim": "A job id is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds a job id"
+      },
+      "assertion": "\"job id\").toEqual([",
+      "breaks": [
+        {
+          "id": "P6-id-9",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "[0-9a-f]{6,}\\b/i",
+              "replace": "[0-9a-f]{9,}\\b/i"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P7-sk",
+      "claim": "An sk- key is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds an sk- key"
+      },
+      "assertion": "\"sk- key\").toEqual([",
+      "breaks": [
+        {
+          "id": "P7-sk-32",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\bsk-[A-Za-z0-9_-]{16,}/",
+              "replace": "/\\bsk-[A-Za-z0-9_-]{32,}/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P8-ghp",
+      "claim": "A ghp_ token is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds a ghp_ token"
+      },
+      "assertion": "\"ghp_ token\").toEqual([",
+      "breaks": [
+        {
+          "id": "P8-ghp-40",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\bghp_[A-Za-z0-9]{20,}/",
+              "replace": "/\\bghp_[A-Za-z0-9]{40,}/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P9-github-pat",
+      "claim": "A github_pat_ token is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds a github_pat_ token"
+      },
+      "assertion": ").toEqual([`${where}: a key or a token; the memory is public, so remove it`]);",
+      "breaks": [
+        {
+          "id": "P9-pat-40",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\bgithub_pat_[A-Za-z0-9_]{20,}/",
+              "replace": "/\\bgithub_pat_[A-Za-z0-9_]{40,}/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P10-akia",
+      "claim": "An AKIA key is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds an AKIA key"
+      },
+      "assertion": "\"AKIA key\").toEqual([",
+      "breaks": [
+        {
+          "id": "P10-akia-17",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\bAKIA[0-9A-Z]{16}\\b/",
+              "replace": "/\\bAKIA[0-9A-Z]{17}\\b/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P11-xox",
+      "claim": "An xox token is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds an xox token"
+      },
+      "assertion": "\"xox token\").toEqual([",
+      "breaks": [
+        {
+          "id": "P11-xox-20",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\bxox[abprs]-[A-Za-z0-9-]{10,}/",
+              "replace": "/\\bxox[abprs]-[A-Za-z0-9-]{20,}/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P12-private-key",
+      "claim": "A private key block is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds a private key block"
+      },
+      "assertion": "\"private key\").toEqual([",
+      "breaks": [
+        {
+          "id": "P12-keys",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "PRIVATE KEY-----/",
+              "replace": "PRIVATE KEYS-----/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P13-ip",
+      "claim": "An IP address is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds an IP address"
+      },
+      "assertion": "\"IP\").toEqual([",
+      "breaks": [
+        {
+          "id": "P13-five-parts",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "(\\d{1,3}\\.){3}\\d{1,3}\\b/",
+              "replace": "(\\d{1,3}\\.){4}\\d{1,3}\\b/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P14-attach",
+      "claim": "A claude attach id is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds a claude attach id"
+      },
+      "assertion": "\"attach id\").toEqual([",
+      "breaks": [
+        {
+          "id": "P14-attach-7",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/claude attach [0-9a-f]{4,}/",
+              "replace": "/claude attach [0-9a-f]{7,}/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P15-tmp",
+      "claim": "A path into tmp/ is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds a path into tmp/"
+      },
+      "assertion": "\"tmp path\").toEqual([",
+      "breaks": [
+        {
+          "id": "P15-no-tmp",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "tmp\\/[A-Za-z0-9._-]/",
+              "replace": "tmpx\\/[A-Za-z0-9._-]/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T1-tracked",
+      "claim": "A short-term file that git tracks is named (security test: private notes must not reach the public repository)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names a short-term file that git tracks"
+      },
+      "assertion": "\"tracked short-term file\").toEqual([",
+      "breaks": [
+        {
+          "id": "T1-keep-all",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "path.startsWith(`${SHORT_TERM}/`) && path !== `${SHORT_TERM}/README.md`",
+              "replace": "path.startsWith(`${SHORT_TERM}/`) && path === `${SHORT_TERM}/README.md`"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E1-missing-lines",
+      "claim": "Each missing ignore line of .git/info/exclude is named (security test: the lines keep private notes out of git)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names a missing ignore line"
+      },
+      "assertion": "expect(problems, \"both lines missing\").toEqual([",
+      "breaks": [
+        {
+          "id": "E1-present-is-missing",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "EXCLUDE_LINES.filter((line) => !lines.has(line))",
+              "replace": "EXCLUDE_LINES.filter((line) => lines.has(line))"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2-create",
+      "claim": "--fix creates a missing exclude file with the two lines (security test: the lines keep private notes out of git)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "creates a missing exclude file with the two lines"
+      },
+      "assertion": "expect(checkExclude(readFileSync(path, \"utf8\")), \"new file\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "E2-adds-none",
+          "file": "scripts/lib/check-memory-local.ts",
+          "edits": [
+            {
+              "find": "EXCLUDE_LINES.filter((line) => !present.has(line))",
+              "replace": "EXCLUDE_LINES.filter(() => false)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E3-second-run",
+      "claim": "A second --fix adds nothing (the CodeQL alert 10 fix keeps one read of the file)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "adds nothing on a second run"
+      },
+      "assertion": "expect(readFileSync(path, \"utf8\"), \"file after the second run\").toBe(first);",
+      "breaks": [
+        {
+          "id": "E3-reads-nothing",
+          "file": "scripts/lib/check-memory-local.ts",
+          "edits": [
+            {
+              "find": "const present = new Set(text.split(\"\\n\").map((line) => line.trim()));",
+              "replace": "const present = new Set<string>();"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E4-old-text",
+      "claim": "--fix keeps the old text of the exclude file",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "keeps the old text of the file"
+      },
+      "assertion": "expect(readFileSync(path, \"utf8\").startsWith(\"# local\\n\"), \"old text first\").toBe(true);",
+      "breaks": [
+        {
+          "id": "E4-no-newline",
+          "file": "scripts/lib/check-memory-local.ts",
+          "edits": [
+            {
+              "find": "const start = text === \"\" || text.endsWith(\"\\n\") ? \"\" : \"\\n\";",
+              "replace": "const start = \"\";"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E5-only-missing",
+      "claim": "--fix adds only the missing line",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "adds only the missing line"
+      },
+      "assertion": "expect(copies, \"one copy\").toHaveLength(1);",
+      "breaks": [
+        {
+          "id": "E5-adds-both",
+          "file": "scripts/lib/check-memory-local.ts",
+          "edits": [
+            {
+              "find": "EXCLUDE_LINES.filter((line) => !present.has(line))",
+              "replace": "EXCLUDE_LINES.filter(() => true)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W1-private-word",
+      "claim": "A word of the private word list is found in any case (security test: names that the public memory must not hold)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds a word of the private word list in any case"
+      },
+      "assertion": "expect(checkPrivateWords(files, [\"zorblat\"]), \"private word\").toEqual([",
+      "breaks": [
+        {
+          "id": "W1-case",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "const lower = line.toLowerCase();",
+              "replace": "const lower = line;"
+            }
+          ]
+        },
+        {
+          "id": "W1-none",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (list.some((word) => lower.includes(word))) {",
+              "replace": "if (list.some(() => false)) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S1-not-skipped",
+      "claim": "check:status does not skip a PR that changes one file outside long-term memory (late test: the skip must not hide a merged PR)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "does not skip a PR with one changed file outside long-term memory"
+      },
+      "assertion": "expect(prs, \"one file outside long-term memory\").toEqual([\"#140\"]);",
+      "breaks": [
+        {
+          "id": "S1-some",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "files.every((file) => file.startsWith(PROMOTION_FOLDER))",
+              "replace": "files.some((file) => file.startsWith(PROMOTION_FOLDER))"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "passes a valid tree",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a schema that is newer than the check",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a README with no schema line",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a missing file",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a missing setting",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names an unknown setting",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a number setting that is not a whole number",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a file with no frontmatter",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a missing field",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names an unknown field",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a status that is not in the list",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a scope that is not in the list",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a said date that is not a date",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names an order that is not a whole number",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names an end that is not never, a date or until",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names an id that is not R- and three digits",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a file name that does not start with its id",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names two files with one id",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a supersedes target that does not exist",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a loop of supersedes and amends",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a superseded rule that is still active",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a replaced rule that no rule supersedes",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a rule with no Rule line",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a rule with no Owner said line",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a quote over the word limit",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a quote with no date",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names an Owner said line with no quote",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a rule over the line limit",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "lists the active rules first, then the others with their successor",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a hand change of the index",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a state file with no Main line",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a lesson line with no id",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names two lessons with one id",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a log heading in the wrong form",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "passes public facts",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a file over its line limit",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a boot set over its size limit",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a link to a file that does not exist",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "passes web links, anchors and links with an anchor",
+      "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-status.test.ts",
+      "name": "skips a memory promotion PR: each changed file is in long-term memory",
+      "reason": "test first: red run in the PR (the skip and mergeFiles did not exist)"
+    },
+    {
+      "file": "scripts/check-status.test.ts",
+      "name": "lists the files that a merge commit changes against its first parent",
+      "reason": "test first: red run in the PR (the skip and mergeFiles did not exist)"
+    }
+  ]
+}

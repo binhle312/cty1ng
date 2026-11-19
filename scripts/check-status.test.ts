@@ -149,10 +149,8 @@ describe("checkStatus", () => {
     const merged = mergedPrs(merge(140, "2026-11-20"));
     const changedFiles = (): string[] => [".agents/memories/long-term/state.md", "docs/status.md"];
     const problems = checkStatus({ merged, statusMd: status([]), since: SINCE, changedFiles });
-    expect(
-      problems.map((p) => p.split(" ")[0]),
-      "one file outside long-term memory",
-    ).toEqual(["#140"]);
+    const prs = problems.map((p) => p.split(" ")[0]);
+    expect(prs, "one file outside long-term memory").toEqual(["#140"]);
   });
 });
 
