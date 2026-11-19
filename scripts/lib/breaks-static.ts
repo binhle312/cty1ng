@@ -85,8 +85,9 @@ function project(root: string, name: string): Project {
     readDirectory: (...args) => ts.sys.readDirectory(...args),
     directoryExists: (path) => ts.sys.directoryExists(path),
     getDirectories: (path) => ts.sys.getDirectories(path),
-    // pnpm links each package. Without the real path, one package has two paths, and its types
-    // do not match: false errors on code that the break keeps.
+    // pnpm links each package into its store. Without the real path, a package that a linked
+    // package imports does not resolve from the link, its types become `any`, and code that the
+    // break keeps gets false errors (TS7006).
     realpath: (path) => (ts.sys.realpath === undefined ? path : ts.sys.realpath(path)),
     useCaseSensitiveFileNames: () => ts.sys.useCaseSensitiveFileNames,
   };

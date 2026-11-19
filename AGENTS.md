@@ -110,6 +110,8 @@ make dev                        # backend on 127.0.0.1:8000, frontend on 127.0.0
   before any code ([planning workflow](docs/workflows/planning.md#code-design-checkpoint)).
 - Anything outside the current task's scope.
 
+An agent never gives an approval of this list in the owner's place, also when the owner is away, unless the owner gave that approval by an order. If an approval is missing, the work that needs it stops, or is flagged in the PR where this list allows that, and the other work goes on.
+
 Mark these in the PR description under a heading `Needs human review` with one line each.
 
 Merge a PR only when the owner asks you to merge that PR. The merge needs no line in the PR description.
