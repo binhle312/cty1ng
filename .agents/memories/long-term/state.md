@@ -22,6 +22,7 @@ act on it.
 - #139, review round 1: who merges a PR that changes a rule about merges, approvals or
   permissions, or `identity.md` (the `AGENTS.md` words W3 to W5); who marks a PR Ready before a
   chief merge (R-002 and `AGENTS.md` §10 differ); the device and time zone lines of `identity.md`.
+  The restore drill fails on Q4 until R-002 gives its two merge paths apart (DQ-895).
 - The UI review after M3 (`docs/status.md`, "Waiting on the owner").
 
 ## The chief's queue

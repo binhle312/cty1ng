@@ -14,3 +14,10 @@ Append only. One heading for each promotion, lint, restore drill or migration.
 - Method: `restore-drill.md`. The probe saw only `CLAUDE.md` and `AGENTS.md`: no memory file and
   no user-level skill.
 - Q10 left out the consultants before the owner's page. Fix: R-016 now points to R-015.
+
+## [2026-11-19] restore | the second drill, on c2702a1, graded by a fresh agent: 17 of 18 right, 1 partial (Q4), fail
+
+- The probe saw only `CLAUDE.md` and `AGENTS.md`.
+- Q4 said that a standing permission must cover each chief merge, and left out a merge that the
+  owner asks for. The fix is in R-002, which waits for the owner's decisions of review round 1
+  (DQ-895).

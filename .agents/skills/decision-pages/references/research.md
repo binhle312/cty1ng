@@ -1,6 +1,6 @@
 # Decision pages: research and rules (2026-11-19)
 
-Purpose: make the owner's quiz pages (left pane = question, right pane = options) easy to scan and
+Purpose: make quiz pages for a decision (left pane = question, right pane = options) easy to scan and
 decide. Each finding has its source and one testable rule. Section 7 gives the structure of one question.
 
 Source trust: NN/g, Baymard, GOV.UK and W3C pages were read for this file. Peer-reviewed papers
@@ -18,7 +18,7 @@ comes from a weaker source, the finding says so.
 2. **People read about 20% of the words on a page** (at most 28% of a 593-word page).
    Source: https://www.nngroup.com/articles/how-little-do-users-read/
    Rule for our pages: before "Details", the left pane shows at most 220 words (table cells
-   included) and the right pane at most 160 (Q1 today: about 470 words in all).
+   included) and the right pane at most 160.
 3. **A dense block of text causes the F-pattern:** the eye reads the first lines, then only the
    left edge, and misses facts at the right or lower in a line. Fixes: key points first, headings,
    bullets, bold key terms, cut text.
@@ -39,7 +39,7 @@ comes from a weaker source, the finding says so.
    Rule for our pages: write all counts as digits (8 fixes, 25 files), and put numbers in a table
    when there are more than 3.
 
-What this means for a decision page: the owner reads the title, the first line and the bold words.
+What this means for a decision page: the reader reads the title, the first line and the bold words.
 Everything that decides the answer must be in those places.
 
 ## 2. Cognitive load, chunking, disclosure, BLUF, text length
@@ -74,11 +74,11 @@ Everything that decides the answer must be in those places.
    lose their place and skip; 100+ characters causes fatigue.
    Sources: https://baymard.com/blog/line-length-readability ;
    https://www.w3.org/WAI/WCAG22/Understanding/visual-presentation.html
-   Rule for our pages: left-pane text has `max-width: 70ch` (today about 88 characters per line).
+   Rule for our pages: left-pane text has `max-width: 70ch`.
 7. **Short sentences and paragraphs.** GOV.UK: split sentences over 25 words, max 5 sentences per
    paragraph. NN/g: 15-20 words per sentence, even for experts. W3C COGA: split any paragraph over
-   50 words, one topic per paragraph, lists for 3 or more items. ASD-STE100 (the owner's writing
-   rule): max 20 words in a procedural sentence, 25 in a descriptive sentence. The GOV.UK blog also
+   50 words, one topic per paragraph, lists for 3 or more items. ASD-STE100 (a controlled-language
+   standard): max 20 words in a procedural sentence, 25 in a descriptive sentence. The GOV.UK blog also
    quotes comprehension figures (14 words: over 90%; 43 words: under 10%) from a weaker,
    non-peer-reviewed source; use them only as a hint.
    Sources: https://guidance.publishing.service.gov.uk/writing-to-gov-uk-standards/writing-guidelines/clear-language/ ;
@@ -89,7 +89,7 @@ Everything that decides the answer must be in those places.
 8. **Experts also prefer plain language.** 80% of people preferred clear English, more so for
    complex topics; NN/g's expert users called dense pages "crazy dense" and wanted less.
    Sources: as in item 7 (GOV.UK clear language; NN/g plain language for experts)
-   Rule for our pages: "he is a developer" is no reason for long or dense text.
+   Rule for our pages: "the reader is a developer" is no reason for long or dense text.
 
 ## 3. Presenting a decision with options
 
@@ -185,7 +185,7 @@ Everything that decides the answer must be in those places.
 4. **Wizards suit rare, unfamiliar tasks; name each step by what the user does; mark completed
    steps; let users leave and resume.** Each step must be self-sufficient.
    Source: https://www.nngroup.com/articles/wizards/
-   Rule for our pages: step buttons show a 1-3 word topic ("Q1 Memory design"), not "Q1"; each
+   Rule for our pages: step buttons show a 1-3 word topic ("Q1 Cache design"), not "Q1"; each
    question can be answered without reading the Overview.
 5. **A "Check answers" page before submit,** with a Change link per answer that returns to it.
    Source: https://design-system.service.gov.uk/patterns/check-answers/

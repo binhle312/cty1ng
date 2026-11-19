@@ -316,7 +316,7 @@ button{font:inherit;color:inherit}
 /* Main area scrolls; the choice column stays in view (R2.2 trade-offs next to the radio) */
 main{overflow:auto;scroll-padding-top:16px}
 .wrap{max-width:1680px;margin:0 auto;padding:16px 24px 32px}
-/* Question step (owner, 2026-11-19): 12 columns, left 7 and right 5; the left scrolls by itself,
+/* Question step: 12 columns, left 7 and right 5; the left scrolls by itself,
    the answers on the right stay in place. Text lines in the left keep at most 72ch (R2.6). */
 .step.q{height:100%}
 .step.q .wrap{height:100%;box-sizing:border-box;padding:16px 24px 0}
