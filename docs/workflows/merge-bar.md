@@ -12,10 +12,14 @@ This bar applies the [when review ends principle](../../.agents/skills/principle
 
 The owner merges a PR, or asks for its merge. The chief may also merge a PR that a standing
 permission of the owner covers, and each memory PR (`AGENTS.md` §7; owner, 2026-11-19, order
-108). Before a chief merge, the chief runs `pnpm merge:check <PR>` from a checkout of main, and
-merges only with the merge line that it prints. Exit 1 means no chief merge: a path that no
-permission covers, a PR that mixes `.agents/chief/memories/` with other files, or a memory PR that
-fails its gate. Exit 2 means that the script cannot check: no chief merge.
+108). Before each chief merge, the chief runs `pnpm merge:check <PR>` from a clean checkout of
+`origin/main`. A memory PR and a PR under a standing permission merge only with the merge line
+that it prints. Exit 1 means no chief merge under a permission: a path that no permission covers,
+red or missing CI, a PR that mixes `.agents/chief/memories/` with other files, a memory PR that
+fails its gate, or a PR from a fork, by another author or for another base. Exit 2 means that the
+script cannot check: no chief merge. When the owner's own message asks for a PR, a listed path
+does not stop the merge (R-002 path 1): the chief merges with
+`gh pr merge <PR> --merge --match-head-commit <head>`, but never a mixed PR.
 
 ## Severity
 

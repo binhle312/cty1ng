@@ -19,11 +19,11 @@ Owner said: "Q3: A Add the API shape to the sentence" (2026-11-19)
 How to apply:
 Check first: ask these questions in this order. The first "yes" decides; if no answer is "yes", do not merge.
 1. Did the owner say that they merge this PR, or that nothing merges now? Then wait. Stop.
-2. Does the owner's own message ask you to merge this PR (R-004)? Then use path 1, also for a PR that question 4 lists.
-3. Is the PR a memory PR (R-005)? Run `pnpm merge:check <PR>` from a checkout of main. If the PR changes `.agents/chief/memories/` and other files, do not merge it: ask for a split. Stop.
-4. Does the PR change `AGENTS.md`, `docs/decisions/`, the public API shape, security-sensitive code, a migration, a dependency, the memory check, or a rule about merges, approvals or permissions outside `.agents/chief/memories/`? Then no permission covers it. Stop: only the owner's own request (question 2) covers it. `pnpm merge:check <PR>` answers it.
+2. Is it a memory PR, or a PR with files in `.agents/chief/memories/` and in other folders? Run `pnpm merge:check <PR>` from a clean checkout of `origin/main`. A memory PR goes by R-005. Do not merge a PR of the second kind, also when the owner asks: ask for a split. Stop.
+3. Does the owner's own message ask you to merge this PR (R-004)? Then use path 1, also for a PR that question 4 lists.
+4. Does the PR change `AGENTS.md`, `docs/decisions/`, the public API shape, security-sensitive code, a migration, a dependency, the memory check, or a rule about merges, approvals or permissions outside `.agents/chief/memories/`? Then no permission covers it. Stop: only the owner's own request (question 3) covers it. `pnpm merge:check <PR>` answers it.
 5. Does a standing permission of the owner cover this PR? Then use path 2.
-- Path 1, the owner asks: two consultants find no blocker first (R-003). The owner marks it Ready, or the owner's message names the Ready step and you mark it Ready right before the merge. Then merge it, and verify the merge (`environment.md`, "GitHub CLI").
+- Path 1, the owner asks: two consultants find no blocker first (R-003). The owner marks it Ready, or the owner's message names the Ready step and you mark it Ready right before the merge. Then merge it with `gh pr merge <PR> --merge --match-head-commit <the head that the consultants read>` (`pnpm merge:check` prints no merge line for a listed PR), and verify the merge (`environment.md`, "GitHub CLI").
 - Path 2, a standing permission covers the PR: do these steps in order.
   1. The merge bar: the reviews ended by the written rule (R-007); the records are written; each required CI check is green; `check:breaks static` is green (not required, so check it); a new `gh pr view` shows MERGEABLE and CLEAN; no owner decision on the PR is open.
   2. Two consultants find no blocker first (R-003). Until #107 merges, also do the hand check of R-035.

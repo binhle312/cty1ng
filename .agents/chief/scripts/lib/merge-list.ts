@@ -27,9 +27,33 @@ export const PACKAGE_FIELDS = [
   "pnpm",
   "packageManager",
   "scripts",
+  "peerDependenciesMeta",
+  "dependenciesMeta",
+  "bundledDependencies",
+  "bundleDependencies",
 ] as const;
 
 export const DEPENDENCY_TEXT = "a dependency";
+
+// The CI checks that must pass before the chief merges: the job names of the CI workflow file
+// (a test keeps the two the same). A check that is missing, skipped, pending or red means no
+// merge line.
+export const REQUIRED_CHECKS = [
+  "lint",
+  "typecheck",
+  "test",
+  "check:index",
+  "check:events",
+  "check:memory",
+  "db:check",
+  "records:counts",
+  "audit",
+  "check:breaks static",
+  "check:status",
+  "gen:api fresh",
+  "build + check:bundle",
+  "e2e",
+] as const;
 
 export const MERGE_LIST: readonly ListItem[] = [
   { text: "`AGENTS.md`", paths: ["AGENTS.md", "CLAUDE.md"], notByPath: undefined },
@@ -63,6 +87,11 @@ export const MERGE_LIST: readonly ListItem[] = [
       "frontend/vite.config.ts",
       ".gitignore",
       "backend/src/adapters/model/",
+      // The hooks and allow rules of each agent session, the key-name pattern of the log
+      // redaction, and the port of the avatar files (review round 3).
+      ".claude/settings.json",
+      "shared/src/catalog.ts",
+      "backend/src/core/ports/avatar-files.ts",
     ],
     notByPath:
       "a removed call of the sensitive data guard in another file; SSE event payloads; Markdown rendering outside markdown.tsx; anything else that touches secrets",
@@ -80,6 +109,8 @@ export const MERGE_LIST: readonly ListItem[] = [
       ".agents/chief/scripts/check-memory*",
       ".agents/chief/scripts/lib/check-memory*",
       ".agents/chief/scripts/lib/owner-quotes*",
+      // It sets the exit code of check:memory.
+      "scripts/lib/report.ts",
     ],
     notByPath: undefined,
   },

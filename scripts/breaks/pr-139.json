@@ -1417,8 +1417,8 @@
           "file": ".agents/chief/scripts/lib/merge-list.ts",
           "edits": [
             {
-              "find": "  \"packageManager\",\n  \"scripts\",\n] as const;",
-              "replace": "  \"packageManager\",\n] as const;"
+              "find": "  \"scripts\",\n  \"peerDependenciesMeta\",",
+              "replace": "  \"peerDependenciesMeta\","
             }
           ]
         },
@@ -1449,8 +1449,8 @@
           "file": ".agents/chief/scripts/lib/merge-check.ts",
           "edits": [
             {
-              "find": "  const base = packageFields(file.baseText, file.previousPath ?? file.path);",
-              "replace": "  const base = packageFields(file.headText, file.previousPath ?? file.path);"
+              "find": "  const base = isPackageJson(old) ? packageFields(file.baseText, old) : {};",
+              "replace": "  const base = isPackageJson(old) ? packageFields(file.headText, old) : {};"
             }
           ]
         }
@@ -1578,15 +1578,15 @@
         "file": ".agents/chief/scripts/merge-check.test.ts",
         "name": "refuses when a CI check is pending, red or missing"
       },
-      "assertion": "expect(result.exit, name).toBe(1);",
+      "assertion": "expect(result.exit, `ci ${name}`).toBe(1);",
       "breaks": [
         {
           "id": "M12-ci-1",
           "file": ".agents/chief/scripts/lib/merge-check.ts",
           "edits": [
             {
-              "find": "      ? [\"no CI check has run\"]",
-              "replace": "      ? []"
+              "find": "    if (state !== \"pass\") problems.push(`the required CI check ${name} is ${state}`);",
+              "replace": "    if (state === \"fail\") problems.push(`the required CI check ${name} is ${state}`);"
             }
           ]
         },
@@ -1595,8 +1595,8 @@
           "file": ".agents/chief/scripts/lib/merge-check.ts",
           "edits": [
             {
-              "find": "          .filter((check) => check.state !== \"pass\")",
-              "replace": "          .filter((check) => check.state === \"fail\")"
+              "find": "    if (check.state === \"pending\" || check.state === \"fail\") {",
+              "replace": "    if (check.state === \"pending\") {"
             }
           ]
         }
@@ -1835,8 +1835,8 @@
           "file": ".agents/chief/scripts/lib/owner-quotes.ts",
           "edits": [
             {
-              "find": "      } else if (!record.includes(fold(quote))) {",
-              "replace": "      } else if (record.length < 0) {"
+              "find": "      } else if (!records.some((record) => record.includes(fold(quote)))) {",
+              "replace": "      } else if (records.length < 0) {"
             }
           ]
         }
@@ -1857,8 +1857,8 @@
           "file": ".agents/chief/scripts/lib/owner-quotes.ts",
           "edits": [
             {
-              "find": "      if (words < input.minWords) {",
-              "replace": "      if (words < input.minWords - 1) {"
+              "find": "      if (words < minWords) {",
+              "replace": "      if (words < minWords - 1) {"
             }
           ]
         }
@@ -1879,8 +1879,8 @@
           "file": ".agents/chief/scripts/lib/owner-quotes.ts",
           "edits": [
             {
-              "find": "  if (record === \"\") return { problems: [], noRecord: true };",
-              "replace": "  if (record === \"x\") return { problems: [], noRecord: true };"
+              "find": "  if (records.length === 0) return { problems: [], noRecord: true };",
+              "replace": "  if (records.length === -1) return { problems: [], noRecord: true };"
             }
           ]
         }
@@ -1925,6 +1925,334 @@
             {
               "find": "  if (agentsList === expected) return [];",
               "replace": "  if (agentsList !== undefined) return [];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-removed-rule",
+      "claim": "A memory PR that removes a permission rule gets no merge line (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "refuses a memory PR that removes a permission rule"
+      },
+      "assertion": "expect(result.lines.join(\"\\n\"), \"removed rule line\").toContain(",
+      "breaks": [
+        {
+          "id": "R3-removed-rule-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "    if (file.status === \"removed\") {\n      problems.push(",
+              "replace": "    if (file.status === \"removed\" && problems.length < 0) {\n      problems.push("
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-new-quote",
+      "claim": "A changed permission rule needs a new owner quote (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "refuses a changed permission rule with no new owner quote"
+      },
+      "assertion": "expect(same.exit, \"no new quote\").toBe(1);",
+      "breaks": [
+        {
+          "id": "R3-new-quote-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "    if (ownerQuotes(head).every((quote) => baseQuotes.has(quote))) {",
+              "replace": "    if (ownerQuotes(head).every((quote) => baseQuotes.has(quote)) && base === head) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-origin",
+      "claim": "A PR from a fork, by another author or for another base gets no merge line (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "gives no chief merge to a PR from a fork, by another author or for another base"
+      },
+      "assertion": "expect(result.exit, `origin ${name}`).toBe(1);",
+      "breaks": [
+        {
+          "id": "R3-origin-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (input.crossRepository) return \"the PR comes from a fork\";",
+              "replace": "  if (input.crossRepository && input.number < 0) return \"the PR comes from a fork\";"
+            }
+          ]
+        },
+        {
+          "id": "R3-origin-2",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (input.author !== input.expectedAuthor) {",
+              "replace": "  if (input.author !== input.expectedAuthor && input.number < 0) {"
+            }
+          ]
+        },
+        {
+          "id": "R3-origin-3",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (input.baseRef !== \"main\") return",
+              "replace": "  if (input.baseRef !== \"main\" && input.number < 0) return"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-control",
+      "claim": "A file name with a control character cannot add an output line (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "prints no control character, so a file name cannot add a line"
+      },
+      "assertion": "expect(Array.from(line).some(isControl), `control in ${JSON.stringify(line)}`).toBe(false);",
+      "breaks": [
+        {
+          "id": "R3-control-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  lines: result.lines.map(printable),",
+              "replace": "  lines: result.lines,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-code-ci",
+      "claim": "A code PR gets no merge line until each required CI check passed (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "gives a code PR no merge line until CI is green"
+      },
+      "assertion": "expect(result.exit, \"code CI\").toBe(1);",
+      "breaks": [
+        {
+          "id": "R3-code-ci-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (ci.length > 0) {\n    return {",
+              "replace": "  if (ci.length < 0) {\n    return {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-package-rename",
+      "claim": "A package.json renamed to or from another name is a changed manifest (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "lists a renamed package.json at its old or its new name"
+      },
+      "assertion": "expect(classify(input([out])).exit, \"manifest renamed out\").toBe(1);",
+      "breaks": [
+        {
+          "id": "R3-package-rename-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  const head = isPackageJson(file.path) ? packageFields(file.headText, file.path) : {};",
+              "replace": "  const head = packageFields(file.headText, file.path);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-rename-record",
+      "claim": "A rename record with no old name cannot be checked (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "cannot check a rename record with no old name"
+      },
+      "assertion": "expect(result.ok, \"rename no old name\").toBe(false);",
+      "breaks": [
+        {
+          "id": "R3-rename-record-1",
+          "file": ".agents/chief/scripts/lib/merge-check-gh.ts",
+          "edits": [
+            {
+              "find": "      (file.status !== \"renamed\" && file.status !== \"copied\") ||",
+              "replace": "      true ||"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-moved",
+      "claim": "A PR whose head or base moves during the read cannot be checked (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "cannot check when the head or the base moves during the read"
+      },
+      "assertion": "expect(result.ok, \"moved\").toBe(false);",
+      "breaks": [
+        {
+          "id": "R3-moved-1",
+          "file": ".agents/chief/scripts/lib/merge-check-gh.ts",
+          "edits": [
+            {
+              "find": "    if (after.headRefOid !== view.headRefOid || after.baseRefOid !== view.baseRefOid) {",
+              "replace": "    if (after.headRefOid !== view.headRefOid) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-utf8",
+      "claim": "A text that is not UTF-8 cannot be checked (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "cannot check a text that is not UTF-8"
+      },
+      "assertion": "expect(result.ok, \"not UTF-8\").toBe(false);",
+      "breaks": [
+        {
+          "id": "R3-utf8-1",
+          "file": ".agents/chief/scripts/lib/merge-check-gh.ts",
+          "edits": [
+            {
+              "find": "const UTF8 = new TextDecoder(\"utf-8\", { fatal: true });",
+              "replace": "const UTF8 = new TextDecoder(\"utf-8\", { fatal: false });"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-base-paths",
+      "claim": "A local settings file or an untracked script that differs from main stops the check (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 when the local settings or an untracked script differs from origin/main"
+      },
+      "assertion": "expect(changed.stdout, \"settings differ\").toContain(\"Run merge:check from a checkout of main\");",
+      "breaks": [
+        {
+          "id": "R3-base-paths-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "const BASE_PATHS = [\"scripts\", \"package.json\", \".agents/chief/scripts\", SETTINGS_FILE];",
+              "replace": "const BASE_PATHS = [\"scripts\", \"package.json\", \".agents/chief/scripts\"];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-required",
+      "claim": "The required CI checks are the job names of the CI workflow (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "are the job names of the CI workflow"
+      },
+      "assertion": "expect([...REQUIRED_CHECKS].sort(), \"required\").toEqual(names);",
+      "breaks": [
+        {
+          "id": "R3-required-1",
+          "file": ".agents/chief/scripts/lib/merge-list.ts",
+          "edits": [
+            {
+              "find": "  \"e2e\",\n] as const;",
+              "replace": "] as const;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-imports",
+      "claim": "Each file that check:memory and merge:check run is on the list (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "lists each file that check:memory and merge:check run"
+      },
+      "assertion": "for (const path of paths) expect(listedItem(path), path).toBeDefined();",
+      "breaks": [
+        {
+          "id": "R3-imports-1",
+          "file": ".agents/chief/scripts/lib/merge-list.ts",
+          "edits": [
+            {
+              "find": "      \"scripts/lib/report.ts\",\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-one-record",
+      "claim": "A quote must be inside one owner record file (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/owner-quotes.test.ts",
+        "name": "does not join two record files into one quote"
+      },
+      "assertion": "expect(result.problems.length, \"joined records\").toBe(1);",
+      "breaks": [
+        {
+          "id": "R3-one-record-1",
+          "file": ".agents/chief/scripts/lib/owner-quotes.ts",
+          "edits": [
+            {
+              "find": "      } else if (!records.some((record) => record.includes(fold(quote)))) {",
+              "replace": "      } else if (!records.join(\" \").includes(fold(quote))) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-floor",
+      "claim": "A quote needs 4 words whatever the setting says (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/owner-quotes.test.ts",
+        "name": "keeps a floor of 4 words whatever the setting says"
+      },
+      "assertion": "expect(result.problems.length, \"floor\").toBe(1);",
+      "breaks": [
+        {
+          "id": "R3-floor-1",
+          "file": ".agents/chief/scripts/lib/owner-quotes.ts",
+          "edits": [
+            {
+              "find": "  const minWords = Math.max(input.minWords, QUOTE_MIN_FLOOR);",
+              "replace": "  const minWords = input.minWords;"
             }
           ]
         }
@@ -2326,6 +2654,16 @@
       "file": ".agents/chief/scripts/check-memory.test.ts",
       "name": "names the old field owner-merges as not a rule field",
       "reason": "test first: red run on the code before the change (tmp/red/6-check-memory.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/merge-check.test.ts",
+      "name": "names question 4 for the list and question 5 for the permission",
+      "reason": "test first: red run of review round 3 (the test failed before the change)"
+    },
+    {
+      "file": ".agents/chief/scripts/merge-check.test.ts",
+      "name": "compares the dependency metadata fields too",
+      "reason": "test first: red run of review round 3 (the test failed before the change)"
     }
   ]
 }

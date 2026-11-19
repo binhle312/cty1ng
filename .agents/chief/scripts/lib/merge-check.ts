@@ -1,12 +1,16 @@
 // The judgment of `pnpm merge:check <PR>` (pure): which kind of PR it is, and if the chief may
 // merge it. The caller reads the PR from gh, the owner record and the private words.
 //
-// - A memory PR changes only `.agents/chief/memories/`. The chief merges it when CI is green, no changed
-//   file holds a private word, and each quote of each added or changed rule file is in the owner
-//   record (owner, 2026-11-19, orders 108 and 109).
+// - First, each PR: no chief merge of a PR from a fork, by an author other than the repository
+//   owner, or for a base other than main.
+// - A memory PR changes only `.agents/chief/memories/`. The chief merges it when each required CI
+//   check passed, no changed file holds a private word, each quote of each added or changed rule
+//   file is in the owner record, no permission rule is removed, and a changed permission rule has
+//   a new owner quote (owner, 2026-11-19, orders 108 and 109).
 // - A mixed PR changes `.agents/chief/memories/` and other files: no chief merge (order 108).
 // - A code PR: a path of the list file means that no standing permission covers it
-//   (`AGENTS.md` §7). Else the script prints the Not-checked items and the merge line.
+//   (`AGENTS.md` §7). Else, when each required CI check passed, the script prints the Not-checked
+//   items and the merge line.
 import { z } from "zod";
 import { checkPrivateWords } from "./check-memory.ts";
 import {
@@ -14,9 +18,10 @@ import {
   MEMORY_FOLDER,
   MERGE_LIST,
   PACKAGE_FIELDS,
+  REQUIRED_CHECKS,
   listedItem,
 } from "./merge-list.ts";
-import { OWNER_RECORD, checkOwnerQuotes } from "./owner-quotes.ts";
+import { OWNER_RECORD, checkOwnerQuotes, ownerQuotes } from "./owner-quotes.ts";
 
 export type FileStatus =
   "added" | "removed" | "modified" | "renamed" | "copied" | "changed" | "unchanged";
@@ -30,7 +35,7 @@ export type PrFile = {
   baseText?: string | undefined;
   headText?: string | undefined;
 };
-export type CiCheck = { name: string; state: "pass" | "pending" | "fail" };
+export type CiCheck = { name: string; state: "pass" | "skipped" | "pending" | "fail" };
 export type MergeInput = {
   number: number;
   head: string;
@@ -41,6 +46,12 @@ export type MergeInput = {
   // The lines of `short-term/private-words.txt`, or undefined when the file is missing.
   privateWords: readonly string[] | undefined;
   minQuoteWords: number;
+  // The base branch of the PR, if its head branch is in a fork, its author, and the login of the
+  // repository owner.
+  baseRef: string;
+  crossRepository: boolean;
+  author: string;
+  expectedAuthor: string;
 };
 export type MergeResult = { exit: 0 | 1 | 2; lines: string[] };
 
@@ -62,6 +73,23 @@ export function needsText(path: string): boolean {
   return isPackageJson(path) || inMemory(path);
 }
 
+// A line of output shows each control character as an escape, so a file name cannot add a line.
+export const isControl = (char: string): boolean => {
+  const code = char.charCodeAt(0);
+  return code < 0x20 || (code >= 0x7f && code <= 0x9f);
+};
+export function printable(line: string): string {
+  return Array.from(line)
+    .map((char) =>
+      isControl(char) ? `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}` : char,
+    )
+    .join("");
+}
+const printed = (result: MergeResult): MergeResult => ({
+  exit: result.exit,
+  lines: result.lines.map(printable),
+});
+
 export function cannotCheck(input: {
   pr: number | string;
   reason: string;
@@ -69,7 +97,7 @@ export function cannotCheck(input: {
 }): MergeResult {
   const { pr, reason, memory } = input;
   const action = memory ? "Do not merge it." : "Treat it as listed: the owner merges it.";
-  return { exit: 2, lines: [`Cannot check #${pr}: ${reason}. ${action}`] };
+  return printed({ exit: 2, lines: [`Cannot check #${pr}: ${reason}. ${action}`] });
 }
 
 class CannotCheck extends Error {}
@@ -90,16 +118,66 @@ function packageFields(text: string | undefined, path: string): Record<string, u
 }
 
 // A `package.json` change is listed when a field of PACKAGE_FIELDS differs between base and head.
+// A rename is a delete of the old name and an add of the new name: only a `package.json` side
+// counts, so a manifest renamed to another name is a removed manifest.
 function packageChanged(file: PrFile): boolean {
+  const old = file.previousPath ?? file.path;
   if (file.status !== "added" && file.baseText === undefined)
-    throw new CannotCheck(`no base text for ${file.previousPath ?? file.path}`);
+    throw new CannotCheck(`no base text for ${old}`);
   if (file.status !== "removed" && file.headText === undefined)
     throw new CannotCheck(`no head text for ${file.path}`);
-  const base = packageFields(file.baseText, file.previousPath ?? file.path);
-  const head = packageFields(file.headText, file.path);
+  const base = isPackageJson(old) ? packageFields(file.baseText, old) : {};
+  const head = isPackageJson(file.path) ? packageFields(file.headText, file.path) : {};
   return PACKAGE_FIELDS.some(
     (field) => JSON.stringify(base[field]) !== JSON.stringify(head[field]),
   );
+}
+
+// Each required CI check must have passed, and no other check may be pending or red.
+function ciProblems(checks: readonly CiCheck[]): string[] {
+  const problems: string[] = [];
+  for (const name of REQUIRED_CHECKS) {
+    const states = checks.filter((check) => check.name === name).map((check) => check.state);
+    const state = states.find((value) => value !== "pass") ?? states[0] ?? "missing";
+    if (state !== "pass") problems.push(`the required CI check ${name} is ${state}`);
+  }
+  const required: readonly string[] = REQUIRED_CHECKS;
+  for (const check of checks) {
+    if (required.includes(check.name)) continue;
+    if (check.state === "pending" || check.state === "fail") {
+      problems.push(`the CI check ${check.name} is ${check.state}`);
+    }
+  }
+  return problems;
+}
+
+const PERMISSION_FIELD = /^permission-rule: true$/m;
+
+// The rule changes that need the owner: a removed permission rule, and a changed permission rule
+// with no quote that is new at the head (order 109: a permission counts only with the owner's
+// quoted words).
+function permissionProblems(files: readonly PrFile[]): string[] {
+  const problems: string[] = [];
+  for (const file of files) {
+    const old = file.previousPath ?? file.path;
+    const isRule = [file.path, old].some((path) => path.startsWith(RULES) && RULE_FILE.test(path));
+    if (!isRule) continue;
+    const base = file.baseText ?? "";
+    const head = file.status === "removed" ? "" : (file.headText ?? "");
+    if (!PERMISSION_FIELD.test(base) && !PERMISSION_FIELD.test(head)) continue;
+    if (file.status === "removed") {
+      problems.push(`${old}: it removes a permission rule; only the owner removes one`);
+      continue;
+    }
+    if (base === "" || base === head) continue;
+    const baseQuotes = new Set(ownerQuotes(base));
+    if (ownerQuotes(head).every((quote) => baseQuotes.has(quote))) {
+      problems.push(
+        `${file.path}: it changes a permission rule with no new owner quote (order 109)`,
+      );
+    }
+  }
+  return problems;
 }
 
 function memoryGate(input: MergeInput, header: string): MergeResult {
@@ -119,12 +197,14 @@ function memoryGate(input: MergeInput, header: string): MergeResult {
     if (file.headText === undefined) throw new CannotCheck(`no head text for ${file.path}`);
     heads.set(file.path, file.headText);
   }
-  const ci =
-    input.checks.length === 0
-      ? ["no CI check has run"]
-      : input.checks
-          .filter((check) => check.state !== "pass")
-          .map((check) => `the CI check ${check.name} is ${check.state}`);
+  // A rule file needs its base text, so the permission check can compare it.
+  for (const file of input.files) {
+    const old = file.previousPath ?? file.path;
+    if (file.status === "added" || !(old.startsWith(RULES) && RULE_FILE.test(old))) continue;
+    if (file.baseText === undefined)
+      throw new CannotCheck(`no base text for ${file.previousPath ?? file.path}`);
+  }
+  const ci = ciProblems(input.checks);
   if (ci.length > 0) return fail(ci);
   if (input.privateWords === undefined)
     throw new CannotCheck(
@@ -144,6 +224,8 @@ function memoryGate(input: MergeInput, header: string): MergeResult {
     if (quotes.noRecord) throw new CannotCheck(`no owner record (${OWNER_RECORD}/*.md)`);
     if (quotes.problems.length > 0) return fail(quotes.problems);
   }
+  const permissions = permissionProblems(input.files);
+  if (permissions.length > 0) return fail(permissions);
   return {
     exit: 0,
     lines: [
@@ -172,21 +254,40 @@ function codeCheck(input: MergeInput, header: string): MergeResult {
       lines: [
         header,
         ...listed,
-        "Question 3: yes. The owner merges it (AGENTS.md §7): no standing permission covers it.",
+        "Question 4: yes. No standing permission covers it (AGENTS.md §7): only the owner's own request (question 3, path 1) covers it.",
       ],
+    };
+  }
+  const free =
+    "Question 4: no by path. Read the Not-checked items. Question 5: merge only if a standing permission covers it, at the merge bar (R-002 path 2).";
+  const ci = ciProblems(input.checks);
+  if (ci.length > 0) {
+    return {
+      exit: 1,
+      lines: [header, free, ...ci.map((problem) => `Not mergeable now: ${problem}`)],
     };
   }
   return {
     exit: 0,
     lines: [
       header,
-      "Question 3: no by path. Read the Not-checked items, then question 4.",
+      free,
       ...MERGE_LIST.filter((item) => item.notByPath !== undefined).map(
         (item) => `Not checked (${item.text}): ${item.notByPath ?? ""}`,
       ),
       `gh pr merge ${input.number} --merge --match-head-commit ${input.head}`,
     ],
   };
+}
+
+// The reason why the chief merges no PR of this origin, or undefined.
+function originProblem(input: MergeInput): string | undefined {
+  if (input.crossRepository) return "the PR comes from a fork";
+  if (input.author !== input.expectedAuthor) {
+    return `the PR author ${input.author} is not the repository owner`;
+  }
+  if (input.baseRef !== "main") return `the PR is for ${input.baseRef}, not main`;
+  return undefined;
 }
 
 export function classify(input: MergeInput): MergeResult {
@@ -200,8 +301,11 @@ export function classify(input: MergeInput): MergeResult {
     });
   }
   const header = `merge:check #${input.number}, head ${input.head.slice(0, 7)}, ${input.files.length} files`;
+  const origin = originProblem(input);
+  if (origin !== undefined)
+    return printed({ exit: 1, lines: [header, `No chief merge: ${origin}.`] });
   try {
-    if (memory) return memoryGate(input, header);
+    if (memory) return printed(memoryGate(input, header));
     if (names.some(inMemory)) {
       return {
         exit: 1,
@@ -211,7 +315,7 @@ export function classify(input: MergeInput): MergeResult {
         ],
       };
     }
-    return codeCheck(input, header);
+    return printed(codeCheck(input, header));
   } catch (error) {
     if (error instanceof CannotCheck) {
       return cannotCheck({ pr: input.number, reason: error.message, memory });

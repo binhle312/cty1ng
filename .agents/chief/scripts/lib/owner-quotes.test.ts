@@ -70,4 +70,20 @@ describe("checkOwnerQuotes", () => {
       `${RULE}: no "Owner said:" quote, so the rule has no words of the owner to compare`,
     ]);
   });
+
+  it("does not join two record files into one quote", () => {
+    const rules = [{ path: "R-040.md", text: 'Owner said: "the chief may merge" (2026-11-20)\n' }];
+    const result = checkOwnerQuotes({
+      rules,
+      record: ["I said: the chief may", "merge nothing tonight"],
+      minWords: 4,
+    });
+    expect(result.problems.length, "joined records").toBe(1);
+  });
+
+  it("keeps a floor of 4 words whatever the setting says", () => {
+    const rules = [{ path: "R-040.md", text: 'Owner said: "" (2026-11-20)\n' }];
+    const result = checkOwnerQuotes({ rules, record: ["any text"], minWords: 0 });
+    expect(result.problems.length, "floor").toBe(1);
+  });
 });

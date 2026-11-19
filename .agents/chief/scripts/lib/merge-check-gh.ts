@@ -7,7 +7,15 @@ import { type CiCheck, type FileStatus, MAX_FILES, type PrFile, needsText } from
 
 export type Run = (args: readonly string[]) => { status: number; stdout: string };
 export type PrRead =
-  | { ok: true; head: string; files: PrFile[]; checks: CiCheck[] }
+  | {
+      ok: true;
+      head: string;
+      baseRef: string;
+      crossRepository: boolean;
+      author: string;
+      files: PrFile[];
+      checks: CiCheck[];
+    }
   | { ok: false; reason: string; memory: boolean };
 
 const SHA = z.string().regex(/^[0-9a-f]{40}$/);
@@ -23,9 +31,14 @@ const CHECK = z.union([
 const VIEW = z.object({
   headRefOid: SHA,
   baseRefOid: SHA,
+  baseRefName: z.string().min(1),
+  isCrossRepository: z.boolean(),
+  author: z.object({ login: z.string().min(1) }),
   changedFiles: z.number().int().nonnegative(),
   statusCheckRollup: z.array(CHECK).nullable(),
 });
+const VIEW_FIELDS =
+  "headRefOid,baseRefOid,baseRefName,isCrossRepository,author,changedFiles,statusCheckRollup";
 const STATUSES = [
   "added",
   "removed",
@@ -35,15 +48,24 @@ const STATUSES = [
   "changed",
   "unchanged",
 ] as const satisfies readonly FileStatus[];
-const FILE = z.object({
-  filename: z.string().min(1),
-  status: z.enum(STATUSES),
-  previous_filename: z.string().min(1).optional(),
-});
+// A rename or a copy must name its old file: without it, a move out of a listed folder would look
+// like a new file only.
+const FILE = z
+  .object({
+    filename: z.string().min(1),
+    status: z.enum(STATUSES),
+    previous_filename: z.string().min(1).optional(),
+  })
+  .refine(
+    (file) =>
+      (file.status !== "renamed" && file.status !== "copied") ||
+      file.previous_filename !== undefined,
+  );
 const CONTENT = z.object({ encoding: z.literal("base64"), content: z.string() });
 
-// A check passes when it ended as success, skipped or neutral (a job without its secret skips).
-const PASS = new Set(["SUCCESS", "SKIPPED", "NEUTRAL"]);
+// A check passes only when it ended as success. Skipped and neutral are their own state: the
+// classify step accepts them only for a check that is not required.
+const SKIPPED = new Set(["SKIPPED", "NEUTRAL"]);
 function checkOf(check: z.infer<typeof CHECK>): CiCheck {
   if (check.__typename === "StatusContext") {
     const state =
@@ -53,10 +75,13 @@ function checkOf(check: z.infer<typeof CHECK>): CiCheck {
   if (check.status !== "COMPLETED" || check.conclusion === null) {
     return { name: check.name, state: "pending" };
   }
-  return { name: check.name, state: PASS.has(check.conclusion) ? "pass" : "fail" };
+  if (check.conclusion === "SUCCESS") return { name: check.name, state: "pass" };
+  return { name: check.name, state: SKIPPED.has(check.conclusion) ? "skipped" : "fail" };
 }
 
 class Failed extends Error {}
+
+const UTF8 = new TextDecoder("utf-8", { fatal: true });
 
 function parseJson<T>(input: { schema: z.ZodType<T>; text: string; what: string }): T {
   const { schema, text, what } = input;
@@ -78,21 +103,14 @@ export function readPr(number: number, run: Run): PrRead {
     if (result.status !== 0) throw new Failed(`gh failed to read ${what}`);
     return result.stdout;
   };
-  try {
-    const view = parseJson({
+  const readView = () =>
+    parseJson({
       schema: VIEW,
-      text: gh(
-        [
-          "pr",
-          "view",
-          String(number),
-          "--json",
-          "headRefOid,baseRefOid,changedFiles,statusCheckRollup",
-        ],
-        "the PR",
-      ),
+      text: gh(["pr", "view", String(number), "--json", VIEW_FIELDS], "the PR"),
       what: "the PR",
     });
+  try {
+    const view = readView();
     // `--jq '.[]'` writes one file object on each line, for each page.
     const lines = gh(
       ["api", "--paginate", `repos/{owner}/{repo}/pulls/${number}/files`, "--jq", ".[]"],
@@ -114,7 +132,11 @@ export function readPr(number: number, run: Run): PrRead {
         text: gh(["api", `repos/{owner}/{repo}/contents/${encoded}?ref=${ref}`], path),
         what: `the text of ${path}`,
       });
-      return Buffer.from(answer.content, "base64").toString("utf8");
+      try {
+        return UTF8.decode(Buffer.from(answer.content, "base64"));
+      } catch {
+        throw new Failed(`the text of ${path} is not UTF-8`);
+      }
     };
     const files = raw.map((f): PrFile => {
       const file: PrFile = {
@@ -130,9 +152,17 @@ export function readPr(number: number, run: Run): PrRead {
         ...(f.status === "removed" ? {} : { headText: textAt(f.filename, view.headRefOid) }),
       };
     });
+    // The files come from other reads: the head and the base must be the same after them.
+    const after = readView();
+    if (after.headRefOid !== view.headRefOid || after.baseRefOid !== view.baseRefOid) {
+      throw new Failed("the head or the base of the PR changed during the read");
+    }
     return {
       ok: true,
       head: view.headRefOid,
+      baseRef: view.baseRefName,
+      crossRepository: view.isCrossRepository,
+      author: view.author.login,
       files,
       checks: (view.statusCheckRollup ?? []).map(checkOf),
     };
