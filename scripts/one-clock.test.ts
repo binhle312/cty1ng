@@ -342,7 +342,9 @@ describe("the app's code", () => {
   it("makes one clock", () => {
     expect(
       uses.flatMap((use) => use.forbidden),
-      `uses of ${CLOCK_NAME} that ${APP_CLOCK} in ${NOW_FILE} does not own`,
+      `non-test files of frontend/src/ may use ${CLOCK_NAME} only for its declaration and ` +
+        `for \`const ${APP_CLOCK}\` in ${NOW_FILE}, and ${INTERVAL_NAME} only in ${NOW_FILE}; ` +
+        `these uses are somewhere else`,
     ).toEqual([]);
   });
 });
