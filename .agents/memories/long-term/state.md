@@ -11,7 +11,7 @@ act on it.
 
 | PR | What | Waits for |
 | --- | --- | --- |
-| #139 | The chief's restore kit: the `decision-pages` skill, this memory, `pnpm check:memory`, the `AGENTS.md` words | The restore drill and the gates, then the owner's merge (it changes `AGENTS.md`). |
+| #139 | The chief's restore kit: the `decision-pages` skill, this memory, `pnpm check:memory`, the `AGENTS.md` words | The owner's decisions on review round 1 (below), then the owner's merge (it changes `AGENTS.md`). |
 | #107 | The redesign of the break runner (five gaps) | The owner's answers R1 to R11. Its leader runs on Fable 5.2, effort `high` (the owner's word). |
 | #140 | The `overnight` skill: owner-started night work with a night card | Its own leader is at work. |
 
@@ -19,6 +19,9 @@ act on it.
 
 - #107: the answers R1 to R11, and the proposal DQ-866 (its home is #107).
 - #139: the proposal DQ-877 (CodeQL is the check for file races; no new check; one "Do not" line).
+- #139, review round 1: who merges a PR that changes a rule about merges, approvals or
+  permissions, or `identity.md` (the `AGENTS.md` words W3 to W5); who marks a PR Ready before a
+  chief merge (R-002 and `AGENTS.md` §10 differ); the device and time zone lines of `identity.md`.
 - The UI review after M3 (`docs/status.md`, "Waiting on the owner").
 
 ## The chief's queue

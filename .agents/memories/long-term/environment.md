@@ -45,7 +45,8 @@ to it. Check a version fact before you trust it.
   prompt "permission-root relocation", and only the owner can answer it. Tell each leader: "you
   are started inside your worktree; do NOT use the EnterWorktree tool".
 - The Write and Edit tools are blocked in the main checkout for a background job and its
-  subagents. Edit files there with `python3 -I` or a quoted heredoc.
+  subagents. If a tool or the harness blocks a write, do not route around it: work in your own
+  worktree, or ask the owner.
 - The folder of a background job is deleted with the job. Keep nothing there that must stay.
 - A `claude -p` that a background job starts fails with "Invalid API key". Run it with
   `env -u ANTHROPIC_API_KEY`, so that it uses the normal login. Copy no credentials.

@@ -1,8 +1,9 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { addExcludeLines } from "./lib/check-memory-local.ts";
+import { addExcludeLines, memoryPaths, trackedPaths } from "./lib/check-memory-local.ts";
 import {
   checkExclude,
   checkFormats,
@@ -10,6 +11,7 @@ import {
   checkMemory,
   checkPrivacy,
   checkPrivateWords,
+  checkQuotes,
   checkRequiredFiles,
   checkRules,
   checkRulesIndex,
@@ -314,6 +316,21 @@ describe("checkRules: body", () => {
     ]);
   });
 
+  it("counts the quotes of one Owner said line together", () => {
+    const half = Array.from({ length: 13 }, () => "word").join(" ");
+    const body = BODY.replace('"do one thing at a time"', `"${half}" and "${half}"`);
+    expect(rulesWith(R2, rule(R2_FIELDS, body)), "two quotes on one line").toEqual([
+      `${R2}: an "Owner said:" quote has 26 words; the limit is 25 (setting quote_max_words)`,
+    ]);
+  });
+
+  it("names a rule id with RegExp characters, with no exception", () => {
+    expect(rulesWith(R2, rule({ ...R2_FIELDS, id: "R-(1" })), "id R-(1").toEqual([
+      `${R2}: field \`id\` is "R-(1"; it must be R- and three digits`,
+      `${R2}: the file name must be "R-(1-<words>.md"`,
+    ]);
+  });
+
   it("names a quote with no date", () => {
     const body = BODY.replace(" (2026-11-15)", "");
     expect(rulesWith(R2, rule(R2_FIELDS, body)), "no date").toEqual([
@@ -434,7 +451,7 @@ describe("checkPrivacy", () => {
 
   it("finds a job id", () => {
     expect(found(["It ran as job", " ", "abcdef12."].join("")), "job id").toEqual([
-      `${where}: a session, job or ref id; the memory is public, so remove it`,
+      `${where}: a session, job, agent or ref id; the memory is public, so remove it`,
     ]);
   });
 
@@ -492,6 +509,83 @@ describe("checkPrivacy", () => {
       `${where}: a path into tmp/, which is on one machine only; remove it`,
     ]);
   });
+
+  // The forms below came from review round 1 of #139 (DQ-879).
+  const ID = "a session, job, agent or ref id; the memory is public, so remove it";
+  const KEY = "a key or a token; the memory is public, so remove it";
+  const TMP = "a path into tmp/, which is on one machine only; remove it";
+  const lines = (count: number, kind: string): string[] =>
+    Array.from({ length: count }, (_, k) => `${L}/environment.md:${k + 3}: ${kind}`);
+
+  it("finds a base62 session id", () => {
+    const problems = found(["Resume session", "_", "01WaaXyZ9kLm."].join(""));
+    expect(problems, "base62 session id").toEqual([`${where}: ${ID}`]);
+  });
+
+  it("finds a session link of the web app", () => {
+    const link = ["Trailer: https://claude.ai/code/session", "_", "01WaaXyZ9kLm"].join("");
+    expect(found(link), "session link").toEqual([`${where}: ${ID}`]);
+  });
+
+  it("finds a job id that is not hex", () => {
+    expect(found(["The job", "-id: b8f3k2."].join("")), "non-hex job id").toEqual([
+      `${where}: ${ID}`,
+    ]);
+  });
+
+  it("finds an agent id", () => {
+    expect(found(["Ask agent", " a1b2c3d4e5."].join("")), "agent id").toEqual([`${where}: ${ID}`]);
+  });
+
+  it("finds a session id after the word id", () => {
+    const problems = found(["The session", " id: abcdef12."].join(""));
+    expect(problems, "session id after id").toEqual([`${where}: ${ID}`]);
+  });
+
+  it("finds a Google API key", () => {
+    expect(found(["Key AI", "za", "Q".repeat(35), "."].join("")), "Google key").toEqual([
+      `${where}: ${KEY}`,
+    ]);
+  });
+
+  it("finds the other GitHub token kinds", () => {
+    const tokens = ["gho", "ghs", "ghu", "ghr"].map((kind) => `${kind}_${"e".repeat(30)}`);
+    expect(found(tokens.join("\n")), "GitHub token kinds").toEqual(lines(4, KEY));
+  });
+
+  it("finds a JWT", () => {
+    const part = "f".repeat(12);
+    const jwt = ["ey", "J", part, ".", part, ".", part].join("");
+    expect(found(`Token ${jwt}.`), "JWT").toEqual([`${where}: ${KEY}`]);
+  });
+
+  it("finds tmp paths in other forms", () => {
+    const paths = ["See ./tmp/x.md.", 'See "tmp/x.md".', "See project/tmp/owner/x.html."];
+    expect(found(paths.join("\n")), "tmp path forms").toEqual(lines(3, TMP));
+  });
+
+  it("finds the root home and a backslash home path", () => {
+    const paths = [
+      ["See /", "root", "/notes."].join(""),
+      ["See \\", "home", "\\user\\x."].join(""),
+    ];
+    expect(found(paths.join("\n")), "home path forms").toEqual(
+      lines(2, "a home folder path; the memory is public, so remove it"),
+    );
+  });
+
+  it("finds an IPv6 address", () => {
+    const short = ["2001", "db8", "", "8a2e", "370", "7334"].join(":");
+    const full = ["2001", "0db8", "85a3", "0000", "0000", "8a2e", "0370", "7334"].join(":");
+    expect(found(`Host ${short}.\nHost ${full}.`), "IPv6").toEqual(
+      lines(2, "an IP address; the memory is public, so remove it"),
+    );
+  });
+
+  it("passes the words session, job and agent in plain text", () => {
+    const text = "Resume the newest session id. Each job folder goes. An agent id is private.";
+    expect(found(text), "plain words").toEqual([]);
+  });
 });
 
 describe("checkSizes", () => {
@@ -523,6 +617,14 @@ describe("checkLinks", () => {
     ]);
   });
 
+  it("names a link that goes outside the repository", () => {
+    const files = tree({ [`${L}/restore.md`]: "# Restore\n\n[x](../../../../AGENTS.md)\n" });
+    const exists = (path: string): boolean => path === "AGENTS.md" || files.has(path);
+    expect(checkLinks(files, exists), "link outside the repository").toEqual([
+      `${L}/restore.md: the link "../../../../AGENTS.md" goes outside the repository`,
+    ]);
+  });
+
   it("passes web links, anchors and links with an anchor", () => {
     const text =
       "# Restore\n\n[a](https://example.test) [b](#top) [c](rules/R-002-new-rule.md#x)\n";
@@ -531,6 +633,52 @@ describe("checkLinks", () => {
       checkLinks(files, (path) => files.has(path)),
       "good links",
     ).toEqual([]);
+  });
+});
+
+describe("checkQuotes", () => {
+  it("names a long quote in identity.md, lessons.md and state.md", () => {
+    const long = `"${Array.from({ length: 26 }, () => "word").join(" ")}"`;
+    const files = tree({
+      [`${L}/identity.md`]: `# Identity\n\n- The owner said ${long}.\n`,
+      [`${L}/lessons.md`]: `# Lessons\n\n- L-01 (2026-11-13): A trap ${long}. Fix: a fix.\n`,
+      [`${L}/state.md`]: `# State\n\nAs of: 2026-11-19\nMain: 934b6ad\nPromoted through: 2026-11-19\n${long}\n`,
+    });
+    const limit = "a quote has 26 words; the limit is 25 (setting quote_max_words)";
+    expect(checkQuotes(files, LIMITS), "long quotes").toEqual([
+      `${L}/identity.md:3: ${limit}`,
+      `${L}/lessons.md:3: ${limit}`,
+      `${L}/state.md:6: ${limit}`,
+    ]);
+  });
+
+  it("passes short quotes", () => {
+    const files = tree({ [`${L}/identity.md`]: '# Identity\n\n- Call them "the owner".\n' });
+    expect(checkQuotes(files, LIMITS), "short quote").toEqual([]);
+  });
+});
+
+describe("memoryPaths and trackedPaths (git file lists)", () => {
+  it("reads non-ASCII file names from git", () => {
+    const repo = mkdtempSync(join(tmpdir(), "check-memory-git-"));
+    const git = (...args: string[]): string =>
+      execFileSync("git", args, { cwd: repo, encoding: "utf8" });
+    try {
+      git("init", "-q");
+      const name = "ghi-chú.md";
+      mkdirSync(join(repo, L), { recursive: true });
+      mkdirSync(join(repo, `${M}/short-term`), { recursive: true });
+      writeFileSync(join(repo, L, name), "x\n");
+      writeFileSync(join(repo, M, "short-term", name), "x\n");
+      git("add", "--", `${M}/short-term/${name}`);
+      const paths = { memory: memoryPaths(repo), tracked: trackedPaths(repo) };
+      expect(paths, "non-ASCII names").toEqual({
+        memory: [`${L}/${name}`, `${M}/short-term/${name}`],
+        tracked: [`${M}/short-term/${name}`],
+      });
+    } finally {
+      rmSync(repo, { recursive: true, force: true });
+    }
   });
 });
 

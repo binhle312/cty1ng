@@ -125,8 +125,8 @@
           "file": "scripts/lib/check-memory.ts",
           "edits": [
             {
-              "find": "[0-9a-f]{6,}\\b/i",
-              "replace": "[0-9a-f]{9,}\\b/i"
+              "find": "[A-Za-z0-9]{6,}|[0-9a-f]{6,})",
+              "replace": "[A-Za-z0-9]{9,}|[0-9a-f]{9,})"
             }
           ]
         }
@@ -169,8 +169,8 @@
           "file": "scripts/lib/check-memory.ts",
           "edits": [
             {
-              "find": "/\\bghp_[A-Za-z0-9]{20,}/",
-              "replace": "/\\bghp_[A-Za-z0-9]{40,}/"
+              "find": "/\\bgh[pousr]_[A-Za-z0-9]{20,}/",
+              "replace": "/\\bgh[pousr]_[A-Za-z0-9]{40,}/"
             }
           ]
         }
@@ -515,6 +515,336 @@
           ]
         }
       ]
+    },
+    {
+      "id": "P16-session-base62",
+      "claim": "A base62 session id is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds a base62 session id"
+      },
+      "assertion": "expect(problems, \"base62 session id\")",
+      "breaks": [
+        {
+          "id": "P16-session-20",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\bsession_[A-Za-z0-9]{8,}/",
+              "replace": "/\\bsession_[A-Za-z0-9]{20,}/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P17-session-link",
+      "claim": "A session link of the web app is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds a session link of the web app"
+      },
+      "assertion": "expect(found(link), \"session link\")",
+      "breaks": [
+        {
+          "id": "P17-session-20",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\bsession_[A-Za-z0-9]{8,}/",
+              "replace": "/\\bsession_[A-Za-z0-9]{20,}/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P18-job-non-hex",
+      "claim": "A job id that is not hex is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds a job id that is not hex"
+      },
+      "assertion": "\"non-hex job id\").toEqual([",
+      "breaks": [
+        {
+          "id": "P18-hex-only",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "(?=[A-Za-z0-9]*\\d)[A-Za-z0-9]{6,}|",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P19-agent",
+      "claim": "An agent id is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds an agent id"
+      },
+      "assertion": "\"agent id\").toEqual([",
+      "breaks": [
+        {
+          "id": "P19-no-agent",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "(job|bg|session|agent|ref)",
+              "replace": "(job|bg|session|ref)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P20-session-id-word",
+      "claim": "A session id after the word id is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds a session id after the word id"
+      },
+      "assertion": "expect(problems, \"session id after id\")",
+      "breaks": [
+        {
+          "id": "P20-no-id-word",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "([\\s_-]?id)?",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P21-google",
+      "claim": "A Google API key is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds a Google API key"
+      },
+      "assertion": "\"Google key\").toEqual([",
+      "breaks": [
+        {
+          "id": "P21-google-36",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\bAIza[0-9A-Za-z_-]{35}/",
+              "replace": "/\\bAIza[0-9A-Za-z_-]{36}/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P22-gh-kinds",
+      "claim": "The gho_, ghs_, ghu_ and ghr_ tokens are found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds the other GitHub token kinds"
+      },
+      "assertion": "\"GitHub token kinds\").toEqual(",
+      "breaks": [
+        {
+          "id": "P22-ghp-only",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "gh[pousr]_",
+              "replace": "gh[p]_"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P23-jwt",
+      "claim": "A JWT is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds a JWT"
+      },
+      "assertion": "\"JWT\").toEqual(",
+      "breaks": [
+        {
+          "id": "P23-no-jwt",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\beyJ",
+              "replace": "/\\beyK"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P24-tmp-forms",
+      "claim": "A path into tmp/ after ./, a quote or a folder is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds tmp paths in other forms"
+      },
+      "assertion": "\"tmp path forms\").toEqual(",
+      "breaks": [
+        {
+          "id": "P24-old-prefix",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "(^|[\\s`(\"'/=:])tmp",
+              "replace": "(^|[\\s`(])tmp"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P25-home-forms",
+      "claim": "The root home and a backslash home path are found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds the root home and a backslash home path"
+      },
+      "assertion": "\"home path forms\").toEqual(",
+      "breaks": [
+        {
+          "id": "P25-no-root",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "|\\/root\\/|\\\\home\\\\[A-Za-z0-9._-]",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P26-ipv6",
+      "claim": "An IPv6 address is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "finds an IPv6 address"
+      },
+      "assertion": "\"IPv6\").toEqual(",
+      "breaks": [
+        {
+          "id": "P26-no-full",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\b([0-9a-f]{1,4}:){7}",
+              "replace": "/\\bZ\\b([0-9a-f]{1,4}:){7}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L1-outside-link",
+      "claim": "A link that goes above the repository root is named (security test: a path escape)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names a link that goes outside the repository"
+      },
+      "assertion": "\"link outside the repository\").toEqual([",
+      "breaks": [
+        {
+          "id": "L1-pop-silently",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "else if (parts.pop() === undefined) return undefined;",
+              "replace": "else parts.pop();"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "G1-non-ascii-memory",
+      "claim": "check:memory reads a non-ASCII file name from git as it is (security test: a quoted name escaped every check)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "reads non-ASCII file names from git"
+      },
+      "assertion": "expect(paths, \"non-ASCII names\").toEqual({",
+      "breaks": [
+        {
+          "id": "G1-no-z",
+          "file": "scripts/lib/check-memory-local.ts",
+          "edits": [
+            {
+              "find": "[...args.slice(0, 1), \"-z\", ...args.slice(1)]",
+              "replace": "args"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "G2-non-ascii-merge",
+      "claim": "check:status reads a non-ASCII file name of a merge as it is (late test: a quoted name changes the promotion skip)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "lists a file name with non-ASCII characters as it is"
+      },
+      "assertion": "expect(merge.files, \"non-ASCII name\").toEqual([name]);",
+      "breaks": [
+        {
+          "id": "G2-no-z",
+          "file": "scripts/lib/check-status-git.ts",
+          "edits": [
+            {
+              "find": "\"--no-renames\", \"-z\", ",
+              "replace": "\"--no-renames\", "
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "G3-move",
+      "claim": "check:status lists both paths of a move into long-term memory (late test: a move must not count as a promotion)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "lists both paths of a file that moves into long-term memory"
+      },
+      "assertion": "expect(merge.files, \"both paths of a move\").toEqual([",
+      "breaks": [
+        {
+          "id": "G3-renames",
+          "file": "scripts/lib/check-status-git.ts",
+          "edits": [
+            {
+              "find": "\"--no-renames\", ",
+              "replace": ""
+            }
+          ]
+        }
+      ]
     }
   ],
   "exempt": [
@@ -645,6 +975,16 @@
     },
     {
       "file": "scripts/check-memory.test.ts",
+      "name": "counts the quotes of one Owner said line together",
+      "reason": "test first: the red run of review round 1 in the PR; not a security, late or order test"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a rule id with RegExp characters, with no exception",
+      "reason": "test first: the red run of review round 1 in the PR (the RegExp threw a SyntaxError); not a security, late or order test"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
       "name": "names a quote with no date",
       "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
     },
@@ -695,6 +1035,11 @@
     },
     {
       "file": "scripts/check-memory.test.ts",
+      "name": "passes the words session, job and agent in plain text",
+      "reason": "a pass case against a false hit: it passed before and after the fix (red run of review round 1)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
       "name": "names a file over its line limit",
       "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
     },
@@ -712,6 +1057,16 @@
       "file": "scripts/check-memory.test.ts",
       "name": "passes web links, anchors and links with an anchor",
       "reason": "test first: red run 1 in the PR (scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "names a long quote in identity.md, lessons.md and state.md",
+      "reason": "test first: the red run of review round 1 in the PR (checkQuotes was a stub); not a security, late or order test"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "passes short quotes",
+      "reason": "a pass case against a false hit: it passed before and after the fix (red run of review round 1)"
     },
     {
       "file": "scripts/check-status.test.ts",

@@ -16,7 +16,7 @@ One trap on each line, with its fix. The date is the day of the trap.
 - L-12 (2026-11-14): A break report was of a head older than the last change of a test. Fix: ask for a new run after each change of a test or of the list.
 - L-13 (2026-11-13): The arena judge picked the candidate of its own model family three times. Fix: score the candidates yourself, and give the owner both scores.
 - L-14 (2026-11-13): A file that the arena seats read changed while the arena ran. Fix: change no such file during an arena, and note each change with its time.
-- L-15 (2026-11-15): A subagent of the chief cannot write in the shared checkout either. Fix: ask it to return the text, then save it with Bash.
+- L-15 (2026-11-15): A subagent of the chief cannot write in the shared checkout either. Fix: ask it to return the text, and write the text in your own worktree, or ask the owner. Do not route around the block.
 - L-16 (2026-11-15): The break of a "no loop" test made a render loop that used all memory (#123). Fix: give such a break its own bound, such as a render cap or a limited number of retries.
 - L-17 (2026-11-15): The kill of a stray process was denied. Fix: ask the owner; never ask another session to do it.
 - L-18 (2026-11-11): Another session switched the branch of the main checkout, and a new file went to its branch. Fix: work in your own worktree, and read `git status -sb` before each write.

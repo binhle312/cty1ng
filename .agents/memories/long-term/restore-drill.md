@@ -5,8 +5,9 @@ The test that a fresh agent can be the chief from the repository alone. Run it e
 
 ## How to run it
 
-1. Export `HEAD` with `git archive` into a new folder outside every git repository. Leave out this
-   file and the `tmp/` folder. A new folder path has no auto-memory.
+1. Export `HEAD` with `git archive` into a new folder outside every git repository: a folder in the
+   job folder of the session (the folder that `$CLAUDE_JOB_DIR` names; R-031 allows it). Leave out
+   this file and the `tmp/` folder. A new folder path has no auto-memory.
 2. In that folder, start a fresh session with project settings only:
    `claude -p --setting-sources project,local --model claude-sonnet-5-5 --no-session-persistence "<prompt>"`.
    From a background job, add `env -u ANTHROPIC_API_KEY` in front (`environment.md`).

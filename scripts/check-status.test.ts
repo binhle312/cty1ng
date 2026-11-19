@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -245,5 +245,56 @@ describe("mergeFiles", () => {
     } finally {
       rmSync(repo, { recursive: true, force: true });
     }
+  });
+
+  // A merge of branch `memory` into main, after `change` ran on that branch (review round 1 of
+  // #139, DQ-878).
+  function filesOfMerge(change: (repo: string, git: (...args: string[]) => string) => void): {
+    files: string[];
+  } {
+    const repo = mkdtempSync(join(tmpdir(), "check-status-files-"));
+    const env = {
+      ...process.env,
+      GIT_AUTHOR_NAME: "t",
+      GIT_AUTHOR_EMAIL: "t@example.invalid",
+      GIT_COMMITTER_NAME: "t",
+      GIT_COMMITTER_EMAIL: "t@example.invalid",
+    };
+    const git = (...args: string[]): string =>
+      execFileSync("git", args, { cwd: repo, env, encoding: "utf8" });
+    try {
+      git("init", "-q", "-b", "main");
+      execFileSync("mkdir", ["-p", join(repo, "docs"), join(repo, ".agents/memories/long-term")]);
+      writeFileSync(join(repo, "docs/policy.md"), "A policy of the project.\n");
+      git("add", ".");
+      git("commit", "-q", "-m", "Initial commit");
+      git("checkout", "-q", "-b", "memory");
+      change(repo, git);
+      git("commit", "-q", "-m", "change");
+      git("checkout", "-q", "main");
+      git("merge", "-q", "--no-ff", "memory", "-m", "Merge pull request #6 from owner/memory");
+      return { files: mergeFiles(repo, git("rev-parse", "HEAD").trim()) };
+    } finally {
+      rmSync(repo, { recursive: true, force: true });
+    }
+  }
+
+  it("lists a file name with non-ASCII characters as it is", () => {
+    const name = ".agents/memories/long-term/ghi-chú.md";
+    const merge = filesOfMerge((repo, git) => {
+      writeFileSync(join(repo, name), "x\n");
+      git("add", ".");
+    });
+    expect(merge.files, "non-ASCII name").toEqual([name]);
+  });
+
+  it("lists both paths of a file that moves into long-term memory", () => {
+    const merge = filesOfMerge((_repo, git) => {
+      git("mv", "docs/policy.md", ".agents/memories/long-term/policy.md");
+    });
+    expect(merge.files, "both paths of a move").toEqual([
+      ".agents/memories/long-term/policy.md",
+      "docs/policy.md",
+    ]);
   });
 });

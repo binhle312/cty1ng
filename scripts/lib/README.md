@@ -8,10 +8,10 @@ The code behind the repository scripts. The tests sit next to the files. A file 
 | `check-index.ts` | The checks of `pnpm check:index`: folder indexes, story ranges, decisions metadata |
 | `check-design.ts` | The design snapshot colours against the token file (called by `check-index.ts`) |
 | `check-memory.ts` | The checks of `pnpm check:memory`: the chief memory fields, rules index, privacy, sizes |
-| `check-memory-local.ts` | The machine part of `pnpm check:memory --local`: the exclude lines (`--fix`) and a read that allows a missing file |
+| `check-memory-local.ts` | The machine part of `pnpm check:memory`: the git file lists of the memory (`-z`), the exclude lines (`--local --fix`) and a read that allows a missing file |
 | `check-events.ts` | The checks of `pnpm check:events` |
 | `check-status.ts` | The checks of `pnpm check:status` (pure) |
-| `check-status-git.ts` | Reads the first-parent git history for `pnpm check:status` |
+| `check-status-git.ts` | Reads the first-parent git history and the files of a merge (`-z`, `--no-renames`) for `pnpm check:status` |
 | `records-counts.ts` | The counts of `pnpm records:counts`: the ledger rows give the Audit row and the register cells |
 | `check-bundle.ts` | The bundle budget, measured on a production build |
 | `breaks.ts` | The break list of a PR: claims, breaks, links, coverage (pure) |

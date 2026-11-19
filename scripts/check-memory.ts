@@ -8,7 +8,6 @@ import { existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import {
-  MEMORY_DIR,
   RULES_INDEX,
   SHORT_TERM,
   checkExclude,
@@ -16,7 +15,12 @@ import {
   checkPrivateWords,
   rulesIndex,
 } from "./lib/check-memory.ts";
-import { addExcludeLines, readIfExists } from "./lib/check-memory-local.ts";
+import {
+  addExcludeLines,
+  memoryPaths,
+  readIfExists,
+  trackedPaths,
+} from "./lib/check-memory-local.ts";
 import { report } from "./lib/report.ts";
 
 const { values } = parseArgs({
@@ -30,13 +34,8 @@ const { values } = parseArgs({
 const git = (...args: string[]): string => execFileSync("git", args, { encoding: "utf8" });
 const lines = (text: string): string[] => text.split("\n").filter((line) => line !== "");
 
-// Each memory file that git tracks or would track: a new file counts before `git add`, and the
-// ignored short-term files never count.
-const paths = lines(
-  git("ls-files", "--cached", "--others", "--exclude-standard", "--", MEMORY_DIR),
-);
 const files = new Map<string, string>();
-for (const path of paths) {
+for (const path of memoryPaths(".")) {
   // A tracked file that was deleted in the work tree is not part of the memory any more.
   const text = readIfExists(path);
   if (text !== undefined) files.set(path, text);
@@ -48,8 +47,11 @@ if (values.write) {
   files.set(RULES_INDEX, index);
 }
 
-const tracked = lines(git("ls-files", "--", SHORT_TERM));
-const problems = checkMemory({ files, exists: (path) => existsSync(path), tracked });
+const problems = checkMemory({
+  files,
+  exists: (path) => existsSync(path),
+  tracked: trackedPaths("."),
+});
 const warnings: string[] = [];
 
 if (values.local) {

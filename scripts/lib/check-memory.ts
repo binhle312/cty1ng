@@ -94,6 +94,15 @@ function dirOf(path: string): string {
   return path.slice(0, path.lastIndexOf("/"));
 }
 
+function countWords(text: string): number {
+  return text.split(/\s+/).filter((word) => word !== "").length;
+}
+
+// A field value goes into a RegExp as plain text: "R-(1" must give a problem, not an exception.
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function baseName(path: string): string {
   return path.slice(path.lastIndexOf("/") + 1);
 }
@@ -207,7 +216,7 @@ function fieldProblems(rule: Rule): string[] {
     if (!RULE_ID.test(id)) {
       problems.push(`${path}: field \`id\` is "${id}"; it must be R- and three digits`);
     }
-    if (!new RegExp(`^${id}-[a-z0-9-]+\\.md$`).test(baseName(path))) {
+    if (!new RegExp(`^${escapeRegExp(id)}-[a-z0-9-]+\\.md$`).test(baseName(path))) {
       problems.push(`${path}: the file name must be "${id}-<words>.md"`);
     }
   }
@@ -271,13 +280,12 @@ function bodyProblems(rule: Rule, limits: Limits): string[] {
     if (!/\(\d{4}-\d{2}-\d{2}\)/.test(line)) {
       problems.push(`${path}: an "Owner said:" line has no date (YYYY-MM-DD)`);
     }
-    for (const quote of quotes) {
-      const words = quote.split(/\s+/).filter((word) => word !== "").length;
-      if (maxWords !== undefined && words > maxWords) {
-        problems.push(
-          `${path}: an "Owner said:" quote has ${words} words; the limit is ${maxWords} (setting quote_max_words)`,
-        );
-      }
+    // The quotes of one line count together: two short quotes make one long quote.
+    const words = countWords(quotes.join(" "));
+    if (maxWords !== undefined && words > maxWords) {
+      problems.push(
+        `${path}: an "Owner said:" quote has ${words} words; the limit is ${maxWords} (setting quote_max_words)`,
+      );
     }
   }
   return problems;
@@ -490,7 +498,7 @@ export function checkFormats(files: MemoryFiles): string[] {
 const PUBLIC = "the memory is public, so remove it";
 const PRIVATE_PATTERNS: [RegExp, string][] = [
   [
-    /\/home\/[A-Za-z0-9._-]|\/Users\/[A-Za-z0-9._-]|[A-Za-z]:\\Users\\|~\/|\$HOME\b/,
+    /\/home\/[A-Za-z0-9._-]|\/Users\/[A-Za-z0-9._-]|\/root\/|\\home\\[A-Za-z0-9._-]|[A-Za-z]:\\Users\\|~\/|\$HOME\b/,
     `a home folder path; ${PUBLIC}`,
   ],
   [
@@ -498,19 +506,33 @@ const PRIVATE_PATTERNS: [RegExp, string][] = [
     `an email address; ${PUBLIC}`,
   ],
   [/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i, `a uuid; ${PUBLIC}`],
+  // An id after the word: hex, or letters and digits with at least one digit ("job-id: b8f3k2",
+  // "agent a1b2c3d4e5", "session id: abcdef12").
   [
-    /\b(job|bg|session|ref)\b[\s`'"([:=]{1,3}[0-9a-f]{6,}\b/i,
-    `a session, job or ref id; ${PUBLIC}`,
+    /\b(job|bg|session|agent|ref)([\s_-]?id)?[\s`'"([:=#-]{1,3}((?=[A-Za-z0-9]*\d)[A-Za-z0-9]{6,}|[0-9a-f]{6,})\b/i,
+    `a session, job, agent or ref id; ${PUBLIC}`,
   ],
+  // A base62 session id, also inside a link of the web app ("session_01Waa...").
+  [/\bsession_[A-Za-z0-9]{8,}/, `a session, job, agent or ref id; ${PUBLIC}`],
   [/\bsk-[A-Za-z0-9_-]{16,}/, `a key or a token; ${PUBLIC}`],
-  [/\bghp_[A-Za-z0-9]{20,}/, `a key or a token; ${PUBLIC}`],
+  [/\bgh[pousr]_[A-Za-z0-9]{20,}/, `a key or a token; ${PUBLIC}`],
+  [/\bAIza[0-9A-Za-z_-]{35}/, `a key or a token; ${PUBLIC}`],
+  [/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/, `a key or a token; ${PUBLIC}`],
   [/\bgithub_pat_[A-Za-z0-9_]{20,}/, `a key or a token; ${PUBLIC}`],
   [/\bAKIA[0-9A-Z]{16}\b/, `a key or a token; ${PUBLIC}`],
   [/\bxox[abprs]-[A-Za-z0-9-]{10,}/, `a key or a token; ${PUBLIC}`],
   [/-----BEGIN [A-Z ]*PRIVATE KEY-----/, `a key or a token; ${PUBLIC}`],
   [/\b(?!127\.0\.0\.1\b)(?!0\.0\.0\.0\b)(\d{1,3}\.){3}\d{1,3}\b/, `an IP address; ${PUBLIC}`],
+  // IPv6: the full form, or a short form with "::" after at least one group ("::1" is local).
+  [
+    /\b([0-9a-f]{1,4}:){7}[0-9a-f]{1,4}\b|\b([0-9a-f]{1,4}:){1,6}:([0-9a-f]{1,4}\b)?/i,
+    `an IP address; ${PUBLIC}`,
+  ],
   [/claude attach [0-9a-f]{4,}/, `a claude attach id; ${PUBLIC}`],
-  [/(^|[\s`(])tmp\/[A-Za-z0-9._-]/, "a path into tmp/, which is on one machine only; remove it"],
+  [
+    /(^|[\s`("'/=:])tmp\/[A-Za-z0-9._-]/,
+    "a path into tmp/, which is on one machine only; remove it",
+  ],
 ];
 
 export function checkPrivacy(files: MemoryFiles): string[] {
@@ -519,6 +541,29 @@ export function checkPrivacy(files: MemoryFiles): string[] {
     text.split("\n").forEach((line, index) => {
       for (const [pattern, kind] of PRIVATE_PATTERNS) {
         if (pattern.test(line)) problems.push(`${path}:${index + 1}: ${kind}`);
+      }
+    });
+  }
+  return problems;
+}
+
+// The files outside rules/ that can hold the owner's words. Each quote in double quotes has the
+// limit of a rule quote. Other files quote commands and prompts, which are not the owner's words.
+const QUOTE_FILES = ["identity.md", "lessons.md", "state.md"].map((name) => `${LONG_TERM}/${name}`);
+
+export function checkQuotes(files: MemoryFiles, limits: Limits): string[] {
+  const maxWords = limits.get("quote_max_words");
+  if (maxWords === undefined) return [];
+  const problems: string[] = [];
+  for (const path of QUOTE_FILES) {
+    (files.get(path) ?? "").split("\n").forEach((line, index) => {
+      for (const match of line.matchAll(/"([^"]*)"/g)) {
+        const words = countWords(match[1] ?? "");
+        if (words > maxWords) {
+          problems.push(
+            `${path}:${index + 1}: a quote has ${words} words; the limit is ${maxWords} (setting quote_max_words)`,
+          );
+        }
       }
     });
   }
@@ -583,7 +628,9 @@ export function checkLinks(files: MemoryFiles, exists: (path: string) => boolean
       const link = match[1] ?? "";
       if (/^[a-z]+:/i.test(link) || link.startsWith("#")) continue;
       const target = resolve(dirOf(path), link.split("#")[0] ?? "");
-      if (!exists(target)) {
+      if (target === undefined) {
+        problems.push(`${path}: the link "${link}" goes outside the repository`);
+      } else if (!exists(target)) {
         problems.push(`${path}: the link "${link}" goes to ${target}, which does not exist`);
       }
     }
@@ -591,12 +638,13 @@ export function checkLinks(files: MemoryFiles, exists: (path: string) => boolean
   return problems;
 }
 
-function resolve(dir: string, link: string): string {
+// The repository path of a link, or undefined when a ".." goes above the repository root.
+function resolve(dir: string, link: string): string | undefined {
   const parts = link.startsWith("/") ? [] : dir.split("/");
   for (const part of link.split("/")) {
     if (part === "" || part === ".") continue;
-    if (part === "..") parts.pop();
-    else parts.push(part);
+    if (part !== "..") parts.push(part);
+    else if (parts.pop() === undefined) return undefined;
   }
   return parts.join("/");
 }
@@ -652,6 +700,7 @@ export function checkMemory(input: {
     ...checkRulesIndex(files),
     ...checkFormats(files),
     ...checkPrivacy(files),
+    ...checkQuotes(files, settings.limits),
     ...checkSizes(files, settings.limits),
     ...checkLinks(files, exists),
     ...checkTracked(tracked),
