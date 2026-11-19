@@ -15,3 +15,12 @@ export function readHistory(repo: string, rev: string): { log: string; problems:
   }
   return { log: git("log", "--first-parent", "--format=%H%x09%cI%x09%s", rev, "--"), problems: [] };
 }
+
+// The files that a merge commit changes against its first parent: what the PR changed.
+export function mergeFiles(repo: string, sha: string): string[] {
+  const out = execFileSync("git", ["diff", "--name-only", `${sha}^1`, sha, "--"], {
+    cwd: repo,
+    encoding: "utf8",
+  });
+  return out.split("\n").filter((line) => line !== "");
+}

@@ -50,14 +50,28 @@ export function doneRows(statusMd: string): { prs: Set<number>; problems: string
   return { prs, problems };
 }
 
+// A memory promotion PR changes only long-term memory, and it needs no Done row
+// (`.agents/memories/README.md`, "Promote"; AGENTS.md §9). One file outside that folder makes it
+// an ordinary PR.
+export const PROMOTION_FOLDER = ".agents/memories/long-term/";
+
+export function isPromotion(files: readonly string[]): boolean {
+  return files.length > 0 && files.every((file) => file.startsWith(PROMOTION_FOLDER));
+}
+
+// `changedFiles` gives the files of a merged PR; the caller reads them from git, and only for a PR
+// with no Done row. With no `changedFiles`, no PR counts as a promotion.
 export function checkStatus(input: {
   merged: readonly Merged[];
   statusMd: string;
   since: string;
+  changedFiles?: (merged: Merged) => readonly string[];
 }): string[] {
   const done = doneRows(input.statusMd);
+  const changedFiles = input.changedFiles;
   const missing = input.merged
     .filter((m) => m.date >= input.since && !done.prs.has(m.pr))
+    .filter((m) => changedFiles === undefined || !isPromotion(changedFiles(m)))
     .map(
       (m) =>
         `#${m.pr} (merged ${m.date}, ${m.sha.slice(0, 7)}) has no Done row in docs/status.md. ` +

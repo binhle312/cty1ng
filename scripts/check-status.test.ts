@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { checkStatus, doneRows, mergedPrs } from "./lib/check-status.ts";
-import { readHistory } from "./lib/check-status-git.ts";
+import { mergeFiles, readHistory } from "./lib/check-status-git.ts";
 
 const LINK = "https://github.com/binhle312/cty1ng/pull";
 const SINCE = "2026-10-30";
@@ -134,6 +134,26 @@ describe("checkStatus", () => {
       'docs/status.md Done row is not "| YYYY-MM-DD | … |": | 18 Nov | x |',
     ]);
   });
+
+  it("skips a memory promotion PR: each changed file is in long-term memory", () => {
+    const merged = mergedPrs(merge(140, "2026-11-20"));
+    const changedFiles = (): string[] => [
+      ".agents/memories/long-term/state.md",
+      ".agents/memories/long-term/rules/R-001-x.md",
+    ];
+    const problems = checkStatus({ merged, statusMd: status([]), since: SINCE, changedFiles });
+    expect(problems, "promotion PR").toEqual([]);
+  });
+
+  it("does not skip a PR with one changed file outside long-term memory", () => {
+    const merged = mergedPrs(merge(140, "2026-11-20"));
+    const changedFiles = (): string[] => [".agents/memories/long-term/state.md", "docs/status.md"];
+    const problems = checkStatus({ merged, statusMd: status([]), since: SINCE, changedFiles });
+    expect(
+      problems.map((p) => p.split(" ")[0]),
+      "one file outside long-term memory",
+    ).toEqual(["#140"]);
+  });
 });
 
 describe("readHistory", () => {
@@ -196,6 +216,36 @@ describe("readHistory", () => {
       ]);
     } finally {
       rmSync(shallow, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("mergeFiles", () => {
+  it("lists the files that a merge commit changes against its first parent", () => {
+    const repo = mkdtempSync(join(tmpdir(), "check-status-files-"));
+    const env = {
+      ...process.env,
+      GIT_AUTHOR_NAME: "t",
+      GIT_AUTHOR_EMAIL: "t@example.invalid",
+      GIT_COMMITTER_NAME: "t",
+      GIT_COMMITTER_EMAIL: "t@example.invalid",
+    };
+    const git = (...args: string[]): string =>
+      execFileSync("git", args, { cwd: repo, env, encoding: "utf8" });
+    try {
+      git("init", "-q", "-b", "main");
+      git("commit", "-q", "--allow-empty", "-m", "Initial commit");
+      git("checkout", "-q", "-b", "memory");
+      execFileSync("mkdir", ["-p", join(repo, "a")]);
+      execFileSync("touch", [join(repo, "a/one.md"), join(repo, "a/two.md")]);
+      git("add", ".");
+      git("commit", "-q", "-m", "two files");
+      git("checkout", "-q", "main");
+      git("merge", "-q", "--no-ff", "memory", "-m", "Merge pull request #5 from owner/memory");
+      const sha = git("rev-parse", "HEAD").trim();
+      expect(mergeFiles(repo, sha), "files of the merge").toEqual(["a/one.md", "a/two.md"]);
+    } finally {
+      rmSync(repo, { recursive: true, force: true });
     }
   });
 });
