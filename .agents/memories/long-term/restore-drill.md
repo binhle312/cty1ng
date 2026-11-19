@@ -64,8 +64,8 @@ memory, then run the missed questions again in a new session.
     no wait state; it adds only the DQ ranges and the model of a leader. Source: `restore.md`
     step 4, `state.md`.
 12. What is the next free DQ id?
-    Key: the ranges in `state.md` (today #139 has DQ-878 to DQ-899, and a new range starts at
-    DQ-920), after a check of the ledger files and the open PRs.
+    Key: the ranges in `state.md` (today #139 has DQ-878 to DQ-899 and DQ-935 to DQ-945, and a new
+    range starts at DQ-920), after a check of the ledger files and the open PRs.
     Source: `state.md`.
 13. Where do you write a new owner order at the moment you get it, and when does it reach
     long-term memory?
