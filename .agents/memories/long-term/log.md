@@ -21,3 +21,8 @@ Append only. One heading for each promotion, lint, restore drill or migration.
 - Q4 said that a standing permission must cover each chief merge, and left out a merge that the
   owner asks for. The fix is in R-002, which waits for the owner's decisions of review round 1
   (DQ-895).
+
+## [2026-11-19] restore | Q4 again, on f60347a, graded by a fresh agent: right
+
+- R-002 now gives its two merge paths apart (DQ-895). The probe saw only `CLAUDE.md` and
+  `AGENTS.md`. The answer gave both paths and each point of the key.
