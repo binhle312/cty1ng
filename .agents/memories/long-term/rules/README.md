@@ -22,7 +22,7 @@ conditions are in the file, not in this table.
 | `R-012-simplest-path-first.md` | Before you recommend extra work, name the concrete failure that happens without it. | all-agents | never | |
 | `R-013-options-need-numbers.md` | Compare designs with measured numbers from a prototype of each option. | chief | never | |
 | `R-014-removal-list-first.md` | Before a cleanup, show the owner each folder and file to remove, and wait for the OK. | all-agents | never | |
-| `R-015-arena-for-open-questions.md` | Send open questions to consultants as one list; the owner is the final judge. | chief | never | |
+| `R-015-consultants-for-open-questions.md` | Send open questions to consultants as one list; the owner is the final judge. | chief | never | |
 | `R-016-owner-pages.md` | Questions and reports for the owner are HTML decision pages made with the decision-pages skill. | chief | never | |
 | `R-017-simple-english.md` | Write each text for the owner in Simple English, and use short, common words for names. | all-agents | never | |
 | `R-018-leader-cap-and-heavy-commands.md` | At most leader_cap conversations run at one time, and the chief grants each heavy command. | all-agents | never | |

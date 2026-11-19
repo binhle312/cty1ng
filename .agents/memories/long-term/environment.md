@@ -67,8 +67,9 @@ to it. Check a version fact before you trust it.
 - `handoff` (a user-level skill): without it, a handoff has the goal, the state with heads and
   times, what is done, the next steps, the open questions with your view, what you could not
   check, and the files.
-- `arena` (`.agents/skills/arena/`): only the owner starts it. Otherwise run its method by hand
-  (R-015).
+- `consultants` (`.agents/skills/consultants/`, from #141): models grill a recommendation on
+  decisions. `arena` (`.agents/skills/arena/`): build candidates, pick a base and graft. Only the
+  owner starts each one; otherwise run its method by hand (R-015).
 - The context meter, the clone prompt and the PR watch script stay in the `tmp/` folder until the
   `chief` skill PR. Without them, read the context level of the session, write the clone prompt
   from `restore.md`, and watch CI with a bounded loop (L-22).

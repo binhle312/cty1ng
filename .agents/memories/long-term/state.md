@@ -37,4 +37,4 @@ each PR waits for in `docs/status.md` ("Next", "Waiting on the owner") and with
 
 - DQ: the chief gives each open PR a range (the table "Open PRs"). A new range starts at
   DQ-946. Check first: the highest id in `docs/delivery-quality*.md` and in the open PRs.
-- Rule: R-037. Lesson: L-30. Owner order: 81.
+- Rule: R-037. Lesson: L-30. Owner order: 99.
