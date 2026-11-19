@@ -157,7 +157,8 @@ A pnpm workspace with three packages. Each folder marked † has a `README.md` i
 ├─ .agents/
 │  ├─ skills/                project agent skills (.agents/skills/README.md); .claude/skills/
 │  │                         links to them
-│  └─ memories/ †            the chief memory: long-term/ in git, short-term/ ignored
+│  └─ chief/ †               the chief only (AGENTS.md §3): memories/ (long-term/ in git,
+│                            short-term/ ignored) and scripts/ (check:memory, merge:check)
 ├─ Makefile                  dev, test, lint, seed shortcuts
 ├─ package.json              workspace scripts (lint, typecheck, test, e2e, gen:api, check:*)
 ├─ pnpm-workspace.yaml
@@ -304,10 +305,13 @@ Start here: `worker.service.ts`. Do not: call the model except through the model
     `frontend/src/themes/command.css` ([design skills](workflows/planning.md#design-skills)).
   Whether two decisions agree in meaning is not checkable; the reviewer checks it
   ([review workflow](workflows/review.md)).
-- **`pnpm check:memory` checks the chief memory** (`.agents/memories/`, its README): the fixed
-  fields of each rule file, the generated rules index, the privacy patterns and the size limits.
-  `.agents/memories/`, `long-term/` and `long-term/rules/` are folder indexes like the others;
-  `short-term/` is not, because git ignores its files.
+- **`pnpm check:memory` checks the chief memory** (`.agents/chief/memories/`, its README): the fixed
+  fields of each rule file, the generated rules index, the `AGENTS.md` §7 list in the rules and in
+  the list file of `pnpm merge:check`, the privacy patterns and the size limits. `--local` also
+  checks the private words and the owner quotes, which git does not share, so CI cannot.
+  `.agents/chief/`, its `scripts/` and `scripts/lib/`, `memories/`, `long-term/` and
+  `long-term/rules/` are folder indexes like the others; `short-term/` is not, because git ignores
+  its files.
 - Leaves only: the root `README.md` and this section link to the package indexes; there is no
   second, central file list to drift.
 

@@ -1,16 +1,10 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  type ChangedFile,
-  checkStatus,
-  doneRows,
-  mergedPrs,
-  ownerMerges,
-} from "./lib/check-status.ts";
-import { mergeChanges, mergeFiles, readHistory } from "./lib/check-status-git.ts";
+import { checkStatus, doneRows, mergedPrs } from "./lib/check-status.ts";
+import { mergeFiles, readHistory } from "./lib/check-status-git.ts";
 
 const LINK = "https://github.com/binhle312/cty1ng/pull";
 const SINCE = "2026-10-30";
@@ -46,14 +40,8 @@ function status(doneLines: string[]): string {
   ].join("\n");
 }
 
-// A changed file of a merge; `texts` are its versions before and after the merge.
-function changed(path: string, ...texts: string[]): ChangedFile {
-  return { path, texts };
-}
-
-const OWNER_RULE = "---\nid: R-002\nowner-merges: true\n---\nRule: Merge at the bar.\n";
-const PLAIN_RULE = "---\nid: R-002\n---\nRule: Merge at the bar.\n";
-const RULE_PATH = ".agents/memories/long-term/rules/R-002-x.md";
+const PERMISSION_RULE = "---\nid: R-002\npermission-rule: true\n---\nRule: Merge at the bar.\n";
+const RULE_PATH = ".agents/chief/memories/long-term/rules/R-002-x.md";
 
 function row(date: string, ...prs: number[]): string {
   return `| ${date} | ${prs.map((pr) => `[#${pr}](${LINK}/${pr})`).join(", ")} merged. |`;
@@ -150,69 +138,30 @@ describe("checkStatus", () => {
     ]);
   });
 
-  it("skips a memory promotion PR: each changed file is in long-term memory", () => {
+  it("skips a memory PR: each changed file is in the chief memory", () => {
     const merged = mergedPrs(merge(140, "2026-11-20"));
-    const changedFiles = (): ChangedFile[] => [
-      changed(".agents/memories/long-term/state.md", "# State\n"),
-      changed(".agents/memories/long-term/rules/R-014-x.md", PLAIN_RULE, PLAIN_RULE),
+    const changedFiles = (): string[] => [
+      ".agents/chief/memories/long-term/state.md",
+      ".agents/chief/memories/long-term/rules/R-014-x.md",
     ];
     const problems = checkStatus({ merged, statusMd: status([]), since: SINCE, changedFiles });
-    expect(problems, "promotion PR").toEqual([]);
+    expect(problems, "memory PR").toEqual([]);
   });
 
-  it("does not skip a PR when a file has owner-merges before or after the merge", () => {
-    const cases = [
-      { when: "before and after the merge", texts: [OWNER_RULE, OWNER_RULE] },
-      { when: "before the merge only: the PR removes it", texts: [OWNER_RULE, PLAIN_RULE] },
-      { when: "after the merge only: the PR adds it", texts: [PLAIN_RULE, OWNER_RULE] },
-      { when: "in a new file", texts: [OWNER_RULE] },
-    ];
+  it("skips a memory PR that changes a permission rule and the memory README (order 108)", () => {
     const merged = mergedPrs(merge(140, "2026-11-20"));
-    for (const { when, texts } of cases) {
-      const changedFiles = (): ChangedFile[] => [
-        changed(".agents/memories/long-term/state.md", "# State\n"),
-        changed(RULE_PATH, ...texts),
-      ];
+    const changedFiles = (): string[] => [RULE_PATH, ".agents/chief/memories/README.md"];
+    const problems = checkStatus({ merged, statusMd: status([]), since: SINCE, changedFiles });
+    expect(problems, "permission rule and README").toEqual([]);
+  });
+
+  it("does not skip a PR with one changed file outside the chief memory", () => {
+    const merged = mergedPrs(merge(140, "2026-11-20"));
+    for (const other of ["docs/status.md", ".agents/chief/scripts/check-memory.ts"]) {
+      const changedFiles = (): string[] => [".agents/chief/memories/long-term/state.md", other];
       const problems = checkStatus({ merged, statusMd: status([]), since: SINCE, changedFiles });
       const prs = problems.map((p) => p.split(" ")[0]);
-      expect(prs, `owner-merges ${when}`).toEqual(["#140"]);
-    }
-  });
-
-  it("does not skip a PR with one changed file outside long-term memory", () => {
-    const merged = mergedPrs(merge(140, "2026-11-20"));
-    const changedFiles = (): ChangedFile[] => [
-      changed(".agents/memories/long-term/state.md", "# State\n"),
-      changed("docs/status.md"),
-    ];
-    const problems = checkStatus({ merged, statusMd: status([]), since: SINCE, changedFiles });
-    const prs = problems.map((p) => p.split(" ")[0]);
-    expect(prs, "one file outside long-term memory").toEqual(["#140"]);
-  });
-});
-
-describe("ownerMerges", () => {
-  it("reads the field in the frontmatter", () => {
-    expect(ownerMerges(OWNER_RULE), "frontmatter").toBe(true);
-  });
-
-  it("does not read the field in the body or with another value", () => {
-    expect(ownerMerges("---\nid: R-002\n---\nowner-merges: true\n"), "body").toBe(false);
-    expect(ownerMerges("---\nowner-merges: false\n---\n"), "false").toBe(false);
-    expect(ownerMerges("owner-merges: true\n"), "no frontmatter").toBe(false);
-  });
-});
-
-describe("the files that the owner merges", () => {
-  const folder = ".agents/memories/long-term";
-  const rules = readdirSync(`${folder}/rules`);
-  it("gives owner-merges: true to identity.md and each rule about merges", () => {
-    const names = ["identity.md", "R-001", "R-002", "R-003", "R-004", "R-005", "R-007", "R-035"];
-    for (const name of names) {
-      const file = name.endsWith(".md")
-        ? `${folder}/${name}`
-        : `${folder}/rules/${rules.find((rule) => rule.startsWith(`${name}-`)) ?? name}`;
-      expect(ownerMerges(readFileSync(file, "utf8")), file).toBe(true);
+      expect(prs, other).toEqual(["#140"]);
     }
   });
 });
@@ -314,7 +263,6 @@ describe("mergeFiles", () => {
   // #139, DQ-878).
   function filesOfMerge(change: (repo: string, git: (...args: string[]) => string) => void): {
     files: string[];
-    changes: ChangedFile[];
   } {
     const repo = mkdtempSync(join(tmpdir(), "check-status-files-"));
     const env = {
@@ -328,10 +276,14 @@ describe("mergeFiles", () => {
       execFileSync("git", args, { cwd: repo, env, encoding: "utf8" });
     try {
       git("init", "-q", "-b", "main");
-      execFileSync("mkdir", ["-p", join(repo, "docs"), join(repo, ".agents/memories/long-term")]);
-      execFileSync("mkdir", ["-p", join(repo, ".agents/memories/long-term/rules")]);
+      execFileSync("mkdir", [
+        "-p",
+        join(repo, "docs"),
+        join(repo, ".agents/chief/memories/long-term"),
+      ]);
+      execFileSync("mkdir", ["-p", join(repo, ".agents/chief/memories/long-term/rules")]);
       writeFileSync(join(repo, "docs/policy.md"), "A policy of the project.\n");
-      writeFileSync(join(repo, RULE_PATH), OWNER_RULE);
+      writeFileSync(join(repo, RULE_PATH), PERMISSION_RULE);
       git("add", ".");
       git("commit", "-q", "-m", "Initial commit");
       git("checkout", "-q", "-b", "memory");
@@ -340,14 +292,14 @@ describe("mergeFiles", () => {
       git("checkout", "-q", "main");
       git("merge", "-q", "--no-ff", "memory", "-m", "Merge pull request #6 from owner/memory");
       const sha = git("rev-parse", "HEAD").trim();
-      return { files: mergeFiles(repo, sha), changes: mergeChanges(repo, sha) };
+      return { files: mergeFiles(repo, sha) };
     } finally {
       rmSync(repo, { recursive: true, force: true });
     }
   }
 
   it("lists a file name with non-ASCII characters as it is", () => {
-    const name = ".agents/memories/long-term/ghi-chú.md";
+    const name = ".agents/chief/memories/long-term/ghi-chú.md";
     const merge = filesOfMerge((repo, git) => {
       writeFileSync(join(repo, name), "x\n");
       git("add", ".");
@@ -357,25 +309,11 @@ describe("mergeFiles", () => {
 
   it("lists both paths of a file that moves into long-term memory", () => {
     const merge = filesOfMerge((_repo, git) => {
-      git("mv", "docs/policy.md", ".agents/memories/long-term/policy.md");
+      git("mv", "docs/policy.md", ".agents/chief/memories/long-term/policy.md");
     });
     expect(merge.files, "both paths of a move").toEqual([
-      ".agents/memories/long-term/policy.md",
+      ".agents/chief/memories/long-term/policy.md",
       "docs/policy.md",
-    ]);
-  });
-
-  it("gives the text of a long-term file before and after the merge", () => {
-    const merge = filesOfMerge((repo, git) => {
-      writeFileSync(join(repo, RULE_PATH), PLAIN_RULE);
-      writeFileSync(join(repo, ".agents/memories/long-term/new.md"), "A new file.\n");
-      writeFileSync(join(repo, "docs/policy.md"), "A new policy.\n");
-      git("add", ".");
-    });
-    expect(merge.changes, "texts of the merge").toEqual([
-      { path: ".agents/memories/long-term/new.md", texts: ["A new file.\n"] },
-      { path: RULE_PATH, texts: [OWNER_RULE, PLAIN_RULE] },
-      { path: "docs/policy.md", texts: [] },
     ]);
   });
 });

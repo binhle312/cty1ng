@@ -1,12 +1,21 @@
 # Merge bar
 
-Builders and reviewers use this bar. Read it when you give a finding a severity, decide what a
+Builders and reviewers use this bar. Read it when you decide who may merge a PR, give a finding a severity, decide what a
 finding blocks, write a state table or order test, set the limits of a pattern rule, or decide
 when the review of a P3 PR ends.
 
 Only P1 and P2 findings block a merge (owner, 2026-11-04). Fix each of them at once, in the PR that has it.
 A P3 finding does not block a merge. Fix it at the end of the milestone, before the next milestone starts (owner, 2026-11-10).
 This bar applies the [when review ends principle](../../.agents/skills/principle-when-review-ends/SKILL.md).
+
+## Who may merge
+
+The owner merges a PR, or asks for its merge. The chief may also merge a PR that a standing
+permission of the owner covers, and each memory PR (`AGENTS.md` §7; owner, 2026-11-19, order
+108). Before a chief merge, the chief runs `pnpm merge:check <PR>` from a checkout of main, and
+merges only with the merge line that it prints. Exit 1 means no chief merge: a path that no
+permission covers, a PR that mixes `.agents/chief/memories/` with other files, or a memory PR that
+fails its gate. Exit 2 means that the script cannot check: no chief merge.
 
 ## Severity
 

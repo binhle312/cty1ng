@@ -6,7 +6,7 @@
 import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { SINCE, checkStatus, mergedPrs } from "./lib/check-status.ts";
-import { mergeChanges, readHistory } from "./lib/check-status-git.ts";
+import { mergeFiles, readHistory } from "./lib/check-status-git.ts";
 import { report } from "./lib/report.ts";
 
 const { values } = parseArgs({ options: { history: { type: "string", default: "origin/main" } } });
@@ -18,6 +18,6 @@ report("check:status", [
     merged: mergedPrs(history.log),
     statusMd,
     since: SINCE,
-    changedFiles: (merged) => mergeChanges(".", merged.sha),
+    changedFiles: (merged) => mergeFiles(".", merged.sha),
   }),
 ]);

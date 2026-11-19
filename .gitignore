@@ -45,6 +45,6 @@ tmp/
 .vscode/*
 !.vscode/extensions.json
 
-# The chief's short-term memory: on this computer only (.agents/memories/README.md)
-/.agents/memories/short-term/*
-!/.agents/memories/short-term/README.md
+# The chief's short-term memory: on this computer only (.agents/chief/memories/README.md)
+/.agents/chief/memories/short-term/*
+!/.agents/chief/memories/short-term/README.md

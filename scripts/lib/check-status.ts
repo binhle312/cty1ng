@@ -50,42 +50,27 @@ export function doneRows(statusMd: string): { prs: Set<number>; problems: string
   return { prs, problems };
 }
 
-// A memory promotion PR changes only long-term memory, and it needs no Done row
-// (`.agents/memories/README.md`, "Promote"; AGENTS.md §9). One file outside that folder makes it
-// an ordinary PR.
-export const PROMOTION_FOLDER = ".agents/memories/long-term/";
+// A memory PR changes only the chief memory, and it needs no Done row (owner, 2026-11-19,
+// order 108; AGENTS.md §9). One file outside that folder makes it an ordinary PR.
+export const MEMORY_FOLDER = ".agents/chief/memories/";
 
-// A changed file of a merged PR, with its text before and after the merge (a missing version has
-// no text).
-export type ChangedFile = { path: string; texts: readonly string[] };
-
-// `owner-merges: true` in the frontmatter: the owner merges a change of the file (AGENTS.md §9).
-export function ownerMerges(text: string): boolean {
-  const front = /^---\n([\s\S]*?)\n---(\n|$)/.exec(text)?.[1] ?? "";
-  return /^owner-merges: ?true\s*$/m.test(front);
+export function isMemoryPr(paths: readonly string[]): boolean {
+  return paths.length > 0 && paths.every((path) => path.startsWith(MEMORY_FOLDER));
 }
 
-// The field counts in the version before and after the merge, so a promotion PR cannot remove the
-// field and change the file in one step.
-export function isPromotion(files: readonly ChangedFile[]): boolean {
-  const inFolder = files.every((file) => file.path.startsWith(PROMOTION_FOLDER));
-  const ownerFile = files.some((file) => file.texts.some(ownerMerges));
-  return files.length > 0 && inFolder && !ownerFile;
-}
-
-// `changedFiles` gives the files of a merged PR; the caller reads them from git, and only for a PR
-// with no Done row. With no `changedFiles`, no PR counts as a promotion.
+// `changedFiles` gives the paths that a merged PR changed; the caller reads them from git, and only
+// for a PR with no Done row. With no `changedFiles`, no PR counts as a memory PR.
 export function checkStatus(input: {
   merged: readonly Merged[];
   statusMd: string;
   since: string;
-  changedFiles?: (merged: Merged) => readonly ChangedFile[];
+  changedFiles?: (merged: Merged) => readonly string[];
 }): string[] {
   const done = doneRows(input.statusMd);
   const changedFiles = input.changedFiles;
   const missing = input.merged
     .filter((m) => m.date >= input.since && !done.prs.has(m.pr))
-    .filter((m) => changedFiles === undefined || !isPromotion(changedFiles(m)))
+    .filter((m) => changedFiles === undefined || !isMemoryPr(changedFiles(m)))
     .map(
       (m) =>
         `#${m.pr} (merged ${m.date}, ${m.sha.slice(0, 7)}) has no Done row in docs/status.md. ` +

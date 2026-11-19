@@ -7,7 +7,6 @@ code is in `lib/`.
 | File | What it is for |
 | --- | --- |
 | `check-index.ts` | `pnpm check:index`: folder indexes and docs metadata (`docs/architecture.md` §4.2) |
-| `check-memory.ts` | `pnpm check:memory`: the chief memory in `.agents/memories/` (fields, Check first form, `AGENTS.md` §7 list, index, privacy, sizes); `--write`, `--local` |
 | `check-events.ts` | `pnpm check:events`: the event table of `docs/realtime-events.md` §4 matches `shared/` |
 | `check-status.ts` | `pnpm check:status`: each merged PR has a Done row in `docs/status.md` |
 | `records-counts.ts` | `pnpm records:counts`: the counts of `docs/delivery-quality.md` §2 come from the ledger rows; `--write` |
