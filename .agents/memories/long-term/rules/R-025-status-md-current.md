@@ -8,6 +8,7 @@ orders: []
 ends: never
 supersedes: []
 amends: []
+check-first: false
 ---
 Rule: Before you hand off a PR, compare `docs/status.md` with the real state. Fix a stale line in the PR you work on; do not only report it.
 Owner said: "Always ensure docs/status.md is up-to-date" (2026-11-11)

@@ -8,6 +8,7 @@ orders: []
 ends: never
 supersedes: []
 amends: []
+check-first: false
 ---
 Rule: Load `ste-writing` before each reply to the owner, and check long text with its script (80% target). For a question, also use `principle-ask-with-options`. Give names of skills, files and concepts in short, common words that say what the thing does.
 Owner said: "Did you apply ste skill?" (2026-11-08)

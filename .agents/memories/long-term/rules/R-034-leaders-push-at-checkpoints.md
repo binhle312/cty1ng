@@ -8,6 +8,7 @@ orders: [78]
 ends: never
 supersedes: []
 amends: []
+check-first: false
 ---
 Rule: A leader pushes its committed work at each checkpoint of its plan, so that the work survives a crash. It says in its report what CI shows on the pushed head.
 Owner said: "Fable base + 8 fixes" (2026-11-19)

@@ -8,6 +8,7 @@ orders: []
 ends: until the conversation feature is in use
 supersedes: []
 amends: []
+check-first: false
 ---
 Rule: Do not ask the owner to check a real database, and do not plan work to protect old data. No real database exists yet.
 Owner said: "I haven't used the app yet. I will start using it after we have conversation feature" (2026-11-13)

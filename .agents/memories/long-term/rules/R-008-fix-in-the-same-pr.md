@@ -8,6 +8,7 @@ orders: [11, 21]
 ends: never
 supersedes: []
 amends: []
+check-first: false
 ---
 Rule: Fix a finding on the diff of a PR in that PR. Do not open another PR only to fix it. A redesign that `AGENTS.md` §9 asks for is built in the PR that found the issue.
 Owner said: "No more addition PR please." (2026-11-13)

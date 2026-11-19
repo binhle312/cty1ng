@@ -8,6 +8,7 @@ orders: [21]
 ends: never
 supersedes: []
 amends: []
+check-first: false
 ---
 Rule: If no file, PR description or handoff has a fact, write "not recorded" and ask the chief. Each reviewer writes its report to a file.
 Owner said: "D14: A" (2026-11-13)

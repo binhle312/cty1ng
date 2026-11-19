@@ -8,6 +8,7 @@ orders: [3, 7, 52]
 ends: never
 supersedes: []
 amends: []
+check-first: false
 ---
 Rule: Write each order or answer of the owner word for word in `short-term/owner/` in the same turn. Update `short-term/now.md` after each event, so that the work can go on if the laptop closes.
 Owner said: "please ensure you can resume the work if I do that by saving memories when something changed" (2026-11-15)

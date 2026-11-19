@@ -100,10 +100,13 @@ orders: [54, 67]
 ends: never
 supersedes: []
 amends: []
+check-first: true
 ---
 Rule: What to do, in five sentences or less.
 Owner said: "a short quote" (2026-11-15)
-How to apply: The steps.
+How to apply:
+Check first: each condition of the Rule sentence, as questions in the order that decides.
+- The steps.
 ```
 
 - `status`: `active`, `replaced` (a newer rule supersedes it), `ended` (its end came) or
@@ -112,6 +115,18 @@ How to apply: The steps.
 - `said`: the date of the owner's newest words for the rule. `orders`: the numbers of the order
   file in `short-term/owner/`, or `[]`.
 - `ends`: `never`, a date, or `until <event>`.
+- `check-first` (a required field, `true` or `false`): `true` for a rule that gates an action, that
+  is, it allows an action only under a condition that can be false (an approval, a permission, a
+  source, a count, a test), or makes the action wait for one. Then the line after `How to apply:`
+  starts with `Check first:` and asks each condition of the Rule sentence; numbered questions can
+  follow it. The steps after it never restate only part of the Rule sentence. `false` for a rule
+  with no such condition (a format, a pre-step of your own work, or a trigger "when X, do Y"); it
+  has no `Check first:` line. An active rule with `owner-merges: true` has `check-first: true`.
+  The check finds the line; it cannot tell that the line holds every condition (owner,
+  2026-11-19, drill-139 Q1 A).
+- A rule that copies the list of `AGENTS.md` §7 ("No permission covers a PR that changes …")
+  copies it word for word, and a Check first step asks "Does the PR change <the same list>?". The
+  check compares the three lists.
 - `owner-merges: true` (an optional field): a rule about merges, approvals or permissions. The
   owner merges a change of it ("Promote", step 6). A rule that supersedes or amends such a rule
   has the field too; the check makes sure of that. `identity.md` has the field in a frontmatter
@@ -120,14 +135,15 @@ How to apply: The steps.
   permission only from the owner's own message, and a rule file that the owner did not merge
   never grants one.
 - The body: a `Rule:` line, one or more `Owner said:` lines (a quote of `quote_max_words` words or
-  less, and its date), then `How to apply:`, and `Not covered:` when it helps.
+  less, and its date), then `How to apply:` (with `Check first:` when `check-first` is `true`),
+  and `Not covered:` when it helps.
 - A rule with no recorded words of the owner is not a rule file. Put it in `identity.md` or
   `lessons.md`, with its source.
 
 ## Check
 
 `pnpm check:memory` runs in CI. It checks the schema line, the required files, the settings, the
-rule fields and links, the generated rules index, the formats of state, lessons and log, the
+rule fields and links, the Check first form, the lists of `AGENTS.md` §7 in the rules, the generated rules index, the formats of state, lessons and log, the
 privacy patterns, the size limits, the relative links, and that git tracks no short-term file
 except its README. `pnpm check:memory --local` also checks this computer: the ignore lines in
 `.git/info/exclude` (`--fix` adds them) and the words of `short-term/private-words.txt`. Run the

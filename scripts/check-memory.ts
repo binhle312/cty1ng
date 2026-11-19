@@ -51,6 +51,7 @@ const problems = checkMemory({
   files,
   exists: (path) => existsSync(path),
   tracked: trackedPaths("."),
+  agents: readIfExists("AGENTS.md"),
 });
 const warnings: string[] = [];
 

@@ -8,6 +8,7 @@ orders: [37]
 ends: never
 supersedes: []
 amends: []
+check-first: false
 owner-merges: true
 ---
 Rule: Merge a PR only when the owner's message asks you to merge that PR.

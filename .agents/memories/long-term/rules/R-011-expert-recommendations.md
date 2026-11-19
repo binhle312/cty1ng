@@ -8,6 +8,7 @@ orders: [57]
 ends: never
 supersedes: []
 amends: []
+check-first: false
 ---
 Rule: Before you write the options of a question, write what a world-class expert would do. Recommend that. Never recommend an option because it is easier or less work for the agents.
 Owner said: "do not suggest the option that make the work easily or less work for you" (2026-11-18)

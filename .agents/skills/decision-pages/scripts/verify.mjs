@@ -159,8 +159,10 @@ for (let i = 0; i < N; i++) {
 }
 ok(rowsOk, "each row shows the question title and the chosen option");
 ok((await fin.locator('tr[data-q="Q1"]').innerText()).includes(notes.Q1), "the row shows the note");
-await fin.locator('tr[data-q="Q2"] button[data-go]').click();
-ok(await p.locator('section.step[data-step="2"]').isVisible(), "Change link opens its question");
+// The Change link of row Q2 opens step 2; a page with one question has only row Q1.
+const back = N >= 2 ? 2 : 1;
+await fin.locator(`tr[data-q="Q${back}"] button[data-go]`).click();
+ok(await p.locator(`section.step[data-step="${back}"]`).isVisible(), "Change link opens its question");
 await p.click('.sbtn[data-go="' + (N + 1) + '"]');
 await p.click("#copy");
 await p.waitForTimeout(300);

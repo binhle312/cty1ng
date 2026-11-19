@@ -8,6 +8,7 @@ orders: [34, 45, 51, 56, 58, 76]
 ends: never
 supersedes: []
 amends: []
+check-first: false
 ---
 Rule: Send each set of questions and each report to the owner as an HTML page made with the `decision-pages` skill (`.agents/skills/decision-pages/`). Never send a wall of text.
 Owner said: "all I see is a bunch of text together with no clear content" (2026-11-19)

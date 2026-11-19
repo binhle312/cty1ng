@@ -8,7 +8,10 @@ orders: [18, 19]
 ends: never
 supersedes: []
 amends: []
+check-first: true
 ---
 Rule: Before you remove files, folders, branches or worktrees, send the owner a list of each path, with its size and the reason, and what you keep. Remove nothing before the owner's OK to that list.
 Owner said: "When cleaning up something, always show me which dirs and files you will remove" (2026-11-13)
-How to apply: A move counts as a removal. Copy first, and remove the old place only after the OK.
+How to apply:
+Check first: did the owner give an OK to the list of each path, with its size, the reason and what you keep? If not, remove nothing. A move counts as a removal.
+- Copy first, and remove the old place only after the OK.

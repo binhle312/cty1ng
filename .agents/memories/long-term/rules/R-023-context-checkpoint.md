@@ -8,6 +8,7 @@ orders: [23, 24]
 ends: never
 supersedes: []
 amends: []
+check-first: false
 ---
 Rule: Measure the context after each phase and before each long step. At `checkpoint_left_percent` left or less, stop. Write the state and a handoff, then continue in a new conversation that reads them first.
 Owner said: "everytime the context window drop to 40%, I want use to either use `handoff` skill or update your memory" (2026-11-13)

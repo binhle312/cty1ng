@@ -8,6 +8,7 @@ orders: [29, 42]
 ends: never
 supersedes: []
 amends: []
+check-first: false
 ---
 Rule: Start each report with a table of the open issues: id, severity, where, and why open. A row that waits for the owner is open. Never put "clean" or "no new findings" first while known rows are open. When you were wrong, say so in the same reply and correct the record.
 Owner said: "As chief of agent, you should report honestly about the remaining issues like that." (2026-11-14)

@@ -71,7 +71,17 @@ const RULE_FIELDS = [
   "ends",
   "supersedes",
   "amends",
+  "check-first",
 ] as const;
+// `check-first: true` marks a rule with conditions: the first line of its "How to apply" is
+// "Check first:", and it names each condition before the steps (owner, 2026-11-19, drill-139 Q1 A).
+const CHECK_FIRST = "check-first";
+const CHECK_FIRST_LINE = "Check first:";
+const HOW_TO_APPLY = "How to apply:";
+// The sentence of `AGENTS.md` §7 that lists the PRs no standing permission covers. A rule that
+// copies the list copies it word for word, and asks it again as a Check first step.
+const NO_PERMISSION = /No permission covers a PR that changes (.+?)(?::|\.(?= [A-Z]|\s*$))/m;
+const LIST_STEP = /^\d+\. Does the PR change (.+?)\? /m;
 // `owner-merges: true` marks a rule about merges, approvals or permissions: a PR that changes it is
 // not a promotion PR, and the owner merges it (`isPromotion` of `check-status.ts`).
 const OWNER_MERGES = "owner-merges";
@@ -229,6 +239,10 @@ function fieldProblems(rule: Rule): string[] {
       `${path}: field \`${OWNER_MERGES}\` is "${ownerMerges}"; write true, or leave the field out`,
     );
   }
+  const checkFirst = fields.get(CHECK_FIRST);
+  if (checkFirst !== undefined && checkFirst !== "true" && checkFirst !== "false") {
+    problems.push(`${path}: field \`${CHECK_FIRST}\` is "${checkFirst}"; write true or false`);
+  }
   const title = fields.get("title");
   if (title !== undefined && (title === "" || title.includes("|"))) {
     problems.push(`${path}: field \`title\` must be one sentence with no "|"`);
@@ -298,6 +312,31 @@ function bodyProblems(rule: Rule, limits: Limits): string[] {
     }
   }
   return problems;
+}
+
+function checkFirstProblems(rule: Rule): string[] {
+  const { path, fields, body } = rule;
+  const lines = body.split("\n");
+  const marked = lines.filter((line) => line.includes(CHECK_FIRST_LINE)).length;
+  const value = fields.get(CHECK_FIRST);
+  if (rule.status === "active" && fields.get(OWNER_MERGES) === "true" && value !== "true") {
+    return [`${path}: it has \`${OWNER_MERGES}: true\`, so \`${CHECK_FIRST}\` must be true`];
+  }
+  if (value === "false" && marked > 0) {
+    return [
+      `${path}: \`${CHECK_FIRST}\` is false, but a line has "${CHECK_FIRST_LINE}"; set true, or remove the line`,
+    ];
+  }
+  if (value !== "true") return [];
+  const at = lines.indexOf(HOW_TO_APPLY);
+  if (at === -1 || !(lines[at + 1] ?? "").startsWith(`${CHECK_FIRST_LINE} `)) {
+    return [
+      `${path}: \`${CHECK_FIRST}\` is true, so the line after "${HOW_TO_APPLY}" must start with "${CHECK_FIRST_LINE}"`,
+    ];
+  }
+  if (marked > 1)
+    return [`${path}: "${CHECK_FIRST_LINE}" is in ${marked} lines; write it one time`];
+  return [];
 }
 
 function ruleFiles(files: MemoryFiles): [string, string][] {
@@ -399,7 +438,11 @@ export function checkRules(files: MemoryFiles, limits: Limits): string[] {
   const rules = parseRules(files, problems);
   const maxLines = limits.get("rule_max_lines");
   for (const rule of rules) {
-    problems.push(...fieldProblems(rule), ...bodyProblems(rule, limits));
+    problems.push(
+      ...fieldProblems(rule),
+      ...bodyProblems(rule, limits),
+      ...checkFirstProblems(rule),
+    );
     const lines = lineCount(files.get(rule.path) ?? "");
     if (maxLines !== undefined && lines > maxLines) {
       problems.push(
@@ -408,6 +451,40 @@ export function checkRules(files: MemoryFiles, limits: Limits): string[] {
     }
   }
   problems.push(...linkProblems(rules));
+  return problems;
+}
+
+// An active rule that copies the list of `AGENTS.md` §7 (the PRs that no standing permission
+// covers) keeps it word for word, and its Check first step asks the same list. `agents` is the
+// text of AGENTS.md.
+export function checkPermissionList(files: MemoryFiles, agents: string | undefined): string[] {
+  const problems: string[] = [];
+  const agentsList = NO_PERMISSION.exec(agents ?? "")?.[1];
+  for (const rule of parseRules(files, [])) {
+    if (rule.status !== "active") continue;
+    const sentence = rule.body.split("\n").find((line) => line.startsWith("Rule: ")) ?? "";
+    const ruleList = NO_PERMISSION.exec(sentence)?.[1];
+    if (ruleList === undefined) continue;
+    const stepList = LIST_STEP.exec(rule.body)?.[1];
+    if (stepList === undefined) {
+      problems.push(
+        `${rule.path}: the Rule sentence lists the PRs that no permission covers, so a Check first step must ask "Does the PR change <that list>?"`,
+      );
+    } else if (stepList !== ruleList) {
+      problems.push(
+        `${rule.path}: the Check first step lists "${stepList}", but the Rule sentence lists "${ruleList}"`,
+      );
+    }
+    if (agentsList === undefined) {
+      problems.push(
+        `AGENTS.md: no sentence "No permission covers a PR that changes …", so ${rule.path} cannot be compared with it`,
+      );
+    } else if (agentsList !== ruleList) {
+      problems.push(
+        `${rule.path}: the Rule sentence lists "${ruleList}", but AGENTS.md §7 lists "${agentsList}"`,
+      );
+    }
+  }
   return problems;
 }
 
@@ -710,14 +787,16 @@ export function checkMemory(input: {
   files: MemoryFiles;
   exists: (path: string) => boolean;
   tracked: readonly string[];
+  agents: string | undefined;
 }): string[] {
-  const { files, exists, tracked } = input;
+  const { files, exists, tracked, agents } = input;
   const settings = readSettings(files.get(SETTINGS_FILE));
   return [
     ...checkSchema(files.get(`${MEMORY_DIR}/README.md`)),
     ...checkRequiredFiles(files),
     ...settings.problems,
     ...checkRules(files, settings.limits),
+    ...checkPermissionList(files, agents),
     ...checkRulesIndex(files),
     ...checkFormats(files),
     ...checkPrivacy(files),

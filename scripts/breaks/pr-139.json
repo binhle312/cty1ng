@@ -943,6 +943,256 @@
           ]
         }
       ]
+    },
+    {
+      "id": "C1-field-required",
+      "claim": "check:memory names a rule with no check-first field (security: a merge rule must show its conditions first (owner, 2026-11-19, drill-139 Q1 A))",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names a rule with no check-first field"
+      },
+      "assertion": "\"no check-first\").toEqual([",
+      "breaks": [
+        {
+          "id": "C1-field-required-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "  \"check-first\",\n] as const;",
+              "replace": "] as const;"
+            },
+            {
+              "find": "new Set<string>([...RULE_FIELDS, OWNER_MERGES])",
+              "replace": "new Set<string>([...RULE_FIELDS, OWNER_MERGES, CHECK_FIRST])"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C2-value",
+      "claim": "check:memory names a check-first value that is not true or false (security: a merge rule must show its conditions first (owner, 2026-11-19, drill-139 Q1 A))",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names a check-first value that is not true or false"
+      },
+      "assertion": "\"yes\").toEqual([",
+      "breaks": [
+        {
+          "id": "C2-value-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "checkFirst !== \"true\" && checkFirst !== \"false\"",
+              "replace": "false"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C3-first-line",
+      "claim": "check:memory names check-first: true when the line after How to apply is not Check first (security: a merge rule must show its conditions first (owner, 2026-11-19, drill-139 Q1 A))",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names check-first: true with no Check first line as the first line of How to apply"
+      },
+      "assertion": "expect(rulesWith(R2, rule(fields, body)), name).toEqual([",
+      "breaks": [
+        {
+          "id": "C3-first-line-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "  if (value !== \"true\") return [];\n",
+              "replace": "  if (value !== \"true\" || value === \"true\") return [];\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C4-one-line",
+      "claim": "check:memory names two Check first lines (security: a merge rule must show its conditions first (owner, 2026-11-19, drill-139 Q1 A))",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names two Check first lines"
+      },
+      "assertion": "\"two lines\").toEqual([",
+      "breaks": [
+        {
+          "id": "C4-one-line-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (marked > 1)\n",
+              "replace": "if (marked > 9)\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C5-false-no-line",
+      "claim": "check:memory names check-first: false with a Check first line (security: a merge rule must show its conditions first (owner, 2026-11-19, drill-139 Q1 A))",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names check-first: false with a Check first line"
+      },
+      "assertion": "\"false with a line\").toEqual([",
+      "breaks": [
+        {
+          "id": "C5-false-no-line-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (value === \"false\" && marked > 0) {",
+              "replace": "if (value === \"false\" && marked > 99) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C6-owner-forces",
+      "claim": "check:memory names an active owner-merges rule with check-first: false (security: a merge rule must show its conditions first (owner, 2026-11-19, drill-139 Q1 A))",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names an active owner-merges rule with check-first: false"
+      },
+      "assertion": "\"owner-merges, check-first false\").toEqual([",
+      "breaks": [
+        {
+          "id": "C6-owner-forces-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "fields.get(OWNER_MERGES) === \"true\" && value !== \"true\"",
+              "replace": "false"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C7-active-only",
+      "claim": "check:memory does not ask a replaced owner-merges rule for check-first: true (a replaced rule keeps its old text)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "passes a replaced owner-merges rule with check-first: false"
+      },
+      "assertion": "\"replaced owner rule\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "C7-active-only-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (rule.status === \"active\" && fields.get(OWNER_MERGES)",
+              "replace": "if (fields.get(OWNER_MERGES)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D1-step-list",
+      "claim": "check:memory names a Check first step whose list is not the list of the Rule sentence (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names a Check first step whose list is not the list of the Rule sentence"
+      },
+      "assertion": "\"step\").toEqual([",
+      "breaks": [
+        {
+          "id": "D1-step-list-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "} else if (stepList !== ruleList) {",
+              "replace": "} else if (stepList === undefined) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D2-no-step",
+      "claim": "check:memory names a Rule sentence with the list and no Check first step (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names a Rule sentence with the list and no Check first step that asks it"
+      },
+      "assertion": "\"no step\").toEqual([",
+      "breaks": [
+        {
+          "id": "D2-no-step-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "    if (stepList === undefined) {\n",
+              "replace": "    if (stepList === ruleList) {\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D3-agents-list",
+      "claim": "check:memory names a Rule sentence whose list is not the list of AGENTS.md (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names a Rule sentence whose list is not the list of AGENTS.md"
+      },
+      "assertion": "\"agents\").toEqual([",
+      "breaks": [
+        {
+          "id": "D3-agents-list-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "} else if (agentsList !== ruleList) {",
+              "replace": "} else if (agentsList === undefined) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D4-no-agents",
+      "claim": "check:memory names an AGENTS.md with no list sentence when a rule has the list (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names an AGENTS.md with no such sentence when a rule has the list"
+      },
+      "assertion": "expect(checkPermissionList(files(body(list, list)), text), name).toEqual([",
+      "breaks": [
+        {
+          "id": "D4-no-agents-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "    if (agentsList === undefined) {\n",
+              "replace": "    if (agentsList === \"\") {\n"
+            },
+            {
+              "find": "} else if (agentsList !== ruleList) {",
+              "replace": "} else if (agentsList !== undefined && agentsList !== ruleList) {"
+            }
+          ]
+        }
+      ]
     }
   ],
   "exempt": [
@@ -1200,6 +1450,21 @@
       "file": "scripts/check-status.test.ts",
       "name": "lists the files that a merge commit changes against its first parent",
       "reason": "test first: red run in the PR (the skip and mergeFiles did not exist)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "passes check-first: true with the Check first line",
+      "reason": "test first: red run of the DQ-897 redesign (the HEAD check-memory.ts rejected the new field and had no list check; in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "passes when AGENTS.md, the Rule sentence and the Check first step list the same items",
+      "reason": "test first: red run of the DQ-897 redesign (the HEAD check-memory.ts rejected the new field and had no list check; in the PR description)"
+    },
+    {
+      "file": "scripts/check-memory.test.ts",
+      "name": "skips a rule that is not active",
+      "reason": "test first: red run of the DQ-897 redesign (the HEAD check-memory.ts rejected the new field and had no list check; in the PR description)"
     }
   ]
 }

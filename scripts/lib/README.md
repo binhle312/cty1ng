@@ -7,7 +7,7 @@ The code behind the repository scripts. The tests sit next to the files. A file 
 | --- | --- |
 | `check-index.ts` | The checks of `pnpm check:index`: folder indexes, story ranges, decisions metadata |
 | `check-design.ts` | The design snapshot colours against the token file (called by `check-index.ts`) |
-| `check-memory.ts` | The checks of `pnpm check:memory`: the chief memory fields, rules index, privacy, sizes |
+| `check-memory.ts` | The checks of `pnpm check:memory`: the chief memory fields, the Check first form, the `AGENTS.md` §7 list in the rules, rules index, privacy, sizes |
 | `check-memory-local.ts` | The machine part of `pnpm check:memory`: the git file lists of the memory (`-z`), the exclude lines (`--local --fix`) and a read that allows a missing file |
 | `check-events.ts` | The checks of `pnpm check:events` |
 | `check-status.ts` | The checks of `pnpm check:status` (pure) |

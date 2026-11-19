@@ -8,6 +8,7 @@ orders: [27, 48, 51, 53]
 ends: never
 supersedes: []
 amends: []
+check-first: false
 ---
 Rule: When the owner gives a goal and rules and goes away, work toward the goal and follow those rules. The rules of that night win over the usual ones.
 Owner said: "We should have an `overnight` mode" (2026-11-15)
