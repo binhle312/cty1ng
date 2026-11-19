@@ -611,12 +611,16 @@ describe("the search of a new row (DQ-853 on)", () => {
   });
 
   it.each([
-    ["an empty pattern", " ", "it is empty"],
-    ["a backslash before a letter", "slip\\d", "it has a backslash before a letter or a digit"],
-    ["a POSIX class", "[[:digit:]]", 'it has "[["'],
-    ["a group with (?", "(?=slip)", 'it has "(?"'],
-    ["a pattern that does not compile", "slip(", "it does not compile"],
-  ])("reports %s", (_name, pattern, why) => {
+    { name: "an empty pattern", pattern: " ", why: "it is empty" },
+    {
+      name: "a backslash before a letter",
+      pattern: "slip\\d",
+      why: "it has a backslash before a letter or a digit",
+    },
+    { name: "a POSIX class", pattern: "[[:digit:]]", why: 'it has "[["' },
+    { name: "a group with (?", pattern: "(?=slip)", why: 'it has "(?"' },
+    { name: "a pattern that does not compile", pattern: "slip(", why: "it does not compile" },
+  ])("reports $name", ({ pattern, why }) => {
     expect(check(`Same cause: no (search: \`${pattern}\`: none)`), pattern).toEqual([
       `${MAIN}: DQ-853: the search pattern \`${pattern}\` is not allowed: ${why} (pull-request.md).`,
     ]);
@@ -650,7 +654,7 @@ describe("the search of a new row (DQ-853 on)", () => {
   it("skips a withdrawn row", () => {
     const withdrawn = (row: string) => row.replace("| fixed |", "| withdrawn |");
     expect(
-      check("Withdrawn: not a defect", withdrawn).filter((p) => p.includes("DQ-853")),
+      check("Withdrawn: not a defect", withdrawn).filter((p) => p.startsWith(`${MAIN}: DQ-853`)),
       "withdrawn",
     ).toEqual([]);
   });

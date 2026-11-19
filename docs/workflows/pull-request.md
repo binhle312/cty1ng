@@ -47,11 +47,23 @@ states no state, count or result that a file or a tool owns:
 - The counts of the Audit row and of each `Ledger` row of the register: `pnpm records:counts --write`
   writes them from the rows, and CI checks them. Nobody types them, in the ledger or in the body.
 - The "Same cause as an earlier fix?" answer and its search live in the "Fix and verification"
-  cell of the ledger row, in the form `Same cause: yes|no (search: <command or places>: <hits>)`
-  (`AGENTS.md` §9). For a yes, the row names the earlier fix and the owner's decision. The
-  `Defect and review fixes` section of the body names the rows. `pnpm records:counts` fails on a
-  row from DQ-751 on, or found after 2026-11-18, that is not `withdrawn` and has no answer in this
-  form. It does not check that the search is right, or that a yes names the earlier fix.
+  cell of the ledger row (`AGENTS.md` §9). The `Defect and review fixes` section of the body names
+  the rows. The form (owner, 2026-11-19, morning Q4 A):
+  `Same cause: no (search: `<pattern>`: <hits>)` or
+  `Same cause: yes (search: `<pattern>`: <hits>; §9: <step>)`.
+  - The pattern is one `grep -E` pattern; write `\|` for `|` in the table. It stands for
+    `grep -n -i -E '<pattern>' docs/delivery-quality.md docs/delivery-quality-archive.md docs/lessons-learned/*.md`:
+    the ledger, its §7 prevention actions and the lessons. It has no backtick, no backslash
+    before a letter or a digit (`\d`, `\w`, `\b`, `\<`), no `[[` and no `(?`, so that grep and
+    the script read it in one way.
+  - The hits name the ids that the answer rests on (or `none`), with no `;` or `)`. Each cited id
+    is in a line that the pattern finds, other than the row itself.
+  - The §9 step of a yes is `owner, <YYYY-MM-DD>, <page> Q<n> <option>` (the owner's decision),
+    `proposal DQ-<n>` (the row of the redesign proposal, not the row itself) or
+    `fixed answer (AGENTS.md §9, owner 2026-11-11)` (a claim bigger than its proof).
+  - `pnpm records:counts` checks each row from DQ-853 on that is not `withdrawn`, and the form of
+    DQ-751 to DQ-777. It does not check the choice of the words (the reviewer does), that `none`
+    or a no is true, or that a decision named in a step exists.
 - A `docs/status.md` line of a PR has its state, its date and its link. It has no list of files, no
   count and no claim that a test or a row owns.
 - The results of a script live in its output. The PR body pastes the output unchanged, with the

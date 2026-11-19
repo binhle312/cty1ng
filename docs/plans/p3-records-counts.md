@@ -161,7 +161,7 @@ The reviewer checks the choice of words."
   runs the pattern as a JavaScript regular expression (any case) on their lines.
 - **One pattern language.** A pattern is a problem when grep -E and JavaScript could read it in two
   ways, or when it does not compile: a backtick, an empty pattern, a backslash before a letter or a
-  digit (`\d`, `\w`, `\b`, `\<`), `[[:` and `(?`.
+  digit (`\d`, `\w`, `\b`, `\<`), `[[` and `(?`.
 - **The hits** are the lines that match, without the row's own line (else each row finds its own
   ids). **A cited id is in the hits** when the id occurs as a whole id (DQ-62 is not DQ-620) in a
   hit line. Each `DQ-<n>` in `<hits>` must be; else the problem names the row, the id and the

@@ -334,39 +334,150 @@ function staleProblems(ledger: Ledger): string[] {
   return problems;
 }
 
-// The rows that must hold their "Same cause?" answer with the search (AGENTS.md §9; owner,
-// 2026-11-18, q4 Q3 A: the ledger rows are the home): from DQ-751 on, and each row found after the
-// rule began, since an id below DQ-751 can still be free. Older rows put the answer in the PR
-// description. A withdrawn row has no fix to answer for.
-const FIRST_ANSWERED_ID = 751;
-const LAST_UNANSWERED_DATE = "2026-11-18";
+// The "Same cause?" answer of a row lives in its "Fix and verification" cell (AGENTS.md §9; owner,
+// 2026-11-18, q4 Q3 A). Two checks, by id; a withdrawn row has no fix to answer for:
+// - DQ-751 to DQ-777 (the rows of #135): the form below, with any search text.
+// - From DQ-853 on (owner, 2026-11-19, morning Q4 A, "new rows only"): the search is one pattern
+//   that this module runs again, each id that the row cites must be in a hit line other than the
+//   row, and a yes names its §9 step. The rows in between belong to PRs that were open then.
+const OLD_FORM = { first: 751, last: 777 };
+const FIRST_SEARCHED_ID = 853;
 // `Same cause: yes|no (search: <command or places>: <hits>)`; an escaped `\|` may be in the search.
-const ANSWER = /Same cause: (yes|no) \(search: (?:[^|\\]|\\.)+?: (?:[^|\\]|\\.)+\)/;
+const OLD_ANSWER = /Same cause: (yes|no) \(search: (?:[^|\\]|\\.)+?: (?:[^|\\]|\\.)+\)/;
+// `Same cause: no (search: `<pattern>`: <hits>)`, or `yes (… <hits>; §9: <step>)`. The hits have
+// no `;` or `)`.
+const ANSWER = /Same cause: (yes|no) \(search: `([^`]*)`: ([^;)]*)(\)|; §9: )/;
+const STEPS = [
+  /^owner, \d{4}-\d{2}-\d{2}, [\w-]+ Q\d+ [A-Z]\)/,
+  /^proposal DQ-(\d+)\)/,
+  /^fixed answer \(AGENTS\.md §9, owner 2026-11-11\)\)/,
+];
+const STEP_HINT =
+  '"; §9: owner, <YYYY-MM-DD>, <page> Q<n> <option>", "; §9: proposal DQ-<n>" or "; §9: fixed answer (AGENTS.md §9, owner 2026-11-11)"';
 
-function answerProblems(files: readonly LedgerFile[]): string[] {
+// Why grep -E and a JavaScript regular expression could read a pattern in two ways, or none.
+export function patternProblem(pattern: string): string | undefined {
+  if (pattern.trim() === "") return "it is empty";
+  if (/\\[A-Za-z0-9]/.test(pattern)) return "it has a backslash before a letter or a digit";
+  if (pattern.includes("[[")) return 'it has "[["';
+  if (pattern.includes("(?")) return 'it has "(?"';
+  try {
+    new RegExp(pattern, "i");
+  } catch {
+    return "it does not compile";
+  }
+  return undefined;
+}
+
+export type Hit = { path: string; line: number; text: string };
+
+// The lines that `grep -n -i -E '<pattern>' <files>` prints, for a pattern with no patternProblem.
+export function searchLines(pattern: string, files: readonly LedgerFile[]): Hit[] {
+  const regex = new RegExp(pattern, "i");
+  return files.flatMap((file) => {
+    // grep reads a last line with no newline, and no line after a final newline.
+    const lines = file.text.endsWith("\n")
+      ? file.text.slice(0, -1).split("\n")
+      : file.text.split("\n");
+    return lines.flatMap((text, index) =>
+      regex.test(text) ? [{ path: file.path, line: index + 1, text }] : [],
+    );
+  });
+}
+
+type SearchedRow = {
+  where: string;
+  answer: RegExpExecArray;
+  row: { path: string; line: number; cell: string; id: number };
+  // The files that the pattern reads, and the ids of the ledger rows.
+  searched: readonly LedgerFile[];
+  ids: ReadonlySet<number>;
+};
+
+function searchProblems(input: SearchedRow): string[] {
+  const { where, answer, row, searched, ids } = input;
+  const [, word, written = "", cited = "", end = ""] = answer;
+  const pattern = written.replaceAll("\\|", "|");
+  const why = patternProblem(pattern);
+  if (why !== undefined)
+    return [
+      `${where}: the search pattern \`${written}\` is not allowed: ${why} (pull-request.md).`,
+    ];
+  const hits = searchLines(pattern, searched).filter(
+    (hit) => hit.path !== row.path || hit.line !== row.line,
+  );
+  const problems = (cited.match(/DQ-\d+/g) ?? [])
+    .filter((id) => !hits.some((hit) => new RegExp(`${id}(?!\\d)`).test(hit.text)))
+    .map(
+      (id) =>
+        `${where}: the search \`${written}\` finds ${id} in no line other than this row; cite only ids of its hits (owner, 2026-11-19, morning Q4 A).`,
+    );
+  if (end === ")") {
+    if (word === "yes")
+      problems.push(`${where} answers yes and names no §9 step: add ${STEP_HINT}.`);
+    return problems;
+  }
+  const rest = row.cell.slice(answer.index + answer[0].length);
+  const step = STEPS.map((form) => form.exec(rest)).find((match) => match !== null);
+  if (step === undefined)
+    return [...problems, `${where} answers yes and names no §9 step: add ${STEP_HINT}.`];
+  const proposal = numberOf(step[1]);
+  if (proposal === row.id)
+    problems.push(
+      `${where}: the §9 proposal ${dq(proposal)} is this row; name the row of the proposal.`,
+    );
+  else if (proposal !== undefined && !ids.has(proposal))
+    problems.push(`${where}: the §9 proposal ${dq(proposal)} is not a row of the ledger files.`);
+  return problems;
+}
+
+function answerProblems(files: readonly LedgerFile[], lessons: readonly LedgerFile[]): string[] {
+  const searched = [...files, ...lessons];
+  const ids = new Set(
+    files.flatMap((file) =>
+      file.text.split("\n").flatMap((line) => numberOf(ISSUE_ROW.exec(line)?.[1]) ?? []),
+    ),
+  );
   return files.flatMap((file) =>
-    file.text.split("\n").flatMap((line) => {
+    file.text.split("\n").flatMap((line, index) => {
       const id = numberOf(ISSUE_ROW.exec(line)?.[1]);
       if (id === undefined) return [];
       const cells = cellsOf(line);
-      const found = (cells[2] ?? "").slice(0, 10);
-      const asked = id >= FIRST_ANSWERED_ID || found > LAST_UNANSWERED_DATE;
-      if (!asked || cells.slice(3).includes("withdrawn") || ANSWER.test(cells[8] ?? "")) return [];
-      return [
-        `${file.path}: ${dq(id)} has no "Same cause: yes|no (search: …)" in its "Fix and verification" cell (AGENTS.md §9; each row from ${dq(FIRST_ANSWERED_ID)} on or found after ${LAST_UNANSWERED_DATE}).`,
-      ];
+      if (cells.slice(3).includes("withdrawn")) return [];
+      const cell = cells[8] ?? "";
+      if (id >= OLD_FORM.first && id <= OLD_FORM.last && !OLD_ANSWER.test(cell))
+        return [
+          `${file.path}: ${dq(id)} has no "Same cause: yes|no (search: …)" in its "Fix and verification" cell (AGENTS.md §9; rows ${dq(OLD_FORM.first)} to ${dq(OLD_FORM.last)}).`,
+        ];
+      if (id < FIRST_SEARCHED_ID) return [];
+      const answer = ANSWER.exec(cell);
+      if (answer === null)
+        return [
+          `${file.path}: ${dq(id)} has no "Same cause: yes|no (search: \`<pattern>\`: <hits>)" in its "Fix and verification" cell (AGENTS.md §9; each row from ${dq(FIRST_SEARCHED_ID)} on).`,
+        ];
+      return searchProblems({
+        where: `${file.path}: ${dq(id)}`,
+        answer,
+        row: { path: file.path, line: index + 1, cell, id },
+        searched,
+        ids,
+      });
     }),
   );
 }
 
 // Every problem: the structure of the files, then each owned cell that differs from the rows.
-export function checkCounts(files: readonly LedgerFile[]): string[] {
+// `lessons` are the other files that a search of a row reads (`docs/lessons-learned/*.md`).
+export function checkCounts(
+  files: readonly LedgerFile[],
+  lessons: readonly LedgerFile[] = [],
+): string[] {
   const { ledger, problems } = readLedger(files);
   if (ledger === undefined) return problems;
   // A stale cell counted from broken rows would mislead, and `--write` refuses to write then.
   const structure = structureProblems(ledger);
-  if (structure.length > 0) return [...structure, ...answerProblems(files)];
-  return [...answerProblems(files), ...staleProblems(ledger)];
+  if (structure.length > 0) return [...structure, ...answerProblems(files, lessons)];
+  return [...answerProblems(files, lessons), ...staleProblems(ledger)];
 }
 
 // The files with each owned cell written from the rows. With a structure problem, no file changes.

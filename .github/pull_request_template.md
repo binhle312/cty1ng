@@ -47,7 +47,7 @@ count, fix commit or round result: the rows hold them.
 ## Defect and review fixes (when a review found something)
 
 List the ledger row of each defect that this PR repairs and of each review fix. The row holds the
-general rule, the fix, the test, and `Same cause: yes|no (search: …)`
+general rule, the fix, the test, and `Same cause: yes|no (search: `<pattern>`: <hits>)`
 ([bug fix, step 2](https://github.com/binhle312/cty1ng/blob/main/docs/workflows/bug-fix.md);
 `AGENTS.md` §9). The search covers earlier PRs: the prevention actions of
 `docs/delivery-quality.md` §7 and the lessons.

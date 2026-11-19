@@ -23,6 +23,8 @@ const docs = readdirSync("docs", { recursive: true, encoding: "utf8" })
   .filter((name) => name.endsWith(".md"))
   .map((name) => read(join("docs", name)));
 const stray = strayLedgerFiles({ docs, list: LEDGER_FILES });
+// The other places that the "Same cause?" search of a row reads (AGENTS.md §9: the lessons).
+const lessons = docs.filter((file) => /^docs\/lessons-learned\/[^/]+\.md$/.test(file.path));
 
 if (values.write && stray.length === 0) {
   const written = writeCounts(files);
@@ -36,8 +38,8 @@ if (values.write && stray.length === 0) {
   // With a structure problem nothing is written, and the problems are the whole report.
   report(
     "records:counts",
-    written.problems.length > 0 ? written.problems : checkCounts(written.files),
+    written.problems.length > 0 ? written.problems : checkCounts(written.files, lessons),
   );
 } else {
-  report("records:counts", [...stray, ...checkCounts(files)]);
+  report("records:counts", [...stray, ...checkCounts(files, lessons)]);
 }
