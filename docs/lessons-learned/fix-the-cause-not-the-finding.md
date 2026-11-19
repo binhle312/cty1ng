@@ -16,4 +16,4 @@ The later state-module incident records the allowlist implementation.
 
 **Reusable principles.** [Fix the root cause](../../.agents/skills/principle-fix-root-cause/SKILL.md).
 
-**Project guidance.** [PR template](../workflows/pull-request.md), [review guide §5](../review-guide.md#5-close-findings-with-evidence), [state-module incident](state-table-before-stateful-code.md).
+**Project guidance.** [PR template](../../.github/pull_request_template.md) and its [rules](../workflows/pull-request.md), [review guide §5](../review-guide.md#5-close-findings-with-evidence), [state-module incident](state-table-before-stateful-code.md).

@@ -65,4 +65,4 @@ fix in each review, and at most three reviews for each PR. The baseline is the f
 
 **Reusable principles.** [Fix the root cause](../../.agents/skills/principle-fix-root-cause/SKILL.md), [Split changes](../../.agents/skills/principle-split-changes/SKILL.md) (step 6), [Decide when review ends](../../.agents/skills/principle-when-review-ends/SKILL.md).
 
-**Project guidance.** [delivery quality](../delivery-quality.md), [PR template](../workflows/pull-request.md), `AGENTS.md` §6 and §9.
+**Project guidance.** [delivery quality](../delivery-quality.md), [PR template](../../.github/pull_request_template.md) and its [rules](../workflows/pull-request.md), `AGENTS.md` §6 and §9.
