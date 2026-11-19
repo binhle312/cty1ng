@@ -13,6 +13,7 @@ act on it.
 | --- | --- | --- |
 | #139 | The chief's restore kit: the `decision-pages` skill, this memory, `pnpm check:memory`, the `AGENTS.md` words | The restore drill and the gates, then the owner's merge (it changes `AGENTS.md`). |
 | #107 | The redesign of the break runner (five gaps) | The owner's answers R1 to R11. Its leader runs on Fable 5.2, effort `high` (the owner's word). |
+| #140 | The `overnight` skill: owner-started night work with a night card | Its own leader is at work. |
 
 ## Waits for the owner
 
@@ -26,7 +27,7 @@ act on it.
    and give the owner the list of auto-memory notes that become pointers. Remove nothing before
    the owner's OK (R-014).
 2. The `chief` skill PR: the method and the tools, with an exam (owner, 2026-11-19, arena Q5 A).
-3. The `overnight` skill PR, which the owner starts (arena Q6 A and Q7 A).
+3. The `overnight` skill (arena Q6 A and Q7 A): draft #140, with its own leader.
 4. Then the order of `docs/status.md`, "Next".
 
 ## Parked
@@ -36,6 +37,7 @@ act on it.
 
 ## Next free ids
 
-- DQ: DQ-878 (DQ-876 and DQ-877 are rows of #139). Check first: the highest id in
-  `docs/delivery-quality*.md` and in the open PRs, plus 1.
+- DQ: the chief gives each open PR a range. #139 has DQ-878 to DQ-899 (it used DQ-876 and
+  DQ-877 before the ranges), and #140 has DQ-900 to DQ-919. A new range starts at DQ-920. Check
+  first: the highest id in `docs/delivery-quality*.md` and in the open PRs.
 - Rule: R-036. Lesson: L-30. Owner order: 81.

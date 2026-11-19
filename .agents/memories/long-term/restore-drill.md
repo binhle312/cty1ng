@@ -60,7 +60,8 @@ memory, then run the missed questions again in a new session.
     Key: as `state.md` says at the drill (today #139: drill, gates, owner's merge; #107: the
     owner's answers R1 to R11), and a live check with `gh pr list`. Source: `state.md`.
 12. What is the next free DQ id?
-    Key: the id in `state.md` (DQ-878 today), after a check of the ledger files and the open PRs.
+    Key: the ranges in `state.md` (today #139 has DQ-878 to DQ-899, and a new range starts at
+    DQ-920), after a check of the ledger files and the open PRs.
     Source: `state.md`.
 13. Where do you write a new owner order at the moment you get it, and when does it reach
     long-term memory?
