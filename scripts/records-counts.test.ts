@@ -458,9 +458,13 @@ describe("the Same cause answer of a row", () => {
     ["the word search with no command and hits", "Same cause: no (no search done)"],
     ["a word other than yes or no", "Same cause: maybe (search: `grep -n x`: no hit)"],
     ["a small first letter", "same cause: no (search: `grep -n x`: no hit)"],
-    ["a search with no hits", "Same cause: no (search: `grep -n x`)"],
   ])("reports %s", (_name, fix) => {
     expect(checkCounts(files(rows(`\`abc1234\`: the fix. ${fix}`))), fix).toEqual([NO_ANSWER(751)]);
+  });
+
+  it("reports an old-form search with no hits", () => {
+    const fix = "`abc1234`: the fix. Same cause: no (search: `grep -n x`)";
+    expect(checkCounts(files(rows(fix))), "no hits").toEqual([NO_ANSWER(751)]);
   });
 
   it("reads the answer only in the Fix and verification cell", () => {
@@ -580,10 +584,8 @@ describe("the search of a new row (DQ-853 on)", () => {
   });
 
   it("reads an escaped pipe as an alternation", () => {
-    expect(
-      check("Same cause: no (search: `zebra\\|kangaroo`: DQ-003, DQ-004)"),
-      "alternation",
-    ).toEqual([]);
+    const fix = "Same cause: no (search: `zebra\\|kangaroo`: DQ-003, DQ-004)";
+    expect(check(fix), "alternation").toEqual([]);
   });
 
   it("matches in any case", () => {
@@ -626,12 +628,21 @@ describe("the search of a new row (DQ-853 on)", () => {
     ]);
   });
 
-  it.each([
-    ["an owner decision", "owner, 2026-11-19, morning Q4 A"],
-    ["a proposal row", "proposal DQ-002"],
-    ["the fixed answer", "fixed answer (AGENTS.md §9, owner 2026-11-11)"],
-  ])("passes a yes with %s as its step", (_name, step) => {
-    expect(check(`Same cause: yes (search: \`a slip\`: DQ-001; §9: ${step})`), step).toEqual([]);
+  it("passes a yes with an owner decision as its step", () => {
+    const step = "owner, 2026-11-19, morning Q4 A";
+    expect(check(`Same cause: yes (search: \`a slip\`: DQ-001; §9: ${step})`), "owner").toEqual([]);
+  });
+
+  it("passes a yes with a proposal row as its step", () => {
+    const step = "proposal DQ-002";
+    expect(check(`Same cause: yes (search: \`a slip\`: DQ-001; §9: ${step})`), "proposal").toEqual(
+      [],
+    );
+  });
+
+  it("passes a yes with the fixed answer as its step", () => {
+    const step = "fixed answer (AGENTS.md §9, owner 2026-11-11)";
+    expect(check(`Same cause: yes (search: \`a slip\`: DQ-001; §9: ${step})`), "fixed").toEqual([]);
   });
 
   it("reports a yes with no step", () => {
@@ -653,10 +664,9 @@ describe("the search of a new row (DQ-853 on)", () => {
 
   it("skips a withdrawn row", () => {
     const withdrawn = (row: string) => row.replace("| fixed |", "| withdrawn |");
-    expect(
-      check("Withdrawn: not a defect", withdrawn).filter((p) => p.startsWith(`${MAIN}: DQ-853`)),
-      "withdrawn",
-    ).toEqual([]);
+    const problems = check("Withdrawn: not a defect", withdrawn);
+    const ofTheRow = problems.filter((p) => p.startsWith(`${MAIN}: DQ-853`));
+    expect(ofTheRow, "withdrawn").toEqual([]);
   });
 });
 

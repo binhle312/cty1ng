@@ -6,9 +6,9 @@
       "test": {
         "kind": "vitest",
         "file": "scripts/records-counts.test.ts",
-        "name": "reports %s"
+        "name": "reports an old-form search with no hits"
       },
-      "assertion": "expect(checkCounts(files(rows(`\\`abc1234\\`: the fix. ${fix}`))), fix).toEqual([NO_ANSWER(751)]);",
+      "assertion": "expect(checkCounts(files(rows(fix))), \"no hits\").toEqual([NO_ANSWER(751)]);",
       "breaks": [
         {
           "id": "L1-no-hits-part",
@@ -172,7 +172,7 @@
         "file": "scripts/records-counts.test.ts",
         "name": "reads an escaped pipe as an alternation"
       },
-      "assertion": "\"alternation\",",
+      "assertion": "expect(check(fix), \"alternation\").toEqual([]);",
       "breaks": [
         {
           "id": "Q2-pipe-kept",
@@ -253,14 +253,14 @@
       ]
     },
     {
-      "id": "Q6-yes-steps",
-      "claim": "A yes with each of the three §9 steps passes (a pass case: green on 65cda0a)",
+      "id": "Q6-owner-step",
+      "claim": "A yes with an owner decision as its §9 step passes (a pass case: green on 65cda0a)",
       "test": {
         "kind": "vitest",
         "file": "scripts/records-counts.test.ts",
-        "name": "passes a yes with %s as its step"
+        "name": "passes a yes with an owner decision as its step"
       },
-      "assertion": "expect(check(`Same cause: yes (search: \\`a slip\\`: DQ-001; §9: ${step})`), step).toEqual([]);",
+      "assertion": "\"owner\").toEqual([]);",
       "breaks": [
         {
           "id": "Q6-no-owner-step",
@@ -271,7 +271,19 @@
               "replace": ""
             }
           ]
-        },
+        }
+      ]
+    },
+    {
+      "id": "Q6-proposal-step",
+      "claim": "A yes with a proposal row as its §9 step passes (a pass case: green on 65cda0a)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "passes a yes with a proposal row as its step"
+      },
+      "assertion": "\"proposal\").toEqual(",
+      "breaks": [
         {
           "id": "Q6-no-proposal-step",
           "file": "scripts/lib/records-counts.ts",
@@ -281,7 +293,19 @@
               "replace": ""
             }
           ]
-        },
+        }
+      ]
+    },
+    {
+      "id": "Q6-fixed-answer-step",
+      "claim": "A yes with the fixed answer as its §9 step passes (a pass case: green on 65cda0a)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "passes a yes with the fixed answer as its step"
+      },
+      "assertion": "\"fixed\").toEqual([]);",
+      "breaks": [
         {
           "id": "Q6-no-fixed-answer-step",
           "file": "scripts/lib/records-counts.ts",
@@ -302,7 +326,7 @@
         "file": "scripts/records-counts.test.ts",
         "name": "skips a withdrawn row"
       },
-      "assertion": ".filter((p) => p.startsWith(`${MAIN}: DQ-853`)),",
+      "assertion": "expect(ofTheRow, \"withdrawn\").toEqual([]);",
       "breaks": [
         {
           "id": "Q7-withdrawn-checked",
@@ -492,6 +516,11 @@
       "file": "scripts/records-counts.test.ts",
       "name": "gives the hit lines of grep -n -i -E for each pattern",
       "reason": "test first: red run on 65cda0a in the PR (25 failed, 32 passed)"
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports %s",
+      "reason": "test first: red run 4 in the PR (9 failed); the case of a search with no hits moved to its own test (claim L1)"
     }
   ]
 }
