@@ -66,7 +66,7 @@ of the name that the rule does not allow. Snippet tests give it a path and a tex
 
 Test of the tree: the checker runs on each non-test file of `frontend/src/` (the generated client is
 skipped) and finds no use. Two guards stop a pass with nothing read: the test finds more than 100
-files (as `lint-rules.test.ts` does; a comment in the test gives the file count of today), and `lib/now.ts` has exactly one allowed call.
+files (as `lint-rules.test.ts` does), and `lib/now.ts` has exactly one allowed call.
 
 Red run (the PR description records it):
 
@@ -170,8 +170,8 @@ Red runs (the PR description records them; I remove the added lines after each r
 
 1. The new snippet cases that reject fail on the checker of `5e43585` (it does not read the name `setInterval`).
 2. The tree test fails when I add `setInterval(…)` to a non-test file (`lib/log.ts`).
-3. The new guard fails when the call in `lib/now.ts` is renamed, and when the glob reads a folder that does not exist.
-4. The new "allows" cases fail on a checker that forbids every text `setInterval` (comments and `lib/now.ts` included) every timer name (`setTimeout` too), or a checker that does not skip test files.
+3. The new guard fails when the call in `lib/now.ts` is written `window.setInterval` (the plain call is gone), and when the glob reads a folder that does not exist.
+4. The new "allows" cases fail on a checker that forbids every text `setInterval` (comments and `lib/now.ts` included), on a checker that forbids `setTimeout` in place of `setInterval`, or on a checker that does not skip test files.
 5. A case that a review adds fails on the checker before it.
 
 Break list: not needed (`docs/testing.md` §5). Each new test goes into `exempt` of
@@ -191,5 +191,7 @@ product code, the Guide ("Guide: not changed": the owner sees no change).
   its timer, and a timer inside a library. `setTimeout` is used today for one-shot waits
   (`skeleton.tsx`, `pinned-sort.tsx`, `realtime/start.ts`) and stays allowed.
 - A name that the code builds at run time (`window["set" + "Interval"]`).
+- A call through an alias that `lib/now.ts` exports (`export const every = setInterval;`, then `every(…)` in another file): any use of the name is allowed in `lib/now.ts`.
+- A `.mts` or `.cts` file in `frontend/src/`: the glob reads `.ts` and `.tsx` files only (none exists today).
 - A use outside `frontend/src/` (`frontend/index.html`, `public/`), and a use in a test file.
 - That the readers of `appClock` share one timer: the test "three subscribers share one timer".

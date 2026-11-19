@@ -54,7 +54,7 @@
     {
       "file": "scripts/one-clock.test.ts",
       "name": "allows the timers that are not setInterval",
-      "reason": "red run Q2B-4b (a checker that forbids `setTimeout` too) fails it; it passes on the checker of `5e43585`. Not a late, security, order or race test"
+      "reason": "red run Q2B-4b (a checker that forbids `setTimeout` in place of `setInterval`) fails it; it passes on the checker of `5e43585`. Not a late, security, order or race test"
     },
     {
       "file": "scripts/one-clock.test.ts",
@@ -69,7 +69,7 @@
     {
       "file": "scripts/one-clock.test.ts",
       "name": "has a setInterval call in lib/now.ts",
-      "reason": "test first: red run Q2B-1 (no `intervalCalls`) fails it; red run Q2B-3 (the call in `lib/now.ts` written `window.setInterval`, and a glob on a folder that does not exist) fails it. Not a late, security, order or race test"
+      "reason": "test first: red run Q2B-1 (no `intervalCalls`) fails it; red run Q2B-3 (the call in `lib/now.ts` written `window.setInterval`, and the glob on a folder that does not exist) fails it. Not a late, security, order or race test"
     }
   ]
 }
