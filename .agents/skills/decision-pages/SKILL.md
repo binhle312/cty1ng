@@ -2,6 +2,9 @@
 name: decision-pages
 description: Build an HTML page that a person reads to decide or to get a status, from a JSON content file, with checked word limits and a headless verify. Use when you ask a human to choose between options, send several questions for answers, or send a status report that ends in a decision.
 disable-model-invocation: true
+metadata:
+  author: binhle312
+  tags: [decision, report, html]
 ---
 
 # Decision pages
@@ -17,10 +20,13 @@ closed "Details" section or out.
 
 Kit files in this skill folder:
 
-- `scripts/lib.mjs`: the lint and the page builder.
-- `scripts/gen.mjs`: `node scripts/gen.mjs content.json page.html` checks the content and writes the page; `--text page.txt` also writes the page text for the writing check.
-- `scripts/selftest.mjs`: `node scripts/selftest.mjs` checks the text export on a small content file.
-- `scripts/verify.mjs`: opens the page in a headless browser and asserts the rules below.
+| Script | Purpose |
+| --- | --- |
+| `scripts/lib.mjs` | The lint and the page builder. |
+| `scripts/gen.mjs` | `node scripts/gen.mjs content.json page.html` checks the content and writes the page; `--text page.txt` also writes the page text for the writing check. |
+| `scripts/selftest.mjs` | `node scripts/selftest.mjs` checks the text export on a small content file. |
+| `scripts/verify.mjs` | Opens the page in a headless browser and asserts the rules below. |
+
 - `references/content-format.md`: every field, with the limits table.
 - `references/research.md`: the evidence. Rule ids such as R2.4 point to its sections.
 - `agents/openai.yaml`: Codex does not start this skill by itself, as the `disable-model-invocation` field does for Claude Code.
@@ -72,7 +78,7 @@ others are yours.
    Cut words; do not move decision facts into Details to pass a limit. Read every `WARN` line: fix
    it, or keep it for a reason that you put in your report.
 5. **Check the writing.** Write the content in Simplified Technical English (ASD-STE100). Run the
-   checker of the `ste-writing` skill on `page.txt`, the page text with one sentence or item on
+   checker of the `ste-writing` skill on the `--text` file of step 4: the page text with one sentence or item on
    each line. The score must be 80% or more before you send the page. Give a reason for each
    flagged sentence that stays: fixed text, a technical name, or accuracy. If the checker is not
    installed, tell the person, and apply the rules by hand.
@@ -158,7 +164,7 @@ The reader pastes it back to you. Read the letters against the options in your c
 
 - [ ] `scripts/gen.mjs` printed 0 lint errors; each warning is fixed or has a reason in your report.
 - [ ] `scripts/verify.mjs` printed `0 failed` on the final page.
-- [ ] The STE checker gave 80% or more on `page.txt`, or you told the person that it is not installed.
+- [ ] The STE checker gave 80% or more on the `--text` file of step 4, or you told the person that it is not installed.
 - [ ] You looked at all four screenshots after the last change, in light and dark.
 - [ ] Each title is a question, and each ask starts the decision in line 1.
 - [ ] Each option has a real gain; no straw man is left.
