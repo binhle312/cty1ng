@@ -189,7 +189,7 @@ export function lint(c) {
       if (!m) errors.push(`${id}.facts[${k}]: must start with bold lead words (${LIMITS.leadBoldMax[1]})`);
       else if (n < L("leadBoldMin") || n > L("leadBoldMax")) errors.push(`${id}.facts[${k}]: bold lead has ${n} words, need ${L("leadBoldMin")}-${L("leadBoldMax")} (${LIMITS.leadBoldMax[1]})`);
     });
-    // Data numbers only: 2+ digits, not an id ("#135", "order 54", "round 3", "DQ-578").
+    // Data numbers only: 2+ digits, not an id ("#42", "order 12", "round 3", "REQ-578").
     const nums = facts.join(" ").replace(/`[^`]*`/g, "").match(/(?<![\w#§-])(?<!(?:order|round|rule|judge|Q) )\d{2,}(?:\.\d+)?(?![\w-])/gi) || [];
     if (nums.length > 3 && !q.table) warnings.push(`${id}: facts hold ${nums.length} numbers and there is no table (R1.6 put more than 3 numbers in a table)`);
 

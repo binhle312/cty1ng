@@ -48,7 +48,7 @@ others are yours.
 | Text lines at most about 70 characters | R2.6 | Long lines make readers lose their place. |
 | A question step uses 12 columns: the facts take 7, the answers take 5. The facts scroll by themselves; the answers stay in place. | R2.2 | The trade-offs stay next to the choice while the reader reads. |
 | Block labels say the content ("Scores are a near tie"), not the type ("What") | R1.4 | Headings are the scan path. |
-| Every id has its meaning next to it ("order 67, for tonight only") | R6 | A bare id stops the reader. |
+| Every id has its meaning next to it ("order 12, for this week only") | R6 | A bare id stops the reader. |
 | One closed Details section, labelled with what is inside | R2.5 | Some readers need the story; nobody needs it first. |
 | A fact that does not change the choice goes into Details or out | R2.3 | Extra material costs attention and adds nothing to the decision. |
 | Bold lead words and headings name decision facts, not background | R4.4 | Readers remember only the signaled words. |

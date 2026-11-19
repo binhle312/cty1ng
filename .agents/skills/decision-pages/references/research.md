@@ -1,7 +1,7 @@
 # Decision pages: research and rules (2026-11-19)
 
 Purpose: make the owner's quiz pages (left pane = question, right pane = options) easy to scan and
-decide. Each finding has its source and one testable rule. Section 7 applies the rules to arena Q1.
+decide. Each finding has its source and one testable rule. Section 7 gives the structure of one question.
 
 Source trust: NN/g, Baymard, GOV.UK and W3C pages were read for this file. Peer-reviewed papers
 were checked by their abstract or index record (DOI given); full texts were not read. Where a figure
@@ -69,7 +69,7 @@ Everything that decides the answer must be in those places.
    Sources: https://www.nngroup.com/articles/progressive-disclosure/ ;
    https://design-system.service.gov.uk/components/details/
    Rule for our pages: one `<details>` per question (and optional one per option), with a label
-   such as "Details: the 8 parts of the Fable design"; nothing that changes the choice is hidden.
+   such as "Details: the 8 parts of the design"; nothing that changes the choice is hidden.
 6. **Line length 50-75 characters; WCAG AAA max 80.** Long lines look "intimidating", readers
    lose their place and skip; 100+ characters causes fatigue.
    Sources: https://baymard.com/blog/line-length-readability ;
@@ -194,7 +194,7 @@ Everything that decides the answer must be in those places.
 6. **Save as the user goes; never ask for the same answer twice.**
    Sources: https://www.gov.uk/service-manual/design/form-structure ;
    https://design-system.service.gov.uk/patterns/question-pages/
-   Rule for our pages: answers persist on each click (arena.html already uses localStorage).
+   Rule for our pages: answers persist on each click (in localStorage).
 
 ## 6. Common failures and their fixes
 
@@ -203,34 +203,13 @@ Everything that decides the answer must be in those places.
 | Wall of text | F-pattern; 20% read (§1.2, §1.3) | Paragraph max 50 words; facts as 2-4 bullets |
 | Evidence mixed with the ask | Inverted pyramid (§2.4) | Ask and pick first; scores in a table; process story in Details |
 | Jargon and private terms ("seats", "grafts", "promotion") | NN/g experts left a page full of unknown terms, https://www.nngroup.com/articles/plain-language-experts/ ; WCAG 3.1.3 unusual words, https://www.w3.org/WAI/WCAG22/Understanding/unusual-words.html | One plain word, or define it at first use in at most 8 words |
-| Ids without meaning (O-076, order 67, #138) | WCAG 3.1.4 abbreviations, https://www.w3.org/WAI/WCAG22/Understanding/abbreviations.html ; NN/g first 2 words (§1.5) | Every id has its meaning next to it: "order 67 (tonight only)" |
+| Ids without meaning (REQ-14, order 12, #42) | WCAG 3.1.4 abbreviations, https://www.w3.org/WAI/WCAG22/Understanding/abbreviations.html ; NN/g first 2 words (§1.5) | Every id has its meaning next to it: "order 12 (for this week only)" |
 | Split panes that must be joined in the head | Split attention (§2.2) | Option trade-offs inside the option card |
 | Uncalibrated recommendation | Anchoring, defaults (§3.4) | Pick line with confidence and "Pick another if" |
 | Over-highlighting | Baymard 10%, NN/g hierarchy (§4.2, §4.3) | One callout; bold at most 10% |
 | Long lines | Baymard, WCAG 1.4.8 (§2.6) | `max-width: 70ch` |
 
-## 7. Arena Q1 against the rules
-
-### 7a. Diagnosis
-
-Measured from `arena/content.md` (word counts by script): What 146 words, Example 65, Why 67,
-option A 86 (label 41), B 50, C 45. Total about 470 words: more than 2x the 200-word limit (§1.2).
-
-| Rule | Status | Quote or fact |
-|---|---|---|
-| Ask first, at most 20 words (§2.4) | Fail | No ask line. The "What" starts with process: "Three seats designed the folder on your split (long-term in git, short-term not in git)." |
-| Paragraph at most 50 words (§1.3) | Fail | "What" is one 146-word paragraph with 3 topics: the process, the scores, the Fable design. |
-| Sentence at most 20 words (§2.7) | Fail | "The Fable design: one home for each fact (...); one file per owner order ...; a weekly restore drill by a reader with no context." is one sentence of about 79 words. |
-| Numbers in a table (§1.6, §3.1) | Fail | 9 scores in prose: "Judge 1 (GPT-6 Astra) gave Fable 46, GPT-6 Astra 61, Opus 35. Judge 2 (Opus) gave Fable 61, GPT-6 Astra 45, Opus 57." The model name is both a judge and a design, so the reader must decode each number. |
-| Labels say content (§1.4) | Fail | Block labels are "What", "Example", "Why this is the recommendation". |
-| Option label at most 8 words (§3.3) | Fail | Option A label is 41 words: "Fable's design as the base, plus 8 grafts: GPT-6 Astra's scope and end per order, crash path and acceptance tests; ..." |
-| Trade-offs next to the radio (§2.2) | Fail | Gain/Cost/Risk are in "Trade-offs and risks" at the bottom of the left pane, below the fold (q1.png); the right pane shows only labels. |
-| Calibrated pick (§3.5, §3.7) | Fail | "the Fable design won on both judges' total" - the total margin is 1 point (107 vs 106), and judge 1 put Fable second, 15 points behind. No "pick another if". |
-| Plain words, ids explained (§6) | Fail | "seats", "grafts", "your split", "promotion", "crash path", "O-076", "your order 67" appear without a meaning. |
-| Line length at most 70ch (§2.6) | Fail | About 88 characters per line in the left pane (q1.png). |
-| Examples as steps | Partial | The Example is concrete and good, but 65 words in 4 sentences of mixed times; steps with a time label scan faster. |
-| One decision per step (§5.1) | Pass | One decision: the base design. |
-| No pre-selected option (§3.4) | Pass | No radio is checked; the badge says "Recommended". |
+## 7. The structure of one question
 
 ### 7b. Proposed structure for one question
 
@@ -248,75 +227,3 @@ option A 86 (label 41), B 50, C 45. Total about 470 words: more than 2x the 200-
 | Option details | inside the card, collapsed | no limit | Full list of what the option contains |
 
 Visible text target: left pane at most 220 words, right pane at most 160, before any Details.
-
-### 7c. Arena Q1 rewritten (all facts kept)
-
-**Left pane**
-
-> **Which memory design do we build in the memory PR?**
->
-> **Decide:** the base design for `.agents/memories/`. The memory PR builds it.
->
-> > **My pick: A, Fable's design plus 8 fixes.** It is the most concrete design, and the
-> > fixes close every gap the judges found. Confidence: close call on scores.
-> > **Pick another if:** you want the strictest rules on which text is in force (B).
->
-> - **Scores are a near tie:** Fable 107, GPT-6 Astra 106, Opus 92 (2 blind judges).
-> - **Judge 1 may favor its own model:** it picked the GPT-6 Astra design; the Opus judge picked Fable.
-> - **Both judges found 3 gaps:** scope and end of each order, urgent promotion, prompt injection.
->
-> | Design | Judge 1 (GPT-6 Astra) | Judge 2 (Opus) | Total |
-> |---|---|---|---|
-> | Fable (A) | 46 | 61 | **107** |
-> | GPT-6 Astra (B) | 61 | 45 | 106 |
-> | Opus (C) | 35 | 57 | 92 |
->
-> **Example: a new order, with design A**
-> 1. **21:00:** you give an order. The chief writes your words and the time to short-term `inbox.md`.
-> 2. **End of day:** a promotion PR moves it to long-term `orders/O-076.md`; the old order gets "Superseded by O-076".
-> 3. **After the merge:** the chief deletes the inbox line.
-> 4. **New computer:** the chief reads long-term memory from `origin/main` and knows O-076.
->
-> ▸ **Details: the Fable design, the 8 fixes, and how the arena ran** (collapsed)
-> - How it ran: 3 agents ("seats") each designed the folder on your split (long-term memory in
->   git, short-term not in git); 2 blind judges scored them.
-> - The Fable design has 8 parts:
->   - One home for each fact: a promotion moves a fact; it does not copy it.
->   - One file per owner order, with Supersedes and Amends lines.
->   - A generated index.
->   - A small `state.md`.
->   - An `inbox.md` for new orders that are not on main yet.
->   - A memory worktree on `origin/main` (the main checkout is 32 merged PRs behind).
->   - The same ignore line in `.git/info/exclude`, so old branches cannot commit private files.
->   - A weekly restore drill by a reader with no context.
-> - The 8 fixes ("grafts") that option A adds:
->   - From GPT-6 Astra: scope and end per order; a crash path; acceptance tests.
->   - From Opus: urgent promotion; fixed fields per file; auto-memory as an inbox.
->   - From judge 2: the injection rule; leaders push at each checkpoint.
-> - Why scope and end matter: your order 67 was for "tonight" only.
-> - Urgent promotion: merge, approval and privacy rules go to long-term memory at once.
-> - Injection rule: only text merged to main by your account counts. An issue or a PR comment is
->   never an order.
-
-**Right pane (one card per option)**
-
-> **A. Fable base + 8 fixes** · Recommended · Risk: low
-> - **Gets:** the best total score, with all gaps both judges found closed.
-> - **Costs:** the largest first PR: about 25 files and 1 check script.
-> - **Risk:** low. The restore drill report shows if something is missing.
->
-> **B. GPT-6 Astra base** · Risk: medium
-> - **Gets:** the strictest rules on which text is in force (pending, proposed, merged-and-verified).
-> - **Costs:** more parts: `events.jsonl`, `runtime.json`, migrations. Judge 2: "over-engineered".
-> - **Risk:** medium. A design that is hard to run gets skipped on busy nights.
->
-> **C. Opus base, the smallest** · Risk: medium
-> - **Gets:** the least work: one journal, rules as one-line index rows.
-> - **Costs:** judge 1 found that its newest-date rule can hide an order that arrived late.
-> - **Risk:** medium. A lost order shows only when the chief acts against it.
-
-Measured by script (markdown symbols removed): before Details, about 206 words on the left,
-table cells included (was 278 words of What, Example and Why prose). The option texts with
-Gain/Cost/Risk are about 141 words (was 181), now all in the right-pane cards. The longest visible sentence is 17 words (was about 79). The 9 scores moved
-to a table. The weak claim "won on both judges' total" became "close call on scores", with the
-counter-case B named. The "split" fact moved to Details because all 3 options share it.
