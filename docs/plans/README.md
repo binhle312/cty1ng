@@ -73,6 +73,7 @@ Plans up to M2 started as PR comments or PR descriptions. The header of each fil
 | `p3-flaky-bots-drop.md` | The flaky e2e test of the pinned card drop line (`bots.spec.ts:101`, CI run 44228267962) | Plan OK by the chief agent, 2026-11-18 (owner rule: fix the flaky test at its cause), revision 2; owner review pending |
 | `p3-breaks-static-test-time.md` | The pnpm links test of the static break check times out in the full suite (#128's test, found by the gates of #134 and #135) | Plan OK by the chief agent, 2026-11-18, revision 1; revision 2 (`lib` and the break list) after the round 1 review; owner review pending |
 | `p3-break-list-decision.md` | Redesign of DQ-782 in #136: CI checks the break-list decision of each PR that adds or changes a test | Owner, 2026-11-18, q5 Q1 A (the design); plan review: chief agent, revision 1; owner review pending |
+| `p3-clock-one-timer.md` | DQ-537, a check that the app keeps one clock timer | Chief agent, 2026-11-18, against the owner's answer q5 Q4 A; owner review pending |
 
 If the task names a plan, open it. Otherwise, find the slice in [status.md](../status.md), then open its plan.
 For current behaviour, read the owning documents.

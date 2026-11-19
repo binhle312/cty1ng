@@ -77,7 +77,8 @@ export function createClock({
   };
 }
 
-// The clock that `useNow` reads.
+// The clock that `useNow` reads. `scripts/one-clock.test.ts` fails when the app's code uses
+// `createClock` anywhere else, so the app keeps one clock and its one timer.
 export const appClock = createClock();
 
 // The time now, up to one tick old while the page is visible. The component renders again at
