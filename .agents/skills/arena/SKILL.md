@@ -11,11 +11,11 @@ a document, a plan or a design. Several candidates do the same task, and the res
 than one attempt. The repository's plan, approval and review rules still apply.
 
 If the session has a task list tool, open one entry for each phase before you start a seat:
-Frame, Fan out, Judge, Pick, Graft, Verify.
+Frame, Fan out, Judge, Graft, Verify.
 
 ## Models
 
-Each seat and the judge use a model from this table. Use only the models in the table.
+Each seat uses a model from this table. Use only the models in the table.
 Do not use fast mode.
 
 | Model             | Use                                         | From Claude Code                                             | From Codex                                                                                |
@@ -47,8 +47,8 @@ owner's instructions for that run give.
 - For a task that reads screenshots, images or very long files, consider GPT-6.1 Terra as one seat.
 - Give the reason for each choice in one line, for example: "Opus high: the task changes one module boundary."
 
-The judge is never a weaker model than the strongest seat. An everyday or simple model never
-judges the work of a frontier model.
+You judge the candidates (Phase C), so no seat uses a stronger model than yours. An everyday
+or simple model never judges the work of a frontier model.
 
 ### Add a model
 
@@ -70,7 +70,7 @@ All candidates get the same brief, so the brief is the contract.
 
 1. State the artifact that each candidate makes.
 2. Write the rubric: 3 to 6 criteria that you can grade on this task.
-   Only you and the judge see the rubric. The candidates see only the task.
+   Only you see the rubric. The candidates see only the task.
 3. Check which models you can start. Your own model family is always available.
    From Claude Code, run `command -v codex`. From Codex, run `command -v claude`.
    If the command finds nothing, you have one model family. Tell the owner once, before the fan out.
@@ -105,34 +105,18 @@ The phase is complete when the rubric and the brief file exist and each seat has
 2. If a seat fails to start, run it on another model from the table at the same effort or higher, and tell the owner.
 3. If a seat gives no output, continue with the others and record the dropout.
 
-## Phase C: Judge
+## Phase C: Judge and pick a base
 
-Start the judge only after all seats finish.
-
-1. Use one read-only judge from the other model family than yours, at effort `high` or higher.
-   - From Claude Code, the judge is GPT-6.2 Astra: `codex exec ... -s read-only -C <repo root>`.
-   - From Codex, the judge is Opus 5.5: `claude -p ... --permission-mode plan`.
-2. If the other family is not available, start a new judge on your own model.
-   - From Claude Code: `Agent` tool with `model: "opus"` and `effort: "high"`.
-   - From Codex: `codex exec ... -s read-only -C <repo root>`.
-   This judge has the same model bias as you. Record it as a same-family judge.
-3. Give the judge the rubric and the candidate paths as labels (`candidate-1`, `candidate-2`).
-   Do not tell the judge which model made which candidate.
-4. Ask for a score on each criterion and a recommended base with reasons.
-5. Do Phase D while the judge works.
-6. If no judge starts, pick the base alone and tell the owner.
-
-## Phase D: Pick a base
+You are the judge: the main agent of the conversation that started the arena. Start after all
+seats finish.
 
 1. Read every candidate from start to end. For code, read `git -C <worktree> diff` and the new files.
-2. Score each candidate on each criterion. Do not score on a general feeling.
-3. Compare your scores with the judge.
-   If you agree on the base, the pick is confirmed.
-   If you disagree, the rubric is not clear or one of you is biased. Read both reasons before you decide.
-4. Pick the base that a future maintainer can extend most easily without breaking invariants.
+2. Score each candidate on each criterion of the rubric. Do not score on a general feeling.
+   Score each candidate by its label (`candidate-1`, `candidate-2`), not by its model.
+3. Pick the base that a future maintainer can extend most easily without breaking invariants.
    If two candidates tie, pick the one with the cleaner boundary or the smaller API.
 
-## Phase E: Graft
+## Phase D: Graft
 
 1. Read each other candidate one more time. Find what is worth moving into the base.
    Usually this is one or two items for each candidate.
@@ -145,13 +129,13 @@ Start the judge only after all seats finish.
 
 Build the result on the task's own branch, not on an arena branch.
 
-## Phase F: Verify
+## Phase E: Verify
 
 1. Verify the result as you verify any other work. Run the checks that the repository requires.
 2. For each test that you use as evidence, see it fail without the change.
 3. If verification finds a problem, find the cause:
    - Phase A was wrong: write the frame again and run the arena again.
-   - A candidate found the problem, but you did not graft the fix: go back to Phase E.
+   - A candidate found the problem, but you did not graft the fix: go back to Phase D.
 4. When the result passes, remove the arena worktrees and their branches.
 
 ## Output
@@ -161,7 +145,7 @@ Build the result on the task's own branch, not on an arena branch.
    there is no PR. The note gives:
    - the model, the effort and the reason of each seat;
    - the base and why you picked it;
-   - the judge's verdict and family (other or same), or that there was no judge;
+   - your score of each candidate on each criterion;
    - each graft and its source candidate;
    - what you rejected and why;
    - what the candidates would build from zero, and each point where two or more of them agree;
