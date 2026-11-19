@@ -1037,28 +1037,6 @@
       ]
     },
     {
-      "id": "C5-false-no-line",
-      "claim": "check:memory names check-first: false with a Check first line (security: a merge rule must show its conditions first (owner, 2026-11-19, drill-139 Q1 A))",
-      "test": {
-        "kind": "vitest",
-        "file": "scripts/check-memory.test.ts",
-        "name": "names check-first: false with a Check first line"
-      },
-      "assertion": "\"false with a line\").toEqual([",
-      "breaks": [
-        {
-          "id": "C5-false-no-line-break",
-          "file": "scripts/lib/check-memory.ts",
-          "edits": [
-            {
-              "find": "if (value === \"false\" && marked > 0) {",
-              "replace": "if (value === \"false\" && marked > 99) {"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "C6-owner-forces",
       "claim": "check:memory names an active owner-merges rule with check-first: false (security: a merge rule must show its conditions first (owner, 2026-11-19, drill-139 Q1 A))",
       "test": {
@@ -1103,6 +1081,138 @@
       ]
     },
     {
+      "id": "C5-false-no-line",
+      "claim": "check:memory names check-first: false with a Check first line (security: a merge rule must show its conditions first (owner, 2026-11-19, drill-139 Q1 A))",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names check-first: false with a Check first line"
+      },
+      "assertion": "\"false with a line\").toEqual([",
+      "breaks": [
+        {
+          "id": "C5-false-no-line-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (count(CHECK_FIRST_LINE) > 0) {",
+              "replace": "if (count(CHECK_FIRST_LINE) > 99) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C8-no-gate",
+      "claim": "check:memory names an active check-first: false rule whose How to apply does not start with No gate (a rule with no gate says why (DQ-940; the chief, 2026-11-19))",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names an active check-first: false rule whose How to apply does not start with No gate"
+      },
+      "assertion": "expect(rulesWith(R2, rule(R2_FIELDS, body)), name).toEqual([",
+      "breaks": [
+        {
+          "id": "C8-no-gate-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "(hasApply && NO_GATE.test(first))",
+              "replace": "true"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C9-true-no-gate",
+      "claim": "check:memory names a No gate line in a check-first: true rule (a rule with no gate says why (DQ-940; the chief, 2026-11-19))",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names a No gate line in a check-first: true rule"
+      },
+      "assertion": "\"true with No gate\").toEqual([",
+      "breaks": [
+        {
+          "id": "C9-true-no-gate-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (count(NO_GATE_LINE) > 0) {",
+              "replace": "if (count(NO_GATE_LINE) > 99) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C10-one-block",
+      "claim": "check:memory names a rule with two How to apply lines (security: a merge rule must show its conditions first (owner, 2026-11-19, drill-139 Q1 A); DQ-939)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names two How to apply lines"
+      },
+      "assertion": "\"two blocks\").toEqual([",
+      "breaks": [
+        {
+          "id": "C10-one-block-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (applies > 1) return",
+              "replace": "if (applies > 9) return"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C11-kinds",
+      "claim": "check:memory takes each of the four kinds of No gate line (a rule with no gate says why (DQ-940; the chief, 2026-11-19))",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "passes each kind of No gate line"
+      },
+      "assertion": "expect(rulesWith(R2, rule(R2_FIELDS, body)), kind).toEqual([]);",
+      "breaks": [
+        {
+          "id": "C11-kinds-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "\"a trigger\", \"a fact\"]",
+              "replace": "\"a trigger\"]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C12-active-only",
+      "claim": "check:memory asks no No gate line of a rule that is not active (a rule with no gate says why (DQ-940; the chief, 2026-11-19))",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "asks no No gate line of a rule that is not active"
+      },
+      "assertion": "\"replaced, no No gate\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "C12-active-only-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (rule.status !== \"active\" || (hasApply",
+              "replace": "if ((hasApply"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "D1-step-list",
       "claim": "check:memory names a Check first step whose list is not the list of the Rule sentence (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002)",
       "test": {
@@ -1117,37 +1227,85 @@
           "file": "scripts/lib/check-memory.ts",
           "edits": [
             {
-              "find": "} else if (stepList !== ruleList) {",
-              "replace": "} else if (stepList === undefined) {"
+              "find": "if (step.list !== ruleList) {",
+              "replace": "if (step.list === `${ruleList}x`) {"
             }
           ]
         }
       ]
     },
     {
-      "id": "D2-no-step",
-      "claim": "check:memory names a Rule sentence with the list and no Check first step (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002)",
+      "id": "D2-block-only",
+      "claim": "check:memory reads the list step only in the Check first block (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002; DQ-938)",
       "test": {
         "kind": "vitest",
         "file": "scripts/check-memory.test.ts",
-        "name": "names a Rule sentence with the list and no Check first step that asks it"
+        "name": "reads the list step only in the Check first block"
       },
-      "assertion": "\"no step\").toEqual([",
+      "assertion": "\"a code block before\").toEqual([",
       "breaks": [
         {
-          "id": "D2-no-step-break",
+          "id": "D2-block-only-break",
           "file": "scripts/lib/check-memory.ts",
           "edits": [
             {
-              "find": "    if (stepList === undefined) {\n",
-              "replace": "    if (stepList === ruleList) {\n"
+              "find": "const start = lines.findIndex((line) => line.startsWith(CHECK_FIRST_LINE));",
+              "replace": "const start = lines.findIndex((line) => line.startsWith(\"Rule: \"));"
+            },
+            {
+              "find": "    if (!NUMBERED.test(line)) return undefined;\n",
+              "replace": "    if (!NUMBERED.test(line)) continue;\n"
             }
           ]
         }
       ]
     },
     {
-      "id": "D3-agents-list",
+      "id": "D6-after-block",
+      "claim": "check:memory does not read a list step after the Check first block (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002; DQ-938)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "does not read a list step after the Check first block"
+      },
+      "assertion": "expect(checkPermissionList(files(text), agentsText(LIST)), name).toEqual([noStep]);",
+      "breaks": [
+        {
+          "id": "D6-after-block-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "    if (!NUMBERED.test(line)) return undefined;\n",
+              "replace": "    if (!NUMBERED.test(line)) continue;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D3-consequence",
+      "claim": "check:memory names a list step that does not say that no permission covers the PR (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002; DQ-938)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names a list step that does not say that no permission covers the PR"
+      },
+      "assertion": "expect(problems, \"consequence\").toEqual([",
+      "breaks": [
+        {
+          "id": "D3-consequence-break",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (!step.rest.startsWith(NOT_COVERED)) {",
+              "replace": "if (false) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D4-agents-list",
       "claim": "check:memory names a Rule sentence whose list is not the list of AGENTS.md (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002)",
       "test": {
         "kind": "vitest",
@@ -1157,38 +1315,66 @@
       "assertion": "\"agents\").toEqual([",
       "breaks": [
         {
-          "id": "D3-agents-list-break",
+          "id": "D4-agents-list-break",
           "file": "scripts/lib/check-memory.ts",
           "edits": [
             {
-              "find": "} else if (agentsList !== ruleList) {",
-              "replace": "} else if (agentsList === undefined) {"
+              "find": "if (agentsList !== undefined && agentsList !== ruleList) {",
+              "replace": "if (false) {"
             }
           ]
         }
       ]
     },
     {
-      "id": "D4-no-agents",
-      "claim": "check:memory names an AGENTS.md with no list sentence when a rule has the list (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002)",
+      "id": "D5-no-agents",
+      "claim": "check:memory names an AGENTS.md with no list sentence (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002; DQ-937)",
       "test": {
         "kind": "vitest",
         "file": "scripts/check-memory.test.ts",
-        "name": "names an AGENTS.md with no such sentence when a rule has the list"
+        "name": "names an AGENTS.md with no list sentence"
       },
-      "assertion": "expect(checkPermissionList(files(body(list, list)), text), name).toEqual([",
+      "assertion": "expect(checkPermissionList(same, text), name).toEqual([",
       "breaks": [
         {
-          "id": "D4-no-agents-break",
+          "id": "D5-no-agents-break",
           "file": "scripts/lib/check-memory.ts",
           "edits": [
             {
-              "find": "    if (agentsList === undefined) {\n",
-              "replace": "    if (agentsList === \"\") {\n"
-            },
+              "find": "  if (agentsList === undefined) {\n    problems.push(",
+              "replace": "  if (agentsList === \"\") {\n    problems.push("
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D7-copied",
+      "claim": "check:memory names a memory where no active owner-merges rule copies the list (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002; DQ-937)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-memory.test.ts",
+        "name": "names a memory where no active owner-merges rule copies the list"
+      },
+      "assertion": "expect(checkPermissionList(tree(changes), agentsText(LIST)), name).toEqual([",
+      "breaks": [
+        {
+          "id": "D7-copied-1",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
             {
-              "find": "} else if (agentsList !== ruleList) {",
-              "replace": "} else if (agentsList !== undefined && agentsList !== ruleList) {"
+              "find": "if (agentsList !== undefined && !copied) {",
+              "replace": "if (false) {"
+            }
+          ]
+        },
+        {
+          "id": "D7-copied-2",
+          "file": "scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (rule.fields.get(OWNER_MERGES) === \"true\") copied = true;",
+              "replace": "copied = true;"
             }
           ]
         }
@@ -1459,11 +1645,6 @@
     {
       "file": "scripts/check-memory.test.ts",
       "name": "passes when AGENTS.md, the Rule sentence and the Check first step list the same items",
-      "reason": "test first: red run of the DQ-897 redesign (the HEAD check-memory.ts rejected the new field and had no list check; in the PR description)"
-    },
-    {
-      "file": "scripts/check-memory.test.ts",
-      "name": "skips a rule that is not active",
       "reason": "test first: red run of the DQ-897 redesign (the HEAD check-memory.ts rejected the new field and had no list check; in the PR description)"
     }
   ]

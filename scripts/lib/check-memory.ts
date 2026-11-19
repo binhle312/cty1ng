@@ -81,7 +81,14 @@ const HOW_TO_APPLY = "How to apply:";
 // The sentence of `AGENTS.md` §7 that lists the PRs no standing permission covers. A rule that
 // copies the list copies it word for word, and asks it again as a Check first step.
 const NO_PERMISSION = /No permission covers a PR that changes (.+?)(?::|\.(?= [A-Z]|\s*$))/m;
-const LIST_STEP = /^\d+\. Does the PR change (.+?)\? /m;
+// A step of the Check first block that asks the list, and what comes after its question.
+const LIST_STEP = /^\d+\. Does the PR change (.+?)\? (.*)$/;
+const NUMBERED = /^\d+\. /;
+const NOT_COVERED = "Then no permission covers it";
+// A rule with `check-first: false` says why on the first line of "How to apply".
+const NO_GATE_LINE = "No gate:";
+const NO_GATE_KINDS = ["a format", "a pre-step of your own work", "a trigger", "a fact"];
+const NO_GATE = new RegExp(`^${NO_GATE_LINE} (${NO_GATE_KINDS.join("|")})\\.`);
 // `owner-merges: true` marks a rule about merges, approvals or permissions: a PR that changes it is
 // not a promotion PR, and the owner merges it (`isPromotion` of `check-status.ts`).
 const OWNER_MERGES = "owner-merges";
@@ -317,23 +324,36 @@ function bodyProblems(rule: Rule, limits: Limits): string[] {
 function checkFirstProblems(rule: Rule): string[] {
   const { path, fields, body } = rule;
   const lines = body.split("\n");
-  const marked = lines.filter((line) => line.includes(CHECK_FIRST_LINE)).length;
+  const count = (text: string): number => lines.filter((line) => line.includes(text)).length;
+  const applies = lines.filter((line) => line.startsWith(HOW_TO_APPLY)).length;
+  if (applies > 1) return [`${path}: "${HOW_TO_APPLY}" is in ${applies} lines; write one block`];
   const value = fields.get(CHECK_FIRST);
   if (rule.status === "active" && fields.get(OWNER_MERGES) === "true" && value !== "true") {
     return [`${path}: it has \`${OWNER_MERGES}: true\`, so \`${CHECK_FIRST}\` must be true`];
   }
-  if (value === "false" && marked > 0) {
+  const first = lines[lines.indexOf(HOW_TO_APPLY) + 1] ?? "";
+  const hasApply = lines.includes(HOW_TO_APPLY);
+  if (value === "false") {
+    if (count(CHECK_FIRST_LINE) > 0) {
+      return [
+        `${path}: \`${CHECK_FIRST}\` is false, but a line has "${CHECK_FIRST_LINE}"; set true, or remove the line`,
+      ];
+    }
+    if (rule.status !== "active" || (hasApply && NO_GATE.test(first))) return [];
     return [
-      `${path}: \`${CHECK_FIRST}\` is false, but a line has "${CHECK_FIRST_LINE}"; set true, or remove the line`,
+      `${path}: \`${CHECK_FIRST}\` is false, so the line after "${HOW_TO_APPLY}" must be "${NO_GATE_LINE} <${NO_GATE_KINDS.join(" | ")}>."`,
     ];
   }
   if (value !== "true") return [];
-  const at = lines.indexOf(HOW_TO_APPLY);
-  if (at === -1 || !(lines[at + 1] ?? "").startsWith(`${CHECK_FIRST_LINE} `)) {
+  if (count(NO_GATE_LINE) > 0) {
+    return [`${path}: \`${CHECK_FIRST}\` is true, but a line has "${NO_GATE_LINE}"; remove it`];
+  }
+  if (!hasApply || !first.startsWith(`${CHECK_FIRST_LINE} `)) {
     return [
       `${path}: \`${CHECK_FIRST}\` is true, so the line after "${HOW_TO_APPLY}" must start with "${CHECK_FIRST_LINE}"`,
     ];
   }
+  const marked = count(CHECK_FIRST_LINE);
   if (marked > 1)
     return [`${path}: "${CHECK_FIRST_LINE}" is in ${marked} lines; write it one time`];
   return [];
@@ -460,32 +480,62 @@ export function checkRules(files: MemoryFiles, limits: Limits): string[] {
 export function checkPermissionList(files: MemoryFiles, agents: string | undefined): string[] {
   const problems: string[] = [];
   const agentsList = NO_PERMISSION.exec(agents ?? "")?.[1];
+  if (agentsList === undefined) {
+    problems.push(
+      `AGENTS.md: no sentence "No permission covers a PR that changes …", so the rules cannot be compared with it`,
+    );
+  }
+  let copied = false;
   for (const rule of parseRules(files, [])) {
     if (rule.status !== "active") continue;
     const sentence = rule.body.split("\n").find((line) => line.startsWith("Rule: ")) ?? "";
     const ruleList = NO_PERMISSION.exec(sentence)?.[1];
     if (ruleList === undefined) continue;
-    const stepList = LIST_STEP.exec(rule.body)?.[1];
-    if (stepList === undefined) {
+    if (rule.fields.get(OWNER_MERGES) === "true") copied = true;
+    const step = listStepOf(rule.body);
+    if (step === undefined) {
       problems.push(
         `${rule.path}: the Rule sentence lists the PRs that no permission covers, so a Check first step must ask "Does the PR change <that list>?"`,
       );
-    } else if (stepList !== ruleList) {
-      problems.push(
-        `${rule.path}: the Check first step lists "${stepList}", but the Rule sentence lists "${ruleList}"`,
-      );
+    } else {
+      if (step.list !== ruleList) {
+        problems.push(
+          `${rule.path}: the Check first step lists "${step.list}", but the Rule sentence lists "${ruleList}"`,
+        );
+      }
+      if (!step.rest.startsWith(NOT_COVERED)) {
+        problems.push(
+          `${rule.path}: the Check first step that asks the list must go on with "${NOT_COVERED}"`,
+        );
+      }
     }
-    if (agentsList === undefined) {
-      problems.push(
-        `AGENTS.md: no sentence "No permission covers a PR that changes …", so ${rule.path} cannot be compared with it`,
-      );
-    } else if (agentsList !== ruleList) {
+    if (agentsList !== undefined && agentsList !== ruleList) {
       problems.push(
         `${rule.path}: the Rule sentence lists "${ruleList}", but AGENTS.md §7 lists "${agentsList}"`,
       );
     }
   }
+  // The list must have a copy that a promotion PR cannot change: an owner rule (DQ-937).
+  if (agentsList !== undefined && !copied) {
+    problems.push(
+      `${RULES_DIR}: no active rule with \`${OWNER_MERGES}: true\` copies the list of AGENTS.md §7`,
+    );
+  }
   return problems;
+}
+
+// The step that asks the list, read only in the Check first block: the "Check first:" line and the
+// numbered lines right after it. A copy in a code block or a later list does not count (DQ-938).
+function listStepOf(body: string): { list: string; rest: string } | undefined {
+  const lines = body.split("\n");
+  const start = lines.findIndex((line) => line.startsWith(CHECK_FIRST_LINE));
+  if (start === -1) return undefined;
+  for (const line of lines.slice(start + 1)) {
+    if (!NUMBERED.test(line)) return undefined;
+    const match = LIST_STEP.exec(line);
+    if (match !== null) return { list: match[1] ?? "", rest: match[2] ?? "" };
+  }
+  return undefined;
 }
 
 // The text of rules/README.md, made from the fields of the rule files. check:index reads its

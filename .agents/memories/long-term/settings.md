@@ -21,7 +21,7 @@ order, and the owner can change it.
 | `owner_pages` | HTML decision pages, made with the `decision-pages` skill | owner, 2026-11-19 (order 76) |
 | `promote_after_hours` | 24 | owner, 2026-11-19 (order 78, arena Q2 A: a daily or nightly PR) |
 | `drill_every_days` | 7 | #139 plan, 2026-11-19 |
-| `boot_max_kb` | 64 | #139 plan, 2026-11-19: about 16,000 tokens, under 2% of the window |
+| `boot_max_kb` | 80 | #139 plan, 2026-11-19; raised from 64 by the chief (2026-11-19, drill-139c fix): about 20,000 tokens, under 3% of the window |
 | `identity_max_lines` | 80 | #139 plan, 2026-11-19 |
 | `rule_max_lines` | 30 | #139 plan, 2026-11-19 |
 | `state_max_lines` | 80 | #139 plan, 2026-11-19 |

@@ -120,13 +120,15 @@ Check first: each condition of the Rule sentence, as questions in the order that
   source, a count, a test), or makes the action wait for one. Then the line after `How to apply:`
   starts with `Check first:` and asks each condition of the Rule sentence; numbered questions can
   follow it. The steps after it never restate only part of the Rule sentence. `false` for a rule
-  with no such condition (a format, a pre-step of your own work, or a trigger "when X, do Y"); it
-  has no `Check first:` line. An active rule with `owner-merges: true` has `check-first: true`.
+  with no such condition; the line after `How to apply:` is then `No gate: <a format | a pre-step
+  of your own work | a trigger | a fact>.`, and it has no `Check first:` line. Each rule has one
+  `How to apply:` line. An active rule with `owner-merges: true` has `check-first: true`.
   The check finds the line; it cannot tell that the line holds every condition (owner,
   2026-11-19, drill-139 Q1 A).
 - A rule that copies the list of `AGENTS.md` §7 ("No permission covers a PR that changes …")
-  copies it word for word, and a Check first step asks "Does the PR change <the same list>?". The
-  check compares the three lists.
+  copies it word for word. A numbered step of its Check first block asks "Does the PR change <the
+  same list>?" and goes on with "Then no permission covers it". The check compares the three lists,
+  and an active rule with `owner-merges: true` must hold the copy.
 - `owner-merges: true` (an optional field): a rule about merges, approvals or permissions. The
   owner merges a change of it ("Promote", step 6). A rule that supersedes or amends such a rule
   has the field too; the check makes sure of that. `identity.md` has the field in a frontmatter

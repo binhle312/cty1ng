@@ -96,7 +96,9 @@ const R2_FIELDS: Fields = {
 const BODY = [
   "Rule: Do one thing.",
   'Owner said: "do one thing at a time" (2026-11-15)',
-  "How to apply: Do it.",
+  "How to apply:",
+  "No gate: a format.",
+  "Do it.",
   "",
 ].join("\n");
 
@@ -110,6 +112,29 @@ const CHECK_BODY = [
   "",
 ].join("\n");
 const CHECKED = { "owner-merges": "true", "check-first": "true" };
+
+// The list of AGENTS.md §7 (the PRs that no standing permission covers), and a rule that copies it.
+const LIST = "`AGENTS.md`, a migration, or a rule about merges";
+const SHORT = "`AGENTS.md`, or a rule about merges";
+function agentsText(items: string): string {
+  return `# AGENTS.md\n\nMerge a PR only when the owner asks. No permission covers a PR that changes ${items}. The merge needs no line.\n`;
+}
+function listBody(ruleList: string, step: string | undefined): string {
+  return [
+    `Rule: Merge a PR that a permission covers. No permission covers a PR that changes ${ruleList}: only the owner's request covers it.`,
+    'Owner said: "merge the good PRs" (2026-11-15)',
+    "How to apply:",
+    "Check first: these questions, in this order.",
+    "1. Does the owner ask for this PR? Then merge it.",
+    ...(step === undefined ? [] : [step]),
+    "3. Does a permission cover the PR? Then merge it.",
+    "- Then verify the merge.",
+    "",
+  ].join("\n");
+}
+function listStep(items: string): string {
+  return `2. Does the PR change ${items}? Then no permission covers it. Stop.`;
+}
 
 function rule(fields: Fields, body = BODY): string {
   const lines = Object.entries(fields).map(([key, value]) => `${key}: ${value}`);
@@ -144,8 +169,7 @@ function tree(changes: Record<string, string | undefined> = {}): Map<string, str
 }
 
 const LIMITS = readSettings(settings()).limits;
-const AGENTS =
-  "# AGENTS.md\n\nNo permission covers a PR that changes `AGENTS.md`. The merge needs no line.\n";
+const AGENTS = agentsText(LIST);
 
 function rulesWith(path: string, text: string): string[] {
   return checkRules(tree({ [path]: text }), LIMITS);
@@ -153,7 +177,9 @@ function rulesWith(path: string, text: string): string[] {
 
 describe("the whole memory", () => {
   it("passes a valid tree", () => {
-    const files = tree();
+    const files = tree({
+      [R2]: rule({ ...R2_FIELDS, ...CHECKED }, listBody(LIST, listStep(LIST))),
+    });
     const tracked = [`${M}/short-term/README.md`];
     expect(
       checkMemory({ files, exists: (path) => files.has(path), tracked, agents: AGENTS }),
@@ -365,7 +391,7 @@ describe("checkRules: check first", () => {
     );
     const inline = CHECK_BODY.replace("How to apply:\nCheck first:", "How to apply: Check first:");
     for (const [name, body] of [
-      ["no line", BODY],
+      ["no line", BODY.replace("No gate: a format.\n", "")],
       ["a later line", later],
       ["on the How to apply line", inline],
     ] as const) {
@@ -396,6 +422,52 @@ describe("checkRules: check first", () => {
     ]);
   });
 
+  it("names an active check-first: false rule whose How to apply does not start with No gate", () => {
+    const inline = BODY.replace(
+      "How to apply:\nNo gate: a format.\nDo it.",
+      "How to apply: Do it.",
+    );
+    const kind = BODY.replace("No gate: a format.", "No gate: a habit.");
+    const later = BODY.replace("No gate: a format.\nDo it.", "Do it.\nNo gate: a format.");
+    for (const [name, body] of [
+      ["on the How to apply line", inline],
+      ["a kind that is not in the list", kind],
+      ["a later line", later],
+    ] as const) {
+      expect(rulesWith(R2, rule(R2_FIELDS, body)), name).toEqual([
+        `${R2}: \`check-first\` is false, so the line after "How to apply:" must be "No gate: <a format | a pre-step of your own work | a trigger | a fact>."`,
+      ]);
+    }
+  });
+
+  it("passes each kind of No gate line", () => {
+    for (const kind of ["a format", "a pre-step of your own work", "a trigger", "a fact"]) {
+      const body = BODY.replace("No gate: a format.", `No gate: ${kind}.`);
+      expect(rulesWith(R2, rule(R2_FIELDS, body)), kind).toEqual([]);
+    }
+  });
+
+  it("names a No gate line in a check-first: true rule", () => {
+    const fields = { ...R2_FIELDS, "check-first": "true" };
+    const body = CHECK_BODY.replace("- Do it.", "- Do it.\nNo gate: a fact.");
+    expect(rulesWith(R2, rule(fields, body)), "true with No gate").toEqual([
+      `${R2}: \`check-first\` is true, but a line has "No gate:"; remove it`,
+    ]);
+  });
+
+  it("asks no No gate line of a rule that is not active", () => {
+    const body = BODY.replace("How to apply:\nNo gate: a format.\nDo it.", "How to apply: Do it.");
+    expect(rulesWith(R1, rule(R1_FIELDS, body)), "replaced, no No gate").toEqual([]);
+  });
+
+  it("names two How to apply lines", () => {
+    const fields = { ...R2_FIELDS, "check-first": "true" };
+    const body = CHECK_BODY.replace("- Do it.", "- Do it.\nHow to apply: more steps.");
+    expect(rulesWith(R2, rule(fields, body)), "two blocks").toEqual([
+      `${R2}: "How to apply:" is in 2 lines; write one block`,
+    ]);
+  });
+
   it("passes a replaced owner-merges rule with check-first: false", () => {
     const files = tree({
       [R1]: rule({ ...R1_FIELDS, "owner-merges": "true" }),
@@ -406,60 +478,85 @@ describe("checkRules: check first", () => {
 });
 
 describe("checkPermissionList", () => {
-  const list = "`AGENTS.md`, a migration, or a rule about merges";
-  const short = "`AGENTS.md`, or a rule about merges";
-  const agents = (items: string): string =>
-    `# AGENTS.md\n\nMerge a PR only when the owner asks. No permission covers a PR that changes ${items}. The merge needs no line.\n`;
-  const body = (rule: string, step: string | undefined): string =>
-    [
-      `Rule: Merge a PR that a permission covers. No permission covers a PR that changes ${rule}: the owner merges it.`,
-      'Owner said: "merge the good PRs" (2026-11-15)',
-      "How to apply:",
-      "Check first: these questions, in this order.",
-      ...(step === undefined ? [] : [`1. Does the PR change ${step}? Then the owner merges it.`]),
-      "2. Does a permission cover the PR? Then merge it.",
-      "",
-    ].join("\n");
   const files = (text: string): Map<string, string> =>
     tree({ [R2]: rule({ ...R2_FIELDS, ...CHECKED }, text) });
+  const same = files(listBody(LIST, listStep(LIST)));
+  const noStep = `${R2}: the Rule sentence lists the PRs that no permission covers, so a Check first step must ask "Does the PR change <that list>?"`;
 
   it("passes when AGENTS.md, the Rule sentence and the Check first step list the same items", () => {
-    expect(checkPermissionList(files(body(list, list)), agents(list)), "same").toEqual([]);
+    expect(checkPermissionList(same, agentsText(LIST)), "same").toEqual([]);
   });
 
   it("names a Check first step whose list is not the list of the Rule sentence", () => {
-    expect(checkPermissionList(files(body(list, short)), agents(list)), "step").toEqual([
-      `${R2}: the Check first step lists "${short}", but the Rule sentence lists "${list}"`,
+    const text = files(listBody(LIST, listStep(SHORT)));
+    expect(checkPermissionList(text, agentsText(LIST)), "step").toEqual([
+      `${R2}: the Check first step lists "${SHORT}", but the Rule sentence lists "${LIST}"`,
     ]);
   });
 
-  it("names a Rule sentence with the list and no Check first step that asks it", () => {
-    expect(checkPermissionList(files(body(list, undefined)), agents(list)), "no step").toEqual([
-      `${R2}: the Rule sentence lists the PRs that no permission covers, so a Check first step must ask "Does the PR change <that list>?"`,
+  it("reads the list step only in the Check first block", () => {
+    const fence = ["```text", listStep(LIST), "```"].join("\n");
+    const before = listBody(LIST, listStep(SHORT)).replace(
+      "How to apply:",
+      `${fence}\nHow to apply:`,
+    );
+    expect(checkPermissionList(files(before), agentsText(LIST)), "a code block before").toEqual([
+      `${R2}: the Check first step lists "${SHORT}", but the Rule sentence lists "${LIST}"`,
+    ]);
+  });
+
+  it("does not read a list step after the Check first block", () => {
+    const later = listBody(LIST, undefined).replace(
+      "- Then verify the merge.",
+      `- Then verify the merge.\n${listStep(LIST)}`,
+    );
+    for (const [name, text] of [
+      ["no step", listBody(LIST, undefined)],
+      ["a step after the block", later],
+    ] as const) {
+      expect(checkPermissionList(files(text), agentsText(LIST)), name).toEqual([noStep]);
+    }
+  });
+
+  it("names a list step that does not say that no permission covers the PR", () => {
+    const step = `2. Does the PR change ${LIST}? Then merge it.`;
+    const problems = checkPermissionList(files(listBody(LIST, step)), agentsText(LIST));
+    expect(problems, "consequence").toEqual([
+      `${R2}: the Check first step that asks the list must go on with "Then no permission covers it"`,
     ]);
   });
 
   it("names a Rule sentence whose list is not the list of AGENTS.md", () => {
-    expect(checkPermissionList(files(body(short, short)), agents(list)), "agents").toEqual([
-      `${R2}: the Rule sentence lists "${short}", but AGENTS.md §7 lists "${list}"`,
+    const text = files(listBody(SHORT, listStep(SHORT)));
+    expect(checkPermissionList(text, agentsText(LIST)), "agents").toEqual([
+      `${R2}: the Rule sentence lists "${SHORT}", but AGENTS.md §7 lists "${LIST}"`,
     ]);
   });
 
-  it("names an AGENTS.md with no such sentence when a rule has the list", () => {
+  it("names an AGENTS.md with no list sentence", () => {
     for (const [name, text] of [
       ["no sentence", "# AGENTS.md\n"],
       ["no file", undefined],
     ] as const) {
-      expect(checkPermissionList(files(body(list, list)), text), name).toEqual([
-        `AGENTS.md: no sentence "No permission covers a PR that changes …", so ${R2} cannot be compared with it`,
+      expect(checkPermissionList(same, text), name).toEqual([
+        `AGENTS.md: no sentence "No permission covers a PR that changes …", so the rules cannot be compared with it`,
       ]);
     }
   });
 
-  it("skips a rule that is not active", () => {
-    const old = rule({ ...R1_FIELDS, "owner-merges": "true" }, body(short, undefined));
-    const tree2 = tree({ [R1]: old, [R2]: rule({ ...R2_FIELDS, ...CHECKED }, CHECK_BODY) });
-    expect(checkPermissionList(tree2, agents(list)), "replaced rule").toEqual([]);
+  it("names a memory where no active owner-merges rule copies the list", () => {
+    const old = rule({ ...R1_FIELDS, "owner-merges": "true" }, listBody(LIST, listStep(LIST)));
+    const noOwner = rule({ ...R2_FIELDS, "check-first": "true" }, listBody(LIST, listStep(LIST)));
+    const plain = rule({ ...R2_FIELDS, ...CHECKED }, CHECK_BODY);
+    for (const [name, changes] of [
+      ["the list is gone from the rules", { [R2]: plain }],
+      ["only a replaced rule has it", { [R1]: old, [R2]: plain }],
+      ["only a rule with no owner-merges has it", { [R2]: noOwner }],
+    ] as const) {
+      expect(checkPermissionList(tree(changes), agentsText(LIST)), name).toEqual([
+        `${R}: no active rule with \`owner-merges: true\` copies the list of AGENTS.md §7`,
+      ]);
+    }
   });
 });
 
@@ -518,7 +615,7 @@ describe("checkRules: body", () => {
   it("names a rule over the line limit", () => {
     const body = `${BODY}${"More.\n".repeat(30)}`;
     expect(rulesWith(R2, rule(R2_FIELDS, body)), "long rule").toEqual([
-      `${R2}: 45 lines; the limit is 30 (setting rule_max_lines)`,
+      `${R2}: 47 lines; the limit is 30 (setting rule_max_lines)`,
     ]);
   });
 });

@@ -8,9 +8,12 @@ orders: [23, 24]
 ends: never
 supersedes: []
 amends: []
-check-first: false
+check-first: true
 ---
 Rule: Measure the context after each phase and before each long step. At `checkpoint_left_percent` left or less, stop. Write the state and a handoff, then continue in a new conversation that reads them first.
 Owner said: "everytime the context window drop to 40%, I want use to either use `handoff` skill or update your memory" (2026-11-13)
 Owner said: "write a handoff, start a new conversation" (2026-11-13)
-How to apply: The chief updates `short-term/now.md`, writes a handoff in `short-term/handoffs/`, and clones itself (`restore.md`, "Same computer"). A leader writes its handoff and tells the chief; the chief starts a new conversation with the same model and effort.
+How to apply:
+Check first: after each phase and before each long step, is `checkpoint_left_percent` or less of the context left? Then stop: write the state and a handoff, and continue in a new conversation that reads them first.
+- The chief updates `short-term/now.md`, writes a handoff in `short-term/handoffs/`, and clones itself (`restore.md`, "Same computer").
+- A leader writes its handoff and tells the chief; the chief starts a new conversation with the same model and effort.

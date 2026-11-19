@@ -17,6 +17,7 @@ How to apply:
 Check first: ask these questions before you take questions to the owner.
 1. Are the open questions in one file, and did consultants (the arena method) see them? If not, do that first. Do not ask one question at a time.
 2. Does the owner's word name a Fable 5.2 seat? Only then run one.
+3. Did the owner decide? Act only on the owner's choice: the owner decides, not the consultants.
 - The seats: an Opus subagent and Codex `gpt-6-astra` (effort high). Give them a brief with the full context, and a rubric.
 - Score the candidates yourself, and give the owner both scores (L-13).
 - Only the owner starts the `arena` skill; otherwise run its method by hand. If you are not sure of an answer, say the doubt and suggest an arena.

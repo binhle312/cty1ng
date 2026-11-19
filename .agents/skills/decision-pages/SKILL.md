@@ -1,6 +1,7 @@
 ---
 name: decision-pages
 description: Build an HTML page that a person reads to decide or to get a status, from a JSON content file, with checked word limits and a headless verify. Use when you ask a human to choose between options, send several questions for answers, or send a status report that ends in a decision.
+disable-model-invocation: true
 ---
 
 # Decision pages
@@ -17,10 +18,12 @@ closed "Details" section or out.
 Kit files in this skill folder:
 
 - `scripts/lib.mjs`: the lint and the page builder.
-- `scripts/gen.mjs`: `node scripts/gen.mjs content.json page.html` checks the content and writes the page.
+- `scripts/gen.mjs`: `node scripts/gen.mjs content.json page.html` checks the content and writes the page; `--text page.txt` also writes the page text for the writing check.
+- `scripts/selftest.mjs`: `node scripts/selftest.mjs` checks the text export on a small content file.
 - `scripts/verify.mjs`: opens the page in a headless browser and asserts the rules below.
 - `references/content-format.md`: every field, with the limits table.
 - `references/research.md`: the evidence. Rule ids such as R2.4 point to its sections.
+- `agents/openai.yaml`: Codex does not start this skill by itself, as the `disable-model-invocation` field does for Claude Code.
 
 ## Reader rules
 
@@ -65,15 +68,20 @@ others are yours.
 3. **Write the content file** in the format of `references/content-format.md`, with the writing rules
    below. Put the conclusion in the ask and the evidence in the facts and table. Put the use
    case in the example and the story in Details.
-4. **Build:** `node scripts/gen.mjs content.json page.html`. Fix every `LINT` line. Cut words; do not
-   move decision facts into Details to pass a limit. Read every `WARN` line: fix it, or keep it
-   for a reason that you put in your report.
-5. **Verify:** `NODE_PATH=<node_modules that has @playwright/test> node scripts/verify.mjs content.json page.html`.
+4. **Build:** `node scripts/gen.mjs content.json page.html --text page.txt`. Fix every `LINT` line.
+   Cut words; do not move decision facts into Details to pass a limit. Read every `WARN` line: fix
+   it, or keep it for a reason that you put in your report.
+5. **Check the writing.** Write the content in Simplified Technical English (ASD-STE100). Run the
+   checker of the `ste-writing` skill on `page.txt`, the page text with one sentence or item on
+   each line. The score must be 80% or more before you send the page. Give a reason for each
+   flagged sentence that stays: fixed text, a technical name, or accuracy. If the checker is not
+   installed, tell the person, and apply the rules by hand.
+6. **Verify:** `NODE_PATH=<node_modules that has @playwright/test> node scripts/verify.mjs content.json page.html`.
    The step is done when the last line says `0 failed`.
-6. **Look at the screenshots** that verify writes (`-overview`, `-q1`, `-finish`, `-q1-dark`).
+7. **Look at the screenshots** that verify writes (`-overview`, `-q1`, `-finish`, `-q1-dark`).
    Blur your eyes: you must see, in order, the title, the ask, the pick box and the options.
    Fix what one look shows, then build and verify again.
-7. **Run the pre-send checklist** at the end of this guide, then send the page.
+8. **Run the pre-send checklist** at the end of this guide, then send the page.
 
 ## Writing rules
 
@@ -150,6 +158,7 @@ The reader pastes it back to you. Read the letters against the options in your c
 
 - [ ] `scripts/gen.mjs` printed 0 lint errors; each warning is fixed or has a reason in your report.
 - [ ] `scripts/verify.mjs` printed `0 failed` on the final page.
+- [ ] The STE checker gave 80% or more on `page.txt`, or you told the person that it is not installed.
 - [ ] You looked at all four screenshots after the last change, in light and dark.
 - [ ] Each title is a question, and each ask starts the decision in line 1.
 - [ ] Each option has a real gain; no straw man is left.

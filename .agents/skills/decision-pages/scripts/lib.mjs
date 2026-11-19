@@ -615,6 +615,54 @@ ${ov}
 </html>`;
 }
 
+// ---------- Text export (for a writing check, such as an STE checker) ----------
+
+// All the text that the page shows from the content, one sentence or item on each line, with the
+// bold and code marks removed. Ids, keys, the storage key, the date, risk levels, confidence and
+// the "when" labels of an example are not prose, so they are left out.
+export function pageText(c) {
+  const out = [];
+  const add = (s) => {
+    const t = stripMarkup(s).trim();
+    if (!t) return;
+    for (const x of t.split(/(?<=[.!?])\s+(?=[A-Z0-9"'(#§\/])/)) if (x.trim()) out.push(x.trim());
+  };
+  const items = (list) => (list || []).forEach((it) => (Array.isArray(it) ? items(it) : add(it)));
+  const table = (t) => {
+    if (!t) return;
+    add(t.title);
+    add(t.columns.join(", "));
+    t.rows.forEach((r) => add(r.map(String).join(", ")));
+  };
+  add(c.page.title);
+  add(c.page.subtitle);
+  const ov = c.overview || {};
+  add(ov.heading);
+  add(ov.lead);
+  for (const b of ov.blocks || []) {
+    if (b.type === "table") table(b);
+    else add(b.title);
+    if (b.type === "text") (b.paragraphs || []).forEach(add);
+    if (b.type === "list") items(b.items);
+    add(b.note);
+  }
+  for (const q of c.questions || []) {
+    [q.topic, q.title, q.ask, q.why].forEach(add);
+    q.facts.forEach(add);
+    table(q.table);
+    add(q.example.title);
+    q.example.steps.forEach((st) => add(st.text));
+    if (q.details) { add(q.details.summary); items(q.details.items); }
+    add(q.pick.reason);
+    add(q.pick.another);
+    for (const o of q.options) {
+      [o.label, o.gets, o.costs, o.riskText].forEach(add);
+      if (o.details) { add(o.details.summary); items(o.details.items); }
+    }
+  }
+  return out;
+}
+
 export function buildPage(c) {
   const bad = validate(c);
   if (bad.length) throw new Error("content is not valid:\n- " + bad.join("\n- "));

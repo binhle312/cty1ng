@@ -49,4 +49,4 @@ Read the matching skill before its phase of work.
 | `ui-ux-pro-max/` | Work on interface design; follow the project design rules. |
 | `typescript-best-practices/` | Write or review TypeScript; `docs/frontend-conventions.md` wins where they differ (see its `SOURCE.md`). |
 | `arena/` | Owner only, with `/arena`: run candidates in parallel on one task, pick a base, and graft the best parts. |
-| `decision-pages/` | Use when you send a person a page to decide or to read a status. Build it from a JSON content file; the scripts check the limits and the page. |
+| `decision-pages/` | The chief only, read by hand (it does not load by itself; owner, 2026-11-19, order 93): a page for a person to decide or to read a status. Build it from a JSON content file; the scripts check the limits, the page and the text for the STE check. |

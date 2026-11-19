@@ -43,6 +43,7 @@ conditions are in the file, not in this table.
 | `R-033-coordinate-do-not-build.md` | The chief coordinates, and gives work of more than a few steps to an agent. | chief | never | |
 | `R-034-leaders-push-at-checkpoints.md` | A leader pushes its branch at each checkpoint of its plan. | leaders | never | |
 | `R-035-hand-check-until-107.md` | Before each merge, check the two template-named tests of DQ-795 by hand until #107 merges. | chief | until #107 merges | |
+| `R-036-grader-not-weaker.md` | A grader, reviewer, consultant or advisor is never a weaker model than the model whose work it grades. | all-agents | never | |
 
 ## Not active
 

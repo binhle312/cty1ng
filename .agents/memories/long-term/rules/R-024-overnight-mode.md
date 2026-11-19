@@ -14,6 +14,7 @@ Rule: When the owner gives a goal and rules and goes away, work toward the goal 
 Owner said: "We should have an `overnight` mode" (2026-11-15)
 Owner said: "for any reports or open questions for owner (me), make it into html file" (2026-11-15)
 How to apply:
+No gate: a trigger.
 1. Write the goal and the rules word for word in `short-term/owner/`.
 2. Before the owner goes, get each decision that only the owner can give; a missing one stops only its PR (R-006).
 3. Keep `decisions.tsv` (each decision you make), a file of what the owner must know (with your own errors) and a timeline. Write each entry when it happens.
