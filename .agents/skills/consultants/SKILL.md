@@ -16,9 +16,11 @@ When an agent is not sure about a decision, it asks up the chain. It does not st
 
 1. An agent that works for a lead agent asks the lead agent.
 2. A lead agent asks the owner, when the owner is available.
-3. In an unattended run (for example, overnight while the owner sleeps), the lead agent asks one
-   advisor: Claude Opus 5.5 at effort `high`, read-only. It records the question, the advice
-   and its decision for the owner's morning report.
+3. In an unattended run (for example, overnight while the owner sleeps), the lead agent asks the
+   built-in `advisor` tool. The tool runs the model that the owner set in the `advisorModel` setting.
+   That setting is the owner's choice, so it can be Fable 5.2 without a new owner word.
+   If the session has no advisor tool, the lead agent asks one Claude Opus 5.5 at effort `high`, read-only.
+   It records the question, the advice and its decision for the owner's morning report.
 4. The lead agent runs this skill only when the owner asks for it: with `/consultants`, or in the
    owner's instructions for the current unattended run. That permission ends with that run.
 
@@ -29,7 +31,7 @@ agent not sure ──► lead agent not sure ──► owner available? ── y
                                               │
                          owner allowed consultants for this run? ── yes ──► this skill
                                               │
-                                              no ──► one Opus 5.5 high advisor
+                                              no ──► the advisor tool (advisorModel)
 ```
 
 ## Models

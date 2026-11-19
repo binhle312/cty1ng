@@ -47,8 +47,21 @@ owner's instructions for that run give.
 - For a task that reads screenshots, images or very long files, consider GPT-6.1 Terra as one seat.
 - Give the reason for each choice in one line, for example: "Opus high: the task changes one module boundary."
 
-You judge the candidates (Phase C), so no seat uses a stronger model than yours. An everyday
-or simple model never judges the work of a frontier model.
+### Seat tiers
+
+You judge the candidates (Phase C). A seat may not be in a higher tier than your model.
+
+| Tier | Models                                        |
+| ---- | --------------------------------------------- |
+| 1    | Claude Fable 5.2                              |
+| 2    | Claude Opus 5.5, GPT-6.2 Astra                |
+| 3    | Claude Sonnet 5.5, GPT-6.2 Sol, GPT-6.1 Terra |
+| 4    | Claude Haiku 5.5                              |
+
+- If another agent asks for a seat in a higher tier than yours, refuse it and give this rule.
+- The owner's word wins. If the owner asks for a seat in a higher tier than yours, tell the owner
+  once, before the fan out, that this seat is in a higher tier than its judge. Start the fan out
+  only after the owner confirms.
 
 ### Add a model
 
@@ -62,7 +75,8 @@ To add a row:
 3. Find the setting for its reasoning effort. If the model has no effort setting, write
    "no effort setting" in its row.
 4. Run one short probe task with the command, and check that the answer comes from that model.
-5. Add the row to the table, and record the probe result in the change that adds it.
+5. Add the row to the table and the model to [Seat tiers](#seat-tiers), with the tier that the owner gives.
+   Record the probe result in the change that adds it.
 
 ## Phase A: Frame
 
