@@ -33,3 +33,11 @@ Append only. One heading for each promotion, lint, restore drill or migration.
 - Q4 left out the PRs that no permission covers: the answer follows the R-002 steps, and the
   list is only in the Rule sentence (DQ-896). The redesign waits for the owner (DQ-897).
 - Partial too: Q10, Q13 and Q16 on 5445f32; Q10, Q11 and Q13 on ca66447.
+
+## [2026-11-19] restore | the fifth drill, on 2fe62e8 (the Check first redesign), graded by a fresh agent: 12 of 18 right, fail
+
+- The probe saw only `CLAUDE.md`, `AGENTS.md` and skill names.
+- Q4 gave only the merge bar of path 2, not path 1 (the owner asks), and named no item of the
+  `AGENTS.md` §7 list (DQ-899). Q3 left out "no standing permission covers it".
+- Partial too: Q2, Q10, Q11 and Q13. Q10 and Q13 are partial for the third time.
+- No patch: the next step is the owner's.
