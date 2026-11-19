@@ -24,6 +24,10 @@ Revision 5, 2026-11-18 (DQ-753, a same cause as DQ-356): the PR template has one
 example rows and links to it. No test: the change removes a copy, so there is nothing to compare.
 Approval: the chief agent, 2026-11-18, by the rule "one home for each fact" (DQ-152, 2026-11-09);
 q4 Q3 A does not name the template, so the owner's review is pending
+Revision 6, 2026-11-19 (owner, 2026-11-19, morning Q4 A): the answer check reruns the search of
+each new row and checks the "Yes" rows; it reads rows from DQ-853 on (the owner's "new rows
+only"). Plan OK by the chief agent, 2026-11-19, with two of the chief's decisions: the third §9
+step (the fixed answer) and the lessons in the searched files
 
 ## The cause
 
@@ -65,7 +69,7 @@ others: a script writes every count, and the other records link to the row that 
 | Counts of a PR (unique, open, escaped, rounds) | Register row (by hand); §2 paragraph; PR description ("two round rows") | Register row of a PR with coverage `Ledger`, written by the script |
 | State, fix commit and test of an issue | Ledger row; §2 paragraph ("fixed in `c8923ef`"); the Fix and Test columns of the description table; `docs/status.md` lines | Ledger row only; the description names the id |
 | Result of a review round | Round row; description ("round 2 confirmed …"); §2 paragraph | Round row only |
-| "Same cause as an earlier fix?" answer and its search | Description table (`AGENTS.md` §9) and the Fix cell of the ledger row | The ledger row only, checked by the script from DQ-751 on and for rows found after 2026-11-18 (revisions 3 and 4; `AGENTS.md` §9); the description names the rows |
+| "Same cause as an earlier fix?" answer and its search | Description table (`AGENTS.md` §9) and the Fix cell of the ledger row | The ledger row only; the script checks the form of DQ-751 to DQ-777 (revisions 3 and 4) and, from DQ-853 on, reruns the search and checks the "Yes" step (revision 6); the description names the rows |
 | What a merged PR delivered | `docs/status.md` line (with file lists and claims, DQ-668, DQ-712) | `docs/status.md`: the state and a link, no file list, no count, no claim that a test owns |
 | Owner answers, reserved id ranges | §2 paragraphs, ledger rows, `plans/README.md` | The ledger row of the issue; the plan approval in `plans/README.md`; a range needs no record (each PR greps the branches) |
 
@@ -136,6 +140,41 @@ home goes into its ledger row first. This removes 13,935 bytes and three wrong s
 - "Before each push" adds a step: after the merge of `origin/main`, run
   `pnpm records:counts --write`; CI runs the check.
 
+### The search of a new row (revision 6; owner, 2026-11-19, morning Q4 A)
+
+The owner's words: "#135 also reruns the grep pattern named in each new row and fails when a cited
+id is not in the hits; a 'Yes' row must name its §9 step (an owner decision or a proposal id) …
+The reviewer checks the choice of words."
+
+- **Rows checked.** "New rows only": the rows from DQ-853 on (the first id after the ranges of the
+  PRs open on 2026-11-19), not `withdrawn`. DQ-751 to DQ-777 (this PR's own rows) keep the form
+  check of revisions 3 and 4. The other rows, also DQ-778 to DQ-852 of #136, #137 and #138, are
+  not checked; this PR does not rewrite rows of other PRs. The date rule of revision 4 goes.
+- **The form**, in the "Fix and verification" cell:
+  `Same cause: no (search: `<pattern>`: <hits>)` and
+  `Same cause: yes (search: `<pattern>`: <hits>; §9: <step>)`. One pattern in one code span; an
+  alternation goes inside it. The table needs `\|`; the script reads `\|` as `|`.
+- **The command** that the pattern stands for: `grep -n -i -E '<pattern>' docs/delivery-quality.md
+  docs/delivery-quality-archive.md docs/lessons-learned/*.md`, on the files of the tree that the
+  script reads (in CI, the PR checkout). These are the places of `AGENTS.md` §9: the ledger, its
+  §7 prevention actions and the lessons. The lib stays pure: the CLI reads the files, and the lib
+  runs the pattern as a JavaScript regular expression (any case) on their lines.
+- **One pattern language.** A pattern is a problem when grep -E and JavaScript could read it in two
+  ways, or when it does not compile: a backtick, an empty pattern, a backslash before a letter or a
+  digit (`\d`, `\w`, `\b`, `\<`), `[[:` and `(?`.
+- **The hits** are the lines that match, without the row's own line (else each row finds its own
+  ids). **A cited id is in the hits** when the id occurs as a whole id (DQ-62 is not DQ-620) in a
+  hit line. Each `DQ-<n>` in `<hits>` must be; else the problem names the row, the id and the
+  pattern. `<hits>` is free text with zero or more ids, or `none`.
+- **The §9 step of a yes** is one of: `owner, <YYYY-MM-DD>, <page> Q<n> <option>` (for example
+  `owner, 2026-11-19, morning Q4 A`); `proposal DQ-<n>`, where DQ-<n> is a row of the ledger files
+  and not the row itself; `fixed answer (AGENTS.md §9, owner 2026-11-11)`, for the fixed answer to
+  a claim bigger than its proof. The third step is the chief agent's reading of "an owner decision
+  or a proposal id": the fixed answer is an owner rule, and a correct row would fail without it. A
+  yes without a step is a problem.
+- `docs/workflows/pull-request.md` ("One home for each fact") gets the form, the command, the three
+  steps and the rows checked. `AGENTS.md` §9 names no form and does not change.
+
 ### `docs/delivery-quality.md` §1 to §3 and §7, and the review brief
 
 - §2: the sentence of the paragraphs (open question 1), and the marker in the Audit row.
@@ -158,8 +197,9 @@ of a fact. Goal: none about a count (the script writes them), and at most one ab
 
 ## Test strategy (test first; `scripts/records-counts.test.ts`)
 
-No break list: these tests come before the code, and none is a security or an order test (owner,
-2026-11-09); the red runs are recorded in the PR description.
+No breaks: these tests come before the code, and none is a late, security or order test (owner,
+2026-11-09); the red runs are recorded in the PR description. Since #136 (owner, 2026-11-18, q5
+Q1 A), `scripts/breaks/pr-135.json` gives each test an exemption whose reason names its red run.
 
 | Behaviour | Test (fixture texts) | Red run |
 | --- | --- | --- |
@@ -181,6 +221,11 @@ No break list: these tests come before the code, and none is a security or an or
 | A row with more or fewer cells than its header is a problem (revision 4) | One row with a stray cell, one with a missing cell | Same |
 | The answer (revision 3, 4): a row from DQ-751 on, or found after 2026-11-18, needs `Same cause: yes\|no (search: <command or places>: <hits>)` in its "Fix and verification" cell; an answer with no search, the word search alone, another word, a small first letter, and an answer in another cell are each a problem; a search with an escaped pipe passes; DQ-750 found on 2026-11-18 and a `withdrawn` row are not asked | One row each | Same |
 | Both kinds in one report: a structure problem and the answer problems | A double DQ-751 with no answer | Same |
+| Revision 6, the rows checked: DQ-853 in the old form is a problem; DQ-800 with no answer and a new row found after 2026-11-18 below DQ-853 are not; DQ-760 keeps the old check; a `withdrawn` DQ-853 is not checked | One row each | Before the code: the old rule |
+| Revision 6, the search: a cited id in a hit line passes; an id only in the row's own line, an id in no line, and DQ-62 when only DQ-620 is a hit are problems; `\|` is an alternation; the match ignores case; a hit in the archive and in a lesson counts | Fixture files | Before the code: no rerun |
+| Revision 6, the pattern: a backtick, an empty pattern, `\d`, `[[:digit:]]`, `(?=` and a pattern that does not compile are each a problem | One row each | Same |
+| Revision 6, the §9 step: a yes with each of the three steps passes; a yes with no step (the text of #137's DQ-849), a proposal of a missing id and a proposal of the row itself are problems; a no needs no step | One row each | Same |
+| Revision 6, one language: for each pattern of these tests, the hit lines of the lib equal the hit lines of the real `grep -n -i -E` on a fixture file; with no `grep`, the test is skipped with a message | Fixture file | Before the code: no search function |
 
 Real runs, recorded in the description: (1) the check on the files of `main` after the `Ledger`
 markers, before `--write`: it lists the stale cells; (2) a scratch copy with one count changed by
@@ -192,9 +237,12 @@ files, each difference checked against its rows.
 - The script does not check that a row is true (its state against the commit, its test). The
   reviewer checks that.
 - It does not read PR descriptions or `docs/status.md`; the link rule there is a written rule.
-- It checks that a row from DQ-751 on, or found after 2026-11-18, has a "Same cause" answer in the
-  form `Same cause: yes|no (search: …: …)`; it does not check that the search is right or complete,
-  or that a yes names the earlier fix (revisions 3 and 4).
+- It checks the form of DQ-751 to DQ-777 (revisions 3 and 4) and, from DQ-853 on, reruns the search
+  and checks the §9 step of a yes (revision 6). Rows before DQ-853, and a new row with an id below
+  DQ-853, are not checked.
+- It does not check the choice of words of a search (the reviewer does), that `none` or a "no" is
+  true, that a cited row has the same cause, that the owner decision named in a step exists, or
+  that grep and JavaScript agree beyond the patterns of the tests.
 - It does not check the 600-byte limit of a row (pull-request.md step 7; about 120 rows are over it
   on `main`) or the file size (§7 step 6).
 - Rows of a PR branch count only after that branch merges. Two PRs that merge one after the other
