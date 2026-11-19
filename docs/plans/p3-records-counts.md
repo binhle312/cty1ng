@@ -149,7 +149,9 @@ The reviewer checks the choice of words."
 - **Rows checked.** "New rows only": the rows from DQ-853 on (the first id after the ranges of the
   PRs open on 2026-11-19), not `withdrawn`. DQ-751 to DQ-777 (this PR's own rows) keep the form
   check of revisions 3 and 4. The other rows, also DQ-778 to DQ-852 of #136, #137 and #138, are
-  not checked; this PR does not rewrite rows of other PRs. The date rule of revision 4 goes.
+  not checked; this PR does not rewrite rows of other PRs, except the old-form answers of rows
+  from DQ-853 on that merged before #135 (DQ-873 to DQ-875 of #138; chief, 2026-11-19, review 5:
+  `main` stays green). The date rule of revision 4 goes.
 - **The form**, in the "Fix and verification" cell:
   `Same cause: no (search: `<pattern>`: <hits>)` and
   `Same cause: yes (search: `<pattern>`: <hits>; §9: <step>)`. One pattern in one code span; an
