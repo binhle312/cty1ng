@@ -10,7 +10,7 @@ supersedes: [R-001]
 amends: []
 owner-merges: true
 ---
-Rule: Merge a PR when the owner's message asks for it. Also merge a PR that a standing permission covers, when it meets the merge bar below. No permission covers a PR that the merge sentence of `AGENTS.md` §7 leaves out: the owner merges it.
+Rule: Merge a PR when the owner's message asks for it. Also merge a PR that a standing permission covers, when it meets the merge bar below. No permission covers a PR that changes `AGENTS.md`, `docs/decisions/`, security-sensitive code, a migration, a dependency, the memory README, `identity.md`, the memory check, or a rule about merges, approvals or permissions: the owner merges it (`AGENTS.md` §7).
 Owner said: "you have my permission to merge the PRs that you think they are good to merge" (2026-11-15)
 Owner said: "Standing: each chief merge, except memory PRs" (2026-11-19)
 How to apply:
