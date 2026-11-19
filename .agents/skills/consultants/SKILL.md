@@ -10,6 +10,28 @@ Use consultants when the owner needs a decision with real trade-offs. Each consu
 same open questions alone and grills your recommendation. You answer each point. The owner decides.
 The repository's approval rules still apply: a consultant's view is advice, not an approval.
 
+## Who asks whom
+
+When an agent is not sure about a decision, it asks up the chain. It does not start consultants alone.
+
+1. An agent that works for a lead agent asks the lead agent.
+2. A lead agent asks the owner, when the owner is available.
+3. In an unattended run (for example, overnight while the owner sleeps), the lead agent asks one
+   advisor: Claude Opus 5.5 at effort `high`, read-only. It records the question, the advice
+   and its decision for the owner's morning report.
+4. The lead agent runs this skill only when the owner asks for it: with `/consultants`, or in the
+   owner's instructions for the current unattended run. That permission ends with that run.
+
+```
+agent not sure ──► lead agent not sure ──► owner available? ── yes ──► ask the owner
+                                              │
+                                              no (unattended run)
+                                              │
+                         owner allowed consultants for this run? ── yes ──► this skill
+                                              │
+                                              no ──► one Opus 5.5 high advisor
+```
+
 ## Models
 
 Every consultant uses a model from this table, at effort `high` and standard speed.
@@ -19,12 +41,13 @@ Use only the models in the table. Do not use `xhigh`, a lower effort, or fast mo
 | ---------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------- |
 | Claude Opus 5.5  | `Agent` tool with `model: "opus"` and `effort: "high"`                                 | `claude -p --model claude-opus-5-5 --effort high`  |
 | Claude Fable 5.2 | `Agent` tool with `model: "fable"` and `effort: "high"`                                | `claude -p --model claude-fable-5-2 --effort high` |
-| GPT-6 Astra      | `codex exec -m gpt-6-astra -c model_reasoning_effort="high" -c service_tier="default"` | The same `codex exec` command                      |
+| GPT-6.2 Astra    | `codex exec -m gpt-6.2-astra -c model_reasoning_effort="high" -c service_tier="default"` | The same `codex exec` command                    |
 
 From Codex, `claude -p` needs network access. If it fails in the sandbox, ask the owner for network access.
 
 No consultant is a weaker model than the model whose work it reads.
-A small or fast model (for example a Sonnet or Haiku model) is never a consultant.
+A consultant reads the work of a frontier model, so only the models in this table are consultants.
+A cheaper model (Sonnet 5.5, Haiku 5.5, GPT-6.2 Sol) is never a consultant.
 
 ### Add a model
 
@@ -42,7 +65,7 @@ To add a row:
 
 ### Choose the consultants
 
-The default is two consultants from two model families: one Opus 5.5 and one GPT-6 Astra.
+The default is two consultants from two model families: one Opus 5.5 and one GPT-6.2 Astra.
 Two families catch different errors.
 
 - Add Fable 5.2 only when the owner names it for this decision.

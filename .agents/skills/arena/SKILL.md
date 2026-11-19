@@ -1,32 +1,52 @@
 ---
 name: arena
-description: Run two or more candidates on one task, pick a base, and graft the best parts of the others into it. Owner starts it with /arena.
+description: Do one task with two or more candidates in parallel, pick the best as the base, and graft the best parts of the others into it. The owner starts it with /arena, or tells an agent to use it.
 disable-model-invocation: true
 ---
 
 # Arena
 
-Use an arena when one attempt at a non-trivial artifact can lock in the wrong shape.
-The arena gives a better first version. The repository's plan, approval and review rules still apply.
+Use an arena for a task that the owner gives you with "use the arena": a feature, a fix,
+a document, a plan or a design. Several candidates do the same task, and the result is better
+than one attempt. The repository's plan, approval and review rules still apply.
 
 If the session has a task list tool, open one entry for each phase before you start a seat:
 Frame, Fan out, Judge, Pick, Graft, Verify.
 
 ## Models
 
-Every seat and the judge use a model from this table, at effort `high` and standard speed.
-Use only the models in the table. Do not use `xhigh`, a lower effort, or fast mode.
+Each seat and the judge use a model from this table. Use only the models in the table.
+Do not use fast mode.
 
-| Model            | From Claude Code                                                                       | From Codex                                         |
-| ---------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Claude Opus 5.5  | `Agent` tool with `model: "opus"` and `effort: "high"`                                 | `claude -p --model claude-opus-5-5 --effort high`  |
-| Claude Fable 5.2 | `Agent` tool with `model: "fable"` and `effort: "high"`                                | `claude -p --model claude-fable-5-2 --effort high` |
-| GPT-6 Astra      | `codex exec -m gpt-6-astra -c model_reasoning_effort="high" -c service_tier="default"` | The same `codex exec` command                      |
+| Model             | Use                                         | From Claude Code                                             | From Codex                                                                                |
+| ----------------- | ------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| Claude Fable 5.2  | Frontier; only when the owner names it      | `Agent` tool with `model: "fable"` and `effort: "<e>"`       | `claude -p --model claude-fable-5-2 --effort <e>`                                         |
+| Claude Opus 5.5   | Frontier                                    | `Agent` tool with `model: "opus"` and `effort: "<e>"`        | `claude -p --model claude-opus-5-5 --effort <e>`                                          |
+| GPT-6.2 Astra     | Frontier                                    | `codex exec -m gpt-6.2-astra -c model_reasoning_effort="<e>" -c service_tier="default"` | The same `codex exec` command                                  |
+| Claude Sonnet 5.5 | Everyday                                    | `Agent` tool with `model: "sonnet"` and `effort: "<e>"`      | `claude -p --model claude-sonnet-5-5 --effort <e>`                                        |
+| GPT-6.2 Sol       | Everyday; near Astra on code, lower price   | `codex exec -m gpt-6.2-sol -c model_reasoning_effort="<e>" -c service_tier="default"`   | The same `codex exec` command                                  |
+| Claude Haiku 5.5  | Simple, fast generation                     | `Agent` tool with `model: "haiku"` and `effort: "<e>"`       | `claude -p --model claude-haiku-5-5 --effort <e>`                                         |
 
 From Codex, `claude -p` needs network access. If it fails in the sandbox, ask the owner for network access.
 
-No seat or judge is a weaker model than the model whose work it reads.
-A small or fast model (for example a Sonnet or Haiku model) never takes a seat.
+### Choose the seats
+
+Choose each seat's model and effort by the difficulty of the task. Propose them to the owner, and
+start the fan out when the owner agrees or changes them. In an unattended run, use the seats that the
+owner's instructions for that run give.
+
+| Task difficulty                                                        | Seats (model and effort)                                          |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Simple: a known pattern, mostly generation (text, tests, small code)   | Haiku 5.5 or Sonnet 5.5, and GPT-6.2 Sol, at `medium`             |
+| Normal: a feature or a fix with some judgment                          | Sonnet 5.5 or Opus 5.5, and GPT-6.2 Sol, at `high`                |
+| Hard: architecture, security, a design that is expensive to change     | Opus 5.5 and GPT-6.2 Astra, at `high` or `xhigh`                  |
+
+- Use two model families when the task needs judgment. They make different errors.
+- Add Fable 5.2 only when the owner names it for this arena.
+- Give the reason for each choice in one line, for example: "Opus high: the task changes one module boundary."
+
+The judge is never a weaker model than the strongest seat. An everyday or simple model never
+judges the work of a frontier model.
 
 ### Add a model
 
@@ -37,15 +57,10 @@ To add a row:
 
 1. The owner names the model for the arena.
 2. Find its exact model id and the command that starts it from Claude Code and from Codex.
-3. Find the setting for its reasoning effort, and set it to high. If the model has no effort
-   setting, write "no effort setting" in its row.
+3. Find the setting for its reasoning effort. If the model has no effort setting, write
+   "no effort setting" in its row.
 4. Run one short probe task with the command, and check that the answer comes from that model.
 5. Add the row to the table, and record the probe result in the change that adds it.
-
-### Choose the models
-
-Opus 5.5 and GPT-6 Astra take the default seats on every task.
-Add a Fable 5.2 seat only when the owner names Fable for this arena.
 
 ## Phase A: Frame
 
@@ -57,12 +72,10 @@ All candidates get the same brief, so the brief is the contract.
 3. Check which models you can start. Your own model family is always available.
    From Claude Code, run `command -v codex`. From Codex, run `command -v claude`.
    If the command finds nothing, you have one model family. Tell the owner once, before the fan out.
-4. Choose the seats. The default is two: one Opus 5.5 and one GPT-6 Astra.
-   Add one Fable 5.2 seat only when the owner names Fable for this arena.
-   With one model family, the default seats use that family: Opus 5.5 from Claude Code, GPT-6 Astra from Codex.
-   The Fable seat needs the Claude family.
+4. Choose the seats with [Choose the seats](#choose-the-seats), and tell the owner the model,
+   the effort and the reason for each seat.
+   With one model family, use that family for all seats, and say so.
    Add seats when the task has more than one design direction.
-   Use one model for all seats when the work is mostly generation, not judgment.
 5. Give each seat its own output place:
    - Code: a git worktree on a new branch `arena-<slug>-<n>`.
      Install the dependencies in each worktree before the fan out, because the Codex sandbox has no network.
@@ -84,18 +97,18 @@ The phase is complete when the rubric and the brief file exist and each seat has
 ## Phase B: Fan out
 
 1. In one message, start all seats in the background with the brief file and the output place.
-   - Opus or Fable seat from Claude Code: `Agent` tool, `run_in_background: true`.
-   - Opus or Fable seat from Codex: `claude -p ... --permission-mode acceptEdits < <brief>`, run in `<worktree>`.
-   - GPT-6 Astra seat: `codex exec ... -s workspace-write -C <worktree> -o <out>/last-message.md - < <brief>`.
-2. If a seat fails to start, run it on another model from the table and tell the owner.
+   - Claude seat from Claude Code: `Agent` tool, `run_in_background: true`.
+   - Claude seat from Codex: `claude -p ... --permission-mode acceptEdits < <brief>`, run in `<worktree>`.
+   - GPT-6.2 Astra or Sol seat: `codex exec ... -s workspace-write -C <worktree> -o <out>/last-message.md - < <brief>`.
+2. If a seat fails to start, run it on another model from the table at the same effort or higher, and tell the owner.
 3. If a seat gives no output, continue with the others and record the dropout.
 
 ## Phase C: Judge
 
 Start the judge only after all seats finish.
 
-1. Use one read-only judge from the other model family than yours.
-   - From Claude Code, the judge is GPT-6 Astra: `codex exec ... -s read-only -C <repo root>`.
+1. Use one read-only judge from the other model family than yours, at effort `high` or higher.
+   - From Claude Code, the judge is GPT-6.2 Astra: `codex exec ... -s read-only -C <repo root>`.
    - From Codex, the judge is Opus 5.5: `claude -p ... --permission-mode plan`.
 2. If the other family is not available, start a new judge on your own model.
    - From Claude Code: `Agent` tool with `model: "opus"` and `effort: "high"`.
@@ -144,7 +157,7 @@ Build the result on the task's own branch, not on an arena branch.
 1. The result, on the task's own branch.
 2. A synthesis note. Put it in the PR description under the heading `Arena`, or in your reply if
    there is no PR. The note gives:
-   - the model of each seat;
+   - the model, the effort and the reason of each seat;
    - the base and why you picked it;
    - the judge's verdict and family (other or same), or that there was no judge;
    - each graft and its source candidate;

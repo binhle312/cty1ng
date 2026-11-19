@@ -48,5 +48,5 @@ Read the matching skill before its phase of work.
 | `principle-safe-test-data/` | Use when a test, fixture or example needs a value that looks like a credential, key, token or private data. Build a synthetic value. |
 | `ui-ux-pro-max/` | Work on interface design; follow the project design rules. |
 | `typescript-best-practices/` | Write or review TypeScript; `docs/frontend-conventions.md` wins where they differ (see its `SOURCE.md`). |
-| `arena/` | Owner only, with `/arena`: run candidates in parallel on one task, pick a base, and graft the best parts. |
+| `arena/` | Owner only, with `/arena` or the owner's words: do one task with parallel candidates (model and effort by difficulty), pick a base, and graft the best parts. |
 | `consultants/` | Owner only, with `/consultants`: strong models grill a recommendation on open decisions before the owner decides. |
