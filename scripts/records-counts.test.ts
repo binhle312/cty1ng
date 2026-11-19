@@ -1,8 +1,14 @@
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   type LedgerFile,
   checkCounts,
   formatIds,
+  patternProblem,
+  searchLines,
   strayLedgerFiles,
   writeCounts,
 } from "./lib/records-counts.ts";
@@ -434,7 +440,7 @@ describe("the Same cause answer of a row", () => {
 
   it("reports a row from DQ-751 on whose fix cell has no answer with a search", () => {
     expect(checkCounts(files(rows("`abc1234`: the fix. Same cause? No"))), "no search").toEqual([
-      `${MAIN}: DQ-751 has no "Same cause: yes|no (search: …)" in its "Fix and verification" cell (AGENTS.md §9; each row from DQ-751 on or found after 2026-11-18).`,
+      `${MAIN}: DQ-751 has no "Same cause: yes|no (search: …)" in its "Fix and verification" cell (AGENTS.md §9; rows DQ-751 to DQ-777).`,
     ]);
   });
 
@@ -445,7 +451,7 @@ describe("the Same cause answer of a row", () => {
   });
 
   const NO_ANSWER = (id: number) =>
-    `${MAIN}: ${dq(id)} has no "Same cause: yes|no (search: …)" in its "Fix and verification" cell (AGENTS.md §9; each row from DQ-751 on or found after 2026-11-18).`;
+    `${MAIN}: ${dq(id)} has no "Same cause: yes|no (search: …)" in its "Fix and verification" cell (AGENTS.md §9; rows DQ-751 to DQ-777).`;
 
   it.each([
     ["an answer with no search", "Same cause: no"],
@@ -471,12 +477,14 @@ describe("the Same cause answer of a row", () => {
     expect(checkCounts(files(rows(answer))), "escaped pipe").toEqual([]);
   });
 
-  it("reports a row below DQ-751 found after 2026-11-18, and skips a withdrawn row", () => {
+  it("checks no row after DQ-777 and before DQ-853, nor a row found after 2026-11-18 below DQ-853, and skips a withdrawn row", () => {
     const later = (row: string) => row.replace("| 2026-11-18 /", "| 2026-11-19 /");
     expect(
       checkCounts(files(rows("`abc1234`: the fix", { id: 700, change: later }))),
       "DQ-700 found later",
-    ).toEqual([NO_ANSWER(700)]);
+    ).toEqual([]);
+    expect(checkCounts(files(rows("`abc1234`: the fix", { id: 778 }))), "DQ-778").toEqual([]);
+    expect(checkCounts(files(rows("`abc1234`: the fix", { id: 852 }))), "DQ-852").toEqual([]);
     const withdrawn = files(
       rows("Withdrawn: not a defect", {
         id: 751,
@@ -501,6 +509,202 @@ describe("the Same cause answer of a row", () => {
       NO_ANSWER(751),
       NO_ANSWER(751).replace(MAIN, ARCHIVE),
     ]);
+  });
+});
+
+describe("the search of a new row (DQ-853 on)", () => {
+  // Rows DQ-001 and DQ-002 ("A slip") and DQ-853 with a fix cell; DQ-003 ("a zebra") is in the
+  // archive; a lesson names DQ-004 and DQ-020.
+  const LESSON: LedgerFile = {
+    path: "docs/lessons-learned/a-lesson.md",
+    text: "# A lesson\n\nA kangaroo slip (DQ-004). As DQ-020 said.\n",
+  };
+  function rows(fix: string, change: (row: string) => string = (row) => row): LedgerFile[] {
+    const row = change(issue({ id: 853, pr: 100 }).replace("| Fix |", `| ${fix} |`));
+    const zebra = issue({ id: 3, pr: 10 }).replace("A slip", "A zebra");
+    return files(
+      onePr({
+        registerRows: [
+          register({ pr: 10, cells: ["3 (DQ-001 to DQ-003)", "1 (DQ-002)", "0", "1"] }),
+          register({ pr: 100, cells: ["1 (DQ-853)", "0", "0", "0"] }),
+        ],
+        audit: [
+          "#10, #100 (the register rows of this milestone)",
+          "4 itemized",
+          "1 (1 `open`)",
+          "0 in the 4 rows that record it; 0 rows do not record it",
+          "1 logged",
+        ],
+        issues: [issue({ id: 1, pr: 10 }), issue({ id: 2, pr: 10, state: "open" }), row],
+        archiveIssues: [zebra],
+      }),
+    );
+  }
+  const check = (fix: string, change?: (row: string) => string) =>
+    checkCounts(rows(`\`abc1234\`: the fix. ${fix}`, change), [LESSON]);
+  const FORM = `${MAIN}: DQ-853 has no "Same cause: yes|no (search: \`<pattern>\`: <hits>)" in its "Fix and verification" cell (AGENTS.md §9; each row from DQ-853 on).`;
+  const MISSING = (pattern: string, id: string) =>
+    `${MAIN}: DQ-853: the search \`${pattern}\` finds ${id} in no line other than this row; cite only ids of its hits (owner, 2026-11-19, morning Q4 A).`;
+  const NO_STEP = `${MAIN}: DQ-853 answers yes and names no §9 step: add "; §9: owner, <YYYY-MM-DD>, <page> Q<n> <option>", "; §9: proposal DQ-<n>" or "; §9: fixed answer (AGENTS.md §9, owner 2026-11-11)".`;
+
+  it("reports a row from DQ-853 on in the old form", () => {
+    expect(check("Same cause: no (search: grep -n slip: DQ-001)"), "old form").toEqual([FORM]);
+  });
+
+  it("reports the text of #137's DQ-849, a yes with no search pattern and no step", () => {
+    const dq849 =
+      'Not fixed (records only, the last check). Owner decides the redesign (§9). Same cause? Yes (§9): DQ-809 (search: "Same cause", "§9")';
+    expect(check(dq849), "DQ-849").toEqual([FORM]);
+  });
+
+  it("passes a cited id that a hit line other than the row has", () => {
+    expect(check("Same cause: no (search: `a slip`: DQ-001, other causes)"), "DQ-001").toEqual([]);
+  });
+
+  it("reports a cited id that only the row's own line has", () => {
+    expect(check("Same cause: no (search: `fix of DQ-002`: DQ-002)"), "own line").toEqual([
+      MISSING("fix of DQ-002", "DQ-002"),
+    ]);
+  });
+
+  it("reports a cited id that no hit line has", () => {
+    expect(check("Same cause: no (search: `a slip`: DQ-001, DQ-007)"), "DQ-007").toEqual([
+      MISSING("a slip", "DQ-007"),
+    ]);
+  });
+
+  it("reads a cited id as a whole id", () => {
+    expect(check("Same cause: no (search: `as DQ-020`: DQ-02)"), "DQ-02").toEqual([
+      MISSING("as DQ-020", "DQ-02"),
+    ]);
+  });
+
+  it("reads an escaped pipe as an alternation", () => {
+    expect(
+      check("Same cause: no (search: `zebra\\|kangaroo`: DQ-003, DQ-004)"),
+      "alternation",
+    ).toEqual([]);
+  });
+
+  it("matches in any case", () => {
+    expect(check("Same cause: no (search: `A SLIP`: DQ-002)"), "any case").toEqual([]);
+  });
+
+  it("counts a hit in the archive", () => {
+    expect(check("Same cause: no (search: `zebra`: DQ-003)"), "archive").toEqual([]);
+  });
+
+  it("counts a hit in a lesson", () => {
+    expect(check("Same cause: no (search: `kangaroo`: DQ-004)"), "lesson").toEqual([]);
+    expect(
+      checkCounts(rows("`abc1234`: the fix. Same cause: no (search: `kangaroo`: DQ-004)")),
+      "no lessons given",
+    ).toEqual([MISSING("kangaroo", "DQ-004")]);
+  });
+
+  it("passes none as the hits", () => {
+    expect(check("Same cause: no (search: `wombat`: none)"), "none").toEqual([]);
+  });
+
+  it("reports a backtick in the pattern", () => {
+    expect(check("Same cause: no (search: `a`slip`: DQ-001)"), "backtick").toEqual([FORM]);
+  });
+
+  it.each([
+    ["an empty pattern", " ", "it is empty"],
+    ["a backslash before a letter", "slip\\d", "it has a backslash before a letter or a digit"],
+    ["a POSIX class", "[[:digit:]]", 'it has "[["'],
+    ["a group with (?", "(?=slip)", 'it has "(?"'],
+    ["a pattern that does not compile", "slip(", "it does not compile"],
+  ])("reports %s", (_name, pattern, why) => {
+    expect(check(`Same cause: no (search: \`${pattern}\`: none)`), pattern).toEqual([
+      `${MAIN}: DQ-853: the search pattern \`${pattern}\` is not allowed: ${why} (pull-request.md).`,
+    ]);
+  });
+
+  it.each([
+    ["an owner decision", "owner, 2026-11-19, morning Q4 A"],
+    ["a proposal row", "proposal DQ-002"],
+    ["the fixed answer", "fixed answer (AGENTS.md §9, owner 2026-11-11)"],
+  ])("passes a yes with %s as its step", (_name, step) => {
+    expect(check(`Same cause: yes (search: \`a slip\`: DQ-001; §9: ${step})`), step).toEqual([]);
+  });
+
+  it("reports a yes with no step", () => {
+    expect(check("Same cause: yes (search: `a slip`: DQ-001)"), "no step").toEqual([NO_STEP]);
+  });
+
+  it("reports a proposal that is no row, and a proposal that is the row itself", () => {
+    expect(
+      check("Same cause: yes (search: `a slip`: DQ-001; §9: proposal DQ-999)"),
+      "DQ-999",
+    ).toEqual([`${MAIN}: DQ-853: the §9 proposal DQ-999 is not a row of the ledger files.`]);
+    expect(
+      check("Same cause: yes (search: `a slip`: DQ-001; §9: proposal DQ-853)"),
+      "itself",
+    ).toEqual([
+      `${MAIN}: DQ-853: the §9 proposal DQ-853 is this row; name the row of the proposal.`,
+    ]);
+  });
+
+  it("skips a withdrawn row", () => {
+    const withdrawn = (row: string) => row.replace("| fixed |", "| withdrawn |");
+    expect(
+      check("Withdrawn: not a defect", withdrawn).filter((p) => p.includes("DQ-853")),
+      "withdrawn",
+    ).toEqual([]);
+  });
+});
+
+describe("searchLines and grep", () => {
+  // The lib runs a pattern as a JavaScript regular expression; the documented command is grep -E.
+  // For each pattern of the tests above, both give the same hit lines.
+  const TEXT = [
+    "| DQ-001 | A slip | fixed |",
+    "| DQ-003 | A zebra | open |",
+    "A kangaroo slip (DQ-004). As DQ-020 said.",
+    "Escaped \\| pipe and a.dot",
+    "a SLIP in capitals",
+    "",
+  ].join("\n");
+  const PATTERNS = [
+    "a slip",
+    "zebra|kangaroo",
+    "A SLIP",
+    "as DQ-020",
+    "a.dot",
+    "slip|pipe$",
+    "^\\| DQ-00[13]",
+  ];
+  const grep = spawnSync("grep", ["--version"], { encoding: "utf8" });
+
+  it.skipIf(grep.error !== undefined)(
+    "gives the hit lines of grep -n -i -E for each pattern",
+    () => {
+      const dir = mkdtempSync(join(tmpdir(), "records-grep-"));
+      try {
+        const path = join(dir, "ledger.md");
+        writeFileSync(path, TEXT);
+        for (const pattern of PATTERNS) {
+          expect(patternProblem(pattern), pattern).toBeUndefined();
+          const out = spawnSync("grep", ["-n", "-i", "-E", "--", pattern, path], {
+            encoding: "utf8",
+          });
+          const want = out.stdout
+            .split("\n")
+            .filter((line) => line !== "")
+            .map((line) => Number(line.slice(0, line.indexOf(":"))));
+          const got = searchLines(pattern, [{ path, text: TEXT }]).map((hit) => hit.line);
+          expect(got, pattern).toEqual(want);
+        }
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    },
+  );
+
+  it.runIf(grep.error !== undefined)("is skipped: no grep on this machine", () => {
+    console.warn("records-counts.test.ts: no grep, so the grep parity test did not run");
   });
 });
 
