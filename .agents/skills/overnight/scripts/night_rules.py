@@ -1,10 +1,11 @@
 """The state of a night (the fold) and the rules on each entry. Pure: no file, no clock, no environment."""
 
 import re
+import shlex
 
 from night_format import (
-    ANY_SHA, DEFAULT_MAX_GAP_MIN, FINAL_OUTCOMES, FULL_SHA, ITEM_EVENTS, ITEM_KINDS, KEEPS_REPORT_FRESH, OPTION,
-    PAGE_CHECKS, PHASE_KINDS, REHEARSALS_FOR_ACTION, entry_time)
+    ANY_SHA, DEFAULT_MAX_GAP_MIN, FINAL_OUTCOMES, FULL_SHA, ITEM_EVENTS, ITEM_KINDS, KEEPS_REPORT_FRESH, PAGE_CHECKS,
+    PHASE_KINDS, REHEARSALS_FOR_ACTION, REPO, SHELL_CHARS, SLOTS, entry_time)
 
 
 def name_key(name):
@@ -18,7 +19,7 @@ class Night:
         self.phase = "none"
         self.run = self.words = self.go = self.close = self.last = None
         self.test = False
-        self.items = {}         # exact name -> (kind, option or None, source entry id)
+        self.items = {}         # exact name -> (kind, command or None, source entry id)
         self.intents = {}       # intent id -> entry
         self.latest = {}        # item -> the id of its newest intent
         self.results = {}       # intent id -> its newest result
@@ -172,8 +173,8 @@ def rows_problems(rows, known=(), same="ITEM_DUPLICATE"):
             found.append(("ITEM_NAME", repr(name)))
         if kind not in ITEM_KINDS:
             found.append(("ITEM_KIND", f"{name!r} has kind {kind!r}"))
-        elif (kind == "commit") != bool(rest) or (rest and not OPTION.fullmatch(rest[0])):
-            found.append(("ITEM_OPTION", f"{' | '.join(row)}"))
+        else:
+            found.extend((code, f"{name!r}: {detail}") for code, detail in row_command_problems(kind, rest))
         if name_key(name) in seen:
             found.append((same, f"{name!r} and {seen[name_key(name)]!r}"))
         seen.setdefault(name_key(name), name)
@@ -209,11 +210,74 @@ def rule_amend(night, entry):
     return found
 
 
+def shell_words(text, slots):
+    """The words of a command as a POSIX shell splits them, or a COMMAND_SHELL problem. `slots`: a slot word is
+    allowed (a card row). A refused character is refused also inside quotes: night.py does not read quotes."""
+    if any(c in "\\\n\r" or ord(c) < 32 or ord(c) == 127 for c in text):
+        return None, ("COMMAND_SHELL", "a backslash, a new line or a control character")
+    try:
+        words = shlex.split(text)
+    except ValueError:
+        return None, ("COMMAND_SHELL", "an unclosed quote")
+    for index, word in enumerate(words):
+        if slots and word in SLOTS:
+            continue
+        if re.fullmatch(r"\{\w*\}", word) and slots:
+            return None, ("ITEM_COMMAND", f"the slot {word} does not exist (only {', '.join(SLOTS)})")
+        bad = sorted(set(word) & SHELL_CHARS)
+        if bad:
+            return None, ("COMMAND_SHELL", f"{' '.join(bad)} in `{word}`")
+        if word.startswith("=") or (index == 0 and "=" in word):
+            return None, ("COMMAND_SHELL", f"`{word}`: an environment word or a zsh `=` word")
+    return words, None
+
+
+def row_command_problems(kind, rest):
+    """The problems of the command part of one card row of `kind`."""
+    if kind == "owner":
+        return [("ITEM_COMMAND", "an owner row gives no command")] if rest else []
+    if not rest or not rest[0]:
+        return [("ITEM_COMMAND", f"a {kind} row gives the exact command")]
+    words, problem = shell_words(rest[0], slots=True)
+    if problem:
+        return [problem]
+    heads = words.count("{head}")
+    if kind == "commit" and (heads != 1 or "--" in words):
+        return [("ITEM_COMMAND", f"a commit row has {{head}} one time and no `--` word: `{rest[0]}`")]
+    if kind == "no-commit" and (heads or any(ANY_SHA.search(word) for word in words)):
+        return [("ITEM_COMMAND", f"a no-commit row has no {{head}} and no sha: `{rest[0]}`")]
+    if words[0] == "gh":
+        pairs = zip(words, words[1:])
+        if not any(flag in ("-R", "--repo") and REPO.fullmatch(value) for flag, value in pairs):
+            return [("ITEM_COMMAND", f"a gh row names its repository with -R owner/repo: `{rest[0]}`")]
+    return []
+
+
+def command_problem(row_command, entry):
+    """The intent command against the command of its row: each word equal, each slot one word of its type."""
+    words, problem = shell_words(entry["command"], slots=False)
+    if problem:
+        return problem
+    row_words, _ = shell_words(row_command, slots=True)
+    if len(words) != len(row_words):
+        return ("COMMAND_NOT_ROW", f"`{entry['command']}` has {len(words)} words; the row `{row_command}` has "
+                                   f"{len(row_words)}")
+    for number, (word, want) in enumerate(zip(words, row_words), 1):
+        if want in SLOTS:
+            ok = SLOTS[want].fullmatch(word) and (want != "{head}" or word == entry.get("head"))
+        else:
+            ok = word == want
+        if not ok:
+            return ("COMMAND_NOT_ROW", f"word {number} is `{word}`; the row `{row_command}` has `{want}`"
+                                       + (" (the head of --head)" if want == "{head}" else ""))
+    return None
+
+
 def rule_intent(night, entry):
     if entry["kind"] != "intent" or entry["item"] not in night.items:
         return []
     item = entry["item"]
-    kind, option, _ = night.items[item]
+    kind, row_command, _ = night.items[item]
     if kind == "owner":
         return [("OWNER_ITEM", repr(item))]
     if item in night.denied:
@@ -230,24 +294,21 @@ def rule_intent(night, entry):
             return [("UNKNOWN_RESULT", f"E{last_result['id']} on E{latest} is unknown")]
     if not entry.get("command", "").strip():
         return [("INTENT_FIELDS", "")]
-    command = entry["command"]
+    row_faults = row_command_problems(kind, [row_command] if row_command else [])
+    if row_faults:  # only a hand-written journal has a bad row (go and --add-item refuse it)
+        return [(code, f"the card row of {item!r}: {detail}") for code, detail in row_faults]
     if kind == "commit":
         if "head" not in entry or "no_head" in entry:
             return [("COMMIT_NEEDS_HEAD", repr(item))]
-        if option is None:  # only a hand-written journal has a commit row with no option (go refuses it)
-            return [("HEAD_OPTION_MISSING", f"the card row of {item!r} names no head-match option")]
         if not FULL_SHA.fullmatch(entry["head"]):
             return [("HEAD_FORM", repr(entry["head"]))]
-        if not re.search(rf"(?<![\w-]){re.escape(option)}(?:=|\s+){entry['head']}(?![0-9A-Fa-f])", command):
-            return [("HEAD_OPTION_MISSING", f"the command needs `{option} {entry['head']}`")]
-        return []
-    if "head" in entry:
-        return [("NO_COMMIT_HAS_HEAD", repr(item))]
-    if not entry.get("no_head", "").strip():
-        return [("NO_COMMIT_NEEDS_REASON", repr(item))]
-    if ANY_SHA.search(command):
-        return [("NO_COMMIT_HAS_SHA", repr(item))]
-    return []
+    else:
+        if "head" in entry:
+            return [("NO_COMMIT_HAS_HEAD", repr(item))]
+        if not entry.get("no_head", "").strip():
+            return [("NO_COMMIT_NEEDS_REASON", repr(item))]
+    problem = command_problem(row_command, entry)
+    return [problem] if problem else []
 
 
 def rule_result(night, entry):

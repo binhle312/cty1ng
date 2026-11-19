@@ -227,13 +227,13 @@ class AdvisorThreeTests(Base):
             with self.subTest(stop=stop):
                 self.refused("go", "--stop", stop, "--goal", "set", "--rehearsal", "passed", at=at("22:01"), code="STOP_NO_OFFSET")
 
-    def test_a_hand_written_commit_row_with_no_option_gives_codes_not_a_crash(self):
+    def test_a_hand_written_commit_row_with_no_command_gives_codes_not_a_crash(self):
         self.hand_edit = True
         write(self.dir, journal(go_at(items=[["PR 1", "commit"]]), {**INTENT, "t": at("22:10"), "item": "PR 1"},
                                 result("22:11", 3)))
         code, out = run(self.dir, "check", at=at("22:12"))
         self.assertEqual(code, 1, out)
-        self.assertIn("HEAD_OPTION_MISSING", code_of(out))
+        self.assertIn("ITEM_COMMAND", code_of(out))
         self.assertNotIn("INTERNAL", out)
         self.ok(run(self.dir, "status", at=at("22:12")))
 
@@ -242,7 +242,8 @@ class AdvisorThreeTests(Base):
         m, rng = night_module(), random.Random(1)
         start = datetime(2026, 1, 10, 22, 0, tzinfo=timezone.utc)
         names = ["PR 1", "PR 2", "notice", "PR 4", "ghost"]
-        rows = [["PR 1", "commit", OPT], ["PR 1", "commit"], ["PR 2", "commit", "--m"], ["notice", "no-commit"],
+        rows = [["PR 1", "commit", merge("PR 1", "{head}")], ["PR 1", "commit"], ["PR 2", "commit", "--m"],
+                ["PR 2", "commit", "gh pr merge 2 {head} # x"], ["notice", "no-commit", merge("notice")], ["notice", "no-commit"],
                 ["PR 4", "owner"], ["PR 4", "owner", "--x"], ["pr 1", "owner"], ["", "owner"], ["a|b", "merge"]]
 
         def value(spec, n):
@@ -337,9 +338,9 @@ class AdvisorThreeTests(Base):
     def test_a_tilde_fence_holds_the_items_and_go_prints_them(self):
         self.ok(new(self.dir))
         with open(os.path.join(self.dir, "card.md"), "a", encoding="utf-8") as handle:
-            handle.write("\n~~~night-items\nPR 1 | commit | --match-head-commit\nPR 4 | owner\n~~~\n")
+            handle.write(f"\n~~~night-items\nPR 1 | commit | {merge('PR 1', '{head}')}\nPR 4 | owner\n~~~\n")
         out = self.ok(run(self.dir, *go_args(), at=at("22:01")))
-        self.assertIn("  PR 1 | commit | --match-head-commit\n  PR 4 | owner", out)
+        self.assertIn(f"  PR 1 | commit | {merge('PR 1', '{head}')}\n  PR 4 | owner", out)
 
     def test_a_second_go_by_hand_does_not_change_the_stop_time(self):
         self.hand_edit = True

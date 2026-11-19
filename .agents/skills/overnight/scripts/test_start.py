@@ -66,7 +66,7 @@ class StartTests(Base):
             "ITEMS_EMPTY": "\n",
             "ITEM_DUPLICATE": "PR 1 | owner\npr  1 | owner",
             "ITEM_KIND": "PR 1 | merge",
-            "ITEM_OPTION": "PR 1 | commit",
+            "ITEM_COMMAND": "PR 1 | commit",
             "ITEM_NAME": "PR\x011 | owner",
             "CARD_TWO_BLOCKS": "PR 1 | owner\n```\n\n```night-items\nPR 2 | owner",
         }
@@ -80,20 +80,20 @@ class StartTests(Base):
                     card(folder, raw=raw)
                 self.refused(*go_args(), at=at("22:01"), code=expected, folder=folder)
 
-    def test_item_options_must_fit_their_kind(self):
-        for raw in ("notice | no-commit | --x", "PR 4 | owner | --x", "PR 1 | commit | match head"):
+    def test_item_commands_must_fit_their_kind(self):
+        for raw in ("notice | no-commit", "PR 4 | owner | --x", "PR 1 | commit | match head"):
             with self.subTest(raw=raw):
                 folder = self.folder(re.sub(r"\W+", "-", raw))
                 self.ok(new(folder))
                 card(folder, raw=raw)
-                self.refused(*go_args(), at=at("22:01"), code="ITEM_OPTION", folder=folder)
+                self.refused(*go_args(), at=at("22:01"), code="ITEM_COMMAND", folder=folder)
 
     def test_card_parse_ignores_a_block_in_the_owner_words_and_reads_crlf(self):
         self.ok(new(self.dir, "goal: x\n```night-items\nPR 9 | owner\n```\n## Needs you\nuntil 06:00"))
         with open(os.path.join(self.dir, "card.md"), "a", encoding="utf-8", newline="") as handle:
-            handle.write("\r\n```night-items\r\nPR 1 | commit | --match-head-commit\r\nPR 4 | owner\r\n```\r\n")
+            handle.write(f"\r\n```night-items\r\nPR 1 | commit | {merge('PR 1', '{head}')}\r\nPR 4 | owner\r\n```\r\n")
         self.ok(run(self.dir, *go_args(), at=at("22:01")))
-        self.assertEqual(self.events()[-1]["items"], [["PR 1", "commit", OPT], ["PR 4", "owner"]])
+        self.assertEqual(self.events()[-1]["items"], [["PR 1", "commit", merge("PR 1", "{head}")], ["PR 4", "owner"]])
 
     def test_an_open_fence_in_the_card_is_refused(self):
         new(self.dir)
@@ -327,18 +327,19 @@ class ItemTests(Base):
         self.is_refused(amend(self.dir, "also pr 1", "--add-item", "pr  1 | owner", when=at("22:10")), "ITEM_ON_CARD")
         self.is_refused(amend(self.dir, "also PR 5", "--add-item", "PR 5 commit", when=at("22:10")), "ITEM_LINE")
         self.is_refused(amend(self.dir, "also PR 5", "--add-item", "PR 5 | merge", when=at("22:10")), "ITEM_KIND")
-        self.is_refused(amend(self.dir, "also PR 5", "--add-item", "PR 5 | commit", when=at("22:10")), "ITEM_OPTION")
+        self.is_refused(amend(self.dir, "also PR 5", "--add-item", "PR 5 | commit", when=at("22:10")), "ITEM_COMMAND")
 
     def test_intent_on_a_new_item_before_its_amend_is_refused(self):
         started(self.dir)
         self.refused(*intent_args("PR 5"), at=at("22:10"), code="ITEM_NOT_ON_CARD")
-        out = self.ok(amend(self.dir, "also merge PR 5 after the bar", "--add-item", "PR 5 | commit | --match-head-commit",
+        row_5 = f"gh pr merge 5 -R org/app --squash {OPT} {{head}}"
+        out = self.ok(amend(self.dir, "also merge PR 5 after the bar", "--add-item", f"PR 5 | commit | {row_5}",
                             when=at("22:11")))
         self.assertIn("read it back", out)
-        self.ok(intent(self.dir, "PR 5", at("22:12")))
+        self.ok(intent(self.dir, "PR 5", at("22:12"), command=row_5.replace("{head}", SHA)))
         items = json.loads(self.ok(run(self.dir, "status", "--json", at=at("22:13"))))["items"]
-        self.assertIn({"name": "PR 5", "kind": "commit", "option": OPT, "from": "E3"}, items)
-        self.assertIn({"name": "PR 1", "kind": "commit", "option": OPT, "from": "E2"}, items)
+        self.assertIn({"name": "PR 5", "kind": "commit", "command": row_5, "from": "E3"}, items)
+        self.assertIn({"name": "PR 1", "kind": "commit", "command": merge("PR 1", "{head}"), "from": "E2"}, items)
 
 
 class HeadTests(Base):
@@ -351,22 +352,25 @@ class HeadTests(Base):
         self.assertIn("needs --head <", out)
         self.refused("log", "intent", "--item", "PR 1", "--command", "gh pr merge 1", "--no-head", "none", at=at("22:10"),
                      code="COMMIT_NEEDS_HEAD")
-        for command in (merge("PR 1", SHA2), f"gh pr merge 1 # {SHA}", merge("PR 1", SHA + "8"), f"gh pr merge 1 --other {SHA}"):
+        for command, code in ((merge("PR 1", SHA2), "COMMAND_NOT_ROW"), (f"gh pr merge 1 # {SHA}", "COMMAND_SHELL"),
+                              (merge("PR 1", SHA + "8"), "COMMAND_NOT_ROW"),
+                              (merge("PR 1").replace(OPT, "--other"), "COMMAND_NOT_ROW"),
+                              (merge("PR 1").replace(f"{OPT} {SHA}", f"{OPT}={SHA}"), "COMMAND_NOT_ROW")):
             with self.subTest(command=command):
-                self.refused(*intent_args("PR 1", SHA, command), at=at("22:10"), code="HEAD_OPTION_MISSING")
-        self.ok(intent(self.dir, "PR 1", at("22:11"), command=f"gh pr merge 1 {OPT}={SHA}"))
+                self.refused(*intent_args("PR 1", SHA, command), at=at("22:10"), code=code)
+        self.ok(intent(self.dir, "PR 1", at("22:11")))
 
     def test_a_no_commit_item_has_no_head(self):
         started(self.dir)
-        self.refused("log", "intent", "--item", "notice", "--command", "send the notice", "--head", SHA, at=at("22:10"),
+        self.refused("log", "intent", "--item", "notice", "--command", merge("notice"), "--head", SHA, at=at("22:10"),
                      code="NO_COMMIT_HAS_HEAD")
-        self.refused("log", "intent", "--item", "notice", "--command", "send the notice", at=at("22:10"),
+        self.refused("log", "intent", "--item", "notice", "--command", merge("notice"), at=at("22:10"),
                      code="NO_COMMIT_NEEDS_REASON")
         for sha in (SHA, SHA.upper()):
             with self.subTest(sha=sha):
                 self.refused("log", "intent", "--item", "notice", "--command", f"git push origin {sha}", "--no-head", "x",
-                             at=at("22:10"), code="NO_COMMIT_HAS_SHA")
-        self.ok(run(self.dir, "log", "intent", "--item", "notice", "--command", "send the notice", "--no-head",
+                             at=at("22:10"), code="COMMAND_NOT_ROW")
+        self.ok(run(self.dir, "log", "intent", "--item", "notice", "--command", merge("notice"), "--no-head",
                     "a notice acts on no commit", at=at("22:11")))
 
 

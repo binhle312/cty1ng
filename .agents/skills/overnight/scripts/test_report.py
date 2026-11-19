@@ -11,7 +11,7 @@ import sys
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # `-I` drops this folder
 from night_testlib import (  # noqa: E402
-    Base, ITEMS, OPT, SHA, amend, at, card, code_of, go_args, go_at, intent, intent_args, journal, new, part,
+    Base, ITEMS, OPT, SHA, amend, at, card, code_of, go_args, go_at, intent, intent_args, journal, merge, new, part,
     read_report, run, started, words_file, write)
 
 
@@ -86,7 +86,7 @@ class BoundaryTests(Base):
         self.ok(run(self.dir, "close", "--reason", "nothing-left", at=at("22:20")))
 
     def test_row_rules_for_the_card_for_add_item_and_for_items(self):
-        for raw, code in ((" | owner", "ITEM_NAME"), ("PR 1 | commit | head", "ITEM_OPTION"), ("PR 1 | commit | #", "ITEM_OPTION"),
+        for raw, code in ((" | owner", "ITEM_NAME"), ("PR 1 | commit | head", "ITEM_COMMAND"), ("PR 1 | commit | #", "COMMAND_SHELL"),
                           ("PR 1 | merge", "ITEM_KIND"), ("PR 1 | owner\npr 1 | owner", "ITEM_DUPLICATE")):
             with self.subTest(raw=raw):
                 folder = self.folder("row-" + re.sub(r"\W+", "-", raw))
@@ -103,9 +103,10 @@ class BoundaryTests(Base):
         self.refused(*go_args(heartbeat="-5"), "--gap-min", "30", at=at("22:01"), code="HEARTBEAT_NOT_POSITIVE")
         self.refused(*go_args(stop="2026-01-10T22:01"), at=at("22:01"), code="GO_STOP_NOT_FUTURE")
 
-    def test_the_option_is_a_word_of_its_own_in_the_command(self):
+    def test_the_head_option_is_a_word_of_its_own_in_the_command(self):
         started(self.dir)
-        self.refused(*intent_args("PR 1", SHA, f"gh pr merge 1 --no{OPT} {SHA}"), at=at("22:10"), code="HEAD_OPTION_MISSING")
+        self.refused(*intent_args("PR 1", SHA, merge("PR 1").replace(OPT, f"--no{OPT}")), at=at("22:10"),
+                     code="COMMAND_NOT_ROW")
 
     def test_a_denied_row_needs_each_of_command_and_blocks(self):
         started(self.dir)

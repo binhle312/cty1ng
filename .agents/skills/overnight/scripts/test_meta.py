@@ -18,7 +18,7 @@ from night_testlib import NIGHT_MODULES, FINAL_CODES, HERE, NIGHT, PRE_EVENT_COD
 
 MAX_LINES = 600  # one read of a file (owner, 2026-11-19, designs-139-140 Q5 A)
 PURE_MODULES = ("night_format", "night_rules", "night_report")
-PURE_IMPORTS = {"re", "datetime"}
+PURE_IMPORTS = {"re", "datetime", "shlex"}
 PURE_NO_CALLS = {"open", "print", "input", "exec", "eval", "__import__", "globals"}
 
 

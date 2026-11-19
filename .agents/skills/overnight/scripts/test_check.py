@@ -55,8 +55,12 @@ BROKEN = {
                                      result("22:11", 3)), "ITEM_NOT_ON_CARD"),
     "a short head": (journal(go_at(), {**INTENT, "t": at("22:10"), "item": "PR 1", "head": "0123456",
                                        "command": f"m {OPT} 0123456"}, result("22:11", 3)), "HEAD_FORM"),
-    "head not with its option": (journal(go_at(), {**INTENT, "t": at("22:10"), "item": "PR 1", "command": f"gh pr merge 1 # {SHA}"},
-                                         result("22:11", 3)), "HEAD_OPTION_MISSING"),
+    "shell syntax in the command": (journal(go_at(), {**INTENT, "t": at("22:10"), "item": "PR 1",
+                                                      "command": f"gh pr merge 1 # {SHA}"}, result("22:11", 3)),
+                                    "COMMAND_SHELL"),
+    "a command that is not its row": (journal(go_at(), {**INTENT, "t": at("22:10"), "item": "PR 1",
+                                                        "command": merge("PR 2")}, result("22:11", 3)),
+                                      "COMMAND_NOT_ROW"),
     "no head on a commit item": (journal(go_at(), {"t": at("22:10"), "kind": "intent", "item": "PR 1",
                                                    "command": "gh pr merge 1", "no_head": "x"}, result("22:11", 3)),
                                  "COMMIT_NEEDS_HEAD"),
@@ -79,7 +83,7 @@ BROKEN = {
     "no new first": ([{"id": 1, **go_at()}], "FIRST_NOT_NEW"),
     "a near duplicate name": (journal(go_at(items=[["PR 1", "owner"], ["pr  1", "owner"]])), "ITEM_DUPLICATE"),
     "a name with spaces at its ends": (journal(go_at(items=[[" PR 1", "owner"]])), "ITEM_NAME"),
-    "a commit row with no option": (journal(go_at(items=[["PR 1", "commit"]])), "ITEM_OPTION"),
+    "a commit row with no command": (journal(go_at(items=[["PR 1", "commit"]])), "ITEM_COMMAND"),
     "an unknown kind of item": (journal(go_at(items=[["PR 1", "merge"]])), "ITEM_KIND"),
 }
 

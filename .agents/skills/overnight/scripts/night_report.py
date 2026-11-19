@@ -99,7 +99,7 @@ def render(entries):
         return [(night.item_of(r), night.intents[r["of"]].get("command"), r["t"], r.get("text"), f"E{r['id']}")
                 for r in results if r["outcome"] == outcome]
 
-    items = [(name, kind, option or "", f"E{source}") for name, (kind, option, source) in night.items.items()]
+    items = [(name, kind, command or "", f"E{source}") for name, (kind, command, source) in night.items.items()]
     errors = [(e["t"], e.get("text"), f"E{e['id']}") for e in night.entries if e["kind"] == "error"]
     messages = [(e["t"], e.get("words"), e.get("reopen") or "", " | ".join(e.get("add_item", [])), f"E{e['id']}")
                 for e in night.entries if e["kind"] in ("amend", "answer")]
@@ -125,7 +125,7 @@ def render(entries):
         f"Go: {go['t']}. Stop time: {go['stop']}. Session goal: {goal[go['goal']]}. "
         f"Rehearsal: {go['rehearsal']}.\n" if go else "Go: none.\n",
         "## Owner's words (exact)\n", fenced(night.words or ""), "",
-        "## Items\n", table(items, ["Name", "Kind", "Head-match option", "From"]),
+        "## Items\n", table(items, ["Name", "Kind", "Command", "From"]),
         "## Needs you\n", table(needs_you(night), ["Item", "Why", "Command", "Blocks", "Entry"]),
         "## My errors\n", table(errors, ["Time", "Error and correction", "Entry"]),
         "## Done and not reversible\n", table(outcome_rows("done"), ["Item", "Command", "Time", "Evidence", "Entry"]),
@@ -147,8 +147,8 @@ def render(entries):
 def status_data(night, now):
     def short(entries, item=lambda e: e.get("item")):
         return [f"E{e['id']} {item(e)}" for e in entries]
-    items = [{"name": name, "kind": kind, "option": option, "from": f"E{source}"}
-             for name, (kind, option, source) in night.items.items()]
+    items = [{"name": name, "kind": kind, "command": command, "from": f"E{source}"}
+             for name, (kind, command, source) in night.items.items()]
     newest = night.newest_report()
     return {
         "run": night.run, "phase": night.phase, "test": night.test,

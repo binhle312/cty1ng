@@ -45,8 +45,18 @@ SHA2 = "fedcba9876543210fedcba9876543210fedcba98"
 OPT = "--match-head-commit"
 
 
-ITEMS = [("PR 1", "commit", OPT), ("PR 2", "commit", OPT), ("PR 3", "commit", OPT), ("PR 12", "commit", OPT),
-         ("org/one#3", "commit", OPT), ("org/two#3", "commit", OPT), ("notice", "no-commit"), ("PR 4", "owner")]
+# Each commit or no-commit row holds the exact command; {head} is the typed slot of the full head.
+ROW_COMMANDS = {
+    "PR 1": f"gh pr merge 1 -R org/app --squash {OPT} {{head}}",
+    "PR 2": f"gh pr merge 2 -R org/app --squash {OPT} {{head}}",
+    "PR 3": f"gh pr merge 3 -R org/app --squash {OPT} {{head}}",
+    "PR 12": f"gh pr merge 12 -R org/app --squash {OPT} {{head}}",
+    "org/one#3": f"gh pr merge 3 -R org/one --squash {OPT} {{head}}",
+    "org/two#3": f"gh pr merge 3 -R org/two --squash {OPT} {{head}}",
+    "notice": "gh issue comment 7 -R org/app --body-file note.md",
+}
+ITEMS = [(name, "no-commit" if name == "notice" else "commit", command) for name, command in ROW_COMMANDS.items()]
+ITEMS += [("PR 4", "owner")]
 
 
 WRITE_COMMANDS = {"new", "go", "log", "report", "close", "repair"}
@@ -62,7 +72,7 @@ UNFINISHED = {"NO_GO", "INTENT_NO_RESULT", "STOP_NOT_CLOSED"}
 # A final code means: do not retry. Pinned, because SKILL.md tells the agent to act on the class.
 FINAL_CODES = {
     "AFTER_STOP", "BAD_LINE", "CLOSED", "COUNTS_WRONG", "FAKE_CLOCK", "FIRST_NOT_NEW", "GO_TWICE", "ID_ORDER", "INTERNAL",
-    "ITEM_DENIED", "ITEM_HELD", "JOURNAL_FAULTS", "LOCK_STALE", "NEW_TWICE", "NO_COMMIT_HAS_SHA", "NO_REHEARSAL",
+    "ITEM_DENIED", "ITEM_HELD", "JOURNAL_FAULTS", "LOCK_STALE", "NEW_TWICE", "NO_REHEARSAL",
     "OWNER_ITEM", "RESULT_FINAL", "SCHEMA", "UNKNOWN_RESULT", "WRITE_FAILED"}
 
 
@@ -135,7 +145,8 @@ def started(folder, rows=ITEMS, **go):
 
 
 def merge(item, sha=SHA):
-    return f"gh pr merge {item!r} {OPT} {sha}"
+    """The command of the card row of `item`, with `sha` in its head slot (a name not on the card: any merge)."""
+    return ROW_COMMANDS.get(item.strip(), f"gh pr merge 9 -R org/app --squash {OPT} {{head}}").replace("{head}", sha)
 
 
 def intent_args(item, sha=SHA, command=None):

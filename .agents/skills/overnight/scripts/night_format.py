@@ -84,7 +84,12 @@ FULL_SHA = re.compile(r"[0-9a-f]{40}")
 ANY_SHA = re.compile(r"(?<![0-9A-Fa-f])[0-9A-Fa-f]{40}(?![0-9A-Fa-f])")
 
 
-OPTION = re.compile(r"-{1,2}[A-Za-z0-9][A-Za-z0-9-]*")
+# A card row holds the exact command. A slot is a whole word of a fixed type; no other slot exists, and a new slot
+# type needs the owner (owner, 2026-11-19, designs-139-140 Q3 A).
+SLOTS = {"{head}": FULL_SHA, "{run}": re.compile(r"[0-9]{1,20}")}
+# A character that a shell reads as syntax: no command or row may have one (outside a slot word).
+SHELL_CHARS = frozenset(";&|`$()<>\\{}~*?[]!#")
+REPO = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
 
 
 FENCE = re.compile(r"^(`{3,}|~{3,})(.*)$")
@@ -99,7 +104,8 @@ CODES = {
     "WORDS_AS_ARGUMENT": ("fix", "the owner's exact words go in only through --words-file, not as an argument"),
     "ARG_NOT_FOR_KIND": ("fix", "this kind of entry does not take this option"),
     "ITEM_MISSING": ("fix", "this kind of entry needs --item <exact card name>"),
-    "ITEM_LINE": ("fix", "an item row is `<name> | commit | <head-match option>`, `<name> | no-commit` or `<name> | owner`"),
+    "ITEM_LINE": ("fix", "an item row is `<name> | commit | <command>`, `<name> | no-commit | <command>` or "
+                         "`<name> | owner`"),
     "EVENT_ID": ("fix", "an entry id is a number such as 12 or E12"),
     "RESULT_FIELDS": ("fix", "a result needs --of <intent id> and --outcome done, failed, unknown or denied"),
     "PAGECHECK_FIELDS": ("fix", "a page check needs --name mechanics, truth, counts, --outcome pass or fail, and --report E<n>"),
@@ -135,7 +141,13 @@ CODES = {
     "ITEMS_EMPTY": ("fix", "the night-items block has no rows"),
     "ITEM_NAME": ("fix", "an item name must not be empty, must have no spaces at its ends, no `|` and no control characters"),
     "ITEM_KIND": ("fix", "an item kind is commit, no-commit or owner"),
-    "ITEM_OPTION": ("fix", "a commit row names its head-match option (such as --match-head-commit); other rows name none"),
+    "ITEM_COMMAND": ("fix", "a commit or no-commit row gives the exact command: a commit row has the slot {head} one "
+                            "time and no `--` word, a no-commit row has no {head} and no sha, a `gh` row names "
+                            "`-R owner/repo`, the only slots are {head} and {run}; an owner row gives no command"),
+    "COMMAND_SHELL": ("fix", "a command or a card row has shell syntax: one of ; & | ` $ ( ) < > \\ { } ~ * ? [ ] ! #, "
+                             "a new line, an unclosed quote, a word that starts with `=`, or an environment word first"),
+    "COMMAND_NOT_ROW": ("fix", "the command must equal the card row of its item, word for word; a slot takes one word "
+                               "of its type. Do not change the command: if the night needs another one, ask the owner"),
     "ITEM_DUPLICATE": ("fix", "two card names are the same or differ only in case or spaces"),
     "ITEM_ON_CARD": ("fix", "this name, or a name that differs from it only in case or spaces, is already on the card"),
     "ITEM_NOT_ON_CARD": ("fix", "the item is not an exact name from the card"),
@@ -153,13 +165,12 @@ CODES = {
     "UNKNOWN_RESULT": ("final", "the last result on this item is unknown: check the real state and log a new result first"),
     "OPEN_INTENT": ("fix", "an intent on this item has no result: log its result first (run `status`)"),
     "INTENT_FIELDS": ("fix", "an intent needs --command"),
-    "COMMIT_NEEDS_HEAD": ("fix", "a commit item needs --head <40-character sha> and its head-match option in the "
-                                 "command; --no-head is only for no-commit items. Do not change the kind of the item"),
+    "COMMIT_NEEDS_HEAD": ("fix", "a commit item needs --head <40-character sha>, and the command of its row with that "
+                                 "head in the slot {head}; --no-head is only for no-commit items. Do not change the "
+                                 "kind of the item"),
     "HEAD_FORM": ("fix", "--head must be the full 40-character lower-case sha"),
-    "HEAD_OPTION_MISSING": ("fix", "the command must give the head with the head-match option of the item"),
     "NO_COMMIT_HAS_HEAD": ("fix", "a no-commit item takes no --head"),
     "NO_COMMIT_NEEDS_REASON": ("fix", "a no-commit item needs --no-head <reason>"),
-    "NO_COMMIT_HAS_SHA": ("final", "a command on a no-commit item must not name a commit sha"),
     "RESULT_NOT_INTENT": ("fix", "--of must name an intent"),
     "RESULT_FINAL": ("final", "this intent already has the result"),
     "DENIED_NEEDS_BLOCKS": ("fix", "a denied result needs --blocks <what it blocks>"),

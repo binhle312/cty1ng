@@ -313,7 +313,7 @@ def parser():
     log.add_argument("--check", action="store_true", help="decision: the owner should check it")
     log.add_argument("--resolves", help="decision: the id of the wait row that it ends")
     log.add_argument("--reopen", help="amend: the denied or held item that the owner opens again")
-    log.add_argument("--add-item", help='amend: "<name> | <kind>" or "<name> | commit | <head-match option>"')
+    log.add_argument("--add-item", help='amend: "<name> | owner" or "<name> | commit|no-commit | <command>"')
     log.add_argument("--name", help="pagecheck: " + ", ".join(PAGE_CHECKS))
     log.add_argument("--report", help="pagecheck: the report entry that the page shows (E12)")
     status = add("status", "show the state")
