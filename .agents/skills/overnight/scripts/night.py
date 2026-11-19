@@ -3,6 +3,11 @@
 
 Commands: new, go, log, status, check, report, close. Each takes `--dir <night folder>`.
 The script takes each time from the clock and stores it in UTC. Do not type times in a text.
+The owner's exact words come in through `--words-file` (write the file with a quoted heredoc).
+
+Values: the heartbeat default (DEFAULT_HEARTBEAT_MIN) and the maximum gap alarm
+(DEFAULT_MAX_GAP_MIN) are written here one time. A project can set a lower or higher maximum with
+the environment variable NIGHT_MAX_GAP_MIN. A night can set a lower gap alarm, never a higher one.
 NIGHT_FAKE_NOW (an ISO time) replaces the clock. Only the tests set it.
 
 Exit codes: 0 = done, 1 = `check` found problems, 2 = bad arguments, 3 = the journal refused.
@@ -25,12 +30,17 @@ LOG_KINDS = (
     "decision", "wait", "denied", "hold", "aware", "error", "alive",
     "intent", "result", "amend", "reserve", "pagecheck", "answer",
 )
+WORDS_KINDS = {"amend", "answer"}  # the owner's exact words: only from --words-file
 AFTER_CLOSE = {"aware", "error", "answer"}
 AFTER_REPORT = {"pagecheck", "alive"}
 PAGE_CHECKS = ("mechanics", "truth", "counts")
-OUTCOMES = ("done", "failed", "unknown")
+OUTCOMES = ("done", "failed", "unknown", "denied")
+GOAL_STATES = ("set", "no-goal-command")
+REHEARSAL_STATES = ("passed", "owner-override", "none")
 CLOSE_REASONS = ("goal-met", "nothing-left", "stop-time", "stopped")
 DEFAULT_HEARTBEAT_MIN = 30
+DEFAULT_MAX_GAP_MIN = 60
+MIN_HEAD_CHARS = 7
 
 EXIT_PROBLEMS = 1
 EXIT_REFUSED = 3
@@ -40,7 +50,15 @@ class Refused(Exception):
     """The journal refuses a command. The message says why."""
 
 
-# ---------- time ----------
+# ---------- time and values ----------
+
+def now():
+    fake = os.environ.get("NIGHT_FAKE_NOW")
+    if fake:
+        value = datetime.fromisoformat(fake)
+        return (value if value.tzinfo else value.astimezone()).astimezone(timezone.utc)
+    return datetime.now(timezone.utc)
+
 
 def parse_time(text):
     text = text.strip()
@@ -54,14 +72,6 @@ def parse_time(text):
     return value.astimezone(timezone.utc)
 
 
-def now():
-    fake = os.environ.get("NIGHT_FAKE_NOW")
-    if fake:
-        value = datetime.fromisoformat(fake)
-        return (value if value.tzinfo else value.astimezone()).astimezone(timezone.utc)
-    return datetime.now(timezone.utc)
-
-
 def iso(value):
     return value.astimezone(timezone.utc).isoformat(timespec="seconds")
 
@@ -72,6 +82,18 @@ def local(text):
 
 def minutes(a, b):
     return (parse_time(b) - parse_time(a)).total_seconds() / 60
+
+
+def max_gap():
+    raw = os.environ.get("NIGHT_MAX_GAP_MIN", str(DEFAULT_MAX_GAP_MIN))
+    if not raw.isdigit() or int(raw) <= 0:
+        raise Refused(f"NIGHT_MAX_GAP_MIN must be a whole number of minutes above 0, not {raw!r}")
+    return int(raw)
+
+
+def gap_limit(go):
+    """The gap alarm of a night, never above the maximum (also for a journal edited by hand)."""
+    return min(go.get("gap_min", 2 * go["heartbeat_min"]), max_gap())
 
 
 # ---------- journal ----------
@@ -91,9 +113,7 @@ class Lock:
                 return self
             except FileExistsError:
                 if time.monotonic() > deadline:
-                    raise Refused(
-                        f"{LOCK} is held. Remove it only if no night.py process runs."
-                    ) from None
+                    raise Refused(f"{LOCK} is held. Remove it only if no night.py process runs.") from None
                 time.sleep(0.05)
 
     def __exit__(self, *exc):
@@ -153,16 +173,33 @@ def label(event):
 
 
 def key(item):
-    """One name for one item: case, spaces, '#' and a 'PR' prefix do not count."""
-    text = re.sub(r"[\s#]+", "", (item or "").lower())
-    return re.sub(r"^pr(?=\d)", "", text)
+    """One name for one item. Each form of a PR or issue number gives that number."""
+    text = re.sub(r"\s+", " ", (item or "").strip().lower()).rstrip(".")
+    for pattern in (
+        r"(?:pr|pull request|pull|issue)?\s*[-#/ ]*\s*(\d+)",  # 3, #3, PR 3, PR-3, pr#3, pull/3
+        r"(?:https?://)?\S*/(?:pull|issues)/(\d+)/?",  # https://host/owner/repo/pull/3, owner/repo/pull/3
+        r"[\w.-]+/[\w.-]+#(\d+)",  # owner/repo#3
+    ):
+        match = re.fullmatch(pattern, text)
+        if match:
+            return f"#{int(match.group(1))}"
+    return text
+
+
+def blocking_results(events):
+    return [e for e in results_by_intent(events).values() if e["outcome"] == "denied"]
 
 
 def open_blocks(events, kinds=("denied", "hold")):
-    """Denied or held items that no later owner amendment opened again, by item key."""
+    """Denied or held items that no later owner amendment opened again, by item key.
+
+    A `denied` result of an intent blocks its item in the same write as the result.
+    """
     blocked = {}
+    newest_result = {e["id"] for e in results_by_intent(events).values()}
     for event in events:
-        if event["kind"] in kinds:
+        is_denied_result = event["kind"] == "result" and event.get("outcome") == "denied" and event["id"] in newest_result
+        if event["kind"] in kinds or ("denied" in kinds and is_denied_result):
             blocked[key(event["item"])] = event
         elif event["kind"] == "amend" and key(event.get("reopen")) in blocked:
             blocked.pop(key(event["reopen"]))
@@ -190,6 +227,11 @@ def unknown_results(events):
     return [r for r in results_by_intent(events).values() if r["outcome"] == "unknown"]
 
 
+def open_waits(events):
+    resolved = {e["resolves"] for e in events if e.get("resolves")}
+    return [e for e in events if e["kind"] == "wait" and e["id"] not in resolved]
+
+
 def event_id(text):
     """Accept an event id as 12 or E12."""
     match = re.fullmatch(r"[Ee]?(\d+)", str(text).strip())
@@ -198,9 +240,21 @@ def event_id(text):
     return int(match.group(1))
 
 
-def open_waits(events):
-    resolved = {e["resolves"] for e in events if e.get("resolves")}
-    return [e for e in events if e["kind"] == "wait" and e["id"] not in resolved]
+def read_words(path):
+    if not path:
+        raise Refused("give the owner's exact words with --words-file (write the file with a quoted heredoc)")
+    with open(path, encoding="utf-8") as handle:
+        words = handle.read().strip()
+    if not words:
+        raise Refused(f"{path} is empty: the owner's exact words are necessary")
+    return words
+
+
+def same_head(a, b):
+    a, b = a.strip().lower(), b.strip().lower()
+    if len(a) < MIN_HEAD_CHARS or len(b) < MIN_HEAD_CHARS:
+        raise Refused(f"a head needs at least {MIN_HEAD_CHARS} characters of its id")
+    return a.startswith(b) or b.startswith(a)
 
 
 # ---------- commands ----------
@@ -209,12 +263,7 @@ def cmd_new(args):
     os.makedirs(args.dir, exist_ok=True)
     if read(args.dir):
         raise Refused(f"{args.dir} already has a journal. One folder holds one night.")
-    words = args.words
-    if args.words_file:
-        with open(args.words_file, encoding="utf-8") as handle:
-            words = handle.read().strip()
-    if not words:
-        raise Refused("give the owner's exact words with --words or --words-file")
+    words = read_words(args.words_file)
     run = "night-" + now().strftime("%Y%m%dT%H%MZ")
     event = append(args.dir, "new", run=run, words=words)
     card = os.path.join(args.dir, CARD)
@@ -240,10 +289,20 @@ def cmd_go(args):
         raise Refused(f"the stop time {local(iso(stop))} is not in the future")
     if args.heartbeat_min <= 0:
         raise Refused("--heartbeat-min must be more than 0")
-    event = append(args.dir, "go", stop=iso(stop), heartbeat_min=args.heartbeat_min, goal=args.goal)
+    limit = max_gap()
+    gap = args.gap_min if args.gap_min is not None else 2 * args.heartbeat_min
+    if gap > limit:
+        raise Refused(
+            f"the gap alarm must be at most {limit} min (NIGHT_MAX_GAP_MIN); it is {gap} min. "
+            f"Use a heartbeat of at most {limit // 2} min, or a lower --gap-min."
+        )
+    if gap < args.heartbeat_min:
+        raise Refused(f"--gap-min ({gap}) must be at least the heartbeat ({args.heartbeat_min})")
+    event = append(args.dir, "go", stop=iso(stop), heartbeat_min=args.heartbeat_min, gap_min=gap,
+                   goal=args.goal, rehearsal=args.rehearsal)
     print(
-        f"{label(event)} GO {found['run']} stop {local(event['stop'])} "
-        f"heartbeat {args.heartbeat_min} min goal {args.goal}"
+        f"{label(event)} GO {found['run']} stop {local(event['stop'])} heartbeat {args.heartbeat_min} min "
+        f"gap alarm {gap} min goal {args.goal} rehearsal {args.rehearsal}"
     )
 
 
@@ -260,8 +319,13 @@ def cmd_log(args):
         raise Refused("no night here: run `new` first")
     if found["phase"] == "closed" and kind not in AFTER_CLOSE:
         raise Refused(f"the night is closed; after the close only {sorted(AFTER_CLOSE)} are allowed")
+    text = args.text
+    if kind in WORDS_KINDS:
+        if text:
+            raise Refused(f"the owner's words of `{kind}` go in only with --words-file, not as an argument")
+        text = read_words(args.words_file)
     fields = {
-        "text": args.text, "item": args.item, "command": args.command, "blocks": args.blocks,
+        "text": text, "item": args.item, "command": args.command, "blocks": args.blocks,
         "source": args.source, "check": args.check,
         "resolves": event_id(args.resolves) if args.resolves is not None else None,
     }
@@ -277,20 +341,38 @@ def cmd_log(args):
         need(args.item and args.command and args.blocks, "a denied row needs --item, --command and --blocks")
         pending = [e for e in open_intents(events) if key(e["item"]) == key(args.item)]
         if pending:
-            raise Refused(f"log the result of {label(pending[0])} first (--outcome failed \"denied\")")
+            raise Refused(
+                f"{args.item} has an open intent ({label(pending[0])}): log "
+                f"`result --of {label(pending[0])} --outcome denied --blocks ...` instead"
+            )
     elif kind == "hold":
-        need(args.item and args.text, "a hold needs --item and the reason as text")
+        need(args.item and text, "a hold needs --item and the reason as text")
     elif kind == "amend":
         fields["reopen"] = args.reopen
     elif kind == "intent":
         need(args.item and args.command, "an intent needs --item and --command")
         need(found["go"], "no go: an action that cannot be undone needs a night that started")
+        if found["go"].get("rehearsal", "none") == "none":
+            raise Refused(
+                "no rehearsal passed and no owner override on the card: this night has no actions "
+                "that cannot be undone (go --rehearsal)"
+            )
         if now() >= parse_time(found["go"]["stop"]):
             raise Refused(f"the stop time {local(found['go']['stop'])} has passed: close the night")
+        if args.no_head:
+            need(not (args.head or args.head_now), "give --head and --head-now, or --no-head, not both")
+            fields["no_head"] = args.no_head
+        else:
+            need(args.head, "an intent needs --head <the reviewed head> (or --no-head <reason>)")
+            need(args.head_now, "an intent needs --head-now <the head that you read just now>")
+            if not same_head(args.head, args.head_now):
+                raise Refused(f"the head moved: reviewed {args.head}, now {args.head_now}. Check the new head first.")
+            fields.update({"head": args.head, "head_now": args.head_now})
         block = open_blocks(events).get(key(args.item))
         if block:
+            name = "denied" if block["kind"] in ("denied", "result") else block["kind"]
             raise Refused(
-                f"{block['kind']} stays {block['kind']}: {args.item} ({label(block)}). "
+                f"{name} stays {name}: {args.item} ({label(block)}). "
                 "Only an owner message can open it again (log amend --reopen)."
             )
         if any(key(e["item"]) == key(args.item) for e in open_intents(events)):
@@ -302,14 +384,18 @@ def cmd_log(args):
                 "check the real state and log a new result first"
             )
     elif kind == "result":
-        need(args.of is not None and args.outcome in OUTCOMES, "a result needs --of <intent id> and --outcome done|failed|unknown")
+        need(args.of is not None and args.outcome in OUTCOMES,
+             "a result needs --of <intent id> and --outcome " + "|".join(OUTCOMES))
         of = event_id(args.of)
         intent = next((e for e in events if e["id"] == of and e["kind"] == "intent"), None)
         need(intent, f"E{of} is not an intent")
         earlier = results_by_intent(events).get(of)
         if earlier and earlier["outcome"] != "unknown":
             raise Refused(f"E{of} already has the result {earlier['outcome']} ({label(earlier)})")
-        fields.update({"of": of, "outcome": args.outcome, "item": intent["item"]})
+        if args.outcome == "denied":
+            need(args.blocks, "a denied result needs --blocks (what waits for the owner)")
+        fields.update({"of": of, "outcome": args.outcome, "item": intent["item"],
+                       "command": intent.get("command")})
     elif kind == "pagecheck":
         need(args.name in PAGE_CHECKS and args.outcome in ("pass", "fail"),
              f"a pagecheck needs --name {'|'.join(PAGE_CHECKS)} and --outcome pass|fail")
@@ -318,19 +404,22 @@ def cmd_log(args):
     print(f"{label(event)} {kind} logged")
 
 
-def summary(events, at=None):
+def summary(events):
     found = state(events)
     counts = {}
     for event in events:
         counts[event["kind"]] = counts.get(event["kind"], 0) + 1
     last = events[-1] if events else None
-    data = {
+    go = found["go"]
+    return {
         "run": found["run"],
         "phase": found["phase"],
-        "go": found["go"]["t"] if found["go"] else None,
-        "stop": found["go"]["stop"] if found["go"] else None,
-        "heartbeat_min": found["go"]["heartbeat_min"] if found["go"] else None,
-        "goal": found["go"]["goal"] if found["go"] else None,
+        "go": go["t"] if go else None,
+        "stop": go["stop"] if go else None,
+        "heartbeat_min": go["heartbeat_min"] if go else None,
+        "gap_alarm_min": gap_limit(go) if go else None,
+        "goal": go["goal"] if go else None,
+        "rehearsal": go.get("rehearsal") if go else None,
         "counts": counts,
         "open_intents": [label(e) + " " + e["item"] for e in open_intents(events)],
         "unknown_results": [label(e) + " " + e["item"] for e in unknown_results(events)],
@@ -339,9 +428,8 @@ def summary(events, at=None):
         "open_waits": [label(e) + " " + e["item"] for e in open_waits(events)],
         "decisions_to_check": sum(1 for e in events if e["kind"] == "decision" and e.get("check")),
         "last_event": last["t"] if last else None,
-        "minutes_since_last": round(minutes(last["t"], iso(at or now())), 1) if last else None,
+        "minutes_since_last": round(minutes(last["t"], iso(now())), 1) if last else None,
     }
-    return data
 
 
 def cmd_status(args):
@@ -349,13 +437,15 @@ def cmd_status(args):
     if args.json:
         print(json.dumps(data, indent=2, ensure_ascii=False))
         return
-    for key, value in data.items():
-        if key in ("go", "stop", "last_event") and value:
+    for name, value in data.items():
+        if name in ("go", "stop", "last_event") and value:
             value = local(value)
-        print(f"{key}: {value}")
+        print(f"{name}: {value}")
 
 
-def problems(events, at=None):
+def problems(events, at=None, clock=None):
+    """Faults of the record. `at`: also count the gap up to that time. `clock`: the time now,
+    for the check that a night past its stop time is closed."""
     found = state(events)
     out = []
     if found["phase"] == "none":
@@ -365,6 +455,7 @@ def problems(events, at=None):
         out.append("no go: the owner did not start the night")
     previous = None
     blocked = {}
+    newest_result = {e["id"] for e in results_by_intent(events).values()}
     for event in events:
         if previous and parse_time(event["t"]) < parse_time(previous["t"]):
             out.append(f"time goes back at {label(event)} ({event['t']} is before {previous['t']})")
@@ -373,6 +464,8 @@ def problems(events, at=None):
             if kind == "denied" and not (event.get("command") and event.get("blocks")):
                 out.append(f"denied row {label(event)} has no exact command or no 'blocks'")
             blocked[key(event.get("item"))] = event
+        elif kind == "result" and event.get("outcome") == "denied" and event["id"] in newest_result:
+            blocked[key(event.get("item"))] = event
         elif kind == "amend" and key(event.get("reopen")) in blocked:
             blocked.pop(key(event["reopen"]))
         elif kind == "decision" and not (event.get("source") or event.get("check")):
@@ -380,7 +473,8 @@ def problems(events, at=None):
         elif kind == "intent":
             block = blocked.get(key(event.get("item")))
             if block:
-                out.append(f"intent {label(event)} acts on {event['item']}, which was {'denied' if block['kind'] == 'denied' else 'held'} ({label(block)})")
+                name = "held" if block["kind"] == "hold" else "denied"
+                out.append(f"intent {label(event)} acts on {event['item']}, which was {name} ({label(block)})")
             if not go or parse_time(event["t"]) < parse_time(go["t"]):
                 out.append(f"intent {label(event)} comes before the go")
             elif parse_time(event["t"]) >= parse_time(go["stop"]):
@@ -389,26 +483,27 @@ def problems(events, at=None):
     for event in open_intents(events):
         out.append(f"intent {label(event)} ({event['item']}) has no result: check the real state")
     if go:
-        limit = 2 * go["heartbeat_min"]
-        end = found["close"]["t"] if found["close"] else None
-        if not end and at is not None:
-            end = iso(min(at, parse_time(go["stop"])))
+        limit = gap_limit(go)
         timeline = [e for e in events if parse_time(e["t"]) >= parse_time(go["t"])]
         if found["close"]:
             timeline = [e for e in timeline if e["id"] <= found["close"]["id"]]
         points = [(label(e), e["t"]) for e in timeline]
-        if end and (not points or parse_time(end) > parse_time(points[-1][1])):
-            points.append(("now" if not found["close"] else "close", end))
+        if not found["close"] and at is not None:
+            end = iso(at)
+            if not points or parse_time(end) > parse_time(points[-1][1]):
+                points.append(("now", end))
         for (name_a, t_a), (name_b, t_b) in zip(points, points[1:]):
             gap = minutes(t_a, t_b)
             if gap > limit:
                 out.append(f"gap of {gap:.0f} min from {name_a} to {name_b} (limit {limit} min)")
+        if not found["close"] and clock is not None and clock >= parse_time(go["stop"]):
+            out.append(f"the stop time {local(go['stop'])} has passed and the night is not closed")
     return out
 
 
 def cmd_check(args):
-    at = now() if args.now else None
-    found = problems(read(args.dir), at)
+    clock = now()
+    found = problems(read(args.dir), clock if args.now else None, clock)
     if not found:
         print("check: OK")
         return 0
@@ -426,42 +521,52 @@ def table(rows, header):
     return "\n".join(lines) + "\n"
 
 
-def cmd_report(args):
-    events = read(args.dir)
+def write_report(folder, events):
+    """Write report.md from the journal. The caller appends its event first, so it counts."""
     found = state(events)
-    if found["phase"] == "none":
-        raise Refused("no night here: run `new` first")
     data = summary(events)
     last = events[-1]
     go = found["go"]
-    needs = [(e["item"], "denied", e.get("command"), e.get("blocks"), label(e)) for e in open_denials(events).values()]
-    needs += [(e["item"], "held: " + e.get("text", ""), e.get("command"), e.get("blocks"), label(e)) for e in open_blocks(events, ("hold",)).values()]
-    needs += [(e["item"], "waits: " + (e.get("text") or ""), e.get("command"), e.get("blocks"), label(e)) for e in open_waits(events)]
-    needs += [(e["item"], "result unknown", "check the real state", "", label(e)) for e in unknown_results(events)]
-    needs += [(e["item"], "intent with no result", "check the real state", "", label(e)) for e in open_intents(events)]
+    needs = []
+    for e in open_denials(events).values():
+        needs.append((e["item"], "denied", e.get("command"), e.get("blocks"), label(e)))
+    for e in open_blocks(events, ("hold",)).values():
+        needs.append((e["item"], "held: " + e.get("text", ""), e.get("command"), e.get("blocks"), label(e)))
+    for e in open_waits(events):
+        needs.append((e["item"], "waits: " + (e.get("text") or ""), e.get("command"), e.get("blocks"), label(e)))
+    for e in unknown_results(events):
+        needs.append((e["item"], "result unknown", "check the real state", "", label(e)))
+    for e in open_intents(events):
+        needs.append((e["item"], "intent with no result", "check the real state", "", label(e)))
     intents = {e["id"]: e for e in events if e["kind"] == "intent"}
-    results = results_by_intent(events).values()
-    done = [(r["item"], intents[r["of"]].get("command"), local(r["t"]), r.get("text"), label(r)) for r in results if r["outcome"] == "done"]
-    failed = [(r["item"], intents[r["of"]].get("command"), local(r["t"]), r.get("text"), label(r)) for r in results if r["outcome"] == "failed"]
+    results = list(results_by_intent(events).values())
+
+    def rows(outcome):
+        return [(r["item"], intents[r["of"]].get("command"), local(r["t"]), r.get("text"), label(r))
+                for r in results if r["outcome"] == outcome]
+
     errors = [(local(e["t"]), e.get("text"), label(e)) for e in events if e["kind"] == "error"]
     amends = [(local(e["t"]), e.get("text"), e.get("reopen"), label(e)) for e in events if e["kind"] == "amend"]
     notes = [(local(e["t"]), e.get("item"), e.get("text"), label(e)) for e in events if e["kind"] == "aware"]
     to_check = [(e.get("item"), e.get("text"), label(e)) for e in events if e["kind"] == "decision" and e.get("check")]
-    issues = problems(events, now() if found["phase"] == "running" else None)
-    closing = (
-        f"Night permissions ended at the close ({label(found['close'])}, reason {found['close']['reason']})."
-        if found["close"] else "The night is not closed. Its permissions still hold until the close."
-    )
+    clock = now()
+    issues = problems(events, clock if found["phase"] == "running" else None, clock)
+    if found["close"]:
+        closing = f"Night permissions ended at the close ({label(found['close'])}, reason {found['close']['reason']})."
+    else:
+        closing = "The night is not closed. Its permissions end at the close."
+    goal = {"set": "set by the owner's /goal line", "no-goal-command": "none: no /goal command here; heartbeat only"}
     text = [
         f"# Morning report: {found['run']}\n",
-        f"Made by night.py at {local(iso(now()))}, from the journal up to {label(last)}.",
+        f"Made by night.py at {local(iso(clock))}, from the journal up to {label(last)}.",
         f"Go: {local(go['t']) if go else 'none'}. Stop time: {local(go['stop']) if go else 'none'}. "
-        f"Session goal: {go['goal'] if go else 'none'}. Phase: {found['phase']}.\n",
+        f"Session goal: {goal.get(go['goal'], go['goal']) if go else 'none'}. "
+        f"Rehearsal: {go.get('rehearsal') if go else 'none'}. Phase: {found['phase']}.\n",
         "## Owner's words (exact)\n", "```text", found["words"], "```\n",
         "## Needs you\n", table(needs, ["Item", "Why", "Command", "Blocks", "Event"]),
         "## My errors\n", table(errors, ["Time", "Error and correction", "Event"]),
-        "## Done and not reversible\n", table(done, ["Item", "Command", "Time", "Evidence", "Event"]),
-        "## Failed\n", table(failed, ["Item", "Command", "Time", "What happened", "Event"]),
+        "## Done and not reversible\n", table(rows("done"), ["Item", "Command", "Time", "Evidence", "Event"]),
+        "## Failed\n", table(rows("failed"), ["Item", "Command", "Time", "What happened", "Event"]),
         "## Owner messages after the start\n", table(amends, ["Time", "Exact words", "Opens again", "Event"]),
         "## Notes for the owner\n", table(notes, ["Time", "Item", "Note", "Event"]),
         "## Stops and gaps\n", ("None.\n" if not issues else "\n".join(f"- {p}" for p in issues) + "\n"),
@@ -469,9 +574,16 @@ def cmd_report(args):
         "## Counts\n", table(sorted(data["counts"].items()), ["Kind", "Count"]),
         "## Permissions\n", closing + "\n",
     ]
-    with open(os.path.join(args.dir, REPORT), "w", encoding="utf-8") as handle:
+    with open(os.path.join(folder, REPORT), "w", encoding="utf-8") as handle:
         handle.write("\n".join(text))
-    event = append(args.dir, "report", covers=last["id"])
+
+
+def cmd_report(args):
+    events = read(args.dir)
+    if state(events)["phase"] == "none":
+        raise Refused("no night here: run `new` first")
+    event = append(args.dir, "report", covers=events[-1]["id"])
+    write_report(args.dir, read(args.dir))
     print(f"{label(event)} report written: {os.path.join(args.dir, REPORT)}")
 
 
@@ -504,9 +616,10 @@ def cmd_close(args):
                 "page checks not passed after the report: " + ", ".join(missing)
                 + ". Or give --without-page <reason>."
             )
-    issues = problems(events)
     event = append(args.dir, "close", reason=args.reason, without_page=args.without_page)
-    for line in issues:
+    events = read(args.dir)
+    write_report(args.dir, events)  # the report of record includes the close and its gaps
+    for line in problems(events):
         print(f"NOTE: {line} (it is on the report)")
     print(f"{label(event)} NIGHT CLOSED {found['run']} reason {args.reason}")
 
@@ -523,15 +636,19 @@ def parser():
         return cmd
 
     new = add("new", "start the journal and the card with the owner's exact words")
-    new.add_argument("--words")
-    new.add_argument("--words-file")
+    new.add_argument("--words-file", required=True, help="a file with the owner's exact /overnight arguments")
     go = add("go", "record the owner's go")
     go.add_argument("--stop", required=True, help="stop time: HH:MM (the next such local time), YYYY-MM-DD HH:MM (local) or ISO with a zone")
-    go.add_argument("--goal", required=True, choices=("set", "not-set"), help="did the owner send the /goal line?")
+    go.add_argument("--goal", required=True, choices=GOAL_STATES,
+                    help="set = the owner sent the /goal line; no-goal-command = this environment has no /goal (say it on the card)")
+    go.add_argument("--rehearsal", required=True, choices=REHEARSAL_STATES,
+                    help="passed = a rehearsal of this skill passed in this project; owner-override = the owner's words on the card; none = no action that cannot be undone tonight")
     go.add_argument("--heartbeat-min", type=int, default=DEFAULT_HEARTBEAT_MIN)
+    go.add_argument("--gap-min", type=int, help="the gap alarm (default 2 times the heartbeat; at most NIGHT_MAX_GAP_MIN)")
     log = add("log", "add one entry")
     log.add_argument("kind", choices=LOG_KINDS)
     log.add_argument("text", nargs="?", default=None)
+    log.add_argument("--words-file", help="amend, answer: a file with the owner's exact words")
     log.add_argument("--item")
     log.add_argument("--command", dest="command")
     log.add_argument("--blocks")
@@ -542,12 +659,15 @@ def parser():
     log.add_argument("--name", help="pagecheck name: " + ", ".join(PAGE_CHECKS))
     log.add_argument("--reopen", help="amend: the denied or held item that this owner message opens again")
     log.add_argument("--resolves", help="the id of the wait row that this entry ends (12 or E12)")
+    log.add_argument("--head", help="intent: the head that the reviews and checks saw")
+    log.add_argument("--head-now", help="intent: the head that you read just before the action")
+    log.add_argument("--no-head", help="intent: why this action has no head")
     status = add("status", "show the state and the counts")
     status.add_argument("--json", action="store_true")
     check = add("check", "find gaps, open intents and broken rows")
     check.add_argument("--now", action="store_true", help="also count the gap from the last entry to now")
     add("report", "write report.md from the journal")
-    close = add("close", "close the night")
+    close = add("close", "close the night (it writes report.md again)")
     close.add_argument("--reason", required=True, choices=CLOSE_REASONS)
     close.add_argument("--without-page", help="the reason why there is no checked page")
     return top
@@ -564,7 +684,7 @@ def main(argv=None):
     except Refused as refusal:
         print(f"REFUSED: {refusal}", file=sys.stderr)
         return EXIT_REFUSED
-    except ValueError as error:
+    except (ValueError, OSError) as error:
         print(f"REFUSED: {error}", file=sys.stderr)
         return EXIT_REFUSED
 

@@ -21,7 +21,11 @@ Stop time: <YYYY-MM-DD HH:MM and zone>
 Report ready by: <time>
 Wake me if: <a list of events, or "never">
 
-## Permissions (an action with no row is not permitted)
+## Session goal and rehearsal
+Session goal: <"set by the owner's /goal line" | "none in this harness. The heartbeat is the only wake source.">
+Rehearsal: <"passed on <date>, recorded in <where>" | "owner override: <exact owner words>" | "none: no row for an action that cannot be undone">
+
+## Permissions (each action that changes something outside my scratch files needs a row; an action with no row is not permitted)
 | Id | Action | Items (by name) | Condition | Ends |
 | --- | --- | --- | --- | --- |
 | P1 | merge | PR 1, PR 3 | <the merge bar, in the owner's or the project's words> | at the close |
@@ -63,7 +67,8 @@ Stop: <stop time>. Report ready by <time>. Wake you if: <list or "never">.
 
 I may:
 - P1: merge PR 1 and PR 3, if <condition>. Ends at the close.
-Nothing else that cannot be undone.
+Nothing else outside my scratch files.
+Rehearsal: <passed on <date> | your override: "<words>" | none>.
 
 Stays for you (do it now, or it waits until the morning):
 - PR 4 changes an agent instruction file. Command: <exact command>. It blocks PR 5.
@@ -73,6 +78,10 @@ I will not: <one line>.
 To start, send this line exactly:
 /goal <the line from section 3>
 ```
+
+A plain "go" or "yes" is not the go. Show the `/goal` line again, and wait. If the harness has no
+`/goal` command, say so in the read-back and on the card. Then end the read-back with "To start,
+reply: go".
 
 ## 3. The /goal line
 

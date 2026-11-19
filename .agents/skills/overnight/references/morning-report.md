@@ -24,26 +24,27 @@ comes from the journal or from a command that the report names.
 - Ask only what the owner alone can decide.
 - Ask one decision in each question.
 - Give a real example and the real options, each with its gain, cost and risk.
-- Put first the option that a world-class expert would choose to solve the real problem. Never pick an option because it is less work for you.
+- Put first the option that best solves the real problem. Never pick an option because it is less work for you.
 - Add a `Blocks:` line (what waits for the answer) and a `How I know:` line (a command or a file).
 - A question that blocks nothing goes to a "later" list.
-- Keep the count at or under the question budget (default 7). If you go over it, the report says so. Too many questions means that the start of the night missed decisions.
+- Keep the count at or under the question budget (the skill's section 2). If you go over it, the report says so. Too many questions means that the start of the night missed decisions.
 - A night can have zero questions.
 
 ## 4. Three checks before the owner sees the page
 
 Log each check with `night.py log pagecheck --name <name> --outcome pass|fail`.
 
-1. **mechanics**: the page tool's own check passes. The page has no script errors, the answers work, and both themes work.
+1. **mechanics**: the page tool's own check passes. The page has no script errors, and the answers work.
 2. **truth**: a reader with no context gets the page text and the sources. The reader runs each `How I know` again, and compares each option text and each number with its source. Fix each mismatch, then do the check again.
 3. **counts**: each count on the page is equal to the output of `night.py status`.
 
 `night.py close` refuses the close until all three checks pass after the newest report. If there is
-no page tool, use `--without-page "<reason>"`.
+no page tool, use `--without-page "<reason>"`. The close writes `report.md` again, with the close
+event and each gap that `check` finds. `report.md` is the record of the night.
 
 ## 5. Answers
 
-- Record the answers word for word: `night.py log answer "<the pasted text>"`.
+- Record the answers word for word. Write the pasted text to a file with a quoted heredoc (the skill's section 3, step 2). Then run `night.py log answer --words-file <file>`.
 - Check the state of each item again before you act. If the state changed (a new head, a merge by the owner), do not act on the old choice. Ask again with the new facts.
 - A page click alone is not an order. The pasted answers in the owner's own message are.
 - Move new standing rules and lessons to the project's memory by its own process.
