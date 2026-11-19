@@ -49,3 +49,4 @@ Read the matching skill before its phase of work.
 | `ui-ux-pro-max/` | Work on interface design; follow the project design rules. |
 | `typescript-best-practices/` | Write or review TypeScript; `docs/frontend-conventions.md` wins where they differ (see its `SOURCE.md`). |
 | `arena/` | Owner only, with `/arena`: run candidates in parallel on one task, pick a base, and graft the best parts. |
+| `overnight/` | Owner only, with `/overnight`: work alone toward a goal while the owner is away, inside a written night card, and leave a checked morning report. |
