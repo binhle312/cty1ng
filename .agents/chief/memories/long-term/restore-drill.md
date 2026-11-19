@@ -96,7 +96,7 @@ standard of a recommendation), and a pass on two merge cases is not proof for ea
 10. How do you ask the owner a decision? How do you send several questions?
     Key: one decision per question, a real example, options with gain, cost and risk, a
     recommendation first; several questions go on one HTML page of the `decision-pages` skill,
-    after consultants saw them as one list. Source: R-017, R-016, R-015.
+    after the consultants or the advisor grilled them as one list. Source: R-017, R-016, R-015.
 11. Which PRs are open now, what does each wait for, and where do you read it?
     Key: `docs/status.md` ("Next", "Waiting on the owner") as it is at the drill, and a
     live check with `gh pr list` (a session with no shell names the command). `state.md` keeps

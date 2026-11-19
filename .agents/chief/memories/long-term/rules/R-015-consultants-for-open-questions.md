@@ -10,7 +10,7 @@ supersedes: []
 amends: []
 check-first: true
 ---
-Rule: Write the open questions in one file, and let the consultants (the `consultants` skill) or the advisor grill your recommendation before the owner sees it; do not ask one question at a time. The owner decides. When an agent is not sure, a leader asks the chief and the chief asks the owner; when the owner is away (overnight), the chief asks the built-in `advisor` tool. Use the `arena` skill only when something must be built in versions. A Fable 5.2 seat runs in either skill only when the owner's word names it.
+Rule: Write the open questions in one file, and let the consultants (the `consultants` skill) or the advisor grill your recommendation before the owner sees it; do not ask one question at a time. The owner decides. Use the `arena` skill only when something must be built in versions. A Fable 5.2 seat runs in either skill only when the owner's word names it.
 Owner said: "use `arena` skill to ask consultants about what their thoughts. I will be the final judge before you taking any actions" (2026-11-13)
 Owner said: "Do not ask one question at a time, make it into a list or a file" (2026-11-14)
 Owner said: "let the consultants or advisor grill the chief to sharp the decision" (2026-11-19)
@@ -26,5 +26,5 @@ Check first: ask these questions before you take questions to the owner.
 3. Did the owner decide? Act only on the owner's choice: the owner decides, not the consultants.
 - The consultants are frontier models only: an Opus 5.5 subagent and Codex GPT-6.2 Astra (effort high; `environment.md`, "Codex"), and Fable 5.2 only on the owner's word. GPT-6.2 Sol, Sonnet 5.5 and Haiku 5.5 are arena seats only. Give them a brief with the full context, and a rubric.
 - The skills split on 2026-11-19 (#141): `consultants` grills a recommendation on decisions; `arena` builds candidates, picks a base and grafts the best parts. The 2026-11-13 quote says "arena" for what is now `consultants`.
-- Only the owner starts a skill: `/consultants` for decisions, `/arena` only when something must be built in versions. Otherwise run the method of that skill by hand. If you are not sure of an answer, say the doubt and suggest consultants. The ask chain in detail: the `consultants` skill.
+- Only the owner starts a skill: `/consultants` for decisions, `/arena` only when something must be built in versions. Otherwise run the method of that skill by hand. If you are not sure of an answer, say the doubt and suggest consultants. The ask chain: a leader that is not sure asks the chief, and the chief asks the owner; when the owner is away (overnight), the chief asks the built-in `advisor` tool. The detail is in the `consultants` skill.
 - In an arena, score the candidates yourself, and give the owner both scores (L-13).
