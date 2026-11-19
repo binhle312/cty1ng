@@ -2184,7 +2184,7 @@
     },
     {
       "file": ".agents/chief/scripts/merge-check.test.ts",
-      "name": "lists a change of %s at %s",
+      "name": "lists case %# as %s",
       "reason": "test first: red run against the stub classify, gh reader and CLI (tmp/red/2-merge-check.log, 2b-merge-list-stub.log)"
     },
     {

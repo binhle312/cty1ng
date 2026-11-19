@@ -101,7 +101,7 @@ describe("the list file", () => {
     ],
   ];
 
-  it.each(CASES)("lists a change of %s at %s", (text, path) => {
+  it.each(CASES)("lists case %# as %s", (text, path) => {
     expect(listedItem(path)?.text, path).toBe(text);
   });
 
@@ -127,6 +127,7 @@ describe("the list file", () => {
       "backend/src/adapters/workspaceX/a.ts",
       "docs/AGENTS.md",
       "frontend/src/components/ui/sub/markdown.tsx",
+      "frontend/src/components/ui/markdown-icons/star.svg",
       "docs/status.md",
     ]) {
       expect(listedItem(path), path).toBeUndefined();
@@ -334,11 +335,11 @@ describe("classify: a memory PR (order 108)", () => {
 describe("classify: a mixed PR", () => {
   it("refuses a PR that changes memory and other files", () => {
     const result = classify(input([memory("state.md"), file("docs/status.md")]));
-    expect(result.exit, "exit").toBe(1);
     expect(result.lines, "mixed lines").toEqual([
       `merge:check #152, head ${HEAD.slice(0, 7)}, 2 files`,
       "MIXED: a memory PR changes only `.agents/chief/memories/`. Split it. No chief merge.",
     ]);
+    expect(result.exit, "exit").toBe(1);
   });
 
   it("reads a rename out of the memory folder as mixed", () => {
@@ -429,7 +430,14 @@ describe("readPr", () => {
 
   it("cannot check on a gh error, bad JSON, a count mismatch or a contents answer with no text", () => {
     const cases: [string, Record<string, { status?: number; stdout: string }>][] = [
-      ["gh error", { "pr view": { status: 1, stdout: "" } }],
+      [
+        "gh error",
+        {
+          "pr view": { stdout: VIEW },
+          "pulls/152/files": { status: 1, stdout: FILES },
+          contents: { stdout: content("{}") },
+        },
+      ],
       ["bad JSON", { "pr view": { stdout: "{" } }],
       [
         "count mismatch",
