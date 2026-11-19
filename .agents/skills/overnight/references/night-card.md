@@ -30,6 +30,14 @@ Rehearsal: <"passed on <date>, recorded in <where>" | "owner override: <exact ow
 | --- | --- | --- | --- | --- |
 | P1 | merge | PR 1, PR 3 | <the merge bar, in the owner's or the project's words> | at the close |
 
+## Items (night.py reads this block at the go; one row for each item, exact names)
+```night-items
+PR 1 | commit | --match-head-commit
+PR 3 | commit | --match-head-commit
+PR 2 | no-commit
+PR 4 | owner
+```
+
 ## Standing permissions in force (not night permissions)
 <each one: where the project records it, its scope and its end. The night does not change them.>
 
@@ -55,6 +63,14 @@ Rehearsal: <"passed on <date>, recorded in <where>" | "owner override: <exact ow
 <each row that you removed at night, with the id of its hold row; the card only gets smaller>
 ```
 
+Rules for the items block:
+
+- Write one block, and write it outside the owner's words. `night.py items --dir <night>` prints the rows that it reads. Run it before the read-back.
+- A name is exact: night.py takes `PR 1` and refuses `#1`, `pr 1` or a link. Two repositories give two names, for example `org/one#3` and `org/two#3`.
+- `commit`: an action on a commit (a merge, a tag, a release). The third column is the head-match option that the documentation of the tool names. With no such option, the item gets no `commit` row.
+- `no-commit`: an action that acts on no commit. `owner`: the item stays for the owner, and night.py refuses each action on it. Notes and `wait` rows can name each item.
+- After the go, only an owner order adds an item (`log amend --add-item`).
+
 ## 2. The read-back
 
 Show it on one screen. Use the owner's words where you can. End with the `/goal` line.
@@ -65,13 +81,15 @@ Night card <run id>. Please check it.
 Goal: <goal>. Done test: <done test>.
 Stop: <stop time>. Report ready by <time>. Wake you if: <list or "never">.
 
+Items (from night.py items): PR 1 commit, PR 3 commit (head match: --match-head-commit), PR 2 no-commit, PR 4 owner.
+
 I may:
 - P1: merge PR 1 and PR 3, if <condition>. Ends at the close.
 Nothing else outside my scratch files.
 Rehearsal: <passed on <date> | your override: "<words>" | none>.
 
 Stays for you (do it now, or it waits until the morning):
-- PR 4 changes an agent instruction file. Command: <exact command>. It blocks PR 5.
+- PR 4 needs your review choice. Command: <exact command>. It blocks PR 5.
 
 I will not: <one line>.
 

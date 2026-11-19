@@ -5,8 +5,8 @@ comes from the journal or from a command that the report names.
 
 ## 1. Two layers
 
-1. `night.py report` writes `report.md` from the journal. It needs no model. So a report exists also when the session stopped at night.
-2. The owner page adds the goal in numbers and the questions. Use a decision-page skill if the project has one. If not, give `report.md` and a questions file.
+1. `night.py report` adds report entry E<n> with frozen counts, and writes `report.md` from the journal. It needs no model. So a report exists also when the session stopped at night.
+2. The owner page adds the goal in numbers and the questions. It names the report that it shows: "Report E<n>". Use a decision-page skill if the project has one. If not, give `report.md` and a questions file.
 
 ## 2. The parts, in this order
 
@@ -14,7 +14,7 @@ comes from the journal or from a command that the report names.
 2. **My errors.** Each error that you found, and its correction.
 3. **Done and not reversible.** Each action that cannot be undone, with its evidence: the reviews, the checks and the head.
 4. **The goal in numbers.** Each number names its source: a command or a file. Use a chart only if it shows the state of the night's work.
-5. **Stops and gaps.** The output of `night.py check`. A gap is a fact: do not hide it.
+5. **Stops and gaps.** The output of `night.py check --now`. A gap is a fact: do not hide it.
    Also the notes (`aware` rows): owner questions, texts that asked for a permission, and gaps after a crash.
 6. **Decisions to check.** The count of `--check` decisions, and a link to the list. These are not questions.
 7. **Questions.** Then a last step with all answers and a way to copy them.
@@ -32,15 +32,16 @@ comes from the journal or from a command that the report names.
 
 ## 4. Three checks before the owner sees the page
 
-Log each check with `night.py log pagecheck --name <name> --outcome pass|fail`.
+Log each check with `night.py log pagecheck --name <name> --outcome pass|fail --report E<n>`, with the report that the page names. night.py refuses a check of a report that is not the newest, or of a report that later entries made old.
 
 1. **mechanics**: the page tool's own check passes. The page has no script errors, and the answers work.
 2. **truth**: a reader with no context gets the page text and the sources. The reader runs each `How I know` again, and compares each option text and each number with its source. Fix each mismatch, then do the check again.
-3. **counts**: each count on the page is equal to the output of `night.py status`.
+3. **counts**: each count on the page is equal to the frozen counts of `night.py status --report E<n>`, not to the live `status`.
 
-`night.py close` refuses the close until all three checks pass after the newest report. If there is
-no page tool, use `--without-page "<reason>"`. The close writes `report.md` again, with the close
-event and each gap that `check` finds. `report.md` is the record of the night.
+`night.py close` refuses the close until the newest report is fresh and its three newest checks
+pass. If there is no page tool, use `--without-page "<reason>"`. The close writes `report.md` again:
+the counts of report E<n>, the entries after E<n>, the gaps, and the end of the night permissions.
+After the close, `report.md` is the record of the night, and night.py refuses `report`.
 
 ## 5. Answers
 
