@@ -26,3 +26,10 @@ Append only. One heading for each promotion, lint, restore drill or migration.
 
 - R-002 now gives its two merge paths apart (DQ-895). The probe saw only `CLAUDE.md` and
   `AGENTS.md`. The answer gave both paths and each point of the key.
+
+## [2026-11-19] restore | the third and fourth drills, on 5445f32 and ca66447, graded by fresh agents: 14 of 18 right each, fail
+
+- The probe saw only `CLAUDE.md` and `AGENTS.md` each time.
+- Q4 left out the PRs that no permission covers: the answer follows the R-002 steps, and the
+  list is only in the Rule sentence (DQ-896). The redesign waits for the owner (DQ-897).
+- Partial too: Q10, Q13 and Q16 on 5445f32; Q10, Q11 and Q13 on ca66447.
