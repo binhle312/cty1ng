@@ -87,8 +87,9 @@ ANY_SHA = re.compile(r"(?<![0-9A-Fa-f])[0-9A-Fa-f]{40}(?![0-9A-Fa-f])")
 # A card row holds the exact command. A slot is a whole word of a fixed type; no other slot exists, and a new slot
 # type needs the owner (owner, 2026-11-19, designs-139-140 Q3 A).
 SLOTS = {"{head}": FULL_SHA, "{run}": re.compile(r"[0-9]{1,20}")}
-# A character that a shell reads as syntax: no command or row may have one (outside a slot word).
-SHELL_CHARS = frozenset(";&|`$()<>\\{}~*?[]!#")
+# A character that a shell reads as syntax: no command or row may have one (outside a slot word). The backtick is
+# written by its name: a literal one made a skill scanner read the lines down to FENCE as one shell command.
+SHELL_CHARS = frozenset(";&|$()<>\\{}~*?[]!#\N{GRAVE ACCENT}")
 REPO = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
 
 

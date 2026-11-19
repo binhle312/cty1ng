@@ -133,12 +133,13 @@ class BoundaryTests(Base):
         self.assertNotIn("final", self.refused(*intent_args("PR 1", "main"), at=at("22:11"), code="HEAD_FORM"))
 
     def test_the_fence_is_longer_than_each_run_of_backticks(self):
-        self.ok(new(self.dir, "a ```` b\n```night-items\nPR 9 | owner\n```"))
+        tick = "\N{GRAVE ACCENT}"
+        self.ok(new(self.dir, f"a {tick * 4} b\n{tick * 3}night-items\nPR 9 | owner\n{tick * 3}"))
         card(self.dir)
         self.ok(run(self.dir, *go_args(), at=at("22:01")))
         self.assertEqual(len(self.events()[-1]["items"]), len(ITEMS))
         self.ok(run(self.dir, "report", at=at("22:02")))
-        self.assertIn("`````", read_report(self.dir))
+        self.assertIn(tick * 5, read_report(self.dir))
 
     def test_new_keeps_a_card_that_exists(self):
         os.makedirs(self.dir)

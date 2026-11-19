@@ -3,6 +3,7 @@
 Run all test files with `python3 -I run_tests.py`.
 """
 
+import json
 import os
 import sys
 import unittest
@@ -149,7 +150,7 @@ class CommandRowTests(Base):
 
     def test_status_and_the_report_show_the_command_of_each_row(self):
         started(self.dir)
-        items = __import__("json").loads(self.ok(run(self.dir, "status", "--json", at=at("22:10"))))["items"]
+        items = json.loads(self.ok(run(self.dir, "status", "--json", at=at("22:10"))))["items"]
         self.assertIn({"name": "PR 1", "kind": "commit", "command": ROW_1, "from": "E2"}, items)
         self.assertIn({"name": "PR 4", "kind": "owner", "command": None, "from": "E2"}, items)
 
