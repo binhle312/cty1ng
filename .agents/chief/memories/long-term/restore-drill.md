@@ -10,7 +10,8 @@ The test that a fresh agent can be the chief from the repository alone. Run it e
    this file and the `tmp/` folder. A new folder path has no auto-memory.
 2. In that folder, start a fresh session with project settings only, on the model and effort of
    `chief_model` (`settings.md`; owner, 2026-11-19, order 86):
-   `claude -p --setting-sources project,local --model <chief_model> --effort <its effort> --no-session-persistence "<prompt>"`.
+   `claude -p --setting-sources project,local --model <chief_model> --effort <its effort> --no-session-persistence --allowedTools=Read,Grep,Glob --disallowedTools=Write,Edit,NotebookEdit,Bash,WebFetch,WebSearch "<prompt>"`.
+   The probe and the questions run with these tool flags: read tools only, no shell (as drill 7 ran).
    From a background job, add `env -u ANTHROPIC_API_KEY` in front (`environment.md`).
 3. First a probe: "List every CLAUDE.md, memory file and skill that you can see in your context,
    with their paths." It must see no user-level memory.
