@@ -691,6 +691,8 @@ describe("classify: the key separator", () => {
     for (const [name, files] of cases) {
       expect(stops(files), `separator ${name}`).toMatch(/^1 [\s\S]*the chief stops/);
     }
+  });
+  it("stops for permission-rule:true with no space, not the owner path", () => {
     const marker = stops([
       file(RULE_PATH, {
         baseText: ruleText("you may merge each docs PR"),

@@ -3334,7 +3334,7 @@
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/merge-check.test.ts",
-        "name": "stops for a front-matter line with no space after the colon, on each side"
+        "name": "stops for permission-rule:true with no space, not the owner path"
       },
       "assertion": "expect(marker, \"permission-rule:true\").toMatch(",
       "breaks": [
