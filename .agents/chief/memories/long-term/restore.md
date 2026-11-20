@@ -23,8 +23,8 @@ How the chief comes back when the old chief is gone. The drill that proves it is
    file; `claude` gets only the tools Read, Grep, Glob and Write (`--tools`), reads no settings
    file of the project, and may write only in `short-term/audits/` (`--allowedTools`; `-p` cannot
    ask for more). Cron needs each `%` as `\%`. The owner record
-   (`short-term/owner/`) is empty on a new computer, so `pnpm merge:check` stops (exit 2) for a
-   memory PR that changes a rule until the record has the owner's words again.
+   (`short-term/owner/`) is empty on a new computer, so `pnpm merge:check` stops (exit 2) for
+   each memory PR until the record has the owner's words again.
 
    ```text
    0 0,8,16 * * * cd <checkout> && export PATH=<claude dir>:<node dir>:<gh dir>:/usr/bin:/bin && A=.agents/chief/memories/short-term/audits && mkdir -p "$A" && R="$A/$(date +\%F-\%H)" && { git fetch -q origin main; echo "## check:memory --local"; pnpm -s check:memory --local; echo "## differences from origin/main"; git status -sb; git diff origin/main -- .agents/chief/memories/; echo "## long-term changes of the last 9 hours"; git log -p --since="9 hours ago" origin/main -- .agents/chief/memories/long-term/; echo "## open PRs and their files"; gh pr list --state open --json number,files --jq '.[] | "#\(.number) \([.files[].path] | join(" "))"'; } > "$R-input.txt" 2>&1; timeout 30m env -u ANTHROPIC_API_KEY claude -p --restricted --strict-mcp-config --model claude-opus-5-5 --effort high --no-session-persistence --tools "Read,Grep,Glob,Write" --allowedTools "Read" "Grep" "Glob" "Write($A/**)" -- "$(cat .agents/chief/memories/long-term/audit.md) The input file: $R-input.txt. The report file: $R.md." >> "$A/cron.log" 2>&1

@@ -11,22 +11,30 @@ This bar applies the [when review ends principle](../../.agents/skills/principle
 ## Who may merge
 
 The owner merges a PR, or asks for its merge. The chief may also merge a PR that a standing
-permission of the owner covers, and each memory PR (`AGENTS.md` §7; owner, 2026-11-19, order
-108). Before each chief merge, the chief runs `pnpm merge:check <PR>` from a clean checkout of
-`origin/main`. A memory PR and a PR under a standing permission merge only with the merge line
-that it prints. The script reads one GitHub snapshot of the PR, judges the git diff at the commit
-ids of that snapshot, and reads the snapshot again: a change in between stops it (owner,
-2026-11-20, orders 128 and 130). Exit 1 means no chief merge under a permission: a path that no
-permission covers, a check that is pending, red or missing, a touched path that main changed
-after the branch split (merge main first), a PR that mixes `.agents/chief/memories/` with other
-files, a memory PR that fails its gate, or a PR that is not open, comes from a fork, has another
-author or is for another base. The owner merges each memory PR that does more than add or change
-`.md` files of `long-term/`, that changes `restore.md` or `audit.md`, or that adds, changes or
-deletes a rule with `permission-rule: true` (order 130). Exit 2 means that the script cannot
-check: no chief merge. When the owner's own message asks for a PR, a listed path does not stop
+permission of the owner covers, and each memory PR that `pnpm merge:check` passes (`AGENTS.md` §7;
+owner, 2026-11-19, order 108). Before each chief merge, the chief runs `pnpm merge:check <PR>`
+from a clean checkout of `origin/main`. A memory PR and a PR under a standing permission merge
+only with the merge line that it prints. The script first checks the clone: the origin is this
+repository on github.com, the clone has its full history, and no git setting can change the diff.
+Then it reads one GitHub snapshot of the PR, compares its own code with the base tip of that
+snapshot, judges the git diff at the commit ids of that snapshot, and reads the snapshot again: a
+change in between stops it (owner, 2026-11-20, orders 128, 130 and 133). Exit 1 means no chief
+merge under a permission: a path that no permission covers, a check that is pending, red or
+missing, a touched path that main changed after the branch split (merge main first), a PR that
+mixes `.agents/chief/memories/` with other files, a memory PR that fails its gate, a path or a
+memory text in a form that the script does not support ("the chief stops"), or a PR that comes
+from a fork, has another author or is for another base. The owner merges each memory PR that does
+more than add or change `.md` files of `long-term/`, that changes `restore.md` or `audit.md`, or
+that adds, changes or deletes a rule with `permission-rule: true` (order 130). Exit 2 means that
+the script cannot check: no chief merge. A PR that is not open, a memory PR with no owner record
+or no private word list, and a failed check of the clone give exit 2. When the owner's own message asks for a PR, a listed path does not stop
 the merge (R-002 path 1): the chief merges with
 `gh pr merge https://github.com/<owner>/<repo>/pull/<PR> --merge --match-head-commit <head>`, but
 never a mixed PR.
+
+Not claimed: the gate assumes a trusted machine and trusted tools (owner, 2026-11-20, order 131).
+The start check finds a local setting that changed by mistake. Anyone who controls the machine can
+merge with the owner's login.
 
 ## Severity
 

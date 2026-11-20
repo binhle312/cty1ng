@@ -17,11 +17,12 @@ The memory has two parts (owner, 2026-11-19, order 72):
 | `long-term/` | Yes, and public | The chief that a new computer can restore: identity, rules, settings, environment, lessons, and the state at the last promotion. Only a PR changes it. |
 | `short-term/` | No, only its README | The current source of truth on this computer: the live state, new orders word for word, private notes. It wins over long-term memory until a promotion. |
 
-The chief merges each memory PR itself: a PR that changes only this folder (owner,
-2026-11-19, order 108; rule R-005). The owner merges a memory PR that adds, changes or deletes a
-rule with `permission-rule: true` (owner, 2026-11-20, order 130), and one that does more than add
-or change `.md` files of `long-term/`, or that changes `long-term/restore.md` or
-`long-term/audit.md` (order 128). The memory check and the merge check are code in
+A memory PR changes only this folder. The owner merges a memory PR that adds, changes or deletes
+a rule with `permission-rule: true` (owner, 2026-11-20, order 130), one that does more than add or
+change `.md` files of `long-term/`, and one that changes `long-term/restore.md` or
+`long-term/audit.md` (order 128). The chief merges each other memory PR that `pnpm merge:check`
+passes (owner, 2026-11-19, order 108; rule R-005). A path or a text in a form that the script
+does not support stops the chief (order 133). The memory check and the merge check are code in
 `../scripts/`, so a change of them is not a memory PR, and the owner merges it (`AGENTS.md` §7).
 
 ## Memory map
@@ -75,7 +76,7 @@ it is on `main`.
 ## Promote
 
 A memory PR moves facts from `short-term/` to `long-term/` (owner, 2026-11-19, arena Q2 A;
-rule R-005). The chief merges it (order 108).
+rule R-005). The chief merges it when `pnpm merge:check` passes it (order 108).
 
 1. Make one memory PR each day or night when the inbox has facts older than the setting
    `promote_after_hours`.
@@ -161,7 +162,7 @@ except its README. `pnpm check:memory --local` also checks this computer: the ig
 rule quote against the `.md` files of `short-term/owner/` (order 109; a quote needs the setting
 `quote_min_words` words or more). Git ignores those files, so CI cannot run these checks. Run the
 local form before each push of memory files. With no owner record it only warns; `pnpm
-merge:check` stops instead (exit 2) for a memory PR that adds or changes a rule.
+merge:check` stops instead (exit 2) for each memory PR.
 
 ## Privacy
 
