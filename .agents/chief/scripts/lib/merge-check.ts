@@ -308,7 +308,7 @@ function memoryGate(input: MergeInput, header: string): MergeResult {
       record: input.record,
       minWords: input.minQuoteWords,
     });
-    if (quotes.noRecord) throw new CannotCheck(`no owner record (${OWNER_RECORD}/*.md)`);
+    // The gate read the owner record first (DQ-1031), so `quotes.noRecord` is false here.
     if (quotes.problems.length > 0) return fail(quotes.problems);
   }
   return {

@@ -1414,7 +1414,7 @@
     },
     {
       "id": "M9-no-record",
-      "claim": "A memory PR that changes a rule with no owner record gives exit 2 (fail closed) (security test: who may merge, AGENTS.md §7, order 108)",
+      "claim": "A memory PR that changes a rule with no owner record gives exit 2 (fail closed; the record is read first, DQ-1031) (security test: who may merge, AGENTS.md §7, order 108)",
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/merge-check.test.ts",
@@ -1427,8 +1427,8 @@
           "file": ".agents/chief/scripts/lib/merge-check.ts",
           "edits": [
             {
-              "find": "    if (quotes.noRecord) throw new CannotCheck",
-              "replace": "    if (quotes.noRecord && rules.length < 0) throw new CannotCheck"
+              "find": "  if ((input.record ?? []).every((text) => text.trim() === \"\")) {",
+              "replace": "  if ((input.record ?? []).length < 0) {"
             }
           ]
         }
@@ -2618,7 +2618,7 @@
         "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
         "name": "marks a path with a BOM, a non-ASCII letter or a space as unsupported"
       },
-      "assertion": "\"letter path\").toBe(false);",
+      "assertion": "\"bom path\").toBe(false);",
       "breaks": [
         {
           "id": "D1-ascii-path-1",
@@ -2640,7 +2640,7 @@
         "file": ".agents/chief/scripts/merge-check.test.ts",
         "name": "stops the chief for a path that is not printable ASCII"
       },
-      "assertion": "\"unsupported path\").toBe(1);",
+      "assertion": "\"unsupported path line\").toContain(",
       "breaks": [
         {
           "id": "D2-unsupported-path-1",

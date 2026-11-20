@@ -210,10 +210,8 @@ describe("readDiff", () => {
     const result = readDiff({ head, baseTip: tip }, runner);
     if (!result.ok) throw new Error(result.reason);
     const byPath = new Map(result.files.map((file) => [file.path, file]));
-    expect(
-      byPath.get("\\xef\\xbb\\xbf.agents/chief/memories/long-term/x.md")?.supported,
-      "bom path",
-    ).toBe(false);
+    const bom = byPath.get("\\xef\\xbb\\xbf.agents/chief/memories/long-term/x.md");
+    expect(bom?.supported, "bom path").toBe(false);
     expect(byPath.get("docs/caf\\xc3\\xa9.md")?.supported, "letter path").toBe(false);
     expect(byPath.get("docs/a\\x20b.md")?.supported, "space path").toBe(false);
     expect(byPath.get(".agents/chief/memories/long-term/note.md")?.supported, "ascii path").toBe(
