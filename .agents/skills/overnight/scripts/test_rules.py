@@ -241,6 +241,8 @@ class AdvisorThreeTests(Base):
             structured = {
                 "run": RUN, "pair": [], "policy": {}, "reports": [], "spec": {}, "evidence": {},
                 "texts": [], "audit": [], "list": [], "tasks": {},
+                "cleanup": {"folder": "/fixture/leader", "repo": "/fixture/repo", "branch": "topic",
+                            "identity": ["/fixture/repo/.git", 1, 2]},
             }
             if spec in structured:
                 return structured[spec]

@@ -28,7 +28,7 @@ Only the owner's own `/overnight <arguments>` message starts a night. If the own
 
 ## Night rule
 
-At night, merge through `night.py merge` after the chief gives permission for that PR and head. Release and delete stay with the owner, with this exception:
+At night, merge through `night.py merge` after the chief gives permission for that PR and head. Release and delete stay with the owner. This applies to direct and indirect effects, with this exception:
 
 > At night, after a PR is MERGED and the worktree has no uncommitted changes, the leader removes its worktree, local branch and temp files; the remote branch is deleted too. Open PRs untouched.
 
