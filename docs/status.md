@@ -93,6 +93,7 @@ A P3 that has a DQ id is not in this table. Its state lives only in its row of t
 
 | Item | Found in | Target |
 | --- | --- | --- |
+| Flaky e2e test `skills.spec.ts:465` (UI-7.5a, the Bots tab empty line): strict mode found two "Add" buttons on the first try and the retry, CI run 44706653327 on #142 (a Markdown-only diff); the rerun passed | [#142](https://github.com/binhle312/cty1ng/pull/142) CI | Find the cause before M3 (the owner picks the PR) |
 | Q1 A redesign (owner 2026-11-18): plans hold the design and the owner's decisions only; build facts only in the PR description; a small docs PR (`planning.md`, `pull-request.md`) | Owner answer Q1 A, 2026-11-18 ([#114](https://github.com/binhle312/cty1ng/pull/114), DQ-541, DQ-542) | [#133](https://github.com/binhle312/cty1ng/pull/133) |
 | `pnpm e2e:serve` can die and leave its servers on the ports: a closed stdout (`EPIPE`) or SIGHUP stops the script without stopping them, and the marker stays. It fails safe, but its message says to stop a script that no longer runs, and no doc says to delete `.e2e-serve`. Stop the servers on those exits, and correct the message | [#60](https://github.com/binhle312/cty1ng/pull/60) review | The P3 PRs before M3 (owner, 2026-11-08) |
 | No test runs `scripts/e2e-serve.ts` itself, so its guard and signal wiring have only manual evidence | [#60](https://github.com/binhle312/cty1ng/pull/60) review | The P3 PRs before M3 (owner, 2026-11-08) |
