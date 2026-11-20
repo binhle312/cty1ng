@@ -208,7 +208,8 @@ function listOf(value: string | undefined): string[] | undefined {
 
 // The one front-matter parser: `check:memory` and `merge:check` both read rule fields with it.
 // Undefined when the text has no front matter between two exact "---" lines; `bad` holds each line
-// that is not "key: value" and each line that repeats a key (plan delta r1 §2.2).
+// that is not "key: value" and each line that repeats a key (plan delta r1 §2.2). The space after
+// the colon is required (plan delta r2 §3, DQ-1041).
 export function frontmatter(
   text: string,
 ): { fields: Map<string, string>; bad: string[]; body: string } | undefined {
@@ -217,7 +218,7 @@ export function frontmatter(
   const fields = new Map<string, string>();
   const bad: string[] = [];
   for (const line of (match[1] ?? "").split("\n")) {
-    const field = /^([a-z][a-z-]*): ?(.*)$/.exec(line);
+    const field = /^([a-z][a-z-]*): (.*)$/.exec(line);
     if (field?.[1] === undefined || fields.has(field[1])) bad.push(line);
     else fields.set(field[1], (field[2] ?? "").trim());
   }

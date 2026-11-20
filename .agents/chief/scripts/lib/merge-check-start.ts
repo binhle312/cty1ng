@@ -1,7 +1,8 @@
 // The start check of `pnpm merge:check` (plan delta r1 §3; owner, 2026-11-20, order 131: trust the
 // computer, check the basics). Pure: the CLI reads the facts and passes them in.
 //
-// - Before snapshot 1: the origin is this repository on github.com, the clone has its full history
+// - Before snapshot 1: the origin has one value, of printable ASCII bytes (plan delta r2 §5), and is
+//   this repository on github.com, the clone has its full history
 //   (not shallow, no grafts file), and no git setting under `diff.`, `submodule.` or `extensions.`
 //   can change the diff, except two known values. A fact that git could not read is a problem too.
 // - The git environment: no inherited `GIT_` variable reaches git, and replace objects are off.
@@ -10,12 +11,14 @@
 //
 // It finds a local setting that changed by mistake. It does not defend against a person who
 // controls the machine (not claimed, order 131).
+import { escaped, isPrintable } from "./merge-check-diff.ts";
 import type { Repo } from "./merge-check-snapshot.ts";
 import { REPOSITORY } from "./merge-list.ts";
 
 export type StartFacts = {
-  // `git config --get remote.origin.url`: the value as written, before a URL rewrite.
-  originUrl: string | undefined;
+  // `git config --get-all -z remote.origin.url` split at NUL: each value as bytes, as written,
+  // before a URL rewrite (an empty value counts too).
+  origin: readonly Buffer[] | undefined;
   // `git rev-parse --is-shallow-repository`.
   shallow: string | undefined;
   // True when the file of `git rev-parse --git-path info/grafts` exists.
@@ -40,12 +43,25 @@ export function originRepo(url: string): Repo | undefined {
   return { owner: match[1], name: match[2] };
 }
 
+// The one origin URL as text: undefined unless there is exactly one value of printable ASCII
+// bytes. No trim: the bytes are checked as git has them (DQ-1043, grill 2).
+export function originUrl(values: readonly Buffer[] | undefined): string | undefined {
+  const [value] = values ?? [];
+  if (values?.length !== 1 || value === undefined || !isPrintable(value)) return undefined;
+  return value.toString("latin1");
+}
+
 export function startProblems(facts: StartFacts): string[] {
   const problems: string[] = [];
   const unread = (fact: string): string => `git could not read ${fact}`;
-  if (facts.originUrl === undefined) problems.push(unread("the origin remote"));
-  else {
-    const repo = originRepo(facts.originUrl);
+  const url = originUrl(facts.origin);
+  if (facts.origin === undefined) problems.push(unread("the origin remote"));
+  else if (facts.origin.length !== 1) {
+    problems.push(`the origin remote has ${String(facts.origin.length)} URLs; it needs one`);
+  } else if (url === undefined) {
+    problems.push("the origin URL has a byte that is not printable ASCII");
+  } else {
+    const repo = originRepo(url);
     if (repo === undefined || `${repo.owner}/${repo.name}` !== REPOSITORY) {
       problems.push(`the origin remote is not https://github.com/${REPOSITORY}`);
     }
@@ -123,20 +139,51 @@ export type PolicyFs = {
 };
 export type PolicyWalk = { ok: true; files: LocalFile[] } | { ok: false; reason: string };
 
-// Each file under the policy paths, tracked or not, in byte order of the names.
+class WalkStop extends Error {}
+
+// Each file under the policy paths, tracked or not, in byte order of the names (plan delta r2 §5).
+// A name must be printable ASCII, so the path is kept exactly. Only a top path may be missing (the
+// base tip list names it); an entry of readdir that lstat does not find, and each error of lstat
+// or readdir, is a stop (exit 2).
 export function walkPolicy(roots: readonly string[], fs: PolicyFs): PolicyWalk {
   const files: LocalFile[] = [];
-  const walk = (path: string): void => {
-    // A policy path that is missing here has no entry; the base tip list names it.
-    const entry = fs.lstat(path);
-    if (entry === undefined) return;
+  const call = <T>(what: { op: string; path: string }, run: () => T): T => {
+    const { op, path } = what;
+    try {
+      return run();
+    } catch (error) {
+      const code =
+        error instanceof Error && "code" in error ? String(error.code) : "an unknown error";
+      throw new WalkStop(`the check could not read ${path} (${op}: ${code})`);
+    }
+  };
+  const walk = (path: string, top: boolean): void => {
+    const entry = call({ op: "lstat", path }, () => fs.lstat(path));
+    if (entry === undefined) {
+      if (top) return;
+      throw new WalkStop(`${path} went away during the check`);
+    }
     if (entry.kind === "dir") {
-      const names = fs.readdir(path).map((name) => name.toString("utf8"));
-      for (const name of names.sort()) walk(`${path}/${name}`);
+      const names = [...call({ op: "readdir", path }, () => fs.readdir(path))].sort((a, b) =>
+        Buffer.compare(a, b),
+      );
+      for (const name of names) {
+        if (!isPrintable(name)) {
+          throw new WalkStop(
+            `a policy file name that the check cannot keep exactly: ${path}/${escaped(name)}`,
+          );
+        }
+        walk(`${path}/${name.toString("latin1")}`, false);
+      }
     } else {
       files.push({ path, executable: entry.executable, plain: entry.kind === "file" });
     }
   };
-  for (const root of roots) walk(root);
+  try {
+    for (const root of roots) walk(root, true);
+  } catch (error) {
+    if (error instanceof WalkStop) return { ok: false, reason: error.message };
+    throw error;
+  }
   return { ok: true, files };
 }

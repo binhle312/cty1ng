@@ -8,14 +8,24 @@
 // snapshot, the base check against that snapshot's base tip, the git diff at the snapshot's
 // commit ids, and a second snapshot that must be the same in each field. Plan delta r1 (order
 // 133): the start check runs before snapshot 1, and the policy files are compared with the
-// snapshot's base tip by blob id and executable bit.
+// snapshot's base tip by blob id and executable bit. Plan delta r2 (order 147): the record step
+// decides first; the CLI reads the texts that it names, then takes snapshot 2, and gives a result
+// only when the two snapshots are the same.
 import { spawnSync } from "node:child_process";
 import { existsSync, lstatSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { SETTINGS_FILE, SHORT_TERM, readSettings } from "./lib/check-memory.ts";
 import { readIfExists, readOwnerRecord } from "./lib/check-memory-local.ts";
-import { type MergeResult, cannotCheck, classify } from "./lib/merge-check.ts";
-import { type GitRun, readDiff } from "./lib/merge-check-diff.ts";
+import {
+  type MergeInput,
+  type MergeResult,
+  type Texts,
+  cannotCheck,
+  decideContent,
+  decideRecords,
+  readTexts,
+} from "./lib/merge-check.ts";
+import { type GitRun, blobReader, readDiff } from "./lib/merge-check-diff.ts";
 import { type Run, readSnapshot, sameSnapshot } from "./lib/merge-check-snapshot.ts";
 import {
   type LocalEntry,
@@ -24,6 +34,7 @@ import {
   type TreeEntry,
   gitEnvironment,
   originRepo,
+  originUrl,
   policyProblems,
   startProblems,
   walkPolicy,
@@ -56,6 +67,20 @@ const gh: Run = (args) => {
   return { status: result.status ?? 1, stdout: result.stdout };
 };
 
+// The values of a `-z` output: each value ends with a NUL, and an empty value counts.
+function splitNul(bytes: Buffer): Buffer[] {
+  const values: Buffer[] = [];
+  let start = 0;
+  for (let i = 0; i < bytes.length; i += 1) {
+    if (bytes[i] === 0) {
+      values.push(bytes.subarray(start, i));
+      start = i + 1;
+    }
+  }
+  if (start !== bytes.length) values.push(bytes.subarray(start));
+  return values;
+}
+
 // The facts of the start check, read from git before snapshot 1. A failed read is undefined.
 function startFacts(): StartFacts {
   const read = (...args: string[]): string | undefined => {
@@ -63,9 +88,11 @@ function startFacts(): StartFacts {
     return result.status === 0 ? result.stdout : undefined;
   };
   const grafts = read("rev-parse", "--git-path", "info/grafts")?.trim();
+  // Each configured value as bytes, as written (a URL rewrite of git does not change what it
+  // names); the text helper would remove a leading BOM (grill 2).
+  const origin = gitBytes(["config", "--get-all", "-z", "remote.origin.url"]);
   return {
-    // The configured value, as written (a URL rewrite of git does not change what it names).
-    originUrl: read("config", "--get", "remote.origin.url")?.trim(),
+    origin: origin.status === 0 ? splitNul(origin.stdout) : undefined,
     shallow: read("rev-parse", "--is-shallow-repository"),
     grafts: grafts === undefined || grafts === "" ? undefined : existsSync(resolve(grafts)),
     config: read("config", "--list", "-z", "--includes"),
@@ -98,6 +125,9 @@ function baseProblem(baseTip: string): string | undefined {
     if (line === "") continue;
     const match = /^(\d{6}) \w+ ([0-9a-f]{40})\t([\s\S]+)$/.exec(line);
     if (match === null) return "git gave an unexpected list of the policy files";
+    if (!/^[\x21-\x7e]+$/.test(match[3] ?? "")) {
+      return "a policy path of the base tip is not printable ASCII";
+    }
     tree.push({ mode: match[1] ?? "", blob: match[2] ?? "", path: match[3] ?? "" });
   }
   const walked = walkPolicy(BASE_PATHS, POLICY_FS);
@@ -136,7 +166,7 @@ function main(arg: string | undefined): MergeResult {
   const facts = startFacts();
   const start = startProblems(facts);
   if (start.length > 0) return stop(start.join("; "));
-  const repo = originRepo(facts.originUrl ?? "");
+  const repo = originRepo(originUrl(facts.origin) ?? "");
   if (repo === undefined) return stop("the origin remote is not a GitHub repository");
   // The trusted local inputs, read one time before the snapshot.
   let record: readonly string[] | undefined;
@@ -159,12 +189,7 @@ function main(arg: string | undefined): MergeResult {
   if (minWords === undefined) return stop("no setting quote_min_words at the base tip");
   const diff = readDiff({ head: snapshot.head, baseTip: snapshot.baseTip }, gitBytes);
   if (!diff.ok) return stop(diff.reason);
-  const second = readSnapshot({ repo, number }, gh);
-  if (!second.ok) return stop(second.reason);
-  if (!sameSnapshot(snapshot, second.snapshot)) {
-    return stop("the PR changed during the check (head, base, state or checks)");
-  }
-  return classify({
+  const input: MergeInput = {
     repo: snapshot.repo,
     number,
     state: snapshot.state,
@@ -178,7 +203,22 @@ function main(arg: string | undefined): MergeResult {
     crossRepository: snapshot.fork,
     author: snapshot.author,
     expectedAuthor: snapshot.repoOwner,
-  });
+  };
+  // Plan delta r2 §2: the record step reads nothing; the texts that it names are read here, before
+  // snapshot 2, and a result waits for the compare.
+  const step = decideRecords(input);
+  let texts: Texts = new Map();
+  if ("reads" in step) {
+    const read = readTexts(step.reads, blobReader(gitBytes));
+    if (!read.ok) return stop(read.reason, step.memory);
+    texts = read.texts;
+  }
+  const second = readSnapshot({ repo, number }, gh);
+  if (!second.ok) return stop(second.reason);
+  if (!sameSnapshot(snapshot, second.snapshot)) {
+    return stop("the PR changed during the check (head, base, state or checks)");
+  }
+  return "done" in step ? step.done : decideContent(input, texts);
 }
 
 const result = main(process.argv[2]);

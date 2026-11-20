@@ -1,14 +1,17 @@
 // The file facts of `pnpm merge:check` (option A): local git at the two commit ids of the snapshot.
 // Git objects do not change, so each fact belongs to those ids. One merge base, `--no-renames` (a
-// rename is a delete and an add), the texts from the blob ids of the diff, and raw bytes with a
-// fatal UTF-8 decode that keeps a BOM. The caller passes the git runner; it must run git with the
-// environment of `gitEnvironment` and give stdout as bytes.
+// rename is a delete and an add), and raw bytes. The caller passes the git runner; it must run git
+// with the environment of `gitEnvironment` and give stdout as bytes.
 //
 // Plan delta r1 (owner, 2026-11-20, order 133): a path is kept as bytes and is supported only when
-// each byte is printable ASCII (0x21-0x7E); classify stops the chief for any other path. A memory
-// text that is not UTF-8 is unsupported text (exit 1); any other text that is not UTF-8 means
-// "cannot check" (exit 2).
-import { type DiffStatus, type PrFile, type Reader, inMemory, needsText } from "./merge-check.ts";
+// each byte is printable ASCII (0x21-0x7E); classify stops the chief for any other path.
+//
+// Plan delta r2 (order 147): `readDiff` gives records only (paths, statuses, modes, blob ids) and
+// reads no blob; the identity of a path is its bytes, and the escaped form is only for output.
+// `blobReader` reads one text by its blob id when the judgment needs it: a memory text keeps a BOM
+// and is unsupported when it is not UTF-8 (exit 1); a manifest is decoded as at d748524 (a leading
+// BOM is removed) and a failed read or a manifest that is not UTF-8 means "cannot check" (exit 2).
+import type { DiffStatus, PrFile, Reader } from "./merge-check.ts";
 
 export type GitRun = (args: readonly string[]) => { status: number; stdout: Buffer };
 export type DiffRead = { ok: true; files: PrFile[] } | { ok: false; reason: string };
@@ -16,6 +19,8 @@ export type DiffRead = { ok: true; files: PrFile[] } | { ok: false; reason: stri
 const SHA = /^[0-9a-f]{40}$/;
 const ZERO = "0".repeat(40);
 const UTF8 = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
+// The manifest decoder of d748524: fatal, and a leading BOM is removed (DQ-1047).
+const MANIFEST = new TextDecoder("utf-8", { fatal: true });
 const STATUSES: readonly DiffStatus[] = ["A", "M", "D", "T"];
 const isStatus = (value: string): value is DiffStatus =>
   STATUSES.some((status) => status === value);
@@ -31,7 +36,7 @@ function decode(bytes: Buffer, what: string): string {
 }
 
 // Each byte outside 0x21-0x7E as "\\xhh", so a path cannot change a line of the output.
-function escaped(bytes: Buffer): string {
+export function escaped(bytes: Buffer): string {
   return Array.from(bytes)
     .map((byte) =>
       byte >= 0x21 && byte <= 0x7e
@@ -40,11 +45,13 @@ function escaped(bytes: Buffer): string {
     )
     .join("");
 }
-const isPrintable = (bytes: Buffer): boolean =>
+export const isPrintable = (bytes: Buffer): boolean =>
   bytes.length > 0 && bytes.every((byte) => byte >= 0x21 && byte <= 0x7e);
 
 type RawEntry = {
   path: string;
+  // The path bytes as hex: the identity of the path (DQ-1046).
+  key: string;
   supported: boolean;
   status: DiffStatus;
   oldMode: string;
@@ -77,6 +84,7 @@ function parseRaw(bytes: Buffer): RawEntry[] {
     if (!isStatus(status)) throw new Failed(`git gave the status ${status} for ${path}`);
     entries.push({
       path,
+      key: bytes.toString("hex"),
       supported: isPrintable(bytes),
       status,
       oldMode,
@@ -123,42 +131,18 @@ export function readDiff(input: { head: string; baseTip: string }, git: GitRun):
     ];
     const entries = parseRaw(run([...diff, base, head], "read the diff of the PR"));
     const onMain = new Set(
-      parseRaw(run([...diff, base, baseTip], "read the changes of main")).map(
-        (entry) => entry.path,
-      ),
+      parseRaw(run([...diff, base, baseTip], "read the changes of main")).map((entry) => entry.key),
     );
-    const reader = blobReader(git);
-    // A blob that is not UTF-8 gives null for a memory file (unsupported text), else it fails.
-    const text = (entry: RawEntry, side: "base" | "head"): string | null | undefined => {
-      const { path } = entry;
-      const blob = side === "base" ? entry.oldBlob : entry.newBlob;
-      if (blob === ZERO) return undefined;
-      const result = reader({ path, side, blob, kind: inMemory(path) ? "memory" : "manifest" });
-      if (result.kind === "failed") throw new Failed(result.reason);
-      return result.kind === "text" ? result.text : null;
-    };
-    const files = entries.map((entry): PrFile => {
-      const file: PrFile = {
-        path: entry.path,
-        supported: entry.supported,
-        status: entry.status,
-        oldMode: entry.oldMode,
-        newMode: entry.newMode,
-        oldBlob: entry.oldBlob,
-        newBlob: entry.newBlob,
-        liveChanged: onMain.has(entry.path),
-      };
-      if (!needsText(entry.path)) return file;
-      const baseText = text(entry, "base");
-      const headText = text(entry, "head");
-      const unsupported = baseText === null || headText === null;
-      return {
-        ...file,
-        baseText: baseText ?? undefined,
-        headText: headText ?? undefined,
-        ...(unsupported ? { textUnsupported: true } : {}),
-      };
-    });
+    const files = entries.map((entry): PrFile => ({
+      path: entry.path,
+      supported: entry.supported,
+      status: entry.status,
+      oldMode: entry.oldMode,
+      newMode: entry.newMode,
+      oldBlob: entry.oldBlob,
+      newBlob: entry.newBlob,
+      liveChanged: onMain.has(entry.key),
+    }));
     return { ok: true, files };
   } catch (error) {
     if (error instanceof Failed) return { ok: false, reason: error.message };
@@ -166,18 +150,26 @@ export function readDiff(input: { head: string; baseTip: string }, git: GitRun):
   }
 }
 
-// The reader of the judgment: one `git cat-file blob` call for each read. A memory text that is not
-// UTF-8 is unsupported; a failed read or another text that is not UTF-8 is a failed read.
+// The reader of the judgment: one `git cat-file blob` call for each read, by blob id. A memory
+// text that is not UTF-8 is unsupported; a failed read or a manifest that is not UTF-8 is a failed
+// read.
 export function blobReader(git: GitRun): Reader {
   return (read) => {
+    const what = `the ${read.side} text of ${read.path}`;
+    if (!SHA.test(read.blob) || read.blob === ZERO) {
+      return { kind: "failed", reason: `no blob id for ${what}` };
+    }
     const result = git(["cat-file", "blob", read.blob]);
-    if (result.status !== 0) return { kind: "failed", reason: `git could not read ${read.path}` };
+    if (result.status !== 0) return { kind: "failed", reason: `git could not read ${what}` };
     try {
-      return { kind: "text", text: UTF8.decode(result.stdout) };
+      return {
+        kind: "text",
+        text: (read.kind === "memory" ? UTF8 : MANIFEST).decode(result.stdout),
+      };
     } catch {
       return read.kind === "memory"
         ? { kind: "unsupported" }
-        : { kind: "failed", reason: `the text of ${read.path} is not UTF-8` };
+        : { kind: "failed", reason: `${what} is not UTF-8` };
     }
   };
 }

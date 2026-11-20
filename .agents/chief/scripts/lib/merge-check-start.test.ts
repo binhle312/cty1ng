@@ -15,7 +15,7 @@ import {
 import { REPOSITORY } from "./merge-list.ts";
 
 const GOOD: StartFacts = {
-  originUrl: `https://github.com/${REPOSITORY}.git`,
+  origin: [Buffer.from(`https://github.com/${REPOSITORY}.git`)],
   shallow: "false\n",
   grafts: false,
   config: "core.bare\nfalse\0extensions.worktreeconfig\ntrue\0extensions.objectformat\nsha1\0",
@@ -31,7 +31,9 @@ describe("startProblems", () => {
       `ssh://git@github.com/${REPOSITORY}.git`,
       `https://github.com/${REPOSITORY}`,
     ]) {
-      expect(startProblems({ ...GOOD, originUrl: url }), `origin form ${url}`).toEqual([]);
+      expect(startProblems({ ...GOOD, origin: [Buffer.from(url)] }), `origin form ${url}`).toEqual(
+        [],
+      );
     }
   });
 
@@ -41,10 +43,16 @@ describe("startProblems", () => {
       `ssh://git@example.org/${REPOSITORY}.git`,
       `https://github.com.example.org/${REPOSITORY}.git`,
       `https://example.org/github.com/${REPOSITORY}.git`,
-      "",
     ]) {
-      expect(problems({ originUrl: url }), `origin ${url}`).toContain("the origin remote is not");
+      expect(problems({ origin: [Buffer.from(url)] }), `origin ${url}`).toContain(
+        "the origin remote is not",
+      );
     }
+    // Plan delta r2 §5: one value, of printable ASCII bytes, as written.
+    expect(problems({ origin: [Buffer.from("")] }), "empty origin").toContain(
+      "not printable ASCII",
+    );
+    expect(problems({ origin: [] }), "no origin value").toContain("has 0 URLs");
   });
 
   it("refuses a shallow clone and a grafts file", () => {
@@ -70,7 +78,7 @@ describe("startProblems", () => {
   });
 
   it("cannot check a fact that git could not read", () => {
-    for (const fact of ["originUrl", "shallow", "grafts", "config"] as const) {
+    for (const fact of ["origin", "shallow", "grafts", "config"] as const) {
       expect(problems({ [fact]: undefined }), `unread ${fact}`).toContain("git could not read");
     }
     expect(problems({ shallow: "maybe\n" }), "unknown shallow answer").toContain(

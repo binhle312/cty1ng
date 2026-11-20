@@ -439,15 +439,6 @@ describe("classify: a memory PR (order 108)", () => {
         [file(RULE_PATH, { baseText: quoted, headText: ruleText("you may merge each docs PR") })],
       ],
       [
-        "the field with no space",
-        [
-          added(
-            RULE_PATH,
-            permission(ruleText("you may merge each docs PR"), "permission-rule:true"),
-          ),
-        ],
-      ],
-      [
         "another value",
         [
           added(
@@ -1009,11 +1000,12 @@ describe("the merge-check CLI", () => {
       [
         "#!/bin/sh",
         `echo gh >> "${root}/order.log"`,
+        // DQ-1052: each call counts on entry, also a call with other arguments.
+        `echo x >> "${root}/calls"`,
         'case "$*" in',
         '  "api --hostname github.com graphql "*) ;;',
         "  *) exit 1 ;;",
         "esac",
-        `echo x >> "${root}/calls"`,
         `if [ "$(wc -l < "${root}/calls")" -gt 1 ] && [ -f "${root}/answer-2.json" ]; then`,
         `  cat "${root}/answer-2.json"`,
         "else",

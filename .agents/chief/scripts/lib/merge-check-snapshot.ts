@@ -8,7 +8,8 @@ import type { CheckState, CiCheck } from "./merge-check.ts";
 
 // The gh runner gives stdout as bytes; the reader decodes it.
 export type Run = (args: readonly string[]) => { status: number; stdout: Buffer };
-const GH_TEXT = new TextDecoder("utf-8");
+// Fatal: a byte that is not UTF-8 must not become a replacement character (plan delta r2 §5).
+const GH_TEXT = new TextDecoder("utf-8", { fatal: true });
 export type Repo = { owner: string; name: string };
 export type Snapshot = {
   repo: string;
@@ -162,7 +163,12 @@ export function readSnapshot(input: { repo: Repo; number: number }, run: Run): S
     `query=${SNAPSHOT_QUERY}`,
   ]);
   if (result.status !== 0) return { ok: false, reason: "gh failed to read the PR" };
-  const text = GH_TEXT.decode(result.stdout);
+  let text: string;
+  try {
+    text = GH_TEXT.decode(result.stdout);
+  } catch {
+    return { ok: false, reason: "gh gave an answer that is not UTF-8" };
+  }
   let value: unknown;
   try {
     value = JSON.parse(text);
