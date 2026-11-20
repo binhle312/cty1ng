@@ -41,3 +41,14 @@ Append only. One heading for each promotion, lint, restore drill or migration.
   `AGENTS.md` §7 list (DQ-899). Q3 left out "no standing permission covers it".
 - Partial too: Q2, Q10, Q11 and Q13. Q10 and Q13 are partial for the third time.
 - No patch: the next step is the owner's.
+
+## [2026-11-20] restore | drill 8, on 77f6de6 (26 questions), two Opus 5.5 high graders: 21 and 20 of 26 right, fail
+
+- The probe saw only `CLAUDE.md`, `AGENTS.md` and skill names, and no user-level memory.
+- Both graders: Q4 (critical) is partial. It gives path 1, the stop cases and each item of the
+  merge bar, but leaves out "from a clean checkout of `origin/main`" and names no item of the
+  `AGENTS.md` §7 list (DQ-1076). One grader also reads Q3d (critical) as partial: it does not say
+  that the owner merges the PR.
+- Partial too, for both graders: Q6, Q12, Q13 and Q19. Q13 is partial for the fourth time. Q12
+  found that `state.md` is out of date (its next id DQ-1020; #141 listed as open).
+- No answer reads 3a, 3c, 3d, 3f or 3g as "merge". No patch: the next step is the owner's.
