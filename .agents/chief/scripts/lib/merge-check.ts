@@ -1,43 +1,67 @@
 // The judgment of `pnpm merge:check <PR>` (pure): which kind of PR it is, and if the chief may
-// merge it. The caller reads the PR from gh, the owner record and the private words.
+// merge it. Its input comes from one GitHub snapshot (`merge-check-snapshot.ts`), the local git
+// diff at the commits of that snapshot (`merge-check-diff.ts`), and two trusted local files: the
+// owner record and the private words (option A; owner, 2026-11-20, orders 128 and 130).
 //
-// - First, each PR: no chief merge of a PR from a fork, by an author other than the repository
-//   owner, or for a base other than main.
-// - A memory PR changes only `.agents/chief/memories/`. The chief merges it when each required CI
-//   check passed, no changed file holds a private word, each quote of each added or changed rule
-//   file is in the owner record, no permission rule is removed, and a changed permission rule has
-//   a new owner quote (owner, 2026-11-19, orders 108 and 109).
+// - First, each PR: no chief merge of a PR that is not open, comes from a fork, has an author
+//   other than the repository owner, or is for a base other than main. No merge line while a
+//   touched path changed on main after the branch split: merge main first.
+// - A memory PR changes only `.agents/chief/memories/`. The chief merges it when it only adds or
+//   changes `.md` files of `long-term/` (not the audit files), touches no rule with
+//   `permission-rule` (the owner merges each one, order 130), each required CI check passed, no
+//   changed file holds a private word, and each quote of each added or changed rule is in the
+//   owner record (orders 108 and 109).
 // - A mixed PR changes `.agents/chief/memories/` and other files: no chief merge (order 108).
-// - A code PR: a path of the list file means that no standing permission covers it
-//   (`AGENTS.md` §7). Else, when each required CI check passed, the script prints the Not-checked
-//   items and the merge line.
+// - A code PR: a path of the list file, or an added, deleted or retyped `package.json`, means
+//   that no standing permission covers it (`AGENTS.md` §7). Else, when each required CI check
+//   passed, the script prints the Not-checked items and the merge line.
 import { z } from "zod";
-import { checkPrivateWords } from "./check-memory.ts";
+import { PERMISSION_RULE, checkPrivateWords, frontmatter } from "./check-memory.ts";
 import {
+  CI_APP_ID,
+  CI_WORKFLOW,
   DEPENDENCY_TEXT,
+  MEMORY_ALLOWED,
   MEMORY_FOLDER,
+  MEMORY_PROTECTED,
   MERGE_LIST,
   PACKAGE_FIELDS,
   REQUIRED_CHECKS,
   listedItem,
 } from "./merge-list.ts";
-import { OWNER_RECORD, checkOwnerQuotes, ownerQuotes } from "./owner-quotes.ts";
+import { OWNER_RECORD, checkOwnerQuotes } from "./owner-quotes.ts";
 
-export type FileStatus =
-  "added" | "removed" | "modified" | "renamed" | "copied" | "changed" | "unchanged";
+// The status of a path in `git diff --no-renames`: a rename is a delete and an add.
+export type DiffStatus = "A" | "M" | "D" | "T";
 
-// A changed file of the PR. `baseText` is the text at the base (at `previousPath` after a rename),
-// `headText` the text at the head; the reader fills them only for files of `needsText`.
+// A changed path of the PR, from the merge base to the head. `baseText` is the text at the merge
+// base and `headText` at the head; the reader fills them only for paths of `needsText`.
+// `liveChanged` is true when main changed this path after the merge base.
 export type PrFile = {
   path: string;
-  previousPath: string | undefined;
-  status: FileStatus;
+  status: DiffStatus;
+  oldMode: string;
+  newMode: string;
+  liveChanged: boolean;
   baseText?: string | undefined;
   headText?: string | undefined;
 };
-export type CiCheck = { name: string; state: "pass" | "skipped" | "pending" | "fail" };
+export type CheckState = "pass" | "skipped" | "pending" | "fail";
+export type CiCheck =
+  | {
+      kind: "run";
+      id: number;
+      name: string;
+      state: CheckState;
+      appId: number;
+      workflowPath: string | null;
+    }
+  | { kind: "status"; context: string; state: CheckState };
 export type MergeInput = {
+  // "owner/name" of the repository that the snapshot read.
+  repo: string;
   number: number;
+  state: string;
   head: string;
   files: readonly PrFile[];
   checks: readonly CiCheck[];
@@ -46,8 +70,6 @@ export type MergeInput = {
   // The lines of `short-term/private-words.txt`, or undefined when the file is missing.
   privateWords: readonly string[] | undefined;
   minQuoteWords: number;
-  // The base branch of the PR, if its head branch is in a fork, its author, and the login of the
-  // repository owner.
   baseRef: string;
   crossRepository: boolean;
   author: string;
@@ -55,18 +77,15 @@ export type MergeInput = {
 };
 export type MergeResult = { exit: 0 | 1 | 2; lines: string[] };
 
-// The GitHub API gives the first 3,000 files of a PR and no more.
-export const MAX_FILES = 3000;
-
 const SHORT_TERM = `${MEMORY_FOLDER}short-term/`;
 const RULES = `${MEMORY_FOLDER}long-term/rules/`;
 const RULE_FILE = /\/R-\d{3}-[a-z0-9-]+\.md$/;
+const FILE_MODE = "100644";
 
 const isPackageJson = (path: string): boolean =>
   path === "package.json" || path.endsWith("/package.json");
 const inMemory = (path: string): boolean => path.startsWith(MEMORY_FOLDER);
-const namesOf = (file: PrFile): string[] =>
-  file.previousPath === undefined ? [file.path] : [file.path, file.previousPath];
+const isRule = (path: string): boolean => path.startsWith(RULES) && RULE_FILE.test(path);
 
 // The files whose text the classify step reads.
 export function needsText(path: string): boolean {
@@ -100,12 +119,17 @@ export function cannotCheck(input: {
   return printed({ exit: 2, lines: [`Cannot check #${pr}: ${reason}. ${action}`] });
 }
 
+// The one merge line: the full URL of the PR that the snapshot read, and its head.
+export function mergeLine(input: { repo: string; number: number; head: string }): string {
+  return `gh pr merge https://github.com/${input.repo}/pull/${input.number} --merge --match-head-commit ${input.head}`;
+}
+
 class CannotCheck extends Error {}
 
 const OBJECT = z.record(z.string(), z.unknown());
 
 function packageFields(text: string | undefined, path: string): Record<string, unknown> {
-  if (text === undefined) return {};
+  if (text === undefined) throw new CannotCheck(`no text for ${path}`);
   let value: unknown;
   try {
     value = JSON.parse(text);
@@ -117,63 +141,67 @@ function packageFields(text: string | undefined, path: string): Record<string, u
   return parsed.data;
 }
 
-// A `package.json` change is listed when a field of PACKAGE_FIELDS differs between base and head.
-// A rename is a delete of the old name and an add of the new name: only a `package.json` side
-// counts, so a manifest renamed to another name is a removed manifest.
-function packageChanged(file: PrFile): boolean {
-  const old = file.previousPath ?? file.path;
-  if (file.status !== "added" && file.baseText === undefined)
-    throw new CannotCheck(`no base text for ${old}`);
-  if (file.status !== "removed" && file.headText === undefined)
-    throw new CannotCheck(`no head text for ${file.path}`);
-  const base = isPackageJson(old) ? packageFields(file.baseText, old) : {};
-  const head = isPackageJson(file.path) ? packageFields(file.headText, file.path) : {};
+// A `package.json` that is added, deleted or retyped is listed (deny by default). A changed one
+// is listed when a field of PACKAGE_FIELDS differs between the merge base and the head.
+function packageListed(file: PrFile): boolean {
+  if (file.status !== "M") return true;
+  const base = packageFields(file.baseText, file.path);
+  const head = packageFields(file.headText, file.path);
   return PACKAGE_FIELDS.some(
     (field) => JSON.stringify(base[field]) !== JSON.stringify(head[field]),
   );
 }
 
-// Each required CI check must have passed, and no other check may be pending or red.
+const isRequiredRun = (check: CiCheck, name: string): boolean =>
+  check.kind === "run" &&
+  check.name === name &&
+  check.appId === CI_APP_ID &&
+  check.workflowPath === CI_WORKFLOW;
+
+// Each required CI check must have passed as a run of the CI workflow of GitHub Actions, and no
+// check of the snapshot, of any name or kind, may be pending or red.
 function ciProblems(checks: readonly CiCheck[]): string[] {
   const problems: string[] = [];
   for (const name of REQUIRED_CHECKS) {
-    const states = checks.filter((check) => check.name === name).map((check) => check.state);
+    const states = checks.filter((check) => isRequiredRun(check, name)).map((c) => c.state);
     const state = states.find((value) => value !== "pass") ?? states[0] ?? "missing";
     if (state !== "pass") problems.push(`the required CI check ${name} is ${state}`);
   }
-  const required: readonly string[] = REQUIRED_CHECKS;
   for (const check of checks) {
-    if (required.includes(check.name)) continue;
-    if (check.state === "pending" || check.state === "fail") {
-      problems.push(`the CI check ${check.name} is ${check.state}`);
-    }
+    if (check.state !== "pending" && check.state !== "fail") continue;
+    if (REQUIRED_CHECKS.some((name) => isRequiredRun(check, name))) continue;
+    const name = check.kind === "run" ? check.name : check.context;
+    problems.push(`the CI check ${name} (${check.kind}) is ${check.state}`);
   }
   return problems;
 }
 
-const PERMISSION_FIELD = /^permission-rule: true$/m;
+// True when a text has front matter with the `permission-rule` field (any value), or front
+// matter that does not parse: the owner merges each such file (order 130).
+function hasPermissionField(text: string | undefined): boolean {
+  if (text === undefined || !text.startsWith("---\n")) return false;
+  const parsed = frontmatter(text);
+  return parsed === undefined || parsed.bad.length > 0 || parsed.fields.has(PERMISSION_RULE);
+}
 
-// The rule changes that need the owner: a removed permission rule, and a changed permission rule
-// with no quote that is new at the head (order 109: a permission counts only with the owner's
-// quoted words).
-function permissionProblems(files: readonly PrFile[]): string[] {
+// The changes of a memory PR that need the owner: a path or a status outside the allowlist, an
+// audit file, and each file with a permission field at the merge base or the head.
+function ownerProblems(files: readonly PrFile[]): string[] {
   const problems: string[] = [];
   for (const file of files) {
-    const old = file.previousPath ?? file.path;
-    const isRule = [file.path, old].some((path) => path.startsWith(RULES) && RULE_FILE.test(path));
-    if (!isRule) continue;
-    const base = file.baseText ?? "";
-    const head = file.status === "removed" ? "" : (file.headText ?? "");
-    if (!PERMISSION_FIELD.test(base) && !PERMISSION_FIELD.test(head)) continue;
-    if (file.status === "removed") {
-      problems.push(`${old}: it removes a permission rule; only the owner removes one`);
-      continue;
-    }
-    if (base === "" || base === head) continue;
-    const baseQuotes = new Set(ownerQuotes(base));
-    if (ownerQuotes(head).every((quote) => baseQuotes.has(quote))) {
+    if (MEMORY_PROTECTED.includes(file.path)) {
+      problems.push(`${file.path}: it holds the audit command or prompt; the owner merges it`);
+    } else if (
+      (file.status !== "A" && file.status !== "M") ||
+      file.newMode !== FILE_MODE ||
+      !MEMORY_ALLOWED.test(file.path)
+    ) {
       problems.push(
-        `${file.path}: it changes a permission rule with no new owner quote (order 109)`,
+        `${file.path}: a memory PR may only add or change a .md file of long-term/ (status ${file.status}, mode ${file.newMode}); the owner merges it`,
+      );
+    } else if (hasPermissionField(file.baseText) || hasPermissionField(file.headText)) {
+      problems.push(
+        `${file.path}: it adds or changes a rule with ${PERMISSION_RULE}; the owner merges each one (order 130)`,
       );
     }
   }
@@ -186,35 +214,31 @@ function memoryGate(input: MergeInput, header: string): MergeResult {
     lines: [header, ...reasons.map((reason) => `Memory PR: not mergeable: ${reason}`)],
   });
   const tracked = input.files
-    .filter((file) => file.status !== "removed")
+    .filter((file) => file.status !== "D")
     .filter((file) => file.path.startsWith(SHORT_TERM) && file.path !== `${SHORT_TERM}README.md`);
   if (tracked.length > 0) {
     return fail(tracked.map((file) => `${file.path} is a short-term file; git must not track it`));
   }
-  const heads = new Map<string, string>();
   for (const file of input.files) {
-    if (file.status === "removed") continue;
-    if (file.headText === undefined) throw new CannotCheck(`no head text for ${file.path}`);
-    heads.set(file.path, file.headText);
+    if (file.status !== "D" && file.headText === undefined)
+      throw new CannotCheck(`no head text for ${file.path}`);
+    if (file.status !== "A" && file.baseText === undefined)
+      throw new CannotCheck(`no base text for ${file.path}`);
   }
-  // A rule file needs its base text, so the permission check can compare it.
-  for (const file of input.files) {
-    const old = file.previousPath ?? file.path;
-    if (file.status === "added" || !(old.startsWith(RULES) && RULE_FILE.test(old))) continue;
-    if (file.baseText === undefined)
-      throw new CannotCheck(`no base text for ${file.previousPath ?? file.path}`);
-  }
+  const owner = ownerProblems(input.files);
+  if (owner.length > 0) return fail(owner);
   const ci = ciProblems(input.checks);
   if (ci.length > 0) return fail(ci);
   if (input.privateWords === undefined)
     throw new CannotCheck(
       "no private word list (.agents/chief/memories/short-term/private-words.txt)",
     );
+  const heads = new Map(input.files.map((file) => [file.path, file.headText ?? ""]));
   const words = checkPrivateWords(heads, input.privateWords);
   if (words.length > 0) return fail(words);
-  const rules = [...heads]
-    .filter(([path]) => path.startsWith(RULES) && RULE_FILE.test(path))
-    .map(([path, text]) => ({ path, text }));
+  const rules = input.files
+    .filter((file) => isRule(file.path))
+    .map((file) => ({ path: file.path, text: file.headText ?? "" }));
   if (rules.length > 0) {
     const quotes = checkOwnerQuotes({
       rules,
@@ -224,15 +248,13 @@ function memoryGate(input: MergeInput, header: string): MergeResult {
     if (quotes.noRecord) throw new CannotCheck(`no owner record (${OWNER_RECORD}/*.md)`);
     if (quotes.problems.length > 0) return fail(quotes.problems);
   }
-  const permissions = permissionProblems(input.files);
-  if (permissions.length > 0) return fail(permissions);
   return {
     exit: 0,
     lines: [
       header,
       "Memory PR: the chief merges it (owner, 2026-11-19, order 108).",
       "Not checked: read the whole diff for private facts.",
-      `gh pr merge ${input.number} --merge --match-head-commit ${input.head}`,
+      mergeLine(input),
     ],
   };
 }
@@ -240,11 +262,9 @@ function memoryGate(input: MergeInput, header: string): MergeResult {
 function codeCheck(input: MergeInput, header: string): MergeResult {
   const listed: string[] = [];
   for (const file of input.files) {
-    for (const name of namesOf(file)) {
-      const item = listedItem(name);
-      if (item !== undefined) listed.push(`LISTED ${name}: ${item.text}`);
-    }
-    if (namesOf(file).some(isPackageJson) && packageChanged(file)) {
+    const item = listedItem(file.path);
+    if (item !== undefined) listed.push(`LISTED ${file.path}: ${item.text}`);
+    if (isPackageJson(file.path) && packageListed(file)) {
       listed.push(`LISTED ${file.path}: ${DEPENDENCY_TEXT}`);
     }
   }
@@ -275,13 +295,14 @@ function codeCheck(input: MergeInput, header: string): MergeResult {
       ...MERGE_LIST.filter((item) => item.notByPath !== undefined).map(
         (item) => `Not checked (${item.text}): ${item.notByPath ?? ""}`,
       ),
-      `gh pr merge ${input.number} --merge --match-head-commit ${input.head}`,
+      mergeLine(input),
     ],
   };
 }
 
-// The reason why the chief merges no PR of this origin, or undefined.
+// The reason why the chief merges no PR in this state, or undefined.
 function originProblem(input: MergeInput): string | undefined {
+  if (input.state !== "OPEN") return `the PR is ${input.state}, not open`;
   if (input.crossRepository) return "the PR comes from a fork";
   if (input.author !== input.expectedAuthor) {
     return `the PR author ${input.author} is not the repository owner`;
@@ -291,22 +312,26 @@ function originProblem(input: MergeInput): string | undefined {
 }
 
 export function classify(input: MergeInput): MergeResult {
-  const names = input.files.flatMap(namesOf);
-  const memory = names.length > 0 && names.every(inMemory);
-  if (input.files.length >= MAX_FILES) {
-    return cannotCheck({
-      pr: input.number,
-      reason: `${input.files.length} files; the GitHub API gives 3,000 at most`,
-      memory: false,
-    });
-  }
+  const memory = input.files.length > 0 && input.files.every((file) => inMemory(file.path));
   const header = `merge:check #${input.number}, head ${input.head.slice(0, 7)}, ${input.files.length} files`;
   const origin = originProblem(input);
   if (origin !== undefined)
     return printed({ exit: 1, lines: [header, `No chief merge: ${origin}.`] });
+  const stale = input.files.filter((file) => file.liveChanged);
+  if (stale.length > 0) {
+    return printed({
+      exit: 1,
+      lines: [
+        header,
+        ...stale.map(
+          (file) => `Merge main first: main changed ${file.path} after the branch split.`,
+        ),
+      ],
+    });
+  }
   try {
     if (memory) return printed(memoryGate(input, header));
-    if (names.some(inMemory)) {
+    if (input.files.some((file) => inMemory(file.path))) {
       return {
         exit: 1,
         lines: [

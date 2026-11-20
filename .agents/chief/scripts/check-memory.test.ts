@@ -1125,3 +1125,15 @@ describe("the rules about merges, approvals or permissions", () => {
     }
   });
 });
+
+// DQ-1026: `--allowedTools` approves tools but does not limit the tool set; `--tools` names it.
+describe("the cron line of the memory audit", () => {
+  it("names the exact tool set of claude with --tools", () => {
+    const text = readFileSync(".agents/chief/memories/long-term/restore.md", "utf8");
+    const line = text.split("\n").find((row) => row.includes("claude -p")) ?? "";
+    expect(line, "cron tools").toContain('--tools "Read,Grep,Glob,Write"');
+    expect(line, "cron write scope").toContain('"Write($A/**)"');
+    expect(line, "cron restricted").toContain("--restricted");
+    expect(line, "cron no Bash").not.toContain("Bash");
+  });
+});

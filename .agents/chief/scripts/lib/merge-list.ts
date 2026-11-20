@@ -55,6 +55,22 @@ export const REQUIRED_CHECKS = [
   "e2e",
 ] as const;
 
+// A required check counts only as a check run of this app (GitHub Actions) from this workflow file
+// (option A, DQ-1020). A status context or another app never stands in for a required job. Rules,
+// not settings (AGENTS.md §10). The probe of 2026-11-20 read both values from the GitHub API.
+export const CI_APP_ID = 15368;
+export const CI_WORKFLOW = ".github/workflows/ci.yml";
+
+// The only files that a memory PR may add or change (option A, deny by default): a `.md` file of
+// `long-term/`. Each other path or status needs the owner (DQ-1021, DQ-1025).
+export const MEMORY_ALLOWED = /^\.agents\/chief\/memories\/long-term\/.+\.md$/;
+// Memory files that the owner merges in each memory PR: the audit cron line and the audit prompt
+// (DQ-949; the second read of the option A plan).
+export const MEMORY_PROTECTED: readonly string[] = [
+  `${MEMORY_FOLDER}long-term/restore.md`,
+  `${MEMORY_FOLDER}long-term/audit.md`,
+];
+
 export const MERGE_LIST: readonly ListItem[] = [
   { text: "`AGENTS.md`", paths: ["AGENTS.md", "CLAUDE.md"], notByPath: undefined },
   { text: "`docs/decisions/`", paths: ["docs/decisions/"], notByPath: undefined },

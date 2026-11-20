@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkOwnerQuotes, ownerQuotes } from "./owner-quotes.ts";
+import { checkOwnerQuotes, normalizeQuote, ownerQuotes } from "./owner-quotes.ts";
 
 // The owner record is synthetic (principle-safe-test-data).
 const RULE = "scripts/fixtures/R-040-docs-merges.md";
@@ -85,5 +85,32 @@ describe("checkOwnerQuotes", () => {
     const rules = [{ path: "R-040.md", text: 'Owner said: "" (2026-11-20)\n' }];
     const result = checkOwnerQuotes({ rules, record: ["any text"], minWords: 0 });
     expect(result.problems.length, "floor").toBe(1);
+  });
+});
+
+// One normalizer for the record match and the word count (option A, DQ-1024).
+describe("normalizeQuote", () => {
+  const NFC = "caf\u00e9 the owner said it";
+  const NFD = "cafe\u0301 the owner said it";
+
+  it("gives one form for white space and for NFC and NFD text", () => {
+    expect(normalizeQuote(`  ${NFD}\n\t `), "nfd and spaces").toBe(NFC);
+    expect(normalizeQuote(normalizeQuote(NFD)), "two runs").toBe(normalizeQuote(NFD));
+  });
+
+  it("counts the words of the normalized quote", () => {
+    // Four words with tabs between them: a split on spaces alone would count one word.
+    const tabbed = rule("one\ttwo\tthree\tfour");
+    expect(check(tabbed, ['Exact text: "one two three four"']).problems, "tabbed quote").toEqual(
+      [],
+    );
+  });
+
+  it("matches a quote in NFC with a record in NFD and other white space", () => {
+    const record = [`Exact text: "${NFD.replace(" the ", "\n   the ")}"`];
+    expect(check(rule(NFC), record).problems, "nfc quote, nfd record").toEqual([]);
+    expect(check(rule(NFD), [`Exact text: "${NFC}"`]).problems, "nfd quote, nfc record").toEqual(
+      [],
+    );
   });
 });

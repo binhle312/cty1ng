@@ -18,7 +18,10 @@ The memory has two parts (owner, 2026-11-19, order 72):
 | `short-term/` | No, only its README | The current source of truth on this computer: the live state, new orders word for word, private notes. It wins over long-term memory until a promotion. |
 
 The chief merges each memory PR itself: a PR that changes only this folder (owner,
-2026-11-19, order 108; rule R-005). The memory check and the merge check are code in
+2026-11-19, order 108; rule R-005). The owner merges a memory PR that adds, changes or deletes a
+rule with `permission-rule: true` (owner, 2026-11-20, order 130), and one that does more than add
+or change `.md` files of `long-term/`, or that changes `long-term/restore.md` or
+`long-term/audit.md` (order 128). The memory check and the merge check are code in
 `../scripts/`, so a change of them is not a memory PR, and the owner merges it (`AGENTS.md` §7).
 
 ## Memory map
@@ -78,14 +81,16 @@ rule R-005). The chief merges it (order 108).
    `promote_after_hours`.
 2. A new or changed rule about merges, approvals or permissions has `permission-rule: true`, and
    it quotes the owner's own words. It gets a memory PR on the same day, and so does a new or
-   changed rule about privacy. Until a PR merges, the inbox entry wins.
+   changed rule about privacy. The owner merges each PR that adds, changes or deletes such a rule
+   (order 130): put it in its own memory PR, so the other facts do not wait. Until a PR merges,
+   the inbox entry wins.
 3. Write each fact in public form only (section "Privacy"). The full text of an order stays in
    `short-term/owner/`.
-4. Do not delete a changed rule: give it the status `replaced` or `ended`, and link it. Then run
-   `pnpm check:memory --write`.
+4. Do not delete or move a file: give a changed rule the status `replaced` or `ended`, and link
+   it. Then run `pnpm check:memory --write`. A deleted or moved file needs the owner's merge.
 5. Add a line to `long-term/log.md`, and change "Promoted through" in `long-term/state.md`.
-6. The PR changes only this folder. Run `pnpm merge:check <PR>` from a checkout of main, and
-   merge only with the merge line that it prints (rule R-005; `AGENTS.md` §9). A PR that changes
+6. The PR changes only this folder. Run `pnpm merge:check <PR>` from a clean checkout of
+   `origin/main`, and merge only with the merge line that it prints (rule R-005; `AGENTS.md` §9). A PR that changes
    this folder and other files is not a memory PR, and the chief does not merge it.
 
 ## Rule files
@@ -156,7 +161,7 @@ except its README. `pnpm check:memory --local` also checks this computer: the ig
 rule quote against the `.md` files of `short-term/owner/` (order 109; a quote needs the setting
 `quote_min_words` words or more). Git ignores those files, so CI cannot run these checks. Run the
 local form before each push of memory files. With no owner record it only warns; `pnpm
-merge:check` stops instead (exit 2) for a memory PR that changes a rule.
+merge:check` stops instead (exit 2) for a memory PR that adds or changes a rule.
 
 ## Privacy
 

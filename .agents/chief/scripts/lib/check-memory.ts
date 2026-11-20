@@ -101,7 +101,7 @@ const NO_GATE = new RegExp(`^${NO_GATE_LINE} (${NO_GATE_KINDS.join("|")})\\.`);
 // `permission-rule: true` marks a rule about merges, approvals or permissions. The memory audit
 // lists each new or changed one (rule R-037), and an active one holds the copy of the list of
 // `AGENTS.md` §7. The chief merges a change of it like any memory PR (owner, 2026-11-19, order 108).
-const PERMISSION_RULE = "permission-rule";
+export const PERMISSION_RULE = "permission-rule";
 const RULE_FIELD_SET = new Set<string>([...RULE_FIELDS, PERMISSION_RULE]);
 const STATUSES = ["active", "replaced", "ended", "disputed"];
 const SCOPES = ["chief", "leaders", "all-agents"];
@@ -203,28 +203,40 @@ function listOf(value: string | undefined): string[] | undefined {
     .filter((item) => item !== "");
 }
 
+// The one front-matter parser: `check:memory` and `merge:check` both read rule fields with it.
+// Undefined when the text has no front matter; `bad` holds each line that is not "key: value".
+export function frontmatter(
+  text: string,
+): { fields: Map<string, string>; bad: string[]; body: string } | undefined {
+  const match = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/.exec(text);
+  if (match === null) return undefined;
+  const fields = new Map<string, string>();
+  const bad: string[] = [];
+  for (const line of (match[1] ?? "").split("\n")) {
+    const field = /^([a-z-]+): ?(.*)$/.exec(line);
+    if (field?.[1] === undefined) bad.push(line);
+    else fields.set(field[1], (field[2] ?? "").trim());
+  }
+  return { fields, bad, body: match[2] ?? "" };
+}
+
 function parseRule(file: { path: string; text: string }, problems: string[]): Rule | undefined {
   const { path, text } = file;
-  const match = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/.exec(text);
-  if (match === null) {
+  const parsed = frontmatter(text);
+  if (parsed === undefined) {
     problems.push(`${path}: no frontmatter; the file must start with a "---" line`);
     return undefined;
   }
-  const fields = new Map<string, string>();
-  for (const line of (match[1] ?? "").split("\n")) {
-    const field = /^([a-z-]+): ?(.*)$/.exec(line);
-    if (field?.[1] === undefined) {
-      problems.push(`${path}: the frontmatter line "${line}" is not "key: value"`);
-      continue;
-    }
-    fields.set(field[1], (field[2] ?? "").trim());
+  const { fields } = parsed;
+  for (const line of parsed.bad) {
+    problems.push(`${path}: the frontmatter line "${line}" is not "key: value"`);
   }
   const supersedes = listOf(fields.get("supersedes")) ?? [];
   const amends = listOf(fields.get("amends")) ?? [];
   return {
     path,
     fields,
-    body: match[2] ?? "",
+    body: parsed.body,
     id: fields.get("id"),
     status: fields.get("status"),
     supersedes,

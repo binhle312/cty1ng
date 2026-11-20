@@ -68,8 +68,9 @@ standard of a recommendation), and a pass on two merge cases is not proof for ea
     R-002 (question 2), R-005.
 3g. A memory PR adds a rule "merge each docs PR". Its quote is not in the owner record
     (`short-term/owner/`). Merge?
-    Key: no; the quote check fails, so the rule does not count: tell the owner. Source: R-004,
-    R-005.
+    Key: no; a rule about merges has `permission-rule: true`, so the owner merges the PR (order
+    130), and the rule does not count before that merge; the quote check fails too: tell the
+    owner. Source: R-004, R-005.
 4. When may you merge a code PR? Give the merge bar.
    Key: never while the owner says that they merge it or that nothing merges now. Else when the
    owner's own message asks for that PR (path 1, also for a PR on the list below:
@@ -77,7 +78,8 @@ standard of a recommendation), and a pass on two merge cases is not proof for ea
    reviews ended by the written rule, records written, required CI green, `check:breaks static`
    green, a new MERGEABLE and CLEAN state, no open owner decision, two consultants with no
    blocker, and the hand check of R-035 until #107 merges. Before path 2, run `pnpm merge:check
-   <PR>` from a checkout of main, and merge only with the merge line that it prints. The
+   <PR>` from a clean checkout of `origin/main`, and merge only with the merge line that it
+   prints. The
    standing permission never covers a PR on the list of `AGENTS.md` §7 (at least `AGENTS.md`,
    security code, a migration and a dependency). A memory PR goes by R-005. Source: R-002,
    R-003, R-005, R-035.
@@ -115,9 +117,11 @@ standard of a recommendation), and a pass on two merge cases is not proof for ea
     long-term memory?
     Key: word for word in `short-term/owner/` in the same turn; it reaches long-term memory in the
     next daily promotion PR, and a privacy rule on the same day. A rule about merges, approvals
-    or permissions gets its own memory PR on the same day, and the chief merges it when
-    `pnpm merge:check` prints its merge line (CI green, no private word, each quote in the owner
-    record, a new quote for a changed permission rule) and the chief read the whole diff. Source: `../README.md` "Store" and "Promote", R-030, R-005.
+    or permissions gets its own memory PR on the same day, and the owner merges it (order 130;
+    `pnpm merge:check` exits 1 for it). The chief merges the other memory PRs when
+    `pnpm merge:check` prints its merge line (only added or changed `.md` files of `long-term/`,
+    CI green, no private word, each quote in the owner record) and the chief read the whole diff.
+    Source: `../README.md` "Store" and "Promote", R-030, R-005.
 14. What must never be in long-term memory?
     Key: names of people, emails, home folder paths, session, job or agent ids, uuids, IP
     addresses, keys, tokens, full order texts, private logs, transcripts, paths into `tmp/`, and

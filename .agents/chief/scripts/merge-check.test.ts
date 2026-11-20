@@ -1,5 +1,7 @@
-// The merge check (`pnpm merge:check <PR>`): the list file, the pure classify step, the gh reader
-// and the CLI end to end. All data is synthetic (principle-safe-test-data).
+// The merge check (`pnpm merge:check <PR>`): the list file, the pure classify step and the CLI end
+// to end (option A: one snapshot, the git diff at its commit ids, an allowlist for memory PRs;
+// owner, 2026-11-20, orders 128 and 130). The snapshot reader and the diff reader have their own
+// tests in lib/. All data is synthetic.
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   chmodSync,
@@ -20,8 +22,10 @@ import {
   classify,
   isControl,
 } from "./lib/merge-check.ts";
-import { type Run, readPr } from "./lib/merge-check-gh.ts";
+import { answer, greenNodes } from "./lib/merge-check-fixtures.ts";
 import {
+  CI_APP_ID,
+  CI_WORKFLOW,
   MERGE_LIST,
   PACKAGE_FIELDS,
   REQUIRED_CHECKS,
@@ -31,22 +35,37 @@ import {
 } from "./lib/merge-list.ts";
 
 const HEAD = "1a2b3c4d5e6f708192a3b4c5d6e7f80912345678";
-const MERGE_LINE = `gh pr merge 152 --merge --match-head-commit ${HEAD}`;
-const GREEN: CiCheck[] = REQUIRED_CHECKS.map((name) => ({ name, state: "pass" }));
+const REPO = "owner-login/cty-test";
+const MERGE_LINE = `gh pr merge https://github.com/${REPO}/pull/152 --merge --match-head-commit ${HEAD}`;
+const ciRun = (name: string, extra: Partial<Extract<CiCheck, { kind: "run" }>> = {}): CiCheck => ({
+  kind: "run",
+  id: 1,
+  name,
+  state: "pass",
+  appId: CI_APP_ID,
+  workflowPath: CI_WORKFLOW,
+  ...extra,
+});
+const GREEN: CiCheck[] = REQUIRED_CHECKS.map((name, i) => ciRun(name, { id: 100 + i }));
 const RECORD = ['## Order 120 (2026-11-20 09:00)\nExact text: "you may merge each docs PR"\n'];
-const RULE_PATH = ".agents/chief/memories/long-term/rules/R-040-docs-merges.md";
+const RULES = ".agents/chief/memories/long-term/rules/";
+const RULE_PATH = `${RULES}R-040-docs-merges.md`;
 
-function ruleText(quote: string): string {
-  return `---\nid: R-040\n---\nRule: Merge each docs PR.\nOwner said: "${quote}" (2026-11-20)\nHow to apply:\n`;
+function ruleText(quote: string, rule = "Merge each docs PR."): string {
+  return `---\nid: R-040\n---\nRule: ${rule}\nOwner said: "${quote}" (2026-11-20)\nHow to apply:\n`;
 }
+const permission = (text: string, field = "permission-rule: true"): string =>
+  text.replace("id: R-040\n", `id: R-040\n${field}\n`);
 
 function file(path: string, extra: Partial<PrFile> = {}): PrFile {
-  return { path, previousPath: undefined, status: "modified", ...extra };
+  return { path, status: "M", oldMode: "100644", newMode: "100644", liveChanged: false, ...extra };
 }
 
 function input(files: PrFile[], extra: Partial<MergeInput> = {}): MergeInput {
   return {
+    repo: REPO,
     number: 152,
+    state: "OPEN",
     head: HEAD,
     files,
     checks: GREEN,
@@ -63,6 +82,10 @@ function input(files: PrFile[], extra: Partial<MergeInput> = {}): MergeInput {
 
 const memory = (path: string, headText = "# A note\n"): PrFile =>
   file(`.agents/chief/memories/long-term/${path}`, { headText, baseText: "# Old\n" });
+const added = (path: string, headText: string): PrFile =>
+  file(path, { status: "A", oldMode: "000000", headText });
+const deleted = (path: string, baseText: string): PrFile =>
+  file(path, { status: "D", newMode: "000000", baseText });
 
 describe("the list file", () => {
   // One case for each path rule of each item: [item text, a path that the rule matches].
@@ -110,7 +133,7 @@ describe("the list file", () => {
     ],
     [
       "a rule about merges, approvals or permissions outside `.agents/chief/memories/`",
-      ".agents/chief/scripts/lib/merge-check-gh.ts",
+      ".agents/chief/scripts/lib/merge-check-snapshot.ts",
     ],
     [
       "a rule about merges, approvals or permissions outside `.agents/chief/memories/`",
@@ -188,18 +211,16 @@ describe("classify: a code PR", () => {
     ]);
   });
 
-  it("lists a rename out of and into docs/decisions/ at both names", () => {
-    const out = file("docs/old/D1.md", { status: "renamed", previousPath: "docs/decisions/D1.md" });
-    const into = file("docs/decisions/D2.md", { status: "renamed", previousPath: "docs/x/D2.md" });
-    expect(classify(input([out])).exit, "renamed out").toBe(1);
-    expect(classify(input([into])).exit, "renamed in").toBe(1);
+  it("lists a move out of and into docs/decisions/ as a delete and an add", () => {
+    const out = [deleted("docs/decisions/D1.md", "x\n"), added("docs/old/D1.md", "x\n")];
+    const into = [deleted("docs/x/D2.md", "x\n"), added("docs/decisions/D2.md", "x\n")];
+    expect(classify(input(out)).exit, "moved out").toBe(1);
+    expect(classify(input(into)).exit, "moved in").toBe(1);
   });
 
   it("lists an added and a deleted migration", () => {
-    const added = file("backend/migrations/0010_a.sql", { status: "added" });
-    const removed = file("backend/migrations/0009_b.sql", { status: "removed" });
-    expect(classify(input([added])).exit, "added").toBe(1);
-    expect(classify(input([removed])).exit, "removed").toBe(1);
+    expect(classify(input([added("backend/migrations/0010_a.sql", "")])).exit, "added").toBe(1);
+    expect(classify(input([deleted("backend/migrations/0009_b.sql", "")])).exit, "deleted").toBe(1);
   });
 });
 
@@ -225,22 +246,33 @@ describe("classify: package.json", () => {
     }
   });
 
-  it("lists a renamed package.json at its old or its new name", () => {
+  // DQ-1023: a manifest that is added, deleted, retyped or moved is listed, whatever its fields.
+  it("lists each added, deleted, retyped or moved package.json", () => {
     const deps = pkg({ dependencies: { a: "1" } });
-    const out = file("backend/package.json.old", {
-      status: "renamed",
-      previousPath: "backend/package.json",
-      baseText: deps,
-      headText: deps,
-    });
-    const into = file("tools/package.json", {
-      status: "renamed",
-      previousPath: "tools/x.json",
-      baseText: deps,
-      headText: deps,
-    });
-    expect(classify(input([out])).exit, "manifest renamed out").toBe(1);
-    expect(classify(input([into])).exit, "manifest renamed into").toBe(1);
+    const cases: [string, PrFile[]][] = [
+      ["added", [added("tools/package.json", deps)]],
+      ["deleted", [deleted("tools/package.json", deps)]],
+      [
+        "retyped",
+        [
+          file("tools/package.json", {
+            status: "T",
+            newMode: "120000",
+            baseText: deps,
+            headText: "x",
+          }),
+        ],
+      ],
+      [
+        "moved to another folder",
+        [deleted("backend/package.json", deps), added("tools/other/package.json", deps)],
+      ],
+    ];
+    for (const [name, files] of cases) {
+      const result = classify(input(files));
+      expect(result.exit, `manifest ${name}`).toBe(1);
+      expect(result.lines.join("\n"), name).toContain(": a dependency");
+    }
   });
 
   it("compares the dependency metadata fields too", () => {
@@ -259,20 +291,7 @@ describe("classify: package.json", () => {
     expect(result.exit, "description").toBe(0);
   });
 
-  it("lists a new and a deleted package.json with dependencies", () => {
-    const added = file("tools/package.json", {
-      status: "added",
-      headText: pkg({ dependencies: { a: "1" } }),
-    });
-    const removed = file("tools/package.json", {
-      status: "removed",
-      baseText: pkg({ dependencies: { a: "1" } }),
-    });
-    expect(classify(input([added])).exit, "added package.json").toBe(1);
-    expect(classify(input([removed])).exit, "removed package.json").toBe(1);
-  });
-
-  it("cannot check a package.json with no text or bad JSON", () => {
+  it("cannot check a changed package.json with no text or bad JSON", () => {
     const noText = file("backend/package.json", { baseText: pkg({}) });
     const bad = file("backend/package.json", { baseText: pkg({}), headText: "{" });
     expect(classify(input([noText])).exit, "no text").toBe(2);
@@ -282,12 +301,7 @@ describe("classify: package.json", () => {
 
 describe("classify: a memory PR (order 108)", () => {
   it("prints the merge line when the gates pass", () => {
-    const result = classify(
-      input([
-        memory("lessons.md"),
-        file(".agents/chief/memories/README.md", { headText: "# M\n" }),
-      ]),
-    );
+    const result = classify(input([memory("lessons.md"), memory("identity.md")]));
     expect(result.exit, "exit").toBe(0);
     expect(result.lines, "lines").toEqual([
       `merge:check #152, head ${HEAD.slice(0, 7)}, 2 files`,
@@ -297,40 +311,81 @@ describe("classify: a memory PR (order 108)", () => {
     ]);
   });
 
-  it("passes the memory README and identity.md as a memory PR", () => {
-    for (const path of [
-      ".agents/chief/memories/README.md",
-      ".agents/chief/memories/long-term/identity.md",
-    ]) {
-      expect(classify(input([file(path, { headText: "# M\n" })])).exit, path).toBe(0);
+  // The allowlist (option A, DQ-1021, DQ-1025): each status, mode and path of a memory file.
+  it("passes only an added or changed .md file of long-term/", () => {
+    const LT = ".agents/chief/memories/long-term/";
+    const cases: [string, PrFile[], 0 | 1][] = [
+      ["added .md", [added(`${LT}notes.md`, "# N\n")], 0],
+      ["changed .md", [memory("lessons.md")], 0],
+      ["deleted .md", [deleted(`${LT}lessons.md`, "# L\n")], 1],
+      [
+        "retyped",
+        [file(`${LT}lessons.md`, { status: "T", newMode: "120000", baseText: "a", headText: "b" })],
+        1,
+      ],
+      [
+        "retyped from a link to a file",
+        [file(`${LT}lessons.md`, { status: "T", oldMode: "120000", baseText: "a", headText: "b" })],
+        1,
+      ],
+      ["link", [file(`${LT}lessons.md`, { newMode: "120000", baseText: "a", headText: "b" })], 1],
+      [
+        "executable",
+        [file(`${LT}lessons.md`, { newMode: "100755", baseText: "a", headText: "b" })],
+        1,
+      ],
+      ["a .txt file", [added(`${LT}notes.txt`, "n\n")], 1],
+      [
+        "the memory README",
+        [file(".agents/chief/memories/README.md", { baseText: "a", headText: "b" })],
+        1,
+      ],
+      [
+        "the short-term README",
+        [file(".agents/chief/memories/short-term/README.md", { baseText: "a", headText: "b" })],
+        1,
+      ],
+      [
+        "a move inside long-term",
+        [deleted(`${LT}lessons.md`, "# L\n"), added(`${LT}old/lessons.md`, "# L\n")],
+        1,
+      ],
+    ];
+    for (const [name, files, exit] of cases) {
+      const result = classify(input(files, { record: undefined }));
+      expect(result.exit, `allowlist ${name}`).toBe(exit);
+      if (exit === 1) expect(result.lines.join("\n"), name).toContain("the owner merges it");
+    }
+  });
+
+  // The second read of the plan: the audit command and prompt need the owner.
+  it("refuses a change of the audit files restore.md and audit.md", () => {
+    for (const name of ["restore.md", "audit.md"]) {
+      const result = classify(input([memory(name)]));
+      expect(result.exit, `audit file ${name}`).toBe(1);
+      expect(result.lines.join("\n"), name).toContain("it holds the audit command or prompt");
     }
   });
 
   it("passes a rule whose quote is in the owner record", () => {
-    const rule = file(RULE_PATH, {
-      status: "added",
-      headText: ruleText("you may merge each docs PR"),
-    });
+    const rule = added(RULE_PATH, ruleText("you may merge each docs PR"));
     expect(classify(input([rule])).exit, "quote in record").toBe(0);
   });
 
   it("refuses a rule whose quote is not in the owner record", () => {
-    const rule = file(RULE_PATH, {
-      status: "added",
-      headText: ruleText("you may merge each code PR"),
-    });
-    const result = classify(input([rule]));
+    const result = classify(input([added(RULE_PATH, ruleText("you may merge each code PR"))]));
     expect(result.exit, "quote not in record").toBe(1);
     expect(result.lines.at(-1), "last line").toBe(
       `Memory PR: not mergeable: ${RULE_PATH}: the quote "you may merge each code PR" is not in the owner record; a rule counts only with the owner's own words (order 109)`,
     );
-    expect(result.lines.join("\n"), "no merge line").not.toContain("gh pr merge");
+    const noQuote = ruleText("x").replace(/^Owner said:.*\n/m, "");
+    expect(classify(input([added(RULE_PATH, noQuote)])).exit, "rule with no quote").toBe(1);
   });
 
   it("cannot check a rule change when the owner record is missing", () => {
     const rule = file(RULE_PATH, {
       baseText: ruleText("you may merge each docs PR"),
-      headText: ruleText("you may merge each docs PR"),
+      headText: ruleText("you may merge each docs PR", "Merge each docs PR now."),
     });
     const result = classify(input([rule], { record: undefined }));
     expect(result.exit, "no record").toBe(2);
@@ -339,39 +394,77 @@ describe("classify: a memory PR (order 108)", () => {
     );
   });
 
-  it("refuses a memory PR that removes a permission rule", () => {
-    const rule = file(RULE_PATH, {
-      status: "removed",
-      baseText: ruleText("you may merge each docs PR").replace(
-        "id: R-040\n",
-        "id: R-040\npermission-rule: true\n",
-      ),
-    });
-    const result = classify(input([rule]));
-    expect(result.exit, "removed permission rule").toBe(1);
-    expect(result.lines.join("\n"), "removed rule line").toContain(
-      `${RULE_PATH}: it removes a permission rule; only the owner removes one`,
-    );
-  });
-
-  it("refuses a changed permission rule with no new owner quote", () => {
-    const base = ruleText("you may merge each docs PR").replace(
-      "id: R-040\n",
-      "id: R-040\npermission-rule: true\n",
-    );
-    const head = base.replace("Rule: Merge each docs PR.", "Rule: Merge each PR.");
-    const same = classify(input([file(RULE_PATH, { baseText: base, headText: head })]));
-    expect(same.exit, "no new quote").toBe(1);
-    expect(same.lines.join("\n"), "no new quote line").toContain(
-      `${RULE_PATH}: it changes a permission rule with no new owner quote (order 109)`,
-    );
-    const quoted = head.replace(
-      "How to apply:",
-      'Owner said: "merge each docs PR (order 120)" (2026-11-20)\nHow to apply:',
-    );
-    const record = [...RECORD, 'Exact text: "merge each docs PR (order 120)"'];
-    const ok = classify(input([file(RULE_PATH, { baseText: base, headText: quoted })], { record }));
-    expect(ok.exit, "a new quote in the record").toBe(0);
+  // Owner order 130 (Q3 B): the owner merges each memory PR that adds, changes or deletes a rule
+  // with permission-rule, whatever its quotes (DQ-1021, DQ-1024, DQ-1025).
+  it("refuses each change of a permission rule, in each status", () => {
+    const quoted = permission(ruleText("you may merge each docs PR"));
+    const record = [...RECORD, 'Exact text: "you may merge each docs PR now"'];
+    const cases: [string, PrFile[]][] = [
+      ["added with a valid quote", [added(RULE_PATH, quoted)]],
+      ["added with no quote", [added(RULE_PATH, quoted.replace(/^Owner said:.*\n/m, ""))]],
+      [
+        "added with a quote not in the record",
+        [added(RULE_PATH, permission(ruleText("merge all of them now")))],
+      ],
+      [
+        "changed with a new quote in the record",
+        [
+          file(RULE_PATH, {
+            baseText: quoted,
+            headText: permission(ruleText("you may merge each docs PR now", "Merge each PR.")),
+          }),
+        ],
+      ],
+      [
+        "changed with an old quote and more white space",
+        [
+          file(RULE_PATH, {
+            baseText: quoted,
+            headText: permission(ruleText("you may merge  each docs PR", "Merge each PR.")),
+          }),
+        ],
+      ],
+      [
+        "the field removed",
+        [file(RULE_PATH, { baseText: quoted, headText: ruleText("you may merge each docs PR") })],
+      ],
+      [
+        "the field with no space",
+        [
+          added(
+            RULE_PATH,
+            permission(ruleText("you may merge each docs PR"), "permission-rule:true"),
+          ),
+        ],
+      ],
+      [
+        "another value",
+        [
+          added(
+            RULE_PATH,
+            permission(ruleText("you may merge each docs PR"), "permission-rule: yes"),
+          ),
+        ],
+      ],
+      ["deleted", [deleted(RULE_PATH, quoted)]],
+      [
+        "moved out of rules/ with the same text",
+        [
+          deleted(RULE_PATH, quoted),
+          added(".agents/chief/memories/long-term/old/R-040-docs-merges.md", quoted),
+        ],
+      ],
+      [
+        "front matter that does not parse, in a file that is not a rule",
+        [added(".agents/chief/memories/long-term/notes.md", "---\nid: x\nnot a field\n---\n# N\n")],
+      ],
+    ];
+    for (const [name, files] of cases) {
+      const result = classify(input(files, { record }));
+      expect(result.exit, `permission ${name}`).toBe(1);
+      expect(result.lines.join("\n"), name).toContain("the owner merges");
+      expect(result.lines.join("\n"), name).not.toContain("gh pr merge");
+    }
   });
 
   it("does not need the owner record when no rule file changes", () => {
@@ -391,31 +484,64 @@ describe("classify: a memory PR (order 108)", () => {
     expect(result.exit, "no word list").toBe(2);
   });
 
-  it("refuses when a CI check is pending, red or missing", () => {
+  // The required-check identity (DQ-1000, DQ-1020): only a run of the CI workflow of GitHub
+  // Actions counts, and no check of any kind may be pending or red.
+  it("refuses when a CI check is pending, red, missing or from another source", () => {
+    const without = (name: string): CiCheck[] =>
+      GREEN.filter((check) => check.kind !== "run" || check.name !== name);
     const cases: [string, CiCheck[]][] = [
-      ["pending", GREEN.map((check) => ({ ...check, state: "pending" }))],
-      ["red", [...GREEN, { name: "Analyze (actions)", state: "fail" }]],
-      ["missing", []],
-      ["one required check missing", GREEN.filter((check) => check.name !== "check:memory")],
+      ["pending", GREEN.map((check) => ({ ...check, state: "pending" as const }))],
       [
-        "a required check skipped",
-        GREEN.map((check) => (check.name === "test" ? { ...check, state: "skipped" } : check)),
+        "red",
+        [
+          ...GREEN,
+          ciRun("Analyze (actions)", {
+            state: "fail",
+            workflowPath: ".github/workflows/codeql.yml",
+          }),
+        ],
       ],
-      ["only an unrelated check", [{ name: "Analyze (actions)", state: "pass" }]],
+      ["missing", []],
+      ["one required check missing", without("check:memory")],
+      ["a required check skipped", [...without("test"), ciRun("test", { state: "skipped" })]],
+      [
+        "only an unrelated check",
+        [ciRun("Analyze (actions)", { workflowPath: ".github/workflows/codeql.yml" })],
+      ],
+      [
+        "a status context named test",
+        [...without("test"), { kind: "status", context: "test", state: "pass" }],
+      ],
+      ["another app named test", [...without("test"), ciRun("test", { appId: 1 })]],
+      [
+        "the CodeQL workflow named test",
+        [...without("test"), ciRun("test", { workflowPath: ".github/workflows/codeql.yml" })],
+      ],
+      [
+        "a green run and a red status of the same name",
+        [...GREEN, { kind: "status", context: "test", state: "fail" }],
+      ],
+      [
+        "a green run and a pending other-app run of the same name",
+        [...GREEN, ciRun("test", { appId: 1, state: "pending" })],
+      ],
+      ["two runs of one job, one red", [...GREEN, ciRun("test", { id: 7, state: "fail" })]],
     ];
     for (const [name, checks] of cases) {
       const result = classify(input([memory("lessons.md")], { checks }));
       expect(result.exit, `ci ${name}`).toBe(1);
       expect(result.lines.join("\n"), name).not.toContain("gh pr merge");
     }
+    const unrelated = [...GREEN, ciRun("CodeQL", { appId: 57789, workflowPath: null })];
+    expect(classify(input([memory("lessons.md")], { checks: unrelated })).exit, "unrelated").toBe(
+      0,
+    );
   });
 
   it("refuses a tracked short-term file", () => {
-    const result = classify(
-      input([file(".agents/chief/memories/short-term/now.md", { headText: "x\n" })]),
-    );
+    const result = classify(input([added(".agents/chief/memories/short-term/now.md", "x\n")]));
     expect(result.exit, "tracked short-term").toBe(1);
-    expect(result.lines.at(-1), "last line").toBe(
+    expect(result.lines.at(-1), "short-term line").toBe(
       "Memory PR: not mergeable: .agents/chief/memories/short-term/now.md is a short-term file; git must not track it",
     );
   });
@@ -426,9 +552,10 @@ describe("classify: a memory PR (order 108)", () => {
   });
 });
 
-describe("classify: who opened the PR and for which base", () => {
-  it("gives no chief merge to a PR from a fork, by another author or for another base", () => {
+describe("classify: the PR itself", () => {
+  it("gives no chief merge to a PR that is not open, from a fork, by another author or for another base", () => {
     const cases: [string, Partial<MergeInput>, string][] = [
+      ["merged", { state: "MERGED" }, "No chief merge: the PR is MERGED, not open."],
       ["fork", { crossRepository: true }, "No chief merge: the PR comes from a fork."],
       [
         "author",
@@ -446,6 +573,18 @@ describe("classify: who opened the PR and for which base", () => {
       }
     }
   });
+
+  // The second read of the plan: a touched path that main changed after the split.
+  it("asks to merge main first when main changed a touched path after the split", () => {
+    for (const files of [
+      [{ ...memory("lessons.md"), liveChanged: true }],
+      [file("docs/a.md", { liveChanged: true })],
+    ]) {
+      const result = classify(input(files));
+      expect(result.exit, "live base").toBe(1);
+      expect(result.lines.join("\n"), "live line").toContain("Merge main first: main changed");
+    }
+  });
 });
 
 describe("classify: the output", () => {
@@ -461,7 +600,9 @@ describe("classify: the output", () => {
 
   it("gives a code PR no merge line until CI is green", () => {
     const pending = GREEN.map((check) =>
-      check.name === "e2e" ? { ...check, state: "pending" as const } : check,
+      check.kind === "run" && check.name === "e2e"
+        ? { ...check, state: "pending" as const }
+        : check,
     );
     const result = classify(input([file("docs/a.md")], { checks: pending }));
     expect(result.exit, "code CI").toBe(1);
@@ -481,6 +622,10 @@ describe("classify: the output", () => {
       "Question 4: no by path. Read the Not-checked items. Question 5: merge only if a standing permission covers it, at the merge bar (R-002 path 2).",
     );
   });
+
+  it("names the full URL of the PR in the merge line", () => {
+    expect(classify(input([file("docs/a.md")])).lines.at(-1), "url").toBe(MERGE_LINE);
+  });
 });
 
 describe("classify: a mixed PR", () => {
@@ -493,201 +638,23 @@ describe("classify: a mixed PR", () => {
     expect(result.exit, "exit").toBe(1);
   });
 
-  it("reads a rename out of the memory folder as mixed", () => {
-    const moved = file("docs/notes.md", {
-      status: "renamed",
-      previousPath: ".agents/chief/memories/long-term/lessons.md",
-    });
-    expect(classify(input([moved])).exit, "renamed out").toBe(1);
-    expect(classify(input([moved])).lines.at(-1), "renamed out").toContain("MIXED");
-  });
-});
-
-describe("classify: cannot check", () => {
-  it("cannot check 3,000 files or more", () => {
-    const files = Array.from({ length: 3000 }, (_, i) => file(`docs/f${i}.md`));
-    const result = classify(input(files));
-    expect(result.exit, "3000 files").toBe(2);
-    expect(result.lines.at(-1), "last line").toBe(
-      "Cannot check #152: 3000 files; the GitHub API gives 3,000 at most. Treat it as listed: the owner merges it.",
-    );
-  });
-});
-
-// A fake gh: each call returns the answer for its first matching key.
-function fakeRun(answers: Record<string, { status?: number; stdout: string }>): Run {
-  return (args) => {
-    const call = args.join(" ");
-    for (const [key, answer] of Object.entries(answers)) {
-      if (call.includes(key)) return { status: answer.status ?? 0, stdout: answer.stdout };
-    }
-    return { status: 1, stdout: "" };
-  };
-}
-
-const VIEW_FIELDS = {
-  headRefOid: HEAD,
-  baseRefOid: "b".repeat(40),
-  baseRefName: "main",
-  isCrossRepository: false,
-  author: { login: "owner-login" },
-  changedFiles: 2,
-};
-const VIEW = JSON.stringify({
-  ...VIEW_FIELDS,
-  statusCheckRollup: [
-    { __typename: "CheckRun", name: "ci", status: "COMPLETED", conclusion: "SUCCESS" },
-    { __typename: "CheckRun", name: "lint", status: "COMPLETED", conclusion: "SKIPPED" },
-    { __typename: "StatusContext", context: "other", state: "PENDING" },
-  ],
-});
-// All required checks green: the view that the CLI tests read.
-const GREEN_VIEW = JSON.stringify({
-  ...VIEW_FIELDS,
-  statusCheckRollup: REQUIRED_CHECKS.map((name) => ({
-    __typename: "CheckRun",
-    name,
-    status: "COMPLETED",
-    conclusion: "SUCCESS",
-  })),
-});
-const FILES = [
-  JSON.stringify({ filename: "docs/a.md", status: "modified" }),
-  JSON.stringify({
-    filename: "pkg/package.json",
-    status: "renamed",
-    previous_filename: "old/package.json",
-  }),
-].join("\n");
-const content = (text: string): string =>
-  JSON.stringify({ encoding: "base64", content: Buffer.from(text).toString("base64") });
-
-describe("readPr", () => {
-  it("reads the head, the files, the checks and the texts at the old name of a rename", () => {
-    const calls: string[] = [];
-    const answers = fakeRun({
-      "pr view 152": { stdout: VIEW },
-      "pulls/152/files": { stdout: FILES },
-      [`contents/old/package.json?ref=${"b".repeat(40)}`]: { stdout: content('{"a":1}') },
-      [`contents/pkg/package.json?ref=${HEAD}`]: { stdout: content('{"a":2}') },
-    });
-    const run: Run = (args) => {
-      calls.push(args.join(" "));
-      return answers(args);
-    };
-    const result = readPr(152, run);
-    expect(result, "result").toEqual({
-      ok: true,
-      head: HEAD,
-      baseRef: "main",
-      crossRepository: false,
-      author: "owner-login",
-      checks: [
-        { name: "ci", state: "pass" },
-        { name: "lint", state: "skipped" },
-        { name: "other", state: "pending" },
-      ],
-      files: [
-        { path: "docs/a.md", previousPath: undefined, status: "modified" },
-        {
-          path: "pkg/package.json",
-          previousPath: "old/package.json",
-          status: "renamed",
-          baseText: '{"a":1}',
-          headText: '{"a":2}',
-        },
-      ],
-    });
-  });
-
-  it("cannot check a rename record with no old name", () => {
-    const files = JSON.stringify({ filename: "docs/a.md", status: "renamed" });
-    const result = readPr(
-      152,
-      fakeRun({
-        "pr view": { stdout: VIEW.replace('"changedFiles":2', '"changedFiles":1') },
-        "pulls/152/files": { stdout: files },
-      }),
-    );
-    expect(result.ok, "rename no old name").toBe(false);
-  });
-
-  it("cannot check when the head or the base moves during the read", () => {
-    const moved = VIEW.replace(
-      '"baseRefOid":"' + "b".repeat(40),
-      '"baseRefOid":"' + "c".repeat(40),
-    );
-    let views = 0;
-    const answers = fakeRun({
-      "pulls/152/files": { stdout: FILES },
-      contents: { stdout: content("{}") },
-    });
-    const run: Run = (args) => {
-      if (args.join(" ").includes("pr view")) {
-        views += 1;
-        return { status: 0, stdout: views === 1 ? VIEW : moved };
-      }
-      return answers(args);
-    };
-    const result = readPr(152, run);
-    expect(result.ok, "moved").toBe(false);
-  });
-
-  it("cannot check a text that is not UTF-8", () => {
-    const files = JSON.stringify({
-      filename: ".agents/chief/memories/long-term/lessons.md",
-      status: "modified",
-    });
-    const binary = JSON.stringify({
-      encoding: "base64",
-      content: Buffer.from([0xff, 0xfe, 0x41]).toString("base64"),
-    });
-    const result = readPr(
-      152,
-      fakeRun({
-        "pr view": { stdout: VIEW.replace('"changedFiles":2', '"changedFiles":1') },
-        "pulls/152/files": { stdout: files },
-        contents: { stdout: binary },
-      }),
-    );
-    expect(result.ok, "not UTF-8").toBe(false);
-  });
-
-  it("cannot check on a gh error, bad JSON, a count mismatch or a contents answer with no text", () => {
-    const cases: [string, Record<string, { status?: number; stdout: string }>][] = [
-      [
-        "gh error",
-        {
-          "pr view": { stdout: VIEW },
-          "pulls/152/files": { status: 1, stdout: FILES },
-          contents: { stdout: content("{}") },
-        },
-      ],
-      ["bad JSON", { "pr view": { stdout: "{" } }],
-      [
-        "count mismatch",
-        { "pr view": { stdout: VIEW }, "pulls/152/files": { stdout: FILES.split("\n")[0] ?? "" } },
-      ],
-      [
-        "no text",
-        {
-          "pr view": { stdout: VIEW },
-          "pulls/152/files": { stdout: FILES },
-          contents: { stdout: JSON.stringify({ encoding: "none", content: "" }) },
-        },
-      ],
+  it("reads a move out of the memory folder as mixed", () => {
+    const moved = [
+      deleted(".agents/chief/memories/long-term/lessons.md", "# L\n"),
+      added("docs/notes.md", "# L\n"),
     ];
-    for (const [name, answers] of cases) {
-      const result = readPr(152, fakeRun(answers));
-      expect(result.ok, name).toBe(false);
-    }
+    expect(classify(input(moved)).lines.at(-1), "moved out").toContain("MIXED");
   });
 });
 
+// The CLI end to end: a temporary origin with real commits, a clone whose origin URL names a
+// GitHub repository (git rewrites it to the local origin), and a fake gh that answers the GraphQL
+// query from files. The first and the second answer can differ, to model a change during the run.
 describe("the merge-check CLI", () => {
   let root: string;
   let repo: string;
   let bin: string;
+  const ORIGIN_URL = "https://github.com/owner-login/cty-test.git";
   const env = (): NodeJS.ProcessEnv => ({
     ...process.env,
     PATH: `${bin}:${process.env.PATH ?? ""}`,
@@ -697,7 +664,7 @@ describe("the merge-check CLI", () => {
     GIT_COMMITTER_EMAIL: "t@example.invalid",
   });
   const git = (...args: string[]): string =>
-    execFileSync("git", args, { cwd: repo, env: env(), encoding: "utf8" });
+    execFileSync("git", args, { cwd: repo, env: env(), encoding: "utf8" }).trim();
   // The chief's scripts and the values that the CLI reads, as on main.
   const COPIED = [
     "package.json",
@@ -708,68 +675,129 @@ describe("the merge-check CLI", () => {
     spawnSync(
       process.execPath,
       ["--import", "tsx", ".agents/chief/scripts/merge-check.ts", ...args],
-      {
-        cwd: repo,
-        env: env(),
-        encoding: "utf8",
-      },
+      { cwd: repo, env: env(), encoding: "utf8" },
     );
-  // The fake gh answers from files in the test folder.
-  function fakeGh(files: string): void {
-    writeFileSync(
-      join(root, "view.json"),
-      GREEN_VIEW.replace('"changedFiles":2', '"changedFiles":1'),
-    );
-    writeFileSync(join(root, "files.jsonl"), files);
+  const mergeLine = (head: string): string =>
+    `gh pr merge https://github.com/owner-login/cty-test/pull/152 --merge --match-head-commit ${head}`;
+
+  // The fake gh: the first call gives answer-1.json, each later call answer-2.json if it exists.
+  function fakeGh(first: string, second?: string): void {
+    writeFileSync(join(root, "answer-1.json"), first);
+    rmSync(join(root, "answer-2.json"), { force: true });
+    rmSync(join(root, "calls"), { force: true });
+    if (second !== undefined) writeFileSync(join(root, "answer-2.json"), second);
     writeFileSync(
       join(bin, "gh"),
       [
         "#!/bin/sh",
         'case "$*" in',
-        `  *"pr view"*) cat "${root}/view.json" ;;`,
-        '  *"repo view"*) echo owner-login ;;',
-        `  *"/files"*) cat "${root}/files.jsonl" ;;`,
+        '  "api graphql "*) ;;',
         "  *) exit 1 ;;",
         "esac",
+        `echo x >> "${root}/calls"`,
+        `if [ "$(wc -l < "${root}/calls")" -gt 1 ] && [ -f "${root}/answer-2.json" ]; then`,
+        `  cat "${root}/answer-2.json"`,
+        "else",
+        `  cat "${root}/answer-1.json"`,
+        "fi",
         "",
       ].join("\n"),
     );
     chmodSync(join(bin, "gh"), 0o755);
   }
 
+  // A PR commit on top of main with only these files, pushed to the PR ref; the clone stays on
+  // main.
+  function prCommit(files: Record<string, string>, from = "main"): string {
+    git("checkout", "-q", "-B", "pr", from);
+    for (const [path, text] of Object.entries(files)) {
+      mkdirSync(dirname(join(repo, path)), { recursive: true });
+      writeFileSync(join(repo, path), text);
+    }
+    git("add", "--", ...Object.keys(files));
+    git("commit", "-q", "-m", "pr");
+    const head = git("rev-parse", "HEAD");
+    git("push", "-q", "-f", "origin", "HEAD:refs/pull/152/head");
+    git("checkout", "-q", "main");
+    return head;
+  }
+  const tip = (): string => git("rev-parse", "HEAD");
+  const pushMain = (): void => {
+    git("push", "-q", "origin", "HEAD:main");
+  };
+
   beforeAll(() => {
     root = mkdtempSync(join(tmpdir(), "merge-check-"));
     repo = join(root, "repo");
     bin = join(root, "bin");
     mkdirSync(bin);
-    execFileSync("git", ["init", "--bare", "-b", "main", join(root, "origin.git")]);
-    execFileSync("git", ["clone", join(root, "origin.git"), repo], { env: env() });
+    const origin = join(root, "origin.git");
+    execFileSync("git", ["init", "-q", "--bare", "-b", "main", origin]);
+    execFileSync("git", ["clone", "-q", origin, repo], { env: env() });
+    git("config", `url.${origin}.insteadOf`, ORIGIN_URL);
+    git("config", "remote.origin.url", ORIGIN_URL);
     for (const path of COPIED) {
       mkdirSync(dirname(join(repo, path)), { recursive: true });
       cpSync(path, join(repo, path), { recursive: true });
     }
+    mkdirSync(join(repo, "docs"));
+    writeFileSync(join(repo, "docs/a.md"), "a\n");
     execFileSync("ln", ["-s", join(process.cwd(), "node_modules"), join(repo, "node_modules")]);
-    writeFileSync(join(repo, ".gitignore"), "node_modules\n");
+    writeFileSync(join(repo, ".gitignore"), "node_modules\n.agents/chief/memories/short-term/\n");
     git("add", "-A");
-    git("commit", "-m", "base");
-    git("push", "origin", "HEAD:main");
+    git("commit", "-q", "-m", "base");
+    pushMain();
+    mkdirSync(join(repo, ".agents/chief/memories/short-term/owner"), { recursive: true });
+    writeFileSync(
+      join(repo, ".agents/chief/memories/short-term/private-words.txt"),
+      "zz-private-zz\n",
+    );
+    writeFileSync(
+      join(repo, ".agents/chief/memories/short-term/owner/orders.md"),
+      '## Order 120 (2026-11-20 09:00)\nExact text: "you may merge each docs PR"\n',
+    );
   });
 
   afterAll(() => {
     rmSync(root, { recursive: true, force: true });
   });
 
-  it("exits 0 with the merge line for a PR with no listed path", () => {
-    fakeGh(JSON.stringify({ filename: "docs/a.md", status: "modified" }));
+  it("exits 0 with the full-URL merge line for a PR with no listed path", () => {
+    const head = prCommit({ "docs/a.md": "b\n" });
+    fakeGh(answer({ head, baseTip: tip() }));
     const result = cli("152");
-    expect(result.stdout, result.stderr).toContain(MERGE_LINE);
+    expect(result.stdout, `docs line ${result.stderr}`).toContain(mergeLine(head));
     expect(result.status, "exit").toBe(0);
   });
 
   it("exits 1 for a listed path", () => {
-    fakeGh(JSON.stringify({ filename: "AGENTS.md", status: "modified" }));
+    const head = prCommit({ "AGENTS.md": "x\n" });
+    fakeGh(answer({ head, baseTip: tip() }));
     const result = cli("152");
-    expect(result.stdout, result.stderr).toContain("LISTED AGENTS.md: `AGENTS.md`");
+    expect(result.stdout, `listed line ${result.stderr}`).toContain(
+      "LISTED AGENTS.md: `AGENTS.md`",
+    );
+    expect(result.status, "exit").toBe(1);
+  });
+
+  it("reads the texts of a memory PR from git and gives the merge line", () => {
+    const head = prCommit({ ".agents/chief/memories/long-term/notes.md": "# Notes\n" });
+    fakeGh(answer({ head, baseTip: tip() }));
+    const result = cli("152");
+    expect(result.stdout, `memory header ${result.stderr}`).toContain(
+      "Memory PR: the chief merges it",
+    );
+    expect(result.stdout, "memory line").toContain(mergeLine(head));
+    expect(result.status, "exit").toBe(0);
+  });
+
+  it("exits 1 for a memory PR that adds a permission rule (order 130)", () => {
+    const rule = `---\nid: R-040\npermission-rule: true\n---\nRule: Merge each docs PR.\nOwner said: "you may merge each docs PR" (2026-11-20)\n`;
+    const head = prCommit({ ".agents/chief/memories/long-term/rules/R-040-docs.md": rule });
+    fakeGh(answer({ head, baseTip: tip() }));
+    const result = cli("152");
+    expect(result.stdout, `permission ${result.stderr}`).toContain("the owner merges");
+    expect(result.stdout, "no line").not.toContain("gh pr merge");
     expect(result.status, "exit").toBe(1);
   });
 
@@ -781,18 +809,13 @@ describe("the merge-check CLI", () => {
     expect(result.status, "exit").toBe(2);
   });
 
-  it("exits 2 when the local list differs from origin/main", () => {
-    fakeGh(JSON.stringify({ filename: "docs/a.md", status: "modified" }));
+  it("exits 2 when the local list, settings or an untracked script differs from the base tip", () => {
+    const head = prCommit({ "docs/a.md": "c\n" });
+    fakeGh(answer({ head, baseTip: tip() }));
     const list = join(repo, ".agents/chief/scripts/lib/merge-list.ts");
     writeFileSync(list, `${readFileSync(list, "utf8")}// a local change\n`);
-    const result = cli("152");
+    const listed = cli("152");
     git("checkout", "--", ".agents/chief/scripts/lib/merge-list.ts");
-    expect(result.stdout, "differs").toContain("Run merge:check from a checkout of main");
-    expect(result.status, "exit").toBe(2);
-  });
-
-  it("exits 2 when the local settings or an untracked script differs from origin/main", () => {
-    fakeGh(JSON.stringify({ filename: "docs/a.md", status: "modified" }));
     const settings = join(repo, ".agents/chief/memories/long-term/settings.md");
     writeFileSync(settings, `${readFileSync(settings, "utf8")}\n`);
     const changed = cli("152");
@@ -801,23 +824,92 @@ describe("the merge-check CLI", () => {
     writeFileSync(extra, "export const x = 1;\n");
     const untracked = cli("152");
     rmSync(extra);
-    expect(changed.stdout, "settings differ").toContain("Run merge:check from a checkout of main");
-    expect(changed.status, "settings exit").toBe(2);
-    expect(untracked.stdout, "untracked").toContain("Run merge:check from a checkout of main");
-    expect(untracked.status, "untracked exit").toBe(2);
+    for (const [name, result] of [
+      ["list", listed],
+      ["settings", changed],
+      ["untracked", untracked],
+    ] as const) {
+      expect(result.stdout, name).toContain("differs from the base tip of the PR");
+      expect(result.status, `${name} base exit`).toBe(2);
+    }
   });
 
-  it("exits 2 when the base has no list file", () => {
-    fakeGh(JSON.stringify({ filename: "docs/a.md", status: "modified" }));
+  // Race: main moves (here, the list file) after this checkout and before snapshot 1.
+  it("exits 2 when main moved past this checkout before the snapshot", () => {
+    const old = tip();
+    const list = join(repo, ".agents/chief/scripts/lib/merge-list.ts");
+    writeFileSync(list, `${readFileSync(list, "utf8")}// main moves\n`);
+    git("commit", "-q", "-am", "main moves");
+    pushMain();
+    const moved = tip();
+    git("reset", "-q", "--hard", old);
+    const head = prCommit({ "docs/a.md": "d\n" }, old);
+    fakeGh(answer({ head, baseTip: moved }));
+    const result = cli("152");
+    git("reset", "-q", "--hard", moved);
+    expect(result.stdout, "moved main").toContain("differs from the base tip of the PR");
+    expect(result.status, "exit").toBe(2);
+  });
+
+  // The second plan read: a rule gains permission-rule on main after the split, and the PR
+  // changes its Rule sentence. The merge-base and head texts both lack the field.
+  it("exits 1 when main changed a touched path after the split", () => {
+    const path = ".agents/chief/memories/long-term/rules/R-041-docs.md";
+    const text = (field: string, rule: string): string =>
+      `---\nid: R-041\n${field}---\nRule: ${rule}\nOwner said: "you may merge each docs PR" (2026-11-20)\n`;
+    mkdirSync(dirname(join(repo, path)), { recursive: true });
+    writeFileSync(join(repo, path), text("", "Merge each docs PR."));
+    git("add", "--", path);
+    git("commit", "-q", "-m", "a rule");
+    pushMain();
+    const split = tip();
+    const head = prCommit({ [path]: text("", "Merge each PR.") }, split);
+    writeFileSync(join(repo, path), text("permission-rule: true\n", "Merge each docs PR."));
+    git("commit", "-q", "-am", "main makes it a permission rule");
+    pushMain();
+    fakeGh(answer({ head, baseTip: tip() }));
+    const result = cli("152");
+    expect(result.stdout, `live line ${result.stderr}`).toContain(
+      `Merge main first: main changed ${path}`,
+    );
+    expect(result.status, "live exit").toBe(1);
+  });
+
+  // Race: the PR is merged, gets a new head, or CI reruns between the two snapshots.
+  it("exits 2 when the second snapshot differs from the first", () => {
+    const head = prCommit({ "docs/a.md": "e\n" });
+    const baseTip = tip();
+    const rerun = greenNodes().map((node, i) => (i === 0 ? { ...node, databaseId: 9999 } : node));
+    const running = greenNodes().map((node, i) =>
+      i === 0 ? { ...node, status: "IN_PROGRESS", conclusion: null } : node,
+    );
+    const cases: [string, string][] = [
+      ["merged", answer({ head, baseTip, state: "MERGED" })],
+      ["new head", answer({ head: "c".repeat(40), baseTip })],
+      ["rerun", answer({ head, baseTip, nodes: rerun })],
+      ["base tip moves", answer({ head, baseTip: "d".repeat(40) })],
+      ["check runs again", answer({ head, baseTip, nodes: running })],
+    ];
+    for (const [name, second] of cases) {
+      fakeGh(answer({ head, baseTip }), second);
+      const result = cli("152");
+      expect(result.stdout, name).toContain("the PR changed during the check");
+      expect(result.status, `${name} race exit`).toBe(2);
+    }
+  });
+
+  it("exits 2 when the base tip has no list file", () => {
     git("rm", "-q", "--cached", ".agents/chief/scripts/lib/merge-list.ts");
     git("commit", "-q", "-m", "drop the list");
-    git("push", "-q", "origin", "HEAD:main");
+    pushMain();
+    const head = prCommit({ "docs/a.md": "f\n" });
+    fakeGh(answer({ head, baseTip: tip() }));
     const result = cli("152");
     git("add", ".agents/chief/scripts/lib/merge-list.ts");
     git("commit", "-q", "-m", "list back");
-    git("push", "-q", "origin", "HEAD:main");
-    expect(result.stdout, "no list").toContain("the base (origin/main) has no list file");
-    expect(result.status, "exit").toBe(2);
+    pushMain();
+    expect(result.stdout, "no list").toContain("the base tip has no list file");
+    expect(result.status, "no list exit").toBe(2);
   });
 });
 
