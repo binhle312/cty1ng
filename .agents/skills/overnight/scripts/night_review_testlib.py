@@ -194,4 +194,3 @@ class ReviewFixture:
         self.git("merge", "--no-ff", "--no-edit", "main")
         self.head = self.git("rev-parse", "HEAD")
         self.config()
-
