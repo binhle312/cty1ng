@@ -18,6 +18,7 @@ export default defineConfig({
           include: [
             "shared/src/**/*.test.ts",
             "scripts/**/*.test.ts",
+            ".agents/chief/scripts/**/*.test.ts",
             "backend/src/**/*.test.ts",
             "backend/test/**/*.test.ts",
           ],

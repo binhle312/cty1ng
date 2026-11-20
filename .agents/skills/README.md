@@ -50,3 +50,4 @@ Read the matching skill before its phase of work.
 | `typescript-best-practices/` | Write or review TypeScript; `docs/frontend-conventions.md` wins where they differ (see its `SOURCE.md`). |
 | `arena/` | Owner only, with `/arena` or the owner's words: do one task with parallel candidates (model and effort by difficulty), pick a base, and graft the best parts. |
 | `consultants/` | Owner only, with `/consultants`: strong models grill a recommendation on open decisions before the owner decides. |
+| `decision-pages/` | The chief only, read by hand (it does not load by itself; owner, 2026-11-19, order 93): a page for a person to decide or to read a status. Build it from a JSON content file; the scripts check the limits, the page and the text for the STE check. |
