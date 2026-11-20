@@ -31,7 +31,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 NIGHT = os.environ.get("NIGHT_PY", os.path.join(HERE, "night.py"))
 # night.py and the modules that it imports; a test copy of night.py needs all of them in its folder.
 NIGHT_MODULES = ("night_format", "night_rules", "night_report", "night_files",
-                 "night_review", "night_review_io", "night_chief", "night_cleanup")
+                 "night_review", "night_review_io", "night_chief", "night_cleanup", "night_leader", "night_merge", "night_merge_policy")
 
 
 RUN = "37b41e3f-dd1e-488b-9b63-14c7d793fdf8"
@@ -65,7 +65,7 @@ FINAL_CODES = {
     "FORMAT_UNSUPPORTED", "REPAIR_PENDING", "REVIEW_CAP_REACHED", "MERGE_PR_NOT_ON_CARD", "MERGE_NOT_ALLOWED",
     "MERGE_CHIEF_ONLY", "MERGE_LEADER_ONLY", "MERGE_JOURNAL_PATH", "MERGE_PERMISSION_DUPLICATE",
     "MERGE_PERMISSION_NIGHT", "MERGE_PERMISSION_PR", "MERGE_PERMISSION_HEAD", "MERGE_PERMISSION_INACTIVE",
-    "MERGE_PERMISSION_USED", "MERGE_PENDING", "MERGE_READ_FAILED", "MERGE_PR_INELIGIBLE", "MERGE_EFFECT_UNCLEAR",
+    "MERGE_PERMISSION_USED", "LEADER_JOURNAL_GAP", "MERGE_READY_FAILED", "MERGE_REQUEST_BUDGET", "MERGE_READ_FAILED", "MERGE_PR_INELIGIBLE", "MERGE_EFFECT_UNCLEAR",
     "MERGE_CI_UNKNOWN", "MERGE_CI_NOT_GREEN", "MERGE_HEAD_CHANGED", "MERGE_REJECTED", "MERGE_OUTCOME_UNKNOWN",
     "AFTER_STOP", "BAD_LINE", "CLOSED", "COUNTS_WRONG", "FAKE_CLOCK", "FIRST_NOT_NEW", "GO_TWICE", "ID_ORDER", "INTERNAL",
     "ITEM_DENIED", "ITEM_HELD", "JOURNAL_FAULTS", "LOCK_STALE", "NEW_TWICE", "NO_REHEARSAL",
@@ -116,8 +116,9 @@ def words_file(folder, text):
     return path
 
 
-def new(folder, text="goal: fix the typos; merge PR 1; until 06:00", when=at("22:00")):
-    return run(folder, "new", "--words-file", words_file(folder, text), at=when)
+def new(folder, text="goal: fix the typos; merge PR 1; until 06:00", when=at("22:00"), automation=None):
+    options = ["--automation", automation] if automation else []
+    return run(folder, "new", "--words-file", words_file(folder, text), *options, at=when)
 
 
 def card(folder, rows=ITEMS, raw=None):
@@ -181,14 +182,14 @@ def night_module():
 GO = {"kind": "go", "stop": "2026-01-11T06:00:00+00:00", "heartbeat_min": 30, "gap_min": 60, "max_gap_min": 60,
       "goal": "set", "rehearsal": "passed", "items": [list(row) for row in ITEMS], "review_cap": 5, "run": RUN,
       "chief": "", "allow_empty_checks": False,
-      "tasks": {}, "merge_main_bonus": 3, "consultants": False}
+      "tasks": {}, "ready_reads": 5, "ready_delay": 3, "merge_main_bonus": 3, "consultants": False}
 
 
 INTENT = {"kind": "intent", "command": ordinary_write("PR 1")}
 
 
 def journal(*rows, test=True):
-    first = {"id": 1, "t": at("22:00"), "kind": "new", "run": RUN, "words": "w", "format": 3, "chief_path": "/fixture"}
+    first = {"id": 1, "t": at("22:00"), "kind": "new", "run": RUN, "words": "w", "format": 4, "chief_path": "/fixture", "lock_identity": [1, 1]}
     if test:
         first["test"] = True
     events = [first]

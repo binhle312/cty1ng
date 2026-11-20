@@ -23,6 +23,29 @@ class Brief8Tests(ReviewFixture, unittest.TestCase):
         self.assertTrue(Path(brief).is_relative_to(self.reviews))
         self.assertIn(self.head, Path(brief).read_text())
 
+    def test_same_head_reports_cannot_cross_prs(self):
+        self.begin()
+        self.ok(self.start(TARGET))
+        reports = self.reports()
+        self.ok(self.start(OTHER))
+        before = self.journal().read_bytes()
+        self.expect(self.typed("review", chief="chief", target=OTHER, reports=reports,
+                               ledger=["ledger fixture"]), "REVIEW_REPORT")
+        self.assertEqual(self.journal().read_bytes(), before)
+        self.expect(self.grant(reports), "REVIEW_START_REQUIRED")
+
+    def test_report_verdict_refuses_wrong_target_alone(self):
+        self.begin(second=False)
+        self.ok(self.start())
+        reports = self.reports()
+        report = Path(reports[0])
+        text = report.read_text()
+        report.write_text(text.replace(TARGET, OTHER))
+        before = self.journal().read_bytes()
+        self.expect(self.typed("review", chief="chief", target=TARGET, reports=reports,
+                               ledger=["ledger fixture"]), "REVIEW_REPORT")
+        self.assertEqual(self.journal().read_bytes(), before)
+
     def test_merge_bonus_is_frozen_per_pr(self):
         self.begin()
         initial = self.head
@@ -47,6 +70,16 @@ class Brief8Tests(ReviewFixture, unittest.TestCase):
         self.assertEqual(self.entries()[-1]["cap"], 11)
         self.expect(self.start(head="1" * 40), "MERGE_HEAD_CHANGED")
         self.assertEqual(self.entries()[1]["merge_main_bonus"], 3)
+
+    def test_later_clean_round_preserves_prior_p3(self):
+        self.begin(second=False)
+        self.complete(p3=["Prior risk remains visible"])
+        self.head = self.commit("owned.txt", "Change reviewed head")
+        self.config()
+        reports = self.complete()
+        self.expect(self.grant(reports), "REVIEW_FINDINGS_OPEN")
+        self.ok(self.command("report"))
+        self.assertIn("Prior risk remains visible", (self.chief / "report.md").read_text())
 
     def test_p3_needs_fix_then_advisor_at_cap(self):
         self.begin(cap=2, consult=True)
@@ -185,7 +218,7 @@ class Brief8Tests(ReviewFixture, unittest.TestCase):
                 "os.fsync", side_effect=OSError(5, "grant sync")):
             self.assertEqual(night_module().main(args), 3)
         before = self.journal().read_bytes()
-        self.expect(self.grant(reports), "MERGE_PENDING")
+        self.expect(self.grant(reports), "MERGE_PERMISSION_DUPLICATE")
         self.assertEqual(self.journal().read_bytes(), before)
         self.assertEqual([e["kind"] for e in self.entries()].count("merge-permission"), 1)
 
@@ -193,6 +226,9 @@ class Brief8Tests(ReviewFixture, unittest.TestCase):
         self.begin()
         self.update_main(1)
         for number in range(1, 9):
+            if number > 1:
+                self.head = self.commit("owned.txt", f"Review head {number}")
+                self.config()
             paths = self.complete(p1=["blocking issue"])
             self.assertEqual(self.entries()[-1]["kind"], "cap" if number == 8 else "review")
         self.expect(self.start(), "REVIEW_CAP_REACHED")

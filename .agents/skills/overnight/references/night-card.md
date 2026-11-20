@@ -20,13 +20,19 @@ Give each task acceptance criteria, exact owned file paths and a class. Use `own
 
 At go, record the chief label and approved reviewer policy. Pass `--consultants` only if the owner allows them. Pass `--review-cap` and `--merge-main-bonus` with the values from the read-back. Include the allowed pair and each named role's resolved provider, model, effort and role. Keep the card's read-back with the owner's exact go. After go, only the exact owner amendment path changes the allowed rows.
 
+## Automation baseline and Ready reads
+
+With `new --automation <file>`, supply a JSON object keyed by the canonical `host/owner/repo`. Each value has the repository's `repo_id`, owner `order`, `workflows` with `id`, `path` and `state`, `blobs` with `path` and `blob_sha`, and a list of `hooks` by ID. Use the owner's approved values. The tool compares the live list and pins at grant and merge.
+
+The optional `go --ready-reads` and `--ready-delay` set the total reads and delay in seconds. Use the defaults from `go --help` or record the approved values. Ready, the final PR reads and the merge request share a 20-second request budget.
+
 ## Dispatch paths
 
 Use the chief's canonical night folder outside each leader worktree and sandbox writable root. Resolve all paths and compare with the actual writable roots at dispatch. Give each leader the canonical chief path, run ID, worktree path and fixed folder. Create the fixed folder outside the worktree and the chief's folder. Use separate writable paths for each leader. Add the fixed folder to the Codex leader's writable roots at dispatch.
 
-In the chief's `assign --data` JSON, set `worktree` and add `cleanup` with `folder`, `repo` and `branch`. Use canonical absolute paths. Set `repo` to the persistent Git checkout and `branch` to the PR head branch. The persistent checkout must remain after the leader's worktree removal. Create `temp/` in the fixed folder for the leader's temp files.
+In the chief's `assign --data` JSON, set `worktree` and the fixed leader `folder`. For cleanup, add `cleanup` with the same `folder`, the `repo` and the `branch`. Use canonical absolute paths. Set `repo` to the persistent Git checkout and `branch` to the PR head branch. The persistent checkout must remain after the leader's worktree removal. Create `temp/` in the fixed folder for the leader's recorded temp files. Git-ignored output directories eligible for worktree removal are `node_modules`, `dist`, `coverage`, `playwright-report` and `test-results`. A mount or a directory on another device holds cleanup.
 
-Keep attempts and outcomes in `leader-events.jsonl` in the fixed folder. Keep review records and grants in the chief's journal. Both use the stable, read-only lock file in the chief folder. An assignment without cleanup paths keeps its worktree journal and can merge and report.
+Keep attempts and outcomes in `leader-events.jsonl` in the fixed folder. Keep review records and grants in the chief's journal. Both use the stable lock file in the chief folder. Dispatch writes and syncs the init entry before it returns. Use the fixed folder for both assignments with cleanup and assignments without cleanup.
 
 Record the passed daytime lock and sandbox checks. If the lock fails or the location is uncertain, hold merges. A chief label is a workflow field. It does not prove who wrote a record.
 
@@ -44,6 +50,6 @@ At the heartbeat interval, schedule this prompt with the run ID. “Read the sta
 
 ## Review files
 
-Use a separate clean detached Git checkout under `reviews/` in the chief's night folder. Verify that both the pushed head and live base are present in the checkout. Use absolute paths for the checkout and both reports. Give the reviewers read access to the checkout and a way to return their reports to the chief. Limit writes to the chief's folder with the harness. If the leader can write there, hold the merge workflow.
+Use a separate clean detached Git checkout under `reviews/` in the chief's night folder. Verify that both the pushed head and live base are present in the checkout. Use absolute paths for the checkout and both reports. Give the reviewers read access to the checkout and a way to return their reports to the chief. Use the harness to limit writes to the chief's folder where supported. The journal binds ordinary inputs to the run. Treat writer authentication and exclusive GitHub access as separate evidence.
 
-Use a fresh night folder with format 3. Use the earlier tool revision to read historical journals.
+Use a fresh night folder with format 4. Use the earlier tool revision to read historical journals.

@@ -67,7 +67,7 @@ BROKEN = {
     "intent with no rehearsal": (journal(go_at(rehearsal="none"), {**INTENT, "t": at("22:10"), "item": "PR 1"},
                                          result("22:11", 3)), "NO_REHEARSAL"),
     "a second go": (journal(go_at(), go_at("22:05")), "GO_TWICE"),
-    "a second new": (journal({"t": at("22:01"), "kind": "new", "run": RUN, "words": "w", "format": 3, "chief_path": "/fixture"}), "NEW_TWICE"),
+    "a second new": (journal({"t": at("22:01"), "kind": "new", "run": RUN, "words": "w", "format": 4, "chief_path": "/fixture", "lock_identity": [1, 1]}), "NEW_TWICE"),
     "a repeated id": ([*journal(go_at()), {"id": 2, "t": at("22:10"), "kind": "alive"}], "ID_ORDER"),
     "a skipped id": ([*journal(go_at()), {"id": 9, "t": at("22:10"), "kind": "alive"}], "ID_ORDER"),
     "no new first": ([{"id": 1, **go_at()}], "FORMAT_UNSUPPORTED"),

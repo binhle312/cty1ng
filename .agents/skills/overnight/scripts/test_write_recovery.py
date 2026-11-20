@@ -56,7 +56,7 @@ class WriteRecoveryTests(ReviewFixture, unittest.TestCase):
                 grants = [e for e in self.entries() if e["kind"] == "merge-permission"]
                 self.assertEqual(len(grants), int(stage == "after"))
                 if grants:
-                    self.expect(self.grant(reports), "MERGE_PENDING")
+                    self.expect(self.grant(reports), "MERGE_PERMISSION_DUPLICATE")
                 else:
                     self.ok(self.grant(reports))
                 grant = self.entries()[-1]
@@ -74,7 +74,7 @@ class WriteRecoveryTests(ReviewFixture, unittest.TestCase):
                 self.failed_write("merge", "merge-result", stage, *args)
                 self.expect(self.command("merge", *args), "MERGE_PERMISSION_USED")
                 self.assertEqual((self.root / "calls").read_text().count('"PUT"'), 1)
-                path, = self.worktree.glob(".overnight/*/*/leader-events.jsonl")
+                path = self.leader_records / "leader-events.jsonl"
                 self.assertEqual(path.read_text().count('"merge-result"'), int(stage == "after"))
 
                 self.failed_write("report", "report", stage)

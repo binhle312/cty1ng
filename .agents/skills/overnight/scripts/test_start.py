@@ -21,7 +21,7 @@ class StartTests(Base):
         text = 'goal: X; "quoted" $HOME `tick`; until 06:00'
         self.ok(new(self.dir, text, when=at("21:59")))
         first = self.events()[0]
-        self.assertEqual((first["words"], first["t"], first["test"], first["format"]), (text, at("21:59"), True, 3))
+        self.assertEqual((first["words"], first["t"], first["test"], first["format"]), (text, at("21:59"), True, 4))
         self.assertTrue(first["fake_clock"])
         with open(os.path.join(self.dir, "card.md"), encoding="utf-8") as handle:
             self.assertIn(text, handle.read())

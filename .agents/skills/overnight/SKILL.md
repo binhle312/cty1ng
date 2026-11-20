@@ -19,12 +19,12 @@ Only the owner's own `/overnight <arguments>` message starts a night. If the own
 
 1. Read the project instructions and memory for the night folder, merge bar, writer permissions and limits.
 2. Check the daytime rehearsal record for this skill revision. Use [the rehearsal](references/rehearsal.md) before first use and after changes. Absent a rehearsal or owner override, record the work for the owner.
-3. Write the owner's exact words in UTF-8 with a quoted heredoc. Run `night.py new --root <chief-night-parent> --words-file <file>` and use the folder from its output. Fill the [night card](references/night-card.md).
+3. Write the owner's exact words in UTF-8 with a quoted heredoc. Run `night.py new --root <chief-night-parent> --words-file <file>` and use the folder from its output. For merge targets, pass the approved `--automation` file. Fill the [night card](references/night-card.md).
 4. Analyze the task, or ask a leader for read-only analysis. Establish the spec before work dispatch. Record acceptance criteria, dependencies, worktrees, PRs, project rules and limits. Give each task an approved class and exact owned files.
 5. Apply the [night rule](#night-rule) to the proposed card. Resolve owner questions in one batch. Check the power supply, sleep settings, memory and disk.
 6. Run `night.py items`. Read back the rows, review cap, bonus per merge of main, stop time with offset and exact `/goal` line on one screen.
 7. Wait for the owner to send the exact `/goal` line. If the harness has no `/goal`, say so in the read-back and require the owner's exact `go` after it. Record `--goal no-goal-command` in that case.
-8. Run `night.py go` with the values from the read-back. The record freezes the card and review settings. Record each heartbeat and stop timer ID with the run when you create or replace it.
+8. Run `night.py go` with the values from the read-back. The record freezes the card, review settings, and limits on reads after Ready. Record each heartbeat and stop timer ID with the run when you create or replace it.
 
 ## Night rule
 
@@ -32,7 +32,7 @@ At night, merge through `night.py merge` after the chief gives permission for th
 
 > At night, after a PR is MERGED and the worktree has no uncommitted changes, the leader removes its worktree, local branch and temp files; the remote branch is deleted too. Open PRs untouched.
 
-Use `night.py clean` for this exception. It checks the recorded merge and the exact PR on GitHub before it removes anything. The tool removes recorded temp files, then the worktree, local branch and remote head branch.
+Use `night.py clean` for this exception. It checks the recorded merge and the exact PR on GitHub before it removes anything. The tool handles recorded temp files, then the worktree, the local branch, and the remote head branch. It records verified ref absence as a successful remote step.
 
 Before a permitted write, check what it can trigger now or later. If the effect is unclear, hold the write. Push to a PR branch, edit a PR body, or rerun CI only when the card and project rules permit it. Auto-merge and a CI rerun that can publish a release stay with the owner.
 
@@ -41,7 +41,7 @@ For cleanup, cancel only timer IDs recorded for this night. The journal tool can
 ## Work
 
 1. Assign up to two leaders for independent work. Wait for dependencies in order. Give each leader one worktree and one PR.
-2. Give each leader a fixed folder outside its worktree and the chief's folder. Use a separate folder for each leader. For a Codex leader, add its folder to its sandbox writable roots at dispatch. Write the brief and record the assignment with `night.py assign`. See [Dispatch paths](references/night-card.md#dispatch-paths).
+2. Give each leader a fixed folder outside its worktree and the chief's folder. Use a separate folder for each leader. For a Codex leader, add its folder to its sandbox writable roots at dispatch. Write the brief. Run `night.py assign` and wait for it to sync the leader journal before the leader starts. See [Dispatch paths](references/night-card.md#dispatch-paths).
 3. Assign one independent Claude and one independent Codex reviewer. Record each provider, model, effort and role. Use an empty role if there is no role.
 4. Use two models above the leader if the owner allows them. The same-tier pair is Opus 5.5 and GPT-6.2 Astra at `high`. Check the model and effort of each named role. Get owner approval for Fable 5.2 if the leader uses Opus 5.5. Exclude `xhigh`.
 5. The leader writes a plan and test strategy. The chief checks both against the spec and records the check with `night.py plan` before code.
@@ -64,8 +64,8 @@ Count one round per complete pair, per PR. Use `review_cap` (default 5) and `mer
 ### Grant and confirm
 
 1. Check the task class, project rules and live PR. A task that needs owner approval stays under **Needs you**. Check the PR ledger and any shared ledger for P1 and P2. Record the checked ledger sources with the review. Hold if the sources disagree or if any required evidence is missing.
-2. Run `night.py grant` with only the two report paths. It checks the live head, required CI and changed paths against the owned files. Compare every open P3 with the live PR body.
-3. Give the run ID and grant entry ID to the leader. The leader runs `night.py merge` with the chief path, run, PR, head, leader and grant ID. The tool records the attempt before the GitHub request. A grant permits one attempt.
+2. Run `night.py grant` with only the two report paths. It checks the reviewed head and main tip, required CI, changed files, approved automation baseline and any auto-delete effects. Compare every open P3 with the live PR body.
+3. Give the run ID and grant entry ID to the leader. The leader runs `night.py merge` with the chief path, run, PR, head, leader and grant ID. The tool syncs the attempt before Ready. It syncs the Ready result, checks the exact PR again, and sends one pinned request if the PR still qualifies. A Ready error consumes the attempt. Send that case to **Needs you**.
 4. Keep one unresolved grant across the night. Run `night.py confirm` after a merge. It requires GitHub to confirm the granted head and requires green CI on main. If main is red, hold all grants. Use `night.py withdraw` only if live evidence and the journal show that a grant had no merge.
 5. After the leader journal records the merge, run `night.py clean` from outside the assigned worktree. Use the chief path, run ID, PR and leader label. If the tool refuses a step, send its code to **Needs you**. See [Cleanup records](references/night-card.md#cleanup-records).
 6. Apply the [night rule](#night-rule) to each write and its effects.
@@ -85,10 +85,10 @@ At a heartbeat, run `status` and `check --now`. Log `alive` with the state. Cont
 The owner's `/overnight continue <card file>` resumes an existing run. Use its original run ID. Read the card, both kinds of journal and the [night rule](#night-rule). Check each open intent and attempt against live state. Recreate only missing timers and record their new IDs. Log the recovery gap. Record the missing session goal if the harness did not restore it.
 
 - For `WRITE_FAILED`, read back under lock. A missing entry ID leaves the write uncertain. If the entry is present, use it. If its state is unclear, stop. A failed claim append gives no authority to send.
-- For `TORN_LINE` or `REPAIR_PENDING`, check the staged cut and run `repair` if its identity matches. Leave inconsistent side files for the owner.
+- For `TORN_LINE` or `REPAIR_PENDING`, check the staged cut and run `repair` if its identity matches. Use `repair --target <PR>` for the assigned leader journal. Leave inconsistent side files for the owner.
 - For `REPORT_FILE`, run `render` to restore the recorded report.
 - For `LOCK_STALE`, leave the lock for the owner and hold the work.
-- For bad shape, journal faults or an unknown merge outcome, hold the item. Use read-only evidence to reconcile the outcome. Keep uncertain sends visible.
+- For bad shape, journal faults or an unknown merge outcome, hold the item. Use read-only evidence to reconcile the outcome. Keep uncertain sends visible. Reconcile a missing leader journal with GitHub evidence before further writes.
 
 ## Close and morning
 

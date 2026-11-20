@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 
 from night_format import (
     CARD, FORMAT, DEFAULT_LOCK_STALE_S, DEFAULT_LOCK_WAIT_S, DEFAULT_MAX_GAP_MIN, FENCE, JOURNAL, LOCK, REPORT, Refused,
-    parse_row, schema_problem, iso, entry_time, FULL_SHA, entry_bytes, clean_entry)
+    parse_row, schema_problem, iso, entry_time, entry_bytes)
 from night_rules import apply, fold, judge
 from night_report import gap_text, gaps, render, stop_passed
 
@@ -80,6 +80,29 @@ class SharedLock:
 
     def __exit__(self, *exc):
         os.close(self.fd)
+
+
+def lock_identity(folder):
+    lock = os.path.join(folder, SharedLock.name)
+    try:
+        info = os.stat(lock, follow_symlinks=False)
+    except OSError:
+        raise Refused("LOCK_STALE", lock) from None
+    if not stat.S_ISREG(info.st_mode):
+        raise Refused("LOCK_STALE", lock)
+    return [info.st_dev, info.st_ino]
+
+
+class LeaderLock(SharedLock):
+    """Leaders acquire the common inode but leave the chief's crash marker alone."""
+
+    def __enter__(self):
+        super().__enter__()
+        marker = Lock(os.path.dirname(self.path))
+        if os.path.lexists(marker.path):
+            self.__exit__()
+            raise marker.refusal()
+        return self
 
 
 class Lock:
@@ -227,8 +250,15 @@ def append(folder, entry, first, name=JOURNAL):
     path = os.path.join(folder, name)
     data = entry_bytes(entry)
     try:
-        handle = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
+        flags = os.O_WRONLY | os.O_APPEND | os.O_NOFOLLOW | os.O_NONBLOCK
+        if name == JOURNAL:
+            flags |= os.O_CREAT
+        elif first:
+            flags |= os.O_CREAT | os.O_EXCL
+        handle = os.open(path, flags, 0o644)
         try:
+            if not stat.S_ISREG(os.fstat(handle).st_mode):
+                raise OSError(errno.EINVAL, "journal is not a regular file")
             rest = memoryview(data)
             while rest:  # os.write can write fewer bytes than it gets (a full disk, a signal)
                 written = os.write(handle, rest)
@@ -362,13 +392,16 @@ def cut_files(folder):
     return sorted(name for name in os.listdir(folder) if re.fullmatch(r"journal\.cut-\d+\.txt", name))
 
 
-def staged_repair(folder, data, entries):
+def staged_repair(folder, data, entries, name=JOURNAL, validate=schema_problem):
     """Return the one side record whose identity matches these bytes."""
     recorded = {e["cut_file"]: e for e in entries if e["kind"] == "repair"}
     pending = []
-    for name in cut_files(folder):
-        path = os.path.join(folder, name)
+    identity = file_identity(os.path.join(folder, name))
+    for side_name in cut_files(folder):
+        path = os.path.join(folder, side_name)
         try:
+            if os.path.realpath(path) != path:
+                raise ValueError("side record path")
             with open(path, encoding="utf-8") as handle:
                 side = json.load(handle)
             entry = side["entry"]
@@ -378,122 +411,45 @@ def staged_repair(folder, data, entries):
                 raise ValueError("prefix size")
             prefix, suffix = data[:length], data[length:]
             if (not prefix.endswith(b"\n") or hashlib.sha256(prefix).hexdigest() != side["prefix_sha256"]
-                    or not cut or b"\n" in cut or entry["cut_file"] != name or entry["bytes"] != len(cut)
-                    or schema_problem(entry)):
+                    or not cut or b"\n" in cut or entry["cut_file"] != side_name or entry["bytes"] != len(cut)
+                    or side["identity"] != identity or validate(entry)):
                 raise ValueError("side record identity")
-            if name in recorded:
-                if entry != recorded[name]:
+            if side_name in recorded:
+                if entry != recorded[side_name]:
                     raise ValueError("recorded entry differs")
                 continue
             if suffix != cut and not entry_bytes(entry).startswith(suffix):
                 raise ValueError("partial write differs")
             pending.append((prefix, entry))
         except (OSError, TypeError, ValueError, AttributeError, KeyError):
-            raise Refused("REPAIR_PENDING", name) from None
+            raise Refused("REPAIR_PENDING", side_name) from None
     if len(pending) > 1:
         raise Refused("REPAIR_PENDING", "multiple side records")
     return pending[0] if pending else None
 
 
-def stage_repair(folder, prefix, cut, entry):
-    side = {"prefix_bytes": len(prefix), "prefix_sha256": hashlib.sha256(prefix).hexdigest(),
+def file_identity(path):
+    observed = os.stat(path, follow_symlinks=False)
+    return [observed.st_dev, observed.st_ino]
+
+
+def stage_repair(folder, prefix, cut, entry, name=JOURNAL):
+    side = {"identity": file_identity(os.path.join(folder, name)), "prefix_bytes": len(prefix), "prefix_sha256": hashlib.sha256(prefix).hexdigest(),
             "cut": base64.b64encode(cut).decode("ascii"), "entry": entry}
     write_file(folder, entry["cut_file"], json.dumps(side) + "\n")
 
 
-def finish_repair(folder, prefix, entry):
+def finish_repair(folder, prefix, entry, name=JOURNAL):
     # A staged file must be durable even if the previous call died directly after rename.
     try:
         sync_folder(folder)
-        os.truncate(journal_path(folder), len(prefix))
+        source = os.path.join(folder, name)
+        if os.path.realpath(source) != source:
+            raise Refused("REPAIR_PENDING", source)
+        os.truncate(source, len(prefix))
     except OSError as error:
         raise Refused("WRITE_FAILED", f"staged repair: {error.strerror}") from None
-    append(folder, entry, first=False)
-
-
-LEADER_JOURNAL = "leader-events.jsonl"
-
-
-def leader_path(chief, night, target):
-    assignment = night.assignments[target]
-    worktree = assignment["worktree"]
-    cleanup = assignment.get("cleanup")
-    child = cleanup["folder"] if cleanup else os.path.join(
-        worktree, ".overnight", night.run, target.replace("/", "_").replace("#", "-"))
-    if cleanup and (not os.path.isdir(child) or any(os.path.commonpath((child, root)) in (child, root)
-                       for root in (worktree, os.path.abspath(chief)))):
-        raise Refused("MERGE_JOURNAL_PATH", child)
-    if (os.path.commonpath((os.path.abspath(chief), worktree)) in (chief, worktree) or os.path.realpath(child) != child):
-        raise Refused("MERGE_JOURNAL_PATH", child)
-    return child
-
-
-def leader_events(chief, night, target):
-    """Read the PR journal under the same lock as the chief journal."""
-    folder = leader_path(chief, night, target)
-    path = os.path.join(folder, LEADER_JOURNAL)
-    if os.path.realpath(path) != path:
-        raise Refused("MERGE_JOURNAL_PATH", path)
-    try:
-        with open(path, "rb") as handle:
-            content = handle.read()
-    except FileNotFoundError:
-        return []
-    except OSError:
-        raise Refused("MERGE_JOURNAL_PATH", folder) from None
-    if content and not content.endswith(b"\n"):
-        raise Refused("TORN_LINE", folder)
-    entries, attempts, results = [], {}, set()
-    clean_intents, clean_results, temps = {}, set(), set()
-    for number, raw in enumerate(content.split(b"\n")[:-1], 1):
-        entry = json_record(raw, number)
-        kind = entry.get("kind")
-        if (entry.get("id") != number or entry.get("run") != night.run or entry.get("target") != target
-                or not entry_time(entry.get("t")) or (entries and entry_time(entry["t"]) < entry_time(entries[-1]["t"]))):
-            raise Refused("JOURNAL_FAULTS", f"{folder} line {number}")
-        if kind == "merge-attempt":
-            grant_id = entry.get("grant")
-            grant = night.grants.get(grant_id) if type(grant_id) is int else None
-            if (not grant or grant_id in attempts.values() or
-                    any(entry.get(k) != grant[k] for k in ("target", "head", "base", "method", "leader"))):
-                raise Refused("JOURNAL_FAULTS", f"{folder} attempt {number}")
-            attempts[number] = grant_id
-        elif kind == "merge-invalidate":
-            grant_id = entry.get("grant")
-            if type(grant_id) is not int or night.grants.get(grant_id, {}).get("target") != target:
-                raise Refused("JOURNAL_FAULTS", f"{folder} invalidation {number}")
-        elif kind == "merge-result":
-            of = entry.get("of")
-            outcome = entry.get("outcome")
-            sha = entry.get("sha")
-            if (type(of) is not int or of not in attempts or of in results
-                    or outcome not in ("merged", "failed", "unknown", "unsent")
-                    or outcome != "unsent" and not entry_time(entry.get("sent_at"))
-                    or (outcome == "merged" and (not isinstance(sha, str) or not FULL_SHA.fullmatch(sha)))):
-                raise Refused("JOURNAL_FAULTS", f"{folder} result {number}")
-            results.add(of)
-        elif kind in ("temp-record", "clean-intent", "clean-result", "clean-refusal"):
-            if not clean_entry(entry, clean_intents, clean_results, temps):
-                raise Refused("JOURNAL_FAULTS", f"{folder} cleanup entry {number}")
-        else:
-            raise Refused("JOURNAL_FAULTS", f"{folder} entry kind {kind!r}")
-        entries.append(entry)
-    return entries
-
-
-def leader_append(chief, night, target, records, kind, now, fields):
-    folder = leader_path(chief, night, target)
-    os.makedirs(folder, exist_ok=True)
-    entry = {"kind": kind, "id": len(records) + 1, "t": iso(now), "run": night.run, "target": target, **fields}
-    if records and now < entry_time(records[-1]["t"]):
-        raise Refused("TIME_BACK", "leader journal is ahead of the clock")
-    append(folder, entry, first=not records, name=LEADER_JOURNAL)
-    records.append(entry)
-    return entry
-
-
-def merge_snapshot(chief, night):
-    return [e for target in sorted(night.assignments) for e in leader_events(chief, night, target)]
+    append(folder, entry, first=False, name=name)
 
 
 def checked_night(folder):
@@ -531,11 +487,6 @@ def write_entry(folder, kind, fields, then=None):
         if then:
             then(night, entry)
         return entry
-
-
-def require_merge_snapshot(folder, night):
-    if night.newest_report() and night.newest_report().get("merges", []) != merge_snapshot(folder, night):
-        raise Refused("REPORT_OLD", "leader journal changed")
 
 
 def repair(folder):
@@ -583,7 +534,10 @@ def bound_night(folder):
     night = checked_night(folder)
     if not night.entries or night.entries[0]["chief_path"] != os.path.abspath(folder):
         raise Refused("MERGE_JOURNAL_PATH", folder)
+    if lock_identity(folder) != night.entries[0]["lock_identity"]:
+        raise Refused("LOCK_STALE", os.path.join(folder, SharedLock.name))
     return night
+
 
 def recorded_report(folder, night, entry):
     try:

@@ -15,17 +15,19 @@ sys.dont_write_bytecode = True  # no __pycache__ in the skill folder
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # `-I` drops the script folder
 try:
     from night_format import (
-        CARD, CLOSE_REASONS, DEFAULT_HEARTBEAT_MIN, DEFAULT_REVIEW_CAP, DEFAULT_MERGE_MAIN_BONUS, FULL_SHA, FIELDS, FORMAT, GOALS, LOG_KINDS, OUTCOMES, PAGE_CHECKS,
+        CARD, CLOSE_REASONS, DEFAULT_HEARTBEAT_MIN, DEFAULT_READY_READS, DEFAULT_READY_DELAY_S, DEFAULT_REVIEW_CAP, DEFAULT_MERGE_MAIN_BONUS, FULL_SHA, FIELDS, FORMAT, GOALS, LOG_KINDS, OUTCOMES, PAGE_CHECKS,
         PAGE_OUTCOMES, REHEARSALS, REPORT, Refused, event_id, iso, line_for, parse_row, parse_stop, parsed_target, entry_time, canonical_target, input_record)
-    from night_rules import counts_with, rows_problems, check_grant, pending_attempt
-    from night_review import required_checks, check_statuses, check_main_statuses
+    from night_rules import counts_with, rows_problems
+    from night_review import required_checks, check_statuses
     from night_chief import command as chief_command, cmd_typed
     from night_cleanup import command as cleanup_command
+    from night_leader import merge_snapshot, repair_leader, require_merge_snapshot
+    from night_merge import command as merge_command
     from night_report import audit_pr, search_candidates, fenced, gap_text, gaps, needs_you, render, status_data
     from night_files import (
-        Lock, SharedLock, append, clock, cut_files, journal_bytes, max_gap_env, need_night, parse_card, parse_lines,
+        Lock, SharedLock, lock_identity, append, clock, cut_files, journal_bytes, max_gap_env, need_night, parse_card, parse_lines,
         read_journal, read_words, state_problems, sync_folder, test_mode, write_file,
-        leader_events, leader_append, merge_snapshot, add_entry, checked_night, write_entry, require_merge_snapshot,
+        add_entry, checked_night, write_entry,
         repair, view_locked, bound_night, recorded_report)
 except ImportError as error:  # a copy of night.py without its modules
     print(f"REFUSED [INTERNAL] (final: do not retry): night.py cannot import its modules ({error}). Copy the whole scripts folder.", file=sys.stderr)
@@ -52,11 +54,14 @@ def cmd_new(args):
     with Lock(folder):
         night = checked_night(folder)
         now, fake = clock()
-        entry = add_entry(folder, night, "new", {"run": run, "chief_path": folder, "words": words, "format": FORMAT,
+        if not night.entries and not os.path.lexists(os.path.join(folder, SharedLock.name)):
+            fd = os.open(os.path.join(folder, SharedLock.name), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+            os.close(fd)
+            sync_folder(folder)
+        automation = input_record(read_words(args.automation)) if args.automation else {}
+        entry = add_entry(folder, night, "new", {"automation": automation, "run": run, "chief_path": folder, "words": words, "format": FORMAT,
+                                                "lock_identity": lock_identity(folder),
                                                 "test": True if test_mode() else None}, now, fake)
-        fd = os.open(os.path.join(folder, SharedLock.name), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
-        os.close(fd)
-        sync_folder(folder)
         if not os.path.exists(os.path.join(folder, CARD)):
             write_file(folder, CARD, f"# Night card {run}\n\nMade: {entry['t']}.\n\n## Owner's words (exact)\n\n"
                                      f"{fenced(words)}\n\nFill one night-items block from the night card reference.\n")
@@ -83,6 +88,7 @@ def cmd_go(args):
         rows = parse_card(args.dir)
         return {"stop": iso(parse_stop(args.stop, now)), "heartbeat_min": args.heartbeat_min, "gap_min": gap,
                 "max_gap_min": limit, "goal": args.goal, "rehearsal": args.rehearsal, "items": rows, "run": night.run,
+                "ready_reads": args.ready_reads, "ready_delay": args.ready_delay,
                 "review_cap": args.review_cap, "merge_main_bonus": args.merge_main_bonus, "consultants": args.consultants,
                 "tasks": input_record(read_words(args.tasks)) if args.tasks else {},
                 "chief": args.chief, "allow_empty_checks": args.allow_empty_checks,
@@ -152,7 +158,7 @@ def cmd_report(args):
     with Lock(args.dir):
         night = checked_night(args.dir)
         now, fake = clock()
-        merges = merge_snapshot(args.dir, night)
+        merges = merge_snapshot(args.dir, night, allow_gaps=True)
         entry = night.newest_report()
         if night.close or not entry or night.made_old_by or entry.get("merges", []) != merges:
             entry = add_entry(args.dir, night, "report", {"counts": counts_with(night, "report"),
@@ -185,7 +191,7 @@ def cmd_close(args):
 
 
 def cmd_repair(args):
-    entry = repair(args.dir)
+    entry = repair_leader(args.dir, canonical_target(args.target)) if args.target else repair(args.dir)
     print(f"E{entry['id']} repair: {entry['bytes']} bytes in {entry['cut_file']}")
 
 
@@ -237,7 +243,7 @@ def cmd_chief(args):
 GH_TIMEOUT_S = 20
 
 
-def github(host, endpoint, code, payload=None, pages=False):
+def github(host, endpoint, code, payload=None, pages=False, timeout=GH_TIMEOUT_S, with_status=False):
     argv = ["gh", "api", "--hostname", host]
     if payload is not None:
         argv += ["--method", "PUT", endpoint, "--input", "-", "--include"]
@@ -245,11 +251,13 @@ def github(host, endpoint, code, payload=None, pages=False):
         argv += ["--method", "GET", endpoint]
         if pages:
             argv += ["--paginate", "--slurp"]
+        if with_status:
+            argv.append("--include")
     try:
         done = subprocess.run(argv, input=json.dumps(payload) if payload is not None else None, capture_output=True,
-                              check=False, text=True, timeout=GH_TIMEOUT_S, shell=False)
+                              check=False, text=True, timeout=timeout, shell=False)
         raw = done.stdout.strip()
-        if payload is not None:
+        if payload is not None or with_status:
             header, sep, body = raw.partition("\n\n")
             status = re.match(r"HTTP/\S+ (\d{3})\b", header)
             if not sep or not status:
@@ -267,11 +275,21 @@ def page_rows(host, endpoint, code, key=None):
     if not isinstance(pages, list) or not pages:
         raise Refused(code, endpoint)
     result = []
+    totals = set()
     for page in pages:
-        rows = page.get(key) if key and isinstance(page, dict) else page
+        if key and not isinstance(page, dict):
+            raise Refused(code, endpoint)
+        rows = page.get(key) if key else page
         if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
             raise Refused(code, endpoint)
+        if key:
+            total = page.get("total_count")
+            if type(total) is not int or total < 0:
+                raise Refused(code, f"{endpoint}: list count")
+            totals.add(total)
         result.extend(rows)
+    if key and totals != {len(result)}:
+        raise Refused(code, f"{endpoint}: incomplete pages")
     return result
 
 
@@ -282,118 +300,28 @@ def check_policy(host, repo, base, head, empty, check_main=False):
     if not isinstance(info, dict) or info.get("name") != base or type(info.get("protected")) is not bool:
         raise Refused(unknown, branch)
     rules = page_rows(host, f"repos/{repo}/rules/branches/{quote(base, safe='')}?per_page=100", unknown)
-    classic = github(host, f"{branch}/protection", unknown) if info["protected"] else None
+    classic = None
+    if info["protected"]:
+        status, body = github(host, f"{branch}/protection", unknown, with_status=True)
+        if status == 200:
+            classic = body
+        elif (status == 404 and isinstance(body, dict) and body.get("message") == "Branch not protected"
+              and body.get("status") == "404"):
+            classic = {}
+        else:
+            raise Refused(unknown, "classic branch protection")
     required = required_checks(rules, classic, info["protected"])
     if not required and not empty:
         raise Refused(unknown, "empty required set needs card permission")
-    if not required and not check_main:
-        return
-    scope = "latest" if check_main and not required else "all"
-    checks = page_rows(host, f"repos/{repo}/commits/{head}/check-runs?per_page=100&filter={scope}", unknown, "check_runs")
+    if not required:
+        return []
+    checks = page_rows(host, f"repos/{repo}/commits/{head}/check-runs?per_page=100&filter=all", unknown, "check_runs")
     statuses = page_rows(host, f"repos/{repo}/commits/{head}/statuses?per_page=100", unknown)
-    check_statuses(required, checks, statuses, head)
-    if check_main:
-        check_main_statuses(checks, statuses, head)
-
-
-def before_merge(night, grant):
-    host, repo, number = parsed_target(grant["target"])
-    endpoint = f"repos/{repo}/pulls/{number}"
-    pr = github(host, endpoint, "MERGE_READ_FAILED")
-    if not isinstance(pr, dict) or not isinstance(pr.get("head"), dict) or not isinstance(pr.get("base"), dict):
-        raise Refused("MERGE_READ_FAILED", endpoint)
-    observed = pr["head"].get("sha")
-    if not isinstance(observed, str) or not FULL_SHA.fullmatch(observed):
-        raise Refused("MERGE_READ_FAILED", "PR head")
-    if observed != grant["head"] or ("review_base" in grant and pr["base"].get("sha") != grant["review_base"]):
-        raise Refused("MERGE_HEAD_CHANGED")
-    if (pr["base"].get("ref") != grant["base"] or pr.get("number") != number or pr.get("state") != "open"
-            or pr.get("draft") is not False or pr.get("merged") is not False or pr.get("mergeable") is not True
-            or pr.get("mergeable_state") != "clean" or pr.get("auto_merge") is not None
-            or (pr["base"].get("repo") or {}).get("full_name", "").lower() != repo):
-        raise Refused("MERGE_PR_INELIGIBLE")
-    settings = github(host, f"repos/{repo}", "MERGE_READ_FAILED")
-    if not isinstance(settings, dict) or settings.get("delete_branch_on_merge") is not False:
-        raise Refused("MERGE_EFFECT_UNCLEAR", "branch deletion")
-    method = {"squash": "allow_squash_merge", "merge": "allow_merge_commit", "rebase": "allow_rebase_merge"}[grant["method"]]
-    if settings.get(method) is not True:
-        raise Refused("MERGE_PR_INELIGIBLE", "merge method")
-    workflows = page_rows(host, f"repos/{repo}/actions/workflows?per_page=100", "MERGE_EFFECT_UNCLEAR", "workflows")
-    hooks = page_rows(host, f"repos/{repo}/hooks?per_page=100", "MERGE_EFFECT_UNCLEAR")
-    inactive = ("disabled_manually", "disabled_inactivity", "disabled_fork")
-    if any(w.get("state") not in inactive for w in workflows) or any(h.get("active") is not False for h in hooks):
-        raise Refused("MERGE_EFFECT_UNCLEAR", "active workflow or webhook")
-    check_policy(host, repo, grant["base"], grant["head"], night.go["allow_empty_checks"])
-    return host, endpoint + "/merge"
-
-
-def get_grant(folder, args, target, entry_id):
-    night = bound_night(folder)
-    now, fake = clock()
-    records = leader_events(folder, night, target) if target in night.assignments else []
-    grant = check_grant(night, args, target, entry_id, now, fake)
-    if any(e["kind"] == "merge-attempt" and e["grant"] == entry_id for e in records):
-        raise Refused("MERGE_PERMISSION_USED")
-    if night.active_grants.get(target) != entry_id or any(
-            e["kind"] == "merge-invalidate" and e["grant"] == entry_id for e in records):
-        raise Refused("MERGE_PERMISSION_INACTIVE")
-    if pending_attempt(records):
-        raise Refused("MERGE_PENDING")
-    return night, grant, records
-
-
-def send_merge(host, endpoint, grant):
-    try:
-        status, data = github(host, endpoint, "MERGE_OUTCOME_UNKNOWN",
-                              payload={"sha": grant["head"], "merge_method": grant["method"]})
-    except Refused:
-        return "unknown", None, "MERGE_OUTCOME_UNKNOWN"
-    if isinstance(data, dict) and status == 200 and data.get("merged") is True:
-        sha = data.get("sha")
-        if isinstance(sha, str) and FULL_SHA.fullmatch(sha):
-            return "merged", sha, None
-    if status == 409:
-        return "failed", None, "MERGE_HEAD_CHANGED"
-    if status in (401, 403, 404, 405, 422) or status == 200 and isinstance(data, dict) and data.get("merged") is False:
-        return "failed", None, "MERGE_REJECTED"
-    return "unknown", None, "MERGE_OUTCOME_UNKNOWN"
+    return check_statuses(required, checks, statuses, head)
 
 
 def cmd_merge(args):
-    target = canonical_target(args.target)
-    if not FULL_SHA.fullmatch(args.head):
-        raise Refused("HEAD_FORM")
-    grant_id = event_id(args.grant)
-    with SharedLock(args.dir):
-        night, grant, _ = get_grant(args.dir, args, target, grant_id)
-    try:
-        host, endpoint = before_merge(night, grant)
-    except Refused as refusal:
-        if refusal.code == "MERGE_HEAD_CHANGED":
-            with SharedLock(args.dir):
-                current, _, records = get_grant(args.dir, args, target, grant_id)
-                now, _ = clock()
-                leader_append(args.dir, current, target, records, "merge-invalidate", now, {"grant": grant_id})
-        raise
-    with SharedLock(args.dir):
-        night, grant, records = get_grant(args.dir, args, target, grant_id)
-        now, _ = clock()
-        if now >= entry_time(night.go["stop"]):
-            raise Refused("AFTER_STOP")
-        attempt = leader_append(args.dir, night, target, records, "merge-attempt", now,
-                                {**{key: grant[key] for key in ("head", "leader", "base", "method")}, "grant": grant_id})
-        send_time, _ = clock()
-        if send_time >= entry_time(night.go["stop"]):
-            outcome, sha, code = "unsent", None, "AFTER_STOP"
-        else:
-            outcome, sha, code = send_merge(host, endpoint, grant)
-        done, _ = clock()
-        leader_append(args.dir, night, target, records, "merge-result", done,
-                      {"of": attempt["id"], "outcome": outcome, "sha": sha, "code": code,
-                       "sent_at": iso(send_time) if outcome != "unsent" else None})
-    if code:
-        raise Refused(code)
-    print(f"Merged {target} at {sha} (attempt {attempt['id']})")
+    return merge_command(args, github, page_rows, check_policy, GH_TIMEOUT_S)
 
 
 SEARCH_LIMIT = 1000
@@ -430,12 +358,15 @@ def search_merges(host, repo, start, end):
 def audit_facts(night, records, end, now):
     start = entry_time(night.go["t"])
     repos = {parsed_target(target)[:2] for target in night.merge_rows}
+    claims = {(e["target"], e["id"]): e for e in records if e["kind"] == "merge-attempt"}
     matches = {}
     for result in records:
         if result.get("kind") == "merge-result" and result.get("outcome") == "merged":
-            matches[(result["target"], result["sha"])] = result
-    attempts = {e["target"] for e in records if e["kind"] == "merge-attempt" and entry_time(e["t"]) < end}
-    rows = []
+            claim = claims[(result["target"], result["of"])]
+            matches[(result["target"], claim["head"], result["sha"])] = result
+    attempts = {claim["target"] for claim in claims.values() if entry_time(claim["t"]) < end}
+    rows = [[e["target"], "coverage gap", f"{iso(start)} to {iso(end)}", f"{e['code']}: {e['detail']}"]
+            for e in records if e["kind"] == "leader-gap"]
     for host, repo in sorted(repos):
         numbers, gaps = search_merges(host, repo, start, end)
         rows.extend(gaps)
@@ -462,7 +393,7 @@ def cmd_audit(args):
             raise Refused("NOT_STARTED")
         if night.faults:
             raise Refused("JOURNAL_FAULTS")
-        records = merge_snapshot(args.dir, night)
+        records = merge_snapshot(args.dir, night, allow_gaps=True)
         now, _ = clock()
         cutoff = min(entry_time(night.go["stop"]), entry_time(night.close["t"]) if night.close else now)
     rows = audit_facts(night, records, cutoff, now)
@@ -472,9 +403,11 @@ def cmd_audit(args):
     with Lock(args.dir):
         current = checked_night(args.dir)
         now, fake = clock()
-        if current.close or current.last != night.last or merge_snapshot(args.dir, current) != records:
+        if current.close or current.last != night.last or merge_snapshot(args.dir, current, allow_gaps=True) != records:
             raise Refused("REPORT_OLD", "the journal changed during audit; read again")
-        add_entry(args.dir, current, "audit", {"rows": rows}, now, fake)
+        repositories = sorted({"/".join(parsed_target(target)[:2]) for target in night.merge_rows})
+        add_entry(args.dir, current, "audit", {"rows": rows, "start": night.go["t"], "end": iso(cutoff),
+                                              "repositories": repositories}, now, fake)
     print(json.dumps(rows))
 
 
@@ -492,6 +425,7 @@ def parser():
     location = new.add_mutually_exclusive_group(required=True)
     location.add_argument("--root", help="parent of the exclusively created UUID run folder")
     location.add_argument("--dir", help="explicit night folder for a daytime fixture")
+    new.add_argument("--automation", help="chief-approved repository automation snapshots (JSON file)")
     new.add_argument("--words-file", help="a file with the owner's exact /overnight arguments")
     add("items", "print the rows of the night-items block of card.md (for the read-back)")
     go = add("go", "record the owner's go; the items come from the night-items block of card.md")
@@ -507,6 +441,8 @@ def parser():
     go.add_argument("--chief", default="")
     go.add_argument("--review-policy", help="JSON file with the approved reviewer pair and resolved roles")
     go.add_argument("--allow-empty-checks", action="store_true")
+    go.add_argument("--ready-reads", type=int, default=DEFAULT_READY_READS)
+    go.add_argument("--ready-delay", type=int, default=DEFAULT_READY_DELAY_S)
     for name in ("assign", "plan", "review-start", "review", "ruling", "advice", "grant", "confirm", "withdraw", "timer"):
         add(name, f"record a {name} entry").add_argument("--data", required=True, help="UTF-8 JSON fields")
     merge = add("merge", "use one chief permission for a direct pinned merge")
@@ -548,7 +484,7 @@ def parser():
     close = add("close", "close the night; report.md becomes the record")
     close.add_argument("--reason", required=True, choices=CLOSE_REASONS)
     close.add_argument("--without-page", help="the reason why there is no checked page")
-    add("repair", "move a cut last line to a side file and record it")
+    add("repair", "move a cut last line to a side file and record it").add_argument("--target", help="repair the assigned leader journal")
     return top
 
 

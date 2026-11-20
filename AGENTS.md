@@ -186,3 +186,4 @@ Merge a PR only when the owner asks you to merge that PR. The merge needs no lin
 - One task slice per branch: `m1-skill-hub`, `m3-chat-one-bot`, …
 - Open every PR as a draft, and leave it a draft. The owner marks it Ready right before the merge
   (owner, 2026-11-04). The paid security review that Ready starts is off for now (owner, 2026-11-06, `docs/security.md` §2.11).
+  At night, a leader marks its own PR Ready only through `night.py merge`, which does so after it verifies a valid grant and just before it sends the merge request.

@@ -1,0 +1,19 @@
+test_incomplete_workflow_inventory_refuses_before_grant (test_option_b_merge.MergeTests.test_incomplete_workflow_inventory_refuses_before_grant) ... FAIL
+
+======================================================================
+FAIL: test_incomplete_workflow_inventory_refuses_before_grant (test_option_b_merge.MergeTests.test_incomplete_workflow_inventory_refuses_before_grant)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b_merge.py", line 208, in test_incomplete_workflow_inventory_refuses_before_grant
+    self.expect(self.grant(reports), "MERGE_EFFECT_UNCLEAR")
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b.py", line 61, in expect
+    self.assertEqual(outcome[0], 3, outcome[1])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 3 : E7 merge-permission
+
+
+----------------------------------------------------------------------
+Ran 1 test in 1.282s
+
+FAILED (failures=1)

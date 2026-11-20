@@ -25,6 +25,25 @@ ROWS = [("notice", "night"), ("release", "owner"), ("merge app", "merge", TARGET
         ("merge other", "merge", OTHER, "main", "squash", "leader")]
 
 
+AUTOMATION = {
+    "github.com/example/app": {
+        "repo_id": 1001, "order": 158, "hooks": [],
+        "workflows": [
+            {"id": 101, "path": ".github/workflows/ci.yml", "state": "active"},
+            {"id": 102, "path": ".github/workflows/codeql.yml", "state": "active"},
+            {"id": 103, "path": "dynamic/copilot/test", "state": "active"},
+            {"id": 104, "path": "dynamic/dependabot/test", "state": "active"},
+            {"id": 105, "path": "dynamic/code-scanning/test", "state": "active"},
+            {"id": 106, "path": ".github/workflows/security-review.yml", "state": "disabled_manually"},
+        ],
+        "blobs": [
+            {"path": ".github/workflows/ci.yml", "blob_sha": "a" * 40},
+            {"path": ".github/workflows/codeql.yml", "blob_sha": "b" * 40},
+        ],
+    }
+}
+
+
 class OptionBTests(unittest.TestCase):
     def setUp(self):
         self.scratch = tempfile.TemporaryDirectory()
@@ -32,6 +51,8 @@ class OptionBTests(unittest.TestCase):
         self.root = Path(self.scratch.name)
         self.chief = self.root / "chief"
         self.worktree = self.root / "leader"
+        self.leader_records = self.root / "leader-records"
+        self.leader_records.mkdir()
 
     def command(self, *args, time="22:10", env=None):
         return run(str(self.chief), *args, at=at(time), env=env)
@@ -57,7 +78,7 @@ class OptionBTests(unittest.TestCase):
         return str(path)
 
     def begin(self, cap=None, rehearsal="passed", empty=False):
-        self.ok(new(str(self.chief), "overnight fixture"))
+        self.ok(new(str(self.chief), "overnight fixture", automation=self.input("automation.json", AUTOMATION)))
         card(str(self.chief), ROWS[:3] if not empty else ROWS[:2])
         options = [] if cap is None else ["--review-cap", str(cap)]
         tasks = {} if empty else {TARGET: {"class": "night", "criteria": ["Change a file"], "owned": ["owned.txt"]}}
@@ -70,7 +91,7 @@ class OptionBTests(unittest.TestCase):
 
     def assign(self, target=TARGET, pair=PAIR, time="22:02", **updates):
         fields = dict(chief="chief", target=target, leader="leader", reviewers=pair, helpers=["implementer"],
-                      worktree=str(self.worktree))
+                      worktree=str(self.worktree), folder=str(self.leader_records))
         fields.update(updates)
         return self.command("assign", "--data", self.input("assign.json", fields), time=time)
 
@@ -87,7 +108,7 @@ class OptionBTests(unittest.TestCase):
         self.assertIn(TARGET, report)
 
     def test_format_boundary(self):
-        for version in (1, 2, None, 4):
+        for version in (1, 2, 3, None, 5):
             for row in (["work", "commit"], ["work", "commit", "words"]):
                 with self.subTest(version=version, row=row):
                     if self.chief.exists():

@@ -7,7 +7,7 @@ import subprocess
 from urllib.parse import quote
 
 from night_format import FULL_SHA, Refused, input_record, parsed_target
-from night_review import credited_merges, review_cap
+from night_review import credited_merges, report_binding, review_cap, task_for
 
 
 def git(checkout, *args):
@@ -35,7 +35,7 @@ def diff_files(checkout, start, end):
 
 def main_merges(checkout, base, head):
     history = git(checkout, "rev-list", "--first-parent", "--merges", "--parents", f"{base}..{head}")
-    merges = {}
+    merges, tips = {}, set()
     for row in history.splitlines():
         commit, first, *parents = row.split()
         previous = git(checkout, "merge-base", first, base).strip()
@@ -43,11 +43,13 @@ def main_merges(checkout, base, head):
         introduced = [parent for parent in parents if git(checkout, "merge-base", parent, base).strip() == parent
                       and git(checkout, "merge-base", parent, previous).strip() != parent]
         if introduced:
+            if parents == [base] and introduced == [base]:
+                tips.add(base)
             merges[commit] = {path for parent in introduced for path in diff_files(checkout, previous, parent)}
-    return dict(reversed(merges.items()))
+    return dict(reversed(merges.items())), tips
 
 
-def pr_facts(github, target, base):
+def pr_facts(github, target, base, *, final=False):
     host, repo, number = parsed_target(target)
     endpoint = f"repos/{repo}/pulls/{number}"
     pr = github(host, endpoint, "MERGE_READ_FAILED")
@@ -60,7 +62,7 @@ def pr_facts(github, target, base):
     base_repo = pr["base"].get("repo")
     if (pr["base"].get("ref") != base or not isinstance(base_repo, dict)
             or not isinstance(base_repo.get("full_name"), str) or base_repo["full_name"].lower() != repo):
-        raise Refused("MERGE_PR_INELIGIBLE", endpoint)
+        raise Refused("MERGE_HEAD_CHANGED" if final else "MERGE_PR_INELIGIBLE", endpoint)
     return pr
 
 
@@ -77,19 +79,19 @@ def review_checkout(chief, night, fields, github):
         raise Refused("REVIEW_CHECKOUT", str(checkout))
     base = pr["base"]["sha"]
     merge_base = git(checkout, "merge-base", base, head).strip()
-    merges = main_merges(checkout, base, head)
+    merges, verified_tips = main_merges(checkout, base, head)
     files = diff_files(checkout, merge_base, head)
     previous = night.reviews.get(target)
     previous_start = next((e for e in reversed(night.entries) if previous and e["id"] == previous["start"]), None)
     previous_base = previous_start["merge_base"] if previous_start else merge_base
     main_files = set(diff_files(checkout, previous_base, base)).union(*merges.values())
-    bonus_merges = credited_merges(night, target, merges)
+    bonus_merges = credited_merges(night, target, verified_tips)
     return dict(base_sha=base, merge_base=merge_base, main_merges=list(merges), bonus_merges=bonus_merges, files=files,
                 intersections=sorted(main_files.intersection(files)), cap=review_cap(night.go, bonus_merges))
 
 
 def reviewer_brief(night, fields):
-    task = night.go["tasks"][fields["target"]]
+    task = task_for(night, fields["target"])
     assignment = night.assignments[fields["target"]]
     return (f"# Review {fields['target']} at {fields['head']}\n\n"
             f"Use the clean checkout at `{fields['checkout']}`.\n"
@@ -102,10 +104,11 @@ def reviewer_brief(night, fields):
             f"Assigned reviewers: {json.dumps(assignment['reviewers'])}\n\n"
             "Put `Reviewer: ` and a JSON object with provider and role before the final two lines.\n"
             "End with `Findings: ` and JSON lists keyed p1, p2 and p3.\n"
-            "Then give `Verdict: ` and a JSON object with head, p1, p2, p3, model and effort.\n")
+            "Then give `Verdict: ` and a JSON object with head, p1, p2, p3, model and effort. "
+            f"Include these fields exactly: {json.dumps(report_binding(night, fields))}.\n")
 
 
-def load_report(chief, value, who, head):
+def load_report(chief, value, who, head, binding):
     path = inside_reviews(chief, value)
     try:
         raw = path.read_bytes()
@@ -123,18 +126,19 @@ def load_report(chief, value, who, head):
                 isinstance(item, str) and item.strip() for item in findings[k]) for k in keys):
             raise ValueError
         counts = {key: len(findings[key]) for key in keys}
-        if (verdict != dict(head=head, model=who["model"], effort=who["effort"], **counts)
-                or any(type(verdict[key]) is not int for key in keys)):
+        if (verdict != dict(head=head, model=who["model"], effort=who["effort"], **binding, **counts)
+                or any(type(verdict[key]) is not int for key in (*keys, "assignment", "plan_check", "start", "round"))):
             raise ValueError
     except (OSError, ValueError, Refused):
         raise Refused("REVIEW_REPORT", str(path)) from None
-    return dict(who=who, head=head, source=str(path), **findings), hashlib.sha256(raw).hexdigest()
+    return dict(who=who, head=head, source=str(path), binding=binding, **findings), hashlib.sha256(raw).hexdigest()
 
 
-def reports_at(chief, paths, assignment, head):
+def reports_at(chief, paths, assignment, night, start):
     if not isinstance(paths, list) or len(paths) != 2 or paths[0] == paths[1]:
         raise Refused("REVIEW_REPORT", "two distinct paths are required")
-    reports, digests = zip(*(load_report(chief, path, who, head)
+    binding = report_binding(night, start)
+    reports, digests = zip(*(load_report(chief, path, who, start["head"], binding)
                              for path, who in zip(paths, assignment["reviewers"])))
     return list(reports), list(digests)
 
@@ -153,6 +157,8 @@ def changed_paths(page_rows, pr, target):
             raise Refused("REVIEW_SCOPE", repr(names))
         returned.add(names[0])
         changed.update(names)
+    if any(name.startswith(".github/workflows/") for name in changed):
+        raise Refused("REVIEW_SCOPE", "GitHub workflow paths need the owner")
     return sorted(changed)
 
 

@@ -1,8 +1,11 @@
 """Pure rules for the chief's review records and grant order."""
 
-from night_format import FULL_SHA, Refused
+import re
+
+from night_format import FULL_SHA, Refused, entry_time, parsed_target
 
 
+GRANT_CHANGES = ("assign", "plan", "review-start", "review", "cap", "ruling")
 CHIEF_EVENTS = ("plan", "review-start", "review", "cap", "ruling", "advice", "confirm", "withdraw")
 
 
@@ -49,8 +52,16 @@ def accepted_findings(night, review):
 
 
 def grant_findings(night, review):
+    target = review["target"]
     findings = accepted_findings(night, review)
-    start = night.review_starts[review["target"]]
+    start = night.review_starts[target]
+    for earlier in night.entries:
+        if earlier["kind"] not in ("review", "cap") or earlier["target"] != target or earlier["id"] == review["id"]:
+            continue
+        previous = accepted_findings(night, earlier)
+        for severity in ("p1", "p2", "p3"):
+            if severity == "p3" or earlier["reports"][0]["head"] == start["head"]:
+                findings[severity] = list(dict.fromkeys(findings[severity] + previous[severity]))
     if findings["p1"] or findings["p2"]:
         raise Refused("REVIEW_FINDINGS_OPEN", review["target"])
     if findings["p3"]:
@@ -61,6 +72,35 @@ def grant_findings(night, review):
                 or any(answer != "allow" for answer in advice["consultants"])):
             raise Refused("REVIEW_ADVICE_REQUIRED", review["target"])
     return findings["p3"]
+
+
+def current_review_allows(night, grant):
+    target = grant["target"]
+    assignment = night.assignments.get(target, {})
+    plan = night.plans.get(target, {})
+    review = night.reviews.get(target, {})
+    start = night.review_starts.get(target, {})
+    if (grant["assignment"] != assignment.get("id") or grant["review"] != review.get("id")
+            or review.get("start") != start.get("id") or start.get("plan_check") != plan.get("id")):
+        return False
+    try:
+        return grant_findings(night, review) == grant["evidence"]["p3"]
+    except Refused:
+        return False
+
+
+def round_number(night, target, head):
+    for entry in night.entries:
+        if entry["kind"] in ("review", "cap") and entry["target"] == target:
+            report = entry["reports"][0]
+            if report["head"] == head:
+                return report["binding"]["round"]
+    return len(night.review_pairs.get(target, ())) + 1
+
+
+def report_binding(night, start):
+    return dict(run=night.run, target=start["target"], assignment=start["assignment"],
+                start=start["id"], plan_check=start["plan_check"], round=start["round"])
 
 
 def review_problem(night, entry):
@@ -93,10 +133,14 @@ def review_problem(night, entry):
     if not (plan := checked_plan(night, target, assignment["id"])):
         return "REVIEW_PLAN_REQUIRED"
     if kind == "review-start":
-        merges = credited_merges(night, target, entry["main_merges"])
-        if (entry["cap"] != review_cap(night.go, merges) or entry["bonus_merges"] != merges
+        prior_tips = set(night.review_starts.get(target, {}).get("bonus_merges", ()))
+        merges = entry["bonus_merges"]
+        if (entry["cap"] != review_cap(night.go, merges) or sorted(set(merges)) != merges
+                or not prior_tips <= set(merges) <= prior_tips | {entry["base_sha"]}
                 or any(not FULL_SHA.fullmatch(sha) for sha in [entry["head"], entry["base_sha"],
                                                              entry["merge_base"], *merges])):
+            return "REVIEW_CAP_FORM"
+        if entry["round"] != round_number(night, target, entry["head"]):
             return "REVIEW_CAP_FORM"
         if entry["plan_check"] != plan["id"]:
             return "REVIEW_PLAN_REQUIRED"
@@ -108,24 +152,30 @@ def review_problem(night, entry):
             or start["plan_check"] != plan["id"]):
         return "REVIEW_START_REQUIRED"
     if kind in ("review", "cap"):
-        if any(report["head"] != start["head"] for report in entry["reports"]):
-            return "MERGE_HEAD_CHANGED"
+        binding = report_binding(night, start)
+        if any(report["head"] != start["head"] or report["binding"] != binding for report in entry["reports"]):
+            return "REVIEW_REPORT"
+        digests = entry["digests"]
+        if len(digests) != 2 or len(set(digests)) != 2 or any(not re.fullmatch(r"[a-f0-9]{64}", d) for d in digests):
+            return "REVIEW_REPORT"
         sources = {r["source"] for r in entry["reports"]}
         if any(e["kind"] in ("review", "cap") and (e["start"] == start["id"] or
-                any(r["source"] in sources for r in e["reports"])) for e in night.entries):
+                set(e["digests"]).intersection(digests) or any(r["source"] in sources for r in e["reports"]))
+                for e in night.entries):
             return "REVIEW_START_REQUIRED"
         return None
     review = night.reviews.get(target)
-    if not review or review["start"] != start["id"] or entry["review"] != review["id"]:
+    if not review or review["start"] != start["id"]:
         return "REVIEW_START_REQUIRED"
-    if kind in ("ruling", "advice") and night.pending_grant in night.grants and (
-            night.grants[night.pending_grant]["target"] == target):
-        return "MERGE_PENDING"
     if kind == "ruling":
-        if not any(r["source"] == entry["source"] and entry["finding"] in r["p1"] + r["p2"] + r["p3"]
+        review = next((prior for prior in night.entries if prior["id"] == entry["review"]
+                       and prior["kind"] in ("review", "cap") and prior["target"] == target), None)
+        if not review or not any(r["source"] == entry["source"] and entry["finding"] in r["p1"] + r["p2"] + r["p3"]
                    for r in review["reports"]):
             return "REVIEW_REPORT"
     if kind == "advice":
+        if entry["review"] != review["id"]:
+            return "REVIEW_START_REQUIRED"
         findings = accepted_findings(night, review)
         if (len(night.review_pairs.get(target, ())) < start["cap"]
                 or findings["p1"] or findings["p2"] or not findings["p3"]
@@ -162,16 +212,54 @@ def required_checks(rules, classic, protected):
     return required
 
 
+def automation_valid(baselines):
+    for repository, baseline in baselines.items():
+        if (not isinstance(repository, str) or parsed_target(repository + "#1") is None
+                or repository != repository.lower() or not isinstance(baseline, dict)
+                or set(baseline) != {"repo_id", "order", "workflows", "blobs", "hooks"}
+                or any(type(baseline[k]) is not int or baseline[k] <= 0 for k in ("repo_id", "order"))
+                or not all(isinstance(baseline[k], list) for k in ("workflows", "blobs", "hooks"))):
+            return False
+        workflows, blobs, hooks = (baseline[k] for k in ("workflows", "blobs", "hooks"))
+        if any(not isinstance(row, dict) or set(row) != {"id", "path", "state"}
+               or type(row["id"]) is not int or row["id"] <= 0 or not isinstance(row["path"], str)
+               or not row["path"] or row["state"] not in ("active", "disabled_manually", "disabled_inactivity", "disabled_fork")
+               for row in workflows):
+            return False
+        if any(not isinstance(row, dict) or set(row) != {"path", "blob_sha"}
+               or not isinstance(row["path"], str) or not row["path"].startswith(".github/workflows/")
+               or not isinstance(row["blob_sha"], str) or not FULL_SHA.fullmatch(row["blob_sha"]) for row in blobs):
+            return False
+        if (len({row["id"] for row in workflows}) != len(workflows)
+                or len({row["path"] for row in blobs}) != len(blobs)
+                or any(type(hook) is not int or hook <= 0 for hook in hooks) or len(set(hooks)) != len(hooks)):
+            return False
+        file_paths = {row["path"] for row in workflows if row["state"] == "active"}
+        if {row["path"] for row in blobs} != {name for name in file_paths if name.startswith(".github/workflows/")}:
+            return False
+    return True
+
+
 def check_statuses(required, checks, statuses, head):
-    for name, source in required:
-        exact = [c for c in checks if c.get("name") == name and c.get("head_sha") == head
-                 and (source in (None, -1) or isinstance(c.get("app"), dict) and c["app"].get("id") == source)]
-        actual = [c.get("status") == "completed" and c.get("conclusion") == "success" for c in exact]
-        if source in (None, -1):
-            actual += [record.get("state") == "success" for record in statuses
-                       if record.get("context") == name and record.get("sha", head) == head]
-        if not actual or not all(actual):
-            raise Refused("MERGE_CI_NOT_GREEN", str(name))
+    decisions = []
+    for name, source in sorted(required, key=lambda pair: (pair[0], pair[1] or 0)):
+        exact = [row for row in checks if row.get("name") == name and row.get("head_sha") == head
+                 and (source in (None, -1) or isinstance(row.get("app"), dict) and row["app"].get("id") == source)]
+        native = next((row for row in statuses if row.get("context") == name
+                       and row.get("sha", head) == head), None) if source in (None, -1) else None
+        if any(type(row.get("id")) is not int for row in exact) or (native is not None and type(native.get("id")) is not int):
+            raise Refused("MERGE_CI_UNKNOWN", name)
+        check = max(exact, key=lambda row: row["id"], default=None)
+        if (not check and not native or check and
+                (check.get("status") != "completed" or check.get("conclusion") != "success")
+                or native and native.get("state") != "success"):
+            raise Refused("MERGE_CI_NOT_GREEN", name)
+        if check:
+            decisions.append(dict(kind="check", context=name, sha=head, id=check["id"],
+                                  app=(check.get("app") or {}).get("id"), state=check["conclusion"]))
+        if native:
+            decisions.append(dict(kind="status", context=name, sha=head, id=native["id"], state=native["state"]))
+    return decisions
 
 
 def check_requirement(check, key):
@@ -181,14 +269,18 @@ def check_requirement(check, key):
     return name, source
 
 
-def check_main_statuses(checks, statuses, head):
-    for row in checks:
-        if row.get("head_sha") != head or row.get("status") != "completed" or row.get("conclusion") not in (
-                "success", "neutral", "skipped"):
-            raise Refused("MERGE_CI_NOT_GREEN", row.get("name", head))
-    latest = {}
-    for row in statuses:
-        latest.setdefault(row.get("context"), row)
-    for context, row in latest.items():
-        if row.get("sha") != head or row.get("state") != "success":
-            raise Refused("MERGE_CI_NOT_GREEN", context or head)
+
+def action_problem(night, now, fake):
+    if fake and not night.test:
+        return "FAKE_CLOCK"
+    if night.last and now < entry_time(night.last["t"]):
+        return "TIME_BACK"
+    if night.faults:
+        return "JOURNAL_FAULTS"
+    if night.close:
+        return "CLOSED"
+    if not night.go:
+        return "NOT_STARTED"
+    if now >= entry_time(night.go["stop"]):
+        return "AFTER_STOP"
+    return None

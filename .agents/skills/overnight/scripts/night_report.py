@@ -58,6 +58,15 @@ def needs_you(night):
         spec = entry["spec"]
         findings = "\n".join(f"{f['severity']} {f['text']}" for f in spec["findings"])
         rows.append((target, "review cap", spec["done"], f"{findings} | Next: {spec['next']}", f"chief entry E{entry['id']}"))
+    for target, review in night.reviews.items():
+        start = night.review_starts.get(target)
+        if target in night.capped or start is None or len(night.review_pairs[target]) < start["cap"]:
+            continue
+        findings = accepted_findings(night, review)
+        advice = night.advice.get(review["id"], {})
+        if findings["p3"] and (advice.get("advisor") != "allow" or "hold" in advice.get("consultants", [])):
+            rows.append((target, "P3 advice at review cap", "", "Chief records the advice or owner decides the next step",
+                         f"chief entry E{review['id']}"))
     if night.go:
         for target, task in night.task_specs.items():
             if task["class"] == "owner":
@@ -92,9 +101,14 @@ def cleanup_rows(records):
     deleted, needs = [], []
     finished = {(e["target"], e["of"]) for e in records if e.get("kind") == "clean-result"}
     for e in records:
+        if e["kind"] == "leader-gap":
+            needs.append((e["target"], e["code"], "", e["detail"], "leader journal"))
+            continue
         key = f"{e['target']} leader E{e['id']}"
+        if e.get("kind") == "merge-result" and e["outcome"] != "merged":
+            needs.append((e["target"], e.get("code") or e["outcome"], "", "reconcile on GitHub", key))
         if e.get("kind") == "clean-result":
-            deleted.append((e["item"], e["subject"], e["size"], e["sha"], key))
+            deleted.append((e["item"], e["subject"], e["size"], e["sha"], key, e.get("outcome", "removed")))
         elif e.get("kind") == "clean-refusal":
             needs.append((e["target"], e["code"], e["subject"], e["detail"], key))
         elif e.get("kind") == "clean-intent" and (e["target"], e["id"]) not in finished:
@@ -156,8 +170,15 @@ def render(entries):
     merges = merge_rows(records)
     deleted, cleanup_needs = cleanup_rows(records)
     audit = next((e for e in reversed(night.entries) if e["kind"] == "audit"), None)
-    p3 = [(entry["target"], finding, f"chief entry E{entry['id']}", ", ".join(r["source"] for r in entry["reports"]))
-          for entry in night.reviews.values() for finding in accepted_findings(night, entry)["p3"]]
+    audit_rows = list(audit["rows"]) if audit else []
+    if audit and go and audit["end"] < go["stop"]:
+        audit_rows.extend([repo, "coverage gap", f"{audit['end']} to {go['stop']}", "interval not read"]
+                          for repo in audit["repositories"])
+    rulings = {(e["review"], e["source"], e["finding"]): e for e in night.entries if e["kind"] == "ruling"}
+    p3 = [(entry["target"], finding, f"chief entry E{entry['id']}", report["source"],
+           f"{ruling['severity']}: {ruling['reason']}" if (ruling := rulings.get((entry["id"], report["source"], finding))) else "open")
+          for entry in night.entries if entry["kind"] in ("review", "cap")
+          for report in entry["reports"] for finding in report["p3"]]
     advice = [(e["target"], e["advisor"], ", ".join(e["consultants"]) or "not authorized", f"E{e['id']}")
               for e in night.entries if e["kind"] == "advice"]
     errors = [(e["t"], e.get("text"), f"E{e['id']}") for e in night.entries if e["kind"] == "error"]
@@ -192,9 +213,9 @@ def render(entries):
         "## Merge targets\n", table(typed_targets, ["Item", "PR", "Base", "Method", "Leader"]),
         "## Needs you\n", table(needs_you(night) + cleanup_needs, ["Item", "Why", "Command", "Blocks", "Entry"]),
         "## Merge attempts\n", table(merges, ["PR", "State", "Reviewed head", "Merge commit", "Detail", "Time", "Source"]),
-        "## Cleanup deletions\n", table(deleted, ["Item", "Path or ref", "Bytes", "SHA", "Source"]),
-        "## Merge audit\n", table(audit["rows"] if audit else [], ["PR or repository", "State", "Time or interval", "Evidence"]),
-        "## P3 findings\n", table(p3, ["PR", "Finding", "Entry", "Reports"]),
+        "## Cleanup deletions\n", table(deleted, ["Item", "Path or ref", "Bytes", "SHA", "Source", "Outcome"]),
+        "## Merge audit\n", table(audit_rows, ["PR or repository", "State", "Time or interval", "Evidence"]),
+        "## P3 findings\n", table(p3, ["PR", "Finding", "Entry", "Report", "Disposition"]),
         "## P3 advice\n", table(advice, ["PR", "Advisor", "Consultants", "Entry"]),
         "## My errors\n", table(errors, ["Time", "Error and correction", "Entry"]),
         "## Done and not reversible\n", table(outcome_rows("done"), ["Item", "Command", "Time", "Evidence", "Entry"]),
@@ -259,14 +280,16 @@ def audit_pr(pr, target, number, endpoint, matches, attempts, start, end):
     if pr.get("merged") is not True or not merged_at or not isinstance(sha, str) or not FULL_SHA.fullmatch(sha):
         raise Refused("MERGE_READ_FAILED", endpoint)
     actor = pr.get("merged_by") or {}
-    result = matches.get((target, sha))
+    head = pr.get("head")
+    result = matches.get((target, head.get("sha") if isinstance(head, dict) else None, sha))
     matched = (result and entry_time(result.get("sent_at")) and
                entry_time(result["sent_at"]) <= merged_at <= entry_time(result["t"]))
     evidence = f"{endpoint}; {sha}; actor {actor.get('login', 'unknown')}"
     if matched:
         evidence += f"; leader result E{result['id']}"
     if start <= merged_at < end:
-        return [target, "verified" if matched else "unmatched", iso(merged_at), evidence]
+        state = "verified" if matched else "clock order uncertain" if result else "unmatched"
+        return [target, state, iso(merged_at), evidence]
     elif end <= merged_at and target in attempts and matched:
         return [target, "verified late", iso(merged_at), evidence]
     elif end <= merged_at and target in attempts:

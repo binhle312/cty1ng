@@ -4,11 +4,17 @@ import os
 import sys
 import threading
 from unittest.mock import patch
+from types import SimpleNamespace
 import unittest
 
 sys.dont_write_bytecode = True
 from night_review_testlib import ReviewFixture, TARGET, OTHER, MERGE_SHA
 from night_testlib import SHA2, at, night_module
+
+
+def merge_args(fixture):
+    return SimpleNamespace(dir=str(fixture.chief), target=TARGET, run=fixture.run_id,
+                           leader="leader", head=fixture.head, grant=fixture.grant_id)
 
 
 class MergeTests(ReviewFixture, unittest.TestCase):
@@ -30,11 +36,39 @@ class MergeTests(ReviewFixture, unittest.TestCase):
         path = self.root / "calls"
         if not path.exists():
             return []
-        return [call for line in path.read_text().splitlines() if (call := json.loads(line))[0][4] == method]
+        return [call for line in path.read_text().splitlines() if (call := json.loads(line))[0][0] == "api" and call[0][4] == method]
 
     def events_for_pr(self):
-        path, = self.worktree.glob(".overnight/*/*/leader-events.jsonl")
+        path = self.leader_records / "leader-events.jsonl"
         return [json.loads(line) for line in path.read_text().splitlines()]
+
+    def test_dispatch_syncs_bound_init_before_first_grant(self):
+        self.begin(second=False, planned=False)
+        records = list(self.leader_records.glob("leader-events.jsonl"))
+        self.assertEqual(len(records), 1, "dispatch must write one leader journal before grant")
+        row, = [json.loads(line) for line in records[0].read_text().splitlines()]
+        self.assertEqual((row["id"], row["kind"], row["run"], row["leader"], row["target"]),
+                         (1, "leader-init", self.run_id, "leader", TARGET))
+        self.ok(self.plan())
+        self.ok(self.grant(self.complete()))
+
+    def test_missing_dispatch_journal_refuses_first_grant(self):
+        self.begin(second=False)
+        reports = self.complete()
+        for journal in self.leader_records.glob("leader-events.jsonl"):
+            journal.unlink()
+        before = self.journal().read_bytes()
+        self.expect(self.grant(reports), "LEADER_JOURNAL_GAP")
+        self.assertEqual(self.journal().read_bytes(), before)
+        self.assertEqual(self.calls("PUT"), [])
+
+    def test_merge_refuses_replaced_lock_inode(self):
+        self.setup_grant()
+        lock = self.chief / "night.flock"
+        lock.rename(lock.with_suffix(".original"))
+        lock.touch()
+        self.expect(self.merge(), "LOCK_STALE")
+        self.assertEqual(self.calls("PUT"), [])
 
     def test_merge_argv_and_one_attempt(self):
         self.setup_grant()
@@ -52,9 +86,66 @@ class MergeTests(ReviewFixture, unittest.TestCase):
                           "repos/example/app/pulls/12/merge", "--input", "-", "--include"],
                           {"sha": self.head, "merge_method": "squash"}]])
         self.assertEqual(self.journal().read_bytes(), before)
-        attempt, result = self.events_for_pr()
+        _, attempt, result = self.events_for_pr()
         self.assertEqual((attempt["kind"], attempt["head"], result["of"], result["outcome"], result["sha"]),
                          ("merge-attempt", self.head, attempt["id"], "merged", MERGE_SHA))
+
+    def test_new_review_blocks_an_unused_same_head_grant(self):
+        self.setup_grant()
+        self.complete(p1=["A blocker found on the same head"])
+        status = json.loads(self.ok(self.command("status", "--json")))
+        self.assertIsNone(status["pending_grant"])
+        self.expect(self.merge(), "MERGE_PERMISSION_INACTIVE")
+        self.assertEqual(self.calls("PUT"), [])
+        self.assertEqual([e["kind"] for e in self.events_for_pr()], ["leader-init"])
+
+    def test_draft_grant_claims_then_marks_ready_before_pinned_put(self):
+        self.begin(second=False)
+        self.config(draft=True)
+        reports = self.complete()
+        self.ok(self.grant(reports))
+        self.grant_id = str(self.entries()[-1]["id"])
+        self.ok(self.merge())
+        attempt, ready, result = self.events_for_pr()[1:]
+        self.assertEqual((attempt["kind"], ready["kind"], ready["of"], result["of"], result["outcome"]),
+                         ("merge-attempt", "merge-ready", attempt["id"], attempt["id"], "merged"))
+        trace = [json.loads(line) for line in (self.root / "calls").read_text().splitlines()]
+        ready_index, = [i for i, (argv, _) in enumerate(trace)
+                        if argv == ["pr", "ready", "12", "--repo", "github.com/example/app"]]
+        self.assertEqual(trace[ready_index + 1][0][4:6], ["GET", "repos/example/app/pulls/12"])
+        self.assertEqual(trace[ready_index + 2][1], {"sha": self.head, "merge_method": "squash"})
+
+    def test_ready_head_change_consumes_claim_and_sends_no_put(self):
+        self.setup_grant(draft=True, after_ready_head=SHA2)
+        self.expect(self.merge(), "MERGE_HEAD_CHANGED")
+        self.assertEqual(self.events_for_pr()[-1]["outcome"], "unsent")
+        self.expect(self.merge(), "MERGE_PERMISSION_USED")
+        self.assertEqual(self.calls("PUT"), [])
+
+    def test_ready_error_consumes_claim_and_sends_no_put(self):
+        self.setup_grant(draft=True, ready_error=True)
+        self.expect(self.merge(), "MERGE_READY_FAILED")
+        self.assertEqual(self.events_for_pr()[-1]["outcome"], "unsent")
+        self.expect(self.merge(), "MERGE_PERMISSION_USED")
+        self.assertEqual(self.calls("PUT"), [])
+        trace = [json.loads(line) for line in (self.root / "calls").read_text().splitlines()]
+        self.assertEqual(sum(args[:2] == ["pr", "ready"] for args, _ in trace), 1)
+
+    def test_final_read_refuses_still_draft_without_put(self):
+        self.setup_grant(draft=True, still_draft=True)
+        self.expect(self.merge(), "MERGE_PR_INELIGIBLE")
+        self.assertEqual(self.calls("PUT"), [])
+
+    def test_request_budget_bounds_ready_wait_and_prevents_put(self):
+        self.setup_grant(draft=True, final_unknown=True)
+        module = night_module()
+        merge = sys.modules["night_merge"]
+        with (patch.dict(os.environ, {**self.env, "NIGHT_TEST_MODE": "1", "NIGHT_FAKE_NOW": at("22:10")}),
+              patch.object(merge.time, "sleep") as sleep,
+              self.assertRaisesRegex(module.Refused, "MERGE_REQUEST_BUDGET")):
+            merge.command(merge_args(self), module.github, module.page_rows, module.check_policy, budget=1)
+        sleep.assert_not_called()
+        self.assertEqual(self.calls("PUT"), [])
 
     def test_head_moves_after_check(self):
         self.setup_grant(write_head=SHA2)
@@ -96,20 +187,53 @@ class MergeTests(ReviewFixture, unittest.TestCase):
         self.setup_grant()
         rules = [{"type": "required_status_checks", "parameters": {"required_status_checks":
                   [{"context": "CI", "integration_id": 42}]}}]
-        exact = dict(name="CI", head_sha=self.head, app={"id": 42}, status="completed", conclusion="success")
+        exact = dict(id=1, name="CI", head_sha=self.head, app={"id": 42}, status="completed", conclusion="success")
         for checks in ([], [dict(exact, head_sha=SHA2)], [dict(exact, app={"id": 99})],
-                       [dict(exact, status="in_progress")], [exact, dict(exact, conclusion="failure")]):
+                       [dict(exact, status="in_progress")], [exact, dict(exact, id=2, conclusion="failure")]):
             with self.subTest(checks=checks):
                 self.config(rules=rules, checks=checks)
                 self.expect(self.merge(), "MERGE_CI_NOT_GREEN")
-        self.config(rules=rules, checks=[exact])
+        self.config(rules=rules, checks=[exact, dict(exact, id=3, head_sha=self.main)])
         self.ok(self.merge())
+
+    def test_approved_active_inventory_and_auto_delete_are_eligible(self):
+        self.setup_grant(auto_delete=True)
+        self.ok(self.merge())
+        self.assertEqual(len(self.calls("PUT")), 1)
+
+    def test_incomplete_workflow_inventory_refuses_before_grant(self):
+        self.begin(second=False)
+        reports = self.complete()
+        self.config(workflow_total=7)
+        self.expect(self.grant(reports), "MERGE_EFFECT_UNCLEAR")
+        self.assertEqual(sum(row["kind"] == "merge-permission" for row in self.entries()), 0)
+
+    def test_green_main_ignores_unrequired_and_older_failures(self):
+        self.begin(second=False)
+        reports = self.complete()
+        rules = [{"type": "required_status_checks", "parameters": {"required_status_checks":
+                  [{"context": "CI", "integration_id": 42}]}}]
+        checks = []
+        for sha in (self.main, self.head):
+            ci = dict(name="CI", head_sha=sha, app={"id": 42}, status="completed", conclusion="success")
+            checks.extend([dict(ci, id=1, conclusion="failure"), dict(ci, id=2),
+                           dict(ci, id=3, name="audit", conclusion="failure")])
+        self.config(rules=rules, checks=checks)
+        self.ok(self.grant(reports))
+
+    def test_unknown_check_identity_refuses_before_claim(self):
+        self.setup_grant()
+        rules = [{"type": "required_status_checks", "parameters": {"required_status_checks":
+                  [{"context": "CI", "integration_id": 42}]}}]
+        self.config(rules=rules, checks=[dict(name="CI", head_sha=self.head, app={"id": 42},
+                                           status="completed", conclusion="success")])
+        self.expect(self.merge(), "MERGE_CI_UNKNOWN")
+        self.assertEqual(self.calls("PUT"), [])
 
     def test_unknown_policy_and_write_effects_hold(self):
         self.setup_grant()
-        for config, code in ((dict(unknown_policy=True), "MERGE_CI_UNKNOWN"),
-                             (dict(draft=True), "MERGE_PR_INELIGIBLE"),
-                             (dict(auto_delete=True), "MERGE_EFFECT_UNCLEAR"),
+        for config, code in ((dict(unknown_policy=True), "MERGE_EFFECT_UNCLEAR"),
+                             (dict(auto_delete=True, head_protected=True), "MERGE_EFFECT_UNCLEAR"),
                              (dict(workflows=[{"state": "active"}]), "MERGE_EFFECT_UNCLEAR")):
             with self.subTest(config=config):
                 self.config(**config)
@@ -129,6 +253,46 @@ class MergeTests(ReviewFixture, unittest.TestCase):
         self.assertEqual(result[0][:3], ["github.com/example/app#101", "unmatched", at("22:01")])
         self.assertIn("actor owner", result[0][3])
         self.assertIn("merged%3A", str(self.calls("GET")))
+
+    def test_report_shows_unread_audit_cutoff_and_later_merge(self):
+        self.setup_grant()
+        pages = [dict(total_count=1, incomplete_results=False, items=[
+            dict(number=101, repository_url="https://api.github.com/repos/example/app")])]
+        self.config(audit=pages, pulls={"101": dict(merged=True, merged_at=at("22:45"),
+                    merge_commit_sha=MERGE_SHA, merged_by={"login": "owner"})})
+        self.ok(self.command("audit", time="22:30", env=self.env))
+        self.ok(self.command("report", time="22:31"))
+        report = self.chief / "report.md"
+        text = report.read_text()
+        self.assertIn(f"{at('22:30')} to {at('23:00')}", text)
+        self.assertNotIn("#101 | unmatched", text)
+        self.ok(self.command("audit", time="23:12", env=self.env))
+        self.ok(self.command("report", time="23:12"))
+        text = report.read_text()
+        self.assertNotIn(f"{at('22:30')} to {at('23:00')}", text)
+        self.assertIn(f"#101 | unmatched | {at('22:45')}", text)
+
+    def test_audit_reports_missing_leader_journal_after_grant(self):
+        self.setup_grant()
+        (self.leader_records / "leader-events.jsonl").unlink()
+        self.config(audit=[dict(total_count=0, incomplete_results=False, items=[])])
+        rows = json.loads(self.ok(self.command("audit", time="23:12", env=self.env)))
+        self.assertTrue(any(row[0:2] == [TARGET, "coverage gap"] and "LEADER_JOURNAL_GAP" in row[3]
+                            for row in rows))
+
+    def test_repair_preserves_complete_claim_before_torn_leader_result(self):
+        self.setup_grant()
+        self.ok(self.merge())
+        journal = self.leader_records / "leader-events.jsonl"
+        start, claim, _ = journal.read_bytes().splitlines(keepends=True)
+        tail = b'{"kind":"merge-res'
+        journal.write_bytes(start + claim + tail)
+        self.ok(self.command("repair", "--target", TARGET))
+        self.assertTrue(journal.read_bytes().startswith(start + claim))
+        repair = self.events_for_pr()[-1]
+        self.assertEqual((repair["kind"], repair["bytes"]), ("repair", len(tail)))
+        self.expect(self.merge(), "MERGE_PERMISSION_USED")
+        self.assertEqual(len(self.calls("PUT")), 1)
 
     def test_audit_reports_a_missing_page(self):
         self.setup_grant()
@@ -160,7 +324,7 @@ class MergeTests(ReviewFixture, unittest.TestCase):
             status = module.main(["merge", "--dir", str(self.chief), "--run", self.run_id, "--target", TARGET,
                                   "--leader", "leader", "--grant", self.grant_id, "--head", self.head])
         self.assertEqual(status, 3)
-        self.assertEqual([e["kind"] for e in self.events_for_pr()], ["merge-attempt"])
+        self.assertEqual([e["kind"] for e in self.events_for_pr()], ["leader-init", "merge-attempt"])
         self.assertFalse(self.calls("PUT"), "a failed claim sync allowed a merge request")
         self.expect(self.merge(), "MERGE_PERMISSION_USED")
 
@@ -183,7 +347,7 @@ class MergeTests(ReviewFixture, unittest.TestCase):
         self.assertEqual(status, 3)
         self.expect(self.merge(), "MERGE_PERMISSION_USED")
         self.assertEqual(len(self.calls("PUT")), 1)
-        self.assertEqual([e["kind"] for e in self.events_for_pr()], ["merge-attempt", "merge-result"])
+        self.assertEqual([e["kind"] for e in self.events_for_pr()], ["leader-init", "merge-attempt", "merge-result"])
 
     def test_new_head_invalidates_prior_grant(self):
         self.setup_grant()

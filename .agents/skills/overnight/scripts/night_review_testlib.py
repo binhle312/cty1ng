@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 import test_option_b as fixtures
-from test_option_b import OTHER, PAIR, POLICY, ROWS, TARGET
+from test_option_b import AUTOMATION, OTHER, PAIR, POLICY, ROWS, TARGET
 from night_testlib import SHA, card, new
 
 MERGE_SHA = "1" * 40
@@ -18,6 +18,13 @@ from pathlib import Path
 folder = Path(os.environ["FAKE_GITHUB"])
 config = json.loads((folder / "config").read_text())
 argv = sys.argv[1:]
+if argv[:2] == ["pr", "ready"]:
+    with (folder / "calls").open("a") as log:
+        print(json.dumps([argv, None]), file=log)
+    if config.get("ready_error"):
+        sys.exit(1)
+    (folder / "ready").touch()
+    sys.exit()
 method = argv[argv.index("--method") + 1]
 endpoint = argv[argv.index("--method") + 2]
 data = json.load(sys.stdin) if method == "PUT" else None
@@ -54,32 +61,49 @@ elif "/pulls/" in endpoint:
         until = time.monotonic() + 8
         while not (folder / "release").exists() and time.monotonic() < until:
             time.sleep(.01)
-    pr = {"number": int(number), "head": {"sha": config.get("head", "$HEAD")},
-          "base": {"ref": "main", "repo": {"full_name": "example/app"}, "sha": config.get("base_sha", "$HEAD")},
+    repo = {"full_name": "example/app", "id": 1001}
+    pr = {"id": 2001, "number": int(number), "head": {"sha": config.get("head", "$HEAD"), "ref": "pr", "repo": repo},
+          "base": {"ref": "main", "repo": repo, "sha": config.get("base_sha", "$HEAD")},
           "changed_files": config.get("changed_files"), "body": config.get("body", ""),
           "state": "open", "draft": config.get("draft", False), "merged": False,
           "mergeable": True, "mergeable_state": "clean", "auto_merge": None}
     pr.update(config.get("pulls", {}).get(number, {}))
+    if (folder / "ready").exists():
+        pr["draft"] = config.get("still_draft", False)
+        if config.get("final_unknown"):
+            pr["mergeable"], pr["mergeable_state"] = None, "unknown"
+        pr["head"]["sha"] = config.get("after_ready_head", pr["head"]["sha"])
     output = pr
 elif endpoint == "repos/example/app":
-    output = {"allow_squash_merge": True, "delete_branch_on_merge": config.get("auto_delete", False)}
+    output = {"id": 1001, "full_name": "example/app", "default_branch": "main",
+              "allow_squash_merge": True, "delete_branch_on_merge": config.get("auto_delete", False)}
 elif "/actions/workflows" in endpoint:
-    output = [{"workflows": config.get("workflows", [])}]
+    rows = config.get("workflows", [])
+    output = [{"total_count": config.get("workflow_total", len(rows)), "workflows": rows}]
 elif "/hooks" in endpoint:
-    output = [[]]
+    output = [config.get("hooks", [])]
+elif "/contents/" in endpoint:
+    filename = endpoint.split("/contents/")[1].split("?")[0]
+    output = {"type": "file", "path": filename, "sha": config.get("blobs", {}).get(filename)}
+elif endpoint.startswith("repos/example/app/pulls?"):
+    output = config.get("dependencies", [[]])
+elif endpoint == "repos/example/app/branches/pr":
+    output = {"name": "pr", "protected": config.get("head_protected", False), "commit": {"sha": config["head"]}}
 elif "/rules/branches" in endpoint:
     if config.get("unknown_policy"):
         sys.exit(1)
     output = [config.get("rules", [{"type": "required_status_checks", "parameters": {
         "required_status_checks": [{"context": "CI", "integration_id": 42}]}}] if config.get("red_main") else [])]
+    if "/rules/branches/pr?" in endpoint:
+        output = [config.get("head_rules", [])]
 elif "/branches/main" in endpoint:
     output = {"name": "main", "protected": False, "commit": {"sha": config.get("base_sha", "$HEAD")}}
 elif "/check-runs" in endpoint:
     checks = config.get("checks", [])
     requested = endpoint.split("/commits/")[1].split("/")[0]
     if config.get("red_main") and requested != config["base_sha"]:
-        checks = [dict(name="CI", head_sha=requested, app={"id": 42}, status="completed", conclusion="success")]
-    output = [{"check_runs": checks}]
+        checks = [dict(id=23, name="CI", head_sha=requested, app={"id": 42}, status="completed", conclusion="success")]
+    output = [{"check_runs": checks, "total_count": len(checks)}]
 elif "/statuses" in endpoint:
     output = [[]]
 else:
@@ -105,7 +129,7 @@ class ReviewFixture:
         return self.git("rev-parse", "HEAD")
 
     def begin(self, cap=None, task_class="night", consult=False, planned=True, second=True):
-        self.ok(new(str(self.chief), "synthetic workflow"))
+        self.ok(new(str(self.chief), "synthetic workflow", automation=self.input("automation.json", AUTOMATION)))
         self.reviews = self.chief / "reviews"
         self.reviews.mkdir()
         self.checkout = self.reviews / "checkout"
@@ -120,6 +144,8 @@ class ReviewFixture:
         self.worktree.mkdir()
         self.other = self.root / "second-leader"
         self.other.mkdir()
+        self.other_records = self.root / "other-records"
+        self.other_records.mkdir()
         tool = self.root / "gh"
         tool.write_text(f"#!{sys.executable}\n" + FAKE_GH)
         tool.chmod(0o755)
@@ -145,8 +171,10 @@ class ReviewFixture:
             self.ok(self.plan(OTHER))
 
     def config(self, **updates):
+        baseline = AUTOMATION["github.com/example/app"]
         self.input("config", dict(head=self.head, base_sha=self.main, files=[{"filename": "owned.txt", "status": "modified"}],
-                                  changed_files=1) | updates)
+                                  changed_files=1, workflows=baseline["workflows"],
+                                  blobs={row["path"]: row["blob_sha"] for row in baseline["blobs"]}) | updates)
 
     def typed(self, command, **data):
         return self.command(command, "--data", self.input("data.json", data))
@@ -154,7 +182,9 @@ class ReviewFixture:
     def assign(self, target=TARGET, **changes):
         fields = dict(chief="chief", target=target, leader="leader" if target == TARGET else "second",
                       reviewers=PAIR, helpers=[], worktree=str(self.worktree if target == TARGET else self.other))
-        return self.typed("assign", **(fields | changes))
+        folder = (changes["cleanup"]["folder"] if "cleanup" in changes
+                  else str(self.leader_records if target == TARGET else self.other_records))
+        return self.typed("assign", **(dict(fields, folder=folder) | changes))
 
     def plan(self, target=TARGET):
         return self.typed("plan", chief="chief", target=target, plan="plan.md", strategy="test-strategy.md")
@@ -165,11 +195,14 @@ class ReviewFixture:
 
     def reports(self, p3=(), *, p1=(), bad_count=False, bad_role=False):
         paths = []
+        start = next(row for row in reversed(self.entries()) if row["kind"] == "review-start")
+        binding = dict(run=self.run_id, start=start["id"], **{key: start[key]
+                       for key in ("target", "assignment", "round", "plan_check")})
         for who in PAIR:
             path = self.reviews / f"{len(self.entries())}-{who['provider']}.md"
             findings = {"p1": list(p1), "p2": [], "p3": list(p3)}
             verdict = dict(head=self.head, model=who["model"], effort=who["effort"], p1=len(p1),
-                           p2=0, p3=len(p3) + int(bad_count))
+                           p2=0, p3=len(p3) + int(bad_count), **binding)
             actor = {key: who[key] for key in ("provider", "role")}
             if bad_role:
                 actor["role"] = "other"

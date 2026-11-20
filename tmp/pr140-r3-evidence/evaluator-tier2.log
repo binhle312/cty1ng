@@ -1,0 +1,18 @@
+skillevaluator, version 0.9.0
+SkillSpector v2.11.2
+WARNING  Using explicit skillspector executable override from
+         SKILLEVALUATOR_SKILLSPECTOR_PATH:
+         /home/binh/.local/share/uv/tools/skillspector/bin/skillspector
+Error: No provider is configured.
+
+For NVIDIA Build, set:
+  export SKILL_EVAL_EMBEDDING_PROVIDER=nv_build
+  export NVIDIA_API_KEY='your-api-key'
+  Get a key: https://build.nvidia.com
+
+Other SKILL_EVAL_EMBEDDING_PROVIDER values and their keys:
+  openai     -> OPENAI_API_KEY
+
+More providers and setup options:
+  https://docs.nvidia.com/skills/skillevaluator/configuration
+Exit 1

@@ -240,7 +240,7 @@ class AdvisorThreeTests(Base):
                 return rng.choice(spec)
             structured = {
                 "run": RUN, "pair": [], "policy": {}, "reports": [], "spec": {}, "evidence": {},
-                "texts": [], "audit": [], "list": [], "tasks": {},
+                "texts": [], "audit": [], "list": [], "tasks": {}, "dict": {}, "lock_identity": [1, 1],
                 "cleanup": {"folder": "/fixture/leader", "repo": "/fixture/repo", "branch": "topic",
                             "identity": ["/fixture/repo/.git", 1, 2]},
             }

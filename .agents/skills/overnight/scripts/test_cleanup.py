@@ -1,31 +1,41 @@
 """Run the public cleanup CLI against disposable Git repos and fake GitHub."""
 import hashlib
 import json
+import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
 sys.dont_write_bytecode = True
 from night_review_testlib import MERGE_SHA, ReviewFixture, TARGET
+from night_testlib import at, night_module
 
 
 FAKE_CLEAN_GITHUB = r"""
 phase = folder / "cleanup"
 if method == "GET" and phase.exists():
     state = json.loads(phase.read_text())
-    repo = {"full_name": "example/app"}
+    repo = {"full_name": "example/app", "id": 1001}
     if endpoint == "repos/example/app/pulls/12":
         if state.get("no_read"):
             sys.exit(1)
         is_open = state.get("open", False)
         output = {"number": 12, "state": "open" if is_open else "closed", "merged": not is_open,
-                  "merge_commit_sha": "$MERGE", "base": {"repo": repo},
+                  "merge_commit_sha": "$MERGE", "base": {"repo": repo, "ref": "main", "sha": config["base_sha"]},
                   "head": {"repo": state.get("head_repo", repo), "ref": "pr", "sha": state.get("pr_head", config["head"])}}
     elif endpoint == "repos/example/app":
         output = dict(repo, default_branch=state.get("default", "main"))
     elif endpoint.startswith("repos/example/app/pulls?"):
         output = [state.get("open_pulls", [])]
+    elif endpoint.startswith("repos/example/app/git/matching-refs/heads/pr"):
+        if state.get("deny_ref"):
+            sys.exit(1)
+        sha = state.get("remote", config["head"])
+        output = [[]] if state.get("absent") else [[{"ref": "refs/heads/pr", "object": {"type": "commit", "sha": sha}}]]
     elif endpoint == "repos/example/app/branches/pr":
         output = {"name": "pr", "protected": state.get("protected", False),
                   "commit": {"sha": state.get("remote", config["head"])}}
@@ -123,9 +133,101 @@ class CleanupTests(ReviewFixture, unittest.TestCase):
         self.assertTrue(self.local_branch())
         self.assertEqual(self.remote_head(), self.head)
 
+    def output_directory(self):
+        exclude = self.repo / ".git" / "info" / "exclude"
+        with exclude.open("a") as git_ignore:
+            git_ignore.write("\nnode_modules/\ndist/\ncoverage/\nplaywright-report/\ntest-results/\n")
+        root = self.worktree / "node_modules"
+        root.mkdir()
+        return root
+
+    def test_allowed_ignored_outputs_keep_external_link_targets(self):
+        self.setup_cleanup()
+        root = self.output_directory()
+        cache = self.root / "real-cache"
+        cache.write_text("external cache")
+        (root / "package").symlink_to(cache)
+        for name in ("dist", "coverage", "playwright-report", "test-results"):
+            folder = self.worktree / "nested" / name
+            folder.mkdir(parents=True)
+            (folder / "test-output").write_text(name)
+        self.ok(self.clean())
+        self.assertFalse(self.worktree.exists())
+        self.assertEqual(cache.read_text(), "external cache")
+
+    def test_output_mount_or_other_device_refuses_before_any_delete(self):
+        for fault in ("mount", "device"):
+            with self.subTest(fault=fault):
+                self.setUp()
+                self.setup_cleanup()
+                root = self.output_directory()
+                child = root / "nested"
+                child.mkdir()
+                (child / "contents").write_text("test output")
+                cache = self.root / "real-cache"
+                cache.write_text("external cache")
+                module = night_module()
+                cleanup = sys.modules["night_cleanup"]
+                real_stat = os.stat
+                real_git = cleanup.git
+                deletions = []
+
+                def altered_stat(name, *args, **kwargs):
+                    info = real_stat(name, *args, **kwargs)
+                    if (fault == "device" and kwargs.get("follow_symlinks") is False
+                            and isinstance(name, (str, Path)) and Path(name) == child):
+                        return SimpleNamespace(st_dev=info.st_dev + 1, st_mode=info.st_mode)
+                    return info
+
+                def watched_git(repo, *args, **kwargs):
+                    if any(command in args for command in ("remove", "update-ref", "push")):
+                        deletions.append(args)
+                        if cache.exists():
+                            cache.unlink()
+                    return real_git(repo, *args, **kwargs)
+
+                with (patch.dict(os.environ, {**self.env, "NIGHT_TEST_MODE": "1", "NIGHT_FAKE_NOW": at("22:10")}),
+                      patch.object(cleanup, "mounted_paths", return_value={str(root)} if fault == "mount" else set(),
+                                   create=True),
+                      patch.object(cleanup, "git", watched_git),
+                      patch("os.stat", altered_stat),
+                      self.assertRaisesRegex(module.Refused, "CLEAN_OUTPUT_MOUNT")):
+                    module.cmd_cleanup(SimpleNamespace(dir=str(self.chief), command_name="clean", target=TARGET,
+                                                       run=self.run_id, leader="leader"))
+                self.assertEqual(deletions, [])
+                self.assertEqual(cache.read_text(), "external cache")
+                self.assert_kept()
+
+    def test_replaced_temp_is_restored_after_staging(self):
+        self.setup_cleanup()
+        module = night_module()
+        cleanup = sys.modules["night_cleanup"]
+        fingerprint = cleanup.fingerprint
+        previous = self.temp_folder / "previous.log"
+        reads = 0
+
+        def replace_after_read(fd, name):
+            nonlocal reads
+            proof = fingerprint(fd, name)
+            if name == self.artifact.name:
+                reads += 1
+            if reads == 2 and name == self.artifact.name:
+                self.artifact.rename(previous)
+                self.artifact.write_text("replacement")
+            return proof
+
+        with (patch.dict(os.environ, {**self.env, "NIGHT_TEST_MODE": "1", "NIGHT_FAKE_NOW": at("22:10")}),
+              patch.object(cleanup, "fingerprint", replace_after_read),
+              self.assertRaisesRegex(module.Refused, "CLEAN_TEMP_IDENTITY")):
+            module.cmd_cleanup(SimpleNamespace(dir=str(self.chief), command_name="clean", target=TARGET,
+                                               run=self.run_id, leader="leader"))
+        self.assertEqual((previous.read_text(), self.artifact.read_text()), ("proof", "replacement"))
+        self.assertFalse((self.root / "push.args").exists())
+        self.assertTrue(self.worktree.exists())
+
     def test_squash_merge_cleans_in_order(self):
         self.setup_cleanup()
-        log = self.worktree / "fixture.log"
+        log = self.temp_folder / "fixture.log"
         log.write_text("in checkout")
         self.ok(self.record(log))
         self.ok(self.clean())
@@ -198,13 +300,13 @@ class CleanupTests(ReviewFixture, unittest.TestCase):
         report = self.report()
         self.assertIn("## Cleanup deletions", report)
         deletions = report.split("## Cleanup deletions\n", 1)[1].split("\n## ", 1)[0]
+        self.assertIn(self.head, deletions)
         for item, path in (("temp", str(self.artifact)), ("worktree", str(self.worktree)),
                            ("local", "refs/heads/pr"), ("remote", "https://github.com/example/app.git refs/heads/pr")):
             with self.subTest(item=item):
                 self.assertIn(f"| {item} | {path} | ", deletions)
         needs = report.split("## Needs you\n", 1)[1].split("\n## ", 1)[0]
         self.assertIn("CLEAN_WORKTREE_DIRTY", needs)
-        self.assertIn(self.head, deletions)
         self.ok(self.command("render"))
         self.assertEqual((self.chief / "report.md").read_text(), report)
 
@@ -277,16 +379,22 @@ class CleanupTests(ReviewFixture, unittest.TestCase):
                       json.loads((self.root / "push.args").read_text()))
         self.assertIn("cleanup intent has no result", self.report())
 
-    def test_interrupted_worktree_result_stays_open(self):
+    def test_interrupted_worktree_result_resumes_from_verified_absence(self):
         self.setup_cleanup(remove_disconnect=True)
         self.expect(self.clean(), "CLEAN_WORKTREE")
         self.input("cleanup", {})
         self.assertFalse(self.worktree.exists())
-        self.expect(self.clean(), "CLEAN_WORKTREE")
-        self.assertTrue(self.local_branch())
-        self.assertEqual(self.remote_head(), self.head)
-        self.assertIn("cleanup intent has no result", self.report())
-        self.assertNotIn(f"| worktree | {self.worktree} |", self.report())
+        self.ok(self.clean())
+        self.assertFalse(self.local_branch())
+        self.assertFalse(self.remote_head())
+        self.assertEqual(self.report().count(f"| worktree | {self.worktree} |"), 1)
+
+    def test_verified_remote_absence_succeeds_without_push(self):
+        self.setup_cleanup(absent=True)
+        self.clean_git("push", "-q", str(self.remote), ":refs/heads/pr")
+        self.ok(self.clean())
+        self.assertFalse((self.root / "push.args").exists())
+        self.assertIn("already absent", self.report())
 
     def test_local_ref_rechecks_after_a_partial_cleanup(self):
         self.setup_cleanup(protected=True)

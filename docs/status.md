@@ -10,7 +10,7 @@ approvals). Keep it short: link to PRs and briefs instead of describing work.
 
 ## Now
 
-Overnight skill and merged PR cleanup, [#140](https://github.com/binhle312/cty1ng/pull/140), 2026-11-20. Draft. The chief's review is pending.
+Overnight skill and merged PR cleanup, [#140](https://github.com/binhle312/cty1ng/pull/140), 2026-11-20. Draft. Round 1 reviewed `808e4fe`. Owner order 160 approved plan delta r3. See the [build evidence](../tmp/pr140-r3-evidence/plan-lines.md) before round 2.
 
 The repository audit of 2026-11-05 found 55 issues. After the owner's decisions, 15 are P2, 39 are P3, and the owner accepted one case; none is P1. Its fixes come before M3 in the owner's order. #69 is closed, and the owner watches more PRs before deciding whether to bring it back. Findings, decisions and progress are in [audits/2026-11-05-repo-audit.md](audits/2026-11-05-repo-audit.md). PR 2 of 7, the security fixes, merged in [#73](https://github.com/binhle312/cty1ng/pull/73) on 2026-11-06. [#76](https://github.com/binhle312/cty1ng/pull/76) merged on 2026-11-06 and records the guard decisions. PR 3 of 7, the Skills page, merged in [#78](https://github.com/binhle312/cty1ng/pull/78) on 2026-11-06. PR 4 of 7, the Bots page, merged in [#82](https://github.com/binhle312/cty1ng/pull/82) on 2026-11-08. PR 5 of 7, tests only, merged in [#86](https://github.com/binhle312/cty1ng/pull/86) on 2026-11-10. PR 6 of 7, six tabs, merged in [#91](https://github.com/binhle312/cty1ng/pull/91) on 2026-11-10.
 
@@ -85,7 +85,7 @@ From M3 on, P3 findings are fixed at the end of each milestone, before the next 
 | Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a schema design approval (initial schema for M3 and M7). The generated SQL is approved in the slice PR | M3 and M7 plans |
 | Approve the M5b schema design: `projects.instructions_md`, `instructions_version`, `colour`, `pinned_position`, goal ≤ 500 chars, `memory_items.seen_at`, `memory_proposals` and the `model_requests` change (D63) (initial schema for M5b, `domain-model.md` §14). Claude Code stops for this approval before it writes them. The generated SQL is approved in the M5b PR | M5b plan |
 | The records redesign merged in [#135](https://github.com/binhle312/cty1ng/pull/135) on 2026-11-19. Its proposal DQ-866 still waits for the owner, with the #107 questions (its home is #107) | The #107 questions |
-| Draft [#140](https://github.com/binhle312/cty1ng/pull/140), Option B approved on 2026-11-20 (order 141). BRIEF-7 and BRIEF-8 built on 2026-11-20 | Chief-led review pending |
+| Draft [#140](https://github.com/binhle312/cty1ng/pull/140), Option B approved on 2026-11-20 (order 141). Plan delta r3 approved on 2026-11-20 (order 160) | Round 2 follows the build gates. Order 155's live test follows round 2 |
 
 ## Follow-ups
 

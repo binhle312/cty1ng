@@ -1,0 +1,19 @@
+test_new_review_blocks_an_unused_same_head_grant (test_option_b_merge.MergeTests.test_new_review_blocks_an_unused_same_head_grant) ... FAIL
+
+======================================================================
+FAIL: test_new_review_blocks_an_unused_same_head_grant (test_option_b_merge.MergeTests.test_new_review_blocks_an_unused_same_head_grant)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b_merge.py", line 89, in test_new_review_blocks_an_unused_same_head_grant
+    self.expect(self.merge(), "MERGE_PERMISSION_INACTIVE")
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b.py", line 42, in expect
+    self.assertEqual(outcome[0], 3, outcome[1])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 3 : Merged github.com/example/app#12 at 1111111111111111111111111111111111111111 (attempt 2)
+
+
+----------------------------------------------------------------------
+Ran 1 test in 1.830s
+
+FAILED (failures=1)

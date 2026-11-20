@@ -1,0 +1,45 @@
+test_report_shows_unread_audit_cutoff_and_later_merge (test_option_b_merge.MergeTests.test_report_shows_unread_audit_cutoff_and_later_merge) ... FAIL
+test_audit_reports_missing_leader_journal_after_grant (test_option_b_merge.MergeTests.test_audit_reports_missing_leader_journal_after_grant) ... FAIL
+test_repair_preserves_complete_claim_before_torn_leader_result (test_option_b_merge.MergeTests.test_repair_preserves_complete_claim_before_torn_leader_result) ... FAIL
+
+======================================================================
+FAIL: test_report_shows_unread_audit_cutoff_and_later_merge (test_option_b_merge.MergeTests.test_report_shows_unread_audit_cutoff_and_later_merge)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b_merge.py", line 226, in test_report_shows_unread_audit_cutoff_and_later_merge
+    self.assertIn(f"{at('22:30')} to {at('23:00')}", text)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '2026-01-10T22:30:00+00:00 to 2026-01-10T23:00:00+00:00' not found in "<!-- night.py record: report E11, open TEST JOURNAL -->\n# Morning report: a93192f0-cc14-49c2-9453-25ccecbcadfd TEST JOURNAL\n\nReport E11: the counts up to E11 (made at 2026-01-10T22:31:00+00:00). The night is not closed.\nGo: 2026-01-10T22:01:00+00:00. Stop time: 2026-01-10T23:00:00+00:00. Session goal: set by the owner's /goal line. Rehearsal: passed.\n\n## Owner's words (exact)\n\n```text\nsynthetic workflow\n```\n\n## Items\n\n| Name | Kind | From |\n|---|---|---|\n| notice | night | E2 |\n| release | owner | E2 |\n| merge app | merge | E2 |\n| merge other | merge | E2 |\n\n## Merge targets\n\n| Item | PR | Base | Method | Leader |\n|---|---|---|---|---|\n| merge app | github.com/example/app#12 | main | squash | leader |\n| merge other | github.com/example/app#13 | main | squash | second |\n\n## Needs you\n\n| Item | Why | Command | Blocks | Entry |\n|---|---|---|---|---|\n| github.com/example/app#12 | grant waits for confirmation |  | 2bc33f89734fc9d0f75712b0b23daf0c33b98206 | E9 |\n| release | owner action from the card |  |  | E2 |\n\n## Merge attempts\n\nNone.\n\n## Cleanup deletions\n\nNone.\n\n## Merge audit\n\n| PR or repository | State | Time or interval | Evidence |\n|---|---|---|---|\n| github.com/example/app | coverage gap | 2026-01-10T22:01:00+00:00 to 2026-01-10T22:30:00+00:00 | search data can arrive late; repeat the read in the morning |\n\n## P3 findings\n\nNone.\n\n## P3 advice\n\nNone.\n\n## My errors\n\nNone.\n\n## Done and not reversible\n\nNone.\n\n## Failed\n\nNone.\n\n## Owner messages after the start\n\nNone.\n\n## Notes for the owner\n\nNone.\n\n## Stops and gaps\n\nNone.\n\n## Decisions to check (0)\n\nNone.\n\n## Counts (report E11)\n\n| Kind | Count |\n|---|---|\n| assign | 2 |\n| audit | 1 |\n| go | 1 |\n| merge-permission | 1 |\n| new | 1 |\n| plan | 2 |\n| report | 1 |\n| review | 1 |\n| review-start | 1 |\n\n## Permissions\n\nNight permissions end at stop or at an earlier close.\n"
+
+======================================================================
+FAIL: test_audit_reports_missing_leader_journal_after_grant (test_option_b_merge.MergeTests.test_audit_reports_missing_leader_journal_after_grant)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b_merge.py", line 238, in test_audit_reports_missing_leader_journal_after_grant
+    rows = json.loads(self.ok(self.command("audit", time="23:12", env=self.env)))
+                      ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b.py", line 66, in ok
+    self.assertEqual(outcome[0], 0, outcome[1])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 3 != 0 : REFUSED [LEADER_JOURNAL_GAP] (final: do not retry): the dispatch journal is missing or its init differs; reconcile before further writes. /tmp/tmpcd2f2nc3/leader-records/leader-events.jsonl
+
+
+======================================================================
+FAIL: test_repair_preserves_complete_claim_before_torn_leader_result (test_option_b_merge.MergeTests.test_repair_preserves_complete_claim_before_torn_leader_result)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b_merge.py", line 249, in test_repair_preserves_complete_claim_before_torn_leader_result
+    self.ok(self.command("repair", "--target", TARGET))
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b.py", line 66, in ok
+    self.assertEqual(outcome[0], 0, outcome[1])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 0 : usage: night.py [-h]
+                {new,items,go,assign,plan,review-start,review,ruling,advice,grant,confirm,withdraw,timer,merge,record-temp,clean,audit,log,status,check,report,render,close,repair} ...
+night.py: error: unrecognized arguments: --target github.com/example/app#12
+
+
+----------------------------------------------------------------------
+Ran 3 tests in 5.640s
+
+FAILED (failures=3)

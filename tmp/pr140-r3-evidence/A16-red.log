@@ -1,0 +1,49 @@
+test_allowed_ignored_outputs_keep_external_link_targets (test_cleanup.CleanupTests.test_allowed_ignored_outputs_keep_external_link_targets) ... FAIL
+test_output_mount_or_other_device_refuses_before_any_delete (test_cleanup.CleanupTests.test_output_mount_or_other_device_refuses_before_any_delete) ...
+  test_output_mount_or_other_device_refuses_before_any_delete (test_cleanup.CleanupTests.test_output_mount_or_other_device_refuses_before_any_delete) (fault='mount') ... FAIL
+  test_output_mount_or_other_device_refuses_before_any_delete (test_cleanup.CleanupTests.test_output_mount_or_other_device_refuses_before_any_delete) (fault='device') ... FAIL
+test_interrupted_worktree_result_stays_open (test_cleanup.CleanupTests.test_interrupted_worktree_result_stays_open) ... ok
+
+======================================================================
+FAIL: test_allowed_ignored_outputs_keep_external_link_targets (test_cleanup.CleanupTests.test_allowed_ignored_outputs_keep_external_link_targets)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_cleanup.py", line 149, in test_allowed_ignored_outputs_keep_external_link_targets
+    self.ok(self.clean())
+    ~~~~~~~^^^^^^^^^^^^^^
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b.py", line 66, in ok
+    self.assertEqual(outcome[0], 0, outcome[1])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 3 != 0 : REFUSED [CLEAN_WORKTREE_DIRTY] (correct it and run again): the worktree has changes outside recorded temp files. nested/coverage/test-output
+
+
+======================================================================
+FAIL: test_output_mount_or_other_device_refuses_before_any_delete (test_cleanup.CleanupTests.test_output_mount_or_other_device_refuses_before_any_delete) (fault='mount')
+----------------------------------------------------------------------
+night_format.Refused: CLEAN_WORKTREE_DIRTY
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_cleanup.py", line 188, in test_output_mount_or_other_device_refuses_before_any_delete
+    self.assertRaisesRegex(module.Refused, "CLEAN_OUTPUT_MOUNT")):
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "CLEAN_OUTPUT_MOUNT" does not match "CLEAN_WORKTREE_DIRTY"
+
+======================================================================
+FAIL: test_output_mount_or_other_device_refuses_before_any_delete (test_cleanup.CleanupTests.test_output_mount_or_other_device_refuses_before_any_delete) (fault='device')
+----------------------------------------------------------------------
+night_format.Refused: CLEAN_WORKTREE_DIRTY
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_cleanup.py", line 188, in test_output_mount_or_other_device_refuses_before_any_delete
+    self.assertRaisesRegex(module.Refused, "CLEAN_OUTPUT_MOUNT")):
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "CLEAN_OUTPUT_MOUNT" does not match "CLEAN_WORKTREE_DIRTY"
+
+----------------------------------------------------------------------
+Ran 3 tests in 9.043s
+
+FAILED (failures=3)

@@ -1,0 +1,45 @@
+test_draft_grant_claims_then_marks_ready_before_pinned_put (test_option_b_merge.MergeTests.test_draft_grant_claims_then_marks_ready_before_pinned_put) ... FAIL
+test_ready_head_change_consumes_claim_and_sends_no_put (test_option_b_merge.MergeTests.test_ready_head_change_consumes_claim_and_sends_no_put) ... FAIL
+test_ready_error_consumes_claim_and_sends_no_put (test_option_b_merge.MergeTests.test_ready_error_consumes_claim_and_sends_no_put) ... FAIL
+
+======================================================================
+FAIL: test_draft_grant_claims_then_marks_ready_before_pinned_put (test_option_b_merge.MergeTests.test_draft_grant_claims_then_marks_ready_before_pinned_put)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b_merge.py", line 90, in test_draft_grant_claims_then_marks_ready_before_pinned_put
+    self.ok(self.grant(reports))
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b.py", line 47, in ok
+    self.assertEqual(outcome[0], 0, outcome[1])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 3 != 0 : REFUSED [MERGE_PR_INELIGIBLE] (final: do not retry): GitHub state or project policy bars a direct merge. github.com/example/app#12
+
+
+======================================================================
+FAIL: test_ready_head_change_consumes_claim_and_sends_no_put (test_option_b_merge.MergeTests.test_ready_head_change_consumes_claim_and_sends_no_put)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b_merge.py", line 104, in test_ready_head_change_consumes_claim_and_sends_no_put
+    self.expect(self.merge(), "MERGE_HEAD_CHANGED")
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b.py", line 43, in expect
+    self.assertIn(f"[{code}]", outcome[1])
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '[MERGE_HEAD_CHANGED]' not found in 'REFUSED [MERGE_PR_INELIGIBLE] (final: do not retry): GitHub state or project policy bars a direct merge\n'
+
+======================================================================
+FAIL: test_ready_error_consumes_claim_and_sends_no_put (test_option_b_merge.MergeTests.test_ready_error_consumes_claim_and_sends_no_put)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b_merge.py", line 111, in test_ready_error_consumes_claim_and_sends_no_put
+    self.expect(self.merge(), "MERGE_READY_FAILED")
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b.py", line 43, in expect
+    self.assertIn(f"[{code}]", outcome[1])
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '[MERGE_READY_FAILED]' not found in 'REFUSED [MERGE_PR_INELIGIBLE] (final: do not retry): GitHub state or project policy bars a direct merge\n'
+
+----------------------------------------------------------------------
+Ran 3 tests in 4.134s
+
+FAILED (failures=3)

@@ -28,7 +28,9 @@ class MetaTests(unittest.TestCase):
         locked_callers = {
             "night.py": {"cmd_new", "cmd_items", "cmd_report", "cmd_render", "cmd_close", "cmd_check", "cmd_status",
                          "cmd_typed", "get_grant", "cmd_merge", "cmd_audit"},
-            "night_chief.py": {"grant_fields", "merge_resolution"},
+            "night_chief.py": {"grant_fields", "merge_resolution", "review_command", "release_unused"},
+            "night_leader.py": {"init_leader", "leader_events", "merge_snapshot", "require_merge_snapshot"},
+            "night_merge.py": {"get_grant"},
             "night_files.py": {"read_journal", "checked_night", "add_entry", "state_problems", "leader_path",
                                "leader_events", "leader_append", "merge_snapshot", "require_merge_snapshot",
                                "view_locked", "staged_repair", "bound_night", "finish_repair"},
@@ -49,7 +51,7 @@ class MetaTests(unittest.TestCase):
                 return
             if isinstance(node, ast.With) and any(
                     isinstance(i.context_expr, ast.Call)
-                    and getattr(i.context_expr.func, "id", "") in ("Lock", "SharedLock", "lock") for i in node.items):
+                    and getattr(i.context_expr.func, "id", "") in ("Lock", "SharedLock", "LeaderLock", "lock") for i in node.items):
                 locked = True
             if isinstance(node, ast.Call) and getattr(node.func, "id", "") in reads and not locked:
                 found.append(f"{filename}: {function}, line {node.lineno}")
@@ -77,7 +79,7 @@ class MetaTests(unittest.TestCase):
         codes = module.CODES
         messages = [message for _, message in codes.values()]
         self.assertEqual(len(messages), len(set(messages)), "two codes share one message")
-        self.assertTrue(all(kind in ("final", "fix") for kind, _ in codes.values()))
+        self.assertTrue(all(kind in ("final", "fix", "retry") for kind, _ in codes.values()))
         self.assertTrue(set(module.PRE_EVENT_CODES) <= set(codes))
         self.assertEqual(set(module.STATE_CODES), STATE_CODES)
         source = ""

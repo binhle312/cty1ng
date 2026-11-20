@@ -1,0 +1,29 @@
+test_dispatch_syncs_bound_init_before_first_grant (test_option_b_merge.MergeTests.test_dispatch_syncs_bound_init_before_first_grant) ... FAIL
+test_missing_dispatch_journal_refuses_first_grant (test_option_b_merge.MergeTests.test_missing_dispatch_journal_refuses_first_grant) ... FAIL
+
+======================================================================
+FAIL: test_dispatch_syncs_bound_init_before_first_grant (test_option_b_merge.MergeTests.test_dispatch_syncs_bound_init_before_first_grant)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b_merge.py", line 42, in test_dispatch_syncs_bound_init_before_first_grant
+    self.assertEqual(len(records), 1, "dispatch must write one leader journal before grant")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : dispatch must write one leader journal before grant
+
+======================================================================
+FAIL: test_missing_dispatch_journal_refuses_first_grant (test_option_b_merge.MergeTests.test_missing_dispatch_journal_refuses_first_grant)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b_merge.py", line 54, in test_missing_dispatch_journal_refuses_first_grant
+    self.expect(self.grant(reports), "LEADER_JOURNAL_GAP")
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/cty1ng-pr140-r3/.agents/skills/overnight/scripts/test_option_b.py", line 40, in expect
+    self.assertEqual(outcome[0], 3, outcome[1])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 3 : E7 merge-permission
+
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.491s
+
+FAILED (failures=2)

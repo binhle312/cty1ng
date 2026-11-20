@@ -1,0 +1,1064 @@
+skillevaluator, version 0.9.0
+SkillSpector v2.13.4
+WARNING  Using explicit skillspector executable override from
+         SKILLEVALUATOR_SKILLSPECTOR_PATH:
+         /home/binh/.cache/uv/archive-v0/A6lMaeigNZJf1Pql/bin/skillspector
+[1/10] schema ...
+[1/10] schema done in 0.0s (ok, 6 warning(s))
+[2/10] version ...
+[2/10] version done in 0.0s (ok)
+[3/10] security ...
+INFO     Running skillspector on /tmp/pr140-pinned-evaluator.2FyLAV/overnight
+INFO     Running skillspector:
+         /home/binh/.cache/uv/archive-v0/A6lMaeigNZJf1Pql/bin/skillspector scan
+         /tmp/pr140-pinned-evaluator.2FyLAV/overnight --format json...
+[3/10] security done in 43.0s (incomplete: skillspector, 31 warning(s))
+[4/10] pii ...
+[4/10] pii done in 0.2s (ok)
+[5/10] license ...
+[5/10] license done in 0.0s (ok, 1 warning(s))
+[6/10] code-integrity ...
+INFO     Running Bandit:
+         /home/binh/.local/share/uv/tools/skillevaluator/bin/bandit -r
+         /tmp/pr140-pinned-evaluator.2FyLAV/overnight -f json...
+INFO     Running Gitleaks:
+         /home/binh/.local/share/skillevaluator/runtimes/gitleaks/8.30.0/gitleak
+         s detect --source . --report-format...
+[6/10] code-integrity done in 1.3s (ok)
+[7/10] unicode ...
+[7/10] unicode done in 0.1s (ok)
+[8/10] quality ...
+[8/10] quality done in 0.0s (ok, 9 warning(s))
+[9/10] lint ...
+[9/10] lint done in 0.2s (ok, 63 warning(s))
+[10/10] harness ...
+[10/10] harness done in 0.1s (ok, 11 warning(s))
+llm skipped: LLM checks disabled by --no-llm.
+                       SkillEvaluator Validation Results
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Validator                      ┃ Status ┃ Details                            ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ Dependency Vulnerability Audit │  SKIP  │ skipped with --skip                │
+│ Schema & Repository Governance │  PASS  │ 7 checks passed                    │
+│ Semantic Version Validation    │  N/A   │ No semantic version label present; │
+│                                │        │ resource will use commit-hash      │
+│                                │        │ history                            │
+│ Security Scan                  │  FAIL  │ 2 errors, 31 warnings              │
+│ PII Scan                       │  PASS  │ 2 checks passed                    │
+│ License Compliance             │  PASS  │ 1 checks passed                    │
+│ Code Risk Analysis             │  PASS  │ 1 checks passed                    │
+│ Secrets Detection              │  PASS  │ 1 checks passed                    │
+│ Code Integrity & Hygiene       │  PASS  │ Found 12 standard Python test-file │
+│                                │        │ candidate(s); target tests were    │
+│                                │        │ not executed and coverage was not  │
+│                                │        │ measured                           │
+│ Unicode Smuggling Detection    │  PASS  │ 1 checks passed                    │
+│ QUALITY                        │  PASS  │ 1 checks passed; quality B         │
+│                                │        │ 83.2/100                           │
+│ SCRIPT_LINT                    │  PASS  │ OK                                 │
+│ Harness Compatibility          │  PASS  │ OK                                 │
+└────────────────────────────────┴────────┴────────────────────────────────────┘
+
+╭─────────────────╮
+│ Failure Details │
+╰─────────────────╯
+
+[Security Scan]
+Detect security vulnerabilities and PII/secrets
+[FAIL] Validation failed
+
+Summary:
+  • Errors: 2 (1 high)
+  • Warnings: 31
+
+Execution errors:
+  • skillspector JSON field 'analysis_completeness' reports incomplete analysis
+(status 'partial'): scripts/test_cleanup.py [static;
+obfuscated_instruction_text;
+analyzers=static_patterns_agent_snooping,static_patterns_anti_refusal,static_pat
+terns_deserialization,static_patterns_excessive_agency,static_patterns_harmful_c
+ontent,static_patterns_memory_poisoning,static_...]; security scan did not
+complete
+
+Issues:
+  1. [SECURITY-HIGH] Data Exfiltration: os.environ.items()
+     File:    scripts/night_cleanup.py:27
+     Check:   Env Variable Harvesting (E2)
+     Content: def git(repo, *args, code="CLEAN_GIT", missing=None):
+    env = {k:...
+     Fix:     Code enumerates, copies, or searches environment variables for
+secrets. Bulk environment access can collect credentials unrelated to the
+skill's stated purpose. Read only explicitly required environment variables by
+name. Avoid enumerating or copying the full environment, and never log or
+transmit credentials to untrusted destinations.
+
+  2. [SECURITY-MEDIUM] MCP Least Privilege: Without declared permissions the
+skill's intent is opaque and cannot be validated.
+     File:    SKILL.md:1
+     Check:   Unknown (LP3)
+     Fix:     Without declared permissions the skill's intent is opaque and
+cannot be validated. Declare the skill's tool scope: for Claude Code / Agent
+Skills SKILL.md, list the tools the skill may invoke in the 'allowed-tools'
+frontmatter field; for MCP server manifests, add a 'permissions' list naming the
+required capabilities.
+
+  3. [SECURITY-MEDIUM] Dangerous Code Execution: subprocess.run(argv,
+input=json.dumps(payload) if payload is not None else None, capture_output=True,
+                              check=False, text=True, timeout=timeout,
+shell=False)
+     File:    scripts/night.py:257
+     Check:   subprocess module call (AST4)
+     Content: if with_status:
+            argv.append("--include")
+    try:
+     ...
+     Fix:     subprocess module calls execute external commands. Without careful
+input validation, this enables command injection. Use subprocess.run() with
+shell=False and an explicit argument list. Validate all inputs and avoid passing
+user-controlled data to commands.
+
+  4. [SECURITY-MEDIUM] Dangerous Code Execution: subprocess.run(["git", "-C",
+repo, "-c", "core.hooksPath=/dev/null", *args],
+                              env=env, capture_output=True,
+timeout=GIT_TIMEOUT_S, shell=False)
+     File:    scripts/night_cleanup.py:30
+     Check:   subprocess module call (AST4)
+     Content: env = {k: v for k, v in os.environ.items() if not
+k.startswith("GIT...
+     Fix:     subprocess module calls execute external commands. Without careful
+input validation, this enables command injection. Use subprocess.run() with
+shell=False and an explicit argument list. Validate all inputs and avoid passing
+user-controlled data to commands.
+
+  5. [SECURITY-MEDIUM] Dangerous Code Execution: subprocess.run(["gh", "pr",
+"ready", str(number), "--repo", f"{host}/{repo}"],
+                              capture_output=True, check=False, timeout=timeout,
+shell=False)
+     File:    scripts/night_merge.py:80
+     Check:   subprocess module call (AST4)
+     Content: def mark_ready(host, repo, number, timeout):
+    try:
+        done ...
+     Fix:     subprocess module calls execute external commands. Without careful
+input validation, this enables command injection. Use subprocess.run() with
+shell=False and an explicit argument list. Validate all inputs and avoid passing
+user-controlled data to commands.
+
+  6. [SECURITY-MEDIUM] Dangerous Code Execution: subprocess.run(["git", "-C",
+str(checkout), *args], check=True,
+                              capture_output=True, timeout=20)
+     File:    scripts/night_review_io.py:15
+     Check:   subprocess module call (AST4)
+     Content: def git(checkout, *args):
+    try:
+        done = subprocess.run(["...
+     Fix:     subprocess module calls execute external commands. Without careful
+input validation, this enables command injection. Use subprocess.run() with
+shell=False and an explicit argument list. Validate all inputs and avoid passing
+user-controlled data to commands.
+
+  7. [SECURITY-MEDIUM] Dangerous Code Execution: subprocess.check_output(["git",
+"-C", str(self.checkout), *args], text=True)
+     File:    scripts/night_review_testlib.py:123
+     Check:   subprocess module call (AST4)
+     Content: return fixtures.OptionBTests.command(self, *args, time=time,
+env=en...
+     Fix:     subprocess module calls execute external commands. Without careful
+input validation, this enables command injection. Use subprocess.run() with
+shell=False and an explicit argument list. Validate all inputs and avoid passing
+user-controlled data to commands.
+
+  8. [SECURITY-MEDIUM] Dangerous Code Execution: subprocess.run(argv(folder,
+*args), capture_output=True, text=True,
+                          env=env_for(at, test_mode, fake, env), check=False)
+     File:    scripts/night_testlib.py:98
+     Check:   subprocess module call (AST4)
+     Content: def run(folder, *args, at=T0, env=None, test_mode=True,
+fake=True):...
+     Fix:     subprocess module calls execute external commands. Without careful
+input validation, this enables command injection. Use subprocess.run() with
+shell=False and an explicit argument list. Validate all inputs and avoid passing
+user-controlled data to commands.
+
+  9. [SECURITY-MEDIUM] Data Flow: subprocess.run(argv(folder, *args),
+capture_output=True, text=True,
+                          env=env_for(at, test_mode, fake, env), check=False)
+     File:    scripts/night_testlib.py:98
+     Check:   Tainted flow: 'at' from os.environ.get (line 311,
+credential/environment) → subprocess.run (code execution) (TT2)
+     Content: def run(folder, *args, at=T0, env=None, test_mode=True,
+fake=True):...
+     Fix:     Data from a source is assigned to a variable that is later passed
+to a sink, creating a variable-mediated taint flow. Validate tainted variables
+before passing them to sinks. Use allowlists, type checks, or sanitization
+functions on data from external sources.
+
+  10. [SECURITY-MEDIUM] Dangerous Code Execution:
+subprocess.Popen([sys.executable, "-I", wrapper, mode, marker, NIGHT, args[0],
+"--dir", self.dir, *args[1:]],
+                                  env=env_for(when, extra={"NIGHT_LOCK_WAIT_S":
+"20"}), st
+     File:    scripts/night_testlib.py:390
+     Check:   subprocess module call (AST4)
+     Content: handle.write(HOOK)
+        COUNTER[0] += 1
+        marker = os.path...
+     Fix:     subprocess module calls execute external commands. Without careful
+input validation, this enables command injection. Use subprocess.run() with
+shell=False and an explicit argument list. Validate all inputs and avoid passing
+user-controlled data to commands.
+
+  11. [SECURITY-MEDIUM] Data Flow: subprocess.Popen([sys.executable, "-I",
+wrapper, mode, marker, NIGHT, args[0], "--dir", self.dir, *args[1:]],
+                                  env=env_for(when, extra={"NIGHT_LOCK_WAIT_S":
+"20"}), st
+     File:    scripts/night_testlib.py:390
+     Check:   Tainted flow: 'NIGHT' from os.environ.get (line 31,
+credential/environment) → subprocess.Popen (code execution) (TT2)
+     Content: handle.write(HOOK)
+        COUNTER[0] += 1
+        marker = os.path...
+     Fix:     Data from a source is assigned to a variable that is later passed
+to a sink, creating a variable-mediated taint flow. Validate tainted variables
+before passing them to sinks. Use allowlists, type checks, or sanitization
+functions on data from external sources.
+
+  12. [SECURITY-MEDIUM] Data Flow: open(marker + ".go", "w", encoding="utf-8")
+     File:    scripts/night_testlib.py:406
+     Check:   Tainted flow: 'marker' from os.environ.get (line 404,
+credential/environment) → open (file write) (TT2)
+     Content: """Start `count` processes at one gate, open it, and return (exit
+c...
+     Fix:     Data from a source is assigned to a variable that is later passed
+to a sink, creating a variable-mediated taint flow. Validate tainted variables
+before passing them to sinks. Use allowlists, type checks, or sanitization
+functions on data from external sources.
+
+  13. [SECURITY-MEDIUM] Data Flow: report.write_text(text.replace(TARGET,
+OTHER))
+     File:    scripts/test_brief8.py:43
+     Check:   Tainted flow: 'text' from pathlib.Path.read_text (line 42, file
+read) → pathlib.Path.write_text (file write) (TT2)
+     Content: reports = self.reports()
+        report = Path(reports[0])
+        ...
+     Fix:     Data from a source is assigned to a variable that is later passed
+to a sink, creating a variable-mediated taint flow. Validate tainted variables
+before passing them to sinks. Use allowlists, type checks, or sanitization
+functions on data from external sources.
+
+  14. [SECURITY-MEDIUM] Dangerous Code Execution: subprocess.run(argv(self.dir,
+"log", "alive", "x"), capture_output=True, text=True,
+                              env=env_for(at("22:10")), preexec_fn=limit,
+check=False)
+     File:    scripts/test_check.py:255
+     Check:   subprocess module call (AST4)
+     Content: def limit():
+            resource.setrlimit(resource.RLIMIT_FSIZE, ...
+     Fix:     subprocess module calls execute external commands. Without careful
+input validation, this enables command injection. Use subprocess.run() with
+shell=False and an explicit argument list. Validate all inputs and avoid passing
+user-controlled data to commands.
+
+  15. [SECURITY-MEDIUM] Dangerous Code Execution: subprocess.run(["git", "-C",
+str(self.repo), "merge-base", "--is-ancestor",
+                                   self.head, "main"], check=False)
+     File:    scripts/test_cleanup.py:64
+     Check:   subprocess module call (AST4)
+     Content: self.clean_git("merge", "--squash", "pr")
+        self.clean_git("c...
+     Fix:     subprocess module calls execute external commands. Without careful
+input validation, this enables command injection. Use subprocess.run() with
+shell=False and an explicit argument list. Validate all inputs and avoid passing
+user-controlled data to commands.
+
+  16. [SECURITY-MEDIUM] Dangerous Code Execution:
+subprocess.check_output(["git", "-C", str(self.repo), *args], text=True)
+     File:    scripts/test_cleanup.py:117
+     Check:   subprocess module call (AST4)
+     Content: "--actor", actor, "--path", str(path))
+
+    def clean_git(self, *ar...
+     Fix:     subprocess module calls execute external commands. Without careful
+input validation, this enables command injection. Use subprocess.run() with
+shell=False and an explicit argument list. Validate all inputs and avoid passing
+user-controlled data to commands.
+
+  17. [SECURITY-MEDIUM] Dangerous Code Execution: subprocess.run(args,
+cwd=self.worktree, env=env_for(at("22:10"), extra=self.env),
+                              text=True, capture_output=True, check=False)
+     File:    scripts/test_cleanup.py:360
+     Check:   subprocess module call (AST4)
+     Content: from night_testlib import argv, at, env_for
+        self.setup_clea...
+     Fix:     subprocess module calls execute external commands. Without careful
+input validation, this enables command injection. Use subprocess.run() with
+shell=False and an explicit argument list. Validate all inputs and avoid passing
+user-controlled data to commands.
+
+  18. [SECURITY-MEDIUM] Dangerous Code Execution:
+subprocess.run([sys.executable, "-I", os.path.join(HERE, "run_tests.py"),
+"--show-red"],
+                                  capture_output=True, text=True, env=env,
+check=False)
+     File:    scripts/test_meta.py:100
+     Check:   subprocess module call (AST4)
+     Content: with open(stub, "w", encoding="utf-8") as handle:
+                h...
+     Fix:     subprocess module calls execute external commands. Without careful
+input validation, this enables command injection. Use subprocess.run() with
+shell=False and an explicit argument list. Validate all inputs and avoid passing
+user-controlled data to commands.
+
+  19. [SECURITY-MEDIUM] Data Flow: subprocess.run([sys.executable, "-I",
+os.path.join(HERE, "run_tests.py"), "--show-red"],
+                                  capture_output=True, text=True, env=env,
+check=False)
+     File:    scripts/test_meta.py:100
+     Check:   Tainted flow: 'env' from os.environ.get (line 99,
+credential/environment) → subprocess.run (code execution) (TT2)
+     Content: with open(stub, "w", encoding="utf-8") as handle:
+                h...
+     Fix:     Data from a source is assigned to a variable that is later passed
+to a sink, creating a variable-mediated taint flow. Validate tainted variables
+before passing them to sinks. Use allowlists, type checks, or sanitization
+functions on data from external sources.
+
+  20. [SECURITY-MEDIUM] Dangerous Code Execution:
+subprocess.run([sys.executable, "-I", os.path.join(tmp, "night.py"), "status",
+"--dir", tmp],
+                                  capture_output=True, text=True, check=False)
+     File:    scripts/test_meta.py:133
+     Check:   subprocess module call (AST4)
+     Content: def test_a_copy_of_night_py_without_its_modules_is_refused(self):
+ ...
+     Fix:     subprocess module calls execute external commands. Without careful
+input validation, this enables command injection. Use subprocess.run() with
+shell=False and an explicit argument list. Validate all inputs and avoid passing
+user-controlled data to commands.
+
+  21. [SECURITY-MEDIUM] Data Exfiltration: https://api.github.com/
+     File:    scripts/test_option_b_merge.py:246
+     Check:   External Transmission (E1)
+     Content: def
+test_audit_includes_unlisted_owner_and_uses_half_open_window(se...
+     Fix:     Data is being sent to an external URL. This could be legitimate
+telemetry or data exfiltration. Manual review is recommended. Verify the
+destination URL is trusted and necessary. Remove or replace with documented
+APIs. Ensure no secrets, tokens, or PII are transmitted.
+
+  22. [SECURITY-MEDIUM] Data Exfiltration: https://api.github.com/
+     File:    scripts/test_option_b_merge.py:260
+     Check:   External Transmission (E1)
+     Content: def test_report_shows_unread_audit_cutoff_and_later_merge(self):
+  ...
+     Fix:     Data is being sent to an external URL. This could be legitimate
+telemetry or data exfiltration. Manual review is recommended. Verify the
+destination URL is trusted and necessary. Remove or replace with documented
+APIs. Ensure no secrets, tokens, or PII are transmitted.
+
+  23. [SECURITY-MEDIUM] Excessive Agency: timeout=0
+     File:    scripts/test_option_b_recovery.py:177
+     Check:   Unbounded Resource Access (EA4)
+     Content: try:
+                        self.assertTrue(waiting.wait(10))
+    ...
+     Fix:     Skill allows unbounded resource consumption (API calls, storage,
+compute). Without rate limits or quotas, a compromised or misbehaving agent can
+cause denial-of-service or cost overruns. Set explicit rate limits, timeouts,
+and resource quotas for API calls, file operations, and compute. Implement
+circuit breakers for runaway loops.
+
+  24. [SECURITY-MEDIUM] Excessive Agency: timeout=0
+     File:    scripts/test_option_b_recovery.py:232
+     Check:   Unbounded Resource Access (EA4)
+     Content: try:
+                self.assertTrue(second_started.wait(3))
+      ...
+     Fix:     Skill allows unbounded resource consumption (API calls, storage,
+compute). Without rate limits or quotas, a compromised or misbehaving agent can
+cause denial-of-service or cost overruns. Set explicit rate limits, timeouts,
+and resource quotas for API calls, file operations, and compute. Implement
+circuit breakers for runaway loops.
+
+  25. [SECURITY-MEDIUM] Dangerous Code Execution:
+subprocess.Popen(argv(self.dir, "log", "alive", "x"), env=env_for(at("22:10"),
+extra={"NIGHT_LOCK_WAIT_S": "20"}),
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+     File:    scripts/test_races.py:66
+     Check:   subprocess module call (AST4)
+     Content: def
+test_a_waiter_that_is_stopped_leaves_the_lock_of_another_proces...
+     Fix:     subprocess module calls execute external commands. Without careful
+input validation, this enables command injection. Use subprocess.run() with
+shell=False and an explicit argument list. Validate all inputs and avoid passing
+user-controlled data to commands.
+
+  26. [SECURITY-MEDIUM] Dangerous Code Execution:
+subprocess.Popen(argv(self.dir, "log", "alive", "x"), env=env_for(at("22:10")),
+stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, text=True)
+     File:    scripts/test_races.py:115
+     Check:   subprocess module call (AST4)
+     Content: def
+test_an_empty_lock_that_goes_away_during_the_wait_is_not_stale(...
+     Fix:     subprocess module calls execute external commands. Without careful
+input validation, this enables command injection. Use subprocess.run() with
+shell=False and an explicit argument list. Validate all inputs and avoid passing
+user-controlled data to commands.
+
+  27. [SECURITY-MEDIUM] Dangerous Code Execution:
+subprocess.Popen(argv(self.dir, "log", "aware", "x"), env=env_for(fake=False,
+extra={"NIGHT_LOCK_WAIT_S": "20"}),
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+text=T
+     File:    scripts/test_races.py:125
+     Check:   subprocess module call (AST4)
+     Content: def
+test_the_time_of_an_entry_is_read_after_the_wait_for_the_lock(s...
+     Fix:     subprocess module calls execute external commands. Without careful
+input validation, this enables command injection. Use subprocess.run() with
+shell=False and an explicit argument list. Validate all inputs and avoid passing
+user-controlled data to commands.
+
+  28. [SECURITY-MEDIUM] Dangerous Code Execution: subprocess.run([os.fsencode(a)
+for a in argv(self.dir, "log", "alive")] + [b"bad \xff byte"],
+                              capture_output=True, env=env_for(at("22:10")),
+check=False)
+     File:    scripts/test_rules.py:168
+     Check:   subprocess module call (AST4)
+     Content: def test_an_argument_that_is_not_utf8_is_refused(self):
+        sta...
+     Fix:     subprocess module calls execute external commands. Without careful
+input validation, this enables command injection. Use subprocess.run() with
+shell=False and an explicit argument list. Validate all inputs and avoid passing
+user-controlled data to commands.
+
+  29. [SECURITY-MEDIUM] Dangerous Code Execution:
+subprocess.run([sys.executable, "-X", "utf8=0", "-I", NIGHT, "items", "--dir",
+self.dir],
+                              capture_output=True, env=env_for(extra={"LC_ALL":
+"C"}), check=False, timeout=60
+     File:    scripts/test_rules.py:367
+     Check:   subprocess module call (AST4)
+     Content: def test_output_that_the_terminal_cannot_show_is_escaped(self):
+   ...
+     Fix:     subprocess module calls execute external commands. Without careful
+input validation, this enables command injection. Use subprocess.run() with
+shell=False and an explicit argument list. Validate all inputs and avoid passing
+user-controlled data to commands.
+
+  30. [SECURITY-LOW] Dangerous Code Execution: getattr(args, name)
+     File:    scripts/night.py:116
+     Check:   Dynamic attribute access via getattr() (AST7)
+     Content: kind = args.kind
+    if kind in ("amend", "answer") and args.text i...
+     Fix:     Dynamic getattr() with a non-literal attribute name can access
+arbitrary object attributes, potentially bypassing access controls. Replace
+dynamic getattr() with explicit attribute access or a dictionary lookup with an
+allowlist of permitted attributes.
+
+  31. [SECURITY-LOW] Dangerous Code Execution: getattr(args, name)
+     File:    scripts/night.py:123
+     Check:   Dynamic attribute access via getattr() (AST7)
+     Content: f"--{extra[0].replace('_', '-')}"))
+    if kind in ("intent", "deni...
+     Fix:     Dynamic getattr() with a non-literal attribute name can access
+arbitrary object attributes, potentially bypassing access controls. Replace
+dynamic getattr() with explicit attribute access or a dictionary lookup with an
+allowlist of permitted attributes.
+
+  32. [SECURITY-LOW] Dangerous Code Execution: getattr(fixtures.OptionBTests,
+name)
+     File:    scripts/night_review_testlib.py:117
+     Check:   Dynamic attribute access via getattr() (AST7)
+     Content: class ReviewFixture:
+    for name in ("setUp", "expect", "ok", "jou...
+     Fix:     Dynamic getattr() with a non-literal attribute name can access
+arbitrary object attributes, potentially bypassing access controls. Replace
+dynamic getattr() with explicit attribute access or a dictionary lookup with an
+allowlist of permitted attributes.
+
+╭───────────────────────╮
+│ Non-blocking Findings │
+╰───────────────────────╯
+
+[Schema & Repository Governance]
+Validate SKILL.md frontmatter and repository structure
+[PASS] Validation passed
+
+Summary:
+  • Checks performed: 7
+
+Details:
+  [OK] manifest_exists: Found skill manifest: SKILL.md
+(file_path=/tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md)
+  [OK] frontmatter_valid: Valid frontmatter for skill 'overnight'
+(description_length=121)
+  [OK] naming_convention: Folder name 'overnight' follows kebab-case convention
+(name_length=9)
+  [OK] line_count: SKILL.md within line limit (99/500) (line_count=99,
+limit=500)
+  [OK] body_heading: Body contains a top-level heading
+  [OK] optional_files: Found optional supporting files: references, scripts
+(files_found=['references', 'scripts'])
+  [OK] name_consistency: Directory name matches frontmatter: 'overnight'
+Issues:
+  1. [SCHEMA-MEDIUM] Skill not in standard location (skills/ or team-skills/)
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight
+     Check:   folder_hierarchy
+     Fix:     Move skill to skills/<skill-name>/ or
+team-skills/<team>/<skill-name>/
+
+  2. [SCHEMA-MEDIUM] Missing recommended section: '## Instructions'
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   body_recommended_section
+     Fix:     Consider adding a '## Instructions' or '## Usage' section. Per
+agentskills.io the body format is unrestricted, so this is a convention nudge —
+it also gives the quality scorer a stable anchor for instruction-quality
+heuristics.
+
+  3. [SCHEMA-MEDIUM] Missing recommended section: '## Examples'
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   body_recommended_section
+     Fix:     Consider adding a '## Examples' section. If examples are already
+inline under instructions, this can be skipped.
+
+  4. [SCHEMA-LOW] Author not specified in metadata
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   author_missing
+     Fix:     Add 'metadata.author' with a person, team, or organization name,
+or 'Name <email@example.com>' to include a contact address
+
+  5. [SCHEMA-LOW] Description has no 'Use when ...' trigger; some harnesses show
+only the first ~60 characters in their skill list
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   description_trigger
+     Fix:     State when to use the skill within the first 60 characters
+
+  6. [SCHEMA-LOW] Frontmatter field(s) outside the agentskills.io spec:
+argument-hint, disable-model-invocation; agent harnesses do not pass them to the
+model
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   unknown_field
+     Fix:     Remove them or move them under 'metadata'
+
+
+[QUALITY]
+Skill quality scoring across Correctness (35%), Discoverability (25%),
+Reliability (25%), and Efficiency (15%)
+
+  Overall: 83.2/100 (Grade: B)
+  Skill Type: script-based
+
+                            Quality Scores by Skill
+┏━━━━━━━━━━━┳━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━┓
+┃ Skill     ┃ Grade ┃ Score ┃ Correctne… ┃ Discovera… ┃ Reliabili… ┃ Efficien… ┃
+┡━━━━━━━━━━━╇━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━┩
+│ overnight │   B   │  83.2 │         70 │         95 │         80 │       100 │
+└───────────┴───────┴───────┴────────────┴────────────┴────────────┴───────────┘
+
+[PASS] Validation passed
+
+Summary:
+  • Checks performed: 1
+
+Details:
+  [OK] quality_score: Score: 83.2/100 (Grade: B) (overall_score=83.2, grade=B,
+skill_type=script-based)
+Issues:
+  1. [QUALITY-MEDIUM] No documented scripts in table format
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   quality_correctness
+     Fix:     Add '## Available Scripts' with table: | Script | Purpose |
+Arguments |
+
+  2. [QUALITY-MEDIUM] Instructions don't mention 'run_script'
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   quality_correctness
+     Fix:     Add explicit run_script() call examples
+
+  3. [QUALITY-LOW] No examples provided
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   quality_correctness
+     Fix:     Add example usage with code blocks
+
+  4. [QUALITY-MEDIUM] SKILL_SPEC recommended field missing: 'metadata.author'
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   quality_correctness
+     Fix:     Add 'author' under metadata: — Author name or team (under
+metadata:)
+
+  5. [QUALITY-LOW] No '## Purpose' section
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   quality_discoverability
+     Fix:     Add purpose section to clarify use cases
+
+  6. [QUALITY-LOW] Scripts may lack error handling: night_review_testlib.py,
+run_tests.py
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   quality_reliability
+     Fix:     Scripts should handle errors explicitly
+
+  7. [QUALITY-LOW] No prerequisites/requirements documented
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   quality_reliability
+     Fix:     Document dependencies, API keys, or setup needed
+
+  8. [QUALITY-LOW] No limitations documented
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   quality_reliability
+     Fix:     Add '## Limitations' section with known issues/constraints
+
+  9. [QUALITY-LOW] No troubleshooting section documented
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   quality_reliability
+     Fix:     Add '## Troubleshooting' with Error/Cause/Solution patterns
+
+
+[SCRIPT_LINT]
+AST-based code quality checks for skill scripts
+[PASS] Validation passed
+
+Summary:
+
+Issues:
+  1. [SCRIPT_LINT-LOW] night.py contains magic numbers
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  2. [SCRIPT_LINT-LOW] night_chief.py contains magic numbers
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_chief.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  3. [SCRIPT_LINT-LOW] night_chief.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_chief.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  4. [SCRIPT_LINT-LOW] night_cleanup.py contains magic numbers
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_cleanup.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  5. [SCRIPT_LINT-LOW] night_cleanup.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_cleanup.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  6. [SCRIPT_LINT-LOW] night_files.py contains magic numbers
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_files.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  7. [SCRIPT_LINT-LOW] night_files.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_files.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  8. [SCRIPT_LINT-LOW] night_format.py contains magic numbers
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_format.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  9. [SCRIPT_LINT-LOW] night_format.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_format.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  10. [SCRIPT_LINT-MEDIUM] night_leader.py has deeply nested code (depth 10, max
+6)
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_leader.py
+     Check:   deep_nesting
+     Fix:     Refactor into smaller functions to reduce complexity
+
+  11. [SCRIPT_LINT-LOW] night_leader.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_leader.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  12. [SCRIPT_LINT-LOW] night_merge.py contains magic numbers
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_merge.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  13. [SCRIPT_LINT-LOW] night_merge.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_merge.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  14. [SCRIPT_LINT-LOW] night_merge_policy.py contains magic numbers
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_merge_policy.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  15. [SCRIPT_LINT-LOW] night_merge_policy.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_merge_policy.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  16. [SCRIPT_LINT-LOW] night_report.py contains magic numbers
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_report.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  17. [SCRIPT_LINT-LOW] night_report.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_report.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  18. [SCRIPT_LINT-LOW] night_review.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_review.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  19. [SCRIPT_LINT-LOW] night_review_io.py contains magic numbers
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_review_io.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  20. [SCRIPT_LINT-LOW] night_review_io.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_review_io.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  21. [SCRIPT_LINT-LOW] night_review_testlib.py contains magic numbers
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_review_testlib.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  22. [SCRIPT_LINT-LOW] night_review_testlib.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_review_testlib.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  23. [SCRIPT_LINT-LOW] night_review_testlib.py may lack input validation
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_review_testlib.py
+     Check:   no_input_validation
+     Fix:     Add argument checks and raise descriptive errors
+
+  24. [SCRIPT_LINT-MEDIUM] night_rules.py has deeply nested code (depth 21, max
+6)
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_rules.py
+     Check:   deep_nesting
+     Fix:     Refactor into smaller functions to reduce complexity
+
+  25. [SCRIPT_LINT-LOW] night_rules.py contains magic numbers
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_rules.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  26. [SCRIPT_LINT-LOW] night_rules.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_rules.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  27. [SCRIPT_LINT-LOW] night_testlib.py contains magic numbers
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_testlib.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  28. [SCRIPT_LINT-LOW] night_testlib.py may lack input validation
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/night_testlib.py
+     Check:   no_input_validation
+     Fix:     Add argument checks and raise descriptive errors
+
+  29. [SCRIPT_LINT-LOW] run_tests.py may lack input validation
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/run_tests.py
+     Check:   no_input_validation
+     Fix:     Add argument checks and raise descriptive errors
+
+  30. [SCRIPT_LINT-LOW] test_brief8.py contains magic numbers
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_brief8.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  31. [SCRIPT_LINT-LOW] test_brief8.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_brief8.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  32. [SCRIPT_LINT-LOW] test_brief8.py may lack input validation
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_brief8.py
+     Check:   no_input_validation
+     Fix:     Add argument checks and raise descriptive errors
+
+  33. [SCRIPT_LINT-LOW] test_check.py contains magic numbers
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_check.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  34. [SCRIPT_LINT-LOW] test_check.py missing shebang line
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_check.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  35. [SCRIPT_LINT-LOW] test_check.py may lack input validation
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_check.py
+     Check:   no_input_validation
+     Fix:     Add argument checks and raise descriptive errors
+
+  36. [SCRIPT_LINT-LOW] test_cleanup.py contains magic numbers
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_cleanup.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  37. [SCRIPT_LINT-LOW] test_cleanup.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_cleanup.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  38. [SCRIPT_LINT-LOW] test_cleanup.py may lack input validation
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_cleanup.py
+     Check:   no_input_validation
+     Fix:     Add argument checks and raise descriptive errors
+
+  39. [SCRIPT_LINT-LOW] test_meta.py contains magic numbers
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_meta.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  40. [SCRIPT_LINT-LOW] test_meta.py missing shebang line
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_meta.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  41. [SCRIPT_LINT-LOW] test_meta.py may lack input validation
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_meta.py
+     Check:   no_input_validation
+     Fix:     Add argument checks and raise descriptive errors
+
+  42. [SCRIPT_LINT-LOW] test_option_b.py contains magic numbers
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_option_b.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  43. [SCRIPT_LINT-LOW] test_option_b.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_option_b.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  44. [SCRIPT_LINT-LOW] test_option_b.py may lack input validation
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_option_b.py
+     Check:   no_input_validation
+     Fix:     Add argument checks and raise descriptive errors
+
+  45. [SCRIPT_LINT-LOW] test_option_b_merge.py contains magic numbers
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_option_b_merge.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  46. [SCRIPT_LINT-LOW] test_option_b_merge.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_option_b_merge.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  47. [SCRIPT_LINT-LOW] test_option_b_merge.py may lack input validation
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_option_b_merge.py
+     Check:   no_input_validation
+     Fix:     Add argument checks and raise descriptive errors
+
+  48. [SCRIPT_LINT-LOW] test_option_b_recovery.py contains magic numbers
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_option_b_recovery.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  49. [SCRIPT_LINT-LOW] test_option_b_recovery.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_option_b_recovery.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  50. [SCRIPT_LINT-LOW] test_races.py contains magic numbers
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_races.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  51. [SCRIPT_LINT-LOW] test_races.py missing shebang line
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_races.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  52. [SCRIPT_LINT-LOW] test_races.py may lack input validation
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_races.py
+     Check:   no_input_validation
+     Fix:     Add argument checks and raise descriptive errors
+
+  53. [SCRIPT_LINT-LOW] test_report.py contains magic numbers
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_report.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  54. [SCRIPT_LINT-LOW] test_report.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_report.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  55. [SCRIPT_LINT-LOW] test_report.py may lack input validation
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_report.py
+     Check:   no_input_validation
+     Fix:     Add argument checks and raise descriptive errors
+
+  56. [SCRIPT_LINT-LOW] test_rules.py contains magic numbers
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_rules.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  57. [SCRIPT_LINT-LOW] test_rules.py missing shebang line
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_rules.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  58. [SCRIPT_LINT-LOW] test_rules.py may lack input validation
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_rules.py
+     Check:   no_input_validation
+     Fix:     Add argument checks and raise descriptive errors
+
+  59. [SCRIPT_LINT-LOW] test_start.py contains magic numbers
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_start.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  60. [SCRIPT_LINT-LOW] test_start.py missing shebang line
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_start.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+  61. [SCRIPT_LINT-LOW] test_start.py may lack input validation
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_start.py
+     Check:   no_input_validation
+     Fix:     Add argument checks and raise descriptive errors
+
+  62. [SCRIPT_LINT-LOW] test_write_recovery.py contains magic numbers
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_write_recovery.py
+     Check:   magic_numbers
+     Fix:     Extract magic numbers to named constants
+
+  63. [SCRIPT_LINT-LOW] test_write_recovery.py missing shebang line
+     File:
+/tmp/pr140-pinned-evaluator.2FyLAV/overnight/scripts/test_write_recovery.py
+     Check:   missing_shebang
+     Fix:     Add: #!/usr/bin/env python3
+
+
+[Harness Compatibility]
+Advisory: whether each agent harness loads, degrades or drops the skill
+[PASS] Validation passed
+
+Summary:
+
+Issues:
+  1. [HARNESS-LOW] codex: disable-model-invocation is ignored: the model still
+sees this skill and can use it on its own.
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   CX-DMI-IGNORED
+     Fix:     For Codex, add agents/openai.yaml with policy:
+{allow_implicit_invocation: false}.
+
+  2. [HARNESS-INFO] codex: Ignored here (Claude Code only): argument-hint.
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   CX-CLAUDE-ONLY
+     Fix:     Fine to keep for Claude Code; don't depend on them elsewhere.
+
+  3. [HARNESS-INFO] copilot-cli: New skills appear only after `/skills reload`
+or a restart; edits to existing skills apply at once.
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   CP-RELOAD
+
+  4. [HARNESS-INFO] copilot-cli: Ignored here (Claude Code only): argument-hint.
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   CP-CLAUDE-ONLY
+     Fix:     Fine to keep for Claude Code; don't depend on them elsewhere.
+
+  5. [HARNESS-INFO] hermes: The skill list shows only the first ~60 chars of the
+description (57 + '...' in 0.16, a word boundary near 59 on main), and the
+trigger isn't in them.
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   HM-DESC-60
+     Fix:     Put the trigger ("Use when …") in the first 57 characters.
+
+  6. [HARNESS-LOW] hermes: disable-model-invocation is ignored: the model still
+sees this skill and can use it on its own.
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   HM-DMI-IGNORED
+     Fix:     No equivalent setting in Hermes; don't rely on it.
+
+  7. [HARNESS-INFO] hermes: Ignored here (Claude Code only): argument-hint.
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   HM-CLAUDE-ONLY
+     Fix:     Fine to keep for Claude Code; don't depend on them elsewhere.
+
+  8. [HARNESS-INFO] openclaw: Ignored here (Claude Code only): argument-hint.
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   OW-CLAUDE-ONLY
+     Fix:     Fine to keep for Claude Code; don't depend on them elsewhere.
+
+  9. [HARNESS-INFO] opencode: Skill list and text are cached at startup; edits
+need a restart.
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   OC-RELOAD
+
+  10. [HARNESS-LOW] opencode: disable-model-invocation is ignored: the model
+still sees this skill and can use it on its own.
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   OC-DMI-IGNORED
+     Fix:     No equivalent setting in OpenCode; don't rely on it.
+
+  11. [HARNESS-INFO] opencode: Ignored here (Claude Code only): argument-hint.
+     File:    /tmp/pr140-pinned-evaluator.2FyLAV/overnight/SKILL.md
+     Check:   OC-CLAUDE-ONLY
+     Fix:     Fine to keep for Claude Code; don't depend on them elsewhere.
+
+
+[FAIL] Changes required
+Tier 1: 10 of 11 checks passed; 1 failed, 0 incomplete, 1 skipped, 1 N/A
+Publication eligibility: Incomplete
+
+Error: Tier 1 checks failed or were incomplete
+Exit 1

@@ -4,46 +4,36 @@ import json
 import re
 from datetime import datetime, timedelta, timezone
 
-
 JOURNAL = "journal.jsonl"
-
 
 CARD = "card.md"
 
-
 REPORT = "report.md"
-
 
 LOCK = "journal.lock"
 
+FORMAT = 4
 
-FORMAT = 3
-
+DEFAULT_READY_READS = 5
+DEFAULT_READY_DELAY_S = 3
 DEFAULT_REVIEW_CAP = 5
 DEFAULT_MERGE_MAIN_BONUS = 3
 MERGE_METHODS = ("merge", "squash", "rebase")
 MERGE_KINDS = ("assign", "merge-permission", "review", "cap", "merge-invalidate", "audit", "timer",
                "plan", "review-start", "ruling", "advice", "confirm", "withdraw")
 
-
 DEFAULT_HEARTBEAT_MIN = 30
-
 
 DEFAULT_MAX_GAP_MIN = 60
 
-
 DEFAULT_LOCK_WAIT_S = 10.0
 
-
 DEFAULT_LOCK_STALE_S = 60.0
-
 
 LOG_KINDS = ("alive", "aware", "error", "reserve", "decision", "intent", "result", "denied", "hold", "wait",
              "amend", "answer", "pagecheck")
 
-
 KINDS = ("new", "go", "report", "close", "repair") + LOG_KINDS + MERGE_KINDS
-
 
 OUTCOMES = ("done", "failed", "unknown", "denied")
 
@@ -109,7 +99,7 @@ CODES = {
     "MERGE_NOT_CONFIRMED": ("fix", "GitHub has not confirmed the grant's merge on main"),
     # Before an entry exists (PRE_EVENT_CODES).
     "NO_NIGHT": ("fix", "no night in this folder: run `new` first"),
-    "FORMAT_UNSUPPORTED": ("final", "use the writer revision of this journal or start a new format 2 night"),
+    "FORMAT_UNSUPPORTED": ("final", f"use the writer revision of this journal or start a new format {FORMAT} night"),
     "REPAIR_PENDING": ("final", "a repair is staged or has an invalid side record; check the repair before further writes"),
     "REVIEW_CAP_FORM": ("fix", "the review cap must be a positive integer"),
     "REVIEW_CAP_REACHED": ("final", "this PR reached the review cap; the owner decides the next step"),
@@ -120,6 +110,7 @@ CODES = {
     "MERGE_CHIEF_ONLY": ("final", "the chief label differs from the frozen card"),
     "MERGE_LEADER_ONLY": ("final", "the leader label differs from the frozen card"),
     "MERGE_JOURNAL_PATH": ("final", "the journal path differs from the canonical path fixed at dispatch"),
+    "LEADER_JOURNAL_GAP": ("final", "the dispatch journal is missing or its init differs; reconcile before further writes"),
     "MERGE_EVIDENCE_INVALID": ("fix", "provide complete review, CI, ledger and P3 evidence"),
     "MERGE_PERMISSION_DUPLICATE": ("final", "this PR and head already have a grant"),
     "MERGE_PERMISSION_MISSING": ("fix", "the chief journal has no such grant"),
@@ -128,13 +119,15 @@ CODES = {
     "MERGE_PERMISSION_HEAD": ("final", "the expected head differs from the granted head"),
     "MERGE_PERMISSION_INACTIVE": ("final", "a replacement, hold or denial ended this grant"),
     "MERGE_PERMISSION_USED": ("final", "an attempt already consumed this grant"),
-    "MERGE_PENDING": ("final", "an earlier attempt on this PR has an unresolved outcome"),
+    "MERGE_PENDING": ("retry", "reconcile the reserved PR before requesting another grant"),
     "MERGE_READ_FAILED": ("final", "GitHub did not provide a valid PR or repository read"),
     "MERGE_PR_INELIGIBLE": ("final", "GitHub state or project policy bars a direct merge"),
     "MERGE_EFFECT_UNCLEAR": ("final", "the merge effect could not be established"),
     "MERGE_CI_UNKNOWN": ("final", "the effective required checks or their source could not be established"),
     "MERGE_CI_NOT_GREEN": ("final", "a required check on the granted head is not green"),
     "MERGE_HEAD_CHANGED": ("final", "GitHub reported a different PR head"),
+    "MERGE_READY_FAILED": ("final", "the Ready request failed or its outcome is unknown"),
+    "MERGE_REQUEST_BUDGET": ("final", "the attempt exhausted its GitHub request budget"),
     "MERGE_REJECTED": ("final", "GitHub refused the merge request"),
     "MERGE_OUTCOME_UNKNOWN": ("final", "read back both journals and GitHub before any further action"),
     "CLEAN_ASSIGNMENT": ("fix", "use the fixed paths and branch of the chief dispatch"),
@@ -148,6 +141,7 @@ CODES = {
     "CLEAN_DEFAULT_BRANCH": ("fix", "a default or protected branch name cannot be cleaned"),
     "CLEAN_OPEN_HEAD": ("fix", "an open PR uses the head branch"),
     "CLEAN_WORKTREE": ("fix", "Git could not verify or remove the assigned worktree"),
+    "CLEAN_OUTPUT_MOUNT": ("fix", "an output mount or another device prevents worktree removal"),
     "CLEAN_WORKTREE_DIRTY": ("fix", "the worktree has changes outside recorded temp files"),
     "CLEAN_LOCAL_IN_USE": ("fix", "a worktree still has the branch checked out"),
     "CLEAN_LOCAL_HEAD": ("fix", "the local ref differs from the merged head or the delete failed"),
@@ -257,7 +251,7 @@ PRE_EVENT_CODES = frozenset((
 STATE_CODES = frozenset(("NO_GO", "INTENT_NO_RESULT", "GAP", "STOP_NOT_CLOSED", "REPORT_FILE", "CUT_UNRECORDED"))
 
 
-CLASS_TEXT = {"final": "final: do not retry", "fix": "correct it and run again"}
+CLASS_TEXT = {"retry": "retry after reconciliation", "final": "final: do not retry", "fix": "correct it and run again"}
 
 
 class Refused(Exception):
@@ -377,7 +371,8 @@ def review_policy(value):
 
 def report_pair(value):
     return (isinstance(value, list) and len(value) == 2
-            and all(isinstance(r, dict) and set(r) == {"who", "head", "source", "p1", "p2", "p3"}
+            and all(isinstance(r, dict) and set(r) == {"who", "head", "source", "p1", "p2", "p3", "binding"} and isinstance(r["binding"], dict)
+                    and all(type(r["binding"].get(key)) is int for key in ("assignment", "plan_check", "start", "round"))
                     and reviewer(r["who"]) and is_text(r["source"]) and r["source"].strip()
                     and is_text(r["head"]) and FULL_SHA.fullmatch(r["head"])
                     and all(text_list(r[key]) for key in ("p1", "p2", "p3")) for r in value))
@@ -392,8 +387,9 @@ def cap_spec(value):
 
 
 def grant_evidence(value):
-    return (isinstance(value, dict) and set(value) == {"reports", "ci", "ledger", "p3"}
-            and all(text_list(v) for v in value.values()) and len(value["reports"]) == 2
+    return (isinstance(value, dict) and set(value) == {"reports", "ci", "ledger", "p3", "checks", "effects"}
+            and isinstance(value["checks"], dict) and isinstance(value["effects"], dict)
+            and all(text_list(value[k]) for k in ("reports", "ci", "ledger", "p3")) and len(value["reports"]) == 2
             and bool(value["ledger"]))
 
 
@@ -414,6 +410,8 @@ TYPES = {
     and all(is_text(v[k]) and v[k] for k in ("folder", "repo", "branch"))
     and isinstance(v["identity"], list) and len(v["identity"]) == 3
     and is_text(v["identity"][0]) and all(is_int(n) for n in v["identity"][1:]),
+    "lock_identity": lambda v: isinstance(v, list) and len(v) == 2 and all(is_int(n) for n in v),
+    "dict": lambda v: isinstance(v, dict),
     "str": is_text,
     "run": lambda value: is_text(value) and RUN_ID.fullmatch(value),
     "pair": pair,
@@ -435,31 +433,31 @@ TYPES = {
 
 
 FIELDS = {
-    "new": {"run": "run", "chief_path": "str", "words": "str", "test": "bool", "format": (FORMAT,)},
+    "new": {"automation": "dict", "run": "run", "chief_path": "str", "lock_identity": "lock_identity", "words": "str", "test": "bool", "format": (FORMAT,)},
     "go": {"stop": "time", "heartbeat_min": "int", "gap_min": "int", "max_gap_min": "int", "goal": GOALS,
            "rehearsal": REHEARSALS, "items": "rows", "run": "run", "review_cap": "int", "chief": "str",
-           "review_policy": "policy", "allow_empty_checks": "bool", "tasks": "tasks",
+           "ready_reads": "int", "ready_delay": "int", "review_policy": "policy", "allow_empty_checks": "bool", "tasks": "tasks",
            "merge_main_bonus": "int", "consultants": "bool"},
     "assign": {"chief": "str", "target": "str", "leader": "str", "reviewers": "pair", "helpers": "texts",
-               "worktree": "str", "run": "run", "replaces": "int", "released": "str", "cleanup": "cleanup"},
+               "worktree": "str", "folder": "str", "run": "run", "replaces": "int", "released": "str", "cleanup": "cleanup"},
     "merge-permission": {"chief": "str", "run": "run", "target": "str", "head": "str", "leader": "str", "base": "str",
-                         "method": MERGE_METHODS, "assignment": "int", "reviewers": "pair", "evidence": "evidence",
+                         "method": MERGE_METHODS, "head_ref": "str", "repo_id": "int", "assignment": "int", "reviewers": "pair", "evidence": "evidence",
                          "review": "int", "review_base": "str", "files": "texts"},
     "plan": {"chief": "str", "target": "str", "assignment": "int", "plan": "str", "strategy": "str"},
     "review-start": {"chief": "str", "target": "str", "assignment": "int", "head": "str", "leader": "str",
                      "checkout": "str", "brief": "str", "base_sha": "str", "merge_base": "str",
                      "main_merges": "texts", "bonus_merges": "texts", "files": "texts",
-                     "intersections": "texts", "cap": "int", "plan_check": "int"},
+                     "intersections": "texts", "cap": "int", "plan_check": "int", "round": "int"},
     "review": {"target": "str", "leader": "str", "reports": "reports", "spec": "spec",
                "chief": "str", "start": "int", "assignment": "int", "digests": "texts", "ledger": "texts"},
     "ruling": {"chief": "str", "target": "str", "assignment": "int", "start": "int", "review": "int",
                "source": "str", "finding": "str", "severity": ("p1", "p2", "p3", "drop"), "reason": "str"},
     "advice": {"chief": "str", "target": "str", "assignment": "int", "start": "int", "review": "int",
                "advisor": ("allow", "hold"), "consultants": "texts"},
-    "confirm": {"chief": "str", "target": "str", "grant": "int", "head": "str", "main": "str", "sha": "str"},
+    "confirm": {"chief": "str", "target": "str", "grant": "int", "head": "str", "main": "str", "sha": "str", "checks": "list"},
     "withdraw": {"chief": "str", "target": "str", "grant": "int", "reason": "str"},
     "merge-invalidate": {"target": "str", "grant": "int"},
-    "audit": {"rows": "audit"},
+    "audit": {"rows": "audit", "start": "time", "end": "time", "repositories": "texts"},
     "timer": {"timer": "str", "run": "run"},
     "intent": {"item": "str", "command": "str"},
     "result": {"of": "int", "outcome": OUTCOMES, "blocks": "str", "text": "str"},
@@ -483,7 +481,7 @@ FIELDS = {
 FIELDS["cap"] = FIELDS["review"]
 
 REQUIRED = {
-    "new": ("run", "format", "chief_path"), "go": tuple(k for k in FIELDS["go"] if k != "review_policy"),
+    "new": ("run", "format", "chief_path", "lock_identity"), "go": tuple(k for k in FIELDS["go"] if k != "review_policy"),
     **{kind: tuple(FIELDS[kind]) for kind in MERGE_KINDS if kind not in ("review", "cap", "assign", "merge-permission")},
     "assign": tuple(k for k in FIELDS["assign"] if k not in ("replaces", "released", "cleanup")),
     "merge-permission": tuple(FIELDS["merge-permission"]),
@@ -508,6 +506,10 @@ def schema_problem(entry):
     fields = FIELDS.get(entry["kind"], {})
     for name, value in entry.items():
         if name in ("id", "t", "kind"):
+            continue
+        if name == "release_grant" and entry["kind"] in ("assign", "plan", "review-start", "review", "cap", "ruling"):
+            if not is_int(value):
+                return "release_grant must be an entry ID"
             continue
         if name == "fake_clock":
             if value is not True:
