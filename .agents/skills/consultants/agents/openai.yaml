@@ -1,0 +1,5 @@
+interface:
+  display_name: "Consultants"
+  short_description: "Strong models grill a recommendation before the owner decides"
+policy:
+  allow_implicit_invocation: false
