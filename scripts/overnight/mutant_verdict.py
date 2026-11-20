@@ -1,4 +1,5 @@
 """Run a discovered test and retain its exact assertion for evidence."""
+from contextlib import redirect_stdout
 import json
 from pathlib import Path
 import subprocess
@@ -69,4 +70,6 @@ def verdict(baseline, broken, test_name, assertion):
 
 if __name__ == "__main__":
     sys.dont_write_bytecode = True
-    print(json.dumps(worker(str(Path(sys.argv[1]).resolve()), sys.argv[2])))
+    with redirect_stdout(sys.stderr):
+        result = worker(str(Path(sys.argv[1]).resolve()), sys.argv[2])
+    print(json.dumps(result))

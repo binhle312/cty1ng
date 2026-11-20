@@ -74,6 +74,18 @@ class RecoveryTests(unittest.TestCase):
         self.assertIn("[REPAIR_PENDING]", out)
         self.assertEqual([path.read_bytes() for path in (journal, side)], originals)
 
+    def test_repair_keeps_a_later_cut_separate(self):
+        folder = self.fixture()
+        journal = folder / "journal.jsonl"
+        for index, cut in enumerate((b"one cut", b"another cut"), 1):
+            with journal.open("ab") as handle:
+                handle.write(cut)
+            status, out = run(str(folder), "repair", at=at("22:10"))
+            self.assertEqual(status, 0, out)
+            self.assertEqual(len(list(folder.glob("journal.cut-*.txt"))), index)
+        self.assertEqual([e["cut_file"] for e in self.events(journal, "repair")],
+                         ["journal.cut-1.txt", "journal.cut-2.txt"])
+
     def test_check_snapshot_orders_with_repair(self):
         for check_first in (True, False):
             with self.subTest(check_first=check_first):

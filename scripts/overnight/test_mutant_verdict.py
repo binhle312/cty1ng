@@ -22,6 +22,8 @@ class VerdictTests(unittest.TestCase):
             env = {"PATH": os.environ["PATH"]}
             path.write_text(CONTROL)
             baseline = run_suite(tmp, env, TEST)
+            path.write_text('print("fixture progress")\n' + CONTROL)
+            self.assertEqual(run_suite(tmp, env, TEST), baseline)
             faults = {
                 "bad_import": "import no_such_fixture\n" + CONTROL,
                 "missing": CONTROL.replace("test_check", "test_other"),
