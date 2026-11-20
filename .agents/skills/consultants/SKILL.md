@@ -2,6 +2,9 @@
 name: consultants
 description: Ask two or more strong models to grill a recommendation on open decisions before the owner decides. Use when the owner asks for consultants, or names this skill.
 disable-model-invocation: true
+metadata:
+  author: cty1ng maintainers
+  tags: [decisions, review, multi-agent]
 ---
 
 # Consultants

@@ -2,6 +2,9 @@
 name: arena
 description: Do one task with two or more candidates in parallel, pick the best as the base, and graft the best parts of the others into it. The owner starts it with /arena, or tells an agent to use it.
 disable-model-invocation: true
+metadata:
+  author: cty1ng maintainers
+  tags: [parallel-build, review, multi-agent]
 ---
 
 # Arena
