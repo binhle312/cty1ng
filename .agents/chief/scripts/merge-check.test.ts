@@ -566,9 +566,10 @@ describe("classify: a memory PR (order 108)", () => {
 // Plan delta r1 §2.2: each base and head text of each changed memory file has one supported form.
 // A text in another form stops the chief (exit 1). Each case has the bad text on one side only.
 describe("classify: the memory text form", () => {
-  const sides = (name: string, bad: string, good = "# Good\n"): [string, PrFile[]][] => [
-    [`${name} in the base`, [file(NOTE, { baseText: bad, headText: good })]],
-    [`${name} in the head`, [file(NOTE, { baseText: good, headText: bad })]],
+  const FM_GOOD = "---\ntitle: a\n---\n# A\n";
+  const sides = (name: string, texts: { bad: string; good: string }): [string, PrFile[]][] => [
+    [`${name} in the base`, [file(NOTE, { baseText: texts.bad, headText: texts.good })]],
+    [`${name} in the head`, [file(NOTE, { baseText: texts.good, headText: texts.bad })]],
   ];
   const stops = (files: PrFile[]): string => {
     const result = classify(input(files));
@@ -587,7 +588,7 @@ describe("classify: the memory text form", () => {
 
   it("stops for a character outside the allowed classes: CR, U+2028, a vertical tab, a BOM", () => {
     const cases: [string, PrFile[]][] = [
-      ...sides("CRLF", "# A note\r\nline\r\n"),
+      ...sides("CRLF", { bad: "# A note\r\nline\r\n", good: "# Good\n" }),
       ["U+2028", [file(NOTE, { baseText: "# O\n", headText: "# A\u2028B\n" })]],
       ["vertical tab", [file(NOTE, { baseText: "# O\n", headText: "# A\vB\n" })]],
       ["BOM in the middle", [file(NOTE, { baseText: "# O\n", headText: "# A\ufeffB\n" })]],
@@ -609,8 +610,8 @@ describe("classify: the memory text form", () => {
 
   it("stops for a text that does not open with front matter or a heading", () => {
     const cases: [string, PrFile[]][] = [
-      ...sides("a blank first line", "\n# A\n"),
-      ...sides("--- with a space", "--- \ntitle: a\n---\n# A\n"),
+      ...sides("a blank first line", { bad: "\n# A\n", good: "# Good\n" }),
+      ...sides("--- with a space", { bad: "--- \ntitle: a\n---\n# A\n", good: "# Good\n" }),
       ["plain text", [file(NOTE, { baseText: "# O\n", headText: "x\n" })]],
     ];
     for (const [name, files] of cases) {
@@ -619,11 +620,8 @@ describe("classify: the memory text form", () => {
   });
 
   it("stops for front matter with a repeated key, on each side", () => {
-    for (const [name, files] of sides(
-      "a repeated key",
-      "---\ntitle: a\ntitle: b\n---\n# A\n",
-      "---\ntitle: a\n---\n# A\n",
-    )) {
+    const repeated = { bad: "---\ntitle: a\ntitle: b\n---\n# A\n", good: FM_GOOD };
+    for (const [name, files] of sides("a repeated key", repeated)) {
       expect(stops(files), `repeated ${name}`).toMatch(/^1 [\s\S]*the chief stops/);
     }
   });
@@ -642,11 +640,7 @@ describe("classify: the memory text form", () => {
 
   it("stops for a front-matter key that is not in the list", () => {
     for (const key of ["zzz: x", "owner-merges: true"]) {
-      for (const [name, files] of sides(
-        key,
-        `---\n${key}\n---\n# A\n`,
-        "---\ntitle: a\n---\n# A\n",
-      )) {
+      for (const [name, files] of sides(key, { bad: `---\n${key}\n---\n# A\n`, good: FM_GOOD })) {
         expect(stops(files), `key ${name}`).toMatch(/^1 [\s\S]*the chief stops/);
       }
     }
@@ -831,13 +825,13 @@ describe("the merge-check CLI", () => {
     ".agents/chief/scripts",
     ".agents/chief/memories/long-term/settings.md",
   ];
-  const cliIn = (cwd: string, extra: NodeJS.ProcessEnv, ...args: string[]) =>
+  const cliIn = (where: { cwd: string; extra?: NodeJS.ProcessEnv }, ...args: string[]) =>
     spawnSync(
       process.execPath,
       ["--import", "tsx", ".agents/chief/scripts/merge-check.ts", ...args],
-      { cwd, env: { ...env(), ...extra }, encoding: "utf8" },
+      { cwd: where.cwd, env: { ...env(), ...where.extra }, encoding: "utf8" },
     );
-  const cli = (...args: string[]) => cliIn(repo, {}, ...args);
+  const cli = (...args: string[]) => cliIn({ cwd: repo }, ...args);
   const mergeLine = (head: string): string =>
     `gh pr merge https://github.com/binhle312/cty1ng/pull/152 --merge --match-head-commit ${head}`;
   // The number of gh calls since the last fakeGh().
@@ -1098,7 +1092,7 @@ describe("the merge-check CLI", () => {
     execFileSync("git", ["-C", shallow, "config", `url.${origin}.insteadOf`, ORIGIN_URL]);
     execFileSync("ln", ["-s", join(process.cwd(), "node_modules"), join(shallow, "node_modules")]);
     fakeGh(answer({ head, baseTip: tip() }));
-    const shallowRun = cliIn(shallow, {}, "152");
+    const shallowRun = cliIn({ cwd: shallow }, "152");
     const shallowCalls = ghCalls();
     rmSync(shallow, { recursive: true, force: true });
     const grafts = join(repo, git("rev-parse", "--git-path", "info/grafts"));
@@ -1201,7 +1195,8 @@ describe("the merge-check CLI", () => {
   it("does not pass a GIT_DIR of the parent environment to git", () => {
     const head = prCommit({ "docs/a.md": "s6\n" });
     fakeGh(answer({ head, baseTip: tip() }));
-    const result = cliIn(repo, { GIT_DIR: join(root, "nothing"), GIT_ZZZ: "1" }, "152");
+    const extra = { GIT_DIR: join(root, "nothing"), GIT_ZZZ: "1" };
+    const result = cliIn({ cwd: repo, extra }, "152");
     expect(result.stdout, `git dir ${result.stderr}`).toContain(mergeLine(head));
   });
 
