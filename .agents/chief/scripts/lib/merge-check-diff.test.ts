@@ -100,7 +100,13 @@ describe("readDiff", () => {
     expect(blobReads, "no blob read").toBe(0);
     const read = blobReader(runner);
     const side = (blob: string | undefined) =>
-      read({ path: "backend/package.json", side: "base", blob: blob ?? "", kind: "manifest" });
+      read({
+        path: "backend/package.json",
+        key: Buffer.from("backend/package.json").toString("hex"),
+        side: "base",
+        blob: blob ?? "",
+        kind: "manifest",
+      });
     expect(side(manifest?.oldBlob), "base text by id").toEqual({
       kind: "text",
       text: '{"name":"b","dependencies":{"x":"1"}}\n',
@@ -131,6 +137,7 @@ describe("readDiff", () => {
     expect(manifest?.liveChanged, "changed on main").toBe(true);
     const merged = blobReader(runner)({
       path: "backend/package.json",
+      key: Buffer.from("backend/package.json").toString("hex"),
       side: "base",
       blob: manifest?.oldBlob ?? "",
       kind: "manifest",
@@ -208,6 +215,7 @@ describe("readDiff", () => {
     const bad = records.files.find((file) => file.path === "backend/package.json");
     const text = blobReader(runner)({
       path: "backend/package.json",
+      key: Buffer.from("backend/package.json").toString("hex"),
       side: "head",
       blob: bad?.newBlob ?? "",
       kind: "manifest",
@@ -264,7 +272,7 @@ describe("readDiff", () => {
       }).trim();
     const read = blobReader(runner);
     const of = (bytes: Buffer, kind: "memory" | "manifest") =>
-      read({ path: "x", side: "head", blob: blob(bytes), kind });
+      read({ path: "x", key: "78", side: "head", blob: blob(bytes), kind });
     expect(of(Buffer.from([0x23, 0x20, 0xff, 0x0a]), "memory"), "memory not UTF-8").toEqual({
       kind: "unsupported",
     });
@@ -280,7 +288,7 @@ describe("readDiff", () => {
       "failed",
     );
     expect(
-      read({ path: "x", side: "base", blob: "e".repeat(40), kind: "memory" }).kind,
+      read({ path: "x", key: "78", side: "base", blob: "e".repeat(40), kind: "memory" }).kind,
       "unknown blob",
     ).toBe("failed");
   });
@@ -300,6 +308,20 @@ describe("readDiff", () => {
     expect(byPath.get("docs/a\\x20b.md"), "a backslash path is not the space path").toBe(false);
     expect(byPath.get("docs/a.md"), "case differs").toBe(false);
     expect(tip, "tip").not.toBe(baseTip());
+  });
+
+  // A2 (order 152): each record keeps the path bytes; the escaped form is only for output.
+  it("keeps the path bytes in each record, also for two paths with one escaped form", () => {
+    const tip = baseTip();
+    w("checkout", "-q", "-b", "pr");
+    const names = ["docs/a b\\x20c.md", "docs/a\\x20b c.md"];
+    const head = commit(Object.fromEntries(names.map((name) => [name, "x\n"])), "pr");
+    pushPr(head);
+    const result = readDiff({ head, baseTip: tip }, runner);
+    if (!result.ok) throw new Error(result.reason);
+    const keys = result.files.map((file) => file.key).sort();
+    const want = names.map((name) => Buffer.from(name).toString("hex")).sort();
+    expect(keys, "one key for each path").toEqual(want);
   });
 
   // Plan delta r1 §3: a local setting cannot hide a gitlink from the raw diff.

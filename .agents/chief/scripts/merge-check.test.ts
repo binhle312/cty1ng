@@ -27,7 +27,9 @@ import {
   classifyWith,
   isControl,
   memoryTextProblems,
+  readTexts,
 } from "./lib/merge-check.ts";
+import { type GitRun, blobReader } from "./lib/merge-check-diff.ts";
 import { answer, greenNodes } from "./lib/merge-check-fixtures.ts";
 import {
   CI_APP_ID,
@@ -67,6 +69,7 @@ const permission = (text: string, field = "permission-rule: true"): string =>
 function file(path: string, extra: Partial<PrFile> = {}): PrFile {
   return {
     path,
+    key: Buffer.from(path).toString("hex"),
     status: "M",
     oldMode: "100644",
     newMode: "100644",
@@ -742,7 +745,8 @@ describe("classify with a reader", () => {
   });
 
   it("the record step reads no text when a path, a status or a mode decides", () => {
-    const gitlink = file(`${LT}sub`, {
+    // A4 (order 152): `sub.md` passes the path grammar, so only the mode decides.
+    const gitlink = file(`${LT}sub.md`, {
       status: "A",
       oldMode: "000000",
       newMode: "160000",
@@ -803,6 +807,45 @@ describe("classify with a reader", () => {
       const pattern = new RegExp(`^1 [\\s\\S]*the chief stops: the ${side} text is not UTF-8`);
       expect(said, `unsupported ${side}`).toMatch(pattern);
     }
+  });
+
+  // A5 (order 152): the git reader and classify together, a byte FF on one side at a time.
+  it("stops the chief for a memory blob that is not UTF-8, through the git reader, on each side alone", () => {
+    const blobs: Record<string, Buffer> = {
+      [BLOB_A]: Buffer.from("# Clean\n"),
+      [BLOB_B]: Buffer.from([0x23, 0x20, 0xff, 0x0a]),
+    };
+    const git: GitRun = (args) => {
+      const bytes = blobs[args[2] ?? ""];
+      return bytes === undefined
+        ? { status: 1, stdout: Buffer.alloc(0) }
+        : { status: 0, stdout: bytes };
+    };
+    const cases: [string, PrFile][] = [
+      ["base", file(NOTE, { oldBlob: BLOB_B, newBlob: BLOB_A })],
+      ["head", file(NOTE, { oldBlob: BLOB_A, newBlob: BLOB_B })],
+    ];
+    for (const [side, note] of cases) {
+      const result = classifyWith(input([note]), blobReader(git));
+      const said = `${String(result.exit)} ${result.lines.join("\n")}`;
+      const pattern = new RegExp(`^1 [\\s\\S]*the chief stops: the ${side} text is not UTF-8`);
+      expect(said, `git reader ${side}`).toMatch(pattern);
+    }
+  });
+
+  // A2 (order 152): a text belongs to the path bytes of its file, not to the escaped form.
+  it("keeps the texts of two files apart by their path bytes", () => {
+    const reads: ContentRead[] = ["aa", "bb"].map((key) => ({
+      path: "docs/same",
+      key,
+      side: "head",
+      blob: BLOB_A,
+      kind: "memory",
+    }));
+    const read = readTexts(reads, (one) => text(one.key));
+    const texts = read.ok ? [...read.texts.values()] : [];
+    const said = texts.map((one) => (one.kind === "text" ? one.text : one.kind)).join(" ");
+    expect(said, "one text for each key").toBe("aa bb");
   });
 
   it("cannot check when the reader fails, for a note and for a manifest", () => {
@@ -1460,7 +1503,8 @@ describe("the merge-check CLI", () => {
     const cases: [string, string, RegExp][] = [
       [
         "a gitlink under long-term",
-        prChange({ write: note, links: [".agents/chief/memories/long-term/sub"] }),
+        // A4 (order 152): `sub.md` passes the path grammar, so only the mode decides.
+        prChange({ write: note, links: [".agents/chief/memories/long-term/sub.md"] }),
         /^1 [\s\S]*the owner merges it/,
       ],
       [
@@ -1480,11 +1524,6 @@ describe("the merge-check CLI", () => {
         }),
         /^1 [\s\S]*The chief stops: a path that is not printable ASCII/,
       ],
-      [
-        "a listed path and a changed manifest",
-        prChange({ write: { "AGENTS.md": "x\n", "package.json": manifest() } }),
-        /^1 [\s\S]*LISTED AGENTS\.md/,
-      ],
     ];
     const results = cases.map(([name, head, want]) => {
       fakeGh(answer({ head, baseTip: tip() }));
@@ -1493,6 +1532,14 @@ describe("the merge-check CLI", () => {
     for (const [name, said, want] of results) {
       expect(said, name).toMatch(new RegExp(`${want.source}[\\s\\S]* reads 0$`));
     }
+  });
+
+  // Plan delta r2 §7, "Listed path first" (A7a, order 152): its own test, so its break fails here.
+  it("reads no text for a listed path beside a changed manifest", () => {
+    const head = prChange({ write: { "AGENTS.md": "x\n", "package.json": manifest() } });
+    fakeGh(answer({ head, baseTip: tip() }));
+    const run = logged("152");
+    expect(run.said, "listed first").toMatch(/^1 [\s\S]*LISTED AGENTS\.md[\s\S]* reads 0$/);
   });
 
   // DQ-1045 (grill r2, point 2): the CI facts decide before any blob read.
@@ -1558,6 +1605,67 @@ describe("the merge-check CLI", () => {
     expect(held.result.stdout, "no held line").not.toContain("a memory PR may only add or change");
   });
 
+  // A1 (order 152): a memory PR that cannot be checked after the diff gives no merge instruction
+  // for the owner, also when snapshot 2 differs or cannot be read.
+  it("tells no one to merge a memory PR when snapshot 2 differs or cannot be read", () => {
+    keptOnMain();
+    const noteHead = prChange({ write: { [KEPT]: "# Kept again\n" } });
+    const goneHead = prChange({ remove: [KEPT] });
+    const rerun = greenNodes().map((node, i) => (i === 0 ? { ...node, databaseId: 9997 } : node));
+    const results: [string, string][] = [];
+    for (const [kind, head] of [
+      ["a passing note", noteHead],
+      ["a record stop", goneHead],
+    ] as const) {
+      for (const [name, second] of [
+        ["differs", answer({ head, baseTip: tip(), nodes: rerun })],
+        ["cannot be read", "not json"],
+      ] as const) {
+        fakeGh(answer({ head, baseTip: tip() }), second);
+        const result = cli("152");
+        results.push([`${kind} ${name}`, `${String(result.status)} ${result.stdout}`]);
+      }
+    }
+    for (const [name, said] of results) {
+      expect(said, `memory ${name}`).toMatch(/^2 Cannot check #152: [^\n]*\. Do not merge it\.\n$/);
+    }
+  });
+
+  // O1 (order 152): a failed content read in the CLI gives exit 2 at once.
+  it("exits 2 when git cannot read a needed text", () => {
+    keptOnMain();
+    const noteHead = prChange({ write: { [KEPT]: "# Kept read\n" } });
+    const codeHead = prChange({ write: { "package.json": manifest() } });
+    const failbin = join(root, "failbin");
+    mkdirSync(failbin, { recursive: true });
+    writeFileSync(
+      join(failbin, "git"),
+      `#!/bin/sh\nif [ "$1 $2" = "cat-file blob" ]; then exit 1; fi\nexec "${realGit}" "$@"\n`,
+    );
+    chmodSync(join(failbin, "git"), 0o755);
+    const results: [string, string, RegExp][] = [];
+    for (const [kind, head, want] of [
+      [
+        "memory",
+        noteHead,
+        /^2 Cannot check #152: git could not read the base text of [^\n]*Do not merge it\.\n$/,
+      ],
+      [
+        "manifest",
+        codeHead,
+        /^2 Cannot check #152: git could not read the base text of package\.json\./,
+      ],
+    ] as const) {
+      fakeGh(answer({ head, baseTip: tip() }));
+      const result = cliIn(
+        { cwd: repo, extra: { PATH: `${failbin}:${bin}:${process.env.PATH ?? ""}` } },
+        "152",
+      );
+      results.push([kind, `${String(result.status)} ${result.stdout}`, want]);
+    }
+    for (const [kind, said, stop] of results) expect(said, `read failed ${kind}`).toMatch(stop);
+  });
+
   // DQ-1043 and grill 2 point 1: one origin value, read as bytes, printable ASCII, no trim.
   it("exits 2 with no gh call for an origin with more or less than one exact value", () => {
     const head = prCommit({ "docs/a.md": "o2\n" });
@@ -1567,10 +1675,17 @@ describe("the merge-check CLI", () => {
       ["a value and an empty value", [ORIGIN_URL, ""], "has 2 URLs"],
       ["a trailing space", [`${ORIGIN_URL} `], "not printable ASCII"],
       ["a BOM", [`\ufeff${ORIGIN_URL}`], "not printable ASCII"],
+      // A3 (order 152): no value, a DEL byte and a TAB.
+      ["no value", [], "has 0 URLs"],
+      ["a DEL byte", [`${ORIGIN_URL}\x7f`], "not printable ASCII"],
+      ["a TAB", [`${ORIGIN_URL}\t`], "not printable ASCII"],
     ];
+    const unset = (): void => {
+      spawnSync("git", ["config", "--unset-all", "remote.origin.url"], { cwd: repo, env: env() });
+    };
     const results: [string, string, string][] = [];
     for (const [name, values, want] of cases) {
-      git("config", "--unset-all", "remote.origin.url");
+      unset();
       for (const value of values) git("config", "--add", "remote.origin.url", value);
       fakeGh(answer({ head, baseTip: tip() }));
       const result = cli("152");
@@ -1580,7 +1695,7 @@ describe("the merge-check CLI", () => {
         want,
       ]);
     }
-    git("config", "--unset-all", "remote.origin.url");
+    unset();
     git("config", "remote.origin.url", ORIGIN_URL);
     for (const [name, said, want] of results) {
       expect(said, `origin ${name}`).toMatch(new RegExp(`^2 [\\s\\S]*${want}[\\s\\S]* calls 0$`));
@@ -1603,19 +1718,64 @@ describe("the merge-check CLI", () => {
     run("a name with the byte ff", /^2 [\s\S]*cannot keep exactly/);
     rmSync(raw);
     writeFileSync(join(lib, "x y.ts"), "export {};\n");
-    run("a name with a space", /^2 [\s\S]*(cannot keep exactly|differs from the base tip)/);
+    // O5 (order 152): the walk itself stops for the space, before the compare.
+    run("a name with a space", /^2 [\s\S]*cannot keep exactly/);
     rmSync(join(lib, "x y.ts"));
     mkdirSync(join(lib, "locked"));
     chmodSync(join(lib, "locked"), 0o000);
     run("a folder it cannot read", /^2 Cannot check #152: [\s\S]*could not read/);
     chmodSync(join(lib, "locked"), 0o755);
     rmSync(join(lib, "locked"), { recursive: true });
-    writeFileSync(join(lib, "locked.ts"), "export {};\n");
-    chmodSync(join(lib, "locked.ts"), 0o000);
-    run("a file it cannot read", /^2 /);
-    chmodSync(join(lib, "locked.ts"), 0o644);
-    rmSync(join(lib, "locked.ts"));
     for (const [name, said, pattern] of results) expect(said, `walk ${name}`).toMatch(pattern);
+  });
+
+  // A6 (order 152): a policy file that matches the base tip but cannot be read stops the check.
+  it("exits 2 when a policy file that matches the base tip cannot be read", () => {
+    expect(process.getuid?.(), "the test does not run as root").not.toBe(0);
+    const head = prCommit({ "docs/a.md": "p3\n" });
+    const locked = join(repo, ".agents/chief/scripts/check-memory.test.ts");
+    chmodSync(locked, 0o000);
+    fakeGh(answer({ head, baseTip: tip() }));
+    const result = cli("152");
+    chmodSync(locked, 0o644);
+    const said = `${String(result.status)} ${result.stdout}${result.stderr}`;
+    const unhashed = /^2 Cannot check #152: git could not hash the policy files here\./;
+    expect(said, "unreadable policy file").toMatch(unhashed);
+  });
+
+  // Plan delta r2 §5 (the plan-line check of order 152): a local read error of the word list
+  // gives exit 2 before snapshot 1.
+  it("exits 2 with no gh call when the private word list cannot be read", () => {
+    expect(process.getuid?.(), "the test does not run as root").not.toBe(0);
+    const head = prCommit({ "docs/a.md": "w2\n" });
+    const words = join(repo, ".agents/chief/memories/short-term/private-words.txt");
+    chmodSync(words, 0o000);
+    fakeGh(answer({ head, baseTip: tip() }));
+    const result = cli("152");
+    chmodSync(words, 0o644);
+    const said = `${String(result.status)} ${result.stdout} calls ${String(ghCalls())}`;
+    const unread =
+      /^2 Cannot check #152: the owner record or the private word list cannot be read\. Do not merge it\.\n calls 0$/;
+    expect(said, "unreadable word list").toMatch(unread);
+  });
+
+  // O2 (order 152): a policy path of the base tip that is not printable ASCII stops the check.
+  it("exits 2 when a policy path of the base tip is not printable ASCII", () => {
+    const spaced = ".agents/chief/scripts/x y.txt";
+    writeFileSync(join(repo, spaced), "x\n");
+    git("add", "--", spaced);
+    git("commit", "-q", "-m", "a spaced policy path");
+    pushMain();
+    const head = prCommit({ "docs/a.md": "p4\n" });
+    fakeGh(answer({ head, baseTip: tip() }));
+    const result = cli("152");
+    git("rm", "-q", "--", spaced);
+    git("commit", "-q", "-m", "remove the spaced policy path");
+    pushMain();
+    const said = `${String(result.status)} ${result.stdout}`;
+    const spacedStop =
+      /^2 Cannot check #152: a policy path of the base tip is not printable ASCII\./;
+    expect(said, "spaced base path").toMatch(spacedStop);
   });
 
   // DQ-1052: the fake gh counts each call on entry, also a call with other arguments.

@@ -41,13 +41,15 @@ import { OWNER_RECORD, checkOwnerQuotes } from "./owner-quotes.ts";
 // The status of a path in `git diff --no-renames`: a rename is a delete and an add.
 export type DiffStatus = "A" | "M" | "D" | "T";
 
-// A changed path of the PR, from the merge base to the head. `baseText` is the text at the merge
-// base and `headText` at the head; the reader fills them only for paths of `needsText`.
-// `liveChanged` is true when main changed this path after the merge base. `supported` is false
-// for a path with a byte outside 0x21-0x7E (`path` is then an escaped form), and
-// `textUnsupported` is true when a memory text is not UTF-8.
+// A changed path of the PR, from the merge base to the head (a record of `readDiff`). `key` is
+// the path bytes as hex: the identity of the path (plan delta r2 §2; order 152). `path` is the
+// escaped form, only for output and for the path rules of a printable path. `liveChanged` is
+// true when main changed this path after the merge base. `supported` is false for a path with a
+// byte outside 0x21-0x7E. `baseText`, `headText` and `textUnsupported` are only for `classify`
+// in tests: the CLI reads each text by its blob id between the two steps.
 export type PrFile = {
   path: string;
+  key: string;
   supported: boolean;
   textUnsupported?: boolean;
   status: DiffStatus;
@@ -64,7 +66,13 @@ export type PrFile = {
 // One text that the judgment needs: a side of a file, read by its blob id. A memory text keeps a
 // BOM; a manifest (`package.json`) is decoded as before plan delta r1.
 export type ContentKind = "memory" | "manifest";
-export type ContentRead = { path: string; side: "base" | "head"; blob: string; kind: ContentKind };
+export type ContentRead = {
+  path: string;
+  key: string;
+  side: "base" | "head";
+  blob: string;
+  kind: ContentKind;
+};
 // `unsupported`: a memory text that is not UTF-8 (the chief stops). `failed`: the text cannot be
 // read, or a manifest is not UTF-8 (cannot check).
 export type ReadResult =
@@ -275,19 +283,19 @@ function recordOwnerProblems(files: readonly PrFile[]): string[] {
 // deleted.
 function readsOf(file: PrFile, kind: ContentKind): ContentRead[] {
   const reads: ContentRead[] = [];
-  if (file.status !== "A")
-    reads.push({ path: file.path, side: "base", blob: file.oldBlob ?? "", kind });
-  if (file.status !== "D")
-    reads.push({ path: file.path, side: "head", blob: file.newBlob ?? "", kind });
+  const { path, key } = file;
+  if (file.status !== "A") reads.push({ path, key, side: "base", blob: file.oldBlob ?? "", kind });
+  if (file.status !== "D") reads.push({ path, key, side: "head", blob: file.newBlob ?? "", kind });
   return reads;
 }
 
 // The result of the record step: a decisive result, or the texts that the content step needs.
-export type RecordStep = { done: MergeResult } | { reads: ContentRead[]; memory: boolean };
-// The texts of a record step, by `readKey`.
+// `memory` is true for a memory PR, so a later stop of the CLI keeps the kind (A1, order 152).
+export type RecordStep =
+  { done: MergeResult; memory: boolean } | { reads: ContentRead[]; memory: boolean };
+// The texts of a record step, by `readKey`: the side and the path bytes (A2, order 152).
 export type Texts = ReadonlyMap<string, ReadResult>;
-export const readKey = (read: { side: string; path: string }): string =>
-  `${read.side} ${read.path}`;
+export const readKey = (read: { side: string; key: string }): string => `${read.side} ${read.key}`;
 
 const isMemoryPr = (input: MergeInput): boolean =>
   input.files.length > 0 && input.files.every((file) => inMemory(file.path));
@@ -308,8 +316,11 @@ const listedResult = (header: string, listed: string[]): MergeResult => ({
   ],
 });
 
+// A result of the rules of one PR kind, or the texts that its content rules need.
+type Decided = { done: MergeResult } | { reads: ContentRead[]; memory: boolean };
+
 // The memory rules that need no text (plan delta r2 §2, steps 2 and 3).
-function memoryRecords(input: MergeInput, header: string): RecordStep {
+function memoryRecords(input: MergeInput, header: string): Decided {
   // DQ-1031: the trusted local inputs first, for each memory PR.
   if ((input.record ?? []).every((text) => text.trim() === "")) {
     throw new CannotCheck(`no owner record (${OWNER_RECORD}/*.md)`);
@@ -338,7 +349,7 @@ function memoryRecords(input: MergeInput, header: string): RecordStep {
 
 // The code rules that need no text: each listed path, an added, deleted or retyped
 // `package.json`, then CI (plan delta r2 §2, steps 2 and 3).
-function codeRecords(input: MergeInput, header: string): RecordStep {
+function codeRecords(input: MergeInput, header: string): Decided {
   const listed: string[] = [];
   for (const file of input.files) {
     const item = listedItem(file.path);
@@ -366,10 +377,10 @@ function codeRecords(input: MergeInput, header: string): RecordStep {
 export function decideRecords(input: MergeInput): RecordStep {
   const memory = isMemoryPr(input);
   const header = headerOf(input);
-  const done = (result: MergeResult): RecordStep => ({ done: printed(result) });
+  const done = (result: MergeResult): RecordStep => ({ done: printed(result), memory });
   // DQ-1033: a PR that is not open cannot be checked.
   if (input.state !== "OPEN") {
-    return { done: cannotCheck({ pr: input.number, reason: `the PR is ${input.state}`, memory }) };
+    return done(cannotCheck({ pr: input.number, reason: `the PR is ${input.state}`, memory }));
   }
   const origin = originProblem(input);
   if (origin !== undefined) return done({ exit: 1, lines: [header, `No chief merge: ${origin}.`] });
@@ -411,7 +422,7 @@ export function decideRecords(input: MergeInput): RecordStep {
     return "done" in step ? done(step.done) : step;
   } catch (error) {
     if (error instanceof CannotCheck) {
-      return { done: cannotCheck({ pr: input.number, reason: error.message, memory }) };
+      return done(cannotCheck({ pr: input.number, reason: error.message, memory }));
     }
     throw error;
   }
@@ -431,7 +442,7 @@ export function readTexts(
   return { ok: true, texts };
 }
 
-function textOf(texts: Texts, read: { side: string; path: string }): string | null {
+function textOf(texts: Texts, read: { side: string; key: string; path: string }): string | null {
   const result = texts.get(readKey(read));
   if (result === undefined || result.kind === "failed") {
     throw new CannotCheck(`no ${read.side} text for ${read.path}`);
@@ -489,8 +500,9 @@ function codeContent(input: MergeInput, step: Step): MergeResult {
   const { texts, header } = step;
   const listed: string[] = [];
   for (const file of input.files.filter((item) => isPackageJson(item.path))) {
-    const base = packageFields(textOf(texts, { side: "base", path: file.path }), file.path);
-    const head = packageFields(textOf(texts, { side: "head", path: file.path }), file.path);
+    const { path, key } = file;
+    const base = packageFields(textOf(texts, { side: "base", key, path }), path);
+    const head = packageFields(textOf(texts, { side: "head", key, path }), path);
     if (
       PACKAGE_FIELDS.some((field) => JSON.stringify(base[field]) !== JSON.stringify(head[field]))
     ) {
@@ -541,7 +553,7 @@ export function classifyWith(input: MergeInput, reader: Reader): MergeResult {
 // The judgment with the texts in the files (`baseText`, `headText`, `textUnsupported`).
 export function classify(input: MergeInput): MergeResult {
   return classifyWith(input, (read) => {
-    const file = input.files.find((item) => item.path === read.path);
+    const file = input.files.find((item) => item.key === read.key);
     const text = read.side === "base" ? file?.baseText : file?.headText;
     if (text !== undefined) return { kind: "text", text };
     if (file?.textUnsupported === true) return { kind: "unsupported" };

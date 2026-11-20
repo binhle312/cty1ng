@@ -2115,8 +2115,8 @@
           "file": ".agents/chief/scripts/lib/merge-check.ts",
           "edits": [
             {
-              "find": "    reads.push({ path: file.path, side: \"head\", blob: file.newBlob ?? \"\", kind });",
-              "replace": "    reads.push({ path: file.path, side: \"head\", blob: file.oldBlob ?? \"\", kind });"
+              "find": "  if (file.status !== \"D\") reads.push({ path, key, side: \"head\", blob: file.newBlob ?? \"\", kind });",
+              "replace": "  if (file.status !== \"D\") reads.push({ path, key, side: \"head\", blob: file.oldBlob ?? \"\", kind });"
             }
           ]
         }
@@ -3092,7 +3092,7 @@
     },
     {
       "id": "E1-cli-record-first",
-      "claim": "The CLI reads no text when a path, a status or a mode decides (DQ-1045; security test: deny by default, plan delta r2, order 147)",
+      "claim": "The CLI reads no text when a path, a status or a mode decides (DQ-1045; the gitlink has a grammar path, so only its mode decides, A4 of order 152; security test: deny by default, plan delta r2, order 147)",
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/merge-check.test.ts",
@@ -3106,7 +3106,21 @@
           "edits": [
             {
               "find": "  const step = decideRecords(input);\n  let texts",
-              "replace": "  readTexts(diff.files.map((file) => ({ path: file.path, side: \"head\" as const, blob: file.newBlob ?? \"\", kind: \"memory\" as const })), blobReader(gitBytes));\n  const step = decideRecords(input);\n  let texts"
+              "replace": "  readTexts(diff.files.map((file) => ({ path: file.path, key: file.key, side: \"head\" as const, blob: file.newBlob ?? \"\", kind: \"memory\" as const })), blobReader(gitBytes));\n  const step = decideRecords(input);\n  let texts"
+            }
+          ]
+        },
+        {
+          "id": "E1-cli-record-first-2",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "      file.newMode !== FILE_MODE ||\n",
+              "replace": ""
+            },
+            {
+              "find": "  const form = textProblems(memory);\n",
+              "replace": "  const modes = input.files.filter((item) => item.newMode !== FILE_MODE);\n  if (modes.length > 0) return memoryFail(header, modes.map((item) => `${item.path}: mode ${item.newMode}`));\n  const form = textProblems(memory);\n"
             }
           ]
         }
@@ -3114,7 +3128,7 @@
     },
     {
       "id": "E2-record-first",
-      "claim": "The record step reads no text when a path, a status or a mode decides (DQ-1045; security test: deny by default, plan delta r2, order 147)",
+      "claim": "The record step reads no text when a path, a status or a mode decides (DQ-1045; the gitlink has a grammar path, so only its mode decides, A4 of order 152; security test: deny by default, plan delta r2, order 147)",
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/merge-check.test.ts",
@@ -3128,7 +3142,21 @@
           "edits": [
             {
               "find": "  const step = decideRecords(input);\n  if (\"done\" in step) return step.done;",
-              "replace": "  input.files.forEach((file) => reader({ path: file.path, side: \"head\", blob: \"\", kind: \"memory\" }));\n  const step = decideRecords(input);\n  if (\"done\" in step) return step.done;"
+              "replace": "  input.files.forEach((file) => reader({ path: file.path, key: file.key, side: \"head\", blob: \"\", kind: \"memory\" }));\n  const step = decideRecords(input);\n  if (\"done\" in step) return step.done;"
+            }
+          ]
+        },
+        {
+          "id": "E2-record-first-2",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "      file.newMode !== FILE_MODE ||\n",
+              "replace": ""
+            },
+            {
+              "find": "  const form = textProblems(memory);\n",
+              "replace": "  const modes = input.files.filter((item) => item.newMode !== FILE_MODE);\n  if (modes.length > 0) return memoryFail(header, modes.map((item) => `${item.path}: mode ${item.newMode}`));\n  const form = textProblems(memory);\n"
             }
           ]
         }
@@ -3418,7 +3446,7 @@
     },
     {
       "id": "E12-origin",
-      "claim": "An origin with more or less than one value, or a value that is not printable ASCII (a trailing space, a BOM), gives exit 2 and no gh call (DQ-1043, grill 2 point 1; security test: deny by default, plan delta r2, order 147)",
+      "claim": "An origin with more or less than one value (no value too), or a value that is not printable ASCII (a trailing space, a BOM, a DEL byte, a TAB), gives exit 2 and no gh call (DQ-1043, grill 2 point 1, A3 of order 152; security test: deny by default, plan delta r2, order 147)",
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/merge-check.test.ts",
@@ -3431,8 +3459,8 @@
           "file": ".agents/chief/scripts/merge-check.ts",
           "edits": [
             {
-              "find": "    origin: origin.status === 0 ? splitNul(origin.stdout) : undefined,",
-              "replace": "    origin: origin.status === 0 ? splitNul(origin.stdout).slice(-1) : undefined,"
+              "find": "    origin: origin.status === 0 ? splitNul(origin.stdout) : none ? [] : undefined,",
+              "replace": "    origin: origin.status === 0 ? splitNul(origin.stdout).slice(-1) : none ? [] : undefined,"
             }
           ]
         },
@@ -3441,8 +3469,8 @@
           "file": ".agents/chief/scripts/merge-check.ts",
           "edits": [
             {
-              "find": "    origin: origin.status === 0 ? splitNul(origin.stdout) : undefined,",
-              "replace": "    origin: origin.status === 0 ? splitNul(origin.stdout).map((v) => Buffer.from(v.toString(\"latin1\").trim())) : undefined,"
+              "find": "    origin: origin.status === 0 ? splitNul(origin.stdout) : none ? [] : undefined,",
+              "replace": "    origin: origin.status === 0 ? splitNul(origin.stdout).map((v) => Buffer.from(v.toString(\"latin1\").trim())) : none ? [] : undefined,"
             }
           ]
         },
@@ -3451,8 +3479,28 @@
           "file": ".agents/chief/scripts/merge-check.ts",
           "edits": [
             {
-              "find": "    origin: origin.status === 0 ? splitNul(origin.stdout) : undefined,",
-              "replace": "    origin: origin.status === 0 ? splitNul(Buffer.from(UTF8.decode(origin.stdout))) : undefined,"
+              "find": "    origin: origin.status === 0 ? splitNul(origin.stdout) : none ? [] : undefined,",
+              "replace": "    origin: origin.status === 0 ? splitNul(Buffer.from(UTF8.decode(origin.stdout))) : none ? [] : undefined,"
+            }
+          ]
+        },
+        {
+          "id": "E12-origin-4",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "  const none = origin.status === 1 && origin.stdout.length === 0;",
+              "replace": "  const none = origin.status < 0;"
+            }
+          ]
+        },
+        {
+          "id": "E12-origin-5",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "  if (values?.length !== 1 || value === undefined || !isPrintable(value)) return undefined;",
+              "replace": "  if (values?.length !== 1 || value === undefined || !value.every((byte) => byte === 0x09 || (byte >= 0x21 && byte <= 0x7f))) return undefined;"
             }
           ]
         }
@@ -3482,7 +3530,7 @@
     },
     {
       "id": "E14-cli-walk",
-      "claim": "The CLI gives exit 2 for a policy file name that is not printable ASCII and for a policy folder that it cannot read (DQ-1042, DQ-1044; security test: deny by default, plan delta r2, order 147)",
+      "claim": "The CLI gives exit 2 for a policy file name that is not printable ASCII and for a policy folder that it cannot read (DQ-1042, DQ-1044; a name with a space stops in the walk, O5 of order 152; security test: deny by default, plan delta r2, order 147)",
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/merge-check.test.ts",
@@ -3515,6 +3563,16 @@
             {
               "find": "      const names = [...call({ op: \"readdir\", path }, () => fs.readdir(path))].sort((a, b) =>",
               "replace": "      const names = [...(() => { try { return fs.readdir(path); } catch { return []; } })()].sort((a, b) =>"
+            }
+          ]
+        },
+        {
+          "id": "E14-cli-walk-3",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "        if (!isPrintable(name)) {",
+              "replace": "        if (name.includes(0xff)) {"
             }
           ]
         }
@@ -3705,6 +3763,234 @@
             {
               "find": "    return { ok: true, files };",
               "replace": "    for (const file of files) git([\"cat-file\", \"blob\", file.newBlob ?? \"\"]);\n    return { ok: true, files };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F1-record-key",
+      "claim": "Each record of readDiff keeps the path bytes, also for two paths with one escaped form (A2 of order 152; plan delta r2 §2; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
+        "name": "keeps the path bytes in each record, also for two paths with one escaped form"
+      },
+      "assertion": "expect(keys, \"one key for each path\").toEqual(want);",
+      "breaks": [
+        {
+          "id": "F1-record-key-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "      key: entry.key,\n",
+              "replace": "      key: entry.path,\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F2-text-key",
+      "claim": "A text belongs to the side and the path bytes of its file (A2 of order 152; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "keeps the texts of two files apart by their path bytes"
+      },
+      "assertion": "expect(said, \"one text for each key\").toBe(\"aa bb\");",
+      "breaks": [
+        {
+          "id": "F2-text-key-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "export const readKey = (read: { side: string; key: string }): string => `${read.side} ${read.key}`;",
+              "replace": "export const readKey = (read: { side: string; key: string }): string => `${read.side}`;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F3-memory-stop",
+      "claim": "A memory PR whose snapshot 2 differs or cannot be read gets exit 2 and \"Do not merge it\", not a merge instruction for the owner (A1 of order 152; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "tells no one to merge a memory PR when snapshot 2 differs or cannot be read"
+      },
+      "assertion": "expect(said, `memory ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "F3-memory-stop-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "    return stop(\"the PR changed during the check (head, base, state or checks)\", step.memory);",
+              "replace": "    return stop(\"the PR changed during the check (head, base, state or checks)\");"
+            }
+          ]
+        },
+        {
+          "id": "F3-memory-stop-2",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (!second.ok) return stop(second.reason, step.memory);",
+              "replace": "  if (!second.ok) return stop(second.reason);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F4-git-reader-sides",
+      "claim": "Through the git reader and classify, a memory blob that is not UTF-8 on one side alone stops the chief and names that side (A5 of order 152, DQ-1050; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops the chief for a memory blob that is not UTF-8, through the git reader, on each side alone"
+      },
+      "assertion": "expect(said, `git reader ${side}`).toMatch(pattern);",
+      "breaks": [
+        {
+          "id": "F4-git-reader-sides-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "const UTF8 = new TextDecoder(\"utf-8\", { fatal: true, ignoreBOM: true });",
+              "replace": "const UTF8 = new TextDecoder(\"utf-8\", { fatal: false, ignoreBOM: true });"
+            }
+          ]
+        },
+        {
+          "id": "F4-git-reader-sides-2",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "      return read.kind === \"memory\"\n",
+              "replace": "      return read.kind === \"memory\" && read.side === \"head\"\n"
+            }
+          ]
+        },
+        {
+          "id": "F4-git-reader-sides-3",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "      return read.kind === \"memory\"\n",
+              "replace": "      return read.kind === \"memory\" && read.side === \"base\"\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F5-policy-unreadable",
+      "claim": "A policy file that matches the base tip but cannot be read gives exit 2 (A6 of order 152, DQ-1044; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 when a policy file that matches the base tip cannot be read"
+      },
+      "assertion": "expect(said, \"unreadable policy file\").toMatch(unhashed);",
+      "breaks": [
+        {
+          "id": "F5-policy-unreadable-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (hashed.status !== 0 || blobs.length !== plain.length) {",
+              "replace": "  if (hashed.status < 0) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F6-listed-first",
+      "claim": "The CLI reads no text for a listed path beside a changed manifest (plan delta r2 §7 \"Listed path first\", A7a of order 152; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "reads no text for a listed path beside a changed manifest"
+      },
+      "assertion": "expect(run.said, \"listed first\").toMatch(",
+      "breaks": [
+        {
+          "id": "F6-listed-first-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "  const step = decideRecords(input);\n  let texts",
+              "replace": "  readTexts(diff.files.filter((file) => file.path.endsWith(\"package.json\")).map((file) => ({ path: file.path, key: file.key, side: \"head\" as const, blob: file.newBlob ?? \"\", kind: \"manifest\" as const })), blobReader(gitBytes));\n  const step = decideRecords(input);\n  let texts"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F7-cli-read-failed",
+      "claim": "In the CLI, a text that git cannot read gives exit 2 at once, with \"Do not merge it\" for a memory PR (O1 of order 152; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 when git cannot read a needed text"
+      },
+      "assertion": "for (const [kind, said, stop] of results) expect(said, `read failed ${kind}`).toMatch(stop);",
+      "breaks": [
+        {
+          "id": "F7-cli-read-failed-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "    if (!read.ok) return stop(read.reason, step.memory);",
+              "replace": "    if (!read.ok) return { exit: 1, lines: [read.reason] };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F8-base-path",
+      "claim": "A policy path of the base tip that is not printable ASCII gives exit 2 (plan delta r2 §5, O2 of order 152; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 when a policy path of the base tip is not printable ASCII"
+      },
+      "assertion": "expect(said, \"spaced base path\").toMatch(spacedStop);",
+      "breaks": [
+        {
+          "id": "F8-base-path-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "    if (!/^[\\x21-\\x7e]+$/.test(match[3] ?? \"\")) {",
+              "replace": "    if (!/^[\\x20-\\x7e]+$/.test(match[3] ?? \"\")) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F9-words-unreadable",
+      "claim": "A private word list that cannot be read gives exit 2 with \"Do not merge it\" and no gh call (plan delta r2 §5, the plan-line check of order 152; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 with no gh call when the private word list cannot be read"
+      },
+      "assertion": "expect(said, \"unreadable word list\").toMatch(unread);",
+      "breaks": [
+        {
+          "id": "F9-words-unreadable-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "    return stop(\"the owner record or the private word list cannot be read\", true);",
+              "replace": "    return { exit: 1, lines: [\"the owner record or the private word list cannot be read\"] };"
             }
           ]
         }

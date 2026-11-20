@@ -20,19 +20,28 @@ change the diff. Then it reads one GitHub snapshot of the PR, compares its own c
 tip of that snapshot, and judges the git diff at the commit ids of that snapshot: first from the
 paths, statuses, modes and CI checks alone, and only then from the texts that it still needs. It
 reads those texts before it reads the snapshot again, and a change in between stops it (owner,
-2026-11-20, orders 128, 130, 133 and 147). Exit 1 means no chief
-merge under a permission: a path that no permission covers, a check that is pending, red or
-missing, a touched path that main changed after the branch split (merge main first), a PR that
-mixes `.agents/chief/memories/` with other files, a memory PR that fails its gate, a path that is not printable
-ASCII or a memory text in a form that the script does not support ("the chief stops"), or a PR
-that comes from a fork, has another author or is for another base. A printable path outside the
-memory path grammar goes to the owner ("the owner merges it"). The owner merges each memory PR that does
-more than add or change `.md` files of `long-term/`, that changes `restore.md` or `audit.md`, or
-that adds, changes or deletes a rule with `permission-rule: true` (order 130). Exit 2 means that
-the script cannot check: no chief merge. A PR that is not open, a failed check of the clone, and a
-memory PR with no owner record or no private word list give exit 2; the record is checked once the
-PR reaches the memory gate, after the checks of each PR. When the owner's own message asks for a PR, a listed path does not stop
-the merge (R-002 path 1): the chief merges with
+2026-11-20, orders 128, 130, 133, 147 and 152). Exit 1 means no chief merge under a
+permission. The script stops at the first rule that fails, in this order:
+
+1. Each PR: it comes from a fork, has another author or is for another base; a path is not
+   printable ASCII ("the chief stops"); main changed a touched path after the branch split (merge
+   main first); the PR mixes `.agents/chief/memories/` with other files.
+2. A memory PR: a `short-term/` file other than its README is tracked (it must leave the PR);
+   `restore.md` or `audit.md` changes, or a change is other than an added or changed `.md` file of
+   the `long-term/` path grammar, such as a printable path outside the grammar ("the owner merges
+   it"); a CI check is pending, red or missing; a memory text has a form that the script does not
+   support ("the chief stops"); a file has `permission-rule` (the owner merges each one, order
+   130); a text holds a private word; a quote of a rule is not in the owner record.
+3. A code PR: a path that no permission covers (a listed path, or an added, deleted or retyped
+   `package.json`); a CI check is pending, red or missing; a dependency field of a changed
+   `package.json` changes.
+
+Exit 2 means that the script cannot check: no chief merge. A PR that is not open, a failed check
+of the clone, a text that git cannot read, a PR that changed during the check, and a memory PR with
+no owner record or no private word list give exit 2. The record is checked once the PR reaches the
+memory gate, after the checks of each PR; for a memory PR, exit 2 says "Do not merge it". When the
+owner's own message asks for a PR, a listed path does not stop the merge (R-002 path 1): the chief
+merges with
 `gh pr merge https://github.com/<owner>/<repo>/pull/<PR> --merge --match-head-commit <head>`, but
 never a mixed PR.
 

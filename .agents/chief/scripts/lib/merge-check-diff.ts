@@ -135,6 +135,7 @@ export function readDiff(input: { head: string; baseTip: string }, git: GitRun):
     );
     const files = entries.map((entry): PrFile => ({
       path: entry.path,
+      key: entry.key,
       supported: entry.supported,
       status: entry.status,
       oldMode: entry.oldMode,

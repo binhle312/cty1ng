@@ -91,8 +91,10 @@ function startFacts(): StartFacts {
   // Each configured value as bytes, as written (a URL rewrite of git does not change what it
   // names); the text helper would remove a leading BOM (grill 2).
   const origin = gitBytes(["config", "--get-all", "-z", "remote.origin.url"]);
+  // Git exits 1 with no output when the key has no value: that is zero URLs (A3, order 152).
+  const none = origin.status === 1 && origin.stdout.length === 0;
   return {
-    origin: origin.status === 0 ? splitNul(origin.stdout) : undefined,
+    origin: origin.status === 0 ? splitNul(origin.stdout) : none ? [] : undefined,
     shallow: read("rev-parse", "--is-shallow-repository"),
     grafts: grafts === undefined || grafts === "" ? undefined : existsSync(resolve(grafts)),
     config: read("config", "--list", "-z", "--includes"),
@@ -213,10 +215,11 @@ function main(arg: string | undefined): MergeResult {
     if (!read.ok) return stop(read.reason, step.memory);
     texts = read.texts;
   }
+  // A1 (order 152): the record step knows the PR kind, so a memory PR gets "Do not merge it".
   const second = readSnapshot({ repo, number }, gh);
-  if (!second.ok) return stop(second.reason);
+  if (!second.ok) return stop(second.reason, step.memory);
   if (!sameSnapshot(snapshot, second.snapshot)) {
-    return stop("the PR changed during the check (head, base, state or checks)");
+    return stop("the PR changed during the check (head, base, state or checks)", step.memory);
   }
   return "done" in step ? step.done : decideContent(input, texts);
 }
