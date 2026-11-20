@@ -677,7 +677,7 @@ describe("classify: the memory text form", () => {
 });
 
 describe("classify: the PR itself", () => {
-  it("gives no chief merge to a PR that is not open, from a fork, by another author or for another base", () => {
+  it("gives no chief merge to a PR from a fork, by another author or for another base", () => {
     const cases: [string, Partial<MergeInput>, string][] = [
       ["fork", { crossRepository: true }, "No chief merge: the PR comes from a fork."],
       [
@@ -1141,12 +1141,13 @@ describe("the merge-check CLI", () => {
       git("config", "--unset", key);
     }
     for (const [key, result, calls] of results) {
+      const want = new RegExp(
+        `^2 [\\s\\S]*the git setting ${key.replace(".", "\\.")}[\\s\\S]* calls 0$`,
+      );
       expect(
         `${String(result.status)} ${result.stdout} calls ${String(calls)}`,
         `setting ${key}`,
-      ).toMatch(
-        new RegExp(`^2 [\\s\\S]*the git setting ${key.replace(".", "\\.")}[\\s\\S]* calls 0$`),
-      );
+      ).toMatch(want);
     }
   });
 

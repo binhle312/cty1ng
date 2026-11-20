@@ -1700,7 +1700,7 @@
     },
     {
       "id": "A3-package-status",
-      "claim": "An added, deleted, retyped or moved package.json is listed whatever its fields (DQ-1023; security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "claim": "The status rule decides the result for an added, deleted, retyped or moved package.json (DQ-1023, DQ-1034; security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/merge-check.test.ts",
@@ -1777,7 +1777,7 @@
           "file": ".agents/chief/scripts/lib/merge-check.ts",
           "edits": [
             {
-              "find": "      !MEMORY_ALLOWED.test(file.path)",
+              "find": "      !MEMORY_PATH.test(file.path)",
               "replace": "      !inMemory(file.path)"
             }
           ]
@@ -1841,18 +1841,8 @@
           "file": ".agents/chief/scripts/lib/merge-check.ts",
           "edits": [
             {
-              "find": "  return parsed === undefined || parsed.bad.length > 0 || parsed.fields.has(PERMISSION_RULE);",
-              "replace": "  return parsed?.fields.get(PERMISSION_RULE) === \"true\";"
-            }
-          ]
-        },
-        {
-          "id": "A7-permission-rule-4",
-          "file": ".agents/chief/scripts/lib/merge-check.ts",
-          "edits": [
-            {
-              "find": "  return parsed === undefined || parsed.bad.length > 0 || parsed.fields.has(PERMISSION_RULE);",
-              "replace": "  return parsed === undefined || parsed.fields.has(PERMISSION_RULE);"
+              "find": "  return text !== undefined && frontmatter(text)?.fields.has(PERMISSION_RULE) === true;",
+              "replace": "  return text !== undefined && frontmatter(text)?.fields.get(PERMISSION_RULE) === \"true\";"
             }
           ]
         }
@@ -1912,26 +1902,16 @@
     },
     {
       "id": "A9-origin",
-      "claim": "No chief merge of a PR that is not open, from a fork, by another author or for another base (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "claim": "No chief merge of a PR from a fork, by another author or for another base (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/merge-check.test.ts",
-        "name": "gives no chief merge to a PR that is not open, from a fork, by another author or for another base"
+        "name": "gives no chief merge to a PR from a fork, by another author or for another base"
       },
       "assertion": "`origin ${name}`).toBe(1);",
       "breaks": [
         {
           "id": "A9-origin-1",
-          "file": ".agents/chief/scripts/lib/merge-check.ts",
-          "edits": [
-            {
-              "find": "  if (input.state !== \"OPEN\")",
-              "replace": "  if (input.state === \"CLOSED\")"
-            }
-          ]
-        },
-        {
-          "id": "A9-origin-2",
           "file": ".agents/chief/scripts/lib/merge-check.ts",
           "edits": [
             {
@@ -1941,7 +1921,7 @@
           ]
         },
         {
-          "id": "A9-origin-3",
+          "id": "A9-origin-2",
           "file": ".agents/chief/scripts/lib/merge-check.ts",
           "edits": [
             {
@@ -1951,7 +1931,7 @@
           ]
         },
         {
-          "id": "A9-origin-4",
+          "id": "A9-origin-3",
           "file": ".agents/chief/scripts/lib/merge-check.ts",
           "edits": [
             {
@@ -1986,7 +1966,7 @@
     },
     {
       "id": "A11-url",
-      "claim": "The merge line names the full URL of the PR (DQ-1026; security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "claim": "The merge line names the full URL of the PR (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/merge-check.test.ts",
@@ -2114,7 +2094,7 @@
       "breaks": [
         {
           "id": "A16-cli-url-1",
-          "file": ".agents/chief/scripts/merge-check.ts",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
           "edits": [
             {
               "find": "  return { owner: match[1], name: match[2] };",
@@ -2126,7 +2106,7 @@
     },
     {
       "id": "A17-cli-texts",
-      "claim": "The CLI reads the head texts of a memory PR from the git blobs (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "claim": "A memory PR with no head text gets no merge line from the CLI (DQ-1035; security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/merge-check.test.ts",
@@ -2139,8 +2119,8 @@
           "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
           "edits": [
             {
-              "find": "        headText: text(entry.newBlob, entry.path),",
-              "replace": "        headText: text(entry.oldBlob, entry.path),"
+              "find": "      const headText = text(entry.newBlob, entry.path);",
+              "replace": "      const headText = text(entry.oldBlob, entry.path);"
             }
           ]
         }
@@ -2148,7 +2128,7 @@
     },
     {
       "id": "A18-cli-permission",
-      "claim": "The CLI refuses an added permission rule (order 130; security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "claim": "The CLI reads the head text of an added rule (order 130, DQ-1034; security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/merge-check.test.ts",
@@ -2161,8 +2141,8 @@
           "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
           "edits": [
             {
-              "find": "        headText: text(entry.newBlob, entry.path),",
-              "replace": "        headText: entry.status === \"A\" ? \"# x\\n\" : text(entry.newBlob, entry.path),"
+              "find": "      const headText = text(entry.newBlob, entry.path);",
+              "replace": "      const headText = entry.status === \"A\" ? \"# x\\n\" : text(entry.newBlob, entry.path);"
             }
           ]
         }
@@ -2180,11 +2160,11 @@
       "breaks": [
         {
           "id": "A19-cli-base-1",
-          "file": ".agents/chief/scripts/merge-check.ts",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
           "edits": [
             {
-              "find": "  const differs = git(\"diff\", \"--quiet\", baseTip, \"--\", ...BASE_PATHS).status !== 0;",
-              "replace": "  const differs = git(\"diff\", \"--quiet\", baseTip, \"--\", ...BASE_PATHS).status > 1;"
+              "find": "    } else if (entry.blob !== here.blob) {",
+              "replace": "    } else if (entry.blob === \"\") {"
             }
           ]
         },
@@ -2200,11 +2180,11 @@
         },
         {
           "id": "A19-cli-base-3",
-          "file": ".agents/chief/scripts/merge-check.ts",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
           "edits": [
             {
-              "find": "  if (differs || untracked.stdout.trim() !== \"\") {",
-              "replace": "  if (differs) {"
+              "find": "  for (const path of local.keys()) problems.push(",
+              "replace": "  for (const path of [...local.keys()].slice(0, 0)) problems.push("
             }
           ]
         }
@@ -2225,8 +2205,8 @@
           "file": ".agents/chief/scripts/merge-check.ts",
           "edits": [
             {
-              "find": "  const differs = git(\"diff\", \"--quiet\", baseTip, \"--\", ...BASE_PATHS).status !== 0;",
-              "replace": "  const differs = git(\"diff\", \"--quiet\", \"HEAD\", \"--\", ...BASE_PATHS).status !== 0;"
+              "find": "  const listing = git(\"ls-tree\", \"-r\", \"-z\", \"--full-tree\", baseTip, \"--\", ...BASE_PATHS);",
+              "replace": "  const listing = git(\"ls-tree\", \"-r\", \"-z\", \"--full-tree\", \"HEAD\", \"--\", ...BASE_PATHS);"
             }
           ]
         }
@@ -2374,7 +2354,7 @@
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
-        "name": "cannot check two merge bases, an unknown commit, or a path or text that is not UTF-8"
+        "name": "cannot check two merge bases, an unknown commit, or a manifest text that is not UTF-8"
       },
       "assertion": "\"two merge bases\").toContain(\"merge bases\");",
       "breaks": [
@@ -2392,21 +2372,21 @@
     },
     {
       "id": "A28-diff-utf8",
-      "claim": "A path that is not UTF-8 stops the check (DQ-1022; security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "claim": "A manifest text that is not UTF-8 stops the check (DQ-1022; security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
-        "name": "cannot check two merge bases, an unknown commit, or a path or text that is not UTF-8"
+        "name": "cannot check two merge bases, an unknown commit, or a manifest text that is not UTF-8"
       },
-      "assertion": "\"path not UTF-8\").toBe(false);",
+      "assertion": "\"text not UTF-8\").toContain(\"not UTF-8\");",
       "breaks": [
         {
           "id": "A28-diff-utf8-1",
           "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
           "edits": [
             {
-              "find": "const UTF8 = new TextDecoder(\"utf-8\", { fatal: true });",
-              "replace": "const UTF8 = new TextDecoder(\"utf-8\", { fatal: false });"
+              "find": "const UTF8 = new TextDecoder(\"utf-8\", { fatal: true, ignoreBOM: true });",
+              "replace": "const UTF8 = new TextDecoder(\"utf-8\", { fatal: false, ignoreBOM: true });"
             }
           ]
         }
@@ -2522,7 +2502,7 @@
     },
     {
       "id": "Q4-case",
-      "claim": "The quote match keeps case and punctuation (security test: who may merge, AGENTS.md §7, order 108)",
+      "claim": "The quote match keeps case (DQ-1039) (security test: who may merge, AGENTS.md §7, order 108)",
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/lib/owner-quotes.test.ts",
@@ -2625,6 +2605,490 @@
             {
               "find": "normalizeQuote(text).split(\" \").filter(Boolean).length;",
               "replace": "text.split(\" \").filter(Boolean).length;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D1-ascii-path",
+      "claim": "The diff reader marks a path with a byte outside 0x21-0x7E as unsupported (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
+        "name": "marks a path with a BOM, a non-ASCII letter or a space as unsupported"
+      },
+      "assertion": "\"letter path\").toBe(false);",
+      "breaks": [
+        {
+          "id": "D1-ascii-path-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "  bytes.length > 0 && bytes.every((byte) => byte >= 0x21 && byte <= 0x7e);",
+              "replace": "  bytes.length > 0 || bytes.every((byte) => byte >= 0x21 && byte <= 0x7e);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D2-unsupported-path",
+      "claim": "A path that is not printable ASCII stops the chief in each PR (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops the chief for a path that is not printable ASCII"
+      },
+      "assertion": "\"unsupported path\").toBe(1);",
+      "breaks": [
+        {
+          "id": "D2-unsupported-path-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  const unsupported = input.files.filter((file) => !file.supported);",
+              "replace": "  const unsupported = input.files.filter((file) => file.path === \"\");"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D3-grammar",
+      "claim": "A memory path outside the grammar needs the owner (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "refuses a memory path outside the grammar"
+      },
+      "assertion": "`grammar ${path}`).toBe(1);",
+      "breaks": [
+        {
+          "id": "D3-grammar-1",
+          "file": ".agents/chief/scripts/lib/merge-list.ts",
+          "edits": [
+            {
+              "find": "  /^\\.agents\\/chief\\/memories\\/long-term\\/([a-z0-9][a-z0-9-]*\\/)*[A-Za-z0-9][A-Za-z0-9._-]*\\.md$/;",
+              "replace": "  /^\\.agents\\/chief\\/memories\\/long-term\\/.+\\.md$/;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D4-utf8-text",
+      "claim": "A memory text that is not UTF-8 stops the chief, on each side (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops for a text that is not UTF-8, on each side"
+      },
+      "assertion": "`utf-8 ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "D4-utf8-text-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "    if (file.textUnsupported === true) {",
+              "replace": "    if (file.textUnsupported === false) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D5-utf8-reader",
+      "claim": "The diff reader gives unsupported text for a memory blob that is not UTF-8 (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
+        "name": "reads a memory text that is not UTF-8 as unsupported, on each side, and keeps a BOM"
+      },
+      "assertion": "\"bad base\").toBe(true);",
+      "breaks": [
+        {
+          "id": "D5-utf8-reader-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "        return null;",
+              "replace": "        return \"# x\\n\";"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D6-classes",
+      "claim": "A memory text with a character outside the allowed classes stops the chief (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops for a character outside the allowed classes: CR, U+2028, a vertical tab, a BOM"
+      },
+      "assertion": "`class ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "D6-classes-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "const TEXT_CLASSES = /^[\\p{L}\\p{M}\\p{N}\\p{P}\\p{S} \\n\\t]*$/u;",
+              "replace": "const TEXT_CLASSES = /^[\\p{L}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Z}\\n\\t]*$/u;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D7-opening",
+      "claim": "A memory text that opens with neither front matter nor a heading stops the chief, on each side (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops for a text that does not open with front matter or a heading"
+      },
+      "assertion": "`opening ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "D7-opening-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (text.startsWith(\"# \")) return body(text);",
+              "replace": "  if (!text.startsWith(\"---\")) return body(text);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D8-repeated-key",
+      "claim": "Front matter with a repeated key stops the chief, on each side (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops for front matter with a repeated key, on each side"
+      },
+      "assertion": "`repeated ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "D8-repeated-key-1",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "    if (field?.[1] === undefined || fields.has(field[1])) bad.push(line);",
+              "replace": "    if (field?.[1] === undefined) bad.push(line);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D9-front-matter",
+      "claim": "Front matter with a bad line or a bad closing line stops the chief (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops for front matter with a bad line or a bad closing line"
+      },
+      "assertion": "`front matter ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "D9-front-matter-1",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "  const match = /^---\\n([\\s\\S]*?)\\n---(?:\\n|$)([\\s\\S]*)$/.exec(text);",
+              "replace": "  const match = /^---\\n([\\s\\S]*?)\\n---\\n?([\\s\\S]*)$/.exec(text);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D10-keys",
+      "claim": "A front-matter key outside the list stops the chief, on each side (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops for a front-matter key that is not in the list"
+      },
+      "assertion": "`key ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "D10-keys-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "    if (!KEYS.has(key)) problems.push(",
+              "replace": "    if (key === \"\") problems.push("
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D11-body-field",
+      "claim": "The permission field in a body line, in any case, stops the chief (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops for the permission field in the body, in any case"
+      },
+      "assertion": "`body ${JSON.stringify(text)}`).toMatch(",
+      "breaks": [
+        {
+          "id": "D11-body-field-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "const FIELD_IN_BODY = /^\\s*permission-rule\\s*:/im;",
+              "replace": "const FIELD_IN_BODY = /^\\s*permission-rule\\s*:/m;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D12-start-origin",
+      "claim": "An origin that is not the repository on github.com gives exit 2 and no gh call (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 with no gh call for an origin that is not the repository"
+      },
+      "assertion": ").toMatch(/^2 [\\s\\S]*the origin remote is not[\\s\\S]* calls 0$/);",
+      "breaks": [
+        {
+          "id": "D12-start-origin-1",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "    if (repo === undefined || `${repo.owner}/${repo.name}` !== REPOSITORY) {",
+              "replace": "    if (repo === undefined) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D13-start-history",
+      "claim": "A shallow clone or a grafts file gives exit 2 and no gh call (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 with no gh call for a shallow clone or a grafts file"
+      },
+      "assertion": ").toMatch(/^2 [\\s\\S]*the full history[\\s\\S]* calls 0$/);",
+      "breaks": [
+        {
+          "id": "D13-start-history-1",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "  } else if (shallow === \"true\" || facts.grafts) {",
+              "replace": "  } else if (shallow === \"true\") {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D14-start-settings",
+      "claim": "A diff setting outside the allowlist gives exit 2 and no gh call (DQ-1029; security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 with no gh call for a git setting that can change the diff"
+      },
+      "assertion": ").toMatch(want);",
+      "breaks": [
+        {
+          "id": "D14-start-settings-1",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "const WATCHED = [\"diff.\", \"submodule.\", \"extensions.\"];",
+              "replace": "const WATCHED = [\"submodule.\", \"extensions.\"];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D15-policy-mode",
+      "claim": "A policy file that differs by its executable bit or line ends gives exit 2 (G2; security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 for a policy file that differs only by its executable bit or its line ends"
+      },
+      "assertion": "`policy ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "D15-policy-mode-1",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "    const mode = here.executable ? \"100755\" : \"100644\";",
+              "replace": "    const mode = entry.mode;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D16-start-unread",
+      "claim": "A git setting list that cannot be read gives exit 2 and no gh call (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 with no gh call when git cannot read the settings"
+      },
+      "assertion": ").toMatch(/^2 [\\s\\S]*git could not read[\\s\\S]* calls 0$/);",
+      "breaks": [
+        {
+          "id": "D16-start-unread-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "    config: read(\"config\", \"--list\", \"-z\", \"--includes\"),",
+              "replace": "    config: read(\"config\", \"--list\", \"-z\", \"--includes\") ?? \"\","
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D17-env",
+      "claim": "No GIT_ variable of the parent environment reaches git (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "does not pass a GIT_DIR of the parent environment to git"
+      },
+      "assertion": "`git dir ${result.stderr}`).toContain(mergeLine(head));",
+      "breaks": [
+        {
+          "id": "D17-env-1",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "    if (!key.startsWith(\"GIT_\")) env[key] = value;",
+              "replace": "    env[key] = value;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D18-host",
+      "claim": "gh gets the fixed host github.com (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-snapshot.test.ts",
+        "name": "sends the query as a constant and the values as variables"
+      },
+      "assertion": "\"one call\").toEqual([",
+      "breaks": [
+        {
+          "id": "D18-host-1",
+          "file": ".agents/chief/scripts/lib/merge-check-snapshot.ts",
+          "edits": [
+            {
+              "find": "    \"--hostname\",\n    \"github.com\",\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D19-gitlink",
+      "claim": "A setting cannot hide a gitlink from the diff reader (DQ-1029; security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
+        "name": "keeps a gitlink when a setting asks git to ignore submodules"
+      },
+      "assertion": "`gitlink with ${setting}`).toBe(\"160000\");",
+      "breaks": [
+        {
+          "id": "D19-gitlink-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "      \"--ignore-submodules=none\",\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D20-record",
+      "claim": "A memory PR with no owner record gives exit 2, also with no rule (DQ-1031; security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "cannot check a memory PR with no owner record, also when no rule changes"
+      },
+      "assertion": "\"note with no record\").toBe(2);",
+      "breaks": [
+        {
+          "id": "D20-record-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if ((input.record ?? []).every((text) => text.trim() === \"\")) {",
+              "replace": "  if ((input.record ?? []).length < 0) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D21-not-open",
+      "claim": "A PR that is merged or closed gives exit 2 (DQ-1033; security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "cannot check a PR that is merged or closed"
+      },
+      "assertion": "`state ${state}`).toBe(2);",
+      "breaks": [
+        {
+          "id": "D21-not-open-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (input.state !== \"OPEN\") {",
+              "replace": "  if (input.state === \"CLOSED\") {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D22-state-schema",
+      "claim": "A PR state outside OPEN, CLOSED and MERGED cannot be checked (DQ-1033; security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-snapshot.test.ts",
+        "name": "cannot check a PR state that is not OPEN, CLOSED or MERGED"
+      },
+      "assertion": "\"unknown state\").toBe(false);",
+      "breaks": [
+        {
+          "id": "D22-state-schema-1",
+          "file": ".agents/chief/scripts/lib/merge-check-snapshot.ts",
+          "edits": [
+            {
+              "find": "        state: z.enum([\"OPEN\", \"CLOSED\", \"MERGED\"]),",
+              "replace": "        state: z.string().min(1),"
             }
           ]
         }
@@ -2924,11 +3388,6 @@
     },
     {
       "file": ".agents/chief/scripts/merge-check.test.ts",
-      "name": "does not need the owner record when no rule file changes",
-      "reason": "test first: red run against the stub classify, gh reader and CLI (tmp/red/2-merge-check.log, 2b-merge-list-stub.log)"
-    },
-    {
-      "file": ".agents/chief/scripts/merge-check.test.ts",
       "name": "exits 1 for a listed path",
       "reason": "test first: red run against the stub classify, gh reader and CLI (tmp/red/2-merge-check.log, 2b-merge-list-stub.log)"
     },
@@ -3041,6 +3500,51 @@
       "file": ".agents/chief/scripts/check-memory.test.ts",
       "name": "names the exact tool set of claude with --tools",
       "reason": "test first: red run in the PR (restore.md had no --tools; cron-red.log in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+      "name": "passes a full clone of the repository with no setting that changes the diff",
+      "reason": "test first: red run in the PR (merge-check-start.ts did not exist on 30a510f; r2-red.log, plan delta r1); the CLI claims D11 to D16 break each rule end to end"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+      "name": "refuses an origin that is not the repository on github.com",
+      "reason": "test first: red run in the PR (merge-check-start.ts did not exist on 30a510f; r2-red.log, plan delta r1); the CLI claims D11 to D16 break each rule end to end"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+      "name": "refuses a shallow clone and a grafts file",
+      "reason": "test first: red run in the PR (merge-check-start.ts did not exist on 30a510f; r2-red.log, plan delta r1); the CLI claims D11 to D16 break each rule end to end"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+      "name": "refuses each diff, submodule or extensions setting outside the allowlist",
+      "reason": "test first: red run in the PR (merge-check-start.ts did not exist on 30a510f; r2-red.log, plan delta r1); the CLI claims D11 to D16 break each rule end to end"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+      "name": "cannot check a fact that git could not read",
+      "reason": "test first: red run in the PR (merge-check-start.ts did not exist on 30a510f; r2-red.log, plan delta r1); the CLI claims D11 to D16 break each rule end to end"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+      "name": "removes each inherited GIT_ variable and turns replace objects off",
+      "reason": "test first: red run in the PR (merge-check-start.ts did not exist on 30a510f; r2-red.log, plan delta r1); the CLI claims D11 to D16 break each rule end to end"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+      "name": "passes when each path, blob and executable bit is the same",
+      "reason": "test first: red run in the PR (merge-check-start.ts did not exist on 30a510f; r2-red.log, plan delta r1); the CLI claims D11 to D16 break each rule end to end"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+      "name": "names a file whose blob, executable bit or presence differs",
+      "reason": "test first: red run in the PR (merge-check-start.ts did not exist on 30a510f; r2-red.log, plan delta r1); the CLI claims D11 to D16 break each rule end to end"
+    },
+    {
+      "file": ".agents/chief/scripts/merge-check.test.ts",
+      "name": "passes each tracked long-term file, and its path matches the grammar",
+      "reason": "test first: red run in the PR (memoryTextProblems did not exist on 30a510f; r2-red.log); it shows that the 48 long-term files of today have the supported form, so it is no security test"
     }
   ]
 }
