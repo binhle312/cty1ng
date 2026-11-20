@@ -270,4 +270,5 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-19 | [#127](https://github.com/binhle312/cty1ng/pull/127) merged. |
 | 2026-11-19 | [#138](https://github.com/binhle312/cty1ng/pull/138) merged. |
 | 2026-11-19 | [#137](https://github.com/binhle312/cty1ng/pull/137) merged. |
-| 2026-11-19 | [#135](https://github.com/binhle312/cty1ng/pull/135) merged. |
+| 2026-11-19 | [#135](https://github.com/binhle312/cty1ng/pull/135) merged: the records redesign and one `AGENTS.md` §9 sentence. |
+| 2026-11-20 | [#141](https://github.com/binhle312/cty1ng/pull/141) merged: the `consultants` skill split from the `arena` skill, and a model rule. |
