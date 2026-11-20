@@ -1,7 +1,7 @@
 // The file facts of merge:check from local git (option A): a temporary origin and clone, with the
 // real git runner. All data is synthetic.
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -141,7 +141,7 @@ describe("readDiff", () => {
     expect(calls[0], "fetch by id").toBe(`fetch --quiet --no-tags origin ${x} ${tip}`);
   });
 
-  it("cannot check two merge bases, an unknown commit, or a path or text that is not UTF-8", () => {
+  it("cannot check two merge bases, an unknown commit, or a manifest text that is not UTF-8", () => {
     const tip = baseTip();
     // Two merge bases: a criss-cross history.
     w("checkout", "-q", "-b", "a");
@@ -169,8 +169,11 @@ describe("readDiff", () => {
     w("commit", "-q", "-m", "bad path");
     const badPath = w("rev-parse", "HEAD");
     pushPr(badPath);
+    // A path with a byte outside 0x21-0x7E is kept, marked as unsupported (plan delta r1, G4).
     const path = readDiff({ head: badPath, baseTip: a2 }, runner);
-    expect(path.ok, "path not UTF-8").toBe(false);
+    if (!path.ok) throw new Error(path.reason);
+    expect(path.files[0]?.supported, "path not UTF-8 is unsupported").toBe(false);
+    expect(path.files[0]?.path, "escaped path").toBe("d\\xff.md");
     w("checkout", "-q", "-b", "bytes2", a2);
     writeFileSync(join(work, "backend/package.json"), Buffer.from([0x7b, 0xff, 0x7d]));
     w("add", "-A");
@@ -179,5 +182,94 @@ describe("readDiff", () => {
     pushPr(badText);
     const text = readDiff({ head: badText, baseTip: a2 }, runner);
     expect(text.ok ? "ok" : text.reason, "text not UTF-8").toContain("not UTF-8");
+  });
+
+  // Plan delta r1 §2.1: a path is supported only when each byte is 0x21-0x7E.
+  it("marks a path with a BOM, a non-ASCII letter or a space as unsupported", () => {
+    const tip = baseTip();
+    w("checkout", "-q", "-b", "pr");
+    const names = [
+      Buffer.concat([
+        Buffer.from([0xef, 0xbb, 0xbf]),
+        Buffer.from(".agents/chief/memories/long-term/x.md"),
+      ]),
+      Buffer.from("docs/caf\u00e9.md"),
+      Buffer.from("docs/a b.md"),
+    ];
+    execFileSync("mkdir", ["-p", join(work, ".agents/chief/memories/long-term")]);
+    writeFileSync(join(work, ".agents/chief/memories/long-term/note.md"), "# Note\n");
+    for (const name of names) {
+      const full = Buffer.concat([Buffer.from(`${work}/`), name]);
+      mkdirSync(full.subarray(0, full.lastIndexOf(0x2f)), { recursive: true });
+      writeFileSync(full, "x\n");
+    }
+    w("add", "-A");
+    w("commit", "-q", "-m", "paths");
+    const head = w("rev-parse", "HEAD");
+    pushPr(head);
+    const result = readDiff({ head, baseTip: tip }, runner);
+    if (!result.ok) throw new Error(result.reason);
+    const byPath = new Map(result.files.map((file) => [file.path, file]));
+    expect(
+      byPath.get("\\xef\\xbb\\xbf.agents/chief/memories/long-term/x.md")?.supported,
+      "bom path",
+    ).toBe(false);
+    expect(byPath.get("docs/caf\\xc3\\xa9.md")?.supported, "letter path").toBe(false);
+    expect(byPath.get("docs/a\\x20b.md")?.supported, "space path").toBe(false);
+    expect(byPath.get(".agents/chief/memories/long-term/note.md")?.supported, "ascii path").toBe(
+      true,
+    );
+  });
+
+  // Plan delta r1 §2.2 (G5): a memory blob that is not UTF-8 is unsupported text, not a failed
+  // read; a leading BOM stays in the text.
+  it("reads a memory text that is not UTF-8 as unsupported, on each side, and keeps a BOM", () => {
+    const note = ".agents/chief/memories/long-term/note.md";
+    execFileSync("mkdir", ["-p", join(work, ".agents/chief/memories/long-term")]);
+    writeFileSync(join(work, note), Buffer.from([0x23, 0x20, 0xff, 0x0a]));
+    w("add", "-A");
+    w("commit", "-q", "-m", "bad base");
+    w("push", "-q", "origin", "HEAD:main");
+    const tip = baseTip();
+    w("checkout", "-q", "-b", "pr");
+    const head = commit({ [note]: "# Clean\n" }, "clean head");
+    pushPr(head);
+    const base = readDiff({ head, baseTip: tip }, runner);
+    if (!base.ok) throw new Error(base.reason);
+    expect(base.files[0]?.textUnsupported, "bad base").toBe(true);
+    writeFileSync(join(work, note), Buffer.from([0x23, 0x20, 0xfe, 0x0a]));
+    w("add", "-A");
+    w("commit", "-q", "-m", "bad head");
+    const badHead = w("rev-parse", "HEAD");
+    pushPr(badHead);
+    const head2 = readDiff({ head: badHead, baseTip: tip }, runner);
+    if (!head2.ok) throw new Error(head2.reason);
+    expect(head2.files[0]?.textUnsupported, "bad head").toBe(true);
+    writeFileSync(join(work, note), Buffer.from("\ufeff# Clean\n"));
+    w("add", "-A");
+    w("commit", "-q", "-m", "bom");
+    const bom = w("rev-parse", "HEAD");
+    pushPr(bom);
+    const kept = readDiff({ head: bom, baseTip: tip }, runner);
+    if (!kept.ok) throw new Error(kept.reason);
+    expect(kept.files[0]?.headText?.startsWith("\ufeff"), "bom kept").toBe(true);
+  });
+
+  // Plan delta r1 §3: a local setting cannot hide a gitlink from the raw diff.
+  it("keeps a gitlink when a setting asks git to ignore submodules", () => {
+    const tip = baseTip();
+    w("checkout", "-q", "-b", "pr");
+    writeFileSync(join(work, ".gitmodules"), '[submodule "lib"]\n\tpath = lib\n\turl = ./lib\n');
+    w("add", ".gitmodules");
+    w("update-index", "--add", "--cacheinfo", `160000,${tip},lib`);
+    w("commit", "-q", "-m", "gitlink");
+    const head = w("rev-parse", "HEAD");
+    pushPr(head);
+    for (const setting of ["diff.ignoreSubmodules=all", "submodule.lib.ignore=all"]) {
+      const result = readDiff({ head, baseTip: tip }, (args) => runner(["-c", setting, ...args]));
+      if (!result.ok) throw new Error(result.reason);
+      const link = result.files.find((file) => file.path === "lib");
+      expect(link?.newMode, `gitlink with ${setting}`).toBe("160000");
+    }
   });
 });

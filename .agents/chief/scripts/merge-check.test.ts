@@ -6,6 +6,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import {
   chmodSync,
   cpSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -21,11 +22,13 @@ import {
   type PrFile,
   classify,
   isControl,
+  memoryTextProblems,
 } from "./lib/merge-check.ts";
 import { answer, greenNodes } from "./lib/merge-check-fixtures.ts";
 import {
   CI_APP_ID,
   CI_WORKFLOW,
+  MEMORY_PATH,
   MERGE_LIST,
   PACKAGE_FIELDS,
   REQUIRED_CHECKS,
@@ -58,7 +61,15 @@ const permission = (text: string, field = "permission-rule: true"): string =>
   text.replace("id: R-040\n", `id: R-040\n${field}\n`);
 
 function file(path: string, extra: Partial<PrFile> = {}): PrFile {
-  return { path, status: "M", oldMode: "100644", newMode: "100644", liveChanged: false, ...extra };
+  return {
+    path,
+    status: "M",
+    oldMode: "100644",
+    newMode: "100644",
+    liveChanged: false,
+    supported: true,
+    ...extra,
+  };
 }
 
 function input(files: PrFile[], extra: Partial<MergeInput> = {}): MergeInput {
@@ -80,6 +91,9 @@ function input(files: PrFile[], extra: Partial<MergeInput> = {}): MergeInput {
   };
 }
 
+const LT = ".agents/chief/memories/long-term/";
+const NOTE = `${LT}notes.md`;
+const TEXTS = { baseText: "# a\n", headText: "# b\n" };
 const memory = (path: string, headText = "# A note\n"): PrFile =>
   file(`.agents/chief/memories/long-term/${path}`, { headText, baseText: "# Old\n" });
 const added = (path: string, headText: string): PrFile =>
@@ -313,38 +327,21 @@ describe("classify: a memory PR (order 108)", () => {
 
   // The allowlist (option A, DQ-1021, DQ-1025): each status, mode and path of a memory file.
   it("passes only an added or changed .md file of long-term/", () => {
-    const LT = ".agents/chief/memories/long-term/";
     const cases: [string, PrFile[], 0 | 1][] = [
       ["added .md", [added(`${LT}notes.md`, "# N\n")], 0],
       ["changed .md", [memory("lessons.md")], 0],
       ["deleted .md", [deleted(`${LT}lessons.md`, "# L\n")], 1],
-      [
-        "retyped",
-        [file(`${LT}lessons.md`, { status: "T", newMode: "120000", baseText: "a", headText: "b" })],
-        1,
-      ],
+      ["retyped", [file(`${LT}lessons.md`, { status: "T", newMode: "120000", ...TEXTS })], 1],
       [
         "retyped from a link to a file",
-        [file(`${LT}lessons.md`, { status: "T", oldMode: "120000", baseText: "a", headText: "b" })],
+        [file(`${LT}lessons.md`, { status: "T", oldMode: "120000", ...TEXTS })],
         1,
       ],
-      ["link", [file(`${LT}lessons.md`, { newMode: "120000", baseText: "a", headText: "b" })], 1],
-      [
-        "executable",
-        [file(`${LT}lessons.md`, { newMode: "100755", baseText: "a", headText: "b" })],
-        1,
-      ],
+      ["link", [file(`${LT}lessons.md`, { newMode: "120000", ...TEXTS })], 1],
+      ["executable", [file(`${LT}lessons.md`, { newMode: "100755", ...TEXTS })], 1],
       ["a .txt file", [added(`${LT}notes.txt`, "n\n")], 1],
-      [
-        "the memory README",
-        [file(".agents/chief/memories/README.md", { baseText: "a", headText: "b" })],
-        1,
-      ],
-      [
-        "the short-term README",
-        [file(".agents/chief/memories/short-term/README.md", { baseText: "a", headText: "b" })],
-        1,
-      ],
+      ["the memory README", [file(".agents/chief/memories/README.md", TEXTS)], 1],
+      ["the short-term README", [file(".agents/chief/memories/short-term/README.md", TEXTS)], 1],
       [
         "a move inside long-term",
         [deleted(`${LT}lessons.md`, "# L\n"), added(`${LT}old/lessons.md`, "# L\n")],
@@ -352,9 +349,18 @@ describe("classify: a memory PR (order 108)", () => {
       ],
     ];
     for (const [name, files, exit] of cases) {
-      const result = classify(input(files, { record: undefined }));
+      const result = classify(input(files));
       expect(result.exit, `allowlist ${name}`).toBe(exit);
       if (exit === 1) expect(result.lines.join("\n"), name).toContain("the owner merges it");
+    }
+  });
+
+  // Plan delta r1 §2.1: the memory path grammar replaces the old pattern (deny by default).
+  it("refuses a memory path outside the grammar", () => {
+    for (const path of [`${LT}_x/y.md`, `${LT}a/.b.md`, `${LT}A/b.md`, `${LT}a//b.md`]) {
+      const result = classify(input([added(path, "# N\n")]));
+      expect(result.exit, `grammar ${path}`).toBe(1);
+      expect(result.lines.join("\n"), `grammar line ${path}`).toContain("the owner merges it");
     }
   });
 
@@ -454,10 +460,6 @@ describe("classify: a memory PR (order 108)", () => {
           added(".agents/chief/memories/long-term/old/R-040-docs-merges.md", quoted),
         ],
       ],
-      [
-        "front matter that does not parse, in a file that is not a rule",
-        [added(".agents/chief/memories/long-term/notes.md", "---\nid: x\nnot a field\n---\n# N\n")],
-      ],
     ];
     for (const [name, files] of cases) {
       const result = classify(input(files, { record }));
@@ -467,12 +469,21 @@ describe("classify: a memory PR (order 108)", () => {
     }
   });
 
-  it("does not need the owner record when no rule file changes", () => {
-    expect(classify(input([memory("lessons.md")], { record: undefined })).exit, "no rule").toBe(0);
+  // DQ-1031 (plan delta r1 §4): the owner record and the word list are read first, for each
+  // memory PR.
+  it("cannot check a memory PR with no owner record, also when no rule changes", () => {
+    const note = classify(input([memory("lessons.md")], { record: undefined }));
+    expect(note.exit, "note with no record").toBe(2);
+    const marked = classify(
+      input([added(RULE_PATH, permission(ruleText("you may merge each docs PR")))], {
+        record: undefined,
+      }),
+    );
+    expect(marked.exit, "marked rule with no record").toBe(2);
   });
 
   it("refuses a changed file with a private word", () => {
-    const result = classify(input([memory("lessons.md", "a zz-PRIVATE-zz note\n")]));
+    const result = classify(input([memory("lessons.md", "# a zz-PRIVATE-zz note\n")]));
     expect(result.exit, "private word").toBe(1);
     expect(result.lines.at(-1), "last line").toBe(
       "Memory PR: not mergeable: .agents/chief/memories/long-term/lessons.md:1: a word of the private word list; remove it",
@@ -552,10 +563,122 @@ describe("classify: a memory PR (order 108)", () => {
   });
 });
 
+// Plan delta r1 §2.2: each base and head text of each changed memory file has one supported form.
+// A text in another form stops the chief (exit 1). Each case has the bad text on one side only.
+describe("classify: the memory text form", () => {
+  const sides = (name: string, bad: string, good = "# Good\n"): [string, PrFile[]][] => [
+    [`${name} in the base`, [file(NOTE, { baseText: bad, headText: good })]],
+    [`${name} in the head`, [file(NOTE, { baseText: good, headText: bad })]],
+  ];
+  const stops = (files: PrFile[]): string => {
+    const result = classify(input(files));
+    return `${String(result.exit)} ${result.lines.join("\n")}`;
+  };
+
+  it("stops for a text that is not UTF-8, on each side", () => {
+    const cases: [string, PrFile[]][] = [
+      ["base", [file(NOTE, { textUnsupported: true, headText: "# N\n" })]],
+      ["head", [file(NOTE, { textUnsupported: true, baseText: "# O\n" })]],
+    ];
+    for (const [name, files] of cases) {
+      expect(stops(files), `utf-8 ${name}`).toMatch(/^1 [\s\S]*the chief stops/);
+    }
+  });
+
+  it("stops for a character outside the allowed classes: CR, U+2028, a vertical tab, a BOM", () => {
+    const cases: [string, PrFile[]][] = [
+      ...sides("CRLF", "# A note\r\nline\r\n"),
+      ["U+2028", [file(NOTE, { baseText: "# O\n", headText: "# A\u2028B\n" })]],
+      ["vertical tab", [file(NOTE, { baseText: "# O\n", headText: "# A\vB\n" })]],
+      ["BOM in the middle", [file(NOTE, { baseText: "# O\n", headText: "# A\ufeffB\n" })]],
+      ["leading BOM", [file(NOTE, { baseText: "# O\n", headText: "\ufeff# A\n" })]],
+      [
+        "CRLF front matter with the permission field (DQ-1032)",
+        [
+          added(
+            RULE_PATH,
+            permission(ruleText("you may merge each docs PR")).replace(/\n/g, "\r\n"),
+          ),
+        ],
+      ],
+    ];
+    for (const [name, files] of cases) {
+      expect(stops(files), `class ${name}`).toMatch(/^1 [\s\S]*the chief stops/);
+    }
+  });
+
+  it("stops for a text that does not open with front matter or a heading", () => {
+    const cases: [string, PrFile[]][] = [
+      ...sides("a blank first line", "\n# A\n"),
+      ...sides("--- with a space", "--- \ntitle: a\n---\n# A\n"),
+      ["plain text", [file(NOTE, { baseText: "# O\n", headText: "x\n" })]],
+    ];
+    for (const [name, files] of cases) {
+      expect(stops(files), `opening ${name}`).toMatch(/^1 [\s\S]*the chief stops/);
+    }
+  });
+
+  it("stops for front matter with a repeated key, on each side", () => {
+    for (const [name, files] of sides(
+      "a repeated key",
+      "---\ntitle: a\ntitle: b\n---\n# A\n",
+      "---\ntitle: a\n---\n# A\n",
+    )) {
+      expect(stops(files), `repeated ${name}`).toMatch(/^1 [\s\S]*the chief stops/);
+    }
+  });
+
+  it("stops for front matter with a bad line or a bad closing line", () => {
+    const cases: [string, PrFile[]][] = [
+      ["a capital letter", [added(NOTE, "---\nTitle: a\n---\n# A\n")]],
+      ["a line that is not a field", [added(NOTE, "---\nid: x\nnot a field\n---\n# N\n")]],
+      ["text after the closing line", [added(NOTE, "---\ntitle: a\n--- x\n# A\n")]],
+      ["no closing line", [added(NOTE, "---\ntitle: a\n# A\n")]],
+    ];
+    for (const [name, files] of cases) {
+      expect(stops(files), `front matter ${name}`).toMatch(/^1 [\s\S]*the chief stops/);
+    }
+  });
+
+  it("stops for a front-matter key that is not in the list", () => {
+    for (const key of ["zzz: x", "owner-merges: true"]) {
+      for (const [name, files] of sides(
+        key,
+        `---\n${key}\n---\n# A\n`,
+        "---\ntitle: a\n---\n# A\n",
+      )) {
+        expect(stops(files), `key ${name}`).toMatch(/^1 [\s\S]*the chief stops/);
+      }
+    }
+  });
+
+  it("stops for the permission field in the body, in any case", () => {
+    for (const text of [
+      "# A\nPermission-Rule: true\n",
+      "# A\n permission-rule :yes\n",
+      "---\ntitle: a\n---\npermission-rule: true\n",
+    ]) {
+      expect(stops([added(NOTE, text)]), `body ${JSON.stringify(text)}`).toMatch(
+        /^1 [\s\S]*the chief stops/,
+      );
+    }
+  });
+
+  it("passes each tracked long-term file, and its path matches the grammar", () => {
+    const paths = execFileSync("git", ["ls-files", "-z", LT], { encoding: "utf8" })
+      .split("\0")
+      .filter((path) => path !== "");
+    expect(paths.length, "long-term files").toBeGreaterThan(40);
+    for (const path of paths) {
+      expect(memoryTextProblems(readFileSync(path, "utf8")), `form of ${path}`).toEqual([]);
+      expect(MEMORY_PATH.test(path), `grammar of ${path}`).toBe(true);
+    }
+  });
+});
+
 describe("classify: the PR itself", () => {
   it("gives no chief merge to a PR that is not open, from a fork, by another author or for another base", () => {
     const cases: [string, Partial<MergeInput>, string][] = [
-      ["merged", { state: "MERGED" }, "No chief merge: the PR is MERGED, not open."],
       ["fork", { crossRepository: true }, "No chief merge: the PR comes from a fork."],
       [
         "author",
@@ -571,6 +694,38 @@ describe("classify: the PR itself", () => {
         expect(result.lines, name).toContain(line);
         expect(result.lines.join("\n"), name).not.toContain("gh pr merge");
       }
+    }
+  });
+
+  // DQ-1033 (plan delta r1 §4): a PR that is not open cannot be checked.
+  it("cannot check a PR that is merged or closed", () => {
+    for (const state of ["MERGED", "CLOSED"]) {
+      for (const files of [[memory("lessons.md")], [file("docs/a.md")]]) {
+        const result = classify(input(files, { state }));
+        expect(result.exit, `state ${state}`).toBe(2);
+        expect(result.lines.join("\n"), `state line ${state}`).toContain(
+          `Cannot check #152: the PR is ${state}`,
+        );
+      }
+    }
+  });
+
+  // Plan delta r1 §2.1: a path with a byte outside 0x21-0x7E stops the chief, in each PR.
+  it("stops the chief for a path that is not printable ASCII", () => {
+    const bom = file("\\xef\\xbb\\xbf.agents/chief/memories/long-term/x.md", {
+      supported: false,
+      status: "A",
+      headText: "# X\n",
+    });
+    for (const files of [
+      [memory("note.md"), bom],
+      [file("docs/a.md"), file("docs/caf\\xc3\\xa9.md", { supported: false })],
+    ]) {
+      const result = classify(input(files));
+      expect(result.exit, "unsupported path").toBe(1);
+      expect(result.lines.join("\n"), "unsupported path line").toContain(
+        "The chief stops: a path that is not printable ASCII",
+      );
     }
   });
 
@@ -654,9 +809,14 @@ describe("the merge-check CLI", () => {
   let root: string;
   let repo: string;
   let bin: string;
-  const ORIGIN_URL = "https://github.com/owner-login/cty-test.git";
+  // The start check accepts only the clone of the repository (plan delta r1 §3).
+  const ORIGIN_URL = "https://github.com/binhle312/cty1ng.git";
+  let realGit = "";
+  // No global git config of the machine that runs the tests: the start check reads each setting.
   const env = (): NodeJS.ProcessEnv => ({
     ...process.env,
+    HOME: join(root, "home"),
+    XDG_CONFIG_HOME: join(root, "home"),
     PATH: `${bin}:${process.env.PATH ?? ""}`,
     GIT_AUTHOR_NAME: "t",
     GIT_AUTHOR_EMAIL: "t@example.invalid",
@@ -671,14 +831,20 @@ describe("the merge-check CLI", () => {
     ".agents/chief/scripts",
     ".agents/chief/memories/long-term/settings.md",
   ];
-  const cli = (...args: string[]) =>
+  const cliIn = (cwd: string, extra: NodeJS.ProcessEnv, ...args: string[]) =>
     spawnSync(
       process.execPath,
       ["--import", "tsx", ".agents/chief/scripts/merge-check.ts", ...args],
-      { cwd: repo, env: env(), encoding: "utf8" },
+      { cwd, env: { ...env(), ...extra }, encoding: "utf8" },
     );
+  const cli = (...args: string[]) => cliIn(repo, {}, ...args);
   const mergeLine = (head: string): string =>
-    `gh pr merge https://github.com/owner-login/cty-test/pull/152 --merge --match-head-commit ${head}`;
+    `gh pr merge https://github.com/binhle312/cty1ng/pull/152 --merge --match-head-commit ${head}`;
+  // The number of gh calls since the last fakeGh().
+  const ghCalls = (): number =>
+    existsSync(join(root, "calls"))
+      ? readFileSync(join(root, "calls"), "utf8").split("\n").length - 1
+      : 0;
 
   // The fake gh: the first call gives answer-1.json, each later call answer-2.json if it exists.
   function fakeGh(first: string, second?: string): void {
@@ -691,7 +857,7 @@ describe("the merge-check CLI", () => {
       [
         "#!/bin/sh",
         'case "$*" in',
-        '  "api graphql "*) ;;',
+        '  "api graphql "*|"api --hostname github.com graphql "*) ;;',
         "  *) exit 1 ;;",
         "esac",
         `echo x >> "${root}/calls"`,
@@ -731,6 +897,8 @@ describe("the merge-check CLI", () => {
     repo = join(root, "repo");
     bin = join(root, "bin");
     mkdirSync(bin);
+    mkdirSync(join(root, "home"));
+    realGit = execFileSync("sh", ["-c", "command -v git"], { encoding: "utf8" }).trim();
     const origin = join(root, "origin.git");
     execFileSync("git", ["init", "-q", "--bare", "-b", "main", origin]);
     execFileSync("git", ["clone", "-q", origin, repo], { env: env() });
@@ -896,6 +1064,144 @@ describe("the merge-check CLI", () => {
       expect(result.stdout, name).toContain("the PR changed during the check");
       expect(result.status, `${name} race exit`).toBe(2);
     }
+  });
+
+  // Plan delta r1 §3: the start check runs before snapshot 1, so a failed fact gives no gh call.
+  it("exits 2 with no gh call for an origin that is not the repository", () => {
+    const head = prCommit({ "docs/a.md": "s1\n" });
+    const results: [string, ReturnType<typeof cli>, number][] = [];
+    for (const url of [
+      "https://github.com/someone/cty1ng.git",
+      "ssh://git@example.org/binhle312/cty1ng.git",
+    ]) {
+      git("config", "remote.origin.url", url);
+      fakeGh(answer({ head, baseTip: tip() }));
+      results.push([url, cli("152"), ghCalls()]);
+    }
+    git("config", "remote.origin.url", ORIGIN_URL);
+    for (const [url, result, calls] of results) {
+      expect(
+        `${String(result.status)} ${result.stdout} calls ${String(calls)}`,
+        `origin ${url}`,
+      ).toMatch(/^2 [\s\S]*the origin remote is not[\s\S]* calls 0$/);
+    }
+  });
+
+  it("exits 2 with no gh call for a shallow clone or a grafts file", () => {
+    const head = prCommit({ "docs/a.md": "s2\n" });
+    const origin = join(root, "origin.git");
+    const shallow = join(root, "shallow");
+    execFileSync("git", ["clone", "-q", "--depth", "1", `file://${origin}`, shallow], {
+      env: env(),
+    });
+    execFileSync("git", ["-C", shallow, "config", "remote.origin.url", ORIGIN_URL]);
+    execFileSync("git", ["-C", shallow, "config", `url.${origin}.insteadOf`, ORIGIN_URL]);
+    execFileSync("ln", ["-s", join(process.cwd(), "node_modules"), join(shallow, "node_modules")]);
+    fakeGh(answer({ head, baseTip: tip() }));
+    const shallowRun = cliIn(shallow, {}, "152");
+    const shallowCalls = ghCalls();
+    rmSync(shallow, { recursive: true, force: true });
+    const grafts = join(repo, git("rev-parse", "--git-path", "info/grafts"));
+    mkdirSync(dirname(grafts), { recursive: true });
+    writeFileSync(grafts, `${tip()}\n`);
+    fakeGh(answer({ head, baseTip: tip() }));
+    const graftsRun = cli("152");
+    const graftsCalls = ghCalls();
+    rmSync(grafts);
+    for (const [name, result, calls] of [
+      ["shallow", shallowRun, shallowCalls],
+      ["grafts", graftsRun, graftsCalls],
+    ] as const) {
+      expect(
+        `${String(result.status)} ${result.stdout} calls ${String(calls)}`,
+        `history ${name}`,
+      ).toMatch(/^2 [\s\S]*the full history[\s\S]* calls 0$/);
+    }
+  });
+
+  // DQ-1029: diff.ignoreSubmodules hid a gitlink, so a PR with a gitlink read as a memory PR.
+  it("exits 2 with no gh call for a git setting that can change the diff", () => {
+    git("checkout", "-q", "-B", "pr", "main");
+    mkdirSync(join(repo, ".agents/chief/memories/long-term"), { recursive: true });
+    writeFileSync(join(repo, ".agents/chief/memories/long-term/link-note.md"), "# Note\n");
+    git("add", ".agents/chief/memories/long-term/link-note.md");
+    git("update-index", "--add", "--cacheinfo", `160000,${tip()},lib`);
+    git("commit", "-q", "-m", "pr with a gitlink");
+    const head = git("rev-parse", "HEAD");
+    git("push", "-q", "-f", "origin", "HEAD:refs/pull/152/head");
+    git("checkout", "-q", "main");
+    const results: [string, ReturnType<typeof cli>, number][] = [];
+    for (const [key, value] of [
+      ["diff.ignoreSubmodules", "all"],
+      ["diff.zzz", "1"],
+    ] as const) {
+      git("config", key, value);
+      fakeGh(answer({ head, baseTip: tip() }));
+      results.push([key.toLowerCase(), cli("152"), ghCalls()]);
+      git("config", "--unset", key);
+    }
+    for (const [key, result, calls] of results) {
+      expect(
+        `${String(result.status)} ${result.stdout} calls ${String(calls)}`,
+        `setting ${key}`,
+      ).toMatch(
+        new RegExp(`^2 [\\s\\S]*the git setting ${key.replace(".", "\\.")}[\\s\\S]* calls 0$`),
+      );
+    }
+  });
+
+  // G2: the policy files are compared by blob id and executable bit, not by git diff, so
+  // core.fileMode and core.autocrlf do not hide a change.
+  it("exits 2 for a policy file that differs only by its executable bit or its line ends", () => {
+    const head = prCommit({ "docs/a.md": "s4\n" });
+    const LIST = ".agents/chief/scripts/lib/merge-list.ts";
+    const list = join(repo, LIST);
+    git("config", "core.fileMode", "false");
+    chmodSync(list, 0o755);
+    fakeGh(answer({ head, baseTip: tip() }));
+    const mode = cli("152");
+    chmodSync(list, 0o644);
+    git("config", "--unset", "core.fileMode");
+    const text = readFileSync(list, "utf8");
+    git("config", "core.autocrlf", "true");
+    writeFileSync(list, text.replace(/\n/g, "\r\n"));
+    fakeGh(answer({ head, baseTip: tip() }));
+    const crlf = cli("152");
+    git("config", "--unset", "core.autocrlf");
+    writeFileSync(list, text);
+    for (const [name, result] of [
+      ["mode", mode],
+      ["crlf", crlf],
+    ] as const) {
+      expect(`${String(result.status)} ${result.stdout}`, `policy ${name}`).toMatch(
+        /^2 [\s\S]*differs from the base tip of the PR/,
+      );
+    }
+  });
+
+  it("exits 2 with no gh call when git cannot read the settings", () => {
+    const head = prCommit({ "docs/a.md": "s5\n" });
+    writeFileSync(
+      join(bin, "git"),
+      `#!/bin/sh\ncase "$*" in *"config --list"*) exit 1 ;; esac\nexec "${realGit}" "$@"\n`,
+    );
+    chmodSync(join(bin, "git"), 0o755);
+    fakeGh(answer({ head, baseTip: tip() }));
+    const result = cli("152");
+    const calls = ghCalls();
+    rmSync(join(bin, "git"));
+    expect(
+      `${String(result.status)} ${result.stdout} calls ${String(calls)}`,
+      "unread setting",
+    ).toMatch(/^2 [\s\S]*git could not read[\s\S]* calls 0$/);
+  });
+
+  // Plan delta r1 §3: the runner removes each inherited GIT_ variable.
+  it("does not pass a GIT_DIR of the parent environment to git", () => {
+    const head = prCommit({ "docs/a.md": "s6\n" });
+    fakeGh(answer({ head, baseTip: tip() }));
+    const result = cliIn(repo, { GIT_DIR: join(root, "nothing"), GIT_ZZZ: "1" }, "152");
+    expect(result.stdout, `git dir ${result.stderr}`).toContain(mergeLine(head));
   });
 
   it("exits 2 when the base tip has no list file", () => {

@@ -107,9 +107,12 @@ describe("readSnapshot", () => {
       calls.push([...args]);
       return { status: 0, stdout: answer() };
     });
+    // The host is a fixed argument: gh never reads another host from its config (plan delta r1 §3).
     expect(calls, "one call").toEqual([
       [
         "api",
+        "--hostname",
+        "github.com",
         "graphql",
         "-f",
         "owner=owner-login",
@@ -139,6 +142,12 @@ describe("readSnapshot", () => {
     for (const [name, stdout, status] of cases) {
       expect(read(stdout, status).ok, name).toBe(false);
     }
+  });
+
+  // DQ-1033: a state outside the schema list cannot be checked.
+  it("cannot check a PR state that is not OPEN, CLOSED or MERGED", () => {
+    expect(read(answer({ state: "DRAFT" })).ok, "unknown state").toBe(false);
+    expect(read(answer({ state: "CLOSED" })).ok, "closed state").toBe(true);
   });
 });
 
