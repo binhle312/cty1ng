@@ -1,6 +1,6 @@
 ---
 name: arena
-description: Do one task with two or more candidates in parallel, pick the best as the base, and graft the best parts of the others into it. The owner starts it with /arena, or tells an agent to use it.
+description: Use when the owner runs /arena or names the skill. Run two or more candidates on one task in parallel. Pick the best as the base and graft in the best parts of the others.
 disable-model-invocation: true
 metadata:
   author: cty1ng maintainers
@@ -8,6 +8,8 @@ metadata:
 ---
 
 # Arena
+
+Run this skill only when the owner starts it or names it.
 
 Use an arena for a task that the owner gives you with "use the arena": a feature, a fix,
 a document, a plan or a design. Several candidates do the same task, and the result is better
