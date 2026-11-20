@@ -339,7 +339,7 @@ describe("classify: a memory PR (order 108)", () => {
       ],
       ["link", [file(`${LT}lessons.md`, { newMode: "120000", ...TEXTS })], 1],
       ["executable", [file(`${LT}lessons.md`, { newMode: "100755", ...TEXTS })], 1],
-      ["a .txt file", [added(`${LT}notes.txt`, "n\n")], 1],
+      ["a .txt file", [added(`${LT}notes.txt`, "# N\n")], 1],
       ["the memory README", [file(".agents/chief/memories/README.md", TEXTS)], 1],
       ["the short-term README", [file(".agents/chief/memories/short-term/README.md", TEXTS)], 1],
       [

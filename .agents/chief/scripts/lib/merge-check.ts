@@ -3,11 +3,14 @@
 // diff at the commits of that snapshot (`merge-check-diff.ts`), and two trusted local files: the
 // owner record and the private words (option A; owner, 2026-11-20, orders 128 and 130).
 //
-// - First, each PR: no chief merge of a PR that is not open, comes from a fork, has an author
-//   other than the repository owner, or is for a base other than main. No merge line while a
-//   touched path changed on main after the branch split: merge main first.
-// - A memory PR changes only `.agents/chief/memories/`. The chief merges it when it only adds or
-//   changes `.md` files of `long-term/` (not the audit files), touches no rule with
+// - First, each PR: a PR that is not open cannot be checked (exit 2). No chief merge of a PR that
+//   comes from a fork, has an author other than the repository owner, or is for a base other
+//   than main. A path that is not printable ASCII stops the chief. No merge line while a touched
+//   path changed on main after the branch split: merge main first.
+// - A memory PR changes only `.agents/chief/memories/`. With no owner record or no private word
+//   list it cannot be checked (exit 2). Each base and head text must have one supported form, or
+//   the chief stops (plan delta r1 §2.2). The chief merges it when it only adds or changes `.md`
+//   files of the path grammar of `long-term/` (not the audit files), touches no file with
 //   `permission-rule` (the owner merges each one, order 130), each required CI check passed, no
 //   changed file holds a private word, and each quote of each added or changed rule is in the
 //   owner record (orders 108 and 109).
@@ -16,13 +19,13 @@
 //   that no standing permission covers it (`AGENTS.md` §7). Else, when each required CI check
 //   passed, the script prints the Not-checked items and the merge line.
 import { z } from "zod";
-import { PERMISSION_RULE, checkPrivateWords, frontmatter } from "./check-memory.ts";
+import { PERMISSION_RULE, RULE_FIELDS, checkPrivateWords, frontmatter } from "./check-memory.ts";
 import {
   CI_APP_ID,
   CI_WORKFLOW,
   DEPENDENCY_TEXT,
-  MEMORY_ALLOWED,
   MEMORY_FOLDER,
+  MEMORY_PATH,
   MEMORY_PROTECTED,
   MERGE_LIST,
   PACKAGE_FIELDS,
@@ -36,9 +39,13 @@ export type DiffStatus = "A" | "M" | "D" | "T";
 
 // A changed path of the PR, from the merge base to the head. `baseText` is the text at the merge
 // base and `headText` at the head; the reader fills them only for paths of `needsText`.
-// `liveChanged` is true when main changed this path after the merge base.
+// `liveChanged` is true when main changed this path after the merge base. `supported` is false
+// for a path with a byte outside 0x21-0x7E (`path` is then an escaped form), and
+// `textUnsupported` is true when a memory text is not UTF-8.
 export type PrFile = {
   path: string;
+  supported: boolean;
+  textUnsupported?: boolean;
   status: DiffStatus;
   oldMode: string;
   newMode: string;
@@ -84,7 +91,7 @@ const FILE_MODE = "100644";
 
 const isPackageJson = (path: string): boolean =>
   path === "package.json" || path.endsWith("/package.json");
-const inMemory = (path: string): boolean => path.startsWith(MEMORY_FOLDER);
+export const inMemory = (path: string): boolean => path.startsWith(MEMORY_FOLDER);
 const isRule = (path: string): boolean => path.startsWith(RULES) && RULE_FILE.test(path);
 
 // The files whose text the classify step reads.
@@ -176,12 +183,61 @@ function ciProblems(checks: readonly CiCheck[]): string[] {
   return problems;
 }
 
-// True when a text has front matter with the `permission-rule` field (any value), or front
-// matter that does not parse: the owner merges each such file (order 130).
-function hasPermissionField(text: string | undefined): boolean {
-  if (text === undefined || !text.startsWith("---\n")) return false;
+// The one supported form of a memory text (plan delta r1 §2.2; the 48 long-term files of
+// 2026-11-20 have it): letters, marks, numbers, punctuation, symbols, space, tab and line feed
+// only; it opens with front matter ("---" line) or a "# " heading; the front matter has exact
+// "---" lines, "key: value" lines, no repeated key and only the keys of RULE_FIELDS or
+// PERMISSION_RULE; no body line starts with the permission field in any case. Each problem stops
+// the chief: it does not guess what an unsupported text means.
+const TEXT_CLASSES = /^[\p{L}\p{M}\p{N}\p{P}\p{S} \n\t]*$/u;
+const FIELD_IN_BODY = /^\s*permission-rule\s*:/im;
+const KEYS = new Set<string>([...RULE_FIELDS, PERMISSION_RULE]);
+export function memoryTextProblems(text: string): string[] {
+  if (!TEXT_CLASSES.test(text)) {
+    return [
+      "a character that is not a letter, mark, number, punctuation, symbol, space, tab or line feed",
+    ];
+  }
+  const body = (part: string): string[] =>
+    FIELD_IN_BODY.test(part) ? [`a body line starts with ${PERMISSION_RULE}`] : [];
+  if (text.startsWith("# ")) return body(text);
+  if (!text.startsWith("---\n")) return ['the text opens with neither a "---" line nor "# "'];
   const parsed = frontmatter(text);
-  return parsed === undefined || parsed.bad.length > 0 || parsed.fields.has(PERMISSION_RULE);
+  if (parsed === undefined) return ['the front matter has no exact closing "---" line'];
+  const problems = parsed.bad.map(
+    () => 'a front-matter line is not "key: value", or repeats a key',
+  );
+  for (const key of parsed.fields.keys()) {
+    if (!KEYS.has(key)) problems.push(`the front-matter key ${key} is not in the list`);
+  }
+  return [...problems, ...body(parsed.body)];
+}
+
+// The texts of a memory PR in an unsupported form: each one stops the chief.
+function textProblems(files: readonly PrFile[]): string[] {
+  const problems: string[] = [];
+  for (const file of files) {
+    if (file.textUnsupported === true) {
+      problems.push(`${file.path}: the chief stops: a text is not UTF-8`);
+      continue;
+    }
+    for (const [side, text] of [
+      ["base", file.baseText],
+      ["head", file.headText],
+    ] as const) {
+      if (text === undefined) continue;
+      for (const problem of memoryTextProblems(text)) {
+        problems.push(`${file.path}: the chief stops: the ${side} text has ${problem}`);
+      }
+    }
+  }
+  return problems;
+}
+
+// True when a text has front matter with the `permission-rule` field (any value): the owner
+// merges each such file (order 130). The text form was checked first.
+function hasPermissionField(text: string | undefined): boolean {
+  return text !== undefined && frontmatter(text)?.fields.has(PERMISSION_RULE) === true;
 }
 
 // The changes of a memory PR that need the owner: a path or a status outside the allowlist, an
@@ -194,7 +250,7 @@ function ownerProblems(files: readonly PrFile[]): string[] {
     } else if (
       (file.status !== "A" && file.status !== "M") ||
       file.newMode !== FILE_MODE ||
-      !MEMORY_ALLOWED.test(file.path)
+      !MEMORY_PATH.test(file.path)
     ) {
       problems.push(
         `${file.path}: a memory PR may only add or change a .md file of long-term/ (status ${file.status}, mode ${file.newMode}); the owner merges it`,
@@ -213,6 +269,14 @@ function memoryGate(input: MergeInput, header: string): MergeResult {
     exit: 1,
     lines: [header, ...reasons.map((reason) => `Memory PR: not mergeable: ${reason}`)],
   });
+  // DQ-1031: the trusted local inputs first, for each memory PR.
+  if ((input.record ?? []).every((text) => text.trim() === "")) {
+    throw new CannotCheck(`no owner record (${OWNER_RECORD}/*.md)`);
+  }
+  if (input.privateWords === undefined)
+    throw new CannotCheck(
+      "no private word list (.agents/chief/memories/short-term/private-words.txt)",
+    );
   const tracked = input.files
     .filter((file) => file.status !== "D")
     .filter((file) => file.path.startsWith(SHORT_TERM) && file.path !== `${SHORT_TERM}README.md`);
@@ -220,19 +284,18 @@ function memoryGate(input: MergeInput, header: string): MergeResult {
     return fail(tracked.map((file) => `${file.path} is a short-term file; git must not track it`));
   }
   for (const file of input.files) {
+    if (file.textUnsupported === true) continue;
     if (file.status !== "D" && file.headText === undefined)
       throw new CannotCheck(`no head text for ${file.path}`);
     if (file.status !== "A" && file.baseText === undefined)
       throw new CannotCheck(`no base text for ${file.path}`);
   }
+  const form = textProblems(input.files);
+  if (form.length > 0) return fail(form);
   const owner = ownerProblems(input.files);
   if (owner.length > 0) return fail(owner);
   const ci = ciProblems(input.checks);
   if (ci.length > 0) return fail(ci);
-  if (input.privateWords === undefined)
-    throw new CannotCheck(
-      "no private word list (.agents/chief/memories/short-term/private-words.txt)",
-    );
   const heads = new Map(input.files.map((file) => [file.path, file.headText ?? ""]));
   const words = checkPrivateWords(heads, input.privateWords);
   if (words.length > 0) return fail(words);
@@ -302,7 +365,6 @@ function codeCheck(input: MergeInput, header: string): MergeResult {
 
 // The reason why the chief merges no PR in this state, or undefined.
 function originProblem(input: MergeInput): string | undefined {
-  if (input.state !== "OPEN") return `the PR is ${input.state}, not open`;
   if (input.crossRepository) return "the PR comes from a fork";
   if (input.author !== input.expectedAuthor) {
     return `the PR author ${input.author} is not the repository owner`;
@@ -314,9 +376,25 @@ function originProblem(input: MergeInput): string | undefined {
 export function classify(input: MergeInput): MergeResult {
   const memory = input.files.length > 0 && input.files.every((file) => inMemory(file.path));
   const header = `merge:check #${input.number}, head ${input.head.slice(0, 7)}, ${input.files.length} files`;
+  // DQ-1033: a PR that is not open cannot be checked.
+  if (input.state !== "OPEN") {
+    return cannotCheck({ pr: input.number, reason: `the PR is ${input.state}`, memory });
+  }
   const origin = originProblem(input);
   if (origin !== undefined)
     return printed({ exit: 1, lines: [header, `No chief merge: ${origin}.`] });
+  const unsupported = input.files.filter((file) => !file.supported);
+  if (unsupported.length > 0) {
+    return printed({
+      exit: 1,
+      lines: [
+        header,
+        ...unsupported.map(
+          (file) => `The chief stops: a path that is not printable ASCII: ${file.path}`,
+        ),
+      ],
+    });
+  }
   const stale = input.files.filter((file) => file.liveChanged);
   if (stale.length > 0) {
     return printed({

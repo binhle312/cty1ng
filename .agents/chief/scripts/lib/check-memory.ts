@@ -70,7 +70,9 @@ const TEXT_SETTINGS = [
   "audit_times",
 ] as const;
 
-const RULE_FIELDS = [
+// The front-matter keys of a memory file. `merge:check` stops the chief for any other key, except
+// PERMISSION_RULE, which the owner merges (plan delta r1 §2.2).
+export const RULE_FIELDS = [
   "id",
   "title",
   "status",
@@ -100,7 +102,8 @@ const NO_GATE_KINDS = ["a format", "a pre-step of your own work", "a trigger", "
 const NO_GATE = new RegExp(`^${NO_GATE_LINE} (${NO_GATE_KINDS.join("|")})\\.`);
 // `permission-rule: true` marks a rule about merges, approvals or permissions. The memory audit
 // lists each new or changed one (rule R-037), and an active one holds the copy of the list of
-// `AGENTS.md` §7. The chief merges a change of it like any memory PR (owner, 2026-11-19, order 108).
+// `AGENTS.md` §7. The owner merges each memory PR that adds, changes or deletes a file with this
+// field (order 130); the chief merges each other memory PR that `merge:check` passes (order 108).
 export const PERMISSION_RULE = "permission-rule";
 const RULE_FIELD_SET = new Set<string>([...RULE_FIELDS, PERMISSION_RULE]);
 const STATUSES = ["active", "replaced", "ended", "disputed"];
@@ -204,17 +207,18 @@ function listOf(value: string | undefined): string[] | undefined {
 }
 
 // The one front-matter parser: `check:memory` and `merge:check` both read rule fields with it.
-// Undefined when the text has no front matter; `bad` holds each line that is not "key: value".
+// Undefined when the text has no front matter between two exact "---" lines; `bad` holds each line
+// that is not "key: value" and each line that repeats a key (plan delta r1 §2.2).
 export function frontmatter(
   text: string,
 ): { fields: Map<string, string>; bad: string[]; body: string } | undefined {
-  const match = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/.exec(text);
+  const match = /^---\n([\s\S]*?)\n---(?:\n|$)([\s\S]*)$/.exec(text);
   if (match === null) return undefined;
   const fields = new Map<string, string>();
   const bad: string[] = [];
   for (const line of (match[1] ?? "").split("\n")) {
-    const field = /^([a-z-]+): ?(.*)$/.exec(line);
-    if (field?.[1] === undefined) bad.push(line);
+    const field = /^([a-z][a-z-]*): ?(.*)$/.exec(line);
+    if (field?.[1] === undefined || fields.has(field[1])) bad.push(line);
     else fields.set(field[1], (field[2] ?? "").trim());
   }
   return { fields, bad, body: match[2] ?? "" };
@@ -229,7 +233,7 @@ function parseRule(file: { path: string; text: string }, problems: string[]): Ru
   }
   const { fields } = parsed;
   for (const line of parsed.bad) {
-    problems.push(`${path}: the frontmatter line "${line}" is not "key: value"`);
+    problems.push(`${path}: the frontmatter line "${line}" is not "key: value", or repeats a key`);
   }
   const supersedes = listOf(fields.get("supersedes")) ?? [];
   const amends = listOf(fields.get("amends")) ?? [];

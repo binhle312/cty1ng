@@ -16,6 +16,10 @@ export type ListItem = {
 // A memory PR changes only this folder; the chief merges it (owner, 2026-11-19, order 108).
 export const MEMORY_FOLDER = ".agents/chief/memories/";
 
+// The GitHub repository of this clone, "owner/name". The start check of `merge:check` refuses a
+// clone whose origin is another repository (plan delta r1 §3; owner, 2026-11-20, order 131).
+export const REPOSITORY = "binhle312/cty1ng";
+
 // A `package.json` change is a dependency change when one of these fields changes. `scripts` is
 // here because a PR can point `merge:check` at a stub or add an install hook.
 export const PACKAGE_FIELDS = [
@@ -62,8 +66,10 @@ export const CI_APP_ID = 15368;
 export const CI_WORKFLOW = ".github/workflows/ci.yml";
 
 // The only files that a memory PR may add or change (option A, deny by default): a `.md` file of
-// `long-term/`. Each other path or status needs the owner (DQ-1021, DQ-1025).
-export const MEMORY_ALLOWED = /^\.agents\/chief\/memories\/long-term\/.+\.md$/;
+// `long-term/` whose folders are lower case words and whose name starts with a letter or a digit.
+// Each other path or status needs the owner (DQ-1021, DQ-1025; plan delta r1 §2.1).
+export const MEMORY_PATH =
+  /^\.agents\/chief\/memories\/long-term\/([a-z0-9][a-z0-9-]*\/)*[A-Za-z0-9][A-Za-z0-9._-]*\.md$/;
 // Memory files that the owner merges in each memory PR: the audit cron line and the audit prompt
 // (DQ-949; the second read of the option A plan).
 export const MEMORY_PROTECTED: readonly string[] = [
