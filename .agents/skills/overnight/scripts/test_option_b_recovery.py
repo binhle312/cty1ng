@@ -74,6 +74,45 @@ class RecoveryTests(unittest.TestCase):
         self.assertIn("[REPAIR_PENDING]", out)
         self.assertEqual([path.read_bytes() for path in (journal, side)], originals)
 
+    def test_repair_retries_durability_and_accepts_a_completed_append(self):
+        folder = self.fixture()
+        journal = folder / "journal.jsonl"
+        with journal.open("ab") as handle:
+            handle.write(b"a cut to keep")
+        original = journal.read_bytes()
+        module = night_module()
+        files = sys.modules["night_files"]
+        sync, append = files.sync_folder, files.append
+        calls = 0
+
+        def fail_before_truncate(path):
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                raise OSError(5, "stage could not sync before truncate")
+            sync(path)
+
+        args = ["repair", "--dir", str(folder)]
+        env = {"NIGHT_TEST_MODE": "1", "NIGHT_FAKE_NOW": at("22:10")}
+        with patch.dict(os.environ, env), patch.object(files, "sync_folder", fail_before_truncate):
+            self.assertEqual(module.main(args), 3)
+        self.assertEqual(journal.read_bytes(), original)
+        side, = folder.glob("journal.cut-*.txt")
+
+        def fail_after_append(path, entry, **options):
+            with patch("os.fsync", side_effect=OSError(5, "repair append sync failed")):
+                return append(path, entry, **options)
+
+        with patch.dict(os.environ, env), patch.object(files, "append", fail_after_append):
+            self.assertEqual(module.main(args), 3)
+        recorded = journal.read_bytes()
+        self.assertEqual(len(self.events(journal, "repair")), 1)
+        status, out = run(str(folder), "repair", at=at("22:11"))
+        self.assertEqual(status, 3, out)
+        self.assertIn("[REPAIR_NOTHING]", out)
+        self.assertEqual(journal.read_bytes(), recorded)
+        self.assertEqual(list(folder.glob("journal.cut-*.txt")), [side])
+
     def test_repair_keeps_a_later_cut_separate(self):
         folder = self.fixture()
         journal = folder / "journal.jsonl"

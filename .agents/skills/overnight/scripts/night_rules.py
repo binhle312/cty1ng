@@ -2,7 +2,7 @@
 
 from night_format import (
     DEFAULT_MAX_GAP_MIN, FINAL_OUTCOMES, ITEM_EVENTS, ITEM_KINDS, KEEPS_REPORT_FRESH, PAGE_CHECKS,
-    PHASE_KINDS, REHEARSALS_FOR_ACTION, Refused, FULL_SHA, LABEL, iso, schema_problem, MERGE_METHODS, entry_time, parsed_target, target_key, valid_base)
+    PHASE_KINDS, REHEARSALS_FOR_ACTION, Refused, FULL_SHA, LABEL, iso, schema_problem, MERGE_KINDS, MERGE_METHODS, entry_time, parsed_target, target_key, valid_base)
 
 from night_review import CHIEF_EVENTS, accepted_findings, grant_findings, owned_scope, review_problem, task_for
 
@@ -271,7 +271,7 @@ def rule_go(night, entry):
     if any(row[1] == "merge" for row in entry["items"]) and (
             not LABEL.fullmatch(entry["chief"]) or "review_policy" not in entry):
         found.append(("MERGE_NOT_ALLOWED", "a merge row needs the chief and approved review policy"))
-    if set(entry["tasks"]) != {target_key(row[2]) for row in entry["items"] if row[1] == "merge"}:
+    if not found and set(entry["tasks"]) != {target_key(row[2]) for row in entry["items"] if row[1] == "merge"}:
         found.append(("REVIEW_OWNER_TASK", "every merge target needs a task spec"))
     if entry_time(entry["stop"]) <= entry_time(entry["t"]):
         found.append(("GO_STOP_NOT_FUTURE", f"stop {entry['stop']}, now {entry['t']}"))
@@ -432,6 +432,8 @@ def merge_item(night, target, leader=None):
 
 def rule_merge(night, entry):
     kind = entry["kind"]
+    if night.go is None and kind in MERGE_KINDS:
+        return [("NOT_STARTED", "")]
     if kind == "timer":
         return [] if entry["run"] == night.run else [("MERGE_PERMISSION_NIGHT", "timer")]
     if problem := review_problem(night, entry):

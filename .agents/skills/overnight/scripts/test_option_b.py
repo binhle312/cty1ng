@@ -129,6 +129,24 @@ class OptionBTests(unittest.TestCase):
         self.expect(self.command(*go, "--chief", "chief", "--review-policy", self.input("policy.json", POLICY),
                                  time="22:01"), "REVIEW_OWNER_TASK")
 
+    def test_bad_merge_row_reports_shape_fault(self):
+        self.ok(new(str(self.chief), "fixture"))
+        card(str(self.chief), [("bad merge", "merge")])
+        self.expect(self.command("go", "--stop", "23:00Z", "--goal", "set", "--rehearsal", "passed"),
+                    "MERGE_TARGET_FORM")
+
+    def test_replay_refuses_ruling_without_go(self):
+        module = night_module()
+        rows = [{"kind": "alive", "id": 1, "t": at("22:01")},
+                {"kind": "ruling", "id": 2, "t": at("22:02"), "chief": "chief", "target": TARGET,
+                 "assignment": 3, "start": 4, "review": 5, "source": "/fixture/report.md",
+                 "finding": "fixture finding", "severity": "drop", "reason": "fixture ruling"}]
+        try:
+            state = module.fold(rows)
+        except KeyError:
+            self.fail("replay applied a ruling without go")
+        self.assertIn((2, "NOT_STARTED", ""), state.faults)
+
     def test_first_entry_rule(self):
         module = night_module()
         night = module.Night()

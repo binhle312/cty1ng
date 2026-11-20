@@ -233,14 +233,14 @@ class AdvisorThreeTests(Base):
         start = datetime(2026, 1, 10, 22, 0, tzinfo=timezone.utc)
         names = ["PR 1", "PR 2", "notice", "PR 4", "ghost"]
         rows = [["PR 1", "night"], ["PR 2", "night"], ["notice", "night"], ["PR 4", "owner"],
-                ["pr 1", "owner"], ["", "owner"], ["a|b", "unknown"]]
+                ["pr 1", "owner"], ["", "owner"], ["a|b", "unknown"], ["bad merge", "merge"]]
 
         def value(spec, n):
             if isinstance(spec, tuple):
                 return rng.choice(spec)
             structured = {
                 "run": RUN, "pair": [], "policy": {}, "reports": [], "spec": {}, "evidence": {},
-                "texts": [], "audit": [], "list": [],
+                "texts": [], "audit": [], "list": [], "tasks": {},
             }
             if spec in structured:
                 return structured[spec]
