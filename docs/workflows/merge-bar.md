@@ -107,6 +107,10 @@ owner answer is new work and goes into the next PR.
    PR that changes the same file. If no open PR changes that file, the issue goes to the audit
    that "Next" of `docs/status.md` names.
 
+## Overnight reviews
+
+For an owner-started night, follow the [night review and merge rule](../../.agents/skills/overnight/SKILL.md#night-review-and-merge) for P3s, the cap per PR and a new head after a merge of main (orders 144 and 145). Project approval rules still apply.
+
 ## Pattern rules
 
 A pattern rule guesses from the shape of text, so it cannot be right for all text. Before the build, the plan names:

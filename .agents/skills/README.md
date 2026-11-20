@@ -50,3 +50,4 @@ Read the matching skill before its phase of work.
 | `typescript-best-practices/` | Write or review TypeScript; `docs/frontend-conventions.md` wins where they differ (see its `SOURCE.md`). |
 | `arena/` | Owner only, with `/arena` or the owner's words: do one task with parallel candidates (model and effort by difficulty), pick a base, and graft the best parts. |
 | `consultants/` | Owner only, with `/consultants`: strong models grill a recommendation on open decisions before the owner decides. |
+| `overnight/` | Owner only, with `/overnight`: run approved night work within a frozen card and leave a checked morning report. |
