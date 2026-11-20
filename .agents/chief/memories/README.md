@@ -162,7 +162,8 @@ except its README. `pnpm check:memory --local` also checks this computer: the ig
 rule quote against the `.md` files of `short-term/owner/` (order 109; a quote needs the setting
 `quote_min_words` words or more). Git ignores those files, so CI cannot run these checks. Run the
 local form before each push of memory files. With no owner record it only warns; `pnpm
-merge:check` stops instead (exit 2) for each memory PR.
+merge:check` stops instead (exit 2) for each memory PR that reaches the memory gate (after the
+checks of each PR).
 
 ## Privacy
 
