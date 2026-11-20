@@ -96,10 +96,8 @@ describe("readDiff", () => {
     const manifest = byPath.get("backend/package.json");
     expect(manifest, "manifest").toMatchObject({ status: "M", liveChanged: false });
     expect(manifest?.baseText, "no text from readDiff").toBeUndefined();
-    expect(
-      calls.filter((call) => call.startsWith("cat-file")),
-      "no blob read",
-    ).toEqual([]);
+    const blobReads = calls.filter((call) => call.startsWith("cat-file")).length;
+    expect(blobReads, "no blob read").toBe(0);
     const read = blobReader(runner);
     const side = (blob: string | undefined) =>
       read({ path: "backend/package.json", side: "base", blob: blob ?? "", kind: "manifest" });

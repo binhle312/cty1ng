@@ -726,10 +726,8 @@ describe("classify with a reader", () => {
     const one = counting({ [`base ${NOTE}`]: text("# Old\n"), [`head ${NOTE}`]: text("# New\n") });
     const result = classifyWith(input([changed(NOTE)]), one.reader);
     expect(result.exit, "one note exit").toBe(0);
-    expect(
-      one.reads.map((read) => `${read.side} ${read.blob}`),
-      "one read for each side",
-    ).toEqual([`base ${BLOB_A}`, `head ${BLOB_B}`]);
+    const sides = one.reads.map((read) => `${read.side} ${read.blob}`).join(" ");
+    expect(sides, "one read for each side").toBe(`base ${BLOB_A} head ${BLOB_B}`);
     const SECOND = `${LT}second.md`;
     const two = counting({
       [`base ${NOTE}`]: text("# Old\n"),
@@ -741,7 +739,7 @@ describe("classify with a reader", () => {
     expect(two.reads.length, "one read for each side of each file").toBe(4);
   });
 
-  it("reads no text when a path, a status or a mode decides", () => {
+  it("the record step reads no text when a path, a status or a mode decides", () => {
     const gitlink = file(`${LT}sub`, {
       status: "A",
       oldMode: "000000",
@@ -766,14 +764,12 @@ describe("classify with a reader", () => {
     for (const [name, files, want] of cases) {
       const { reader, reads } = counting({});
       const result = classifyWith(input(files), reader);
-      expect(
-        `${String(result.exit)} ${result.lines.join("\n")} reads ${String(reads.length)}`,
-        name,
-      ).toMatch(new RegExp(`${want.source}[\\s\\S]* reads 0$`));
+      const said = `${String(result.exit)} ${result.lines.join("\n")} reads ${String(reads.length)}`;
+      expect(said, `record ${name}`).toMatch(new RegExp(`${want.source}[\\s\\S]* reads 0$`));
     }
   });
 
-  it("reads no text when CI decides, for a memory PR and for a changed manifest", () => {
+  it("the record step reads no text when CI decides", () => {
     const red = GREEN.map((check, i) => (i === 0 ? { ...check, state: "fail" as const } : check));
     const pending = GREEN.map((check, i) =>
       i === 0 ? { ...check, state: "pending" as const } : check,
@@ -788,10 +784,8 @@ describe("classify with a reader", () => {
       ] as const) {
         const { reader, reads } = counting({});
         const result = classifyWith(input([...files], { checks }), reader);
-        expect(
-          `${String(result.exit)} ${result.lines.join("\n")} reads ${String(reads.length)}`,
-          `${kind} ${name}`,
-        ).toMatch(/^1 [\s\S]*CI check[\s\S]* reads 0$/);
+        const said = `${String(result.exit)} ${result.lines.join("\n")} reads ${String(reads.length)}`;
+        expect(said, `record ${kind} ${name}`).toMatch(/^1 [\s\S]*CI check[\s\S]* reads 0$/);
       }
     }
   });
@@ -803,18 +797,17 @@ describe("classify with a reader", () => {
     ];
     for (const [side, texts] of cases) {
       const result = classifyWith(input([changed(NOTE)]), counting(texts).reader);
-      expect(`${String(result.exit)} ${result.lines.join("\n")}`, `unsupported ${side}`).toMatch(
-        new RegExp(`^1 [\\s\\S]*the chief stops: the ${side} text is not UTF-8`),
-      );
+      const said = `${String(result.exit)} ${result.lines.join("\n")}`;
+      const pattern = new RegExp(`^1 [\\s\\S]*the chief stops: the ${side} text is not UTF-8`);
+      expect(said, `unsupported ${side}`).toMatch(pattern);
     }
   });
 
   it("cannot check when the reader fails, for a note and for a manifest", () => {
     for (const path of [NOTE, "package.json"]) {
       const result = classifyWith(input([changed(path)]), counting({}).reader);
-      expect(`${String(result.exit)} ${result.lines.join("\n")}`, `failed ${path}`).toMatch(
-        /^2 Cannot check #152: no base text/,
-      );
+      const said = `${String(result.exit)} ${result.lines.join("\n")}`;
+      expect(said, `failed ${path}`).toMatch(/^2 Cannot check #152: no base text/);
     }
   });
 });
@@ -1550,9 +1543,7 @@ describe("the merge-check CLI", () => {
       expect(`${kind} read ${String(lastRead)} gh ${String(secondGh)}`, `order ${kind}`).toMatch(
         /^\w+ read \d+ gh \d+$/,
       );
-      expect(lastRead < secondGh, `${kind}: the last read comes before the second gh call`).toBe(
-        true,
-      );
+      expect(lastRead < secondGh, `${kind} reads first`).toBe(true);
     }
     const goneHead = prChange({ remove: [KEPT] });
     const rerun = greenNodes().map((node, i) => (i === 0 ? { ...node, databaseId: 9998 } : node));
@@ -1622,7 +1613,7 @@ describe("the merge-check CLI", () => {
     run("a file it cannot read", /^2 /);
     chmodSync(join(lib, "locked.ts"), 0o644);
     rmSync(join(lib, "locked.ts"));
-    for (const [name, said, want] of results) expect(said, `policy ${name}`).toMatch(want);
+    for (const [name, said, pattern] of results) expect(said, `walk ${name}`).toMatch(pattern);
   });
 
   // DQ-1052: the fake gh counts each call on entry, also a call with other arguments.
