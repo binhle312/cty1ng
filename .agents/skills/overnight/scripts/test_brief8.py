@@ -265,12 +265,5 @@ class Brief8Tests(ReviewFixture, unittest.TestCase):
         self.expect(self.typed("review", chief="chief", target=TARGET, reports=paths, ledger=["ledger fixture"]),
                     "REVIEW_START_REQUIRED")
 
-    def test_merge_bar_links_night_rule(self):
-        override = os.environ.get("OVERNIGHT_MERGE_BAR")
-        root = next(parent for parent in Path(__file__).resolve().parents if (parent / "docs/workflows").is_dir())
-        text = (Path(override) if override else root / "docs/workflows/merge-bar.md").read_text()
-        self.assertIn("overnight/SKILL.md#night-review-and-merge", text)
-
-
 if __name__ == "__main__":
     unittest.main()

@@ -49,7 +49,7 @@ BREAKS = [
     ("skip-leader-release", RULES, 'entry.get("replaces") != previous["id"] or not entry.get("released", "").strip()',
      "False", TEST + "test_replacement_needs_release", "0 != 3"),
     ("drop-night-merge-bar-link", "docs/workflows/merge-bar.md", "overnight/SKILL.md#night-review-and-merge",
-     "overnight/SKILL.md#work", TEST + "test_merge_bar_links_night_rule", "not found"),
+     "overnight/SKILL.md#work", "test_merge_bar.MergeBarTests.test_merge_bar_links_night_rule", "not found"),
     ("omit-main-intersection", IO, "intersections=sorted(main_files.intersection(files))",
      "intersections=[]", TEST + "test_review_brief_shows_main_intersection_and_resolution", "'owned.txt'"),
     ("ignore-reported-role", IO, 'if actor != {key: who[key] for key in ("provider", "role")}:',

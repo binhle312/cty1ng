@@ -25,11 +25,12 @@ def prove(case):
     name, filename, old, new, test_name, assertion = case
     repo_source = Path(os.environ.get("NIGHT_PY", SKILL_TESTS / "night.py")).parent
     doc = filename.startswith("docs/")
+    test_dir = HERE if doc else SKILL_TESTS
     source = ((REPO if doc else repo_source) / filename).read_text()
     if source.count(old) != 1:
         return name, "BAD", f"source edit matched {source.count(old)} times"
     empty_env = {"PATH": os.environ["PATH"]}
-    baseline = run_suite(SKILL_TESTS, {**empty_env, "NIGHT_PY": str(repo_source / "night.py")}, test_name)
+    baseline = run_suite(test_dir, {**empty_env, "NIGHT_PY": str(repo_source / "night.py")}, test_name)
     if not green(baseline):
         return name, "BAD", f"baseline failed: {baseline}"
     with tempfile.TemporaryDirectory() as folder:
@@ -42,7 +43,7 @@ def prove(case):
             path = folder / "merge-bar.md"
             path.write_text(source.replace(old, new, 1))
             broken_env["OVERNIGHT_MERGE_BAR"] = str(path)
-        result = run_suite(SKILL_TESTS, broken_env, test_name)
+        result = run_suite(test_dir, broken_env, test_name)
     state, evidence = verdict(baseline, result, test_name, assertion)
     return name, state, f"{evidence} | observed: {result.get('failures', [])}"
 
