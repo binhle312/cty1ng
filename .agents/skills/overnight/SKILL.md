@@ -28,16 +28,20 @@ Only the owner's own `/overnight <arguments>` message starts a night. If the own
 
 ## Night rule
 
-At night, merge through `night.py merge` after the chief gives permission for that PR and head. Release and delete stay with the owner. This applies to direct and indirect effects.
+At night, merge through `night.py merge` after the chief gives permission for that PR and head. Release and delete stay with the owner, with this exception:
 
-Before a permitted write, check what it can trigger now or later. If the effect is unclear, hold the write. Push to a PR branch, edit a PR body, or rerun CI only when the card and project rules permit it. Ref deletion, auto-merge, and a CI rerun that can publish a release stay with the owner.
+> At night, after a PR is MERGED and the worktree has no uncommitted changes, the leader removes its worktree, local branch and temp files; the remote branch is deleted too. Open PRs untouched.
+
+Use `night.py clean` for this exception. It checks the recorded merge and the exact PR on GitHub before it removes anything. The tool removes recorded temp files, then the worktree, local branch and remote head branch.
+
+Before a permitted write, check what it can trigger now or later. If the effect is unclear, hold the write. Push to a PR branch, edit a PR body, or rerun CI only when the card and project rules permit it. Auto-merge and a CI rerun that can publish a release stay with the owner.
 
 For cleanup, cancel only timer IDs recorded for this night. The journal tool can remove only files it can identify as its own. Leave a stale lock or a file of uncertain ownership for the owner.
 
 ## Work
 
 1. Assign up to two leaders for independent work. Wait for dependencies in order. Give each leader one worktree and one PR.
-2. Write each leader's brief with its spec and allowed helpers. Record the assignment with `night.py assign`.
+2. Give each leader a fixed folder outside its worktree and the chief's folder. Use a separate folder for each leader. For a Codex leader, add its folder to its sandbox writable roots at dispatch. Write the brief and record the assignment with `night.py assign`. See [Dispatch paths](references/night-card.md#dispatch-paths).
 3. Assign one independent Claude and one independent Codex reviewer. Record each provider, model, effort and role. Use an empty role if there is no role.
 4. Use two models above the leader if the owner allows them. The same-tier pair is Opus 5.5 and GPT-6.2 Astra at `high`. Check the model and effort of each named role. Get owner approval for Fable 5.2 if the leader uses Opus 5.5. Exclude `xhigh`.
 5. The leader writes a plan and test strategy. The chief checks both against the spec and records the check with `night.py plan` before code.
@@ -63,7 +67,8 @@ Count one round per complete pair, per PR. Use `review_cap` (default 5) and `mer
 2. Run `night.py grant` with only the two report paths. It checks the live head, required CI and changed paths against the owned files. Compare every open P3 with the live PR body.
 3. Give the run ID and grant entry ID to the leader. The leader runs `night.py merge` with the chief path, run, PR, head, leader and grant ID. The tool records the attempt before the GitHub request. A grant permits one attempt.
 4. Keep one unresolved grant across the night. Run `night.py confirm` after a merge. It requires GitHub to confirm the granted head and requires green CI on main. If main is red, hold all grants. Use `night.py withdraw` only if live evidence and the journal show that a grant had no merge.
-5. Apply the [night rule](#night-rule) to each write and its effects.
+5. After the leader journal records the merge, run `night.py clean` from outside the assigned worktree. Use the chief path, run ID, PR and leader label. If the tool refuses a step, send its code to **Needs you**. See [Cleanup records](references/night-card.md#cleanup-records).
+6. Apply the [night rule](#night-rule) to each write and its effects.
 
 ### Ordinary work and amendments
 
@@ -89,6 +94,6 @@ The owner's `/overnight continue <card file>` resumes an existing run. Use its o
 
 Start no new work at stop. Record the state of each open item. Stop the helpers that you started and get their handoffs. Apply the [night rule](#night-rule) to timer cleanup.
 
-Follow the [morning report](references/morning-report.md) for the audit, page checks and close. Freeze the report, record the three page checks and close the night. The owner keeps release, deletion and decisions on capped PRs that need the owner. Record a pasted answer with `log answer --words-file` and check the morning state before the owner acts.
+Follow the [morning report](references/morning-report.md) for the audit, page checks and close. Freeze the report, record the three page checks and close the night. Apply the [night rule](#night-rule) to remaining releases and deletions. Send capped PRs that need an owner decision to **Needs you**. Record a pasted answer with `log answer --words-file` and check the morning state before the owner acts.
 
 The tool checks the recorded workflow and the GitHub reads it can obtain. Actor authentication, writer denial in Claude, credential denial and atomic head pinning require separate evidence. A P1 or P2 absent from every source stays undetectable.

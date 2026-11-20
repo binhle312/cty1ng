@@ -31,7 +31,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 NIGHT = os.environ.get("NIGHT_PY", os.path.join(HERE, "night.py"))
 # night.py and the modules that it imports; a test copy of night.py needs all of them in its folder.
 NIGHT_MODULES = ("night_format", "night_rules", "night_report", "night_files",
-                 "night_review", "night_review_io", "night_chief")
+                 "night_review", "night_review_io", "night_chief", "night_cleanup")
 
 
 RUN = "37b41e3f-dd1e-488b-9b63-14c7d793fdf8"

@@ -1,5 +1,6 @@
 """The state of a night (the fold) and the rules on each entry. Pure: no file, no clock, no environment."""
 
+
 from night_format import (
     DEFAULT_MAX_GAP_MIN, FINAL_OUTCOMES, ITEM_EVENTS, ITEM_KINDS, KEEPS_REPORT_FRESH, PAGE_CHECKS,
     PHASE_KINDS, REHEARSALS_FOR_ACTION, Refused, FULL_SHA, LABEL, iso, schema_problem, MERGE_KINDS, MERGE_METHODS, entry_time, parsed_target, target_key, valid_base)
@@ -414,6 +415,24 @@ def tier_allowed(go, pair):
     return True
 
 
+def paths_overlap(a, b):
+    def writable(entry):
+        return [entry["worktree"]] + ([entry["cleanup"]["folder"]] if "cleanup" in entry else [])
+
+    def inside(root, path):
+        return root == path or path.startswith(root.rstrip("/") + "/")
+
+    for left, right in ((a, b), (b, a)):
+        scope = right.get("cleanup")
+        if any(inside(x, y) for x in writable(left) for y in writable(right)):
+            return True
+        if scope and any(inside(x, y) for x in writable(left) for y in (scope["repo"], scope["identity"][0])):
+            return True
+    left, right = a.get("cleanup"), b.get("cleanup")
+    return (left and right and left["branch"] == right["branch"] and
+            (left["identity"] == right["identity"] or a["target"].split("#")[0] == b["target"].split("#")[0]))
+
+
 def merge_item(night, target, leader=None):
     row = night.merge_rows.get(target)
     if not row:
@@ -466,7 +485,10 @@ def rule_merge(night, entry):
             return [("REVIEWER_NOT_ASSIGNED", target)]
         if target in night.assignments and entry["worktree"] != night.assignments[target]["worktree"]:
             return [("MERGE_NOT_ALLOWED", "replacement reviewers must use the original worktree")]
-        if any(pr != target and (e["leader"] == entry["leader"] or e["worktree"] == entry["worktree"])
+        if previous and entry.get("cleanup") != previous.get("cleanup"):
+            return [("CLEAN_ASSIGNMENT", "replacement must use the fixed cleanup paths")]
+        if any(pr != target and (e["leader"] == entry["leader"] or
+                                 paths_overlap(entry, e))
                for pr, e in night.assignments.items()):
             return [("MERGE_NOT_ALLOWED", "each PR needs its own leader and worktree")]
         return []

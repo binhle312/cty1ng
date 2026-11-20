@@ -12,13 +12,14 @@ sys.path.insert(0, str(HERE))
 from mutant_verdict import green, run_suite, verdict
 from option_b_breaks import BREAKS as OPTION_B_BREAKS
 from brief8_breaks import BREAKS as BRIEF8_BREAKS
+from cleanup_breaks import BREAKS as CLEANUP_BREAKS
 
-BREAKS = OPTION_B_BREAKS + BRIEF8_BREAKS
+BREAKS = OPTION_B_BREAKS + BRIEF8_BREAKS + CLEANUP_BREAKS
 
 REPO = HERE.parent.parent
 SKILL_TESTS = Path(os.environ.get("NIGHT_TEST_DIR", REPO / ".agents" / "skills" / "overnight" / "scripts"))
 MODULES = ("night.py", "night_files.py", "night_format.py", "night_report.py", "night_rules.py",
-           "night_chief.py", "night_review.py", "night_review_io.py")
+           "night_chief.py", "night_review.py", "night_review_io.py", "night_cleanup.py")
 
 
 def prove(case):

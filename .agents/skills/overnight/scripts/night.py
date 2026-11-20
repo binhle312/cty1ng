@@ -19,7 +19,8 @@ try:
         PAGE_OUTCOMES, REHEARSALS, REPORT, Refused, event_id, iso, line_for, parse_row, parse_stop, parsed_target, entry_time, canonical_target, input_record)
     from night_rules import counts_with, rows_problems, check_grant, pending_attempt
     from night_review import required_checks, check_statuses, check_main_statuses
-    from night_chief import command as chief_command
+    from night_chief import command as chief_command, cmd_typed
+    from night_cleanup import command as cleanup_command
     from night_report import audit_pr, search_candidates, fenced, gap_text, gaps, needs_you, render, status_data
     from night_files import (
         Lock, SharedLock, append, clock, cut_files, journal_bytes, max_gap_env, need_night, parse_card, parse_lines,
@@ -225,23 +226,8 @@ def cmd_status(args):
     return 0
 
 
-def cmd_typed(args):
-    fields = input_record(read_words(args.data))
-    kind = args.command_name
-    if fields.keys() - (set(FIELDS[kind]) - {"run"}):
-        raise Refused("MERGE_EVIDENCE_INVALID", "unknown fields")
-    if kind == "assign":
-        fields["target"] = canonical_target(fields.get("target"))
-    with Lock(args.dir):
-        night = bound_night(args.dir)
-        now, fake = clock()
-        fields["run"] = night.run
-        if kind == "assign" and isinstance(worktree := fields.get("worktree"), str):
-            if (not os.path.isabs(worktree) or os.path.realpath(worktree) != worktree
-                    or os.path.commonpath((worktree, os.path.abspath(args.dir))) in (worktree, os.path.abspath(args.dir))):
-                raise Refused("MERGE_JOURNAL_PATH", worktree)
-        entry = add_entry(args.dir, night, kind, fields, now, fake)
-    print(f"E{entry['id']} {entry['kind']}")
+def cmd_cleanup(args):
+    return cleanup_command(args, github, page_rows)
 
 
 def cmd_chief(args):
@@ -526,6 +512,14 @@ def parser():
     merge = add("merge", "use one chief permission for a direct pinned merge")
     for name in ("run", "target", "head", "leader", "grant"):
         merge.add_argument(f"--{name}", required=True)
+    for name, helptext in (("record-temp", "record one exact temporary file for this leader"),
+                           ("clean", "remove only the recorded leftovers of a merged PR")):
+        cleanup = add(name, helptext)
+        for field in ("run", "target", "leader"):
+            cleanup.add_argument(f"--{field}", required=True)
+        if name == "record-temp":
+            cleanup.add_argument("--actor", required=True)
+            cleanup.add_argument("--path", required=True)
     add("audit", "read GitHub merges for the recorded night window")
     log = add("log", "add one entry")
     log.add_argument("kind", choices=LOG_KINDS)
@@ -560,7 +554,7 @@ def parser():
 
 HANDLERS = {"new": cmd_new, "items": cmd_items, "go": cmd_go, "log": cmd_log, "status": cmd_status,
             "check": cmd_check, "report": cmd_report, "render": cmd_render, "close": cmd_close, "repair": cmd_repair, "assign": cmd_typed,
-            "timer": cmd_typed, "merge": cmd_merge, "audit": cmd_audit,
+            "timer": cmd_typed, "merge": cmd_merge, "audit": cmd_audit, "clean": cmd_cleanup, "record-temp": cmd_cleanup,
             **dict.fromkeys(("plan", "review-start", "review", "ruling", "advice", "grant", "confirm", "withdraw"), cmd_chief)}
 
 

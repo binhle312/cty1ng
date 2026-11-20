@@ -137,6 +137,31 @@ CODES = {
     "MERGE_HEAD_CHANGED": ("final", "GitHub reported a different PR head"),
     "MERGE_REJECTED": ("final", "GitHub refused the merge request"),
     "MERGE_OUTCOME_UNKNOWN": ("final", "read back both journals and GitHub before any further action"),
+    "CLEAN_ASSIGNMENT": ("fix", "use the fixed paths and branch of the chief dispatch"),
+    "CLEAN_REPO": ("fix", "the Git repository identity differs from the dispatch"),
+    "CLEAN_CWD": ("fix", "run the installed tool from outside the assigned worktree"),
+    "CLEAN_NO_MERGE": ("fix", "this leader journal has no single proven merge result"),
+    "CLEAN_GITHUB": ("fix", "GitHub did not provide a definite cleanup check"),
+    "CLEAN_PR_NOT_MERGED": ("fix", "GitHub has not confirmed that this PR is merged"),
+    "CLEAN_PR_SCOPE": ("fix", "the PR branch, repository or leader differs from the dispatch"),
+    "CLEAN_PR_HEAD": ("fix", "the PR head or merge commit differs from the journal"),
+    "CLEAN_DEFAULT_BRANCH": ("fix", "a default or protected branch name cannot be cleaned"),
+    "CLEAN_OPEN_HEAD": ("fix", "an open PR uses the head branch"),
+    "CLEAN_WORKTREE": ("fix", "Git could not verify or remove the assigned worktree"),
+    "CLEAN_WORKTREE_DIRTY": ("fix", "the worktree has changes outside recorded temp files"),
+    "CLEAN_LOCAL_IN_USE": ("fix", "a worktree still has the branch checked out"),
+    "CLEAN_LOCAL_HEAD": ("fix", "the local ref differs from the merged head or the delete failed"),
+    "CLEAN_REMOTE_PROTECTED": ("fix", "GitHub reports protection on the head branch"),
+    "CLEAN_REMOTE_HEAD": ("fix", "the remote ref differs from the merged head"),
+    "CLEAN_REMOTE_URL": ("fix", "Git config rewrites the exact PR repository URL"),
+    "CLEAN_REMOTE_PUSH": ("fix", "Git did not confirm the leased remote deletion"),
+    "CLEAN_TEMP_SCOPE": ("fix", "the file is outside its allowed paths or is tracked"),
+    "CLEAN_TEMP_IDENTITY": ("fix", "the file identity or content differs from the temp record"),
+    "CLEAN_TEMP_ACTOR": ("fix", "the actor is not the assigned leader or a recorded helper"),
+    "CLEAN_TEMP_RECORD": ("fix", "the temp file is already recorded or cleanup has started"),
+    "CLEAN_INTERRUPTED": ("fix", "an earlier cleanup intent still needs evidence"),
+    "CLEAN_GIT": ("fix", "Git did not provide a definite cleanup check"),
+    "CLEAN_FILE": ("fix", "the temp file could not be checked or removed"),
     "REVIEWER_NOT_ASSIGNED": ("fix", "use the current chief assignment and obtain matching reports"),
     "BAD_ARGUMENT": ("fix", "an argument has bytes that are not UTF-8"),
     "WORDS_FILE": ("fix", "the words file cannot be read as UTF-8 text"),
@@ -385,6 +410,10 @@ def tasks(value):
 
 
 TYPES = {
+    "cleanup": lambda v: isinstance(v, dict) and set(v) == {"folder", "repo", "branch", "identity"}
+    and all(is_text(v[k]) and v[k] for k in ("folder", "repo", "branch"))
+    and isinstance(v["identity"], list) and len(v["identity"]) == 3
+    and is_text(v["identity"][0]) and all(is_int(n) for n in v["identity"][1:]),
     "str": is_text,
     "run": lambda value: is_text(value) and RUN_ID.fullmatch(value),
     "pair": pair,
@@ -412,7 +441,7 @@ FIELDS = {
            "review_policy": "policy", "allow_empty_checks": "bool", "tasks": "tasks",
            "merge_main_bonus": "int", "consultants": "bool"},
     "assign": {"chief": "str", "target": "str", "leader": "str", "reviewers": "pair", "helpers": "texts",
-               "worktree": "str", "run": "run", "replaces": "int", "released": "str"},
+               "worktree": "str", "run": "run", "replaces": "int", "released": "str", "cleanup": "cleanup"},
     "merge-permission": {"chief": "str", "run": "run", "target": "str", "head": "str", "leader": "str", "base": "str",
                          "method": MERGE_METHODS, "assignment": "int", "reviewers": "pair", "evidence": "evidence",
                          "review": "int", "review_base": "str", "files": "texts"},
@@ -456,7 +485,7 @@ FIELDS["cap"] = FIELDS["review"]
 REQUIRED = {
     "new": ("run", "format", "chief_path"), "go": tuple(k for k in FIELDS["go"] if k != "review_policy"),
     **{kind: tuple(FIELDS[kind]) for kind in MERGE_KINDS if kind not in ("review", "cap", "assign", "merge-permission")},
-    "assign": tuple(k for k in FIELDS["assign"] if k not in ("replaces", "released")),
+    "assign": tuple(k for k in FIELDS["assign"] if k not in ("replaces", "released", "cleanup")),
     "merge-permission": tuple(FIELDS["merge-permission"]),
     "review": tuple(k for k in FIELDS["review"] if k != "spec"), "cap": tuple(FIELDS["cap"]), "intent": ("item",), "result": ("of", "outcome"), "denied": ("item",),
     "hold": ("item",), "wait": ("item",), "pagecheck": ("name", "outcome", "report"), "report": ("counts",),
@@ -524,3 +553,43 @@ def input_record(text):
     if not isinstance(data, dict):
         raise Refused("MERGE_EVIDENCE_INVALID", "read a UTF-8 JSON object")
     return data
+
+def clean_entry(entry, intents, results, temps):
+    """Check the record before reports or retries use its cleanup fields."""
+    kind, subject = entry["kind"], entry.get("subject")
+    if not isinstance(subject, str) or not subject:
+        return False
+    if kind == "clean-refusal":
+        return (entry.get("item") in ("cleanup", "temp", "worktree", "local", "remote")
+                and isinstance(entry.get("code"), str) and entry["code"] in CODES
+                and isinstance(entry.get("detail"), str))
+    size, sha = entry.get("size"), entry.get("sha")
+    if size is not None and (type(size) is not int or size < 0):
+        return False
+    if kind == "temp-record":
+        identity = entry.get("identity")
+        if (intents or subject in temps or size is None or not isinstance(entry.get("actor"), str)
+                or not isinstance(sha, str) or not re.fullmatch("[0-9a-f]{64}", sha)
+                or not isinstance(identity, list) or len(identity) != 4 or any(type(n) is not int for n in identity)):
+            return False
+        temps.add(subject)
+        return True
+    item = entry.get("item")
+    if item not in ("temp", "worktree", "local", "remote") or not isinstance(sha, str):
+        return False
+    if item == "temp":
+        if subject not in temps or size is None or not re.fullmatch("[0-9a-f]{64}", sha):
+            return False
+    elif not FULL_SHA.fullmatch(sha) or (size is None) != (item in ("local", "remote")):
+        return False
+    fields = (item, subject, size, sha)
+    if kind == "clean-intent":
+        if intents.keys() - results or fields in intents.values():
+            return False
+        intents[entry["id"]] = fields
+        return True
+    of = entry.get("of")
+    if type(of) is not int or of in results or intents.get(of) != fields:
+        return False
+    results.add(of)
+    return True

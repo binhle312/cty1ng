@@ -88,6 +88,20 @@ def merge_rows(records):
     return rows
 
 
+def cleanup_rows(records):
+    deleted, needs = [], []
+    finished = {(e["target"], e["of"]) for e in records if e.get("kind") == "clean-result"}
+    for e in records:
+        key = f"{e['target']} leader E{e['id']}"
+        if e.get("kind") == "clean-result":
+            deleted.append((e["item"], e["subject"], e["size"], e["sha"], key))
+        elif e.get("kind") == "clean-refusal":
+            needs.append((e["target"], e["code"], e["subject"], e["detail"], key))
+        elif e.get("kind") == "clean-intent" and (e["target"], e["id"]) not in finished:
+            needs.append((e["target"], "cleanup intent has no result", e["subject"], "check actual state", key))
+    return deleted, needs
+
+
 def card_targets(night):
     return {row[0]: target for target, row in night.merge_rows.items()}
 
@@ -140,6 +154,7 @@ def render(entries):
     typed_targets = [(name, target, *night.merge_rows[target][3:]) for name, target in targets.items()]
     records = report.get("merges", [])
     merges = merge_rows(records)
+    deleted, cleanup_needs = cleanup_rows(records)
     audit = next((e for e in reversed(night.entries) if e["kind"] == "audit"), None)
     p3 = [(entry["target"], finding, f"chief entry E{entry['id']}", ", ".join(r["source"] for r in entry["reports"]))
           for entry in night.reviews.values() for finding in accepted_findings(night, entry)["p3"]]
@@ -175,8 +190,9 @@ def render(entries):
         "## Owner's words (exact)\n", fenced(night.words or ""), "",
         "## Items\n", table(items, ["Name", "Kind", "From"]),
         "## Merge targets\n", table(typed_targets, ["Item", "PR", "Base", "Method", "Leader"]),
-        "## Needs you\n", table(needs_you(night), ["Item", "Why", "Command", "Blocks", "Entry"]),
+        "## Needs you\n", table(needs_you(night) + cleanup_needs, ["Item", "Why", "Command", "Blocks", "Entry"]),
         "## Merge attempts\n", table(merges, ["PR", "State", "Reviewed head", "Merge commit", "Detail", "Time", "Source"]),
+        "## Cleanup deletions\n", table(deleted, ["Item", "Path or ref", "Bytes", "SHA", "Source"]),
         "## Merge audit\n", table(audit["rows"] if audit else [], ["PR or repository", "State", "Time or interval", "Evidence"]),
         "## P3 findings\n", table(p3, ["PR", "Finding", "Entry", "Reports"]),
         "## P3 advice\n", table(advice, ["PR", "Advisor", "Consultants", "Entry"]),

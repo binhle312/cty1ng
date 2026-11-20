@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 
 from night_format import (
     CARD, FORMAT, DEFAULT_LOCK_STALE_S, DEFAULT_LOCK_WAIT_S, DEFAULT_MAX_GAP_MIN, FENCE, JOURNAL, LOCK, REPORT, Refused,
-    parse_row, schema_problem, iso, entry_time, FULL_SHA, entry_bytes)
+    parse_row, schema_problem, iso, entry_time, FULL_SHA, entry_bytes, clean_entry)
 from night_rules import apply, fold, judge
 from night_report import gap_text, gaps, render, stop_passed
 
@@ -417,7 +417,12 @@ LEADER_JOURNAL = "leader-events.jsonl"
 def leader_path(chief, night, target):
     assignment = night.assignments[target]
     worktree = assignment["worktree"]
-    child = os.path.join(worktree, ".overnight", night.run, target.replace("/", "_").replace("#", "-"))
+    cleanup = assignment.get("cleanup")
+    child = cleanup["folder"] if cleanup else os.path.join(
+        worktree, ".overnight", night.run, target.replace("/", "_").replace("#", "-"))
+    if cleanup and (not os.path.isdir(child) or any(os.path.commonpath((child, root)) in (child, root)
+                       for root in (worktree, os.path.abspath(chief)))):
+        raise Refused("MERGE_JOURNAL_PATH", child)
     if (os.path.commonpath((os.path.abspath(chief), worktree)) in (chief, worktree) or os.path.realpath(child) != child):
         raise Refused("MERGE_JOURNAL_PATH", child)
     return child
@@ -439,6 +444,7 @@ def leader_events(chief, night, target):
     if content and not content.endswith(b"\n"):
         raise Refused("TORN_LINE", folder)
     entries, attempts, results = [], {}, set()
+    clean_intents, clean_results, temps = {}, set(), set()
     for number, raw in enumerate(content.split(b"\n")[:-1], 1):
         entry = json_record(raw, number)
         kind = entry.get("kind")
@@ -466,6 +472,9 @@ def leader_events(chief, night, target):
                     or (outcome == "merged" and (not isinstance(sha, str) or not FULL_SHA.fullmatch(sha)))):
                 raise Refused("JOURNAL_FAULTS", f"{folder} result {number}")
             results.add(of)
+        elif kind in ("temp-record", "clean-intent", "clean-result", "clean-refusal"):
+            if not clean_entry(entry, clean_intents, clean_results, temps):
+                raise Refused("JOURNAL_FAULTS", f"{folder} cleanup entry {number}")
         else:
             raise Refused("JOURNAL_FAULTS", f"{folder} entry kind {kind!r}")
         entries.append(entry)

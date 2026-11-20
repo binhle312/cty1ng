@@ -22,9 +22,21 @@ At go, record the chief label and approved reviewer policy. Pass `--consultants`
 
 ## Dispatch paths
 
-Use the chief's canonical night folder outside each leader worktree and sandbox writable root. Resolve all paths and compare with the actual writable roots at dispatch. Give each leader the canonical chief path, original run ID and its own worktree path. Keep reviewer assignments, plan checks, review records and grants in the chief's journal. Keep attempts and outcomes in a separate run and PR journal in the leader worktree. Both use the stable, read-only lock file in the chief folder.
+Use the chief's canonical night folder outside each leader worktree and sandbox writable root. Resolve all paths and compare with the actual writable roots at dispatch. Give each leader the canonical chief path, run ID, worktree path and fixed folder. Create the fixed folder outside the worktree and the chief's folder. Use separate writable paths for each leader. Add the fixed folder to the Codex leader's writable roots at dispatch.
+
+In the chief's `assign --data` JSON, set `worktree` and add `cleanup` with `folder`, `repo` and `branch`. Use canonical absolute paths. Set `repo` to the persistent Git checkout and `branch` to the PR head branch. The persistent checkout must remain after the leader's worktree removal. Create `temp/` in the fixed folder for the leader's temp files.
+
+Keep attempts and outcomes in `leader-events.jsonl` in the fixed folder. Keep review records and grants in the chief's journal. Both use the stable, read-only lock file in the chief folder. An assignment without cleanup paths keeps its worktree journal and can merge and report.
 
 Record the passed daytime lock and sandbox checks. If the lock fails or the location is uncertain, hold merges. A chief label is a workflow field. It does not prove who wrote a record.
+
+## Cleanup records
+
+Run the installed tool from a directory outside the assigned worktree. Check at dispatch that the harness permits the recorded Git operations and keeps the chief files read-only to the leader.
+
+Record each finished temp file with `night.py record-temp --dir <chief> --run <run> --target <pr> --leader <leader> --actor <creator> --path <file>`. Give one exact absolute path and the label of the leader or helper who made it. Record the file after its last write. Stop helpers before cleanup.
+
+After the merge result, run `night.py clean --dir <chief> --run <run> --target <pr> --leader <leader>`. Keep the fixed folder and journal. If a step has an intent and no result, check the observed state before retry. If the item is absent or its identity changed, send the unresolved intent to **Needs you**.
 
 ## Timers
 

@@ -4,7 +4,8 @@ import os
 from pathlib import Path
 
 from night_files import Lock, add_entry, bound_night, clock, leader_events, read_words, write_file
-from night_format import FULL_SHA, Refused, entry_time, iso, schema_problem, text_list, canonical_target, input_record, parsed_target
+from night_cleanup import dispatch as cleanup_dispatch
+from night_format import FIELDS, FULL_SHA, Refused, entry_time, iso, schema_problem, text_list, canonical_target, input_record, parsed_target
 from night_review import accepted_findings, checked_plan, chief_only, grant_findings, owned_scope, reviewed_head_matches, task_for
 from night_review_io import changed_paths, main_head, pr_facts, reports_at, review_checkout, reviewer_brief
 from night_rules import judge, merge_item, pending_attempt, review_kind
@@ -237,4 +238,25 @@ def command(args, github, page_rows, check_policy):
             entry = add_entry(folder, night, kind, fields, now, fake)
         else:
             entry = fields
+    print(f"E{entry['id']} {entry['kind']}")
+
+
+def cmd_typed(args):
+    fields = input_record(read_words(args.data))
+    kind = args.command_name
+    if fields.keys() - (set(FIELDS[kind]) - {"run"}):
+        raise Refused("MERGE_EVIDENCE_INVALID", "unknown fields")
+    if kind == "assign":
+        fields["target"] = canonical_target(fields.get("target"))
+    with Lock(args.dir):
+        night = bound_night(args.dir)
+        now, fake = clock()
+        fields["run"] = night.run
+        if kind == "assign" and isinstance(worktree := fields.get("worktree"), str):
+            if (not os.path.isabs(worktree) or os.path.realpath(worktree) != worktree
+                    or os.path.commonpath((worktree, os.path.abspath(args.dir))) in (worktree, os.path.abspath(args.dir))):
+                raise Refused("MERGE_JOURNAL_PATH", worktree)
+        if kind == "assign" and "cleanup" in fields:
+            cleanup_dispatch(args.dir, fields)
+        entry = add_entry(args.dir, night, kind, fields, now, fake)
     print(f"E{entry['id']} {entry['kind']}")
