@@ -1,5 +1,6 @@
 """The journal format of night.py: the constants, the codes and the shape of each entry. Pure: no file, no clock, no environment."""
 
+import json
 import re
 from datetime import datetime, timedelta, timezone
 
@@ -16,7 +17,11 @@ REPORT = "report.md"
 LOCK = "journal.lock"
 
 
-FORMAT = 1
+FORMAT = 2
+
+DEFAULT_REVIEW_CAP = 5
+MERGE_METHODS = ("merge", "squash", "rebase")
+MERGE_KINDS = ("assign", "merge-permission", "review", "cap", "merge-invalidate", "audit", "timer")
 
 
 DEFAULT_HEARTBEAT_MIN = 30
@@ -35,7 +40,7 @@ LOG_KINDS = ("alive", "aware", "error", "reserve", "decision", "intent", "result
              "amend", "answer", "pagecheck")
 
 
-KINDS = ("new", "go", "report", "close", "repair") + LOG_KINDS
+KINDS = ("new", "go", "report", "close", "repair") + LOG_KINDS + MERGE_KINDS
 
 
 OUTCOMES = ("done", "failed", "unknown", "denied")
@@ -62,7 +67,7 @@ PAGE_CHECKS = ("mechanics", "truth", "counts")
 PAGE_OUTCOMES = ("pass", "fail")
 
 
-ITEM_KINDS = ("commit", "no-commit", "owner")
+ITEM_KINDS = ("night", "owner", "merge")
 
 
 KEEPS_REPORT_FRESH = ("pagecheck", "alive")
@@ -73,24 +78,16 @@ ITEM_EVENTS = ("intent", "denied", "hold", "wait", "decision", "aware", "error",
 
 PHASE_KINDS = {
     "prepared": {"go", "alive", "aware", "error", "reserve", "decision", "amend", "repair"},
-    "running": set(LOG_KINDS) | {"report", "close", "repair"},
+    "running": set(LOG_KINDS + MERGE_KINDS) | {"report", "close", "repair"},
     "closed": {"aware", "error", "answer", "repair"},
 }
 
 
+HOST = r"(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z](?:[a-z0-9-]*[a-z0-9])?"
+TARGET = re.compile(rf"({HOST})/([A-Za-z0-9][A-Za-z0-9-]*)/([A-Za-z0-9_][A-Za-z0-9_.-]*)#([1-9][0-9]{{0,9}})")
+LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]*")
+RUN_ID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")
 FULL_SHA = re.compile(r"[0-9a-f]{40}")
-
-
-ANY_SHA = re.compile(r"(?<![0-9A-Fa-f])[0-9A-Fa-f]{40}(?![0-9A-Fa-f])")
-
-
-# A card row holds the exact command. A slot is a whole word of a fixed type; no other slot exists, and a new slot
-# type needs the owner (owner, 2026-11-19, designs-139-140 Q3 A).
-SLOTS = {"{head}": FULL_SHA, "{run}": re.compile(r"[0-9]{1,20}")}
-# A character that a shell reads as syntax: no command or row may have one (outside a slot word). The backtick is
-# written by its name: a literal one made a skill scanner read the lines down to FENCE as one shell command.
-SHELL_CHARS = frozenset(";&|$()<>\\{}~*?[]!#\N{GRAVE ACCENT}")
-REPO = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
 
 
 FENCE = re.compile(r"^(`{3,}|~{3,})(.*)$")
@@ -100,13 +97,41 @@ FENCE = re.compile(r"^(`{3,}|~{3,})(.*)$")
 CODES = {
     # Before an entry exists (PRE_EVENT_CODES).
     "NO_NIGHT": ("fix", "no night in this folder: run `new` first"),
+    "FORMAT_UNSUPPORTED": ("final", "use the writer revision of this journal or start a new format 2 night"),
+    "REPAIR_PENDING": ("final", "a repair is staged or has an invalid side record; check the repair before further writes"),
+    "REVIEW_CAP_FORM": ("fix", "the review cap must be a positive integer"),
+    "REVIEW_CAP_REACHED": ("final", "this PR reached the review cap; the owner decides the next step"),
+    "MERGE_TARGET_FORM": ("fix", "use host/owner/repository#PR and a valid base, method and leader"),
+    "HEAD_FORM": ("fix", "use the full 40-character lowercase GitHub SHA"),
+    "MERGE_PR_NOT_ON_CARD": ("final", "the frozen card does not name this PR"),
+    "MERGE_NOT_ALLOWED": ("final", "the card does not allow this merge method, base or assignment"),
+    "MERGE_CHIEF_ONLY": ("final", "the chief label differs from the frozen card"),
+    "MERGE_LEADER_ONLY": ("final", "the leader label differs from the frozen card"),
+    "MERGE_JOURNAL_PATH": ("final", "the journal path differs from the canonical path fixed at dispatch"),
+    "MERGE_EVIDENCE_INVALID": ("fix", "provide complete review, CI, ledger and P3 evidence"),
+    "MERGE_PERMISSION_DUPLICATE": ("final", "this PR and head already have a grant"),
+    "MERGE_PERMISSION_MISSING": ("fix", "the chief journal has no such grant"),
+    "MERGE_PERMISSION_NIGHT": ("final", "the permission belongs to a different night"),
+    "MERGE_PERMISSION_PR": ("final", "the permission belongs to a different PR"),
+    "MERGE_PERMISSION_HEAD": ("final", "the expected head differs from the granted head"),
+    "MERGE_PERMISSION_INACTIVE": ("final", "a replacement, hold or denial ended this grant"),
+    "MERGE_PERMISSION_USED": ("final", "an attempt already consumed this grant"),
+    "MERGE_PENDING": ("final", "an earlier attempt on this PR has an unresolved outcome"),
+    "MERGE_READ_FAILED": ("final", "GitHub did not provide a valid PR or repository read"),
+    "MERGE_PR_INELIGIBLE": ("final", "GitHub state or project policy bars a direct merge"),
+    "MERGE_EFFECT_UNCLEAR": ("final", "the merge effect could not be established"),
+    "MERGE_CI_UNKNOWN": ("final", "the effective required checks or their source could not be established"),
+    "MERGE_CI_NOT_GREEN": ("final", "a required check on the granted head is not green"),
+    "MERGE_HEAD_CHANGED": ("final", "GitHub reported a different PR head"),
+    "MERGE_REJECTED": ("final", "GitHub refused the merge request"),
+    "MERGE_OUTCOME_UNKNOWN": ("final", "read back both journals and GitHub before any further action"),
+    "REVIEWER_NOT_ASSIGNED": ("fix", "use the current chief assignment and obtain matching reports"),
     "BAD_ARGUMENT": ("fix", "an argument has bytes that are not UTF-8"),
     "WORDS_FILE": ("fix", "the words file cannot be read as UTF-8 text"),
     "WORDS_AS_ARGUMENT": ("fix", "the owner's exact words go in only through --words-file, not as an argument"),
     "ARG_NOT_FOR_KIND": ("fix", "this kind of entry does not take this option"),
     "ITEM_MISSING": ("fix", "this kind of entry needs --item <exact card name>"),
-    "ITEM_LINE": ("fix", "an item row is `<name> | commit | <command>`, `<name> | no-commit | <command>` or "
-                         "`<name> | owner`"),
+    "ITEM_LINE": ("fix", "use `name | night`, `name | owner` or `name | merge | target | base | method | leader`"),
     "EVENT_ID": ("fix", "an entry id is a number such as 12 or E12"),
     "RESULT_FIELDS": ("fix", "a result needs --of <intent id> and --outcome done, failed, unknown or denied"),
     "PAGECHECK_FIELDS": ("fix", "a page check needs --name mechanics, truth, counts, --outcome pass or fail, and --report E<n>"),
@@ -126,7 +151,7 @@ CODES = {
     "STOP_NO_OFFSET": ("fix", "--stop needs its offset: `YYYY-MM-DDTHH:MM+07:00` or `HH:MM+07:00` (the zone of the card, "
                               "not of this computer)"),
     "ID_NOT_REPORT": ("fix", "this entry is not a report entry"),
-    "WRITE_FAILED": ("final", "a file write failed"),
+    "WRITE_FAILED": ("final", "a file write failed; read back under lock before deciding what happened"),
     "INTERNAL": ("final", "an unexpected error in night.py; run `check` and tell the owner"),
     # Rules on an entry (the same for a live command and for the fold in `check`).
     "FIRST_NOT_NEW": ("final", "the first journal entry is not `new`"),
@@ -141,14 +166,7 @@ CODES = {
     "WORDS_EMPTY": ("fix", "the words file is empty; it must hold the owner's exact words"),
     "ITEMS_EMPTY": ("fix", "the night-items block has no rows"),
     "ITEM_NAME": ("fix", "an item name must not be empty, must have no spaces at its ends, no `|` and no control characters"),
-    "ITEM_KIND": ("fix", "an item kind is commit, no-commit or owner"),
-    "ITEM_COMMAND": ("fix", "a commit or no-commit row gives the exact command: a commit row has the slot {head} one "
-                            "time and no `--` word, a no-commit row has no {head} and no sha, a `gh` row names "
-                            "`-R owner/repo`, the only slots are {head} and {run}; an owner row gives no command"),
-    "COMMAND_SHELL": ("fix", "a command or a card row has shell syntax: one of ; & | ` $ ( ) < > \\ { } ~ * ? [ ] ! #, "
-                             "a new line, an unclosed quote, a word that starts with `=`, or an environment word first"),
-    "COMMAND_NOT_ROW": ("fix", "the command must equal the card row of its item, word for word; a slot takes one word "
-                               "of its type. Do not change the command: if the night needs another one, ask the owner"),
+    "ITEM_KIND": ("fix", "an item kind is night, owner or merge"),
     "ITEM_DUPLICATE": ("fix", "two card names are the same or differ only in case or spaces"),
     "ITEM_ON_CARD": ("fix", "this name, or a name that differs from it only in case or spaces, is already on the card"),
     "ITEM_NOT_ON_CARD": ("fix", "the item is not an exact name from the card"),
@@ -166,12 +184,6 @@ CODES = {
     "UNKNOWN_RESULT": ("final", "the last result on this item is unknown: check the real state and log a new result first"),
     "OPEN_INTENT": ("fix", "an intent on this item has no result: log its result first (run `status`)"),
     "INTENT_FIELDS": ("fix", "an intent needs --command"),
-    "COMMIT_NEEDS_HEAD": ("fix", "a commit item needs --head <40-character sha>, and the command of its row with that "
-                                 "head in the slot {head}; --no-head is only for no-commit items. Do not change the "
-                                 "kind of the item"),
-    "HEAD_FORM": ("fix", "--head must be the full 40-character lower-case sha"),
-    "NO_COMMIT_HAS_HEAD": ("fix", "a no-commit item takes no --head"),
-    "NO_COMMIT_NEEDS_REASON": ("fix", "a no-commit item needs --no-head <reason>"),
     "RESULT_NOT_INTENT": ("fix", "--of must name an intent"),
     "RESULT_FINAL": ("final", "this intent already has the result"),
     "DENIED_NEEDS_BLOCKS": ("fix", "a denied result needs --blocks <what it blocks>"),
@@ -198,7 +210,7 @@ CODES = {
 
 
 PRE_EVENT_CODES = frozenset((
-    "NO_NIGHT", "BAD_ARGUMENT", "WORDS_FILE", "WORDS_AS_ARGUMENT", "ARG_NOT_FOR_KIND", "ITEM_MISSING", "ITEM_LINE",
+    "FORMAT_UNSUPPORTED", "REPAIR_PENDING", "NO_NIGHT", "BAD_ARGUMENT", "WORDS_FILE", "WORDS_AS_ARGUMENT", "ARG_NOT_FOR_KIND", "ITEM_MISSING", "ITEM_LINE",
     "EVENT_ID", "RESULT_FIELDS", "PAGECHECK_FIELDS", "CARD_MISSING", "CARD_NO_BLOCK", "CARD_TWO_BLOCKS",
     "CARD_OPEN_FENCE", "MAX_GAP_ENV", "FAKE_CLOCK_NO_TEST", "FAKE_CLOCK_FORM", "LOCK_HELD", "LOCK_STALE", "TORN_LINE",
     "BAD_LINE", "SCHEMA", "REPAIR_NOTHING", "ID_NOT_REPORT", "WRITE_FAILED", "INTERNAL", "STOP_NO_OFFSET",
@@ -243,6 +255,9 @@ def parse_stop(text, now):
     """--stop: a date and time with its offset, or HH:MM with its offset (the next such time).
     The zone of this computer is never used: it need not be the zone of the card."""
     text = text.strip()
+    zone_parts = re.search(r"([+-])(\d{2}):(\d{2})$", text)
+    if zone_parts and (int(zone_parts[2]) > 23 or int(zone_parts[3]) > 59):
+        raise Refused("STOP_NO_OFFSET", repr(text))
     clock_only = re.fullmatch(r"(\d{1,2}):(\d{2})(Z|[+-]\d{2}:\d{2})", text)
     if clock_only:
         hour, minute, zone = int(clock_only.group(1)), int(clock_only.group(2)), clock_only.group(3)
@@ -281,11 +296,81 @@ def is_text(value):
 
 
 def is_row(value):
-    return isinstance(value, list) and len(value) in (2, 3) and all(is_text(part) for part in value)
+    return isinstance(value, list) and len(value) in (2, 6) and all(is_text(part) for part in value)
+
+def parsed_target(value):
+    match = TARGET.fullmatch(value) if is_text(value) else None
+    if not match:
+        return None
+    host, owner, repo, number = match.groups()
+    return host, f"{owner.lower()}/{repo.lower()}", int(number)
+
+
+def target_key(value):
+    host, repo, number = parsed_target(value)
+    return f"{host}/{repo}#{number}"
+
+
+def valid_base(value):
+    return bool(re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]*", value)
+                and all(part and not part.startswith(".") and not part.endswith((".", ".lock"))
+                        for part in value.split("/")) and ".." not in value)
+
+
+def text_list(value):
+    return isinstance(value, list) and all(is_text(s) and s.strip() for s in value)
+
+
+def reviewer(value):
+    return (isinstance(value, dict) and set(value) == {"provider", "model", "effort", "role"}
+            and all(is_text(v) for v in value.values()) and value["model"].strip()
+            and value["provider"] in ("claude", "codex") and value["effort"] in ("low", "medium", "high"))
+
+
+def pair(value):
+    return (isinstance(value, list) and len(value) == 2 and all(reviewer(who) for who in value)
+            and [who["provider"] for who in value] == ["claude", "codex"])
+
+
+def review_policy(value):
+    return (isinstance(value, dict) and set(value) == {"allowed", "roles"} and pair(value["allowed"])
+            and isinstance(value["roles"], dict) and all(reviewer(who) and label == f"{who['provider']}:{who['role']}"
+                                                       for label, who in value["roles"].items()))
+
+
+def report_pair(value):
+    return (isinstance(value, list) and len(value) == 2
+            and all(isinstance(r, dict) and set(r) == {"who", "head", "source", "p1", "p2", "p3"}
+                    and reviewer(r["who"]) and is_text(r["source"]) and r["source"].strip()
+                    and is_text(r["head"]) and FULL_SHA.fullmatch(r["head"])
+                    and all(text_list(r[key]) for key in ("p1", "p2", "p3")) for r in value))
+
+
+def cap_spec(value):
+    return (isinstance(value, dict) and set(value) == {"done", "findings", "next"}
+            and all(is_text(value[key]) and value[key].strip() for key in ("done", "next"))
+            and isinstance(value["findings"], list) and value["findings"]
+            and all(isinstance(f, dict) and set(f) == {"severity", "text"} and f["severity"] in ("P1", "P2", "P3")
+                    and is_text(f["text"]) and f["text"].strip() for f in value["findings"]))
+
+
+def grant_evidence(value):
+    return (isinstance(value, dict) and set(value) == {"reports", "ci", "ledger", "p3"}
+            and all(text_list(v) for v in value.values()) and len(value["reports"]) == 2
+            and bool(value["ledger"]))
 
 
 TYPES = {
     "str": is_text,
+    "run": lambda value: is_text(value) and RUN_ID.fullmatch(value),
+    "pair": pair,
+    "policy": review_policy,
+    "reports": report_pair,
+    "spec": cap_spec,
+    "evidence": grant_evidence,
+    "texts": text_list,
+    "audit": lambda value: isinstance(value, list) and all(text_list(row) for row in value),
+    "list": lambda value: isinstance(value, list) and all(isinstance(e, dict) for e in value),
     "int": is_int,
     "bool": lambda v: isinstance(v, bool),
     "time": lambda v: entry_time(v) is not None,
@@ -296,10 +381,20 @@ TYPES = {
 
 
 FIELDS = {
-    "new": {"run": "str", "words": "str", "test": "bool", "format": (FORMAT,)},
+    "new": {"run": "run", "chief_path": "str", "words": "str", "test": "bool", "format": (FORMAT,)},
     "go": {"stop": "time", "heartbeat_min": "int", "gap_min": "int", "max_gap_min": "int", "goal": GOALS,
-           "rehearsal": REHEARSALS, "items": "rows"},
-    "intent": {"item": "str", "command": "str", "head": "str", "no_head": "str"},
+           "rehearsal": REHEARSALS, "items": "rows", "run": "run", "review_cap": "int", "chief": "str",
+           "review_policy": "policy", "allow_empty_checks": "bool"},
+    "assign": {"chief": "str", "target": "str", "leader": "str", "reviewers": "pair", "helpers": "texts",
+               "worktree": "str", "run": "run"},
+    "merge-permission": {"chief": "str", "run": "run", "target": "str", "head": "str", "leader": "str", "base": "str",
+                         "method": MERGE_METHODS, "assignment": "int", "reviewers": "pair", "evidence": "evidence"},
+    "review": {"target": "str", "leader": "str", "reports": "reports", "spec": "spec"},
+    "cap": {"target": "str", "leader": "str", "reports": "reports", "spec": "spec"},
+    "merge-invalidate": {"target": "str", "grant": "int"},
+    "audit": {"rows": "audit"},
+    "timer": {"timer": "str", "run": "run"},
+    "intent": {"item": "str", "command": "str"},
     "result": {"of": "int", "outcome": OUTCOMES, "blocks": "str", "text": "str"},
     "denied": {"item": "str", "command": "str", "blocks": "str", "text": "str"},
     "hold": {"item": "str", "text": "str"},
@@ -312,14 +407,16 @@ FIELDS = {
     "amend": {"words": "str", "reopen": "str", "add_item": "row"},
     "answer": {"words": "str"},
     "pagecheck": {"name": PAGE_CHECKS, "outcome": PAGE_OUTCOMES, "report": "int", "text": "str"},
-    "report": {"counts": "counts"},
+    "report": {"counts": "counts", "merges": "list"},
     "close": {"reason": CLOSE_REASONS, "without_page": "str"},
     "repair": {"cut_file": "str", "bytes": "int"},
 }
 
 
 REQUIRED = {
-    "new": ("run",), "go": tuple(FIELDS["go"]), "intent": ("item",), "result": ("of", "outcome"), "denied": ("item",),
+    "new": ("run", "format", "chief_path"), "go": tuple(k for k in FIELDS["go"] if k != "review_policy"),
+    **{kind: tuple(FIELDS[kind]) for kind in MERGE_KINDS if kind != "review"},
+    "review": ("target", "leader", "reports"), "intent": ("item",), "result": ("of", "outcome"), "denied": ("item",),
     "hold": ("item",), "wait": ("item",), "pagecheck": ("name", "outcome", "report"), "report": ("counts",),
     "close": ("reason",), "repair": ("cut_file", "bytes"),
 }
@@ -355,7 +452,7 @@ def schema_problem(entry):
 
 def parse_row(line):
     parts = [part.strip() for part in line.split("|")]
-    if len(parts) not in (2, 3):
+    if not is_row(parts):
         raise Refused("ITEM_LINE", repr(line.strip()))
     return parts
 
@@ -365,3 +462,23 @@ def event_id(text):
     if not match:
         raise Refused("EVENT_ID", repr(text))
     return int(match.group(1))
+
+
+def canonical_target(raw):
+    if not parsed_target(raw):
+        raise Refused("MERGE_TARGET_FORM")
+    return target_key(raw)
+
+
+def entry_bytes(entry):
+    return (json.dumps(entry, ensure_ascii=False) + "\n").encode("utf-8")
+
+
+def input_record(text):
+    try:
+        data = json.loads(text)
+    except ValueError:
+        data = None
+    if not isinstance(data, dict):
+        raise Refused("MERGE_EVIDENCE_INVALID", "read a UTF-8 JSON object")
+    return data

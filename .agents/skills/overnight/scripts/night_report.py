@@ -2,8 +2,8 @@
 
 import re
 
-from night_format import CODES, DEFAULT_MAX_GAP_MIN, entry_time, iso, minutes
-from night_rules import fold
+from night_format import Refused, FULL_SHA, CODES, DEFAULT_MAX_GAP_MIN, entry_time, iso, minutes
+from night_rules import fold, read_rounds
 
 
 def alarm(go):
@@ -36,7 +36,7 @@ def gap_text(night, gap):
 def stop_passed(night, now=None):
     if night.go is None or night.close is not None or night.last is None:
         return False
-    stop = entry_time(night.go["stop"])
+    stop = entry_time(night.go["stop"]) if night.go else None
     return entry_time(night.last["t"]) >= stop or (now is not None and now >= stop)
 
 
@@ -53,7 +53,35 @@ def needs_you(night):
         rows.append((night.item_of(entry), "result unknown", "check the real state", "", f"E{entry['id']}"))
     for entry in night.open_intents():
         rows.append((entry["item"], "intent with no result", "check the real state", "", f"E{entry['id']}"))
+    for target, entry in night.capped.items():
+        spec = entry["spec"]
+        findings = "\n".join(f"{f['severity']} {f['text']}" for f in spec["findings"])
+        rows.append((target, "review cap", spec["done"], f"{findings} | Next: {spec['next']}", f"leader entry E{entry['id']}"))
+    for name, (kind, source) in night.items.items():
+        if kind == "owner" and name not in night.denied and name not in night.held:
+            rows.append((name, "owner action from the card", "", "", f"E{source}"))
     return rows
+
+
+def merge_rows(records):
+    results = {(e["target"], e["of"]): e for e in records if e.get("kind") == "merge-result"}
+    rows = []
+    for attempt in records:
+        if attempt.get("kind") != "merge-attempt":
+            continue
+        target, number = attempt["target"], attempt["id"]
+        reply = results.get((target, number))
+        if not reply:
+            state, sha, detail = "send uncertain", "", ""
+        else:
+            state = "unconfirmed" if reply["outcome"] == "unknown" else reply["outcome"]
+            sha, detail = reply.get("sha") or "", reply.get("code") or ""
+        rows.append((target, state, attempt["head"], sha, detail, attempt["t"], f"leader entry E{number}"))
+    return rows
+
+
+def card_targets(night):
+    return {row[0]: target for target, row in night.merge_rows.items()}
 
 
 def cell(value):
@@ -99,7 +127,18 @@ def render(entries):
         return [(night.item_of(r), night.intents[r["of"]].get("command"), r["t"], r.get("text"), f"E{r['id']}")
                 for r in results if r["outcome"] == outcome]
 
-    items = [(name, kind, command or "", f"E{source}") for name, (kind, command, source) in night.items.items()]
+    items = [(name, kind, f"E{source}") for name, (kind, source) in night.items.items()]
+    targets = card_targets(night)
+    typed_targets = [(name, target, *night.merge_rows[target][3:]) for name, target in targets.items()]
+    records = report.get("merges", [])
+    merges = merge_rows(records)
+    read_rounds(night, records)
+    audit = next((e for e in reversed(night.entries) if e["kind"] == "audit"), None)
+    p3 = [(e["target"], p3, f"grant E{e['id']}", ", ".join(e["evidence"]["reports"]))
+          for e in night.grants.values() for p3 in e["evidence"]["p3"]]
+    p3.extend((entry["target"], finding, f"leader entry E{entry['id']}", report["source"])
+              for entry in records if entry["kind"] in ("review", "cap")
+              for report in entry["reports"] for finding in report["p3"])
     errors = [(e["t"], e.get("text"), f"E{e['id']}") for e in night.entries if e["kind"] == "error"]
     messages = [(e["t"], e.get("words"), e.get("reopen") or "", " | ".join(e.get("add_item", [])), f"E{e['id']}")
                 for e in night.entries if e["kind"] in ("amend", "answer")]
@@ -113,10 +152,13 @@ def render(entries):
               for e in night.entries if e["kind"] == "repair"]
     if closed:
         state = f"The night is closed at {night.close['t']} (E{night.close['id']}, reason {night.close['reason']})."
-        permissions = f"Night permissions ended at the close (E{night.close['id']})."
+        end = entry_time(night.close["t"])
+        stop = entry_time(night.go["stop"]) if night.go else None
+        permissions = (f"Night permissions ended at the close (E{night.close['id']})." if stop is None or end < stop
+                       else f"Night permissions ended at stop ({night.go['stop']}).")
     else:
         state = "The night is not closed."
-        permissions = "The night is not closed. Its permissions stay until the close."
+        permissions = "Night permissions end at stop or at an earlier close."
     goal = {"set": "set by the owner's /goal line", "no-goal-command": "none: no /goal command here; heartbeat only"}
     text = [
         f"<!-- night.py record: report E{report['id']}, {'closed' if closed else 'open'}{test} -->",
@@ -125,8 +167,12 @@ def render(entries):
         f"Go: {go['t']}. Stop time: {go['stop']}. Session goal: {goal[go['goal']]}. "
         f"Rehearsal: {go['rehearsal']}.\n" if go else "Go: none.\n",
         "## Owner's words (exact)\n", fenced(night.words or ""), "",
-        "## Items\n", table(items, ["Name", "Kind", "Command", "From"]),
+        "## Items\n", table(items, ["Name", "Kind", "From"]),
+        "## Merge targets\n", table(typed_targets, ["Item", "PR", "Base", "Method", "Leader"]),
         "## Needs you\n", table(needs_you(night), ["Item", "Why", "Command", "Blocks", "Entry"]),
+        "## Merge attempts\n", table(merges, ["PR", "State", "Reviewed head", "Merge commit", "Detail", "Time", "Source"]),
+        "## Merge audit\n", table(audit["rows"] if audit else [], ["PR or repository", "State", "Time or interval", "Evidence"]),
+        "## P3 findings\n", table(p3, ["PR", "Finding", "Entry", "Reports"]),
         "## My errors\n", table(errors, ["Time", "Error and correction", "Entry"]),
         "## Done and not reversible\n", table(outcome_rows("done"), ["Item", "Command", "Time", "Evidence", "Entry"]),
         "## Failed\n", table(outcome_rows("failed"), ["Item", "Command", "Time", "What happened", "Entry"]),
@@ -147,14 +193,22 @@ def render(entries):
 def status_data(night, now):
     def short(entries, item=lambda e: e.get("item")):
         return [f"E{e['id']} {item(e)}" for e in entries]
-    items = [{"name": name, "kind": kind, "command": command, "from": f"E{source}"}
-             for name, (kind, command, source) in night.items.items()]
+    items = [{"name": name, "kind": kind, "from": f"E{source}"}
+             for name, (kind, source) in night.items.items()]
+    targets = card_targets(night)
+    for item in items:
+        if item["name"] in targets:
+            item["target"] = targets[item["name"]]
     newest = night.newest_report()
     return {
         "run": night.run, "phase": night.phase, "test": night.test,
         "last": f"E{night.last['id']} {night.last['kind']} {night.last['t']}" if night.last else None,
         "closed": f"E{night.close['id']} NIGHT CLOSED {night.run} reason {night.close['reason']}" if night.close else None,
         "stop": night.go["stop"] if night.go else None, "items": items,
+        "review_cap": night.go["review_cap"] if night.go else None,
+        "capped": night.capped,
+        "timers": [e["timer"] for e in night.entries if e["kind"] == "timer"],
+        "audit": next((e for e in reversed(night.entries) if e["kind"] == "audit"), None),
         "open_intents": short(night.open_intents()),
         "open_denials": short(night.denied.values(), night.item_of),
         "open_holds": short(night.held.values()),
@@ -167,3 +221,43 @@ def status_data(night, now):
         "faults": [f"E{i} {code}" for i, code, _ in night.faults],
         "counts": night.counts,
     }
+
+
+def audit_pr(pr, target, number, endpoint, matches, attempts, start, end):
+    if not isinstance(pr, dict) or pr.get("number") != number:
+        raise Refused("MERGE_READ_FAILED", endpoint)
+    if pr.get("merged") is False:
+        return None
+    merged_at = entry_time(pr.get("merged_at"))
+    sha = pr.get("merge_commit_sha")
+    if pr.get("merged") is not True or not merged_at or not isinstance(sha, str) or not FULL_SHA.fullmatch(sha):
+        raise Refused("MERGE_READ_FAILED", endpoint)
+    actor = pr.get("merged_by") or {}
+    result = matches.get((target, sha))
+    matched = (result and entry_time(result.get("sent_at")) and
+               entry_time(result["sent_at"]) <= merged_at <= entry_time(result["t"]))
+    evidence = f"{endpoint}; {sha}; actor {actor.get('login', 'unknown')}"
+    if matched:
+        evidence += f"; leader result E{result['id']}"
+    if start <= merged_at < end:
+        return [target, "verified" if matched else "unmatched", iso(merged_at), evidence]
+    elif end <= merged_at and target in attempts and matched:
+        return [target, "verified late", iso(merged_at), evidence]
+    elif end <= merged_at and target in attempts:
+        return [target, "late merge without proven match", iso(merged_at), evidence]
+
+
+def search_candidates(pages, repo):
+    if not isinstance(pages, list) or not pages or not all(isinstance(page, dict) for page in pages):
+        raise ValueError("pagination")
+    counts = {page["total_count"] for page in pages}
+    if len(counts) != 1 or any(page["incomplete_results"] is not False for page in pages):
+        raise ValueError("incomplete search")
+    count = counts.pop()
+    if type(count) is not int or count < 0:
+        raise ValueError("invalid count")
+    rows = [row for page in pages for row in page["items"]]
+    numbers = {row["number"] for row in rows if isinstance(row, dict) and
+               type(row.get("number")) is int and row["number"] > 0 and
+               row.get("repository_url", "").rstrip("/").lower().endswith("/repos/" + repo)}
+    return count, numbers, len(rows)

@@ -14,8 +14,8 @@ from datetime import datetime, timedelta, timezone
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # `-I` drops this folder
 from night_testlib import (  # noqa: E402
-    Base, INTENT, NIGHT, OPT, SHA, amend, argv, at, card, code_of, env_for, go_args, go_at, intent, intent_args,
-    journal, journal_bytes, merge, new, night_module, part, read_report, result, run, started, words_file, write)
+    Base, RUN, INTENT, NIGHT, SHA, amend, argv, at, card, code_of, env_for, go_args, go_at, intent, intent_args,
+    journal, journal_bytes, ordinary_write, new, night_module, part, read_report, result, run, started, words_file, write)
 
 
 class BlockTests(Base):
@@ -104,14 +104,14 @@ class IntentTests(Base):
 
     def test_intent_needs_an_item_and_a_command(self):
         started(self.dir)
-        self.refused("log", "intent", "--item", "PR 1", "--head", SHA, at=at("22:10"), code="INTENT_FIELDS")
-        self.refused("log", "intent", "--command", merge("PR 1"), "--head", SHA, at=at("22:10"), code="ITEM_MISSING")
+        self.refused("log", "intent", "--item", "PR 1", at=at("22:10"), code="INTENT_FIELDS")
+        self.refused("log", "intent", "--command", ordinary_write("PR 1"), at=at("22:10"), code="ITEM_MISSING")
 
     def test_second_intent_while_the_first_has_no_result_is_refused(self):
         started(self.dir)
         self.ok(intent(self.dir, "PR 1", at("22:10")))
         out = self.refused(*intent_args("PR 1"), at=at("22:12"), code="OPEN_INTENT")
-        for text in ("E3", at("22:10"), merge("PR 1"), "no result", "status"):
+        for text in ("E3", at("22:10"), ordinary_write("PR 1"), "no result", "status"):
             self.assertIn(text, out)
 
     def test_unknown_result_blocks_a_new_intent_until_a_new_result(self):
@@ -206,11 +206,11 @@ class AdvisorThreeTests(Base):
         self.ok(run(self.dir, "report", at=at("22:18")))  # E11
         report = read_report(self.dir)
         self.assertIn("Go: 2026-01-10T22:01:00+00:00. Stop time: 2026-01-11T06:00:00+00:00", report)
-        self.assertIn("| org/one#3 | commit |", part(report, "## Items", "## Needs you"))
+        self.assertIn("| org/one#3 | night |", part(report, "## Items", "## Needs you"))
         needs = part(report, "## Needs you", "## My errors")
         self.assertIn("| PR 12 | held: owner-only file |", needs)
         self.assertIn("| PR 3 | intent with no result |", needs)
-        self.assertIn("| PR 1 | gh pr merge", part(report, "## Done and not reversible", "## Failed"))
+        self.assertIn("| PR 1 | update record", part(report, "## Done and not reversible", "## Failed"))
         self.assertIn("merged", part(report, "## Done and not reversible", "## Failed"))
         self.assertIn("conflict", part(report, "## Failed", "## Owner messages"))
         self.assertIn("| PR 2 | a note for you |", part(report, "## Notes for the owner", "## Stops and gaps"))
@@ -227,29 +227,24 @@ class AdvisorThreeTests(Base):
             with self.subTest(stop=stop):
                 self.refused("go", "--stop", stop, "--goal", "set", "--rehearsal", "passed", at=at("22:01"), code="STOP_NO_OFFSET")
 
-    def test_a_hand_written_commit_row_with_no_command_gives_codes_not_a_crash(self):
-        self.hand_edit = True
-        write(self.dir, journal(go_at(items=[["PR 1", "commit"]]), {**INTENT, "t": at("22:10"), "item": "PR 1"},
-                                result("22:11", 3)))
-        code, out = run(self.dir, "check", at=at("22:12"))
-        self.assertEqual(code, 1, out)
-        self.assertIn("ITEM_COMMAND", code_of(out))
-        self.assertNotIn("INTERNAL", out)
-        self.ok(run(self.dir, "status", at=at("22:12")))
-
     def test_random_journals_that_pass_the_schema_crash_nothing(self):
         """A fixed-seed fuzz of the fold, the views and the rules (advisor point 3, F5)."""
         m, rng = night_module(), random.Random(1)
         start = datetime(2026, 1, 10, 22, 0, tzinfo=timezone.utc)
         names = ["PR 1", "PR 2", "notice", "PR 4", "ghost"]
-        rows = [["PR 1", "commit", merge("PR 1", "{head}")], ["PR 1", "commit"], ["PR 2", "commit", "--m"],
-                ["PR 2", "commit", "gh pr merge 2 {head} # x"], ["notice", "no-commit", merge("notice")], ["notice", "no-commit"],
-                ["PR 4", "owner"], ["PR 4", "owner", "--x"], ["pr 1", "owner"], ["", "owner"], ["a|b", "merge"]]
+        rows = [["PR 1", "night"], ["PR 2", "night"], ["notice", "night"], ["PR 4", "owner"],
+                ["pr 1", "owner"], ["", "owner"], ["a|b", "unknown"]]
 
         def value(spec, n):
             if isinstance(spec, tuple):
                 return rng.choice(spec)
-            return {"str": lambda: rng.choice(names + ["", " ", "x", SHA, merge("PR 1")]),
+            structured = {
+                "run": RUN, "pair": [], "policy": {}, "reports": [], "spec": {}, "evidence": {},
+                "texts": [], "audit": [], "list": [],
+            }
+            if spec in structured:
+                return structured[spec]
+            return {"str": lambda: rng.choice(names + ["", " ", "x", SHA, ordinary_write("PR 1")]),
                     "int": lambda: rng.choice([0, 1, 2, 3, n, n - 1, 30, 60, 600, -1]),
                     "bool": lambda: rng.choice([True, False]),
                     "time": lambda: (start + timedelta(minutes=rng.choice([-5, 30, 600]))).isoformat(),
@@ -281,14 +276,14 @@ class AdvisorThreeTests(Base):
                     m.render(entries)
                 for name in names[:4]:
                     m.judge(night, {"id": night.last["id"] + 1, "t": (start + timedelta(hours=2)).isoformat(),
-                                    "kind": "intent", "item": name, "command": merge(name), "head": SHA})
+                                    "kind": "intent", "item": name, "command": ordinary_write(name)})
 
     def test_status_of_a_closed_night_prints_the_close_line_and_the_last_entry(self):
         started(self.dir)
         self.ok(run(self.dir, "report", at=at("22:10")))
         self.ok(run(self.dir, "close", "--reason", "nothing-left", "--without-page", "x", at=at("22:11")))
         out = self.ok(run(self.dir, "status", at=at("22:12")))
-        self.assertIn("E4 NIGHT CLOSED night-", out)
+        self.assertIn(f"E4 NIGHT CLOSED {self.events()[0]['run']}", out)
         self.assertIn("last: E4 close 2026-01-10T22:11:00+00:00", out)
 
     def test_a_write_error_after_the_append_names_the_entry(self):
@@ -305,7 +300,7 @@ class AdvisorThreeTests(Base):
 
     def test_an_intent_with_an_empty_command_is_refused(self):
         started(self.dir)
-        self.refused("log", "intent", "--item", "notice", "--command", "  ", "--no-head", "x", at=at("22:10"),
+        self.refused("log", "intent", "--item", "notice", "--command", "  ", at=at("22:10"),
                      code="INTENT_FIELDS")
 
     def test_a_reopen_name_is_stripped(self):
@@ -338,9 +333,9 @@ class AdvisorThreeTests(Base):
     def test_a_tilde_fence_holds_the_items_and_go_prints_them(self):
         self.ok(new(self.dir))
         with open(os.path.join(self.dir, "card.md"), "a", encoding="utf-8") as handle:
-            handle.write(f"\n~~~night-items\nPR 1 | commit | {merge('PR 1', '{head}')}\nPR 4 | owner\n~~~\n")
+            handle.write(f"\n~~~night-items\nPR 1 | night\nPR 4 | owner\n~~~\n")
         out = self.ok(run(self.dir, *go_args(), at=at("22:01")))
-        self.assertIn(f"  PR 1 | commit | {merge('PR 1', '{head}')}\n  PR 4 | owner", out)
+        self.assertIn(f"  PR 1 | night\n  PR 4 | owner", out)
 
     def test_a_second_go_by_hand_does_not_change_the_stop_time(self):
         self.hand_edit = True

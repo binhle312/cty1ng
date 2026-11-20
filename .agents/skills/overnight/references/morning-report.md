@@ -1,51 +1,25 @@
-# The morning report
+# Morning report
 
-The owner reads the report first. It must say, at the top, what needs the owner. Each fact on it
-comes from the journal or from a command that the report names.
+Use this at the close, and again for a late read. Apply the [night rule](../SKILL.md#night-rule).
 
-## 1. Two layers
+## Audit
 
-1. `night.py report` adds report entry E<n> with frozen counts, and writes `report.md` from the journal. It needs no model. So a report exists also when the session stopped at night.
-2. The owner page adds the goal in numbers and the questions. It names the report that it shows: "Report E<n>". Use a decision-page skill if the project has one. If not, give `report.md` and a questions file.
+First compare each target with the original task. Query all merges in each repository on the card. Include unlisted PRs. Bound the query by merge time and read every page. Split capped ranges where possible. Include go and exclude the earlier of stop or close. If there is no close, use stop. Report the repository and interval for each coverage gap.
 
-## 2. The parts, in this order
+Match the repository, PR, merge commit, time and journal result. Report a merge without that match as *unmatched*. Apply the same rule to the owner's merges. Name the actor when the evidence identifies one. Call a breach only when the evidence identifies the actor and shows a violation.
 
-1. **Needs you.** A table of the denied rows, the held items, the open wait rows, the unknown results and the intents with no result. Each row: the item, why it waits, the one command or the question number, and what it blocks.
-2. **My errors.** Each error that you found, and its correction.
-3. **Done and not reversible.** Each action that cannot be undone, with its evidence: the reviews, the checks and the head.
-4. **The goal in numbers.** Each number names its source: a command or a file. Use a chart only if it shows the state of the night's work.
-5. **Stops and gaps.** The output of `night.py check --now`. A gap is a fact: do not hide it.
-   Also the notes (`aware` rows): owner questions, texts that asked for a permission, and gaps after a crash.
-6. **Decisions to check.** The count of `--check` decisions, and a link to the list. These are not questions.
-7. **Questions.** Then a last step with all answers and a way to copy them.
+Check the exact PR for every attempt sent before the cutoff with an unresolved result. Link a proven late result to its attempt and exclude it from the in-window count. Keep an unresolved sent attempt *unconfirmed*. Show uncertainty about whether the leader sent a request. Repeat an incomplete audit read in the morning. Put later facts in the handoff and preserve the closed report.
 
-## 3. Questions
+## Page and close
 
-- Ask only what the owner alone can decide.
-- Ask one decision in each question.
-- Give a real example and the real options, each with its gain, cost and risk.
-- Put first the option that best solves the real problem. Never pick an option because it is less work for you.
-- Add a `Blocks:` line (what waits for the answer) and a `How I know:` line (a command or a file).
-- A question that blocks nothing goes to a "later" list.
-- Keep the count at or under the question budget (the skill's section 2). If you go over it, the report says so. Too many questions means that the start of the night missed decisions.
-- A night can have zero questions.
+Build the owner page from the current report entry. Show verified merges, unmatched merges, unconfirmed attempts, gaps, P3s and owner actions with evidence links. Under **Needs you**, show each capped PR and its full spec. Give release and delete requests their exact target, observed state, evidence and what they block.
 
-## 4. Three checks before the owner sees the page
+1. **Mechanics** Check that the page opens and each source link works.
+2. **Truth** Check each fact against the report entry and its evidence.
+3. **Counts** Compare the page with the frozen counts for the exact report entry.
 
-Log each check with `night.py log pagecheck --name <name> --outcome pass|fail --report E<n>`, with the report that the page names. night.py refuses a check of a report that is not the newest, or of a report that later entries made old.
+Log each page check for that report entry. If new facts make it old, generate and check a new report before close. Close with the checked page or record why it is absent.
 
-1. **mechanics**: the page tool's own check passes. The page has no script errors, and the answers work.
-2. **truth**: a reader with no context gets the page text and the sources. The reader runs each `How I know` again, and compares each option text and each number with its source. Fix each mismatch, then do the check again.
-3. **counts**: each count on the page is equal to the frozen counts of `night.py status --report E<n>`, not to the live `status`.
+## Owner action
 
-`night.py close` refuses the close until the newest report is fresh and its three newest checks
-pass. If there is no page tool, use `--without-page "<reason>"`. The close writes `report.md` again:
-the counts of report E<n>, the entries after E<n>, the gaps, and the end of the night permissions.
-After the close, `report.md` is the record of the night, and night.py refuses `report`.
-
-## 5. Answers
-
-- Record the answers word for word. Write the pasted text to a file with a quoted heredoc (the skill's section 3, step 2). Then run `night.py log answer --words-file <file>`.
-- Check the state of each item again before you act. If the state changed (a new head, a merge by the owner), do not act on the old choice. Ask again with the new facts.
-- A page click alone is not an order. The pasted answers in the owner's own message are.
-- Move new standing rules and lessons to the project's memory by its own process.
+Compare the target with the original task first. Then check live state, relevant revision, evidence and project rules. The owner decides and uses the owner's tool. A page action or pasted answer records facts only.

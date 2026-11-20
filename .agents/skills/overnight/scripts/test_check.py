@@ -3,6 +3,7 @@
 Run all test files with `python3 -I run_tests.py`.
 """
 
+import base64
 import json
 import os
 import re
@@ -13,8 +14,8 @@ import tempfile
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # `-I` drops this folder
 from night_testlib import (  # noqa: E402
-    Base, GO, INTENT, OPT, SHA, UNFINISHED, argv, at, code_of, env_for, go_args, go_at, intent, journal,
-    journal_bytes, merge, read_events, read_report, result, run, started, write)
+    Base, GO, INTENT, RUN, UNFINISHED, argv, at, code_of, env_for, go_args, go_at, intent, journal,
+    journal_bytes, ordinary_write, read_events, read_report, result, run, started, write)
 
 
 BROKEN = {
@@ -24,14 +25,14 @@ BROKEN = {
                        "TIME_BACK"),
     "intent on a denied item": (journal(go_at(),
                                         {"t": at("22:10"), "kind": "denied", "item": "PR 3", "command": "m", "blocks": "x"},
-                                        {**INTENT, "t": at("22:20"), "item": "PR 3", "command": merge("PR 3")},
+                                        {**INTENT, "t": at("22:20"), "item": "PR 3", "command": ordinary_write("PR 3")},
                                         result("22:21", 4)), "ITEM_DENIED"),
     "intent after a reopen of another repository": (journal(
         go_at(),
         {"t": at("22:10"), "kind": "denied", "item": "org/one#3", "command": "m", "blocks": "x"},
         {"t": at("22:11"), "kind": "denied", "item": "org/two#3", "command": "m", "blocks": "x"},
         {"t": at("22:12"), "kind": "amend", "words": "yes: org/two#3", "reopen": "org/two#3"},
-        {**INTENT, "t": at("22:13"), "item": "org/one#3", "command": merge("org/one#3")},
+        {**INTENT, "t": at("22:13"), "item": "org/one#3", "command": ordinary_write("org/one#3")},
         result("22:14", 6)), "ITEM_DENIED"),
     "decision with no source": (journal(go_at(), {"t": at("22:10"), "kind": "decision", "text": "x"}), "DECISION_SOURCE"),
     "intent after the stop": (journal(go_at(stop=at("22:30")), {"t": at("22:20"), "kind": "alive"},
@@ -41,7 +42,7 @@ BROKEN = {
     "denied row with no command": (journal(go_at(), {"t": at("22:10"), "kind": "denied", "item": "PR 3", "blocks": "x"}),
                                    "DENIED_FIELDS"),
     "intent on a held item": (journal(go_at(), {"t": at("22:10"), "kind": "hold", "item": "PR 12", "text": "owner-only"},
-                                      {**INTENT, "t": at("22:20"), "item": "PR 12", "command": merge("PR 12")},
+                                      {**INTENT, "t": at("22:20"), "item": "PR 12", "command": ordinary_write("PR 12")},
                                       result("22:21", 4)), "ITEM_HELD"),
     "gap alarm above the maximum": (journal(go_at(heartbeat_min=600, gap_min=1200), {"t": at("23:15"), "kind": "alive"}),
                                     ["GAP_TOO_HIGH", "GAP"]),
@@ -51,21 +52,10 @@ BROKEN = {
                                         {"t": at("23:05"), "kind": "alive"}), "STOP_NOT_CLOSED"),
     "fake time in a real journal": (journal(go_at(), {"t": at("22:10"), "kind": "alive", "fake_clock": True}, test=False),
                                     "FAKE_CLOCK"),
-    "item not on the card": (journal(go_at(), {**INTENT, "t": at("22:10"), "item": "#3", "command": merge("#3")},
+    "item not on the card": (journal(go_at(), {**INTENT, "t": at("22:10"), "item": "#3", "command": ordinary_write("#3")},
                                      result("22:11", 3)), "ITEM_NOT_ON_CARD"),
-    "a short head": (journal(go_at(), {**INTENT, "t": at("22:10"), "item": "PR 1", "head": "0123456",
-                                       "command": f"m {OPT} 0123456"}, result("22:11", 3)), "HEAD_FORM"),
-    "shell syntax in the command": (journal(go_at(), {**INTENT, "t": at("22:10"), "item": "PR 1",
-                                                      "command": f"gh pr merge 1 # {SHA}"}, result("22:11", 3)),
-                                    "COMMAND_SHELL"),
-    "a command that is not its row": (journal(go_at(), {**INTENT, "t": at("22:10"), "item": "PR 1",
-                                                        "command": merge("PR 2")}, result("22:11", 3)),
-                                      "COMMAND_NOT_ROW"),
-    "no head on a commit item": (journal(go_at(), {"t": at("22:10"), "kind": "intent", "item": "PR 1",
-                                                   "command": "gh pr merge 1", "no_head": "x"}, result("22:11", 3)),
-                                 "COMMIT_NEEDS_HEAD"),
     "intent on an owner item": (journal(go_at(), {"t": at("22:10"), "kind": "intent", "item": "PR 4", "command": "m",
-                                                  "no_head": "x"}, result("22:11", 3)), "OWNER_ITEM"),
+                                                 }, result("22:11", 3)), "OWNER_ITEM"),
     "an event after the close": (journal(go_at(), {"t": at("22:10"), "kind": "report", "counts": {"new": 1, "go": 1, "report": 1}},
                                          {"t": at("22:11"), "kind": "close", "reason": "nothing-left", "without_page": "x"},
                                          {"t": at("22:12"), "kind": "decision", "text": "x", "check": True}),
@@ -77,14 +67,13 @@ BROKEN = {
     "intent with no rehearsal": (journal(go_at(rehearsal="none"), {**INTENT, "t": at("22:10"), "item": "PR 1"},
                                          result("22:11", 3)), "NO_REHEARSAL"),
     "a second go": (journal(go_at(), go_at("22:05")), "GO_TWICE"),
-    "a second new": (journal({"t": at("22:01"), "kind": "new", "run": "x", "words": "w"}), "NEW_TWICE"),
+    "a second new": (journal({"t": at("22:01"), "kind": "new", "run": RUN, "words": "w", "format": 2, "chief_path": "/fixture"}), "NEW_TWICE"),
     "a repeated id": ([*journal(go_at()), {"id": 2, "t": at("22:10"), "kind": "alive"}], "ID_ORDER"),
     "a skipped id": ([*journal(go_at()), {"id": 9, "t": at("22:10"), "kind": "alive"}], "ID_ORDER"),
-    "no new first": ([{"id": 1, **go_at()}], "FIRST_NOT_NEW"),
+    "no new first": ([{"id": 1, **go_at()}], "FORMAT_UNSUPPORTED"),
     "a near duplicate name": (journal(go_at(items=[["PR 1", "owner"], ["pr  1", "owner"]])), "ITEM_DUPLICATE"),
     "a name with spaces at its ends": (journal(go_at(items=[[" PR 1", "owner"]])), "ITEM_NAME"),
-    "a commit row with no command": (journal(go_at(items=[["PR 1", "commit"]])), "ITEM_COMMAND"),
-    "an unknown kind of item": (journal(go_at(items=[["PR 1", "merge"]])), "ITEM_KIND"),
+    "an unknown kind of item": (journal(go_at(items=[["PR 1", "unknown"]])), "ITEM_KIND"),
 }
 
 
@@ -101,7 +90,7 @@ class CheckTests(Base):
             with self.subTest(name=name):
                 folder = self.folder(re.sub(r"\W+", "-", name))
                 code, out = check_broken(folder, events)
-                self.assertEqual(code, 1, out)
+                self.assertEqual(code, 3 if expected == "FORMAT_UNSUPPORTED" else 1, out)
                 wanted = [expected] if isinstance(expected, str) else expected
                 self.assertEqual([c for c in code_of(out) if c in wanted or c not in UNFINISHED], wanted, out)
 
@@ -154,7 +143,7 @@ class CheckTests(Base):
                 cut = [f for f in os.listdir(folder) if f.startswith("journal.cut-")]
                 self.assertEqual(len(cut), 1)
                 with open(os.path.join(folder, cut[0]), encoding="utf-8") as handle:
-                    self.assertEqual(handle.read(), tail)
+                    self.assertEqual(base64.b64decode(json.load(handle)["cut"]).decode(), tail)
                 self.assertEqual(read_events(folder)[-1]["kind"], "repair")
                 self.assertEqual(run(folder, "check", at=at("22:12"))[0], 0)
 
@@ -169,7 +158,7 @@ class CheckTests(Base):
 
     def test_an_entry_with_a_bad_shape_is_a_schema_fault_not_a_crash(self):
         self.hand_edit = True
-        intent_row = {"t": at("22:10"), "kind": "intent", "item": "PR 1", "command": merge("PR 1"), "head": SHA}
+        intent_row = {"t": at("22:10"), "kind": "intent", "item": "PR 1", "command": ordinary_write("PR 1")}
         cases = {
             "intent with no item": ({**intent_row, "item": None}, "SCHEMA"),
             "result with no outcome": ({"t": at("22:10"), "kind": "result", "of": 2}, "SCHEMA"),
@@ -208,7 +197,7 @@ class CheckTests(Base):
                 self.assertNotIn("Traceback", out)
                 self.refused("log", "alive", "x", at=at("22:11"), code=expected, folder=folder)
         for name, events in (("no id", [*journal(), {"t": at("22:10"), "kind": "alive"}]),
-                             ("format 2", [{**journal()[0], "format": 2}])):
+                             ("format 2 bad run", [{**journal()[0], "run": "bad"}])):
             with self.subTest(case=name):
                 folder = self.folder("schema-" + re.sub(r"\W+", "-", name))
                 write(folder, events)
@@ -252,7 +241,7 @@ class CheckTests(Base):
         self.ok(run(self.dir, "render", at=at("22:16")))
         self.assertIn("ended at the close", read_report(self.dir))
         self.assertEqual(run(self.dir, "check", at=at("22:16"))[0], 0)
-        self.assertEqual(sorted(os.listdir(self.dir)), ["card.md", "journal.jsonl", "report.md"])
+        self.assertEqual(sorted(os.listdir(self.dir)), ["card.md", "journal.jsonl", "night.flock", "report.md"])
 
     def test_a_write_error_has_a_code(self):
         """A file size limit makes the append fail, also for root (a chmod does not stop root)."""
@@ -329,7 +318,7 @@ class CheckTests(Base):
         texts = []
         for name in cuts:
             with open(os.path.join(self.dir, name), encoding="utf-8") as handle:
-                texts.append(handle.read())
+                texts.append(base64.b64decode(json.load(handle)["cut"]).decode())
         self.assertEqual(texts, ["first cut", "second cut"])
 
 
@@ -342,7 +331,7 @@ def show_red():
             code, out = check_broken(folder, events)
             print(f"## {name}\nexpected code: {expected}\nexit code: {code}\n{out}")
             wanted = [expected] if isinstance(expected, str) else expected
-            if code != 1 or not set(wanted) <= set(code_of(out)):
+            if code != (3 if expected == "FORMAT_UNSUPPORTED" else 1) or not set(wanted) <= set(code_of(out)):
                 misses.append(name)
     for name in misses:
         print(f"NOT RED: {name}")

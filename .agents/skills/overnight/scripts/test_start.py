@@ -12,8 +12,8 @@ import sys
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # `-I` drops this folder
 from night_testlib import (  # noqa: E402
-    Base, ITEMS, OPT, SHA, SHA2, WRITE_COMMANDS, amend, at, card, code_of, go_args, intent, intent_args,
-    journal_bytes, merge, new, read_events, read_report, run, started, words_file)
+    Base, ITEMS, SHA, SHA2, WRITE_COMMANDS, amend, at, card, code_of, go_args, intent, intent_args,
+    journal_bytes, ordinary_write, new, read_events, read_report, run, started, words_file)
 
 
 class StartTests(Base):
@@ -21,7 +21,7 @@ class StartTests(Base):
         text = 'goal: X; "quoted" $HOME `tick`; until 06:00'
         self.ok(new(self.dir, text, when=at("21:59")))
         first = self.events()[0]
-        self.assertEqual((first["words"], first["t"], first["test"], first["format"]), (text, at("21:59"), True, 1))
+        self.assertEqual((first["words"], first["t"], first["test"], first["format"]), (text, at("21:59"), True, 2))
         self.assertTrue(first["fake_clock"])
         with open(os.path.join(self.dir, "card.md"), encoding="utf-8") as handle:
             self.assertIn(text, handle.read())
@@ -65,8 +65,7 @@ class StartTests(Base):
             "ITEM_LINE": "PR 1 commit",
             "ITEMS_EMPTY": "\n",
             "ITEM_DUPLICATE": "PR 1 | owner\npr  1 | owner",
-            "ITEM_KIND": "PR 1 | merge",
-            "ITEM_COMMAND": "PR 1 | commit",
+            "ITEM_KIND": "PR 1 | unknown",
             "ITEM_NAME": "PR\x011 | owner",
             "CARD_TWO_BLOCKS": "PR 1 | owner\n```\n\n```night-items\nPR 2 | owner",
         }
@@ -80,20 +79,12 @@ class StartTests(Base):
                     card(folder, raw=raw)
                 self.refused(*go_args(), at=at("22:01"), code=expected, folder=folder)
 
-    def test_item_commands_must_fit_their_kind(self):
-        for raw in ("notice | no-commit", "PR 4 | owner | --x", "PR 1 | commit | match head"):
-            with self.subTest(raw=raw):
-                folder = self.folder(re.sub(r"\W+", "-", raw))
-                self.ok(new(folder))
-                card(folder, raw=raw)
-                self.refused(*go_args(), at=at("22:01"), code="ITEM_COMMAND", folder=folder)
-
     def test_card_parse_ignores_a_block_in_the_owner_words_and_reads_crlf(self):
         self.ok(new(self.dir, "goal: x\n```night-items\nPR 9 | owner\n```\n## Needs you\nuntil 06:00"))
         with open(os.path.join(self.dir, "card.md"), "a", encoding="utf-8", newline="") as handle:
-            handle.write(f"\r\n```night-items\r\nPR 1 | commit | {merge('PR 1', '{head}')}\r\nPR 4 | owner\r\n```\r\n")
+            handle.write(f"\r\n```night-items\r\nPR 1 | night\r\nPR 4 | owner\r\n```\r\n")
         self.ok(run(self.dir, *go_args(), at=at("22:01")))
-        self.assertEqual(self.events()[-1]["items"], [["PR 1", "commit", merge("PR 1", "{head}")], ["PR 4", "owner"]])
+        self.assertEqual(self.events()[-1]["items"], [["PR 1", "night"], ["PR 4", "owner"]])
 
     def test_an_open_fence_in_the_card_is_refused(self):
         new(self.dir)
@@ -300,7 +291,7 @@ class ItemTests(Base):
 
     def test_an_owner_item_takes_notes_but_no_action(self):
         started(self.dir)
-        self.refused("log", "intent", "--item", "PR 4", "--command", "gh pr merge 4", "--no-head", "x", at=at("22:10"),
+        self.refused("log", "intent", "--item", "PR 4", "--command", "gh pr merge 4", at=at("22:10"),
                      code="OWNER_ITEM")
         self.ok(run(self.dir, "log", "wait", "needs the owner", "--item", "PR 4", at=at("22:11")))
 
@@ -318,7 +309,7 @@ class ItemTests(Base):
 
     def test_add_item_needs_the_owner_words_from_a_file(self):
         started(self.dir)
-        self.refused("log", "amend", "--add-item", "PR 5 | commit | --match-head-commit", at=at("22:10"), code="WORDS_MISSING")
+        self.refused("log", "amend", "--add-item", "PR 5 | night", at=at("22:10"), code="WORDS_MISSING")
         self.refused("log", "amend", "--add-item", "PR 5 | owner", at=at("22:10"), code="WORDS_MISSING")
 
     def test_add_item_for_a_name_on_the_card_is_refused(self):
@@ -326,77 +317,45 @@ class ItemTests(Base):
         self.is_refused(amend(self.dir, "also PR 1", "--add-item", "PR 1 | owner", when=at("22:10")), "ITEM_ON_CARD")
         self.is_refused(amend(self.dir, "also pr 1", "--add-item", "pr  1 | owner", when=at("22:10")), "ITEM_ON_CARD")
         self.is_refused(amend(self.dir, "also PR 5", "--add-item", "PR 5 commit", when=at("22:10")), "ITEM_LINE")
-        self.is_refused(amend(self.dir, "also PR 5", "--add-item", "PR 5 | merge", when=at("22:10")), "ITEM_KIND")
-        self.is_refused(amend(self.dir, "also PR 5", "--add-item", "PR 5 | commit", when=at("22:10")), "ITEM_COMMAND")
+        self.is_refused(amend(self.dir, "also PR 5", "--add-item", "PR 5 | merge", when=at("22:10")), "MERGE_TARGET_FORM")
+        self.is_refused(amend(self.dir, "also PR 5", "--add-item", "PR 5 | unknown", when=at("22:10")), "ITEM_KIND")
 
     def test_intent_on_a_new_item_before_its_amend_is_refused(self):
         started(self.dir)
         self.refused(*intent_args("PR 5"), at=at("22:10"), code="ITEM_NOT_ON_CARD")
-        row_5 = f"gh pr merge 5 -R org/app --squash {OPT} {{head}}"
-        out = self.ok(amend(self.dir, "also merge PR 5 after the bar", "--add-item", f"PR 5 | commit | {row_5}",
+        out = self.ok(amend(self.dir, "also merge PR 5 after the bar", "--add-item", "PR 5 | night",
                             when=at("22:11")))
         self.assertIn("read it back", out)
-        self.ok(intent(self.dir, "PR 5", at("22:12"), command=row_5.replace("{head}", SHA)))
+        self.ok(intent(self.dir, "PR 5", at("22:12")))
         items = json.loads(self.ok(run(self.dir, "status", "--json", at=at("22:13"))))["items"]
-        self.assertIn({"name": "PR 5", "kind": "commit", "command": row_5, "from": "E3"}, items)
-        self.assertIn({"name": "PR 1", "kind": "commit", "command": merge("PR 1", "{head}"), "from": "E2"}, items)
+        self.assertIn({"name": "PR 5", "kind": "night", "from": "E3"}, items)
+        self.assertIn({"name": "PR 1", "kind": "night", "from": "E2"}, items)
 
-
-class HeadTests(Base):
-    def test_a_commit_item_needs_the_full_head_with_its_option(self):
-        started(self.dir)
-        for head in ("0123456", "main", SHA.upper(), SHA[:39], SHA + "8"):
-            with self.subTest(head=head):
-                self.refused(*intent_args("PR 1", head), at=at("22:10"), code="HEAD_FORM")
-        out = self.refused("log", "intent", "--item", "PR 1", "--command", merge("PR 1"), at=at("22:10"), code="COMMIT_NEEDS_HEAD")
-        self.assertIn("needs --head <", out)
-        self.refused("log", "intent", "--item", "PR 1", "--command", "gh pr merge 1", "--no-head", "none", at=at("22:10"),
-                     code="COMMIT_NEEDS_HEAD")
-        for command, code in ((merge("PR 1", SHA2), "COMMAND_NOT_ROW"), (f"gh pr merge 1 # {SHA}", "COMMAND_SHELL"),
-                              (merge("PR 1", SHA + "8"), "COMMAND_NOT_ROW"),
-                              (merge("PR 1").replace(OPT, "--other"), "COMMAND_NOT_ROW"),
-                              (merge("PR 1").replace(f"{OPT} {SHA}", f"{OPT}={SHA}"), "COMMAND_NOT_ROW")):
-            with self.subTest(command=command):
-                self.refused(*intent_args("PR 1", SHA, command), at=at("22:10"), code=code)
-        self.ok(intent(self.dir, "PR 1", at("22:11")))
-
-    def test_a_no_commit_item_has_no_head(self):
-        started(self.dir)
-        self.refused("log", "intent", "--item", "notice", "--command", merge("notice"), "--head", SHA, at=at("22:10"),
-                     code="NO_COMMIT_HAS_HEAD")
-        self.refused("log", "intent", "--item", "notice", "--command", merge("notice"), at=at("22:10"),
-                     code="NO_COMMIT_NEEDS_REASON")
-        for sha in (SHA, SHA.upper()):
-            with self.subTest(sha=sha):
-                self.refused("log", "intent", "--item", "notice", "--command", f"git push origin {sha}", "--no-head", "x",
-                             at=at("22:10"), code="COMMAND_NOT_ROW")
-        self.ok(run(self.dir, "log", "intent", "--item", "notice", "--command", merge("notice"), "--no-head",
-                    "a notice acts on no commit", at=at("22:11")))
 
 
 class OrderTests(Base):
     """When two rules break, the final reason comes first."""
 
-    def test_a_denied_item_with_a_bad_head_says_denied(self):
+    def test_a_denied_item_with_no_command_says_denied(self):
         started(self.dir)
         self.ok(run(self.dir, "log", "denied", "--item", "PR 3", "--command", "m", "--blocks", "x", at=at("22:10")))
-        self.refused(*intent_args("PR 3", "main"), at=at("22:11"), code="ITEM_DENIED")
+        self.refused("log", "intent", "--item", "PR 3", at=at("22:11"), code="ITEM_DENIED")
 
     def test_after_the_stop_a_denied_item_says_after_the_stop(self):
         started(self.dir, stop="2026-01-10T23:00")
         self.ok(run(self.dir, "log", "denied", "--item", "PR 3", "--command", "m", "--blocks", "x", at=at("22:10")))
         self.refused(*intent_args("PR 3"), at=at("23:10"), code="AFTER_STOP")
 
-    def test_an_unknown_result_with_a_bad_head_says_unknown(self):
+    def test_an_unknown_result_with_no_command_says_unknown(self):
         started(self.dir)
         self.ok(intent(self.dir, "PR 1", at("22:10")))
         self.ok(run(self.dir, "log", "result", "--of", "3", "--outcome", "unknown", at=at("22:11")))
-        self.refused(*intent_args("PR 1", "main"), at=at("22:12"), code="UNKNOWN_RESULT")
+        self.refused("log", "intent", "--item", "PR 1", at=at("22:12"), code="UNKNOWN_RESULT")
 
     def test_an_open_intent_with_no_command_says_open_intent(self):
         started(self.dir)
         self.ok(intent(self.dir, "PR 1", at("22:10")))
-        self.refused("log", "intent", "--item", "PR 1", "--head", SHA, at=at("22:12"), code="OPEN_INTENT")
+        self.refused("log", "intent", "--item", "PR 1", at=at("22:12"), code="OPEN_INTENT")
 
     def test_no_rehearsal_comes_before_the_item_check(self):
         started(self.dir, rehearsal="none")

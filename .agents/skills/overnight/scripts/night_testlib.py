@@ -33,6 +33,9 @@ NIGHT = os.environ.get("NIGHT_PY", os.path.join(HERE, "night.py"))
 NIGHT_MODULES = ("night_format", "night_rules", "night_report", "night_files")
 
 
+RUN = "37b41e3f-dd1e-488b-9b63-14c7d793fdf8"
+
+
 T0 = "2026-01-10T22:00:00+00:00"
 
 
@@ -42,20 +45,7 @@ SHA = "0123456789abcdef0123456789abcdef01234567"
 SHA2 = "fedcba9876543210fedcba9876543210fedcba98"
 
 
-OPT = "--match-head-commit"
-
-
-# Each commit or no-commit row holds the exact command; {head} is the typed slot of the full head.
-ROW_COMMANDS = {
-    "PR 1": f"gh pr merge 1 -R org/app --squash {OPT} {{head}}",
-    "PR 2": f"gh pr merge 2 -R org/app --squash {OPT} {{head}}",
-    "PR 3": f"gh pr merge 3 -R org/app --squash {OPT} {{head}}",
-    "PR 12": f"gh pr merge 12 -R org/app --squash {OPT} {{head}}",
-    "org/one#3": f"gh pr merge 3 -R org/one --squash {OPT} {{head}}",
-    "org/two#3": f"gh pr merge 3 -R org/two --squash {OPT} {{head}}",
-    "notice": "gh issue comment 7 -R org/app --body-file note.md",
-}
-ITEMS = [(name, "no-commit" if name == "notice" else "commit", command) for name, command in ROW_COMMANDS.items()]
+ITEMS = [(name, "night") for name in ("PR 1", "PR 2", "PR 3", "PR 12", "org/one#3", "org/two#3", "notice")]
 ITEMS += [("PR 4", "owner")]
 
 
@@ -71,6 +61,11 @@ UNFINISHED = {"NO_GO", "INTENT_NO_RESULT", "STOP_NOT_CLOSED"}
 
 # A final code means: do not retry. Pinned, because SKILL.md tells the agent to act on the class.
 FINAL_CODES = {
+    "FORMAT_UNSUPPORTED", "REPAIR_PENDING", "REVIEW_CAP_REACHED", "MERGE_PR_NOT_ON_CARD", "MERGE_NOT_ALLOWED",
+    "MERGE_CHIEF_ONLY", "MERGE_LEADER_ONLY", "MERGE_JOURNAL_PATH", "MERGE_PERMISSION_DUPLICATE",
+    "MERGE_PERMISSION_NIGHT", "MERGE_PERMISSION_PR", "MERGE_PERMISSION_HEAD", "MERGE_PERMISSION_INACTIVE",
+    "MERGE_PERMISSION_USED", "MERGE_PENDING", "MERGE_READ_FAILED", "MERGE_PR_INELIGIBLE", "MERGE_EFFECT_UNCLEAR",
+    "MERGE_CI_UNKNOWN", "MERGE_CI_NOT_GREEN", "MERGE_HEAD_CHANGED", "MERGE_REJECTED", "MERGE_OUTCOME_UNKNOWN",
     "AFTER_STOP", "BAD_LINE", "CLOSED", "COUNTS_WRONG", "FAKE_CLOCK", "FIRST_NOT_NEW", "GO_TWICE", "ID_ORDER", "INTERNAL",
     "ITEM_DENIED", "ITEM_HELD", "JOURNAL_FAULTS", "LOCK_STALE", "NEW_TWICE", "NO_REHEARSAL",
     "OWNER_ITEM", "RESULT_FINAL", "SCHEMA", "UNKNOWN_RESULT", "WRITE_FAILED"}
@@ -78,7 +73,7 @@ FINAL_CODES = {
 
 # Pinned here, not read from the script: a script that calls a rule code "pre-event" would switch parity off.
 PRE_EVENT_CODES = {
-    "NO_NIGHT", "BAD_ARGUMENT", "WORDS_FILE", "WORDS_AS_ARGUMENT", "ARG_NOT_FOR_KIND", "ITEM_MISSING", "ITEM_LINE",
+    "FORMAT_UNSUPPORTED", "REPAIR_PENDING", "NO_NIGHT", "BAD_ARGUMENT", "WORDS_FILE", "WORDS_AS_ARGUMENT", "ARG_NOT_FOR_KIND", "ITEM_MISSING", "ITEM_LINE",
     "EVENT_ID", "RESULT_FIELDS", "PAGECHECK_FIELDS", "CARD_MISSING", "CARD_NO_BLOCK", "CARD_TWO_BLOCKS",
     "CARD_OPEN_FENCE", "MAX_GAP_ENV", "FAKE_CLOCK_NO_TEST", "FAKE_CLOCK_FORM", "LOCK_HELD", "LOCK_STALE", "TORN_LINE",
     "BAD_LINE", "SCHEMA", "REPAIR_NOTHING", "ID_NOT_REPORT", "WRITE_FAILED", "INTERNAL", "STOP_NO_OFFSET"}
@@ -144,17 +139,16 @@ def started(folder, rows=ITEMS, **go):
     assert code == 0, out
 
 
-def merge(item, sha=SHA):
-    """The command of the card row of `item`, with `sha` in its head slot (a name not on the card: any merge)."""
-    return ROW_COMMANDS.get(item.strip(), f"gh pr merge 9 -R org/app --squash {OPT} {{head}}").replace("{head}", sha)
+def ordinary_write(item):
+    return f"update record {item.strip()}"
 
 
-def intent_args(item, sha=SHA, command=None):
-    return ["log", "intent", "--item", item, "--command", command or merge(item, sha), "--head", sha]
+def intent_args(item, command=None):
+    return ["log", "intent", "--item", item, "--command", command or ordinary_write(item)]
 
 
-def intent(folder, item, when, sha=SHA, command=None):
-    return run(folder, *intent_args(item, sha, command), at=when)
+def intent(folder, item, when, command=None):
+    return run(folder, *intent_args(item, command), at=when)
 
 
 def amend(folder, text, *extra, when):
@@ -184,14 +178,15 @@ def night_module():
 
 # Broken journals for `check`. Each one breaks one rule; `check` must name its code.
 GO = {"kind": "go", "stop": "2026-01-11T06:00:00+00:00", "heartbeat_min": 30, "gap_min": 60, "max_gap_min": 60,
-      "goal": "set", "rehearsal": "passed", "items": [list(row) for row in ITEMS]}
+      "goal": "set", "rehearsal": "passed", "items": [list(row) for row in ITEMS], "review_cap": 5, "run": RUN,
+      "chief": "", "allow_empty_checks": False}
 
 
-INTENT = {"kind": "intent", "command": merge("PR 1"), "head": SHA}
+INTENT = {"kind": "intent", "command": ordinary_write("PR 1")}
 
 
 def journal(*rows, test=True):
-    first = {"id": 1, "t": at("22:00"), "kind": "new", "run": "night-test", "words": "w"}
+    first = {"id": 1, "t": at("22:00"), "kind": "new", "run": RUN, "words": "w", "format": 2, "chief_path": "/fixture"}
     if test:
         first["test"] = True
     events = [first]

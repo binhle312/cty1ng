@@ -94,7 +94,7 @@ class RaceTests(Hooked):
         self.assertTrue(os.path.exists(lock))
         os.remove(lock)
 
-    def test_a_kill_between_the_report_entry_and_its_file_is_found_and_render_cleans_up(self):
+    def test_a_kill_between_report_and_its_file_preserves_uncertain_temp(self):
         started(self.dir)
         marker, (proc,) = self.hooked("hold-replace", ["report"], at("22:10"))
         self.wait_markers(marker, "held")
@@ -105,7 +105,8 @@ class RaceTests(Hooked):
         code, out = run(self.dir, "check", at=at("22:11"))
         self.assertEqual((code, code_of(out)), (1, ["REPORT_FILE"]), out)
         self.ok(run(self.dir, "render", at=at("22:11")))
-        self.assertEqual(sorted(os.listdir(self.dir)), ["card.md", "journal.jsonl", "report.md"])
+        self.assertEqual(len([n for n in os.listdir(self.dir) if n.startswith(".report.md.")]), 1)
+        self.assertTrue(os.path.isfile(os.path.join(self.dir, "night.flock")))
         self.assertEqual(run(self.dir, "check", at=at("22:11"))[0], 0)
 
     def test_an_empty_lock_that_goes_away_during_the_wait_is_not_stale(self):

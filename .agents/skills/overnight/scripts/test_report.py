@@ -11,7 +11,7 @@ import sys
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # `-I` drops this folder
 from night_testlib import (  # noqa: E402
-    Base, ITEMS, OPT, SHA, amend, at, card, code_of, go_args, go_at, intent, intent_args, journal, merge, new, part,
+    Base, ITEMS, SHA, amend, at, card, code_of, go_args, go_at, intent, intent_args, journal, ordinary_write, new, part,
     read_report, run, started, words_file, write)
 
 
@@ -86,8 +86,8 @@ class BoundaryTests(Base):
         self.ok(run(self.dir, "close", "--reason", "nothing-left", at=at("22:20")))
 
     def test_row_rules_for_the_card_for_add_item_and_for_items(self):
-        for raw, code in ((" | owner", "ITEM_NAME"), ("PR 1 | commit | head", "ITEM_COMMAND"), ("PR 1 | commit | #", "COMMAND_SHELL"),
-                          ("PR 1 | merge", "ITEM_KIND"), ("PR 1 | owner\npr 1 | owner", "ITEM_DUPLICATE")):
+        for raw, code in ((" | owner", "ITEM_NAME"), ("PR 1 | night | write", "ITEM_LINE"),
+                          ("PR 1 | unknown", "ITEM_KIND"), ("PR 1 | owner\npr 1 | owner", "ITEM_DUPLICATE")):
             with self.subTest(raw=raw):
                 folder = self.folder("row-" + re.sub(r"\W+", "-", raw))
                 self.ok(new(folder))
@@ -103,11 +103,6 @@ class BoundaryTests(Base):
         self.refused(*go_args(heartbeat="-5"), "--gap-min", "30", at=at("22:01"), code="HEARTBEAT_NOT_POSITIVE")
         self.refused(*go_args(stop="2026-01-10T22:01"), at=at("22:01"), code="GO_STOP_NOT_FUTURE")
 
-    def test_the_head_option_is_a_word_of_its_own_in_the_command(self):
-        started(self.dir)
-        self.refused(*intent_args("PR 1", SHA, merge("PR 1").replace(OPT, f"--no{OPT}")), at=at("22:10"),
-                     code="COMMAND_NOT_ROW")
-
     def test_a_denied_row_needs_each_of_command_and_blocks(self):
         started(self.dir)
         self.refused("log", "denied", "--item", "PR 3", "--command", "m", at=at("22:10"), code="DENIED_FIELDS")
@@ -118,10 +113,8 @@ class BoundaryTests(Base):
         self.refused("log", "error", "x", "--item", "PR 9", at=at("22:10"), code="ITEM_NOT_ON_CARD")
         self.refused("log", "reserve", "x", "--item", "PR 9", at=at("22:10"), code="ITEM_NOT_ON_CARD")
 
-    def test_a_reason_of_spaces_and_a_row_with_no_text_are_refused(self):
+    def test_a_row_with_no_text_is_refused(self):
         started(self.dir)
-        self.refused("log", "intent", "--item", "notice", "--command", "send", "--no-head", "  ", at=at("22:10"),
-                     code="NO_COMMIT_NEEDS_REASON")
         for kind in ("wait", "aware", "error"):
             with self.subTest(kind=kind):
                 self.refused("log", kind, "--item", "PR 1", at=at("22:10"), code="TEXT_MISSING")
@@ -130,7 +123,7 @@ class BoundaryTests(Base):
         started(self.dir)
         self.ok(run(self.dir, "log", "denied", "--item", "PR 3", "--command", "m", "--blocks", "x", at=at("22:10")))
         self.assertIn("final: do not retry", self.refused(*intent_args("PR 3"), at=at("22:11"), code="ITEM_DENIED"))
-        self.assertNotIn("final", self.refused(*intent_args("PR 1", "main"), at=at("22:11"), code="HEAD_FORM"))
+        self.assertNotIn("final", self.refused("log", "intent", "--item", "PR 1", at=at("22:11"), code="INTENT_FIELDS"))
 
     def test_the_fence_is_longer_than_each_run_of_backticks(self):
         tick = "\N{GRAVE ACCENT}"
@@ -266,7 +259,7 @@ class ReportTests(Base):
         self.ok(run(self.dir, "report", at=at("22:31")))  # E13
         self.page_checks(at("22:31"), report="E13")
         out = self.ok(run(self.dir, "close", "--reason", "nothing-left", at=at("23:41")))
-        self.assertIn("NIGHT CLOSED night-20260110T2200Z reason nothing-left", out)
+        self.assertIn(f"NIGHT CLOSED {self.events()[0]['run']} reason nothing-left", out)
         self.assertIn("NOTE:", out)
         self.assertIn("PR 4", "".join(line for line in out.splitlines() if line.startswith("NOTE:")))
         report = read_report(self.dir)
