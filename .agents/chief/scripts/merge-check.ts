@@ -6,13 +6,26 @@
 //
 // Option A (owner, 2026-11-20, orders 128 and 130): the trusted local files, then one GitHub
 // snapshot, the base check against that snapshot's base tip, the git diff at the snapshot's
-// commit ids, and a second snapshot that must be the same in each field.
+// commit ids, and a second snapshot that must be the same in each field. Plan delta r1 (order
+// 133): the start check runs before snapshot 1, and the policy files are compared with the
+// snapshot's base tip by blob id and executable bit.
 import { spawnSync } from "node:child_process";
+import { existsSync, lstatSync, readdirSync } from "node:fs";
+import { resolve } from "node:path";
 import { SETTINGS_FILE, SHORT_TERM, readSettings } from "./lib/check-memory.ts";
 import { readIfExists, readOwnerRecord } from "./lib/check-memory-local.ts";
 import { type MergeResult, cannotCheck, classify } from "./lib/merge-check.ts";
 import { type GitRun, readDiff } from "./lib/merge-check-diff.ts";
-import { type Repo, type Run, readSnapshot, sameSnapshot } from "./lib/merge-check-snapshot.ts";
+import { type Run, readSnapshot, sameSnapshot } from "./lib/merge-check-snapshot.ts";
+import {
+  type LocalEntry,
+  type StartFacts,
+  type TreeEntry,
+  gitEnvironment,
+  originRepo,
+  policyProblems,
+  startProblems,
+} from "./lib/merge-check-start.ts";
 import { OWNER_RECORD } from "./lib/owner-quotes.ts";
 
 // The code and the values that the judgment reads: each must be the same as at the base tip.
@@ -20,10 +33,10 @@ const BASE_PATHS = ["scripts", "package.json", ".agents/chief/scripts", SETTINGS
 const LIST_FILE = ".agents/chief/scripts/lib/merge-list.ts";
 const UTF8 = new TextDecoder("utf-8", { fatal: true });
 
-// Git runs with no replace objects, and gives its output as bytes.
+// Git runs with no inherited GIT_ variable and no replace objects, and gives its output as bytes.
 const gitBytes: GitRun = (args) => {
   const result = spawnSync("git", args, {
-    env: { ...process.env, GIT_NO_REPLACE_OBJECTS: "1" },
+    env: gitEnvironment(process.env),
     maxBuffer: 256 * 1024 * 1024,
   });
   return { status: result.status ?? 1, stdout: result.stdout };
@@ -41,17 +54,40 @@ const gh: Run = (args) => {
   return { status: result.status ?? 1, stdout: result.stdout };
 };
 
-// The GitHub repository of the `origin` remote: the one that the query reads and the merge line
-// names.
-function originRepo(): Repo | undefined {
-  // The configured value, as written (a URL rewrite of git does not change what it names).
-  const url = git("config", "--get", "remote.origin.url").stdout.trim();
-  const match =
-    /^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)([A-Za-z0-9-]+)\/([A-Za-z0-9._-]+?)(?:\.git)?$/.exec(
-      url,
-    );
-  if (match?.[1] === undefined || match[2] === undefined) return undefined;
-  return { owner: match[1], name: match[2] };
+// The facts of the start check, read from git before snapshot 1. A failed read is undefined.
+function startFacts(): StartFacts {
+  const read = (...args: string[]): string | undefined => {
+    const result = git(...args);
+    return result.status === 0 ? result.stdout : undefined;
+  };
+  const grafts = read("rev-parse", "--git-path", "info/grafts")?.trim();
+  return {
+    // The configured value, as written (a URL rewrite of git does not change what it names).
+    originUrl: read("config", "--get", "remote.origin.url")?.trim(),
+    shallow: read("rev-parse", "--is-shallow-repository"),
+    grafts: grafts === undefined || grafts === "" ? undefined : existsSync(resolve(grafts)),
+    config: read("config", "--list", "-z", "--includes"),
+  };
+}
+
+type LocalFile = { path: string; executable: boolean; plain: boolean };
+
+// Each file under the policy paths here, tracked or not, from the file system. A link or another
+// kind of file gets no blob id, so it never matches the base tip.
+function localFiles(): LocalFile[] {
+  const files: LocalFile[] = [];
+  const walk = (path: string): void => {
+    // A policy path that is missing here has no entry; the base tip list names it.
+    const stat = lstatSync(path, { throwIfNoEntry: false });
+    if (stat === undefined) return;
+    if (stat.isDirectory()) {
+      for (const name of readdirSync(path).sort()) walk(`${path}/${name}`);
+    } else {
+      files.push({ path, executable: (stat.mode & 0o100) !== 0, plain: stat.isFile() });
+    }
+  };
+  for (const path of BASE_PATHS) walk(path);
+  return files;
 }
 
 // The base check against the snapshot's base tip: a reason to stop, or undefined.
@@ -62,11 +98,34 @@ function baseProblem(baseTip: string): string | undefined {
   if (git("cat-file", "-e", `${baseTip}:${LIST_FILE}`).status !== 0) {
     return "the base tip has no list file. Run merge:check from a checkout of main";
   }
-  const differs = git("diff", "--quiet", baseTip, "--", ...BASE_PATHS).status !== 0;
-  const untracked = git("ls-files", "--others", "--exclude-standard", "--", ...BASE_PATHS);
-  if (untracked.status !== 0) return "git could not list the untracked files";
-  if (differs || untracked.stdout.trim() !== "") {
-    return "the merge-check code here differs from the base tip of the PR. Run merge:check from a clean checkout of origin/main";
+  const listing = git("ls-tree", "-r", "-z", "--full-tree", baseTip, "--", ...BASE_PATHS);
+  if (listing.status !== 0) return "git could not list the policy files of the base tip";
+  const tree: TreeEntry[] = [];
+  for (const line of listing.stdout.split("\0")) {
+    if (line === "") continue;
+    const match = /^(\d{6}) \w+ ([0-9a-f]{40})\t([\s\S]+)$/.exec(line);
+    if (match === null) return "git gave an unexpected list of the policy files";
+    tree.push({ mode: match[1] ?? "", blob: match[2] ?? "", path: match[3] ?? "" });
+  }
+  const files = localFiles();
+  const plain = files.filter((file) => file.plain);
+  const hashed =
+    plain.length === 0
+      ? { status: 0, stdout: "" }
+      : git("hash-object", "--no-filters", "--", ...plain.map((file) => file.path));
+  const blobs = hashed.stdout.split("\n").filter((line) => line !== "");
+  if (hashed.status !== 0 || blobs.length !== plain.length) {
+    return "git could not hash the policy files here";
+  }
+  const byPath = new Map(plain.map((file, i) => [file.path, blobs[i] ?? ""]));
+  const local: LocalEntry[] = files.map((file) => ({
+    path: file.path,
+    executable: file.executable,
+    blob: byPath.get(file.path) ?? "not a file",
+  }));
+  const problems = policyProblems({ tree, local });
+  if (problems.length > 0) {
+    return `the merge-check code here differs from the base tip of the PR (${problems.slice(0, 3).join("; ")}). Run merge:check from a clean checkout of origin/main`;
   }
   return undefined;
 }
@@ -78,7 +137,11 @@ function main(arg: string | undefined): MergeResult {
   const number = Number(arg);
   const stop = (reason: string, memory = false): MergeResult =>
     cannotCheck({ pr: number, reason, memory });
-  const repo = originRepo();
+  // The start check, before snapshot 1: a failed fact gives no gh call (plan delta r1 §3).
+  const facts = startFacts();
+  const start = startProblems(facts);
+  if (start.length > 0) return stop(start.join("; "));
+  const repo = originRepo(facts.originUrl ?? "");
   if (repo === undefined) return stop("the origin remote is not a GitHub repository");
   // The trusted local inputs, read one time before the snapshot.
   let record: readonly string[] | undefined;

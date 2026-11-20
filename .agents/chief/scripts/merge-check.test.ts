@@ -857,7 +857,7 @@ describe("the merge-check CLI", () => {
       [
         "#!/bin/sh",
         'case "$*" in',
-        '  "api graphql "*|"api --hostname github.com graphql "*) ;;',
+        '  "api --hostname github.com graphql "*) ;;',
         "  *) exit 1 ;;",
         "esac",
         `echo x >> "${root}/calls"`,

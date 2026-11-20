@@ -80,7 +80,8 @@ const ANSWER = z.object({
     repository: z.object({
       owner: z.object({ login: z.string().min(1) }),
       pullRequest: z.object({
-        state: z.string().min(1),
+        // DQ-1033: any other state cannot be checked.
+        state: z.enum(["OPEN", "CLOSED", "MERGED"]),
         headRefOid: SHA,
         baseRefName: z.string().min(1),
         baseRef: z.object({ target: z.object({ oid: SHA }) }),
@@ -143,8 +144,11 @@ const checkKey = (check: CiCheck): string =>
 
 export function readSnapshot(input: { repo: Repo; number: number }, run: Run): SnapshotRead {
   const { repo, number } = input;
+  // The host is fixed: gh does not read another host from its config (plan delta r1 §3).
   const result = run([
     "api",
+    "--hostname",
+    "github.com",
     "graphql",
     "-f",
     `owner=${repo.owner}`,
