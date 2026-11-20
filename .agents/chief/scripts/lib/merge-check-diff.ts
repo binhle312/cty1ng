@@ -8,7 +8,7 @@
 // each byte is printable ASCII (0x21-0x7E); classify stops the chief for any other path. A memory
 // text that is not UTF-8 is unsupported text (exit 1); any other text that is not UTF-8 means
 // "cannot check" (exit 2).
-import { type DiffStatus, type PrFile, inMemory, needsText } from "./merge-check.ts";
+import { type DiffStatus, type PrFile, type Reader, inMemory, needsText } from "./merge-check.ts";
 
 export type GitRun = (args: readonly string[]) => { status: number; stdout: Buffer };
 export type DiffRead = { ok: true; files: PrFile[] } | { ok: false; reason: string };
@@ -127,16 +127,15 @@ export function readDiff(input: { head: string; baseTip: string }, git: GitRun):
         (entry) => entry.path,
       ),
     );
+    const reader = blobReader(git);
     // A blob that is not UTF-8 gives null for a memory file (unsupported text), else it fails.
-    const text = (blob: string, path: string): string | null | undefined => {
+    const text = (entry: RawEntry, side: "base" | "head"): string | null | undefined => {
+      const { path } = entry;
+      const blob = side === "base" ? entry.oldBlob : entry.newBlob;
       if (blob === ZERO) return undefined;
-      const bytes = run(["cat-file", "blob", blob], `read ${path}`);
-      if (!inMemory(path)) return decode(bytes, `the text of ${path}`);
-      try {
-        return UTF8.decode(bytes);
-      } catch {
-        return null;
-      }
+      const result = reader({ path, side, blob, kind: inMemory(path) ? "memory" : "manifest" });
+      if (result.kind === "failed") throw new Failed(result.reason);
+      return result.kind === "text" ? result.text : null;
     };
     const files = entries.map((entry): PrFile => {
       const file: PrFile = {
@@ -145,11 +144,13 @@ export function readDiff(input: { head: string; baseTip: string }, git: GitRun):
         status: entry.status,
         oldMode: entry.oldMode,
         newMode: entry.newMode,
+        oldBlob: entry.oldBlob,
+        newBlob: entry.newBlob,
         liveChanged: onMain.has(entry.path),
       };
       if (!needsText(entry.path)) return file;
-      const baseText = text(entry.oldBlob, entry.path);
-      const headText = text(entry.newBlob, entry.path);
+      const baseText = text(entry, "base");
+      const headText = text(entry, "head");
       const unsupported = baseText === null || headText === null;
       return {
         ...file,
@@ -163,4 +164,20 @@ export function readDiff(input: { head: string; baseTip: string }, git: GitRun):
     if (error instanceof Failed) return { ok: false, reason: error.message };
     throw error;
   }
+}
+
+// The reader of the judgment: one `git cat-file blob` call for each read. A memory text that is not
+// UTF-8 is unsupported; a failed read or another text that is not UTF-8 is a failed read.
+export function blobReader(git: GitRun): Reader {
+  return (read) => {
+    const result = git(["cat-file", "blob", read.blob]);
+    if (result.status !== 0) return { kind: "failed", reason: `git could not read ${read.path}` };
+    try {
+      return { kind: "text", text: UTF8.decode(result.stdout) };
+    } catch {
+      return read.kind === "memory"
+        ? { kind: "unsupported" }
+        : { kind: "failed", reason: `the text of ${read.path} is not UTF-8` };
+    }
+  };
 }

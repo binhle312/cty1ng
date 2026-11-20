@@ -49,10 +49,23 @@ export type PrFile = {
   status: DiffStatus;
   oldMode: string;
   newMode: string;
+  // The blob ids of the raw diff (the reader reads a text by its id); tests may leave them out.
+  oldBlob?: string;
+  newBlob?: string;
   liveChanged: boolean;
   baseText?: string | undefined;
   headText?: string | undefined;
 };
+
+// One text that the judgment needs: a side of a file, read by its blob id. A memory text keeps a
+// BOM; a manifest (`package.json`) is decoded as before plan delta r1.
+export type ContentKind = "memory" | "manifest";
+export type ContentRead = { path: string; side: "base" | "head"; blob: string; kind: ContentKind };
+// `unsupported`: a memory text that is not UTF-8 (the chief stops). `failed`: the text cannot be
+// read, or a manifest is not UTF-8 (cannot check).
+export type ReadResult =
+  { kind: "text"; text: string } | { kind: "unsupported" } | { kind: "failed"; reason: string };
+export type Reader = (read: ContentRead) => ReadResult;
 export type CheckState = "pass" | "skipped" | "pending" | "fail";
 export type CiCheck =
   | {
@@ -371,6 +384,33 @@ function originProblem(input: MergeInput): string | undefined {
   }
   if (input.baseRef !== "main") return `the PR is for ${input.baseRef}, not main`;
   return undefined;
+}
+
+// The judgment with a reader for the texts: each text of `needsText` is read first, then classify.
+export function classifyWith(input: MergeInput, reader: Reader): MergeResult {
+  const memory = input.files.length > 0 && input.files.every((file) => inMemory(file.path));
+  const files: PrFile[] = [];
+  for (const file of input.files) {
+    if (!needsText(file.path)) {
+      files.push(file);
+      continue;
+    }
+    const kind: ContentKind = inMemory(file.path) ? "memory" : "manifest";
+    const filled: PrFile = { ...file, baseText: undefined, headText: undefined };
+    for (const side of ["base", "head"] as const) {
+      if (side === "base" ? file.status === "A" : file.status === "D") continue;
+      const blob = (side === "base" ? file.oldBlob : file.newBlob) ?? "";
+      const result = reader({ path: file.path, side, blob, kind });
+      if (result.kind === "failed") {
+        return cannotCheck({ pr: input.number, reason: result.reason, memory });
+      }
+      if (result.kind === "unsupported") filled.textUnsupported = true;
+      else if (side === "base") filled.baseText = result.text;
+      else filled.headText = result.text;
+    }
+    files.push(filled);
+  }
+  return classify({ ...input, files });
 }
 
 export function classify(input: MergeInput): MergeResult {

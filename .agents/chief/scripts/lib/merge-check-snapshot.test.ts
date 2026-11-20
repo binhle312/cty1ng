@@ -21,7 +21,7 @@ import {
 const REPO = { owner: "owner-login", name: "cty-test" };
 const fixed =
   (stdout: string, status = 0): Run =>
-  () => ({ status, stdout });
+  () => ({ status, stdout: Buffer.from(stdout) });
 const read = (stdout: string, status = 0) =>
   readSnapshot({ repo: REPO, number: 152 }, fixed(stdout, status));
 
@@ -105,7 +105,7 @@ describe("readSnapshot", () => {
     const calls: string[][] = [];
     readSnapshot({ repo: REPO, number: 152 }, (args) => {
       calls.push([...args]);
-      return { status: 0, stdout: answer() };
+      return { status: 0, stdout: Buffer.from(answer()) };
     });
     // The host is a fixed argument: gh never reads another host from its config (plan delta r1 §3).
     expect(calls, "one call").toEqual([

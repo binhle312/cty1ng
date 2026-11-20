@@ -6,7 +6,9 @@
 import { z } from "zod";
 import type { CheckState, CiCheck } from "./merge-check.ts";
 
-export type Run = (args: readonly string[]) => { status: number; stdout: string };
+// The gh runner gives stdout as bytes; the reader decodes it.
+export type Run = (args: readonly string[]) => { status: number; stdout: Buffer };
+const GH_TEXT = new TextDecoder("utf-8");
 export type Repo = { owner: string; name: string };
 export type Snapshot = {
   repo: string;
@@ -160,9 +162,10 @@ export function readSnapshot(input: { repo: Repo; number: number }, run: Run): S
     `query=${SNAPSHOT_QUERY}`,
   ]);
   if (result.status !== 0) return { ok: false, reason: "gh failed to read the PR" };
+  const text = GH_TEXT.decode(result.stdout);
   let value: unknown;
   try {
-    value = JSON.parse(result.stdout);
+    value = JSON.parse(text);
   } catch {
     return { ok: false, reason: "gh gave bad JSON for the PR" };
   }

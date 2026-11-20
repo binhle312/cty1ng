@@ -110,3 +110,33 @@ export function policyProblems(input: {
   for (const path of local.keys()) problems.push(`${path} is not in the base tip`);
   return problems;
 }
+
+// A file under the policy paths here, from the file system. A link or another kind of file gets no
+// blob id (`plain` is false), so it never matches the base tip.
+export type LocalFile = { path: string; executable: boolean; plain: boolean };
+export type FsEntry = { kind: "dir" | "file" | "other"; executable: boolean };
+// The file system calls of the walk; the CLI passes `lstatSync` and `readdirSync`. `lstat` gives
+// undefined for a path that does not exist.
+export type PolicyFs = {
+  lstat: (path: string) => FsEntry | undefined;
+  readdir: (path: string) => Buffer[];
+};
+export type PolicyWalk = { ok: true; files: LocalFile[] } | { ok: false; reason: string };
+
+// Each file under the policy paths, tracked or not, in byte order of the names.
+export function walkPolicy(roots: readonly string[], fs: PolicyFs): PolicyWalk {
+  const files: LocalFile[] = [];
+  const walk = (path: string): void => {
+    // A policy path that is missing here has no entry; the base tip list names it.
+    const entry = fs.lstat(path);
+    if (entry === undefined) return;
+    if (entry.kind === "dir") {
+      const names = fs.readdir(path).map((name) => name.toString("utf8"));
+      for (const name of names.sort()) walk(`${path}/${name}`);
+    } else {
+      files.push({ path, executable: entry.executable, plain: entry.kind === "file" });
+    }
+  };
+  for (const root of roots) walk(root);
+  return { ok: true, files };
+}

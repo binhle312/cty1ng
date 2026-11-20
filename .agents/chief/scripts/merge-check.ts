@@ -19,12 +19,14 @@ import { type GitRun, readDiff } from "./lib/merge-check-diff.ts";
 import { type Run, readSnapshot, sameSnapshot } from "./lib/merge-check-snapshot.ts";
 import {
   type LocalEntry,
+  type PolicyFs,
   type StartFacts,
   type TreeEntry,
   gitEnvironment,
   originRepo,
   policyProblems,
   startProblems,
+  walkPolicy,
 } from "./lib/merge-check-start.ts";
 import { OWNER_RECORD } from "./lib/owner-quotes.ts";
 
@@ -50,7 +52,7 @@ const git = (...args: string[]): { status: number; stdout: string } => {
   }
 };
 const gh: Run = (args) => {
-  const result = spawnSync("gh", args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  const result = spawnSync("gh", args, { maxBuffer: 64 * 1024 * 1024 });
   return { status: result.status ?? 1, stdout: result.stdout };
 };
 
@@ -70,25 +72,16 @@ function startFacts(): StartFacts {
   };
 }
 
-type LocalFile = { path: string; executable: boolean; plain: boolean };
-
-// Each file under the policy paths here, tracked or not, from the file system. A link or another
-// kind of file gets no blob id, so it never matches the base tip.
-function localFiles(): LocalFile[] {
-  const files: LocalFile[] = [];
-  const walk = (path: string): void => {
-    // A policy path that is missing here has no entry; the base tip list names it.
+// The file system of the policy walk.
+const POLICY_FS: PolicyFs = {
+  lstat: (path) => {
     const stat = lstatSync(path, { throwIfNoEntry: false });
-    if (stat === undefined) return;
-    if (stat.isDirectory()) {
-      for (const name of readdirSync(path).sort()) walk(`${path}/${name}`);
-    } else {
-      files.push({ path, executable: (stat.mode & 0o100) !== 0, plain: stat.isFile() });
-    }
-  };
-  for (const path of BASE_PATHS) walk(path);
-  return files;
-}
+    if (stat === undefined) return undefined;
+    const kind = stat.isDirectory() ? "dir" : stat.isFile() ? "file" : "other";
+    return { kind, executable: (stat.mode & 0o100) !== 0 };
+  },
+  readdir: (path) => readdirSync(path, { encoding: "buffer" }),
+};
 
 // The base check against the snapshot's base tip: a reason to stop, or undefined.
 function baseProblem(baseTip: string): string | undefined {
@@ -107,7 +100,9 @@ function baseProblem(baseTip: string): string | undefined {
     if (match === null) return "git gave an unexpected list of the policy files";
     tree.push({ mode: match[1] ?? "", blob: match[2] ?? "", path: match[3] ?? "" });
   }
-  const files = localFiles();
+  const walked = walkPolicy(BASE_PATHS, POLICY_FS);
+  if (!walked.ok) return walked.reason;
+  const files = walked.files;
   const plain = files.filter((file) => file.plain);
   const hashed =
     plain.length === 0
