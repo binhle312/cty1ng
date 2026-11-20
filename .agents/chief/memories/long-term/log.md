@@ -52,3 +52,13 @@ Append only. One heading for each promotion, lint, restore drill or migration.
 - Partial too, for both graders: Q6, Q12, Q13 and Q19. Q13 is partial for the fourth time. Q12
   found that `state.md` is out of date (its next id DQ-1020; #141 listed as open).
 - No answer reads 3a, 3c, 3d, 3f or 3g as "merge". No patch: the next step is the owner's.
+
+## [2026-11-20] restore | drill 9, on e953dfb (behaviour keys, order 161), two Opus 5.5 high graders: 21 and 23 of 26 right, fail
+
+- The keys and the bar were committed and pushed before the run (`e953dfb`). The probe ran with
+  read tools only and saw only `CLAUDE.md`, `AGENTS.md` and skill names, and no user-level memory.
+- Q4 is right for both graders. Grader 1 reads 3d and 17 (critical) as partial: 3d does not say
+  that the chief reads the diff for each "Not checked" item, and 17 names no file. Grader 2
+  reads each critical question as right.
+- Partial for both: Q7, Q12 and Q13. Q13 is partial for the fifth time (DQ-1078).
+- No answer reads 3a, 3c, 3d, 3f or 3g as "merge". No patch: the next step is the owner's.

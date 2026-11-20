@@ -15,7 +15,7 @@ each PR waits for in `docs/status.md` ("Next", "Waiting on the owner") and with
 
 | PR | What | DQ range | Other fact |
 | --- | --- | --- | --- |
-| #139 | The chief's restore kit: the `decision-pages` skill, this memory, `pnpm check:memory`, the `AGENTS.md` words | DQ-878 to DQ-899, DQ-935 to DQ-952, DQ-1000 to DQ-1019 and DQ-1020 to DQ-1077 (it used DQ-876 and DQ-877 before the ranges); DQ-953 to DQ-959 are a reserve that only the chief gives | — |
+| #139 | The chief's restore kit: the `decision-pages` skill, this memory, `pnpm check:memory`, the `AGENTS.md` words | DQ-878 to DQ-899, DQ-935 to DQ-952, DQ-1000 to DQ-1019 and DQ-1020 to DQ-1078 (it used DQ-876 and DQ-877 before the ranges); DQ-953 to DQ-959 are a reserve that only the chief gives | — |
 | #107 | The redesign of the break runner (five gaps) | — | No leader runs now. |
 | #140 | The `overnight` skill: owner-started night work with a night card | DQ-900 to DQ-934, DQ-960 to DQ-999 | — |
 | #142 | The trigger first in the `consultants` and `arena` descriptions | — | — |
@@ -44,5 +44,5 @@ each PR waits for in `docs/status.md` ("Next", "Waiting on the owner") and with
 ## Next free ids
 
 - DQ: the chief gives each open PR a range (the table "Open PRs"). A new range starts at
-  DQ-1078. Check first: the highest id in `docs/delivery-quality*.md` and in the open PRs.
+  DQ-1079. Check first: the highest id in `docs/delivery-quality*.md` and in the open PRs.
 - Rule: R-038. Lesson: L-30. Owner order: 161 (check the log at the merge).
