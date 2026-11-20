@@ -39,9 +39,11 @@ permission. The script stops at the first rule that fails, in this order:
 Exit 2 means that the script cannot check: no chief merge. A PR that is not open, a failed check
 of the clone, a text that git cannot read, a PR that changed during the check, and a memory PR with
 no owner record or no private word list give exit 2. The record is checked once the PR reaches the
-memory gate, after the checks of each PR; for a memory PR, exit 2 says "Do not merge it". When the
-owner's own message asks for a PR, a listed path does not stop the merge (R-002 path 1): the chief
-merges with
+memory gate, after the checks of each PR. Exit 2 says "Do not merge it" when the owner record or
+the private word list cannot be read (for each PR), and for a memory PR once the script has read
+the diff. Before it has read the diff, the script does not know the kind of PR, and exit 2 says
+"Treat it as listed: the owner merges it". When the owner's own message asks for a PR, a listed
+path does not stop the merge (R-002 path 1): the chief merges with
 `gh pr merge https://github.com/<owner>/<repo>/pull/<PR> --merge --match-head-commit <head>`, but
 never a mixed PR.
 

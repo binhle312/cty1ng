@@ -474,8 +474,13 @@ function memoryContent(input: MergeInput, step: Step): MergeResult {
         `${entry.file.path}: it adds or changes a rule with ${PERMISSION_RULE}; the owner merges each one (order 130)`,
     );
   if (permission.length > 0) return memoryFail(header, permission);
-  const heads = new Map(memory.map((entry) => [entry.file.path, sideText(entry, "head") ?? ""]));
-  const words = checkPrivateWords(heads, input.privateWords ?? []);
+  // One scan for each file, so no map joins two files by their display path (order 152).
+  const words = memory.flatMap((entry) =>
+    checkPrivateWords(
+      new Map([[entry.file.path, sideText(entry, "head") ?? ""]]),
+      input.privateWords ?? [],
+    ),
+  );
   if (words.length > 0) return memoryFail(header, words);
   const rules = memory
     .filter((entry) => isRule(entry.file.path))

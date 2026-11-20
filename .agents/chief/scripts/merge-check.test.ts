@@ -848,6 +848,18 @@ describe("classify with a reader", () => {
     expect(said, "one text for each key").toBe("aa bb");
   });
 
+  // Round 2 ruling 2 (order 152, "every identity check"): the private-word scan keeps two files
+  // with one display path apart by their path bytes.
+  it("finds a private word in each file, also in two files with one display path", () => {
+    const words = file(NOTE, { key: "aa", baseText: "# a\n", headText: "# zz-private-zz\n" });
+    const clean = file(NOTE, { key: "bb", baseText: "# a\n", headText: "# Clean\n" });
+    const result = classify(input([words, clean]));
+    const said = `${String(result.exit)} ${result.lines.join("\n")}`;
+    expect(said, "private word in the first file").toMatch(
+      /^1 [\s\S]*a word of the private word list/,
+    );
+  });
+
   it("cannot check when the reader fails, for a note and for a manifest", () => {
     for (const path of [NOTE, "package.json"]) {
       const result = classifyWith(input([changed(path)]), counting({}).reader);
@@ -1648,12 +1660,12 @@ describe("the merge-check CLI", () => {
       [
         "memory",
         noteHead,
-        /^2 Cannot check #152: git could not read the base text of [^\n]*Do not merge it\.\n$/,
+        /^2 Cannot check #152: git could not read the base text of [^\n]*Do not merge it\.\n calls 1$/,
       ],
       [
         "manifest",
         codeHead,
-        /^2 Cannot check #152: git could not read the base text of package\.json\./,
+        /^2 Cannot check #152: git could not read the base text of package\.json\.[^\n]*\n calls 1$/,
       ],
     ] as const) {
       fakeGh(answer({ head, baseTip: tip() }));
@@ -1661,9 +1673,24 @@ describe("the merge-check CLI", () => {
         { cwd: repo, extra: { PATH: `${failbin}:${bin}:${process.env.PATH ?? ""}` } },
         "152",
       );
-      results.push([kind, `${String(result.status)} ${result.stdout}`, want]);
+      // Round 2 ruling 3: one gh call, so the CLI stops before snapshot 2.
+      results.push([
+        kind,
+        `${String(result.status)} ${result.stdout} calls ${String(ghCalls())}`,
+        want,
+      ]);
     }
     for (const [kind, said, stop] of results) expect(said, `read failed ${kind}`).toMatch(stop);
+  });
+
+  // Round 2 ruling 1: git that cannot start (not on PATH) is a failed read: exit 2, no gh call.
+  it("exits 2 with no gh call when git cannot start", () => {
+    const head = prCommit({ "docs/a.md": "n2\n" });
+    fakeGh(answer({ head, baseTip: tip() }));
+    const result = cliIn({ cwd: repo, extra: { PATH: bin } }, "152");
+    const said = `${String(result.status)} ${result.stdout}${result.stderr} calls ${String(ghCalls())}`;
+    const noGit = /^2 Cannot check #152: git could not read the origin remote[^\n]*\n calls 0$/;
+    expect(said, "no git").toMatch(noGit);
   });
 
   // DQ-1043 and grill 2 point 1: one origin value, read as bytes, printable ASCII, no trim.

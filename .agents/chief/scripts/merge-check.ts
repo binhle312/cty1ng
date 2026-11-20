@@ -52,7 +52,12 @@ const gitBytes: GitRun = (args) => {
     env: gitEnvironment(process.env),
     maxBuffer: 256 * 1024 * 1024,
   });
-  return { status: result.status ?? 1, stdout: result.stdout };
+  // Git that cannot start (not on PATH) or that a signal ends gives no exit status and no output:
+  // a failed read, never an empty answer (round 2 of redesign r2, order 152).
+  if (result.error !== undefined || result.status === null) {
+    return { status: -1, stdout: Buffer.alloc(0) };
+  }
+  return { status: result.status, stdout: result.stdout };
 };
 const git = (...args: string[]): { status: number; stdout: string } => {
   const result = gitBytes(args);

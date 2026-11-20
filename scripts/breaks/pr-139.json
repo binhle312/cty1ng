@@ -3932,7 +3932,7 @@
     },
     {
       "id": "F7-cli-read-failed",
-      "claim": "In the CLI, a text that git cannot read gives exit 2 at once, with \"Do not merge it\" for a memory PR (O1 of order 152; security test: deny by default, order 152)",
+      "claim": "In the CLI, a text that git cannot read gives exit 2 at once (one gh call: no snapshot 2), with \"Do not merge it\" for a memory PR (O1 of order 152, round 2 ruling 3; security test: deny by default, order 152)",
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/merge-check.test.ts",
@@ -3947,6 +3947,16 @@
             {
               "find": "    if (!read.ok) return stop(read.reason, step.memory);",
               "replace": "    if (!read.ok) return { exit: 1, lines: [read.reason] };"
+            }
+          ]
+        },
+        {
+          "id": "F7-cli-read-failed-2",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "    if (!read.ok) return stop(read.reason, step.memory);",
+              "replace": "    if (!read.ok) {\n      readSnapshot({ repo, number }, gh);\n      return stop(read.reason, step.memory);\n    }"
             }
           ]
         }
@@ -3991,6 +4001,50 @@
             {
               "find": "    return stop(\"the owner record or the private word list cannot be read\", true);",
               "replace": "    return { exit: 1, lines: [\"the owner record or the private word list cannot be read\"] };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F10-git-cannot-start",
+      "claim": "Git that cannot start gives exit 2 with a reason and no gh call, not an exception (round 2 ruling 1; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 with no gh call when git cannot start"
+      },
+      "assertion": "expect(said, \"no git\").toMatch(noGit);",
+      "breaks": [
+        {
+          "id": "F10-git-cannot-start-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "    return { status: -1, stdout: Buffer.alloc(0) };",
+              "replace": "    return { status: 1, stdout: Buffer.alloc(0) };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F11-words-by-file",
+      "claim": "The private-word scan keeps two files with one display path apart (A2 of order 152, every identity check; round 2 ruling 2; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "finds a private word in each file, also in two files with one display path"
+      },
+      "assertion": "expect(said, \"private word in the first file\").toMatch(",
+      "breaks": [
+        {
+          "id": "F11-words-by-file-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  const words = memory.flatMap((entry) =>\n    checkPrivateWords(\n      new Map([[entry.file.path, sideText(entry, \"head\") ?? \"\"]]),\n      input.privateWords ?? [],\n    ),\n  );",
+              "replace": "  const heads = new Map(memory.map((entry) => [entry.file.path, sideText(entry, \"head\") ?? \"\"]));\n  const words = checkPrivateWords(heads, input.privateWords ?? []);"
             }
           ]
         }
