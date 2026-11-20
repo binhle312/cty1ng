@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # `-I` drops thi
 from night_testlib import NIGHT_MODULES, FINAL_CODES, HERE, NIGHT, PRE_EVENT_CODES, STATE_CODES, STUB, night_module  # noqa: E402
 
 MAX_LINES = 600  # one read of a file (owner, 2026-11-19, designs-139-140 Q5 A)
-PURE_MODULES = ("night_format", "night_rules", "night_report")
+PURE_MODULES = ("night_format", "night_rules", "night_report", "night_review")
 PURE_IMPORTS = {"re", "datetime", "json"}
 PURE_NO_CALLS = {"open", "print", "input", "exec", "eval", "__import__", "globals"}
 
@@ -28,6 +28,7 @@ class MetaTests(unittest.TestCase):
         locked_callers = {
             "night.py": {"cmd_new", "cmd_items", "cmd_report", "cmd_render", "cmd_close", "cmd_check", "cmd_status",
                          "cmd_typed", "get_grant", "cmd_merge", "cmd_audit"},
+            "night_chief.py": {"grant_fields", "merge_resolution"},
             "night_files.py": {"read_journal", "checked_night", "add_entry", "state_problems", "leader_path",
                                "leader_events", "leader_append", "merge_snapshot", "require_merge_snapshot",
                                "view_locked", "staged_repair", "bound_night", "finish_repair"},
@@ -39,7 +40,7 @@ class MetaTests(unittest.TestCase):
         def walk(node, filename, function="", locked=False):
             if isinstance(node, ast.FunctionDef):
                 # These helpers explicitly borrow the caller's lock. Each call is checked below.
-                delegates = locked_callers[filename] - {
+                delegates = locked_callers.get(filename, set()) - {
                     "cmd_new", "cmd_items", "cmd_report", "cmd_render", "cmd_close", "cmd_check",
                     "cmd_status", "cmd_typed", "cmd_merge", "cmd_audit",
                 }
@@ -56,7 +57,9 @@ class MetaTests(unittest.TestCase):
                 walk(child, filename, function, locked)
 
         folder = os.path.dirname(NIGHT)
-        for filename in locked_callers:
+        for filename in sorted(name for name in os.listdir(folder)
+                               if name == "night.py" or name.startswith("night_") and name.endswith(".py")
+                               and not name.endswith("testlib.py")):
             with open(os.path.join(folder, filename), encoding="utf-8") as handle:
                 walk(ast.parse(handle.read()), filename)
         self.assertEqual(found, [])

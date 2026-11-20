@@ -20,11 +20,11 @@ Only the owner's own `/overnight <arguments>` message starts a night. If the own
 1. Read the project instructions and memory for the night folder, merge bar, writer permissions and limits.
 2. Check the daytime rehearsal record for this skill revision. Use [the rehearsal](references/rehearsal.md) before first use and after changes. Absent a rehearsal or owner override, record the work for the owner.
 3. Write the owner's exact words in UTF-8 with a quoted heredoc. Run `night.py new --root <chief-night-parent> --words-file <file>` and use the folder from its output. Fill the [night card](references/night-card.md).
-4. Analyze the task, or ask a leader for read-only analysis. Establish the spec before work dispatch. Record acceptance criteria, dependencies, worktrees, PRs, project rules and limits.
+4. Analyze the task, or ask a leader for read-only analysis. Establish the spec before work dispatch. Record acceptance criteria, dependencies, worktrees, PRs, project rules and limits. Give each task an approved class and exact owned files.
 5. Apply the [night rule](#night-rule) to the proposed card. Resolve owner questions in one batch. Check the power supply, sleep settings, memory and disk.
-6. Run `night.py items`. Read back the rows, review cap, stop time with offset and exact `/goal` line on one screen.
+6. Run `night.py items`. Read back the rows, review cap, bonus per merge of main, stop time with offset and exact `/goal` line on one screen.
 7. Wait for the owner to send the exact `/goal` line. If the harness has no `/goal`, say so in the read-back and require the owner's exact `go` after it. Record `--goal no-goal-command` in that case.
-8. Run `night.py go` with the values from the read-back. The record freezes the card. Record each heartbeat and stop timer ID with the run when you create or replace it.
+8. Run `night.py go` with the values from the read-back. The record freezes the card and review settings. Record each heartbeat and stop timer ID with the run when you create or replace it.
 
 ## Night rule
 
@@ -36,32 +36,34 @@ For cleanup, cancel only timer IDs recorded for this night. The journal tool can
 
 ## Work
 
-1. The chief can dispatch two leaders at the same time for independent work. Wait for dependencies in order. Give each leader one worktree and one PR. The chief and reviewers only read them.
-2. Before dispatch, the chief puts the reviewer pair and allowed helper roles in the leader's brief. List provider, model, effort and role. Use an empty role when a reviewer has no role. Write the matching `assign` entry at dispatch.
-3. Choose one independent Claude reviewer and one independent Codex reviewer. Use two models above the leader if the owner allows them. Otherwise use the same-tier Opus 5.5 and GPT-6.2 Astra pair at `high`. Check the configured model of each named role. An Opus 5.5 leader needs owner approval for Fable 5.2. Use an approved effort and exclude `xhigh`.
-4. The leader uses the pair from the chief's brief. If a start fails or a usage limit intervenes, stop the review step. Ask the chief for a new valid `assign` entry. Helpers work inside the leader's worktree. Only the leader commits, pushes, edits its PR, asks for merge permission or runs the merge.
-5. Run the project checks. Give both reviewers the spec, merge bar and same full PR head. Record both original reports with provider, model, effort, role, head, P1 and P2 verdicts and all P3s.
+1. Assign up to two leaders for independent work. Wait for dependencies in order. Give each leader one worktree and one PR.
+2. Write each leader's brief with its spec and allowed helpers. Record the assignment with `night.py assign`.
+3. Assign one independent Claude and one independent Codex reviewer. Record each provider, model, effort and role. Use an empty role if there is no role.
+4. Use two models above the leader if the owner allows them. The same-tier pair is Opus 5.5 and GPT-6.2 Astra at `high`. Check the model and effort of each named role. Get owner approval for Fable 5.2 if the leader uses Opus 5.5. Exclude `xhigh`.
+5. The leader writes a plan and test strategy. The chief checks both against the spec and records the check with `night.py plan` before code.
+6. Helpers work inside the leader's worktree. The leader commits, pushes, edits its PR, requests review and runs its permitted merge.
+7. If a reviewer fails to start or hits a usage limit, the chief records a new eligible assignment. If a leader is lost, stop its session and remove write access first. Record the release and old assignment in a new chief `assign` before a replacement starts.
 
-### Fix and review
+## Night review and merge
 
-Read `review_cap` from the owner's prompt. Use 5 when it is absent. Read it back and freeze it at `go`. One round is one Claude review and one Codex review of the same full PR head.
+Review each pushed head in a full round. The leader runs project checks and asks the chief to review the exact SHA. The chief prepares a clean detached checkout in its night folder and runs `night.py review-start`. The chief starts the assigned pair with the generated brief. Keep the reports in the chief folder, outside the leader's writable roots.
 
-Record each pair. Report every P3 to the chief and list its disposition in the PR body. If neither reviewer finds a P1 or P2, ask the chief for permission, including after a P3-only round at the cap. Apply any stricter project rule.
+Review the full PR diff against its current merge base. If main moved, also check the merge resolutions and where the PR meets files that main changed. Reviewers use the scope in the brief. Each report ends with the brief's `Findings` and `Verdict` lines. The chief records both original paths with `night.py review`. If the leader disputes a finding, use `night.py ruling` to record the chief's reason and decision. Preserve the original finding.
 
-If either reviewer finds a P1 or P2 below the cap, fix it in that PR and get both reviews of the new head. If the last round at the cap still has a P1 or P2, stop work on that PR. Start no further review and ask for no permission. Record a `cap` entry with a spec of the work done, each open finding and severity, and proposed next steps. The chief may give the leader other work. Show the spec under **Needs you** for the owner's decision.
+Count one round per complete pair, per PR. Use `review_cap` (default 5) and `merge_main_bonus` (default 3) from the card. Each distinct merge of main into that PR adds the bonus. Two merges give a cap of 11 at the defaults.
 
-### Permission
+- If the round has no open findings, ask the chief for a grant. If findings remain below the cap, fix them and ask for a new full round. This includes P3s.
+- If P1 or P2 remains at the cap, stop work on the PR. Include the work, open findings and next steps under **Needs you**. The chief can assign other work.
+- If only P3s remain at the cap, the chief asks the advisor and the consultants that the owner allowed. Record their answers with `night.py advice`. Keep the open P3 list for the morning report. The leader adds it to the PR body.
+- If the head changes, request another full round. If the cap leaves no round for the new head, send the PR to **Needs you**. Put round records in the next real commit or merge of main. A separate records commit takes a full round.
 
-The leader sends the exact PR and head, both reports, CI evidence, ledger links and the PR-body P3 list. Use explicit empty lists for no findings.
+### Grant and confirm
 
-The chief checks the sources itself before it issues a grant.
-
-1. Compare the original task, frozen card and live PR. Check the repository, PR, base, leader and method. Apply the project's ready and eligibility rules.
-2. Compare both full reviewed heads with the live head. Match the provider, model, effort and role against the active `assign` entry. Check the tier and independence. Require zero P1 and P2 in both reports.
-3. Read the live branch policy and exact-head CI. Require each required check and source to pass. Accept an empty set only if the policy explicitly establishes it and the card permits it.
-4. Read the ledger at the PR head and any shared ledger. Hold for each open or partial P1 or P2. Compare the P3s against the live PR body and leader handoff. Hold for missing or inconsistent evidence.
-5. Record the evidence with `night.py grant`. Send the run ID and grant entry ID to the leader. A new head, including a records commit, needs new evidence and a fresh grant.
-6. The leader follows the [night rule](#night-rule) and runs `night.py merge` with the bound chief path, run, target, head, leader and grant ID. The command records the attempt before the GitHub request. A consumed grant permits no second request.
+1. Check the task class, project rules and live PR. A task that needs owner approval stays under **Needs you**. Check the PR ledger and any shared ledger for P1 and P2. Record the checked ledger sources with the review. Hold if the sources disagree or if any required evidence is missing.
+2. Run `night.py grant` with only the two report paths. It checks the live head, required CI and changed paths against the owned files. Compare every open P3 with the live PR body.
+3. Give the run ID and grant entry ID to the leader. The leader runs `night.py merge` with the chief path, run, PR, head, leader and grant ID. The tool records the attempt before the GitHub request. A grant permits one attempt.
+4. Keep one unresolved grant across the night. Run `night.py confirm` after a merge. It requires GitHub to confirm the granted head and requires green CI on main. If main is red, hold all grants. Use `night.py withdraw` only if live evidence and the journal show that a grant had no merge.
+5. Apply the [night rule](#night-rule) to each write and its effects.
 
 ### Ordinary work and amendments
 
@@ -69,7 +71,7 @@ Check the [night rule](#night-rule) before a write. Use an exact `night` item na
 
 Apply a written rule and cite it in a `decision`. Mark an in-scope reversible decision for the owner to check. Park other decisions with `wait`.
 
-Only a new owner order adds a row or reopens a hold or denial. Save the exact words in a file. Use `log amend --words-file <file>` with `--add-item` or `--reopen`, then read the change back. For a question, answer and log `aware`. If an effect or authority becomes unclear, log `hold` and park the item.
+Only a new owner order adds a row or reopens a hold or denial. Save the exact words in a file. Use `log amend --words-file <file>` with `--add-item` or `--reopen`. Supply the spec with `--tasks` for a new merge row. Read the change back. For a question, answer and log `aware`. If an effect or authority becomes unclear, log `hold` and park the item.
 
 ## Wake and recovery
 
@@ -87,6 +89,6 @@ The owner's `/overnight continue <card file>` resumes an existing run. Use its o
 
 Start no new work at stop. Record the state of each open item. Stop the helpers that you started and get their handoffs. Apply the [night rule](#night-rule) to timer cleanup.
 
-Follow the [morning report](references/morning-report.md) for the audit, page checks and close. Freeze the report, record the three page checks and close the night. The owner keeps release, deletion and decisions on capped PRs. Record a pasted answer with `log answer --words-file` and check the morning state before the owner acts.
+Follow the [morning report](references/morning-report.md) for the audit, page checks and close. Freeze the report, record the three page checks and close the night. The owner keeps release, deletion and decisions on capped PRs that need the owner. Record a pasted answer with `log answer --words-file` and check the morning state before the owner acts.
 
 The tool checks the recorded workflow and the GitHub reads it can obtain. Actor authentication, writer denial in Claude, credential denial and atomic head pinning require separate evidence. A P1 or P2 absent from every source stays undetectable.

@@ -15,9 +15,11 @@ sys.dont_write_bytecode = True  # no __pycache__ in the skill folder
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # `-I` drops the script folder
 try:
     from night_format import (
-        CARD, CLOSE_REASONS, DEFAULT_HEARTBEAT_MIN, DEFAULT_REVIEW_CAP, FULL_SHA, FIELDS, FORMAT, GOALS, LOG_KINDS, OUTCOMES, PAGE_CHECKS,
+        CARD, CLOSE_REASONS, DEFAULT_HEARTBEAT_MIN, DEFAULT_REVIEW_CAP, DEFAULT_MERGE_MAIN_BONUS, FULL_SHA, FIELDS, FORMAT, GOALS, LOG_KINDS, OUTCOMES, PAGE_CHECKS,
         PAGE_OUTCOMES, REHEARSALS, REPORT, Refused, event_id, iso, line_for, parse_row, parse_stop, parsed_target, entry_time, canonical_target, input_record)
-    from night_rules import counts_with, rows_problems, check_grant, pending_attempt, read_rounds, required_checks, check_statuses, prepared_round, review_key
+    from night_rules import counts_with, rows_problems, check_grant, pending_attempt
+    from night_review import required_checks, check_statuses, check_main_statuses
+    from night_chief import command as chief_command
     from night_report import audit_pr, search_candidates, fenced, gap_text, gaps, needs_you, render, status_data
     from night_files import (
         Lock, SharedLock, append, clock, cut_files, journal_bytes, max_gap_env, need_night, parse_card, parse_lines,
@@ -80,12 +82,14 @@ def cmd_go(args):
         rows = parse_card(args.dir)
         return {"stop": iso(parse_stop(args.stop, now)), "heartbeat_min": args.heartbeat_min, "gap_min": gap,
                 "max_gap_min": limit, "goal": args.goal, "rehearsal": args.rehearsal, "items": rows, "run": night.run,
-                "review_cap": args.review_cap, "chief": args.chief, "allow_empty_checks": args.allow_empty_checks,
+                "review_cap": args.review_cap, "merge_main_bonus": args.merge_main_bonus, "consultants": args.consultants,
+                "tasks": input_record(read_words(args.tasks)) if args.tasks else {},
+                "chief": args.chief, "allow_empty_checks": args.allow_empty_checks,
                 "review_policy": input_record(read_words(args.review_policy)) if args.review_policy else None}
     entry = write_entry(args.dir, "go", fields)
     print(f"E{entry['id']} GO stop {entry['stop']} heartbeat {args.heartbeat_min} min gap alarm {gap} min "
           f"goal {args.goal} rehearsal {args.rehearsal}")
-    print(f"Items from the card (read them back to the owner). Review cap: {entry['review_cap']}")
+    print(f"Items from the card (read them back to the owner). Review cap: {entry['review_cap']}. Merge of main bonus: {entry['merge_main_bonus']}")
     for row in entry["items"]:
         print("  " + " | ".join(row))
 
@@ -125,6 +129,8 @@ def log_fields(args):
         fields["reopen"] = args.reopen.strip()
     if args.add_item is not None:
         fields["add_item"] = parse_row(args.add_item)
+    if args.tasks is not None:
+        fields["tasks"] = input_record(read_words(args.tasks))
     return fields
 
 
@@ -200,7 +206,6 @@ def cmd_status(args):
     with Lock(args.dir):
         night, now = view_locked(args.dir)
         merges = merge_snapshot(args.dir, night)
-        read_rounds(night, merges)
     if args.report is not None:
         wanted = event_id(args.report)
         report = next((e for e in night.reports if e["id"] == wanted), None)
@@ -222,35 +227,25 @@ def cmd_status(args):
 
 def cmd_typed(args):
     fields = input_record(read_words(args.data))
-    kind = {"grant": "merge-permission"}.get(args.command_name, args.command_name)
-    allowed = set(FIELDS[kind]) - ({"run"} if kind in ("assign", "timer") else set())
-    if fields.keys() - allowed:
+    kind = args.command_name
+    if fields.keys() - (set(FIELDS[kind]) - {"run"}):
         raise Refused("MERGE_EVIDENCE_INVALID", "unknown fields")
-    if kind != "timer":
+    if kind == "assign":
         fields["target"] = canonical_target(fields.get("target"))
-    lock = SharedLock if kind == "review" else Lock
-    with lock(args.dir):
+    with Lock(args.dir):
         night = bound_night(args.dir)
         now, fake = clock()
-        if kind in ("assign", "timer"):
-            fields["run"] = night.run
+        fields["run"] = night.run
         if kind == "assign" and isinstance(worktree := fields.get("worktree"), str):
             if (not os.path.isabs(worktree) or os.path.realpath(worktree) != worktree
                     or os.path.commonpath((worktree, os.path.abspath(args.dir))) in (worktree, os.path.abspath(args.dir))):
                 raise Refused("MERGE_JOURNAL_PATH", worktree)
-        target = fields.get("target")
-        records = leader_events(args.dir, night, target) if target in night.assignments else []
-        read_rounds(night, records)
-        if kind == "merge-permission" and pending_attempt(records):
-            raise Refused("MERGE_PENDING")
-        if kind == "review":
-            event_kind = prepared_round(night, fields, now, fake)
-            previous = next((e for e in records if e["kind"] == "review" and review_key(e) == review_key(fields)), None)
-            entry = previous or leader_append(args.dir, night, target, records, event_kind, now,
-                                               {**fields, "assignment": night.assignments[target]["id"]})
-        else:
-            entry = add_entry(args.dir, night, kind, fields, now, fake)
+        entry = add_entry(args.dir, night, kind, fields, now, fake)
     print(f"E{entry['id']} {entry['kind']}")
+
+
+def cmd_chief(args):
+    return chief_command(args, github, page_rows, check_policy)
 
 
 GH_TIMEOUT_S = 20
@@ -294,7 +289,7 @@ def page_rows(host, endpoint, code, key=None):
     return result
 
 
-def check_policy(host, repo, base, head, empty):
+def check_policy(host, repo, base, head, empty, check_main=False):
     unknown = "MERGE_CI_UNKNOWN"
     branch = f"repos/{repo}/branches/{quote(base, safe='')}"
     info = github(host, branch, unknown)
@@ -303,13 +298,16 @@ def check_policy(host, repo, base, head, empty):
     rules = page_rows(host, f"repos/{repo}/rules/branches/{quote(base, safe='')}?per_page=100", unknown)
     classic = github(host, f"{branch}/protection", unknown) if info["protected"] else None
     required = required_checks(rules, classic, info["protected"])
-    if not required:
-        if not empty:
-            raise Refused(unknown, "empty required set needs card permission")
+    if not required and not empty:
+        raise Refused(unknown, "empty required set needs card permission")
+    if not required and not check_main:
         return
-    checks = page_rows(host, f"repos/{repo}/commits/{head}/check-runs?per_page=100&filter=all", unknown, "check_runs")
+    scope = "latest" if check_main and not required else "all"
+    checks = page_rows(host, f"repos/{repo}/commits/{head}/check-runs?per_page=100&filter={scope}", unknown, "check_runs")
     statuses = page_rows(host, f"repos/{repo}/commits/{head}/statuses?per_page=100", unknown)
     check_statuses(required, checks, statuses, head)
+    if check_main:
+        check_main_statuses(checks, statuses, head)
 
 
 def before_merge(night, grant):
@@ -321,7 +319,7 @@ def before_merge(night, grant):
     observed = pr["head"].get("sha")
     if not isinstance(observed, str) or not FULL_SHA.fullmatch(observed):
         raise Refused("MERGE_READ_FAILED", "PR head")
-    if observed != grant["head"]:
+    if observed != grant["head"] or ("review_base" in grant and pr["base"].get("sha") != grant["review_base"]):
         raise Refused("MERGE_HEAD_CHANGED")
     if (pr["base"].get("ref") != grant["base"] or pr.get("number") != number or pr.get("state") != "open"
             or pr.get("draft") is not False or pr.get("merged") is not False or pr.get("mergeable") is not True
@@ -347,7 +345,6 @@ def get_grant(folder, args, target, entry_id):
     night = bound_night(folder)
     now, fake = clock()
     records = leader_events(folder, night, target) if target in night.assignments else []
-    read_rounds(night, records)
     grant = check_grant(night, args, target, entry_id, now, fake)
     if any(e["kind"] == "merge-attempt" and e["grant"] == entry_id for e in records):
         raise Refused("MERGE_PERMISSION_USED")
@@ -518,10 +515,13 @@ def parser():
     go.add_argument("--heartbeat-min", type=int, default=DEFAULT_HEARTBEAT_MIN)
     go.add_argument("--gap-min", type=int, help="the gap alarm (default 2 times the heartbeat)")
     go.add_argument("--review-cap", type=int, default=DEFAULT_REVIEW_CAP)
+    go.add_argument("--merge-main-bonus", type=int, default=DEFAULT_MERGE_MAIN_BONUS)
+    go.add_argument("--tasks", help="JSON task classes, acceptance criteria and owned files")
+    go.add_argument("--consultants", action="store_true", help="the overnight prompt allows consultants")
     go.add_argument("--chief", default="")
     go.add_argument("--review-policy", help="JSON file with the approved reviewer pair and resolved roles")
     go.add_argument("--allow-empty-checks", action="store_true")
-    for name in ("assign", "grant", "review", "timer"):
+    for name in ("assign", "plan", "review-start", "review", "ruling", "advice", "grant", "confirm", "withdraw", "timer"):
         add(name, f"record a {name} entry").add_argument("--data", required=True, help="UTF-8 JSON fields")
     merge = add("merge", "use one chief permission for a direct pinned merge")
     for name in ("run", "target", "head", "leader", "grant"):
@@ -540,6 +540,7 @@ def parser():
     log.add_argument("--check", action="store_true", help="decision: the owner should check it")
     log.add_argument("--resolves", help="decision: the id of the wait row that it ends")
     log.add_argument("--reopen", help="amend: the denied or held item that the owner opens again")
+    log.add_argument("--tasks", help="amend: JSON spec for a new merge target")
     log.add_argument("--add-item", help='amend: "<name> | owner" or "<name> | night"')
     log.add_argument("--name", help="pagecheck: " + ", ".join(PAGE_CHECKS))
     log.add_argument("--report", help="pagecheck: the report entry that the page shows (E12)")
@@ -558,8 +559,9 @@ def parser():
 
 
 HANDLERS = {"new": cmd_new, "items": cmd_items, "go": cmd_go, "log": cmd_log, "status": cmd_status,
-            "check": cmd_check, "report": cmd_report, "render": cmd_render, "close": cmd_close, "repair": cmd_repair, "assign": cmd_typed, "grant": cmd_typed,
-            "review": cmd_typed, "timer": cmd_typed, "merge": cmd_merge, "audit": cmd_audit}
+            "check": cmd_check, "report": cmd_report, "render": cmd_render, "close": cmd_close, "repair": cmd_repair, "assign": cmd_typed,
+            "timer": cmd_typed, "merge": cmd_merge, "audit": cmd_audit,
+            **dict.fromkeys(("plan", "review-start", "review", "ruling", "advice", "grant", "confirm", "withdraw"), cmd_chief)}
 
 
 def main(argv=None):

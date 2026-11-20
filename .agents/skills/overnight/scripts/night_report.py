@@ -3,7 +3,8 @@
 import re
 
 from night_format import Refused, FULL_SHA, CODES, DEFAULT_MAX_GAP_MIN, entry_time, iso, minutes
-from night_rules import fold, read_rounds
+from night_rules import fold
+from night_review import accepted_findings
 
 
 def alarm(go):
@@ -56,7 +57,14 @@ def needs_you(night):
     for target, entry in night.capped.items():
         spec = entry["spec"]
         findings = "\n".join(f"{f['severity']} {f['text']}" for f in spec["findings"])
-        rows.append((target, "review cap", spec["done"], f"{findings} | Next: {spec['next']}", f"leader entry E{entry['id']}"))
+        rows.append((target, "review cap", spec["done"], f"{findings} | Next: {spec['next']}", f"chief entry E{entry['id']}"))
+    if night.go:
+        for target, task in night.task_specs.items():
+            if task["class"] == "owner":
+                rows.append((target, "owner task under project rules", "", ", ".join(task["criteria"]), f"E{night.go['id']}"))
+    if night.pending_grant is not None:
+        grant = night.grants[night.pending_grant]
+        rows.append((grant["target"], "grant waits for confirmation", "", grant["head"], f"E{grant['id']}"))
     for name, (kind, source) in night.items.items():
         if kind == "owner" and name not in night.denied and name not in night.held:
             rows.append((name, "owner action from the card", "", "", f"E{source}"))
@@ -132,13 +140,11 @@ def render(entries):
     typed_targets = [(name, target, *night.merge_rows[target][3:]) for name, target in targets.items()]
     records = report.get("merges", [])
     merges = merge_rows(records)
-    read_rounds(night, records)
     audit = next((e for e in reversed(night.entries) if e["kind"] == "audit"), None)
-    p3 = [(e["target"], p3, f"grant E{e['id']}", ", ".join(e["evidence"]["reports"]))
-          for e in night.grants.values() for p3 in e["evidence"]["p3"]]
-    p3.extend((entry["target"], finding, f"leader entry E{entry['id']}", report["source"])
-              for entry in records if entry["kind"] in ("review", "cap")
-              for report in entry["reports"] for finding in report["p3"])
+    p3 = [(entry["target"], finding, f"chief entry E{entry['id']}", ", ".join(r["source"] for r in entry["reports"]))
+          for entry in night.reviews.values() for finding in accepted_findings(night, entry)["p3"]]
+    advice = [(e["target"], e["advisor"], ", ".join(e["consultants"]) or "not authorized", f"E{e['id']}")
+              for e in night.entries if e["kind"] == "advice"]
     errors = [(e["t"], e.get("text"), f"E{e['id']}") for e in night.entries if e["kind"] == "error"]
     messages = [(e["t"], e.get("words"), e.get("reopen") or "", " | ".join(e.get("add_item", [])), f"E{e['id']}")
                 for e in night.entries if e["kind"] in ("amend", "answer")]
@@ -173,6 +179,7 @@ def render(entries):
         "## Merge attempts\n", table(merges, ["PR", "State", "Reviewed head", "Merge commit", "Detail", "Time", "Source"]),
         "## Merge audit\n", table(audit["rows"] if audit else [], ["PR or repository", "State", "Time or interval", "Evidence"]),
         "## P3 findings\n", table(p3, ["PR", "Finding", "Entry", "Reports"]),
+        "## P3 advice\n", table(advice, ["PR", "Advisor", "Consultants", "Entry"]),
         "## My errors\n", table(errors, ["Time", "Error and correction", "Entry"]),
         "## Done and not reversible\n", table(outcome_rows("done"), ["Item", "Command", "Time", "Evidence", "Entry"]),
         "## Failed\n", table(outcome_rows("failed"), ["Item", "Command", "Time", "What happened", "Entry"]),
@@ -206,6 +213,9 @@ def status_data(night, now):
         "closed": f"E{night.close['id']} NIGHT CLOSED {night.run} reason {night.close['reason']}" if night.close else None,
         "stop": night.go["stop"] if night.go else None, "items": items,
         "review_cap": night.go["review_cap"] if night.go else None,
+        "merge_main_bonus": night.go.get("merge_main_bonus") if night.go else None,
+        "review_rounds": {target: len(pairs) for target, pairs in night.review_pairs.items()},
+        "pending_grant": night.pending_grant,
         "capped": night.capped,
         "timers": [e["timer"] for e in night.entries if e["kind"] == "timer"],
         "audit": next((e for e in reversed(night.entries) if e["kind"] == "audit"), None),

@@ -74,6 +74,62 @@ class RecoveryTests(unittest.TestCase):
         self.assertIn("[REPAIR_PENDING]", out)
         self.assertEqual([path.read_bytes() for path in (journal, side)], originals)
 
+    def test_check_snapshot_orders_with_repair(self):
+        for check_first in (True, False):
+            with self.subTest(check_first=check_first):
+                folder = self.fixture()
+                journal = folder / "journal.jsonl"
+                with journal.open("ab") as f:
+                    f.write(b"lost tail")
+                module = night_module()
+                files = sys.modules["night_files"]
+                paused, release, waiting = threading.Event(), threading.Event(), threading.Event()
+                real_view, real_truncate = files.view_locked, os.truncate
+                args = SimpleNamespace(dir=str(folder), now=False)
+
+                def barrier():
+                    paused.set()
+                    self.assertTrue(release.wait(10))
+
+                def read_before_repair(path):
+                    if check_first:
+                        barrier()
+                    return real_view(path)
+
+                def truncate_before_check(path, size):
+                    if not check_first:
+                        barrier()
+                    return real_truncate(path, size)
+
+                def check():
+                    try:
+                        return module.cmd_check(args)
+                    except module.Refused as error:
+                        return error.code
+
+                def repair():
+                    return files.repair(str(folder))["kind"]
+
+                def second(action):
+                    waiting.set()
+                    return action()
+
+                with patch.dict(os.environ, {"NIGHT_TEST_MODE": "1", "NIGHT_FAKE_NOW": at("22:10")}), patch.dict(
+                        module.cmd_check.__globals__, {"view_locked": read_before_repair}), patch("os.truncate", truncate_before_check), (
+                        ThreadPoolExecutor(max_workers=2)) as pool:
+                    first = pool.submit(check if check_first else repair)
+                    self.assertTrue(paused.wait(10))
+                    other = pool.submit(second, repair if check_first else check)
+                    try:
+                        self.assertTrue(waiting.wait(10))
+                        with self.assertRaises(TimeoutError):
+                            other.result(timeout=0.15)
+                    finally:
+                        release.set()
+                    self.assertEqual((first.result(timeout=10), other.result(timeout=10)),
+                                     ("TORN_LINE", "repair") if check_first else ("repair", 0))
+                self.assertEqual(self.events(journal, "repair")[0]["bytes"], len(b"lost tail"))
+
     def test_check_snapshot_orders_with_report_and_render(self):
         for first in ("check", "report", "render"):
             with self.subTest(first=first):

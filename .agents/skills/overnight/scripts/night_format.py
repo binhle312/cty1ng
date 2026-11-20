@@ -17,11 +17,13 @@ REPORT = "report.md"
 LOCK = "journal.lock"
 
 
-FORMAT = 2
+FORMAT = 3
 
 DEFAULT_REVIEW_CAP = 5
+DEFAULT_MERGE_MAIN_BONUS = 3
 MERGE_METHODS = ("merge", "squash", "rebase")
-MERGE_KINDS = ("assign", "merge-permission", "review", "cap", "merge-invalidate", "audit", "timer")
+MERGE_KINDS = ("assign", "merge-permission", "review", "cap", "merge-invalidate", "audit", "timer",
+               "plan", "review-start", "ruling", "advice", "confirm", "withdraw")
 
 
 DEFAULT_HEARTBEAT_MIN = 30
@@ -95,6 +97,16 @@ FENCE = re.compile(r"^(`{3,}|~{3,})(.*)$")
 
 # code: (class, message). "final" = do not retry; "fix" = correct the input and run again.
 CODES = {
+    "REVIEW_OWNER_TASK": ("fix", "the task needs the owner under the project rules"),
+    "REVIEW_PLAN_REQUIRED": ("fix", "the chief must check the plan and test strategy first"),
+    "REVIEW_START_REQUIRED": ("fix", "the chief must start this review of the pushed head"),
+    "REVIEW_CHECKOUT": ("fix", "use a clean detached checkout of the pushed head"),
+    "REVIEW_REPORT": ("fix", "the original report or its verdict does not match the review"),
+    "REVIEW_SCOPE": ("fix", "the live PR diff is incomplete or includes a file outside the owned paths"),
+    "REVIEW_FINDINGS_OPEN": ("fix", "fix the open findings and ask for a new round"),
+    "REVIEW_ADVICE_REQUIRED": ("fix", "record the required advisor and consultant answers"),
+    "REVIEW_REPLACEMENT": ("fix", "record the old assignment and the release of its writer"),
+    "MERGE_NOT_CONFIRMED": ("fix", "GitHub has not confirmed the grant's merge on main"),
     # Before an entry exists (PRE_EVENT_CODES).
     "NO_NIGHT": ("fix", "no night in this folder: run `new` first"),
     "FORMAT_UNSUPPORTED": ("final", "use the writer revision of this journal or start a new format 2 night"),
@@ -360,10 +372,23 @@ def grant_evidence(value):
             and bool(value["ledger"]))
 
 
+def tasks(value):
+    return isinstance(value, dict) and all(
+        parsed_target(target) and target_key(target) == target and isinstance(task, dict)
+        and set(task) == {"class", "criteria", "owned"} and task["class"] in ("night", "owner")
+        and all(text_list(task[key]) and task[key] and all(text.strip() for text in task[key])
+                for key in ("criteria", "owned"))
+        and len(set(task["owned"])) == len(task["owned"])
+        and all(not path.startswith("/") and all(part not in ("", ".", "..") for part in path.split("/"))
+                for path in task["owned"])
+        for target, task in value.items())
+
+
 TYPES = {
     "str": is_text,
     "run": lambda value: is_text(value) and RUN_ID.fullmatch(value),
     "pair": pair,
+    "tasks": tasks,
     "policy": review_policy,
     "reports": report_pair,
     "spec": cap_spec,
@@ -384,13 +409,26 @@ FIELDS = {
     "new": {"run": "run", "chief_path": "str", "words": "str", "test": "bool", "format": (FORMAT,)},
     "go": {"stop": "time", "heartbeat_min": "int", "gap_min": "int", "max_gap_min": "int", "goal": GOALS,
            "rehearsal": REHEARSALS, "items": "rows", "run": "run", "review_cap": "int", "chief": "str",
-           "review_policy": "policy", "allow_empty_checks": "bool"},
+           "review_policy": "policy", "allow_empty_checks": "bool", "tasks": "tasks",
+           "merge_main_bonus": "int", "consultants": "bool"},
     "assign": {"chief": "str", "target": "str", "leader": "str", "reviewers": "pair", "helpers": "texts",
-               "worktree": "str", "run": "run"},
+               "worktree": "str", "run": "run", "replaces": "int", "released": "str"},
     "merge-permission": {"chief": "str", "run": "run", "target": "str", "head": "str", "leader": "str", "base": "str",
-                         "method": MERGE_METHODS, "assignment": "int", "reviewers": "pair", "evidence": "evidence"},
-    "review": {"target": "str", "leader": "str", "reports": "reports", "spec": "spec"},
-    "cap": {"target": "str", "leader": "str", "reports": "reports", "spec": "spec"},
+                         "method": MERGE_METHODS, "assignment": "int", "reviewers": "pair", "evidence": "evidence",
+                         "review": "int", "review_base": "str", "files": "texts"},
+    "plan": {"chief": "str", "target": "str", "assignment": "int", "plan": "str", "strategy": "str"},
+    "review-start": {"chief": "str", "target": "str", "assignment": "int", "head": "str", "leader": "str",
+                     "checkout": "str", "brief": "str", "base_sha": "str", "merge_base": "str",
+                     "main_merges": "texts", "bonus_merges": "texts", "files": "texts",
+                     "intersections": "texts", "cap": "int", "plan_check": "int"},
+    "review": {"target": "str", "leader": "str", "reports": "reports", "spec": "spec",
+               "chief": "str", "start": "int", "assignment": "int", "digests": "texts", "ledger": "texts"},
+    "ruling": {"chief": "str", "target": "str", "assignment": "int", "start": "int", "review": "int",
+               "source": "str", "finding": "str", "severity": ("p1", "p2", "p3", "drop"), "reason": "str"},
+    "advice": {"chief": "str", "target": "str", "assignment": "int", "start": "int", "review": "int",
+               "advisor": ("allow", "hold"), "consultants": "texts"},
+    "confirm": {"chief": "str", "target": "str", "grant": "int", "head": "str", "main": "str", "sha": "str"},
+    "withdraw": {"chief": "str", "target": "str", "grant": "int", "reason": "str"},
     "merge-invalidate": {"target": "str", "grant": "int"},
     "audit": {"rows": "audit"},
     "timer": {"timer": "str", "run": "run"},
@@ -404,7 +442,7 @@ FIELDS = {
     "reserve": {"text": "str", "item": "str"},
     "aware": {"text": "str", "item": "str"},
     "error": {"text": "str", "item": "str"},
-    "amend": {"words": "str", "reopen": "str", "add_item": "row"},
+    "amend": {"words": "str", "reopen": "str", "add_item": "row", "tasks": "tasks"},
     "answer": {"words": "str"},
     "pagecheck": {"name": PAGE_CHECKS, "outcome": PAGE_OUTCOMES, "report": "int", "text": "str"},
     "report": {"counts": "counts", "merges": "list"},
@@ -413,10 +451,14 @@ FIELDS = {
 }
 
 
+FIELDS["cap"] = FIELDS["review"]
+
 REQUIRED = {
     "new": ("run", "format", "chief_path"), "go": tuple(k for k in FIELDS["go"] if k != "review_policy"),
-    **{kind: tuple(FIELDS[kind]) for kind in MERGE_KINDS if kind != "review"},
-    "review": ("target", "leader", "reports"), "intent": ("item",), "result": ("of", "outcome"), "denied": ("item",),
+    **{kind: tuple(FIELDS[kind]) for kind in MERGE_KINDS if kind not in ("review", "cap", "assign", "merge-permission")},
+    "assign": tuple(k for k in FIELDS["assign"] if k not in ("replaces", "released")),
+    "merge-permission": tuple(FIELDS["merge-permission"]),
+    "review": tuple(k for k in FIELDS["review"] if k != "spec"), "cap": tuple(FIELDS["cap"]), "intent": ("item",), "result": ("of", "outcome"), "denied": ("item",),
     "hold": ("item",), "wait": ("item",), "pagecheck": ("name", "outcome", "report"), "report": ("counts",),
     "close": ("reason",), "repair": ("cut_file", "bytes"),
 }

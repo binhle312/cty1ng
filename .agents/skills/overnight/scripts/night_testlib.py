@@ -30,7 +30,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 NIGHT = os.environ.get("NIGHT_PY", os.path.join(HERE, "night.py"))
 # night.py and the modules that it imports; a test copy of night.py needs all of them in its folder.
-NIGHT_MODULES = ("night_format", "night_rules", "night_report", "night_files")
+NIGHT_MODULES = ("night_format", "night_rules", "night_report", "night_files",
+                 "night_review", "night_review_io", "night_chief")
 
 
 RUN = "37b41e3f-dd1e-488b-9b63-14c7d793fdf8"
@@ -179,14 +180,15 @@ def night_module():
 # Broken journals for `check`. Each one breaks one rule; `check` must name its code.
 GO = {"kind": "go", "stop": "2026-01-11T06:00:00+00:00", "heartbeat_min": 30, "gap_min": 60, "max_gap_min": 60,
       "goal": "set", "rehearsal": "passed", "items": [list(row) for row in ITEMS], "review_cap": 5, "run": RUN,
-      "chief": "", "allow_empty_checks": False}
+      "chief": "", "allow_empty_checks": False,
+      "tasks": {}, "merge_main_bonus": 3, "consultants": False}
 
 
 INTENT = {"kind": "intent", "command": ordinary_write("PR 1")}
 
 
 def journal(*rows, test=True):
-    first = {"id": 1, "t": at("22:00"), "kind": "new", "run": RUN, "words": "w", "format": 2, "chief_path": "/fixture"}
+    first = {"id": 1, "t": at("22:00"), "kind": "new", "run": RUN, "words": "w", "format": 3, "chief_path": "/fixture"}
     if test:
         first["test"] = True
     events = [first]

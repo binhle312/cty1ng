@@ -10,16 +10,22 @@ sys.dont_write_bytecode = True
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from mutant_verdict import green, run_suite, verdict
-from option_b_breaks import BREAKS
+from option_b_breaks import BREAKS as OPTION_B_BREAKS
+from brief8_breaks import BREAKS as BRIEF8_BREAKS
 
-SKILL_TESTS = HERE.parent.parent / ".agents" / "skills" / "overnight" / "scripts"
-MODULES = ("night.py", "night_files.py", "night_format.py", "night_report.py", "night_rules.py")
+BREAKS = OPTION_B_BREAKS + BRIEF8_BREAKS
+
+REPO = HERE.parent.parent
+SKILL_TESTS = Path(os.environ.get("NIGHT_TEST_DIR", REPO / ".agents" / "skills" / "overnight" / "scripts"))
+MODULES = ("night.py", "night_files.py", "night_format.py", "night_report.py", "night_rules.py",
+           "night_chief.py", "night_review.py", "night_review_io.py")
 
 
 def prove(case):
     name, filename, old, new, test_name, assertion = case
     repo_source = Path(os.environ.get("NIGHT_PY", SKILL_TESTS / "night.py")).parent
-    source = (repo_source / filename).read_text()
+    doc = filename.startswith("docs/")
+    source = ((REPO if doc else repo_source) / filename).read_text()
     if source.count(old) != 1:
         return name, "BAD", f"source edit matched {source.count(old)} times"
     empty_env = {"PATH": os.environ["PATH"]}
@@ -31,7 +37,12 @@ def prove(case):
         for module in MODULES:
             text = source.replace(old, new, 1) if module == filename else (repo_source / module).read_text()
             (folder / module).write_text(text)
-        result = run_suite(SKILL_TESTS, {**empty_env, "NIGHT_PY": str(folder / "night.py")}, test_name)
+        broken_env = {**empty_env, "NIGHT_PY": str(folder / "night.py")}
+        if doc:
+            path = folder / "merge-bar.md"
+            path.write_text(source.replace(old, new, 1))
+            broken_env["OVERNIGHT_MERGE_BAR"] = str(path)
+        result = run_suite(SKILL_TESTS, broken_env, test_name)
     state, evidence = verdict(baseline, result, test_name, assertion)
     return name, state, f"{evidence} | observed: {result.get('failures', [])}"
 

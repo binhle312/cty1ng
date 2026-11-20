@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 
 from night_format import (
     CARD, FORMAT, DEFAULT_LOCK_STALE_S, DEFAULT_LOCK_WAIT_S, DEFAULT_MAX_GAP_MIN, FENCE, JOURNAL, LOCK, REPORT, Refused,
-    parse_row, schema_problem, iso, entry_time, FULL_SHA, report_pair, cap_spec, entry_bytes)
+    parse_row, schema_problem, iso, entry_time, FULL_SHA, entry_bytes)
 from night_rules import apply, fold, judge
 from night_report import gap_text, gaps, render, stop_passed
 
@@ -438,7 +438,7 @@ def leader_events(chief, night, target):
         raise Refused("MERGE_JOURNAL_PATH", folder) from None
     if content and not content.endswith(b"\n"):
         raise Refused("TORN_LINE", folder)
-    entries, attempts, results, pairs, capped = [], {}, set(), set(), False
+    entries, attempts, results = [], {}, set()
     for number, raw in enumerate(content.split(b"\n")[:-1], 1):
         entry = json_record(raw, number)
         kind = entry.get("kind")
@@ -452,20 +452,6 @@ def leader_events(chief, night, target):
                     any(entry.get(k) != grant[k] for k in ("target", "head", "base", "method", "leader"))):
                 raise Refused("JOURNAL_FAULTS", f"{folder} attempt {number}")
             attempts[number] = grant_id
-        elif kind in ("review", "cap"):
-            reports = entry.get("reports")
-            assignment_id = entry.get("assignment")
-            assignment = next((e for e in night.entries if e["id"] == assignment_id and e["kind"] == "assign"), None)
-            if (capped or not assignment or assignment["target"] != target or assignment["leader"] != entry.get("leader")
-                    or not report_pair(reports) or [r["who"] for r in reports] != assignment["reviewers"]
-                    or len({r["head"] for r in reports}) != 1 or len({r["source"] for r in reports}) != 2):
-                raise Refused("JOURNAL_FAULTS", f"{folder} review {number}")
-            key = tuple((r["head"], r["source"]) for r in reports)
-            should_cap = (len(pairs) + 1 >= night.go["review_cap"] and any(r["p1"] or r["p2"] for r in reports))
-            if key in pairs or (kind == "cap") != should_cap or (should_cap and not cap_spec(entry.get("spec"))):
-                raise Refused("JOURNAL_FAULTS", f"{folder} review cap {number}")
-            pairs.add(key)
-            capped = should_cap
         elif kind == "merge-invalidate":
             grant_id = entry.get("grant")
             if type(grant_id) is not int or night.grants.get(grant_id, {}).get("target") != target:

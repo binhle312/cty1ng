@@ -4,6 +4,8 @@ from night_format import (
     DEFAULT_MAX_GAP_MIN, FINAL_OUTCOMES, ITEM_EVENTS, ITEM_KINDS, KEEPS_REPORT_FRESH, PAGE_CHECKS,
     PHASE_KINDS, REHEARSALS_FOR_ACTION, Refused, FULL_SHA, LABEL, iso, schema_problem, MERGE_METHODS, entry_time, parsed_target, target_key, valid_base)
 
+from night_review import CHIEF_EVENTS, accepted_findings, grant_findings, owned_scope, review_problem, task_for
+
 
 def name_key(name):
     return " ".join(name.split()).casefold()
@@ -18,6 +20,13 @@ class Night:
         self.test = False
         self.merge_rows = {}    # target -> typed card row
         self.assignments = {}
+        self.task_specs = {}
+        self.plans = {}
+        self.review_starts = {}
+        self.reviews = {}
+        self.rulings = {}
+        self.advice = {}
+        self.pending_grant = None
         self.grants = {}
         self.granted = set()
         self.active_grants = {}
@@ -67,6 +76,7 @@ def apply(night, entry):
     elif kind == "go" and night.go is None:
         night.go = entry
         night.phase = "running" if night.phase == "prepared" else night.phase
+        night.task_specs.update(entry["tasks"])
         for row in entry["items"]:
             night.add_item(row, entry["id"])
     elif kind == "intent":
@@ -93,16 +103,41 @@ def apply(night, entry):
         if "add_item" in entry:
             row = entry["add_item"]
             night.add_item(row, entry["id"])
+            night.task_specs.update(entry.get("tasks", {}))
     elif kind == "assign":
         night.assignments[entry["target"]] = entry
         night.active_grants.pop(entry["target"], None)
+    elif kind == "plan":
+        night.plans[entry["target"]] = entry
+    elif kind == "review-start":
+        night.review_starts[entry["target"]] = entry
+    elif kind == "ruling":
+        night.rulings[(entry["review"], entry["source"], entry["finding"])] = entry["severity"]
+        review = night.reviews[entry["target"]]
+        start = night.review_starts[entry["target"]]
+        findings = accepted_findings(night, review)
+        if len(night.review_pairs[entry["target"]]) >= start["cap"]:
+            if findings["p1"] or findings["p2"]:
+                spec = dict(done=f"Reviewed {start['head']}", next="The owner decides the next work",
+                            findings=[dict(severity=level.upper(), text=text)
+                                      for level, texts in findings.items() for text in texts])
+                night.capped[entry["target"]] = dict(review, spec=spec)
+            else:
+                night.capped.pop(entry["target"], None)
+    elif kind == "advice":
+        night.advice[entry["review"]] = entry
+    elif kind in ("confirm", "withdraw"):
+        night.pending_grant = None
+        night.active_grants.pop(entry["target"], None)
     elif kind == "merge-permission":
+        night.pending_grant = entry["id"]
         night.granted.add((entry["target"], entry["head"]))
         night.grants[entry["id"]] = entry
         night.active_grants[entry["target"]] = entry["id"]
     elif kind == "merge-invalidate":
         night.active_grants.pop(entry["target"], None)
     elif kind in ("review", "cap"):
+        night.reviews[entry["target"]] = entry
         night.review_pairs.setdefault(entry["target"], set()).add(review_key(entry))
         if kind == "cap":
             night.capped[entry["target"]] = entry
@@ -161,7 +196,7 @@ def rule_words(night, entry):
 
 def rule_action_allowed(night, entry):
     """For an intent, the final reasons come first: a retry cannot fix them."""
-    if entry["kind"] not in ("intent", "merge-permission") or night.go is None:
+    if entry["kind"] not in ("intent", "merge-permission", "review-start", "assign", "plan") or night.go is None:
         return []
     if entry_time(entry["t"]) >= entry_time(night.go["stop"]):
         return [("AFTER_STOP", f"the stop time {night.go['stop']} has passed")]
@@ -231,11 +266,13 @@ def rule_go(night, entry):
     found = rows_problems(entry["items"]) if entry["items"] else [("ITEMS_EMPTY", "")]
     if entry["run"] != night.run:
         found.append(("MERGE_PERMISSION_NIGHT", "go"))
-    if entry["review_cap"] <= 0:
+    if entry["review_cap"] <= 0 or entry.get("merge_main_bonus", 0) < 0:
         found.append(("REVIEW_CAP_FORM", ""))
     if any(row[1] == "merge" for row in entry["items"]) and (
             not LABEL.fullmatch(entry["chief"]) or "review_policy" not in entry):
         found.append(("MERGE_NOT_ALLOWED", "a merge row needs the chief and approved review policy"))
+    if set(entry["tasks"]) != {target_key(row[2]) for row in entry["items"] if row[1] == "merge"}:
+        found.append(("REVIEW_OWNER_TASK", "every merge target needs a task spec"))
     if entry_time(entry["stop"]) <= entry_time(entry["t"]):
         found.append(("GO_STOP_NOT_FUTURE", f"stop {entry['stop']}, now {entry['t']}"))
     if entry["heartbeat_min"] <= 0:
@@ -256,8 +293,12 @@ def rule_amend(night, entry):
     if "reopen" in entry and entry["reopen"] in night.items:
         if entry["reopen"] not in night.denied and entry["reopen"] not in night.held:
             found.append(("REOPEN_NOT_BLOCKED", repr(entry["reopen"])))
-    if "add_item" in entry:
-        found.extend(rows_problems([entry["add_item"]], night.items, "ITEM_ON_CARD", night.merge_rows))
+    row = entry.get("add_item")
+    if row:
+        found.extend(rows_problems([row], night.items, "ITEM_ON_CARD", night.merge_rows))
+    target = {target_key(row[2])} if row and row[1] == "merge" and not found else set()
+    if not found and set(entry.get("tasks", {})) != target:
+        found.append(("REVIEW_OWNER_TASK", "an amended merge target needs a task spec"))
     return found
 
 
@@ -356,7 +397,8 @@ def review_key(entry):
 
 def review_kind(night, entry):
     blocked = any(r["p1"] or r["p2"] for r in entry["reports"])
-    return "cap" if blocked and len(night.review_pairs.get(entry["target"], ())) + 1 >= night.go["review_cap"] else "review"
+    cap = night.review_starts[entry["target"]]["cap"]
+    return "cap" if blocked and len(night.review_pairs.get(entry["target"], ())) + 1 >= cap else "review"
 
 
 def tier_allowed(go, pair):
@@ -376,7 +418,7 @@ def merge_item(night, target, leader=None):
     row = night.merge_rows.get(target)
     if not row:
         return "MERGE_PR_NOT_ON_CARD"
-    if leader is not None and leader != row[5]:
+    if leader is not None and leader != night.assignments.get(target, {}).get("leader", row[5]):
         return "MERGE_LEADER_ONLY"
     name = row[0]
     if target in night.capped:
@@ -392,12 +434,14 @@ def rule_merge(night, entry):
     kind = entry["kind"]
     if kind == "timer":
         return [] if entry["run"] == night.run else [("MERGE_PERMISSION_NIGHT", "timer")]
+    if problem := review_problem(night, entry):
+        return [(problem, entry.get("target", ""))]
     if kind not in ("assign", "merge-permission", "review", "cap", "merge-invalidate") or night.go is None:
         return []
     target = entry["target"]
     if not parsed_target(target) or target_key(target) != target:
         return [("MERGE_TARGET_FORM", repr(target))]
-    problem = merge_item(night, target, entry.get("leader"))
+    problem = merge_item(night, target, None if kind == "assign" and target in night.assignments else entry.get("leader"))
     if problem:
         return [(problem, target)]
     if kind in ("assign", "merge-permission"):
@@ -406,6 +450,15 @@ def rule_merge(night, entry):
         if entry["chief"] != night.go["chief"]:
             return [("MERGE_CHIEF_ONLY", target)]
     if kind == "assign":
+        previous = night.assignments.get(target)
+        task = task_for(night, target)
+        if not task or task["class"] == "owner":
+            return [("REVIEW_OWNER_TASK", target)]
+        if previous and (entry["leader"] != previous["leader"] or "replaces" in entry) and (
+                entry.get("replaces") != previous["id"] or not entry.get("released", "").strip()):
+            return [("REVIEW_REPLACEMENT", target)]
+        if previous and night.pending_grant in night.grants and night.grants[night.pending_grant]["target"] == target:
+            return [("MERGE_PENDING", target)]
         if (not tier_allowed(night.go, entry["reviewers"]) or not entry["worktree"].startswith("/")
                 or entry["chief"] == entry["leader"]):
             return [("REVIEWER_NOT_ASSIGNED", target)]
@@ -417,6 +470,24 @@ def rule_merge(night, entry):
         return []
     assignment = night.assignments.get(target)
     if kind == "merge-permission":
+        task = task_for(night, target)
+        if not task or task["class"] == "owner":
+            return [("REVIEW_OWNER_TASK", target)]
+        if night.pending_grant is not None:
+            return [("MERGE_PENDING", target)]
+        review = night.reviews.get(target)
+        start = night.review_starts.get(target)
+        if (not review or not start or review["start"] != start["id"] or review["id"] != entry.get("review")
+                or start["head"] != entry["head"] or start["base_sha"] != entry.get("review_base")
+                or start["assignment"] != entry["assignment"] or start["plan_check"] != night.plans[target]["id"]):
+            return [("REVIEW_START_REQUIRED", target)]
+        if entry["files"] != start["files"] or not owned_scope(night, target, entry["files"]):
+            return [("REVIEW_SCOPE", target)]
+        try:
+            if grant_findings(night, review) != entry["evidence"]["p3"]:
+                return [("REVIEW_REPORT", target)]
+        except Refused as error:
+            return [(error.code, target)]
         if not FULL_SHA.fullmatch(entry["head"]):
             return [("HEAD_FORM", repr(entry["head"]))]
         if entry["base"] != night.merge_rows[target][3] or entry["method"] != night.merge_rows[target][4]:
@@ -458,7 +529,7 @@ def fold(entries):
         for code, detail in judge(night, entry):
             night.faults.append((entry["id"], code, detail))
         if not night.faults or night.faults[-1][0] != entry["id"] or entry["kind"] not in (
-                "assign", "merge-permission", "review", "cap", "merge-invalidate"):
+                "assign", "merge-permission", "merge-invalidate", *CHIEF_EVENTS):
             apply(night, entry)
         else:
             night.last = entry
@@ -502,74 +573,3 @@ def check_grant(night, args, target, entry_id, now, fake):
     if grant["head"] != args.head:
         raise Refused("MERGE_PERMISSION_HEAD")
     return grant
-
-
-def read_rounds(night, records):
-    for entry in records:
-        if entry["kind"] in ("review", "cap"):
-            night.review_pairs.setdefault(entry["target"], set()).add(review_key(entry))
-            if entry["kind"] == "cap":
-                night.capped[entry["target"]] = entry
-
-
-def required_checks(rules, classic, protected):
-    unknown = "MERGE_CI_UNKNOWN"
-    required = set()
-    for rule in rules:
-        if not isinstance(rule.get("type"), str):
-            raise Refused(unknown, "branch rules")
-        if rule["type"] == "merge_queue":
-            raise Refused("MERGE_PR_INELIGIBLE", "merge queue")
-        if rule["type"] == "required_status_checks":
-            try:
-                checks = rule["parameters"]["required_status_checks"]
-                required.update(check_requirement(check, "integration_id") for check in checks)
-            except (TypeError, KeyError, AttributeError, ValueError):
-                raise Refused(unknown, "branch rules") from None
-    if protected:
-        if not isinstance(classic, dict):
-            raise Refused(unknown, "classic branch protection")
-        checks = classic.get("required_status_checks")
-        if checks is not None:
-            try:
-                required.update(check_requirement(check, "app_id") for check in checks["checks"])
-                represented = {name for name, _ in required}
-                required.update(check_requirement({"context": name}, "app_id")
-                                for name in checks["contexts"] if name not in represented)
-            except (TypeError, KeyError, AttributeError, ValueError):
-                raise Refused(unknown, "classic checks") from None
-    return required
-
-
-def check_statuses(required, checks, statuses, head):
-    for name, source in required:
-        exact = [c for c in checks if c.get("name") == name and c.get("head_sha") == head
-                 and (source in (None, -1) or isinstance(c.get("app"), dict) and c["app"].get("id") == source)]
-        actual = [c.get("status") == "completed" and c.get("conclusion") == "success" for c in exact]
-        if source in (None, -1):
-            actual += [record.get("state") == "success" for record in statuses
-                       if record.get("context") == name and record.get("sha", head) == head]
-        if not actual or not all(actual):
-            raise Refused("MERGE_CI_NOT_GREEN", str(name))
-
-
-def check_requirement(check, key):
-    name, source = check["context"], check.get(key)
-    if not isinstance(name, str) or not name.strip() or (source is not None and type(source) is not int):
-        raise ValueError("invalid check requirement")
-    return name, source
-
-
-def prepared_round(night, fields, now, fake):
-    row = {"id": night.last["id"] + 1, "kind": "review", "t": iso(now), **fields}
-    if fake:
-        row["fake_clock"] = True
-    if schema_problem(row):
-        raise Refused("MERGE_EVIDENCE_INVALID", "review pair")
-    if night.faults:
-        raise Refused("JOURNAL_FAULTS")
-    if night.go and review_key(row) not in night.review_pairs.get(row["target"], ()):
-        row["kind"] = review_kind(night, row)
-    if found := judge(night, row):
-        raise Refused(*found[0], event=row)
-    return row["kind"]

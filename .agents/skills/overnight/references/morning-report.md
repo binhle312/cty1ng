@@ -12,7 +12,7 @@ Check the exact PR for every attempt sent before the cutoff with an unresolved r
 
 ## Page and close
 
-Build the owner page from the current report entry. Show verified merges, unmatched merges, unconfirmed attempts, gaps, P3s and owner actions with evidence links. Under **Needs you**, show each capped PR and its full spec. Give release and delete requests their exact target, observed state, evidence and what they block.
+Build the owner page from the current report entry. Show verified merges, unmatched merges, unconfirmed attempts, gaps, P3s and owner actions with evidence links. Under **Needs you**, show capped PRs with blocking findings, owner tasks and unresolved grants. Include the open P3 list and the advisor and consultant answers. Give release and delete requests their exact target, observed state, evidence and what they block.
 
 1. **Mechanics** Check that the page opens and each source link works.
 2. **Truth** Check each fact against the report entry and its evidence.

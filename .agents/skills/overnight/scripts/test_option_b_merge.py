@@ -1,116 +1,27 @@
 """Exercise the normal CLI with a synthetic GitHub subprocess."""
 import json
 import os
-from pathlib import Path
 import sys
 import threading
 from unittest.mock import patch
 import unittest
 
 sys.dont_write_bytecode = True
-sys.path.insert(0, str(Path(__file__).parent))
-import test_option_b as fixtures
-from night_testlib import NIGHT, SHA, SHA2, at, night_module
-
-TARGET, OTHER = fixtures.TARGET, fixtures.OTHER
-MERGE_SHA = "1" * 40
-
-FAKE_GH = r"""
-import json, os, sys, time
-from pathlib import Path
-folder = Path(os.environ["FAKE_GITHUB"])
-config = json.loads((folder / "config").read_text())
-argv = sys.argv[1:]
-method = argv[argv.index("--method") + 1]
-endpoint = argv[argv.index("--method") + 2]
-data = json.load(sys.stdin) if method == "PUT" else None
-with (folder / "calls").open("a") as log:
-    print(json.dumps([argv, data]), file=log)
-if method == "PUT":
-    remote_head = config.get("write_head", config.get("head", "$HEAD"))
-    if data.get("sha") != remote_head:
-        print("HTTP/2.0 409 Conflict\n\n" + json.dumps({"message": "Head changed"}))
-        sys.exit(1)
-    if config.get("reject"):
-        print("HTTP/2.0 405 Method Not Allowed\n\n" + json.dumps({"message": "Rejected"}))
-        sys.exit(1)
-    if config.get("bad_reply"):
-        print("invalid")
-    else:
-        print("HTTP/2.0 200 OK\n\n" + json.dumps({"merged": True, "sha": "$MERGE"}))
-    sys.exit(0)
-if endpoint.startswith("search/issues?"):
-    pages = config.get("audit")
-    if pages is None:
-        sys.exit(1)
-    print(json.dumps(pages))
-    sys.exit()
-number = endpoint.rsplit("/", 1)[-1]
-if "/pulls/" in endpoint:
-    if config.get("bad_read"):
-        sys.exit(1)
-    entered = folder / "entered"
-    if config.get("block_read"):
-        entered.touch()
-        until = time.monotonic() + 8
-        while not (folder / "release").exists() and time.monotonic() < until:
-            time.sleep(.01)
-    pr = {"number": int(number), "head": {"sha": config.get("head", "$HEAD")},
-          "base": {"ref": "main", "repo": {"full_name": "example/app"}},
-          "state": "open", "draft": config.get("draft", False), "merged": False,
-          "mergeable": True, "mergeable_state": "clean", "auto_merge": None}
-    pr.update(config.get("pulls", {}).get(number, {}))
-    output = pr
-elif endpoint == "repos/example/app":
-    output = {"allow_squash_merge": True, "delete_branch_on_merge": config.get("auto_delete", False)}
-elif "/actions/workflows" in endpoint:
-    output = [{"workflows": config.get("workflows", [])}]
-elif "/hooks" in endpoint:
-    output = [[]]
-elif "/rules/branches" in endpoint:
-    if config.get("unknown_policy"):
-        sys.exit(1)
-    output = [config.get("rules", [])]
-elif "/branches/main" in endpoint:
-    output = {"name": "main", "protected": False}
-elif "/check-runs" in endpoint:
-    output = [{"check_runs": config.get("checks", [])}]
-elif "/statuses" in endpoint:
-    output = [[]]
-else:
-    sys.exit(1)
-print(json.dumps(output))
-""".replace("$HEAD", SHA).replace("$MERGE", MERGE_SHA)
+from night_review_testlib import ReviewFixture, TARGET, OTHER, MERGE_SHA
+from night_testlib import SHA2, at, night_module
 
 
-class MergeTests(unittest.TestCase):
-    def setUp(self):
-        # Reuse the CLI fixture methods without inheriting its test cases.
-        fixtures.OptionBTests.setUp(self)
-        tool = self.root / "gh"
-        tool.write_text(f"#!{sys.executable}\n" + FAKE_GH)
-        tool.chmod(0o755)
-        self.env = {"PATH": str(self.root), "FAKE_GITHUB": str(self.root)}
-
-    command = fixtures.OptionBTests.command
-    expect = fixtures.OptionBTests.expect
-    ok = fixtures.OptionBTests.ok
-    journal = fixtures.OptionBTests.journal
-    entries = fixtures.OptionBTests.entries
-    input = fixtures.OptionBTests.input
-    begin = fixtures.OptionBTests.begin
-    assign = fixtures.OptionBTests.assign
-    grant = fixtures.OptionBTests.grant
-    round = fixtures.OptionBTests.round
-
+class MergeTests(ReviewFixture, unittest.TestCase):
     def setup_grant(self, **config):
         self.begin()
-        self.ok(self.assign())
-        self.ok(self.grant())
-        self.input("config", config)
+        self.paths = self.complete()
+        self.ok(self.grant(self.paths))
+        self.grant_id = str(self.entries()[-1]["id"])
+        self.config(**config)
+        self.prior_reads = len(self.calls("GET"))
 
     def merge(self, time="22:10", **updates):
-        options = dict(run=self.run_id, target=TARGET, leader="leader", grant="E4", head=SHA)
+        options = dict(run=self.run_id, target=TARGET, leader="leader", grant=self.grant_id, head=self.head)
         options.update(updates)
         return self.command("merge", *(word for key, value in options.items() for word in ("--" + key, value)),
                             time=time, env=self.env)
@@ -139,16 +50,16 @@ class MergeTests(unittest.TestCase):
         self.expect(next(result for result in results if result[0] == 3), "MERGE_PERMISSION_USED")
         self.assertEqual(self.calls("PUT"), [[["api", "--hostname", "github.com", "--method", "PUT",
                           "repos/example/app/pulls/12/merge", "--input", "-", "--include"],
-                          {"sha": SHA, "merge_method": "squash"}]])
+                          {"sha": self.head, "merge_method": "squash"}]])
         self.assertEqual(self.journal().read_bytes(), before)
         attempt, result = self.events_for_pr()
         self.assertEqual((attempt["kind"], attempt["head"], result["of"], result["outcome"], result["sha"]),
-                         ("merge-attempt", SHA, attempt["id"], "merged", MERGE_SHA))
+                         ("merge-attempt", self.head, attempt["id"], "merged", MERGE_SHA))
 
     def test_head_moves_after_check(self):
         self.setup_grant(write_head=SHA2)
         self.expect(self.merge(), "MERGE_HEAD_CHANGED")
-        self.assertEqual(self.calls("PUT")[0][1]["sha"], SHA)
+        self.assertEqual(self.calls("PUT")[0][1]["sha"], self.head)
         self.assertEqual(self.events_for_pr()[-1]["outcome"], "failed")
         self.expect(self.merge(), "MERGE_PERMISSION_USED")
 
@@ -157,15 +68,16 @@ class MergeTests(unittest.TestCase):
         before = self.journal().read_bytes()
         self.expect(self.merge(), "MERGE_HEAD_CHANGED")
         self.assertFalse(self.calls("PUT"))
-        self.input("config", {})
+        self.config()
         self.expect(self.merge(), "MERGE_PERMISSION_INACTIVE")
         self.assertEqual(self.journal().read_bytes(), before)
 
     def test_merge_scope_and_phase(self):
         self.setup_grant()
-        for fields, code in ((dict(run=SHA), "MERGE_PERMISSION_NIGHT"), (dict(target=OTHER), "MERGE_PERMISSION_PR"),
+        for fields, code in ((dict(run=self.head), "MERGE_PERMISSION_NIGHT"), (dict(target=OTHER, leader="second"), "MERGE_PERMISSION_PR"),
                              (dict(grant="99"), "MERGE_PERMISSION_MISSING"), (dict(head=SHA2), "MERGE_PERMISSION_HEAD"),
                              (dict(leader="peer"), "MERGE_LEADER_ONLY"), (dict(head="1"), "HEAD_FORM"),
+                             (dict(target="github.com/example/app#97"), "MERGE_PR_NOT_ON_CARD"),
                              (dict(target="github.com/example/app#12?"), "MERGE_TARGET_FORM")):
             with self.subTest(fields=fields):
                 self.expect(self.merge(**fields), code)
@@ -176,7 +88,7 @@ class MergeTests(unittest.TestCase):
         self.setup_grant(bad_reply=True)
         self.expect(self.merge(), "MERGE_OUTCOME_UNKNOWN")
         self.expect(self.merge(), "MERGE_PERMISSION_USED")
-        self.expect(self.grant(head=SHA2, time="22:11"), "MERGE_PENDING")
+        self.expect(self.grant(self.paths), "MERGE_PENDING")
         self.assertEqual(len(self.calls("PUT")), 1)
         self.assertEqual(self.events_for_pr()[-1]["outcome"], "unknown")
 
@@ -184,13 +96,13 @@ class MergeTests(unittest.TestCase):
         self.setup_grant()
         rules = [{"type": "required_status_checks", "parameters": {"required_status_checks":
                   [{"context": "CI", "integration_id": 42}]}}]
-        exact = dict(name="CI", head_sha=SHA, app={"id": 42}, status="completed", conclusion="success")
+        exact = dict(name="CI", head_sha=self.head, app={"id": 42}, status="completed", conclusion="success")
         for checks in ([], [dict(exact, head_sha=SHA2)], [dict(exact, app={"id": 99})],
                        [dict(exact, status="in_progress")], [exact, dict(exact, conclusion="failure")]):
             with self.subTest(checks=checks):
-                self.input("config", {"rules": rules, "checks": checks})
+                self.config(rules=rules, checks=checks)
                 self.expect(self.merge(), "MERGE_CI_NOT_GREEN")
-        self.input("config", {"rules": rules, "checks": [exact]})
+        self.config(rules=rules, checks=[exact])
         self.ok(self.merge())
 
     def test_unknown_policy_and_write_effects_hold(self):
@@ -200,7 +112,7 @@ class MergeTests(unittest.TestCase):
                              (dict(auto_delete=True), "MERGE_EFFECT_UNCLEAR"),
                              (dict(workflows=[{"state": "active"}]), "MERGE_EFFECT_UNCLEAR")):
             with self.subTest(config=config):
-                self.input("config", config)
+                self.config(**config)
                 self.expect(self.merge(), code)
         self.assertFalse(self.calls("PUT"))
 
@@ -228,7 +140,7 @@ class MergeTests(unittest.TestCase):
         self.setup_grant(bad_read=True)
         self.expect(self.merge(), "MERGE_READ_FAILED")
         self.assertFalse(self.calls("PUT"))
-        self.input("config", {"reject": True})
+        self.config(reject=True)
         self.expect(self.merge(), "MERGE_REJECTED")
         self.assertEqual(self.events_for_pr()[-1]["outcome"], "failed")
 
@@ -238,7 +150,7 @@ class MergeTests(unittest.TestCase):
         self.chief = self.root / "substitute"
         self.chief.symlink_to(canonical, target_is_directory=True)
         self.expect(self.merge(), "MERGE_JOURNAL_PATH")
-        self.assertFalse(self.calls("GET"))
+        self.assertEqual(len(self.calls("GET")), self.prior_reads)
 
     def test_failed_claim_sync_makes_no_request(self):
         self.setup_grant()
@@ -246,7 +158,7 @@ class MergeTests(unittest.TestCase):
         with patch.dict(os.environ, {**self.env, "NIGHT_TEST_MODE": "1", "NIGHT_FAKE_NOW": at("22:10")}), patch(
                 "os.fsync", side_effect=OSError(5, "sync failed after write")):
             status = module.main(["merge", "--dir", str(self.chief), "--run", self.run_id, "--target", TARGET,
-                                  "--leader", "leader", "--grant", "E4", "--head", SHA])
+                                  "--leader", "leader", "--grant", self.grant_id, "--head", self.head])
         self.assertEqual(status, 3)
         self.assertEqual([e["kind"] for e in self.events_for_pr()], ["merge-attempt"])
         self.assertFalse(self.calls("PUT"), "a failed claim sync allowed a merge request")
@@ -267,20 +179,18 @@ class MergeTests(unittest.TestCase):
         with patch.dict(os.environ, {**self.env, "NIGHT_TEST_MODE": "1", "NIGHT_FAKE_NOW": at("22:10")}), patch.object(
                 files, "append", after_result):
             status = module.main(["merge", "--dir", str(self.chief), "--run", self.run_id, "--target", TARGET,
-                                  "--leader", "leader", "--grant", "E4", "--head", SHA])
+                                  "--leader", "leader", "--grant", self.grant_id, "--head", self.head])
         self.assertEqual(status, 3)
         self.expect(self.merge(), "MERGE_PERMISSION_USED")
         self.assertEqual(len(self.calls("PUT")), 1)
         self.assertEqual([e["kind"] for e in self.events_for_pr()], ["merge-attempt", "merge-result"])
 
-    def test_cap_refuses_prior_grant(self):
-        self.begin(cap=1)
-        self.ok(self.assign())
-        self.ok(self.grant())
-        self.input("config", {})
-        self.ok(self.round(1))
-        self.expect(self.merge(), "REVIEW_CAP_REACHED")
-        self.assertFalse(self.calls("GET"))
+    def test_new_head_invalidates_prior_grant(self):
+        self.setup_grant()
+        next_head = self.commit("owned.txt", "changed after grant")
+        self.config(head=next_head)
+        self.expect(self.merge(), "MERGE_HEAD_CHANGED")
+        self.assertFalse(self.calls("PUT"))
 
 
 if __name__ == "__main__":

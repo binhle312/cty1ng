@@ -1,134 +1,47 @@
 """Exercise the chief review flow with a local checkout and a fake GitHub CLI."""
 import json
 import os
-import subprocess
-import sys
-import unittest
 from pathlib import Path
+import sys
+from subprocess import CalledProcessError
+import unittest
+from unittest.mock import patch
 
 sys.dont_write_bytecode = True
-from test_option_b import OTHER, PAIR, POLICY, ROWS, TARGET
-import test_option_b as fixtures
-from test_option_b_merge import FAKE_GH
-from night_testlib import card, new
+from night_review_testlib import ReviewFixture, TARGET, OTHER
+from test_option_b import LOWER
+from night_testlib import at, night_module
 
 
-class Brief8Tests(unittest.TestCase):
-    for name in ("setUp", "expect", "ok", "journal", "entries", "input"):
-        locals()[name] = getattr(fixtures.OptionBTests, name)
-
-    def command(self, *args, time="22:10", env=None):
-        return fixtures.OptionBTests.command(self, *args, time=time, env=env or self.env)
-
-    def git(self, *args):
-        return subprocess.check_output(["git", "-C", str(self.checkout), *args], text=True).strip()
-
-    def commit(self, name, content):
-        (self.checkout / name).write_text(content)
-        self.git("add", name)
-        self.git("commit", "-qm", content)
-        return self.git("rev-parse", "HEAD")
-
-    def begin(self, cap=5, task_class="night", consult=False, planned=True):
-        self.ok(new(str(self.chief), "synthetic workflow"))
-        self.reviews = self.chief / "reviews"
-        self.reviews.mkdir()
-        self.checkout = self.reviews / "checkout"
-        self.checkout.mkdir()
-        self.git("init", "-qb", "main")
-        self.git("config", "user.name", "Fixture")
-        self.git("config", "user.email", "fixture@example.invalid")
-        self.main = self.commit("base.txt", "base")
-        self.git("switch", "-qc", "pr")
-        self.head = self.commit("owned.txt", "change")
-        self.git("switch", "-q", "--detach", self.head)
-        self.worktree.mkdir()
-        self.other = self.root / "second-leader"
-        self.other.mkdir()
-        tool = self.root / "gh"
-        tool.write_text(f"#!{sys.executable}\n" + FAKE_GH)
-        tool.chmod(0o755)
-        self.env = {"PATH": f"{self.root}:{os.environ['PATH']}", "FAKE_GITHUB": str(self.root)}
-        self.config()
-        rows = [*ROWS[:3], (*ROWS[3][:5], "second")]
-        card(str(self.chief), rows)
-        tasks = {target: {"class": kind, "criteria": ["Change the owned file"], "owned": ["owned.txt"]}
-                 for target, kind in ((TARGET, task_class), (OTHER, "night"))}
-        options = ["--consultants"] if consult else []
-        self.ok(self.command("go", "--stop", "23:00Z", "--goal", "set", "--rehearsal", "passed",
-                             "--chief", "chief", "--review-policy", self.input("policy.json", POLICY),
-                             "--tasks", self.input("tasks.json", tasks), "--review-cap", str(cap),
-                             "--merge-main-bonus", "3", "--allow-empty-checks", *options))
-        if task_class == "night":
-            self.ok(self.assign())
-            if planned:
-                self.ok(self.plan())
-        self.ok(self.assign(OTHER))
-        self.ok(self.plan(OTHER))
-
-    def config(self, **updates):
-        self.input("config", dict(head=self.head, base_sha=self.main, files=[{"filename": "owned.txt", "status": "modified"}],
-                                  changed_files=1, **updates))
-
-    def typed(self, command, **data):
-        return self.command(command, "--data", self.input("data.json", data))
-
-    def assign(self, target=TARGET, **changes):
-        fields = dict(chief="chief", target=target, leader="leader" if target == TARGET else "second",
-                      reviewers=PAIR, helpers=[], worktree=str(self.worktree if target == TARGET else self.other))
-        return self.typed("assign", **(fields | changes))
-
-    def plan(self, target=TARGET):
-        return self.typed("plan", chief="chief", target=target, plan="plan.md", strategy="test-strategy.md")
-
-    def start(self, target=TARGET, **changes):
-        fields = dict(chief="chief", target=target, head=self.head, checkout=str(self.checkout))
-        return self.typed("review-start", **(fields | changes))
-
-    def reports(self, p3=(), *, bad_count=False):
-        paths = []
-        for who in PAIR:
-            path = self.reviews / f"{len(self.entries())}-{who['provider']}.md"
-            findings = {"p1": [], "p2": [], "p3": list(p3)}
-            verdict = dict(head=self.head, model=who["model"], effort=who["effort"], p1=0,
-                           p2=0, p3=len(p3) + int(bad_count))
-            path.write_text("Review details\n\nFindings: " + json.dumps(findings) +
-                            "\nVerdict: " + json.dumps(verdict) + "\n")
-            paths.append(str(path))
-        return paths
-
-    def complete(self, target=TARGET, p3=()):
-        self.ok(self.start(target))
-        paths = self.reports(p3)
-        self.ok(self.typed("review", chief="chief", target=target, reports=paths))
-        return paths
-
-    def grant(self, reports):
-        return self.typed("grant", reports=reports)
-
-    def update_main(self, number):
-        self.git("switch", "-q", "main")
-        self.main = self.commit(f"main-{number}.txt", f"advance {number}")
-        self.git("switch", "-q", "--detach", self.head)
-        self.git("merge", "--no-ff", "--no-edit", "main")
-        self.head = self.git("rev-parse", "HEAD")
-        self.config()
-
+class Brief8Tests(ReviewFixture, unittest.TestCase):
     def test_chief_starts_review(self):
         self.begin()
         self.expect(self.start(chief="leader"), "MERGE_CHIEF_ONLY")
         self.ok(self.start())
+        self.expect(self.start(chief="leader"), "MERGE_CHIEF_ONLY")
         brief = self.entries()[-1]["brief"]
         self.assertTrue(Path(brief).is_relative_to(self.reviews))
         self.assertIn(self.head, Path(brief).read_text())
 
     def test_merge_bonus_is_frozen_per_pr(self):
         self.begin()
+        initial = self.head
+        self.git("switch", "-qc", "side", self.main)
+        self.commit("side.txt", "side change")
+        self.git("switch", "-q", "--detach", initial)
+        self.git("merge", "--no-ff", "--no-edit", "side")
+        self.head = self.git("rev-parse", "HEAD")
+        self.config()
+        self.ok(self.start())
+        self.assertEqual(self.entries()[-1]["cap"], 5)
         self.update_main(1)
         self.ok(self.start())
         first = self.entries()[-1]
         self.assertEqual(first["cap"], 8)
-        self.ok(self.typed("review", chief="chief", target=TARGET, reports=self.reports()))
+        self.assertEqual(first["main_merges"], [self.head])
+        with (self.chief / "card.md").open("a") as card:
+            card.write("\nreview_cap: 1\nmerge_main_bonus: 1\n")
+        self.ok(self.typed("review", chief="chief", target=TARGET, ledger=["ledger fixture"], reports=self.reports()))
         self.update_main(2)
         self.ok(self.start())
         self.assertEqual(self.entries()[-1]["cap"], 11)
@@ -148,11 +61,16 @@ class Brief8Tests(unittest.TestCase):
         self.ok(self.typed("advice", chief="chief", target=TARGET, advisor="allow", consultants=["allow"]))
         self.ok(self.grant(paths))
         self.ok(self.command("report"))
-        self.assertIn("small item", (self.chief / "report.md").read_text())
+        report = (self.chief / "report.md").read_text()
+        self.assertIn("small item", report)
+        self.assertIn("| github.com/example/app#12 | allow | allow |", report)
 
     def test_new_head_needs_full_round(self):
         self.begin()
         paths = self.complete()
+        self.head = self.commit("owned.txt", "another PR commit")
+        self.config()
+        self.expect(self.grant(paths), "MERGE_HEAD_CHANGED")
         self.update_main(1)
         self.expect(self.grant(paths), "MERGE_HEAD_CHANGED")
         self.ok(self.start())
@@ -160,6 +78,21 @@ class Brief8Tests(unittest.TestCase):
         self.assertEqual(review["merge_base"], self.main)
         self.assertEqual(review["files"], ["owned.txt"])
         self.assertEqual(review["main_merges"], [self.head])
+
+    def test_review_brief_shows_main_intersection_and_resolution(self):
+        self.begin()
+        self.complete()
+        self.git("switch", "-q", "main")
+        self.main = self.commit("owned.txt", "independent change from main")
+        self.git("switch", "-q", "--detach", self.head)
+        with self.assertRaises(CalledProcessError):
+            self.git("merge", "--no-ff", "--no-edit", "main")
+        self.head = self.commit("owned.txt", "resolved PR change")
+        self.config()
+        self.ok(self.start())
+        start = self.entries()[-1]
+        self.assertEqual(start["intersections"], ["owned.txt"])
+        self.assertIn(f"git show --remerge-diff for {self.head}", Path(start["brief"]).read_text())
 
     def test_section_seven_has_no_grant(self):
         self.begin(task_class="owner")
@@ -179,28 +112,37 @@ class Brief8Tests(unittest.TestCase):
         self.expect(self.start(), "REVIEW_CHECKOUT")
         (self.checkout / "untracked.txt").unlink()
         self.ok(self.start())
-        paths = self.reports(bad_count=True)
-        self.expect(self.typed("review", chief="chief", target=TARGET, reports=paths), "REVIEW_REPORT")
+        for invalid in ("bad_role", "bad_count"):
+            with self.subTest(invalid=invalid):
+                paths = self.reports(**{invalid: True})
+                self.expect(self.typed("review", chief="chief", target=TARGET, ledger=["ledger fixture"], reports=paths),
+                            "REVIEW_REPORT")
         paths = self.reports()
         outside = self.root / "copied-report.md"
         outside.write_text(Path(paths[0]).read_text())
-        self.expect(self.typed("review", chief="chief", target=TARGET, reports=[str(outside), paths[1]]),
+        self.expect(self.typed("review", chief="chief", target=TARGET, ledger=["ledger fixture"], reports=[str(outside), paths[1]]),
                     "REVIEW_REPORT")
-        self.ok(self.typed("review", chief="chief", target=TARGET, reports=paths))
+        self.ok(self.typed("review", chief="chief", target=TARGET, ledger=["ledger fixture"], reports=paths))
 
     def test_only_chief_rules_on_findings(self):
         self.begin()
         self.complete(p3=["small item"])
-        fields = dict(target=TARGET, finding="small item", severity="drop", reason="duplicate of an existing point")
+        fields = dict(target=TARGET, finding="small item", source=self.entries()[-1]["reports"][0]["source"], severity="drop", reason="duplicate of an existing point")
         self.expect(self.typed("ruling", chief="leader", **fields), "MERGE_CHIEF_ONLY")
         self.ok(self.typed("ruling", chief="chief", **fields))
         self.assertEqual(self.entries()[-1]["finding"], "small item")
 
     def test_grant_reads_live_head_ci_and_scope(self):
         self.begin()
+        clean_head = self.head
+        self.head = self.commit("another.txt", "out of scope")
+        self.config(files_override=[{"filename": name, "status": "modified"} for name in ("another.txt", "owned.txt")],
+                    changed_files=2)
+        self.expect(self.grant(self.complete()), "REVIEW_SCOPE")
+        self.head = clean_head
+        self.git("switch", "-q", "--detach", self.head)
+        self.config()
         paths = self.complete()
-        self.config(files_override=[{"filename": "another.txt", "status": "modified"}])
-        self.expect(self.grant(paths), "REVIEW_SCOPE")
         self.config(rules=[{"type": "required_status_checks", "parameters": {
             "required_status_checks": [{"context": "CI", "integration_id": 42}]}}],
             checks=[dict(name="CI", head_sha=self.main, app={"id": 42}, status="completed", conclusion="success")])
@@ -216,7 +158,7 @@ class Brief8Tests(unittest.TestCase):
         entry = next(e["id"] for e in self.entries() if e["kind"] == "merge-permission")
         self.expect(self.grant(second), "MERGE_PENDING")
         self.expect(self.typed("confirm", chief="chief", grant=entry), "MERGE_NOT_CONFIRMED")
-        self.config(pulls={"12": {"merged": True, "head": {"sha": "2" * 40}, "merge_commit_sha": self.main}})
+        self.config(pulls={"12": {"merged": True, "state": "closed", "head": {"sha": "2" * 40}, "merge_commit_sha": self.main}})
         self.expect(self.typed("confirm", chief="chief", grant=entry), "MERGE_NOT_CONFIRMED")
         self.config(pulls={"12": {"merged": True, "state": "closed", "merge_commit_sha": self.main}})
         self.ok(self.typed("confirm", chief="chief", grant=entry))
@@ -230,12 +172,103 @@ class Brief8Tests(unittest.TestCase):
         latest = next(e["id"] for e in self.entries() if e["kind"] == "assign" and e["target"] == TARGET)
         self.expect(self.assign(leader="replacement"), "REVIEW_REPLACEMENT")
         self.ok(self.assign(leader="replacement", replaces=latest, released="Old session stopped and access revoked"))
+        self.expect(self.start(), "REVIEW_PLAN_REQUIRED")
+        self.ok(self.plan())
         self.ok(self.start())
         self.assertEqual(self.entries()[-1]["leader"], "replacement")
 
+    def test_grant_readback_after_failed_sync(self):
+        self.begin()
+        reports = self.complete()
+        args = ["grant", "--dir", str(self.chief), "--data", self.input("grant.json", {"reports": reports})]
+        with patch.dict(os.environ, {**self.env, "NIGHT_TEST_MODE": "1", "NIGHT_FAKE_NOW": at("22:10")}), patch(
+                "os.fsync", side_effect=OSError(5, "grant sync")):
+            self.assertEqual(night_module().main(args), 3)
+        before = self.journal().read_bytes()
+        self.expect(self.grant(reports), "MERGE_PENDING")
+        self.assertEqual(self.journal().read_bytes(), before)
+        self.assertEqual([e["kind"] for e in self.entries()].count("merge-permission"), 1)
+
+    def test_review_cap_stops_at_eight_for_one_main_merge(self):
+        self.begin()
+        self.update_main(1)
+        for number in range(1, 9):
+            paths = self.complete(p1=["blocking issue"])
+            self.assertEqual(self.entries()[-1]["kind"], "cap" if number == 8 else "review")
+        self.expect(self.start(), "REVIEW_CAP_REACHED")
+        self.expect(self.grant(paths), "REVIEW_CAP_REACHED")
+        status = json.loads(self.ok(self.command("status", "--json")))
+        self.assertEqual(status["review_rounds"][TARGET], 8)
+        self.ok(self.start(OTHER))
+        self.ok(self.command("report"))
+        report = (self.chief / "report.md").read_text().split("## Needs you", 1)[1].split("## Merge attempts", 1)[0]
+        self.assertIn("P1 blocking issue", report)
+
+    def test_secondary_reads_recheck_reports_and_cap_state(self):
+        self.begin(cap=1)
+        reports = self.complete(p1=["blocking issue"])
+        self.expect(self.grant(reports), "REVIEW_CAP_REACHED")
+        entry = self.entries()[-1]
+        self.ok(self.typed("review", chief="chief", target=TARGET, reports=reports, ledger=["ledger fixture"]))
+        self.assertEqual(self.entries()[-1], entry)
+        for path in reports:
+            self.ok(self.typed("ruling", chief="chief", target=TARGET, source=path,
+                               finding="blocking issue", severity="drop", reason="Duplicate of verified work"))
+        Path(reports[0]).write_text(Path(reports[0]).read_text().replace("Review details", "modified afterwards"))
+        self.expect(self.grant(reports), "REVIEW_REPORT")
+
+    def test_replacement_rejects_outdated_leader(self):
+        self.begin()
+        latest = [e for e in self.entries() if e["kind"] == "assign" and e["target"] == TARGET][-1]
+        self.ok(self.assign(leader="replacement", replaces=latest["id"], released="Old leader access revoked"))
+        self.ok(self.plan())
+        self.ok(self.grant(self.complete()))
+        outcome = self.command("merge", "--run", self.run_id, "--head", self.head, "--target", TARGET,
+                               "--leader", "leader", "--grant", str(self.entries()[-1]["id"]))
+        self.expect(outcome, "MERGE_LEADER_ONLY")
+
+    def test_refuses_duplicate_grant_after_withdrawal(self):
+        self.begin()
+        reports = self.complete()
+        self.ok(self.grant(reports))
+        self.ok(self.typed("withdraw", chief="chief", grant=self.entries()[-1]["id"], reason="leader stopped"))
+        self.expect(self.grant(reports), "MERGE_PERMISSION_DUPLICATE")
+
+    def test_clean_round_cannot_reuse_reports_for_a_new_head(self):
+        self.begin()
+        original = self.complete()
+        self.head = self.commit("owned.txt", "new head")
+        self.config()
+        self.ok(self.start())
+        self.expect(self.typed("review", chief="chief", target=TARGET, reports=original, ledger=["ledger fixture"]),
+                    "REVIEW_REPORT")
+        self.ok(self.typed("review", chief="chief", target=TARGET, reports=self.reports(), ledger=["ledger fixture"]))
+
+    def test_grant_refuses_legacy_fields(self):
+        self.begin()
+        self.expect(self.typed("grant", head=self.head, target=TARGET, ci=["fake green"]), "MERGE_EVIDENCE_INVALID")
+
+    def test_assignment_refuses_unapproved_role(self):
+        self.begin()
+        before = self.journal().read_bytes()
+        self.expect(self.assign(reviewers=LOWER), "REVIEWER_NOT_ASSIGNED")
+        self.assertEqual(self.journal().read_bytes(), before)
+
+    def test_started_round_requires_current_assignments(self):
+        self.begin()
+        self.ok(self.start())
+        paths = self.reports()
+        self.ok(self.assign())
+        self.expect(self.typed("review", chief="chief", target=TARGET, reports=paths, ledger=["ledger fixture"]),
+                    "REVIEW_PLAN_REQUIRED")
+        self.ok(self.plan())
+        self.expect(self.typed("review", chief="chief", target=TARGET, reports=paths, ledger=["ledger fixture"]),
+                    "REVIEW_START_REQUIRED")
+
     def test_merge_bar_links_night_rule(self):
+        override = os.environ.get("OVERNIGHT_MERGE_BAR")
         root = next(parent for parent in Path(__file__).resolve().parents if (parent / "docs/workflows").is_dir())
-        text = (root / "docs/workflows/merge-bar.md").read_text()
+        text = (Path(override) if override else root / "docs/workflows/merge-bar.md").read_text()
         self.assertIn("overnight/SKILL.md#night-review-and-merge", text)
 
 
