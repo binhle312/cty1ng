@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type GitRun, readDiff } from "./merge-check-diff.ts";
+import { type GitRun, blobReader, readDiff } from "./merge-check-diff.ts";
 
 let root = "";
 let work = "";
@@ -75,7 +75,11 @@ describe("readDiff", () => {
       "pr",
     );
     pushPr(head);
-    const result = readDiff({ head, baseTip: tip }, runner);
+    const calls: string[] = [];
+    const result = readDiff({ head, baseTip: tip }, (args) => {
+      calls.push(args.join(" "));
+      return runner(args);
+    });
     if (!result.ok) throw new Error(result.reason);
     const byPath = new Map(result.files.map((file) => [file.path, file]));
     expect([...byPath.keys()].sort(), "paths").toEqual([
@@ -88,13 +92,25 @@ describe("readDiff", () => {
     expect(byPath.get("docs/old.md")?.status, "rename old").toBe("D");
     expect(byPath.get("docs/new.md")?.status, "rename new").toBe("A");
     expect(byPath.get("tool.sh")?.newMode, "mode").toBe("100755");
-    expect(byPath.get("backend/package.json"), "manifest").toMatchObject({
-      status: "M",
-      liveChanged: false,
-      baseText: '{"name":"b","dependencies":{"x":"1"}}\n',
-      headText: '{"name":"b","dependencies":{"x":"2"}}\n',
+    // Plan delta r2 §2: records only. The reader reads a text later, by its blob id.
+    const manifest = byPath.get("backend/package.json");
+    expect(manifest, "manifest").toMatchObject({ status: "M", liveChanged: false });
+    expect(manifest?.baseText, "no text from readDiff").toBeUndefined();
+    expect(
+      calls.filter((call) => call.startsWith("cat-file")),
+      "no blob read",
+    ).toEqual([]);
+    const read = blobReader(runner);
+    const side = (blob: string | undefined) =>
+      read({ path: "backend/package.json", side: "base", blob: blob ?? "", kind: "manifest" });
+    expect(side(manifest?.oldBlob), "base text by id").toEqual({
+      kind: "text",
+      text: '{"name":"b","dependencies":{"x":"1"}}\n',
     });
-    expect(byPath.get("docs/a.md")?.baseText, "no text for a docs file").toBeUndefined();
+    expect(side(manifest?.newBlob), "head text by id").toEqual({
+      kind: "text",
+      text: '{"name":"b","dependencies":{"x":"2"}}\n',
+    });
   });
 
   it("marks a touched path that main changed after the split, and reads the merge-base text", () => {
@@ -115,7 +131,16 @@ describe("readDiff", () => {
     if (!result.ok) throw new Error(result.reason);
     const manifest = result.files.find((file) => file.path === "backend/package.json");
     expect(manifest?.liveChanged, "changed on main").toBe(true);
-    expect(manifest?.baseText, "merge-base text").toBe('{"name":"b","dependencies":{"x":"1"}}\n');
+    const merged = blobReader(runner)({
+      path: "backend/package.json",
+      side: "base",
+      blob: manifest?.oldBlob ?? "",
+      kind: "manifest",
+    });
+    expect(merged, "merge-base text").toEqual({
+      kind: "text",
+      text: '{"name":"b","dependencies":{"x":"1"}}\n',
+    });
     expect(result.files.find((file) => file.path === "docs/a.md")?.liveChanged, "not on main").toBe(
       false,
     );
@@ -180,8 +205,18 @@ describe("readDiff", () => {
     w("commit", "-q", "-m", "bad text");
     const badText = w("rev-parse", "HEAD");
     pushPr(badText);
-    const text = readDiff({ head: badText, baseTip: a2 }, runner);
-    expect(text.ok ? "ok" : text.reason, "text not UTF-8").toContain("not UTF-8");
+    const records = readDiff({ head: badText, baseTip: a2 }, runner);
+    if (!records.ok) throw new Error(records.reason);
+    const bad = records.files.find((file) => file.path === "backend/package.json");
+    const text = blobReader(runner)({
+      path: "backend/package.json",
+      side: "head",
+      blob: bad?.newBlob ?? "",
+      kind: "manifest",
+    });
+    expect(text.kind === "failed" ? text.reason : text.kind, "text not UTF-8").toContain(
+      "not UTF-8",
+    );
   });
 
   // Plan delta r1 §2.1: a path is supported only when each byte is 0x21-0x7E.
@@ -219,38 +254,54 @@ describe("readDiff", () => {
     );
   });
 
-  // Plan delta r1 §2.2 (G5): a memory blob that is not UTF-8 is unsupported text, not a failed
-  // read; a leading BOM stays in the text.
-  it("reads a memory text that is not UTF-8 as unsupported, on each side, and keeps a BOM", () => {
-    const note = ".agents/chief/memories/long-term/note.md";
-    execFileSync("mkdir", ["-p", join(work, ".agents/chief/memories/long-term")]);
-    writeFileSync(join(work, note), Buffer.from([0x23, 0x20, 0xff, 0x0a]));
-    w("add", "-A");
-    w("commit", "-q", "-m", "bad base");
-    w("push", "-q", "origin", "HEAD:main");
+  // Plan delta r2 §2 and §4: the reader reads one blob by its id. A memory blob that is not UTF-8
+  // is unsupported and a memory BOM stays (plan delta r1); a manifest that is not UTF-8 is a failed
+  // read, and a manifest BOM is removed, as at d748524 (DQ-1047).
+  it("reads a blob by id with the decoder of its kind", () => {
+    const blob = (bytes: Buffer): string =>
+      execFileSync("git", ["hash-object", "-w", "--stdin"], {
+        cwd: clone,
+        input: bytes,
+        encoding: "utf8",
+      }).trim();
+    const read = blobReader(runner);
+    const of = (bytes: Buffer, kind: "memory" | "manifest") =>
+      read({ path: "x", side: "head", blob: blob(bytes), kind });
+    expect(of(Buffer.from([0x23, 0x20, 0xff, 0x0a]), "memory"), "memory not UTF-8").toEqual({
+      kind: "unsupported",
+    });
+    expect(of(Buffer.from("\ufeff# Clean\n"), "memory"), "memory BOM kept").toEqual({
+      kind: "text",
+      text: "\ufeff# Clean\n",
+    });
+    expect(of(Buffer.from('\ufeff{"name":"b"}\n'), "manifest"), "manifest BOM removed").toEqual({
+      kind: "text",
+      text: '{"name":"b"}\n',
+    });
+    expect(of(Buffer.from([0x7b, 0xff, 0x7d]), "manifest").kind, "manifest not UTF-8").toBe(
+      "failed",
+    );
+    expect(
+      read({ path: "x", side: "base", blob: "e".repeat(40), kind: "memory" }).kind,
+      "unknown blob",
+    ).toBe("failed");
+  });
+
+  // DQ-1046: the live-path check compares the path bytes, not the escaped form.
+  it("compares the paths that main changed by their bytes", () => {
     const tip = baseTip();
     w("checkout", "-q", "-b", "pr");
-    const head = commit({ [note]: "# Clean\n" }, "clean head");
+    const head = commit({ "docs/a\\x20b.md": "pr\n", "docs/a.md": "pr\n" }, "pr");
     pushPr(head);
-    const base = readDiff({ head, baseTip: tip }, runner);
-    if (!base.ok) throw new Error(base.reason);
-    expect(base.files[0]?.textUnsupported, "bad base").toBe(true);
-    writeFileSync(join(work, note), Buffer.from([0x23, 0x20, 0xfe, 0x0a]));
-    w("add", "-A");
-    w("commit", "-q", "-m", "bad head");
-    const badHead = w("rev-parse", "HEAD");
-    pushPr(badHead);
-    const head2 = readDiff({ head: badHead, baseTip: tip }, runner);
-    if (!head2.ok) throw new Error(head2.reason);
-    expect(head2.files[0]?.textUnsupported, "bad head").toBe(true);
-    writeFileSync(join(work, note), Buffer.from("\ufeff# Clean\n"));
-    w("add", "-A");
-    w("commit", "-q", "-m", "bom");
-    const bom = w("rev-parse", "HEAD");
-    pushPr(bom);
-    const kept = readDiff({ head: bom, baseTip: tip }, runner);
-    if (!kept.ok) throw new Error(kept.reason);
-    expect(kept.files[0]?.headText?.startsWith("\ufeff"), "bom kept").toBe(true);
+    w("checkout", "-q", "main");
+    commit({ "docs/a b.md": "main\n", "docs/A.md": "main\n" }, "main moves");
+    w("push", "-q", "origin", "HEAD:main");
+    const result = readDiff({ head, baseTip: baseTip() }, runner);
+    if (!result.ok) throw new Error(result.reason);
+    const byPath = new Map(result.files.map((file) => [file.path, file.liveChanged]));
+    expect(byPath.get("docs/a\\x20b.md"), "a backslash path is not the space path").toBe(false);
+    expect(byPath.get("docs/a.md"), "case differs").toBe(false);
+    expect(tip, "tip").not.toBe(baseTip());
   });
 
   // Plan delta r1 §3: a local setting cannot hide a gitlink from the raw diff.

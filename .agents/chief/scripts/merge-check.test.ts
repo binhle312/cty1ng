@@ -18,9 +18,13 @@ import { dirname, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   type CiCheck,
+  type ContentRead,
   type MergeInput,
   type PrFile,
+  type ReadResult,
+  type Reader,
   classify,
+  classifyWith,
   isControl,
   memoryTextProblems,
 } from "./lib/merge-check.ts";
@@ -670,6 +674,160 @@ describe("classify: the memory text form", () => {
   });
 });
 
+// Plan delta r2 §3 (DQ-1041): a front-matter line is "key: value" with a space after the colon.
+// C1 A (the chief, 2026-11-20): `permission-rule:true` is a bad line too, so the chief stops.
+describe("classify: the key separator", () => {
+  const stops = (files: PrFile[]): string => {
+    const result = classify(input(files));
+    return `${String(result.exit)} ${result.lines.join("\n")}`;
+  };
+  it("stops for a front-matter line with no space after the colon, on each side", () => {
+    const good = "---\ntitle: a\n---\n# A\n";
+    const cases: [string, PrFile[]][] = [
+      [
+        "no space in the base",
+        [file(NOTE, { baseText: "---\ntitle:Example\n---\n# A\n", headText: good })],
+      ],
+      [
+        "no space in the head",
+        [file(NOTE, { baseText: good, headText: "---\ntitle:Example\n---\n# A\n" })],
+      ],
+      [
+        "a tab in the head",
+        [file(NOTE, { baseText: good, headText: "---\ntitle:\tx\n---\n# A\n" })],
+      ],
+    ];
+    for (const [name, files] of cases) {
+      expect(stops(files), `separator ${name}`).toMatch(/^1 [\s\S]*the chief stops/);
+    }
+    const marker = stops([
+      file(RULE_PATH, {
+        baseText: ruleText("you may merge each docs PR"),
+        headText: permission(ruleText("you may merge each docs PR"), "permission-rule:true"),
+      }),
+    ]);
+    expect(marker, "permission-rule:true").toMatch(/^1 [\s\S]*the chief stops/);
+    expect(marker, "permission-rule:true is not an owner case").not.toContain("the owner merges");
+  });
+});
+
+// Plan delta r2 §2: the judgment reads a text only after the records and the CI facts decide
+// nothing, and reads each needed side of each file one time.
+describe("classify with a reader", () => {
+  const BLOB_A = "a".repeat(40);
+  const BLOB_B = "b".repeat(40);
+  const counting = (
+    texts: Record<string, ReadResult>,
+  ): { reader: Reader; reads: ContentRead[] } => {
+    const reads: ContentRead[] = [];
+    const reader: Reader = (read) => {
+      reads.push(read);
+      return (
+        texts[`${read.side} ${read.path}`] ?? { kind: "failed", reason: `no ${read.side} text` }
+      );
+    };
+    return { reader, reads };
+  };
+  const text = (value: string): ReadResult => ({ kind: "text", text: value });
+  const changed = (path: string): PrFile => file(path, { oldBlob: BLOB_A, newBlob: BLOB_B });
+
+  it("reads each side of a changed note one time, also when two files share a blob id", () => {
+    const one = counting({ [`base ${NOTE}`]: text("# Old\n"), [`head ${NOTE}`]: text("# New\n") });
+    const result = classifyWith(input([changed(NOTE)]), one.reader);
+    expect(result.exit, "one note exit").toBe(0);
+    expect(
+      one.reads.map((read) => `${read.side} ${read.blob}`),
+      "one read for each side",
+    ).toEqual([`base ${BLOB_A}`, `head ${BLOB_B}`]);
+    const SECOND = `${LT}second.md`;
+    const two = counting({
+      [`base ${NOTE}`]: text("# Old\n"),
+      [`head ${NOTE}`]: text("# New\n"),
+      [`base ${SECOND}`]: text("# Old\n"),
+      [`head ${SECOND}`]: text("# New\n"),
+    });
+    classifyWith(input([changed(NOTE), changed(SECOND)]), two.reader);
+    expect(two.reads.length, "one read for each side of each file").toBe(4);
+  });
+
+  it("reads no text when a path, a status or a mode decides", () => {
+    const gitlink = file(`${LT}sub`, {
+      status: "A",
+      oldMode: "000000",
+      newMode: "160000",
+      newBlob: BLOB_B,
+    });
+    const gone = file(`${LT}old.md`, { status: "D", newMode: "000000", oldBlob: BLOB_A });
+    const cases: [string, PrFile[], RegExp][] = [
+      ["a gitlink next to a note", [changed(NOTE), gitlink], /^1 [\s\S]*the owner merges it/],
+      ["a deleted note next to a note", [changed(NOTE), gone], /^1 [\s\S]*the owner merges it/],
+      [
+        "an unsupported manifest path",
+        [file("x\\xff/package.json", { supported: false })],
+        /^1 [\s\S]*The chief stops/,
+      ],
+      [
+        "a listed path and a changed manifest",
+        [file("AGENTS.md"), changed("package.json")],
+        /^1 [\s\S]*LISTED AGENTS\.md/,
+      ],
+    ];
+    for (const [name, files, want] of cases) {
+      const { reader, reads } = counting({});
+      const result = classifyWith(input(files), reader);
+      expect(
+        `${String(result.exit)} ${result.lines.join("\n")} reads ${String(reads.length)}`,
+        name,
+      ).toMatch(new RegExp(`${want.source}[\\s\\S]* reads 0$`));
+    }
+  });
+
+  it("reads no text when CI decides, for a memory PR and for a changed manifest", () => {
+    const red = GREEN.map((check, i) => (i === 0 ? { ...check, state: "fail" as const } : check));
+    const pending = GREEN.map((check, i) =>
+      i === 0 ? { ...check, state: "pending" as const } : check,
+    );
+    for (const [name, checks] of [
+      ["red", red],
+      ["pending", pending],
+    ] as const) {
+      for (const [kind, files] of [
+        ["memory", [changed(NOTE)]],
+        ["manifest", [changed("package.json")]],
+      ] as const) {
+        const { reader, reads } = counting({});
+        const result = classifyWith(input([...files], { checks }), reader);
+        expect(
+          `${String(result.exit)} ${result.lines.join("\n")} reads ${String(reads.length)}`,
+          `${kind} ${name}`,
+        ).toMatch(/^1 [\s\S]*CI check[\s\S]* reads 0$/);
+      }
+    }
+  });
+
+  it("stops the chief for a memory text that is not UTF-8, on each side alone", () => {
+    const cases: [string, Record<string, ReadResult>][] = [
+      ["base", { [`base ${NOTE}`]: { kind: "unsupported" }, [`head ${NOTE}`]: text("# New\n") }],
+      ["head", { [`base ${NOTE}`]: text("# Old\n"), [`head ${NOTE}`]: { kind: "unsupported" } }],
+    ];
+    for (const [side, texts] of cases) {
+      const result = classifyWith(input([changed(NOTE)]), counting(texts).reader);
+      expect(`${String(result.exit)} ${result.lines.join("\n")}`, `unsupported ${side}`).toMatch(
+        new RegExp(`^1 [\\s\\S]*the chief stops: the ${side} text is not UTF-8`),
+      );
+    }
+  });
+
+  it("cannot check when the reader fails, for a note and for a manifest", () => {
+    for (const path of [NOTE, "package.json"]) {
+      const result = classifyWith(input([changed(path)]), counting({}).reader);
+      expect(`${String(result.exit)} ${result.lines.join("\n")}`, `failed ${path}`).toMatch(
+        /^2 Cannot check #152: no base text/,
+      );
+    }
+  });
+});
+
 describe("classify: the PR itself", () => {
   it("gives no chief merge to a PR from a fork, by another author or for another base", () => {
     const cases: [string, Partial<MergeInput>, string][] = [
@@ -850,6 +1008,7 @@ describe("the merge-check CLI", () => {
       join(bin, "gh"),
       [
         "#!/bin/sh",
+        `echo gh >> "${root}/order.log"`,
         'case "$*" in',
         '  "api --hostname github.com graphql "*) ;;',
         "  *) exit 1 ;;",
@@ -1212,6 +1371,280 @@ describe("the merge-check CLI", () => {
     pushMain();
     expect(result.stdout, "no list").toContain("the base tip has no list file");
     expect(result.status, "no list exit").toBe(2);
+  });
+
+  // Plan delta r2: a git wrapper and the fake gh write one ordered log of the calls of a run.
+  const logged = (...args: string[]) => {
+    const log = join(root, "order.log");
+    rmSync(log, { force: true });
+    const logbin = join(root, "logbin");
+    mkdirSync(logbin, { recursive: true });
+    writeFileSync(
+      join(logbin, "git"),
+      `#!/bin/sh\necho "git $*" >> "${log}"\nexec "${realGit}" "$@"\n`,
+    );
+    chmodSync(join(logbin, "git"), 0o755);
+    const result = cliIn(
+      { cwd: repo, extra: { PATH: `${logbin}:${bin}:${process.env.PATH ?? ""}` } },
+      ...args,
+    );
+    const lines = existsSync(log)
+      ? readFileSync(log, "utf8")
+          .split("\n")
+          .filter((l) => l !== "")
+      : [];
+    const reads = lines.filter((line) => line.startsWith("git cat-file blob")).length;
+    return {
+      result,
+      lines,
+      reads,
+      said: `${String(result.status)} ${result.stdout} reads ${String(reads)}`,
+    };
+  };
+  // A PR commit with written, removed, raw-named and gitlink paths.
+  function prChange(change: {
+    write?: Record<string, string>;
+    remove?: string[];
+    raw?: [Buffer, Buffer][];
+    links?: string[];
+  }): string {
+    git("checkout", "-q", "-B", "pr", "main");
+    for (const [path, text] of Object.entries(change.write ?? {})) {
+      mkdirSync(dirname(join(repo, path)), { recursive: true });
+      writeFileSync(join(repo, path), text);
+      git("add", "--", path);
+    }
+    for (const [name, bytes] of change.raw ?? []) {
+      const full = Buffer.concat([Buffer.from(`${repo}/`), name]);
+      mkdirSync(full.subarray(0, full.lastIndexOf(0x2f)), { recursive: true });
+      writeFileSync(full, bytes);
+    }
+    if ((change.raw ?? []).length > 0) git("add", "-A");
+    for (const path of change.remove ?? []) git("rm", "-q", "--", path);
+    for (const path of change.links ?? []) {
+      git("update-index", "--add", "--cacheinfo", `160000,${tip()},${path}`);
+    }
+    git("commit", "-q", "-m", "pr change");
+    const head = git("rev-parse", "HEAD");
+    git("push", "-q", "-f", "origin", "HEAD:refs/pull/152/head");
+    git("checkout", "-q", "-f", "main");
+    git("clean", "-q", "-fd", "--", "x*");
+    return head;
+  }
+  const KEPT = ".agents/chief/memories/long-term/kept.md";
+  const keptOnMain = (): void => {
+    if (existsSync(join(repo, KEPT))) return;
+    writeFileSync(join(repo, KEPT), "# Kept\n");
+    git("add", "--", KEPT);
+    git("commit", "-q", "-m", "a kept note");
+    pushMain();
+  };
+  let manifests = 0;
+  // The root package.json with a new description line (not a field of PACKAGE_FIELDS).
+  const manifest = (bom = ""): string => {
+    manifests += 1;
+    const text = readFileSync(join(repo, "package.json"), "utf8");
+    return `${bom}${text.replace(/^\{/, `{\n  "description": "pr ${String(manifests)}",`)}`;
+  };
+  const RED_NODES = () =>
+    greenNodes().map((node, i) => (i === 0 ? { ...node, conclusion: "FAILURE" } : node));
+  const PENDING_NODES = () =>
+    greenNodes().map((node, i) =>
+      i === 0 ? { ...node, status: "IN_PROGRESS", conclusion: null } : node,
+    );
+
+  // Plan delta r2 §7, valid control: one content read for an added note, two for a changed one.
+  it("reads each needed text one time on a passing memory PR", () => {
+    keptOnMain();
+    const addedHead = prChange({ write: { ".agents/chief/memories/long-term/new.md": "# New\n" } });
+    fakeGh(answer({ head: addedHead, baseTip: tip() }));
+    const add = logged("152");
+    const changedHead = prChange({ write: { [KEPT]: "# Kept two\n" } });
+    fakeGh(answer({ head: changedHead, baseTip: tip() }));
+    const change = logged("152");
+    expect(add.said, "added note").toMatch(/^0 [\s\S]*gh pr merge[\s\S]* reads 1$/);
+    expect(change.said, "changed note").toMatch(/^0 [\s\S]*gh pr merge[\s\S]* reads 2$/);
+  });
+
+  // DQ-1045: a path, a status or a mode decides before any blob read.
+  it("reads no text when a path, a status or a mode decides", () => {
+    keptOnMain();
+    const note = { ".agents/chief/memories/long-term/n.md": "# N\n" };
+    const cases: [string, string, RegExp][] = [
+      [
+        "a gitlink under long-term",
+        prChange({ write: note, links: [".agents/chief/memories/long-term/sub"] }),
+        /^1 [\s\S]*the owner merges it/,
+      ],
+      [
+        "a deleted note next to a note",
+        prChange({ write: note, remove: [KEPT] }),
+        /^1 [\s\S]*the owner merges it/,
+      ],
+      [
+        "an unsupported manifest path",
+        prChange({
+          raw: [
+            [
+              Buffer.from([0x78, 0xff, 0x2f, ...Buffer.from("package.json")]),
+              Buffer.from([0x7b, 0xff, 0x7d]),
+            ],
+          ],
+        }),
+        /^1 [\s\S]*The chief stops: a path that is not printable ASCII/,
+      ],
+      [
+        "a listed path and a changed manifest",
+        prChange({ write: { "AGENTS.md": "x\n", "package.json": manifest() } }),
+        /^1 [\s\S]*LISTED AGENTS\.md/,
+      ],
+    ];
+    const results = cases.map(([name, head, want]) => {
+      fakeGh(answer({ head, baseTip: tip() }));
+      return [name, logged("152").said, want] as const;
+    });
+    for (const [name, said, want] of results) {
+      expect(said, name).toMatch(new RegExp(`${want.source}[\\s\\S]* reads 0$`));
+    }
+  });
+
+  // DQ-1045 (grill r2, point 2): the CI facts decide before any blob read.
+  it("reads no text when CI decides, for a memory PR and for a changed manifest", () => {
+    const memoryHead = prChange({ write: { ".agents/chief/memories/long-term/ci.md": "# CI\n" } });
+    const codeHead = prChange({ write: { "package.json": manifest() } });
+    const results: [string, string][] = [];
+    for (const [name, nodes] of [
+      ["red", RED_NODES()],
+      ["pending", PENDING_NODES()],
+    ] as const) {
+      for (const [kind, head] of [
+        ["memory", memoryHead],
+        ["manifest", codeHead],
+      ] as const) {
+        fakeGh(answer({ head, baseTip: tip(), nodes }));
+        results.push([`${kind} ${name}`, logged("152").said]);
+      }
+    }
+    for (const [name, said] of results) {
+      expect(said, name).toMatch(/^1 [\s\S]*CI check[\s\S]* reads 0$/);
+    }
+  });
+
+  // DQ-1047: a manifest keeps the decode of d748524 (a leading BOM is removed).
+  it("passes a manifest with a BOM and a description change", () => {
+    const head = prChange({ write: { "package.json": manifest("\ufeff") } });
+    fakeGh(answer({ head, baseTip: tip() }));
+    const run = logged("152");
+    expect(run.said, "bom manifest").toMatch(/^0 [\s\S]*gh pr merge/);
+  });
+
+  // Grill r2, point 2: all git work, the content reads too, comes before snapshot 2, and a
+  // decisive record result waits for the compare.
+  it("reads each text before the second snapshot, and holds a record result until the compare", () => {
+    keptOnMain();
+    const memoryHead = prChange({ write: { [KEPT]: "# Kept order\n" } });
+    const codeHead = prChange({ write: { "package.json": manifest() } });
+    const orders: [string, string[]][] = [];
+    for (const [kind, head] of [
+      ["memory", memoryHead],
+      ["manifest", codeHead],
+    ] as const) {
+      fakeGh(answer({ head, baseTip: tip() }));
+      orders.push([kind, logged("152").lines]);
+    }
+    for (const [kind, lines] of orders) {
+      const lastRead = lines.map((line) => line.startsWith("git cat-file blob")).lastIndexOf(true);
+      const secondGh = lines.indexOf("gh", lines.indexOf("gh") + 1);
+      expect(`${kind} read ${String(lastRead)} gh ${String(secondGh)}`, `order ${kind}`).toMatch(
+        /^\w+ read \d+ gh \d+$/,
+      );
+      expect(lastRead < secondGh, `${kind}: the last read comes before the second gh call`).toBe(
+        true,
+      );
+    }
+    const goneHead = prChange({ remove: [KEPT] });
+    const rerun = greenNodes().map((node, i) => (i === 0 ? { ...node, databaseId: 9998 } : node));
+    fakeGh(
+      answer({ head: goneHead, baseTip: tip() }),
+      answer({ head: goneHead, baseTip: tip(), nodes: rerun }),
+    );
+    const held = logged("152");
+    expect(held.said, "held result").toMatch(/^2 [\s\S]*the PR changed during the check/);
+    expect(held.result.stdout, "no held line").not.toContain("a memory PR may only add or change");
+  });
+
+  // DQ-1043 and grill 2 point 1: one origin value, read as bytes, printable ASCII, no trim.
+  it("exits 2 with no gh call for an origin with more or less than one exact value", () => {
+    const head = prCommit({ "docs/a.md": "o2\n" });
+    const cases: [string, string[], string][] = [
+      ["two values", [ORIGIN_URL, "https://github.com/binhle312/cty1ng"], "has 2 URLs"],
+      ["two equal values", [ORIGIN_URL, ORIGIN_URL], "has 2 URLs"],
+      ["a value and an empty value", [ORIGIN_URL, ""], "has 2 URLs"],
+      ["a trailing space", [`${ORIGIN_URL} `], "not printable ASCII"],
+      ["a BOM", [`\ufeff${ORIGIN_URL}`], "not printable ASCII"],
+    ];
+    const results: [string, string, string][] = [];
+    for (const [name, values, want] of cases) {
+      git("config", "--unset-all", "remote.origin.url");
+      for (const value of values) git("config", "--add", "remote.origin.url", value);
+      fakeGh(answer({ head, baseTip: tip() }));
+      const result = cli("152");
+      results.push([
+        name,
+        `${String(result.status)} ${result.stdout} calls ${String(ghCalls())}`,
+        want,
+      ]);
+    }
+    git("config", "--unset-all", "remote.origin.url");
+    git("config", "remote.origin.url", ORIGIN_URL);
+    for (const [name, said, want] of results) {
+      expect(said, `origin ${name}`).toMatch(new RegExp(`^2 [\\s\\S]*${want}[\\s\\S]* calls 0$`));
+    }
+  });
+
+  // DQ-1042 and DQ-1044: the policy walk keeps each name as bytes and stops on a read error.
+  it("exits 2 for a policy file name that is not printable ASCII, or a folder it cannot read", () => {
+    expect(process.getuid?.(), "the test does not run as root").not.toBe(0);
+    const head = prCommit({ "docs/a.md": "p2\n" });
+    const lib = join(repo, ".agents/chief/scripts/lib");
+    const results: [string, string, RegExp][] = [];
+    const run = (name: string, want: RegExp): void => {
+      fakeGh(answer({ head, baseTip: tip() }));
+      const result = cli("152");
+      results.push([name, `${String(result.status)} ${result.stdout}${result.stderr}`, want]);
+    };
+    const raw = Buffer.concat([Buffer.from(`${lib}/x`), Buffer.from([0xff]), Buffer.from(".ts")]);
+    writeFileSync(raw, "export {};\n");
+    run("a name with the byte ff", /^2 [\s\S]*cannot keep exactly/);
+    rmSync(raw);
+    writeFileSync(join(lib, "x y.ts"), "export {};\n");
+    run("a name with a space", /^2 [\s\S]*(cannot keep exactly|differs from the base tip)/);
+    rmSync(join(lib, "x y.ts"));
+    mkdirSync(join(lib, "locked"));
+    chmodSync(join(lib, "locked"), 0o000);
+    run("a folder it cannot read", /^2 Cannot check #152: [\s\S]*could not read/);
+    chmodSync(join(lib, "locked"), 0o755);
+    rmSync(join(lib, "locked"), { recursive: true });
+    writeFileSync(join(lib, "locked.ts"), "export {};\n");
+    chmodSync(join(lib, "locked.ts"), 0o000);
+    run("a file it cannot read", /^2 /);
+    chmodSync(join(lib, "locked.ts"), 0o644);
+    rmSync(join(lib, "locked.ts"));
+    for (const [name, said, want] of results) expect(said, `policy ${name}`).toMatch(want);
+  });
+
+  // DQ-1052: the fake gh counts each call on entry, also a call with other arguments.
+  it("counts each gh call, also one with other arguments", () => {
+    fakeGh(answer());
+    spawnSync(join(bin, "gh"), ["auth", "status"], { encoding: "utf8" });
+    expect(ghCalls(), "a call with other arguments").toBe(1);
+    const head = prCommit({ "docs/a.md": "g2\n" });
+    fakeGh(answer({ head, baseTip: tip() }));
+    const result = cli("152");
+    expect(
+      `${String(result.status)} calls ${String(ghCalls())}`,
+      "two calls on a passing run",
+    ).toBe("0 calls 2");
   });
 });
 

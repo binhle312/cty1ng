@@ -6,8 +6,11 @@ import { describe, expect, it } from "vitest";
 import {
   type StartFacts,
   gitEnvironment,
+  type FsEntry,
+  type PolicyFs,
   policyProblems,
   startProblems,
+  walkPolicy,
 } from "./merge-check-start.ts";
 import { REPOSITORY } from "./merge-list.ts";
 
@@ -118,5 +121,54 @@ describe("policyProblems", () => {
       }).join("\n"),
       "a link in the tree",
     ).toContain("scripts/l");
+  });
+});
+
+// Plan delta r2 §5 (DQ-1042, DQ-1044): names as bytes, "no entry" only for a top path, and a read
+// error gives a reason (exit 2), not an exception.
+describe("walkPolicy", () => {
+  const DIR: FsEntry = { kind: "dir", executable: false };
+  const FILE: FsEntry = { kind: "file", executable: false };
+  const fsOf = (
+    tree: Record<string, FsEntry | "gone">,
+    dirs: Record<string, Buffer[]>,
+  ): PolicyFs => ({
+    lstat: (path) => {
+      const entry = tree[path];
+      return entry === undefined || entry === "gone" ? undefined : entry;
+    },
+    readdir: (path) => {
+      const names = dirs[path];
+      if (names === undefined) throw Object.assign(new Error("denied"), { code: "EACCES" });
+      return names;
+    },
+  });
+  const said = (walk: ReturnType<typeof walkPolicy>): string =>
+    walk.ok ? `ok ${walk.files.map((file) => file.path).join(",")}` : `stop ${walk.reason}`;
+
+  it("lists each file of a folder and allows a missing top path", () => {
+    const fs = fsOf({ scripts: DIR, "scripts/a.ts": FILE }, { scripts: [Buffer.from("a.ts")] });
+    expect(said(walkPolicy(["scripts", "package.json"], fs)), "files").toBe("ok scripts/a.ts");
+  });
+
+  it("stops for an entry of readdir that lstat does not find", () => {
+    const fs = fsOf({ scripts: DIR, "scripts/a.ts": "gone" }, { scripts: [Buffer.from("a.ts")] });
+    expect(said(walkPolicy(["scripts"], fs)), "gone entry").toMatch(/^stop .*scripts\/a\.ts/);
+  });
+
+  it("stops for a name with a byte that is not printable ASCII", () => {
+    for (const name of [Buffer.from([0x78, 0xff]), Buffer.from("x y.ts")]) {
+      const fs = fsOf({ scripts: DIR }, { scripts: [name] });
+      expect(said(walkPolicy(["scripts"], fs)), `name ${name.toString("hex")}`).toMatch(
+        /^stop .*cannot keep exactly/,
+      );
+    }
+  });
+
+  it("stops with a reason when a folder cannot be read", () => {
+    const fs = fsOf({ scripts: DIR }, {});
+    expect(said(walkPolicy(["scripts"], fs)), "unreadable folder").toMatch(
+      /^stop .*could not read scripts/,
+    );
   });
 });

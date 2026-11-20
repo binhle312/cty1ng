@@ -32,6 +32,19 @@ function snapshotOf(stdout: string): Snapshot {
 }
 
 describe("readSnapshot", () => {
+  // Plan delta r2 §5: gh output is decoded with a fatal UTF-8 decoder, before the JSON check.
+  it("cannot check a gh answer that is not UTF-8", () => {
+    const text = answer({ author: "owner-login" });
+    const at = text.indexOf("owner-login");
+    const bytes = Buffer.concat([
+      Buffer.from(text.slice(0, at)),
+      Buffer.from([0xff]),
+      Buffer.from(text.slice(at)),
+    ]);
+    const result = readSnapshot({ repo: REPO, number: 152 }, () => ({ status: 0, stdout: bytes }));
+    expect(result.ok ? "ok" : result.reason, "not UTF-8").toContain("not UTF-8");
+  });
+
   it("reads each fact of the PR and each check with its app and workflow file", () => {
     const nodes = [
       runNode("lint"),

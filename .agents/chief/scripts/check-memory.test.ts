@@ -21,6 +21,7 @@ import {
   checkSchema,
   checkSizes,
   checkTracked,
+  frontmatter,
   readSettings,
   rulesIndex,
 } from "./lib/check-memory.ts";
@@ -1135,5 +1136,17 @@ describe("the cron line of the memory audit", () => {
     expect(line, "cron write scope").toContain('"Write($A/**)"');
     expect(line, "cron restricted").toContain("--restricted");
     expect(line, "cron no Bash").not.toContain("Bash");
+  });
+});
+
+// Plan delta r2 §3 (DQ-1041): "key: value" with a space after the colon; the key and the value
+// stay two capture groups.
+describe("frontmatter", () => {
+  it("gives a line with no space after the colon as a bad line, and keeps key and value", () => {
+    expect(frontmatter("---\ntitle:x\n---\n")?.bad, "no space").toEqual(["title:x"]);
+    const parsed = frontmatter("---\ntitle: x\n---\n");
+    expect([...(parsed?.fields ?? new Map<string, string>())], "key and value").toEqual([
+      ["title", "x"],
+    ]);
   });
 });
