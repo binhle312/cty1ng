@@ -145,7 +145,7 @@ The historical snapshot column gives evidence for a specific review period.
 | [#139](https://github.com/binhle312/cty1ng/pull/139) | No milestone / the chief's restore kit (owner, 2026-11-19, orders 70, 76 and 78): the `decision-pages` skill and the chief memory | Ledger | 122 (DQ-876 to DQ-899, DQ-935 to DQ-952, DQ-1000 to DQ-1018, DQ-1020 to DQ-1080) | 6 (DQ-897, DQ-899, DQ-1076, DQ-1078 to DQ-1080) | 0 | 11 | — |
 | [#137](https://github.com/binhle312/cty1ng/pull/137) | Audit 2026-11-05 / DQ-455, the 1 MB line test of the guard on the fastest of 3 runs; the redesign of the timed tests (owner, q5 Q5 A) | Ledger | 25 (DQ-801 to DQ-820, DQ-848 to DQ-852) | 10 (DQ-809 to DQ-811, DQ-816, DQ-818 to DQ-820, DQ-848, DQ-851, DQ-852) | 0 | 6 | — |
 | [#145](https://github.com/binhle312/cty1ng/pull/145) | No milestone / stage 1 of the chief move (owner orders 199–205) | Ledger | 22 (DQ-1114 to DQ-1135) | 3 (DQ-1115, DQ-1116, DQ-1127) | 0 | 3 | — |
-| [#146](https://github.com/binhle312/cty1ng/pull/146) | No milestone / standing-permission redesign (owner order 207) | Ledger | 2 (DQ-1136, DQ-1137) | 1 (DQ-1136) | 0 | 1 | — |
+| [#146](https://github.com/binhle312/cty1ng/pull/146) | No milestone / standing-permission redesign (owner order 207) | Ledger | 2 (DQ-1136, DQ-1137) | 1 (DQ-1136) | 0 | 2 | — |
 
 ## 4. Historical evidence snapshots
 
@@ -1057,6 +1057,7 @@ The rounds of merged PRs are in the [archive](delivery-quality-archive.md#review
 | [#145](https://github.com/binhle312/cty1ng/pull/145) / round 2, Astra | 2026-11-23 | `4047ba8` / `a58eed3`, local `33b08e4` | Round 1 fix review / Astra 2-1 to 2-7 | DQ-1129 to DQ-1132 | DQ-1115, DQ-1116 | none | none | Local Vitest passed 334 tests and local TypeScript passed. No public test changed. The review traced the grant and Ready findings. It did not execute a live merge. |
 | [#145](https://github.com/binhle312/cty1ng/pull/145) / round 2, Opus | 2026-11-23 | `4047ba8` / `a58eed3`, local `33b08e4` | Narrow round 2 / Opus N1 to N8 | DQ-1133 to DQ-1135 | DQ-1115, DQ-1116 (also reported by Astra), DQ-1127 | none | none | The grant reference and config findings repeat round 1 causes. The report records probes of grant references and tool configs. It records no live merge test. |
 | [#146](https://github.com/binhle312/cty1ng/pull/146) / redesign round 1 | 2026-11-23 | `bf03f5d` / `d2a5be4`, local `3864cdf` | Public wording and round 2 records / independent Codex record review | DQ-1137 | none | none | none | The reviewer checked the kind rules, direct Ready route and report attribution. The review ran no project gates. |
+| [#146](https://github.com/binhle312/cty1ng/pull/146) / redesign round 2 | 2026-11-23 | `d2a5be4` / `bf58cfa`, local `3864cdf` | Record fix only / independent Codex reviewer | none | none | DQ-1137 | none | The reviewer confirmed both record corrections and the round 1 scope. The check ran no project gates. |
 
 Use a local review artifact or an authorized PR comment as the source.
 If the head changes after review, the row still describes the original reviewed revision.
