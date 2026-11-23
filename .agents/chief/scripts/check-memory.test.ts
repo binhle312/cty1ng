@@ -1147,8 +1147,13 @@ describe("the memory audit on request (order 179)", () => {
     const restore = readFileSync(".agents/chief/memories/long-term/restore.md", "utf8");
     const start = /^## Audit start\n[\s\S]*?^```\w*\n([\s\S]*?)^```/m.exec(restore)?.[1] ?? "";
     expect(start, "restricted mode").toContain("--restricted");
-    expect(start, "tool set").toContain('--tools "Read,Grep,Glob,Write"');
-    expect(start, "write scope").toContain('"Write($A/**)"');
+    expect(start, "tool and write limits").toContain(
+      '--tools "Read,Grep,Glob,Write" --allowedTools "Read" "Grep" "Glob" "Write($A/**)" --',
+    );
+    expect(start, "input and report guard").toContain(
+      ': "${A:?}" "${R:?}" && test -s "$R-input.txt" && test ! -e "$R-report.md" &&',
+    );
+    expect(start, "no permission bypass").not.toContain("--dangerously");
     expect(start, "Bash tool").not.toContain("Bash");
   });
 
@@ -1156,8 +1161,70 @@ describe("the memory audit on request (order 179)", () => {
     const restore = readFileSync(".agents/chief/memories/long-term/restore.md", "utf8");
     const input = /^## Audit input\n[\s\S]*?^```\w*\n([\s\S]*?)^```/m.exec(restore)?.[1] ?? "";
     expect(input, "main commit").toContain("git rev-parse origin/main");
-    expect(input, "main commit range").toContain("..origin/main");
+    expect(input, "main header").toContain("printf 'Main: %s\\n'");
+    expect(input, "ancestor check").toContain("--is-ancestor");
+    expect(input, "net change range").toContain('git diff "$previous_main" "$main"');
+    expect(input, "report end line").toContain("End of report.");
+    expect(input, "partial input file").toContain("-input.part");
+    expect(input, "memory check exit code").toContain("check:memory exit");
     expect(input, "no time window").not.toContain("--since");
+  });
+
+  it("includes the net change since the last complete matching report", () => {
+    const restore = readFileSync(`${L}/restore.md`, "utf8");
+    const input = /^## Audit input\n[\s\S]*?^```\w*\n([\s\S]*?)^```/m.exec(restore)?.[1] ?? "";
+    const repo = mkdtempSync(join(tmpdir(), "check-audit-input-"));
+    const bin = join(repo, "bin");
+    const env = {
+      PATH: `${bin}:${process.env.PATH ?? ""}`,
+      GIT_ALLOW_PROTOCOL: "file",
+      GIT_CONFIG_GLOBAL: "/dev/null",
+      GIT_CONFIG_NOSYSTEM: "1",
+    };
+    const git = (...args: string[]): string =>
+      execFileSync("git", args, { cwd: repo, env, encoding: "utf8" });
+    try {
+      mkdirSync(bin);
+      writeFileSync(join(bin, "pnpm"), "#!/bin/sh\nprintf 'memory problem\\n'\nexit 1\n", {
+        mode: 0o700,
+      });
+      writeFileSync(join(bin, "gh"), "#!/bin/sh\nexit 0\n", { mode: 0o700 });
+      git("init", "-q", "-b", "main");
+      git("config", "user.name", "Audit Test");
+      git("config", "user.email", "audit@example.test");
+      git("remote", "add", "origin", ".");
+      mkdirSync(join(repo, L), { recursive: true });
+      const rule = join(repo, L, "rule.md");
+      writeFileSync(rule, "Old rule.\n");
+      git("add", L);
+      git("commit", "-qm", "Initial rule");
+      const previous = git("rev-parse", "HEAD").trim();
+      writeFileSync(rule, "New rule.\n");
+      git("commit", "-qam", "Change rule");
+      const main = git("rev-parse", "HEAD").trim();
+
+      const audits = join(repo, M, "short-term/audits");
+      mkdirSync(audits, { recursive: true });
+      for (const day of ["01", "02", "03"]) {
+        const stem = join(audits, `2000-01-${day}-0000`);
+        const reportMain = day === "01" ? previous : main;
+        const inputMain = day === "02" ? main : previous;
+        const footer = day === "02" ? "" : "End of report.\n";
+        writeFileSync(`${stem}-input.txt`, `Main: ${inputMain}\n`);
+        writeFileSync(`${stem}-report.md`, `Main: ${reportMain}\n${footer}`);
+      }
+
+      const run = spawnSync("sh", ["-c", `${input}\nstatus=$?\nprintf '%s' "$R"\nexit "$status"`], {
+        cwd: repo,
+        env,
+        encoding: "utf8",
+      });
+      expect(run.status, run.stderr).toBe(0);
+      const evidence = readFileSync(join(repo, `${run.stdout}-input.txt`), "utf8");
+      expect(evidence, "net rule change").toContain("-Old rule.\n+New rule.");
+    } finally {
+      rmSync(repo, { recursive: true, force: true });
+    }
   });
 
   it("the restore guide names the owner trigger, lack of a cron line, and the input file", () => {
@@ -1173,6 +1240,11 @@ describe("the memory audit on request (order 179)", () => {
     const checklist = readFileSync(".agents/chief/memories/long-term/audit.md", "utf8");
     expect(checklist, "no command tool").toContain("The auditor has no command tool.");
     expect(checklist, "report only").toMatch(/Write only\s+one report file\./);
+    expect(checklist, "copy the main line first").toContain(
+      "Copy the `Main:` line from the input file to the first line of the report.",
+    );
+    expect(checklist, "open issues heading").toContain('Never start with "no findings".');
+    expect(checklist, "finish the report").toContain("End of report.");
   });
 });
 

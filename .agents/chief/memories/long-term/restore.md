@@ -37,49 +37,88 @@ How the chief comes back when the old chief is gone. The drill that proves it is
 ## Audit input
 
 Run this block from the chief's checkout. It writes `$R-input.txt` in `short-term/audits/`.
-Use the newest timestamped report to find the previous `Main:` line. With no report in this
-format, start at `fe44c64` (the merge of #139). If the block fails, fix the problem before
-you start the auditor. If the file name is in use, wait until the next minute.
+The chief runs one audit at a time. Use the newest timestamped report that ends with
+`End of report.` and starts with the same `Main:` line as its matching input file.
+If none qualify, start at `fe44c64` (the merge of #139). To fix a bad first line, copy the
+`Main:` line from the report's input file. You can also remove a bad report after the owner gives the OK.
+
+The block publishes the input only after all required commands finish. A `check:memory` exit code
+of 1 records memory problems as input. Any other nonzero code means the check could not run.
+If the block fails, check its error and any `$R-input.part` file before you retry.
+If the file name is in use, wait until the next minute.
 
 ```sh
 A=.agents/chief/memories/short-term/audits
-R="$A/$(date +%F-%H%M)"
+R="$A/$(date +%F-%H%M)" &&
 mkdir -p "$A" &&
 test ! -e "$R-input.txt" &&
 test ! -e "$R-report.md" &&
 git fetch -q origin main &&
 (
-  report=$(find "$A" -maxdepth 1 -type f -name '????-??-??-????-report.md' | LC_ALL=C sort | tail -n 1)
+  main=$(git rev-parse origin/main) || exit
+  reports=$(find "$A" -maxdepth 1 -type f -name '????-??-??-????-report.md') || exit
+  reports=$(LC_ALL=C sort -r <<EOF
+$reports
+EOF
+  ) || exit
+  report=
   previous_main=fe44c64
-  if [ -n "$report" ]; then
-    previous_main=$(sed -n '1s/^Main: //p' "$report")
-  fi
-  git merge-base --is-ancestor "$previous_main" origin/main || exit 1
-  main=$(git rev-parse origin/main) || exit 1
-  printf 'Main: %s\n' "$main"
-  echo "## check:memory --local"
-  pnpm -s check:memory --local || :
-  echo "## differences from origin/main"
-  git status -sb
-  git diff origin/main -- .agents/chief/memories/
-  echo "## long-term changes since the last audit"
-  git log -p "$previous_main"..origin/main -- .agents/chief/memories/long-term/ || exit 1
-  echo "## open PRs and their files"
+  while IFS= read -r candidate; do
+    candidate_input=${candidate%-report.md}-input.txt
+    test -f "$candidate_input" || continue
+    last=$(tail -n 1 "$candidate") || exit
+    test "$last" = 'End of report.' || continue
+    first=$(head -n 1 "$candidate") || exit
+    input_first=$(head -n 1 "$candidate_input") || exit
+    test "$first" = "$input_first" || continue
+    case "$first" in
+      'Main: '?*)
+        report=$candidate
+        previous_main=${first#Main: }
+        break
+        ;;
+    esac
+  done <<EOF
+$reports
+EOF
+  git merge-base --is-ancestor "$previous_main" "$main" || {
+    printf 'Audit checkpoint %s from %s is not an ancestor of %s.\n' \
+      "$previous_main" "${report:-the first-audit default}" "$main" >&2
+    exit 1
+  }
+  printf 'Main: %s\n' "$main" &&
+  echo "## check:memory --local" || exit
+  memory_exit=0
+  pnpm -s check:memory --local 2>&1 || memory_exit=$?
+  printf 'check:memory exit %s\n' "$memory_exit" &&
+  test "$memory_exit" -le 1 &&
+  echo "## differences from origin/main" &&
+  git status -sb &&
+  git diff "$main" -- .agents/chief/memories/ &&
+  echo "## long-term changes since the last audit" &&
+  git log --oneline "$previous_main..$main" &&
+  git diff "$previous_main" "$main" -- .agents/chief/memories/long-term/ &&
+  echo "## open PRs and their files" &&
   gh pr list --state open --json number,files --jq '.[] | "#\(.number) \([.files[].path] | join(" "))"'
-) > "$R-input.txt" 2>&1
+) > "$R-input.part" &&
+mv "$R-input.part" "$R-input.txt"
 ```
 
 ## Audit start
 
 Use the same shell and the same `A` and `R` from "Audit input". Replace `<audit_timeout_minutes>`
 with the timeout in `settings.md`, and `<model>` with the model ID in `chief_model`.
+Run the block in the background as shown. The timeout can exceed the limit of a foreground command.
 The auditor has no command tool and can write only in `$A`. Read `$R-report.md` after the run.
 
 ```sh
-timeout <audit_timeout_minutes>m env -u ANTHROPIC_API_KEY claude -p --restricted --strict-mcp-config \
-  --model <model> --effort high --no-session-persistence --tools "Read,Grep,Glob,Write" \
-  --allowedTools "Read" "Grep" "Glob" "Write($A/**)" \
-  -- "$(cat .agents/chief/memories/long-term/audit.md) The input file: $R-input.txt. The report file: $R-report.md."
+(
+  : "${A:?}" "${R:?}" && test -s "$R-input.txt" && test ! -e "$R-report.md" &&
+  timeout <audit_timeout_minutes>m env -u ANTHROPIC_API_KEY claude -p --restricted --strict-mcp-config \
+    --model <model> --effort high --no-session-persistence \
+    --tools "Read,Grep,Glob,Write" --allowedTools "Read" "Grep" "Glob" "Write($A/**)" -- \
+    "$(cat .agents/chief/memories/long-term/audit.md) The input file: $R-input.txt. The report file: $R-report.md."
+) &
 ```
 
 ## Not claimed

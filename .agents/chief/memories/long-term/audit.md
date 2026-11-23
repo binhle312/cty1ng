@@ -21,6 +21,7 @@ one report file.
    `short-term/owner/` (yes or no).
 5. Privacy: read the changes of `long-term/` in the input file. Look for each fact of the
    section "Privacy" of `../README.md`.
-6. Copy the `Main:` line from the input file to the first line of the report. Then write a table
-   of the open issues (issue, file, what to do), the permission rules of step 4, and what you
-   checked or could not check.
+6. Copy the `Main:` line from the input file to the first line of the report.
+   Never start with "no findings". Then write a table of the open issues (issue, file, what to do),
+   the permission rules of step 4, and what you checked or could not check.
+   When the report is complete, write `End of report.` as its last line.
