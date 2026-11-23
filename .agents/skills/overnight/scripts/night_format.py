@@ -88,6 +88,7 @@ FENCE = re.compile(r"^(`{3,}|~{3,})(.*)$")
 # code: (class, message). "final" = do not retry; "fix" = correct the input and run again.
 CODES = {
     "REVIEW_OWNER_TASK": ("fix", "the task needs the owner under the project rules"),
+    "REVIEW_OWNER_PATH": ("final", "the live PR changes an owner-only path. Needs you"),
     "REVIEW_PLAN_REQUIRED": ("fix", "the chief must check the plan and test strategy first"),
     "REVIEW_START_REQUIRED": ("fix", "the chief must start this review of the pushed head"),
     "REVIEW_CHECKOUT": ("fix", "use a clean detached checkout of the pushed head"),

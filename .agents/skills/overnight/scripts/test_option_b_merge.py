@@ -70,6 +70,57 @@ class MergeTests(ReviewFixture, unittest.TestCase):
         self.expect(self.merge(), "LOCK_STALE")
         self.assertEqual(self.calls("PUT"), [])
 
+    def test_grant_refuses_migration_classified_as_night(self):
+        path = "backend/migrations/0001.sql"
+        self.begin(second=False, filename=path)
+        reports = self.complete()
+        before = self.journal().read_bytes()
+        response = self.grant(reports)
+        self.expect(response, "REVIEW_OWNER_PATH")
+        self.assertIn(path, response[1])
+        self.assertEqual(self.journal().read_bytes(), before)
+        self.assertEqual(self.calls("PUT"), [])
+        text = self.ok(self.command("report"))
+        self.assertIn("report written", text)
+        needs = (self.chief / "report.md").read_text().split("## Needs you\n")[1].split("\n## ")[0]
+        self.assertIn(f"| {TARGET} | owner-only path under project rules |  | {path} |", needs)
+
+    def test_docs_only_pr_can_receive_grant_and_merge(self):
+        self.begin(second=False, filename="docs/x.md")
+        self.config(draft=True)
+        self.ok(self.grant(self.complete()))
+        grant = self.entries()[-1]
+        self.assertEqual((grant["kind"], grant["files"]), ("merge-permission", ["docs/x.md"]))
+        self.grant_id = str(grant["id"])
+        self.ok(self.merge())
+        self.assertEqual(len(self.calls("PUT")), 1)
+
+    def test_merge_refuses_live_rename_from_owner_path_before_claim(self):
+        self.begin(second=False, filename="docs/x.md")
+        self.ok(self.grant(self.complete()))
+        self.grant_id = str(self.entries()[-1]["id"])
+        self.config(draft=True, files=[{"filename": "docs/x.md", "status": "renamed",
+                                      "previous_filename": "docs/decisions/old.md"}])
+        self.expect(self.merge(), "REVIEW_OWNER_PATH")
+        self.assertEqual([e["kind"] for e in self.events_for_pr()], ["leader-init"])
+        self.assertEqual(self.calls("PUT"), [])
+        calls = [json.loads(line)[0] for line in (self.root / "calls").read_text().splitlines()]
+        self.assertFalse(any(argv[:2] == ["pr", "ready"] for argv in calls))
+
+    def test_owner_path_categories(self):
+        protected = (
+            "AGENTS.md", "docs/decisions/new.md", "other/migrations/002.sql",
+            "frontend/package.json", "pnpm-lock.yaml", ".github/workflows/ci.yml",
+            "backend/src/adapters/workspace/port.ts", "backend/src/adapters/http/uploads/avatar.ts",
+            "backend/src/adapters/http/middleware.ts", "frontend/src/components/ui/markdown.tsx",
+            "backend/src/core/guard/rules.ts",
+        )
+        matches = night_module().owner_only_paths
+        for path in protected:
+            with self.subTest(path=path):
+                self.assertEqual(matches([path]), [path])
+        self.assertEqual(matches(["docs/x.md", "docs/decisions-example.md", "docs/migrations.md"]), [])
+
     def test_merge_argv_and_one_attempt(self):
         self.setup_grant()
         before = self.journal().read_bytes()
@@ -196,10 +247,29 @@ class MergeTests(ReviewFixture, unittest.TestCase):
         self.config(rules=rules, checks=[exact, dict(exact, id=3, head_sha=self.main)])
         self.ok(self.merge())
 
+    def test_merge_refuses_wrong_check_source_with_green_main(self):
+        self.setup_grant()
+        rules = [{"type": "required_status_checks", "parameters": {"required_status_checks":
+                  [{"context": "CI", "integration_id": 42}]}}]
+        check = dict(id=1, name="CI", head_sha=self.head, app={"id": 99}, status="completed", conclusion="success")
+        self.config(rules=rules, checks=[check, dict(check, id=2, head_sha=self.main, app={"id": 42})])
+        self.expect(self.merge(), "MERGE_CI_NOT_GREEN")
+        self.assertEqual(self.calls("PUT"), [])
+
+    def test_merge_rejects_another_run(self):
+        self.setup_grant()
+        self.expect(self.merge(run="another-night"), "MERGE_PERMISSION_NIGHT")
+        self.assertEqual(self.calls("PUT"), [])
+
     def test_approved_active_inventory_and_auto_delete_are_eligible(self):
         self.setup_grant(auto_delete=True)
         self.ok(self.merge())
         self.assertEqual(len(self.calls("PUT")), 1)
+
+    def test_auto_delete_refuses_protected_head(self):
+        self.setup_grant(auto_delete=True, head_protected=True)
+        self.expect(self.merge(), "MERGE_EFFECT_UNCLEAR")
+        self.assertEqual(self.calls("PUT"), [])
 
     def test_incomplete_workflow_inventory_refuses_before_grant(self):
         self.begin(second=False)

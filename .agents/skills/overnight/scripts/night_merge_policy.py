@@ -4,8 +4,14 @@ from urllib.parse import quote, urlencode
 
 from night_format import Refused, parsed_target, valid_base
 from night_review_io import main_head
+from night_rules import owner_only_paths
 
 METHODS = {"squash": "allow_squash_merge", "merge": "allow_merge_commit", "rebase": "allow_rebase_merge"}
+
+
+def require_night_paths(files):
+    if paths := owner_only_paths(files):
+        raise Refused("REVIEW_OWNER_PATH", ", ".join(paths))
 
 
 def repository_matches(repository, name, repo_id):

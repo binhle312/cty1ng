@@ -16,6 +16,22 @@ from night_testlib import Hooked, argv, at, code_of, env_for, intent_args, journ
 
 
 class RaceTests(Hooked):
+    def test_sigterm_releases_lock_marker(self):
+        started(self.dir)
+        lock = os.path.join(self.dir, "journal.lock")
+        marker, (holder,) = self.hooked("hold-fsync", ["log", "alive", "x"], at("22:10"))
+        try:
+            self.wait_markers(marker, "held")
+            holder.send_signal(signal.SIGTERM)
+            holder.communicate(timeout=30)
+            self.assertFalse(os.path.exists(lock))
+        finally:
+            if holder.poll() is None:
+                holder.kill()
+                holder.communicate(timeout=30)
+            if os.path.exists(lock):
+                os.remove(lock)
+
     def test_eight_writers_at_one_gate_lose_no_entry(self):
         started(self.dir)
         for _ in range(3):

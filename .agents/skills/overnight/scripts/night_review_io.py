@@ -157,8 +157,6 @@ def changed_paths(page_rows, pr, target):
             raise Refused("REVIEW_SCOPE", repr(names))
         returned.add(names[0])
         changed.update(names)
-    if any(name.startswith(".github/workflows/") for name in changed):
-        raise Refused("REVIEW_SCOPE", "GitHub workflow paths need the owner")
     return sorted(changed)
 
 

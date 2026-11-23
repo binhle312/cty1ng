@@ -18,6 +18,8 @@ Use `night.py items`, then show the owner its rows, review cap, bonus per merge 
 
 Give each task acceptance criteria, exact owned file paths and a class. Use `owner` for any task that needs approval under project rules, including AGENTS.md §7. Put it under **Needs you**. Use `night` only for approved night work. For merge targets, pass the specs to `go --tasks <file>` as a JSON object keyed by canonical PR target. Each value has `class`, `criteria` and `owned`. Both lists must contain at least one entry. Use repository-relative owned paths.
 
+The live path check also covers both names of a renamed file. `REVIEW_OWNER_PATH` sends the PR to **Needs you**. Use the task class for §7 changes that the path list cannot identify.
+
 At go, record the chief label and approved reviewer policy. Pass `--consultants` only if the owner allows them. Pass `--review-cap` and `--merge-main-bonus` with the values from the read-back. Include the allowed pair and each named role's resolved provider, model, effort and role. Keep the card's read-back with the owner's exact go. After go, only the exact owner amendment path changes the allowed rows.
 
 ## Automation baseline and Ready reads

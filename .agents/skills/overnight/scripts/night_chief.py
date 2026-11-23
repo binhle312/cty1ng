@@ -8,7 +8,7 @@ from night_leader import init_leader, leader_events
 from night_cleanup import dispatch as cleanup_dispatch
 from night_format import FIELDS, FULL_SHA, Refused, entry_time, iso, schema_problem, text_list, canonical_target, input_record, parsed_target
 from night_review import GRANT_CHANGES, accepted_findings, checked_plan, chief_only, grant_findings, owned_scope, reviewed_head_matches, round_number, task_for
-from night_merge_policy import merge_policy
+from night_merge_policy import merge_policy, require_night_paths
 from night_review_io import changed_paths, main_head, pr_facts, reports_at, review_checkout, reviewer_brief
 from night_rules import judge, merge_item, pending_attempt, review_kind
 
@@ -189,6 +189,7 @@ def grant_fields(chief, night, raw, github, page_rows, check_policy):
     if p3 and (not isinstance(pr.get("body"), str) or any(text not in pr["body"] for text in p3)):
         raise Refused("REVIEW_REPORT", "list each open P3 in the PR body")
     files = changed_paths(page_rows, pr, target)
+    require_night_paths(files)
     effects = merge_policy(night, target, pr, method, github, page_rows)
     if not owned_scope(night, target, files):
         raise Refused("REVIEW_SCOPE", target)

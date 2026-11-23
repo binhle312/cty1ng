@@ -64,6 +64,7 @@ Count one round per complete pair, per PR. Use `review_cap` (default 5) and `mer
 ### Grant and confirm
 
 1. Check the task class, project rules and live PR. A task that needs owner approval stays under **Needs you**. Check the PR ledger and any shared ledger for P1 and P2. Record the checked ledger sources with the review. Hold if the sources disagree or if any required evidence is missing.
+   Grant and merge check the live PR paths against [the owner-only list](scripts/night_owner_paths.py). A match needs the owner, even for a `night` task.
 2. Run `night.py grant` with only the two report paths. It checks the reviewed head and main tip, required CI, changed files, approved automation baseline and any auto-delete effects. Compare every open P3 with the live PR body.
 3. Give the run ID and grant entry ID to the leader. The leader runs `night.py merge` with the chief path, run, PR, head, leader and grant ID. The tool syncs the attempt before Ready. It syncs the Ready result, checks the exact PR again, and sends one pinned request if the PR still qualifies. A Ready error consumes the attempt. Send that case to **Needs you**.
 4. Keep one unresolved grant across the night. Run `night.py confirm` after a merge. It requires GitHub to confirm the granted head and requires green CI on main. If main is red, hold all grants. Use `night.py withdraw` only if live evidence and the journal show that a grant had no merge.

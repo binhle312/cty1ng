@@ -7,7 +7,7 @@ from night_files import LeaderLock, bound_night, clock
 from night_format import FULL_SHA, Refused, canonical_target, entry_time, event_id, iso, parsed_target
 from night_leader import leader_append, leader_events
 from night_review import current_review_allows
-from night_merge_policy import merge_policy, same_repository
+from night_merge_policy import merge_policy, require_night_paths, same_repository
 from night_review_io import changed_paths, main_head, pr_facts
 from night_rules import check_grant, pending_attempt
 
@@ -21,7 +21,9 @@ def before_merge(night, grant, github, page_rows, check_policy):
     if (pr.get("state") != "open" or type(pr.get("draft")) is not bool or pr.get("merged") is not False
             or pr.get("mergeable") is not True or pr.get("mergeable_state") != "clean" or pr.get("auto_merge") is not None):
         raise Refused("MERGE_PR_INELIGIBLE", target)
-    if changed_paths(page_rows, pr, target) != grant["files"]:
+    files = changed_paths(page_rows, pr, target)
+    require_night_paths(files)
+    if files != grant["files"]:
         raise Refused("REVIEW_SCOPE", "GitHub files differ from the reviewed diff")
     effects = merge_policy(night, target, pr, grant["method"], github, page_rows)
     if effects["repo_id"] != grant["repo_id"] or pr["head"]["ref"] != grant["head_ref"]:

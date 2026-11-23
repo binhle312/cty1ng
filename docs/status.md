@@ -10,7 +10,7 @@ approvals). Keep it short: link to PRs and briefs instead of describing work.
 
 ## Now
 
-Overnight skill and merged PR cleanup, [#140](https://github.com/binhle312/cty1ng/pull/140), 2026-11-20. Draft. Round 1 reviewed `808e4fe`. Owner order 160 approved plan delta r3. See the [build evidence](../tmp/pr140-r3-evidence/plan-lines.md) before round 2.
+Overnight skill and merged PR cleanup, [#140](https://github.com/binhle312/cty1ng/pull/140), 2026-11-23. Draft. Owner-led round 2 follows the build gates. See the [build evidence](../tmp/pr140-r3-evidence/plan-lines.md).
 
 The repository audit of 2026-11-05 found 55 issues. After the owner's decisions, 15 are P2, 39 are P3, and the owner accepted one case; none is P1. Its fixes come before M3 in the owner's order. #69 is closed, and the owner watches more PRs before deciding whether to bring it back. Findings, decisions and progress are in [audits/2026-11-05-repo-audit.md](audits/2026-11-05-repo-audit.md). PR 2 of 7, the security fixes, merged in [#73](https://github.com/binhle312/cty1ng/pull/73) on 2026-11-06. [#76](https://github.com/binhle312/cty1ng/pull/76) merged on 2026-11-06 and records the guard decisions. PR 3 of 7, the Skills page, merged in [#78](https://github.com/binhle312/cty1ng/pull/78) on 2026-11-06. PR 4 of 7, the Bots page, merged in [#82](https://github.com/binhle312/cty1ng/pull/82) on 2026-11-08. PR 5 of 7, tests only, merged in [#86](https://github.com/binhle312/cty1ng/pull/86) on 2026-11-10. PR 6 of 7, six tabs, merged in [#91](https://github.com/binhle312/cty1ng/pull/91) on 2026-11-10.
 

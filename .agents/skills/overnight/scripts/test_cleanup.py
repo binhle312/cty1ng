@@ -38,7 +38,7 @@ if method == "GET" and phase.exists():
         output = [[]] if state.get("absent") else [[{"ref": "refs/heads/pr", "object": {"type": "commit", "sha": sha}}]]
     elif endpoint == "repos/example/app/branches/pr":
         output = {"name": "pr", "protected": state.get("protected", False),
-                  "commit": {"sha": state.get("remote", config["head"])}}
+                  "commit": {"sha": state.get("branch_sha", state.get("remote", config["head"]))}}
     elif endpoint.startswith("repos/example/app/rules/branches/pr"):
         output = [[]]
     else:
@@ -268,6 +268,12 @@ class CleanupTests(ReviewFixture, unittest.TestCase):
         self.assertFalse(self.local_branch())
         self.assertEqual(self.remote_head(), moved)
         self.assertIn("CLEAN_REMOTE_HEAD", self.report())
+
+    def test_remote_branch_read_has_to_agree_with_the_ref_read(self):
+        self.setup_cleanup(branch_sha="2" * 40)
+        self.expect(self.clean(), "CLEAN_REMOTE_HEAD")
+        self.assertFalse((self.root / "push.args").exists())
+        self.assertEqual(self.remote_head(), self.head)
 
     def test_open_pr_keeps_every_item(self):
         self.setup_cleanup(open=True)

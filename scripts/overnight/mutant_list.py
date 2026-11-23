@@ -1,4 +1,4 @@
-"""The mutants of night.py and its modules, for mutants.py: (name, old text, new text) or (name, [(old, new), ...])."""
+"""Original historical break inventory. See historical_r3_breaks.py for the runnable edits."""
 
 MUTANTS = [
     # Lock and order (score: lock not exclusive; check before the lock).

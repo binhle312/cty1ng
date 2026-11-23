@@ -23,6 +23,13 @@ class Brief8Tests(ReviewFixture, unittest.TestCase):
         self.assertTrue(Path(brief).is_relative_to(self.reviews))
         self.assertIn(self.head, Path(brief).read_text())
 
+    def test_leader_cannot_start_github_reads_for_review(self):
+        self.begin(second=False)
+        calls = self.root / "calls"
+        before = calls.read_bytes() if calls.exists() else b""
+        self.expect(self.start(chief="leader"), "MERGE_CHIEF_ONLY")
+        self.assertEqual(calls.read_bytes() if calls.exists() else b"", before)
+
     def test_same_head_reports_cannot_cross_prs(self):
         self.begin()
         self.ok(self.start(TARGET))
@@ -156,6 +163,40 @@ class Brief8Tests(ReviewFixture, unittest.TestCase):
         self.expect(self.typed("review", chief="chief", target=TARGET, ledger=["ledger fixture"], reports=[str(outside), paths[1]]),
                     "REVIEW_REPORT")
         self.ok(self.typed("review", chief="chief", target=TARGET, ledger=["ledger fixture"], reports=paths))
+
+    def test_only_verdict_counts_differ(self):
+        self.begin(second=False)
+        self.ok(self.start())
+        paths = self.reports(bad_count=True)
+        self.expect(self.typed("review", chief="chief", target=TARGET, ledger=["ledger fixture"], reports=paths),
+                    "REVIEW_REPORT")
+
+    def test_only_the_report_role_differs(self):
+        self.begin(second=False)
+        self.ok(self.start())
+        paths = self.reports(bad_role=True)
+        self.expect(self.typed("review", chief="chief", target=TARGET, ledger=["ledger fixture"], reports=paths),
+                    "REVIEW_REPORT")
+
+    def test_replay_refuses_a_grant_while_another_pr_has_the_reservation(self):
+        self.begin()
+        first, second = self.complete(), self.complete(OTHER)
+        self.ok(self.grant(first))
+        reserved = self.entries()
+        self.ok(self.typed("withdraw", chief="chief", grant=reserved[-1]["id"], reason="fixture"))
+        self.ok(self.grant(second))
+        module = night_module()
+        problems = module.rule_merge(module.fold(reserved), self.entries()[-1])
+        self.assertEqual(problems, [("MERGE_PENDING", OTHER)])
+
+    def test_replay_refuses_a_duplicate_grant_after_withdrawal(self):
+        self.begin(second=False)
+        self.ok(self.grant(self.complete()))
+        grant = self.entries()[-1]
+        self.ok(self.typed("withdraw", chief="chief", grant=grant["id"], reason="fixture"))
+        module = night_module()
+        problems = module.rule_merge(module.fold(self.entries()), grant)
+        self.assertEqual(problems, [("MERGE_PERMISSION_DUPLICATE", TARGET)])
 
     def test_only_chief_rules_on_findings(self):
         self.begin()

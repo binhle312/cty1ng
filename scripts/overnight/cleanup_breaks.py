@@ -14,9 +14,10 @@ def proof(name, module, before, after, method, anchor, subtest=""):
 BREAKS = [
     proof("cleanup-ignore-dirty", CLEAN, 'if root is None:\n            raise Refused("CLEAN_WORKTREE_DIRTY", name)',
           "if root is None:\n            continue", "test_uncommitted_file_stops_first_removal", "self.assert_kept()"),
-    ("cleanup-skip-remote-sha", CLEAN, 'if not isinstance(commit, dict) or commit.get("sha") != sha:',
-     "if not isinstance(commit, dict):", TEST + "test_moved_remote_head_stops_remote_delete",
-     "same moved SHA is caught by the separate exact ref read"),
+    ('cleanup-skip-remote-sha', 'night_cleanup.py',
+     'if not isinstance(commit, dict) or commit.get("sha") != sha:', 'if not isinstance(commit, dict):',
+     'test_cleanup.CleanupTests.test_remote_branch_read_has_to_agree_with_the_ref_read',
+     {'anchor': 'self.expect(self.clean(), "CLEAN_REMOTE_HEAD")', 'subtest': ''}),
     proof("cleanup-allow-open", CLEAN, 'or pr.get("state") != "closed" or pr.get("merged") is not True:',
           ':', "test_open_pr_keeps_every_item", 'self.expect(self.clean(), "CLEAN_PR_NOT_MERGED")'),
     proof("cleanup-glob-temp", CLEAN, '        os.unlink(slot, dir_fd=stage)\n        os.fsync(stage)\n        self.complete(entry)',

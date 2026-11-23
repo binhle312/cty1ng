@@ -5,6 +5,16 @@ from night_format import (
     PHASE_KINDS, REHEARSALS_FOR_ACTION, Refused, FULL_SHA, LABEL, iso, schema_problem, MERGE_KINDS, MERGE_METHODS, entry_time, parsed_target, target_key, valid_base)
 
 from night_review import CHIEF_EVENTS, GRANT_CHANGES, action_problem, automation_valid, accepted_findings, grant_findings, owned_scope, review_problem, task_for
+from night_owner_paths import OWNER_DIRS, OWNER_FILES, OWNER_NAMES, OWNER_TREES
+
+def owner_only_paths(files):
+    matches = []
+    for name in files:
+        *parents, basename = name.split("/")
+        if name in OWNER_FILES or name.startswith(OWNER_TREES) or basename in OWNER_NAMES or any(
+                part in OWNER_DIRS for part in parents):
+            matches.append(name)
+    return matches
 
 def name_key(name):
     return " ".join(name.split()).casefold()

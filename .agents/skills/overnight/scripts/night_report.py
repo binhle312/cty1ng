@@ -3,7 +3,7 @@
 import re
 
 from night_format import Refused, FULL_SHA, CODES, DEFAULT_MAX_GAP_MIN, entry_time, iso, minutes
-from night_rules import fold
+from night_rules import fold, owner_only_paths
 from night_review import accepted_findings
 
 
@@ -71,6 +71,8 @@ def needs_you(night):
         for target, task in night.task_specs.items():
             if task["class"] == "owner":
                 rows.append((target, "owner task under project rules", "", ", ".join(task["criteria"]), f"E{night.go['id']}"))
+            elif (start := night.review_starts.get(target)) and (paths := owner_only_paths(start["files"])):
+                rows.append((target, "owner-only path under project rules", "", ", ".join(paths), f"E{start['id']}"))
     if night.pending_grant is not None:
         grant = night.grants[night.pending_grant]
         rows.append((grant["target"], "grant waits for confirmation", "", grant["head"], f"E{grant['id']}"))

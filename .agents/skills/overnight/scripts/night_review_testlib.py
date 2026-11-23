@@ -123,12 +123,14 @@ class ReviewFixture:
         return subprocess.check_output(["git", "-C", str(self.checkout), *args], text=True).strip()
 
     def commit(self, name, content):
+        (self.checkout / name).parent.mkdir(parents=True, exist_ok=True)
         (self.checkout / name).write_text(content)
         self.git("add", name)
         self.git("commit", "-qm", content)
         return self.git("rev-parse", "HEAD")
 
-    def begin(self, cap=None, task_class="night", consult=False, planned=True, second=True):
+    def begin(self, cap=None, task_class="night", consult=False, planned=True, second=True, filename="owned.txt"):
+        self.filename = filename
         self.ok(new(str(self.chief), "synthetic workflow", automation=self.input("automation.json", AUTOMATION)))
         self.reviews = self.chief / "reviews"
         self.reviews.mkdir()
@@ -139,7 +141,7 @@ class ReviewFixture:
         self.git("config", "user.email", "fixture@example.invalid")
         self.main = self.commit("base.txt", "base")
         self.git("switch", "-qc", "pr")
-        self.head = self.commit("owned.txt", "change")
+        self.head = self.commit(filename, "change")
         self.git("switch", "-q", "--detach", self.head)
         self.worktree.mkdir()
         self.other = self.root / "second-leader"
@@ -153,7 +155,7 @@ class ReviewFixture:
         self.config()
         rows = [*ROWS[:3], (*ROWS[3][:5], "second")] if second else ROWS[:3]
         card(str(self.chief), rows)
-        tasks = {target: {"class": kind, "criteria": ["Change the owned file"], "owned": ["owned.txt"]}
+        tasks = {target: {"class": kind, "criteria": ["Change the owned file"], "owned": [filename]}
                  for target, kind in ((TARGET, task_class), (OTHER, "night")) if target == TARGET or second}
         options = ["--consultants"] if consult else []
         if cap is not None:
@@ -172,7 +174,7 @@ class ReviewFixture:
 
     def config(self, **updates):
         baseline = AUTOMATION["github.com/example/app"]
-        self.input("config", dict(head=self.head, base_sha=self.main, files=[{"filename": "owned.txt", "status": "modified"}],
+        self.input("config", dict(head=self.head, base_sha=self.main, files=[{"filename": self.filename, "status": "modified"}],
                                   changed_files=1, workflows=baseline["workflows"],
                                   blobs={row["path"]: row["blob_sha"] for row in baseline["blobs"]}) | updates)
 

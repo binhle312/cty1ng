@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # `-I` drops thi
 from night_testlib import NIGHT_MODULES, FINAL_CODES, HERE, NIGHT, PRE_EVENT_CODES, STATE_CODES, STUB, night_module  # noqa: E402
 
 MAX_LINES = 600  # one read of a file (owner, 2026-11-19, designs-139-140 Q5 A)
-PURE_MODULES = ("night_format", "night_rules", "night_report", "night_review")
+PURE_MODULES = ("night_format", "night_rules", "night_report", "night_review", "night_owner_paths")
 PURE_IMPORTS = {"re", "datetime", "json"}
 PURE_NO_CALLS = {"open", "print", "input", "exec", "eval", "__import__", "globals"}
 

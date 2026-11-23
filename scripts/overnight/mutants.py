@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply one source edit in an isolated source copy and check its named assertion."""
+"""Apply one source edit per copy. NIGHT_BREAK_JOBS controls concurrent copies."""
 from concurrent.futures import ThreadPoolExecutor
 import ast
 import os
@@ -17,7 +17,7 @@ REPO = HERE.parent.parent
 SKILL_TESTS = Path(os.environ.get("NIGHT_TEST_DIR", REPO / ".agents" / "skills" / "overnight" / "scripts"))
 MODULES = ("night.py", "night_files.py", "night_format.py", "night_report.py", "night_rules.py",
            "night_chief.py", "night_review.py", "night_review_io.py", "night_cleanup.py",
-           "night_leader.py", "night_merge.py", "night_merge_policy.py")
+           "night_leader.py", "night_merge.py", "night_merge_policy.py", "night_owner_paths.py")
 
 
 def assertion_site(test_dir, test_name, selector):
@@ -27,7 +27,10 @@ def assertion_site(test_dir, test_name, selector):
     body = next(node for node in ast.parse(source).body if isinstance(node, ast.ClassDef) and node.name == cls)
     test = next(node for node in body.body if isinstance(node, ast.FunctionDef) and node.name == method)
     lines = source.splitlines()
-    matches = [line for line in range(test.lineno, test.end_lineno + 1) if selector["anchor"] in lines[line - 1]]
+    anchor = selector["anchor"]
+    count = len(anchor.splitlines())
+    matches = [line for line in range(test.lineno, test.end_lineno - count + 2)
+               if anchor in "\n".join(lines[line - 1:line - 1 + count])]
     if len(matches) != 1:
         raise ValueError(f"assertion anchor matched {len(matches)} lines")
     return {"subtest": selector["subtest"], "site": [file.name, matches[0]]}
@@ -44,7 +47,12 @@ def prove(case):
         expected = assertion_site(test_dir, test_name, assertion)
     except (OSError, ValueError, StopIteration) as error:
         return name, "BAD", str(error)
-    source = ((REPO if doc else repo_source) / filename).read_text()
+    try:
+        source = ((REPO if doc else repo_source) / filename).read_text()
+    except OSError as error:
+        return name, "BAD", f"cannot read mutation target: {error}"
+    if not old or old == new:
+        return name, "BAD", "source edit does not change a value"
     if source.count(old) != 1:
         return name, "BAD", f"source edit matched {source.count(old)} times"
     empty_env = {"PATH": os.environ["PATH"]}
@@ -84,7 +92,11 @@ def main(names):
     count, invalid = 0, len(missing)
     for name, reason in missing.items():
         print(f"BAD: {name}: {reason}")
-    with ThreadPoolExecutor(max_workers=2) as workers:
+    jobs = os.environ.get("NIGHT_BREAK_JOBS", "2")
+    if not jobs.isdecimal() or int(jobs) < 1:
+        print("NIGHT_BREAK_JOBS must be a positive integer", file=sys.stderr)
+        return 2
+    with ThreadPoolExecutor(max_workers=int(jobs)) as workers:
         for name, state, evidence in workers.map(prove, chosen):
             count += state == "KILLED"
             invalid += state == "BAD"
