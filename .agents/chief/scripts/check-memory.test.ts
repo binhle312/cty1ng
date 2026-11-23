@@ -1,5 +1,13 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -43,6 +51,7 @@ const SETTINGS: [string, string][] = [
   ["checkpoint_left_percent", "40"],
   ["context_window_tokens", "1000000"],
   ["review_cap", "5"],
+  ["merge_main_bonus", "3"],
   ["promote_after_hours", "24"],
   ["drill_every_days", "7"],
   ["boot_max_kb", "48"],
@@ -60,7 +69,7 @@ const SETTINGS: [string, string][] = [
   ["chief_model", "the model that the owner names"],
   ["owner_language", "simple English"],
   ["owner_pages", "one question per step"],
-  ["audit_times", "00:00, 08:00 and 16:00 (+07)"],
+  ["audit_times", "on the owner's request"],
 ];
 
 function settings(rows: [string, string][] = SETTINGS): string {
@@ -233,8 +242,13 @@ describe("readSettings", () => {
     ]);
   });
 
-  it("names each setting of the memory audit and the quote check that is missing", () => {
-    for (const key of ["quote_min_words", "audit_times", "audit_timeout_minutes"]) {
+  it("names each missing setting for the memory audit, quote check, and review cap bonus", () => {
+    for (const key of [
+      "quote_min_words",
+      "audit_times",
+      "audit_timeout_minutes",
+      "merge_main_bonus",
+    ]) {
       const rows = SETTINGS.filter(([name]) => name !== key);
       expect(readSettings(settings(rows)).problems, key).toEqual([
         `${L}/settings.md: setting \`${key}\` is missing`,
@@ -255,6 +269,15 @@ describe("readSettings", () => {
     );
     expect(readSettings(settings(rows)).problems, "not a number").toEqual([
       `${L}/settings.md: setting \`leader_cap\` is "two"; it must be a whole number`,
+    ]);
+  });
+
+  it("names merge_main_bonus when it is not a whole number", () => {
+    const rows = SETTINGS.map(([key, value]): [string, string] =>
+      key === "merge_main_bonus" ? [key, "3.5"] : [key, value],
+    );
+    expect(readSettings(settings(rows)).problems, "fractional bonus").toEqual([
+      `${L}/settings.md: setting \`merge_main_bonus\` is "3.5"; it must be a whole number`,
     ]);
   });
 });
@@ -1127,15 +1150,323 @@ describe("the rules about merges, approvals or permissions", () => {
   });
 });
 
-// DQ-1026: `--allowedTools` approves tools but does not limit the tool set; `--tools` names it.
-describe("the cron line of the memory audit", () => {
-  it("names the exact tool set of claude with --tools", () => {
-    const text = readFileSync(".agents/chief/memories/long-term/restore.md", "utf8");
-    const line = text.split("\n").find((row) => row.includes("claude -p")) ?? "";
-    expect(line, "cron tools").toContain('--tools "Read,Grep,Glob,Write"');
-    expect(line, "cron write scope").toContain('"Write($A/**)"');
-    expect(line, "cron restricted").toContain("--restricted");
-    expect(line, "cron no Bash").not.toContain("Bash");
+function withAuditRepo(test: (fixture: ReturnType<typeof auditRepo>) => void): void {
+  const repo = mkdtempSync(join(tmpdir(), "check-audit-input-"));
+  try {
+    test(auditRepo(repo));
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+}
+
+const REPORT_SECTIONS =
+  "## Open issues\nnone\n## Permission rules\nnone\n## What I checked\nnone\n";
+
+function auditRepo(repo: string) {
+  const restore = readFileSync(`${L}/restore.md`, "utf8");
+  const input = /^## Audit input\n[\s\S]*?^```\w*\n([\s\S]*?)^```/m.exec(restore)?.[1] ?? "";
+  const bin = join(repo, "bin");
+  const env = {
+    PATH: `${bin}:${process.env.PATH ?? ""}`,
+    GIT_ALLOW_PROTOCOL: "file",
+    GIT_CONFIG_GLOBAL: "/dev/null",
+    GIT_CONFIG_NOSYSTEM: "1",
+  };
+  const git = (...args: string[]): string =>
+    execFileSync("git", args, { cwd: repo, env, encoding: "utf8" }).trim();
+  mkdirSync(bin);
+  writeFileSync(
+    join(bin, "pnpm"),
+    "#!/bin/sh\nprintf 'memory problem\\n'\nexit \"$MEMORY_EXIT\"\n",
+    {
+      mode: 0o700,
+    },
+  );
+  writeFileSync(join(bin, "gh"), '#!/bin/sh\nexit "$GH_EXIT"\n', { mode: 0o700 });
+  writeFileSync(join(bin, "date"), "#!/bin/sh\nprintf '2000-01-10-0000\\n'\n", { mode: 0o700 });
+  writeFileSync(join(bin, "timeout"), '#!/bin/sh\nshift\nexec "$@"\n', { mode: 0o700 });
+  writeFileSync(join(bin, "claude"), "#!/bin/sh\nprintf 'fake auditor started\\n'\n", {
+    mode: 0o700,
+  });
+  git("init", "-q", "-b", "main");
+  git("config", "user.name", "Audit Test");
+  git("config", "user.email", "audit@example.test");
+  git("remote", "add", "origin", ".");
+  mkdirSync(join(repo, L), { recursive: true });
+  const audits = join(repo, M, "short-term/audits");
+  mkdirSync(audits, { recursive: true });
+
+  const commitRule = (line: string): string => {
+    writeFileSync(join(repo, L, "rule.md"), `${line}\n`);
+    git("add", L);
+    git("commit", "-qm", "Update rule");
+    return git("rev-parse", "HEAD");
+  };
+  const previous = commitRule("Old rule.");
+  const main = commitRule("New rule.");
+  const stem = (day: string): string => join(audits, `2000-01-${day}-0000`);
+  const checklist = join(repo, L, "audit.md");
+  const checkpoint = ({
+    day,
+    reportMain,
+    inputMain = reportMain,
+    sections = REPORT_SECTIONS,
+    footer = "End of report.\n",
+  }: {
+    day: string;
+    reportMain: string;
+    inputMain?: string;
+    sections?: string;
+    footer?: string;
+  }): void => {
+    writeFileSync(`${stem(day)}-input.txt`, `Main: ${inputMain}\n`);
+    writeFileSync(`${stem(day)}-report.md`, `Main: ${reportMain}\n${sections}${footer}`);
+  };
+  const run = ({ memoryExit = "1", ghExit = "0", launch = false } = {}) => {
+    const start = /^## Audit start\n[\s\S]*?^```\w*\n([\s\S]*?)^```/m.exec(restore)?.[1] ?? "";
+    const command = launch
+      ? `${input.trimEnd()} &&\n${start.replace("<audit_timeout_minutes>", "1").replace("<model>", "test-model")}`
+      : input;
+    const result = spawnSync("sh", ["-c", command], {
+      cwd: repo,
+      env: { ...env, MEMORY_EXIT: memoryExit, GH_EXIT: ghExit },
+      encoding: "utf8",
+    });
+    const path = `${stem("10")}-input.txt`;
+    const published = existsSync(path);
+    return { ...result, published, evidence: published ? readFileSync(path, "utf8") : "" };
+  };
+  checkpoint({
+    day: "01",
+    reportMain: previous,
+    sections: REPORT_SECTIONS.replaceAll("\nnone\n", "\nChecked fixture.\n"),
+  });
+  return { git, commitRule, previous, main, audits, stem, checklist, checkpoint, run };
+}
+
+describe("the memory audit on request (order 179)", () => {
+  it("matches the whole audit start command after whitespace normalization", () => {
+    const restore = readFileSync(".agents/chief/memories/long-term/restore.md", "utf8");
+    const start = /^## Audit start\n[\s\S]*?^```\w*\n([\s\S]*?)^```/m.exec(restore)?.[1] ?? "";
+    const expected = [
+      ': "${A:?}" "${R:?}" && test -s "$R-input.txt" && test ! -e "$R-report.md" &&',
+      "test -s .agents/chief/memories/long-term/audit.md &&",
+      "printf 'Audit stem: %s\\n' \"$R\" &&",
+      "timeout <audit_timeout_minutes>m env -u ANTHROPIC_API_KEY claude -p --restricted --strict-mcp-config",
+      "--model <model> --effort high --no-session-persistence",
+      '--tools "Read,Grep,Glob,Write" --allowedTools "Read" "Grep" "Glob" "Write($A/**)" --',
+      '"$(cat .agents/chief/memories/long-term/audit.md) The input file: $R-input.txt. The report file: $R-report.md."',
+    ].join(" ");
+    expect(start.replace(/\\\n/g, "").replace(/\s+/g, " ").trim(), "whole start command").toBe(
+      expected,
+    );
+    const linesBeforeLast = start.trimEnd().split("\n").slice(0, -1);
+    const continued = linesBeforeLast.every((line) => line.endsWith(" \\"));
+    expect(continued, "start line continuations").toBe(true);
+  });
+
+  it("does not launch the auditor when the checklist is missing", () => {
+    withAuditRepo(({ run }) => {
+      const result = run({ launch: true });
+      expect(result.published, "input was ready before launch").toBe(true);
+      expect([result.status, result.stdout], "missing checklist stops launch").toEqual([1, ""]);
+    });
+  });
+
+  it("prints the audit stem before the auditor starts", () => {
+    withAuditRepo(({ checklist, run }) => {
+      writeFileSync(checklist, "Audit checklist.\n");
+      const result = run({ launch: true });
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.stdout, "stem before launch").toBe(
+        `Audit stem: ${M}/short-term/audits/2000-01-10-0000\nfake auditor started\n`,
+      );
+    });
+  });
+
+  it("names the main commit range in the audit input block", () => {
+    const restore = readFileSync(".agents/chief/memories/long-term/restore.md", "utf8");
+    const input = /^## Audit input\n[\s\S]*?^```\w*\n([\s\S]*?)^```/m.exec(restore)?.[1] ?? "";
+    expect(input, "main commit").toContain("git rev-parse origin/main");
+    expect(input, "main header").toContain("printf 'Main: %s\\n'");
+    expect(input, "net change range").toContain('git diff "$previous_main" "$main"');
+    expect(input, "memory check exit code").toContain("check:memory exit");
+    expect(input, "no time window").not.toContain("--since");
+  });
+
+  it("includes the rule change after the last complete matching report", () => {
+    withAuditRepo(({ main, previous, checkpoint, run }) => {
+      checkpoint({ day: "02", reportMain: main, footer: "" });
+      checkpoint({ day: "03", reportMain: main, inputMain: previous });
+      const result = run();
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.evidence, "rule change").toContain("-Old rule.\n+New rule.");
+    });
+  });
+
+  it("includes a line that later history removed", () => {
+    withAuditRepo(({ main, checkpoint, commitRule, run }) => {
+      checkpoint({ day: "02", reportMain: main });
+      commitRule("New rule.\nTemporary rule.");
+      commitRule("New rule.");
+      const result = run();
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.evidence, "reverted addition").toContain("+Temporary rule.");
+    });
+  });
+
+  it("includes a temporary line from a merged branch", () => {
+    withAuditRepo(({ git, main, checkpoint, commitRule, run }) => {
+      checkpoint({ day: "02", reportMain: main });
+      git("switch", "-qc", "side");
+      commitRule("New rule.\nTemporary side rule.");
+      commitRule("New rule.");
+      git("switch", "-q", "main");
+      git("commit", "--allow-empty", "-qm", "Advance main");
+      git("merge", "--no-ff", "-qm", "Merge side", "side");
+      const result = run();
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.evidence, "reverted side branch addition").toContain("+Temporary side rule.");
+    });
+  });
+
+  it("skips a report with only the main line and footer", () => {
+    withAuditRepo(({ main, checkpoint, run }) => {
+      checkpoint({ day: "02", reportMain: main, sections: "" });
+      const result = run();
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.evidence, "change before the two-line report").toContain(
+        "-Old rule.\n+New rule.",
+      );
+    });
+  });
+
+  it("skips a three-line report with an empty open issues heading", () => {
+    withAuditRepo(({ main, checkpoint, run }) => {
+      checkpoint({ day: "02", reportMain: main, sections: "## Open issues\n" });
+      const result = run();
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.evidence, "change before the three-line report").toContain(
+        "-Old rule.\n+New rule.",
+      );
+    });
+  });
+
+  it("skips a report when any of the three sections is empty", () => {
+    for (const heading of ["## Open issues", "## Permission rules", "## What I checked"]) {
+      withAuditRepo(({ main, checkpoint, run }) => {
+        const sections = REPORT_SECTIONS.replace(`${heading}\nnone\n`, `${heading}\n   \n`);
+        checkpoint({ day: "02", reportMain: main, sections });
+        const result = run();
+        expect(result.status, result.stderr).toBe(0);
+        expect(result.evidence, `change before empty ${heading}`).toContain(
+          "-Old rule.\n+New rule.",
+        );
+      });
+    }
+  });
+
+  it("uses the newer of two complete matching reports with none in each section", () => {
+    withAuditRepo(({ main, checkpoint, commitRule, run }) => {
+      checkpoint({ day: "02", reportMain: main });
+      commitRule("Latest rule.");
+      const result = run();
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.evidence, "change after the newer checkpoint").toContain(
+        "-New rule.\n+Latest rule.",
+      );
+      expect(result.evidence, "change before the newer checkpoint").not.toContain("-Old rule.");
+    });
+  });
+
+  it("skips a checkpoint that names a ref instead of a full SHA", () => {
+    withAuditRepo(({ checkpoint, run }) => {
+      checkpoint({ day: "02", reportMain: "HEAD" });
+      const result = run();
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.evidence, "change before the ref checkpoint").toContain(
+        "-Old rule.\n+New rule.",
+      );
+    });
+  });
+
+  it("skips a report whose timestamp is later than this audit", () => {
+    withAuditRepo(({ main, checkpoint, run }) => {
+      checkpoint({ day: "11", reportMain: main });
+      const result = run();
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.evidence, "change before the future report").toContain(
+        "-Old rule.\n+New rule.",
+      );
+    });
+  });
+
+  it("fails without publishing input when the memory check exits 2", () => {
+    withAuditRepo(({ run }) => {
+      const result = run({ memoryExit: "2" });
+      expect([result.status, result.published], "memory check failure").toEqual([1, false]);
+    });
+  });
+
+  it("fails without publishing input when the PR list command exits 1", () => {
+    withAuditRepo(({ run }) => {
+      const result = run({ ghExit: "1" });
+      expect([result.status, result.published], "PR list failure").toEqual([1, false]);
+    });
+  });
+
+  it("fails without publishing input when the checkpoint is not an ancestor", () => {
+    withAuditRepo(({ git, checkpoint, run }) => {
+      const unrelated = git("commit-tree", "HEAD^{tree}", "-m", "Unrelated rule");
+      checkpoint({ day: "02", reportMain: unrelated });
+      const result = run();
+      expect([result.status, result.published], "ancestry failure").toEqual([1, false]);
+    });
+  });
+
+  it("fails without publishing input when the checkpoint is a sibling commit", () => {
+    withAuditRepo(({ git, previous, checkpoint, run }) => {
+      const sibling = git("commit-tree", "HEAD^{tree}", "-p", previous, "-m", "Sibling rule");
+      checkpoint({ day: "02", reportMain: sibling });
+      const result = run();
+      expect([result.status, result.published], "sibling checkpoint failure").toEqual([1, false]);
+    });
+  });
+
+  it("preserves an occupied input name and creates no new input file", () => {
+    withAuditRepo(({ audits, stem, run }) => {
+      writeFileSync(`${stem("10")}-input.txt`, "Existing input.\n");
+      const before = readdirSync(audits).sort();
+      const result = run();
+      const outcome = [result.status, result.evidence, readdirSync(audits).sort()];
+      expect(outcome, "occupied input name").toEqual([1, "Existing input.\n", before]);
+    });
+  });
+
+  it("the restore guide names the owner trigger, lack of a cron line, and the input file", () => {
+    const restore = readFileSync(".agents/chief/memories/long-term/restore.md", "utf8");
+    expect(restore, "owner trigger").toContain(
+      "The memory audit runs only when the owner asks (rule R-037).",
+    );
+    expect(restore, "audit input").toContain("It writes `$R-input.txt` in `short-term/audits/`.");
+    expect(restore, "no cron line").toContain("There is no cron line");
+  });
+
+  it("the checklist calls for one report file and says the auditor has no command tool", () => {
+    const checklist = readFileSync(".agents/chief/memories/long-term/audit.md", "utf8");
+    expect(checklist, "no command tool").toContain("The auditor has no command tool.");
+    expect(checklist, "report only").toMatch(/Write only\s+one report file\./);
+    expect(checklist, "copy the main line first").toContain(
+      "Copy the `Main:` line from the input file to the first line of the report.",
+    );
+    expect(checklist, "report opening").toContain('Never start with "no findings".');
+    expect(checklist, "open issues heading").toContain("`## Open issues`");
+    expect(checklist, "permission rules heading").toContain("`## Permission rules`");
+    expect(checklist, "what I checked heading").toContain("`## What I checked`");
+    expect(checklist, "memory check could not run").toContain(
+      '"check:memory could not run" as an open issue.',
+    );
+    expect(checklist, "finish the report").toContain("End of report.");
   });
 });
 

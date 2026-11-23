@@ -1,7 +1,7 @@
 # State
 
 As of: 2026-11-23
-Main: 1969b72
+Main: 5fd2c83
 Promoted through: 2026-11-23
 
 This file holds only facts that `docs/status.md` does not hold. Check each one live before you
@@ -24,8 +24,7 @@ each PR waits for in `docs/status.md` ("Next", "Waiting on the owner") and with
    and give the owner the list of auto-memory notes that become pointers. Remove nothing before
    the owner's OK (R-014). Build `short-term/owner/`: one `.md` file for each day, with every word
    of the owner that a rule quotes, before the first chief merge of a memory PR (chief,
-   2026-11-19, plan v3 Q2). Run `pnpm check:memory --local --fix` (the new folder path), and give
-   the owner the filled cron line of rule R-037.
+   2026-11-19, plan v3 Q2). Run `pnpm check:memory --local --fix` (the new folder path).
 2. The final rules into this memory, then their install by the owner (owner, 2026-11-19, orders 110 to 112).
 3. The chief's mistakes: a way to stop the rule breaks (order 121).
 4. The token audit of the agent workflow (order 106).
@@ -42,4 +41,4 @@ each PR waits for in `docs/status.md` ("Next", "Waiting on the owner") and with
 ## Next free ids
 
 - DQ: the chief gives each open PR a range (the table "Open PRs"). A new range starts at DQ-1114. Check first: the highest id in `docs/delivery-quality*.md` and in the open PRs.
-- Rule: R-039. Lesson: L-30. Owner order: 176 (check the owner record).
+- Rule: R-039. Lesson: L-30. Owner order: the highest number in `short-term/owner/`, plus one.

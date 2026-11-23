@@ -33,7 +33,7 @@ const REQUIRED_FILES = [
   `${LONG_TERM}/state.md`,
   `${LONG_TERM}/restore.md`,
   `${LONG_TERM}/restore-drill.md`,
-  // The prompt of the memory audit (rule R-037).
+  // The audit commands and the audit checklist are in restore.md and audit.md (rule R-037).
   `${LONG_TERM}/audit.md`,
   `${LONG_TERM}/log.md`,
   RULES_INDEX,
@@ -48,6 +48,7 @@ const NUMBER_SETTINGS = [
   "checkpoint_left_percent",
   "context_window_tokens",
   "review_cap",
+  "merge_main_bonus",
   "promote_after_hours",
   "drill_every_days",
   "boot_max_kb",

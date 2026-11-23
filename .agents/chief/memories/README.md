@@ -44,9 +44,11 @@ does not support stops the chief (order 133). The memory check and the merge che
 
 1. This file.
 2. `short-term/now.md`, if it exists. It is newer than each long-term file.
-3. `long-term/identity.md`, `settings.md`, `environment.md`, `lessons.md` and `state.md`.
-4. `long-term/rules/README.md`, then each active rule file in full.
-5. Find the live state yourself: open PRs, CI, running agents. Do not trust a summary for it.
+3. The newest complete report in `short-term/audits/`, if one exists (`long-term/restore.md`, "Audit input").
+   Fix each open issue that no merged memory PR fixed (R-037).
+4. `long-term/identity.md`, `settings.md`, `environment.md`, `lessons.md` and `state.md`.
+5. `long-term/rules/README.md`, then each active rule file in full.
+6. Find the live state yourself: open PRs, CI, running agents. Do not trust a summary for it.
 
 ## Which source wins
 

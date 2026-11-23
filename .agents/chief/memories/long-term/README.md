@@ -13,7 +13,7 @@ The chief memory that git keeps. It is public, and only a memory PR changes it (
 | `state.md` | The state at the last promotion: open PRs, waits, the chief's queue, the next free ids |
 | `restore.md` | Restore on a new computer, a clone, a crash; what a restore cannot give |
 | `restore-drill.md` | The questions that prove a restore, with their answers; the drill runs without this file |
-| `audit.md` | The prompt of the memory audit that cron starts at the setting `audit_times` (rule R-037) |
+| `audit.md` | The checklist of the memory audit that the chief starts when the owner asks (rule R-037) |
 | `log.md` | Each promotion, lint, drill and migration |
 
 Start here: `../README.md`. Do not: edit `rules/README.md` by hand (`pnpm check:memory --write`

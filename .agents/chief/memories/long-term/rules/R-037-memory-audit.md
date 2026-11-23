@@ -1,20 +1,21 @@
 ---
 id: R-037
-title: Audit the chief memory at the setting audit_times, from a cron line that the owner adds.
+title: Audit the chief memory when the owner asks.
 status: active
 scope: chief
-said: 2026-11-19
-orders: [108, 109, 110]
+said: 2026-11-23
+orders: [109, 110, 179, 186]
 ends: never
 supersedes: []
 amends: []
 check-first: false
 ---
-Rule: A memory audit runs at the times of the setting `audit_times`, with `claude -p` and the prompt `../audit.md`. The owner adds its cron line; the agent never adds a cron line or another job that runs after its session. The audit writes only its report in `short-term/audits/`: open issues first, then each new or changed permission rule with its quotes and the match result. The chief reads the newest report at each start and fixes each issue in a memory PR.
-Owner said: "Chief set a schedule (can be a claude schedule if possible) to audit it memory every 8 hours" (2026-11-19)
+Rule: The chief starts a memory audit only when the owner asks. The auditor is never weaker than the chief (R-036) and follows `../audit.md`. It writes only its report in `short-term/audits/` and puts the open issues first after the `Main:` line. The audit lists each new or changed permission rule with its quotes and the match result (`audit.md` step 4).
+Owner said: "I will manually tell chief to spawn a auditor when needed" (2026-11-23)
 Owner said: "if the memory is bad, it's chief fault, chief has to improve the quality over time" (2026-11-19)
 How to apply:
 No gate: a trigger.
-- The cron line is in `../restore.md`, with slots for the paths. Give the owner the filled line on a page.
-- Cron on WSL runs only while WSL runs, and it does not run a missed job later. At each start, read the time of the newest report. If a run is missing, run the audit by hand.
-- Each run has a deadline: the setting `audit_timeout_minutes`.
+- Prepare the input with "Audit input" in `restore.md`. Start the auditor with the `claude -p` command in "Audit start".
+- The auditor checks each memory place, counts from its input file, and lists what it could not check.
+- At each start, the chief reads the newest complete report, if one exists. Fix each open issue that no merged memory PR fixed.
+- The setting `audit_timeout_minutes` is the deadline of one audit.

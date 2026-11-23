@@ -13,6 +13,7 @@ order, and the owner can change it.
 | `checkpoint_left_percent` | 40 | owner, 2026-11-13 (order 23) |
 | `context_window_tokens` | 1000000 | the window of Opus 5.5, Sonnet 5.5 and Fable 5.2, checked on 2026-11-13 |
 | `review_cap` | 5 | owner, 2026-11-13 and 2026-11-14 (orders 27, 48): review rounds before the work on a PR stops |
+| `merge_main_bonus` | 3 | owner, 2026-11-20 and 2026-11-23 (orders 145, 173 and 180): review rounds that each merge of `main` into a PR adds to its cap, day and night |
 | `model_easy` | GPT-6.1 Terra (`gpt-6.1-terra`), effort `medium` | owner, 2026-11-23 (orders 164, 174 and 175): written steps, little judgment |
 | `model_medium` | GPT-6.2 Sol (`gpt-6.2-sol`), effort `high` | owner, 2026-11-23 (orders 164, 174 and 175): judgment inside clear rules |
 | `model_hard` | GPT-6.2 Sol (`gpt-6.2-sol`), effort `high` | owner, 2026-11-23 (orders 164, 174 and 175): design, proof, code fixes, security; no `xhigh` (order 138) |
@@ -28,5 +29,5 @@ order, and the owner can change it.
 | `lessons_max_lines` | 200 | #139 plan, 2026-11-19 |
 | `quote_max_words` | 25 | #139 plan, 2026-11-19; the owner asked for short, dated quotes (order 78, arena Q3 A) |
 | `quote_min_words` | 4 | chief, 2026-11-19 (#139 plan v3, Q3): a shorter quote proves little in the owner-quote check of order 109 |
-| `audit_times` | 00:00, 08:00 and 16:00 (+07) | owner, 2026-11-19 (orders 108 and 109): the memory audit, rule R-037 |
-| `audit_timeout_minutes` | 30 | chief, 2026-11-19 (#139 plan v3): the deadline of one audit run; the cron line copies it |
+| `audit_times` | on the owner's request | owner, 2026-11-23 (order 179): follow "Audit input" and "Audit start" in `restore.md` |
+| `audit_timeout_minutes` | 30 | chief, 2026-11-19 (#139 plan v3): the timeout in "Audit start" in `restore.md` |

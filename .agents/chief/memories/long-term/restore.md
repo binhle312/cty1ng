@@ -14,23 +14,7 @@ How the chief comes back when the old chief is gone. The drill that proves it is
 4. Find the live state yourself: `docs/status.md` ("Next", "Waiting on the owner"),
    `gh pr list`, the CI of each open PR, `git worktree list`. Add the facts of `state.md`, and
    write `short-term/now.md`.
-5. Ask the owner to add the cron line of the memory audit (rule R-037) with `crontab -e`. The
-   agent never adds it. Fill the slots for the owner: `<checkout>` is the chief's checkout,
-   because only it has the files of `short-term/`, and `<claude dir>`, `<node dir>` and
-   `<gh dir>` are the folders of `claude`, `node` and `gh` (`command -v`). The minutes after
-   `timeout` come from the setting `audit_timeout_minutes`. The line does not change the branch or
-   the files of the checkout. The shell runs each command and writes its output to the input
-   file; `claude` gets only the tools Read, Grep, Glob and Write (`--tools`), reads no settings
-   file of the project, and may write only in `short-term/audits/` (`--allowedTools`; `-p` cannot
-   ask for more). Cron needs each `%` as `\%`. The owner record
-   (`short-term/owner/`) is empty on a new computer, so `pnpm merge:check` stops (exit 2) for
-   each memory PR that reaches the memory gate (after the checks of each PR) until the record
-   has the owner's words again.
-
-   ```text
-   0 0,8,16 * * * cd <checkout> && export PATH=<claude dir>:<node dir>:<gh dir>:/usr/bin:/bin && A=.agents/chief/memories/short-term/audits && mkdir -p "$A" && R="$A/$(date +\%F-\%H)" && { git fetch -q origin main; echo "## check:memory --local"; pnpm -s check:memory --local; echo "## differences from origin/main"; git status -sb; git diff origin/main -- .agents/chief/memories/; echo "## long-term changes of the last 9 hours"; git log -p --since="9 hours ago" origin/main -- .agents/chief/memories/long-term/; echo "## open PRs and their files"; gh pr list --state open --json number,files --jq '.[] | "#\(.number) \([.files[].path] | join(" "))"'; } > "$R-input.txt" 2>&1; timeout 30m env -u ANTHROPIC_API_KEY claude -p --restricted --strict-mcp-config --model claude-opus-5-5 --effort high --no-session-persistence --tools "Read,Grep,Glob,Write" --allowedTools "Read" "Grep" "Glob" "Write($A/**)" -- "$(cat .agents/chief/memories/long-term/audit.md) The input file: $R-input.txt. The report file: $R.md." >> "$A/cron.log" 2>&1
-   ```
-
+5. The memory audit runs only when the owner asks (rule R-037). There is no cron line (owner, 2026-11-23, order 179).
 6. Tell the owner what you restored and what is missing (section "Not claimed"). Ask before any
    work.
 
@@ -49,6 +33,108 @@ How the chief comes back when the old chief is gone. The drill that proves it is
    `gh pr view`, `git log origin/<branch>`, `claude agents --json`.
 2. Find the running leaders. Read their last reports and handoffs before you send new work.
 3. If two chiefs can run at one time, ask the owner which one stays.
+
+## Audit input
+
+Run this block from the chief's checkout. It writes `$R-input.txt` in `short-term/audits/`.
+The chief runs one audit at a time. Use the newest report at or before this audit's timestamp.
+Its first line must match the input file's `Main:` line and contain a 40-digit hex SHA.
+The report must have the three headings in step 6 of `audit.md`.
+Each section must have at least one non-empty line before the next heading or the footer.
+The line can say `none`. The report must end with `End of report.`.
+If none qualify, start at `fe44c64` (the merge of #139). To fix a bad first line, copy the
+`Main:` line from the report's input file. You can also remove a bad report after the owner gives the OK.
+
+The block publishes the input only after all required commands finish. It keeps the `check:memory`
+output for exit codes 0 and 1. If the section has no `check:memory: ok` or
+`check:memory: <n> problem(s)` summary line, record "check:memory could not run" as an open issue.
+If the block fails, check its error and any `$R-input.part` file before you retry.
+If the file name is in use, wait until the next minute.
+
+```sh
+A=.agents/chief/memories/short-term/audits
+R="$A/$(date +%F-%H%M)" &&
+mkdir -p "$A" &&
+test ! -e "$R-input.txt" &&
+test ! -e "$R-report.md" &&
+git fetch -q origin main &&
+(
+  main=$(git rev-parse origin/main) || exit
+  reports=$(find "$A" -maxdepth 1 -type f -name '????-??-??-????-report.md') || exit
+  reports=$(LC_ALL=C sort -r <<EOF
+$reports
+EOF
+  ) || exit
+  report=
+  previous_main=fe44c64
+  while IFS= read -r candidate; do
+    LC_ALL=C expr "$candidate" '>' "$R-report.md" >/dev/null && continue
+    candidate_input=${candidate%-report.md}-input.txt
+    test -f "$candidate_input" || continue
+    last=$(tail -n 1 "$candidate") || exit
+    test "$last" = 'End of report.' || continue
+    awk '
+      NR == 1 || $0 == "End of report." { next }
+      /^[ ]{0,3}#+([[:space:]]|$)/ { section = $0; next }
+      /[^[:space:]]/ { content[section] = 1 }
+      END {
+        exit !(content["## Open issues"] &&
+               content["## Permission rules"] &&
+               content["## What I checked"])
+      }
+    ' "$candidate" || continue
+    first=$(head -n 1 "$candidate") || exit
+    input_first=$(head -n 1 "$candidate_input") || exit
+    test "$first" = "$input_first" || continue
+    printf '%s\n' "$first" | grep -Eq '^Main: [0-9A-Fa-f]{40}$' || continue
+    report=$candidate
+    previous_main=${first#Main: }
+    break
+  done <<EOF
+$reports
+EOF
+  git merge-base --is-ancestor "$previous_main" "$main" || {
+    printf 'Audit checkpoint %s from %s is not an ancestor of %s.\n' \
+      "$previous_main" "${report:-the first-audit default}" "$main" >&2
+    exit 1
+  }
+  printf 'Main: %s\n' "$main" &&
+  echo "## check:memory --local" || exit
+  memory_exit=0
+  pnpm -s check:memory --local 2>&1 || memory_exit=$?
+  printf 'check:memory exit %s\n' "$memory_exit" &&
+  test "$memory_exit" -le 1 &&
+  echo "## differences from origin/main" &&
+  git status -sb &&
+  git diff "$main" -- .agents/chief/memories/ &&
+  echo "## long-term changes since the last audit" &&
+  git log -p --full-history --diff-merges=first-parent "$previous_main..$main" -- .agents/chief/memories/long-term/ &&
+  git diff "$previous_main" "$main" -- .agents/chief/memories/long-term/ &&
+  echo "## open PRs and their files" &&
+  gh pr list --state open --json number,files --jq '.[] | "#\(.number) \([.files[].path] | join(" "))"'
+) > "$R-input.part" &&
+mv "$R-input.part" "$R-input.txt"
+```
+
+## Audit start
+
+Replace `<audit_timeout_minutes>` with the timeout in `settings.md`. Replace `<model>` with the
+model ID in `chief_model`. The start command requires a non-empty `audit.md` checklist.
+Run "Audit input" and "Audit start" in one shell call. Add `&&` to the last line of "Audit input"
+so "Audit start" runs only after the input is ready. Use the tool's background mode and check the
+call's exit status.
+The auditor has no command tool and can write only in `$A`.
+After the call, use the printed stem as `R` to read `$R-report.md`.
+
+```sh
+: "${A:?}" "${R:?}" && test -s "$R-input.txt" && test ! -e "$R-report.md" && \
+test -s .agents/chief/memories/long-term/audit.md && \
+printf 'Audit stem: %s\n' "$R" && \
+timeout <audit_timeout_minutes>m env -u ANTHROPIC_API_KEY claude -p --restricted --strict-mcp-config \
+  --model <model> --effort high --no-session-persistence \
+  --tools "Read,Grep,Glob,Write" --allowedTools "Read" "Grep" "Glob" "Write($A/**)" -- \
+  "$(cat .agents/chief/memories/long-term/audit.md) The input file: $R-input.txt. The report file: $R-report.md."
+```
 
 ## Not claimed
 
