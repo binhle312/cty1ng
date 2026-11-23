@@ -3,5 +3,5 @@
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["*.ts", "scripts/**/*.ts", ".agents/chief/scripts/**/*.ts"]
+  "include": ["*.ts", "scripts/**/*.ts"]
 }
