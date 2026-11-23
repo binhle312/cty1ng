@@ -18,8 +18,6 @@
     "check:index": "tsx scripts/check-index.ts",
     "check:events": "tsx scripts/check-events.ts",
     "check:status": "tsx scripts/check-status.ts",
-    "check:memory": "tsx .agents/chief/scripts/check-memory.ts",
-    "merge:check": "tsx .agents/chief/scripts/merge-check.ts",
     "records:counts": "tsx scripts/records-counts.ts",
     "check:breaks": "tsx scripts/check-breaks.ts",
     "check:breaks:static": "tsx scripts/check-breaks-static.ts",

@@ -1,0 +1,10 @@
+{
+  "claims": [],
+  "exempt": [
+    {
+      "file": "scripts/check-status.test.ts",
+      "name": "requires a Done row for a merged PR that changed only the old chief memory",
+      "reason": "Test first: red run on 4047ba8 with the old memory exception returned no problem for #140; green run after removal returned #140. This is a status rule, not a security, order or race test."
+    }
+  ]
+}

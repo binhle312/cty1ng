@@ -1,10 +1,10 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { checkStatus, doneRows, mergedPrs } from "./lib/check-status.ts";
-import { mergeFiles, readHistory } from "./lib/check-status-git.ts";
+import { readHistory } from "./lib/check-status-git.ts";
 
 const LINK = "https://github.com/binhle312/cty1ng/pull";
 const SINCE = "2026-10-30";
@@ -39,9 +39,6 @@ function status(doneLines: string[]): string {
     "",
   ].join("\n");
 }
-
-const PERMISSION_RULE = "---\nid: R-002\npermission-rule: true\n---\nRule: Merge at the bar.\n";
-const RULE_PATH = ".agents/chief/memories/long-term/rules/R-002-x.md";
 
 function row(date: string, ...prs: number[]): string {
   return `| ${date} | ${prs.map((pr) => `[#${pr}](${LINK}/${pr})`).join(", ")} merged. |`;
@@ -138,31 +135,22 @@ describe("checkStatus", () => {
     ]);
   });
 
-  it("skips a memory PR: each changed file is in the chief memory", () => {
+  it("requires a Done row for a merged PR that changed only the old chief memory", () => {
     const merged = mergedPrs(merge(140, "2026-11-20"));
-    const changedFiles = (): string[] => [
-      ".agents/chief/memories/long-term/state.md",
-      ".agents/chief/memories/long-term/rules/R-014-x.md",
-    ];
-    const problems = checkStatus({ merged, statusMd: status([]), since: SINCE, changedFiles });
-    expect(problems, "memory PR").toEqual([]);
-  });
-
-  it("skips a memory PR that changes a permission rule and the memory README (order 108)", () => {
-    const merged = mergedPrs(merge(140, "2026-11-20"));
-    const changedFiles = (): string[] => [RULE_PATH, ".agents/chief/memories/README.md"];
-    const problems = checkStatus({ merged, statusMd: status([]), since: SINCE, changedFiles });
-    expect(problems, "permission rule and README").toEqual([]);
-  });
-
-  it("does not skip a PR with one changed file outside the chief memory", () => {
-    const merged = mergedPrs(merge(140, "2026-11-20"));
-    for (const other of ["docs/status.md", ".agents/chief/scripts/check-memory.ts"]) {
-      const changedFiles = (): string[] => [".agents/chief/memories/long-term/state.md", other];
-      const problems = checkStatus({ merged, statusMd: status([]), since: SINCE, changedFiles });
-      const prs = problems.map((p) => p.split(" ")[0]);
-      expect(prs, other).toEqual(["#140"]);
-    }
+    const oldMemoryPr = {
+      merged,
+      statusMd: status([]),
+      since: SINCE,
+      changedFiles: (): string[] => [
+        ".agents/chief/memories/long-term/state.md",
+        ".agents/chief/memories/long-term/rules/R-014-x.md",
+      ],
+    };
+    const problems = checkStatus(oldMemoryPr);
+    expect(
+      problems.map((problem) => problem.split(" ")[0]),
+      "memory PR",
+    ).toEqual(["#140"]);
   });
 });
 
@@ -227,93 +215,5 @@ describe("readHistory", () => {
     } finally {
       rmSync(shallow, { recursive: true, force: true });
     }
-  });
-});
-
-describe("mergeFiles", () => {
-  it("lists the files that a merge commit changes against its first parent", () => {
-    const repo = mkdtempSync(join(tmpdir(), "check-status-files-"));
-    const env = {
-      ...process.env,
-      GIT_AUTHOR_NAME: "t",
-      GIT_AUTHOR_EMAIL: "t@example.invalid",
-      GIT_COMMITTER_NAME: "t",
-      GIT_COMMITTER_EMAIL: "t@example.invalid",
-    };
-    const git = (...args: string[]): string =>
-      execFileSync("git", args, { cwd: repo, env, encoding: "utf8" });
-    try {
-      git("init", "-q", "-b", "main");
-      git("commit", "-q", "--allow-empty", "-m", "Initial commit");
-      git("checkout", "-q", "-b", "memory");
-      execFileSync("mkdir", ["-p", join(repo, "a")]);
-      execFileSync("touch", [join(repo, "a/one.md"), join(repo, "a/two.md")]);
-      git("add", ".");
-      git("commit", "-q", "-m", "two files");
-      git("checkout", "-q", "main");
-      git("merge", "-q", "--no-ff", "memory", "-m", "Merge pull request #5 from owner/memory");
-      const sha = git("rev-parse", "HEAD").trim();
-      expect(mergeFiles(repo, sha), "files of the merge").toEqual(["a/one.md", "a/two.md"]);
-    } finally {
-      rmSync(repo, { recursive: true, force: true });
-    }
-  });
-
-  // A merge of branch `memory` into main, after `change` ran on that branch (review round 1 of
-  // #139, DQ-878).
-  function filesOfMerge(change: (repo: string, git: (...args: string[]) => string) => void): {
-    files: string[];
-  } {
-    const repo = mkdtempSync(join(tmpdir(), "check-status-files-"));
-    const env = {
-      ...process.env,
-      GIT_AUTHOR_NAME: "t",
-      GIT_AUTHOR_EMAIL: "t@example.invalid",
-      GIT_COMMITTER_NAME: "t",
-      GIT_COMMITTER_EMAIL: "t@example.invalid",
-    };
-    const git = (...args: string[]): string =>
-      execFileSync("git", args, { cwd: repo, env, encoding: "utf8" });
-    try {
-      git("init", "-q", "-b", "main");
-      execFileSync("mkdir", [
-        "-p",
-        join(repo, "docs"),
-        join(repo, ".agents/chief/memories/long-term"),
-      ]);
-      execFileSync("mkdir", ["-p", join(repo, ".agents/chief/memories/long-term/rules")]);
-      writeFileSync(join(repo, "docs/policy.md"), "A policy of the project.\n");
-      writeFileSync(join(repo, RULE_PATH), PERMISSION_RULE);
-      git("add", ".");
-      git("commit", "-q", "-m", "Initial commit");
-      git("checkout", "-q", "-b", "memory");
-      change(repo, git);
-      git("commit", "-q", "-m", "change");
-      git("checkout", "-q", "main");
-      git("merge", "-q", "--no-ff", "memory", "-m", "Merge pull request #6 from owner/memory");
-      const sha = git("rev-parse", "HEAD").trim();
-      return { files: mergeFiles(repo, sha) };
-    } finally {
-      rmSync(repo, { recursive: true, force: true });
-    }
-  }
-
-  it("lists a file name with non-ASCII characters as it is", () => {
-    const name = ".agents/chief/memories/long-term/ghi-chú.md";
-    const merge = filesOfMerge((repo, git) => {
-      writeFileSync(join(repo, name), "x\n");
-      git("add", ".");
-    });
-    expect(merge.files, "non-ASCII name").toEqual([name]);
-  });
-
-  it("lists both paths of a file that moves into long-term memory", () => {
-    const merge = filesOfMerge((_repo, git) => {
-      git("mv", "docs/policy.md", ".agents/chief/memories/long-term/policy.md");
-    });
-    expect(merge.files, "both paths of a move").toEqual([
-      ".agents/chief/memories/long-term/policy.md",
-      "docs/policy.md",
-    ]);
   });
 });

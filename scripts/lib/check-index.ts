@@ -25,13 +25,6 @@ export const INDEXED_FOLDERS = [
   "docs/plans",
   "scripts",
   "scripts/lib",
-  // The chief memory. Not short-term/: git ignores its files, so they exist on one machine only.
-  ".agents/chief",
-  ".agents/chief/scripts",
-  ".agents/chief/scripts/lib",
-  ".agents/chief/memories",
-  ".agents/chief/memories/long-term",
-  ".agents/chief/memories/long-term/rules",
 ] as const;
 
 // Never listed in a folder table: the index itself, tests, generated code (architecture.md

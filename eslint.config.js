@@ -153,9 +153,8 @@ export default tseslint.config(
       "**/playwright-report/**",
       "frontend/src/lib/api/generated/**",
       "docs/**",
-      // The chief's scripts in .agents/chief/scripts/ are code, so lint reads them.
       ".agents/skills/**",
-      ".agents/chief/memories/**",
+      ".chief/**",
       ".claude/**",
       ".impeccable/**",
     ],
@@ -270,7 +269,6 @@ export default tseslint.config(
       "backend/test/**/*.ts",
       "scripts/**/*.test.ts",
       "scripts/fixtures/**/*.ts",
-      ".agents/chief/scripts/**/*.test.ts",
     ],
     ignores: ["backend/test/timed.ts"],
     rules: { "no-restricted-properties": ["error", ...TIMED_BACKEND] },
@@ -286,8 +284,8 @@ export default tseslint.config(
     rules: { "no-restricted-properties": ["error", ...TIMED_OTHER] },
   },
   {
-    // The repository scripts and the chief's scripts are command-line tools: they print their results.
-    files: ["scripts/**/*.ts", ".agents/chief/scripts/**/*.ts"],
+    // Repository scripts are command-line tools: they print their results.
+    files: ["scripts/**/*.ts"],
     rules: { "no-console": "off" },
   },
 );

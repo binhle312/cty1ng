@@ -10,6 +10,8 @@ approvals). Keep it short: link to PRs and briefs instead of describing work.
 
 ## Now
 
+The chief memory move is in flight in [#145](https://github.com/binhle312/cty1ng/pull/145) (owner order 205). Review round 1 fixes are in the draft. The PR waits for owner review of the protected changes.
+
 The repository audit of 2026-11-05 found 55 issues. After the owner's decisions, 15 are P2, 39 are P3, and the owner accepted one case; none is P1. Its fixes come before M3 in the owner's order. #69 is closed, and the owner watches more PRs before deciding whether to bring it back. Findings, decisions and progress are in [audits/2026-11-05-repo-audit.md](audits/2026-11-05-repo-audit.md). PR 2 of 7, the security fixes, merged in [#73](https://github.com/binhle312/cty1ng/pull/73) on 2026-11-06. [#76](https://github.com/binhle312/cty1ng/pull/76) merged on 2026-11-06 and records the guard decisions. PR 3 of 7, the Skills page, merged in [#78](https://github.com/binhle312/cty1ng/pull/78) on 2026-11-06. PR 4 of 7, the Bots page, merged in [#82](https://github.com/binhle312/cty1ng/pull/82) on 2026-11-08. PR 5 of 7, tests only, merged in [#86](https://github.com/binhle312/cty1ng/pull/86) on 2026-11-10. PR 6 of 7, six tabs, merged in [#91](https://github.com/binhle312/cty1ng/pull/91) on 2026-11-10.
 
 The automated security review is off for now (owner, 2026-11-06, [security.md §2.11](security.md#211-supply-chain-and-review)).
@@ -135,9 +137,7 @@ A P3 that has a DQ id is not in this table. Its state lives only in its row of t
 | In a production build, React 19 (`defaultOnCaughtError`) and the router still write the whole caught error to the browser console; only the app's log (`lib/log.ts`) gets the error name alone. Pass `onCaughtError` to `createRoot` in `main.tsx` (its own plan line) | Round 1 of [#123](https://github.com/binhle312/cty1ng/pull/123) | The P3 PRs before M3, or the M3 code design |
 | No test runs "a link in the Skills list leaves the error screen" (`requirements/app-shell.md`, Errors); it holds by a reading of the router (each new match resets the boundary) | Round 1 of [#123](https://github.com/binhle312/cty1ng/pull/123) | The P3 PRs before M3 |
 | `pnpm audit` is red: picomatch up to 4.0.7 (GHSA-fc5q-39xc-vjpf, high; no patched version yet), through vitest, vite and tinyglobby. `main` passed it on 2026-11-17; the lockfile of #124 is the same as `main` (`testing.md` §4: a signal) | CI of [#124](https://github.com/binhle312/cty1ng/pull/124) on `b5f9db6`, 2026-11-18 | A separate PR, when a patched version exists |
-| The owner adds a GitHub ruleset for `main` that requires the CI jobs of `.github/workflows/ci.yml` from GitHub Actions. `pnpm merge:check` checks the app and the workflow file of each required run itself, so it does not wait for the ruleset; the ruleset is not a condition for any row (owner, 2026-11-20, order 130, Q2 A) | The plan of option A of [#139](https://github.com/binhle312/cty1ng/pull/139) | The owner, after #139 merges |
-
-| A memory PR (only `.agents/chief/memories/`) cannot pass `check:status` when a PR merged before it has no Done row on `main` yet: the memory PR may not add the row, so the chief cannot merge it (`AGENTS.md` §9). [#143](https://github.com/binhle312/cty1ng/pull/143) added the #142 row, and the owner merges #143 (owner, 2026-11-23) | [#143](https://github.com/binhle312/cty1ng/pull/143) CI | The chief skill PR, or a `check:status` change that the owner approves |
+| The owner adds a GitHub ruleset for `main` that requires the CI jobs of `.github/workflows/ci.yml` from GitHub Actions. `pnpm exec tsx .chief/scripts/merge-check.ts <PR>` checks the app and the workflow file of each required run itself, so the ruleset is independent of the local check and of every row (owner, 2026-11-20, order 130, Q2 A) | The plan of option A of [#139](https://github.com/binhle312/cty1ng/pull/139) | The owner, after #139 merges |
 
 ## Slices
 
@@ -281,3 +281,4 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-23 | [#139](https://github.com/binhle312/cty1ng/pull/139) merged: the chief's restore kit and `pnpm check:memory`. |
 | 2026-11-23 | [#142](https://github.com/binhle312/cty1ng/pull/142) merged: the trigger first in the `consultants` and `arena` descriptions. |
 | 2026-11-23 | [#143](https://github.com/binhle312/cty1ng/pull/143) merged: rule R-038, new leaders run on Codex. |
+| 2026-11-23 | [#144](https://github.com/binhle312/cty1ng/pull/144) merged: chief rules, audit trigger and quotes (`4047ba8`). |

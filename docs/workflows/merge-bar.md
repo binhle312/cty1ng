@@ -10,56 +10,31 @@ This bar applies the [when review ends principle](../../.agents/skills/principle
 
 ## Who may merge
 
-The owner merges a PR, or asks for its merge. The chief may also merge a PR that a standing
-permission of the owner covers, and each memory PR that `pnpm merge:check` passes (`AGENTS.md` §7;
-owner, 2026-11-19, order 108). Before each chief merge, the chief runs `pnpm merge:check <PR>`
-from a clean checkout of `origin/main`. A memory PR and a PR under a standing permission merge
-only with the merge line that it prints. The script first checks the clone: the origin has one URL,
-which is this repository on github.com, the clone has its full history, and no git setting can
-change the diff. Then it reads one GitHub snapshot of the PR, compares its own code with the base
-tip of that snapshot, and judges the git diff at the commit ids of that snapshot: first from the
-paths, statuses, modes and CI checks alone, and only then from the texts that it still needs. It
-reads those texts before it reads the snapshot again, and a change in between stops it (owner,
-2026-11-20, orders 128, 130, 133, 147 and 152). Exit 1 means no chief merge under a
-permission. The script stops at the first rule that fails, in this order:
+The owner merges a PR or asks the chief to merge that PR. The chief may also merge a PR under a standing permission in the local `.chief/` repository (`AGENTS.md` §7). Before each standing merge, run `pnpm exec tsx .chief/scripts/merge-check.ts <PR>` from the main checkout, clean at `origin/main`. An owner instruction to wait or stop takes priority.
 
-1. Each PR: it comes from a fork, has another author or is for another base; a path is not
-   printable ASCII ("the chief stops"); main changed a touched path after the branch split (merge
-   main first); the PR mixes `.agents/chief/memories/` with other files.
-2. A memory PR: a `short-term/` file other than its README is tracked (it must leave the PR);
-   `restore.md` or `audit.md` changes, or a change is other than an added or changed `.md` file of
-   the `long-term/` path grammar, such as a printable path outside the grammar ("the owner merges
-   it"); a CI check is pending, red or missing; a memory text has a form that the script does not
-   support ("the chief stops"); a file has `permission-rule` (the owner merges each one, order
-   130); a text holds a private word; a quote of a rule is not in the owner record.
-3. A code PR: a path that no permission covers (a listed path, or an added, deleted or retyped
-   `package.json`); a CI check is pending, red or missing; a dependency field of a changed
-   `package.json` changes.
+The local checker reads the clean inner Git head. The import gives no grant authority.
+The grant fields must first appear in a reviewed loop commit. The checker reads each first-parent
+commit after import that changed the rule file. Each must have both memory trailers and add a
+proposal and review as new regular files. The hashes must match, and the review block must approve
+the exact change. Replay from the first parent must reproduce the committed rule text.
 
-For a code PR, the script checks paths and compares these fields in both versions of a changed
-`package.json`: `dependencies`, `devDependencies`, `peerDependencies`, `optionalDependencies`,
-`overrides`, `pnpm`, `packageManager`, `scripts`, `peerDependenciesMeta`, `dependenciesMeta`,
-`bundledDependencies` and `bundleDependencies`. A difference in one of these fields gives exit 1.
-The script does not check other content in a code PR. With the merge line, it prints a "Not
-checked" line for each list item that needs a diff read, such as a removed call of the sensitive
-data guard. Before path 2, the chief reads the whole diff for each "Not checked" item. If one
-matches, no standing permission covers the PR, and the owner merges it (R-002, question 4).
+When another active rule names a grant in `amends` or `supersedes`, the grant stops giving
+authority. It can count again after a reviewed change to its permission fields.
 
-Exit 2 means that the script cannot check: no chief merge. A PR that is not open, a failed check
-of the clone, a text that git cannot read, a PR that changed during the check, and a memory PR with
-no owner record or no private word list give exit 2. The record is checked once the PR reaches the
-memory gate, after the checks of each PR. Exit 2 says "Do not merge it" in two cases: the owner
-record or the private word list cannot be read (for each PR, also a code PR), and a memory PR after
-the script has read the diff. Each other exit 2 says "Treat it as listed: the owner merges it":
-a code PR, and each stop before the diff, where the script does not know the kind of PR yet. When
-the owner's own message asks for a PR, a listed path does not stop the merge (R-002 path 1): the
-chief merges with
-`gh pr merge https://github.com/<owner>/<repo>/pull/<PR> --merge --match-head-commit <head>`, but
-never a mixed PR.
+A grant must name this repository, the merge operation, and one PR or exact files or narrow
+folder prefixes. The `ends` field takes an ISO time with an offset, such as
+`2026-11-30T23:59+07:00`, or `never` (until withdrawn). The checker rejects a bare date.
+The public protection list in `AGENTS.md` §7 takes priority over every grant. The checker rejects
+each protected path. Read the full diff for protections that a path alone cannot prove. Stop if a
+protection applies or the result is uncertain.
 
-Not claimed: the gate assumes a trusted machine and trusted tools (owner, 2026-11-20, order 131).
-The start check finds a local setting that changed by mistake. Anyone who controls the machine can
-merge with the owner's login.
+For a public PR, the checker confirms the origin and full Git history. It reads two GitHub snapshots and stops if their head, base, state or checks differ. It reads the full diff at those commit IDs. CI must be green for the exact head, from the expected GitHub Actions app and workflow. During cutover, it selects the old or new CI profile from the workflow at the verified base tip. Each change to `ci.yml` needs a new profile pin in `.chief/`. The checker exits 2 until the new pin is in place. The checker also preserves path, mode, changed-base-path, dependency-field and public policy checks. A standing grant must cover every changed file.
+
+If the command asks for a diff review, read the diff it names. Check for an owner hold and run the command again with the printed `--reviewed-diff` value only when both checks pass.
+
+Exit 0 prints one `gh pr merge … --merge --match-head-commit <head>` line. The chief marks the PR Ready at the last step and uses that line only while the approval and checked facts still hold. Exit 1 denies a standing merge. Exit 2 means the checker cannot decide. Both stop the standing route. A direct request from the owner still uses the current exact-head merge procedure and consultant checks.
+
+The light gate trusts this laptop (orders 131 and 203). Any process that can write `.chief/` can make a grant or change the local checker and its protected list. The chief treats a conflict, a stale grant or an owner hold as a stop.
 
 ## Severity
 

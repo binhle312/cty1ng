@@ -22,17 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        gate:
-          [
-            lint,
-            typecheck,
-            test,
-            "check:index",
-            "check:events",
-            "check:memory",
-            "db:check",
-            "records:counts",
-          ]
+        gate: [lint, typecheck, test, "check:index", "check:events", "db:check", "records:counts"]
     steps:
       - uses: actions/checkout@v7
         with:
