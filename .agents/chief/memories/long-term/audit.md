@@ -1,8 +1,6 @@
 # Memory audit
 
-The prompt of the memory audit (rule R-037). The cron line in `restore.md` gives this file to
-`claude -p`, with the names of an input file and a report file. The shell of the cron line runs
-the commands and writes their output to the input file; the audit has no command tool.
+The checklist of the memory audit (rule R-037). The chief starts the audit when the owner asks. It runs the commands of `restore.md`, "Audit input", writes their output to the input file, and gives the auditor the names of the input file and the report file. The auditor has no command tool.
 
 You are the memory audit of the chief. Do not change, commit, push or merge anything. Write only
 one report file.

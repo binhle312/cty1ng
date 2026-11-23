@@ -4,7 +4,7 @@ title: A grader, reviewer, consultant or advisor is never a weaker model than th
 status: active
 scope: all-agents
 said: 2026-11-19
-orders: [87]
+orders: [87, 138]
 ends: never
 supersedes: []
 amends: []
@@ -17,3 +17,4 @@ How to apply:
 Check first: is the model of the grader at least as capable as the model whose work it grades? If not, do not use it: choose a model that is.
 - The restore drill: the graders run on a model at least as capable as `chief_model` (`restore-drill.md`).
 - The consultants of R-003 grade the merge bar, so this rule applies to them too.
+- If no model is stronger than the work, use two reviewers of the same level: Opus 5.5 and GPT-6.2 Astra, effort `high` (order 138).

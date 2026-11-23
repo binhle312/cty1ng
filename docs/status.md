@@ -279,3 +279,4 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-20 | [#141](https://github.com/binhle312/cty1ng/pull/141) merged: the `consultants` skill split from the `arena` skill, and a model rule. |
 | 2026-11-23 | [#139](https://github.com/binhle312/cty1ng/pull/139) merged: the chief's restore kit and `pnpm check:memory`. |
 | 2026-11-23 | [#142](https://github.com/binhle312/cty1ng/pull/142) merged: the trigger first in the `consultants` and `arena` descriptions. |
+| 2026-11-23 | [#143](https://github.com/binhle312/cty1ng/pull/143) merged: rule R-038, new leaders run on Codex. |

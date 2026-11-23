@@ -44,7 +44,7 @@ conditions are in the file, not in this table.
 | `R-034-leaders-push-at-checkpoints.md` | A leader pushes its branch at each checkpoint of its plan. | leaders | never | |
 | `R-035-hand-check-until-107.md` | Before each merge, check the two template-named tests of DQ-795 by hand until #107 merges. | chief | until #107 merges | |
 | `R-036-grader-not-weaker.md` | A grader, reviewer, consultant or advisor is never a weaker model than the model whose work it grades. | all-agents | never | |
-| `R-037-memory-audit.md` | Audit the chief memory at the setting audit_times, from a cron line that the owner adds. | chief | never | |
+| `R-037-memory-audit.md` | Audit the chief memory when the owner asks. | chief | never | |
 | `R-038-leaders-on-codex.md` | Start each new leader on Codex, with the model and effort that the task difficulty gives. | chief | never | |
 
 ## Not active

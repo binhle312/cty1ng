@@ -29,5 +29,5 @@ order, and the owner can change it.
 | `lessons_max_lines` | 200 | #139 plan, 2026-11-19 |
 | `quote_max_words` | 25 | #139 plan, 2026-11-19; the owner asked for short, dated quotes (order 78, arena Q3 A) |
 | `quote_min_words` | 4 | chief, 2026-11-19 (#139 plan v3, Q3): a shorter quote proves little in the owner-quote check of order 109 |
-| `audit_times` | 00:00, 08:00 and 16:00 (+07) | owner, 2026-11-19 (orders 108 and 109): the memory audit, rule R-037 |
-| `audit_timeout_minutes` | 30 | chief, 2026-11-19 (#139 plan v3): the deadline of one audit run; the cron line copies it |
+| `audit_times` | on the owner's request | owner, 2026-11-23 (order 179): no cron line; the owner tells the chief when to start an auditor |
+| `audit_timeout_minutes` | 30 | chief, 2026-11-19 (#139 plan v3): the deadline of one audit run |

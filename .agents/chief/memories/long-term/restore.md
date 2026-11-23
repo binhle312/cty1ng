@@ -14,23 +14,7 @@ How the chief comes back when the old chief is gone. The drill that proves it is
 4. Find the live state yourself: `docs/status.md` ("Next", "Waiting on the owner"),
    `gh pr list`, the CI of each open PR, `git worktree list`. Add the facts of `state.md`, and
    write `short-term/now.md`.
-5. Ask the owner to add the cron line of the memory audit (rule R-037) with `crontab -e`. The
-   agent never adds it. Fill the slots for the owner: `<checkout>` is the chief's checkout,
-   because only it has the files of `short-term/`, and `<claude dir>`, `<node dir>` and
-   `<gh dir>` are the folders of `claude`, `node` and `gh` (`command -v`). The minutes after
-   `timeout` come from the setting `audit_timeout_minutes`. The line does not change the branch or
-   the files of the checkout. The shell runs each command and writes its output to the input
-   file; `claude` gets only the tools Read, Grep, Glob and Write (`--tools`), reads no settings
-   file of the project, and may write only in `short-term/audits/` (`--allowedTools`; `-p` cannot
-   ask for more). Cron needs each `%` as `\%`. The owner record
-   (`short-term/owner/`) is empty on a new computer, so `pnpm merge:check` stops (exit 2) for
-   each memory PR that reaches the memory gate (after the checks of each PR) until the record
-   has the owner's words again.
-
-   ```text
-   0 0,8,16 * * * cd <checkout> && export PATH=<claude dir>:<node dir>:<gh dir>:/usr/bin:/bin && A=.agents/chief/memories/short-term/audits && mkdir -p "$A" && R="$A/$(date +\%F-\%H)" && { git fetch -q origin main; echo "## check:memory --local"; pnpm -s check:memory --local; echo "## differences from origin/main"; git status -sb; git diff origin/main -- .agents/chief/memories/; echo "## long-term changes of the last 9 hours"; git log -p --since="9 hours ago" origin/main -- .agents/chief/memories/long-term/; echo "## open PRs and their files"; gh pr list --state open --json number,files --jq '.[] | "#\(.number) \([.files[].path] | join(" "))"'; } > "$R-input.txt" 2>&1; timeout 30m env -u ANTHROPIC_API_KEY claude -p --restricted --strict-mcp-config --model claude-opus-5-5 --effort high --no-session-persistence --tools "Read,Grep,Glob,Write" --allowedTools "Read" "Grep" "Glob" "Write($A/**)" -- "$(cat .agents/chief/memories/long-term/audit.md) The input file: $R-input.txt. The report file: $R.md." >> "$A/cron.log" 2>&1
-   ```
-
+5. The memory audit runs only when the owner asks (rule R-037). There is no cron line (owner, 2026-11-23, order 179).
 6. Tell the owner what you restored and what is missing (section "Not claimed"). Ask before any
    work.
 
@@ -49,6 +33,23 @@ How the chief comes back when the old chief is gone. The drill that proves it is
    `gh pr view`, `git log origin/<branch>`, `claude agents --json`.
 2. Find the running leaders. Read their last reports and handoffs before you send new work.
 3. If two chiefs can run at one time, ask the owner which one stays.
+
+## Audit input
+
+Before an audit, run these commands from the chief's checkout and write their output to `short-term/audits/<date>-input.txt`:
+
+```text
+git fetch -q origin main
+echo "## check:memory --local"
+pnpm -s check:memory --local
+echo "## differences from origin/main"
+git status -sb
+git diff origin/main -- .agents/chief/memories/
+echo "## long-term changes of the last 9 hours"
+git log -p --since="9 hours ago" origin/main -- .agents/chief/memories/long-term/
+echo "## open PRs and their files"
+gh pr list --state open --json number,files --jq '.[] | "#\(.number) \([.files[].path] | join(" "))"'
+```
 
 ## Not claimed
 

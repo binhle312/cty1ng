@@ -1136,15 +1136,20 @@ describe("the rules about merges, approvals or permissions", () => {
   });
 });
 
-// DQ-1026: `--allowedTools` approves tools but does not limit the tool set; `--tools` names it.
-describe("the cron line of the memory audit", () => {
-  it("names the exact tool set of claude with --tools", () => {
-    const text = readFileSync(".agents/chief/memories/long-term/restore.md", "utf8");
-    const line = text.split("\n").find((row) => row.includes("claude -p")) ?? "";
-    expect(line, "cron tools").toContain('--tools "Read,Grep,Glob,Write"');
-    expect(line, "cron write scope").toContain('"Write($A/**)"');
-    expect(line, "cron restricted").toContain("--restricted");
-    expect(line, "cron no Bash").not.toContain("Bash");
+describe("the memory audit on request (order 179)", () => {
+  it("documents the owner trigger and keeps the input commands with the chief", () => {
+    const restore = readFileSync(".agents/chief/memories/long-term/restore.md", "utf8");
+    expect(restore, "owner trigger").toContain(
+      "The memory audit runs only when the owner asks (rule R-037).",
+    );
+    expect(restore, "audit input").toContain("short-term/audits/<date>-input.txt");
+    expect(restore, "no scheduled auditor command").not.toContain("claude -p");
+  });
+
+  it("limits the auditor to writing one report and gives it no command tool", () => {
+    const checklist = readFileSync(".agents/chief/memories/long-term/audit.md", "utf8");
+    expect(checklist, "no command tool").toContain("The auditor has no command tool.");
+    expect(checklist, "report only").toMatch(/Write only\s+one report file\./);
   });
 });
 
