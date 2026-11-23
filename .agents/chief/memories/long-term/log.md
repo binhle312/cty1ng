@@ -62,3 +62,14 @@ Append only. One heading for each promotion, lint, restore drill or migration.
   reads each critical question as right.
 - Partial for both: Q7, Q12 and Q13. Q13 is partial for the fifth time (DQ-1078).
 - No answer reads 3a, 3c, 3d, 3f or 3g as "merge". No patch: the next step is the owner's.
+
+## [2026-11-23] restore | drill 10, on 75ce5c1 (three key fixes, order 163), two Opus 5.5 high graders: 22 and 22 of 26 right, fail
+
+- The key fix was committed and pushed before the run (`75ce5c1`). The probe ran with read tools
+  only and saw only `CLAUDE.md`, `AGENTS.md` and skill names, and no user-level memory.
+- Both graders read Q4 and 3g (critical) as partial. Q4 gives each item of path 2 and of the list,
+  but not the owner hold, the steps of path 1 or R-005 for a memory PR. 3g does not say that the
+  rule grants nothing before its PR merges.
+- Partial too, for both: Q6 and Q13 (Q13 for the sixth time). Q7, Q12 and Q17 are right.
+- Q4, 3g and Q6 were right for both graders in drill 9, and their keys and rule texts did not
+  change (DQ-1079). No patch: the next step is the owner's.
