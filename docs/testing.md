@@ -377,7 +377,7 @@ GitHub requires nine checks before a merge into `main` (ruleset "Protected main"
 2026-11-12): `lint`, `typecheck`, `test`, `check:index`, `check:events`, `db:check`,
 `gen:api fresh`, `build + check:bundle` and `e2e`. The check `audit` is not one of them: the
 rule above is for the person who merges. The check `check:breaks static` is not one of them either:
-the owner chose to keep it optional (2026-11-18, q4 Q2 B); the chief checks it before each merge. The same ruleset has its own rules for CodeQL alerts, code quality, test coverage
+the owner chose to keep it optional (2026-11-18, q4 Q2 B); the person who merges checks it before each merge. The same ruleset has its own rules for CodeQL alerts, code quality, test coverage
 and open review threads. A branch does not have to be up to date with `main` before its merge.
 
 ## 5. Evidence in PRs
