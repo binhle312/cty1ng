@@ -59,7 +59,7 @@ to it. Check a version fact before you trust it.
 
 - New leaders run on Codex (R-038). Start one from the chief's shell, with the brief on standard input: `codex exec -m <model> -c model_reasoning_effort="<effort>" -c service_tier="default" -s workspace-write -C <worktree> -o <report file> - < <brief file>`.
 - To let the leader commit and push, add `-c sandbox_workspace_write.network_access=true` and `-c 'sandbox_workspace_write.writable_roots=["<repository>/.git","<repository>/.git/worktrees/<admin name>"]'`. The network then opens for each command, so the brief says: use the network only for git and gh.
-- A Codex run is one shot: it has no live session for messages. The brief is the plan; the leader stops and reports when a step does not fit. Read its report file and its log.
+- A Codex run is one shot: it has no live session for messages. Plan first follows R-038. Read the report file and the log of each run.
 
 ## Reviews
 

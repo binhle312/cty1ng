@@ -18,5 +18,6 @@ How to apply:
 Check first: before you start a leader, is its model and effort the value of `model_easy`, `model_medium` or `model_hard`? If not, do not start it.
 - GPT-6.2 Astra is not a leader model: it reviews and consults (the chief's reading of orders 174 and 175).
 - Use no effort `xhigh` (order 138).
+- Plan first (order 176): if the brief gives each step and the exact text, the brief is the plan, and the leader stops and reports when a step does not fit. If the task has design choices, the leader first does a plan-only run that changes nothing; review that plan before a second run builds it.
 - A running leader keeps its model until its task ends (R-020).
 - The start command is in `environment.md`, "Codex leaders".
