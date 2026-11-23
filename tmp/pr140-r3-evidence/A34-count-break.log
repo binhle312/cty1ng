@@ -1,2 +1,0 @@
-docs/delivery-quality.md: the row #140, cell "Unique issues" is "72 (DQ-900 to DQ-934, DQ-960 to DQ-976, DQ-978 to DQ-997)"; the rows give "107 (DQ-900 to DQ-934, DQ-960 to DQ-999, DQ-1001 to DQ-1032)". Run `pnpm records:counts --write`.
-records:counts: 1 problem(s)
