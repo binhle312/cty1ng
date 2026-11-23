@@ -43,6 +43,7 @@ const SETTINGS: [string, string][] = [
   ["checkpoint_left_percent", "40"],
   ["context_window_tokens", "1000000"],
   ["review_cap", "5"],
+  ["merge_main_bonus", "3"],
   ["promote_after_hours", "24"],
   ["drill_every_days", "7"],
   ["boot_max_kb", "48"],
@@ -233,8 +234,13 @@ describe("readSettings", () => {
     ]);
   });
 
-  it("names each setting of the memory audit and the quote check that is missing", () => {
-    for (const key of ["quote_min_words", "audit_times", "audit_timeout_minutes"]) {
+  it("names each missing setting for the memory audit, quote check, and review cap bonus", () => {
+    for (const key of [
+      "quote_min_words",
+      "audit_times",
+      "audit_timeout_minutes",
+      "merge_main_bonus",
+    ]) {
       const rows = SETTINGS.filter(([name]) => name !== key);
       expect(readSettings(settings(rows)).problems, key).toEqual([
         `${L}/settings.md: setting \`${key}\` is missing`,
@@ -249,12 +255,15 @@ describe("readSettings", () => {
     ]);
   });
 
-  it("names a number setting that is not a whole number", () => {
+  it.each([
+    ["leader_cap", "two"],
+    ["merge_main_bonus", "3.5"],
+  ])("names %s when its value %s is not a whole number", (setting, invalidValue) => {
     const rows = SETTINGS.map(([key, value]): [string, string] =>
-      key === "leader_cap" ? [key, "two"] : [key, value],
+      key === setting ? [key, invalidValue] : [key, value],
     );
     expect(readSettings(settings(rows)).problems, "not a number").toEqual([
-      `${L}/settings.md: setting \`leader_cap\` is "two"; it must be a whole number`,
+      `${L}/settings.md: setting \`${setting}\` is "${invalidValue}"; it must be a whole number`,
     ]);
   });
 });

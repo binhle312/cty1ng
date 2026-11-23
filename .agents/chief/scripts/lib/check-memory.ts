@@ -48,6 +48,7 @@ const NUMBER_SETTINGS = [
   "checkpoint_left_percent",
   "context_window_tokens",
   "review_cap",
+  "merge_main_bonus",
   "promote_after_hours",
   "drill_every_days",
   "boot_max_kb",
