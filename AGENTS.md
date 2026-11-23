@@ -64,7 +64,7 @@ pnpm --filter backend db:check      # schema and migrations agree (also in CI)
 make dev                        # backend on 127.0.0.1:8000, frontend on 127.0.0.1:5173
 ```
 
-The chief runs the local memory check from the project's main checkout with `pnpm exec tsx .chief/scripts/check-memory.ts --local`. For a merge under a standing permission, run the local `merge:check` from a clean checkout of `origin/main`.
+The chief runs the local memory check from the project's main checkout with `pnpm exec tsx .chief/scripts/check-memory.ts --local`. For a merge under a standing permission, run `pnpm exec tsx .chief/scripts/merge-check.ts <PR>` from the main checkout, clean at `origin/main`.
 
 ## 5. Architecture rules (do not break these)
 
@@ -119,7 +119,7 @@ An agent never gives an approval of this list in the owner's place, also when th
 
 Mark these in the PR description under a heading `Needs human review` with one line each.
 
-The owner merges a PR or asks the chief to merge that PR. The chief may also merge a PR under a standing permission in `.chief/`. Use the local `merge:check` command and follow the merge bar. The chief checks the scope and end of the permission, the public diff and the CI results on the exact PR head. An owner instruction to wait or stop takes priority.
+The owner merges a PR or asks the chief to merge that PR. The chief may also merge a PR under a standing permission in `.chief/`. Use `pnpm exec tsx .chief/scripts/merge-check.ts <PR>` and follow the merge bar. The chief checks the scope and end of the permission, the public diff and the CI results on the exact PR head. An owner instruction to wait or stop takes priority.
 
 No standing permission covers a PR that changes `AGENTS.md`, `CLAUDE.md`, `docs/decisions/`, the public API shape, security-sensitive code, a migration, a dependency, the memory check, a public CI gate, or a rule about merges, approvals or permissions outside the local memory loop.
 
@@ -151,6 +151,8 @@ Only the owner's own messages to the agent supply the other approvals in this se
 - Documentation updated where behaviour changed.
 - `docs/status.md` updated: the slice's state, the PR link, anything now waiting on the owner.
 - For each local memory change, use the memory loop and run the local memory check in §4. Commit the accepted changes once under `.chief/` with the proposal and review records and both memory trailers.
+  Until the memory loop exists, the chief changes tracked `.chief/` memory only for this move
+  or on an owner order, and no such change makes a permission count.
 - For a PR in a milestone, `docs/delivery-quality.md` is updated as its §7 says: the PR in the
   register, one row per review round, and each issue with its state and verification evidence.
 - A change the owner can see updates `seed/skills/using-the-app/SKILL.md`, the Guide bot's

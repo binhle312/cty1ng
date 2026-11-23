@@ -306,8 +306,8 @@ Start here: `worker.service.ts`. Do not: call the model except through the model
 - **The chief checks local memory** from the project's main checkout with
   `pnpm exec tsx .chief/scripts/check-memory.ts --local` (`AGENTS.md` §4). The local repository
   holds long-term memory and scripts. Its Git ignore keeps short-term memory and work local.
-  The public `check:index` checks only public folders. The local memory check owns the chief's
-  folder indexes, rule form, privacy patterns, owner quotes and size limits.
+  The public `check:index` checks only public folders. The local memory check verifies the generated
+  rules index, rule form, privacy patterns, owner quotes and size limits.
 - Leaves only: the root `README.md` and this section link to the package indexes; there is no
   second, central file list to drift.
 
