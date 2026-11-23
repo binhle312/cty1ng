@@ -44,3 +44,9 @@ tmp/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# The chief's short-term memory: on this computer only (.agents/chief/memories/README.md)
+/.agents/chief/memories/short-term/*
+!/.agents/chief/memories/short-term/README.md
+# The old short-term folder, until the cutover moves its files (review round 3)
+/.agents/memories/short-term/
