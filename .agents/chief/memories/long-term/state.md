@@ -1,8 +1,8 @@
 # State
 
 As of: 2026-11-23
-Main: aa11c16
-Promoted through: 2026-11-19
+Main: 1969b72
+Promoted through: 2026-11-23
 
 This file holds only facts that `docs/status.md` does not hold. Check each one live before you
 act on it.
@@ -15,14 +15,12 @@ each PR waits for in `docs/status.md` ("Next", "Waiting on the owner") and with
 
 | PR | What | DQ range | Other fact |
 | --- | --- | --- | --- |
-| #139 | The chief's restore kit: the `decision-pages` skill, this memory, `pnpm check:memory`, the `AGENTS.md` words | DQ-878 to DQ-899, DQ-935 to DQ-952, DQ-1000 to DQ-1019 and DQ-1020 to DQ-1080 (it used DQ-876 and DQ-877 before the ranges); DQ-953 to DQ-959 are a reserve that only the chief gives | — |
-| #107 | The redesign of the break runner (five gaps) | — | No leader runs now. |
-| #140 | The `overnight` skill: owner-started night work with a night card | DQ-900 to DQ-934, DQ-960 to DQ-999 | — |
-| #142 | The trigger first in the `consultants` and `arena` descriptions | — | — |
+| #107 | The redesign of the break runner (five gaps) | — | On hold (owner, 2026-11-23, order 169). |
+| #140 | The `overnight` skill: owner-started night work with a night card | DQ-900 to DQ-934, DQ-960 to DQ-999; DQ-1081 to DQ-1113 if its merge of main keeps the renumber | — |
 
 ## The chief's queue
 
-1. After #139 merges: the cutover. Copy the live files of the `tmp/` folder into `short-term/`,
+1. Started on 2026-11-23: `short-term/` and the owner record exist. After #139 merges: the cutover. Copy the live files of the `tmp/` folder into `short-term/`,
    and give the owner the list of auto-memory notes that become pointers. Remove nothing before
    the owner's OK (R-014). Build `short-term/owner/`: one `.md` file for each day, with every word
    of the owner that a rule quotes, before the first chief merge of a memory PR (chief,
@@ -43,6 +41,5 @@ each PR waits for in `docs/status.md` ("Next", "Waiting on the owner") and with
 
 ## Next free ids
 
-- DQ: the chief gives each open PR a range (the table "Open PRs"). A new range starts at
-  DQ-1081. Check first: the highest id in `docs/delivery-quality*.md` and in the open PRs.
-- Rule: R-038. Lesson: L-30. Owner order: 166 (check the log at the merge).
+- DQ: the chief gives each open PR a range (the table "Open PRs"). A new range starts at DQ-1114. Check first: the highest id in `docs/delivery-quality*.md` and in the open PRs.
+- Rule: R-039. Lesson: L-30. Owner order: 176 (check the owner record).

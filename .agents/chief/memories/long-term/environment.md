@@ -33,7 +33,7 @@ to it. Check a version fact before you trust it.
 
 ## Claude Code sessions
 
-- Start a leader from its worktree:
+- Start a Claude conversation (the chief's clone, or a Claude reviewer) from its folder:
   `cd <worktree> && claude --bg --permission-mode auto --model <model> --effort <effort> -n "<name>" "<prompt>"`.
   Never use `-w`.
 - Resume: `claude --bg --permission-mode auto --resume <newest session id> '<prompt>'`. Each
@@ -54,6 +54,12 @@ to it. Check a version fact before you trust it.
   `env -u ANTHROPIC_API_KEY`, so that it uses the normal login. Copy no credentials.
 - Never `pkill -f` or `pgrep -f` a pattern that is also in your own command line: it kills your
   shell (exit 144).
+
+## Codex leaders
+
+- New leaders run on Codex (R-038). Start one from the chief's shell, with the brief on standard input: `codex exec -m <model> -c model_reasoning_effort="<effort>" -c service_tier="default" -s workspace-write -C <worktree> -o <report file> - < <brief file>`.
+- To let the leader commit and push, add `-c sandbox_workspace_write.network_access=true` and `-c 'sandbox_workspace_write.writable_roots=["<repository>/.git","<repository>/.git/worktrees/<admin name>"]'`. The network then opens for each command, so the brief says: use the network only for git and gh.
+- A Codex run is one shot: it has no live session for messages. The brief is the plan; the leader stops and reports when a step does not fit. Read its report file and its log.
 
 ## Reviews
 

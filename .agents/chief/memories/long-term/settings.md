@@ -13,9 +13,9 @@ order, and the owner can change it.
 | `checkpoint_left_percent` | 40 | owner, 2026-11-13 (order 23) |
 | `context_window_tokens` | 1000000 | the window of Opus 5.5, Sonnet 5.5 and Fable 5.2, checked on 2026-11-13 |
 | `review_cap` | 5 | owner, 2026-11-13 and 2026-11-14 (orders 27, 48): review rounds before the work on a PR stops |
-| `model_easy` | Sonnet 5.5 (`claude-sonnet-5-5`), effort `medium`, or `high` with recounts | owner, 2026-11-13 (order 9): written steps, little judgment |
-| `model_medium` | Opus 5.5 (`claude-opus-5-5`), effort `high` | owner, 2026-11-13 (order 9): judgment inside clear rules |
-| `model_hard` | Opus 5.5 (`claude-opus-5-5`), effort `xhigh` | owner, 2026-11-13 (order 9): design, proof, code fixes, security |
+| `model_easy` | GPT-6.1 Terra (`gpt-6.1-terra`), effort `medium` | owner, 2026-11-23 (orders 164, 174 and 175): written steps, little judgment |
+| `model_medium` | GPT-6.2 Sol (`gpt-6.2-sol`), effort `high` | owner, 2026-11-23 (orders 164, 174 and 175): judgment inside clear rules |
+| `model_hard` | GPT-6.2 Sol (`gpt-6.2-sol`), effort `high` | owner, 2026-11-23 (orders 164, 174 and 175): design, proof, code fixes, security; no `xhigh` (order 138) |
 | `chief_model` | Opus 5.5 (`claude-opus-5-5`), effort `high` | owner, 2026-11-14 (order 47) |
 | `owner_language` | Simple English (ASD-STE100, 80% target) | owner, 2026-11-06 and 2026-11-08 |
 | `owner_pages` | HTML decision pages, made with the `decision-pages` skill | owner, 2026-11-19 (order 76) |
