@@ -73,3 +73,11 @@ Append only. One heading for each promotion, lint, restore drill or migration.
 - Partial too, for both: Q6 and Q13 (Q13 for the sixth time). Q7, Q12 and Q17 are right.
 - Q4, 3g and Q6 were right for both graders in drill 9, and their keys and rule texts did not
   change (DQ-1079). No patch: the next step is the owner's.
+
+## [2026-11-23] restore | owner order 165, the drill moves to a follow-up PR
+
+- The owner accepts "The restore drill passes" as **Not met** and will merge #139.
+- The export includes earlier misses in the ledger and this log. Drill 10 cites the drill 9
+  log entry and adds the Q3d diff-read step that DQ-1078 records as missing (DQ-1080).
+- The follow-up PR seals the export, adds scenarios for gaps in the recall questions, and runs
+  the drill. The pass result remains open.
