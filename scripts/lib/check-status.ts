@@ -50,27 +50,14 @@ export function doneRows(statusMd: string): { prs: Set<number>; problems: string
   return { prs, problems };
 }
 
-// A memory PR changes only the chief memory, and it needs no Done row (owner, 2026-11-19,
-// order 108; AGENTS.md §9). One file outside that folder makes it an ordinary PR.
-export const MEMORY_FOLDER = ".agents/chief/memories/";
-
-export function isMemoryPr(paths: readonly string[]): boolean {
-  return paths.length > 0 && paths.every((path) => path.startsWith(MEMORY_FOLDER));
-}
-
-// `changedFiles` gives the paths that a merged PR changed; the caller reads them from git, and only
-// for a PR with no Done row. With no `changedFiles`, no PR counts as a memory PR.
 export function checkStatus(input: {
   merged: readonly Merged[];
   statusMd: string;
   since: string;
-  changedFiles?: (merged: Merged) => readonly string[];
 }): string[] {
   const done = doneRows(input.statusMd);
-  const changedFiles = input.changedFiles;
   const missing = input.merged
     .filter((m) => m.date >= input.since && !done.prs.has(m.pr))
-    .filter((m) => changedFiles === undefined || !isMemoryPr(changedFiles(m)))
     .map(
       (m) =>
         `#${m.pr} (merged ${m.date}, ${m.sha.slice(0, 7)}) has no Done row in docs/status.md. ` +
