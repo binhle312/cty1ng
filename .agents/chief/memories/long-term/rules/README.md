@@ -26,7 +26,7 @@ conditions are in the file, not in this table.
 | `R-016-owner-pages.md` | Questions and reports for the owner are HTML decision pages made with the decision-pages skill. | chief | never | |
 | `R-017-simple-english.md` | Write each text for the owner in Simple English, and use short, common words for names. | all-agents | never | |
 | `R-018-leader-cap-and-heavy-commands.md` | At most leader_cap leaders run at one time, and the chief grants each heavy command. | all-agents | never | |
-| `R-019-leader-model-and-plan-first.md` | Suggest each leader's model and effort, give it a plan as its prompt, and review its plan before it acts. | chief | never | |
+| `R-019-leader-model-and-plan-first.md` | Suggest each leader's model and effort, give it a plan as its prompt, and review its plan before it acts. | chief | never | R-038 |
 | `R-020-never-change-model-mid-task.md` | Never change the model of a conversation in the middle of a task. | all-agents | never | |
 | `R-021-chief-model-and-fable.md` | The chief runs on chief_model, and a Fable 5.2 conversation or seat starts only on the owner's word. | chief | never | |
 | `R-022-leaders-need-full-context.md` | The chief makes sure that each leader has the context to do its job. | chief | never | |
@@ -45,6 +45,7 @@ conditions are in the file, not in this table.
 | `R-035-hand-check-until-107.md` | Before each merge, check the two template-named tests of DQ-795 by hand until #107 merges. | chief | until #107 merges | |
 | `R-036-grader-not-weaker.md` | A grader, reviewer, consultant or advisor is never a weaker model than the model whose work it grades. | all-agents | never | |
 | `R-037-memory-audit.md` | Audit the chief memory at the setting audit_times, from a cron line that the owner adds. | chief | never | |
+| `R-038-leaders-on-codex.md` | Start each new leader on Codex, with the model and effort that the task difficulty gives. | chief | never | |
 
 ## Not active
 

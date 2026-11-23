@@ -84,7 +84,6 @@ From M3 on, P3 findings are fixed at the end of each milestone, before the next 
 | Approve the M5b schema design: `projects.instructions_md`, `instructions_version`, `colour`, `pinned_position`, goal ≤ 500 chars, `memory_items.seen_at`, `memory_proposals` and the `model_requests` change (D63) (initial schema for M5b, `domain-model.md` §14). Claude Code stops for this approval before it writes them. The generated SQL is approved in the M5b PR | M5b plan |
 | Draft [#107](https://github.com/binhle312/cty1ng/pull/107), the redesign of the break runner (five gaps): the owner's answers R1 to R11 | The #107 work |
 | The proposal DQ-866 of [#135](https://github.com/binhle312/cty1ng/pull/135) (merged on 2026-11-19) waits for the owner, with the #107 questions (its home is #107) | The owner's #107 answers |
-| Merge draft [#142](https://github.com/binhle312/cty1ng/pull/142): the "Use when" trigger first in the `consultants` and `arena` descriptions, and one body line for harnesses that ignore `disable-model-invocation` (owner order 134, 2026-11-20) | The owner's merge |
 
 ## Follow-ups
 
@@ -136,6 +135,8 @@ A P3 that has a DQ id is not in this table. Its state lives only in its row of t
 | No test runs "a link in the Skills list leaves the error screen" (`requirements/app-shell.md`, Errors); it holds by a reading of the router (each new match resets the boundary) | Round 1 of [#123](https://github.com/binhle312/cty1ng/pull/123) | The P3 PRs before M3 |
 | `pnpm audit` is red: picomatch up to 4.0.7 (GHSA-fc5q-39xc-vjpf, high; no patched version yet), through vitest, vite and tinyglobby. `main` passed it on 2026-11-17; the lockfile of #124 is the same as `main` (`testing.md` §4: a signal) | CI of [#124](https://github.com/binhle312/cty1ng/pull/124) on `b5f9db6`, 2026-11-18 | A separate PR, when a patched version exists |
 | The owner adds a GitHub ruleset for `main` that requires the CI jobs of `.github/workflows/ci.yml` from GitHub Actions. `pnpm merge:check` checks the app and the workflow file of each required run itself, so it does not wait for the ruleset; the ruleset is not a condition for any row (owner, 2026-11-20, order 130, Q2 A) | The plan of option A of [#139](https://github.com/binhle312/cty1ng/pull/139) | The owner, after #139 merges |
+
+| A memory PR (only `.agents/chief/memories/`) cannot pass `check:status` when a PR merged before it has no Done row on `main` yet: the memory PR may not add the row, so the chief cannot merge it (`AGENTS.md` §9). [#143](https://github.com/binhle312/cty1ng/pull/143) added the #142 row, and the owner merges #143 (owner, 2026-11-23) | [#143](https://github.com/binhle312/cty1ng/pull/143) CI | The chief skill PR, or a `check:status` change that the owner approves |
 
 ## Slices
 
@@ -277,3 +278,4 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-19 | [#135](https://github.com/binhle312/cty1ng/pull/135) merged: the records redesign and one `AGENTS.md` §9 sentence. |
 | 2026-11-20 | [#141](https://github.com/binhle312/cty1ng/pull/141) merged: the `consultants` skill split from the `arena` skill, and a model rule. |
 | 2026-11-23 | [#139](https://github.com/binhle312/cty1ng/pull/139) merged: the chief's restore kit and `pnpm check:memory`. |
+| 2026-11-23 | [#142](https://github.com/binhle312/cty1ng/pull/142) merged: the trigger first in the `consultants` and `arena` descriptions. |
