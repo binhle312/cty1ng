@@ -156,7 +156,6 @@ A pnpm workspace with three packages. Each folder marked † has a `README.md` i
 ├─ .impeccable/              Impeccable settings and design.json (its hook cache is ignored)
 ├─ .agents/                  project agent skills (.agents/skills/README.md);
 │                            .claude/skills/ links to them
-├─ .chief/                   local chief repository, ignored by public Git (AGENTS.md §3)
 ├─ Makefile                  dev, test, lint, seed shortcuts
 ├─ package.json              workspace scripts (lint, typecheck, test, e2e, gen:api, check:*)
 ├─ pnpm-workspace.yaml
@@ -303,11 +302,6 @@ Start here: `worker.service.ts`. Do not: call the model except through the model
     `frontend/src/themes/command.css` ([design skills](workflows/planning.md#design-skills)).
   Whether two decisions agree in meaning is not checkable; the reviewer checks it
   ([review workflow](workflows/review.md)).
-- **The chief checks local memory** from the project's main checkout with
-  `pnpm exec tsx .chief/scripts/check-memory.ts --local` (`AGENTS.md` §4). The local repository
-  holds long-term memory and scripts. Its Git ignore keeps short-term memory and work local.
-  The public `check:index` checks only public folders. The local memory check verifies the generated
-  rules index, rule form, privacy patterns, owner quotes and size limits.
 - Leaves only: the root `README.md` and this section link to the package indexes; there is no
   second, central file list to drift.
 

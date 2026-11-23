@@ -154,7 +154,6 @@ export default tseslint.config(
       "frontend/src/lib/api/generated/**",
       "docs/**",
       ".agents/skills/**",
-      ".chief/**",
       ".claude/**",
       ".impeccable/**",
     ],

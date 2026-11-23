@@ -10,7 +10,7 @@ approvals). Keep it short: link to PRs and briefs instead of describing work.
 
 ## Now
 
-The chief memory move is in flight in [#145](https://github.com/binhle312/cty1ng/pull/145) (owner order 205). Review round 1 fixes are in the draft. The PR waits for owner review of the protected changes.
+The owner stopped the chief of agents (order 213, 2026-11-23) and works from one conversation: one leader and its workers. The chief rules leave the repository in [#PRNUM](https://github.com/binhle312/cty1ng/pull/PRNUM). The redesign draft #146 and the overnight skill draft #140 are closed without a merge.
 
 The repository audit of 2026-11-05 found 55 issues. After the owner's decisions, 15 are P2, 39 are P3, and the owner accepted one case; none is P1. Its fixes come before M3 in the owner's order. #69 is closed, and the owner watches more PRs before deciding whether to bring it back. Findings, decisions and progress are in [audits/2026-11-05-repo-audit.md](audits/2026-11-05-repo-audit.md). PR 2 of 7, the security fixes, merged in [#73](https://github.com/binhle312/cty1ng/pull/73) on 2026-11-06. [#76](https://github.com/binhle312/cty1ng/pull/76) merged on 2026-11-06 and records the guard decisions. PR 3 of 7, the Skills page, merged in [#78](https://github.com/binhle312/cty1ng/pull/78) on 2026-11-06. PR 4 of 7, the Bots page, merged in [#82](https://github.com/binhle312/cty1ng/pull/82) on 2026-11-08. PR 5 of 7, tests only, merged in [#86](https://github.com/binhle312/cty1ng/pull/86) on 2026-11-10. PR 6 of 7, six tabs, merged in [#91](https://github.com/binhle312/cty1ng/pull/91) on 2026-11-10.
 
@@ -96,7 +96,6 @@ A P3 that has a DQ id is not in this table. Its state lives only in its row of t
 
 | Item | Found in | Target |
 | --- | --- | --- |
-| Seal the restore drill: export without the ledger miss rows and the drill log entries; turn the recall questions (Q4, Q13 and others with long lists) into scenario questions for the parts no scenario tests (the owner hold, the path 2 bar, the memory PR timing); run it (order 165) | [#139](https://github.com/binhle312/cty1ng/pull/139) | Restore drill follow-up PR |
 | `docs/workflows/merge-bar.md` has no merge-of-main bonus and no full round after a merge of main (R-007, orders 145, 148) | [#144](https://github.com/binhle312/cty1ng/pull/144) | Merge-bar follow-up |
 | Flaky e2e test `skills.spec.ts:465` (UI-7.5a, the Bots tab empty line): strict mode found two "Add" buttons on the first try and the retry, CI run 44706653327 on #142 (a Markdown-only diff); the rerun passed | [#142](https://github.com/binhle312/cty1ng/pull/142) CI | Find the cause before M3 (the owner picks the PR) |
 | Q1 A redesign (owner 2026-11-18): plans hold the design and the owner's decisions only; build facts only in the PR description; a small docs PR (`planning.md`, `pull-request.md`) | Owner answer Q1 A, 2026-11-18 ([#114](https://github.com/binhle312/cty1ng/pull/114), DQ-541, DQ-542) | [#133](https://github.com/binhle312/cty1ng/pull/133) |
@@ -137,7 +136,7 @@ A P3 that has a DQ id is not in this table. Its state lives only in its row of t
 | In a production build, React 19 (`defaultOnCaughtError`) and the router still write the whole caught error to the browser console; only the app's log (`lib/log.ts`) gets the error name alone. Pass `onCaughtError` to `createRoot` in `main.tsx` (its own plan line) | Round 1 of [#123](https://github.com/binhle312/cty1ng/pull/123) | The P3 PRs before M3, or the M3 code design |
 | No test runs "a link in the Skills list leaves the error screen" (`requirements/app-shell.md`, Errors); it holds by a reading of the router (each new match resets the boundary) | Round 1 of [#123](https://github.com/binhle312/cty1ng/pull/123) | The P3 PRs before M3 |
 | `pnpm audit` is red: picomatch up to 4.0.7 (GHSA-fc5q-39xc-vjpf, high; no patched version yet), through vitest, vite and tinyglobby. `main` passed it on 2026-11-17; the lockfile of #124 is the same as `main` (`testing.md` §4: a signal) | CI of [#124](https://github.com/binhle312/cty1ng/pull/124) on `b5f9db6`, 2026-11-18 | A separate PR, when a patched version exists |
-| The owner adds a GitHub ruleset for `main` that requires the CI jobs of `.github/workflows/ci.yml` from GitHub Actions. `pnpm exec tsx .chief/scripts/merge-check.ts <PR>` checks the app and the workflow file of each required run itself, so the ruleset is independent of the local check and of every row (owner, 2026-11-20, order 130, Q2 A) | The plan of option A of [#139](https://github.com/binhle312/cty1ng/pull/139) | The owner, after #139 merges |
+| The owner adds a GitHub ruleset for `main` that requires the CI jobs of `.github/workflows/ci.yml` from GitHub Actions; the ruleset is independent of every row (owner, 2026-11-20, order 130, Q2 A) | The plan of option A of [#139](https://github.com/binhle312/cty1ng/pull/139) | The owner, after #139 merges |
 
 ## Slices
 
@@ -282,3 +281,4 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-23 | [#142](https://github.com/binhle312/cty1ng/pull/142) merged: the trigger first in the `consultants` and `arena` descriptions. |
 | 2026-11-23 | [#143](https://github.com/binhle312/cty1ng/pull/143) merged: rule R-038, new leaders run on Codex. |
 | 2026-11-23 | [#144](https://github.com/binhle312/cty1ng/pull/144) merged: chief rules, audit trigger and quotes (`4047ba8`). |
+| 2026-11-23 | [#145](https://github.com/binhle312/cty1ng/pull/145) merged: chief memory moved to local Git (`bf03f5d`). |

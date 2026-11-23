@@ -45,5 +45,3 @@ tmp/
 .vscode/*
 !.vscode/extensions.json
 
-# The chief's local repository
-/.chief/
