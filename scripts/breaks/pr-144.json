@@ -159,28 +159,6 @@
       ]
     },
     {
-      "id": "audit-start-restricted",
-      "claim": "The audit start block names restricted mode",
-      "test": {
-        "kind": "vitest",
-        "file": ".agents/chief/scripts/check-memory.test.ts",
-        "name": "names the tool and write limits in the audit start block"
-      },
-      "assertion": "expect(start, \"restricted mode\").toContain(\"--restricted\")",
-      "breaks": [
-        {
-          "id": "audit-start-restricted-removed",
-          "file": ".agents/chief/memories/long-term/restore.md",
-          "edits": [
-            {
-              "find": " -p --restricted --strict-mcp-config",
-              "replace": " -p --strict-mcp-config"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "audit-input-no-time-window",
       "claim": "The audit input block has no --since option",
       "test": {
@@ -195,96 +173,8 @@
           "file": ".agents/chief/memories/long-term/restore.md",
           "edits": [
             {
-              "find": "git log --oneline \"$previous_main..$main\"",
-              "replace": "git log --oneline --since=\"9 hours ago\" \"$previous_main..$main\""
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "audit-start-exact-tools",
-      "claim": "The start block names the exact tool and write arguments",
-      "test": {
-        "kind": "vitest",
-        "file": ".agents/chief/scripts/check-memory.test.ts",
-        "name": "names the tool and write limits in the audit start block"
-      },
-      "assertion": "expect(start, \"tool and write limits\").toContain(",
-      "breaks": [
-        {
-          "id": "audit-start-exact-tools-changed",
-          "file": ".agents/chief/memories/long-term/restore.md",
-          "edits": [
-            {
-              "find": "--tools \"Read,Grep,Glob,Write\" --allowedTools \"Read\" \"Grep\" \"Glob\" \"Write($A/**)\" --",
-              "replace": "--tools \"Read,Grep,Glob,Write\" --allowedTools \"Read\" \"Grep\" \"Glob\" \"Write($A/**)\" \"Write\" --"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "audit-start-guard",
-      "claim": "The start block checks both variables, a nonempty input, and an unused report name",
-      "test": {
-        "kind": "vitest",
-        "file": ".agents/chief/scripts/check-memory.test.ts",
-        "name": "names the tool and write limits in the audit start block"
-      },
-      "assertion": "expect(start, \"input and report guard\").toContain(",
-      "breaks": [
-        {
-          "id": "audit-start-guard-changed",
-          "file": ".agents/chief/memories/long-term/restore.md",
-          "edits": [
-            {
-              "find": ": \"${A:?}\" \"${R:?}\" && test -s \"$R-input.txt\" && test ! -e \"$R-report.md\" &&",
-              "replace": ": \"${A:?}\" \"${R:?}\" && test -e \"$R-input.txt\" && test ! -e \"$R-report.md\" &&"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "audit-start-no-permission-bypass",
-      "claim": "The start block has no --dangerously flag",
-      "test": {
-        "kind": "vitest",
-        "file": ".agents/chief/scripts/check-memory.test.ts",
-        "name": "names the tool and write limits in the audit start block"
-      },
-      "assertion": "expect(start, \"no permission bypass\").not.toContain(",
-      "breaks": [
-        {
-          "id": "audit-start-no-permission-bypass-changed",
-          "file": ".agents/chief/memories/long-term/restore.md",
-          "edits": [
-            {
-              "find": "--no-session-persistence",
-              "replace": "--no-session-persistence --dangerously-skip-permissions"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "audit-start-no-bash",
-      "claim": "The start block does not name Bash",
-      "test": {
-        "kind": "vitest",
-        "file": ".agents/chief/scripts/check-memory.test.ts",
-        "name": "names the tool and write limits in the audit start block"
-      },
-      "assertion": "expect(start, \"Bash tool\").not.toContain(",
-      "breaks": [
-        {
-          "id": "audit-start-no-bash-changed",
-          "file": ".agents/chief/memories/long-term/restore.md",
-          "edits": [
-            {
-              "find": "--no-session-persistence",
-              "replace": "--no-session-persistence --allowedTools Bash"
+              "find": "git log -p --diff-merges=first-parent \"$previous_main..$main\" -- .agents/chief/memories/long-term/",
+              "replace": "git log -p --since=\"9 hours ago\" --diff-merges=first-parent \"$previous_main..$main\" -- .agents/chief/memories/long-term/"
             }
           ]
         }
@@ -314,21 +204,21 @@
     },
     {
       "id": "audit-input-ancestor",
-      "claim": "The input block calls the ancestry check",
+      "claim": "An unrelated checkpoint fails the input block without publishing input",
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/check-memory.test.ts",
-        "name": "names the main commit range in the audit input block"
+        "name": "fails without publishing input when the checkpoint is not an ancestor"
       },
-      "assertion": "expect(input, \"ancestor check\").toContain(",
+      "assertion": "expect([result.status, result.published], \"ancestry failure\").toEqual(",
       "breaks": [
         {
-          "id": "audit-input-ancestor-changed",
+          "id": "audit-input-accepts-unrelated-sha",
           "file": ".agents/chief/memories/long-term/restore.md",
           "edits": [
             {
               "find": "git merge-base --is-ancestor \"$previous_main\" \"$main\"",
-              "replace": "git merge-base \"$previous_main\" \"$main\""
+              "replace": "git merge-base --is-ancestor \"$main\" \"$main\""
             }
           ]
         }
@@ -358,47 +248,21 @@
     },
     {
       "id": "audit-input-report-end",
-      "claim": "The input block checks for the report end line",
+      "claim": "A report with no footer does not move the checkpoint",
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/check-memory.test.ts",
-        "name": "names the main commit range in the audit input block"
+        "name": "includes the rule change after the last complete matching report"
       },
-      "assertion": "expect(input, \"report end line\").toContain(",
+      "assertion": "expect(result.evidence, \"rule change\").toContain(",
       "breaks": [
         {
-          "id": "audit-input-report-end-changed",
+          "id": "audit-input-report-end-ignored",
           "file": ".agents/chief/memories/long-term/restore.md",
           "edits": [
             {
-              "find": "'End of report.'",
-              "replace": "'Report finished.'"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "audit-input-part-file",
-      "claim": "The input block uses the partial input file name",
-      "test": {
-        "kind": "vitest",
-        "file": ".agents/chief/scripts/check-memory.test.ts",
-        "name": "names the main commit range in the audit input block"
-      },
-      "assertion": "expect(input, \"partial input file\").toContain(",
-      "breaks": [
-        {
-          "id": "audit-input-part-file-changed",
-          "file": ".agents/chief/memories/long-term/restore.md",
-          "edits": [
-            {
-              "find": ") > \"$R-input.part\" &&",
-              "replace": ") > \"$R-input.tmp\" &&"
-            },
-            {
-              "find": "mv \"$R-input.part\"",
-              "replace": "mv \"$R-input.tmp\""
+              "find": "    test \"$last\" = 'End of report.' || continue\n",
+              "replace": ""
             }
           ]
         }
@@ -456,7 +320,7 @@
         "file": ".agents/chief/scripts/check-memory.test.ts",
         "name": "the checklist calls for one report file and says the auditor has no command tool"
       },
-      "assertion": "expect(checklist, \"open issues heading\").toContain(",
+      "assertion": "expect(checklist, \"report opening\").toContain(",
       "breaks": [
         {
           "id": "audit-report-open-issues-changed",
@@ -498,9 +362,9 @@
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/check-memory.test.ts",
-        "name": "includes the net change since the last complete matching report"
+        "name": "includes the rule change after the last complete matching report"
       },
-      "assertion": "expect(evidence, \"net rule change\").toContain(",
+      "assertion": "expect(result.evidence, \"rule change\").toContain(",
       "breaks": [
         {
           "id": "audit-input-checkpoint-range-changed",
@@ -509,6 +373,264 @@
             {
               "find": "test \"$first\" = \"$input_first\" || continue",
               "replace": "test \"$first\" = \"$first\" || continue"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-start-whole-command",
+      "claim": "The whole start command matches one expected string after whitespace normalization",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "matches the whole audit start command after whitespace normalization"
+      },
+      "assertion": "expect(start.replace(/\\\\\\n/g, \"\").replace(/\\s+/g, \" \").trim(), \"whole start command\").toBe(",
+      "breaks": [
+        {
+          "id": "audit-start-restricted-removed",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": " -p --restricted --strict-mcp-config",
+              "replace": " -p --strict-mcp-config"
+            }
+          ]
+        },
+        {
+          "id": "audit-start-exact-tools-changed",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "--tools \"Read,Grep,Glob,Write\" --allowedTools \"Read\" \"Grep\" \"Glob\" \"Write($A/**)\" --",
+              "replace": "--tools \"Read,Grep,Glob,Write\" --allowedTools \"Read\" \"Grep\" \"Glob\" \"Write($A/**)\" \"Write\" --"
+            }
+          ]
+        },
+        {
+          "id": "audit-start-guard-changed",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": ": \"${A:?}\" \"${R:?}\" && test -s \"$R-input.txt\" && test ! -e \"$R-report.md\" &&",
+              "replace": ": \"${A:?}\" \"${R:?}\" && test -e \"$R-input.txt\" && test ! -e \"$R-report.md\" &&"
+            }
+          ]
+        },
+        {
+          "id": "audit-start-no-permission-bypass-changed",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "--no-session-persistence",
+              "replace": "--no-session-persistence --dangerously-skip-permissions"
+            }
+          ]
+        },
+        {
+          "id": "audit-start-no-bash-changed",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "--no-session-persistence",
+              "replace": "--no-session-persistence --allowedTools Bash"
+            }
+          ]
+        },
+        {
+          "id": "audit-start-permission-mode-added",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "--no-session-persistence",
+              "replace": "--no-session-persistence --permission-mode bypassPermissions"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-input-history",
+      "claim": "The input includes an added line that a later commit removes",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "includes a line that later history removed"
+      },
+      "assertion": "expect(result.evidence, \"reverted addition\").toContain(",
+      "breaks": [
+        {
+          "id": "audit-input-history-without-patches",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "git log -p --diff-merges=first-parent \"$previous_main..$main\" -- .agents/chief/memories/long-term/",
+              "replace": "git log --oneline \"$previous_main..$main\" -- .agents/chief/memories/long-term/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-input-complete-report",
+      "claim": "The input skips a two-line report with no open issues heading",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "skips a report with only the main line and footer"
+      },
+      "assertion": "expect(result.evidence, \"change before the two-line report\").toContain(",
+      "breaks": [
+        {
+          "id": "audit-input-report-heading-ignored",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "    grep -Fxq '## Open issues' \"$candidate\" || continue\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-input-newest-report",
+      "claim": "The input range excludes the changes before the newer complete matching report",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "uses the newer of two complete matching reports"
+      },
+      "assertion": "expect(result.evidence, \"change before the newer checkpoint\").not.toContain(",
+      "breaks": [
+        {
+          "id": "audit-input-oldest-report-first",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "LC_ALL=C sort -r",
+              "replace": "LC_ALL=C sort"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-input-full-sha",
+      "claim": "The input skips a checkpoint that names HEAD",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "skips a checkpoint that names a ref instead of a full SHA"
+      },
+      "assertion": "expect(result.evidence, \"change before the ref checkpoint\").toContain(",
+      "breaks": [
+        {
+          "id": "audit-input-accepts-ref",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "^Main: [0-9A-Fa-f]{40}$",
+              "replace": "^Main: .+$"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-input-current-date",
+      "claim": "The input skips a report with a timestamp later than the audit",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "skips a report whose timestamp is later than this audit"
+      },
+      "assertion": "expect(result.evidence, \"change before the future report\").toContain(",
+      "breaks": [
+        {
+          "id": "audit-input-accepts-future-report",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "    LC_ALL=C expr \"$candidate\" '>' \"$R-report.md\" >/dev/null && continue\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-input-memory-failure",
+      "claim": "A memory check exit of 2 fails the input block without publishing input",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "fails without publishing input when the memory check exits 2"
+      },
+      "assertion": "expect([result.status, result.published], \"memory check failure\").toEqual(",
+      "breaks": [
+        {
+          "id": "audit-input-ignores-memory-failure",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "  test \"$memory_exit\" -le 1 &&\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-input-publish-on-success",
+      "claim": "A PR list exit of 1 fails the input block without publishing input",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "fails without publishing input when the PR list command exits 1"
+      },
+      "assertion": "expect([result.status, result.published], \"PR list failure\").toEqual(",
+      "breaks": [
+        {
+          "id": "audit-input-publishes-on-failure",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": ") > \"$R-input.part\" &&",
+              "replace": ") > \"$R-input.part\""
+            }
+          ]
+        },
+        {
+          "id": "audit-input-ignores-pr-list-failure",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "  gh pr list ",
+              "replace": "  true pr list "
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-report-heading",
+      "claim": "The checklist names the required open issues heading",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "the checklist calls for one report file and says the auditor has no command tool"
+      },
+      "assertion": "expect(checklist, \"open issues heading\").toContain(",
+      "breaks": [
+        {
+          "id": "audit-report-heading-changed",
+          "file": ".agents/chief/memories/long-term/audit.md",
+          "edits": [
+            {
+              "find": "## Open issues",
+              "replace": "## Findings"
             }
           ]
         }

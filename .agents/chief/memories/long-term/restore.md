@@ -37,13 +37,15 @@ How the chief comes back when the old chief is gone. The drill that proves it is
 ## Audit input
 
 Run this block from the chief's checkout. It writes `$R-input.txt` in `short-term/audits/`.
-The chief runs one audit at a time. Use the newest timestamped report that ends with
-`End of report.` and starts with the same `Main:` line as its matching input file.
+The chief runs one audit at a time. Use the newest report at or before this audit's timestamp.
+Its first line must match the input file's `Main:` line and contain a 40-digit hex SHA.
+The report must have a `## Open issues` line and end with `End of report.`.
 If none qualify, start at `fe44c64` (the merge of #139). To fix a bad first line, copy the
 `Main:` line from the report's input file. You can also remove a bad report after the owner gives the OK.
 
-The block publishes the input only after all required commands finish. A `check:memory` exit code
-of 1 records memory problems as input. Any other nonzero code means the check could not run.
+The block publishes the input only after all required commands finish. It keeps the `check:memory`
+output for exit codes 0 and 1. If the section has no `check:memory: ok` or
+`check:memory: <n> problem(s)` summary line, record "check:memory could not run" as an open issue.
 If the block fails, check its error and any `$R-input.part` file before you retry.
 If the file name is in use, wait until the next minute.
 
@@ -64,20 +66,19 @@ EOF
   report=
   previous_main=fe44c64
   while IFS= read -r candidate; do
+    LC_ALL=C expr "$candidate" '>' "$R-report.md" >/dev/null && continue
     candidate_input=${candidate%-report.md}-input.txt
     test -f "$candidate_input" || continue
     last=$(tail -n 1 "$candidate") || exit
     test "$last" = 'End of report.' || continue
+    grep -Fxq '## Open issues' "$candidate" || continue
     first=$(head -n 1 "$candidate") || exit
     input_first=$(head -n 1 "$candidate_input") || exit
     test "$first" = "$input_first" || continue
-    case "$first" in
-      'Main: '?*)
-        report=$candidate
-        previous_main=${first#Main: }
-        break
-        ;;
-    esac
+    printf '%s\n' "$first" | grep -Eq '^Main: [0-9A-Fa-f]{40}$' || continue
+    report=$candidate
+    previous_main=${first#Main: }
+    break
   done <<EOF
 $reports
 EOF
@@ -96,7 +97,7 @@ EOF
   git status -sb &&
   git diff "$main" -- .agents/chief/memories/ &&
   echo "## long-term changes since the last audit" &&
-  git log --oneline "$previous_main..$main" &&
+  git log -p --diff-merges=first-parent "$previous_main..$main" -- .agents/chief/memories/long-term/ &&
   git diff "$previous_main" "$main" -- .agents/chief/memories/long-term/ &&
   echo "## open PRs and their files" &&
   gh pr list --state open --json number,files --jq '.[] | "#\(.number) \([.files[].path] | join(" "))"'
@@ -106,19 +107,20 @@ mv "$R-input.part" "$R-input.txt"
 
 ## Audit start
 
-Use the same shell and the same `A` and `R` from "Audit input". Replace `<audit_timeout_minutes>`
-with the timeout in `settings.md`, and `<model>` with the model ID in `chief_model`.
-Run the block in the background as shown. The timeout can exceed the limit of a foreground command.
+Replace `<audit_timeout_minutes>` with the timeout in `settings.md`. Replace `<model>` with the
+model ID in `chief_model`. Check that `audit.md` exists before the start.
+Run "Audit input" and "Audit start" in one shell call. Add `&&` to the last line of "Audit input"
+so "Audit start" runs only after the input is ready. Use the tool's background mode and check the
+call's exit status.
+If the call ran in a new shell, set `A` as above and set `R` to the stem of the newest `-input.txt` that has no report.
 The auditor has no command tool and can write only in `$A`. Read `$R-report.md` after the run.
 
 ```sh
-(
-  : "${A:?}" "${R:?}" && test -s "$R-input.txt" && test ! -e "$R-report.md" &&
-  timeout <audit_timeout_minutes>m env -u ANTHROPIC_API_KEY claude -p --restricted --strict-mcp-config \
-    --model <model> --effort high --no-session-persistence \
-    --tools "Read,Grep,Glob,Write" --allowedTools "Read" "Grep" "Glob" "Write($A/**)" -- \
-    "$(cat .agents/chief/memories/long-term/audit.md) The input file: $R-input.txt. The report file: $R-report.md."
-) &
+: "${A:?}" "${R:?}" && test -s "$R-input.txt" && test ! -e "$R-report.md" &&
+timeout <audit_timeout_minutes>m env -u ANTHROPIC_API_KEY claude -p --restricted --strict-mcp-config \
+  --model <model> --effort high --no-session-persistence \
+  --tools "Read,Grep,Glob,Write" --allowedTools "Read" "Grep" "Glob" "Write($A/**)" -- \
+  "$(cat .agents/chief/memories/long-term/audit.md) The input file: $R-input.txt. The report file: $R-report.md."
 ```
 
 ## Not claimed
