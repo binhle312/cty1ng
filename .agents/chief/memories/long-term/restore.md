@@ -36,19 +36,50 @@ How the chief comes back when the old chief is gone. The drill that proves it is
 
 ## Audit input
 
-Before an audit, run these commands from the chief's checkout and write their output to `short-term/audits/<date>-input.txt`:
+Run this block from the chief's checkout. It writes `$R-input.txt` in `short-term/audits/`.
+Use the newest timestamped report to find the previous `Main:` line. With no report in this
+format, start at `fe44c64` (the merge of #139). If the block fails, fix the problem before
+you start the auditor. If the file name is in use, wait until the next minute.
 
-```text
-git fetch -q origin main
-echo "## check:memory --local"
-pnpm -s check:memory --local
-echo "## differences from origin/main"
-git status -sb
-git diff origin/main -- .agents/chief/memories/
-echo "## long-term changes of the last 9 hours"
-git log -p --since="9 hours ago" origin/main -- .agents/chief/memories/long-term/
-echo "## open PRs and their files"
-gh pr list --state open --json number,files --jq '.[] | "#\(.number) \([.files[].path] | join(" "))"'
+```sh
+A=.agents/chief/memories/short-term/audits
+R="$A/$(date +%F-%H%M)"
+mkdir -p "$A" &&
+test ! -e "$R-input.txt" &&
+test ! -e "$R-report.md" &&
+git fetch -q origin main &&
+(
+  report=$(find "$A" -maxdepth 1 -type f -name '????-??-??-????-report.md' | LC_ALL=C sort | tail -n 1)
+  previous_main=fe44c64
+  if [ -n "$report" ]; then
+    previous_main=$(sed -n '1s/^Main: //p' "$report")
+  fi
+  git merge-base --is-ancestor "$previous_main" origin/main || exit 1
+  main=$(git rev-parse origin/main) || exit 1
+  printf 'Main: %s\n' "$main"
+  echo "## check:memory --local"
+  pnpm -s check:memory --local || :
+  echo "## differences from origin/main"
+  git status -sb
+  git diff origin/main -- .agents/chief/memories/
+  echo "## long-term changes since the last audit"
+  git log -p "$previous_main"..origin/main -- .agents/chief/memories/long-term/ || exit 1
+  echo "## open PRs and their files"
+  gh pr list --state open --json number,files --jq '.[] | "#\(.number) \([.files[].path] | join(" "))"'
+) > "$R-input.txt" 2>&1
+```
+
+## Audit start
+
+Use the same shell and the same `A` and `R` from "Audit input". Replace `<audit_timeout_minutes>`
+with the timeout in `settings.md`, and `<model>` with the model ID in `chief_model`.
+The auditor has no command tool and can write only in `$A`. Read `$R-report.md` after the run.
+
+```sh
+timeout <audit_timeout_minutes>m env -u ANTHROPIC_API_KEY claude -p --restricted --strict-mcp-config \
+  --model <model> --effort high --no-session-persistence --tools "Read,Grep,Glob,Write" \
+  --allowedTools "Read" "Grep" "Glob" "Write($A/**)" \
+  -- "$(cat .agents/chief/memories/long-term/audit.md) The input file: $R-input.txt. The report file: $R-report.md."
 ```
 
 ## Not claimed

@@ -6,7 +6,7 @@
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/check-memory.test.ts",
-        "name": "documents the owner trigger and keeps the input commands with the chief"
+        "name": "the restore guide names the owner trigger, lack of a cron line, and the input file"
       },
       "assertion": "expect(restore, \"owner trigger\").toContain(",
       "breaks": [
@@ -28,7 +28,7 @@
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/check-memory.test.ts",
-        "name": "documents the owner trigger and keeps the input commands with the chief"
+        "name": "the restore guide names the owner trigger, lack of a cron line, and the input file"
       },
       "assertion": "expect(restore, \"audit input\").toContain(",
       "breaks": [
@@ -37,25 +37,25 @@
           "file": ".agents/chief/memories/long-term/restore.md",
           "edits": [
             {
-              "find": "short-term/audits/<date>-input.txt",
-              "replace": "short-term/audits/<date>.md"
+              "find": "It writes `$R-input.txt` in `short-term/audits/`.",
+              "replace": "It writes `$R-input.md` in `short-term/audits/`."
             }
           ]
         }
       ]
     },
     {
-      "id": "audit-no-cron-command",
-      "claim": "The restore guide has no scheduled auditor command",
+      "id": "audit-no-cron-line",
+      "claim": "The restore guide states that there is no cron line",
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/check-memory.test.ts",
-        "name": "documents the owner trigger and keeps the input commands with the chief"
+        "name": "the restore guide names the owner trigger, lack of a cron line, and the input file"
       },
-      "assertion": "expect(restore, \"no scheduled auditor command\").not.toContain(",
+      "assertion": "expect(restore, \"no cron line\").toContain(",
       "breaks": [
         {
-          "id": "audit-no-cron-command-removed",
+          "id": "audit-no-cron-line-removed",
           "file": ".agents/chief/memories/long-term/restore.md",
           "edits": [
             {
@@ -72,7 +72,7 @@
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/check-memory.test.ts",
-        "name": "limits the auditor to writing one report and gives it no command tool"
+        "name": "the checklist calls for one report file and says the auditor has no command tool"
       },
       "assertion": "expect(checklist, \"no command tool\").toContain(",
       "breaks": [
@@ -94,7 +94,7 @@
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/check-memory.test.ts",
-        "name": "limits the auditor to writing one report and gives it no command tool"
+        "name": "the checklist calls for one report file and says the auditor has no command tool"
       },
       "assertion": "expect(checklist, \"report only\").toMatch(",
       "breaks": [
@@ -153,6 +153,50 @@
             {
               "find": "const TEXT_SETTINGS = [\n",
               "replace": "const TEXT_SETTINGS = [\n  \"merge_main_bonus\",\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-start-restricted",
+      "claim": "The audit start block names restricted mode",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names the tool and write limits in the audit start block"
+      },
+      "assertion": "expect(start, \"restricted mode\").toContain(\"--restricted\")",
+      "breaks": [
+        {
+          "id": "audit-start-restricted-removed",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": " -p --restricted --strict-mcp-config",
+              "replace": " -p --strict-mcp-config"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-input-no-time-window",
+      "claim": "The audit input block has no --since option",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names the main commit range in the audit input block"
+      },
+      "assertion": "expect(input, \"no time window\").not.toContain(\"--since\")",
+      "breaks": [
+        {
+          "id": "audit-input-time-window-restored",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "git log -p \"$previous_main\"..origin/main",
+              "replace": "git log -p --since=\"9 hours ago\" \"$previous_main\"..origin/main"
             }
           ]
         }

@@ -1,6 +1,8 @@
 # Memory audit
 
-The checklist of the memory audit (rule R-037). The chief starts the audit when the owner asks. It runs the commands of `restore.md`, "Audit input", writes their output to the input file, and gives the auditor the names of the input file and the report file. The auditor has no command tool.
+The checklist of the memory audit (rule R-037). When the owner asks for an audit, the chief
+prepares the input file with "Audit input" in `restore.md`. The chief starts the auditor with
+"Audit start" in the same file. The auditor has no command tool.
 
 You are the memory audit of the chief. Do not change, commit, push or merge anything. Write only
 one report file.
@@ -14,10 +16,11 @@ one report file.
    than the setting `promote_after_hours` with no open memory PR (the section "open PRs"), and "Promoted
    through" in `long-term/state.md`.
 4. Permission rules: find each rule file that changed since the last report (the section
-   "long-term changes", and the files of the open memory PRs). For each one, write its id, if
+   "long-term changes since the last audit", and the files of the open memory PRs). For each one, write its id, if
    it has `permission-rule: true`, each of its quotes, and if the quote is in a `.md` file of
    `short-term/owner/` (yes or no).
 5. Privacy: read the changes of `long-term/` in the input file. Look for each fact of the
    section "Privacy" of `../README.md`.
-6. Write the report to the report file. First a table of the open issues (issue, file, what to do). Then the
-   permission rules of step 4. Then what you checked. Never start with "no findings".
+6. Copy the `Main:` line from the input file to the first line of the report. Then write a table
+   of the open issues (issue, file, what to do), the permission rules of step 4, and what you
+   checked or could not check.

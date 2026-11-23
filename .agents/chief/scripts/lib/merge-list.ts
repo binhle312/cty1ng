@@ -70,7 +70,7 @@ export const CI_WORKFLOW = ".github/workflows/ci.yml";
 // Each other path or status needs the owner (DQ-1021, DQ-1025; plan delta r1 §2.1).
 export const MEMORY_PATH =
   /^\.agents\/chief\/memories\/long-term\/([a-z0-9][a-z0-9-]*\/)*[A-Za-z0-9][A-Za-z0-9._-]*\.md$/;
-// Memory files that the owner merges in each memory PR: the audit cron line and the audit prompt
+// Memory files that the owner merges in each memory PR: the audit commands and the audit checklist
 // (DQ-949; the second read of the option A plan).
 export const MEMORY_PROTECTED: readonly string[] = [
   `${MEMORY_FOLDER}long-term/restore.md`,

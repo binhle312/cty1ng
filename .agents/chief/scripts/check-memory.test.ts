@@ -61,7 +61,7 @@ const SETTINGS: [string, string][] = [
   ["chief_model", "the model that the owner names"],
   ["owner_language", "simple English"],
   ["owner_pages", "one question per step"],
-  ["audit_times", "00:00, 08:00 and 16:00 (+07)"],
+  ["audit_times", "on the owner's request"],
 ];
 
 function settings(rows: [string, string][] = SETTINGS): string {
@@ -1143,16 +1143,33 @@ describe("the rules about merges, approvals or permissions", () => {
 });
 
 describe("the memory audit on request (order 179)", () => {
-  it("documents the owner trigger and keeps the input commands with the chief", () => {
+  it("names the tool and write limits in the audit start block", () => {
+    const restore = readFileSync(".agents/chief/memories/long-term/restore.md", "utf8");
+    const start = /^## Audit start\n[\s\S]*?^```\w*\n([\s\S]*?)^```/m.exec(restore)?.[1] ?? "";
+    expect(start, "restricted mode").toContain("--restricted");
+    expect(start, "tool set").toContain('--tools "Read,Grep,Glob,Write"');
+    expect(start, "write scope").toContain('"Write($A/**)"');
+    expect(start, "Bash tool").not.toContain("Bash");
+  });
+
+  it("names the main commit range in the audit input block", () => {
+    const restore = readFileSync(".agents/chief/memories/long-term/restore.md", "utf8");
+    const input = /^## Audit input\n[\s\S]*?^```\w*\n([\s\S]*?)^```/m.exec(restore)?.[1] ?? "";
+    expect(input, "main commit").toContain("git rev-parse origin/main");
+    expect(input, "main commit range").toContain("..origin/main");
+    expect(input, "no time window").not.toContain("--since");
+  });
+
+  it("the restore guide names the owner trigger, lack of a cron line, and the input file", () => {
     const restore = readFileSync(".agents/chief/memories/long-term/restore.md", "utf8");
     expect(restore, "owner trigger").toContain(
       "The memory audit runs only when the owner asks (rule R-037).",
     );
-    expect(restore, "audit input").toContain("short-term/audits/<date>-input.txt");
-    expect(restore, "no scheduled auditor command").not.toContain("claude -p");
+    expect(restore, "audit input").toContain("It writes `$R-input.txt` in `short-term/audits/`.");
+    expect(restore, "no cron line").toContain("There is no cron line");
   });
 
-  it("limits the auditor to writing one report and gives it no command tool", () => {
+  it("the checklist calls for one report file and says the auditor has no command tool", () => {
     const checklist = readFileSync(".agents/chief/memories/long-term/audit.md", "utf8");
     expect(checklist, "no command tool").toContain("The auditor has no command tool.");
     expect(checklist, "report only").toMatch(/Write only\s+one report file\./);
