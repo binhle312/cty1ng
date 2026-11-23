@@ -1,0 +1,162 @@
+{
+  "claims": [
+    {
+      "id": "audit-owner-trigger",
+      "claim": "The restore guide documents the owner request as the trigger",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "documents the owner trigger and keeps the input commands with the chief"
+      },
+      "assertion": "expect(restore, \"owner trigger\").toContain(",
+      "breaks": [
+        {
+          "id": "audit-owner-trigger-removed",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "The memory audit runs only when the owner asks (rule R-037).",
+              "replace": "The memory audit runs on a schedule."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-chief-input",
+      "claim": "The restore guide names the audit input file the chief prepares",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "documents the owner trigger and keeps the input commands with the chief"
+      },
+      "assertion": "expect(restore, \"audit input\").toContain(",
+      "breaks": [
+        {
+          "id": "audit-chief-input-removed",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "short-term/audits/<date>-input.txt",
+              "replace": "short-term/audits/<date>.md"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-no-cron-command",
+      "claim": "The restore guide has no scheduled auditor command",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "documents the owner trigger and keeps the input commands with the chief"
+      },
+      "assertion": "expect(restore, \"no scheduled auditor command\").not.toContain(",
+      "breaks": [
+        {
+          "id": "audit-no-cron-command-removed",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "There is no cron line (owner, 2026-11-23, order 179).",
+              "replace": "Start the scheduled audit with `claude -p`."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-no-command-tool",
+      "claim": "The checklist says that the auditor has no command tool",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "limits the auditor to writing one report and gives it no command tool"
+      },
+      "assertion": "expect(checklist, \"no command tool\").toContain(",
+      "breaks": [
+        {
+          "id": "audit-no-command-tool-removed",
+          "file": ".agents/chief/memories/long-term/audit.md",
+          "edits": [
+            {
+              "find": "The auditor has no command tool.",
+              "replace": "The auditor has a command tool."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-report-only",
+      "claim": "The checklist limits the auditor to writing one report file",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "limits the auditor to writing one report and gives it no command tool"
+      },
+      "assertion": "expect(checklist, \"report only\").toMatch(",
+      "breaks": [
+        {
+          "id": "audit-report-only-removed",
+          "file": ".agents/chief/memories/long-term/audit.md",
+          "edits": [
+            {
+              "find": "Write only\none report file.",
+              "replace": "Write a report and update the memory."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "merge-main-bonus-known-number",
+      "claim": "merge_main_bonus is a known number setting",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names each missing setting for the memory audit, quote check, and review cap bonus"
+      },
+      "assertion": "expect(readSettings(settings(rows)).problems, key).toEqual(",
+      "breaks": [
+        {
+          "id": "merge-main-bonus-removed",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "  \"merge_main_bonus\",\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "merge-main-bonus-whole-number",
+      "claim": "merge_main_bonus rejects a fractional value",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names merge_main_bonus when it is not a whole number"
+      },
+      "assertion": "expect(readSettings(settings(rows)).problems, \"fractional bonus\").toEqual(",
+      "breaks": [
+        {
+          "id": "merge-main-bonus-as-text",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "  \"merge_main_bonus\",\n",
+              "replace": ""
+            },
+            {
+              "find": "const TEXT_SETTINGS = [\n",
+              "replace": "const TEXT_SETTINGS = [\n  \"merge_main_bonus\",\n"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

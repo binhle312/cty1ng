@@ -15,5 +15,5 @@ Owner said: "No cronline need for now, I will manually tell chief to spawn a aud
 Owner said: "if the memory is bad, it's chief fault, chief has to improve the quality over time" (2026-11-19)
 How to apply:
 No gate: a trigger.
-- The audit of 2026-11-23 is the model: it audits each memory place, counts with commands, and lists what it could not check.
+- The audit of 2026-11-23 is the model: it audits each memory place, counts from its input file, and lists what it could not check.
 - The setting `audit_timeout_minutes` is the deadline of one audit.

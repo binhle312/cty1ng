@@ -255,15 +255,21 @@ describe("readSettings", () => {
     ]);
   });
 
-  it.each([
-    ["leader_cap", "two"],
-    ["merge_main_bonus", "3.5"],
-  ])("names %s when its value %s is not a whole number", (setting, invalidValue) => {
+  it("names a number setting that is not a whole number", () => {
     const rows = SETTINGS.map(([key, value]): [string, string] =>
-      key === setting ? [key, invalidValue] : [key, value],
+      key === "leader_cap" ? [key, "two"] : [key, value],
     );
     expect(readSettings(settings(rows)).problems, "not a number").toEqual([
-      `${L}/settings.md: setting \`${setting}\` is "${invalidValue}"; it must be a whole number`,
+      `${L}/settings.md: setting \`leader_cap\` is "two"; it must be a whole number`,
+    ]);
+  });
+
+  it("names merge_main_bonus when it is not a whole number", () => {
+    const rows = SETTINGS.map(([key, value]): [string, string] =>
+      key === "merge_main_bonus" ? [key, "3.5"] : [key, value],
+    );
+    expect(readSettings(settings(rows)).problems, "fractional bonus").toEqual([
+      `${L}/settings.md: setting \`merge_main_bonus\` is "3.5"; it must be a whole number`,
     ]);
   });
 });
