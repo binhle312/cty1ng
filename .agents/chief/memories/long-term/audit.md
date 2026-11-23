@@ -25,6 +25,8 @@ one report file.
    section "Privacy" of `../README.md`.
 6. Copy the `Main:` line from the input file to the first line of the report.
    Never start with "no findings". Write the heading `## Open issues`, then a table of the open
-   issues (issue, file, what to do). List the permission rules from step 4 and what you checked
-   or could not check.
+   issues (issue, file, what to do).
+   Under `## Permission rules`, list the permission rules from step 4.
+   Under `## What I checked`, list what you checked or could not check.
+   Put at least one non-empty line in each section. Write `none` if the section has no entries.
    When the report is complete, write `End of report.` as its last line.

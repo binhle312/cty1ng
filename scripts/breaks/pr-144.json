@@ -173,7 +173,7 @@
           "file": ".agents/chief/memories/long-term/restore.md",
           "edits": [
             {
-              "find": "git log -p --diff-merges=first-parent \"$previous_main..$main\" -- .agents/chief/memories/long-term/",
+              "find": "git log -p --full-history --diff-merges=first-parent \"$previous_main..$main\" -- .agents/chief/memories/long-term/",
               "replace": "git log -p --since=\"9 hours ago\" --diff-merges=first-parent \"$previous_main..$main\" -- .agents/chief/memories/long-term/"
             }
           ]
@@ -465,7 +465,7 @@
           "file": ".agents/chief/memories/long-term/restore.md",
           "edits": [
             {
-              "find": "git log -p --diff-merges=first-parent \"$previous_main..$main\" -- .agents/chief/memories/long-term/",
+              "find": "git log -p --full-history --diff-merges=first-parent \"$previous_main..$main\" -- .agents/chief/memories/long-term/",
               "replace": "git log --oneline \"$previous_main..$main\" -- .agents/chief/memories/long-term/"
             }
           ]
@@ -487,7 +487,7 @@
           "file": ".agents/chief/memories/long-term/restore.md",
           "edits": [
             {
-              "find": "    grep -Fxq '## Open issues' \"$candidate\" || continue\n",
+              "find": "    awk '\n      NR == 1 || $0 == \"End of report.\" { next }\n      /^[ ]{0,3}#+([[:space:]]|$)/ { section = $0; next }\n      /[^[:space:]]/ { content[section] = 1 }\n      END {\n        exit !(content[\"## Open issues\"] &&\n               content[\"## Permission rules\"] &&\n               content[\"## What I checked\"])\n      }\n    ' \"$candidate\" || continue\n",
               "replace": ""
             }
           ]
@@ -500,7 +500,7 @@
       "test": {
         "kind": "vitest",
         "file": ".agents/chief/scripts/check-memory.test.ts",
-        "name": "uses the newer of two complete matching reports"
+        "name": "uses the newer of two complete matching reports with none in each section"
       },
       "assertion": "expect(result.evidence, \"change before the newer checkpoint\").not.toContain(",
       "breaks": [
@@ -511,6 +511,16 @@
             {
               "find": "LC_ALL=C sort -r",
               "replace": "LC_ALL=C sort"
+            }
+          ]
+        },
+        {
+          "id": "audit-input-rejects-none",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "/[^[:space:]]/ { content[section] = 1 }",
+              "replace": "/[^[:space:]]/ && $0 != \"none\" { content[section] = 1 }"
             }
           ]
         }
@@ -631,6 +641,268 @@
             {
               "find": "## Open issues",
               "replace": "## Findings"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-input-merged-history",
+      "claim": "The input includes a temporary addition on a merged branch",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "includes a temporary line from a merged branch"
+      },
+      "assertion": "expect(result.evidence, \"reverted side branch addition\").toContain(",
+      "breaks": [
+        {
+          "id": "audit-input-omits-full-merge-history",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "git log -p --full-history --diff-merges=first-parent \"$previous_main..$main\" -- .agents/chief/memories/long-term/",
+              "replace": "git log -p \"$previous_main..$main\" -- .agents/chief/memories/long-term/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-input-three-line-report",
+      "claim": "The input skips a report with the Main line, an empty Open issues heading, and the footer",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "skips a three-line report with an empty open issues heading"
+      },
+      "assertion": "expect(result.evidence, \"change before the three-line report\").toContain(",
+      "breaks": [
+        {
+          "id": "audit-input-accepts-three-line-report",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "    awk '\n      NR == 1 || $0 == \"End of report.\" { next }\n      /^[ ]{0,3}#+([[:space:]]|$)/ { section = $0; next }\n      /[^[:space:]]/ { content[section] = 1 }\n      END {\n        exit !(content[\"## Open issues\"] &&\n               content[\"## Permission rules\"] &&\n               content[\"## What I checked\"])\n      }\n    ' \"$candidate\" || continue\n",
+              "replace": "    grep -Fxq '## Open issues' \"$candidate\" || continue\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-input-report-section-content",
+      "claim": "The input skips a report if any of the three sections has only blank lines",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "skips a report when any of the three sections is empty"
+      },
+      "assertion": "expect(result.evidence, `change before empty ${heading}`).toContain(",
+      "breaks": [
+        {
+          "id": "audit-input-allows-empty-open-issues",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "content[\"## Open issues\"]",
+              "replace": "1"
+            }
+          ]
+        },
+        {
+          "id": "audit-input-allows-empty-permission-rules",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "content[\"## Permission rules\"]",
+              "replace": "1"
+            }
+          ]
+        },
+        {
+          "id": "audit-input-allows-empty-what-i-checked",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "content[\"## What I checked\"]",
+              "replace": "1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-start-continuations",
+      "claim": "Every line before the last line of Audit start ends in a space and backslash",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "matches the whole audit start command after whitespace normalization"
+      },
+      "assertion": "expect(continued, \"start line continuations\").toBe(",
+      "breaks": [
+        {
+          "id": "audit-start-drops-continuation",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "--no-session-persistence \\\n",
+              "replace": "--no-session-persistence\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-start-needs-checklist",
+      "claim": "The start block with a ready input exits 1 and never calls fake Claude if the checklist is missing",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "does not launch the auditor when the checklist is missing"
+      },
+      "assertion": "expect([result.status, result.stdout], \"missing checklist stops launch\").toEqual(",
+      "breaks": [
+        {
+          "id": "audit-start-omits-checklist-guard",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "test -s .agents/chief/memories/long-term/audit.md && \\\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-start-print-stem",
+      "claim": "The combined call prints the audit stem before fake Claude starts",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "prints the audit stem before the auditor starts"
+      },
+      "assertion": "expect(result.stdout, \"stem before launch\").toBe(",
+      "breaks": [
+        {
+          "id": "audit-start-omits-stem",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "printf 'Audit stem: %s\\n' \"$R\" && \\\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-report-permission-rules-heading",
+      "claim": "The checklist names the Permission rules heading",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "the checklist calls for one report file and says the auditor has no command tool"
+      },
+      "assertion": "expect(checklist, \"permission rules heading\").toContain(",
+      "breaks": [
+        {
+          "id": "audit-report-permission-rules-heading-changed",
+          "file": ".agents/chief/memories/long-term/audit.md",
+          "edits": [
+            {
+              "find": "## Permission rules",
+              "replace": "## Findings"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-report-what-i-checked-heading",
+      "claim": "The checklist names the What I checked heading",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "the checklist calls for one report file and says the auditor has no command tool"
+      },
+      "assertion": "expect(checklist, \"what I checked heading\").toContain(",
+      "breaks": [
+        {
+          "id": "audit-report-what-i-checked-heading-changed",
+          "file": ".agents/chief/memories/long-term/audit.md",
+          "edits": [
+            {
+              "find": "## What I checked",
+              "replace": "## Findings"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-report-memory-check-unavailable",
+      "claim": "The checklist tells the auditor to record check:memory could not run as an open issue",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "the checklist calls for one report file and says the auditor has no command tool"
+      },
+      "assertion": "expect(checklist, \"memory check could not run\").toContain(",
+      "breaks": [
+        {
+          "id": "audit-report-memory-check-unavailable-changed",
+          "file": ".agents/chief/memories/long-term/audit.md",
+          "edits": [
+            {
+              "find": "\"check:memory could not run\" as an open issue.",
+              "replace": "that the memory check passed."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-input-sibling-checkpoint",
+      "claim": "A sibling checkpoint with a common parent causes exit 1 without publication",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "fails without publishing input when the checkpoint is a sibling commit"
+      },
+      "assertion": "expect([result.status, result.published], \"sibling checkpoint failure\").toEqual(",
+      "breaks": [
+        {
+          "id": "audit-input-accepts-common-ancestor",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "git merge-base --is-ancestor \"$previous_main\" \"$main\" || {",
+              "replace": "git merge-base \"$previous_main\" \"$main\" >/dev/null || {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-input-occupied-name",
+      "claim": "An occupied input name causes exit 1 and the files and existing input text stay the same",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "preserves an occupied input name and creates no new input file"
+      },
+      "assertion": "expect(outcome, \"occupied input name\").toEqual(",
+      "breaks": [
+        {
+          "id": "audit-input-overwrites-occupied-name",
+          "file": ".agents/chief/memories/long-term/restore.md",
+          "edits": [
+            {
+              "find": "test ! -e \"$R-input.txt\" &&\n",
+              "replace": ""
             }
           ]
         }

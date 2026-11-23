@@ -39,7 +39,9 @@ How the chief comes back when the old chief is gone. The drill that proves it is
 Run this block from the chief's checkout. It writes `$R-input.txt` in `short-term/audits/`.
 The chief runs one audit at a time. Use the newest report at or before this audit's timestamp.
 Its first line must match the input file's `Main:` line and contain a 40-digit hex SHA.
-The report must have a `## Open issues` line and end with `End of report.`.
+The report must have the three headings in step 6 of `audit.md`.
+Each section must have at least one non-empty line before the next heading or the footer.
+The line can say `none`. The report must end with `End of report.`.
 If none qualify, start at `fe44c64` (the merge of #139). To fix a bad first line, copy the
 `Main:` line from the report's input file. You can also remove a bad report after the owner gives the OK.
 
@@ -71,7 +73,16 @@ EOF
     test -f "$candidate_input" || continue
     last=$(tail -n 1 "$candidate") || exit
     test "$last" = 'End of report.' || continue
-    grep -Fxq '## Open issues' "$candidate" || continue
+    awk '
+      NR == 1 || $0 == "End of report." { next }
+      /^[ ]{0,3}#+([[:space:]]|$)/ { section = $0; next }
+      /[^[:space:]]/ { content[section] = 1 }
+      END {
+        exit !(content["## Open issues"] &&
+               content["## Permission rules"] &&
+               content["## What I checked"])
+      }
+    ' "$candidate" || continue
     first=$(head -n 1 "$candidate") || exit
     input_first=$(head -n 1 "$candidate_input") || exit
     test "$first" = "$input_first" || continue
@@ -97,7 +108,7 @@ EOF
   git status -sb &&
   git diff "$main" -- .agents/chief/memories/ &&
   echo "## long-term changes since the last audit" &&
-  git log -p --diff-merges=first-parent "$previous_main..$main" -- .agents/chief/memories/long-term/ &&
+  git log -p --full-history --diff-merges=first-parent "$previous_main..$main" -- .agents/chief/memories/long-term/ &&
   git diff "$previous_main" "$main" -- .agents/chief/memories/long-term/ &&
   echo "## open PRs and their files" &&
   gh pr list --state open --json number,files --jq '.[] | "#\(.number) \([.files[].path] | join(" "))"'
@@ -108,15 +119,17 @@ mv "$R-input.part" "$R-input.txt"
 ## Audit start
 
 Replace `<audit_timeout_minutes>` with the timeout in `settings.md`. Replace `<model>` with the
-model ID in `chief_model`. Check that `audit.md` exists before the start.
+model ID in `chief_model`. The start command requires a non-empty `audit.md` checklist.
 Run "Audit input" and "Audit start" in one shell call. Add `&&` to the last line of "Audit input"
 so "Audit start" runs only after the input is ready. Use the tool's background mode and check the
 call's exit status.
-If the call ran in a new shell, set `A` as above and set `R` to the stem of the newest `-input.txt` that has no report.
-The auditor has no command tool and can write only in `$A`. Read `$R-report.md` after the run.
+The auditor has no command tool and can write only in `$A`.
+After the call, use the printed stem as `R` to read `$R-report.md`.
 
 ```sh
-: "${A:?}" "${R:?}" && test -s "$R-input.txt" && test ! -e "$R-report.md" &&
+: "${A:?}" "${R:?}" && test -s "$R-input.txt" && test ! -e "$R-report.md" && \
+test -s .agents/chief/memories/long-term/audit.md && \
+printf 'Audit stem: %s\n' "$R" && \
 timeout <audit_timeout_minutes>m env -u ANTHROPIC_API_KEY claude -p --restricted --strict-mcp-config \
   --model <model> --effort high --no-session-persistence \
   --tools "Read,Grep,Glob,Write" --allowedTools "Read" "Grep" "Glob" "Write($A/**)" -- \

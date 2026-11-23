@@ -1159,6 +1159,9 @@ function withAuditRepo(test: (fixture: ReturnType<typeof auditRepo>) => void): v
   }
 }
 
+const REPORT_SECTIONS =
+  "## Open issues\nnone\n## Permission rules\nnone\n## What I checked\nnone\n";
+
 function auditRepo(repo: string) {
   const restore = readFileSync(`${L}/restore.md`, "utf8");
   const input = /^## Audit input\n[\s\S]*?^```\w*\n([\s\S]*?)^```/m.exec(restore)?.[1] ?? "";
@@ -1181,6 +1184,10 @@ function auditRepo(repo: string) {
   );
   writeFileSync(join(bin, "gh"), '#!/bin/sh\nexit "$GH_EXIT"\n', { mode: 0o700 });
   writeFileSync(join(bin, "date"), "#!/bin/sh\nprintf '2000-01-10-0000\\n'\n", { mode: 0o700 });
+  writeFileSync(join(bin, "timeout"), '#!/bin/sh\nshift\nexec "$@"\n', { mode: 0o700 });
+  writeFileSync(join(bin, "claude"), "#!/bin/sh\nprintf 'fake auditor started\\n'\n", {
+    mode: 0o700,
+  });
   git("init", "-q", "-b", "main");
   git("config", "user.name", "Audit Test");
   git("config", "user.email", "audit@example.test");
@@ -1198,24 +1205,29 @@ function auditRepo(repo: string) {
   const previous = commitRule("Old rule.");
   const main = commitRule("New rule.");
   const stem = (day: string): string => join(audits, `2000-01-${day}-0000`);
+  const checklist = join(repo, L, "audit.md");
   const checkpoint = ({
     day,
     reportMain,
     inputMain = reportMain,
-    heading = "## Open issues\n",
+    sections = REPORT_SECTIONS,
     footer = "End of report.\n",
   }: {
     day: string;
     reportMain: string;
     inputMain?: string;
-    heading?: string;
+    sections?: string;
     footer?: string;
   }): void => {
     writeFileSync(`${stem(day)}-input.txt`, `Main: ${inputMain}\n`);
-    writeFileSync(`${stem(day)}-report.md`, `Main: ${reportMain}\n${heading}${footer}`);
+    writeFileSync(`${stem(day)}-report.md`, `Main: ${reportMain}\n${sections}${footer}`);
   };
-  const run = ({ memoryExit = "1", ghExit = "0" } = {}) => {
-    const result = spawnSync("sh", ["-c", input], {
+  const run = ({ memoryExit = "1", ghExit = "0", launch = false } = {}) => {
+    const start = /^## Audit start\n[\s\S]*?^```\w*\n([\s\S]*?)^```/m.exec(restore)?.[1] ?? "";
+    const command = launch
+      ? `${input.trimEnd()} &&\n${start.replace("<audit_timeout_minutes>", "1").replace("<model>", "test-model")}`
+      : input;
+    const result = spawnSync("sh", ["-c", command], {
       cwd: repo,
       env: { ...env, MEMORY_EXIT: memoryExit, GH_EXIT: ghExit },
       encoding: "utf8",
@@ -1224,8 +1236,12 @@ function auditRepo(repo: string) {
     const published = existsSync(path);
     return { ...result, published, evidence: published ? readFileSync(path, "utf8") : "" };
   };
-  checkpoint({ day: "01", reportMain: previous });
-  return { git, commitRule, previous, main, checkpoint, run };
+  checkpoint({
+    day: "01",
+    reportMain: previous,
+    sections: REPORT_SECTIONS.replaceAll("\nnone\n", "\nChecked fixture.\n"),
+  });
+  return { git, commitRule, previous, main, audits, stem, checklist, checkpoint, run };
 }
 
 describe("the memory audit on request (order 179)", () => {
@@ -1234,6 +1250,8 @@ describe("the memory audit on request (order 179)", () => {
     const start = /^## Audit start\n[\s\S]*?^```\w*\n([\s\S]*?)^```/m.exec(restore)?.[1] ?? "";
     const expected = [
       ': "${A:?}" "${R:?}" && test -s "$R-input.txt" && test ! -e "$R-report.md" &&',
+      "test -s .agents/chief/memories/long-term/audit.md &&",
+      "printf 'Audit stem: %s\\n' \"$R\" &&",
       "timeout <audit_timeout_minutes>m env -u ANTHROPIC_API_KEY claude -p --restricted --strict-mcp-config",
       "--model <model> --effort high --no-session-persistence",
       '--tools "Read,Grep,Glob,Write" --allowedTools "Read" "Grep" "Glob" "Write($A/**)" --',
@@ -1242,6 +1260,28 @@ describe("the memory audit on request (order 179)", () => {
     expect(start.replace(/\\\n/g, "").replace(/\s+/g, " ").trim(), "whole start command").toBe(
       expected,
     );
+    const linesBeforeLast = start.trimEnd().split("\n").slice(0, -1);
+    const continued = linesBeforeLast.every((line) => line.endsWith(" \\"));
+    expect(continued, "start line continuations").toBe(true);
+  });
+
+  it("does not launch the auditor when the checklist is missing", () => {
+    withAuditRepo(({ run }) => {
+      const result = run({ launch: true });
+      expect(result.published, "input was ready before launch").toBe(true);
+      expect([result.status, result.stdout], "missing checklist stops launch").toEqual([1, ""]);
+    });
+  });
+
+  it("prints the audit stem before the auditor starts", () => {
+    withAuditRepo(({ checklist, run }) => {
+      writeFileSync(checklist, "Audit checklist.\n");
+      const result = run({ launch: true });
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.stdout, "stem before launch").toBe(
+        `Audit stem: ${M}/short-term/audits/2000-01-10-0000\nfake auditor started\n`,
+      );
+    });
   });
 
   it("names the main commit range in the audit input block", () => {
@@ -1275,9 +1315,24 @@ describe("the memory audit on request (order 179)", () => {
     });
   });
 
+  it("includes a temporary line from a merged branch", () => {
+    withAuditRepo(({ git, main, checkpoint, commitRule, run }) => {
+      checkpoint({ day: "02", reportMain: main });
+      git("switch", "-qc", "side");
+      commitRule("New rule.\nTemporary side rule.");
+      commitRule("New rule.");
+      git("switch", "-q", "main");
+      git("commit", "--allow-empty", "-qm", "Advance main");
+      git("merge", "--no-ff", "-qm", "Merge side", "side");
+      const result = run();
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.evidence, "reverted side branch addition").toContain("+Temporary side rule.");
+    });
+  });
+
   it("skips a report with only the main line and footer", () => {
     withAuditRepo(({ main, checkpoint, run }) => {
-      checkpoint({ day: "02", reportMain: main, heading: "" });
+      checkpoint({ day: "02", reportMain: main, sections: "" });
       const result = run();
       expect(result.status, result.stderr).toBe(0);
       expect(result.evidence, "change before the two-line report").toContain(
@@ -1286,7 +1341,32 @@ describe("the memory audit on request (order 179)", () => {
     });
   });
 
-  it("uses the newer of two complete matching reports", () => {
+  it("skips a three-line report with an empty open issues heading", () => {
+    withAuditRepo(({ main, checkpoint, run }) => {
+      checkpoint({ day: "02", reportMain: main, sections: "## Open issues\n" });
+      const result = run();
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.evidence, "change before the three-line report").toContain(
+        "-Old rule.\n+New rule.",
+      );
+    });
+  });
+
+  it("skips a report when any of the three sections is empty", () => {
+    for (const heading of ["## Open issues", "## Permission rules", "## What I checked"]) {
+      withAuditRepo(({ main, checkpoint, run }) => {
+        const sections = REPORT_SECTIONS.replace(`${heading}\nnone\n`, `${heading}\n   \n`);
+        checkpoint({ day: "02", reportMain: main, sections });
+        const result = run();
+        expect(result.status, result.stderr).toBe(0);
+        expect(result.evidence, `change before empty ${heading}`).toContain(
+          "-Old rule.\n+New rule.",
+        );
+      });
+    }
+  });
+
+  it("uses the newer of two complete matching reports with none in each section", () => {
     withAuditRepo(({ main, checkpoint, commitRule, run }) => {
       checkpoint({ day: "02", reportMain: main });
       commitRule("Latest rule.");
@@ -1344,6 +1424,25 @@ describe("the memory audit on request (order 179)", () => {
     });
   });
 
+  it("fails without publishing input when the checkpoint is a sibling commit", () => {
+    withAuditRepo(({ git, previous, checkpoint, run }) => {
+      const sibling = git("commit-tree", "HEAD^{tree}", "-p", previous, "-m", "Sibling rule");
+      checkpoint({ day: "02", reportMain: sibling });
+      const result = run();
+      expect([result.status, result.published], "sibling checkpoint failure").toEqual([1, false]);
+    });
+  });
+
+  it("preserves an occupied input name and creates no new input file", () => {
+    withAuditRepo(({ audits, stem, run }) => {
+      writeFileSync(`${stem("10")}-input.txt`, "Existing input.\n");
+      const before = readdirSync(audits).sort();
+      const result = run();
+      const outcome = [result.status, result.evidence, readdirSync(audits).sort()];
+      expect(outcome, "occupied input name").toEqual([1, "Existing input.\n", before]);
+    });
+  });
+
   it("the restore guide names the owner trigger, lack of a cron line, and the input file", () => {
     const restore = readFileSync(".agents/chief/memories/long-term/restore.md", "utf8");
     expect(restore, "owner trigger").toContain(
@@ -1362,6 +1461,11 @@ describe("the memory audit on request (order 179)", () => {
     );
     expect(checklist, "report opening").toContain('Never start with "no findings".');
     expect(checklist, "open issues heading").toContain("`## Open issues`");
+    expect(checklist, "permission rules heading").toContain("`## Permission rules`");
+    expect(checklist, "what I checked heading").toContain("`## What I checked`");
+    expect(checklist, "memory check could not run").toContain(
+      '"check:memory could not run" as an open issue.',
+    );
     expect(checklist, "finish the report").toContain("End of report.");
   });
 });
