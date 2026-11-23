@@ -1,0 +1,4511 @@
+{
+  "claims": [
+    {
+      "id": "P1-linux-home",
+      "claim": "A Linux home folder path is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds a Linux home folder path"
+      },
+      "assertion": "\"home path\").toEqual([",
+      "breaks": [
+        {
+          "id": "P1-no-home",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\/home\\/[A-Za-z0-9._-]|\\/Users\\/",
+              "replace": "/\\/Users\\/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P2-macos-home",
+      "claim": "A macOS home folder path is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds a macOS home folder path"
+      },
+      "assertion": "\"Users path\").toEqual([",
+      "breaks": [
+        {
+          "id": "P2-no-users",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "|\\/Users\\/[A-Za-z0-9._-]|",
+              "replace": "|"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P3-tilde",
+      "claim": "A path from the home folder (tilde) is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds a path from the home folder"
+      },
+      "assertion": "\"tilde path\").toEqual([",
+      "breaks": [
+        {
+          "id": "P3-no-tilde",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "|~\\/|",
+              "replace": "|"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P4-email",
+      "claim": "An email address is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds an email address"
+      },
+      "assertion": "\"email\").toEqual([",
+      "breaks": [
+        {
+          "id": "P4-long-tld",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "\\.[A-Za-z]{2,}/,",
+              "replace": "\\.[A-Za-z]{20,}/,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P5-uuid",
+      "claim": "A uuid is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds a uuid"
+      },
+      "assertion": "\"uuid\").toEqual([",
+      "breaks": [
+        {
+          "id": "P5-uuid-13",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "[0-9a-f]{12}\\b/i",
+              "replace": "[0-9a-f]{13}\\b/i"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P6-job-id",
+      "claim": "A job id is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds a job id"
+      },
+      "assertion": "\"job id\").toEqual([",
+      "breaks": [
+        {
+          "id": "P6-id-9",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "[A-Za-z0-9]{6,}|[0-9a-f]{6,})",
+              "replace": "[A-Za-z0-9]{9,}|[0-9a-f]{9,})"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P7-sk",
+      "claim": "An sk- key is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds an sk- key"
+      },
+      "assertion": "\"sk- key\").toEqual([",
+      "breaks": [
+        {
+          "id": "P7-sk-32",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\bsk-[A-Za-z0-9_-]{16,}/",
+              "replace": "/\\bsk-[A-Za-z0-9_-]{32,}/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P8-ghp",
+      "claim": "A ghp_ token is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds a ghp_ token"
+      },
+      "assertion": "\"ghp_ token\").toEqual([",
+      "breaks": [
+        {
+          "id": "P8-ghp-40",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\bgh[pousr]_[A-Za-z0-9]{20,}/",
+              "replace": "/\\bgh[pousr]_[A-Za-z0-9]{40,}/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P9-github-pat",
+      "claim": "A github_pat_ token is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds a github_pat_ token"
+      },
+      "assertion": ").toEqual([`${where}: a key or a token; the memory is public, so remove it`]);",
+      "breaks": [
+        {
+          "id": "P9-pat-40",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\bgithub_pat_[A-Za-z0-9_]{20,}/",
+              "replace": "/\\bgithub_pat_[A-Za-z0-9_]{40,}/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P10-akia",
+      "claim": "An AKIA key is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds an AKIA key"
+      },
+      "assertion": "\"AKIA key\").toEqual([",
+      "breaks": [
+        {
+          "id": "P10-akia-17",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\bAKIA[0-9A-Z]{16}\\b/",
+              "replace": "/\\bAKIA[0-9A-Z]{17}\\b/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P11-xox",
+      "claim": "An xox token is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds an xox token"
+      },
+      "assertion": "\"xox token\").toEqual([",
+      "breaks": [
+        {
+          "id": "P11-xox-20",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\bxox[abprs]-[A-Za-z0-9-]{10,}/",
+              "replace": "/\\bxox[abprs]-[A-Za-z0-9-]{20,}/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P12-private-key",
+      "claim": "A private key block is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds a private key block"
+      },
+      "assertion": "\"private key\").toEqual([",
+      "breaks": [
+        {
+          "id": "P12-keys",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "PRIVATE KEY-----/",
+              "replace": "PRIVATE KEYS-----/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P13-ip",
+      "claim": "An IP address is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds an IP address"
+      },
+      "assertion": "\"IP\").toEqual([",
+      "breaks": [
+        {
+          "id": "P13-five-parts",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "(\\d{1,3}\\.){3}\\d{1,3}\\b/",
+              "replace": "(\\d{1,3}\\.){4}\\d{1,3}\\b/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P14-attach",
+      "claim": "A claude attach id is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds a claude attach id"
+      },
+      "assertion": "\"attach id\").toEqual([",
+      "breaks": [
+        {
+          "id": "P14-attach-7",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/claude attach [0-9a-f]{4,}/",
+              "replace": "/claude attach [0-9a-f]{7,}/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P15-tmp",
+      "claim": "A path into tmp/ is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds a path into tmp/"
+      },
+      "assertion": "\"tmp path\").toEqual([",
+      "breaks": [
+        {
+          "id": "P15-no-tmp",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "tmp\\/[A-Za-z0-9._-]/",
+              "replace": "tmpx\\/[A-Za-z0-9._-]/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T1-tracked",
+      "claim": "A short-term file that git tracks is named (security test: private notes must not reach the public repository)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names a short-term file that git tracks"
+      },
+      "assertion": "\"tracked short-term file\").toEqual([",
+      "breaks": [
+        {
+          "id": "T1-keep-all",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "path.startsWith(`${SHORT_TERM}/`) && path !== `${SHORT_TERM}/README.md`",
+              "replace": "path.startsWith(`${SHORT_TERM}/`) && path === `${SHORT_TERM}/README.md`"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E1-missing-lines",
+      "claim": "Each missing ignore line of .git/info/exclude is named (security test: the lines keep private notes out of git)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names a missing ignore line"
+      },
+      "assertion": "expect(problems, \"both lines missing\").toEqual([",
+      "breaks": [
+        {
+          "id": "E1-present-is-missing",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "EXCLUDE_LINES.filter((line) => !lines.has(line))",
+              "replace": "EXCLUDE_LINES.filter((line) => lines.has(line))"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2-create",
+      "claim": "--fix creates a missing exclude file with the two lines (security test: the lines keep private notes out of git)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "creates a missing exclude file with the two lines"
+      },
+      "assertion": "expect(checkExclude(readFileSync(path, \"utf8\")), \"new file\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "E2-adds-none",
+          "file": ".agents/chief/scripts/lib/check-memory-local.ts",
+          "edits": [
+            {
+              "find": "EXCLUDE_LINES.filter((line) => !present.has(line))",
+              "replace": "EXCLUDE_LINES.filter(() => false)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E3-second-run",
+      "claim": "A second --fix adds nothing (the CodeQL alert 10 fix keeps one read of the file)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "adds nothing on a second run"
+      },
+      "assertion": "expect(readFileSync(path, \"utf8\"), \"file after the second run\").toBe(first);",
+      "breaks": [
+        {
+          "id": "E3-reads-nothing",
+          "file": ".agents/chief/scripts/lib/check-memory-local.ts",
+          "edits": [
+            {
+              "find": "const present = new Set(text.split(\"\\n\").map((line) => line.trim()));",
+              "replace": "const present = new Set<string>();"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E4-old-text",
+      "claim": "--fix keeps the old text of the exclude file",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "keeps the old text of the file"
+      },
+      "assertion": "expect(readFileSync(path, \"utf8\").startsWith(\"# local\\n\"), \"old text first\").toBe(true);",
+      "breaks": [
+        {
+          "id": "E4-no-newline",
+          "file": ".agents/chief/scripts/lib/check-memory-local.ts",
+          "edits": [
+            {
+              "find": "const start = text === \"\" || text.endsWith(\"\\n\") ? \"\" : \"\\n\";",
+              "replace": "const start = \"\";"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E5-only-missing",
+      "claim": "--fix adds only the missing line",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "adds only the missing line"
+      },
+      "assertion": "expect(copies, \"one copy\").toHaveLength(1);",
+      "breaks": [
+        {
+          "id": "E5-adds-both",
+          "file": ".agents/chief/scripts/lib/check-memory-local.ts",
+          "edits": [
+            {
+              "find": "EXCLUDE_LINES.filter((line) => !present.has(line))",
+              "replace": "EXCLUDE_LINES.filter(() => true)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W1-private-word",
+      "claim": "A word of the private word list is found in any case (security test: names that the public memory must not hold)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds a word of the private word list in any case"
+      },
+      "assertion": "expect(checkPrivateWords(files, [\"zorblat\"]), \"private word\").toEqual([",
+      "breaks": [
+        {
+          "id": "W1-case",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "const lower = line.toLowerCase();",
+              "replace": "const lower = line;"
+            }
+          ]
+        },
+        {
+          "id": "W1-none",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (list.some((word) => lower.includes(word))) {",
+              "replace": "if (list.some(() => false)) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S1-not-skipped",
+      "claim": "A PR with one changed file outside the chief memory still needs its Done row (order 108: only a memory PR is skipped)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "does not skip a PR with one changed file outside the chief memory"
+      },
+      "assertion": "expect(prs, other).toEqual([\"#140\"]);",
+      "breaks": [
+        {
+          "id": "S1-some",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "paths.every((path) => path.startsWith(MEMORY_FOLDER))",
+              "replace": "paths.some((path) => path.startsWith(MEMORY_FOLDER))"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P16-session-base62",
+      "claim": "A base62 session id is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds a base62 session id"
+      },
+      "assertion": "expect(problems, \"base62 session id\")",
+      "breaks": [
+        {
+          "id": "P16-session-20",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\bsession_[A-Za-z0-9]{8,}/",
+              "replace": "/\\bsession_[A-Za-z0-9]{20,}/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P17-session-link",
+      "claim": "A session link of the web app is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds a session link of the web app"
+      },
+      "assertion": "expect(found(link), \"session link\")",
+      "breaks": [
+        {
+          "id": "P17-session-20",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\bsession_[A-Za-z0-9]{8,}/",
+              "replace": "/\\bsession_[A-Za-z0-9]{20,}/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P18-job-non-hex",
+      "claim": "A job id that is not hex is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds a job id that is not hex"
+      },
+      "assertion": "\"non-hex job id\").toEqual([",
+      "breaks": [
+        {
+          "id": "P18-hex-only",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "(?=[A-Za-z0-9]*\\d)[A-Za-z0-9]{6,}|",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P19-agent",
+      "claim": "An agent id is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds an agent id"
+      },
+      "assertion": "\"agent id\").toEqual([",
+      "breaks": [
+        {
+          "id": "P19-no-agent",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "(job|bg|session|agent|ref)",
+              "replace": "(job|bg|session|ref)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P20-session-id-word",
+      "claim": "A session id after the word id is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds a session id after the word id"
+      },
+      "assertion": "expect(problems, \"session id after id\")",
+      "breaks": [
+        {
+          "id": "P20-no-id-word",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "([\\s_-]?id)?",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P21-google",
+      "claim": "A Google API key is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds a Google API key"
+      },
+      "assertion": "\"Google key\").toEqual([",
+      "breaks": [
+        {
+          "id": "P21-google-36",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\bAIza[0-9A-Za-z_-]{35}/",
+              "replace": "/\\bAIza[0-9A-Za-z_-]{36}/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P22-gh-kinds",
+      "claim": "The gho_, ghs_, ghu_ and ghr_ tokens are found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds the other GitHub token kinds"
+      },
+      "assertion": "\"GitHub token kinds\").toEqual(",
+      "breaks": [
+        {
+          "id": "P22-ghp-only",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "gh[pousr]_",
+              "replace": "gh[p]_"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P23-jwt",
+      "claim": "A JWT is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds a JWT"
+      },
+      "assertion": "\"JWT\").toEqual(",
+      "breaks": [
+        {
+          "id": "P23-no-jwt",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\beyJ",
+              "replace": "/\\beyK"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P24-tmp-forms",
+      "claim": "A path into tmp/ after ./, a quote or a folder is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds tmp paths in other forms"
+      },
+      "assertion": "\"tmp path forms\").toEqual(",
+      "breaks": [
+        {
+          "id": "P24-old-prefix",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "(^|[\\s`(\"'/=:])tmp",
+              "replace": "(^|[\\s`(])tmp"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P25-home-forms",
+      "claim": "The root home and a backslash home path are found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds the root home and a backslash home path"
+      },
+      "assertion": "\"home path forms\").toEqual(",
+      "breaks": [
+        {
+          "id": "P25-no-root",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "|\\/root\\/|\\\\home\\\\[A-Za-z0-9._-]",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P26-ipv6",
+      "claim": "An IPv6 address is found (security test: the check of private data in the public memory)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "finds an IPv6 address"
+      },
+      "assertion": "\"IPv6\").toEqual(",
+      "breaks": [
+        {
+          "id": "P26-no-full",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "/\\b([0-9a-f]{1,4}:){7}",
+              "replace": "/\\bZ\\b([0-9a-f]{1,4}:){7}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L1-outside-link",
+      "claim": "A link that goes above the repository root is named (security test: a path escape)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names a link that goes outside the repository"
+      },
+      "assertion": "\"link outside the repository\").toEqual([",
+      "breaks": [
+        {
+          "id": "L1-pop-silently",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "else if (parts.pop() === undefined) return undefined;",
+              "replace": "else parts.pop();"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "G1-non-ascii-memory",
+      "claim": "check:memory reads a non-ASCII file name from git as it is (security test: a quoted name escaped every check)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "reads non-ASCII file names from git"
+      },
+      "assertion": "expect(paths, \"non-ASCII names\").toEqual({",
+      "breaks": [
+        {
+          "id": "G1-no-z",
+          "file": ".agents/chief/scripts/lib/check-memory-local.ts",
+          "edits": [
+            {
+              "find": "[...args.slice(0, 1), \"-z\", ...args.slice(1)]",
+              "replace": "args"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "G2-non-ascii-merge",
+      "claim": "check:status reads a non-ASCII file name of a merge as it is (late test: a quoted name changes the promotion skip)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "lists a file name with non-ASCII characters as it is"
+      },
+      "assertion": "expect(merge.files, \"non-ASCII name\").toEqual([name]);",
+      "breaks": [
+        {
+          "id": "G2-no-z",
+          "file": "scripts/lib/check-status-git.ts",
+          "edits": [
+            {
+              "find": "\"--no-renames\", \"-z\", ",
+              "replace": "\"--no-renames\", "
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "G3-move",
+      "claim": "check:status lists both paths of a move into long-term memory (late test: a move must not count as a promotion)",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "lists both paths of a file that moves into long-term memory"
+      },
+      "assertion": "expect(merge.files, \"both paths of a move\").toEqual([",
+      "breaks": [
+        {
+          "id": "G3-renames",
+          "file": "scripts/lib/check-status-git.ts",
+          "edits": [
+            {
+              "find": "\"--no-renames\", ",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L2-successor",
+      "claim": "check:memory names a rule that changes a permission-rule rule without the field (security: a new file must not take over an owner rule)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names a rule that changes a rule with permission-rule and has no field"
+      },
+      "assertion": "\"a new rule without the field\").toEqual([",
+      "breaks": [
+        {
+          "id": "L2-no-check",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "byId.get(target)?.fields.has(PERMISSION_RULE) === true",
+              "replace": "false"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C1-field-required",
+      "claim": "check:memory names a rule with no check-first field (security: a merge rule must show its conditions first (owner, 2026-11-19, drill-139 Q1 A))",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names a rule with no check-first field"
+      },
+      "assertion": "\"no check-first\").toEqual([",
+      "breaks": [
+        {
+          "id": "C1-field-required-break",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "  \"check-first\",\n] as const;",
+              "replace": "] as const;"
+            },
+            {
+              "find": "new Set<string>([...RULE_FIELDS, PERMISSION_RULE])",
+              "replace": "new Set<string>([...RULE_FIELDS, PERMISSION_RULE, CHECK_FIRST])"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C2-value",
+      "claim": "check:memory names a check-first value that is not true or false (security: a merge rule must show its conditions first (owner, 2026-11-19, drill-139 Q1 A))",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names a check-first value that is not true or false"
+      },
+      "assertion": "\"yes\").toEqual([",
+      "breaks": [
+        {
+          "id": "C2-value-break",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "checkFirst !== \"true\" && checkFirst !== \"false\"",
+              "replace": "false"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C3-first-line",
+      "claim": "check:memory names check-first: true when the line after How to apply is not Check first (security: a merge rule must show its conditions first (owner, 2026-11-19, drill-139 Q1 A))",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names check-first: true with no Check first line as the first line of How to apply"
+      },
+      "assertion": "expect(rulesWith(R2, rule(fields, body)), name).toEqual([",
+      "breaks": [
+        {
+          "id": "C3-first-line-break",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "  if (value !== \"true\") return [];\n",
+              "replace": "  if (value !== \"true\" || value === \"true\") return [];\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C4-one-line",
+      "claim": "check:memory names two Check first lines (security: a merge rule must show its conditions first (owner, 2026-11-19, drill-139 Q1 A))",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names two Check first lines"
+      },
+      "assertion": "\"two lines\").toEqual([",
+      "breaks": [
+        {
+          "id": "C4-one-line-break",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (marked > 1)\n",
+              "replace": "if (marked > 9)\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C6-owner-forces",
+      "claim": "check:memory names an active permission-rule rule with check-first: false (security: a merge rule must show its conditions first (owner, 2026-11-19, drill-139 Q1 A))",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names an active permission-rule rule with check-first: false"
+      },
+      "assertion": "\"permission-rule, check-first false\").toEqual([",
+      "breaks": [
+        {
+          "id": "C6-owner-forces-break",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "fields.get(PERMISSION_RULE) === \"true\" && value !== \"true\"",
+              "replace": "false"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C7-active-only",
+      "claim": "check:memory does not ask a replaced permission-rule rule for check-first: true (a replaced rule keeps its old text)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "passes a replaced permission-rule rule with check-first: false"
+      },
+      "assertion": "\"replaced owner rule\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "C7-active-only-break",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (rule.status === \"active\" && fields.get(PERMISSION_RULE)",
+              "replace": "if (fields.get(PERMISSION_RULE)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C5-false-no-line",
+      "claim": "check:memory names check-first: false with a Check first line (security: a merge rule must show its conditions first (owner, 2026-11-19, drill-139 Q1 A))",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names check-first: false with a Check first line"
+      },
+      "assertion": "\"false with a line\").toEqual([",
+      "breaks": [
+        {
+          "id": "C5-false-no-line-break",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (count(CHECK_FIRST_LINE) > 0) {",
+              "replace": "if (count(CHECK_FIRST_LINE) > 99) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C8-no-gate",
+      "claim": "check:memory names an active check-first: false rule whose How to apply does not start with No gate (a rule with no gate says why (DQ-940; the chief, 2026-11-19))",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names an active check-first: false rule whose How to apply does not start with No gate"
+      },
+      "assertion": "expect(rulesWith(R2, rule(R2_FIELDS, body)), name).toEqual([",
+      "breaks": [
+        {
+          "id": "C8-no-gate-break",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "(hasApply && NO_GATE.test(first))",
+              "replace": "true"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C9-true-no-gate",
+      "claim": "check:memory names a No gate line in a check-first: true rule (a rule with no gate says why (DQ-940; the chief, 2026-11-19))",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names a No gate line in a check-first: true rule"
+      },
+      "assertion": "\"true with No gate\").toEqual([",
+      "breaks": [
+        {
+          "id": "C9-true-no-gate-break",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (count(NO_GATE_LINE) > 0) {",
+              "replace": "if (count(NO_GATE_LINE) > 99) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C10-one-block",
+      "claim": "check:memory names a rule with two How to apply lines (security: a merge rule must show its conditions first (owner, 2026-11-19, drill-139 Q1 A); DQ-939)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names two How to apply lines"
+      },
+      "assertion": "\"two blocks\").toEqual([",
+      "breaks": [
+        {
+          "id": "C10-one-block-break",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (applies > 1) return",
+              "replace": "if (applies > 9) return"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C11-kinds",
+      "claim": "check:memory takes each of the four kinds of No gate line (a rule with no gate says why (DQ-940; the chief, 2026-11-19))",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "passes each kind of No gate line"
+      },
+      "assertion": "expect(rulesWith(R2, rule(R2_FIELDS, body)), kind).toEqual([]);",
+      "breaks": [
+        {
+          "id": "C11-kinds-break",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "\"a trigger\", \"a fact\"]",
+              "replace": "\"a trigger\"]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C12-active-only",
+      "claim": "check:memory asks no No gate line of a rule that is not active (a rule with no gate says why (DQ-940; the chief, 2026-11-19))",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "asks no No gate line of a rule that is not active"
+      },
+      "assertion": "\"replaced, no No gate\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "C12-active-only-break",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (rule.status !== \"active\" || (hasApply",
+              "replace": "if ((hasApply"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D1-step-list",
+      "claim": "check:memory names a Check first step whose list is not the list of the Rule sentence (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names a Check first step whose list is not the list of the Rule sentence"
+      },
+      "assertion": "\"step\").toEqual([",
+      "breaks": [
+        {
+          "id": "D1-step-list-break",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (step.list !== ruleList) {",
+              "replace": "if (step.list === `${ruleList}x`) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D2-block-only",
+      "claim": "check:memory reads the list step only in the Check first block (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002; DQ-938)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "reads the list step only in the Check first block"
+      },
+      "assertion": "\"a code block before\").toEqual([",
+      "breaks": [
+        {
+          "id": "D2-block-only-break",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "const start = lines.findIndex((line) => line.startsWith(CHECK_FIRST_LINE));",
+              "replace": "const start = lines.findIndex((line) => line.startsWith(\"Rule: \"));"
+            },
+            {
+              "find": "    if (!NUMBERED.test(line)) return undefined;\n",
+              "replace": "    if (!NUMBERED.test(line)) continue;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D6-after-block",
+      "claim": "check:memory does not read a list step after the Check first block (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002; DQ-938)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "does not read a list step after the Check first block"
+      },
+      "assertion": "expect(checkPermissionList(files(text), agentsText(LIST)), name).toEqual([noStep]);",
+      "breaks": [
+        {
+          "id": "D6-after-block-break",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "    if (!NUMBERED.test(line)) return undefined;\n",
+              "replace": "    if (!NUMBERED.test(line)) continue;\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D3-consequence",
+      "claim": "check:memory names a list step that does not say that no permission covers the PR (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002; DQ-938)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names a list step that does not say that no permission covers the PR"
+      },
+      "assertion": "expect(problems, \"consequence\").toEqual([",
+      "breaks": [
+        {
+          "id": "D3-consequence-break",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (!step.rest.startsWith(NOT_COVERED)) {",
+              "replace": "if (false) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D4-agents-list",
+      "claim": "check:memory names a Rule sentence whose list is not the list of AGENTS.md (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names a Rule sentence whose list is not the list of AGENTS.md"
+      },
+      "assertion": "\"agents\").toEqual([",
+      "breaks": [
+        {
+          "id": "D4-agents-list-break",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (agentsList !== undefined && agentsList !== ruleList) {",
+              "replace": "if (false) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D5-no-agents",
+      "claim": "check:memory names an AGENTS.md with no list sentence (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002; DQ-937)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names an AGENTS.md with no list sentence"
+      },
+      "assertion": "expect(checkPermissionList(same, text), name).toEqual([",
+      "breaks": [
+        {
+          "id": "D5-no-agents-break",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "  if (agentsList === undefined) {\n    problems.push(",
+              "replace": "  if (agentsList === \"\") {\n    problems.push("
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D7-copied",
+      "claim": "check:memory names a memory where no active permission-rule rule copies the list (security: the list of PRs that no permission covers must not drift between AGENTS.md and R-002; DQ-937)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names a memory where no active permission-rule rule copies the list"
+      },
+      "assertion": "expect(checkPermissionList(tree(changes), agentsText(LIST)), name).toEqual([",
+      "breaks": [
+        {
+          "id": "D7-copied-1",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (agentsList !== undefined && !copied) {",
+              "replace": "if (false) {"
+            }
+          ]
+        },
+        {
+          "id": "D7-copied-2",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "if (rule.fields.get(PERMISSION_RULE) === \"true\") copied = true;",
+              "replace": "copied = true;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "M1-boundary",
+      "claim": "A folder rule does not match a longer folder name or the same name elsewhere (security test: who may merge, AGENTS.md §7, order 108)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "does not match a longer folder name or a file of the same name elsewhere"
+      },
+      "assertion": "expect(listedItem(path), path).toBeUndefined();",
+      "breaks": [
+        {
+          "id": "M1-boundary-1",
+          "file": ".agents/chief/scripts/lib/merge-list.ts",
+          "edits": [
+            {
+              "find": "  if (rule.endsWith(\"/\")) return path.startsWith(rule);",
+              "replace": "  if (rule.endsWith(\"/\")) return path.startsWith(rule.slice(0, -1));"
+            }
+          ]
+        },
+        {
+          "id": "M1-boundary-2",
+          "file": ".agents/chief/scripts/lib/merge-list.ts",
+          "edits": [
+            {
+              "find": "  return !path.slice(prefix.length, path.length - suffix.length).includes(\"/\");",
+              "replace": "  return true;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "M2-dotfiles",
+      "claim": "A path rule matches a dotfile (security test: who may merge, AGENTS.md §7, order 108)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "matches dotfiles"
+      },
+      "assertion": "expect(listedItem(\"backend/src/adapters/workspace/.env\")?.text, \"workspace/.env\").toBe(",
+      "breaks": [
+        {
+          "id": "M2-dotfiles-1",
+          "file": ".agents/chief/scripts/lib/merge-list.ts",
+          "edits": [
+            {
+              "find": "  if (rule.endsWith(\"/\")) return path.startsWith(rule);",
+              "replace": "  if (rule.endsWith(\"/\")) return path.startsWith(rule) && !path.includes(\"/.\");"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "M5-fields",
+      "claim": "A change of each dependency field and of scripts in a package.json is listed (security test: who may merge, AGENTS.md §7, order 108)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "lists a change of each dependency field and of scripts"
+      },
+      "assertion": "expect(result.exit, field).toBe(1);",
+      "breaks": [
+        {
+          "id": "M5-fields-1",
+          "file": ".agents/chief/scripts/lib/merge-list.ts",
+          "edits": [
+            {
+              "find": "  \"scripts\",\n  \"peerDependenciesMeta\",",
+              "replace": "  \"peerDependenciesMeta\","
+            }
+          ]
+        },
+        {
+          "id": "M5-fields-2",
+          "file": ".agents/chief/scripts/lib/merge-list.ts",
+          "edits": [
+            {
+              "find": "  \"dependencies\",\n  \"devDependencies\",",
+              "replace": "  \"devDependencies\","
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "M8-quote",
+      "claim": "A memory PR whose rule quote is not in the owner record gets no merge line (order 109) (security test: who may merge, AGENTS.md §7, order 108)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "refuses a rule whose quote is not in the owner record"
+      },
+      "assertion": "expect(result.exit, \"quote not in record\").toBe(1);",
+      "breaks": [
+        {
+          "id": "M8-quote-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "    if (quotes.problems.length > 0) return memoryFail(header, quotes.problems);",
+              "replace": "    if (quotes.problems.length < 0) return memoryFail(header, quotes.problems);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "M9-no-record",
+      "claim": "A memory PR that changes a rule with no owner record gives exit 2 (fail closed; the record is read first, DQ-1031) (security test: who may merge, AGENTS.md §7, order 108)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "cannot check a rule change when the owner record is missing"
+      },
+      "assertion": "expect(result.exit, \"no record\").toBe(2);",
+      "breaks": [
+        {
+          "id": "M9-no-record-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if ((input.record ?? []).every((text) => text.trim() === \"\")) {",
+              "replace": "  if ((input.record ?? []).length < 0) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "M10-private-word",
+      "claim": "A memory PR with a private word gets no merge line (security test: who may merge, AGENTS.md §7, order 108)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "refuses a changed file with a private word"
+      },
+      "assertion": "expect(result.exit, \"private word\").toBe(1);",
+      "breaks": [
+        {
+          "id": "M10-private-word-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (words.length > 0) return memoryFail(header, words);",
+              "replace": "  if (words.length < 0) return memoryFail(header, words);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "M21-workflow",
+      "claim": "The security item holds each path of the security-review workflow filter (security test: who may merge, AGENTS.md §7, order 108)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "has each path of the workflow filter in the security item"
+      },
+      "assertion": "for (const path of paths) expect(security?.paths, path).toContain(path);",
+      "breaks": [
+        {
+          "id": "M21-workflow-1",
+          "file": ".agents/chief/scripts/lib/merge-list.ts",
+          "edits": [
+            {
+              "find": "      \"backend/src/adapters/log/\",\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q2-min-words",
+      "claim": "A quote under quote_min_words is named (security test: who may merge, AGENTS.md §7, order 108)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/owner-quotes.test.ts",
+        "name": "names a quote with fewer words than quote_min_words"
+      },
+      "assertion": "\"short quote\").toEqual([",
+      "breaks": [
+        {
+          "id": "Q2-min-words-1",
+          "file": ".agents/chief/scripts/lib/owner-quotes.ts",
+          "edits": [
+            {
+              "find": "      if (words < minWords) {",
+              "replace": "      if (words < minWords - 1) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q3-no-record",
+      "claim": "An empty owner record reports noRecord, so merge:check can fail closed (security test: who may merge, AGENTS.md §7, order 108)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/owner-quotes.test.ts",
+        "name": "reports no record when the record is missing or empty"
+      },
+      "assertion": "expect(result.noRecord, `record ${JSON.stringify(record)}`).toBe(true);",
+      "breaks": [
+        {
+          "id": "Q3-no-record-1",
+          "file": ".agents/chief/scripts/lib/owner-quotes.ts",
+          "edits": [
+            {
+              "find": "  if (records.length === 0) return { problems: [], noRecord: true };",
+              "replace": "  if (records.length === -1) return { problems: [], noRecord: true };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C1-merge-list",
+      "claim": "AGENTS.md §7 must list the words of the list file (security test: who may merge, AGENTS.md §7, order 108)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "names an AGENTS.md sentence with an item that is not in the list file"
+      },
+      "assertion": "expect(checkMergeList(agentsText(short)), \"missing item\").toEqual([",
+      "breaks": [
+        {
+          "id": "C1-merge-list-1",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "  if (agentsList === expected) return [];",
+              "replace": "  if (agentsList !== undefined) return [];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-control",
+      "claim": "A file name with a control character cannot add an output line (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "prints no control character, so a file name cannot add a line"
+      },
+      "assertion": "expect(Array.from(line).some(isControl), `control in ${JSON.stringify(line)}`).toBe(false);",
+      "breaks": [
+        {
+          "id": "R3-control-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  lines: result.lines.map(printable),",
+              "replace": "  lines: result.lines,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-code-ci",
+      "claim": "A code PR gets no merge line until each required CI check passed (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "gives a code PR no merge line until CI is green"
+      },
+      "assertion": "expect(result.exit, \"code CI\").toBe(1);",
+      "breaks": [
+        {
+          "id": "R3-code-ci-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (ci.length > 0) {\n    return {",
+              "replace": "  if (ci.length < 0) {\n    return {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-required",
+      "claim": "The required CI checks are the job names of the CI workflow (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "are the job names of the CI workflow"
+      },
+      "assertion": "expect([...REQUIRED_CHECKS].sort(), \"required\").toEqual(names);",
+      "breaks": [
+        {
+          "id": "R3-required-1",
+          "file": ".agents/chief/scripts/lib/merge-list.ts",
+          "edits": [
+            {
+              "find": "  \"e2e\",\n] as const;",
+              "replace": "] as const;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-imports",
+      "claim": "Each file that check:memory and merge:check run is on the list (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "lists each file that check:memory and merge:check run"
+      },
+      "assertion": "for (const path of paths) expect(listedItem(path), path).toBeDefined();",
+      "breaks": [
+        {
+          "id": "R3-imports-1",
+          "file": ".agents/chief/scripts/lib/merge-list.ts",
+          "edits": [
+            {
+              "find": "      \"scripts/lib/report.ts\",\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-floor",
+      "claim": "A quote needs 4 words whatever the setting says (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/owner-quotes.test.ts",
+        "name": "keeps a floor of 4 words whatever the setting says"
+      },
+      "assertion": "expect(result.problems.length, \"floor\").toBe(1);",
+      "breaks": [
+        {
+          "id": "R3-floor-1",
+          "file": ".agents/chief/scripts/lib/owner-quotes.ts",
+          "edits": [
+            {
+              "find": "  const minWords = Math.max(input.minWords, QUOTE_MIN_FLOOR);",
+              "replace": "  const minWords = input.minWords;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A1-decisions-move",
+      "claim": "A move out of docs/decisions/ is listed at its deleted path (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "lists a move out of and into docs/decisions/ as a delete and an add"
+      },
+      "assertion": "\"moved out\").toBe(1);",
+      "breaks": [
+        {
+          "id": "A1-decisions-move-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "    const item = listedItem(file.path);",
+              "replace": "    const item = file.status === \"D\" ? undefined : listedItem(file.path);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A2-migration",
+      "claim": "A deleted migration is listed (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "lists an added and a deleted migration"
+      },
+      "assertion": "\"deleted\").toBe(1);",
+      "breaks": [
+        {
+          "id": "A2-migration-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "    const item = listedItem(file.path);",
+              "replace": "    const item = file.status === \"D\" ? undefined : listedItem(file.path);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A3-package-status",
+      "claim": "The status rule decides the result for an added, deleted, retyped or moved package.json (DQ-1023, DQ-1034; security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "lists each added, deleted, retyped or moved package.json"
+      },
+      "assertion": "`manifest ${name}`).toBe(1);",
+      "breaks": [
+        {
+          "id": "A3-package-status-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "    if (isPackageJson(file.path) && file.status !== \"M\") {",
+              "replace": "    if (isPackageJson(file.path) && file.status === \"T\") {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A4-bad-json",
+      "claim": "A changed package.json that is not JSON gives exit 2 (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "cannot check a changed package.json with no text or bad JSON"
+      },
+      "assertion": "\"bad JSON\").toBe(2);",
+      "breaks": [
+        {
+          "id": "A4-bad-json-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "    throw new CannotCheck(`${path} is not JSON`);",
+              "replace": "    value = {};"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A5-allowlist",
+      "claim": "A memory PR may only add or change a regular .md file of long-term/ (DQ-1021; security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "passes only an added or changed .md file of long-term/"
+      },
+      "assertion": "`allowlist ${name}`).toBe(exit);",
+      "breaks": [
+        {
+          "id": "A5-allowlist-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "      (file.status !== \"A\" && file.status !== \"M\") ||",
+              "replace": "      file.status === \"D\" ||"
+            }
+          ]
+        },
+        {
+          "id": "A5-allowlist-2",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "      file.newMode !== FILE_MODE ||",
+              "replace": "      file.newMode === \"000000\" ||"
+            }
+          ]
+        },
+        {
+          "id": "A5-allowlist-3",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "      !MEMORY_PATH.test(file.path)",
+              "replace": "      !inMemory(file.path)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A6-protected",
+      "claim": "A change of restore.md or audit.md needs the owner (second plan read; security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "refuses a change of the audit files restore.md and audit.md"
+      },
+      "assertion": "`audit file ${name}`).toBe(1);",
+      "breaks": [
+        {
+          "id": "A6-protected-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "    if (MEMORY_PROTECTED.includes(file.path)) {",
+              "replace": "    if (MEMORY_PROTECTED.includes(file.path.toUpperCase())) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A7-permission-rule",
+      "claim": "Each add, change or delete of a file with permission-rule needs the owner (order 130, Q3 B; DQ-1024, DQ-1025; security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "refuses each change of a permission rule, in each status"
+      },
+      "assertion": "`permission ${name}`).toBe(1);",
+      "breaks": [
+        {
+          "id": "A7-permission-rule-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "      entry.sides.some((side) => side.text !== null && hasPermissionField(side.text)),",
+              "replace": "      entry.sides.some((side) => side.name === \"head\" && side.text !== null && hasPermissionField(side.text)),"
+            }
+          ]
+        },
+        {
+          "id": "A7-permission-rule-2",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "      entry.sides.some((side) => side.text !== null && hasPermissionField(side.text)),",
+              "replace": "      entry.sides.some((side) => side.name === \"base\" && side.text !== null && hasPermissionField(side.text)),"
+            }
+          ]
+        },
+        {
+          "id": "A7-permission-rule-3",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  return frontmatter(text)?.fields.has(PERMISSION_RULE) === true;",
+              "replace": "  return frontmatter(text)?.fields.get(PERMISSION_RULE) === \"true\";"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A8-ci-identity",
+      "claim": "Only a run of the CI workflow of GitHub Actions passes a required check, and no check may be pending or red (DQ-1000, DQ-1020; security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "refuses when a CI check is pending, red, missing or from another source"
+      },
+      "assertion": "`ci ${name}`).toBe(1);",
+      "breaks": [
+        {
+          "id": "A8-ci-identity-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  check.appId === CI_APP_ID &&",
+              "replace": "  check.appId > 0 &&"
+            }
+          ]
+        },
+        {
+          "id": "A8-ci-identity-2",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  check.workflowPath === CI_WORKFLOW;",
+              "replace": "  check.workflowPath !== \"\";"
+            }
+          ]
+        },
+        {
+          "id": "A8-ci-identity-3",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "    if (check.state !== \"pending\" && check.state !== \"fail\") continue;",
+              "replace": "    if (check.state !== \"pending\") continue;"
+            }
+          ]
+        },
+        {
+          "id": "A8-ci-identity-4",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "    const state = states.find((value) => value !== \"pass\") ?? states[0] ?? \"missing\";",
+              "replace": "    const state = states[0] ?? \"missing\";"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A9-origin",
+      "claim": "No chief merge of a PR from a fork, by another author or for another base (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "gives no chief merge to a PR from a fork, by another author or for another base"
+      },
+      "assertion": "`origin ${name}`).toBe(1);",
+      "breaks": [
+        {
+          "id": "A9-origin-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (input.crossRepository) return",
+              "replace": "  if (input.crossRepository && input.number < 0) return"
+            }
+          ]
+        },
+        {
+          "id": "A9-origin-2",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (input.author !== input.expectedAuthor) {",
+              "replace": "  if (input.author === \"\") {"
+            }
+          ]
+        },
+        {
+          "id": "A9-origin-3",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (input.baseRef !== \"main\")",
+              "replace": "  if (input.baseRef === \"\")"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A10-live-base",
+      "claim": "A touched path that main changed after the split means merge main first (second plan read; security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "asks to merge main first when main changed a touched path after the split"
+      },
+      "assertion": "\"live base\").toBe(1);",
+      "breaks": [
+        {
+          "id": "A10-live-base-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  const stale = input.files.filter((file) => file.liveChanged);",
+              "replace": "  const stale = input.files.filter((file) => file.liveChanged && file.status === \"D\");"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A11-url",
+      "claim": "The merge line names the full URL of the PR (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "names the full URL of the PR in the merge line"
+      },
+      "assertion": "\"url\").toBe(MERGE_LINE);",
+      "breaks": [
+        {
+          "id": "A11-url-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "https://github.com/${input.repo}/pull/${input.number}",
+              "replace": "${input.number}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A12-mixed",
+      "claim": "A PR that changes memory and other files is mixed (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "refuses a PR that changes memory and other files"
+      },
+      "assertion": "\"mixed lines\").toEqual([",
+      "breaks": [
+        {
+          "id": "A12-mixed-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (!memory && input.files.some((file) => inMemory(file.path))) {",
+              "replace": "  if (!memory && input.files.some((file) => inMemory(file.path) && file.status !== \"M\")) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A13-mixed-move",
+      "claim": "A move out of the memory folder is mixed (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "reads a move out of the memory folder as mixed"
+      },
+      "assertion": "\"moved out\").toContain(\"MIXED\");",
+      "breaks": [
+        {
+          "id": "A13-mixed-move-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (!memory && input.files.some((file) => inMemory(file.path))) {",
+              "replace": "  if (!memory && input.files.some((file) => inMemory(file.path) && file.status !== \"D\")) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A14-no-text",
+      "claim": "A memory file with no text gives exit 2 (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "cannot check a memory file with no text"
+      },
+      "assertion": "\"memory no text\").toBe(2);",
+      "breaks": [
+        {
+          "id": "A14-no-text-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "    if (result.kind === \"failed\") return { ok: false, reason: result.reason };",
+              "replace": "    if (result.kind === \"failed\") continue;"
+            },
+            {
+              "find": "    throw new CannotCheck(`no ${read.side} text for ${read.path}`);",
+              "replace": "    return \"# x\\n\";"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A15-no-words",
+      "claim": "A memory PR with no private word list gives exit 2 (fail closed) (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "cannot check when the private word list is missing"
+      },
+      "assertion": "\"no word list\").toBe(2);",
+      "breaks": [
+        {
+          "id": "A15-no-words-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (input.privateWords === undefined)\n",
+              "replace": "  if (input.privateWords === undefined && input.files.length < 0)\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A16-cli-url",
+      "claim": "The merge line formatter uses the snapshot result (DQ-1051; not claimed: where the repository name comes from: it comes from the request arguments, and this break does not test that) (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 0 with the full-URL merge line for a PR with no listed path"
+      },
+      "assertion": "`docs line ${result.stderr}`).toContain(mergeLine(head));",
+      "breaks": [
+        {
+          "id": "A16-cli-url-1",
+          "file": ".agents/chief/scripts/lib/merge-check-snapshot.ts",
+          "edits": [
+            {
+              "find": "      repo: `${repo.owner}/${repo.name}`,",
+              "replace": "      repo: `${repo.name}/${repo.owner}`,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A17-cli-texts",
+      "claim": "The CLI reads the head text of a memory file by its head blob id, so a memory PR with no head text gets no merge line (DQ-1035; security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "reads the texts of a memory PR from git and gives the merge line"
+      },
+      "assertion": "expect(result.stdout, `memory header ${result.stderr}`).toContain(",
+      "breaks": [
+        {
+          "id": "A17-cli-texts-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (file.status !== \"D\") reads.push({ path, key, side: \"head\", blob: file.newBlob ?? \"\", kind });",
+              "replace": "  if (file.status !== \"D\") reads.push({ path, key, side: \"head\", blob: file.oldBlob ?? \"\", kind });"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A18-cli-permission",
+      "claim": "The CLI reads the head text of an added rule (order 130, DQ-1034; security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 1 for a memory PR that adds a permission rule (order 130)"
+      },
+      "assertion": "`permission ${result.stderr}`).toContain(\"the owner merges\");",
+      "breaks": [
+        {
+          "id": "A18-cli-permission-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "        text: (read.kind === \"memory\" ? UTF8 : MANIFEST).decode(result.stdout),",
+              "replace": "        text: read.kind === \"memory\" ? \"# x\\n\" : MANIFEST.decode(result.stdout),"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A19-cli-base",
+      "claim": "The CLI stops when its code, settings or an untracked script differs from the base tip (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 when the local list, settings or an untracked script differs from the base tip"
+      },
+      "assertion": "expect(result.stdout, name).toContain(\"differs from the base tip of the PR\");",
+      "breaks": [
+        {
+          "id": "A19-cli-base-1",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "    } else if (entry.blob !== here.blob) {",
+              "replace": "    } else if (entry.blob === \"\") {"
+            }
+          ]
+        },
+        {
+          "id": "A19-cli-base-2",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "const BASE_PATHS = [\"scripts\", \"package.json\", \".agents/chief/scripts\", SETTINGS_FILE];",
+              "replace": "const BASE_PATHS = [\"scripts\", \"package.json\", \".agents/chief/scripts\"];"
+            }
+          ]
+        },
+        {
+          "id": "A19-cli-base-3",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "  for (const path of local.keys()) problems.push(",
+              "replace": "  for (const path of [...local.keys()].slice(0, 0)) problems.push("
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A20-cli-moved-main",
+      "claim": "The base check uses the base tip of the snapshot, not this checkout (race test: the facts of one snapshot; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 when main moved past this checkout before the snapshot"
+      },
+      "assertion": "\"moved main\").toContain(\"differs from the base tip of the PR\");",
+      "breaks": [
+        {
+          "id": "A20-cli-moved-main-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "  const listing = git(\"ls-tree\", \"-r\", \"-z\", \"--full-tree\", baseTip, \"--\", ...BASE_PATHS);",
+              "replace": "  const listing = git(\"ls-tree\", \"-r\", \"-z\", \"--full-tree\", \"HEAD\", \"--\", ...BASE_PATHS);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A21-cli-live",
+      "claim": "The CLI finds a touched path that main changed after the split (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 1 when main changed a touched path after the split"
+      },
+      "assertion": "expect(result.stdout, `live line ${result.stderr}`).toContain(",
+      "breaks": [
+        {
+          "id": "A21-cli-live-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "      liveChanged: onMain.has(entry.key),",
+              "replace": "      liveChanged: false,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A22-cli-second-read",
+      "claim": "A second snapshot that differs stops the check (race test: the facts of one snapshot; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 when the second snapshot differs from the first"
+      },
+      "assertion": "expect(result.stdout, name).toContain(\"the PR changed during the check\");",
+      "breaks": [
+        {
+          "id": "A22-cli-second-read-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (!sameSnapshot(snapshot, second.snapshot)) {",
+              "replace": "  if (!sameSnapshot(snapshot, snapshot)) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A23-cli-no-list",
+      "claim": "A base tip with no list file stops the check (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 when the base tip has no list file"
+      },
+      "assertion": "\"no list\").toContain(\"the base tip has no list file\");",
+      "breaks": [
+        {
+          "id": "A23-cli-no-list-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (git(\"cat-file\", \"-e\", `${baseTip}:${LIST_FILE}`).status !== 0) {",
+              "replace": "  if (git(\"cat-file\", \"-e\", `${baseTip}:${LIST_FILE}`).status === 255) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A24-diff-mode",
+      "claim": "The diff reader gives the new mode of each path (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
+        "name": "reads each status, mode and text, and a rename as a delete and an add"
+      },
+      "assertion": "\"mode\").toBe(\"100755\");",
+      "breaks": [
+        {
+          "id": "A24-diff-mode-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "    const [, oldMode = \"\", newMode = \"\", oldBlob = \"\", newBlob = \"\", status = \"\"] = match;",
+              "replace": "    const [, newMode = \"\", oldMode = \"\", oldBlob = \"\", newBlob = \"\", status = \"\"] = match;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A25-diff-live",
+      "claim": "The diff reader marks a path that main changed after the split (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
+        "name": "marks a touched path that main changed after the split, and reads the merge-base text"
+      },
+      "assertion": "\"changed on main\").toBe(true);",
+      "breaks": [
+        {
+          "id": "A25-diff-live-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "      parseRaw(run([...diff, base, baseTip], \"read the changes of main\")).map(",
+              "replace": "      parseRaw(run([...diff, base, base], \"read the changes of main\")).map("
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A26-diff-snapshot-head",
+      "claim": "The diff reader reads the head id of the snapshot, not a moving PR ref (race test: the facts of one snapshot; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
+        "name": "reads the snapshot head, not the head that the PR ref has now"
+      },
+      "assertion": ").toEqual([\"docs/x.md\"]);",
+      "breaks": [
+        {
+          "id": "A26-diff-snapshot-head-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "    run([\"fetch\", \"--quiet\", \"--no-tags\", \"origin\", head, baseTip], \"fetch the commits of the PR\");",
+              "replace": "    run([\"fetch\", \"--quiet\", \"--no-tags\", \"origin\", \"refs/pull/1/head\", baseTip], \"fetch the commits of the PR\");"
+            },
+            {
+              "find": "    const entries = parseRaw(run([...diff, base, head], \"read the diff of the PR\"));",
+              "replace": "    const entries = parseRaw(run([...diff, base, \"FETCH_HEAD\"], \"read the diff of the PR\"));"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A27-diff-merge-bases",
+      "claim": "Two merge bases stop the check (security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
+        "name": "cannot check two merge bases, an unknown commit, or a manifest text that is not UTF-8"
+      },
+      "assertion": "\"two merge bases\").toContain(\"merge bases\");",
+      "breaks": [
+        {
+          "id": "A27-diff-merge-bases-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "    if (bases.length !== 1 || ",
+              "replace": "    if (bases.length < 1 || "
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A28-diff-utf8",
+      "claim": "A manifest text that is not UTF-8 stops the check (DQ-1022; security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
+        "name": "cannot check two merge bases, an unknown commit, or a manifest text that is not UTF-8"
+      },
+      "assertion": "\"text not UTF-8\").toContain(",
+      "breaks": [
+        {
+          "id": "A28-diff-utf8-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "const MANIFEST = new TextDecoder(\"utf-8\", { fatal: true });",
+              "replace": "const MANIFEST = new TextDecoder(\"utf-8\", { fatal: false });"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A29-snapshot-facts",
+      "claim": "The snapshot gives the app and the workflow file of each run (DQ-1020; security test: who may merge, AGENTS.md §7, orders 108 and 130; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-snapshot.test.ts",
+        "name": "reads each fact of the PR and each check with its app and workflow file"
+      },
+      "assertion": "\"facts\").toEqual({",
+      "breaks": [
+        {
+          "id": "A29-snapshot-facts-1",
+          "file": ".agents/chief/scripts/lib/merge-check-snapshot.ts",
+          "edits": [
+            {
+              "find": "    appId: node.checkSuite.app?.databaseId ?? -1,",
+              "replace": "    appId: node.databaseId,"
+            }
+          ]
+        },
+        {
+          "id": "A29-snapshot-facts-2",
+          "file": ".agents/chief/scripts/lib/merge-check-snapshot.ts",
+          "edits": [
+            {
+              "find": "    workflowPath: node.checkSuite.workflowRun?.file?.path ?? null,",
+              "replace": "    workflowPath: node.name,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A30-snapshot-stop",
+      "claim": "A stale last commit or a second page of checks stops the check (race test: the facts of one snapshot; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-snapshot.test.ts",
+        "name": "cannot check a gh error, bad JSON, a missing field, a second page or a stale commit"
+      },
+      "assertion": "expect(read(stdout, status).ok, name).toBe(false);",
+      "breaks": [
+        {
+          "id": "A30-snapshot-stop-1",
+          "file": ".agents/chief/scripts/lib/merge-check-snapshot.ts",
+          "edits": [
+            {
+              "find": "  if (commit.oid !== pr.headRefOid) {",
+              "replace": "  if (commit.oid === \"\") {"
+            }
+          ]
+        },
+        {
+          "id": "A30-snapshot-stop-2",
+          "file": ".agents/chief/scripts/lib/merge-check-snapshot.ts",
+          "edits": [
+            {
+              "find": "  if (contexts?.pageInfo.hasNextPage === true) {",
+              "replace": "  if (contexts?.pageInfo.hasNextPage === undefined) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A31-snapshot-same",
+      "claim": "Two snapshots are the same only when each field is the same (DQ-1022; race test: the facts of one snapshot; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-snapshot.test.ts",
+        "name": "is false when any one field of the snapshot differs"
+      },
+      "assertion": "expect(sameSnapshot(base(), snapshotOf(stdout)), name).toBe(false);",
+      "breaks": [
+        {
+          "id": "A31-snapshot-same-1",
+          "file": ".agents/chief/scripts/lib/merge-check-snapshot.ts",
+          "edits": [
+            {
+              "find": "  return JSON.stringify(a) === JSON.stringify(b);",
+              "replace": "  return a.head === b.head;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q1-not-in-record",
+      "claim": "A quote that is not in the owner record is named (order 109) (security test: who may merge, AGENTS.md §7, order 108)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/owner-quotes.test.ts",
+        "name": "names a quote that is not in the record"
+      },
+      "assertion": "\"not in record\").toEqual([",
+      "breaks": [
+        {
+          "id": "Q1-not-in-record-1",
+          "file": ".agents/chief/scripts/lib/owner-quotes.ts",
+          "edits": [
+            {
+              "find": "      } else if (!records.some((record) => record.includes(normalizeQuote(quote)))) {",
+              "replace": "      } else if (records.length < 0) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q4-case",
+      "claim": "The quote match keeps case (DQ-1039) (security test: who may merge, AGENTS.md §7, order 108)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/owner-quotes.test.ts",
+        "name": "needs the same case and punctuation"
+      },
+      "assertion": "\"case\").toHaveLength(1);",
+      "breaks": [
+        {
+          "id": "Q4-case-1",
+          "file": ".agents/chief/scripts/lib/owner-quotes.ts",
+          "edits": [
+            {
+              "find": "  return text.normalize(\"NFC\").replace(/\\s+/g, \" \").trim();",
+              "replace": "  return text.normalize(\"NFC\").replace(/\\s+/g, \" \").trim().toLowerCase();"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R3-one-record",
+      "claim": "A quote must be inside one owner record file (security test: who may merge, AGENTS.md §7, orders 108 and 109; review round 3)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/owner-quotes.test.ts",
+        "name": "does not join two record files into one quote"
+      },
+      "assertion": "expect(result.problems.length, \"joined records\").toBe(1);",
+      "breaks": [
+        {
+          "id": "R3-one-record-1",
+          "file": ".agents/chief/scripts/lib/owner-quotes.ts",
+          "edits": [
+            {
+              "find": "      } else if (!records.some((record) => record.includes(normalizeQuote(quote)))) {",
+              "replace": "      } else if (!records.join(\" \").includes(normalizeQuote(quote))) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A32-nfc",
+      "claim": "A quote in NFC matches a record in NFD (DQ-1024) (security test: who may merge, AGENTS.md §7, orders 108 and 109; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/owner-quotes.test.ts",
+        "name": "matches a quote in NFC with a record in NFD and other white space"
+      },
+      "assertion": "\"nfc quote, nfd record\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "A32-nfc-1",
+          "file": ".agents/chief/scripts/lib/owner-quotes.ts",
+          "edits": [
+            {
+              "find": "  return text.normalize(\"NFC\").replace(/\\s+/g, \" \").trim();",
+              "replace": "  return text.replace(/\\s+/g, \" \").trim();"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "M13-tracked",
+      "claim": "A tracked short-term file is named as one; the allowlist refuses it too (security test: who may merge, AGENTS.md §7, order 108)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "refuses a tracked short-term file"
+      },
+      "assertion": "\"short-term line\").toBe(",
+      "breaks": [
+        {
+          "id": "M13-tracked-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (tracked.length > 0) {",
+              "replace": "  if (tracked.length < 0) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A33-word-count",
+      "claim": "The word count of a quote uses the normalized text (DQ-1024) (security test: who may merge, AGENTS.md §7, orders 108 and 109; option A)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/owner-quotes.test.ts",
+        "name": "counts the words of the normalized quote"
+      },
+      "assertion": "\"tabbed quote\").toEqual(",
+      "breaks": [
+        {
+          "id": "A33-word-count-1",
+          "file": ".agents/chief/scripts/lib/owner-quotes.ts",
+          "edits": [
+            {
+              "find": "normalizeQuote(text).split(\" \").filter(Boolean).length;",
+              "replace": "text.split(\" \").filter(Boolean).length;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D1-ascii-path",
+      "claim": "The diff reader marks a path with a byte outside 0x21-0x7E as unsupported (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
+        "name": "marks a path with a BOM, a non-ASCII letter or a space as unsupported"
+      },
+      "assertion": "\"bom path\").toBe(false);",
+      "breaks": [
+        {
+          "id": "D1-ascii-path-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "  bytes.length > 0 && bytes.every((byte) => byte >= 0x21 && byte <= 0x7e);",
+              "replace": "  bytes.length > 0 || bytes.every((byte) => byte >= 0x21 && byte <= 0x7e);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D2-unsupported-path",
+      "claim": "A path that is not printable ASCII stops the chief in each PR (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops the chief for a path that is not printable ASCII"
+      },
+      "assertion": "\"unsupported path line\").toContain(",
+      "breaks": [
+        {
+          "id": "D2-unsupported-path-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  const unsupported = input.files.filter((file) => !file.supported);",
+              "replace": "  const unsupported = input.files.filter((file) => file.path === \"\");"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D3-grammar",
+      "claim": "A memory path outside the grammar needs the owner (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "refuses a memory path outside the grammar"
+      },
+      "assertion": "`grammar ${path}`).toBe(1);",
+      "breaks": [
+        {
+          "id": "D3-grammar-1",
+          "file": ".agents/chief/scripts/lib/merge-list.ts",
+          "edits": [
+            {
+              "find": "  /^\\.agents\\/chief\\/memories\\/long-term\\/([a-z0-9][a-z0-9-]*\\/)*[A-Za-z0-9][A-Za-z0-9._-]*\\.md$/;",
+              "replace": "  /^\\.agents\\/chief\\/memories\\/long-term\\/.+\\.md$/;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D4-utf8-text",
+      "claim": "A memory text that is not UTF-8 stops the chief, on each side (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops for a text that is not UTF-8, on each side"
+      },
+      "assertion": "`utf-8 ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "D4-utf8-text-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "        problems.push(`${file.path}: the chief stops: the ${side.name} text is not UTF-8`);\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D5-utf8-reader",
+      "claim": "The blob reader gives unsupported text for a memory blob that is not UTF-8 (security test: deny by default, plan delta r1, order 133; plan delta r2 §2)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
+        "name": "reads a blob by id with the decoder of its kind"
+      },
+      "assertion": "\"memory not UTF-8\").toEqual({",
+      "breaks": [
+        {
+          "id": "D5-utf8-reader-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "        ? { kind: \"unsupported\" }",
+              "replace": "        ? { kind: \"text\", text: \"# x\\n\" }"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D6-classes",
+      "claim": "A memory text with a character outside the allowed classes stops the chief (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops for a character outside the allowed classes: CR, U+2028, a vertical tab, a BOM"
+      },
+      "assertion": "`class ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "D6-classes-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "const TEXT_CLASSES = /^[\\p{L}\\p{M}\\p{N}\\p{P}\\p{S} \\n\\t]*$/u;",
+              "replace": "const TEXT_CLASSES = /^[\\p{L}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Z}\\n\\t]*$/u;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D7-opening",
+      "claim": "A memory text that opens with neither front matter nor a heading stops the chief, on each side (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops for a text that does not open with front matter or a heading"
+      },
+      "assertion": "`opening ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "D7-opening-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (text.startsWith(\"# \")) return body(text);",
+              "replace": "  if (!text.startsWith(\"---\")) return body(text);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D8-repeated-key",
+      "claim": "Front matter with a repeated key stops the chief, on each side (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops for front matter with a repeated key, on each side"
+      },
+      "assertion": "`repeated ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "D8-repeated-key-1",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "    if (field?.[1] === undefined || fields.has(field[1])) bad.push(line);",
+              "replace": "    if (field?.[1] === undefined) bad.push(line);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D9-front-matter",
+      "claim": "Front matter with a bad line or a bad closing line stops the chief (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops for front matter with a bad line or a bad closing line"
+      },
+      "assertion": "`front matter ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "D9-front-matter-1",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "  const match = /^---\\n([\\s\\S]*?)\\n---(?:\\n|$)([\\s\\S]*)$/.exec(text);",
+              "replace": "  const match = /^---\\n([\\s\\S]*?)\\n---\\n?([\\s\\S]*)$/.exec(text);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D10-keys",
+      "claim": "A front-matter key outside the list stops the chief, on each side (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops for a front-matter key that is not in the list"
+      },
+      "assertion": "`key ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "D10-keys-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "    if (!KEYS.has(key)) problems.push(",
+              "replace": "    if (key === \"\") problems.push("
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D11-body-field",
+      "claim": "The permission field in a body line, in any case, stops the chief (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops for the permission field in the body, in any case"
+      },
+      "assertion": "`body ${JSON.stringify(text)}`).toMatch(",
+      "breaks": [
+        {
+          "id": "D11-body-field-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "const FIELD_IN_BODY = /^\\s*permission-rule\\s*:/im;",
+              "replace": "const FIELD_IN_BODY = /^\\s*permission-rule\\s*:/m;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D12-start-origin",
+      "claim": "An origin that is not the repository on github.com gives exit 2 and no gh call (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 with no gh call for an origin that is not the repository"
+      },
+      "assertion": ").toMatch(/^2 [\\s\\S]*the origin remote is not[\\s\\S]* calls 0$/);",
+      "breaks": [
+        {
+          "id": "D12-start-origin-1",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "    if (repo === undefined || `${repo.owner}/${repo.name}` !== REPOSITORY) {",
+              "replace": "    if (repo === undefined) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D13-start-history",
+      "claim": "A shallow clone or a grafts file gives exit 2 and no gh call (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 with no gh call for a shallow clone or a grafts file"
+      },
+      "assertion": ").toMatch(/^2 [\\s\\S]*the full history[\\s\\S]* calls 0$/);",
+      "breaks": [
+        {
+          "id": "D13-start-history-1",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "  } else if (shallow === \"true\" || facts.grafts) {",
+              "replace": "  } else if (shallow === \"true\") {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D14-start-settings",
+      "claim": "A diff setting outside the allowlist gives exit 2 and no gh call (DQ-1029; security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 with no gh call for a git setting that can change the diff"
+      },
+      "assertion": ").toMatch(want);",
+      "breaks": [
+        {
+          "id": "D14-start-settings-1",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "const WATCHED = [\"diff.\", \"submodule.\", \"extensions.\"];",
+              "replace": "const WATCHED = [\"submodule.\", \"extensions.\"];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D15-policy-mode",
+      "claim": "A policy file that differs by its executable bit or line ends gives exit 2 (G2; security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 for a policy file that differs only by its executable bit or its line ends"
+      },
+      "assertion": "`policy ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "D15-policy-mode-1",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "    const mode = here.executable ? \"100755\" : \"100644\";",
+              "replace": "    const mode = entry.mode;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D16-start-unread",
+      "claim": "A git setting list that cannot be read gives exit 2 and no gh call (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 with no gh call when git cannot read the settings"
+      },
+      "assertion": ").toMatch(/^2 [\\s\\S]*git could not read[\\s\\S]* calls 0$/);",
+      "breaks": [
+        {
+          "id": "D16-start-unread-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "    config: read(\"config\", \"--list\", \"-z\", \"--includes\"),",
+              "replace": "    config: read(\"config\", \"--list\", \"-z\", \"--includes\") ?? \"\","
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D17-env",
+      "claim": "No GIT_ variable of the parent environment reaches git (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "does not pass a GIT_DIR of the parent environment to git"
+      },
+      "assertion": "`git dir ${result.stderr}`).toContain(mergeLine(head));",
+      "breaks": [
+        {
+          "id": "D17-env-1",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "    if (!key.startsWith(\"GIT_\")) env[key] = value;",
+              "replace": "    env[key] = value;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D18-host",
+      "claim": "gh gets the fixed host github.com (security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-snapshot.test.ts",
+        "name": "sends the query as a constant and the values as variables"
+      },
+      "assertion": "\"one call\").toEqual([",
+      "breaks": [
+        {
+          "id": "D18-host-1",
+          "file": ".agents/chief/scripts/lib/merge-check-snapshot.ts",
+          "edits": [
+            {
+              "find": "    \"--hostname\",\n    \"github.com\",\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D19-gitlink",
+      "claim": "A setting cannot hide a gitlink from the diff reader (DQ-1029; security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
+        "name": "keeps a gitlink when a setting asks git to ignore submodules"
+      },
+      "assertion": "`gitlink with ${setting}`).toBe(\"160000\");",
+      "breaks": [
+        {
+          "id": "D19-gitlink-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "      \"--ignore-submodules=none\",\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D20-record",
+      "claim": "A memory PR with no owner record gives exit 2, also with no rule (DQ-1031; security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "cannot check a memory PR with no owner record, also when no rule changes"
+      },
+      "assertion": "\"note with no record\").toBe(2);",
+      "breaks": [
+        {
+          "id": "D20-record-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if ((input.record ?? []).every((text) => text.trim() === \"\")) {",
+              "replace": "  if ((input.record ?? []).length < 0) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D21-not-open",
+      "claim": "A PR that is merged or closed gives exit 2 (DQ-1033; security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "cannot check a PR that is merged or closed"
+      },
+      "assertion": "`state ${state}`).toBe(2);",
+      "breaks": [
+        {
+          "id": "D21-not-open-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (input.state !== \"OPEN\") {",
+              "replace": "  if (input.state === \"CLOSED\") {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D22-state-schema",
+      "claim": "A PR state outside OPEN, CLOSED and MERGED cannot be checked (DQ-1033; security test: deny by default, plan delta r1, order 133)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-snapshot.test.ts",
+        "name": "cannot check a PR state that is not OPEN, CLOSED or MERGED"
+      },
+      "assertion": "\"unknown state\").toBe(false);",
+      "breaks": [
+        {
+          "id": "D22-state-schema-1",
+          "file": ".agents/chief/scripts/lib/merge-check-snapshot.ts",
+          "edits": [
+            {
+              "find": "        state: z.enum([\"OPEN\", \"CLOSED\", \"MERGED\"]),",
+              "replace": "        state: z.string().min(1),"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E1-cli-record-first",
+      "claim": "The CLI reads no text when a path, a status or a mode decides (DQ-1045; the gitlink has a grammar path, so only its mode decides, A4 of order 152; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "reads no text when a path, a status or a mode decides"
+      },
+      "assertion": "expect(said, name).toMatch(new RegExp(",
+      "breaks": [
+        {
+          "id": "E1-cli-record-first-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "  const step = decideRecords(input);\n  let texts",
+              "replace": "  readTexts(diff.files.map((file) => ({ path: file.path, key: file.key, side: \"head\" as const, blob: file.newBlob ?? \"\", kind: \"memory\" as const })), blobReader(gitBytes));\n  const step = decideRecords(input);\n  let texts"
+            }
+          ]
+        },
+        {
+          "id": "E1-cli-record-first-2",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "      file.newMode !== FILE_MODE ||\n",
+              "replace": ""
+            },
+            {
+              "find": "  const form = textProblems(memory);\n",
+              "replace": "  const modes = input.files.filter((item) => item.newMode !== FILE_MODE);\n  if (modes.length > 0) return memoryFail(header, modes.map((item) => `${item.path}: mode ${item.newMode}`));\n  const form = textProblems(memory);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2-record-first",
+      "claim": "The record step reads no text when a path, a status or a mode decides (DQ-1045; the gitlink has a grammar path, so only its mode decides, A4 of order 152; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "the record step reads no text when a path, a status or a mode decides"
+      },
+      "assertion": "expect(said, `record ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "E2-record-first-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  const step = decideRecords(input);\n  if (\"done\" in step) return step.done;",
+              "replace": "  input.files.forEach((file) => reader({ path: file.path, key: file.key, side: \"head\", blob: \"\", kind: \"memory\" }));\n  const step = decideRecords(input);\n  if (\"done\" in step) return step.done;"
+            }
+          ]
+        },
+        {
+          "id": "E2-record-first-2",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "      file.newMode !== FILE_MODE ||\n",
+              "replace": ""
+            },
+            {
+              "find": "  const form = textProblems(memory);\n",
+              "replace": "  const modes = input.files.filter((item) => item.newMode !== FILE_MODE);\n  if (modes.length > 0) return memoryFail(header, modes.map((item) => `${item.path}: mode ${item.newMode}`));\n  const form = textProblems(memory);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E3-cli-ci-first",
+      "claim": "The CLI reads no text when CI decides, for a memory PR and for a changed manifest (DQ-1045, grill r2 point 2; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "reads no text when CI decides, for a memory PR and for a changed manifest"
+      },
+      "assertion": "expect(said, name).toMatch(/^1 [\\s\\S]*CI check",
+      "breaks": [
+        {
+          "id": "E3-cli-ci-first-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  const ci = ciProblems(input.checks);\n  if (ci.length > 0) return { done: memoryFail(header, ci) };",
+              "replace": "  const ci: string[] = [];\n  if (ci.length > 0) return { done: memoryFail(header, ci) };"
+            },
+            {
+              "find": "  const form = textProblems(memory);\n",
+              "replace": "  const late = ciProblems(input.checks);\n  if (late.length > 0) return memoryFail(header, late);\n  const form = textProblems(memory);\n"
+            }
+          ]
+        },
+        {
+          "id": "E3-cli-ci-first-2",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  const ci = ciProblems(input.checks);\n  if (ci.length > 0) {",
+              "replace": "  const ci: string[] = [];\n  if (ci.length > 0) {"
+            },
+            {
+              "find": "  if (listed.length > 0) return listedResult(header, listed);\n  return {",
+              "replace": "  const late = ciProblems(input.checks);\n  if (late.length > 0) return { exit: 1, lines: [header, ...late.map((p) => `CI check: ${p}`)] };\n  if (listed.length > 0) return listedResult(header, listed);\n  return {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E4-ci-first",
+      "claim": "The record step reads no text when CI decides (DQ-1045, grill r2 point 2; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "the record step reads no text when CI decides"
+      },
+      "assertion": "expect(said, `record ${kind} ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "E4-ci-first-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  const ci = ciProblems(input.checks);\n  if (ci.length > 0) return { done: memoryFail(header, ci) };",
+              "replace": "  const ci: string[] = [];\n  if (ci.length > 0) return { done: memoryFail(header, ci) };"
+            },
+            {
+              "find": "  const form = textProblems(memory);\n",
+              "replace": "  const late = ciProblems(input.checks);\n  if (late.length > 0) return memoryFail(header, late);\n  const form = textProblems(memory);\n"
+            }
+          ]
+        },
+        {
+          "id": "E4-ci-first-2",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  const ci = ciProblems(input.checks);\n  if (ci.length > 0) {",
+              "replace": "  const ci: string[] = [];\n  if (ci.length > 0) {"
+            },
+            {
+              "find": "  if (listed.length > 0) return listedResult(header, listed);\n  return {",
+              "replace": "  const late = ciProblems(input.checks);\n  if (late.length > 0) return { exit: 1, lines: [header, ...late.map((p) => `CI check: ${p}`)] };\n  if (listed.length > 0) return listedResult(header, listed);\n  return {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E5-one-read",
+      "claim": "The judgment reads each needed side of a file one time (plan delta r2 §2; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "reads each side of a changed note one time, also when two files share a blob id"
+      },
+      "assertion": "expect(sides, \"one read for each side\").toBe(",
+      "breaks": [
+        {
+          "id": "E5-one-read-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "    const result = reader(read);\n",
+              "replace": "    if (read.side === \"head\") reader(read);\n    const result = reader(read);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E6-cli-one-read",
+      "claim": "The CLI reads one text for an added note and two for a changed note (valid control, plan delta r2 §7; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "reads each needed text one time on a passing memory PR"
+      },
+      "assertion": "expect(add.said, \"added note\").toMatch(",
+      "breaks": [
+        {
+          "id": "E6-cli-one-read-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "    const result = reader(read);\n",
+              "replace": "    if (read.side === \"head\") reader(read);\n    const result = reader(read);\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E7-read-failed",
+      "claim": "A failed read gives exit 2 (plan delta r2 §2; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "cannot check when the reader fails, for a note and for a manifest"
+      },
+      "assertion": "expect(said, `failed ${path}`).toMatch(",
+      "breaks": [
+        {
+          "id": "E7-read-failed-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (!read.ok) return cannotCheck({ pr: input.number, reason: read.reason, memory: step.memory });",
+              "replace": "  if (!read.ok) return { exit: 1, lines: [read.reason] };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E8-path-bytes",
+      "claim": "The live-path check compares path bytes, not the escaped form (DQ-1046; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
+        "name": "compares the paths that main changed by their bytes"
+      },
+      "assertion": "\"a backslash path is not the space path\").toBe(false);",
+      "breaks": [
+        {
+          "id": "E8-path-bytes-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "      parseRaw(run([...diff, base, baseTip], \"read the changes of main\")).map((entry) => entry.key),",
+              "replace": "      parseRaw(run([...diff, base, baseTip], \"read the changes of main\")).map((entry) => entry.path),"
+            },
+            {
+              "find": "      liveChanged: onMain.has(entry.key),",
+              "replace": "      liveChanged: onMain.has(entry.path),"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E9-separator",
+      "claim": "A front-matter line with no space after the colon stops the chief, on each side (DQ-1041; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops for a front-matter line with no space after the colon, on each side"
+      },
+      "assertion": "expect(stops(files), `separator ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "E9-separator-1",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "    const field = /^([a-z][a-z-]*): (.*)$/.exec(line);",
+              "replace": "    const field = /^([a-z][a-z-]*): ?(.*)$/.exec(line);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E9b-separator-marker",
+      "claim": "permission-rule:true with no space stops the chief, not the owner path (C1 A, the chief, 2026-11-20; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops for permission-rule:true with no space, not the owner path"
+      },
+      "assertion": "expect(marker, \"permission-rule:true\").toMatch(",
+      "breaks": [
+        {
+          "id": "E9b-separator-marker-1",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "    const field = /^([a-z][a-z-]*): (.*)$/.exec(line);",
+              "replace": "    const field = /^([a-z][a-z-]*): ?(.*)$/.exec(line);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E10-check-memory-separator",
+      "claim": "check:memory gives a front-matter line with no space after the colon as a bad line (DQ-1041; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/check-memory.test.ts",
+        "name": "gives a line with no space after the colon as a bad line, and keeps key and value"
+      },
+      "assertion": "\"no space\").toEqual([\"title:x\"]);",
+      "breaks": [
+        {
+          "id": "E10-check-memory-separator-1",
+          "file": ".agents/chief/scripts/lib/check-memory.ts",
+          "edits": [
+            {
+              "find": "    const field = /^([a-z][a-z-]*): (.*)$/.exec(line);",
+              "replace": "    const field = /^([a-z][a-z-]*): ?(.*)$/.exec(line);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E11-manifest-bom",
+      "claim": "A manifest with a BOM is decoded as at d748524 (DQ-1047; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "passes a manifest with a BOM and a description change"
+      },
+      "assertion": "expect(run.said, \"bom manifest\").toMatch(",
+      "breaks": [
+        {
+          "id": "E11-manifest-bom-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "const MANIFEST = new TextDecoder(\"utf-8\", { fatal: true });",
+              "replace": "const MANIFEST = new TextDecoder(\"utf-8\", { fatal: true, ignoreBOM: true });"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E11b-reader-manifest-bom",
+      "claim": "The blob reader removes the BOM of a manifest (DQ-1047; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
+        "name": "reads a blob by id with the decoder of its kind"
+      },
+      "assertion": "\"manifest BOM removed\").toEqual({",
+      "breaks": [
+        {
+          "id": "E11b-reader-manifest-bom-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "const MANIFEST = new TextDecoder(\"utf-8\", { fatal: true });",
+              "replace": "const MANIFEST = new TextDecoder(\"utf-8\", { fatal: true, ignoreBOM: true });"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E12-origin",
+      "claim": "An origin with more or less than one value (no value too), or a value that is not printable ASCII (a trailing space, a BOM, a DEL byte, a TAB), gives exit 2 and no gh call (DQ-1043, grill 2 point 1, A3 of order 152; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 with no gh call for an origin with more or less than one exact value"
+      },
+      "assertion": "expect(said, `origin ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "E12-origin-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "    origin: origin.status === 0 ? splitNul(origin.stdout) : none ? [] : undefined,",
+              "replace": "    origin: origin.status === 0 ? splitNul(origin.stdout).slice(-1) : none ? [] : undefined,"
+            }
+          ]
+        },
+        {
+          "id": "E12-origin-2",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "    origin: origin.status === 0 ? splitNul(origin.stdout) : none ? [] : undefined,",
+              "replace": "    origin: origin.status === 0 ? splitNul(origin.stdout).map((v) => Buffer.from(v.toString(\"latin1\").trim())) : none ? [] : undefined,"
+            }
+          ]
+        },
+        {
+          "id": "E12-origin-3",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "    origin: origin.status === 0 ? splitNul(origin.stdout) : none ? [] : undefined,",
+              "replace": "    origin: origin.status === 0 ? splitNul(Buffer.from(UTF8.decode(origin.stdout))) : none ? [] : undefined,"
+            }
+          ]
+        },
+        {
+          "id": "E12-origin-4",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "  const none = origin.status === 1 && origin.stdout.length === 0;",
+              "replace": "  const none = origin.status < 0;"
+            }
+          ]
+        },
+        {
+          "id": "E12-origin-5",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "  if (values?.length !== 1 || value === undefined || !isPrintable(value)) return undefined;",
+              "replace": "  if (values?.length !== 1 || value === undefined || !value.every((byte) => byte === 0x09 || (byte >= 0x21 && byte <= 0x7f))) return undefined;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E13-gh-utf8",
+      "claim": "A gh answer that is not UTF-8 cannot be checked (plan delta r2 §5; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-snapshot.test.ts",
+        "name": "cannot check a gh answer that is not UTF-8"
+      },
+      "assertion": "\"not UTF-8\").toContain(\"not UTF-8\");",
+      "breaks": [
+        {
+          "id": "E13-gh-utf8-1",
+          "file": ".agents/chief/scripts/lib/merge-check-snapshot.ts",
+          "edits": [
+            {
+              "find": "const GH_TEXT = new TextDecoder(\"utf-8\", { fatal: true });",
+              "replace": "const GH_TEXT = new TextDecoder(\"utf-8\", { fatal: false });"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E14-cli-walk",
+      "claim": "The CLI gives exit 2 for a policy file name that is not printable ASCII and for a policy folder that it cannot read (DQ-1042, DQ-1044; a name with a space stops in the walk, O5 of order 152; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 for a policy file name that is not printable ASCII, or a folder it cannot read"
+      },
+      "assertion": "expect(said, `walk ${name}`).toMatch(pattern);",
+      "breaks": [
+        {
+          "id": "E14-cli-walk-1",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "        if (!isPrintable(name)) {",
+              "replace": "        if (name.length < 0) {"
+            },
+            {
+              "find": "        walk(`${path}/${name.toString(\"latin1\")}`, false);",
+              "replace": "        walk(`${path}/${name.toString(\"utf8\")}`, false);"
+            },
+            {
+              "find": "      if (top) return;",
+              "replace": "      if (top || !top) return;"
+            }
+          ]
+        },
+        {
+          "id": "E14-cli-walk-2",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "      const names = [...call({ op: \"readdir\", path }, () => fs.readdir(path))].sort((a, b) =>",
+              "replace": "      const names = [...(() => { try { return fs.readdir(path); } catch { return []; } })()].sort((a, b) =>"
+            }
+          ]
+        },
+        {
+          "id": "E14-cli-walk-3",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "        if (!isPrintable(name)) {",
+              "replace": "        if (name.includes(0xff)) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E15a-walk-gone",
+      "claim": "An entry of readdir that lstat does not find stops the walk (DQ-1042; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+        "name": "stops for an entry of readdir that lstat does not find"
+      },
+      "assertion": "\"gone entry\").toMatch(",
+      "breaks": [
+        {
+          "id": "E15a-walk-gone-1",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "      if (top) return;",
+              "replace": "      if (top || !top) return;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E15b-walk-names",
+      "claim": "A policy name with a byte that is not printable ASCII stops the walk (DQ-1042; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+        "name": "stops for a name with a byte that is not printable ASCII"
+      },
+      "assertion": "expect(said(walkPolicy([\"scripts\"], fs)), `name ${name.toString(\"hex\")}`).toMatch(",
+      "breaks": [
+        {
+          "id": "E15b-walk-names-1",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "        if (!isPrintable(name)) {",
+              "replace": "        if (name.length < 0) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E15c-walk-error",
+      "claim": "A folder that the walk cannot read is a stop, not a silent drop or an exception (DQ-1044; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+        "name": "stops with a reason when a folder cannot be read"
+      },
+      "assertion": "\"unreadable folder\").toMatch(",
+      "breaks": [
+        {
+          "id": "E15c-walk-error-1",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "      const names = [...call({ op: \"readdir\", path }, () => fs.readdir(path))].sort((a, b) =>",
+              "replace": "      const names = [...(() => { try { return fs.readdir(path); } catch { return []; } })()].sort((a, b) =>"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E15d-walk-top",
+      "claim": "A missing top policy path is allowed; the base tip list names it (valid control, plan delta r2 §5; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+        "name": "lists each file of a folder and allows a missing top path"
+      },
+      "assertion": "\"files\").toBe(\"ok scripts/a.ts\");",
+      "breaks": [
+        {
+          "id": "E15d-walk-top-1",
+          "file": ".agents/chief/scripts/lib/merge-check-start.ts",
+          "edits": [
+            {
+              "find": "      if (top) return;",
+              "replace": "      if (top && path === \"\") return;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E16-sides",
+      "claim": "A memory text that is not UTF-8 stops the chief, on each side alone (DQ-1050; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops the chief for a memory text that is not UTF-8, on each side alone"
+      },
+      "assertion": "expect(said, `unsupported ${side}`).toMatch(pattern);",
+      "breaks": [
+        {
+          "id": "E16-sides-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "      if (side.text === null) {\n",
+              "replace": "      if (side.text === null && side.name === \"base\") continue;\n      if (side.text === null) {\n"
+            }
+          ]
+        },
+        {
+          "id": "E16-sides-2",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "      if (side.text === null) {\n",
+              "replace": "      if (side.text === null && side.name === \"head\") continue;\n      if (side.text === null) {\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E18a-reads-before-snapshot-2",
+      "claim": "The CLI reads each text before the second snapshot (grill r2 point 2; race test: the facts of one snapshot, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "reads each text before the second snapshot, and holds a record result until the compare"
+      },
+      "assertion": "`${kind} reads first`).toBe(true);",
+      "breaks": [
+        {
+          "id": "E18a-reads-before-snapshot-2-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "  let texts: Texts = new Map();\n  if (\"reads\" in step) {\n    const read = readTexts(step.reads, blobReader(gitBytes));\n    if (!read.ok) return stop(read.reason, step.memory);\n    texts = read.texts;\n  }\n",
+              "replace": "  let texts: Texts = new Map();\n"
+            },
+            {
+              "find": "  return \"done\" in step ? step.done : decideContent(input, texts);",
+              "replace": "  if (\"reads\" in step) {\n    const read = readTexts(step.reads, blobReader(gitBytes));\n    if (!read.ok) return stop(read.reason, step.memory);\n    texts = read.texts;\n  }\n  return \"done\" in step ? step.done : decideContent(input, texts);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E18b-held-result",
+      "claim": "The CLI holds a record result until the two snapshots match (grill r2 point 2; race test: the facts of one snapshot, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "reads each text before the second snapshot, and holds a record result until the compare"
+      },
+      "assertion": "expect(held.said, \"held result\").toMatch(",
+      "breaks": [
+        {
+          "id": "E18b-held-result-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "  const second = readSnapshot({ repo, number }, gh);",
+              "replace": "  if (\"done\" in step && step.done.exit !== 0) return step.done;\n  const second = readSnapshot({ repo, number }, gh);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E20-records-only",
+      "claim": "readDiff reads no blob (plan delta r2 §2; security test: deny by default, plan delta r2, order 147)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
+        "name": "reads each status, mode and text, and a rename as a delete and an add"
+      },
+      "assertion": "expect(blobReads, \"no blob read\").toBe(0);",
+      "breaks": [
+        {
+          "id": "E20-records-only-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "    return { ok: true, files };",
+              "replace": "    for (const file of files) git([\"cat-file\", \"blob\", file.newBlob ?? \"\"]);\n    return { ok: true, files };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F1-record-key",
+      "claim": "Each record of readDiff keeps the path bytes, also for two paths with one escaped form (A2 of order 152; plan delta r2 §2; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/lib/merge-check-diff.test.ts",
+        "name": "keeps the path bytes in each record, also for two paths with one escaped form"
+      },
+      "assertion": "expect(keys, \"one key for each path\").toEqual(want);",
+      "breaks": [
+        {
+          "id": "F1-record-key-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "      key: entry.key,\n",
+              "replace": "      key: entry.path,\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F2-text-key",
+      "claim": "A text belongs to the side and the path bytes of its file (A2 of order 152; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "keeps the texts of two files apart by their path bytes"
+      },
+      "assertion": "expect(said, \"one text for each key\").toBe(\"aa bb\");",
+      "breaks": [
+        {
+          "id": "F2-text-key-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "export const readKey = (read: { side: string; key: string }): string => `${read.side} ${read.key}`;",
+              "replace": "export const readKey = (read: { side: string; key: string }): string => `${read.side}`;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F3-memory-stop",
+      "claim": "A memory PR whose snapshot 2 differs or cannot be read gets exit 2 and \"Do not merge it\", not a merge instruction for the owner (A1 of order 152; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "tells no one to merge a memory PR when snapshot 2 differs or cannot be read"
+      },
+      "assertion": "expect(said, `memory ${name}`).toMatch(",
+      "breaks": [
+        {
+          "id": "F3-memory-stop-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "    return stop(\"the PR changed during the check (head, base, state or checks)\", step.memory);",
+              "replace": "    return stop(\"the PR changed during the check (head, base, state or checks)\");"
+            }
+          ]
+        },
+        {
+          "id": "F3-memory-stop-2",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (!second.ok) return stop(second.reason, step.memory);",
+              "replace": "  if (!second.ok) return stop(second.reason);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F4-git-reader-sides",
+      "claim": "Through the git reader and classify, a memory blob that is not UTF-8 on one side alone stops the chief and names that side (A5 of order 152, DQ-1050; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "stops the chief for a memory blob that is not UTF-8, through the git reader, on each side alone"
+      },
+      "assertion": "expect(said, `git reader ${side}`).toMatch(pattern);",
+      "breaks": [
+        {
+          "id": "F4-git-reader-sides-1",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "const UTF8 = new TextDecoder(\"utf-8\", { fatal: true, ignoreBOM: true });",
+              "replace": "const UTF8 = new TextDecoder(\"utf-8\", { fatal: false, ignoreBOM: true });"
+            }
+          ]
+        },
+        {
+          "id": "F4-git-reader-sides-2",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "      return read.kind === \"memory\"\n",
+              "replace": "      return read.kind === \"memory\" && read.side === \"head\"\n"
+            }
+          ]
+        },
+        {
+          "id": "F4-git-reader-sides-3",
+          "file": ".agents/chief/scripts/lib/merge-check-diff.ts",
+          "edits": [
+            {
+              "find": "      return read.kind === \"memory\"\n",
+              "replace": "      return read.kind === \"memory\" && read.side === \"base\"\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F5-policy-unreadable",
+      "claim": "A policy file that matches the base tip but cannot be read gives exit 2 (A6 of order 152, DQ-1044; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 when a policy file that matches the base tip cannot be read"
+      },
+      "assertion": "expect(said, \"unreadable policy file\").toMatch(unhashed);",
+      "breaks": [
+        {
+          "id": "F5-policy-unreadable-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "  if (hashed.status !== 0 || blobs.length !== plain.length) {",
+              "replace": "  if (hashed.status < 0) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F6-listed-first",
+      "claim": "The CLI reads no text for a listed path beside a changed manifest (plan delta r2 §7 \"Listed path first\", A7a of order 152; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "reads no text for a listed path beside a changed manifest"
+      },
+      "assertion": "expect(run.said, \"listed first\").toMatch(",
+      "breaks": [
+        {
+          "id": "F6-listed-first-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "  const step = decideRecords(input);\n  let texts",
+              "replace": "  readTexts(diff.files.filter((file) => file.path.endsWith(\"package.json\")).map((file) => ({ path: file.path, key: file.key, side: \"head\" as const, blob: file.newBlob ?? \"\", kind: \"manifest\" as const })), blobReader(gitBytes));\n  const step = decideRecords(input);\n  let texts"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F7-cli-read-failed",
+      "claim": "In the CLI, a text that git cannot read gives exit 2 at once (one gh call: no snapshot 2), with \"Do not merge it\" for a memory PR (O1 of order 152, round 2 ruling 3; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 when git cannot read a needed text"
+      },
+      "assertion": "for (const [kind, said, stop] of results) expect(said, `read failed ${kind}`).toMatch(stop);",
+      "breaks": [
+        {
+          "id": "F7-cli-read-failed-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "    if (!read.ok) return stop(read.reason, step.memory);",
+              "replace": "    if (!read.ok) return { exit: 1, lines: [read.reason] };"
+            }
+          ]
+        },
+        {
+          "id": "F7-cli-read-failed-2",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "    if (!read.ok) return stop(read.reason, step.memory);",
+              "replace": "    if (!read.ok) {\n      readSnapshot({ repo, number }, gh);\n      return stop(read.reason, step.memory);\n    }"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F8-base-path",
+      "claim": "A policy path of the base tip that is not printable ASCII gives exit 2 (plan delta r2 §5, O2 of order 152; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 when a policy path of the base tip is not printable ASCII"
+      },
+      "assertion": "expect(said, \"spaced base path\").toMatch(spacedStop);",
+      "breaks": [
+        {
+          "id": "F8-base-path-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "    if (!/^[\\x21-\\x7e]+$/.test(match[3] ?? \"\")) {",
+              "replace": "    if (!/^[\\x20-\\x7e]+$/.test(match[3] ?? \"\")) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F9-words-unreadable",
+      "claim": "A private word list that cannot be read gives exit 2 with \"Do not merge it\" and no gh call (plan delta r2 §5, the plan-line check of order 152; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 with no gh call when the private word list cannot be read"
+      },
+      "assertion": "expect(said, \"unreadable word list\").toMatch(unread);",
+      "breaks": [
+        {
+          "id": "F9-words-unreadable-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "    return stop(\"the owner record or the private word list cannot be read\", true);",
+              "replace": "    return { exit: 1, lines: [\"the owner record or the private word list cannot be read\"] };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F10-git-cannot-start",
+      "claim": "Git that cannot start gives exit 2 with a reason and no gh call, not an exception (round 2 ruling 1; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "exits 2 with no gh call when git cannot start"
+      },
+      "assertion": "expect(said, \"no git\").toMatch(noGit);",
+      "breaks": [
+        {
+          "id": "F10-git-cannot-start-1",
+          "file": ".agents/chief/scripts/merge-check.ts",
+          "edits": [
+            {
+              "find": "    return { status: -1, stdout: Buffer.alloc(0) };",
+              "replace": "    return { status: 1, stdout: Buffer.alloc(0) };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F11-words-by-file",
+      "claim": "The private-word scan keeps two files with one display path apart (A2 of order 152, every identity check; round 2 ruling 2; security test: deny by default, order 152)",
+      "test": {
+        "kind": "vitest",
+        "file": ".agents/chief/scripts/merge-check.test.ts",
+        "name": "finds a private word in each file, also in two files with one display path"
+      },
+      "assertion": "expect(said, \"private word in the first file\").toMatch(",
+      "breaks": [
+        {
+          "id": "F11-words-by-file-1",
+          "file": ".agents/chief/scripts/lib/merge-check.ts",
+          "edits": [
+            {
+              "find": "  const words = memory.flatMap((entry) =>\n    checkPrivateWords(\n      new Map([[entry.file.path, sideText(entry, \"head\") ?? \"\"]]),\n      input.privateWords ?? [],\n    ),\n  );",
+              "replace": "  const heads = new Map(memory.map((entry) => [entry.file.path, sideText(entry, \"head\") ?? \"\"]));\n  const words = checkPrivateWords(heads, input.privateWords ?? []);"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exempt": [
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "passes a valid tree",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a schema that is newer than the check",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a README with no schema line",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a missing file",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a missing setting",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names an unknown setting",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a number setting that is not a whole number",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a file with no frontmatter",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a missing field",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names an unknown field",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a status that is not in the list",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a scope that is not in the list",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a said date that is not a date",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names an order that is not a whole number",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names an end that is not never, a date or until",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names an id that is not R- and three digits",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a file name that does not start with its id",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names two files with one id",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a supersedes target that does not exist",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a loop of supersedes and amends",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "passes the field permission-rule: true",
+      "reason": "test first: the red run of the permission-rule patch (the field was not a rule field); not a security, late or order test"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a permission-rule value that is not true",
+      "reason": "test first: the red run of the permission-rule patch; not a security, late or order test"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "passes a rule that changes a rule with permission-rule and has the field too",
+      "reason": "test first: the red run of the permission-rule patch (the field was not a rule field); not a security, late or order test"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a superseded rule that is still active",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a replaced rule that no rule supersedes",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a rule with no Rule line",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a rule with no Owner said line",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a quote over the word limit",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "counts the quotes of one Owner said line together",
+      "reason": "test first: the red run of review round 1 in the PR; not a security, late or order test"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a rule id with RegExp characters, with no exception",
+      "reason": "test first: the red run of review round 1 in the PR (the RegExp threw a SyntaxError); not a security, late or order test"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a quote with no date",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names an Owner said line with no quote",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a rule over the line limit",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "lists the active rules first, then the others with their successor",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a hand change of the index",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a state file with no Main line",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a lesson line with no id",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names two lessons with one id",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a log heading in the wrong form",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "passes public facts",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "passes the words session, job and agent in plain text",
+      "reason": "a pass case against a false hit: it passed before and after the fix (red run of review round 1)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a file over its line limit",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a boot set over its size limit",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a link to a file that does not exist",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "passes web links, anchors and links with an anchor",
+      "reason": "test first: red run 1 in the PR (.agents/chief/scripts/lib/check-memory.ts was a stub; red-runs.md in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a long quote in identity.md, lessons.md and state.md",
+      "reason": "test first: the red run of review round 1 in the PR (checkQuotes was a stub); not a security, late or order test"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "passes short quotes",
+      "reason": "a pass case against a false hit: it passed before and after the fix (red run of review round 1)"
+    },
+    {
+      "file": "scripts/check-status.test.ts",
+      "name": "lists the files that a merge commit changes against its first parent",
+      "reason": "test first: red run in the PR (the skip and mergeFiles did not exist)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "passes check-first: true with the Check first line",
+      "reason": "test first: red run of the DQ-897 redesign (the HEAD check-memory.ts rejected the new field and had no list check; in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "passes when AGENTS.md, the Rule sentence and the Check first step list the same items",
+      "reason": "test first: red run of the DQ-897 redesign (the HEAD check-memory.ts rejected the new field and had no list check; in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/merge-check.test.ts",
+      "name": "lists case %# as %s",
+      "reason": "test first: red run against the stub classify, gh reader and CLI (tmp/red/2-merge-check.log, 2b-merge-list-stub.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/merge-check.test.ts",
+      "name": "has a case for each path rule of each item",
+      "reason": "test first: red run against the stub classify, gh reader and CLI (tmp/red/2-merge-check.log, 2b-merge-list-stub.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/merge-check.test.ts",
+      "name": "joins the item texts as the AGENTS.md sentence does",
+      "reason": "test first: red run against the stub classify, gh reader and CLI (tmp/red/2-merge-check.log, 2b-merge-list-stub.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/merge-check.test.ts",
+      "name": "prints the merge line when no path is listed",
+      "reason": "test first: red run against the stub classify, gh reader and CLI (tmp/red/2-merge-check.log, 2b-merge-list-stub.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/merge-check.test.ts",
+      "name": "lists a security path and prints no merge line",
+      "reason": "test first: red run against the stub classify, gh reader and CLI (tmp/red/2-merge-check.log, 2b-merge-list-stub.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/merge-check.test.ts",
+      "name": "does not list a description change",
+      "reason": "test first: red run against the stub classify, gh reader and CLI (tmp/red/2-merge-check.log, 2b-merge-list-stub.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/merge-check.test.ts",
+      "name": "prints the merge line when the gates pass",
+      "reason": "test first: red run against the stub classify, gh reader and CLI (tmp/red/2-merge-check.log, 2b-merge-list-stub.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/merge-check.test.ts",
+      "name": "passes a rule whose quote is in the owner record",
+      "reason": "test first: red run against the stub classify, gh reader and CLI (tmp/red/2-merge-check.log, 2b-merge-list-stub.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/merge-check.test.ts",
+      "name": "exits 1 for a listed path",
+      "reason": "test first: red run against the stub classify, gh reader and CLI (tmp/red/2-merge-check.log, 2b-merge-list-stub.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/merge-check.test.ts",
+      "name": "exits 2 on a bad argument",
+      "reason": "test first: red run against the stub classify, gh reader and CLI (tmp/red/2-merge-check.log, 2b-merge-list-stub.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/owner-quotes.test.ts",
+      "name": "reads each quote of each Owner said line",
+      "reason": "test first: red run against the stub (tmp/red/1-owner-quotes.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/owner-quotes.test.ts",
+      "name": "passes a quote that is in the record",
+      "reason": "test first: red run against the stub (tmp/red/1-owner-quotes.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/owner-quotes.test.ts",
+      "name": "passes a quote that a line break splits in the record",
+      "reason": "test first: red run against the stub (tmp/red/1-owner-quotes.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/owner-quotes.test.ts",
+      "name": "names a rule with no quote",
+      "reason": "test first: red run against the stub (tmp/red/1-owner-quotes.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "passes an AGENTS.md sentence with the words of the list file",
+      "reason": "test first: red run on the code before the change (tmp/red/6-check-memory.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "passes rules whose quotes are in the owner record",
+      "reason": "test first: red run on the code before the change (tmp/red/6-check-memory.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a rule whose quote is not in the owner record",
+      "reason": "test first: red run on the code before the change (tmp/red/6-check-memory.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "warns, and checks no quote, when the owner record is missing",
+      "reason": "test first: red run on the code before the change (tmp/red/6-check-memory.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "says that it does not check the owner quotes",
+      "reason": "test first: red run on the code before the change (tmp/red/6-check-memory.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "gives permission-rule: true to each of them",
+      "reason": "test first: red run on the code before the change (tmp/red/6-check-memory.log)"
+    },
+    {
+      "file": "scripts/check-status.test.ts",
+      "name": "skips a memory PR: each changed file is in the chief memory",
+      "reason": "test first: red run on the code before the change (tmp/red/7-check-status.log)"
+    },
+    {
+      "file": "scripts/check-status.test.ts",
+      "name": "skips a memory PR that changes a permission rule and the memory README (order 108)",
+      "reason": "test first: red run on the code before the change (tmp/red/7-check-status.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names a missing audit prompt",
+      "reason": "test first: red run on the code before the change (tmp/red/6-check-memory.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names each setting of the memory audit and the quote check that is missing",
+      "reason": "test first: red run on the code before the change (tmp/red/6-check-memory.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names the old field owner-merges as not a rule field",
+      "reason": "test first: red run on the code before the change (tmp/red/6-check-memory.log)"
+    },
+    {
+      "file": ".agents/chief/scripts/merge-check.test.ts",
+      "name": "names question 4 for the list and question 5 for the permission",
+      "reason": "test first: red run of review round 3 (the test failed before the change)"
+    },
+    {
+      "file": ".agents/chief/scripts/merge-check.test.ts",
+      "name": "compares the dependency metadata fields too",
+      "reason": "test first: red run of review round 3 (the test failed before the change)"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/merge-check-snapshot.test.ts",
+      "name": "sends the query as a constant and the values as variables",
+      "reason": "test first: red run in the PR (the reader was a stub that returns a failure; stub-red.log in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/merge-check-snapshot.test.ts",
+      "name": "is true for two reads of the same answer",
+      "reason": "test first: red run in the PR (the reader was a stub that returns a failure; stub-red.log in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/owner-quotes.test.ts",
+      "name": "gives one form for white space and for NFC and NFD text",
+      "reason": "test first: red run in the PR (normalizeQuote did not exist; normalize-red.log in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/check-memory.test.ts",
+      "name": "names the exact tool set of claude with --tools",
+      "reason": "test first: red run in the PR (restore.md had no --tools; cron-red.log in the PR description)"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+      "name": "passes a full clone of the repository with no setting that changes the diff",
+      "reason": "test first: red run in the PR (merge-check-start.ts did not exist on 30a510f; r2-red.log, plan delta r1); the CLI claims D11 to D16 break each rule end to end"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+      "name": "refuses an origin that is not the repository on github.com",
+      "reason": "test first: red run in the PR (merge-check-start.ts did not exist on 30a510f; r2-red.log, plan delta r1); the CLI claims D11 to D16 break each rule end to end"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+      "name": "refuses a shallow clone and a grafts file",
+      "reason": "test first: red run in the PR (merge-check-start.ts did not exist on 30a510f; r2-red.log, plan delta r1); the CLI claims D11 to D16 break each rule end to end"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+      "name": "refuses each diff, submodule or extensions setting outside the allowlist",
+      "reason": "test first: red run in the PR (merge-check-start.ts did not exist on 30a510f; r2-red.log, plan delta r1); the CLI claims D11 to D16 break each rule end to end"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+      "name": "cannot check a fact that git could not read",
+      "reason": "test first: red run in the PR (merge-check-start.ts did not exist on 30a510f; r2-red.log, plan delta r1); the CLI claims D11 to D16 break each rule end to end"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+      "name": "removes each inherited GIT_ variable and turns replace objects off",
+      "reason": "test first: red run in the PR (merge-check-start.ts did not exist on 30a510f; r2-red.log, plan delta r1); the CLI claims D11 to D16 break each rule end to end"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+      "name": "passes when each path, blob and executable bit is the same",
+      "reason": "test first: red run in the PR (merge-check-start.ts did not exist on 30a510f; r2-red.log, plan delta r1); the CLI claims D11 to D16 break each rule end to end"
+    },
+    {
+      "file": ".agents/chief/scripts/lib/merge-check-start.test.ts",
+      "name": "names a file whose blob, executable bit or presence differs",
+      "reason": "test first: red run in the PR (merge-check-start.ts did not exist on 30a510f; r2-red.log, plan delta r1); the CLI claims D11 to D16 break each rule end to end"
+    },
+    {
+      "file": ".agents/chief/scripts/merge-check.test.ts",
+      "name": "passes each tracked long-term file, and its path matches the grammar",
+      "reason": "test first: red run in the PR (memoryTextProblems did not exist on 30a510f; r2-red.log); it shows that the 48 long-term files of today have the supported form, so it is no security test"
+    },
+    {
+      "file": ".agents/chief/scripts/merge-check.test.ts",
+      "name": "counts each gh call, also one with other arguments",
+      "reason": "a test of the test helper (DQ-1052): no code break reaches the fake gh; the red run of d7f1226 (tmp/red/r3-red.log in the leader's scratch folder) shows the old fake failing it"
+    }
+  ]
+}
