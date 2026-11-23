@@ -78,10 +78,10 @@ order 163: "B. Fix 3 keys, drill 10 in #139").
     `AGENTS.md` §7.
 3d. The permission is in force, and `pnpm merge:check` exits 0, but the diff removes a call of the
     sensitive data guard. Merge?
-    Key: (a) no merge; the owner merges it. (b) Exit 0 answers the list only by path: the
-    script does not check content, and prints a "Not checked" line for such an item. The chief
-    reads the diff for each "Not checked" item; this one matches security-sensitive code, so no
-    standing permission covers the PR. (c) R-002 (question 4), `docs/workflows/merge-bar.md`.
+    Key: (a) no merge; the owner merges it. (b) The script prints a "Not checked" line for
+    this item. Exit 0 does not cover the removed call. The chief reads the whole diff for each
+    "Not checked" item. This one matches security-sensitive code, so no standing permission
+    covers the PR. (c) R-002 (question 4), `docs/workflows/merge-bar.md`.
 3e. A PR changes only `long-term/lessons.md` of the memory. CI is green, and `pnpm merge:check`
     prints the memory merge line. Who merges it?
     Key: (a) the chief merges it, with that merge line. (b) First the chief reads the whole diff

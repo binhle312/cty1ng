@@ -36,11 +36,14 @@ permission. The script stops at the first rule that fails, in this order:
    `package.json`); a CI check is pending, red or missing; a dependency field of a changed
    `package.json` changes.
 
-Exit 0 for a code PR answers the list of `AGENTS.md` §7 only by path. With the merge line, the
-script prints a "Not checked" line for each list item that no path shows, such as a removed call
-of the sensitive data guard in another file. Before path 2, the chief reads the whole diff for
-each "Not checked" item. If one matches, no standing permission covers the PR, and the owner
-merges it (R-002, question 4). Not claimed: the script does not check the content of a code PR.
+For a code PR, the script checks paths and compares these fields in both versions of a changed
+`package.json`: `dependencies`, `devDependencies`, `peerDependencies`, `optionalDependencies`,
+`overrides`, `pnpm`, `packageManager`, `scripts`, `peerDependenciesMeta`, `dependenciesMeta`,
+`bundledDependencies` and `bundleDependencies`. A difference in one of these fields gives exit 1.
+The script does not check other content in a code PR. With the merge line, it prints a "Not
+checked" line for each list item that needs a diff read, such as a removed call of the sensitive
+data guard. Before path 2, the chief reads the whole diff for each "Not checked" item. If one
+matches, no standing permission covers the PR, and the owner merges it (R-002, question 4).
 
 Exit 2 means that the script cannot check: no chief merge. A PR that is not open, a failed check
 of the clone, a text that git cannot read, a PR that changed during the check, and a memory PR with
