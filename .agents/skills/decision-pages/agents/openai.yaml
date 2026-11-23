@@ -1,0 +1,5 @@
+interface:
+  display_name: "Decision pages"
+  short_description: "Build a page from a JSON content file for a person to decide or to read a status"
+policy:
+  allow_implicit_invocation: false

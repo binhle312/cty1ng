@@ -10,7 +10,7 @@ approvals). Keep it short: link to PRs and briefs instead of describing work.
 
 ## Now
 
-Overnight skill and merged PR cleanup, [#140](https://github.com/binhle312/cty1ng/pull/140), 2026-11-23. Draft. Owner-led round 2 follows the build gates. See the [build evidence](../tmp/pr140-r3-evidence/plan-lines.md).
+Overnight skill and merged PR cleanup, draft [#140](https://github.com/binhle312/cty1ng/pull/140). Merged `main` on 2026-11-23. The chief starts review round 2 next. See the [build evidence](../tmp/pr140-r3-evidence/plan-lines.md).
 
 The repository audit of 2026-11-05 found 55 issues. After the owner's decisions, 15 are P2, 39 are P3, and the owner accepted one case; none is P1. Its fixes come before M3 in the owner's order. #69 is closed, and the owner watches more PRs before deciding whether to bring it back. Findings, decisions and progress are in [audits/2026-11-05-repo-audit.md](audits/2026-11-05-repo-audit.md). PR 2 of 7, the security fixes, merged in [#73](https://github.com/binhle312/cty1ng/pull/73) on 2026-11-06. [#76](https://github.com/binhle312/cty1ng/pull/76) merged on 2026-11-06 and records the guard decisions. PR 3 of 7, the Skills page, merged in [#78](https://github.com/binhle312/cty1ng/pull/78) on 2026-11-06. PR 4 of 7, the Bots page, merged in [#82](https://github.com/binhle312/cty1ng/pull/82) on 2026-11-08. PR 5 of 7, tests only, merged in [#86](https://github.com/binhle312/cty1ng/pull/86) on 2026-11-10. PR 6 of 7, six tabs, merged in [#91](https://github.com/binhle312/cty1ng/pull/91) on 2026-11-10.
 
@@ -84,8 +84,9 @@ From M3 on, P3 findings are fixed at the end of each milestone, before the next 
 | Approve the M3 schema design for D46 (auto title) before it is written. The generated SQL is approved in the slice PR | M3 plan |
 | Specify the data of the bot Usage tab (`design/components/bot-page.md` §9.6): task verdict on runs, setup change record, tile targets, Group by, run timings. Needs a schema design approval (initial schema for M3 and M7). The generated SQL is approved in the slice PR | M3 and M7 plans |
 | Approve the M5b schema design: `projects.instructions_md`, `instructions_version`, `colour`, `pinned_position`, goal ≤ 500 chars, `memory_items.seen_at`, `memory_proposals` and the `model_requests` change (D63) (initial schema for M5b, `domain-model.md` §14). Claude Code stops for this approval before it writes them. The generated SQL is approved in the M5b PR | M5b plan |
-| The records redesign merged in [#135](https://github.com/binhle312/cty1ng/pull/135) on 2026-11-19. Its proposal DQ-866 still waits for the owner, with the #107 questions (its home is #107) | The #107 questions |
-| Draft [#140](https://github.com/binhle312/cty1ng/pull/140), Option B approved on 2026-11-20 (order 141). Plan delta r3 approved on 2026-11-20 (order 160) | Round 2 follows the build gates. Order 155's live test follows round 2 |
+| Draft [#107](https://github.com/binhle312/cty1ng/pull/107), the redesign of the break runner (five gaps): the owner's answers R1 to R11 | The #107 work |
+| The proposal DQ-866 of [#135](https://github.com/binhle312/cty1ng/pull/135) (merged on 2026-11-19) waits for the owner, with the #107 questions (its home is #107) | The owner's #107 answers |
+| Draft [#140](https://github.com/binhle312/cty1ng/pull/140), Option B approved on 2026-11-20 (order 141). Plan delta r3 approved on 2026-11-20 (order 160) | Merged `main` on 2026-11-23. The cap counts from review round 2 (order 153). Round 2 comes next, then the live test (order 155), then the owner's merge. |
 
 ## Follow-ups
 
@@ -96,6 +97,8 @@ A P3 that has a DQ id is not in this table. Its state lives only in its row of t
 
 | Item | Found in | Target |
 | --- | --- | --- |
+| Seal the restore drill: export without the ledger miss rows and the drill log entries; turn the recall questions (Q4, Q13 and others with long lists) into scenario questions for the parts no scenario tests (the owner hold, the path 2 bar, the memory PR timing); run it (order 165) | [#139](https://github.com/binhle312/cty1ng/pull/139) | Restore drill follow-up PR |
+| Flaky e2e test `skills.spec.ts:465` (UI-7.5a, the Bots tab empty line): strict mode found two "Add" buttons on the first try and the retry, CI run 44706653327 on #142 (a Markdown-only diff); the rerun passed | [#142](https://github.com/binhle312/cty1ng/pull/142) CI | Find the cause before M3 (the owner picks the PR) |
 | Q1 A redesign (owner 2026-11-18): plans hold the design and the owner's decisions only; build facts only in the PR description; a small docs PR (`planning.md`, `pull-request.md`) | Owner answer Q1 A, 2026-11-18 ([#114](https://github.com/binhle312/cty1ng/pull/114), DQ-541, DQ-542) | [#133](https://github.com/binhle312/cty1ng/pull/133) |
 | `pnpm e2e:serve` can die and leave its servers on the ports: a closed stdout (`EPIPE`) or SIGHUP stops the script without stopping them, and the marker stays. It fails safe, but its message says to stop a script that no longer runs, and no doc says to delete `.e2e-serve`. Stop the servers on those exits, and correct the message | [#60](https://github.com/binhle312/cty1ng/pull/60) review | The P3 PRs before M3 (owner, 2026-11-08) |
 | No test runs `scripts/e2e-serve.ts` itself, so its guard and signal wiring have only manual evidence | [#60](https://github.com/binhle312/cty1ng/pull/60) review | The P3 PRs before M3 (owner, 2026-11-08) |
@@ -134,6 +137,7 @@ A P3 that has a DQ id is not in this table. Its state lives only in its row of t
 | In a production build, React 19 (`defaultOnCaughtError`) and the router still write the whole caught error to the browser console; only the app's log (`lib/log.ts`) gets the error name alone. Pass `onCaughtError` to `createRoot` in `main.tsx` (its own plan line) | Round 1 of [#123](https://github.com/binhle312/cty1ng/pull/123) | The P3 PRs before M3, or the M3 code design |
 | No test runs "a link in the Skills list leaves the error screen" (`requirements/app-shell.md`, Errors); it holds by a reading of the router (each new match resets the boundary) | Round 1 of [#123](https://github.com/binhle312/cty1ng/pull/123) | The P3 PRs before M3 |
 | `pnpm audit` is red: picomatch up to 4.0.7 (GHSA-fc5q-39xc-vjpf, high; no patched version yet), through vitest, vite and tinyglobby. `main` passed it on 2026-11-17; the lockfile of #124 is the same as `main` (`testing.md` §4: a signal) | CI of [#124](https://github.com/binhle312/cty1ng/pull/124) on `b5f9db6`, 2026-11-18 | A separate PR, when a patched version exists |
+| The owner adds a GitHub ruleset for `main` that requires the CI jobs of `.github/workflows/ci.yml` from GitHub Actions. `pnpm merge:check` checks the app and the workflow file of each required run itself, so it does not wait for the ruleset; the ruleset is not a condition for any row (owner, 2026-11-20, order 130, Q2 A) | The plan of option A of [#139](https://github.com/binhle312/cty1ng/pull/139) | The owner, after #139 merges |
 
 ## Slices
 
@@ -270,7 +274,9 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-18 | [#134](https://github.com/binhle312/cty1ng/pull/134) merged. |
 | 2026-11-18 | [#136](https://github.com/binhle312/cty1ng/pull/136) merged. |
 | 2026-11-19 | [#127](https://github.com/binhle312/cty1ng/pull/127) merged. |
-| 2026-11-19 | [#138](https://github.com/binhle312/cty1ng/pull/138) merged. |
 | 2026-11-19 | [#137](https://github.com/binhle312/cty1ng/pull/137) merged. |
+| 2026-11-19 | [#138](https://github.com/binhle312/cty1ng/pull/138) merged. |
 | 2026-11-19 | [#135](https://github.com/binhle312/cty1ng/pull/135) merged: the records redesign and one `AGENTS.md` §9 sentence. |
 | 2026-11-20 | [#141](https://github.com/binhle312/cty1ng/pull/141) merged: the `consultants` skill split from the `arena` skill, and a model rule. |
+| 2026-11-23 | [#139](https://github.com/binhle312/cty1ng/pull/139) merged: the chief's restore kit and `pnpm check:memory`. |
+| 2026-11-23 | [#142](https://github.com/binhle312/cty1ng/pull/142) merged: trigger and invocation wording for `consultants` and `arena` (order 134). |

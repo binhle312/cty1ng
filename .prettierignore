@@ -2,7 +2,8 @@
 *.md
 docs/
 seed/
-.agents/
+.agents/skills/
+.agents/chief/memories/
 .claude/
 .impeccable/
 pnpm-lock.yaml

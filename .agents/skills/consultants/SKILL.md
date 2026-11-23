@@ -1,6 +1,6 @@
 ---
 name: consultants
-description: Ask two or more strong models to grill a recommendation on open decisions before the owner decides. Use when the owner asks for consultants, or names this skill.
+description: Use when the owner runs /consultants or names the skill. Ask two or more strong models to grill a recommendation on open decisions before the owner decides.
 disable-model-invocation: true
 metadata:
   author: cty1ng maintainers
@@ -8,6 +8,8 @@ metadata:
 ---
 
 # Consultants
+
+Run this skill only when the owner starts it or names it.
 
 Use consultants when the owner needs a decision with real trade-offs. Each consultant reads the
 same open questions alone and grills your recommendation. You answer each point. The owner decides.
