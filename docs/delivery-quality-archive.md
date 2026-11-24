@@ -1,8 +1,9 @@
 # Delivery quality: archive
 
 The closed rows of [delivery-quality.md](delivery-quality.md): its rules, its columns and its
-counts apply here too. Read this file only to trace an old fix or to count; current work needs
-the live file only.
+counts apply here too. Use this archive to trace old fixes or check counts. For current work, use
+the live ledger, the [PR register](delivery-quality-register.md), and the
+[prevention actions](delivery-quality-prevention.md#prevention-actions).
 
 - **Closed issues:** each issue row with the state `fixed`, `dropped` or `withdrawn`.
 - **Review rounds:** each round of a merged PR.

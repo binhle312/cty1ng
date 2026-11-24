@@ -13,6 +13,7 @@ It also applies to defects from reviews and audits. The agent that delegates the
    Explain the cause and propose the smallest fix, affected files, and verification steps.
    Write the general rule that the bug broke, not only its symptom. Search the old fixes in
    the [ledger](../delivery-quality.md), its [archive](../delivery-quality-archive.md), the
+   [PR register](../delivery-quality-register.md), the
    [prevention actions](../delivery-quality-prevention.md#prevention-actions), and the
    [lessons](../lessons-learned/README.md) for that rule,
    and record the search. The lesson of DQ-003 named a symptom, so the same bug came back in new code (owner, 2026-11-06).

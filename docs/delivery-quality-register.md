@@ -22,7 +22,7 @@ Count review rounds by distinct PR and round ID.
 If any PR lacks full coverage, show the known subtotal with its coverage, or keep the total `unknown`.
 Add a row for each later milestone when its first PR enters the record.
 `pnpm records:counts --write` writes the Audit row from the rows of the ledger files, and CI
-fails when the row is stale (§7, step 5). The notes on the count of each PR that this section held
+fails when the row is stale ([ledger §7, step 5](delivery-quality.md#7-update-and-assess)). The notes on the count of each PR that this section held
 before #135 are in git history: `git show 5605954:docs/delivery-quality.md`, lines 59 to 84. The
 notes that later merges of `main` brought (#128, #129, #132, #134) are in the commits that this
 command lists: `git log --oneline -G '^#[0-9]+ added ' origin/main -- docs/delivery-quality.md`.

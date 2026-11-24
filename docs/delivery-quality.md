@@ -11,8 +11,8 @@ not a fresh audit of GitHub review threads. Later entries must name their source
 This file holds the rules and the live rows. The closed issue rows and the review rounds of
 merged PRs are in the [archive](delivery-quality-archive.md) (owner, 2026-11-10). The counts in
 the [PR register and milestone view](delivery-quality-register.md) include the archive rows.
-To find an old fix, search the ledger, its archive, and the
-[prevention actions](delivery-quality-prevention.md#prevention-actions).
+The [prevention actions](delivery-quality-prevention.md#prevention-actions) cover recurring causes.
+To find an old fix, use the [Same cause search](workflows/pull-request.md#one-home-for-each-fact).
 
 ## 1. Counting rules
 

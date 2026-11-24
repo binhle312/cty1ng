@@ -25,6 +25,7 @@ the second Clone bug to DQ-003, and its file records no search and no coverage.
    other mechanisms. Record in the finding where the search looked and what it found.
 4. **Compare with old fixes.** Search [delivery-quality.md](../delivery-quality.md), its
    [archive](../delivery-quality-archive.md), the
+   [PR register](../delivery-quality-register.md), the
    [prevention actions](../delivery-quality-prevention.md#prevention-actions), and
    [lessons-learned](../lessons-learned/README.md) for rows with the same rule. If one exists,
    answer "Same cause as an earlier fix?" with yes. Then
