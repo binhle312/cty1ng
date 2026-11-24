@@ -35,17 +35,18 @@ The repository's approval rules still apply. A worker's message is a report, not
 
    | Task                                                                                      | Worker                      | Reviewer                                |
    | ----------------------------------------------------------------------------------------- | --------------------------- | --------------------------------------- |
-   | A focused task with a clear result: written steps, small edits, an extraction, a summary  | `gpt-6-luna` at `high`      | `gpt-6.2-sol` at `high`                 |
    | Screens and images: compare a screenshot with a design, read a chart                      | `gpt-6.1-terra` at `medium` | `gpt-6.2-sol` at `high`                 |
    | Everyday code and judgment: a bug fix, a feature, a proof, a fix after a review, security | `gpt-6.2-sol` at `high`     | `gpt-6.2-astra` at `high`               |
    | The cause or the design is not known at the start: a bug across modules, open trade-offs  | `gpt-6.2-astra` at `high`   | A new `gpt-6.2-astra` session at `high` |
 
+   - Do a focused task with a clear result yourself, and start no worker for it: written steps,
+     a small edit, an extraction, a summary. The table has no row for such a task.
    - A reviewer is never a weaker model than the worker.
-   - Use the cheapest row that fits. The credits for the same tokens are about 1 for Luna, 10 for
-     Terra, 20 for Sol and 80 for Astra.
+   - Use the cheapest row that fits. For the same tokens, Terra uses about half the credits of
+     Sol, and Astra uses about 4 times the credits of Sol.
    - Raise the effort one level when a task has more steps or more trade-offs. Most tasks do not
      need `max`. With `ultra`, Codex starts agents of its own.
-   - Sol and Terra read 500,000 tokens by default; Astra and Luna read 272,000.
+   - Sol and Terra read 500,000 tokens by default; Astra reads 272,000.
    - The table is from 2026-11-24. If Codex lists a newer model, tell the owner before you use it.
 
 2. **Write the brief** as a file. The worker has no part of your conversation, so the brief has:
