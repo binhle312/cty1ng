@@ -9,34 +9,13 @@ You talk with one agent: the lead agent. It is the Claude Code conversation that
 The lead agent gives build work and review work to Codex workers, and it talks with them when that
 is needed. You approve, you decide, and you merge.
 
-## Who talks with whom
-
-```
-              YOU  approve, decide, merge
-               │  ▲
-          task │  │ answer, report, questions
-               ▼  │
-           LEAD AGENT ◀── advice ── advisor tool
-            │  ▲   │  ▲
-      brief │  │   │  │ findings
-            │  │   │  │
-            │  │ plan, then report
-            │  │   │ review brief
-            ▼  │   ▼  │
-          WORKER   REVIEWER
-          builds   did not build the code
-```
-
-A worker and a reviewer send no messages to each other or to you. Each message passes through the
-lead agent.
-
 ## One task, turn by turn
 
 ```
  LEAD AGENT                                   CODEX WORKER (one session)
  ──────────                                   ──────────────────────────
- brief ─────────────────────────────────────▶ reads, plans
-       ◀───────────────────── plan, or a question ("a fact is missing")
+ brief ─────────────────────────────────────▶ reads, changes no file
+       ◀───────────── the plan in its own words, or a question ("a fact is missing")
  answer, or "plan OK, build" ───────────────▶ same session, context kept
        ◀───────────────────── pushes a checkpoint, reports the checks
  a wrong direction:
@@ -45,7 +24,8 @@ lead agent.
  review findings ───────────────────────────▶ same session fixes them
 ```
 
-The review is a new session that did not build the code. Its findings go to the lead agent, and the
+A worker and a reviewer send no messages to each other or to you. Each message passes through the
+lead agent. The review is a new session that did not build the code. Its findings go to the lead agent, and the
 lead agent sends them to the session of the builder.
 
 ## How to start it

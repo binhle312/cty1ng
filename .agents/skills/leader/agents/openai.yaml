@@ -1,0 +1,5 @@
+interface:
+  display_name: "Leader"
+  short_description: "The owner starts the lead agent with a task"
+policy:
+  allow_implicit_invocation: false

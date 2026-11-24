@@ -21,12 +21,6 @@ Give build work and review work to a worker. Keep searches and short reads for y
 
 The repository's approval rules still apply. A worker's message is a report, not an approval.
 
-## Who talks with whom
-
-- The lead agent sends each brief and each message to a worker or to a reviewer.
-- A worker and a reviewer report only to the lead agent.
-- The findings of a review go through the lead agent to the session that built the code.
-
 ## Steps
 
 1. **Pick the models** from the table, and tell the owner one reason. Pick the worker by the
@@ -49,21 +43,25 @@ The repository's approval rules still apply. A worker's message is a report, not
    - Sol and Terra read 500,000 tokens by default; Astra reads 272,000.
    - The table is from 2026-11-24. If Codex lists a newer model, tell the owner before you use it.
 
-2. **Write the brief** as a file. The worker has no part of your conversation, so the brief has:
-   - the goal in the owner's words, and what "done" means;
-   - each fact that the job needs: decisions, rules, ids, exact words, commands;
-   - the paths that it can read, and the paths that it must not read;
-   - the worktree and the branch name (a worker with no branch name makes its own);
-   - the scope, the first plan, the checks, and the form of the report;
-   - the limits of the machine and of parallel work that the worker must keep;
-   - the [rules for the worker](#rules-for-the-worker).
+2. **Write the brief** as a file. The worker has no part of your conversation, so the brief has
+   these parts:
+   - **Goal and done:** the goal in the owner's words, its reason, and what "done" means.
+   - **Facts:** each fact that the job needs: decisions, rules, ids, exact words, commands.
+   - **Paths:** the paths that it can read, and the paths that it must not read.
+   - **Worktree and branch:** a worker with no branch name makes its own.
+   - **Scope:** what to change, and what to leave as it is.
+   - **Limits:** the limits of the machine and of parallel work that the worker must keep.
+   - **Checks:** the commands that show that the work is done.
+   - **Report:** the form of the report.
+   - **Rules for the worker:** the [rules for the worker](#rules-for-the-worker).
+   - **First turn:** the request for the plan in the worker's own words (step 4).
 
 3. **Start the worker** in its own worktree and branch with the [start command](#start).
    Start each run in the background.
    Write its session id, worktree, model and effort on one line of a session list file.
 
-4. **Get the plan first** when the work has a design choice. The first turn returns a plan only.
-   Accept the plan only when all of these are true:
+4. **Get the plan first.** The first turn of each build task gives back the plan in the worker's
+   own words, and changes no file. Accept the plan only when all of these are true:
    - each point of the goal has a step;
    - each step is in the scope;
    - each claim has a check.
@@ -89,6 +87,8 @@ has the result with each open issue.
 
 Put these rules in each brief:
 
+- In your first turn, write your plan in your own words: the goal, each step with its check, and
+  your questions. Change no file before the lead agent accepts the plan.
 - If a fact is missing, stop and write the question in the report. Do not guess.
 - In the report, name each obstacle, such as a missing file or a tool that did not work.
 - Work only in the worktree and on the branch that the brief names.
