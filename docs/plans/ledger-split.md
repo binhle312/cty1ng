@@ -15,8 +15,12 @@ Revision 2, owner, 2026-11-24, after round 3 of the review of #153:
 - The new words of `AGENTS.md` §9, line 144 (owner, 2026-11-24): "the delivery records are updated
   as `docs/delivery-quality.md` §7 says".
 Revision 3, owner, 2026-11-24, after round 4 of the review of #153:
-- S4-F1: "Edit the 7 places". The open rows and the notes of the live ledger that name a moved part
-  name the new file (DQ-443, DQ-820, DQ-859, DQ-862, and the notes of §5 on the snapshots).
+- S4-F1: "Edit the 7 places". The seven places of the live ledger that name a moved part with no
+  link name the new file: the open rows DQ-859 (line 133, "the §7 text", now in the prevention
+  file) and DQ-862 (line 136, "the §2 sentence", now in the register), and the notes of §5 on the
+  snapshots S2, S3 and S7 (lines 57, 58, 146, 147 and 150, now in register §4). Correction
+  (lead agent, 2026-11-24): the question named DQ-443, DQ-820 and three notes; those two rows
+  name no moved part, and the reviewer's list has these seven.
 - S4-F2: "Finish it in #153". Each text about where review rounds go agrees with §7 step 2,
   including the PR template and §6.
 - End of review: "Review until clean". A complete review of the final head with no P1 or P2
