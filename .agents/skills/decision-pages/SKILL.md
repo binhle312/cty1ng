@@ -38,6 +38,10 @@ others are yours.
 
 | Rule | Id | Reason |
 |---|---|---|
+| The page stands alone: the reader decides with no chat, terminal or other file open | R2.9 | A reader who must look elsewhere to understand a choice cannot decide on the page. |
+| The overview says what happened and why it needs a decision now | R2.9 | The reader did not see your work; the event gives the question its sense. |
+| A choice about words quotes the old and the new words, and names the file and the section | R2.9 | A summary of a change hides the exact difference that the reader decides on. |
+| The purpose and the source of the thing in question come before the choice | R2.9 | The reader cannot weigh a change to a rule without what the rule is for. |
 | The ask comes first: "Decide: ..." in at most 20 words | R2.4 | Readers stop early; the conclusion must be in line 1. |
 | The title is the question, at most 12 words, ends with "?" | R5.2 | The heading tells the reader what to do on this step. |
 | One decision per step | R5.1 | Two decisions in one step make both answers vague. |
@@ -68,26 +72,41 @@ others are yours.
 
 1. **List the questions.** One decision per question. Split a question that holds two. Give
    each a topic of 1-3 words for its step button.
-2. **For each question, find the real options.** 2-4 options that a sensible person could
+2. **Read the source of each question.** Open the file, the rule or the record that the
+   question is about, and find what it is for: its origin, such as a lesson, a decision or an
+   incident. Write down the exact words that change, if the question is about words. A pick made
+   from your memory of the source can be wrong.
+3. **For each question, find the real options.** 2-4 options that a sensible person could
    choose. Write each option's real gain, cost and risk. If an option has no case, remove it
    and say so in the question's Details.
-3. **Write the content file** in the format of `references/content-format.md`, with the writing rules
+4. **Write the content file** in the format of `references/content-format.md`, with the writing rules
    below. Put the conclusion in the ask and the evidence in the facts and table. Put the use
    case in the example and the story in Details.
-4. **Build:** `node scripts/gen.mjs content.json page.html --text page.txt`. Fix every `LINT` line.
+5. **Build:** `node scripts/gen.mjs content.json page.html --text page.txt`. Fix every `LINT` line.
    Cut words; do not move decision facts into Details to pass a limit. Read every `WARN` line: fix
    it, or keep it for a reason that you put in your report.
-5. **Check the writing.** Write the content in Simplified Technical English (ASD-STE100). Run the
-   checker of the `ste-writing` skill on the `--text` file of step 4: the page text with one sentence or item on
+6. **Check the writing.** Write the content in Simplified Technical English (ASD-STE100). Run the
+   checker of the `ste-writing` skill on the `--text` file of step 5: the page text with one sentence or item on
    each line. The score must be 80% or more before you send the page. Give a reason for each
    flagged sentence that stays: fixed text, a technical name, or accuracy. If the checker is not
    installed, tell the person, and apply the rules by hand.
-6. **Verify:** `NODE_PATH=<node_modules that has @playwright/test> node scripts/verify.mjs content.json page.html`.
+7. **Do the cold read.** Give the `--text` file of step 5, and nothing else, to a new agent
+   session that did not see your work. Ask it to answer from that file alone:
+   1. What happened, and why does it need a decision now?
+   2. For each option: what exactly changes, and what does it cost?
+   3. What does the pick rest on, and when is another option better?
+   4. What happens after the answer?
+
+   Compare its answers with what you know. Each answer that it cannot give, or gives wrong, is a
+   missing fact: add it to the page, then build and check again. The step is done when each
+   answer is right. If you cannot start a new session, tell the person that the cold read did not
+   run.
+8. **Verify:** `NODE_PATH=<node_modules that has @playwright/test> node scripts/verify.mjs content.json page.html`.
    The step is done when the last line says `0 failed`.
-7. **Look at the screenshots** that verify writes (`-overview`, `-q1`, `-finish`, `-q1-dark`).
+9. **Look at the screenshots** that verify writes (`-overview`, `-q1`, `-finish`, `-q1-dark`).
    Blur your eyes: you must see, in order, the title, the ask, the pick box and the options.
    Fix what one look shows, then build and verify again.
-8. **Run the pre-send checklist** at the end of this guide, then send the page.
+10. **Run the pre-send checklist** at the end of this guide, then send the page.
 
 ## Writing rules
 
@@ -127,6 +146,8 @@ The pick moves the answer strongly (R3.4), so calibrate it.
   others'.
 - Keep every fact and number from your sources. Shorten the words, not the facts. A fact that
   does not change the choice goes into Details.
+- Base the pick on the source (step 2), not on your summary of it. If the source changes your
+  pick, say so in the Details.
 - When you remove an option or correct an earlier claim, say so in the Details.
 
 ## Overview step
@@ -135,6 +156,10 @@ The overview is step 0. It answers "what is the state, and what do you need from
 
 - `heading`: what the page is and how many questions ("Release 4: 7 questions for you").
 - `lead`: the bottom line in at most 30 words: the state and the main finding.
+- When a question comes from an event (a review finding, a failure, a change), one block says
+  what happened, where, and why it needs the reader now. A block for the thing in question says
+  what it is and what it is for. A choice about words gets a table with the old words, the new
+  words and their source, each as a quote.
 - Blocks, each with a finding as its title. Typical blocks: the open issues, the status list,
   the numbers table, my errors, and other items that wait for the reader. Put two short blocks
   side by side (`place: left` and `place: right`).
@@ -164,7 +189,10 @@ The reader pastes it back to you. Read the letters against the options in your c
 
 - [ ] `scripts/gen.mjs` printed 0 lint errors; each warning is fixed or has a reason in your report.
 - [ ] `scripts/verify.mjs` printed `0 failed` on the final page.
-- [ ] The STE checker gave 80% or more on the `--text` file of step 4, or you told the person that it is not installed.
+- [ ] The STE checker gave 80% or more on the `--text` file of step 5, or you told the person that it is not installed.
+- [ ] A new session answered the 4 cold-read questions right from the `--text` file alone, or you told the person that the cold read did not run.
+- [ ] The overview says what happened and why it needs the reader now.
+- [ ] Each choice about words quotes the old and the new words, with the file and the section.
 - [ ] You looked at all four screenshots after the last change, in light and dark.
 - [ ] Each title is a question, and each ask starts the decision in line 1.
 - [ ] Each option has a real gain; no straw man is left.
