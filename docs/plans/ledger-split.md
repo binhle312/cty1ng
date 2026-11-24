@@ -6,6 +6,14 @@ actions; the 80,000-byte limit stays). Follow-ups row in `docs/status.md` (from 
 Checkpoint: plan (it changes `AGENTS.md` §9 and the PR template: `AGENTS.md` §7)
 Approval: owner, 2026-11-24, revision 1: "Approve both the plan and the split plan" (the plan, the two
 file names, and the new words of `AGENTS.md` §9 under "Owner questions")
+Revision 2, owner, 2026-11-24, after round 3 of the review of #153:
+- S3-F1 (a second reader link that the searches missed; same cause as S1-F1): "Inventory by script".
+  A script lists each link and section reference into the four delivery-quality files from the
+  active docs, with its sentence and the heading it opens; each row is checked by its words.
+- S2-F7 (ledger §7 step 2 and `AGENTS.md` §9 disagree on round rows): "No rows, fix §7". A PR with
+  no milestone keeps its review rounds in its description; §7 step 2 says so.
+- The new words of `AGENTS.md` §9, line 144 (owner, 2026-11-24): "the delivery records are updated
+  as `docs/delivery-quality.md` §7 says".
 
 ## Goal
 
