@@ -54,29 +54,29 @@ Plans up to M2 started as PR comments or PR descriptions. The header of each fil
 | `p3-shell-error-boundary.md` | P3 list PR 16 (items 65 and 66, errors that keep the shell) | Accepted by the owner, 2026-11-15 ("P-16: approve"), revision 2 |
 | `dq-180-clone-draft.md` | DQ-180, the Clone draft (before audit PR 6) | Approved 2026-11-10 |
 | `dq-198-closed-dialog-read.md` | DQ-198, a closed dialog and the read of all data (after audit PR 6) | Owner, 2026-11-10 |
-| `p3-backend-data-purge.md` | P3 list PR 9 (items 27 to 31, the docs of item 37) | Chief agent, 2026-11-15; accepted by the owner, 2026-11-15 |
-| `p3-security-headers.md` | P3 PR 11, security headers (items 35, 36) | Chief agent, 2026-11-15, revision 1; accepted by the owner, 2026-11-15 |
-| `p3-skills-pages-small.md` | P3 list PR 15, Skills pages small fixes (items 57 to 64) | Chief agent, 2026-11-15, under the owner's order of 2026-11-14; accepted by the owner, 2026-11-15 |
-| `p3-bots-pages.md` | P3 PR E: items 40 to 46 (Bots pages, small fixes; bot page Esc) | Chief agent, 2026-11-15, revision 1; accepted by the owner, 2026-11-15 |
-| `p3-unknown-keys-field.md` | DQ-385, a real `field` for unknown keys in a body | Chief agent, 2026-11-18, revision 1, against the owner's answer q4 Q4 A; owner review pending |
-| `p3-frontend-cleanup.md` | P3 PR K (list PR 21, item 68): frontend cleanup with the same texts and screens | Chief agent, 2026-11-15, under the owner's order of 2026-11-14; accepted by the owner, 2026-11-15 |
-| `p3-tests-only.md` | P3 PR 18, tests only (items 70, 71, 72) | Chief agent, 2026-11-15, under the owner's order of 2026-11-14; accepted by the owner, 2026-11-15 |
-| `p3-tooling-gates.md` | P3 list PR 19, tooling gates (items 73 to 76) | Chief agent, 2026-11-15; accepted by the owner, 2026-11-15 |
-| `p3-skills-page-orders.md` | P3 list PR 14, Skills page orders (items 51 to 56) | Accepted by the owner, 2026-11-15 ("P-14: approve"), revision 2; Q1 takes the plan's answer (chief agent's reading, owner review pending); Q2 approved by the owner, 2026-11-18 (UI-4: A) |
-| `p3-relative-time.md` | P3 list PR 17 (item 67): relative times that update | Accepted by the owner, 2026-11-15 (P-17: approve), revision 3; Q1 and Q2 by the chief agent's reading |
-| `p3-limits-strict-inputs.md` | P3 PR C: list PR 7 (diff and changelog limits) and list PR 10 (API strict inputs) | Chief agent, 2026-11-15, revision 1; accepted by the owner, 2026-11-15 |
-| `p3-ci-break-static.md` | DQ-517 D and DQ-448 B: a CI check of the break list rules | Plan OK by the chief agent, 2026-11-18, against the owner's answers DQ-517 D and DQ-448 B; revision 1 |
-| `p3-runner-tmpdir.md` | DQ-618: the break runner keeps the local changes when TMPDIR is inside a git repository | Plan OK by the chief agent, 2026-11-18, against the owner's answer q3 Q1 A, revision 1; owner review pending |
-| `p3-check-status.md` | DQ-571: a CI check that each merged PR has its Done row in `docs/status.md` | Plan OK by the chief agent, 2026-11-18, against the owner's answer q2 Q2 A, revision 1; owner review pending |
-| `p3-plans-design-only.md` | Owner's answer q2 Q1 A: plans hold the design and the owner's decisions; build facts go only in the PR description | Chief agent, 2026-11-18, against the owner's answer q2 Q1 A, revision 2; owner review pending |
-| `p3-small-owner-answers.md` | Small fixes from the owner's answers of 2026-11-18 (DQ-442, DQ-500, DQ-485, DQ-411, item 61, #123, DQ-426) | UI texts and scope: the owner's answers of 2026-11-18; plan OK by the chief agent, 2026-11-18; item 8 approved by the owner, 2026-11-18 (Q2 A) |
-| `p3-breaks-static-test-time.md` | The pnpm links test of the static break check times out in the full suite (#128's test, found by the gates of #134 and #135) | Plan OK by the chief agent, 2026-11-18, revision 1; revision 2 (`lib` and the break list) after the round 1 review; owner review pending |
-| `p3-break-list-decision.md` | Redesign of DQ-782 in #136: CI checks the break-list decision of each PR that adds or changes a test | Owner, 2026-11-18, q5 Q1 A (the design); plan review: chief agent, revision 1; owner review pending |
-| `p3-flaky-bots-drop.md` | The flaky e2e test of the pinned card drop line (`bots.spec.ts:101`, CI run 44228267962) | Plan OK by the chief agent, 2026-11-18 (owner rule: fix the flaky test at its cause), revision 3; owner review pending |
-| `p3-guard-speed-test.md` | DQ-455, the 1 MB line test of the guard | Chief agent, 2026-11-18, under the owner's order of 2026-11-14; owner review pending |
-| `p3-timed-tests.md` | DQ-805, the redesign of timed tests (owner's q5 Q5 A), built in #137 | Owner, 2026-11-18, q5 Q5 A (the design); plan review: chief agent; owner review pending |
-| `p3-clock-one-timer.md` | DQ-537, a check that the app keeps one clock timer | Chief agent, 2026-11-18, against the owner's answer q5 Q4 A; owner review pending |
-| `p3-records-counts.md` | Owner's answers q4 Q3 A and Q6 A: one home for record facts; a records script writes the counts | Plan OK by the chief agent, 2026-11-18, against the owner's answers q4 Q3 A and Q6 A, revision 5; revision 6: owner, 2026-11-19, morning Q4 A, plan OK by the chief agent; owner review pending |
+| `p3-backend-data-purge.md` | P3 list PR 9 (items 27 to 31, the docs of item 37) | Lead agent, 2026-11-15; accepted by the owner, 2026-11-15 |
+| `p3-security-headers.md` | P3 PR 11, security headers (items 35, 36) | Lead agent, 2026-11-15, revision 1; accepted by the owner, 2026-11-15 |
+| `p3-skills-pages-small.md` | P3 list PR 15, Skills pages small fixes (items 57 to 64) | Lead agent, 2026-11-15, under the owner's order of 2026-11-14; accepted by the owner, 2026-11-15 |
+| `p3-bots-pages.md` | P3 PR E: items 40 to 46 (Bots pages, small fixes; bot page Esc) | Lead agent, 2026-11-15, revision 1; accepted by the owner, 2026-11-15 |
+| `p3-unknown-keys-field.md` | DQ-385, a real `field` for unknown keys in a body | Lead agent, 2026-11-18, revision 1, against the owner's answer q4 Q4 A; owner review pending |
+| `p3-frontend-cleanup.md` | P3 PR K (list PR 21, item 68): frontend cleanup with the same texts and screens | Lead agent, 2026-11-15, under the owner's order of 2026-11-14; accepted by the owner, 2026-11-15 |
+| `p3-tests-only.md` | P3 PR 18, tests only (items 70, 71, 72) | Lead agent, 2026-11-15, under the owner's order of 2026-11-14; accepted by the owner, 2026-11-15 |
+| `p3-tooling-gates.md` | P3 list PR 19, tooling gates (items 73 to 76) | Lead agent, 2026-11-15; accepted by the owner, 2026-11-15 |
+| `p3-skills-page-orders.md` | P3 list PR 14, Skills page orders (items 51 to 56) | Accepted by the owner, 2026-11-15 ("P-14: approve"), revision 2; Q1 takes the plan's answer (lead agent's reading, owner review pending); Q2 approved by the owner, 2026-11-18 (UI-4: A) |
+| `p3-relative-time.md` | P3 list PR 17 (item 67): relative times that update | Accepted by the owner, 2026-11-15 (P-17: approve), revision 3; Q1 and Q2 by the lead agent's reading |
+| `p3-limits-strict-inputs.md` | P3 PR C: list PR 7 (diff and changelog limits) and list PR 10 (API strict inputs) | Lead agent, 2026-11-15, revision 1; accepted by the owner, 2026-11-15 |
+| `p3-ci-break-static.md` | DQ-517 D and DQ-448 B: a CI check of the break list rules | Plan OK by the lead agent, 2026-11-18, against the owner's answers DQ-517 D and DQ-448 B; revision 1 |
+| `p3-runner-tmpdir.md` | DQ-618: the break runner keeps the local changes when TMPDIR is inside a git repository | Plan OK by the lead agent, 2026-11-18, against the owner's answer q3 Q1 A, revision 1; owner review pending |
+| `p3-check-status.md` | DQ-571: a CI check that each merged PR has its Done row in `docs/status.md` | Plan OK by the lead agent, 2026-11-18, against the owner's answer q2 Q2 A, revision 1; owner review pending |
+| `p3-plans-design-only.md` | Owner's answer q2 Q1 A: plans hold the design and the owner's decisions; build facts go only in the PR description | Lead agent, 2026-11-18, against the owner's answer q2 Q1 A, revision 2; owner review pending |
+| `p3-small-owner-answers.md` | Small fixes from the owner's answers of 2026-11-18 (DQ-442, DQ-500, DQ-485, DQ-411, item 61, #123, DQ-426) | UI texts and scope: the owner's answers of 2026-11-18; plan OK by the lead agent, 2026-11-18; item 8 approved by the owner, 2026-11-18 (Q2 A) |
+| `p3-breaks-static-test-time.md` | The pnpm links test of the static break check times out in the full suite (#128's test, found by the gates of #134 and #135) | Plan OK by the lead agent, 2026-11-18, revision 1; revision 2 (`lib` and the break list) after the round 1 review; owner review pending |
+| `p3-break-list-decision.md` | Redesign of DQ-782 in #136: CI checks the break-list decision of each PR that adds or changes a test | Owner, 2026-11-18, q5 Q1 A (the design); plan review: lead agent, revision 1; owner review pending |
+| `p3-flaky-bots-drop.md` | The flaky e2e test of the pinned card drop line (`bots.spec.ts:101`, CI run 44228267962) | Plan OK by the lead agent, 2026-11-18 (owner rule: fix the flaky test at its cause), revision 3; owner review pending |
+| `p3-guard-speed-test.md` | DQ-455, the 1 MB line test of the guard | Lead agent, 2026-11-18, under the owner's order of 2026-11-14; owner review pending |
+| `p3-timed-tests.md` | DQ-805, the redesign of timed tests (owner's q5 Q5 A), built in #137 | Owner, 2026-11-18, q5 Q5 A (the design); plan review: lead agent; owner review pending |
+| `p3-clock-one-timer.md` | DQ-537, a check that the app keeps one clock timer | Lead agent, 2026-11-18, against the owner's answer q5 Q4 A; owner review pending |
+| `p3-records-counts.md` | Owner's answers q4 Q3 A and Q6 A: one home for record facts; a records script writes the counts | Plan OK by the lead agent, 2026-11-18, against the owner's answers q4 Q3 A and Q6 A, revision 5; revision 6: owner, 2026-11-19, morning Q4 A, plan OK by the lead agent; owner review pending |
 
 If the task names a plan, open it. Otherwise, find the slice in [status.md](../status.md), then open its plan.
 For current behaviour, read the owning documents.

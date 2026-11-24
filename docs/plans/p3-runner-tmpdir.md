@@ -5,7 +5,7 @@ Brief: the owner's answer of 2026-11-18, "Q1: A": "Fix it now in a small PR: the
 reach the copy. One test: TMPDIR inside a temporary git repo, a tracked edit, the edit must reach
 the copy. When #107 merges, its new copy code replaces this."
 Checkpoint: none (a fix inside the copy step of one script; no UI, no migration, no public API)
-Approval: plan OK by the chief agent, 2026-11-18, against the owner's answer q3 Q1 A (revision 1); owner review pending
+Approval: plan OK by the lead agent, 2026-11-18, against the owner's answer q3 Q1 A (revision 1); owner review pending
 
 ## The cause
 
@@ -67,7 +67,7 @@ repository. Another way to lose an edit (a git setting, a future git change, a f
 The wiring in `check-breaks.ts` (three lines) is checked by the proof below, not by a unit test:
 the runner is a top-level script.
 
-Proof (step C, the heavy slot from the chief):
+Proof (step C, the heavy slot from the lead agent):
 
 - #128's case on the fixed runner: TMPDIR inside `cty1ng/tmp`, a list with a local tracked edit
   that the runner must refuse. The refusal line must show.
@@ -96,7 +96,7 @@ Proof (step C, the heavy slot from the chief):
   `.gitattributes` export rule; the repository has none) are not tested. The check stops such a
   run if it drops a changed or new file; it does not see a file that no local change touches.
 - The rule that TMPDIR must be outside each git repository stays in the common prompt of the
-  agents (the chief owns it).
+  agents (the lead agent owns it).
 
 ## Open questions
 

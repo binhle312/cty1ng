@@ -9,24 +9,24 @@ cause?" answer written without a search, and (2), records not updated with the P
 this redesign (no separate PR).
 Checkpoint: none beyond the owner's design answer q4 Q3 A (a new check script and two workflow
 texts; no shared state, module boundary or screen flow)
-Approval: plan OK by the chief agent, 2026-11-18, against the owner's answers q4 Q3 A and Q6 A,
-revision 2 (the chief's answers to the three open questions are in the sections below); owner
+Approval: plan OK by the lead agent, 2026-11-18, against the owner's answers q4 Q3 A and Q6 A,
+revision 2 (the lead agent's answers to the three open questions are in the sections below); owner
 review pending
-Revision 3, chief agent, 2026-11-18 (option a, under q4 Q3 A: "the ledger rows are the home"):
+Revision 3, lead agent, 2026-11-18 (option a, under q4 Q3 A: "the ledger rows are the home"):
 the "Same cause?" answer and its search move into the ledger row; `AGENTS.md` §9 line: owner
 review pending
 Revision 4, 2026-11-18 (review round 2 of #135): the test strategy rows of revision 3 and of the
 checks that the reviews added; the answer check also covers rows found after 2026-11-18 and needs
-the whole form; a row with more or fewer cells than its header is a problem (the chief agent's
-note on DQ-573). Approval: the chief agent, 2026-11-18; owner review pending
+the whole form; a row with more or fewer cells than its header is a problem (the lead agent's
+note on DQ-573). Approval: the lead agent, 2026-11-18; owner review pending
 Revision 5, 2026-11-18 (DQ-753, a same cause as DQ-356): the PR template has one home,
 `.github/pull_request_template.md`, which GitHub needs; `pull-request.md` keeps the rules and
 example rows and links to it. No test: the change removes a copy, so there is nothing to compare.
-Approval: the chief agent, 2026-11-18, by the rule "one home for each fact" (DQ-152, 2026-11-09);
+Approval: the lead agent, 2026-11-18, by the rule "one home for each fact" (DQ-152, 2026-11-09);
 q4 Q3 A does not name the template, so the owner's review is pending
 Revision 6, 2026-11-19 (owner, 2026-11-19, morning Q4 A): the answer check reruns the search of
 each new row and checks the "Yes" rows; it reads rows from DQ-853 on (the owner's "new rows
-only"). Plan OK by the chief agent, 2026-11-19, with two of the chief's decisions: the third §9
+only"). Plan OK by the lead agent, 2026-11-19, with two of the lead agent's decisions: the third §9
 step (the fixed answer) and the lessons in the searched files
 
 ## The cause
@@ -118,7 +118,7 @@ others: a script writes every count, and the other records link to the row that 
   in the fix cell of that row and in the round log. The build checks each such text against its
   home before the cell changes, and the PR description lists any that has none.
 
-### The paragraphs under the §2 table (the chief's answer: remove them)
+### The paragraphs under the §2 table (the lead agent's answer: remove them)
 
 Remove the per-PR paragraphs and the count sentences (lines 59 to 84), and keep the rules of lines
 55 to 58 and the two checks of M2 (lines 86 to 97). One sentence replaces them: the script writes
@@ -150,7 +150,7 @@ The reviewer checks the choice of words."
   PRs open on 2026-11-19), not `withdrawn`. DQ-751 to DQ-777 (this PR's own rows) keep the form
   check of revisions 3 and 4. The other rows, also DQ-778 to DQ-852 of #136, #137 and #138, are
   not checked; this PR does not rewrite rows of other PRs, except the old-form answers of rows
-  from DQ-853 on that merged before #135 (DQ-873 to DQ-875 of #138; chief, 2026-11-19, review 5:
+  from DQ-853 on that merged before #135 (DQ-873 to DQ-875 of #138; lead agent, 2026-11-19, review 5:
   `main` stays green). The date rule of revision 4 goes.
 - **The form**, in the "Fix and verification" cell:
   `Same cause: no (search: `<pattern>`: <hits>)` and
@@ -171,7 +171,7 @@ The reviewer checks the choice of words."
 - **The §9 step of a yes** is one of: `owner, <YYYY-MM-DD>, <page> Q<n> <option>` (for example
   `owner, 2026-11-19, morning Q4 A`); `proposal DQ-<n>`, where DQ-<n> is a row of the ledger files
   and not the row itself; `fixed answer (AGENTS.md §9, owner 2026-11-11)`, for the fixed answer to
-  a claim bigger than its proof. The third step is the chief agent's reading of "an owner decision
+  a claim bigger than its proof. The third step is the lead agent's reading of "an owner decision
   or a proposal id": the fixed answer is an owner rule, and a correct row would fail without it. A
   yes without a step is a problem.
 - `docs/workflows/pull-request.md` ("One home for each fact") gets the form, the command, the three
@@ -253,7 +253,7 @@ files, each difference checked against its rows.
 
 ## Open rows: how each one ends
 
-The end rules (the chief's answer, 2026-11-18; `dropped` is not used: the owner's q4 Q3 A says
+The end rules (the lead agent's answer, 2026-11-18; `dropped` is not used: the owner's q4 Q3 A says
 the rows "close with it" and gives no "do not fix"):
 
 - **A wrong fact in a home** (a ledger cell, a round row, a `status.md` line, `plans/README.md`):
@@ -264,12 +264,12 @@ the rows "close with it" and gives no "do not fix"):
   this PR lists each edited PR. GitHub keeps the edit history.
 - **An old "Same cause?" answer written without a search**: the search runs now and goes into the
   row, with the search named; state `fixed`. If the search shows that the old answer was wrong, it is
-  not patched: it goes to the chief as an `AGENTS.md` §9 owner case, and the row stays `open`.
+  not patched: it goes to the lead agent as an `AGENTS.md` §9 owner case, and the row stays `open`.
 - **A wrong copy in the §2 paragraphs**: the paragraphs are removed (above); state `fixed`.
 - Any row that cannot close stays `open` with its reason.
-- The row closures start only when #127, #128, #129 and #132 are on `main` (the chief tells the
+- The row closures start only when #127, #128, #129 and #132 are on `main` (the lead agent tells the
   leader after each merge). Rows of a branch that is not merged then stay out of this PR.
-- DQ-618 and DQ-669 are not in this PR: the chief's merge preparation of #128 ends them.
+- DQ-618 and DQ-669 are not in this PR: the lead agent's merge preparation of #128 ends them.
 - #114's register row says 2 escaped (DQ-541, DQ-542); both rows say `escaped: no`. The build finds
   which side is true, with evidence, and corrects that side; the fact lives in the rows.
 
@@ -278,7 +278,7 @@ the rows "close with it" and gives no "do not fix"):
 | DQ-626 (#128) | §2 sentence: DQ-624 "fixed in the step 5 commit" | Fixed: the paragraph is removed; DQ-624's row is right |
 | DQ-627 (#128) | §2 sentence: counts "from the script on the records commit" | Fixed: the paragraph is removed; the script writes the counts |
 | DQ-628 (#128) | Body "two round rows"; DQ-620, DQ-622 fix-induced `no`; §2 #119 sentence | Fixed: DQ-620 and DQ-622 get the fix-induced value that the commits show; the §2 sentence is removed; the body gets the link form |
-| DQ-629 (#128) | DQ-622's precedent DQ-512 is another cause | Search runs now and goes into DQ-622; fixed, or a §9 case for the chief |
+| DQ-629 (#128) | DQ-622's precedent DQ-512 is another cause | Search runs now and goes into DQ-622; fixed, or a §9 case for the lead agent |
 | DQ-630 (#128) | DQ-625 lacks the fixed words; the measure count 1 not told | Fixed: DQ-625's last cell gets "fix-induced: yes (the round 2 correction DQ-617)"; Needs human review tells the owner that the measure count of step 5 is 1 |
 | DQ-591 (#129) | Description row R3-3 "Same row as above" | Fixed: the body gets the link form, with the search of R3-3 named |
 | DQ-592 (#129) | DQ-649, DQ-650 and R4 rows name no search | Search runs now and goes into the rows; fixed, or a §9 case |

@@ -5,7 +5,7 @@ Brief: the owner's answer of 2026-11-18 (q5 Q1 A) to the repeated cause that rou
 test strategy and review rounds). The PR: #136, after the plan
 [p3-breaks-static-test-time.md](p3-breaks-static-test-time.md).
 Checkpoint: none (a CI script and its doc rule; no UI, no migration, no public API, no new module)
-Approval: Owner, 2026-11-18, q5 Q1 A (the design); plan review: chief agent; owner review pending
+Approval: Owner, 2026-11-18, q5 Q1 A (the design); plan review: lead agent; owner review pending
 
 ## The problem (DQ-782)
 
@@ -74,7 +74,7 @@ changed test is a claim with breaks, or an exemption with a reason, for example 
    changed test files (the step that it ran already for each list) and compiles nothing.
 7. **Rollout.** The job runs on the merge commit of each PR with `main`. After this PR merges,
    each open PR that changes a test fails the job until it has a list. The job is not a required
-   check (owner, q4 Q2 B); the chief checks it before each merge, so the chief tells the leaders
+   check (owner, q4 Q2 B); the lead agent checks it before each merge, so the lead agent tells the leaders
    of the open PRs. Probe (2026-11-18, the code of this branch before this plan, a script that
    runs `prProblems` with an empty list on a merge commit): #130 (`6a43404`) would need 9 lines,
    #134 (`74a1ff2`) 7 lines.
@@ -124,7 +124,7 @@ No order or race case: the job is one synchronous run on one checkout.
   that is not a `*.test.*` file) marks no test as changed, as in step 3 today. A test file with
   another name is not read.
 - GitHub does not block a merge when the job is red: it stays optional (owner, q4 Q2 B), and the
-  chief checks it before each merge.
+  lead agent checks it before each merge.
 - The job checks only the list of the open PR, not the lists of merged PRs.
 - The reader of the changed tests keeps two gaps (round 1 of the redesign, R1-1 and R1-2; DQ-161:
   the plan of #107 changes this reader for the runner, not yet for the CI job): lines that the PR

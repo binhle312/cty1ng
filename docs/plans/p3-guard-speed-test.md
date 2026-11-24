@@ -1,18 +1,18 @@
 # Guard speed test: the fastest of 3 runs for each 1 MB line (DQ-455)
 
-Brief: DQ-455 in [delivery-quality.md](../delivery-quality.md) (the home was not set; the chief agent set it on 2026-11-18); no task brief exists
+Brief: DQ-455 in [delivery-quality.md](../delivery-quality.md) (the home was not set; the lead agent set it on 2026-11-18); no task brief exists
 Checkpoint: none (one test changes; no product code, no UI, no new module)
-Approval: chief agent, 2026-11-18, under the owner's order of 2026-11-14 (P3 questions to consultants); owner review pending. The chief agent asked for two proofs in the PR: the time of the test with the 1.1 s break (it must be far from the 20 s test timeout) and the normal time in the full suite
+Approval: lead agent, 2026-11-18, under the owner's order of 2026-11-14 (P3 questions to consultants); owner review pending. The lead agent asked for two proofs in the PR: the time of the test with the 1.1 s break (it must be far from the 20 s test timeout) and the normal time in the full suite
 
 Revision 3 (2026-11-18): the owner's answer q5 Q5 A chose a redesign of the way that tests time
 work. Its plan, test strategy and approval are in [p3-timed-tests.md](p3-timed-tests.md), a file of
 its own ([plans README](README.md), rule 6). This file keeps the plan of the 48 lines of the guard
 test, which did not change.
 
-Revision 2 (2026-11-18, after review round 1; approved by the chief agent, 2026-11-18): a second
+Revision 2 (2026-11-18, after review round 1; approved by the lead agent, 2026-11-18): a second
 break (the last line), the red-run break of the first 3 lines, and the goal "one slow run does not
 fail the test" in place of "a busy machine does not fail the test". The old words came from the
-chief agent's brief, not from an owner-approved criterion. The owner's decision on a redesign is
+lead agent's brief, not from an owner-approved criterion. The owner's decision on a redesign is
 in [p3-timed-tests.md](p3-timed-tests.md).
 
 Code read at `origin/main` = `74a1ff2`.

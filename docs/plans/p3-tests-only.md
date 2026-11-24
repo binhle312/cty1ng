@@ -2,7 +2,7 @@
 
 Brief: items 70, 71 and 72 of the P3 list before M3 (owner-approved list of 2026-11-12, PR 18 "Tests only"); DQ-115 in [delivery-quality.md](../delivery-quality.md)
 Checkpoint: none (tests only; the list's approval column says "none")
-Approval: chief agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15
+Approval: lead agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15
 
 Tests only: no product code changes.
 

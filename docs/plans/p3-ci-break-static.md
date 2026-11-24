@@ -3,7 +3,7 @@
 Brief: the owner's answers of 2026-11-18 in `decisions.html`: "DQ-517: D" and "DQ-448: B" (a CI
 check that runs the static rules of the break runner on each PR, in its own small PR with a plan)
 Checkpoint: code design (a new script and a new module of `scripts/lib/`); no UI, no migration
-Approval: plan OK by the chief agent, 2026-11-18, against the owner's answers DQ-517 D and DQ-448 B (revision 1; Q1: option B; Q2 and Q3 as recommended); owner review pending
+Approval: plan OK by the lead agent, 2026-11-18, against the owner's answers DQ-517 D and DQ-448 B (revision 1; Q1: option B; Q2 and Q3 as recommended); owner review pending
 
 ## The cause
 
@@ -51,7 +51,7 @@ push. A CI job runs them on each push of a PR.
   `fetch-depth: 2`; the job runs `pnpm check:breaks:static scripts/breaks/pr-$PR.json --base HEAD^1`
   (`HEAD^1` of the merge commit of GitHub is the base branch, so the diff is the change of the PR).
   The PR number comes from `github.event.pull_request.number` through an environment variable.
-  It runs on each PR: with no list it passes in a few seconds. It stays an optional check: the chief checks it before each merge (owner, 2026-11-18, q4 Q2 B).
+  It runs on each PR: with no list it passes in a few seconds. It stays an optional check: the lead agent checks it before each merge (owner, 2026-11-18, q4 Q2 B).
 
 ### Failure paths
 
@@ -118,11 +118,11 @@ race.
 - A PR that needs a list and has none passes the job.
 - Lists of older PRs are not checked.
 
-## Open questions (for the chief; owner items go under `Needs human review`)
+## Open questions (for the lead agent; owner items go under `Needs human review`)
 
 1. Option B (with the compile check) or A? Recommendation: B.
 2. Required check: the owner's setting in the ruleset "Protected main". Recommendation: make
    `check:breaks static` required (it always reports, so a PR without a list is not blocked).
    This PR does not change the ruleset.
-   Answer: the owner chose to keep it optional (2026-11-18, q4 Q2 B); the chief checks it before
+   Answer: the owner chose to keep it optional (2026-11-18, q4 Q2 B); the lead agent checks it before
    each merge.

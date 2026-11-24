@@ -2,7 +2,7 @@
 
 Brief: P3 list of 2026-11-12, part 2, items 73, 74, 75 and 76 (part 5, PR 19), approved by the owner on 2026-11-12
 Checkpoint: none (tooling only; no UI, no code design)
-Approval: chief agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15
+Approval: lead agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15
 
 ## Items and their state on `main` (`97221d3`)
 
@@ -47,7 +47,7 @@ run (ESLint prints "There are suppressions left that do not occur anymore", exit
   `docs/frontend-conventions.md` §1 (the bot-list row).
 - Not claimed: `exec`/`prepare` on a better-sqlite3 handle with a built string. A wider rule flags 4
   places today (`migrate.ts` x3, `bots-schema.test.ts:67`) and #113 rewrites `migrate.ts`, so this
-  waits for a later PR (chief, 2026-11-15, Q1 B).
+  waits for a later PR (lead agent, 2026-11-15, Q1 B).
 
 ### 75 and 76: `e2e:serve` stops on more exits, and a test runs the script
 
@@ -94,5 +94,5 @@ value in `eslint.config.js`).
 
 ## Open questions
 
-Answered by the chief on 2026-11-15: Q1 B (no `exec`/`prepare` widening), Q2 A (narrow the two
+Answered by the lead agent on 2026-11-15: Q1 B (no `exec`/`prepare` widening), Q2 A (narrow the two
 texts), Q3 A plus a break list for the SQL-rule tests.

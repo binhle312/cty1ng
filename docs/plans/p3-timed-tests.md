@@ -2,7 +2,7 @@
 
 Brief: DQ-805 in [delivery-quality.md](../delivery-quality.md) (the owner's decision on a repeated cause); the first plan of this PR is [p3-guard-speed-test.md](p3-guard-speed-test.md); no task brief exists
 Checkpoint: none (test helper and lint config only; no product code, no UI; the owner decided the design)
-Approval: Owner, 2026-11-18, q5 Q5 A (the design); plan review: chief agent, 2026-11-18 (with two changes: the rule covers the frontend and shared tests too, and this plan has its own file); owner review pending
+Approval: Owner, 2026-11-18, q5 Q5 A (the design); plan review: lead agent, 2026-11-18 (with two changes: the rule covers the frontend and shared tests too, and this plan has its own file); owner review pending
 
 Revision 2 (2026-11-18, after review round 1 of the redesign; no change of the owner's decision):
 the plan text now matches the build in six places: the status of the bots test is checked inside
@@ -87,7 +87,7 @@ The rule reads the form `performance.now` (also `performance["now"]` and a destr
 It uses a block of its own: `no-restricted-properties` is another rule from `no-restricted-syntax`,
 so it does not meet the "last block wins" problem.
 
-**The frontend and shared tests** (chief agent, plan review, 2026-11-18). The helper lives in
+**The frontend and shared tests** (lead agent, plan review, 2026-11-18). The helper lives in
 `backend/test/`; `frontend/` and `shared/` may not import `backend/` (the import rules
 `frontend-not-to-backend` and `shared-not-to-packages`). No frontend or shared test times work
 today, so nothing breaks. The same rule covers them with no exception: `frontend/**/*.{test,spec}.{ts,tsx}`,
@@ -169,6 +169,6 @@ each line one time. The loop keeps the first failing line in the message.
 
 None for the owner. The decision is the owner's answer q5 Q5 A, quoted above.
 
-Choices that I made inside the decision, for the plan review (all approved by the chief agent): the
+Choices that I made inside the decision, for the plan review (all approved by the lead agent): the
 helper is a new file `backend/test/timed.ts`, not `helpers.ts`; the check is an ESLint rule; the
 helper returns the time and the test keeps its assertion.

@@ -1,12 +1,12 @@
 # The pnpm links test of the static break check is fast enough for the full suite
 
-Brief: the chief's task of 2026-11-18. The test "reads the packages that pnpm links, with no
+Brief: the lead agent's task of 2026-11-18. The test "reads the packages that pnpm links, with no
 false errors on code that the break keeps" (`scripts/lib/breaks-static.test.ts`, from #128) times
 out in the full `pnpm test` (20 s limit) and passes when its file runs alone. Found by the gates
 of #135 and #134 (two full runs of two).
 Checkpoint: none (a change of one test file; no UI, no migration, no public API, no code design)
-Approval: plan OK by the chief agent, 2026-11-18 (revision 1), with four conditions: break 1 (no `realpath`) and break 2 (the fixture check) each give a recorded red run; a comment at the fixture names the real case; the Not claimed line names where the real layout is still exercised; the test time alone and in three full runs. Owner review pending
-Approval: revision 2, 2026-11-18: `lib: ["ES2022"]` in the fixture tsconfigs, and the break list (round 1 review, R1-1 and R1-2); the chief agent accepted the `lib` change ("Good find on `lib`"); owner review pending
+Approval: plan OK by the lead agent, 2026-11-18 (revision 1), with four conditions: break 1 (no `realpath`) and break 2 (the fixture check) each give a recorded red run; a comment at the fixture names the real case; the Not claimed line names where the real layout is still exercised; the test time alone and in three full runs. Owner review pending
+Approval: revision 2, 2026-11-18: `lib: ["ES2022"]` in the fixture tsconfigs, and the break list (round 1 review, R1-1 and R1-2); the lead agent accepted the `lib` change ("Good find on `lib`"); owner review pending
 Redesign of DQ-782 (owner, 2026-11-18, q5 Q1 A), built in this PR: [p3-break-list-decision.md](p3-break-list-decision.md).
 
 ## The cause, with numbers

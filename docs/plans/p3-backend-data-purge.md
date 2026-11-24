@@ -2,7 +2,7 @@
 
 Brief: the P3 list before M3 (owner, 2026-11-08; list approved 2026-11-12), list PR 9: items 27, 28, 29, 30, five parts of item 31, and the docs of item 37 (owner, 2026-11-13, question 12)
 Checkpoint: none (the P3 list: "Needs the owner before code: no")
-Approval: chief agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15
+Approval: lead agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15
 
 ## 1. What I found on `origin/main` (`97221d3`, 2026-11-15, read)
 
@@ -28,7 +28,7 @@ Not mine: the 1 MB limit and `SkillDiff` (list PR 10).
 3. **31b.** Export all uses the `latest` that `list()` gives. The path with ids stays.
 4. **31c.** One `liveSkill`, exported from `core/skills/`; `bots.service.ts` imports it.
 5. **31d.** One purge loop: `backend/src/core/purge-due.ts`. The service gives two functions: the due ids for a cutoff, and "purge this id in this transaction if it is still due" (the recheck of `trash_days` and of the state stays in each service). No change of behaviour; the old tests stay green.
-6. **27.** Tests first, then the fix in the one loop (section 4, the chief decides the option). `docs/architecture.md` §6.1, the row "Trash purge", gets the new behaviour. The comment of `timed-jobs.ts` too.
+6. **27.** Tests first, then the fix in the one loop (section 4, the lead agent decides the option). `docs/architecture.md` §6.1, the row "Trash purge", gets the new behaviour. The comment of `timed-jobs.ts` too.
 7. **28.** Test first, then `toSkill` parses the value with Zod (section 4).
 8. **30.** Two tests (they pass on `main`: break claims).
 9. **37.** One commit: the owner's words in `docs/domain-model.md` and `docs/api.md`, and one API test (passes on `main`: break claim).
@@ -58,11 +58,11 @@ Order and race cases: T1 to T4 are the order cases of item 27 (the failed item d
 
 Changed tests of steps 2 to 5 (the `modifiedAt` reads): `exempt` with the reason "the same assertion through `list()`; no change of behaviour".
 
-## 4. Open questions for the chief
+## 4. Open questions for the lead agent
 
-Q1 and Q2: answered by the chief with consultants, 2026-11-15 (two consultants agreed; option A for both). Q3: answered.
+Q1 and Q2: answered by the lead agent with consultants, 2026-11-15 (two consultants agreed; option A for both). Q3: answered.
 
-**Q1 (item 27): what does the purge do after one item fails?** Answered: A (the chief with consultants, 2026-11-15). Notes of the answer: keep the step try in `timed-jobs.ts` (the read of the due list can still throw); catch outside `uow.run` for each item; log the error as pino `err`, one line per failed item with the step and the id; the info line keeps the real counts; a test runs the job a second time and checks that it tries the failed item again; the checks inside each transaction stay. A does not make sure that an item that keeps failing goes by its deadline: the failed item stays in Trash, and the log shows it. No document decides it. `architecture.md` §6.1 says "Purges each item … One item per transaction, with its event" and "a failed run (or purge step) is logged and the next run tries again". Example: skills A, B, C are due; B fails each time (a bad row). Today A goes, B fails, C stays in Trash on every run, past `trash_days` (D62 says "never shorter", "up to one interval longer").
+**Q1 (item 27): what does the purge do after one item fails?** Answered: A (the lead agent with consultants, 2026-11-15). Notes of the answer: keep the step try in `timed-jobs.ts` (the read of the due list can still throw); catch outside `uow.run` for each item; log the error as pino `err`, one line per failed item with the step and the id; the info line keeps the real counts; a test runs the job a second time and checks that it tries the failed item again; the checks inside each transaction stay. A does not make sure that an item that keeps failing goes by its deadline: the failed item stays in Trash, and the log shows it. No document decides it. `architecture.md` §6.1 says "Purges each item … One item per transaction, with its event" and "a failed run (or purge step) is logged and the next run tries again". Example: skills A, B, C are due; B fails each time (a bad row). Today A goes, B fails, C stays in Trash on every run, past `trash_days` (D62 says "never shorter", "up to one interval longer").
 
 | Option | What happens | Gain | Cost / risk |
 | --- | --- | --- | --- |
@@ -74,14 +74,14 @@ Events (`AGENTS.md` §5 rule 3), same in A and B: the failed item's transaction 
 The new sentence in §6.1 (A): "When one item fails, the job logs it with its id and goes on with the next item; the failed item stays in Trash, and the next run tries it again."
 Not in scope: the avatar cleanup (`avatars.service.ts:63-78`) has the same shape (one transaction for all files); item 27 names only the two loops.
 
-**Q2 (item 28): what does a read do with a bad stored value?** Answered: A (the chief with consultants, 2026-11-15). The risk is bigger than A below says: `list()` reads every row through `toSkill` (`repositories.ts:147`, `:161`), so one bad row makes the whole Skill Hub list, Export all and the Trash list answer 500. The undo: `UPDATE skills SET trashed_bot_ids = NULL WHERE id = ?`. Valid values stay valid: `null` and an empty list. No stored data changes. The restore loses only its `safeParse` skip, and keeps its check that each bot still exists and is live. Tests: `{}`, `[1]`, `["not-a-typeid"]` are refused, and one row reads back as `BotId[]`.
+**Q2 (item 28): what does a read do with a bad stored value?** Answered: A (the lead agent with consultants, 2026-11-15). The risk is bigger than A below says: `list()` reads every row through `toSkill` (`repositories.ts:147`, `:161`), so one bad row makes the whole Skill Hub list, Export all and the Trash list answer 500. The undo: `UPDATE skills SET trashed_bot_ids = NULL WHERE id = ?`. Valid values stay valid: `null` and an empty list. No stored data changes. The restore loses only its `safeParse` skip, and keeps its check that each bot still exists and is live. Tests: `{}`, `[1]`, `["not-a-typeid"]` are refused, and one row reads back as `BotId[]`.
 - A (recommended): refuse it (Zod `parse`, an error), as `tool_settings` does (`bots-repository.ts:229`, its test `bots-repository.test.ts:47-55`). `SkillRecord.trashedBotIds` becomes `BotId[] | null`, and the restore loses its `safeParse` skip. Risk: one bad row makes each read of that skill fail (500). The app never writes such a value, and no real database exists (owner, 2026-11-13).
 - B: drop the bad entries on read (a value that is not a list reads as `null`). The reads never fail; a bad value is silent.
 No migration and no change of the stored value in A or B. The audit also says the column "holds TypeIDs" (D36 stores UUIDs in the database). Changing that changes stored values: not in this PR; I write it as `Not claimed` and name it for the owner.
 
-**Q3 (item 29): the fix needs a TypeID prefix that D36 does not have.** History of the plan: the chief answered A on 2026-11-15, as written below. Then the owner, 2026-11-15: "29: simp": the prefix is `simp`, and item 29 is built in this PR (section 7). The text below is the question as it was before that answer. `docs/decisions/` is the owner's (`AGENTS.md` §7), so the prefix was the owner's choice. D36: every id outside the database is a TypeID, and its table lists each prefix. The ids port only makes TypeIDs (`newId(prefix)`). My scope then said: no change to `docs/decisions/`; the owner's answer allows the one D36 row.
+**Q3 (item 29): the fix needs a TypeID prefix that D36 does not have.** History of the plan: the lead agent answered A on 2026-11-15, as written below. Then the owner, 2026-11-15: "29: simp": the prefix is `simp`, and item 29 is built in this PR (section 7). The text below is the question as it was before that answer. `docs/decisions/` is the owner's (`AGENTS.md` §7), so the prefix was the owner's choice. D36: every id outside the database is a TypeID, and its table lists each prefix. The ids port only makes TypeIDs (`newId(prefix)`). My scope then said: no change to `docs/decisions/`; the owner's answer allows the one D36 row.
 - A (recommended then, answered): no code tonight. The PR names item 29 under `Needs human review`: "the owner picks a prefix (for example `simp`) for D36; then the fix is one line, `deps.ids.newId("simp")`, and one test".
-- B (not taken): the chief allows a D36 line now; I add the prefix to `shared/src/ids.ts`, use the ids port, and flag the D36 line for the owner.
+- B (not taken): the lead agent allows a D36 line now; I add the prefix to `shared/src/ids.ts`, use the ids port, and flag the D36 line for the owner.
 - C: add a `newUuid()` to the ids port (UUIDv7, no prefix). Changes a port and its contract suite, and the API id still has no prefix (against D36).
 
 
