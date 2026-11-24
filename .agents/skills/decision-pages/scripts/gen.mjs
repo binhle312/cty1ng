@@ -1,10 +1,10 @@
 // Build one decision page from a content file.
 // Usage: node gen.mjs <content.json> <out.html> [--allow-lint] [--text <page.txt>]
 // Exit 1 when the content is not valid, or when it breaks a limit (unless --allow-lint).
-// --text writes the page text, one sentence or item on each line, for a writing check.
+// --text writes the page text and one text file per question, for a writing check.
 import fs from "node:fs";
 import path from "node:path";
-import { validate, lint, buildPage, pageText } from "./lib.mjs";
+import { validate, lint, buildPage, pageText, questionText } from "./lib.mjs";
 
 const args = process.argv.slice(2);
 const allow = args.includes("--allow-lint");
@@ -18,12 +18,21 @@ try { content = JSON.parse(fs.readFileSync(src, "utf8")); }
 catch (e) { console.error(`cannot read ${src}: ${e.message}`); process.exit(1); }
 
 const bad = validate(content);
-if (bad.length) { console.error("content is not valid:\n- " + bad.join("\n- ")); process.exit(1); }
+if (bad.length) {
+  for (const error of bad) console.error("LINT " + error);
+  process.exit(1);
+}
 
 if (textOut) {
   fs.mkdirSync(path.dirname(path.resolve(textOut)), { recursive: true });
   fs.writeFileSync(textOut, pageText(content).join("\n") + "\n");
   console.log(`wrote ${textOut} (the page text, one sentence or item on each line)`);
+  const { dir, name } = path.parse(textOut);
+  content.questions.forEach((q, i) => {
+    const questionOut = path.join(dir, `${name}.q${i + 1}.txt`);
+    fs.writeFileSync(questionOut, questionText(q).join("\n") + "\n");
+    console.log(`wrote ${questionOut}`);
+  });
 }
 
 const r = lint(content);

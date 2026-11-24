@@ -38,6 +38,10 @@ others are yours.
 
 | Rule | Id | Reason |
 |---|---|---|
+| The page stands alone: the reader decides with no chat, terminal or other file open | R2.9 | A reader who must look elsewhere to understand a choice cannot decide on the page. |
+| The overview says what happened and why it needs a decision now | R2.9 | The reader did not see your work; the event gives the question its sense. |
+| A choice about words quotes the old and the new words, and names the file and the section | R2.9 | A summary of a change hides the exact difference that the reader decides on. |
+| The purpose and the source of the thing in question come before the choice | R2.9 | The reader cannot weigh a change to a rule without what the rule is for. |
 | The ask comes first: "Decide: ..." in at most 20 words | R2.4 | Readers stop early; the conclusion must be in line 1. |
 | The title is the question, at most 12 words, ends with "?" | R5.2 | The heading tells the reader what to do on this step. |
 | One decision per step | R5.1 | Two decisions in one step make both answers vague. |
@@ -68,26 +72,69 @@ others are yours.
 
 1. **List the questions.** One decision per question. Split a question that holds two. Give
    each a topic of 1-3 words for its step button.
-2. **For each question, find the real options.** 2-4 options that a sensible person could
-   choose. Write each option's real gain, cost and risk. If an option has no case, remove it
-   and say so in the question's Details.
-3. **Write the content file** in the format of `references/content-format.md`, with the writing rules
+2. **Read the source of each question.** Open the file, the rule or the record that the
+   question is about, and find what it is for: its origin, such as a lesson, a decision or an
+   incident. Write down the exact words that change, if the question is about words. A pick made
+   from your memory of the source can be wrong.
+3. **Find whose decision it is, and the real options.** For each question, write down:
+   - the rule or the approval that makes it the reader's decision (`owner`);
+   - what the reader's earlier decisions and the approved scope already settle (`settled`);
+   - the one choice that still needs the answer (`decides`).
+
+   Then find 2-4 options that a sensible person could choose, each with what it does, its real
+   gain, cost and risk. Remove an option that asks the reader to approve a settled point, that
+   only defends your own earlier change, or that offers a difference the sources do not show.
+   List each removed option and why in `removed`.
+
+   Then challenge each question before you write it: what stays open after the settled points,
+   and which source makes it the reader's decision? If nothing stays open, drop the question.
+   If you are not sure, run the source review of step 7 on this list now, before you write.
+4. **Write the content file** in the format of `references/content-format.md`, with the writing rules
    below. Put the conclusion in the ask and the evidence in the facts and table. Put the use
    case in the example and the story in Details.
-4. **Build:** `node scripts/gen.mjs content.json page.html --text page.txt`. Fix every `LINT` line.
+5. **Build:** `node scripts/gen.mjs content.json page.html --text page.txt`. Fix every `LINT` line.
    Cut words; do not move decision facts into Details to pass a limit. Read every `WARN` line: fix
    it, or keep it for a reason that you put in your report.
-5. **Check the writing.** Write the content in Simplified Technical English (ASD-STE100). Run the
-   checker of the `ste-writing` skill on the `--text` file of step 4: the page text with one sentence or item on
+6. **Check the writing.** Write the content in Simplified Technical English (ASD-STE100). Run the
+   checker of the `ste-writing` skill on the `--text` file of step 5: the page text with one sentence or item on
    each line. The score must be 80% or more before you send the page. Give a reason for each
    flagged sentence that stays: fixed text, a technical name, or accuracy. If the checker is not
    installed, tell the person, and apply the rules by hand.
-6. **Verify:** `NODE_PATH=<node_modules that has @playwright/test> node scripts/verify.mjs content.json page.html`.
-   The step is done when the last line says `0 failed`.
-7. **Look at the screenshots** that verify writes (`-overview`, `-q1`, `-finish`, `-q1-dark`).
+7. **Get a source review.** A reviewer of the same or a stronger model than yours, read-only,
+   gets the content file, the question files of step 5 (`page.q1.txt`, ...) and the paths of the
+   sources behind each question. The question files show what each screen shows; the content
+   file shows the option keys, the pick and the Details. For each question it
+   answers: whose decision is it, and which source says so; what do the sources already settle;
+   does an option ask for an approval that the sources do not give, or offer a difference that
+   does not exist; does the question say what is settled and what only the answer changes. It
+   ends with `VALID` or `INVALID` for each question. Fix each point, or answer it in writing in
+   your report. In a test on two rejected pages, a reader of the page alone missed an option that
+   needed an approval nobody gave; a reader of the sources found it.
+8. **Test each question screen alone.** Step 5 also writes `page.q1.txt`, `page.q2.txt` and so
+   on: the text of one question screen, with its Details closed. Give each file, and nothing
+   else, to a new agent session that did not see your work. Ask it to write "NOT ON THE SCREEN"
+   for each part that the screen does not give:
+   1. What happened, and why does it need a decision now?
+   2. What is already decided, and what does only your answer change?
+   3. What is the thing in question, and what is it for? If the choice is about words: what are
+      the exact old and new words?
+   4. For each option: what does it do, and what does it cost?
+   5. What does the pick rest on, and when is another option better?
+   6. Is any option about something that is already decided, or not your decision to make? If
+      so, write "ALREADY SETTLED" and why.
+
+   Compare its answers with what you know. Each answer that it cannot give, or gives wrong, is a
+   missing fact on that screen: add it, then build and check again. The step is done when
+   answers 1 to 5 are right, answer 3 gives the purpose (and both versions for a choice about
+   words), and answer 6 names no option. If you cannot start a new session, tell the person that
+   this test did not run.
+9. **Verify:** `NODE_PATH=<node_modules that has @playwright/test> node scripts/verify.mjs content.json page.html`.
+   The step is done when the command exits with status 0 and its summary line says `0 failed`.
+10. **Look at the screenshots** that verify writes: `-overview`, `-q1`, `-finish` and `-q1-dark`
+   for a page with questions, and only `-overview` for a report page.
    Blur your eyes: you must see, in order, the title, the ask, the pick box and the options.
    Fix what one look shows, then build and verify again.
-8. **Run the pre-send checklist** at the end of this guide, then send the page.
+11. **Run the pre-send checklist** at the end of this guide, then send the page.
 
 ## Writing rules
 
@@ -127,6 +174,8 @@ The pick moves the answer strongly (R3.4), so calibrate it.
   others'.
 - Keep every fact and number from your sources. Shorten the words, not the facts. A fact that
   does not change the choice goes into Details.
+- Base the pick on the source (step 2), not on your summary of it. If the source changes your
+  pick, say so in the Details.
 - When you remove an option or correct an earlier claim, say so in the Details.
 
 ## Overview step
@@ -135,6 +184,10 @@ The overview is step 0. It answers "what is the state, and what do you need from
 
 - `heading`: what the page is and how many questions ("Release 4: 7 questions for you").
 - `lead`: the bottom line in at most 30 words: the state and the main finding.
+- When a question comes from an event (a review finding, a failure, a change), one block says
+  what happened, where, and why it needs the reader now. A block for the thing in question says
+  what it is and what it is for. A choice about words gets a table with the old words, the new
+  words and their source, each as a quote.
 - Blocks, each with a finding as its title. Typical blocks: the open issues, the status list,
   the numbers table, my errors, and other items that wait for the reader. Put two short blocks
   side by side (`place: left` and `place: right`).
@@ -156,16 +209,26 @@ per row. "Copy my answers" copies this text:
 Q1: A <option label>
   Note: <note text>
 Q2: (no answer)
+Page clear: no
+  Missing: <text>
 ```
 
 The reader pastes it back to you. Read the letters against the options in your content file.
+The "Page clear" line answers "Did this page tell you what each question is about?". It is the
+only test by the real reader. When it says "no", or names something missing, fix that in the
+next page, and add the case to the step that should have found it.
 
 ## Pre-send checklist
 
 - [ ] `scripts/gen.mjs` printed 0 lint errors; each warning is fixed or has a reason in your report.
 - [ ] `scripts/verify.mjs` printed `0 failed` on the final page.
-- [ ] The STE checker gave 80% or more on the `--text` file of step 4, or you told the person that it is not installed.
-- [ ] You looked at all four screenshots after the last change, in light and dark.
+- [ ] The STE checker gave 80% or more on the `--text` file of step 5, or you told the person that it is not installed.
+- [ ] Each question has `owner`, `settled` and `decides`, and each option has `does`; no option asks for a settled point.
+- [ ] A source review ran; each of its points is fixed or answered in your report.
+- [ ] A new session passed step 8 on each question screen alone (answers 1 to 5 right, answer 6 names no option), or you told the person that the test did not run.
+- [ ] The overview says what happened and why it needs the reader now.
+- [ ] Each choice about words quotes the old and the new words, with the file and the section.
+- [ ] You looked at each screenshot of step 10 after the last change.
 - [ ] Each title is a question, and each ask starts the decision in line 1.
 - [ ] Each option has a real gain; no straw man is left.
 - [ ] Each pick has its confidence, its margin when close, and "Pick another if".

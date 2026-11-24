@@ -90,6 +90,16 @@ Everything that decides the answer must be in those places.
    complex topics; NN/g's expert users called dense pages "crazy dense" and wanted less.
    Sources: as in item 7 (GOV.UK clear language; NN/g plain language for experts)
    Rule for our pages: "the reader is a developer" is no reason for long or dense text.
+9. **Recognition rather than recall.** "Minimize the user's memory load by making elements,
+   actions, and options visible." "The user should not have to remember information from one
+   part of the interface to another." (Nielsen, heuristic 6, 1994, last reviewed 2024).
+   "Recognition is easier than recall because it involves more cues" (Budiu, NN/g, 2024).
+   Sources: https://www.nngroup.com/articles/ten-usability-heuristics/ ;
+   https://www.nngroup.com/articles/recognition-and-recall/
+   Rule for our pages: the page holds each fact that the decision needs, so the reader does not
+   recall it from a chat or look it up in a terminal: what happened, the exact old and new words,
+   and what the thing in question is for. Each question screen holds them: a new session that
+   reads only that screen can say what is settled and what the answer changes.
 
 ## 3. Presenting a decision with options
 
@@ -203,6 +213,8 @@ Everything that decides the answer must be in those places.
 | Wall of text | F-pattern; 20% read (§1.2, §1.3) | Paragraph max 50 words; facts as 2-4 bullets |
 | Evidence mixed with the ask | Inverted pyramid (§2.4) | Ask and pick first; scores in a table; process story in Details |
 | Jargon and private terms ("seats", "grafts", "promotion") | NN/g experts left a page full of unknown terms, https://www.nngroup.com/articles/plain-language-experts/ ; WCAG 3.1.3 unusual words, https://www.w3.org/WAI/WCAG22/Understanding/unusual-words.html | One plain word, or define it at first use in at most 8 words |
+| Context only in the author's head: the page names a change but not the old and new words, or a rule but not its purpose | Recognition rather than recall (§2.9) | The overview says what happened; a choice about words quotes both versions; each question screen passes a test by a new session alone |
+| A question about something already settled, or an option that defends the author's own change | Owner, 2026-11-24: two rejected pages; on one of them a reader of the page alone missed it, and a reader of the sources found it | Fields `owner`, `settled`, `decides`, `removed`; a source review by a reviewer of the same or a stronger model |
 | Ids without meaning (REQ-14, order 12, #42) | WCAG 3.1.4 abbreviations, https://www.w3.org/WAI/WCAG22/Understanding/abbreviations.html ; NN/g first 2 words (§1.5) | Every id has its meaning next to it: "order 12 (for this week only)" |
 | Split panes that must be joined in the head | Split attention (§2.2) | Option trade-offs inside the option card |
 | Uncalibrated recommendation | Anchoring, defaults (§3.4) | Pick line with confidence and "Pick another if" |
@@ -223,7 +235,7 @@ Everything that decides the answer must be in those places.
 | Example | left | 2-4 steps, 15 words each | Time or trigger label, then what happens |
 | Details | left, collapsed | no limit | Process story, full lists, ids, sources |
 | Option card | right | label 8 words | Letter, short name, Recommended badge, "Risk: low" chip |
-| Gets / Costs / Risk | inside the card | 12 words each | Same 3 fields for every option |
+| Does / Gets / Costs / Risk | inside the card | 12 words each | Same 4 fields for every option |
 | Option details | inside the card, collapsed | no limit | Full list of what the option contains |
 
 Visible text target: left pane at most 220 words, right pane at most 160, before any Details.

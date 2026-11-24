@@ -1,43 +1,56 @@
 // Decision page kit: content lint and page builder. ES module, no dependencies.
 // Input: a content object (see content-format.md). Output: one self-contained HTML page.
-// Rule ids in comments (R1.2, R3.4, ...) point to sections of references/research.md.
+// Rule ids point to references/research.md or references/content-format.md.
 
 // ---------- Text helpers ----------
 
 export const esc = (s) =>
   String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
+const BOLD_MARKUP = /\*\*([^*]+?)\*\*/g;
+const SENTENCE_BREAK = /(?<=[.!?])\s+(?=[A-Z0-9"'(#§\/])/g;
+
+function inlineParts(s) {
+  const text = String(s ?? "");
+  const parts = text.split("`");
+  return parts.length % 2 === 0 ? [text] : parts; // Unbalanced backticks stay literal.
+}
+
 // Safe inline markup: escape all text first, then allow only `code` and **bold**.
 export function inline(s) {
-  const parts = String(s ?? "").split("`");
-  if (parts.length % 2 === 0) return boldOnly(esc(s)); // unbalanced backtick: no code spans
-  return parts.map((p, i) => (i % 2 ? `<code${p.length <= 48 ? ' class="nw"' : ""}>${esc(p)}</code>` : boldOnly(esc(p)))).join("");
+  return inlineParts(s).map((part, i) => i % 2
+    ? `<code${part.length <= 48 ? ' class="nw"' : ""}>${esc(part)}</code>`
+    : esc(part).replace(BOLD_MARKUP, "<strong>$1</strong>")).join("");
 }
-function boldOnly(h) {
-  return h.replace(/\*\*([^*]+?)\*\*/g, "<strong>$1</strong>");
-}
+
+const textParts = (s) => inlineParts(s).map((part, i) => i % 2 ? part : part.replace(BOLD_MARKUP, "$1"));
+export const stripMarkup = (s) => textParts(s).join("");
 
 // Plain text for counting: a code span counts as one word.
 export function plain(s) {
-  return String(s ?? "").replace(/`[^`]*`/g, "CODE").replace(/\*\*/g, "");
+  return textParts(s).map((part, i) => i % 2 ? "CODE" : part).join("");
 }
-export const stripMarkup = (s) => String(s ?? "").replace(/\*\*/g, "").replace(/`/g, "");
 export function countWords(s) {
   return plain(s).split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w)).length;
 }
 // A semicolon list counts as one sentence (R2.7).
 export function sentences(s) {
   return plain(s)
-    .split(/(?<=[.!?])\s+(?=[A-Z0-9"'(#§\/])/)
+    .split(SENTENCE_BREAK)
     .map((x) => x.trim())
     .filter(Boolean);
 }
 export function boldWords(s) {
-  const m = String(s ?? "").match(/\*\*([^*]+?)\*\*/g) || [];
-  return m.reduce((n, b) => n + countWords(b), 0);
+  let count = 0;
+  for (const [i, part] of inlineParts(s).entries()) {
+    if (i % 2 === 0) for (const [, bold] of part.matchAll(BOLD_MARKUP)) count += countWords(bold);
+  }
+  return count;
 }
 
-// ---------- Limits (each traces to references/research.md) ----------
+// ---------- Limits ----------
+
+const SCOPE_FIELDS_RULE = "R8.1 scope fields";
 
 export const LIMITS = {
   titleWords: [12, "R5.2 the heading is the question, at most 12 words, ends with ?"],
@@ -45,6 +58,11 @@ export const LIMITS = {
   topicChars: [16, "R5.4 short step names keep the step bar on one or two rows"],
   askWords: [20, "R2.4 BLUF: the ask is the first line, at most 20 words"],
   whyWords: [25, "R5.2 hint text is one short sentence"],
+  decidesWords: [20, `${SCOPE_FIELDS_RULE}: state what the reader decides`],
+  settledMax: [3, `${SCOPE_FIELDS_RULE}: list up to 3 settled items`],
+  settledWords: [20, `${SCOPE_FIELDS_RULE}: keep each settled item short`],
+  ownerWords: [25, `${SCOPE_FIELDS_RULE}: state why the reader decides`],
+  removedWords: [25, `${SCOPE_FIELDS_RULE}: explain each removed option in Details`],
   pickReasonWords: [25, "R7b the pick line is at most 25 words"],
   pickAnotherWords: [15, "R3.7 'Pick another if' is at most 15 words"],
   factsMin: [2, "R2.1 2-4 bullets"],
@@ -61,7 +79,7 @@ export const LIMITS = {
   optionsMin: [2, "R3.3 2-4 options"],
   optionsMax: [4, "R3.3 2-4 options; R2.1 4 chunks"],
   labelWords: [8, "R3.3 an option label is at most 8 words"],
-  fieldWords: [12, "R7b Gets, Costs and Risk are at most 12 words each"],
+  fieldWords: [12, `${SCOPE_FIELDS_RULE} / R7b: Does, Gets, Costs and Risk are at most 12 words each`],
   contextWords: [220, "R1.2 people read about 20% of a page: at most 220 visible words of context"],
   choiceWords: [160, "R1.2 at most 160 visible words in the options"],
   sentenceWords: [20, "R2.7 visible sentences at most 20 words"],
@@ -76,12 +94,26 @@ const L = (k) => LIMITS[k][0];
 const RISKS = ["low", "medium", "high"];
 const CONFIDENCE = ["clear", "close call"];
 const STRAWMAN = /^(no work|nothing|none|no change)\.?$/i;
+const DECIDES_LABEL = "Only this depends on you:";
+const OWNER_LABEL = "Why you decide:";
+const SETTLED_LABEL = "Already decided (no answer needed):";
+const OPTION_ROWS = [["does", "Does"], ["gets", "Gets"], ["costs", "Costs"], ["riskText", "Risk"]];
+const riskChipText = (risk) => `Risk: ${risk}`;
+
+function questionDetails(q) {
+  if (!q.removed?.length) return q.details;
+  return {
+    summary: q.details?.summary || "Options removed",
+    items: [...(q.details?.items || []), ...q.removed.map((item) => `Option removed: ${item}`)],
+  };
+}
 
 // ---------- Validation (shape) ----------
 
 export function validate(c) {
   const e = [];
   const need = (cond, msg) => { if (!cond) e.push(msg); };
+  const hasText = (s) => typeof s === "string" && s.trim().length > 0;
   need(c && typeof c === "object", "content must be an object");
   if (e.length) return e;
   need(c.page && c.page.title && c.page.storageKey, "page.title and page.storageKey are required");
@@ -97,12 +129,16 @@ export function validate(c) {
   (c.questions || []).forEach((q, i) => {
     const id = `questions[${i}]`;
     for (const f of ["topic", "title", "ask", "why", "facts", "example", "options", "pick"]) need(q[f], `${id}.${f} is required`);
+    for (const f of ["decides", "owner"]) need(hasText(q[f]), `${id}.${f} is required and must be a non-empty string (${SCOPE_FIELDS_RULE})`);
+    need(Array.isArray(q.settled) && q.settled.every(hasText), `${id}.settled is required and must be an array of non-empty strings (${SCOPE_FIELDS_RULE})`);
+    if (q.removed !== undefined) need(Array.isArray(q.removed) && q.removed.every(hasText), `${id}.removed must be an array of non-empty strings (${SCOPE_FIELDS_RULE})`);
     if (q.example) need(Array.isArray(q.example.steps) && q.example.title, `${id}.example needs title and steps`);
     if (Array.isArray(q.options)) {
       const keys = q.options.map((o) => o.key);
       need(new Set(keys).size === keys.length, `${id} option keys must be unique`);
       q.options.forEach((o, k) => {
         for (const f of ["key", "label", "gets", "costs", "risk", "riskText"]) need(o[f], `${id}.options[${k}].${f} is required (R3.2 same fields for every option)`);
+        need(hasText(o.does), `${id}.options[${k}].does is required and must be a non-empty string (${SCOPE_FIELDS_RULE})`);
         need(/^[A-Z]$/.test(o.key || ""), `${id}.options[${k}].key must be one capital letter`);
       });
       if (q.pick) need(keys.includes(q.pick.key), `${id}.pick.key must name an option`);
@@ -116,7 +152,8 @@ export function validate(c) {
 // ---------- Lint (limits) ----------
 
 export function lint(c) {
-  const errors = [], warnings = [], stats = [];
+  const errors = validate(c), warnings = [], stats = [];
+  if (errors.length) return { errors, warnings, stats };
   const max = (where, text, key) => {
     const n = countWords(text);
     if (n > L(key)) errors.push(`${where}: ${n} words > ${L(key)} (${LIMITS[key][1]})`);
@@ -132,8 +169,9 @@ export function lint(c) {
   };
   const markup = (where, text) => {
     const t = String(text ?? "");
-    if ((t.split("`").length - 1) % 2) warnings.push(`${where}: unbalanced backtick; shown as plain text`);
-    if ((t.split("**").length - 1) % 2) warnings.push(`${where}: unbalanced ** marker`);
+    const parts = inlineParts(t);
+    if (parts.length === 1 && t.includes("`")) warnings.push(`${where}: unbalanced backtick; shown as plain text`);
+    if (parts.some((part, i) => i % 2 === 0 && part.split("**").length % 2 === 0)) warnings.push(`${where}: unbalanced ** marker`);
   };
   const range = (where, n, lo, hi) => {
     if (n < L(lo) || n > L(hi)) errors.push(`${where}: ${n} items, need ${L(lo)}-${L(hi)} (${LIMITS[hi][1]})`);
@@ -160,6 +198,7 @@ export function lint(c) {
     const id = `Q${i + 1}`;
     let ctx = 0, bold = 0;
     const count = (where, text, key) => { markup(where, text); ctx += key ? max(where, text, key) : countWords(text); bold += boldWords(text); };
+    const countScopeLabel = (label) => { const words = countWords(label); ctx += words; bold += words; };
 
     count(`${id}.title`, q.title, "titleWords");
     if (!/\?\s*$/.test(q.title || "")) errors.push(`${id}.title: must end with "?" (${LIMITS.titleWords[1]})`);
@@ -169,6 +208,14 @@ export function lint(c) {
     sent(`${id}.ask`, q.ask);
     count(`${id}.why`, q.why, "whyWords");
     if (sentences(q.why).length > 1) errors.push(`${id}.why: ${sentences(q.why).length} sentences, need 1 (${LIMITS.whyWords[1]})`);
+    count(`${id}.decides`, q.decides, "decidesWords"); countScopeLabel(DECIDES_LABEL);
+    count(`${id}.owner`, q.owner, "ownerWords"); countScopeLabel(OWNER_LABEL);
+    sent(`${id}.owner`, q.owner);
+    if (q.settled.length) {
+      countScopeLabel(SETTLED_LABEL);
+      if (q.settled.length > L("settledMax")) errors.push(`${id}.settled: ${q.settled.length} items > ${L("settledMax")} (${LIMITS.settledMax[1]})`);
+      q.settled.forEach((item, k) => count(`${id}.settled[${k}]`, item, "settledWords"));
+    }
 
     // Pick
     const p = q.pick || {};
@@ -215,7 +262,13 @@ export function lint(c) {
     });
 
     // Details label (visible); details body is collapsed and not counted
-    if (q.details) { count(`${id}.details.summary`, q.details.summary, "blockTitleWords"); detailItems(`${id}.details`, q.details.items); }
+    const details = questionDetails(q);
+    if (details) count(`${id}.details.summary`, details.summary, "blockTitleWords");
+    if (q.details) detailItems(`${id}.details`, q.details.items);
+    (q.removed || []).forEach((item, k) => {
+      const where = `${id}.removed[${k}]`;
+      max(where, item, "removedWords"); markup(where, item);
+    });
 
     // Options
     const opts = q.options || [];
@@ -223,10 +276,12 @@ export function lint(c) {
     let choice = 0;
     opts.forEach((o) => {
       const w = `${id}.option ${o.key}`;
-      for (const [f, key] of [["label", "labelWords"], ["gets", "fieldWords"], ["costs", "fieldWords"], ["riskText", "fieldWords"]]) {
-        markup(`${w}.${f}`, o[f]); choice += max(`${w}.${f}`, o[f], key); sent(`${w}.${f}`, o[f]);
+      for (const [field, label] of [["label", ""], ...OPTION_ROWS]) {
+        const where = `${w}.${field}`;
+        markup(where, o[field]); sent(where, o[field]);
+        choice += max(where, o[field], label ? "fieldWords" : "labelWords") + countWords(label);
       }
-      choice += 2; // "Risk: low" chip
+      choice += countWords(riskChipText(o.risk));
       if (!RISKS.includes(o.risk)) errors.push(`${w}.risk: "${o.risk}" must be one of ${RISKS.join(", ")} (R4.5 the chip says the level in words)`);
       if (STRAWMAN.test(String(o.gets).trim())) warnings.push(`${w}.gets: "${o.gets}" is no real gain; remove the option or name its case (R3.6 decoys)`);
       if (o.details) detailItems(`${w}.details`, o.details.items);
@@ -243,17 +298,26 @@ export function lint(c) {
 
 // ---------- Copy text (shared by page and verify) ----------
 
-export function copyLines(c, answers, notes) {
-  const n = c.questions.filter((q, i) => answers[`Q${i + 1}`]).length;
-  const out = [`${c.page.title}${c.page.date ? ", " + c.page.date : ""}: my answers (${n} of ${c.questions.length})`];
+function feedbackLines({ clear, missing } = {}) {
+  const lines = [`Page clear: ${clear === "yes" || clear === "no" ? clear : "(no answer)"}`];
+  const text = String(missing || "").replace(/\s+/g, " ").trim();
+  if (text) lines.push(`  Missing: ${text}`);
+  return lines;
+}
+
+export function copyLines(c, answers, notes, feedback) {
+  let answered = 0;
+  const out = [];
   c.questions.forEach((q, i) => {
     const id = `Q${i + 1}`, a = answers[id];
     const o = q.options.find((x) => x.key === a);
+    if (o) answered++;
     out.push(o ? `${id}: ${o.key} ${stripMarkup(o.label)}` : `${id}: (no answer)`);
     const nt = String(notes[id] || "").replace(/\s+/g, " ").trim();
     if (nt) out.push(`  Note: ${nt}`);
   });
-  return out.join("\n");
+  const header = `${stripMarkup(c.page.title)}${c.page.date ? ", " + c.page.date : ""}: my answers (${answered} of ${c.questions.length})`;
+  return [header, ...out, ...feedbackLines(feedback)].join("\n");
 }
 
 // ---------- Styles ----------
@@ -496,17 +560,22 @@ function renderOverview(c) {
 function renderQuestion(q, i) {
   const id = `Q${i + 1}`, n = i + 1;
   const pickOpt = q.options.find((o) => o.key === q.pick.key);
-  const facts = `<ul class="facts">${q.facts.map((f) => `<li>${inline(f)}</li>`).join("")}</ul>`;
+  const factList = (items) => `<ul class="facts">${items.map((item) => `<li>${inline(item)}</li>`).join("")}</ul>`;
+  const settled = q.settled.length ? `<div class="settled"><p><strong>${SETTLED_LABEL}</strong></p>${factList(q.settled)}</div>` : "";
+  const facts = factList(q.facts);
   const table = q.table ? `<div class="blk">${renderTable(q.table)}</div>` : "";
   const ex = `<section class="blk example"><h2>Example: ${inline(q.example.title)}</h2><ol class="steps-ex">${q.example.steps
     .map((s) => `<li><span class="when">${inline(s.when)}</span><span>${inline(s.text)}</span></li>`)
     .join("")}</ol></section>`;
-  const details = q.details ? `<details class="blk more"><summary>${inline(q.details.summary)}</summary>${renderItems(q.details.items)}</details>` : "";
+  const details = questionDetails(q);
   const ctx = `<article class="ctx" aria-labelledby="h-${id}">
 <h1 id="h-${id}" tabindex="-1">${inline(q.title)}</h1>
 <p class="ask"><strong>Decide:</strong> ${inline(q.ask)}</p>
 <p class="why">${inline(q.why)}</p>
-${facts}${table}${ex}${details}
+<p class="decides"><strong>${DECIDES_LABEL}</strong> ${inline(q.decides)}</p>
+<p class="owner"><strong>${OWNER_LABEL}</strong> ${inline(q.owner)}</p>
+${settled}${facts}${table}${ex}
+${details ? `<details class="blk more"><summary>${inline(details.summary)}</summary>${renderItems(details.items)}</details>` : ""}
 </article>`;
   const pick = `<section class="pick" aria-label="My pick" data-pick-line="${esc(pickOpt.key)}">
 <p class="head"><span class="lbl">My pick:</span> ${esc(pickOpt.key)}. ${inline(pickOpt.label)}</p>
@@ -516,10 +585,11 @@ ${facts}${table}${ex}${details}
   const opts = q.options.map((o, k) => {
     const isPick = o.key === q.pick.key;
     const rid = `r-${id}-${o.key}`;
+    const rows = OPTION_ROWS.map(([field, label]) => `<dt>${label}</dt><dd class="${label.toLowerCase()}">${inline(o[field])}</dd>`).join("");
     return `<div class="opt" data-key="${esc(o.key)}"${isPick ? " data-pick" : ""}>
 <label for="${rid}"><input type="radio" id="${rid}" name="${id}" value="${esc(o.key)}">
-<span class="ohead"><span class="olabel">${esc(o.key)}. ${inline(o.label)}</span><span class="otags">${isPick ? '<span class="tag tag-pick">My pick</span>' : ""}<span class="tag risk-${esc(o.risk)}">Risk: ${esc(o.risk)}</span><kbd title="Press ${k + 1} to choose ${esc(o.key)}">${k + 1}</kbd></span></span>
-<dl class="tr"><dt>Gets</dt><dd class="gets">${inline(o.gets)}</dd><dt>Costs</dt><dd class="costs">${inline(o.costs)}</dd><dt>Risk</dt><dd class="risk">${inline(o.riskText)}</dd></dl>
+<span class="ohead"><span class="olabel">${esc(o.key)}. ${inline(o.label)}</span><span class="otags">${isPick ? '<span class="tag tag-pick">My pick</span>' : ""}<span class="tag risk-${esc(o.risk)}">${esc(riskChipText(o.risk))}</span><kbd title="Press ${k + 1} to choose ${esc(o.key)}">${k + 1}</kbd></span></span>
+<dl class="tr">${rows}</dl>
 </label>${o.details ? `<details><summary>${inline(o.details.summary || "What " + o.key + " contains")}</summary>${renderItems(o.details.items)}</details>` : ""}
 </div>`;
   }).join("\n");
@@ -542,32 +612,44 @@ function renderFinish(c) {
   return `<section class="step fin" data-step="${N + 1}" aria-labelledby="h-fin" hidden><div class="wrap">
 <header class="page-head"><h1 id="h-fin" tabindex="-1">Check your answers</h1><p id="fin-sum"></p></header>
 <table class="fin-table" style="margin-top:20px"><thead><tr><th scope="col">#</th><th scope="col">Question</th><th scope="col">Your answer</th><th scope="col">Note</th><th scope="col"><span class="sr">Change</span></th></tr></thead><tbody>${rows}</tbody></table>
+<fieldset><legend>Did this page tell you what each question is about?</legend>
+<label><input type="radio" name="page-clear" value="yes"> Yes</label>
+<label><input type="radio" name="page-clear" value="no"> No</label>
+</fieldset>
+<div class="note"><label for="page-missing">What was missing? (optional)</label><textarea id="page-missing" rows="2"></textarea></div>
 <div class="fin-actions"><button type="button" class="btn primary" id="copy">Copy my answers</button><button type="button" class="btn" id="clear">Clear my answers</button><p id="copy-status" class="muted" role="status" style="align-self:center"></p></div>
 <div class="copy-prev"><p class="muted">The button copies this text. You can also select it and copy it.</p><pre id="copytext"></pre></div>
 </div></section>`;
 }
 
 const JS = String.raw`(function(){
-var C=__CONFIG__;var N=C.ids.length;var st={a:{},n:{},step:0};
+var C=__CONFIG__;var N=C.ids.length;var st={a:{},n:{},feedback:{},step:0};
+${feedbackLines}
 function $(i){return document.getElementById(i);}
 function all(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
-function load(){try{var o=JSON.parse(localStorage.getItem(C.key)||"null");if(o&&typeof o==="object"){st.a=o.a||{};st.n=o.n||{};var p=parseInt(o.step,10);if(p>=0&&p<=N+1)st.step=p;}}catch(e){}}
+function load(){try{var o=JSON.parse(localStorage.getItem(C.key)||"null");if(o&&typeof o==="object"){st.a=o.a||{};st.n=o.n||{};
+ if(o.feedback&&typeof o.feedback==="object")st.feedback=o.feedback;
+ var p=parseInt(o.step,10);if(p>=0&&p<=N+1)st.step=p;}}catch(e){}}
 function save(){try{localStorage.setItem(C.key,JSON.stringify(st));}catch(e){}}
-function answered(){var k=0;C.ids.forEach(function(id){if(st.a[id])k++;});return k;}
-function label(id,key){var m=C.labels[id]||{};return m[key]||"";}
+function hasAnswer(id){var key=st.a[id];return typeof key==="string"&&Object.hasOwn(C.labels[id],key);}
+function answered(){return C.ids.filter(hasAnswer).length;}
 function copyText(){var L=[C.title+(C.date?", "+C.date:"")+": my answers ("+answered()+" of "+N+")"];
- C.ids.forEach(function(id){var a=st.a[id];L.push(a&&label(id,a)?id+": "+a+" "+label(id,a):id+": (no answer)");
-  var nt=String(st.n[id]||"").replace(/\s+/g," ").trim();if(nt)L.push("  Note: "+nt);});return L.join("\n");}
-function applyForm(){C.ids.forEach(function(id){all('input[name="'+id+'"]').forEach(function(r){r.checked=st.a[id]===r.value;});var t=$("n-"+id);if(t)t.value=st.n[id]||"";});}
+ C.ids.forEach(function(id){var a=st.a[id];L.push(hasAnswer(id)?id+": "+a+" "+C.labels[id][a]:id+": (no answer)");
+  var nt=String(st.n[id]||"").replace(/\s+/g," ").trim();if(nt)L.push("  Note: "+nt);});return L.concat(feedbackLines(st.feedback)).join("\n");}
+function applyForm(){C.ids.forEach(function(id){all('input[name="'+id+'"]').forEach(function(r){r.checked=st.a[id]===r.value;});var t=$("n-"+id);if(t)t.value=st.n[id]||"";});
+ all('input[name="page-clear"]').forEach(function(r){r.checked=st.feedback.clear===r.value;});
+ $("page-missing").value=st.feedback.missing||"";}
+function updateCopyPreview(){$("copytext").textContent=copyText();}
+function setFeedback(field,value){st.feedback[field]=value;save();updateCopyPreview();}
 function finish(){var a=answered();$("fin-sum").textContent="You answered "+a+" of "+N+" questions."+(a<N?" Use the links to answer the rest.":" Copy your answers and send them.");
- all(".fin-table tr[data-q]").forEach(function(tr){var id=tr.getAttribute("data-q"),v=st.a[id],td=tr.querySelector(".ans");
-  td.textContent=v?v+". "+label(id,v):"Not answered";td.classList.toggle("none",!v);
+ all(".fin-table tr[data-q]").forEach(function(tr){var id=tr.getAttribute("data-q"),v=st.a[id],td=tr.querySelector(".ans"),selected=hasAnswer(id);
+  td.textContent=selected?v+". "+C.labels[id][v]:"Not answered";td.classList.toggle("none",!selected);
   tr.querySelector(".nt").textContent=String(st.n[id]||"").trim();});
- $("copytext").textContent=copyText();}
+ updateCopyPreview();}
 function refresh(){var a=answered();$("cA").textContent=a;$("cR").textContent=N-a;
  var s=st.step;$("where").textContent=s===0?"Overview":(s===N+1?"Check your answers":"Question "+s+" of "+N+": "+C.topics[s-1]);
  all(".step").forEach(function(el){el.hidden=el.getAttribute("data-step")!==String(s);});
- all(".sbtn").forEach(function(b){var k=parseInt(b.getAttribute("data-go"),10);var done=k>=1&&k<=N&&!!st.a[C.ids[k-1]];
+ all(".sbtn").forEach(function(b){var k=parseInt(b.getAttribute("data-go"),10);var done=k>=1&&k<=N&&hasAnswer(C.ids[k-1]);
   b.classList.toggle("done",done);var sr=b.querySelector(".st");if(sr)sr.textContent=done?" (answered)":"";
   if(k===s)b.setAttribute("aria-current","step");else b.removeAttribute("aria-current");});
  $("back").disabled=s===0;var nx=$("next");nx.hidden=s===N+1;nx.textContent=s===0?"Start with Q1":(s===N?"Check answers":"Next");
@@ -579,10 +661,12 @@ function choose(id,key){st.a[id]=key;save();applyForm();refresh();}
 document.addEventListener("click",function(ev){var g=ev.target.closest&&ev.target.closest("[data-go]");if(g)go(parseInt(g.getAttribute("data-go"),10));});
 $("back").addEventListener("click",function(){go(st.step-1);});
 $("next").addEventListener("click",function(){go(st.step+1);});
-document.addEventListener("change",function(ev){var t=ev.target;if(t.type==="radio")choose(t.name,t.value);});
+document.addEventListener("change",function(ev){var t=ev.target;if(t.type==="radio"){
+ if(t.name==="page-clear")setFeedback("clear",t.value);else choose(t.name,t.value);}});
 document.addEventListener("input",function(ev){var t=ev.target;if(t.hasAttribute&&t.hasAttribute("data-note")){st.n[t.getAttribute("data-note")]=t.value;save();}});
+$("page-missing").addEventListener("input",function(ev){setFeedback("missing",ev.target.value);});
 document.addEventListener("keydown",function(ev){if(ev.ctrlKey||ev.metaKey||ev.altKey)return;var t=ev.target,tag=t&&t.tagName;
- if(tag==="TEXTAREA"||(tag==="INPUT"&&t.type!=="radio")||tag==="SUMMARY"&&(ev.key===" "||ev.key==="Enter"))return;
+ if(tag==="TEXTAREA"||(tag==="INPUT"&&(t.type!=="radio"||t.name==="page-clear"))||tag==="SUMMARY"&&(ev.key===" "||ev.key==="Enter"))return;
  if(ev.key==="ArrowLeft"){ev.preventDefault();go(st.step-1,false);}
  else if(ev.key==="ArrowRight"){ev.preventDefault();go(st.step+1,false);}
  else if(/^[1-9]$/.test(ev.key)&&st.step>=1&&st.step<=N){var id=C.ids[st.step-1];var r=all('input[name="'+id+'"]')[parseInt(ev.key,10)-1];if(r){ev.preventDefault();choose(id,r.value);r.focus({preventScroll:true});}}});
@@ -590,7 +674,7 @@ function copy(){var txt=copyText(),s=$("copy-status");function ok(){s.textConten
  function fail(){s.textContent="The browser blocked the copy. Select the text below and copy it.";var r=document.createRange();r.selectNodeContents($("copytext"));var sel=getSelection();sel.removeAllRanges();sel.addRange(r);}
  try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(ok,fail);return;}}catch(e){}fail();}
 $("copy").addEventListener("click",copy);
-$("clear").addEventListener("click",function(){if(!window.confirm("Clear all your answers and notes on this page?"))return;st={a:{},n:{},step:st.step};save();applyForm();refresh();});
+$("clear").addEventListener("click",function(){if(!window.confirm("Clear your answers, notes and feedback on this page?"))return;st={a:{},n:{},feedback:{},step:st.step};save();applyForm();refresh();});
 window.decisionPage={copyText:copyText,go:go,state:function(){return JSON.parse(JSON.stringify(st));}};
 load();applyForm();refresh();
 })();`;
@@ -617,15 +701,22 @@ ${ov}
 
 // ---------- Text export (for a writing check, such as an STE checker) ----------
 
-// All the text that the page shows from the content, one sentence or item on each line, with the
-// bold and code marks removed. Ids, keys, the storage key, the date, risk levels, confidence and
-// the "when" labels of an example are not prose, so they are left out.
-export function pageText(c) {
-  const out = [];
+function textWriter() {
+  const lines = [];
+  const item = (s) => lines.push(stripMarkup(s).trim());
   const add = (s) => {
-    const t = stripMarkup(s).trim();
-    if (!t) return;
-    for (const x of t.split(/(?<=[.!?])\s+(?=[A-Z0-9"'(#§\/])/)) if (x.trim()) out.push(x.trim());
+    const parts = textParts(s);
+    const text = parts.join("");
+    // Hide code punctuation during the sentence scan. Keep the offsets into the original text.
+    const prose = parts.map((part, i) => i % 2 ? "C".repeat(part.length) : part).join("");
+    let start = 0;
+    for (const match of prose.matchAll(SENTENCE_BREAK)) {
+      const line = text.slice(start, match.index).trim();
+      if (line) lines.push(line);
+      start = match.index + match[0].length;
+    }
+    const last = text.slice(start).trim();
+    if (last) lines.push(last);
   };
   const items = (list) => (list || []).forEach((it) => (Array.isArray(it) ? items(it) : add(it)));
   const table = (t) => {
@@ -634,6 +725,49 @@ export function pageText(c) {
     add(t.columns.join(", "));
     t.rows.forEach((r) => add(r.map(String).join(", ")));
   };
+  return { lines, add, item, items, table };
+}
+
+function writeQuestionText(q, { add, item, items, table }, screenOnly) {
+  if (!screenOnly) add(q.topic);
+  add(q.title);
+  add(screenOnly ? `Decide: ${q.ask}` : q.ask);
+  add(q.why);
+  add(screenOnly ? `${DECIDES_LABEL} ${q.decides}` : q.decides);
+  add(screenOnly ? `${OWNER_LABEL} ${q.owner}` : q.owner);
+  if (screenOnly && q.settled.length) add(SETTLED_LABEL);
+  q.settled.forEach(add);
+  q.facts.forEach(add);
+  table(q.table);
+  add(screenOnly ? `Example: ${q.example.title}` : q.example.title);
+  q.example.steps.forEach((step) => add(screenOnly ? `${step.when}: ${step.text}` : step.text));
+  if (screenOnly) {
+    const pick = q.options.find((option) => option.key === q.pick.key);
+    item(`My pick: ${pick.key}. ${pick.label}`);
+  } else {
+    const details = questionDetails(q);
+    if (details) { add(details.summary); items(details.items); }
+  }
+  add(q.pick.reason);
+  if (screenOnly) add(`Confidence: ${q.pick.confidence}.`);
+  add(screenOnly ? `Pick another if: ${q.pick.another}` : q.pick.another);
+  for (const o of q.options) {
+    if (screenOnly) {
+      item(`${o.key}. ${o.label}`);
+      item(riskChipText(o.risk));
+      OPTION_ROWS.forEach(([field, label]) => add(`${label}: ${o[field]}`));
+    } else {
+      add(o.label);
+      OPTION_ROWS.forEach(([field]) => add(o[field]));
+      if (o.details) { add(o.details.summary); items(o.details.items); }
+    }
+  }
+}
+
+// Author text for the whole page, including Details. Keep one sentence or item per line.
+export function pageText(c) {
+  const writer = textWriter();
+  const { lines, add, items, table } = writer;
   add(c.page.title);
   add(c.page.subtitle);
   const ov = c.overview || {};
@@ -646,21 +780,15 @@ export function pageText(c) {
     if (b.type === "list") items(b.items);
     add(b.note);
   }
-  for (const q of c.questions || []) {
-    [q.topic, q.title, q.ask, q.why].forEach(add);
-    q.facts.forEach(add);
-    table(q.table);
-    add(q.example.title);
-    q.example.steps.forEach((st) => add(st.text));
-    if (q.details) { add(q.details.summary); items(q.details.items); }
-    add(q.pick.reason);
-    add(q.pick.another);
-    for (const o of q.options) {
-      [o.label, o.gets, o.costs, o.riskText].forEach(add);
-      if (o.details) { add(o.details.summary); items(o.details.items); }
-    }
-  }
-  return out;
+  for (const q of c.questions || []) writeQuestionText(q, writer, false);
+  return lines;
+}
+
+// Question text that the reader can see before they open any Details.
+export function questionText(q) {
+  const writer = textWriter();
+  writeQuestionText(q, writer, true);
+  return writer.lines;
 }
 
 export function buildPage(c) {
