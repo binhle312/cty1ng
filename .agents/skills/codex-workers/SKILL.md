@@ -33,14 +33,21 @@ The repository's approval rules still apply. A worker's message is a report, not
    | Everyday code and judgment: a bug fix, a feature, a proof, a fix after a review, security | `gpt-6.2-sol` at `high`     | `gpt-6.2-astra` at `high`               |
    | The cause or the design is not known at the start: a bug across modules, open trade-offs  | `gpt-6.2-astra` at `high`   | A new `gpt-6.2-astra` session at `high` |
 
-   - Do a focused task with a clear result yourself, and start no worker for it: written steps,
-     an extraction, a summary. The table has no row for such a task. Give each code change to a
-     worker.
+   - Do these tasks yourself, and start no worker for them:
+     - a focused task with a clear result: written steps, an extraction, a summary;
+     - a code change of fewer than 5 changed lines.
+
+     Give each other code change to a worker, also a simple one. The table has no row for the
+     tasks that you do yourself.
+   - To count the changed lines, mark each new file of the change with `git add -N <file>`, then
+     run `git diff --numstat HEAD`. Add the larger of the added and the removed lines of each code
+     file. If your change grows to 5 lines or more, stop, and give it to a worker.
    - A reviewer is never a weaker model than the worker.
    - Use the cheapest row that fits. For the same tokens, Terra uses about half the credits of
      Sol, and Astra uses about 4 times the credits of Sol.
    - Raise the effort of a worker one level when a task has more steps or more trade-offs. A
-     reviewer keeps the effort of the table. Most tasks do not need `max`. With `ultra`, Codex starts agents of its own.
+     reviewer keeps the effort of the table. Most tasks do not need `max`. With `ultra`, Codex
+     starts agents of its own.
    - Sol and Terra read 500,000 tokens by default; Astra reads 272,000.
    - The table is from 2026-11-24. If Codex lists a newer model, tell the owner before you use it.
 
@@ -84,13 +91,16 @@ The repository's approval rules still apply. A worker's message is a report, not
 7. **Review with a different agent.** The reviewer is a new session that did not build the code.
    A worker does not review its own work, so do not send the review to the session of the builder.
    The reviewer makes no commits. Send its findings to the session that built the code.
+   A different agent also reviews each code change that you made yourself, in the next review
+   round.
 
 The work is complete when each claim of the last report agrees with the final head (the pushed
 head, if the brief names a remote branch), and the owner has the result with each open issue.
 
 ## Rules for the worker
 
-Put these rules in each build brief. In a review brief, leave out the rules about the push.
+Put these rules in each build brief. In a review brief, leave out the rules about the first turn
+and the push.
 
 - In your first turn, write your plan in your own words: the goal, each step with its check, and
   your questions. Change no file before the lead agent accepts the plan.

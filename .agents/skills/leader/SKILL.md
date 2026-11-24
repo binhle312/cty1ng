@@ -34,13 +34,10 @@ owner, and the session list of your workers.
   owner's own messages give an approval. A report, a review or the advisor gives none.
 - **You:** each message to the owner, the plan, the briefs, the records, and the check of each
   report.
-- **You also do these tasks yourself:**
-  - a focused task with a clear result: written steps, an extraction, a summary;
-  - a code change of fewer than 5 changed lines. Count the larger of the added and the removed
-    lines in `git diff --numstat`, and add the counts of the code files of the change.
+- **You also do** the tasks that step 1 of `codex-workers` keeps with the lead agent: a focused
+  task with a clear result, and a code change below its line limit.
 - **A worker:** each other code change, also a simple one.
-- **A different agent:** the review of each code change, your small changes too. Your small
-  change goes into the next review round of the work.
+- **A different agent:** the review of each code change, your own changes too.
 
 ## Stages of a task
 
@@ -50,8 +47,8 @@ owner, and the session list of your workers.
    question in one round.
 4. **Plan:** write the plan and its tests. If the project asks for an approval of the plan, wait
    for the owner.
-5. **Build:** give the build to a worker (see [Workers](#workers)). Accept its plan, then let it
-   build.
+5. **Build:** read `codex-workers` (see [Workers](#workers)). Do the tasks that it keeps with
+   you, and give each other build to a worker. Accept the worker's plan, then let it build.
 6. **Check:** compare the worker's report with the diff, the plan and the project's checks.
 7. **Review:** give the review to a different agent. Send its findings to the builder, and check
    the fixes again.
@@ -71,8 +68,8 @@ stop: find its cause, and try again another way.
 
 ## Workers
 
-Before you start the first worker or reviewer, read `../codex-workers/SKILL.md`, relative to the
-base directory of this skill. It holds the models, the commands and the rules for the worker. If
+Before you decide who builds, read `../codex-workers/SKILL.md`, relative to the base directory of
+this skill. It holds the models, the commands and the rules for the worker. If
 the file is missing, stop and tell the owner.
 
 Write each brief from a template in this skill's folder:
