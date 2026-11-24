@@ -7,7 +7,8 @@ cause: yes" (DQ-570, and the prevention action "One fact had hand copies…"). S
 asks for a redesign in #151. "Q2: A Own script, after #151" (a copy check for docs and code) is
 not in this plan. It gets its own plan and PR after #151.
 Checkpoint: plan (an `AGENTS.md` §9 redesign, and a change of `AGENTS.md`: §7)
-Approval: waiting
+Approval: owner, 2026-11-24, revision 1 (`aea29a1`): "Approve both the plan and the split plan". The
+owner's decisions in it: Q1 A, Q3 A and the words of design step 4.
 
 ## Goal
 
