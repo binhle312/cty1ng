@@ -150,6 +150,8 @@ fails it. Research IDs in the Rule column refer to `research.md` (next to this f
 | Overview lead | 30 words | R2.4 |
 | Block title, table title, example title, details label | 8 words | R1.4 |
 
+A Details body (of a question or an option) has no total word limit; its sentences keep the limit above.
+
 **R8.1 scope fields.** Each question says why it is the reader's decision, what is settled, and what only the answer changes (SKILL.md step 3).
 
 **Known limits** (owner, 2026-11-24: keep the kit simple). The 160-word option count can be lower

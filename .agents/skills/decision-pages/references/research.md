@@ -196,7 +196,7 @@ Everything that decides the answer must be in those places.
 | Failure | Evidence | Fix (testable) |
 |---|---|---|
 | Wall of text | F-pattern; 20% read (§1.2, §1.3) | Paragraph max 50 words; facts as 2-4 bullets |
-| Evidence mixed with the ask | Inverted pyramid (§2.4) | Ask and pick first; numbers in a table (R1.6, R3.1); process story in Details |
+| Evidence mixed with the ask | Inverted pyramid (§2.4) | Ask and pick first; R1.6 and R3.1 decide when numbers need a table; process story in Details |
 | Jargon and private terms ("seats", "grafts", "promotion") | NN/g experts left a page full of unknown terms, https://www.nngroup.com/articles/plain-language-experts/ ; WCAG 3.1.3 unusual words, https://www.w3.org/WAI/WCAG22/Understanding/unusual-words.html | One plain word, or define it at first use in at most 8 words |
 | Context only in the author's head: the page names a change but not the old and new words, or a rule but not its purpose | Recognition rather than recall (§2.9) | The overview says what happened; a choice about words quotes both versions; each question screen passes a test by a new session alone |
 | A question about something already settled, or an option that defends the author's own change | Owner, 2026-11-24: two rejected pages; on one of them a reader of the page alone missed it, and a reader of the sources found it | Fields `owner`, `settled`, `decides`, `removed`; a source review by a reviewer of the same or a stronger model |
