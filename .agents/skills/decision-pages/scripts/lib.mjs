@@ -31,7 +31,7 @@ export function plain(s) {
   return textParts(s).map((part, i) => i % 2 ? "CODE" : part).join("");
 }
 export function countWords(s) {
-  return plain(s).split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w)).length;
+  return plain(s).split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
 }
 // A semicolon list counts as one sentence (R2.7).
 export function sentences(s) {
@@ -153,8 +153,12 @@ export function validate(c) {
           const path = `${id}.options[${k}].votes`;
           need(Array.isArray(o.votes), `${path} must be an array`);
           if (Array.isArray(o.votes)) o.votes.forEach((vote, j) => {
-            need(vote && VOTE_ROLES.has(vote.role) && hasText(vote.name) && Object.keys(vote).length === 2,
+            need(vote && VOTE_ROLES.has(vote.role) && hasText(vote.name),
               `${path}[${j}] must have a role (${[...VOTE_ROLES.keys()].join(", ")}) and a non-empty name`);
+            if (vote && typeof vote === "object") {
+              const extra = Object.keys(vote).filter((key) => key !== "role" && key !== "name");
+              need(extra.length === 0, `${path}[${j}] has unexpected keys: ${extra.join(", ")}`);
+            }
           });
         }
       });
@@ -328,6 +332,10 @@ function feedbackLines({ clear, missing } = {}) {
   return lines;
 }
 
+function copiedVoteLines(q, option) {
+  return hasVotes(q) ? voteLabels(option).map((label) => `  ${stripMarkup(label)}`) : [];
+}
+
 export function copyLines(c, answers, notes, feedback) {
   let answered = 0;
   const out = [];
@@ -336,6 +344,7 @@ export function copyLines(c, answers, notes, feedback) {
     const o = q.options.find((x) => x.key === a);
     if (o) answered++;
     out.push(o ? `${id}: ${o.key} ${stripMarkup(o.label)}` : `${id}: (no answer)`);
+    if (o) out.push(...copiedVoteLines(q, o));
     const nt = String(notes[id] || "").replace(/\s+/g, " ").trim();
     if (nt) out.push(`  Note: ${nt}`);
   });
@@ -769,6 +778,7 @@ function hasAnswer(id){var key=st.a[id];return typeof key==="string"&&Object.has
 function answered(){return C.ids.filter(hasAnswer).length;}
 function copyText(){var L=[C.title+(C.date?", "+C.date:"")+": my answers ("+answered()+" of "+N+")"];
  C.ids.forEach(function(id){var a=st.a[id];L.push(hasAnswer(id)?id+": "+a+" "+C.labels[id][a]:id+": (no answer)");
+  if(hasAnswer(id))C.voteLines[id][a].forEach(function(line){L.push(line);});
   var nt=String(st.n[id]||"").replace(/\s+/g," ").trim();if(nt)L.push("  Note: "+nt);});return L.concat(feedbackLines(st.feedback)).join("\n");}
 function applyForm(){C.ids.forEach(function(id){all('input[name="'+id+'"]').forEach(function(r){r.checked=st.a[id]===r.value;});var t=$("n-"+id);if(t)t.value=st.n[id]||"";});
  all('input[name="page-clear"]').forEach(function(r){r.checked=st.feedback.clear===r.value;});
@@ -1002,6 +1012,9 @@ export function buildPage(c) {
     topics: c.questions.map((q) => stripMarkup(q.topic)),
     counts: c.questions.map((q) => q.options.length),
     labels: Object.fromEntries(c.questions.map((q, i) => [`Q${i + 1}`, Object.fromEntries(q.options.map((o) => [o.key, stripMarkup(o.label)]))])),
+    voteLines: Object.fromEntries(c.questions.map((q, i) => [
+      `Q${i + 1}`, Object.fromEntries(q.options.map((o) => [o.key, copiedVoteLines(q, o)])),
+    ])),
   };
   const cfgJson = JSON.stringify(cfg).replace(/</g, "\\u003c");
   // An answered step shows a check in place of its number (same width, so the bar does not grow).

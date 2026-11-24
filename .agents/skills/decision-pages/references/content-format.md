@@ -62,15 +62,15 @@ every bar has a direct label, so the chart needs no legend.
   "owner": "The release plan gives you final approval for changes to the build server.",
   "settled": ["The next PR adds a cache to the build server."],
   "pick": { "key": "A", "reason": "...", "confidence": "close call", "another": "you want the smallest first PR (B)." },
-  "facts": ["**A near tie:** design A scored 107, design B 106, design C 92.", "..."],
-  "table": { "title": "Scores per reviewer (max 70 each)", "columns": ["Design", "Reviewer 1", "Reviewer 2", "Total"],
-             "align": ["left", "right", "right", "right"], "rows": [["A", "46", "61", "**107**"], ["..."]] },
+  "facts": ["**Shared cache:** A reuses files across builds.", "**Local cache:** B gives each build its own files."],
+  "table": { "title": "Build time in minutes", "columns": ["Design", "First build", "Repeat build"],
+             "align": ["left", "right", "right"], "rows": [["A", 8, 2], ["B", 6, 4]] },
   "example": { "title": "a cold build, with design A", "steps": [{ "when": "09:00", "text": "..." }] },
   "options": [
     { "key": "A", "label": "Shared cache with 8 fixes", "does": "Use one cache for all builds.", "gets": "...", "costs": "...",
-      "risk": "low", "riskText": "...", "details": { "summary": "What A contains", "items": ["..."] } }
+      "risk": "low", "riskText": "...", "votes": [{"role":"worker","name":"Sam"}], "details": { "summary": "What A contains", "items": ["..."] } }
   ],
-  "details": { "summary": "Details: the 8 fixes and how we scored", "items": ["...", ["sub item", "sub item"]] },
+  "details": { "summary": "What the 8 fixes change", "items": ["...", ["sub item", "sub item"]] },
   "removed": ["A remote cache requires a service outside the release plan."]
 }
 ```
@@ -90,7 +90,7 @@ every bar has a direct label, so the chart needs no legend.
 | `example` | Ordered steps with a time or trigger label | `title` is the heading below "Example". 2-4 steps. |
 | `options` | One card per option | 2-4 options. Every option has every field. `risk` is `low`, `medium` or `high`. |
 | `options[].does` | **Does**, the first row before **Gets** | Required. State what happens if the reader selects this option. |
-| `options[].votes` | One pill per voter below the option label | Optional. Each vote has a `role` and a non-empty `name`, for example `{ "role": "consultant", "name": "GPT-6.2 Astra high" }`. The roles are `lead agent`, `worker`, `consultant` and `advisor`. |
+| `options[].votes` | One pill per voter below the option label | Optional array, such as `"votes": [{"role":"worker","name":"Sam"}]`. Each vote has a `role` and a non-empty `name`. The roles are `lead agent`, `worker`, `consultant` and `advisor`. |
 | `options[].details` | A closed "What A contains" | Optional. The full list of what the option holds. |
 | `details` | One closed section at the end | Optional. The story, full lists, ids and sources. Nothing that changes the choice. |
 | `removed` | Items that start with **Option removed:** in the question's closed Details | Optional. State why each option was removed. If there is no `details` field, the kit adds a closed **Options removed** section. |

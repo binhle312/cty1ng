@@ -57,7 +57,7 @@ for (const value of ["low", "high", "clear", "A", "B", "Monday", "Tuesday"]) {
   assert.ok(!lines.includes(value), `the text has the line "${value}"`);
 }
 const q = content.questions[0];
-assert.deepEqual(questionText(q), [
+const expectedQuestion = [
   "Which plan?", "The decision", "Decide: the plan for next week.", "It sets the work.",
   "Only this depends on you: Choose the scope for next week.",
   "Why you decide: The team gives you final approval.", "Already decided (no answer needed):", "Work starts on Monday.",
@@ -66,7 +66,8 @@ assert.deepEqual(questionText(q), [
   "My pick: A. Small plan", "It is small.", "Confidence: clear.", "Pick another if: you want more.",
   "A. Small plan", "Risk: low", "Does: Fix the cache.", "Gets: Fast.", "Costs: Less scope.", "Risk: A gap.",
   "B. Big plan", "Risk: high", "Does: Fix and test the cache.", "Gets: More scope.", "Costs: Slow.", "Risk: A delay.",
-]);
+];
+assert.deepEqual(questionText(q), expectedQuestion);
 
 const answers = { Q1: "A" }, notes = { Q1: " A note.\nSecond line. " };
 const copied = "Pick a plan, 2026-01-02: my answers (1 of 1)\nQ1: A Small plan\n  Note: A note. Second line.";
@@ -113,25 +114,36 @@ const votes = [
 const withVotes = { ...q, options: [{ ...q.options[0], votes }, { ...q.options[1], votes: [] }] };
 const voteContent = { ...content, questions: [withVotes] };
 assert.deepEqual(lint(voteContent).errors.filter((error) => error.includes("votes")), []);
-for (const lines of [pageText(voteContent), questionText(withVotes)]) {
-  for (const label of ["Lead agent: Alex", "Worker: Sam", "Consultant: GPT-6.2 Astra high", "Advisor: Jo", "No votes"]) {
-    assert.ok(lines.includes(label), `export includes ${label}`);
-  }
+for (const [actual, baseline, a, b] of [
+  [pageText(voteContent), expected, "Small plan", "Big plan"],
+  [questionText(withVotes), expectedQuestion, "Risk: low", "Risk: high"],
+]) {
+  const want = [...baseline];
+  want.splice(want.indexOf(a) + 1, 0, "Lead agent: Alex", "Worker: Sam", "Consultant: GPT-6.2 Astra high", "Advisor: Jo");
+  want.splice(want.indexOf(b) + 1, 0, "No votes");
+  assert.deepEqual(actual, want);
 }
+assert.equal(copyLines(voteContent, { Q1: "A" }, {}), [
+  "Pick a plan, 2026-01-02: my answers (1 of 1)", "Q1: A Small plan", "  Lead agent: Alex", "  Worker: Sam",
+  "  Consultant: GPT-6.2 Astra high", "  Advisor: Jo", "Page clear: (no answer)",
+].join("\n"));
+assert.equal(copyLines(voteContent, { Q1: "B" }, {}), "Pick a plan, 2026-01-02: my answers (1 of 1)\nQ1: B Big plan\n  No votes\nPage clear: (no answer)");
 const emptyVotes = { ...q, options: [{ ...q.options[0], votes: [] }, q.options[1]] };
 assert.deepEqual(questionText(emptyVotes), questionText(q));
 assert.equal(lintQuestion(emptyVotes).stats[0].choiceWords, lintQuestion(q).stats[0].choiceWords);
-for (const bad of [null, "Alex", [null], [{ role: "chief", name: "Alex" }], [{ role: "worker", name: " " }], [{ ...votes[0], score: 1 }]]) {
+for (const bad of [null, "Alex", [null], [{ role: "chief", name: "Alex" }], [{ role: "worker", name: " " }]]) {
   const invalid = { ...q, options: [{ ...q.options[0], votes: bad }, q.options[1]] };
   assert.ok(lintQuestion(invalid).errors.some((error) => error.startsWith("questions[0].options[0].votes")));
 }
+const extraVoteKey = { ...q, options: [{ ...q.options[0], votes: [{ ...votes[0], score: 1 }] }, q.options[1]] };
+assert.ok(lintQuestion(extraVoteKey).errors.includes("questions[0].options[0].votes[0] has unexpected keys: score"));
 const voteBoundary = [
   { ...boundaryOptions[0], does: words(1), gets: words(7), votes: [votes[1]] }, ...boundaryOptions.slice(1),
 ];
 const atVoteLimit = lintQuestion({ ...q, options: voteBoundary });
 assert.equal(atVoteLimit.stats[0].choiceWords, 160);
 assert.ok(!atVoteLimit.errors.some((error) => error.includes("visible option words")));
-voteBoundary[0].votes = [{ ...votes[1], name: "Sam Lee" }];
+voteBoundary[0].votes = [{ ...votes[1], name: "李 明" }];
 const overVoteLimit = lintQuestion({ ...q, options: voteBoundary });
 assert.equal(overVoteLimit.stats[0].choiceWords, 161);
 assert.ok(overVoteLimit.errors.some((error) => error.includes("161 visible option words > 160")));

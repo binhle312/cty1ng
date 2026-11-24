@@ -53,14 +53,14 @@ others are yours.
 | 2-4 real options; each has a real gain | R3.3, R3.6 | A straw-man option pushes the reader to the pick. |
 | No option is pre-checked | R3.4 | A default moves the choice more than any argument. |
 | The pick is a labeled box with confidence and "Pick another if" | R3.5, R3.7 | The reader can weigh only what the page shows. |
-| One colour fill per question: the pick | R4.1, R4.6 | If everything is marked, nothing stands out. |
+| In the question content, the accent fill marks only my pick. The reader's choice, the current step and Next use the theme accent. Voter pills use role tints. | R4.1, R4.6 | If everything is marked, nothing stands out. |
 | Bold is at most 10% of the words | R4.3 | Fewer highlights get more attention each. |
 | Risk level is a word ("Risk: low"), not only a colour | R4.5 | Colour alone fails some readers. |
 | At most 220 words of context and 160 words of options before Details | R1.2 | People read about 20% of a page. |
 | Sentences at most 20 words; paragraphs at most 50 | R2.7, R1.3 | Long sentences and blocks cause skipping. |
 | Text lines at most about 70 characters | R2.6 | Long lines make readers lose their place. |
 | A question step uses 12 columns. The facts take 6 and the answers take 6. The facts scroll by themselves. | R2.2 | The 7:5 split pushed three option cards below the footer in a short window. The equal split gives the cards more room. |
-| Block labels say the content ("Scores are a near tie"), not the type ("What") | R1.4 | Headings are the scan path. |
+| Block labels name the content ("A saves time on repeat builds") | R1.4 | Headings are the scan path. |
 | Every id has its meaning next to it ("order 12, for this week only") | R6 | A bare id stops the reader. |
 | One closed Details section, labelled with what is inside | R2.5 | Some readers need the story; nobody needs it first. |
 | A fact that does not change the choice goes into Details or out | R2.3 | Extra material costs attention and adds nothing to the decision. |

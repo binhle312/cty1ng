@@ -24,6 +24,9 @@ let pass = 0, fail = 0;
 const ok = (cond, msg) => { if (cond) pass++; else fail++; console.log((cond ? "PASS " : "FAIL ") + msg); };
 const info = (msg) => console.log("INFO " + msg);
 const sameText = (actual, expected) => actual.replace(/\s+/g, " ").trim() === stripMarkup(expected).replace(/\s+/g, " ").trim();
+const voteText = (votes) => votes?.length
+  ? votes.map(({ role, name }) => role[0].toUpperCase() + role.slice(1) + ": " + name.trim())
+  : ["No votes"];
 
 // 1. Content: shape and limits
 const bad = validate(c);
@@ -134,8 +137,10 @@ for (let i = 0; i < N; i++) {
   const showVotes = q.options.some((o) => o.votes?.length);
   ok(n === q.options.length, `${id}: ${n} options`);
   let allIn = true, allFields = true, allDoes = n === q.options.length, votesMatch = n === q.options.length, bottom = 0;
+  let voteTintsMatch = true, cardsMatch = n === q.options.length;
   for (let k = 0; k < n; k++) {
     const o = opts.nth(k);
+    const option = q.options[k];
     const b = await o.boundingBox();
     bottom = Math.max(bottom, b.y + b.height);
     if (b.y < g.headerBottom || b.y + b.height > Math.min(g.footerTop, choiceBottom)) allIn = false;
@@ -146,13 +151,32 @@ for (let i = 0; i < N; i++) {
     const does = o.locator(".tr > dt:first-child + dd.does");
     if (allDoes && (!(await does.isVisible()) || !sameText(await o.locator(".tr > dt:first-child").innerText(), "Does")
       || !sameText(await does.innerText(), q.options[k].does))) allDoes = false;
-    const v = q.options[k].votes || [], row = o.locator(".votes");
+    const votes = option.votes || [], row = o.locator(".votes");
+    const labels = showVotes ? voteText(votes) : [];
     if (showVotes) {
-      const labels = v.length ? v.map(({ role, name }) => role[0].toUpperCase() + role.slice(1) + ": " + name.trim()) : ["No votes"];
-      const badges = await row.locator(":scope > span").allInnerTexts();
-      votesMatch &&= badges.length === labels.length && badges.every((badge, j) => sameText(badge, labels[j]));
-      votesMatch &&= await row.count() === 1 && sameText(await row.innerText(), labels.join(" ")) && (await row.locator(".vscore").count()) === 0;
+      const badges = row.locator(":scope > span");
+      const texts = await badges.allInnerTexts();
+      votesMatch &&= texts.length === labels.length && texts.every((text, j) => sameText(text, labels[j]));
+      votesMatch &&= await row.count() === 1 && sameText(await row.innerText(), labels.join(" "));
+      for (let j = 0; j < votes.length; j++) {
+        const badge = badges.nth(j);
+        const token = votes[j].role === "lead agent" ? "lead" : votes[j].role;
+        voteTintsMatch &&= await badge.isVisible() && await badge.evaluate((el, role) => {
+          const actual = getComputedStyle(el);
+          const color = document.createElement("span").style;
+          color.backgroundColor = actual.getPropertyValue(`--${role}-bg`).trim();
+          color.color = actual.getPropertyValue(`--${role}-ink`).trim();
+          return actual.backgroundColor === color.backgroundColor && actual.color === color.color
+            && actual.backgroundColor !== getComputedStyle(el.closest(".opt")).backgroundColor;
+        }, token);
+      }
     } else votesMatch &&= (await row.count()) === 0;
+    const cardText = [`${option.key}. ${option.label}`];
+    if (option.key === q.pick.key) cardText.push("My pick");
+    cardText.push(`Risk: ${option.risk}`, String(k + 1), ...labels,
+      "Does", option.does, "Gets", option.gets, "Costs", option.costs, "Risk", option.riskText);
+    if (option.details) cardText.push(option.details.summary || `What ${option.key} contains`);
+    cardsMatch &&= sameText(await o.innerText(), cardText.join(" "));
     const details = o.locator("details");
     if (q.options[k].details) {
       ok(await details.isVisible() && await details.getAttribute("open") === null, `${id}: option ${q.options[k].key} Details starts closed`);
@@ -161,7 +185,9 @@ for (let i = 0; i < N; i++) {
   maxBottom = Math.max(maxBottom, bottom);
   ok(allFields, `${id}: every option shows Gets, Costs, Risk text and a "Risk: level" chip`);
   ok(allDoes, `${id}: every option shows its Does row first`);
-  ok(votesMatch, `${id}: ${showVotes ? "vote rows show the expected names or No votes, with no score or tally" : "no vote rows when there are no votes"}`);
+  ok(votesMatch, `${id}: ${showVotes ? "vote rows show the expected names or No votes" : "no vote rows when there are no votes"}`);
+  if (showVotes) ok(voteTintsMatch, `${id}: each voter badge shows its role tint`);
+  ok(cardsMatch, `${id}: option cards show only the expected text, with no added scores or tallies`);
   ok(allIn && g.mainScroll === 0, `${id}: all option cards are in the first viewport at 1440x900, no scroll (lowest card bottom ${Math.round(bottom)} px, footer top ${Math.round(g.footerTop)} px)`);
   const measure = await s.evaluate((el) => {
     const probe = document.createElement("span"); probe.textContent = "0000000000"; probe.style.cssText = "position:absolute;visibility:hidden;font:16px/1.5 var(--font)";
@@ -231,6 +257,16 @@ await p.click("#copy");
 await p.waitForFunction(() => document.querySelector("#copy-status").textContent !== "");
 const clip = await p.evaluate(() => navigator.clipboard.readText().catch((e) => "ERR " + e));
 ok(clip === expect, "copied text matches the expected format");
+const preview = await fin.locator("#copytext").textContent();
+for (let i = 0; i < N; i++) {
+  const q = c.questions[i], id = `Q${i + 1}`;
+  if (!q.options.some((o) => o.votes?.length)) continue;
+  const o = q.options.find(({ key }) => key === answers[id]);
+  const labels = voteText(o.votes).map((label) => stripMarkup(label));
+  const block = [`${id}: ${o.key} ${stripMarkup(o.label)}`, ...labels.map((label) => `  ${label}`)].join("\n");
+  ok(preview.includes(`\n${block}\n`), `${id}: copy preview lists ${labels.join(", ")}`);
+  ok(clip.includes(`\n${block}\n`), `${id}: clipboard text lists ${labels.join(", ")}`);
+}
 ok(clip.endsWith("\nPage clear: no\n  Missing: The difference between two options. An example would help."), "copied text ends with the Page clear and Missing lines");
 let allQ = true;
 for (let i = 1; i <= N; i++) if (!new RegExp(`^Q${i}: [A-Z] `, "m").test(clip)) allQ = false;
@@ -305,8 +341,21 @@ const animations = await p.evaluate(() => {
   });
 });
 ok(animations.join(",") === "tick,just-done,pop-option,pop-box,pop-in", "a new answer animates the count, completed check, option and answer badge");
+const movesLeft = await p.evaluate(async () => {
+  window.decisionPage.go(0, false);
+  const main = document.querySelector("main");
+  const wrap = main.querySelector(".step:not([hidden]) > .wrap");
+  await Promise.all(wrap.getAnimations().map((anim) => anim.finished));
+  const before = wrap.getBoundingClientRect().left;
+  main.dispatchEvent(new WheelEvent("wheel", { deltaX: 25, bubbles: true }));
+  wrap.getBoundingClientRect();
+  await Promise.all(wrap.getAnimations().map((anim) => anim.finished));
+  return wrap.getBoundingClientRect().left < before;
+});
+ok(movesLeft, "a partial forward swipe moves the page left");
+await p.waitForTimeout(200);
 const [partial, forward, ...tail] = await swipe(0, [[25, 3], [25, 3], [6], [13], [12], [11], [10], [9]]);
-ok(partial.step === 0 && partial.edge === "edge-r" && Number(partial.progress) === .5 && partial.drag !== "", "short horizontal swipe fills the right ring and moves the page without changing steps");
+ok(partial.step === 0 && partial.edge === "edge-r" && Number(partial.progress) === .5, "short horizontal swipe fills the right ring without changing steps");
 ok(forward.step === 1 && forward.slide === "in-next" && forward.overscroll === "none" && tail.every(({ step }) => step === 1), "forward swipe slides one step and ignores momentum");
 await p.waitForTimeout(200);
 const [second] = await swipe(null, [[60]]);
