@@ -132,7 +132,7 @@ becomes the lead agent with the `leader` skill. Type:
 3. Build on branch <m#-name> as the codex-workers skill says, by
    docs/workflows/implementation.md, test first. The Roles table of
    docs/workflows/coordination.md says who does each step. Keep to the brief's scope; list
-   anything else under "Follow-ups" in the PR instead of doing it.
+   anything else that you notice under "Follow-ups" in the PR instead of doing it.
 4. Check that every check in AGENTS.md §4 passes on the final head, and fill the PR
    description per docs/workflows/pull-request.md, as the Roles table assigns.
 If the docs and the code disagree, or the brief is ambiguous, stop and ask.
