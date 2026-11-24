@@ -57,7 +57,7 @@ Stop each background job that you start, and remove your temporary files before 
 Write the report for a reader who did not see your work. Put the key points first.
 - What you changed: each file and each change, also the small ones.
 - For each claim: the command that you ran and its result.
-- The pushed commit and the result of the remote checks for it.
+- If you pushed: the pushed commit and the result of the remote checks for it.
 - What you did not do, what you did not check, and each obstacle.
 - Your questions, if a fact is missing.
 </report>
