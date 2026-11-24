@@ -112,9 +112,9 @@ Break list: not needed (`docs/testing.md` §5: not a late, security or order tes
 
 ## Revision 3 (2026-11-19): `setInterval` outside `lib/now.ts`
 
-Brief: the owner's answer of 2026-11-19 (morning page, Q2, choice "B"): "Accept the fix of da1ed3c
-and also fail the test when frontend code calls `setInterval` outside now.ts; built in #138 before
-its merge (plan revision, test first, one review check); then the chief merges #138."
+Brief: the owner's answer of 2026-11-19 (morning page, Q2, choice "B"): accept the fix of da1ed3c
+and also fail the test when frontend code calls `setInterval` outside now.ts. It is built in #138
+before its merge (plan revision, test first, one review check), and then the lead agent merges #138.
 Approval: lead agent, 2026-11-19, against the owner's answer Q2 B (one change: the lead agent locks the
 scope to the owner's words, so any use of `setInterval` inside `lib/now.ts` is allowed); owner review pending
 

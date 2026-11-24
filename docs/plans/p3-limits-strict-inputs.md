@@ -2,7 +2,7 @@
 
 Brief: the one P3 list before M3 (owner-approved 2026-11-12), part 5, list PR 7 (items 23, 24) and list PR 10 (items 32, 33, 34, and the two approval parts of 31). Night decisions: arena 1 synthesis, Q9 (one PR) and Q12 A.
 Checkpoint: none (no new screen, no code design). Public API changes and upload code are flagged under `Needs human review`.
-Approval: lead agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15 ("CHIEF: accept"). Revision 1. Answers of the lead agent: Q1 A, Q3 diff budget 2000, Q4 A, Q5 A. Q2, Q3 (changelog default), Q6 and Q7 go to consultants; section 6 records the answers when they come.
+Approval: lead agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15. Revision 1. Answers of the lead agent: Q1 A, Q3 diff budget 2000, Q4 A, Q5 A. Q2, Q3 (changelog default), Q6 and Q7 go to consultants; section 6 records the answers when they come.
 
 ## 1. Item check on `origin/main` = `97221d3` (2026-11-15)
 

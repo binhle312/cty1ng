@@ -2,7 +2,7 @@
 
 Brief: items 40 to 46 of the owner's P3 list of 2026-11-12 (list PR 12 "Bots pages, small fixes" and list PR 13 "Bot page Esc"); DQ-089 and DQ-095 in [delivery-quality.md](../delivery-quality.md)
 Checkpoint: none (no new screen, no code design); the Esc rule is a behaviour change, flagged for the owner
-Approval: lead agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15 ("CHIEF: accept"). Q13 A (Esc on the whole bot page) was decided by arena 1; the owner approved it on 2026-11-15 ("116-A: A (approve all three)"), with the `invalid` prop of the check box (Q1 A) and the `ignoreBlocker` move after a late Delete (round 2, R2-1). Revision 1.
+Approval: lead agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15. Q13 A (Esc on the whole bot page) was decided by arena 1; the owner approved it on 2026-11-15 ("116-A: A (approve all three)"), with the `invalid` prop of the check box (Q1 A) and the `ignoreBlocker` move after a late Delete (round 2, R2-1). Revision 1.
 
 The code was read at `origin/main` = `97221d3`. "Read" means from reading the code; each item
 gets a test that fails before its fix.
