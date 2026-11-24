@@ -5,6 +5,9 @@ review round 2 found the same two faults that round 1 had fixed.
 Checkpoint: plan. The owner approves a redesign under `AGENTS.md` §9.
 Approval: waiting for the owner. The owner chose the direction on 2026-11-24 (decision page r7,
 Q2: "B Read the built page").
+Withdrawn: the owner, 2026-11-24: "keep it simple please, it just a small skill, not worth doing
+that much of time". Not built. The two faults are known limits in `references/content-format.md`
+of the skill.
 
 ## Why
 

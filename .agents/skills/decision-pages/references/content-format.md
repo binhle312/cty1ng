@@ -148,6 +148,10 @@ fails it. Research IDs in the Rule column refer to `research.md` (next to this f
 
 **R8.1 scope fields.** Each question says why it is the reader's decision, what is settled, and what only the answer changes (SKILL.md step 3).
 
+**Known limits** (owner, 2026-11-24: keep the kit simple). The totals are close, not exact: the
+option count leaves out the "My pick" badge and the summary line of a closed option Details. The
+text files can lose a `**` when two cells of one table row each hold one `**` outside code.
+
 `decides`, `owner`, and `settled` count toward the visible context limit. Their labels also count
 as bold words. The visible option count includes each row label, its text, and the risk chip.
 The `removed` items stay in Details.
