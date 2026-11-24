@@ -19,6 +19,27 @@ The repository's approval rules still apply. A worker's message is a report, not
 
 If you are a worker, this skill is not for you. Ask the lead agent.
 
+## Who talks with whom
+
+```
+              OWNER  approves, decides, merges
+                │  ▲
+           task │  │ answer, report, questions
+                ▼  │
+           LEAD AGENT ◀── advice ── advisor tool
+            │  ▲   │  ▲
+      brief │  │   │  │ findings
+            │  │   │  │
+            │  │ plan, then report
+            │  │   │ review brief
+            ▼  │   ▼  │
+          WORKER   REVIEWER
+          builds   did not write the code
+```
+
+A worker and a reviewer send no messages to each other or to the owner.
+Each message passes through the lead agent.
+
 ## Steps
 
 1. **Pick the model** from the table, and tell the owner one reason. Keep that model until the
@@ -38,20 +59,22 @@ If you are a worker, this skill is not for you. Ask the lead agent.
    - the paths that it can read, and the paths that it must not read;
    - the worktree and the branch name (a worker with no branch name makes its own);
    - the scope, the first plan, the checks, and the form of the report;
+   - the limits of the machine and of parallel work that the worker must keep;
    - the [rules for the worker](#rules-for-the-worker).
 
 3. **Start the worker** in its own worktree and branch with the [start command](#start).
+   Start each run in the background.
    Write its session id, worktree, model and effort on one line of a session list file.
 
 4. **Get the plan first** when the work has a design choice. The first turn returns a plan only.
-   Approve the plan only when all of these are true:
+   Accept the plan only when all of these are true:
    - each point of the goal has a step;
    - each step is in the scope;
    - each claim has a check.
 
-   Then send the message to build.
+   Then send the message to build. Your OK is not the owner's approval.
 
-5. **Talk with the worker** with the [send command](#send-a-message): answer its question, approve
+5. **Talk with the worker** with the [send command](#send-a-message): answer its question, accept
    its plan, or send the findings of a review. If a run goes in a wrong direction,
    [stop it](#stop-a-run) and send the correction.
    Each message sends the full session again, so send a message for a reason.
@@ -115,12 +138,14 @@ Outside a Git repository, add `--skip-git-repo-check` to the start command and t
 kill -INT <process id of that codex exec>
 ```
 
+The process id is `$!` immediately after you start a run in the background. Write it to a file.
+After the stop, check that no command of the worker still runs.
 The session stays usable. Send the correction with the send command.
 
 ### Commit and push
 
-The sandbox does not let a worker write to the Git folder or use the network. For a worker that
-commits and pushes, add these options to the start command and to each `resume`:
+In `workspace-write`, Codex keeps the Git folder read-only and the network closed. For a worker
+that commits and pushes, add these options to the start command and to each `resume`:
 
 ```bash
 -c 'sandbox_workspace_write.writable_roots=["<repository>/.git","<repository>/.git/worktrees/<admin name>"]' \
@@ -131,6 +156,13 @@ The admin name is the result of `basename "$(git rev-parse --git-dir)"` in the w
 The network opens for each command of the worker. In the brief, permit the network only for Git
 and the Git host.
 If the worker installs packages, add the store folder of the package manager to the roots.
+
+### The sandbox is not a hard limit
+
+Codex can send a command that the sandbox refuses to an approval step. If the Codex configuration
+has an automatic reviewer for approvals (`approvals_reviewer`), that reviewer can approve the
+command, and it then runs outside the sandbox.
+So the brief carries each limit as a rule, and you check the diff and the folders after each turn.
 
 ### Review run
 
