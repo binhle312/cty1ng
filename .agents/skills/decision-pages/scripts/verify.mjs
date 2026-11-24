@@ -90,7 +90,7 @@ ok((await p.locator("input[type=radio]:checked").count()) === 0, "no option is p
 const counts = await p.locator(".counts").innerText();
 ok(/Total\s*\n?\s*\d+/.test(counts) && /Answered/.test(counts) && /Remaining/.test(counts), "header shows Total, Answered, Remaining");
 ok((await p.locator(".bar img, .bar progress, [role=progressbar]").count()) === 0, "no progress bar (R5.3)");
-ok((await p.locator(".sbtn .no").count()) === N, "the stepper has one number element (.no) for each question");
+ok((await p.locator(".sbtn .no").count()) === N, "the stepper has N number elements (.no), one for each question in total");
 ok((await p.locator('.sbtn[aria-current="step"]').getAttribute("data-go")) === "0", "Overview is the active step");
 
 // 3. Overview
@@ -123,7 +123,7 @@ for (let i = 0; i < N; i++) {
   ok(await s.isVisible(), `${id}: step opens (${i === 0 ? "arrow key" : "Next button"})`);
   const step = p.locator(`.sbtn[data-go="${i + 1}"]`);
   ok((await step.getAttribute("aria-current")) === "step" && await step.locator(".no").isVisible()
-    && (await step.locator(".no").innerText()) === String(i + 1), `${id}: its stepper button has aria-current=\"step\" and the number ${i + 1}`);
+    && (await step.locator(".no").innerText()) === String(i + 1), `${id}: its stepper button has aria-current=\"step\" and its expected question number`);
   ok((await s.locator("h1").innerText()).trim() === stripMarkup(q.title), `${id}: shows the question as the title`);
   const ask = s.locator(".ask");
   ok((await ask.isVisible()) && (await ask.innerText()).startsWith("Decide:"), `${id}: shows the ask, "Decide: ..."`);
@@ -192,9 +192,9 @@ for (let i = 0; i < N; i++) {
   ok(allFields, `${id}: every option shows Gets, Costs, Risk text and a "Risk: level" chip`);
   ok(allDoes, `${id}: every option shows its Does row first`);
   ok(votesMatch, `${id}: ${showVotes ? "vote rows show the expected names or No votes" : "no vote rows when there are no votes"}`);
-  if (showVotes) ok(await voteTintsMatch(s, q), `${id}: each voter badge has the computed colours of its role tint variables in the light theme`);
+  if (showVotes) ok(await voteTintsMatch(s, q), `${id}: each expected voter badge has the computed colours of its role tint variables in the light theme`);
   ok(cardsMatch, `${id}: option card innerText matches the expected text`);
-  ok(allIn && g.mainScroll === 0, `${id}: at 1440x900 each option card top is below the header and each bottom is above the footer and the pane bottom, no scroll (lowest card bottom ${Math.round(bottom)} px, footer top ${Math.round(g.footerTop)} px)`);
+  ok(allIn && g.mainScroll === 0, `${id}: at 1440x900 main.scrollTop is 0, each option card top is at or below the header bottom, and each card bottom is at or above the footer top and the pane bottom (lowest card bottom ${Math.round(bottom)} px, footer top ${Math.round(g.footerTop)} px)`);
   const measure = await s.evaluate((el) => {
     const probe = document.createElement("span"); probe.textContent = "0000000000"; probe.style.cssText = "position:absolute;visibility:hidden;font:16px/1.5 var(--font)";
     el.appendChild(probe); const ch = probe.getBoundingClientRect().width / 10; probe.remove();
@@ -210,7 +210,7 @@ for (let i = 0; i < N; i++) {
   answers[id] = choice;
   ok((await s.locator(`input[value="${choice}"]`).isChecked()), `${id}: answer ${choice} is checked (${i % 2 === 0 ? "key" : "click"})`);
   ok(await step.locator(".ck").isVisible() && !(await step.locator(".no").isVisible()), `${id}: answered step replaces its number with a check`);
-  ok((await s.locator(".yours").innerText()) === ("You chose " + choice + (choice === q.pick.key ? ", same" : "")), `${id}: the step's answer badge text is \"You chose\" and the chosen key`);
+  ok((await s.locator(".yours").innerText()) === ("You chose " + choice + (choice === q.pick.key ? ", same" : "")), `${id}: the step's answer badge text matches the expected \"You chose\" label`);
   if (i === 0 || i === 2) { const t = `note for ${id}: test`; await s.locator("textarea").fill(t); notes[id] = t; }
 }
 info(`lowest option card bottom over all questions: ${Math.round(maxBottom)} px of 900`);
@@ -220,7 +220,7 @@ ok((await p.locator("#cA").innerText()) === String(N) && (await p.locator("#cR")
 await p.reload();
 ok(await p.locator(`section.step[data-step="${N}"]`).isVisible(), "reload returns to the same step");
 ok((await p.locator("input[type=radio]:checked").count()) === N, "reload keeps all answers");
-ok((await p.locator(".sbtn.done").count()) === N && (await p.locator(`.step[data-step="${N}"] .yours`).isVisible()), "reload restores one .done stepper button for each question and a visible answer badge on the last question");
+ok((await p.locator(".sbtn.done").count()) === N && (await p.locator(`.step[data-step="${N}"] .yours`).isVisible()), "reload restores N .done stepper buttons in total and a visible answer badge on the last question");
 ok((await p.locator("#n-Q1").inputValue()) === notes.Q1, "reload keeps the notes");
 
 // 6. Check answers step
@@ -302,7 +302,7 @@ for (let i = 0; i < N; i++) {
   }, i + 1);
   if (r.bottom > r.f) { in1280 = false; info(`Q${i + 1}: at 1280x800 the lowest option card ends at ${Math.round(r.bottom)} px, ${Math.round(r.bottom - r.f)} px below the visible pane (${Math.round(r.f)} px)`); }
 }
-ok(in1280, "at 1280x800 the lowest option card bottom is above the footer and the pane bottom");
+ok(in1280, "at 1280x800 the lowest option card bottom is at or above the footer top and the pane bottom");
 
 // 8. Clear answers, dark mode look
 await p.setViewportSize({ width: 1440, height: 900 });
@@ -310,7 +310,7 @@ await p.evaluate((k) => window.decisionPage.go(k, false), N + 1);
 await p.click("#clear");
 ok((await p.locator("input[type=radio]:checked").count()) === 0 && (await p.locator("#cA").innerText()) === "0", "Clear my answers removes all answers");
 ok((await missing.inputValue()) === "" && (await fin.locator("#copytext").textContent()).endsWith("\nPage clear: (no answer)"), "Clear my answers removes feedback and updates the copy preview");
-ok((await p.locator(".sbtn.done").count()) === 0 && (await p.locator(".yours:not(:empty)").count()) === 0, "Clear my answers removes the .done stepper classes and empties the answer badges");
+ok((await p.locator(".sbtn.done").count()) === 0 && (await p.locator(".yours:not(:empty)").count()) === 0, "after Clear my answers, no .sbtn.done and no non-empty .yours remains");
 await p.evaluate(() => window.decisionPage.go(1, false));
 const q1 = c.questions[0], different = q1.options.findIndex((o) => o.key !== q1.pick.key);
 await p.keyboard.press(String(different + 1));
@@ -322,7 +322,7 @@ for (const [i, q] of c.questions.entries()) {
   if (!q.options.some((o) => o.votes?.length)) continue;
   await p.evaluate((k) => window.decisionPage.go(k, false), i + 1);
   const s = p.locator(`section.step[data-step="${i + 1}"]`);
-  ok(await voteTintsMatch(s, q), `Q${i + 1}: each voter badge has the computed colours of its role tint variables in the dark theme`);
+  ok(await voteTintsMatch(s, q), `Q${i + 1}: each expected voter badge has the computed colours of its role tint variables in the dark theme`);
 }
 await p.emulateMedia({ colorScheme: "light" });
 
@@ -352,7 +352,7 @@ const animations = await p.evaluate(() => {
     return el ? getComputedStyle(el).animationName : "";
   });
 });
-ok(animations.join(",") === "tick,just-done,pop-option,pop-box,pop-in", "a new answer starts the CSS animation names tick, just-done, pop-option, pop-box and pop-in");
+ok(animations.join(",") === "tick,just-done,pop-option,pop-box,pop-in", "after a new answer, the five sampled elements have the computed animation names tick, just-done, pop-option, pop-box and pop-in");
 const movesLeft = await p.evaluate(async () => {
   window.decisionPage.go(0, false);
   const main = document.querySelector("main");
@@ -367,7 +367,7 @@ const movesLeft = await p.evaluate(async () => {
 ok(movesLeft, "a partial forward swipe moves the page left");
 await p.waitForTimeout(200);
 const [partial, forward, ...tail] = await swipe(0, [[25, 3], [25, 3], [6], [13], [12], [11], [10], [9]]);
-ok(partial.step === 0 && partial.edge === "edge-r" && Number(partial.progress) === .5, "short horizontal swipe marks the right ring .edge.live with --p 0.5 and keeps the step");
+ok(partial.step === 0 && partial.edge === "edge-r" && Number(partial.progress) === .5, "short horizontal swipe: the .edge.live element has the id edge-r and --p 0.5, and the step stays");
 ok(forward.step === 1 && forward.slide === "in-next" && forward.overscroll === "none" && tail.every(({ step }) => step === 1), "forward swipe advances one step with animation name in-next and no horizontal overscroll or extra momentum steps");
 await p.waitForTimeout(200);
 const [second] = await swipe(null, [[60]]);
@@ -375,7 +375,7 @@ ok(second.step === 2, "a new swipe after 200 ms advances one more step");
 await p.waitForFunction(() => !document.querySelector(".edge.live, .wrap.drag"));
 await p.waitForTimeout(180);
 const [reverse] = await swipe(1, [[-60]]);
-ok(reverse.step === 0 && reverse.edge === "edge-l" && reverse.slide === "in-prev", "reverse swipe returns to Overview with animation name in-prev and the left ring marked .edge.live");
+ok(reverse.step === 0 && reverse.edge === "edge-l" && reverse.slide === "in-prev", "reverse swipe returns to Overview with animation name in-prev, and the .edge.live element has the id edge-l");
 await p.waitForTimeout(180);
 ok((await swipe(0, [[-60]]))[0].step === 0, "swipe cannot go back from Overview");
 await p.waitForTimeout(180);
@@ -385,7 +385,7 @@ ok((await swipe(0, [[55, 80]]))[0].step === 0, "vertical scroll leaves the step 
 await p.waitForTimeout(180);
 await p.emulateMedia({ reducedMotion: "reduce" });
 const [quietPartial, quiet] = await swipe(0, [[25], [25]]);
-ok(quiet.step === 1 && quiet.slide === "none" && !quiet.edge && !quietPartial.edge && quietPartial.drag === "", "reduced motion keeps swipe navigation with no animation name, no drag transform and no .edge.live ring");
+ok(quiet.step === 1 && quiet.slide === "none" && !quiet.edge && !quietPartial.edge && quietPartial.drag === "", "reduced motion keeps swipe navigation; the samples have the animation name none, an empty inline transform and no .edge.live id");
 const q1Radio = p.locator('.step[data-step="1"] .opt input').first();
 await q1Radio.focus();
 await p.keyboard.press("ArrowLeft");
@@ -442,7 +442,7 @@ const guarded = await p.evaluate(() => {
 });
 ok(guarded.cleared, "Ctrl-wheel clears the partial drag at 100 ms");
 ok(guarded.partialStep === 0, "35 px and 15 px stay below the swipe threshold across Ctrl-wheel at 100 and 200 ms");
-ok(guarded.committedStep === 1 && guarded.finalStep === 1, "Ctrl-wheel keeps a committed swipe locked until a pause");
+ok(guarded.committedStep === 1 && guarded.finalStep === 1, "after a committed swipe, the step stays 1 through the sampled Ctrl-wheel events");
 await p.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
 
 ok(errs.length === 0, "no console errors" + (errs.length ? ": " + JSON.stringify(errs) : ""));
