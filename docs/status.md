@@ -10,8 +10,6 @@ approvals). Keep it short: link to PRs and briefs instead of describing work.
 
 ## Now
 
-The owner stopped the chief of agents (order 213, 2026-11-23) and works from one conversation: one leader and its workers. The chief rules leave the repository in [#147](https://github.com/binhle312/cty1ng/pull/147). The redesign draft #146 and the overnight skill draft #140 are closed without a merge.
-
 The repository audit of 2026-11-05 found 55 issues. After the owner's decisions, 15 are P2, 39 are P3, and the owner accepted one case; none is P1. Its fixes come before M3 in the owner's order. #69 is closed, and the owner watches more PRs before deciding whether to bring it back. Findings, decisions and progress are in [audits/2026-11-05-repo-audit.md](audits/2026-11-05-repo-audit.md). PR 2 of 7, the security fixes, merged in [#73](https://github.com/binhle312/cty1ng/pull/73) on 2026-11-06. [#76](https://github.com/binhle312/cty1ng/pull/76) merged on 2026-11-06 and records the guard decisions. PR 3 of 7, the Skills page, merged in [#78](https://github.com/binhle312/cty1ng/pull/78) on 2026-11-06. PR 4 of 7, the Bots page, merged in [#82](https://github.com/binhle312/cty1ng/pull/82) on 2026-11-08. PR 5 of 7, tests only, merged in [#86](https://github.com/binhle312/cty1ng/pull/86) on 2026-11-10. PR 6 of 7, six tabs, merged in [#91](https://github.com/binhle312/cty1ng/pull/91) on 2026-11-10.
 
 The automated security review is off for now (owner, 2026-11-06, [security.md §2.11](security.md#211-supply-chain-and-review)).
@@ -96,7 +94,6 @@ A P3 that has a DQ id is not in this table. Its state lives only in its row of t
 
 | Item | Found in | Target |
 | --- | --- | --- |
-| `docs/workflows/merge-bar.md` has no merge-of-main bonus and no full round after a merge of main (R-007, orders 145, 148) | [#144](https://github.com/binhle312/cty1ng/pull/144) | Merge-bar follow-up |
 | Flaky e2e test `skills.spec.ts:465` (UI-7.5a, the Bots tab empty line): strict mode found two "Add" buttons on the first try and the retry, CI run 44706653327 on #142 (a Markdown-only diff); the rerun passed | [#142](https://github.com/binhle312/cty1ng/pull/142) CI | Find the cause before M3 (the owner picks the PR) |
 | Q1 A redesign (owner 2026-11-18): plans hold the design and the owner's decisions only; build facts only in the PR description; a small docs PR (`planning.md`, `pull-request.md`) | Owner answer Q1 A, 2026-11-18 ([#114](https://github.com/binhle312/cty1ng/pull/114), DQ-541, DQ-542) | [#133](https://github.com/binhle312/cty1ng/pull/133) |
 | `pnpm e2e:serve` can die and leave its servers on the ports: a closed stdout (`EPIPE`) or SIGHUP stops the script without stopping them, and the marker stays. It fails safe, but its message says to stop a script that no longer runs, and no doc says to delete `.e2e-serve`. Stop the servers on those exits, and correct the message | [#60](https://github.com/binhle312/cty1ng/pull/60) review | The P3 PRs before M3 (owner, 2026-11-08) |
