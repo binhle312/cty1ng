@@ -2,7 +2,7 @@
 
 Brief: the owner's answer of 2026-11-18 (q4 Q4, choice "A"): "Fix it now in a small PR: `field` is the first unknown key; the message names every unknown key ("Unknown fields: nmae, colr."); docs/api.md §1 says so; one test per case (one key, two keys, nested)."
 Checkpoint: none beyond the owner's answer (the error shape stays one `field`, so the public API shape does not change; no shared state, module boundary or screen flow)
-Approval: plan OK by the chief agent, 2026-11-18, against the owner's answer q4 Q4 A (revision 1); owner review pending
+Approval: plan OK by the lead agent, 2026-11-18, against the owner's answer q4 Q4 A (revision 1); owner review pending
 
 ## The cause
 
@@ -37,7 +37,7 @@ key with its full path, and the message lists every unknown key.
 1. **One key.** Today the message is `Unrecognized key: "nmae"`. The owner's example form is
    `Unknown fields: nmae, colr.`, which that text does not match. One key gets `Unknown field: nmae.`,
    so both forms read the same.
-2. **Nested.** The chief's brief gave `skills.0.extra` as an example; the repository format
+2. **Nested.** The lead agent's brief gave `skills.0.extra` as an example; the repository format
    (`docs/api.md` §1, item 32 of the P3 list, DQ-375) writes an index of a list as `[i]`, so the
    path is `pins[0].extra`. The owner's answer only says "nested"; it gives no format.
 3. **Query and path.** The hook serves every target of a Zod route (body, query, path). An unknown

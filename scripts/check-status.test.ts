@@ -135,22 +135,20 @@ describe("checkStatus", () => {
     ]);
   });
 
-  it("requires a Done row for a merged PR that changed only the old chief memory", () => {
-    const merged = mergedPrs(merge(140, "2026-11-20"));
-    const oldMemoryPr = {
-      merged,
+  it("does not read the changed files of a merged PR", () => {
+    let reads = 0;
+    const input = {
+      merged: mergedPrs(merge(140, "2026-11-20")),
       statusMd: status([]),
       since: SINCE,
-      changedFiles: (): string[] => [
-        ".agents/chief/memories/long-term/state.md",
-        ".agents/chief/memories/long-term/rules/R-014-x.md",
-      ],
+      changedFiles: (): string[] => {
+        reads += 1;
+        return ["notes/state.md"];
+      },
     };
-    const problems = checkStatus(oldMemoryPr);
-    expect(
-      problems.map((problem) => problem.split(" ")[0]),
-      "memory PR",
-    ).toEqual(["#140"]);
+    const problems = checkStatus(input);
+    expect(problems.map((problem) => problem.split(" ")[0])).toEqual(["#140"]);
+    expect(reads, "reads of the changed files").toBe(0);
   });
 });
 

@@ -4,7 +4,7 @@ Brief: p3 list item 68 (list PR 21), `docs/status.md:94` on `origin/main` (`9722
 cleanup with the same texts and screens" (repository review of 2026-11-10, #94).
 Checkpoint: none (a refactor inside existing modules; no shared state, no new module boundary, no
 new screen or text).
-Approval: chief agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15. Revision 1. Decisions: Q1 B, Q2 A, Q3 A (§7)
+Approval: lead agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15. Revision 1. Decisions: Q1 B, Q2 A, Q3 A (§7)
 
 ## 1. The item, checked on `origin/main` (`97221d3`)
 
@@ -65,7 +65,7 @@ first on the old code (recorded red run).
 | 5 | e2e `journey-first-use.spec.ts:60` (after Create; its line changes with option A) | `shell/header-bot-card.test.tsx` (or a case in `header-bot-list.test.tsx`, which renders the card): the settings link's `href` is `/bots/{slug}` and it opens in a new tab. Red on `origin/main` (it has `?tab=profile`) with option A |
 
 Each part commit runs its target test files only (the heavy slot rule); the full commands run once
-at the end in the chief's heavy slot; `pnpm e2e` once with the e2e slot.
+at the end in the lead agent's heavy slot; `pnpm e2e` once with the e2e slot.
 
 ## 5. Risks
 
@@ -83,7 +83,7 @@ at the end in the chief's heavy slot; `pnpm e2e` once with the e2e slot.
 Guide: not changed (no owner-visible page, text or action changes; the Guide has no `?tab=` text:
 `grep -n "tab=" seed/skills/using-the-app/SKILL.md` prints nothing).
 
-## 7. Questions and answers (chief agent, 2026-11-15)
+## 7. Questions and answers (lead agent, 2026-11-15)
 
 Q1, part 1. A: delete `changesLine` (one line less; the text stays in two places, so the review's
 "same text written twice" stays). B: move it next to `SaveBarFrame` and call it from both bars (one

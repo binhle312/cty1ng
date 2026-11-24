@@ -2,7 +2,7 @@
 
 Brief: the P3 list before M3 (`p3-list-2026-11-12.md`, outside the repository), part 2, items 57 to 64; part 5, PR 15
 Checkpoint: none (P3 list PR; item 61 reuses an existing UI pattern, see "Fix per item")
-Approval: chief agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15. Revision 1. Decisions: Q1 A, Q2 A (test a ZWJ emoji, a flag and a lone-surrogate case), Q3 A
+Approval: lead agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15. Revision 1. Decisions: Q1 A, Q2 A (test a ZWJ emoji, a flag and a lone-surrogate case), Q3 A
 
 ## Items on `origin/main` (`97221d3`)
 
@@ -97,7 +97,7 @@ Each other new test records its red run on the old code; those go to `exempt` wi
 - 57: a Clone with cached settings now shows the skeleton until the settings answer (one short read).
 - 61 adds a button in three dialogs: a UI change from an existing pattern; flagged.
 
-## Open questions and the answers (chief v4, 2026-11-15 02:3x: A, A, A)
+## Open questions and the answers (lead agent v4, 2026-11-15 02:3x: A, A, A)
 
 1. Item 61. A (recommended): Try again in the card + reason "Try again first." (both texts exist; the
    pattern of the bot cards §2a; one doc line changes; flagged under Needs human review).

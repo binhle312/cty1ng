@@ -145,7 +145,7 @@ describe("POST /bots", () => {
     expect(error).not.toHaveProperty("field");
   });
 
-  // DQ-735 (the chief's decision inside the owner's answer q4 Q4 A): a key with a character
+  // DQ-735 (the lead agent's decision inside the owner's answer q4 Q4 A): a key with a character
   // outside letters, digits, `_`, `$` and `-` is written as a JSON string in the message, so a
   // comma or a quote in a key is not read as a separator. `field` keeps the raw key.
   it("writes an empty unknown key as an empty JSON string in the message", async () => {

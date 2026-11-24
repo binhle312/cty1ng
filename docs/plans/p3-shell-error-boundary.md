@@ -5,7 +5,7 @@ Brief: none. The source is items 65 ("Fix before M3") and 66 of the P3 list (the
 (`M0-skeleton.md:120`).
 Checkpoint: plan (`AGENTS.md` §7: the UI design of a new screen and its texts; the roster fallback).
 Approval: accepted by the owner, 2026-11-15 ("P-16: approve"; revision 2, in the owner's answers
-of 2026-11-15 12:15). The answers to Q1 to Q3 are the plan's recommendations, by the chief agent's
+of 2026-11-15 12:15). The answers to Q1 to Q3 are the plan's recommendations, by the lead agent's
 reading of that approval (part 7); the PR lists this under "Needs human review".
 
 
@@ -170,7 +170,7 @@ list column goes)?** I recommend A: simplest, and the Clone page does the same.
 ## 7. Approval and answers (2026-11-15)
 
 The owner approved this plan, revision 2, on 2026-11-15 ("P-16: approve"). The owner's note says
-that the plan's own recommended answers count as approved with the plan; this is the chief
+that the plan's own recommended answers count as approved with the plan; this is the lead agent
 agent's reading, so the PR lists it under "Needs human review".
 
 - Q1: the two texts ship as proposed ("Something went wrong"; "The app could not show this page.
@@ -202,7 +202,7 @@ Build details that follow from the probes:
 - The log line has the event name and the error name only, never the message
   (`security.md` §2.10).
 
-## 9. Build changes (2026-11-15, the chief agent's approval)
+## 9. Build changes (2026-11-15, the lead agent's approval)
 
 - Part 5, the row "Try again when the page throws again": "one render for each click" becomes
   "no loop (the render count stops growing)". React renders a throwing component two times for

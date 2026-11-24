@@ -2,7 +2,7 @@
 
 Brief: the one P3 list before M3 (owner-approved 2026-11-12), part 5, list PR 7 (items 23, 24) and list PR 10 (items 32, 33, 34, and the two approval parts of 31). Night decisions: arena 1 synthesis, Q9 (one PR) and Q12 A.
 Checkpoint: none (no new screen, no code design). Public API changes and upload code are flagged under `Needs human review`.
-Approval: chief agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15 ("CHIEF: accept"). Revision 1. Answers of the chief: Q1 A, Q3 diff budget 2000, Q4 A, Q5 A. Q2, Q3 (changelog default), Q6 and Q7 go to consultants; section 6 records the answers when they come.
+Approval: lead agent, 2026-11-15, under the owner's order of 2026-11-14 (P3 questions to consultants); accepted by the owner, 2026-11-15. Revision 1. Answers of the lead agent: Q1 A, Q3 diff budget 2000, Q4 A, Q5 A. Q2, Q3 (changelog default), Q6 and Q7 go to consultants; section 6 records the answers when they come.
 
 ## 1. Item check on `origin/main` = `97221d3` (2026-11-15)
 
@@ -40,7 +40,7 @@ Defaults are written one time, in the table of `docs/architecture.md` §8. The r
 
 ### PR 10 part
 
-**Item 32.** `router.ts` writes an array index as `[i]`: `pins[0].skill_id`. One helper for the `invalid_id` path and the other paths. `docs/api.md` §1 gets one sentence on the format. No frontend change (`fieldHead` already splits on `[`); the frontend parser tests stay; I add no frontend test unless the chief wants one.
+**Item 32.** `router.ts` writes an array index as `[i]`: `pins[0].skill_id`. One helper for the `invalid_id` path and the other paths. `docs/api.md` §1 gets one sentence on the format. No frontend change (`fieldHead` already splits on `[`); the frontend parser tests stay; I add no frontend test unless the lead agent wants one.
 
 **Item 33.**
 - Import apply: a slug listed twice → 422 `validation_error`, `field: "slugs"`, "{slug} is listed twice." (the field of the other two slug errors of this endpoint, and the words of "This bot is listed twice."). Nothing is written. Service change in `skill-import.service.ts` apply (not a #114 file part: #114 changes the preview id at `:261`, a nearby hunk).
@@ -92,12 +92,12 @@ No order or race case: the changes are pure checks on one request. Break list: o
 - **Q1 (a) The answer over the budget.** A: the fallback diff (all old lines `del`, all new `add`) in the normal 200 shape; budget per `lineDiff` call. B: a flag `truncated: true` in `SkillDiff` + a UI line (API shape and new UI text). C: an error (422/413) and an error text in two places. **Recommend A**: it is the owner's decision of 2026-11-06, it is still a correct diff, and it needs no API or UI change. Per call (not per request): one call has one cost bound; a request has at most 2 calls (History) or 2 per row with a pause between rows (import).
 - **Q2 (b) Item 33 results.** `ids=` → A: 422 `validation_error` (field `ids`); B: the same as no `ids` (all skills). Repeated `ids=a,a` / `slugs` → A: 422; B: remove repeats silently. **Recommend A for both**: an explicit empty or repeated list is a client error, the page never sends either, and "refused" is the words of the item.
 - **Q3 (c) Defaults.** `SKILL_DIFF_MAX_EDITS = 1000`: worst case about 70 ms of blocked server per call (table above), and any change of up to 1,000 added + removed lines still gets the shortest diff (twice the 500-line warning of `skill_body_warn_lines`). 2000 (the audit's probe value) costs about 220-275 ms per call. `SKILL_CHANGELOG_MAX = 500` characters: a one-line note; `Imported from {file}` fits any file name up to 486 characters (OS file names stop at 255 bytes); the regex at 500 takes 0.1 ms. **Recommend 1000 and 500.**
-- **Q4 The quadratic regex.** A: the limit only (the regex then reads at most 500 characters). B: also rewrite `oneLine` with a split (linear, same result). **Recommend A** (simplest; no concrete failure is left at 500); B is one line if the chief wants the regex gone.
+- **Q4 The quadratic regex.** A: the limit only (the regex then reads at most 500 characters). B: also rewrite `oneLine` with a split (linear, same result). **Recommend A** (simplest; no concrete failure is left at 500); B is one line if the lead agent wants the regex gone.
 - **Q5 Item 32 format.** A: brackets for array indexes (`pins[0].skill_id`), dots for object keys; one router change; matches `api.md:30`, `:64` and the frontend keys. B: dots everywhere (`pins.0`): changes 2 service lines, 2 frontend lines, the docs. **Recommend A.**
-- **Q6 Item 34 third input.** The list's `app.ts:85` is `app.doc31("/api/openapi.json")` (line 85 on `97221d3` and on the audit commit). Its input is the query string, which no schema checks; the same for the dev docs routes. **Recommend** fixing those as input (2). If the chief prefers, the alternative third input is `preview_id: z.string()` of import apply (not a UUID check), but #114 changes that id's format (ids port), so I recommend leaving it.
+- **Q6 Item 34 third input.** The list's `app.ts:85` is `app.doc31("/api/openapi.json")` (line 85 on `97221d3` and on the audit commit). Its input is the query string, which no schema checks; the same for the dev docs routes. **Recommend** fixing those as input (2). If the lead agent prefers, the alternative third input is `preview_id: z.string()` of import apply (not a UUID check), but #114 changes that id's format (ids port), so I recommend leaving it.
 - **Q7 Item 31 "one limit".** It covers the SKILL.md limit of the zip reader and the CLI reader; `MAX_BODY_BYTES` is the JSON body limit, a separate rule that only has the same number. **Recommend** not joining it.
 
-## 6. Answers (chief agent, 2026-11-15 01:1x +07)
+## 6. Answers (lead agent, 2026-11-15 01:1x +07)
 
 - Q1: A. The 200 shape with the del/add fallback; budget per `lineDiff` call (the owner's text of 2026-11-06, audit file line 80).
 - Q3, diff budget: `SKILL_DIFF_MAX_EDITS = 2000`, the value of the owner's 2026-11-06 text ("187 ms for 10,000 lines"). My measurement above agrees: 218-275 ms for 5,000 to 50,000 all-different lines.
@@ -105,9 +105,9 @@ No order or race case: the changes are pure checks on one request. Break list: o
 - Q5: A, brackets for indexes and dots for keys; `router.ts` only; `create-bot-form.ts` untouched.
 - Q2, Q3 (changelog default), Q6, Q7: with the consultants. Items 33, 34 and 31 wait for these answers.
 
-## 7. Answers (chief, arena 3, 2026-11-15 01:2x +07)
+## 7. Answers (lead agent, arena 3, 2026-11-15 01:2x +07)
 
-Two consultants agreed with the plan on all four questions. The answers are in the chief's folder `tmp/owner/night-2026-11-15/arena3/`.
+Two consultants agreed with the plan on all four questions. The answers are in the lead agent's folder `tmp/owner/night-2026-11-15/arena3/`.
 
 - Q2 (item 33): as written. Only an absent `ids` means "all"; `ids=` (empty) → 422. The import check for repeated slugs runs before any claim or write.
 - Q3 (changelog): 500 characters (`domain-model.md` and `skills-page.md` §5: "one line"). A long file name gets 422 on `file`; it is not shortened. The length check runs before the lines are joined, on every path, and the file-name check counts characters the same way. The CLI passes the folder's base name, not the full path, so a long parent path uses none of the limit (the risk line about CLI paths is removed). Follow-up for the records turn: M5 `propose_skill` takes a changelog with no stated limit (`conversation-rules.md` §7, "Text only").

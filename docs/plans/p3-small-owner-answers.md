@@ -2,7 +2,7 @@
 
 Brief: the owner's answers of 2026-11-18 to DQ-442, DQ-500, DQ-485, DQ-411 (UI-1), item 61 (UI-2), #123 (UI-3), DQ-426 and the after-save cards (Q2 A); no task brief exists
 Checkpoint: none (eight small changes; the owner gave each answer and each text)
-Approval: UI texts and scope: the owner's answers of 2026-11-18. Plan OK by the chief agent, 2026-11-18, against the owner's answers (DQ-442 B, DQ-500 C, DQ-485 C, DQ-426 A, UI-1 A, UI-2 B, UI-3 A). Item 8 approved by the owner, 2026-11-18 (after-save cards, Q2 A).
+Approval: UI texts and scope: the owner's answers of 2026-11-18. Plan OK by the lead agent, 2026-11-18, against the owner's answers (DQ-442 B, DQ-500 C, DQ-485 C, DQ-426 A, UI-1 A, UI-2 B, UI-3 A). Item 8 approved by the owner, 2026-11-18 (after-save cards, Q2 A).
 
 Code read at `origin/main` = `aa85cb9` (#124 merged). I read each place; The red runs are in the PR
 description. Revision 2 (2026-11-18, after round 1) replaces sections 2 and 3 with what was built.
@@ -18,7 +18,7 @@ the table).
 | --- | --- | --- | --- | --- |
 | 1 | DQ-442 B | `skill-history.tsx:91` and `:312`: a `<p>` with the load error, no **Try again**, no `role="alert"` | Use `LoadError` (the pattern of the skill dialogs and the bot cards) with `versions.refetch()` and `diff.refetch()`. The texts stay: "The app could not load the versions." and "The app could not load the changes." | `skill-history.tsx` |
 | 2 | DQ-500 C | `top-header.tsx:34`: `errorComponent={() => <RosterStandIn bots={all} failed />}` is a new function type on each header render, so React mounts the stand-in again each time | A module-level `RosterFailed` component that reads the bots with `useBots()` (the query is shared; `errorComponent` gets only `error` and `reset`) | `top-header.tsx` |
-| 3 | DQ-485 C | `routes/bots.tsx:30` cites "bot-page.md §1"; `bot-tabs.ts:1` cites "§1". The URL table is in the unnumbered intro of `bot-page.md`; the tab list is §3 | Comments only. Cite the headings by name: "the URL table in the intro of bot-page.md" and "bot-page.md, Tabs". The cite in `routes/bots.tsx:7` ("bot-page.md §1, create-bot-page.md §7") is the same wrong cite for the URLs, so I correct that line too (the chief agent said yes, 2026-11-18) | `routes/bots.tsx`, `features/bots/bot-tabs.ts`, and (round 1, same wrong cite) `features/bots/bot-page-top.tsx`, `test/e2e/bot-page.spec.ts` |
+| 3 | DQ-485 C | `routes/bots.tsx:30` cites "bot-page.md §1"; `bot-tabs.ts:1` cites "§1". The URL table is in the unnumbered intro of `bot-page.md`; the tab list is §3 | Comments only. Cite the headings by name: "the URL table in the intro of bot-page.md" and "bot-page.md, Tabs". The cite in `routes/bots.tsx:7` ("bot-page.md §1, create-bot-page.md §7") is the same wrong cite for the URLs, so I correct that line too (the lead agent said yes, 2026-11-18) | `routes/bots.tsx`, `features/bots/bot-tabs.ts`, and (round 1, same wrong cite) `features/bots/bot-page-top.tsx`, `test/e2e/bot-page.spec.ts` |
 | 4 | DQ-411 / UI-1 A | `create-bot-steps.tsx:463`: "... Deprecated skills are not in the list." | The last sentence becomes "You cannot add deprecated skills." `create-bot-page.md` step 3 states the fact (`:61-64`) and does not quote the note; I do not change it unless the build finds a quote (then I change the quote) | `create-bot-steps.tsx` |
 | 5 | Item 61 / UI-2 B | `skill-dialogs.tsx:63`: "The bots did not load. Try again first." | The reason becomes "The app must know which bots use this skill. Try again first." The error text "The app could not load the bots." stays. `skills-page.md:574` gives the old reason for the Deprecate, Remove from bots and Delete dialogs: update it | `skill-dialogs.tsx`, `skills-page.md` |
 | 6 | #123 / UI-3 A | `error-page.tsx` and `not-found-page.tsx` have an `h1`. Inside the Skills page they show beside the list column with its `h1` "Skills": two `h1` | Both components take `level?: 1 \| 2` (default 1). The Skills page uses `2`: `skill-page.tsx:106` and `new-skill-page.tsx:94` (Page not found), and the four lazy child routes of `skills.lazy.tsx` get an `errorComponent` that renders `<ErrorPage level={2} />`. Texts and buttons stay. Remove the Follow-ups row of #123 from `status.md` (the row that says "Two `h1` headings on the Skills page") | `error-page.tsx`, `not-found-page.tsx`, `skill-page.tsx`, `new-skill-page.tsx`, `routes/skills.lazy.tsx`, `routes/root.tsx` (a wrapper, for the types), `test/e2e/shell.spec.ts`, `test/e2e/skills.spec.ts`, `docs/status.md` |
@@ -31,7 +31,7 @@ Not claimed, and not in this PR:
 - A route-level `notFoundComponent` for an unknown address below `/skills` (for example
   `/skills/a/b`) is not changed.
 
-### Item 6: where the screens show (chief's condition, 2026-11-18)
+### Item 6: where the screens show (lead agent's condition, 2026-11-18)
 
 Today: a child route of `/skills` that throws has its own match, so its error boundary is the
 child's. The router's `defaultErrorComponent` renders in that match, in the `Outlet` of
@@ -43,7 +43,7 @@ An error of the layout itself (or of the chunk) still goes to the default `Error
 there is no list column then, so one `h1` is right.
 Proof, not a reading: the tests of item 6 check that the list column (the "Skills" `h1`, the
 search box) is still in the document when a child route fails, and that the screen has exactly
-one `h1`. If the test shows any change beyond the heading level, I stop and tell the chief.
+one `h1`. If the test shows any change beyond the heading level, I stop and tell the lead agent.
 
 ## 2. Test strategy, as built (revision 2)
 
@@ -73,7 +73,7 @@ three dialogs, because they share `botsReason`). S10 to S12 and S15 to S17: no `
 for one child route, or no `level={2}` for Page not found. S13 and S14: the other card's reason.
 The two guards of the default level are exempt, because they pass on the old code. The full
 `pnpm check:breaks scripts/breaks/pr-129.json` runs before each push of a test change, with the
-TMPDIR line of the chief (outside every git repository). 0 problems is the bar.
+TMPDIR line of the lead agent (outside every git repository). 0 problems is the bar.
 
 ## 4. Docs and records
 

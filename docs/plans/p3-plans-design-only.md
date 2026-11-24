@@ -5,8 +5,8 @@ and the owner's decisions only; build facts go only in the PR description. A sma
 changes docs/workflows/planning.md and pull-request.md (and removes the 'What the build changed'
 step)."
 Checkpoint: none beyond the owner's design answer q2 Q1 A (workflow docs only; no code, no screen)
-Approval: chief agent, 2026-11-18, against the owner's answer q2 Q1 A; owner review pending
-Revision 2, 2026-11-18: the round 1 findings (`implementation.md`, the review guide, a correction in rule 6, the plans of open PRs); approved: chief agent, 2026-11-18, against q2 Q1 A; owner review pending
+Approval: lead agent, 2026-11-18, against the owner's answer q2 Q1 A; owner review pending
+Revision 2, 2026-11-18: the round 1 findings (`implementation.md`, the review guide, a correction in rule 6, the plans of open PRs); approved: lead agent, 2026-11-18, against q2 Q1 A; owner review pending
 
 ## The cause
 
@@ -85,7 +85,7 @@ rows, not copy them) can change that part of `pull-request.md` later with no con
 - One prevention action in `docs/delivery-quality.md` §7 for the cause (DQ-327, DQ-330, DQ-334,
   DQ-435, DQ-496, DQ-528, DQ-533, DQ-540, DQ-541, DQ-542, DQ-682, DQ-686, DQ-688; DQ-540 and
   DQ-688 are open, and the action links them to rule 6), as §7 step 7 asks for a recurring cause, in one line
-  that names the branch of each row (chief agent, 2026-11-18: yes). Verification: count the
+  that names the branch of each row (lead agent, 2026-11-18: yes). Verification: count the
   plan-text findings of this kind in the next three PRs with a plan.
 
 ## Test strategy
@@ -106,4 +106,4 @@ Docs only, so no test and no break list. Gates: `pnpm lint` (Prettier), `pnpm ch
 
 ## Open questions
 
-None for the owner. The chief agent accepted the prevention action (Records), 2026-11-18.
+None for the owner. The lead agent accepted the prevention action (Records), 2026-11-18.

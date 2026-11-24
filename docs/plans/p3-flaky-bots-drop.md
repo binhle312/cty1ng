@@ -1,9 +1,9 @@
 # P3 fix: the flaky e2e test of the pinned card drop line
 
-Brief: the chief's task of 2026-11-18. The test `bots.spec.ts:101` "the keyboard moves a pinned card and the drop line shows" failed once in CI run 44228267962 (PR #124, head `3dfb86b`, attempt 1), then passed on the retry. No ledger row names it (searched `docs/delivery-quality.md` on `main` and all origin branches).
+Brief: the lead agent's task of 2026-11-18. The test `bots.spec.ts:101` "the keyboard moves a pinned card and the drop line shows" failed once in CI run 44228267962 (PR #124, head `3dfb86b`, attempt 1), then passed on the retry. No ledger row names it (searched `docs/delivery-quality.md` on `main` and all origin branches).
 Checkpoint: none. There is no new screen, no new text and no code design. The fix is a behaviour fix inside the existing keyboard move (`pin.md` §2).
-Approval: plan OK by the chief agent, 2026-11-18 (owner rule: fix the flaky test at its cause). Revision 2 adds the chief's three conditions: a guard test of the private parts, a fallback to dnd-kit's own behaviour, and the upstream search (section 3).
-Revision 3, 2026-11-18: the review round 1 changes of §3 and §4 item 5, approved by the chief agent; owner review pending.
+Approval: plan OK by the lead agent, 2026-11-18 (owner rule: fix the flaky test at its cause). Revision 2 adds the lead agent's three conditions: a guard test of the private parts, a fallback to dnd-kit's own behaviour, and the upstream search (section 3).
+Revision 3, 2026-11-18: the review round 1 changes of §3 and §4 item 5, approved by the lead agent; owner review pending.
 Owner decision, 2026-11-18 (q4 Q7 A), on revision 3: §4 item 7 "The criterion is met by the drop-line evidence (99 of 99 under load, twice; 100 of 100 without load)."
 
 ## 1. Evidence

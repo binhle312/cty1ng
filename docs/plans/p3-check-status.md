@@ -6,7 +6,7 @@ docs/status.md. Built in its own small PR with a plan. #127's DQ-571 stays open 
 until it merges."
 Checkpoint: none beyond the owner's design answer q2 Q2 A (a new check script; no shared state,
 module boundary or screen flow)
-Approval: plan OK by the chief agent, 2026-11-18, against the owner's answer q2 Q2 A (revision 1); owner review pending
+Approval: plan OK by the lead agent, 2026-11-18, against the owner's answer q2 Q2 A (revision 1); owner review pending
 
 ## The cause
 
@@ -112,7 +112,7 @@ the check fail with a message; none passes in silence.
 The real red run: `pnpm check:status` on the status.md of `main` must list the 16 PRs of probe 3
 (before the rows are added). Then it prints `check:status: ok`.
 
-A break list `scripts/breaks/pr-<n>.json` for the new tests (as the chief asked): breaks such as
+A break list `scripts/breaks/pr-<n>.json` for the new tests (as the lead agent asked): breaks such as
 the squash pattern removed, `--first-parent` removed, the start date filter removed, and links
 counted outside `## Done`.
 

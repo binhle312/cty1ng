@@ -2,7 +2,7 @@
 
 Brief: the owner's answer of 2026-11-18 (q5 Q4, choice "A"): "Keep §1 as it is and add a check: a test (or lint rule) fails when `createClock` is called anywhere but `appClock` in now.ts. A small PR with a plan; it closes DQ-537."
 Checkpoint: none beyond the owner's answer (one new test file; no shared state, no module boundary, no screen, no migration, no public API, no new dependency)
-Approval: chief agent, 2026-11-18, against the owner's answer q5 Q4 A (the owner chose the check; the choice of a test over a lint rule is the builder's); owner review pending
+Approval: lead agent, 2026-11-18, against the owner's answer q5 Q4 A (the owner chose the check; the choice of a test over a lint rule is the builder's); owner review pending
 
 ## The cause
 
@@ -112,10 +112,11 @@ Break list: not needed (`docs/testing.md` §5: not a late, security or order tes
 
 ## Revision 3 (2026-11-19): `setInterval` outside `lib/now.ts`
 
-Brief: the owner's answer of 2026-11-19 (morning page, Q2, choice "B"): "Accept the fix of da1ed3c
-and also fail the test when frontend code calls `setInterval` outside now.ts; built in #138 before
-its merge (plan revision, test first, one review check); then the chief merges #138."
-Approval: chief agent, 2026-11-19, against the owner's answer Q2 B (one change: the chief locks the
+Brief: the owner's answer of 2026-11-19 (morning page, Q2, choice "B"): the owner accepts the fix of
+da1ed3c and also wants the test to fail when frontend code calls `setInterval` outside now.ts. The
+owner asks for the build in #138 before its merge (plan revision, test first, one review check),
+and then for the merge of #138 by the lead agent.
+Approval: lead agent, 2026-11-19, against the owner's answer Q2 B (one change: the lead agent locks the
 scope to the owner's words, so any use of `setInterval` inside `lib/now.ts` is allowed); owner review pending
 
 ### The cause

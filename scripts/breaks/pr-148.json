@@ -1,0 +1,26 @@
+{
+  "claims": [
+    {
+      "id": "C1",
+      "claim": "checkStatus does not read the changed files of a merged PR",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "does not read the changed files of a merged PR"
+      },
+      "assertion": "expect(reads, \"reads of the changed files\").toBe(0);",
+      "breaks": [
+        {
+          "id": "C1-reads-the-files",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "  const done = doneRows(input.statusMd);\n",
+              "replace": "  const done = doneRows(input.statusMd);\n  (input as unknown as { changedFiles?: () => string[] }).changedFiles?.();\n"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 Brief: P3 list of 2026-11-12, part 5, PR 17, item 67 (`docs/status.md` Follow-ups, review of #94)
 Checkpoint: plan (code design: shared state in a new module `lib/now.ts`)
-Approval: accepted by the owner, 2026-11-15 (P-17: approve), revision 3. The answers of Q1 and Q2 are the plan's recommended options: this is the chief agent's reading of "approve", and the owner has not answered them on their own.
+Approval: accepted by the owner, 2026-11-15 (P-17: approve), revision 3. The answers of Q1 and Q2 are the plan's recommended options: this is the lead agent's reading of "approve", and the owner has not answered them on their own.
 
 Code read at `origin/main` = `97221d3`; each call site checked again at `b8218e5` (2026-11-15). A probe of the clock design ran in a scratch folder outside the repository (revision 3).
 
