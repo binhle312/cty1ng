@@ -468,7 +468,7 @@ details[open]>summary{margin-bottom:8px}
 .choice{min-height:0;overflow-y:auto;padding:2px 4px 24px 2px}
 .pick{background:var(--pick-bg);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);border-radius:var(--panel-radius);padding:12px 16px}
 .pick.agreed{border-color:color-mix(in srgb,var(--accent) 55%,transparent)}
-.pick>*+*{margin-top:4px}
+.pick>*+*{margin-top:2px}
 .pick .head,.pick .lbl{display:flex;align-items:center;gap:6px;font-weight:650}
 .pick .head{flex-wrap:wrap}
 .pick .lbl{color:var(--accent-ink);font-size:14px}
@@ -481,7 +481,7 @@ fieldset{border:0;margin:12px 0 0;padding:0;min-width:0}
 .opt:hover{border-color:var(--control);box-shadow:var(--shadow-hover)}
 .opt:has(input:checked){border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent),var(--shadow-hover)}
 .opt:has(input:checked) .olabel{color:var(--accent-ink)}
-.opt>label{display:grid;grid-template-columns:20px minmax(0,1fr);gap:2px 12px;padding:10px 14px;cursor:pointer}
+.opt>label{display:grid;grid-template-columns:20px minmax(0,1fr);gap:2px 12px;padding:8px 14px;cursor:pointer}
 .opt input{appearance:none;width:20px;height:20px;margin:2px 0 0;border-radius:50%;border:1.5px solid var(--control);background:var(--surface);cursor:pointer}
 .opt input:checked{border-color:var(--accent);background:var(--accent);box-shadow:inset 0 0 0 4px var(--surface)}
 .ohead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
@@ -558,7 +558,6 @@ textarea{display:block;width:100%;margin-top:4px;font:inherit;color:var(--text);
  .opt+.opt{margin-top:4px}
  .opt>label{padding-block:4px;row-gap:0}
  .pick{padding-block:8px}
- .pick>*+*{margin-top:2px}
  .choice fieldset{margin-top:8px}
  .tr{grid-column:1/-1;margin-top:2px}
  .tr dt,.tr dd,.pick p{line-height:20px}

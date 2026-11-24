@@ -87,9 +87,10 @@ every bar has a direct label, so the chart needs no legend.
 | `pick` | The one coloured box, above the options | `key` names an option. `reason` is the main reason. `confidence` is `clear` or `close call`. `another` completes "Pick another if: ..." and names the other letter. |
 | `facts` | 2-4 bullets | Each starts with 2-4 bold lead words that carry the fact. |
 | `table` | A table under the facts | Optional. Use it when the facts hold more than 3 numbers. 2-5 rows. |
-| `example` | Ordered steps with a time or trigger label | `title` completes "Example: ...". 2-4 steps. |
+| `example` | Ordered steps with a time or trigger label | `title` is the heading below "Example". 2-4 steps. |
 | `options` | One card per option | 2-4 options. Every option has every field. `risk` is `low`, `medium` or `high`. |
 | `options[].does` | **Does**, the first row before **Gets** | Required. State what happens if the reader selects this option. |
+| `options[].votes` | One pill per voter below the option label | Optional. Each vote has a `role` and a non-empty `name`, for example `{ "role": "consultant", "name": "GPT-6.2 Astra high" }`. The roles are `lead agent`, `worker`, `consultant` and `advisor`. |
 | `options[].details` | A closed "What A contains" | Optional. The full list of what the option holds. |
 | `details` | One closed section at the end | Optional. The story, full lists, ids and sources. Nothing that changes the choice. |
 | `removed` | Items that start with **Option removed:** in the question's closed Details | Optional. State why each option was removed. If there is no `details` field, the kit adds a closed **Options removed** section. |
@@ -99,6 +100,9 @@ In `details.items`, a list inside the list is a sub-list of the item before it.
 The kit numbers the questions Q1, Q2, ... in file order. Option keys are single capital letters.
 Put the options in the order that reads best; the pick does not need to be first. No option
 is pre-checked.
+
+If a question has votes, each option shows its voters or **No votes**. A badge shows the role
+and name, for example **Consultant: GPT-6.2 Astra high**. Use votes from the source.
 
 ## Check answers
 
@@ -155,8 +159,9 @@ in two cells of one table row (header or data) can pair across the cells. The ex
 both markers.
 
 `decides`, `owner`, and `settled` count toward the visible context limit. Their labels also count
-as bold words. The visible option count includes each row label, its text, and the risk chip.
-The `removed` items stay in Details.
+as bold words. The section headings **The decision**, **Facts**, and **Example** also count
+toward the context limit. The visible option count includes each row label, its text, the risk
+chip, and any vote labels or **No votes** text. The `removed` items stay in Details.
 
 Warnings do not stop a build. Read each one and fix it, or keep it for a reason you can say:
 

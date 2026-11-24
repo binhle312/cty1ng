@@ -128,6 +128,7 @@ for (let i = 0; i < N; i++) {
   ok((await s.locator('[data-pick]').count()) === 1 && (await s.locator("[data-pick]").getAttribute("data-key")) === q.pick.key, `${id}: exactly one option marked as my pick (${q.pick.key})`);
   ok((await s.locator(".pick").getAttribute("data-pick-line")) === q.pick.key && /Confidence:/.test(await s.locator(".pick").innerText()) && /Pick another if:/.test(await s.locator(".pick").innerText()), `${id}: pick line names letter, confidence and "Pick another if"`);
   const g = await geo();
+  const choiceBottom = await s.locator(".choice").evaluate((el) => el.getBoundingClientRect().bottom);
   const opts = s.locator(".opt");
   const n = await opts.count();
   const showVotes = q.options.some((o) => o.votes?.length);
@@ -137,7 +138,7 @@ for (let i = 0; i < N; i++) {
     const o = opts.nth(k);
     const b = await o.boundingBox();
     bottom = Math.max(bottom, b.y + b.height);
-    if (b.y < g.headerBottom || b.y + b.height > g.footerTop) allIn = false;
+    if (b.y < g.headerBottom || b.y + b.height > Math.min(g.footerTop, choiceBottom)) allIn = false;
     for (const f of [".gets", ".costs", ".risk", ".tag[class*=risk-]"]) {
       const el = o.locator(f);
       if (!(await el.isVisible()) || !(await el.innerText()).trim()) allFields = false;
@@ -253,10 +254,11 @@ let in1280 = true;
 for (let i = 0; i < N; i++) {
   await p.evaluate((k) => window.decisionPage.go(k, false), i + 1);
   const r = await p.evaluate((k) => {
-    const s = document.querySelector(`section.step[data-step="${k}"]`), f = document.querySelector(".nav").getBoundingClientRect().top;
+    const s = document.querySelector(`section.step[data-step="${k}"]`);
+    const f = Math.min(document.querySelector(".nav").getBoundingClientRect().top, s.querySelector(".choice").getBoundingClientRect().bottom);
     return { bottom: Math.max(...[...s.querySelectorAll(".opt")].map((e) => e.getBoundingClientRect().bottom)), f };
   }, i + 1);
-  if (r.bottom > r.f) { in1280 = false; info(`Q${i + 1}: at 1280x800 the lowest option card ends at ${Math.round(r.bottom)} px, ${Math.round(r.bottom - r.f)} px below the fold (footer top ${Math.round(r.f)} px)`); }
+  if (r.bottom > r.f) { in1280 = false; info(`Q${i + 1}: at 1280x800 the lowest option card ends at ${Math.round(r.bottom)} px, ${Math.round(r.bottom - r.f)} px below the visible pane (${Math.round(r.f)} px)`); }
 }
 ok(in1280, "all option cards are in the first viewport at 1280x800");
 

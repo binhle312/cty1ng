@@ -11,8 +11,8 @@ metadata:
 
 A decision page asks one person to answer a set of questions, one question per step, and to
 send the answers back as text. A report page shows status only. Both come from one JSON
-content file. The kit writes one self-contained HTML file: no network, system fonts, light
-and dark themes.
+content file. The kit writes one self-contained HTML file with light and dark Workbench themes.
+It uses local Inter when available and system fonts otherwise.
 
 The reader scans. They read the title, the first line and the bold words, and little else
 (R1.1, R1.2). Everything that decides the answer goes in those places. The rest goes into a
@@ -59,13 +59,13 @@ others are yours.
 | At most 220 words of context and 160 words of options before Details | R1.2 | People read about 20% of a page. |
 | Sentences at most 20 words; paragraphs at most 50 | R2.7, R1.3 | Long sentences and blocks cause skipping. |
 | Text lines at most about 70 characters | R2.6 | Long lines make readers lose their place. |
-| A question step uses 12 columns: the facts take 7, the answers take 5. The facts scroll by themselves; the answers stay in place. | R2.2 | The trade-offs stay next to the choice while the reader reads. |
+| A question step uses 12 columns. The facts take 6 and the answers take 6. The facts scroll by themselves. | R2.2 | The 7:5 split pushed three option cards below the footer in a short window. The equal split gives the cards more room. |
 | Block labels say the content ("Scores are a near tie"), not the type ("What") | R1.4 | Headings are the scan path. |
 | Every id has its meaning next to it ("order 12, for this week only") | R6 | A bare id stops the reader. |
 | One closed Details section, labelled with what is inside | R2.5 | Some readers need the story; nobody needs it first. |
 | A fact that does not change the choice goes into Details or out | R2.3 | Extra material costs attention and adds nothing to the decision. |
 | Bold lead words and headings name decision facts, not background | R4.4 | Readers remember only the signaled words. |
-| Answers save on each click; Back, Next and the arrow keys move | R5.6, R5.4 | The reader can stop, come back and change any answer. |
+| Answers save on each click. Back, Next, arrow keys and a two-finger touchpad swipe move between steps. | R5.6, R5.4 | The reader can stop, come back and change any answer. |
 | A "Check your answers" step with a Change link per row | R5.5 | The reader confirms before sending. |
 
 ## Steps
@@ -154,8 +154,9 @@ them; a sentence split on "; " still counts as one sentence.
 
 ## What to highlight
 
-- **The pick box** is the only colour fill on a question step. Nothing else competes with it:
-  examples are plain steps, facts are plain bullets.
+- **The pick box** is the only accent fill on a question step. Examples are plain steps and
+  facts are plain bullets. If the source gives votes, list them in the option cards as described
+  in [the content format](references/content-format.md#one-question).
 - **Bold** goes on the 2-4 lead words of each fact and list item. The kit sets option labels,
   the "Decide:" label and the pick line in bold for you. Bold nothing for tone.
 - **The chart** on an overview gets one highlighted series in the accent colour; the other
