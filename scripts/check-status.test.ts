@@ -112,6 +112,13 @@ describe("checkStatus", () => {
       expect.stringContaining('"3 Bytes"'),
       expect.stringContaining('"90 KB"'),
     ]);
+    for (const [input, measure] of [
+      ["__80,000-byte__", "80,000-byte"],
+      [".5 KB", ".5 KB"],
+    ]) {
+      const problems = checkStatus({ merged: [], statusMd: `${status([])}${input}`, since: SINCE });
+      expect.soft(problems, input).toEqual([expect.stringContaining(`"${measure}"`)]);
+    }
   });
 
   it("rejects a typed row or token count", () => {
@@ -123,6 +130,10 @@ describe("checkStatus", () => {
       expect.stringContaining('"120,000 tokens"'),
       expect.stringContaining('"1.5 tokens"'),
     ]);
+    for (const input of ["_12 rows_", "*12 rows*"]) {
+      const problems = checkStatus({ merged: [], statusMd: `${status([])}${input}`, since: SINCE });
+      expect.soft(problems, input).toEqual([expect.stringContaining('"12 rows"')]);
+    }
   });
 
   it("names the line number and the measure", () => {
