@@ -82,8 +82,9 @@ Each message passes through the lead agent.
 6. **Check each report.** After each turn, read the report file. Compare each claim with the diff,
    the test results and the remote checks of the pushed head.
 
-7. **Review in a separate session.** A reviewer did not write the code, and it makes no commits.
-   Send its findings to the session that built the code.
+7. **Review with a different agent.** The reviewer is a new session that did not build the code.
+   A worker does not review its own work, so do not send the review to the session of the builder.
+   The reviewer makes no commits. Send its findings to the session that built the code.
 
 The work is complete when each claim of the last report agrees with the pushed head, and the owner
 has the result with each open issue.
