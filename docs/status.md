@@ -10,7 +10,7 @@ approvals). Keep it short: link to PRs and briefs instead of describing work.
 
 ## Now
 
-The cleanup of what is left of the stopped agent setup is in draft [#148](https://github.com/binhle312/cty1ng/pull/148) (owner, 2026-11-24). Waiting on: the owner's review.
+The [delivery ledger archive move](delivery-quality-archive.md) is in progress (2026-11-24).
 
 The repository audit of 2026-11-05 found 55 issues. After the owner's decisions, 15 are P2, 39 are P3, and the owner accepted one case; none is P1. Its fixes come before M3 in the owner's order. #69 is closed, and the owner watches more PRs before deciding whether to bring it back. Findings, decisions and progress are in [audits/2026-11-05-repo-audit.md](audits/2026-11-05-repo-audit.md). PR 2 of 7, the security fixes, merged in [#73](https://github.com/binhle312/cty1ng/pull/73) on 2026-11-06. [#76](https://github.com/binhle312/cty1ng/pull/76) merged on 2026-11-06 and records the guard decisions. PR 3 of 7, the Skills page, merged in [#78](https://github.com/binhle312/cty1ng/pull/78) on 2026-11-06. PR 4 of 7, the Bots page, merged in [#82](https://github.com/binhle312/cty1ng/pull/82) on 2026-11-08. PR 5 of 7, tests only, merged in [#86](https://github.com/binhle312/cty1ng/pull/86) on 2026-11-10. PR 6 of 7, six tabs, merged in [#91](https://github.com/binhle312/cty1ng/pull/91) on 2026-11-10.
 
@@ -96,6 +96,8 @@ A P3 that has a DQ id is not in this table. Its state lives only in its row of t
 
 | Item | Found in | Target |
 | --- | --- | --- |
+| Add the task verdict to the M3 brief and the conversation requirements. The [bot page design](design/components/bot-page.md#95-where-task-success-comes-from-uv5) puts "Did this do the job?" (Yes / Bad answer) under a finished action run. The schema change needs the owner's approval (`AGENTS.md` §7) | Owner agreement, 2026-11-03. Waited for [#59](https://github.com/binhle312/cty1ng/pull/59) to merge | M3 plan |
+| Write a `proposed` decision for assertions that use no model for skill test cases, next to the "A good answer has …" note. It extends [D51](decisions/D51-bots-improve-their-skills-from-owner-feedback.md), which says there are no graders | Owner agreement, 2026-11-03. Waited for [#59](https://github.com/binhle312/cty1ng/pull/59) to merge | Decision proposal before M3 |
 | Flaky e2e test `skills.spec.ts:465` (UI-7.5a, the Bots tab empty line): strict mode found two "Add" buttons on the first try and the retry, CI run 44706653327 on #142 (a Markdown-only diff); the rerun passed | [#142](https://github.com/binhle312/cty1ng/pull/142) CI | Find the cause before M3 (the owner picks the PR) |
 | Q1 A redesign (owner 2026-11-18): plans hold the design and the owner's decisions only; build facts only in the PR description; a small docs PR (`planning.md`, `pull-request.md`) | Owner answer Q1 A, 2026-11-18 ([#114](https://github.com/binhle312/cty1ng/pull/114), DQ-541, DQ-542) | [#133](https://github.com/binhle312/cty1ng/pull/133) |
 | `pnpm e2e:serve` can die and leave its servers on the ports: a closed stdout (`EPIPE`) or SIGHUP stops the script without stopping them, and the marker stays. It fails safe, but its message says to stop a script that no longer runs, and no doc says to delete `.e2e-serve`. Stop the servers on those exits, and correct the message | [#60](https://github.com/binhle312/cty1ng/pull/60) review | The P3 PRs before M3 (owner, 2026-11-08) |
@@ -282,3 +284,4 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-23 | [#144](https://github.com/binhle312/cty1ng/pull/144) merged: agent memory rules, audit trigger and quotes (`4047ba8`), which left in #145. |
 | 2026-11-23 | [#145](https://github.com/binhle312/cty1ng/pull/145) merged: the agent memory moved out of the repository to local Git (`bf03f5d`). |
 | 2026-11-23 | [#147](https://github.com/binhle312/cty1ng/pull/147) merged: the rules for agent memory and standing merges removed (`b623ae3`). |
+| 2026-11-24 | [#148](https://github.com/binhle312/cty1ng/pull/148) merged. |
