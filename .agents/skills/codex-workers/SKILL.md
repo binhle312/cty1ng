@@ -1,12 +1,16 @@
 ---
 name: codex-workers
-description: Use when a lead agent hands build or review work to a worker, sends a message to a worker, or stops one. A worker is a Codex session that the lead agent starts and talks with.
+description: Use when the owner runs /codex-workers or names the skill. How a lead agent starts Codex workers, talks with them and stops them.
+disable-model-invocation: true
 metadata:
   author: cty1ng maintainers
   tags: [multi-agent, codex, delegation]
 ---
 
 # Codex workers
+
+Run this skill only when the owner starts it or names it, or when a skill that the owner started
+tells you to read it.
 
 The **lead agent** is the Claude Code conversation that the owner starts. Only the lead agent talks
 with the owner. It can ask the built-in `advisor` tool before it decides.
