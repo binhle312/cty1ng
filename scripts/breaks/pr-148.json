@@ -1,0 +1,10 @@
+{
+  "claims": [],
+  "exempt": [
+    {
+      "file": "scripts/check-status.test.ts",
+      "name": "requires a Done row for a merged PR, whatever files it changed",
+      "reason": "name and data only: the test has a new name and neutral file paths; its assertion and the checked code do not change"
+    }
+  ]
+}
