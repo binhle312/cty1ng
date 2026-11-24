@@ -271,4 +271,48 @@ Owner, 2026-11-24, after round 5 (the review of `a3c1952`):
 
 ### Places (written by the builder)
 
-To come with the fixes.
+Line numbers below refer to `ba40948`. To repeat the search, run
+`bash tmp/split-b7-reader-search.sh`. The search output is in `tmp/split-b7-reader-search.log`.
+
+**Reader places**
+
+- `docs/delivery-quality-prevention.md:3` and `:20` — fixed. The head names both files and shows where to find S1.
+- `docs/delivery-quality-register.md:5`, `:25–26`, `:34`, and `:58–68` — right. The head sends §7 to the ledger. The Audit row and snapshots are in the register.
+- `docs/delivery-quality-register.md:9–11` and `:41` — right. The PR population and M2 close check are in §2 of the same file.
+- `AGENTS.md:144–146` — fixed. The owner chose one pointer to §7, which links the register.
+- `AGENTS.md:158` and `.github/pull_request_template.md:45`, `:54` — right. The instructions name the files for the register and prevention actions.
+- `docs/README.md:43`, `docs/status.md:4–6`, and `docs/delivery-quality-archive.md:4–6` — right. The entry points link the new files.
+- `docs/delivery-quality.md:11–15`, `:42–52`, and `:208–210` — right. The head and stubs link the moved sections.
+- `docs/delivery-quality.md:57–58`, `:149–152`, and `:156–157` — right. The snapshot notes and backfill instruction link to register §4.
+- `docs/delivery-quality.md:136` and `:139` — right. The fix text links the moved sections. The finding text records the old wording.
+- `docs/delivery-quality.md:176–177`, `:185–187`, and `:200–201` — right. The steps link the register or prevention file at the point of use.
+- `docs/delivery-quality.md:191` — fixed. The close step links the PR population in register §2.
+- `docs/workflows/pull-request.md:34` and `:55` — right. The same-cause search names the prevention file and its command names both moved files.
+- `docs/workflows/pull-request.md:47` — fixed. The count instruction links the file for the Audit and register rows.
+- `docs/workflows/egm.md:77`, `:81–83`, and `docs/testing.md:361–364` — right. The trial and CI instructions link the sections they use.
+- `scripts/README.md:12`, `scripts/records-counts.ts:1–3`, `:18–19`, and `scripts/lib/records-counts.ts:345` — right. Each names the file by path, link, or the register path in the message.
+- `scripts/lib/records-counts.ts:548` and `scripts/records-counts.ts:36` — fixed. Both search comments name the prevention file.
+- `scripts/lib/README.md:13` and `scripts/lib/records-counts.ts:4–5` (R5A2R-F3) — history, unchanged since b45ef6f. The table names are the same as at the split base.
+- `scripts/lib/records-counts.ts:168` and `:328` (R5A2R-F4) — history, unchanged since b45ef6f. The messages are the same as at the split base.
+- `docs/status.md:15` and `:105` — history. Both describe the approved move and link its plan or PR.
+
+**Round places**
+
+- `docs/delivery-quality.md:180–182` — right. This is §7 step 2, the rule for the review destination.
+- `docs/delivery-quality.md:24`, `:153–154`, and `:163–166` — right. The counting rule keeps the original issue ID, and the live issue and round sections send the review to step 2.
+- `docs/delivery-quality.md:178`, `:183`, and `:192–193` — right. These lines cover issue rows, fix evidence, and the archive move after merge.
+- `docs/delivery-quality-archive.md:9–10` — right. The archive head links to step 2 for which PRs use round rows.
+- `docs/delivery-quality-archive.md:12–13` — fixed. The issue row goes back to the live ledger. Step 2 gives the destination for the reopen event.
+- `docs/delivery-quality-register.md:22` and `:48–49` — right. The register counts distinct rounds and defines issue coverage for its own rows.
+- `.github/pull_request_template.md:43–45` and `:51` — right. The records section points to step 2 and gives the locations of issue and register rows.
+- `AGENTS.md:144–146` — fixed. The checklist points to §7.
+- `AGENTS.md:154`, `:156–166` — right. These rules cover skill citations, issue evidence, redesign review scope, and the PR claim that needs owner review.
+- `docs/workflows/pull-request.md:42–46` and `:90–92` — right. These lines name the issue row and the sources of evidence, and point to step 2 for the result.
+- `docs/workflows/pull-request.md:113–114` — fixed. A later review follows step 2.
+- `docs/workflows/implementation.md:32–33` and `:45–53` — right. The workflow points to step 2 and links the rules for issue rows and their evidence.
+- `docs/workflows/review.md:5–6` and `:27` — right. The workflow points to §7 for the review and uses the requested destination for the findings report.
+- `docs/review-guide.md:13`, `:23`, `:101–105`, and `:109–122` — right. The guide tells the reviewer what to report and points to step 2 for its home.
+- `docs/workflows/merge-bar.md:19`, `:51–55`, and `:68–93` — right. The bar points to step 2 for each check and gives the rules for issue rows and follow-ups.
+- `docs/workflows/merge-bar.md:60`, `:63–65`, and `:106–108` — right. These lines assign owner decisions and work on issues found after merge.
+- `docs/workflows/audit.md:17–30` and `docs/workflows/coordination.md:54` — right. These instructions cover evidence in an audit file, the search in a finding, and feedback about how a slice was built.
+- `scripts/lib/records-counts.ts:1–3` — fixed. The comment points to step 2 for the review destination.

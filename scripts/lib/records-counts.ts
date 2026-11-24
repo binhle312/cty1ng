@@ -1,6 +1,6 @@
-// The counts behind `pnpm records:counts`: the rows of the ledger files are the one home of each
-// issue and round, and this module writes the counts that other tables give from them
-// (plans/p3-records-counts.md). It owns two kinds of cells:
+// The counts behind `pnpm records:counts` come from the rows of the ledger files.
+// See docs/delivery-quality.md#7-update-and-assess, step 2, for where to record each review.
+// This module owns two kinds of cells (plans/p3-records-counts.md):
 // - the rows of the milestone view whose "Lesson source coverage" cell ends with OWNED_MARKER;
 // - the four count cells of each register row with the coverage `Ledger`.
 // Pure: the caller reads and writes the files. Tables are found by their header line, in any file,
@@ -545,7 +545,7 @@ function answerProblems(
 }
 
 // Every problem: the structure of the files, then each owned cell that differs from the rows.
-// `otherSearchFiles` are the prevention actions and lessons that a search of a row also reads.
+// A search of a row also reads `otherSearchFiles`: docs/delivery-quality-prevention.md and the lessons.
 export function checkCounts(
   files: readonly LedgerFile[],
   otherSearchFiles: readonly LedgerFile[] = [],

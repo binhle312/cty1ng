@@ -188,7 +188,8 @@ If the head changes after review, the row still describes the original reviewed 
    CI runs `pnpm records:counts` and fails when a count is stale. Its
    list of ledger files is `LEDGER_FILES` in `scripts/records-counts.ts`: a PR that moves rows to a
    new file adds the file there, and the check fails until it does.
-6. At milestone close, confirm the PR population and calculate the totals from distinct IDs in this file and the archive.
+6. At milestone close, confirm the PR population in [register §2](delivery-quality-register.md#2-milestone-view).
+   Calculate the totals from distinct IDs in this file and the archive.
    Then move the rows with the state `fixed`, `dropped` or `withdrawn`, and the round rows of merged
    PRs, to the [archive](delivery-quality-archive.md), unchanged, in a PR that changes records only.
    A `withdrawn` row stays out of the confirmed totals there too.

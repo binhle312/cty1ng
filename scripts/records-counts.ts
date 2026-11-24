@@ -33,7 +33,7 @@ const fileProblems = [
   ...missingSearchFiles.map((path) => `${path}: required search file is missing.`),
   ...splitTables(requiredSearchFiles),
 ];
-// The "Same cause?" search also reads the prevention actions and the lessons (AGENTS.md §9).
+// The "Same cause?" search (AGENTS.md §9) also reads docs/delivery-quality-prevention.md and the lessons.
 const otherSearchFiles = [
   ...requiredSearchFiles,
   ...docs.filter((file) => /^docs\/lessons-learned\/[^/]+\.md$/.test(file.path)),

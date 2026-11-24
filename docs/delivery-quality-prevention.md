@@ -1,6 +1,8 @@
 # Delivery quality prevention
 
 This file holds the actions for recurring causes. The [ledger rules](delivery-quality.md) apply.
+The [ledger](delivery-quality.md) holds sections with bare numbers such as §5, and the
+[register](delivery-quality-register.md) holds §2 to §4, the Audit row, and snapshots S1 to S7.
 
 ## Prevention actions
 

@@ -44,8 +44,8 @@ states no state, count or result that a file or a tool owns:
   The PR body names the id in its `Records` section
   and in the `Defect and review fixes` table; it does not repeat them (owner, 2026-11-18, q4 Q3 A).
 - The result of a review round lives where [ledger §7 step 2](../delivery-quality.md#7-update-and-assess) says to record it.
-- The counts of the Audit row and of each `Ledger` row of the register: `pnpm records:counts --write`
-  writes them from the rows, and CI checks them. Nobody types them in the register or in the body.
+- `pnpm records:counts --write` writes the counts for the Audit row and each `Ledger` row in the
+  [register](../delivery-quality-register.md). CI checks them. Nobody types them in the register or in the body.
 - The "Same cause as an earlier fix?" answer and its search live in the "Fix and verification"
   cell of the ledger row (`AGENTS.md` §9). The `Defect and review fixes` section of the body names
   the rows. The form (owner, 2026-11-19, morning Q4 A):
@@ -110,8 +110,7 @@ review fix, check them against the commit that you push (owner, 2026-11-08, DQ-1
    `pnpm check:status` lists each merged PR with no Done row, and gives the row to add; CI runs it.
    Merge `origin/main` into the branch first: the local run reads the merges of `origin/main` but
    the branch's own `docs/status.md`, so on an older branch it asks for rows that `main` already has.
-   For a PR that is ready and has no record turn, the record of a later review goes into the next
-   PR.
+   Follow [ledger §7 step 2](../delivery-quality.md#7-update-and-assess) for where to record a later review.
 7. Measure each ledger row with an id above DQ-202. This command must print nothing:
    `LC_ALL=C awk -F'|' '/^\| DQ-/ { id = substr($2, 5) + 0; if (id > 202 && length($0) > 600) print "DQ-" id, length($0) }' docs/delivery-quality.md`.
    `LC_ALL=C` makes it count bytes, so each machine gives the same result. Make each row that it

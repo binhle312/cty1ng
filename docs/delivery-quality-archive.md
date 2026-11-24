@@ -10,7 +10,8 @@ the live ledger, the [PR register](delivery-quality-register.md), and the
   for which PRs use round rows.
 
 A row comes here unchanged. Nobody edits it here. If an issue opens again, move its row back to
-the live ledger and record the reopen event there ([counting rules](delivery-quality.md#1-counting-rules)).
+the [live ledger](delivery-quality.md#5-live-issue-ledger). Follow
+[ledger §7 step 2](delivery-quality.md#7-update-and-assess) for where to record the reopen event.
 
 ## Closed issues
 
