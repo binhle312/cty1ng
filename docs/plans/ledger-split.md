@@ -14,6 +14,16 @@ Revision 2, owner, 2026-11-24, after round 3 of the review of #153:
   no milestone keeps its review rounds in its description; §7 step 2 says so.
 - The new words of `AGENTS.md` §9, line 144 (owner, 2026-11-24): "the delivery records are updated
   as `docs/delivery-quality.md` §7 says".
+Revision 3, owner, 2026-11-24, after round 4 of the review of #153:
+- S4-F1: "Edit the 7 places". The open rows and the notes of the live ledger that name a moved part
+  name the new file (DQ-443, DQ-820, DQ-859, DQ-862, and the notes of §5 on the snapshots).
+- S4-F2: "Finish it in #153". Each text about where review rounds go agrees with §7 step 2,
+  including the PR template and §6.
+- End of review: "Review until clean". A complete review of the final head with no P1 or P2
+  (review guide §6).
+- S4-F6: "Take them into #153". DQ-854, DQ-855, DQ-856, DQ-863, DQ-868 and DQ-870 are fixed in
+  this PR, with the owner's answers of 2026-11-19 (#135 page Q3 A, Q4 A, Q6 A). Their code design
+  and test strategy come in a section of this plan, for the owner's approval, before the code.
 
 ## Goal
 
