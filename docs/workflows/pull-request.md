@@ -51,16 +51,27 @@ states no state, count or result that a file or a tool owns:
   the rows. The form (owner, 2026-11-19, morning Q4 A):
   `Same cause: no (search: `<pattern>`: <hits>)` or
   `Same cause: yes (search: `<pattern>`: <hits>; §9: <step>)`.
-  - The pattern is one `grep -E` pattern; write `\|` for `|` in the table. It stands for
+  - Write one pattern. Use `\|` for `|` in the table. Search with
     `grep -n -i -E '<pattern>' docs/delivery-quality.md docs/delivery-quality-archive.md docs/delivery-quality-register.md docs/delivery-quality-prevention.md docs/lessons-learned/*.md`.
-    It has no backtick, no backslash
-    before a letter or a digit (`\d`, `\w`, `\b`, `\<`), no `[[` and no `(?`, so that grep and
-    the script read it in one way.
-  - The hits name the ids that the answer rests on (or `none`), with no `;` or `)`. Each cited id
-    is in a line that the pattern finds, other than the row itself.
-  - The §9 step of a yes is `owner, <YYYY-MM-DD>, <page> Q<n> <option>` (the owner's decision),
-    `proposal DQ-<n>` (the row of the redesign proposal, not the row itself) or
-    `fixed answer (AGENTS.md §9, owner 2026-11-11)` (a claim bigger than its proof).
+    The checker matches each line with a case-insensitive JavaScript regular expression.
+    It rejects empty or blank patterns, backticks, backslashes before ASCII letters or digits,
+    `[[`, `(?`, and patterns that JavaScript cannot compile. The
+    [search fixture](../../scripts/records-counts.test.ts) compares the hit lines for its sample
+    patterns.
+  - Each `Same cause:` marker outside a single-backtick span needs a complete answer. Put
+    nonblank hits inside the answer. Cite whole ids on matching lines other than the source row,
+    or write `none`. Hits can contain balanced parentheses and ordinary semicolons. Only
+    `; §9: ` at the outer level starts a step. The checker rejects a colon continuation after the
+    closing parenthesis. Move any such note before the answer.
+  - A yes needs one §9 step. A no takes none. Use one of these steps for a yes.
+    - `owner, YYYY-MM-DD, <page> <question> <answer>` for the owner's decision. Use the exact
+      spacing and a Gregorian date in years 0001–9999. The page uses groups of ASCII letters or
+      digits joined by hyphens, or `#` followed by a positive number. The question is `Q`
+      followed by a positive number. Use decimal digits without leading zeros for both numbers.
+      The answer is one uppercase ASCII letter.
+    - `proposal DQ-<n>` for the ledger row of the redesign proposal. A row can name itself
+      when its trimmed fix cell starts with `Proposal:`.
+    - `fixed answer (AGENTS.md §9, owner 2026-11-11)` for a claim bigger than its proof.
   - `pnpm records:counts` checks each row from DQ-853 on that is not `withdrawn`, and the form of
     DQ-751 to DQ-777. It does not check the choice of the words (the reviewer does), that `none`
     or a no is true, or that a decision named in a step exists.

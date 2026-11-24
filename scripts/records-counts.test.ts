@@ -749,6 +749,127 @@ describe("the search of a new row (DQ-853 on)", () => {
     ]);
   });
 
+  it("accepts an id in parenthesized hits", () => {
+    const fix = "Same cause: yes (search: `kangaroo`: (DQ-004); §9: proposal DQ-002)";
+    expect(check(fix), "parenthesized hits").toEqual([]);
+  });
+
+  it("checks hits after a nested close", () => {
+    const fix = "Same cause: no (search: `a slip`: (DQ-001), DQ-007)";
+    expect(check(fix), "hits after a nested close").toEqual([MISSING("a slip", "DQ-007")]);
+  });
+
+  it("checks hits after a plain semicolon", () => {
+    const fix = "Same cause: no (search: `a slip`: DQ-001; see DQ-007)";
+    expect(check(fix), "hits after a plain semicolon").toEqual([MISSING("a slip", "DQ-007")]);
+  });
+
+  it("accepts two answers in one cell", () => {
+    const fix =
+      "Same cause: no (search: `a slip`: DQ-001). Same cause: no (search: `zebra`: DQ-003)";
+    expect(check(fix), "two valid answers").toEqual([]);
+  });
+
+  it("checks the second answer in a cell", () => {
+    const fix =
+      "Same cause: no (search: `a slip`: DQ-001). Same cause: no (search: `zebra`: DQ-007)";
+    expect(check(fix), "hits of the second answer").toEqual([MISSING("zebra", "DQ-007")]);
+  });
+
+  it("rejects a malformed second answer", () => {
+    const fix = "Same cause: no (search: `a slip`: DQ-001). Same cause: yes";
+    expect(check(fix), "malformed second answer").toEqual([FORM]);
+  });
+
+  it("ignores a quoted marker", () => {
+    const fix = "The label is `Same cause:`. Same cause: no (search: `a slip`: DQ-001)";
+    expect(check(fix), "quoted marker").toEqual([]);
+  });
+
+  it("rejects a section 9 step for a no", () => {
+    const fix = "Same cause: no (search: `a slip`: DQ-001; §9: proposal DQ-002)";
+    expect(check(fix), "step for a no").toEqual([`${MAIN}: DQ-853: a no has a §9 step.`]);
+  });
+
+  it("rejects blank hits", () => {
+    expect(check("Same cause: no (search: `a slip`:   )"), "blank hits").toEqual([FORM]);
+  });
+
+  it("rejects a colon continuation after an answer", () => {
+    const fix = "Same cause: no (search: `a slip`: none): see DQ-001";
+    expect(check(fix), "colon continuation").toEqual([
+      `${MAIN}: DQ-853: a colon continues the answer after its closing ")". Put hits inside the answer or move the note before it.`,
+    ]);
+  });
+
+  const checkStep = (step: string) =>
+    check(`Same cause: yes (search: \`a slip\`: DQ-001; §9: ${step})`);
+  const BAD_DATE = `${MAIN}: DQ-853: the owner step date is not a real date.`;
+
+  it("rejects an unknown section 9 step", () => {
+    expect(checkStep("someone agreed"), "unknown step").toEqual([NO_STEP]);
+  });
+
+  it("rejects free text in an owner step", () => {
+    expect(
+      checkStep("owner, 2026-11-19, morning Q4 A in the review"),
+      "owner step with free text",
+    ).toEqual([NO_STEP]);
+  });
+
+  it("accepts a leap day on a PR page", () => {
+    expect(checkStep("owner, 2024-02-29, #135 Q3 A"), "leap day on a PR page").toEqual([]);
+  });
+
+  it("rejects a date outside the month", () => {
+    expect(checkStep("owner, 2026-02-30, morning Q4 A"), "date outside the month").toEqual([
+      BAD_DATE,
+    ]);
+  });
+
+  it("rejects a leap day outside a leap year", () => {
+    expect(checkStep("owner, 2026-02-29, morning Q4 A"), "leap day outside a leap year").toEqual([
+      BAD_DATE,
+    ]);
+  });
+
+  it("rejects year zero", () => {
+    expect(checkStep("owner, 0000-01-01, morning Q4 A"), "year zero").toEqual([BAD_DATE]);
+  });
+
+  it("rejects an owner page with spaces", () => {
+    expect(checkStep("owner, 2026-11-19, morning review Q4 A"), "page with spaces").toEqual([
+      NO_STEP,
+    ]);
+  });
+
+  it("rejects question zero", () => {
+    expect(checkStep("owner, 2026-11-19, morning Q0 A"), "question zero").toEqual([NO_STEP]);
+  });
+
+  it("rejects a multi-letter answer", () => {
+    expect(checkStep("owner, 2026-11-19, morning Q4 AB"), "multi-letter answer").toEqual([NO_STEP]);
+  });
+
+  const SELF_PROPOSAL = "Same cause: yes (search: `a slip`: DQ-001; §9: proposal DQ-853)";
+  const SELF_PROPOSAL_PROBLEM = `${MAIN}: DQ-853: the §9 proposal DQ-853 is this row; name the row of the proposal.`;
+
+  it("accepts a self-proposal with its prefix", () => {
+    const problems = checkCounts(rows(`  Proposal: a redesign. ${SELF_PROPOSAL}`));
+    expect(problems, "self-proposal with prefix").toEqual([]);
+  });
+
+  it("rejects a self-proposal without its prefix", () => {
+    expect(check(SELF_PROPOSAL), "self-proposal without prefix").toEqual([SELF_PROPOSAL_PROBLEM]);
+  });
+
+  it("requires the self-proposal prefix at the start", () => {
+    expect(
+      check(`Proposal: a redesign. ${SELF_PROPOSAL}`),
+      "self-proposal with a late prefix",
+    ).toEqual([SELF_PROPOSAL_PROBLEM]);
+  });
+
   it("skips a withdrawn row", () => {
     const withdrawn = (row: string) => row.replace("| fixed |", "| withdrawn |");
     const problems = check("Withdrawn: not a defect", withdrawn);

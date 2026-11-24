@@ -1,5 +1,490 @@
 {
-  "claims": [],
+  "claims": [
+    {
+      "id": "parenthesized-hit",
+      "claim": "Accepts a whole cited id inside parentheses.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "accepts an id in parenthesized hits"
+      },
+      "assertion": "expect(check(fix), \"parenthesized hits\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "reject-open-paren",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "const cited = body.slice(0, stepAt ?? closeAt);",
+              "replace": "const cited = body.slice(0, stepAt ?? closeAt);\n  if (cited.includes(\"(\")) return undefined;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nested-close",
+      "claim": "Checks ids after an inner closing parenthesis.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "checks hits after a nested close"
+      },
+      "assertion": "expect(check(fix), \"hits after a nested close\").toEqual([MISSING(\"a slip\", \"DQ-007\")]);",
+      "breaks": [
+        {
+          "id": "stop-at-inner-close",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (depth === 0) {",
+              "replace": "if (depth >= 0) {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plain-semicolon",
+      "claim": "Checks ids after an ordinary semicolon.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "checks hits after a plain semicolon"
+      },
+      "assertion": "expect(check(fix), \"hits after a plain semicolon\").toEqual([MISSING(\"a slip\", \"DQ-007\")]);",
+      "breaks": [
+        {
+          "id": "stop-at-any-semicolon",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "const cited = body.slice(0, stepAt ?? closeAt);",
+              "replace": "const cited = body.slice(0, stepAt ?? closeAt).split(\";\")[0] ?? \"\";"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "two-answers",
+      "claim": "Accepts two complete answers in a cell.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "accepts two answers in one cell"
+      },
+      "assertion": "expect(check(fix), \"two valid answers\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "reject-second-marker",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (markers.length === 0) return [formProblem];",
+              "replace": "if (markers.length !== 1) return [formProblem];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "second-search",
+      "claim": "Checks cited ids in the second answer.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "checks the second answer in a cell"
+      },
+      "assertion": "expect(check(fix), \"hits of the second answer\").toEqual([MISSING(\"zebra\", \"DQ-007\")]);",
+      "breaks": [
+        {
+          "id": "only-first-marker",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "return markers.flatMap((marker, n) => {",
+              "replace": "return markers.slice(0, 1).flatMap((marker, n) => {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "malformed-answer",
+      "claim": "Reports a malformed second answer after a valid one.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects a malformed second answer"
+      },
+      "assertion": "expect(check(fix), \"malformed second answer\").toEqual([FORM]);",
+      "breaks": [
+        {
+          "id": "skip-malformed-marker",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (answer === undefined) return [formProblem];",
+              "replace": "if (answer === undefined) return markers.some((other, i) => answerParts(cell.slice(other.index, markers[i + 1]?.index)) !== undefined) ? [] : [formProblem];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quoted-marker",
+      "claim": "Ignores the marker inside a single-backtick span.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "ignores a quoted marker"
+      },
+      "assertion": "expect(check(fix), \"quoted marker\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "scan-code-spans",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "/`[^`]*`|(Same cause:)/g",
+              "replace": "/(Same cause:)/g"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "step-for-no",
+      "claim": "Reports a §9 step on a no answer.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects a section 9 step for a no"
+      },
+      "assertion": "expect(check(fix), \"step for a no\").toEqual([`${MAIN}: DQ-853: a no has a §9 step.`]);",
+      "breaks": [
+        {
+          "id": "ignore-step-on-no",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    if (step !== undefined) problems.push(`${where}: a no has a §9 step.`);\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blank-hits",
+      "claim": "Reports a blank hits field.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects blank hits"
+      },
+      "assertion": "expect(check(\"Same cause: no (search: `a slip`:   )\"), \"blank hits\").toEqual([FORM]);",
+      "breaks": [
+        {
+          "id": "allow-blank-hits",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "  if (cited.trim() === \"\") return undefined;\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "colon-continuation",
+      "claim": "Reports a colon continuation after the answer.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects a colon continuation after an answer"
+      },
+      "assertion": "expect(check(fix), \"colon continuation\").toEqual([",
+      "breaks": [
+        {
+          "id": "allow-colon-continuation",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (/^\\s*:/.test(suffix))",
+              "replace": "if (false)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "unknown-step",
+      "claim": "Reports an unknown §9 step.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects an unknown section 9 step"
+      },
+      "assertion": "expect(checkStep(\"someone agreed\"), \"unknown step\").toEqual([NO_STEP]);",
+      "breaks": [
+        {
+          "id": "allow-unknown-step",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (ownerDate === undefined && proposal === undefined && step !== FIXED_STEP)",
+              "replace": "if (step === undefined)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "owner-free-text",
+      "claim": "Reports free text after the answer in an owner step.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects free text in an owner step"
+      },
+      "assertion": "    ).toEqual([NO_STEP]);",
+      "breaks": [
+        {
+          "id": "allow-owner-free-text",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "/^owner, (\\d{4}-\\d{2}-\\d{2}), (?:#[1-9]\\d*|[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*) Q[1-9]\\d* [A-Z]$/;",
+              "replace": "/^owner, (\\d{4}-\\d{2}-\\d{2}), (?:#[1-9]\\d*|[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*) Q[1-9]\\d* [A-Z](?: .*)?$/;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "leap-day-pr-page",
+      "claim": "Accepts a valid leap day in an owner step with a PR page.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "accepts a leap day on a PR page"
+      },
+      "assertion": "expect(checkStep(\"owner, 2024-02-29, #135 Q3 A\"), \"leap day on a PR page\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "reject-february-29",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "!value.startsWith(\"0000-\") &&",
+              "replace": "!value.startsWith(\"0000-\") && !value.endsWith(\"-02-29\") &&"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "date-outside-month",
+      "claim": "Reports a day outside the month.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects a date outside the month"
+      },
+      "assertion": "expect(checkStep(\"owner, 2026-02-30, morning Q4 A\"), \"date outside the month\").toEqual([",
+      "breaks": [
+        {
+          "id": "only-date-shape",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "return (\n    !value.startsWith(\"0000-\") &&\n    Number.isFinite(date.valueOf()) &&\n    date.toISOString().slice(0, 10) === value\n  );",
+              "replace": "return /^\\d{4}-\\d{2}-\\d{2}$/.test(value);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "non-leap-year",
+      "claim": "Reports February 29 in a non-leap year.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects a leap day outside a leap year"
+      },
+      "assertion": "expect(checkStep(\"owner, 2026-02-29, morning Q4 A\"), \"leap day outside a leap year\").toEqual([",
+      "breaks": [
+        {
+          "id": "allow-february-29-every-year",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "date.toISOString().slice(0, 10) === value",
+              "replace": "(date.toISOString().slice(0, 10) === value || value.endsWith(\"-02-29\"))"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "year-zero",
+      "claim": "Reports a date with year zero.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects year zero"
+      },
+      "assertion": "expect(checkStep(\"owner, 0000-01-01, morning Q4 A\"), \"year zero\").toEqual([BAD_DATE]);",
+      "breaks": [
+        {
+          "id": "drop-year-floor",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "    !value.startsWith(\"0000-\") &&\n",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "owner-page-spaces",
+      "claim": "Reports spaces in an owner page.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects an owner page with spaces"
+      },
+      "assertion": "expect(checkStep(\"owner, 2026-11-19, morning review Q4 A\"), \"page with spaces\").toEqual([",
+      "breaks": [
+        {
+          "id": "allow-page-spaces",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "/^owner, (\\d{4}-\\d{2}-\\d{2}), (?:#[1-9]\\d*|[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*) Q[1-9]\\d* [A-Z]$/;",
+              "replace": "/^owner, (\\d{4}-\\d{2}-\\d{2}), (?:#[1-9]\\d*|[A-Za-z0-9]+(?:[- ][A-Za-z0-9]+)*) Q[1-9]\\d* [A-Z]$/;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "question-zero",
+      "claim": "Reports question zero in an owner step.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects question zero"
+      },
+      "assertion": "expect(checkStep(\"owner, 2026-11-19, morning Q0 A\"), \"question zero\").toEqual([NO_STEP]);",
+      "breaks": [
+        {
+          "id": "allow-question-zero",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "/^owner, (\\d{4}-\\d{2}-\\d{2}), (?:#[1-9]\\d*|[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*) Q[1-9]\\d* [A-Z]$/;",
+              "replace": "/^owner, (\\d{4}-\\d{2}-\\d{2}), (?:#[1-9]\\d*|[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*) Q(?:0|[1-9]\\d*) [A-Z]$/;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "multi-letter-answer",
+      "claim": "Reports a multi-letter answer in an owner step.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects a multi-letter answer"
+      },
+      "assertion": "expect(checkStep(\"owner, 2026-11-19, morning Q4 AB\"), \"multi-letter answer\").toEqual([NO_STEP]);",
+      "breaks": [
+        {
+          "id": "allow-multi-letter-answer",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "/^owner, (\\d{4}-\\d{2}-\\d{2}), (?:#[1-9]\\d*|[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*) Q[1-9]\\d* [A-Z]$/;",
+              "replace": "/^owner, (\\d{4}-\\d{2}-\\d{2}), (?:#[1-9]\\d*|[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*) Q[1-9]\\d* [A-Z]+$/;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "self-proposal-prefix",
+      "claim": "Accepts a self-proposal when its fix cell starts with the prefix.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "accepts a self-proposal with its prefix"
+      },
+      "assertion": "expect(problems, \"self-proposal with prefix\").toEqual([]);",
+      "breaks": [
+        {
+          "id": "reject-all-self-proposals",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "proposal === row.id && !row.cell.startsWith(\"Proposal:\")",
+              "replace": "proposal === row.id"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "self-proposal-no-prefix",
+      "claim": "Reports a self-proposal with no prefix.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects a self-proposal without its prefix"
+      },
+      "assertion": "expect(check(SELF_PROPOSAL), \"self-proposal without prefix\").toEqual([SELF_PROPOSAL_PROBLEM]);",
+      "breaks": [
+        {
+          "id": "allow-self-proposal-without-prefix",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "row.cell.startsWith(\"Proposal:\")",
+              "replace": "row.cell.startsWith(\"\")"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "self-proposal-late-prefix",
+      "claim": "Reports a self-proposal with a prefix later in the fix cell.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "requires the self-proposal prefix at the start"
+      },
+      "assertion": "    ).toEqual([SELF_PROPOSAL_PROBLEM]);",
+      "breaks": [
+        {
+          "id": "allow-prefix-anywhere",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "row.cell.startsWith(\"Proposal:\")",
+              "replace": "row.cell.includes(\"Proposal:\")"
+            }
+          ]
+        }
+      ]
+    }
+  ],
   "exempt": [
     {
       "file": "scripts/records-counts.test.ts",

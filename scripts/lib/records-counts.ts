@@ -344,16 +344,55 @@ const OLD_FORM = { first: 751, last: 777 };
 const FIRST_SEARCHED_ID = 853;
 // `Same cause: yes|no (search: <command or places>: <hits>)`; an escaped `\|` may be in the search.
 const OLD_ANSWER = /Same cause: (yes|no) \(search: (?:[^|\\]|\\.)+?: (?:[^|\\]|\\.)+\)/;
-// `Same cause: no (search: `<pattern>`: <hits>)`, or `yes (… <hits>; §9: <step>)`. The hits have
-// no `;` or `)`.
-const ANSWER = /Same cause: (yes|no) \(search: `([^`]*)`: ([^;)]*)(\)|; §9: )/;
-const STEPS = [
-  /^owner, \d{4}-\d{2}-\d{2}, [\w-]+ Q\d+ [A-Z]\)/,
-  /^proposal DQ-(\d+)\)/,
-  /^fixed answer \(AGENTS\.md §9, owner 2026-11-11\)\)/,
-];
+const ANSWER_START = /^Same cause: (yes|no) \(search: `([^`]*)`: /;
+const STEP_START = "; §9: ";
+const OWNER_STEP =
+  /^owner, (\d{4}-\d{2}-\d{2}), (?:#[1-9]\d*|[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*) Q[1-9]\d* [A-Z]$/;
+const PROPOSAL_STEP = /^proposal DQ-(\d+)$/;
+const FIXED_STEP = "fixed answer (AGENTS.md §9, owner 2026-11-11)";
+const WHOLE_DQ_ID = /\bDQ-\d+\b/g;
 const STEP_HINT =
   '"; §9: owner, <YYYY-MM-DD>, <page> Q<n> <option>", "; §9: proposal DQ-<n>" or "; §9: fixed answer (AGENTS.md §9, owner 2026-11-11)"';
+
+function isGregorianDate(value: string): boolean {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return (
+    !value.startsWith("0000-") &&
+    Number.isFinite(date.valueOf()) &&
+    date.toISOString().slice(0, 10) === value
+  );
+}
+
+function answerParts(segment: string) {
+  const start = ANSWER_START.exec(segment);
+  if (start === null) return undefined;
+  const body = segment.slice(start[0].length);
+  let depth = 0;
+  let stepAt: number | undefined;
+  let closeAt: number | undefined;
+  for (const token of body.matchAll(/`[^`]*`|[();]/g)) {
+    const at = token.index;
+    if (token[0] === "(") depth++;
+    if (token[0] === ")") {
+      if (depth === 0) {
+        closeAt = at;
+        break;
+      }
+      depth--;
+    }
+    if (depth === 0 && stepAt === undefined && body.startsWith(STEP_START, at)) stepAt = at;
+  }
+  if (closeAt === undefined) return undefined;
+  const cited = body.slice(0, stepAt ?? closeAt);
+  if (cited.trim() === "") return undefined;
+  return {
+    yes: start[1] === "yes",
+    written: start[2] ?? "",
+    cited,
+    step: stepAt === undefined ? undefined : body.slice(stepAt + STEP_START.length, closeAt),
+    suffix: body.slice(closeAt + 1),
+  };
+}
 
 // Why grep -E and a JavaScript regular expression could read a pattern in two ways, or none.
 export function patternProblem(pattern: string): string | undefined {
@@ -371,7 +410,7 @@ export function patternProblem(pattern: string): string | undefined {
 
 export type Hit = { path: string; line: number; text: string };
 
-// The lines that `grep -n -i -E '<pattern>' <files>` prints, for a pattern with no patternProblem.
+// Match lines with a case-insensitive JavaScript regular expression.
 export function searchLines(pattern: string, files: readonly LedgerFile[]): Hit[] {
   const regex = new RegExp(pattern, "i");
   return files.flatMap((file) => {
@@ -387,7 +426,7 @@ export function searchLines(pattern: string, files: readonly LedgerFile[]): Hit[
 
 type SearchedRow = {
   where: string;
-  answer: RegExpExecArray;
+  answer: NonNullable<ReturnType<typeof answerParts>>;
   row: { path: string; line: number; cell: string; id: number };
   // The files that the pattern reads, and the ids of the ledger rows.
   searched: readonly LedgerFile[];
@@ -396,7 +435,7 @@ type SearchedRow = {
 
 function searchProblems(input: SearchedRow): string[] {
   const { where, answer, row, searched, ids } = input;
-  const [, word, written = "", cited = "", end = ""] = answer;
+  const { yes, written, cited, step, suffix } = answer;
   const pattern = written.replaceAll("\\|", "|");
   const why = patternProblem(pattern);
   if (why !== undefined)
@@ -406,23 +445,28 @@ function searchProblems(input: SearchedRow): string[] {
   const hits = searchLines(pattern, searched).filter(
     (hit) => hit.path !== row.path || hit.line !== row.line,
   );
-  const problems = (cited.match(/DQ-\d+/g) ?? [])
-    .filter((id) => !hits.some((hit) => new RegExp(`${id}(?!\\d)`).test(hit.text)))
+  const hitIds = new Set(hits.flatMap((hit) => hit.text.match(WHOLE_DQ_ID) ?? []));
+  const problems = (cited.match(WHOLE_DQ_ID) ?? [])
+    .filter((id) => !hitIds.has(id))
     .map(
       (id) =>
         `${where}: the search \`${written}\` finds ${id} in no line other than this row; cite only ids of its hits (owner, 2026-11-19, morning Q4 A).`,
     );
-  if (end === ")") {
-    if (word === "yes")
-      problems.push(`${where} answers yes and names no §9 step: add ${STEP_HINT}.`);
+  if (/^\s*:/.test(suffix))
+    problems.push(
+      `${where}: a colon continues the answer after its closing ")". Put hits inside the answer or move the note before it.`,
+    );
+  if (!yes) {
+    if (step !== undefined) problems.push(`${where}: a no has a §9 step.`);
     return problems;
   }
-  const rest = row.cell.slice(answer.index + answer[0].length);
-  const step = STEPS.map((form) => form.exec(rest)).find((match) => match !== null);
-  if (step === undefined)
+  const ownerDate = OWNER_STEP.exec(step ?? "")?.[1];
+  const proposal = numberOf(PROPOSAL_STEP.exec(step ?? "")?.[1]);
+  if (ownerDate !== undefined && !isGregorianDate(ownerDate))
+    problems.push(`${where}: the owner step date is not a real date.`);
+  if (ownerDate === undefined && proposal === undefined && step !== FIXED_STEP)
     return [...problems, `${where} answers yes and names no §9 step: add ${STEP_HINT}.`];
-  const proposal = numberOf(step[1]);
-  if (proposal === row.id)
+  if (proposal === row.id && !row.cell.startsWith("Proposal:"))
     problems.push(
       `${where}: the §9 proposal ${dq(proposal)} is this row; name the row of the proposal.`,
     );
@@ -453,17 +497,22 @@ function answerProblems(
           `${file.path}: ${dq(id)} has no "Same cause: yes|no (search: …)" in its "Fix and verification" cell (AGENTS.md §9; rows ${dq(OLD_FORM.first)} to ${dq(OLD_FORM.last)}).`,
         ];
       if (id < FIRST_SEARCHED_ID) return [];
-      const answer = ANSWER.exec(cell);
-      if (answer === null)
-        return [
-          `${file.path}: ${dq(id)} has no "Same cause: yes|no (search: \`<pattern>\`: <hits>)" in its "Fix and verification" cell (AGENTS.md §9; each row from ${dq(FIRST_SEARCHED_ID)} on).`,
-        ];
-      return searchProblems({
-        where: `${file.path}: ${dq(id)}`,
-        answer,
-        row: { path: file.path, line: index + 1, cell, id },
-        searched,
-        ids,
+      const where = `${file.path}: ${dq(id)}`;
+      const formProblem = `${where} has no "Same cause: yes|no (search: \`<pattern>\`: <hits>)" in its "Fix and verification" cell (AGENTS.md §9; each row from ${dq(FIRST_SEARCHED_ID)} on).`;
+      const markers = [...cell.matchAll(/`[^`]*`|(Same cause:)/g)].filter(
+        (token) => token[1] !== undefined,
+      );
+      if (markers.length === 0) return [formProblem];
+      return markers.flatMap((marker, n) => {
+        const answer = answerParts(cell.slice(marker.index, markers[n + 1]?.index));
+        if (answer === undefined) return [formProblem];
+        return searchProblems({
+          where,
+          answer,
+          row: { path: file.path, line: index + 1, cell, id },
+          searched,
+          ids,
+        });
       });
     }),
   );
