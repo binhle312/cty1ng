@@ -63,26 +63,27 @@ sequenceDiagram
     L->>W: stops the running turn, sends the correction
     Note over W: same session, context kept
   end
-  W->>L: report of the turn: the commits, the push if any, and the checks
-  opt the context use reaches 35%
+  opt the context use reaches 35%, during or after a turn
     L->>W: stops the turn if one runs, asks for a handoff
     W->>L: the handoff
     Note over L: checks and corrects the handoff
     Note over W: a new worker session gets the brief and the handoff,<br/>and sends its plan for the rest of the work
   end
+  W->>L: report of the turn: the commits, the push if any, and the checks
   W->>L: final report: each claim with its command and result
-  Note over L: compares each claim with the diff and the test results
+  Note over L: compares each claim with the diff, the test results,<br/>and the remote checks if the worker pushed
   L->>R: review brief
   R->>L: findings
   L->>W: review findings
   Note over W: the builder's session fixes them
   W->>L: report of the fixes
-  Note over L: compares each claim with the diff and the test results
+  Note over L: compares each claim with the diff, the test results,<br/>and the remote checks if the worker pushed
   L->>H: the result, with each open issue
   Note over H: decides the merge
 ```
 
-After each report, the lead agent compares each claim with the diff and the test results.
+After each report, the lead agent compares each claim with the diff, the test results, and the
+remote checks if the worker pushed.
 
 The diagram does not show the points where the human approves, because each repository has its own
 rules. At each of these points, the lead agent stops and asks the human.
