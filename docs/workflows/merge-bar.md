@@ -1,6 +1,6 @@
 # Merge bar
 
-The agents that build a change and the agents that review it use this bar. Who does each step: the [Roles](coordination.md#roles) table. Read it when you give a finding a severity, decide what a
+The agents that build a change and the agents that review work use this bar. Who does each step: the [Roles](coordination.md#roles) table. Read it when you give a finding a severity, decide what a
 finding blocks, write a state table or order test, set the limits of a pattern rule, or decide
 when the review of a P3 PR ends.
 
