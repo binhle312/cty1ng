@@ -6,7 +6,8 @@ the live ledger, the [PR register](delivery-quality-register.md), and the
 [prevention actions](delivery-quality-prevention.md#prevention-actions).
 
 - **Closed issues:** each issue row with the state `fixed`, `dropped` or `withdrawn`.
-- **Review rounds:** each round of a merged PR.
+- **Review rounds:** round rows from merged PRs. See [ledger §7 step 2](delivery-quality.md#7-update-and-assess)
+  for which PRs use round rows.
 
 A row comes here unchanged. Nobody edits it here. If an issue opens again, move its row back to
 the live ledger and record the reopen event there ([counting rules](delivery-quality.md#1-counting-rules)).

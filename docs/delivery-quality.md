@@ -8,8 +8,8 @@ Baseline recorded: 2026-11-04. Sources: all 17 [project lessons](lessons-learned
 and the local [slice register](status.md#slices). Historical figures are document reports,
 not a fresh audit of GitHub review threads. Later entries must name their source and revision.
 
-This file holds the rules and the live rows. The closed issue rows and the review rounds of
-merged PRs are in the [archive](delivery-quality-archive.md) (owner, 2026-11-10). The counts in
+This file holds the rules and the live rows. The [archive](delivery-quality-archive.md) holds
+closed issue rows and round rows from merged PRs (owner, 2026-11-10). The counts in
 the [PR register and milestone view](delivery-quality-register.md) include the archive rows.
 The [prevention actions](delivery-quality-prevention.md#prevention-actions) cover recurring causes.
 To find an old fix, use the [Same cause search](workflows/pull-request.md#one-home-for-each-fact).
@@ -150,7 +150,8 @@ Unknown states prevent an exact open-issue count. The S7 source in
 [register §4](delivery-quality-register.md#4-historical-evidence-snapshots) reports fixes and failing
 tests, but lacks per-issue verification references.
 Severity totals belong to S2 and S7 there; the sources do not assign each priority to an individual issue.
-Record reopen events in the round log with the original issue ID.
+Record reopen events with the original issue ID. Follow [§7 step 2](#7-update-and-assess)
+for where to record the review.
 For duplicate reports, keep one issue row and link each source.
 When backfilling other snapshots in [register §4](delivery-quality-register.md#4-historical-evidence-snapshots),
 match their reports against these IDs before adding issues.
@@ -159,9 +160,10 @@ Use `unknown` when the introducing PR or related cause is not established.
 
 ## 6. Review round log
 
-The reviewer records one row after each completed review. This includes reviews with no findings.
+The reviewer records each completed review, even if it has no findings.
+Follow [§7 step 2](#7-update-and-assess) for where to record it.
 The builder records later fix and verification evidence on the issue rows.
-The rounds of merged PRs are in the [archive](delivery-quality-archive.md#review-rounds-of-merged-prs).
+See the [archive](delivery-quality-archive.md#review-rounds-of-merged-prs) for past round rows.
 
 | PR / round ID | Date | Base / head and local changes | Scope / source | New issue IDs | Reopened IDs | Fixed IDs | Withdrawn IDs | Required checks and results |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -187,7 +189,7 @@ If the head changes after review, the row still describes the original reviewed 
    list of ledger files is `LEDGER_FILES` in `scripts/records-counts.ts`: a PR that moves rows to a
    new file adds the file there, and the check fails until it does.
 6. At milestone close, confirm the PR population and calculate the totals from distinct IDs in this file and the archive.
-   Then move the rows with the state `fixed`, `dropped` or `withdrawn`, and the rounds of merged
+   Then move the rows with the state `fixed`, `dropped` or `withdrawn`, and the round rows of merged
    PRs, to the [archive](delivery-quality-archive.md), unchanged, in a PR that changes records only.
    A `withdrawn` row stays out of the confirmed totals there too.
    Do the same move before that time if `wc -c` gives more than 80,000 bytes for this file. If no

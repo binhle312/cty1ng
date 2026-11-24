@@ -41,10 +41,9 @@ say what the proof shows and add `Not claimed: …` (`docs/workflows/pull-reques
 ## Records
 
 Issue rows DQ-… to DQ-… are in `docs/delivery-quality.md` §5.
-Follow `docs/delivery-quality.md` §7 step 2 for the review rounds.
+Follow [ledger §7 step 2](https://github.com/binhle312/cty1ng/blob/main/docs/delivery-quality.md#7-update-and-assess) for where to record review rounds.
 PR register rows are in `docs/delivery-quality-register.md` §3.
-`pnpm records:counts` passes (CI). This description holds no state,
-count, fix commit or round result: the rows hold them.
+`pnpm records:counts` passes (CI). Use the rows for issue states, counts and fix commits.
 
 ## Defect and review fixes (when a review found something)
 
