@@ -56,8 +56,9 @@ gives the parts; the build writes the text.
 8. **The worker's plan first** (owner, Q1 note 3). A worker's first turn gives back the plan in
    its own words, and changes no file. The lead agent checks the plan with the three tests of
    step 4 of `codex-workers` and accepts it, or sends its corrections. Then the worker builds. The
-   lead agent's OK is not the owner's approval. The cost: one more worker turn, about 23,000 input
-   tokens before its first action (a measured turn of #149). A reviewer has no plan turn, because
+   lead agent's OK is not the owner's approval. The cost: one more worker turn. Correction after the build: the
+   measured plan turn of a Sol probe used 72,794 input tokens, 56,192 of them cached. The first
+   number of revision 1, about 23,000, counted only the tokens before the first action. A reviewer has no plan turn, because
    it changes no file.
 9. **Workers.** Before the first worker, read `../codex-workers/SKILL.md`, relative to the base
    directory of this skill. If the file is missing, stop and tell the owner.
