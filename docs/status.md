@@ -284,3 +284,4 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-23 | [#144](https://github.com/binhle312/cty1ng/pull/144) merged: agent memory rules, audit trigger and quotes (`4047ba8`), which left in #145. |
 | 2026-11-23 | [#145](https://github.com/binhle312/cty1ng/pull/145) merged: the agent memory moved out of the repository to local Git (`bf03f5d`). |
 | 2026-11-23 | [#147](https://github.com/binhle312/cty1ng/pull/147) merged: the rules for agent memory and standing merges removed (`b623ae3`). |
+| 2026-11-24 | [#148](https://github.com/binhle312/cty1ng/pull/148) merged: the cleanup of what is left of the stopped agent setup (`b99e581`). |
