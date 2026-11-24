@@ -36,7 +36,7 @@ for (const w of L.warnings) info("lint warning: " + w);
 for (const s of L.stats) info(`${s.id}: context ${s.contextWords} words, options ${s.choiceWords} words, bold ${s.boldPercent}%`);
 
 const browser = await chromium.launch();
-const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, permissions: ["clipboard-read", "clipboard-write"] });
+const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: "reduce", permissions: ["clipboard-read", "clipboard-write"] });
 const p = await ctx.newPage();
 const errs = [];
 p.on("console", (m) => { if (m.type() === "error") errs.push(m.text()); });
@@ -117,7 +117,7 @@ for (let i = 0; i < N; i++) {
     const items = await details.locator("ul > li").allTextContents();
     ok(q.removed.every((item) => items.some((text) => sameText(text, `Option removed: ${item}`))), `${id}: Details lists each removed option`);
   }
-  const facts = s.locator(".ctx > .facts");
+  const facts = s.locator(".ctx .sec > .facts");
   ok((await facts.locator("li").count()) === q.facts.length && (await facts.isVisible()), `${id}: shows ${q.facts.length} key facts`);
   ok((await s.locator(".example .steps-ex li").count()) === q.example.steps.length && (await s.locator(".example").isVisible()), `${id}: shows the example as ${q.example.steps.length} steps`);
   ok((await s.locator('[data-pick]').count()) === 1 && (await s.locator("[data-pick]").getAttribute("data-key")) === q.pick.key, `${id}: exactly one option marked as my pick (${q.pick.key})`);
@@ -147,7 +147,7 @@ for (let i = 0; i < N; i++) {
   const measure = await s.evaluate((el) => {
     const probe = document.createElement("span"); probe.textContent = "0000000000"; probe.style.cssText = "position:absolute;visibility:hidden;font:16px/1.5 var(--font)";
     el.appendChild(probe); const ch = probe.getBoundingClientRect().width / 10; probe.remove();
-    return Math.max(...[...el.querySelectorAll(".ctx > p, .ctx .facts")].map((x) => x.getBoundingClientRect().width / ch));
+    return Math.max(...[...el.querySelectorAll(".ctx .decision > p, .ctx .facts")].map((x) => x.getBoundingClientRect().width / ch));
   });
   ok(measure <= 75, `${id}: context text measure ${measure.toFixed(0)}ch <= 75 (R2.6)`);
   ok((await s.locator("input[type=radio]:checked").count()) === 0, `${id}: no option checked before an answer`);

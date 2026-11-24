@@ -58,11 +58,11 @@ for (const value of ["low", "high", "clear", "A", "B", "Monday", "Tuesday"]) {
 }
 const q = content.questions[0];
 assert.deepEqual(questionText(q), [
-  "Which plan?", "Decide: the plan for next week.", "It sets the work.",
+  "Which plan?", "The decision", "Decide: the plan for next week.", "It sets the work.",
   "Only this depends on you: Choose the scope for next week.",
   "Why you decide: The team gives you final approval.", "Already decided (no answer needed):", "Work starts on Monday.",
-  "First task: fix the cache.", "Second task: test the cache.", "Days per plan", "Plan, Days", "A, 1", "B, 2",
-  "Example: a week", "Monday: Start the work.", "Tuesday: Check the work.",
+  "Facts", "First task: fix the cache.", "Second task: test the cache.", "Days per plan", "Plan, Days", "A, 1", "B, 2",
+  "Example", "a week", "Monday: Start the work.", "Tuesday: Check the work.",
   "My pick: A. Small plan", "It is small.", "Confidence: clear.", "Pick another if: you want more.",
   "A. Small plan", "Risk: low", "Does: Fix the cache.", "Gets: Fast.", "Costs: Less scope.", "Risk: A gap.",
   "B. Big plan", "Risk: high", "Does: Fix and test the cache.", "Gets: More scope.", "Costs: Slow.", "Risk: A delay.",
@@ -104,7 +104,7 @@ const overOptionLimit = lintQuestion({ ...q, options: [{ ...boundaryOptions[0], 
 assert.equal(overOptionLimit.stats[0].choiceWords, 161);
 assert.ok(overOptionLimit.errors.some((error) => error.includes("161 visible option words > 160")));
 
-const atBoldLimit = { ...q, table: { ...q.table, rows: [...q.table.rows, [words(39), words(39)]] } };
+const atBoldLimit = { ...q, table: { ...q.table, rows: [...q.table.rows, [words(39), words(36)]] } };
 const atBold = lintQuestion(atBoldLimit);
 assert.equal(atBold.stats[0].contextWords, 170);
 assert.equal(atBold.stats[0].boldPercent, 10);
