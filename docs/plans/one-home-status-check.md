@@ -9,6 +9,9 @@ not in this plan. It gets its own plan and PR after #151.
 Checkpoint: plan (an `AGENTS.md` §9 redesign, and a change of `AGENTS.md`: §7)
 Approval: owner, 2026-11-24, revision 1 (`aea29a1`): "Approve both the plan and the split plan". The
 owner's decisions in it: Q1 A, Q3 A and the words of design step 4.
+Revision 2, owner, 2026-11-24, answer "A" to R1-F4 of the review of the build (a scratch break of the
+singular `token` passed all tests; same cause in kind as DQ-856): the break list proves each part of
+the pattern with a break, in place of the exemptions.
 
 ## Goal
 
@@ -93,9 +96,17 @@ flow. It adds one pure function to an existing check.
 
 ## Test strategy (test first)
 
-Each new test runs red on the code before the change, and the PR records the red run. The break
-list `scripts/breaks/pr-151.json` lists each new test as exempt. Its reason is "test first: red
-run in the PR" (`docs/testing.md`, break lists).
+Each new test runs red on the code before the change, and the PR records the red run.
+
+The break list `scripts/breaks/pr-151.json` has a claim for each new test, with breaks of
+`scripts/lib/check-status.ts` (revision 2). `pnpm check:breaks scripts/breaks/pr-151.json` proves
+that each break makes its test fail.
+
+- One break for each part of the pattern: each unit in singular and plural (`byte`, `bytes`, `KB`,
+  `row`, `rows`, `token`, `tokens`), the hyphen, the comma group, the decimal, the leading decimal,
+  and the letter and digit look-arounds (emphasis, `rowspan`, `5 rowers`).
+- The test of each part has a case that the break makes fail. If a part has no such case, the
+  builder adds the case first (for example `1 token`).
 
 | Behaviour | Test (`scripts/check-status.test.ts`) | Cases beyond the normal path |
 |---|---|---|
