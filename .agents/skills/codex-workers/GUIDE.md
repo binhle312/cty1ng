@@ -5,25 +5,27 @@ holds the rules and the commands. This file adds no rule.
 
 ## What the skill does
 
-You talk with one agent: the lead agent. It is the Claude Code conversation that you start.
-The lead agent gives build work and review work to Codex workers, and it talks with them when that
-is needed. You approve, you decide, and you merge.
+The skill keeps a human in the loop.
 
-The lead agent's OK on a plan is not your approval. When the rules of your repository ask for your
-approval, the lead agent stops and asks you.
+The human talks with one agent: the lead agent. It is the Claude Code conversation that the human
+starts. The lead agent gives build work and review work to Codex workers, and it talks with them
+when that is needed. The human approves, decides, and merges.
+
+The lead agent's OK on a plan is not the human's approval. When the rules of the repository ask for
+the human's approval, the lead agent stops and asks the human.
 
 ## Who talks with whom
 
 ```mermaid
 flowchart TB
-  you(["You<br/>approve, decide, merge"])
+  human(["Human<br/>approves, decides, merges"])
   lead["Lead agent<br/>the Claude Code conversation"]
   advisor["Advisor tool<br/>built into Claude Code"]
-  worker["Codex worker<br/>builds"]
+  worker["Codex workers<br/>one or more, each builds its own task"]
   reviewer["Codex reviewer<br/>reviews code that it did not build"]
 
-  you -- "task, answers" --> lead
-  lead -- "questions, report" --> you
+  human -- "task, answers" --> lead
+  lead -- "questions, report" --> human
   lead -- "asks" --> advisor
   advisor -- "advice" --> lead
   lead -- "brief, answers" --> worker
@@ -32,19 +34,19 @@ flowchart TB
   reviewer -- "findings" --> lead
 ```
 
-A worker and a reviewer send no messages to each other or to you. Each message passes through the
-lead agent. The lead agent can ask the advisor before it decides.
+A worker and a reviewer send no messages to each other or to the human. Each message passes through
+the lead agent. The lead agent can ask the advisor before it decides.
 
 ## One task, turn by turn
 
 ```mermaid
 sequenceDiagram
-  participant Y as You
+  participant H as Human
   participant L as Lead agent
   participant W as Codex worker
   participant R as Codex reviewer (a new session)
 
-  Y->>L: task
+  H->>L: task
   L->>W: brief
   Note over W: reads the brief
   opt a fact is missing
@@ -74,12 +76,12 @@ sequenceDiagram
   Note over W: the builder's session fixes them
   W->>L: report of the fixes
   Note over L: compares each claim with the diff and the test results
-  L->>Y: the result, with each open issue
-  Note over Y: you decide the merge
+  L->>H: the result, with each open issue
+  Note over H: decides the merge
 ```
 
-The diagram does not show the points where you approve, because each repository has its own rules.
-At each of these points, the lead agent stops and asks you.
+The diagram does not show the points where the human approves, because each repository has its own
+rules. At each of these points, the lead agent stops and asks the human.
 
 The review is a new session that did not build the code. Its findings go to the lead agent, and the
 lead agent sends them to the builder's session. After a handoff, that is the new session.
@@ -92,8 +94,9 @@ lead agent sends them to the builder's session. After a handoff, that is the new
 - If the brief names a remote branch, the worker pushes its commits to that branch at each
   checkpoint. It pushes to no other branch, and it does not force a push.
 - A reviewer makes no commits.
-- The lead agent can run more than one worker. It tells them the order of the commands that only
-  one agent can run at a time, such as a heavy build.
+- The lead agent can run more than one worker at the same time, each on its own task, in its own
+  worktree and branch. The turn diagram shows one of them. The lead agent tells them the order of
+  the commands that only one agent can run at a time, such as a heavy build.
 
 ## The 35% limit
 
@@ -105,21 +108,21 @@ corrects it, and a new worker continues from it.
 The limit applies to a reviewer too. The lead agent splits a large review into parts before it
 starts, so that each part ends under 35%.
 
-35% is your limit, and you can change it.
+35% is the human's limit, and the human can change it.
 
 ## How to start it
 
-Before you start:
+Before the first start, the human does these steps:
 
 1. Install the Codex CLI (`codex`) and sign in.
 2. Put the folder of this file, with its `SKILL.md`, where Claude Code finds skills.
 
-Each start comes from you. The lead agent does not start this skill on its own. Start it in one of
-these ways:
+Each start comes from the human. The lead agent does not start this skill on its own. The human
+starts it in one of these ways:
 
 - Type `/codex-workers` in a conversation.
-- Name the skill `codex-workers` in your message.
+- Name the skill `codex-workers` in a message.
 - Start another skill that tells the lead agent to read the `SKILL.md` of this skill. Read that
   skill to see if it does this.
 
-`SKILL.md` has the commands, the models, and the full rules. You can read it too.
+`SKILL.md` has the commands, the models, and the full rules. The human can read it too.
