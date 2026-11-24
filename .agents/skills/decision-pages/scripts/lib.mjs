@@ -102,6 +102,12 @@ const FACTS_HEADING = "Facts";
 const EXAMPLE_HEADING = "Example";
 const OPTION_ROWS = [["does", "Does"], ["gets", "Gets"], ["costs", "Costs"], ["riskText", "Risk"]];
 const riskChipText = (risk) => `Risk: ${risk}`;
+const VOTE_ROLES = new Map([
+  ["lead agent", "Lead agent"], ["worker", "Worker"], ["consultant", "Consultant"], ["advisor", "Advisor"],
+]);
+const hasVotes = (q) => q.options.some((o) => o.votes?.length);
+const voteLabel = (vote) => `${VOTE_ROLES.get(vote.role)}: ${vote.name.trim()}`;
+const voteLabels = (o) => o.votes?.length ? o.votes.map(voteLabel) : ["No votes"];
 
 function questionDetails(q) {
   if (!q.removed?.length) return q.details;
@@ -143,6 +149,14 @@ export function validate(c) {
         for (const f of ["key", "label", "gets", "costs", "risk", "riskText"]) need(o[f], `${id}.options[${k}].${f} is required (R3.2 same fields for every option)`);
         need(hasText(o.does), `${id}.options[${k}].does is required and must be a non-empty string (${SCOPE_FIELDS_RULE})`);
         need(/^[A-Z]$/.test(o.key || ""), `${id}.options[${k}].key must be one capital letter`);
+        if (o.votes !== undefined) {
+          const path = `${id}.options[${k}].votes`;
+          need(Array.isArray(o.votes), `${path} must be an array`);
+          if (Array.isArray(o.votes)) o.votes.forEach((vote, j) => {
+            need(vote && VOTE_ROLES.has(vote.role) && hasText(vote.name) && Object.keys(vote).length === 2,
+              `${path}[${j}] must have a role (${[...VOTE_ROLES.keys()].join(", ")}) and a non-empty name`);
+          });
+        }
       });
       if (q.pick) need(keys.includes(q.pick.key), `${id}.pick.key must name an option`);
     }
@@ -277,6 +291,7 @@ export function lint(c) {
     // Options
     const opts = q.options || [];
     range(`${id}.options`, opts.length, "optionsMin", "optionsMax");
+    const showVotes = hasVotes(q);
     let choice = 0;
     opts.forEach((o) => {
       const w = `${id}.option ${o.key}`;
@@ -286,6 +301,10 @@ export function lint(c) {
         choice += max(where, o[field], label ? "fieldWords" : "labelWords") + countWords(label);
       }
       choice += countWords(riskChipText(o.risk));
+      if (showVotes) for (const label of voteLabels(o)) {
+        markup(`${w}.votes`, label); sent(`${w}.votes`, label);
+        choice += countWords(label);
+      }
       if (!RISKS.includes(o.risk)) errors.push(`${w}.risk: "${o.risk}" must be one of ${RISKS.join(", ")} (R4.5 the chip says the level in words)`);
       if (STRAWMAN.test(String(o.gets).trim())) warnings.push(`${w}.gets: "${o.gets}" is no real gain; remove the option or name its case (R3.6 decoys)`);
       if (o.details) detailItems(`${w}.details`, o.details.items);
@@ -340,6 +359,8 @@ const CSS = `
  --content-width:calc(100% * 10 / 12);--panel-radius:8px;--nav-accent:#066fd1;
  --slide:260ms;--slide-d:28px;--shift:12px;
  --ease:cubic-bezier(.2,.75,.25,1);--spring:cubic-bezier(.34,1.56,.64,1);
+ --lead-bg:#e5f5ef;--lead-ink:#11603f;--worker-bg:#fae9ee;--worker-ink:#8a2e54;
+ --consultant-bg:#f0ebfa;--consultant-ink:#5530a0;--advisor-bg:#fbf0e3;--advisor-ink:#7a4510;
  color-scheme:light dark;
 }
 @media (prefers-color-scheme:dark){:root{
@@ -348,6 +369,8 @@ const CSS = `
  --low-bg:#143323;--low-ink:#8bdfa7;--med-bg:#3a2b0f;--med-ink:#f1c777;--high-bg:#3f1b1b;--high-ink:#ffa9a9;
  --code:#1f2d3f;--nav:#0c131d;--nav-ink:#aab6c6;
  --shadow:0 1px 2px rgba(0,0,0,.3);--shadow-hover:0 6px 16px -6px rgba(0,0,0,.6);
+ --lead-bg:#123528;--lead-ink:#8fd9b6;--worker-bg:#3c2131;--worker-ink:#f4aaca;
+ --consultant-bg:#2a2147;--consultant-ink:#c5b3f2;--advisor-bg:#3a2a14;--advisor-ink:#f0c58f;
 }}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -458,7 +481,7 @@ fieldset{border:0;margin:12px 0 0;padding:0;min-width:0}
 .opt:hover{border-color:var(--control);box-shadow:var(--shadow-hover)}
 .opt:has(input:checked){border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent),var(--shadow-hover)}
 .opt:has(input:checked) .olabel{color:var(--accent-ink)}
-.opt>label{display:grid;grid-template-columns:20px 1fr;gap:2px 12px;padding:12px 14px;cursor:pointer}
+.opt>label{display:grid;grid-template-columns:20px minmax(0,1fr);gap:2px 12px;padding:10px 14px;cursor:pointer}
 .opt input{appearance:none;width:20px;height:20px;margin:2px 0 0;border-radius:50%;border:1.5px solid var(--control);background:var(--surface);cursor:pointer}
 .opt input:checked{border-color:var(--accent);background:var(--accent);box-shadow:inset 0 0 0 4px var(--surface)}
 .ohead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
@@ -466,12 +489,21 @@ fieldset{border:0;margin:12px 0 0;padding:0;min-width:0}
 .otags{margin-left:auto;display:flex;gap:6px;align-items:baseline}
 .tag{font-size:14px;line-height:20px;padding:0 7px;border-radius:4px;white-space:nowrap}
 .tag-pick{color:var(--accent-ink);border:1px solid var(--accent);line-height:18px}
+.votes{grid-column:2;display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;min-width:0}
+.vb,.vnone{font-size:14px;line-height:20px;overflow-wrap:anywhere}
+.vb{border-radius:999px;padding:0 8px;font-weight:600}
+.vb-lead-agent{background:var(--lead-bg);color:var(--lead-ink)}
+.vb-worker{background:var(--worker-bg);color:var(--worker-ink)}
+.vb-consultant{background:var(--consultant-bg);color:var(--consultant-ink)}
+.vb-advisor{background:var(--advisor-bg);color:var(--advisor-ink)}
+.vnone{color:var(--muted)}
 .risk-low{background:var(--low-bg);color:var(--low-ink)}
 .risk-medium{background:var(--med-bg);color:var(--med-ink)}
 .risk-high{background:var(--high-bg);color:var(--high-ink)}
 kbd{font:14px/18px var(--font);color:var(--muted);border:1px solid var(--border);border-radius:4px;background:var(--raised);box-shadow:0 1px 0 var(--border);padding:0 5px;min-width:20px;text-align:center}
-.tr{grid-column:2;display:grid;grid-template-columns:max-content 1fr;gap:1px 10px;margin-top:4px}
-.tr dt{font-size:14px;color:var(--muted);line-height:24px}
+.tr{grid-column:2;display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:10px;margin-top:4px}
+.tr dt,.tr dd{line-height:22px}
+.tr dt{font-size:14px;color:var(--muted)}
 .opt details{padding:0 14px 8px 46px;margin-top:-6px}
 .opt details>summary{font-weight:500;color:var(--accent-ink);font-size:14px;line-height:20px}
 .note{margin-top:12px}
@@ -524,11 +556,15 @@ textarea{display:block;width:100%;margin-top:4px;font:inherit;color:var(--text);
 @media (max-height:820px){
  .step.q .wrap{padding:8px 0}
  .opt+.opt{margin-top:4px}
- .opt>label{padding-block:8px}
+ .opt>label{padding-block:4px;row-gap:0}
  .pick{padding-block:8px}
+ .pick>*+*{margin-top:2px}
  .choice fieldset{margin-top:8px}
- .tr{row-gap:0}
- .tr dt,.tr dd,.pick p{line-height:22px}
+ .tr{grid-column:1/-1;margin-top:2px}
+ .tr dt,.tr dd,.pick p{line-height:20px}
+ .votes{margin-top:0;gap:2px 4px}
+ .vb,.vnone{line-height:18px}
+ .vb{padding-inline:6px}
 }
 
 /* The edge ring follows the horizontal gesture in the side gutter. */
@@ -671,14 +707,19 @@ ${details ? `<details class="sec more"><summary><h2>${inline(details.summary)}</
 <p>${inline(q.pick.reason)} Confidence: <strong>${esc(q.pick.confidence)}</strong>.</p>
 <p><strong>Pick another if:</strong> ${inline(q.pick.another)}</p>
 </section>`;
+  const showVotes = hasVotes(q);
   const opts = q.options.map((o, k) => {
     const isPick = o.key === q.pick.key;
     const rid = `r-${id}-${o.key}`;
     const rows = OPTION_ROWS.map(([field, label]) => `<dt>${label}</dt><dd class="${label.toLowerCase()}">${inline(o[field])}</dd>`).join("");
+    const votes = showVotes ? `<span class="votes">${voteLabels(o).map((label, j) => {
+      const role = o.votes?.[j]?.role;
+      return `<span class="${role ? `vb vb-${role.replaceAll(" ", "-")}` : "vnone"}">${inline(label)}</span>`;
+    }).join("")}</span>` : "";
     return `<div class="opt" data-key="${esc(o.key)}"${isPick ? " data-pick" : ""}>
 <label for="${rid}"><input type="radio" id="${rid}" name="${id}" value="${esc(o.key)}">
 <span class="ohead"><span class="olabel">${esc(o.key)}. ${inline(o.label)}</span><span class="otags">${isPick ? '<span class="tag tag-pick">My pick</span>' : ""}<span class="tag risk-${esc(o.risk)}">${esc(riskChipText(o.risk))}</span><kbd title="Press ${k + 1} to choose ${esc(o.key)}">${k + 1}</kbd></span></span>
-<dl class="tr">${rows}</dl>
+${votes}<dl class="tr">${rows}</dl>
 </label>${o.details ? `<details><summary>${inline(o.details.summary || "What " + o.key + " contains")}</summary>${renderItems(o.details.items)}</details>` : ""}
 </div>`;
   }).join("\n");
@@ -911,13 +952,16 @@ function writeQuestionText(q, { add, item, items, table }, screenOnly) {
   add(q.pick.reason);
   if (screenOnly) add(`Confidence: ${q.pick.confidence}.`);
   add(screenOnly ? `Pick another if: ${q.pick.another}` : q.pick.another);
+  const showVotes = hasVotes(q);
   for (const o of q.options) {
     if (screenOnly) {
       item(`${o.key}. ${o.label}`);
       item(riskChipText(o.risk));
+      if (showVotes) voteLabels(o).forEach(item);
       OPTION_ROWS.forEach(([field, label]) => add(`${label}: ${o[field]}`));
     } else {
       add(o.label);
+      if (showVotes) voteLabels(o).forEach(item);
       OPTION_ROWS.forEach(([field]) => add(o[field]));
       if (o.details) { add(o.details.summary); items(o.details.items); }
     }

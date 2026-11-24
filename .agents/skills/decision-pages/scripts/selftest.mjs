@@ -104,6 +104,38 @@ const overOptionLimit = lintQuestion({ ...q, options: [{ ...boundaryOptions[0], 
 assert.equal(overOptionLimit.stats[0].choiceWords, 161);
 assert.ok(overOptionLimit.errors.some((error) => error.includes("161 visible option words > 160")));
 
+const votes = [
+  { role: "lead agent", name: "Alex" },
+  { role: "worker", name: "Sam" },
+  { role: "consultant", name: "GPT-6.2 Astra high" },
+  { role: "advisor", name: "Jo" },
+];
+const withVotes = { ...q, options: [{ ...q.options[0], votes }, { ...q.options[1], votes: [] }] };
+const voteContent = { ...content, questions: [withVotes] };
+assert.deepEqual(lint(voteContent).errors.filter((error) => error.includes("votes")), []);
+for (const lines of [pageText(voteContent), questionText(withVotes)]) {
+  for (const label of ["Lead agent: Alex", "Worker: Sam", "Consultant: GPT-6.2 Astra high", "Advisor: Jo", "No votes"]) {
+    assert.ok(lines.includes(label), `export includes ${label}`);
+  }
+}
+const emptyVotes = { ...q, options: [{ ...q.options[0], votes: [] }, q.options[1]] };
+assert.deepEqual(questionText(emptyVotes), questionText(q));
+assert.equal(lintQuestion(emptyVotes).stats[0].choiceWords, lintQuestion(q).stats[0].choiceWords);
+for (const bad of [null, "Alex", [null], [{ role: "chief", name: "Alex" }], [{ role: "worker", name: " " }], [{ ...votes[0], score: 1 }]]) {
+  const invalid = { ...q, options: [{ ...q.options[0], votes: bad }, q.options[1]] };
+  assert.ok(lintQuestion(invalid).errors.some((error) => error.startsWith("questions[0].options[0].votes")));
+}
+const voteBoundary = [
+  { ...boundaryOptions[0], does: words(1), gets: words(7), votes: [votes[1]] }, ...boundaryOptions.slice(1),
+];
+const atVoteLimit = lintQuestion({ ...q, options: voteBoundary });
+assert.equal(atVoteLimit.stats[0].choiceWords, 160);
+assert.ok(!atVoteLimit.errors.some((error) => error.includes("visible option words")));
+voteBoundary[0].votes = [{ ...votes[1], name: "Sam Lee" }];
+const overVoteLimit = lintQuestion({ ...q, options: voteBoundary });
+assert.equal(overVoteLimit.stats[0].choiceWords, 161);
+assert.ok(overVoteLimit.errors.some((error) => error.includes("161 visible option words > 160")));
+
 const atBoldLimit = { ...q, table: { ...q.table, rows: [...q.table.rows, [words(39), words(36)]] } };
 const atBold = lintQuestion(atBoldLimit);
 assert.equal(atBold.stats[0].contextWords, 170);
@@ -139,4 +171,4 @@ assert.equal(lintQuestion({ ...q, decides: "Choose now." }).stats[0].contextWord
 assert.equal(lintQuestion({ ...q, removed: [] }).stats[0].contextWords, stats.contextWords);
 assert.equal(lintQuestion({ ...q, options: [{ ...q.options[0], does: "Fix it." }, q.options[1]] }).stats[0].choiceWords, stats.choiceWords - 1);
 
-console.log("selftest: ok (scope lint, page and question text, and copied feedback)");
+console.log("selftest: ok (scope and vote lint, page and question text, and copied feedback)");

@@ -69,6 +69,8 @@ ok((await p.locator("input[type=radio]:checked").count()) === 0, "no option is p
 const counts = await p.locator(".counts").innerText();
 ok(/Total\s*\n?\s*\d+/.test(counts) && /Answered/.test(counts) && /Remaining/.test(counts), "header shows Total, Answered, Remaining");
 ok((await p.locator(".bar img, .bar progress, [role=progressbar]").count()) === 0, "no progress bar (R5.3)");
+ok((await p.locator(".sbtn .no").count()) === N, "only question steps have numbers");
+ok((await p.locator('.sbtn[aria-current="step"]').getAttribute("data-go")) === "0", "Overview is the active step");
 
 // 3. Overview
 const ov = p.locator('section.step[data-step="0"]');
@@ -98,6 +100,9 @@ for (let i = 0; i < N; i++) {
   if (i === 0) await p.keyboard.press("ArrowRight"); else await p.click("#next");
   const s = p.locator(`section.step[data-step="${i + 1}"]`);
   ok(await s.isVisible(), `${id}: step opens (${i === 0 ? "arrow key" : "Next button"})`);
+  const step = p.locator(`.sbtn[data-go="${i + 1}"]`);
+  ok((await step.getAttribute("aria-current")) === "step" && await step.locator(".no").isVisible()
+    && (await step.locator(".no").innerText()) === String(i + 1), `${id}: shows the active step number`);
   ok((await s.locator("h1").innerText()).trim() === stripMarkup(q.title), `${id}: shows the question as the title`);
   const ask = s.locator(".ask");
   ok((await ask.isVisible()) && (await ask.innerText()).startsWith("Decide:"), `${id}: shows the ask, "Decide: ..."`);
@@ -125,11 +130,12 @@ for (let i = 0; i < N; i++) {
   const g = await geo();
   const opts = s.locator(".opt");
   const n = await opts.count();
+  const showVotes = q.options.some((o) => o.votes?.length);
   ok(n === q.options.length, `${id}: ${n} options`);
-  let allIn = true, allFields = true, allDoes = n === q.options.length, bottom = 0;
+  let allIn = true, allFields = true, allDoes = n === q.options.length, votesMatch = n === q.options.length, bottom = 0;
   for (let k = 0; k < n; k++) {
     const o = opts.nth(k);
-    const b = await o.locator("label").boundingBox();
+    const b = await o.boundingBox();
     bottom = Math.max(bottom, b.y + b.height);
     if (b.y < g.headerBottom || b.y + b.height > g.footerTop) allIn = false;
     for (const f of [".gets", ".costs", ".risk", ".tag[class*=risk-]"]) {
@@ -139,10 +145,22 @@ for (let i = 0; i < N; i++) {
     const does = o.locator(".tr > dt:first-child + dd.does");
     if (allDoes && (!(await does.isVisible()) || !sameText(await o.locator(".tr > dt:first-child").innerText(), "Does")
       || !sameText(await does.innerText(), q.options[k].does))) allDoes = false;
+    const v = q.options[k].votes || [], row = o.locator(".votes");
+    if (showVotes) {
+      const labels = v.length ? v.map(({ role, name }) => role[0].toUpperCase() + role.slice(1) + ": " + name.trim()) : ["No votes"];
+      const badges = await row.locator(":scope > span").allInnerTexts();
+      votesMatch &&= badges.length === labels.length && badges.every((badge, j) => sameText(badge, labels[j]));
+      votesMatch &&= await row.count() === 1 && sameText(await row.innerText(), labels.join(" ")) && (await row.locator(".vscore").count()) === 0;
+    } else votesMatch &&= (await row.count()) === 0;
+    const details = o.locator("details");
+    if (q.options[k].details) {
+      ok(await details.isVisible() && await details.getAttribute("open") === null, `${id}: option ${q.options[k].key} Details starts closed`);
+    }
   }
   maxBottom = Math.max(maxBottom, bottom);
   ok(allFields, `${id}: every option shows Gets, Costs, Risk text and a "Risk: level" chip`);
   ok(allDoes, `${id}: every option shows its Does row first`);
+  ok(votesMatch, `${id}: ${showVotes ? "vote rows show the expected names or No votes, with no score or tally" : "no vote rows when there are no votes"}`);
   ok(allIn && g.mainScroll === 0, `${id}: all option cards are in the first viewport at 1440x900, no scroll (lowest card bottom ${Math.round(bottom)} px, footer top ${Math.round(g.footerTop)} px)`);
   const measure = await s.evaluate((el) => {
     const probe = document.createElement("span"); probe.textContent = "0000000000"; probe.style.cssText = "position:absolute;visibility:hidden;font:16px/1.5 var(--font)";
@@ -158,6 +176,8 @@ for (let i = 0; i < N; i++) {
   else await s.locator(`.opt[data-key="${choice}"] label`).click();
   answers[id] = choice;
   ok((await s.locator(`input[value="${choice}"]`).isChecked()), `${id}: answer ${choice} is checked (${i % 2 === 0 ? "key" : "click"})`);
+  ok(await step.locator(".ck").isVisible() && !(await step.locator(".no").isVisible()), `${id}: answered step replaces its number with a check`);
+  ok((await s.locator(".yours").innerText()) === ("You chose " + choice + (choice === q.pick.key ? ", same" : "")), `${id}: pick box shows the answer badge`);
   if (i === 0 || i === 2) { const t = `note for ${id}: test`; await s.locator("textarea").fill(t); notes[id] = t; }
 }
 info(`lowest option card bottom over all questions: ${Math.round(maxBottom)} px of 900`);
@@ -167,6 +187,7 @@ ok((await p.locator("#cA").innerText()) === String(N) && (await p.locator("#cR")
 await p.reload();
 ok(await p.locator(`section.step[data-step="${N}"]`).isVisible(), "reload returns to the same step");
 ok((await p.locator("input[type=radio]:checked").count()) === N, "reload keeps all answers");
+ok((await p.locator(".sbtn.done").count()) === N && (await p.locator(`.step[data-step="${N}"] .yours`).isVisible()), "reload restores completed steps and the answer badge");
 ok((await p.locator("#n-Q1").inputValue()) === notes.Q1, "reload keeps the notes");
 
 // 6. Check answers step
@@ -233,11 +254,11 @@ for (let i = 0; i < N; i++) {
   await p.evaluate((k) => window.decisionPage.go(k, false), i + 1);
   const r = await p.evaluate((k) => {
     const s = document.querySelector(`section.step[data-step="${k}"]`), f = document.querySelector(".nav").getBoundingClientRect().top;
-    return { bottom: Math.max(...[...s.querySelectorAll(".opt > label")].map((e) => e.getBoundingClientRect().bottom)), f };
+    return { bottom: Math.max(...[...s.querySelectorAll(".opt")].map((e) => e.getBoundingClientRect().bottom)), f };
   }, i + 1);
   if (r.bottom > r.f) { in1280 = false; info(`Q${i + 1}: at 1280x800 the lowest option card ends at ${Math.round(r.bottom)} px, ${Math.round(r.bottom - r.f)} px below the fold (footer top ${Math.round(r.f)} px)`); }
 }
-info(`options fully in the first viewport at 1280x800: ${in1280 ? "all questions" : "not all (see above)"}`);
+ok(in1280, "all option cards are in the first viewport at 1280x800");
 
 // 8. Clear answers, dark mode look
 await p.setViewportSize({ width: 1440, height: 900 });
@@ -245,10 +266,60 @@ await p.evaluate((k) => window.decisionPage.go(k, false), N + 1);
 await p.click("#clear");
 ok((await p.locator("input[type=radio]:checked").count()) === 0 && (await p.locator("#cA").innerText()) === "0", "Clear my answers removes all answers");
 ok((await missing.inputValue()) === "" && (await fin.locator("#copytext").textContent()).endsWith("\nPage clear: (no answer)"), "Clear my answers removes feedback and updates the copy preview");
+ok((await p.locator(".sbtn.done").count()) === 0 && (await p.locator(".yours:not(:empty)").count()) === 0, "Clear my answers removes completion checks and answer badges");
+await p.evaluate(() => window.decisionPage.go(1, false));
+const q1 = c.questions[0], different = q1.options.findIndex((o) => o.key !== q1.pick.key);
+await p.keyboard.press(String(different + 1));
+ok((await p.locator('.step[data-step="1"] .yours').innerText()) === "You chose " + q1.options[different].key, "answer badge omits same for a different pick");
 await p.emulateMedia({ colorScheme: "dark" });
 await p.evaluate(() => window.decisionPage.go(1, false));
 await p.screenshot({ path: path.join(outDir, `${name}-q1-dark.png`) });
 await p.emulateMedia({ colorScheme: "light" });
+
+// 9. Swipe: dispatch the wheel events together so no browser scheduling gap splits a gesture.
+const swipe = async (start, deltas) => p.evaluate(({ start, deltas }) => {
+  window.decisionPage.go(start, false);
+  const main = document.querySelector("main");
+  return deltas.map(([deltaX, deltaY = 0]) => {
+    main.dispatchEvent(new WheelEvent("wheel", { deltaX, deltaY, bubbles: true }));
+    const live = document.querySelector(".edge.live");
+    const wrap = main.querySelector(".step:not([hidden]) > .wrap");
+    return { step: window.decisionPage.state().step, edge: live?.id,
+      progress: live?.style.getPropertyValue("--p"), slide: getComputedStyle(wrap).animationName,
+      drag: wrap.style.transform, overscroll: getComputedStyle(document.documentElement).overscrollBehaviorX };
+  });
+}, { start, deltas });
+await p.emulateMedia({ reducedMotion: "no-preference" });
+const animations = await p.evaluate(() => {
+  // Q1 is already answered. Clear it first so a new pick changes both the count and the check.
+  window.decisionPage.go(document.querySelectorAll("section.step").length - 1, false);
+  document.getElementById("clear").click();
+  window.decisionPage.go(1, false);
+  const radio = document.querySelector('.step[data-step="1"] .opt input');
+  radio.click();
+  return ["#cA", ".sbtn.done .ck path", ".opt.just-picked", ".pick.pop", ".yours.pop"].map((selector) => {
+    const el = document.querySelector(selector);
+    return el ? getComputedStyle(el).animationName : "";
+  });
+});
+ok(animations.join(",") === "tick,just-done,pop-option,pop-box,pop-in", "a new answer animates the count, completed check, option and answer badge");
+const [partial, forward, tail] = await swipe(0, [[25, 3], [25, 3], [35]]);
+ok(partial.step === 0 && partial.edge === "edge-r" && Number(partial.progress) === .5 && partial.drag !== "", "short horizontal swipe fills the right ring and moves the page without changing steps");
+ok(forward.step === 1 && forward.slide === "in-next" && forward.overscroll === "none" && tail.step === 1, "forward swipe slides one step and ignores momentum");
+await p.waitForFunction(() => !document.querySelector(".edge.live, .wrap.drag"));
+await p.waitForTimeout(180);
+const [reverse] = await swipe(1, [[-60]]);
+ok(reverse.step === 0 && reverse.edge === "edge-l" && reverse.slide === "in-prev", "reverse swipe slides one step and shows the left ring");
+await p.waitForTimeout(180);
+ok((await swipe(0, [[-60]]))[0].step === 0, "swipe cannot go back from Overview");
+await p.waitForTimeout(180);
+ok((await swipe(N + 1, [[60]]))[0].step === N + 1, "swipe cannot go forward from Check answers");
+await p.waitForTimeout(180);
+ok((await swipe(0, [[55, 80]]))[0].step === 0, "vertical scroll leaves the step unchanged");
+await p.waitForTimeout(180);
+await p.emulateMedia({ reducedMotion: "reduce" });
+const [quietPartial, quiet] = await swipe(0, [[25], [25]]);
+ok(quiet.step === 1 && quiet.slide === "none" && !quiet.edge && !quietPartial.edge && quietPartial.drag === "", "reduced motion keeps swipe navigation and suppresses slide, drag and edge feedback");
 await p.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
 
 ok(errs.length === 0, "no console errors" + (errs.length ? ": " + JSON.stringify(errs) : ""));
