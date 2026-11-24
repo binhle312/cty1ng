@@ -10,7 +10,7 @@ approvals). Keep it short: link to PRs and briefs instead of describing work.
 
 ## Now
 
-The `codex-workers` skill is in draft [#149](https://github.com/binhle312/cty1ng/pull/149) (owner, 2026-11-24): the lead agent starts Codex workers and talks with them. Waiting on: the owner's review and the points under its `Needs human review`.
+The `codex-workers` skill is in draft [#149](https://github.com/binhle312/cty1ng/pull/149) (owner, 2026-11-24): the lead agent starts Codex workers and talks with them. The owner answered its open points on 2026-11-24. Waiting on: the one Codex review of both skills, after `leader` is built in #150 (owner's answer), then the owner's merge.
 
 The plan of the `leader` skill is in draft [#150](https://github.com/binhle312/cty1ng/pull/150), on top of #149 (owner, 2026-11-24): the owner starts the lead agent with `/leader <task>`. The owner answered the four questions on 2026-11-24; revision 3 of the plan holds the answers and the owner's decision to remove Luna. Waiting on: the owner's approval of revision 3, the review of a small change by the lead agent, and the rule for a simple code change of 5 lines or more.
 

@@ -152,7 +152,8 @@ No row for Luna (owner, 2026-11-24): "remove luna from the selection, if the tas
 simple, leader should do it by itself". The lead agent does a focused task with a clear result
 itself. The evidence about Luna above stays, for a later choice.
 
-Where this changes an earlier rule of the owner:
+Where this changes an earlier rule of the owner (the owner accepted both on 2026-11-24, Q4 A,
+"Accept both changes"):
 
 1. **Terra.** The owner's rule of 2026-11-23 used Terra for easy tasks with written steps. That
    work now stays with the lead agent. OpenAI gives Terra the work with screens, images and apps.
@@ -160,8 +161,8 @@ Where this changes an earlier rule of the owner:
    work to Astra. On one coding benchmark Sol is within 0.5 points of Astra at one fifth of the
    cost, so Sol stays the worker for most code.
 
-Open for the owner: the effort of a Sol reviewer. The table keeps `high`. OpenAI's example of a
-reviewer agent uses Sol at `medium` (S9).
+The effort of a Sol reviewer: the table keeps `high` (owner, 2026-11-24, Q5 A, "high, as the
+table has it"). OpenAI's example of a reviewer agent uses Sol at `medium` (S9).
 
 Not tested: Terra's use of an app (computer use) from `codex exec`. The table leaves it out.
 
