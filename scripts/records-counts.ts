@@ -1,6 +1,6 @@
-// `pnpm records:counts [--write]`: the Audit row of docs/delivery-quality.md §2 and the count cells
-// of each `Ledger` register row are what the ledger rows give (plans/p3-records-counts.md). With no
-// flag it checks (CI runs it); `--write` writes the cells, then checks.
+// `pnpm records:counts [--write]`: check the Audit row and the count cells of each `Ledger` row
+// in docs/delivery-quality-register.md against the ledger rows. `--write` updates the cells
+// before the check (docs/delivery-quality.md §7).
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";

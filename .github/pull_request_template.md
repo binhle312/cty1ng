@@ -40,8 +40,9 @@ say what the proof shows and add `Not claimed: …` (`docs/workflows/pull-reques
 
 ## Records
 
-Ledger rows DQ-… to DQ-…, the round rows of this PR in §6 and its register row, in
-`docs/delivery-quality.md`. `pnpm records:counts` passes (CI). This description holds no state,
+Ledger rows DQ-… to DQ-… and the round rows of this PR in `docs/delivery-quality.md` §6.
+The PR register row is in `docs/delivery-quality-register.md` §3.
+`pnpm records:counts` passes (CI). This description holds no state,
 count, fix commit or round result: the rows hold them.
 
 ## Defect and review fixes (when a review found something)
@@ -49,8 +50,7 @@ count, fix commit or round result: the rows hold them.
 List the ledger row of each defect that this PR repairs and of each review fix. The row holds the
 general rule, the fix, the test, and `Same cause: yes|no (search: `<pattern>`: <hits>)`
 ([bug fix, step 2](https://github.com/binhle312/cty1ng/blob/main/docs/workflows/bug-fix.md);
-`AGENTS.md` §9). The search covers earlier PRs: the prevention actions of
-`docs/delivery-quality.md` §7 and the lessons.
+`AGENTS.md` §9). Search `docs/delivery-quality-prevention.md` and the lessons for earlier fixes.
 
 | Row | Finding |
 | --- | --- |

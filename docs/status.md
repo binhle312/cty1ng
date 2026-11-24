@@ -1,7 +1,9 @@
 # Status
 
 Where the project is right now. This file owns delivery state, next work, and owner decisions.
-[delivery-quality.md](delivery-quality.md) tracks issue counts, review rounds, and prevention evidence.
+The [delivery ledger](delivery-quality.md) tracks issues and review rounds. The
+[PR register and milestone view](delivery-quality-register.md) hold the counts.
+The [prevention actions](delivery-quality-prevention.md) record prevention evidence.
 The plan ([development-plan.md](development-plan.md)) says what and in which order, and carries no delivery state beyond whether a brief file exists.
 
 **Who updates it:** the builder agent, in the same PR that finishes a step (part of the

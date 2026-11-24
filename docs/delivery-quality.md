@@ -8,10 +8,11 @@ Baseline recorded: 2026-11-04. Sources: all 17 [project lessons](lessons-learned
 and the local [slice register](status.md#slices). Historical figures are document reports,
 not a fresh audit of GitHub review threads. Later entries must name their source and revision.
 
-This file holds the rules, the register and the rows that are not closed. The closed issue rows
-and the review rounds of merged PRs are in the [archive](delivery-quality-archive.md) (owner,
-2026-11-10). Each count in this file includes the archive rows. To find an old fix, search the
-two files.
+This file holds the rules and the live rows. The closed issue rows and the review rounds of
+merged PRs are in the [archive](delivery-quality-archive.md) (owner, 2026-11-10). The counts in
+the [PR register and milestone view](delivery-quality-register.md) include the archive rows.
+To find an old fix, search the ledger, its archive, and the
+[prevention actions](delivery-quality-prevention.md#prevention-actions).
 
 ## 1. Counting rules
 
@@ -164,15 +165,17 @@ If the head changes after review, the row still describes the original reviewed 
 
 ## 7. Update and assess
 
-1. At the creation of a PR in a milestone or an audit, add its milestone and source coverage to the register.
-   A PR whose findings all get ledger rows has the coverage `Ledger` (§3).
+1. At the creation of a PR in a milestone or an audit, add its milestone and source coverage to
+   the [PR register](delivery-quality-register.md#3-pr-register).
+   A PR whose findings all get ledger rows has the coverage `Ledger`.
    A PR with no milestone needs no entry (`AGENTS.md` §9; owner, 2026-11-11).
 2. After each review, add the round and reconcile its findings with existing issue IDs.
 3. After a fix, add the verification result and change the issue state only when evidence supports it.
 4. After a new discovery, check whether it escaped a merge, repeats a cause, or came from a repair. Record the general rule and the search of old fixes ([bug fix, step 2](workflows/bug-fix.md)).
 5. At PR handoff, after the merge of `origin/main`, run `pnpm records:counts --write`. It writes
-   the rows of §2 that it owns and the count cells of each `Ledger` row of the register from the
-   rows of the ledger files; CI runs `pnpm records:counts` and fails when a count is stale. Its
+   the rows it owns in the [milestone view](delivery-quality-register.md#2-milestone-view) and
+   the count cells of each `Ledger` row of the register from the rows of the ledger files.
+   CI runs `pnpm records:counts` and fails when a count is stale. Its
    list of ledger files is `LEDGER_FILES` in `scripts/records-counts.ts`: a PR that moves rows to a
    new file adds the file there, and the check fails until it does.
 6. At milestone close, confirm the PR population and calculate the totals from distinct IDs in this file and the archive.
@@ -184,7 +187,8 @@ If the head changes after review, the row still describes the original reviewed 
    move again (owner, 2026-11-11).
    A script shows that each moved row has no change and that the counts stay the same (owner,
    2026-11-24).
-7. Record one prevention action for a recurring cause, with an owner and verification evidence.
+7. Add one row to the [prevention actions](delivery-quality-prevention.md#prevention-actions)
+   for a recurring cause. Include an owner and verification evidence.
 
 The builder maintains this file in the delivery change. The reviewer checks that each row of the
 PR is true: its state, commit, test and source. A count that `pnpm records:counts` writes is not a

@@ -154,7 +154,7 @@ Only the owner's own messages to the agent supply the approvals in this section.
   its `SKILL.md` in that session.
 - Each review fix answers "Same cause as an earlier fix?" in its ledger row, with the search; the
   PR's `Defect and review fixes` table names the rows. An earlier fix can be in this PR or in an
-  earlier one: search the prevention actions of `docs/delivery-quality.md` §7 and the lessons, and
+  earlier one: search `docs/delivery-quality-prevention.md` and the lessons, and
   name the search in the answer. If the
   answer is yes, stop the patches. Propose a redesign, get the owner's decision, and record it.
   Build the redesign in the PR that found the issue. It has its own plan and test strategy, and

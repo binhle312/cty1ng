@@ -31,29 +31,29 @@ the proof shows, and add `Not claimed: …` (owner, 2026-11-11;
 first ([review guide §3](../review-guide.md#3-verify-what-the-evidence-proves)).
 
 In a ledger row, "Same cause as an earlier fix?" covers earlier PRs too.
-Name the search of the prevention actions
-([delivery quality §7](../delivery-quality.md#7-update-and-assess)) and of the
-[lessons](../lessons-learned/README.md) in the answer.
+Name the search of the [prevention actions](../delivery-quality-prevention.md#prevention-actions)
+and the [lessons](../lessons-learned/README.md) in the answer.
 
 ## One home for each fact
 
 Each fact has one home, and other records link to it (decided by the builder at the owner's request, 2026-11-09, DQ-152). The PR body
 states no state, count or result that a file or a tool owns:
 
-- The state, the fix commit and the test of an issue, and the state of a prevention action, live
-  only in its row of `docs/delivery-quality.md`. The PR body names the id in its `Records` section
+- The issue state, fix commit and test live in the issue row of the ledger or its archive.
+  The state of a prevention action lives in its row in `docs/delivery-quality-prevention.md`.
+  The PR body names the id in its `Records` section
   and in the `Defect and review fixes` table; it does not repeat them (owner, 2026-11-18, q4 Q3 A).
 - The result of a review round lives only in its row of the round log.
 - The counts of the Audit row and of each `Ledger` row of the register: `pnpm records:counts --write`
-  writes them from the rows, and CI checks them. Nobody types them, in the ledger or in the body.
+  writes them from the rows, and CI checks them. Nobody types them in the register or in the body.
 - The "Same cause as an earlier fix?" answer and its search live in the "Fix and verification"
   cell of the ledger row (`AGENTS.md` §9). The `Defect and review fixes` section of the body names
   the rows. The form (owner, 2026-11-19, morning Q4 A):
   `Same cause: no (search: `<pattern>`: <hits>)` or
   `Same cause: yes (search: `<pattern>`: <hits>; §9: <step>)`.
   - The pattern is one `grep -E` pattern; write `\|` for `|` in the table. It stands for
-    `grep -n -i -E '<pattern>' docs/delivery-quality.md docs/delivery-quality-archive.md docs/lessons-learned/*.md`:
-    the ledger, its §7 prevention actions and the lessons. It has no backtick, no backslash
+    `grep -n -i -E '<pattern>' docs/delivery-quality.md docs/delivery-quality-archive.md docs/delivery-quality-register.md docs/delivery-quality-prevention.md docs/lessons-learned/*.md`.
+    It has no backtick, no backslash
     before a letter or a digit (`\d`, `\w`, `\b`, `\<`), no `[[` and no `(?`, so that grep and
     the script read it in one way.
   - The hits name the ids that the answer rests on (or `none`), with no `;` or `)`. Each cited id
