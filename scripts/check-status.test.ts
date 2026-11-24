@@ -102,6 +102,53 @@ describe("doneRows", () => {
 });
 
 describe("checkStatus", () => {
+  it("quotes the measures in the case table", () => {
+    const cases: [input: string, measures: string[]][] = [
+      ["89,987 bytes", ["89,987 bytes"]],
+      ["80,000-byte", ["80,000-byte"]],
+      ["1 byte", ["1 byte"]],
+      ["3 Bytes", ["3 Bytes"]],
+      ["90 KB", ["90 KB"]],
+      ["78 rows", ["78 rows"]],
+      ["12 row", ["12 row"]],
+      ["1 token", ["1 token"]],
+      ["120,000 tokens", ["120,000 tokens"]],
+      ["1.5 tokens", ["1.5 tokens"]],
+      ["1 row and 2 tokens", ["1 row", "2 tokens"]],
+      ["3 bytes", ["3 bytes"]],
+      ["_12 rows_", ["12 rows"]],
+      ["__80,000-byte__", ["80,000-byte"]],
+      ["*12 rows*", ["12 rows"]],
+      [".5 KB", [".5 KB"]],
+      ["78 rows 90 KB", ["78 rows", "90 KB"]],
+      ["78 rows, 90 KB", ["78 rows", "90 KB"]],
+      ["78 rows,90 KB", ["78 rows", "90 KB"]],
+      ["78 rows;90 KB", ["78 rows", "90 KB"]],
+      ["[78 rows][90 KB]", ["78 rows", "90 KB"]],
+      ["#151", []],
+      ["2026-11-24", []],
+      ["DQ-570", []],
+      ["§7 step 6", []],
+      ["Q1 A", []],
+      ["PR 5", []],
+      ["M2b", []],
+      ["fa19669", []],
+      ["15 words", []],
+      ["1 MB", []],
+      ["48-line", []],
+      ["rowspan", []],
+      ["5 rowers", []],
+      ["1,50 rows", []],
+      ["v1.5 KB", []],
+      ["5 row2", []],
+    ];
+    for (const [input, measures] of cases) {
+      const problems = checkStatus({ merged: [], statusMd: `${status([])}${input}`, since: SINCE });
+      const quotedMeasures = problems.map((problem) => problem.match(/"([^"]+)"/)?.[1]);
+      expect.soft(quotedMeasures, input).toEqual(measures);
+    }
+  });
+
   it("rejects a typed byte count", () => {
     const inputs = [
       "89,987 bytes; 80,000-byte; 1 byte; 3 Bytes; 90 KB",
