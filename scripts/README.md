@@ -9,7 +9,7 @@ code is in `lib/`.
 | `check-index.ts` | `pnpm check:index`: folder indexes and docs metadata (`docs/architecture.md` §4.2) |
 | `check-events.ts` | `pnpm check:events`: the event table of `docs/realtime-events.md` §4 matches `shared/` |
 | `check-status.ts` | `pnpm check:status`: checks Done rows and rejects typed measures in `docs/status.md` |
-| `records-counts.ts` | `pnpm records:counts`: check the counts in [delivery-quality-register.md](../docs/delivery-quality-register.md) against the ledger rows. `--write` updates them. |
+| `records-counts.ts` | Use `pnpm records:counts` to check the marked milestone row (Audit) and the count cells of `Ledger` rows in the [register](../docs/delivery-quality-register.md). `--write` updates them. |
 | `check-bundle.ts` | `pnpm check:bundle`: the first-load bundle budget, after `pnpm build` |
 | `check-breaks.ts` | `pnpm check:breaks <list>`: runs the break list of a PR (`docs/testing.md` §5); run by hand |
 | `check-breaks-static.ts` | `pnpm check:breaks:static <list>`: the break-list rules that need no test run; CI runs it |
