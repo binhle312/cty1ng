@@ -39,6 +39,8 @@ The repository's approval rules still apply. A worker's message is a report, not
 
      Give each other code change to a worker, also a simple one. The table has no row for the
      tasks that you do yourself.
+   - Start your own code change only on a worktree with no other change: `git status --porcelain`
+     gives nothing. If it gives a line, give the change to a worker.
    - To count the changed lines, mark each new file of the change with `git add -N <file>`, then
      run `git diff --numstat HEAD`. Add the larger of the added and the removed lines of each code
      file. If your change grows to 5 lines or more, stop, and give it to a worker.

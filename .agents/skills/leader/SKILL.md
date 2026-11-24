@@ -68,8 +68,8 @@ stop: find its cause, and try again another way.
 
 ## Workers
 
-Before you decide who builds, read `../codex-workers/SKILL.md`, relative to the base directory of
-this skill. It holds the models, the commands and the rules for the worker. If
+Before you decide who builds or who reviews, read `../codex-workers/SKILL.md`, relative to the
+base directory of this skill. It holds the models, the commands and the rules for the worker. If
 the file is missing, stop and tell the owner.
 
 Write each brief from a template in this skill's folder:
