@@ -135,19 +135,20 @@ describe("checkStatus", () => {
     ]);
   });
 
-  it("requires a Done row for a merged PR, whatever files it changed", () => {
-    const merged = mergedPrs(merge(140, "2026-11-20"));
-    const notesOnlyPr = {
-      merged,
+  it("does not read the changed files of a merged PR", () => {
+    let reads = 0;
+    const input = {
+      merged: mergedPrs(merge(140, "2026-11-20")),
       statusMd: status([]),
       since: SINCE,
-      changedFiles: (): string[] => ["notes/state.md", "notes/rules/rule-x.md"],
+      changedFiles: (): string[] => {
+        reads += 1;
+        return ["notes/state.md"];
+      },
     };
-    const problems = checkStatus(notesOnlyPr);
-    expect(
-      problems.map((problem) => problem.split(" ")[0]),
-      "notes PR",
-    ).toEqual(["#140"]);
+    const problems = checkStatus(input);
+    expect(problems.map((problem) => problem.split(" ")[0])).toEqual(["#140"]);
+    expect(reads, "reads of the changed files").toBe(0);
   });
 });
 

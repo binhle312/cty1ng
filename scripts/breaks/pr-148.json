@@ -1,10 +1,26 @@
 {
-  "claims": [],
-  "exempt": [
+  "claims": [
     {
-      "file": "scripts/check-status.test.ts",
-      "name": "requires a Done row for a merged PR, whatever files it changed",
-      "reason": "name and data only: the test has a new name and neutral file paths; its assertion and the checked code do not change"
+      "id": "C1",
+      "claim": "checkStatus does not read the changed files of a merged PR, so no file path can free a PR from its Done row",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "does not read the changed files of a merged PR"
+      },
+      "assertion": "expect(reads, \"reads of the changed files\").toBe(0);",
+      "breaks": [
+        {
+          "id": "C1-reads-the-files",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "  const done = doneRows(input.statusMd);\n",
+              "replace": "  const done = doneRows(input.statusMd);\n  (input as unknown as { changedFiles?: () => string[] }).changedFiles?.();\n"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
