@@ -640,7 +640,7 @@
     },
     {
       "id": "removed-words-repeats",
-      "claim": "Counts repeated words and reports the removed copies in old order.",
+      "claim": "Counts removed copies of repeated words.",
       "test": {
         "kind": "vitest",
         "file": "scripts/records-removed-words.test.ts",
@@ -675,8 +675,8 @@
           "file": "scripts/lib/records-removed-words.ts",
           "edits": [
             {
-              "find": "if (!shrank(raw) && !cells.some(shrank)) return [];",
-              "replace": "if (!shrank(raw)) return [];"
+              "find": "if (aligned !== undefined && !shrank(raw) && !aligned.some(shrank)) return [];",
+              "replace": "if (aligned !== undefined && !shrank(raw)) return [];"
             }
           ]
         }
@@ -741,8 +741,8 @@
           "file": "scripts/lib/records-removed-words.ts",
           "edits": [
             {
-              "find": "const cells = alignedCells({ before, after }) ?? [raw];",
-              "replace": "const cells = alignedCells({ before, after }) ?? [];"
+              "find": "const cells = aligned ?? [raw];",
+              "replace": "const cells = aligned ?? [];"
             }
           ]
         }
@@ -763,8 +763,96 @@
           "file": "scripts/lib/records-removed-words.ts",
           "edits": [
             {
-              "find": "if (!shrank(raw) && !cells.some(shrank)) return [];",
+              "find": "if (aligned !== undefined && !shrank(raw) && !aligned.some(shrank)) return [];",
               "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-growing-legacy-row",
+      "claim": "Reports a lost word when a malformed legacy row grows.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "reports removed words from a growing legacy row"
+      },
+      "assertion": "expect(report, \"loss from a growing raw row\").toEqual([",
+      "breaks": [
+        {
+          "id": "require-shorter-legacy-row",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "if (aligned !== undefined && !shrank(raw) && !aligned.some(shrank)) return [];",
+              "replace": "if (!shrank(raw) && !(aligned ?? [raw]).some(shrank)) return [];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-old-order",
+      "claim": "Reports removed words in their old order.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "reports removed words in their old order"
+      },
+      "assertion": "expect(report, \"the order of removed words\").toEqual([",
+      "breaks": [
+        {
+          "id": "reverse-removed-words",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "const words = lostWords(cell);",
+              "replace": "const words = lostWords(cell).reverse();"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-shorter-line",
+      "claim": "Reports a loss when only the raw line shrinks.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "reports removed words when only the raw line shrinks"
+      },
+      "assertion": "expect(report, \"loss when only padding shrinks\").toEqual([",
+      "breaks": [
+        {
+          "id": "skip-raw-line-size-check",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "if (aligned !== undefined && !shrank(raw) && !aligned.some(shrank)) return [];",
+              "replace": "if (aligned !== undefined && !aligned.some(shrank)) return [];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-repeat-position",
+      "claim": "Uses word order to locate the removed phrase when words repeat.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "locates the removed phrase when words repeat"
+      },
+      "assertion": "expect(report, \"loss at the first safety check\").toEqual([",
+      "breaks": [
+        {
+          "id": "ignore-word-positions",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "const unmatched = unmatchedWords({ before, after });",
+              "replace": "const unmatched = { before, after };"
             }
           ]
         }

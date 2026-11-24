@@ -32,11 +32,31 @@ describe("records:removed-words", () => {
 
   it("counts removed repeated words", () => {
     const report = reportRows({
-      before: ["| DQ-001 | review | proof\tproof checked proof done |"],
-      after: ["| DQ-001 | review | proof done |"],
+      before: ["| DQ-001 | review | proof\tproof checked proof retained context here |"],
+      after: ["| DQ-001 | review | retained context here proof |"],
     });
     expect(report, "repeated words in old order").toEqual([
       `DQ-001 ${LIVE} -> ${LIVE} [Fix and verification]: proof checked proof`,
+    ]);
+  });
+
+  it("reports removed words in their old order", () => {
+    const report = reportRows({
+      before: ["| DQ-001 | review | zebra kept amber |"],
+      after: ["| DQ-001 | review | kept |"],
+    });
+    expect(report, "the order of removed words").toEqual([
+      `DQ-001 ${LIVE} -> ${LIVE} [Fix and verification]: zebra amber`,
+    ]);
+  });
+
+  it("locates the removed phrase when words repeat", () => {
+    const report = reportRows({
+      before: ["| DQ-001 | safety check fails then safety check passes | proof |"],
+      after: ["| DQ-001 | then safety check passes | proof |"],
+    });
+    expect(report, "loss at the first safety check").toEqual([
+      `DQ-001 ${LIVE} -> ${LIVE} [Source]: safety check fails`,
     ]);
   });
 
@@ -46,6 +66,16 @@ describe("records:removed-words", () => {
       after: ["| DQ-001 | origin | needs a longer proof |"],
     });
     expect(report, "a short cell in a longer row").toEqual([
+      `DQ-001 ${LIVE} -> ${LIVE} [Source]: old`,
+    ]);
+  });
+
+  it("reports removed words when only the raw line shrinks", () => {
+    const report = reportRows({
+      before: ["| DQ-001 | old     | proof   |"],
+      after: ["| DQ-001 | new | proof |"],
+    });
+    expect(report, "loss when only padding shrinks").toEqual([
       `DQ-001 ${LIVE} -> ${LIVE} [Source]: old`,
     ]);
   });
@@ -82,6 +112,16 @@ describe("records:removed-words", () => {
       after: ["| DQ-001 | review | a | separator |"],
     });
     expect(report, "loss from the raw row").toEqual([`DQ-001 ${LIVE} -> ${LIVE} [raw row]: stray`]);
+  });
+
+  it("reports removed words from a growing legacy row", () => {
+    const report = reportRows({
+      before: ["| DQ-001 | old source | stray | tail |"],
+      after: ["| DQ-001 | source | stray | much longer tail |"],
+    });
+    expect(report, "loss from a growing raw row").toEqual([
+      `DQ-001 ${LIVE} -> ${LIVE} [raw row]: old`,
+    ]);
   });
 
   it("omits a row that did not shorten", () => {

@@ -2,6 +2,7 @@
 import { type IssueRow, type LedgerFile, issueRows } from "./records-counts.ts";
 
 type CellPair = { heading: string; before: string; after: string };
+type WordPair = { before: string[]; after: string[] };
 
 function rowsById(files: readonly LedgerFile[]): Map<string, IssueRow> {
   const rows = new Map<string, IssueRow>();
@@ -35,11 +36,64 @@ function alignedCells(pair: { before: IssueRow; after: IssueRow }): CellPair[] |
   return pairs;
 }
 
-function lostWords(cell: CellPair): string[] {
-  const kept = new Map<string, number>();
-  for (const word of cell.after.match(/\S+/g) ?? []) kept.set(word, (kept.get(word) ?? 0) + 1);
+// Store the length of the longest common subsequence for each pair of suffixes.
+function commonWordLengths({ before, after }: WordPair): Uint32Array[] {
+  const lengths = [new Uint32Array(after.length + 1)];
+  for (const word of before.toReversed()) {
+    const next = lengths.at(-1);
+    const row = new Uint32Array(after.length + 1);
+    for (let index = after.length - 1; index >= 0; index--) {
+      row[index] =
+        word === after[index]
+          ? 1 + (next?.[index + 1] ?? 0)
+          : Math.max(next?.[index] ?? 0, row[index + 1] ?? 0);
+    }
+    lengths.push(row);
+  }
+  return lengths.reverse();
+}
 
-  return (cell.before.match(/\S+/g) ?? []).filter((word) => {
+function unmatchedWords({ before, after }: WordPair): WordPair {
+  const lengths = commonWordLengths({ before, after });
+  const unmatchedBefore: string[] = [];
+  const unmatchedAfter: string[] = [];
+  let oldIndex = 0;
+  let newIndex = 0;
+  for (;;) {
+    const oldWord = before[oldIndex];
+    const newWord = after[newIndex];
+    if (oldWord === undefined || newWord === undefined) break;
+
+    if (oldWord === newWord) {
+      oldIndex++;
+      newIndex++;
+    } else if (
+      (lengths[oldIndex]?.[newIndex + 1] ?? 0) > (lengths[oldIndex + 1]?.[newIndex] ?? 0)
+    ) {
+      unmatchedAfter.push(newWord);
+      newIndex++;
+    } else {
+      unmatchedBefore.push(oldWord);
+      oldIndex++;
+    }
+  }
+  return {
+    before: unmatchedBefore.concat(before.slice(oldIndex)),
+    after: unmatchedAfter.concat(after.slice(newIndex)),
+  };
+}
+
+function lostWords(cell: CellPair): string[] {
+  if (cell.before === cell.after) return [];
+  const before = cell.before.match(/\S+/g) ?? [];
+  const after = cell.after.match(/\S+/g) ?? [];
+  const unmatched = unmatchedWords({ before, after });
+
+  // Cancel words that moved to a different position in the same cell.
+  const kept = new Map<string, number>();
+  for (const word of unmatched.after) kept.set(word, (kept.get(word) ?? 0) + 1);
+
+  return unmatched.before.filter((word) => {
     const count = kept.get(word) ?? 0;
     if (count === 0) return true;
     kept.set(word, count - 1);
@@ -53,8 +107,9 @@ function shrank(cell: Pick<CellPair, "before" | "after">): boolean {
 
 function compareRows({ before, after }: { before: IssueRow; after: IssueRow }): string[] {
   const raw = { heading: "raw row", before: before.raw, after: after.raw };
-  const cells = alignedCells({ before, after }) ?? [raw];
-  if (!shrank(raw) && !cells.some(shrank)) return [];
+  const aligned = alignedCells({ before, after });
+  if (aligned !== undefined && !shrank(raw) && !aligned.some(shrank)) return [];
+  const cells = aligned ?? [raw];
 
   const prefix = `${before.id} ${before.path} -> ${after.path}`;
   return cells.flatMap((cell) => {
