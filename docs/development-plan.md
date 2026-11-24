@@ -5,7 +5,7 @@ this file changes only when the plan changes.
 
 Split milestones into reviewable parts where needed. Each part preserves a usable, tested
 app and merges before the next starts (except the parallel cases in [parallel work](workflows/coordination.md#parallel-work)).
-Write a brief for each implementation part before code starts; start the lead agent with that brief and the prompt in
+Write a brief for each implementation part before code starts; give it to the lead agent with the prompt in
 [the lead agent prompt](workflows/planning.md#lead-agent-prompt).
 
 | Slice | Brief | Delivers | Checkpoint | Depends on |
