@@ -103,37 +103,47 @@ describe("doneRows", () => {
 
 describe("checkStatus", () => {
   it("rejects a typed byte count", () => {
-    const statusMd = `${status([])}89,987 bytes; 80,000-byte; 1 byte; 3 Bytes; 90 KB`;
-    const problems = checkStatus({ merged: [], statusMd, since: SINCE });
+    const inputs = [
+      "89,987 bytes; 80,000-byte; 1 byte; 3 Bytes; 90 KB",
+      "__80,000-byte__",
+      ".5 KB",
+    ];
+    const problems = inputs.map((input) =>
+      checkStatus({ merged: [], statusMd: `${status([])}${input}`, since: SINCE }),
+    );
     expect(problems, "byte measures").toEqual([
-      expect.stringContaining('"89,987 bytes"'),
-      expect.stringContaining('"80,000-byte"'),
-      expect.stringContaining('"1 byte"'),
-      expect.stringContaining('"3 Bytes"'),
-      expect.stringContaining('"90 KB"'),
+      [
+        expect.stringContaining('"89,987 bytes"'),
+        expect.stringContaining('"80,000-byte"'),
+        expect.stringContaining('"1 byte"'),
+        expect.stringContaining('"3 Bytes"'),
+        expect.stringContaining('"90 KB"'),
+      ],
+      [expect.stringContaining('"80,000-byte"')],
+      [expect.stringContaining('".5 KB"')],
     ]);
-    for (const [input, measure] of [
-      ["__80,000-byte__", "80,000-byte"],
-      [".5 KB", ".5 KB"],
-    ]) {
-      const problems = checkStatus({ merged: [], statusMd: `${status([])}${input}`, since: SINCE });
-      expect.soft(problems, input).toEqual([expect.stringContaining(`"${measure}"`)]);
-    }
   });
 
   it("rejects a typed row or token count", () => {
-    const statusMd = `${status([])}78 rows; 12 row; 120,000 tokens; 1.5 tokens`;
-    const problems = checkStatus({ merged: [], statusMd, since: SINCE });
+    const inputs = [
+      "78 rows; 12 row; 1 token; 120,000 tokens; 1.5 tokens",
+      "_12 rows_",
+      "*12 rows*",
+    ];
+    const problems = inputs.map((input) =>
+      checkStatus({ merged: [], statusMd: `${status([])}${input}`, since: SINCE }),
+    );
     expect(problems, "row and token measures").toEqual([
-      expect.stringContaining('"78 rows"'),
-      expect.stringContaining('"12 row"'),
-      expect.stringContaining('"120,000 tokens"'),
-      expect.stringContaining('"1.5 tokens"'),
+      [
+        expect.stringContaining('"78 rows"'),
+        expect.stringContaining('"12 row"'),
+        expect.stringContaining('"1 token"'),
+        expect.stringContaining('"120,000 tokens"'),
+        expect.stringContaining('"1.5 tokens"'),
+      ],
+      [expect.stringContaining('"12 rows"')],
+      [expect.stringContaining('"12 rows"')],
     ]);
-    for (const input of ["_12 rows_", "*12 rows*"]) {
-      const problems = checkStatus({ merged: [], statusMd: `${status([])}${input}`, since: SINCE });
-      expect.soft(problems, input).toEqual([expect.stringContaining('"12 rows"')]);
-    }
   });
 
   it("names the line number and the measure", () => {
