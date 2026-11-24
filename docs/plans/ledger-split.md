@@ -128,9 +128,20 @@ A break list for the script change follows `docs/testing.md`.
    lessons" in place of "search the prevention actions of `docs/delivery-quality.md` §7 and the
    lessons".
 
-## Revision 4 (proposed): the six rows of #135
+## Revision 4: the six rows of #135
 
-Approval is pending.
+Approved by the owner on 2026-11-24 ("Approve as written"), with three more answers:
+
+- **The two count cells** ("Allow the 2 cells"): proof step 1 allows exactly the two `Open issues`
+  cells below, with the values that `records:counts --write` makes. Every other byte of the
+  moved §§2–4 stays the same as the base. This is the one exception to the byte-for-byte
+  criterion of "Done means".
+- **Rows over 600 bytes** ("May stay over"): a row that is already over 600 bytes may stay over
+  when this PR edits it. This PR does not shorten rows by hand (DQ-868).
+- **DQ-578** ("Home: Unicode PR"): this PR changes only its home text, to the next PR that changes
+  `check:status`: the one for the Unicode misses of the typed-measure check (FR-F5, FR-F6 of
+  #151, a row in the Follow-ups of `docs/status.md`). #151 changed `check:status` and did not
+  take DQ-578.
 
 - **DQ-854** stops at the first `)` or `;` and checks only the first answer. In
   `scripts/lib/records-counts.ts`, find every `Same cause:` marker outside single backtick spans.
