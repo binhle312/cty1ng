@@ -40,12 +40,13 @@ The repository's approval rules still apply. A worker's message is a report, not
    | The cause or the design is not known at the start: a bug across modules, open trade-offs  | `gpt-6.2-astra` at `high`   | A new `gpt-6.2-astra` session at `high` |
 
    - Do a focused task with a clear result yourself, and start no worker for it: written steps,
-     a small edit, an extraction, a summary. The table has no row for such a task.
+     an extraction, a summary. The table has no row for such a task. Give each code change to a
+     worker.
    - A reviewer is never a weaker model than the worker.
    - Use the cheapest row that fits. For the same tokens, Terra uses about half the credits of
      Sol, and Astra uses about 4 times the credits of Sol.
-   - Raise the effort one level when a task has more steps or more trade-offs. Most tasks do not
-     need `max`. With `ultra`, Codex starts agents of its own.
+   - Raise the effort of a worker one level when a task has more steps or more trade-offs. A
+     reviewer keeps the effort of the table. Most tasks do not need `max`. With `ultra`, Codex starts agents of its own.
    - Sol and Terra read 500,000 tokens by default; Astra reads 272,000.
    - The table is from 2026-11-24. If Codex lists a newer model, tell the owner before you use it.
 
@@ -60,7 +61,11 @@ The repository's approval rules still apply. A worker's message is a report, not
 
 3. **Start the worker** in its own worktree and branch with the [start command](#start).
    Start each run in the background.
-   Write its session id, worktree, model and effort on one line of a session list file.
+   Write its session id, worktree, model, effort and sandbox mode on one line of a session list
+   file.
+   Before you start a worker, compare its brief with the briefs of the workers that still run. If
+   two need a command that only one agent can run at a time, such as a heavy build or a test on
+   fixed ports, tell each worker the order, or start the second worker after the first one ends.
 
 4. **Get the plan first** when the work has a design choice. The first turn returns a plan only.
    Accept the plan only when all of these are true:
@@ -76,25 +81,25 @@ The repository's approval rules still apply. A worker's message is a report, not
    Each message sends the full session again, so send a message for a reason.
 
 6. **Check each report.** After each turn, read the report file. Compare each claim with the diff,
-   the test results and the remote checks of the pushed head.
+   the test results and, for pushed work, the remote checks of the pushed head.
 
 7. **Review with a different agent.** The reviewer is a new session that did not build the code.
    A worker does not review its own work, so do not send the review to the session of the builder.
    The reviewer makes no commits. Send its findings to the session that built the code.
 
-The work is complete when each claim of the last report agrees with the pushed head, and the owner
-has the result with each open issue.
+The work is complete when each claim of the last report agrees with the final head (the pushed
+head, if the brief names a remote branch), and the owner has the result with each open issue.
 
 ## Rules for the worker
 
-Put these rules in each brief:
+Put these rules in each build brief. In a review brief, leave out the rules about the push.
 
 - If a fact is missing, stop and write the question in the report. Do not guess.
 - In the report, name each obstacle, such as a missing file or a tool that did not work.
 - Work only in the worktree and on the branch that the brief names.
-- At each checkpoint of the plan, push the committed work. Push only to the branch of the brief,
-  and with no force.
-- In the report, give the pushed commit and the result of the remote checks for it.
+- If the brief names a remote branch: at each checkpoint of the plan, push the committed work.
+  Push only to the branch of the brief, and with no force.
+- If you pushed: in the report, give the pushed commit and the result of the remote checks for it.
 - For each claim in the report, give the command and its result.
 
 ## Commands
@@ -120,14 +125,15 @@ brief.
 ```bash
 cd <worktree> && codex exec resume <session id> \
   -m <model> -c model_reasoning_effort="<effort>" -c service_tier="default" \
-  -c sandbox_mode="workspace-write" --json -o <report file> - \
+  -c sandbox_mode="<sandbox mode>" --json -o <report file> - \
   < <message file> > <events file> 2> <log file>
 ```
 
 A resumed session keeps its conversation, and nothing more. It takes its folder from the folder
 where you start it. It takes its model, its effort and its sandbox from the Codex configuration.
-So start it in the worktree, and give each option of the start command again.
-`resume` has no `-s` and no `-C`: use `cd` and `-c sandbox_mode=...`.
+So start it in the worktree, and give each option of the start command again. Use the sandbox
+mode of the session list: `workspace-write` for a worker, `read-only` for a reviewer that only
+reads. `resume` has no `-s` and no `-C`: use `cd` and `-c sandbox_mode=...`.
 
 Use the session id from the session list file. With `--last`, a message can go to another worker.
 
