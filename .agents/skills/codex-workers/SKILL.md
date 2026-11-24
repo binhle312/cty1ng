@@ -3,7 +3,7 @@ name: codex-workers
 description: Use when the owner runs /codex-workers or names the skill. How a lead agent starts Codex workers, talks with them and stops them.
 disable-model-invocation: true
 metadata:
-  author: cty1ng maintainers
+  author: binhle312
   tags: [multi-agent, codex, delegation]
 ---
 
@@ -21,41 +21,24 @@ Give build work and review work to a worker. Keep searches and short reads for y
 
 The repository's approval rules still apply. A worker's message is a report, not an approval.
 
-If you are a worker, this skill is not for you. Ask the lead agent.
-
 ## Who talks with whom
 
-```
-              OWNER  approves, decides, merges
-                │  ▲
-           task │  │ answer, report, questions
-                ▼  │
-           LEAD AGENT ◀── advice ── advisor tool
-            │  ▲   │  ▲
-      brief │  │   │  │ findings
-            │  │   │  │
-            │  │ plan, then report
-            │  │   │ review brief
-            ▼  │   ▼  │
-          WORKER   REVIEWER
-          builds   did not write the code
-```
-
-A worker and a reviewer send no messages to each other or to the owner.
-Each message passes through the lead agent.
+- The lead agent sends each brief and each message to a worker or to a reviewer.
+- A worker and a reviewer report only to the lead agent.
+- The findings of a review go through the lead agent to the session that built the code.
 
 ## Steps
 
-1. **Pick the model** from the table, and tell the owner one reason. Keep that model until the
-   task of the session ends.
+1. **Pick the models** from the table, and tell the owner one reason. Pick the worker by the
+   difficulty of the task. Pick the reviewer by the worker and by the difficulty.
+   Keep the model of a session until its task ends.
 
-   | Work                                               | Model           | Effort   |
-   | -------------------------------------------------- | --------------- | -------- |
-   | Written steps to follow                            | `gpt-6.1-terra` | `medium` |
-   | Judgment: design, proof, code fixes, security      | `gpt-6.2-sol`   | `high`   |
-   | Review of work that another session did            | `gpt-6.2-astra` | `high`   |
+   | Task                                          | Worker                                       | Reviewer                   |
+   | --------------------------------------------- | -------------------------------------------- | -------------------------- |
+   | Simple: written steps to follow               | `gpt-6-luna` or `gpt-6.1-terra`, at `medium` | `gpt-6.2-sol`, at `high`   |
+   | Judgment: design, proof, code fixes, security | `gpt-6.2-sol`, at `high`                     | `gpt-6.2-astra`, at `high` |
 
-   A reviewer is never a weaker model than the model that did the work.
+   A reviewer is never a weaker model than the worker.
 
 2. **Write the brief** as a file. The worker has no part of your conversation, so the brief has:
    - the goal in the owner's words, and what "done" means;
