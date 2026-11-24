@@ -11,6 +11,8 @@ owner approves this plan before the build.
 Approval: owner, 2026-11-24, revision 3 ("Approve revision 3 as written"). Revision 2 added the
 owner's answers and notes of 2026-11-24; revision 3 added the owner's decision to remove Luna.
 The redesign after review round 2 has its own plan: [leader-skill-redesign.md](leader-skill-redesign.md).
+Revision 5 (2026-11-25, approval waiting): two candidate PRs, one skill or two; see
+[Revision 5](#revision-5-2026-11-25-two-candidate-prs-one-skill-or-two).
 
 ## Goal
 
@@ -164,6 +166,49 @@ The owner's words, from the question page of revision 1:
    one home of item 6); "#3 let do as your recommendation" (F11: record the hit in the
    prevention action, and change nothing more).
 
+
+## Revision 5 (2026-11-25): two candidate PRs, one skill or two
+
+Approval of this revision: waiting. The owner's order lets the lead agent build both candidates;
+the owner approves one of them, and this revision with it, at the merge.
+
+The owner's words in the lead agent's conversation, 2026-11-25: "it's a bit strange as leader and
+codex-workers are strictly tight together. Hey Advisor, what do you think, should we combine into 1
+skill or leave them as 2 separated skills?" After the lead agent's options (A: one skill; B: two
+skills with a clean split; C: as they are): "Let close 149 and 150. Do 2 PRs: 1 is option A,
+another the one is option B".
+
+Why new PRs: `AGENTS.md` §9 keeps a redesign in the PR that found the issue. Here the owner
+ordered the two new PRs and the close of #149 and #150, so the history of reviews stays in the
+closed PRs, and each new PR links them.
+
+**The line.** One test for each sentence or bullet of the two skills: "Does this text change if the
+worker is not Codex?" No: it is process, and its home is `leader`. Yes: it is Codex mechanics, and
+its home is the Codex text. The unit is a sentence or a bullet, not a section.
+
+**Option B** (branch `leader-two-skills`): two skills. `leader` holds each process rule.
+`codex-workers` holds only the Codex mechanics: the model table and its notes, and the commands.
+`leader` names the Codex text for each command.
+
+**Option A** (branch `leader-one-skill`): option B, then the fold. `codex-workers/SKILL.md` moves to
+`leader/references/codex.md`; one `GUIDE.md`; no `/codex-workers`, no second `agents/openai.yaml`,
+no second link in `.claude/skills/`, and one index row. The lead agent reads the Codex text at the
+build stage, so a task with no build loads only `leader/SKILL.md`.
+
+Both candidates come from one split, so they differ only in the packaging. The owner compares them
+with the same numbers: the lines that load at `/leader` and at the build stage, the pointers
+between files, the skill validator and the security scan, and the files changed against `main`.
+
+**Test strategy of this revision.**
+- A fact map script (`tmp/leader-skill/split/factmap.py`, not in the repository) checks that each
+  sentence of the two skills at `cf571de` is in the new tree the same number of times, or is on an
+  exceptions list with a reason; that each code block is the same; that each relative path
+  resolves; and that the line limit of F1 has one home. It lists each new sentence for the
+  reviewer. Proof that it can fail: on a copy with a removed rule, a changed code block, a broken
+  path and a copy of the line limit, it reported all four and exited 1.
+- One complete review in parts, with the guides against the skill, then one narrow fix check, then
+  the lead agent stops and reports.
+- The full set of `AGENTS.md` §4 on each final head, with no edits during the run.
 
 ## Open questions
 
