@@ -154,7 +154,7 @@ them; a sentence split on "; " still counts as one sentence.
 
 ## What to highlight
 
-- **The pick box** is the only accent fill on a question step. Examples are plain steps and
+- **The pick box** is the only accent fill in the question content (see the R4.1 row). Examples are plain steps and
   facts are plain bullets. If the source gives votes, list them in the option cards as described
   in [the content format](references/content-format.md#one-question).
 - **Bold** goes on the 2-4 lead words of each fact and list item. The kit sets option labels,
