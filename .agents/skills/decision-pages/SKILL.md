@@ -48,7 +48,7 @@ others are yours.
 | 2-4 key facts, each with 2-4 bold lead words | R2.1, R1.5 | Working memory holds about 4 chunks; the first 2 words carry the scan. |
 | More than 3 numbers go in a table, numbers right-aligned | R1.6, R3.1 | A matrix lets the eye compare; prose makes the reader build it. |
 | An example as 2-4 ordered steps with a time or trigger label | R7b | Concrete steps show what the choice does in real use. |
-| Each option shows Gets, Costs and Risk inside its own card | R2.2 | Trade-offs away from the option force the reader to join them in the head. |
+| Each option shows Does, Gets, Costs and Risk inside its own card | R2.2 | Trade-offs away from the option force the reader to join them in the head. |
 | Every option has the same fields, all filled | R3.2 | A comparison with gaps is no comparison. |
 | 2-4 real options; each has a real gain | R3.3, R3.6 | A straw-man option pushes the reader to the pick. |
 | No option is pre-checked | R3.4 | A default moves the choice more than any argument. |
@@ -133,7 +133,8 @@ others are yours.
    The step is done when the command exits with status 0 and its summary line says `0 failed`.
 10. **Look at the screenshots** that verify writes: `-overview`, `-q1`, `-finish` and `-q1-dark`
    for a page with questions, and only `-overview` for a report page.
-   Blur your eyes: you must see, in order, the title, the ask, the pick box and the options.
+   Blur your eyes. On a question screenshot you must see, in order, the title, the ask, the pick
+   box and the options. On the overview of a report page, you must see the title and then the lead.
    Fix what one look shows, then build and verify again.
 11. **Run the pre-send checklist** at the end of this guide, then send the page.
 

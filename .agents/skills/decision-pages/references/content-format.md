@@ -154,7 +154,9 @@ fails it. Research IDs in the Rule column refer to `research.md` (next to this f
 
 **Known limits** (owner, 2026-11-24: keep the kit simple). The 160-word option count can be lower
 than the visible text. It leaves out the option letter, the shortcut number, the "My pick" badge and
-the summary line of a closed option Details, which has no word limit. In the text files, two `**` markers outside code
+the summary line of a closed option Details, which has no word limit. Each count can also be
+higher: a word is a token with a Unicode letter or number, so a symbol that Unicode classes as a
+letter, such as ℹ, counts as a word. In the text files, two `**` markers outside code
 in two cells of one table row (header or data) can pair across the cells. The export then drops
 both markers.
 

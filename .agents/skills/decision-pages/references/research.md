@@ -52,7 +52,7 @@ Everything that decides the answer must be in those places.
    (Sweller 1988, cognitive load theory). **Split attention** is one cause: the reader must join
    separated sources in the head (Chandler & Sweller 1991).
    Sources: https://doi.org/10.1207/s15516709cog1202_4 ; https://doi.org/10.1207/s1532690xci0804_2
-   Rule for our pages: an option's gain, cost and risk sit inside the option card on the right,
+   Rule for our pages: what an option does, its gain, cost and risk sit inside the option card on the right,
    next to its radio button, not in a separate left-pane section.
 3. **Mayer's principles: coherence** (remove material that is not needed), **signaling** (mark the
    essential words), **spatial contiguity** (put related items near each other).
