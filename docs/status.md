@@ -9,7 +9,7 @@ finishes a step (part of the definition of done in `AGENTS.md` §9). Keep it sho
 
 ## Now
 
-The `codex-workers` skill is in draft [#149](https://github.com/binhle312/cty1ng/pull/149) (owner, 2026-11-24): how to start Codex workers and talk with them. The owner answered its open points and the questions of review round 2 on 2026-11-24 (R2-7 fixed by revision 4 of the leader plan; the scan flags recorded in the PR). Waiting on: the review rounds of revision 4, then the owner's merge.
+The `codex-workers` skill is in draft [#149](https://github.com/binhle312/cty1ng/pull/149) (owner, 2026-11-24): how to start Codex workers and talk with them. The owner answered its open points and the questions of review round 2 on 2026-11-24 (R2-7 fixed by revision 4 of the leader plan; the scan flags recorded in the PR). Owner, 2026-11-24: the two sketches in its `GUIDE.md` are now Mermaid diagrams. Waiting on: the review of that change, then the owner's merge.
 
 The `leader` skill is in draft [#150](https://github.com/binhle312/cty1ng/pull/150), on top of #149 (owner, 2026-11-24): the owner starts it with `/leader <task>`. The owner approved the plan (revision 3) and the redesign after review round 2 (`docs/plans/leader-skill-redesign.md`) on 2026-11-24; both are built. For the repeat cause of D1-3 the owner chose a case check of the rule edits of #150, and approved its plan (`docs/plans/leader-skill-case-check.md`) on 2026-11-24. The case check reviews and the full checks are done. Waiting on: the owner's review and merge.
 

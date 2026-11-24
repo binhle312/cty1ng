@@ -11,17 +11,27 @@ is needed. You approve, you decide, and you merge.
 
 ## One task, turn by turn
 
-```
- LEAD AGENT                                   CODEX WORKER (one session)
- ──────────                                   ──────────────────────────
- brief ─────────────────────────────────────▶ reads, changes no file
-       ◀───────────── the plan in its own words, or a question ("a fact is missing")
- answer, or "plan OK, build" ───────────────▶ same session, context kept
-       ◀───────────────────── pushes a checkpoint, reports the checks
- a wrong direction:
- stop the run, send the correction ─────────▶ same session, context kept
-       ◀───────────────────── report with evidence
- review findings ───────────────────────────▶ same session fixes them
+```mermaid
+sequenceDiagram
+  participant L as Lead agent
+  participant W as Codex worker (one session)
+  participant R as Codex reviewer (a new session)
+
+  L->>W: brief
+  Note over W: reads, changes no file
+  W->>L: the plan in its own words, or a question ("a fact is missing")
+  L->>W: answer, or "plan OK, build"
+  Note over W: same session, context kept
+  W->>L: pushes a checkpoint, reports the checks
+  opt a wrong direction
+    L->>W: stop the run, send the correction
+    Note over W: same session, context kept
+  end
+  W->>L: report with evidence
+  L->>R: review brief
+  R->>L: findings
+  L->>W: review findings
+  Note over W: same session fixes them
 ```
 
 A worker and a reviewer send no messages to each other or to you. Each message passes through the
