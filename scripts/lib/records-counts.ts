@@ -431,8 +431,11 @@ function searchProblems(input: SearchedRow): string[] {
   return problems;
 }
 
-function answerProblems(files: readonly LedgerFile[], lessons: readonly LedgerFile[]): string[] {
-  const searched = [...files, ...lessons];
+function answerProblems(
+  files: readonly LedgerFile[],
+  otherSearchFiles: readonly LedgerFile[],
+): string[] {
+  const searched = [...files, ...otherSearchFiles];
   const ids = new Set(
     files.flatMap((file) =>
       file.text.split("\n").flatMap((line) => numberOf(ISSUE_ROW.exec(line)?.[1]) ?? []),
@@ -467,17 +470,17 @@ function answerProblems(files: readonly LedgerFile[], lessons: readonly LedgerFi
 }
 
 // Every problem: the structure of the files, then each owned cell that differs from the rows.
-// `lessons` are the other files that a search of a row reads (`docs/lessons-learned/*.md`).
+// `otherSearchFiles` are the prevention actions and lessons that a search of a row also reads.
 export function checkCounts(
   files: readonly LedgerFile[],
-  lessons: readonly LedgerFile[] = [],
+  otherSearchFiles: readonly LedgerFile[] = [],
 ): string[] {
   const { ledger, problems } = readLedger(files);
   if (ledger === undefined) return problems;
   // A stale cell counted from broken rows would mislead, and `--write` refuses to write then.
   const structure = structureProblems(ledger);
-  if (structure.length > 0) return [...structure, ...answerProblems(files, lessons)];
-  return [...answerProblems(files, lessons), ...staleProblems(ledger)];
+  if (structure.length > 0) return [...structure, ...answerProblems(files, otherSearchFiles)];
+  return [...answerProblems(files, otherSearchFiles), ...staleProblems(ledger)];
 }
 
 // The files with each owned cell written from the rows. With a structure problem, no file changes.

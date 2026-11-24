@@ -12,9 +12,12 @@ import {
 } from "./lib/records-counts.ts";
 import { report } from "./lib/report.ts";
 
-// The files with ledger rows. A move of rows to a new file adds the file here; the check fails
-// until it does.
-const LEDGER_FILES = ["docs/delivery-quality.md", "docs/delivery-quality-archive.md"];
+// The files with ledger rows and count tables. Add a new file here if it gets either.
+const LEDGER_FILES = [
+  "docs/delivery-quality.md",
+  "docs/delivery-quality-archive.md",
+  "docs/delivery-quality-register.md",
+];
 
 const { values } = parseArgs({ options: { write: { type: "boolean", default: false } } });
 const read = (path: string): LedgerFile => ({ path, text: readFileSync(path, "utf8") });
@@ -23,8 +26,12 @@ const docs = readdirSync("docs", { recursive: true, encoding: "utf8" })
   .filter((name) => name.endsWith(".md"))
   .map((name) => read(join("docs", name)));
 const stray = strayLedgerFiles({ docs, list: LEDGER_FILES });
-// The other places that the "Same cause?" search of a row reads (AGENTS.md §9: the lessons).
-const lessons = docs.filter((file) => /^docs\/lessons-learned\/[^/]+\.md$/.test(file.path));
+// The "Same cause?" search also reads the prevention actions and the lessons (AGENTS.md §9).
+const otherSearchFiles = docs.filter(
+  (file) =>
+    file.path === "docs/delivery-quality-prevention.md" ||
+    /^docs\/lessons-learned\/[^/]+\.md$/.test(file.path),
+);
 
 if (values.write && stray.length === 0) {
   const written = writeCounts(files);
@@ -38,8 +45,8 @@ if (values.write && stray.length === 0) {
   // With a structure problem nothing is written, and the problems are the whole report.
   report(
     "records:counts",
-    written.problems.length > 0 ? written.problems : checkCounts(written.files, lessons),
+    written.problems.length > 0 ? written.problems : checkCounts(written.files, otherSearchFiles),
   );
 } else {
-  report("records:counts", [...stray, ...checkCounts(files, lessons)]);
+  report("records:counts", [...stray, ...checkCounts(files, otherSearchFiles)]);
 }

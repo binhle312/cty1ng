@@ -1,7 +1,8 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   type LedgerFile,
@@ -16,6 +17,7 @@ import {
 const LINK = "https://github.com/binhle312/cty1ng/pull";
 const MAIN = "docs/delivery-quality.md";
 const ARCHIVE = "docs/delivery-quality-archive.md";
+const REGISTER = "docs/delivery-quality-register.md";
 const AUDIT = "Audit 2026-11-05";
 const MARKER = "no lesson source; written by `pnpm records:counts`";
 
@@ -145,6 +147,66 @@ function onePr(overrides: Partial<Fixture> = {}): Fixture {
 function text(all: LedgerFile[], path: string): string {
   return all.find((f) => f.path === path)?.text ?? "";
 }
+
+function withSplitLedger(fixture: Fixture, run: (dir: string) => void, prevention = ""): void {
+  const all = files(fixture);
+  const main = text(all, MAIN);
+  const start = main.indexOf("## 2. Milestone view");
+  const end = main.indexOf("## 5. Live issue ledger");
+  const dir = mkdtempSync(join(tmpdir(), "records-cli-"));
+  try {
+    mkdirSync(join(dir, "docs"));
+    writeFileSync(join(dir, MAIN), main.slice(0, start) + main.slice(end));
+    writeFileSync(join(dir, REGISTER), main.slice(start, end));
+    writeFileSync(join(dir, ARCHIVE), text(all, ARCHIVE));
+    writeFileSync(join(dir, "docs/delivery-quality-prevention.md"), prevention);
+    run(dir);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+function runCounts(dir: string, ...args: string[]) {
+  const script = fileURLToPath(new URL("./records-counts.ts", import.meta.url));
+  return spawnSync(process.execPath, ["--import", import.meta.resolve("tsx"), script, ...args], {
+    cwd: dir,
+    encoding: "utf8",
+  });
+}
+
+describe("records:counts", () => {
+  it("writes counts in the separate register file", () => {
+    const fixture = onePr({
+      registerRows: [register({ pr: 10, cells: ["0", "0", "0", "0"] })],
+    });
+    withSplitLedger(fixture, (dir) => {
+      const result = runCounts(dir, "--write");
+      expect(result.status, result.stderr).toBe(0);
+      expect(readFileSync(join(dir, REGISTER), "utf8"), "the corrected register row").toContain(
+        register({ pr: 10, cells: ["2 (DQ-001, DQ-002)", "1 (DQ-002)", "0", "1"] }),
+      );
+    });
+  });
+
+  it("accepts a Same cause hit in the separate prevention file", () => {
+    const row = issue({ id: 853, pr: 10 }).replace(
+      "| Fix |",
+      "| Same cause: no (search: `paper jam`: DQ-001) |",
+    );
+    const fixture = onePr({
+      registerRows: [register({ pr: 10, cells: ["2 (DQ-002, DQ-853)", "1 (DQ-002)", "0", "1"] })],
+      issues: [row, issue({ id: 2, pr: 10, state: "open" })],
+    });
+    withSplitLedger(
+      fixture,
+      (dir) => {
+        const result = runCounts(dir);
+        expect(result.status, result.stderr).toBe(0);
+      },
+      "An earlier paper jam (DQ-001).\n",
+    );
+  });
+});
 
 describe("checkCounts", () => {
   it("passes when each owned cell is what the rows give", () => {
