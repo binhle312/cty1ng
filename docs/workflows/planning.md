@@ -129,7 +129,7 @@ becomes the lead agent with the `leader` skill. Type:
    Stop and wait for my approval if the brief says "checkpoint: plan".
    If a screen has saves under a lock, live events or late answers, the plan has its state
    table (planning.md, "State table for stateful screens").
-3. Build on branch <m#-name> as the codex-workers skill says, by
+3. Build on branch <m#-name> as the leader skill says, by
    docs/workflows/implementation.md, test first. The Roles table of
    docs/workflows/coordination.md says who does each step. Keep to the brief's scope; list
    anything else that you notice under "Follow-ups" in the PR instead of doing it.

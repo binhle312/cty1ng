@@ -63,7 +63,7 @@ Write the report for a reader who did not see your work. Put the key points firs
 </report>
 
 <rules_for_the_worker>
-[Copy the list "Rules for the worker" from the codex-workers skill here.]
+[Copy the list "Rules for the worker" from the leader skill here.]
 If a command fails or times out, find the cause and try again another way. Stop only for a missing
 fact or a deliberate block, such as a file that the brief tells you not to change. Then write what
 you found in the report.

@@ -67,9 +67,96 @@ fix, or when an approval is missing. Other work goes on.
 | --- | --- |
 | Plans, briefs, records, messages to the human | The lead agent |
 | Written steps, an extraction, a summary | The lead agent |
-| A code change below the line limit of `codex-workers` (step 1) | The lead agent; a different agent reviews it |
+| A code change below the [line limit](SKILL.md#the-lead-agents-own-work) | The lead agent; a different agent reviews it |
 | Each other code change, also a simple one | A Codex worker |
 | Each review | A different agent: a new session that did not build the code |
 
-The models, the commands and the rules for the worker are in the `codex-workers` skill. The
-templates for the briefs are in `references/`.
+The rules for the worker are in `SKILL.md`. The templates for the briefs are in `references/`.
+
+## What the skill does
+
+The human talks with one agent: the lead agent. It is the Claude Code conversation that the human
+starts. The lead agent gives build work and review work to Codex workers, and it talks with them
+when that is needed. The human approves, decides, and merges.
+
+The lead agent's OK on a plan is not the human's approval. When the rules of the repository ask for
+the human's approval, the lead agent stops and asks the human.
+
+## One task, turn by turn
+
+```mermaid
+sequenceDiagram
+  participant H as Human
+  participant L as Lead agent
+  participant W as Codex worker
+  participant R as Codex reviewer (a new session)
+
+  H->>L: task
+  L->>H: the models, with one reason
+  L->>W: brief
+  Note over W: reads, changes no file
+  W->>L: the plan in its own words, with its questions
+  loop while the plan needs answers or corrections
+    L->>W: answers or corrections
+    W->>L: the new plan
+  end
+  L->>W: "plan OK, build"
+  Note over W: builds and commits.<br/>Pushes to its branch if the brief names a remote branch.
+  opt the work goes in a wrong direction
+    L->>W: stops the running turn, sends the correction
+    Note over W: same session, context kept
+  end
+  opt the context use reaches 35%, during or after a turn
+    L->>W: stops the turn if one runs, asks for a handoff
+    W->>L: the handoff
+    Note over L: checks and corrects the handoff
+    Note over W: a new worker session gets the brief and the handoff,<br/>and sends its plan for the rest of the work
+  end
+  W->>L: report of the turn: the commits, the push if any, and the checks
+  W->>L: final report: each claim with its command and result
+  Note over L: compares each claim with the diff, the test results,<br/>and the remote checks if the worker pushed
+  L->>R: review brief
+  R->>L: findings
+  L->>W: review findings
+  Note over W: the builder's session fixes them
+  W->>L: report of the fixes
+  Note over L: compares each claim with the diff, the test results,<br/>and the remote checks if the worker pushed
+  L->>H: the result, with each open issue
+  Note over H: decides the merge
+```
+
+The diagram uses [Talk with the worker](SKILL.md#talk-with-the-worker) for the send command.
+
+After each report, the lead agent compares each claim with the diff, the test results, and the
+remote checks if the worker pushed.
+
+The diagram does not show the points where the human approves, because each repository has its own
+rules. At each of these points, the lead agent stops and asks the human.
+
+Only the lead agent talks with the human. The review is a new session that did not build the code.
+Its findings go to the lead agent, and the lead agent sends them to the builder's session. After a
+handoff, that is the new session.
+
+## Where the worker works
+
+- The lead agent starts each worker in its own Git worktree and branch, which the brief names.
+- A checkpoint is a point that the worker's plan names.
+- A turn is one run of the worker: from a message of the lead agent to the report of the worker.
+- If the brief names a remote branch, the worker pushes its commits to that branch at each
+  checkpoint. It pushes to no other branch, and it does not force a push.
+- A reviewer makes no commits.
+- The lead agent can run more than one worker at the same time, each on its own task, in its own
+  worktree and branch. The turn diagram shows one of them. For a command that only one agent can
+  run at a time, such as a heavy build, the lead agent tells them the order, or sends the second
+  message after the first worker is done with that command.
+
+## The 35% limit
+
+The lead agent watches how full the context window of each worker is.
+When 35% of the model's window is used, the worker writes a handoff. The lead agent checks and
+corrects it, and a new worker continues from it.
+
+The limit applies to a reviewer too. Before each review starts, the lead agent splits it into parts,
+by files or by checks, so that each part ends under 35%.
+
+35% is the human's limit, and the human can change it.

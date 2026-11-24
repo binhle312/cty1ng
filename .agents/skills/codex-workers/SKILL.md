@@ -15,6 +15,8 @@ tells you to read it.
 A **worker** is a Codex session that the lead agent starts with `codex exec`. A worker is a
 conversation: the lead agent keeps its session id and sends it more messages when that is needed.
 
+See the [stages of a task in `leader`](../leader/SKILL.md#stages-of-a-task) for the process.
+
 ## Pick the models
 
 Pick the models from the table.
