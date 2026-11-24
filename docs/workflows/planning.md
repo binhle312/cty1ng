@@ -38,7 +38,7 @@ For M3 and later parts, the EGM design step comes before the plan ([egm.md](egm.
 ### Risk probes first
 
 Before you write the plan, run short checks on every
-part that this repository has not used yet, and put the results in the plan as
+part that you have not used in this repository yet, also when an earlier slice used it, and put the results in the plan as
 evidence. For example: does the library work under our CSP (no `new Function`, no inline
 style; `docs/security.md` §2.1)? Does the generated client type-check with the new endpoints?
 Does the component library give the roles and close behaviour that the spec and the tests
@@ -62,7 +62,7 @@ checkpointed or not. The approved design then replaces the sketch (`docs/design/
 
 ### Design skills
 
-You may use the vendored `ui-ux-pro-max` skill
+The agent that writes the UI design, and the agent that builds the screen, may use the vendored `ui-ux-pro-max` skill
 (`.agents/skills/`, linked into `.claude/skills/`) to generate options and check
 accessibility for that section. Its output is input to the proposal, never a decision:
 `docs/design/themes.md`, the D-decisions and the approved plan win where they disagree, and
@@ -72,7 +72,7 @@ plan or `docs/design/`, never with `--persist`.
 Its `SKILL.md` gives the search command with a path that does not exist in this repository. Use
 `python3 .agents/skills/ui-ux-pro-max/scripts/search.py "<query>" --domain <domain>`. Ignore its
 rules for mobile screens: the owner uses a laptop (owner, 2026-11-10).
-You may also use the `impeccable` skill. It reads `PRODUCT.md`, `DESIGN.md` and
+Both may also use the `impeccable` skill. It reads `PRODUCT.md`, `DESIGN.md` and
 `.impeccable/design.json` at the repository root: a short snapshot of the product brief and
 of the Command dark theme, so the skill keeps the agreed look. The snapshot is not a spec;
 `docs/` wins where they differ, and whoever changes the owning document updates the

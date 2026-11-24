@@ -53,7 +53,7 @@ Read each test's setup and assertions. A test name or comment does not establish
 Ask which incorrect behaviour the test would detect.
 Run the affected checks; use [testing.md](testing.md) for test rules and the required gates.
 Run only the tests and breaks of the diff. Do not run the full gates or the full e2e suite again, and do not
-confirm total test counts: the gate run of the PR and CI give that proof (owner, 2026-11-09).
+confirm total test counts: the gate run at the reviewed commit and CI give that proof (owner, 2026-11-09).
 Separate local results from CI results and checks that did not run.
 
 For a race, identify the order the test forces and the state it checks afterward.

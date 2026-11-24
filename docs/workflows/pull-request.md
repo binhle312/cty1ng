@@ -37,7 +37,7 @@ Name the search of the prevention actions
 
 ## One home for each fact
 
-Each fact has one home, and other records link to it (decided at the owner's request, 2026-11-09, DQ-152). The PR body
+Each fact has one home, and other records link to it (decided by the builder at the owner's request, 2026-11-09, DQ-152). The PR body
 states no state, count or result that a file or a tool owns:
 
 - The state, the fix commit and the test of an issue, and the state of a prevention action, live

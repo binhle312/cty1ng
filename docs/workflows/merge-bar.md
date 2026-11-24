@@ -27,7 +27,7 @@ Harm is small and recoverable when all of these are true:
 
 At each milestone close, before the next milestone starts, each open P3 (ledger rows and follow-ups) is fixed, or the owner drops it (owner, 2026-11-10).
 
-If a severity is in dispute, ask the owner.
+If the agent that built the change and the reviewer disagree about a severity, ask the owner.
 This bar does not change `AGENTS.md` §7, §8 or §9, but step 5 of the section below has an owner's exception with limits for §9 in round 2 and in a later review (owner, 2026-11-12 and 2026-11-13).
 
 ## When the review of a P3 PR ends

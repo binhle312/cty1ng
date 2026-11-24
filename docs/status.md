@@ -4,8 +4,9 @@ Where the project is right now. This file owns delivery state, next work, and ow
 [delivery-quality.md](delivery-quality.md) tracks issue counts, review rounds, and prevention evidence.
 The plan ([development-plan.md](development-plan.md)) says what and in which order, and carries no delivery state beyond whether a brief file exists.
 
-**Who updates it:** the [Roles](workflows/coordination.md#roles) table says who, in the same PR that finishes a step (part of the
-definition of done in `AGENTS.md` §9). Keep it short: link to PRs and briefs instead of describing work.
+**Who updates it:** the [Roles](workflows/coordination.md#roles) table says who. An agent updates it in the same PR that
+finishes a step (part of the definition of done in `AGENTS.md` §9). The owner updates it for the owner's own steps, such as
+reviews and approvals. Keep it short: link to PRs and briefs instead of describing work.
 
 ## Now
 
