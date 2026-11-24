@@ -91,11 +91,14 @@ others are yours.
    flagged sentence that stays: fixed text, a technical name, or accuracy. If the checker is not
    installed, tell the person, and apply the rules by hand.
 7. **Do the cold read.** Give the `--text` file of step 5, and nothing else, to a new agent
-   session that did not see your work. Ask it to answer from that file alone:
+   session that did not see your work. Ask it to answer from that file alone, and to write "NOT ON
+   THE PAGE" for each part that the file does not give:
    1. What happened, and why does it need a decision now?
-   2. For each option: what exactly changes, and what does it cost?
-   3. What does the pick rest on, and when is another option better?
-   4. What happens after the answer?
+   2. What is the thing that the question is about, and what is it for?
+   3. If the question is about words: what are the exact old and new words, and where are they?
+   4. For each option: what exactly changes, and what does it cost?
+   5. What does the pick rest on, and when is another option better?
+   6. What happens after the answer?
 
    Compare its answers with what you know. Each answer that it cannot give, or gives wrong, is a
    missing fact: add it to the page, then build and check again. The step is done when each
@@ -190,7 +193,7 @@ The reader pastes it back to you. Read the letters against the options in your c
 - [ ] `scripts/gen.mjs` printed 0 lint errors; each warning is fixed or has a reason in your report.
 - [ ] `scripts/verify.mjs` printed `0 failed` on the final page.
 - [ ] The STE checker gave 80% or more on the `--text` file of step 5, or you told the person that it is not installed.
-- [ ] A new session answered the 4 cold-read questions right from the `--text` file alone, or you told the person that the cold read did not run.
+- [ ] A new session answered the 6 cold-read questions right from the `--text` file alone, or you told the person that the cold read did not run.
 - [ ] The overview says what happened and why it needs the reader now.
 - [ ] Each choice about words quotes the old and the new words, with the file and the section.
 - [ ] You looked at all four screenshots after the last change, in light and dark.
