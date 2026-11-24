@@ -10,6 +10,11 @@
       "file": "scripts/records-counts.test.ts",
       "name": "accepts a Same cause hit in the separate prevention file",
       "reason": "Test first. The red run rejected a hit that only the prevention file held."
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "reports a missing prevention search file",
+      "reason": "Test first. The red run passed the counts check with the prevention file missing."
     }
   ]
 }

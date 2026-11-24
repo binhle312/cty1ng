@@ -18,6 +18,7 @@ const LEDGER_FILES = [
   "docs/delivery-quality-archive.md",
   "docs/delivery-quality-register.md",
 ];
+const REQUIRED_SEARCH_FILES = ["docs/delivery-quality-prevention.md"];
 
 const { values } = parseArgs({ options: { write: { type: "boolean", default: false } } });
 const read = (path: string): LedgerFile => ({ path, text: readFileSync(path, "utf8") });
@@ -25,15 +26,21 @@ const files = LEDGER_FILES.map(read);
 const docs = readdirSync("docs", { recursive: true, encoding: "utf8" })
   .filter((name) => name.endsWith(".md"))
   .map((name) => read(join("docs", name)));
-const stray = strayLedgerFiles({ docs, list: LEDGER_FILES });
+const missingSearchFiles = REQUIRED_SEARCH_FILES.filter(
+  (path) => !docs.some((file) => file.path === path),
+);
+const fileProblems = [
+  ...strayLedgerFiles({ docs, list: LEDGER_FILES }),
+  ...missingSearchFiles.map((path) => `${path}: required search file is missing.`),
+];
 // The "Same cause?" search also reads the prevention actions and the lessons (AGENTS.md §9).
 const otherSearchFiles = docs.filter(
   (file) =>
-    file.path === "docs/delivery-quality-prevention.md" ||
+    REQUIRED_SEARCH_FILES.includes(file.path) ||
     /^docs\/lessons-learned\/[^/]+\.md$/.test(file.path),
 );
 
-if (values.write && stray.length === 0) {
+if (values.write && fileProblems.length === 0) {
   const written = writeCounts(files);
   for (const file of written.files) {
     const before = files.find((f) => f.path === file.path)?.text;
@@ -48,5 +55,5 @@ if (values.write && stray.length === 0) {
     written.problems.length > 0 ? written.problems : checkCounts(written.files, otherSearchFiles),
   );
 } else {
-  report("records:counts", [...stray, ...checkCounts(files, otherSearchFiles)]);
+  report("records:counts", [...fileProblems, ...checkCounts(files, otherSearchFiles)]);
 }

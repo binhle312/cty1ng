@@ -18,6 +18,7 @@ const LINK = "https://github.com/binhle312/cty1ng/pull";
 const MAIN = "docs/delivery-quality.md";
 const ARCHIVE = "docs/delivery-quality-archive.md";
 const REGISTER = "docs/delivery-quality-register.md";
+const PREVENTION = "docs/delivery-quality-prevention.md";
 const AUDIT = "Audit 2026-11-05";
 const MARKER = "no lesson source; written by `pnpm records:counts`";
 
@@ -162,7 +163,7 @@ function withSplitLedger(
     writeFileSync(join(dir, MAIN), main.slice(0, start) + main.slice(end));
     writeFileSync(join(dir, REGISTER), main.slice(start, end));
     writeFileSync(join(dir, ARCHIVE), text(all, ARCHIVE));
-    writeFileSync(join(dir, "docs/delivery-quality-prevention.md"), prevention);
+    writeFileSync(join(dir, PREVENTION), prevention);
     run(dir);
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -203,6 +204,15 @@ describe("records:counts", () => {
     withSplitLedger({ fixture, prevention: "An earlier paper jam (DQ-001).\n" }, (dir) => {
       const result = runCounts(dir);
       expect(result.status, result.stderr).toBe(0);
+    });
+  });
+
+  it("reports a missing prevention search file", () => {
+    withSplitLedger({ fixture: onePr() }, (dir) => {
+      rmSync(join(dir, PREVENTION));
+      const result = runCounts(dir);
+      expect(result.status, result.stdout + result.stderr).toBe(1);
+      expect(result.stderr).toContain(`${PREVENTION}: required search file is missing.`);
     });
   });
 });
