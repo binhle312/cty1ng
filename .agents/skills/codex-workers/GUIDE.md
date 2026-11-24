@@ -24,6 +24,7 @@ sequenceDiagram
   participant R as Codex reviewer (a new session)
 
   H->>L: task
+  L->>H: the models, with one reason
   L->>W: brief
   Note over W: reads, changes no file
   W->>L: the plan in its own words, with its questions
@@ -33,14 +34,15 @@ sequenceDiagram
     L->>W: stops the running turn, sends the correction
     Note over W: same session, context kept
   end
-  W->>L: report of the turn: the commits, the push, and the checks
+  W->>L: report of the turn: the commits, the push if any, and the checks
   opt the context use reaches 35%
-    L->>W: write a handoff
+    L->>W: stops the turn if one runs, asks for a handoff
     W->>L: the handoff
     Note over L: checks and corrects the handoff
-    Note over W: a new worker session continues the task
+    Note over W: a new worker session gets the brief and the handoff,<br/>and sends its plan for the rest of the work
   end
   W->>L: final report: each claim with its command and result
+  Note over L: compares each claim with the diff and the test results
   L->>R: review brief
   R->>L: findings
   L->>W: review findings
@@ -50,6 +52,8 @@ sequenceDiagram
   L->>H: the result, with each open issue
   Note over H: decides the merge
 ```
+
+After each report, the lead agent compares each claim with the diff and the test results.
 
 The diagram does not show the points where the human approves, because each repository has its own
 rules. At each of these points, the lead agent stops and asks the human.
@@ -68,8 +72,9 @@ session.
   checkpoint. It pushes to no other branch, and it does not force a push.
 - A reviewer makes no commits.
 - The lead agent can run more than one worker at the same time, each on its own task, in its own
-  worktree and branch. The turn diagram shows one of them. The lead agent tells them the order of
-  the commands that only one agent can run at a time, such as a heavy build.
+  worktree and branch. The turn diagram shows one of them. For a command that only one agent can
+  run at a time, such as a heavy build, the lead agent tells them the order, or sends the second
+  message after the first worker is done with that command.
 
 ## The 35% limit
 
@@ -78,8 +83,8 @@ files that it read. The lead agent watches how full the context window of each C
 When 35% of the model's window is used, the worker writes a handoff. The lead agent checks and
 corrects it, and a new worker continues from it.
 
-The limit applies to a reviewer too. The lead agent splits a large review into parts before it
-starts, so that each part ends under 35%.
+The limit applies to a reviewer too. Before each review starts, the lead agent splits it into parts,
+by files or by checks, so that each part ends under 35%.
 
 35% is the human's limit, and the human can change it.
 
