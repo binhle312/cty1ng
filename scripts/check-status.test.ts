@@ -148,6 +148,7 @@ describe("checkStatus", () => {
       ["15 words, 1 MB, 48-line, rowspan, 5 rowers", []],
       ["[#151](https://example.invalid/pull/151) and `fa19669` and `15 words`", []],
       ["[12 rows](record.md) and `4 KB`", ["12 rows", "4 KB"]],
+      ["[reference](doc.md#step-2-rows-to-keep)", ["2-rows"]],
       ["[guide](docs/v2/151) and `issue/151`", []],
       ["bytes: 89,987 and 90 MB and 12 lines and 55 issues", []],
       ["1.5 tokens (last line, no newline)", ["1.5 tokens"]],
@@ -160,6 +161,8 @@ describe("checkStatus", () => {
       ["1,,50 rows", ["50 rows"]],
       ["10..12 rows", ["12 rows"]],
       ["10...12 rows", ["12 rows"]],
+      ["10..1.5 tokens", ["1.5 tokens"]],
+      ["10..89,987 bytes", ["89,987 bytes"]],
       [
         "| Move §2 to §4 (the milestone view, the PR register and the old snapshots) and the prevention actions of `docs/delivery-quality.md` to files of their own, and keep the 80,000-byte limit (owner, 2026-11-24). It changes `AGENTS.md` §9, so its plan comes first | [#151](https://github.com/binhle312/cty1ng/pull/151): the ledger is still above 80,000 bytes after the move | A PR after #151, with a plan that the owner approves |",
         ["80,000-byte", "80,000 bytes"],

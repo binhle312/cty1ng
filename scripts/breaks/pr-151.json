@@ -329,6 +329,16 @@
           ]
         },
         {
+          "id": "block-hyphen-before-measure",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}\\p{N}.-])"
+            }
+          ]
+        },
+        {
           "id": "require-prefix-before-measure",
           "file": "scripts/lib/check-status.ts",
           "edits": [
