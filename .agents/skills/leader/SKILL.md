@@ -35,7 +35,7 @@ The **lead agent** is the Claude Code conversation that the owner starts.
 - **You:** each message to the owner, the plan, the briefs, the records, and the check of each
   report.
 - **You also do** [the lead agent's own work](#the-lead-agents-own-work).
-- **A different agent:** the [review](#stages-of-a-task) of each code change.
+- **Review:** see [stage 7](#stages-of-a-task).
 
 ### The lead agent's own work
 
@@ -46,7 +46,7 @@ Do these tasks yourself, and start no worker for them:
 - a focused task with a clear result: written steps, an extraction, a summary;
 - a code change of fewer than 5 changed lines.
 
-Give each other code change to a worker, also a simple one.
+Give each other build to a worker, including a simple code change.
 
 - Start your own code change only on a worktree with no other change: `git status --porcelain`
   gives nothing. If it gives a line, give the change to a worker.
@@ -62,21 +62,19 @@ Give each other code change to a worker, also a simple one.
    question in one round.
 4. **Plan:** write the plan and its tests. If the project asks for an approval of the plan, wait
    for the owner.
-5. **Build:** follow [Workers](#workers). Do [the lead agent's own work](#the-lead-agents-own-work),
-   and give each other build to a worker.
-6. **Check:** compare the worker's report with the diff, the plan and the project's checks.
-   After each turn, read the report file. Compare each claim with the diff, the test results and,
-   for pushed work, the remote checks of the pushed head. Read the worker's
-   [context use](#context-of-each-worker) after each turn, and about each minute while a turn runs.
-7. **Review:** give the review to a different agent. The reviewer is a new session that did not
-   build the code. The reviewer makes no commits. Send its findings to the session that built the
-   code. Check the fixes again. A different agent also reviews each code change that you made
-   yourself, in the next review round.
+5. **Build:** see [The lead agent's own work](#the-lead-agents-own-work) and [Workers](#workers).
+6. **Check:** after each turn, read the report file. Compare each claim with the plan, the diff,
+   the project's check results, including the test results, and, for pushed work, the remote checks
+   of the pushed head. Read the worker's [context use](#context-of-each-worker) after each turn, and
+   about each minute while a turn runs.
+7. **Review:** the reviewer is a new session that did not build the code. The reviewer makes no
+   commits. Send its findings to the session that built the code. Check the fixes again. A different
+   agent also reviews each code change that you made yourself, in the next review round.
 
-   Read [Workers](#workers) before you pick the reviewer. Do the [order check](#order-check).
-   For Codex, use the [review run of `codex-workers`](../codex-workers/SKILL.md#review-run). If the
-   reviewer's sandbox blocks a test tool, give the reviewer the test results of the builder, or start
-   it in a worktree of its own.
+   If the review message lets the reviewer run checks, do the [order check](#order-check).
+   For Codex, use the [review run of `codex-workers`](../codex-workers/SKILL.md#review-run). If a
+   test tool needs to write files, give the reviewer the test results of the builder, or start it in
+   a worktree of its own with the [writable sandbox of `codex-workers`](../codex-workers/SKILL.md#review-run).
 
 8. **Report** to the owner. Merge only when the owner asks for the merge of that work.
 
@@ -113,7 +111,7 @@ reason. Keep the model of a session until its task ends.
 - **Goal and done:** the goal in the owner's words, its reason, and what "done" means.
 - **Facts:** each fact that the job needs: decisions, rules, ids, exact words, commands.
 - **Paths:** the paths that it can read, and the paths that it must not read.
-- **Worktree and branch:** a worker with no branch name makes its own.
+- **Worktree and branch.**
 - **Scope:** what to change, and what to leave as it is.
 - **Limits:** the limits of the machine and of parallel work that the worker must keep.
 - **Checks:** the commands that show that the work is done.
@@ -127,9 +125,9 @@ Write each brief from a template in this skill's folder:
 - `references/reviewer-brief.md` for a reviewer.
 
 Fill each section with facts for this task. Delete the guidance lines. The brief carries each limit
-as a rule, and you check the diff and the folders after each turn. For a task with an image, you can
-name the path of the file in the brief. For a worker that commits and pushes, permit the network
-only for Git and the Git host in the brief.
+as a rule, and you check the diff and the folders after each turn. For a task with an image, name
+the path of the file in the brief, or use the [image flag of `codex-workers`](../codex-workers/SKILL.md#image-flag).
+For a worker that commits and pushes, permit the network only for Git and the Git host in the brief.
 
 ### Order check
 
@@ -140,10 +138,11 @@ or send the second message after the first worker is done with that command.
 
 ### Start the worker
 
-Do the [order check](#order-check). Start the worker in its own worktree and branch. For Codex, use
-the [start command of `codex-workers`](../codex-workers/SKILL.md#start). Start each run in the
-background. Write its session id, worktree, model, effort and sandbox mode on one line of a session
-list file. Add its last [context use](#context-of-each-worker) to that line after each check.
+If the start message lets the worker build or run checks, do the [order check](#order-check).
+Start the worker in its own worktree and branch. For Codex, use the
+[start command of `codex-workers`](../codex-workers/SKILL.md#start). Start each run in the background.
+Write its session id, worktree, model, effort and sandbox mode on one line of a session list file.
+Add its last [context use](#context-of-each-worker) to that line after each check.
 
 Use a new report file for each turn. For a Codex worker that commits and pushes, use the
 [commit and push options of `codex-workers`](../codex-workers/SKILL.md#commit-and-push).
@@ -157,13 +156,14 @@ of these are true:
 - each step is in the scope;
 - each claim has a check.
 
-If the plan needs corrections, send them. When you accept it, do the [order check](#order-check),
-and send the message to build. Your OK is not the owner's approval. A reviewer changes no file, so
-it has no plan turn.
+If the plan needs corrections, send them. When you accept it, do the [order check](#order-check)
+before you send the message to build. Your OK is not the owner's approval. A reviewer changes no
+file, so it has no plan turn.
 
 ### Talk with the worker
 
-Answer its question, accept its plan, or send the findings of a review. Send a message for a reason.
+A worker is a conversation. Use the session id from the session list file. Send it more messages
+when that is needed. Answer its question, accept its plan, or send the findings of a review.
 For Codex, use the [send command of `codex-workers`](../codex-workers/SKILL.md#send-a-message).
 Before a message that lets it build or run checks, do the [order check](#order-check). If a run goes
 in a wrong direction, [stop the run](#stop-a-workers-run) and send the correction.

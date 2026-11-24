@@ -12,8 +12,7 @@ metadata:
 Run this skill only when the owner starts it or names it, or when a skill that the owner started
 tells you to read it.
 
-A **worker** is a Codex session that the lead agent starts with `codex exec`. A worker is a
-conversation: the lead agent keeps its session id and sends it more messages when that is needed.
+A **worker** is a Codex session that the lead agent starts with `codex exec`.
 
 See the [stages of a task in `leader`](../leader/SKILL.md#stages-of-a-task) for the process.
 
@@ -35,13 +34,14 @@ The table has no row for the tasks that you do yourself.
   reviewer keeps the effort of the table. Most tasks do not need `max`. With `ultra`, Codex
   starts agents of its own.
 - Sol and Terra read 500,000 tokens by default; Astra reads 272,000.
-- On a model with a window of about 258,000 tokens, a full review of a large change reaches 35%
-  first.
+- One Codex model has a window of about 258,000 tokens.
 - The table is from 2026-11-24. If Codex lists a newer model, tell the owner before you use it.
 
 ## Commands
 
 ### Start
+
+A worker with no branch name makes its own branch.
 
 ```bash
 codex exec -m <model> -c model_reasoning_effort="<effort>" -c service_tier="default" \
@@ -54,7 +54,9 @@ The session id is in the first line of the events file:
 
 `-o` writes only the last message of that turn.
 
-For a task with an image, you can add `-i <image file>` before `-s`.
+#### Image flag
+
+Add `-i <image file>` before `-s`.
 
 ### Send a message
 
@@ -71,7 +73,7 @@ So start it in the worktree, and give each option of the start command again. Us
 mode of the session list: `workspace-write` for a worker, `read-only` for a reviewer that only
 reads. `resume` has no `-s` and no `-C`: use `cd` and `-c sandbox_mode=...`.
 
-Use the session id from the session list file. With `--last`, a message can go to another worker.
+With `--last`, a message can go to another worker.
 
 Outside a Git repository, add `--skip-git-repo-check` to the start command and to each `resume`.
 
@@ -134,4 +136,5 @@ command, and it then runs outside the sandbox.
 ### Review run
 
 Start a review with `-s read-only` when the reviewer only reads. A test tool that writes files
-does not run in that sandbox. To run it, use `-s workspace-write`.
+does not run in that sandbox. To run it in the [reviewer's own worktree](../leader/SKILL.md#stages-of-a-task),
+use `-s workspace-write`.

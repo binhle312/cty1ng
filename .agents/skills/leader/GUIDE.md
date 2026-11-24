@@ -45,7 +45,7 @@ the lead agent. The lead agent can ask the advisor before it decides.
       │
       ▼
  5 worker: plan in its own words ──▶ lead agent accepts ──▶ worker builds
-   (a code change below the line limit: the lead agent makes it)
+   (see The lead agent's own work)
       │
       ▼
  6 lead agent checks the report ──▶ 7 a different agent reviews ──▶ fixes ──▶ lead agent
@@ -57,6 +57,8 @@ the lead agent. The lead agent can ask the advisor before it decides.
 
 `══▶` is a gate: the work that depends on it waits for the human.
 
+See [The lead agent's own work](SKILL.md#the-lead-agents-own-work) for step 5.
+
 The lead agent also stops the work that depends on an item, and tells the human, when the documents
 and the code disagree, when a bug does not reproduce, when a fix has the same cause as an earlier
 fix, or when an approval is missing. Other work goes on.
@@ -66,8 +68,7 @@ fix, or when an approval is missing. Other work goes on.
 | Work | Who |
 | --- | --- |
 | Plans, briefs, records, messages to the human | The lead agent |
-| Written steps, an extraction, a summary | The lead agent |
-| A code change below the [line limit](SKILL.md#the-lead-agents-own-work) | The lead agent; a different agent reviews it |
+| [The lead agent's own work](SKILL.md#the-lead-agents-own-work) | The lead agent |
 | Each other code change, also a simple one | A Codex worker |
 | Each review | A different agent: a new session that did not build the code |
 
@@ -139,7 +140,8 @@ handoff, that is the new session.
 
 ## Where the worker works
 
-- The lead agent starts each worker in its own Git worktree and branch, which the brief names.
+- The lead agent starts each worker in its own Git worktree and branch. The brief names the branch.
+  If the brief has no branch name, a [Codex worker](../codex-workers/SKILL.md#start) makes its own.
 - A checkpoint is a point that the worker's plan names.
 - A turn is one run of the worker: from a message of the lead agent to the report of the worker.
 - If the brief names a remote branch, the worker pushes its commits to that branch at each
