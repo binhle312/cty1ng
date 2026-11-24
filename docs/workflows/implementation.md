@@ -1,6 +1,7 @@
 # Implement an approved slice
 
 Read this workflow when you implement an approved plan. If a plan is missing, use [planning](planning.md) first.
+Who does each step: the [Roles](coordination.md#roles) table.
 Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
 
 ## Build
@@ -19,16 +20,16 @@ Every command in `AGENTS.md` §4 passes, run once in full at the end:
 after the last code change, before the push, and with the full `pnpm e2e`. A report names
 each check and its result and says which checks did not run; nobody reports a run that has
 not finished (lesson `full-gate-before-the-report.md`).
-**Spec walk.** Before the PR, the builder reads each section of the slice's spec against the
+**Spec walk.** Before the PR, read each section of the slice's spec against the
 code, not only the acceptance criteria, and tests the edge cases in `docs/testing.md` §3 ("Edge
 cases each slice tests"). The PR lists the sections checked (lesson
 `self-review-against-the-spec.md`), and it has one edge case table for each changed screen ([PR template](../../.github/pull_request_template.md)).
 **Order and list-state checks.** Before the push, check every request on each changed
 screen with locks, live events or late answers. Cover all six cases in
 [Request order and list states](../testing.md#request-order-and-list-states), including requests away from the reported finding.
-Then a fresh reviewer agent, given the code and not the builder's conclusions, tries to
-break the screen with forced orders. Point it to [the review workflow](review.md); the builder
-does not need to read that file (lesson `check-every-order-before-the-push.md`).
+Then a fresh reviewer agent, given the code and not the conclusions of its author, tries to
+break the screen with forced orders. Point it to [the review workflow](review.md); the author of
+the code does not need to read that file (lesson `check-every-order-before-the-push.md`).
 **Delivery records.** After review or fixes, update [delivery quality](../delivery-quality.md#7-update-and-assess).
 At handoff, reconcile the PR's issues, review rounds, and verification evidence there.
 [Status](../status.md) owns milestone state and next work.
@@ -43,7 +44,7 @@ now, what is not built yet, and the names on the screen (M2 plan, decision 14).
 ## Respond to review
 
 The other agent reviews the PR and reports its findings.
-The builder fixes or answers each. A finding says what is wrong, not which text or layout to
+Fix or answer each. A finding says what is wrong, not which text or layout to
 use: when a fix needs a new text, state, flow or layout, the PR lists it under `Needs human
 review` (`AGENTS.md` §7; lesson `flag-ui-choices-in-review-fixes.md`).
 **Merge bar.** Each finding has a severity. Only P1 and P2 block the merge; a P3 gets its

@@ -1,6 +1,6 @@
 # Plan a slice
 
-Read this workflow before a new slice or a change that needs a plan. Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
+Read this workflow before a new slice or a change that needs a plan. Who does each step: the [Roles](coordination.md#roles) table. Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
 
 ## Brief
 
@@ -28,7 +28,7 @@ their own requests. A plan that touches more than about 30 files is a sign to sp
 ## Plan
 
 Every slice has a plan before its code, checkpointed or not (owner, 2026-11-04).
-The lead agent reads the brief and the documents it lists, then writes a short plan (files to
+Read the brief and the documents it lists, then write a short plan (files to
 touch, migrations, tests to add, risks) in `docs/plans/<slice>-<name>.md`. The file goes in a
 draft PR, so the owner reviews it there and the repository keeps it for reference. The rules
 for the file are in [plans/README.md](../plans/README.md). The plan holds the design and the
@@ -37,8 +37,8 @@ For M3 and later parts, the EGM design step comes before the plan ([egm.md](egm.
 
 ### Risk probes first
 
-Before the lead agent writes the plan, it runs short checks (or gives them to a worker) on every
-part that it has not used in this repository yet, and puts the results in the plan as
+Before you write the plan, run short checks on every
+part that this repository has not used yet, and put the results in the plan as
 evidence. For example: does the library work under our CSP (no `new Function`, no inline
 style; `docs/security.md` §2.1)? Does the generated client type-check with the new endpoints?
 Does the component library give the roles and close behaviour that the spec and the tests
@@ -62,7 +62,7 @@ checkpointed or not. The approved design then replaces the sketch (`docs/design/
 
 ### Design skills
 
-The lead agent may use the vendored `ui-ux-pro-max` skill
+You may use the vendored `ui-ux-pro-max` skill
 (`.agents/skills/`, linked into `.claude/skills/`) to generate options and check
 accessibility for that section. Its output is input to the proposal, never a decision:
 `docs/design/themes.md`, the D-decisions and the approved plan win where they disagree, and
@@ -72,7 +72,7 @@ plan or `docs/design/`, never with `--persist`.
 Its `SKILL.md` gives the search command with a path that does not exist in this repository. Use
 `python3 .agents/skills/ui-ux-pro-max/scripts/search.py "<query>" --domain <domain>`. Ignore its
 rules for mobile screens: the owner uses a laptop (owner, 2026-11-10).
-The lead agent and the builder may also use the `impeccable` skill. It reads `PRODUCT.md`, `DESIGN.md` and
+You may also use the `impeccable` skill. It reads `PRODUCT.md`, `DESIGN.md` and
 `.impeccable/design.json` at the repository root: a short snapshot of the product brief and
 of the Command dark theme, so the skill keeps the agreed look. The snapshot is not a spec;
 `docs/` wins where they differ, and whoever changes the owning document updates the
@@ -81,9 +81,9 @@ snapshot. `pnpm check:index` fails when a snapshot colour differs from
 
 ### Test strategy before code
 
-After the plan, and before any code, the lead agent writes the
+After the plan, and before any code, write the
 test strategy as a section of the plan file (owner, 2026-11-03). For each acceptance
-criterion it lists the behaviour, the test level (unit, component, API, contract, end to
+criterion, list the behaviour, the test level (unit, component, API, contract, end to
 end) and the cases beyond the normal path: the edge cases in `docs/testing.md` §3, and above all
 the order and timing cases (an answer that comes late, a change in another tab, a Discard
 while a request waits, a value that changes and changes back). Most review findings are
@@ -129,9 +129,10 @@ becomes the lead agent with the `leader` skill. Type:
    Stop and wait for my approval if the brief says "checkpoint: plan".
    If a screen has saves under a lock, live events or late answers, the plan has its state
    table (planning.md, "State table for stateful screens").
-3. Give the build to a Codex worker on branch <m#-name>, as the codex-workers skill says. The
-   worker follows docs/workflows/implementation.md and builds test first. Keep to the brief's
-   scope; list anything else under "Follow-ups" in the PR instead of doing it.
+3. Build on branch <m#-name> as the codex-workers skill says, by
+   docs/workflows/implementation.md, test first. The Roles table of
+   docs/workflows/coordination.md says who does each step. Keep to the brief's scope; list
+   anything else under "Follow-ups" in the PR instead of doing it.
 4. Check that every check in AGENTS.md §4 passes on the final head, and fill the PR
    description per docs/workflows/pull-request.md.
 If the docs and the code disagree, or the brief is ambiguous, stop and ask.

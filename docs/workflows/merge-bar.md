@@ -1,6 +1,6 @@
 # Merge bar
 
-Builders and reviewers use this bar. Read it when you give a finding a severity, decide what a
+The agents of a PR and its reviewers use this bar. Who does each step: the [Roles](coordination.md#roles) table. Read it when you give a finding a severity, decide what a
 finding blocks, write a state table or order test, set the limits of a pattern rule, or decide
 when the review of a P3 PR ends.
 
@@ -27,7 +27,7 @@ Harm is small and recoverable when all of these are true:
 
 At each milestone close, before the next milestone starts, each open P3 (ledger rows and follow-ups) is fixed, or the owner drops it (owner, 2026-11-10).
 
-If the builder and the reviewer disagree about a severity, ask the owner.
+If a severity is in dispute, ask the owner.
 This bar does not change `AGENTS.md` §7, §8 or §9, but step 5 of the section below has an owner's exception with limits for §9 in round 2 and in a later review (owner, 2026-11-12 and 2026-11-13).
 
 ## When the review of a P3 PR ends
@@ -59,13 +59,13 @@ After round 1, a PR takes only these changes, and the changes that steps 2, 4 an
 Limits: a merge record has only the state, the date and the link of the PR. The record of an
 owner answer is new work and goes into the next PR.
 
-1. Round 1 is a full review. The builder fixes its findings in the PR.
+1. Round 1 is a full review. Fix its findings in the PR.
 2. No new work enters the PR after round 1. The record of an owner's answer that comes during a
    review goes into the next PR. Exception: a redesign that the owner approves under `AGENTS.md`
    §9. Its commits get their own round 1 and round 2.
 3. Round 2 reads the fix commits of round 1. Its brief is narrow: is each fix of round 1 correct,
    and does a fix make a P1 or a P2? The reviewer does not search for new points in the wording.
-4. After round 2, the builder fixes only a P1 or a P2. Such a fix gets one check of that commit
+4. After round 2, fix only a P1 or a P2. Such a fix gets one check of that commit
    only, by an independent reviewer, with a row in the round log.
 5. A P3 that round 2 or a later check finds gets a row in the ledger of
    `docs/delivery-quality.md`. Before the merge, the PR fixes its own open rows (owner,
@@ -83,9 +83,9 @@ owner answer is new work and goes into the next PR.
    Exception (owner, 2026-11-12 and 2026-11-13): a P3 of round 2 or of a later review that is a
    claim bigger than its proof gets the answer of `AGENTS.md` §9, inside these limits:
 
-   - The builder changes only the places that the review found. A wider search is not part of
+   - Change only the places that the review found. A wider search is not part of
      the correction.
-   - The builder only removes or narrows words, and adds the `Not claimed` line under "Needs
+   - Only remove or narrow words, and add the `Not claimed` line under "Needs
      human review". No new fact, no new rule, and no change of code or tests.
    - If the correction needs more, the finding gets a ledger row, as each other P3 of that review.
 

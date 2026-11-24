@@ -3,7 +3,7 @@
 The template is [`.github/pull_request_template.md`](../../.github/pull_request_template.md). GitHub
 puts it into each new PR, and it is the one home of the sections and their order (DQ-753, by the
 rule [one home for each fact](#one-home-for-each-fact); owner review pending). This file holds the
-rules for what goes into them.
+rules for what goes into them. Who writes it: the [Roles](coordination.md#roles) table.
 Before a protected action, check [AGENTS.md §7](../../AGENTS.md#7-what-needs-the-humans-approval-stop-and-ask-or-flag-it-clearly-in-the-pr).
 
 ## Examples of filled rows
@@ -37,7 +37,7 @@ Name the search of the prevention actions
 
 ## One home for each fact
 
-Each fact has one home, and other records link to it (decided by the builder at the owner's request, 2026-11-09, DQ-152). The PR body
+Each fact has one home, and other records link to it (decided at the owner's request, 2026-11-09, DQ-152). The PR body
 states no state, count or result that a file or a tool owns:
 
 - The state, the fix commit and the test of an issue, and the state of a prevention action, live

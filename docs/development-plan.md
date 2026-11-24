@@ -36,8 +36,8 @@ Write a brief for each implementation part before code starts; start the lead ag
 | later | not written | External project folders (D23: documents first, write-capable design) | separate milestone | M9 or earlier, owner decides |
 | later | not written | Desktop app (Windows, Linux) and coding agents from the app (idea only: [ideas/desktop-app-and-cli-agents.md](ideas/desktop-app-and-cli-agents.md)) | separate milestone | M9 and external project folders (D23) |
 
-"Checkpoint: plan" means the lead agent stops after writing the plan and waits for the owner's
-approval ([planning](workflows/planning.md#plan)). Every slice also needs the owner's review of migrations and
+"Checkpoint: plan" means that the work stops after the plan and waits for the owner's
+approval ([Roles](workflows/coordination.md#roles) says who does each step) ([planning](workflows/planning.md#plan)). Every slice also needs the owner's review of migrations and
 `Needs human review` items before merge.
 
 Every slice with a screen (M0–M5d, M6, Inbox, M7, M8, M8b, M8c, T2) also has a **UI design checkpoint**:
