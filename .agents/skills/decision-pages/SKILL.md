@@ -76,9 +76,15 @@ others are yours.
    question is about, and find what it is for: its origin, such as a lesson, a decision or an
    incident. Write down the exact words that change, if the question is about words. A pick made
    from your memory of the source can be wrong.
-3. **For each question, find the real options.** 2-4 options that a sensible person could
-   choose. Write each option's real gain, cost and risk. If an option has no case, remove it
-   and say so in the question's Details.
+3. **Find whose decision it is, and the real options.** For each question, write down:
+   - the rule or the approval that makes it the reader's decision (`owner`);
+   - what the reader's earlier decisions and the approved scope already settle (`settled`);
+   - the one choice that still needs the answer (`decides`).
+
+   Then find 2-4 options that a sensible person could choose, each with what it does, its real
+   gain, cost and risk. Remove an option that asks the reader to approve a settled point, that
+   only defends your own earlier change, or that offers a difference the sources do not show.
+   List each removed option and why in `removed`.
 4. **Write the content file** in the format of `references/content-format.md`, with the writing rules
    below. Put the conclusion in the ask and the evidence in the facts and table. Put the use
    case in the example and the story in Details.
@@ -90,26 +96,36 @@ others are yours.
    each line. The score must be 80% or more before you send the page. Give a reason for each
    flagged sentence that stays: fixed text, a technical name, or accuracy. If the checker is not
    installed, tell the person, and apply the rules by hand.
-7. **Do the cold read.** Give the `--text` file of step 5, and nothing else, to a new agent
-   session that did not see your work. Ask it to answer from that file alone, and to write "NOT ON
-   THE PAGE" for each part that the file does not give:
+7. **Get a source review.** A reviewer of the same or a stronger model than yours, read-only,
+   gets the `--text` file and the paths of the sources behind each question. For each question it
+   answers: whose decision is it, and which source says so; what do the sources already settle;
+   does an option ask for an approval that the sources do not give, or offer a difference that
+   does not exist; does the question say what is settled and what only the answer changes. It
+   ends with `VALID` or `INVALID` for each question. Fix each point, or answer it in writing in
+   your report. A page reader cannot find a wrong question; only a reader of the sources can.
+8. **Test each question screen alone.** Step 5 also writes `page.q1.txt`, `page.q2.txt` and so
+   on: the text of one question screen, with its Details closed. Give each file, and nothing
+   else, to a new agent session that did not see your work. Ask it to write "NOT ON THE SCREEN"
+   for each part that the screen does not give:
    1. What happened, and why does it need a decision now?
-   2. What is the thing that the question is about, and what is it for?
-   3. If the question is about words: what are the exact old and new words, and where are they?
-   4. For each option: what exactly changes, and what does it cost?
+   2. What is already decided, and what does only your answer change?
+   3. What is the thing in question, and what is it for? If the choice is about words: what are
+      the exact old and new words?
+   4. For each option: what does it do, and what does it cost?
    5. What does the pick rest on, and when is another option better?
-   6. What happens after the answer?
+   6. Is any option about something that is already decided, or not your decision to make? If
+      so, write "ALREADY SETTLED" and why.
 
    Compare its answers with what you know. Each answer that it cannot give, or gives wrong, is a
-   missing fact: add it to the page, then build and check again. The step is done when each
-   answer is right. If you cannot start a new session, tell the person that the cold read did not
-   run.
-8. **Verify:** `NODE_PATH=<node_modules that has @playwright/test> node scripts/verify.mjs content.json page.html`.
+   missing fact on that screen: add it, then build and check again. The step is done when
+   answers 1, 2, 4 and 5 are right and answer 6 names no option. If you cannot start a new
+   session, tell the person that this test did not run.
+9. **Verify:** `NODE_PATH=<node_modules that has @playwright/test> node scripts/verify.mjs content.json page.html`.
    The step is done when the last line says `0 failed`.
-9. **Look at the screenshots** that verify writes (`-overview`, `-q1`, `-finish`, `-q1-dark`).
+10. **Look at the screenshots** that verify writes (`-overview`, `-q1`, `-finish`, `-q1-dark`).
    Blur your eyes: you must see, in order, the title, the ask, the pick box and the options.
    Fix what one look shows, then build and verify again.
-10. **Run the pre-send checklist** at the end of this guide, then send the page.
+11. **Run the pre-send checklist** at the end of this guide, then send the page.
 
 ## Writing rules
 
@@ -184,16 +200,23 @@ per row. "Copy my answers" copies this text:
 Q1: A <option label>
   Note: <note text>
 Q2: (no answer)
+Page clear: no
+  Missing: <text>
 ```
 
 The reader pastes it back to you. Read the letters against the options in your content file.
+The "Page clear" line answers "Did this page tell you what each question is about?". It is the
+only test by the real reader. When it says "no", or names something missing, fix that in the
+next page, and add the case to the step that should have found it.
 
 ## Pre-send checklist
 
 - [ ] `scripts/gen.mjs` printed 0 lint errors; each warning is fixed or has a reason in your report.
 - [ ] `scripts/verify.mjs` printed `0 failed` on the final page.
 - [ ] The STE checker gave 80% or more on the `--text` file of step 5, or you told the person that it is not installed.
-- [ ] A new session answered the 6 cold-read questions right from the `--text` file alone, or you told the person that the cold read did not run.
+- [ ] Each question has `owner`, `settled` and `decides`, and each option has `does`; no option asks for a settled point.
+- [ ] A source review ran; each of its points is fixed or answered in your report.
+- [ ] A new session passed the 6 questions of step 8 on each question screen alone, or you told the person that the test did not run.
 - [ ] The overview says what happened and why it needs the reader now.
 - [ ] Each choice about words quotes the old and the new words, with the file and the section.
 - [ ] You looked at all four screenshots after the last change, in light and dark.
