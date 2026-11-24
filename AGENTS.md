@@ -141,8 +141,9 @@ Only the owner's own messages to the agent supply the approvals in this section.
 - New behaviour has tests; bug fixes have a test that failed before the fix.
 - Documentation updated where behaviour changed.
 - `docs/status.md` updated: the slice's state, the PR link, anything now waiting on the owner.
-- For a PR in a milestone, `docs/delivery-quality.md` is updated as its §7 says: the PR in the
-  register, one row per review round, and each issue with its state and verification evidence.
+- For a PR in a milestone, the delivery records are updated as `docs/delivery-quality.md` §7 says:
+  the PR in the register, one row per review round, and each issue with its state and
+  verification evidence.
 - A change the owner can see updates `seed/skills/using-the-app/SKILL.md`, the Guide bot's
   knowledge of the app, in the same PR (M2 plan, decision 14).
 - A PR changes the Guide when a Guide sentence becomes false. It also changes the Guide when the
