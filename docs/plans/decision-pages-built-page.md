@@ -3,11 +3,10 @@
 Brief: no brief file. This is the redesign that `AGENTS.md` §9 asks for in draft PR #152, after
 review round 2 found the same two faults that round 1 had fixed.
 Checkpoint: plan. The owner approves a redesign under `AGENTS.md` §9.
-Approval: waiting for the owner. The owner chose the direction on 2026-11-24 (decision page r7,
-Q2: "B Read the built page").
-Withdrawn: the owner, 2026-11-24: "keep it simple please, it just a small skill, not worth doing
-that much of time". Not built. The two faults are known limits in `references/content-format.md`
-of the skill.
+Approval: withdrawn by the owner, 2026-11-24. History: the owner first chose this direction on
+2026-11-24 (decision page r7, Q2: "B Read the built page"), then withdrew it: "keep it simple
+please, it just a small skill, not worth doing that much of time". Not built. The two faults are
+known limits in `references/content-format.md` of the skill.
 
 ## Why
 
@@ -43,8 +42,8 @@ needed.
 5. **Out of scope:** the copied answers (`copyLines` and the copy button). They are not part of the
    two faults. Each change of the HTML layout. The P3 findings R2-2, R2-3 and R2-7 (Follow-ups).
 
-A Codex worker (GPT-6.2 Sol, effort high) builds it from a brief. Its first turn gives back the plan
-in its own words. The lead agent changes no kit code.
+Who would have built it (not done, the plan is withdrawn): a Codex worker (GPT-6.2 Sol, effort
+high) from a brief, with its first turn giving back the plan in its own words.
 
 ## Test strategy
 
