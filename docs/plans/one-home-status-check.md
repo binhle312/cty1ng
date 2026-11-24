@@ -14,6 +14,8 @@ singular `token` passed all tests; same cause in kind as DQ-856): the break list
 the pattern with a break, in place of the exemptions.
 Revision 3, owner, 2026-11-24, answer "A" to R2-F1 of the review of the fixes (the fix of R1-F1 made
 `78 rows,90 KB` give one problem in place of two; same cause as DQ-470): one table of cases.
+Revision 4, owner, 2026-11-24, answer "A" to T1-F1 and T1-F2 of the review of the table (missing rows;
+`PR #151,90 KB` gave no problem): when in doubt, the check reports the number.
 
 ## Goal
 
@@ -118,8 +120,10 @@ each row, with the input as the label of its result.
   (`78 rows,90 KB`), a semicolon, brackets, Markdown emphasis (`_12 rows_`, `__80,000-byte__`,
   `*12 rows*`), the start and the end of the line.
 - The leading decimal (`.5 KB`).
-- Inputs that are not measures: the inputs of the row "Other numbers pass", and a comma inside a
-  number that is not a comma group (`1,50 rows`).
+- Inputs that are not measures: the inputs of the row "Other numbers pass", and a number that is
+  part of a word or a version (`v1.5 KB`, `5 row2`). Each other number before a unit is a measure,
+  also after a comma (`1,50 rows` gives `50 rows`, `PR #151,90 KB` gives `90 KB`) (revision 4).
+- Each input of the scratch cases of each review of this check is a row (revision 4).
 - A pattern change keeps each row. The builder runs the table on the code before each pattern
   change, and records each row that changes its result.
 
