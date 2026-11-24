@@ -5,6 +5,7 @@ import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import {
+  ISSUE_FILES,
   type LedgerFile,
   checkCounts,
   splitTables,
@@ -14,11 +15,7 @@ import {
 import { report } from "./lib/report.ts";
 
 // The files with ledger rows and count tables. Add a new file here if it gets either.
-const LEDGER_FILES = [
-  "docs/delivery-quality.md",
-  "docs/delivery-quality-archive.md",
-  "docs/delivery-quality-register.md",
-];
+const LEDGER_FILES = [...ISSUE_FILES, "docs/delivery-quality-register.md"];
 const REQUIRED_SEARCH_FILES = ["docs/delivery-quality-prevention.md"];
 
 const { values } = parseArgs({ options: { write: { type: "boolean", default: false } } });

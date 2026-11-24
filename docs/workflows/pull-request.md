@@ -122,6 +122,8 @@ review fix, check them against the commit that you push (owner, 2026-11-08, DQ-1
 9. Run `wc -c < docs/delivery-quality.md`. If the result is larger than the limit in
    [§7 step 6 of the ledger](../delivery-quality.md#7-update-and-assess), write under Follow-ups
    of the PR description that a move of the closed rows is due. The move is a PR of its own.
+10. Before each push that edits issue rows, save the output of `pnpm records:removed-words <base> <head>`.
+    Use the PR merge base and the commit you will push. The reviewer reads the report.
 
 Before you say that a PR is ready: the description has no state line that is older than the head,
 and `docs/status.md` names the PR.

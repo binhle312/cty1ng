@@ -9,6 +9,7 @@
 export type LedgerFile = { path: string; text: string };
 
 export const OWNED_MARKER = "written by `pnpm records:counts`";
+export const ISSUE_FILES = ["docs/delivery-quality.md", "docs/delivery-quality-archive.md"];
 
 const PULL_LINK = "https://github.com/binhle312/cty1ng/pull";
 const ISSUE_ROW = /^\| DQ-(\d+) \|/;
@@ -96,14 +97,41 @@ function tablesWithHeader(input: { files: readonly LedgerFile[]; header: string 
   return tables;
 }
 
+function issueId(line: string): number | undefined {
+  return numberOf(ISSUE_ROW.exec(line)?.[1]);
+}
+
+export type IssueRow = Pick<Row, "path" | "cells"> & {
+  id: string;
+  raw: string;
+  headers: readonly string[];
+};
+
+export function issueRows(files: readonly LedgerFile[]): IssueRow[] {
+  return files.flatMap((file) => {
+    const columns = new Map<number, Pick<IssueRow, "headers" | "cells">>();
+    for (const table of tablesWithHeader({ files: [file], header: ISSUE_HEADER }))
+      for (const row of table.rows)
+        columns.set(row.line, { headers: table.headers, cells: row.cells });
+
+    return file.text.split("\n").flatMap((raw, index) => {
+      const id = issueId(raw);
+      if (id === undefined) return [];
+      // A row outside a table still has an ID, but its headings are unknown.
+      const parsed = columns.get(index) ?? { headers: [], cells: cellsOf(raw) };
+      return { id: dq(id), path: file.path, raw, ...parsed };
+    });
+  });
+}
+
 function parseIssue(input: { path: string; line: string }): Issue | undefined {
-  const match = ISSUE_ROW.exec(input.line);
-  if (match === null) return undefined;
+  const id = issueId(input.line);
+  if (id === undefined) return undefined;
   const cells = cellsOf(input.line);
   const last = cells[cells.length - 1] ?? "";
   const recorded = /escaped: /.test(last) && !/escaped: unknown/.test(last);
   return {
-    id: Number(match[1]),
+    id,
     path: input.path,
     milestone: (cells[1] ?? "").split(/[\s/]/)[0] ?? "",
     discoveryPr: numberOf(/\/ #(\d+) \//.exec(cells[2] ?? "")?.[1]),
@@ -481,13 +509,11 @@ function answerProblems(
 ): string[] {
   const searched = [...files, ...otherSearchFiles];
   const ids = new Set(
-    files.flatMap((file) =>
-      file.text.split("\n").flatMap((line) => numberOf(ISSUE_ROW.exec(line)?.[1]) ?? []),
-    ),
+    files.flatMap((file) => file.text.split("\n").flatMap((line) => issueId(line) ?? [])),
   );
   return files.flatMap((file) =>
     file.text.split("\n").flatMap((line, index) => {
-      const id = numberOf(ISSUE_ROW.exec(line)?.[1]);
+      const id = issueId(line);
       if (id === undefined) return [];
       const cells = cellsOf(line);
       if (cells.slice(3).includes("withdrawn")) return [];
@@ -567,9 +593,7 @@ export function strayLedgerFiles(input: {
   return input.docs
     .filter((file) => !input.list.includes(file.path))
     .flatMap((file) => {
-      const ids = file.text
-        .split("\n")
-        .flatMap((line) => numberOf(ISSUE_ROW.exec(line)?.[1]) ?? []);
+      const ids = file.text.split("\n").flatMap((line) => issueId(line) ?? []);
       if (ids.length === 0) return [];
       return [
         `${file.path} has ledger rows (${formatIds(ids)}) and is not in LEDGER_FILES of scripts/records-counts.ts: add it there.`,

@@ -10,6 +10,8 @@ code is in `lib/`.
 | `check-events.ts` | `pnpm check:events`: the event table of `docs/realtime-events.md` §4 matches `shared/` |
 | `check-status.ts` | `pnpm check:status`: checks Done rows and rejects typed measures in `docs/status.md` |
 | `records-counts.ts` | Use `pnpm records:counts` to check the marked milestone row (Audit) and the count cells of `Ledger` rows in the [register](../docs/delivery-quality-register.md). `--write` updates them. |
+| `records-removed-words.ts` | `pnpm records:removed-words <base> <head>`: the removed-words report for the [PR records check](../docs/workflows/pull-request.md#before-each-push-check-the-records) |
+| `records-removed-words.test.ts` | Tests for the removed-words report |
 | `check-bundle.ts` | `pnpm check:bundle`: the first-load bundle budget, after `pnpm build` |
 | `check-breaks.ts` | `pnpm check:breaks <list>`: runs the break list of a PR (`docs/testing.md` §5); run by hand |
 | `check-breaks-static.ts` | `pnpm check:breaks:static <list>`: the break-list rules that need no test run; CI runs it |

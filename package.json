@@ -19,6 +19,7 @@
     "check:events": "tsx scripts/check-events.ts",
     "check:status": "tsx scripts/check-status.ts",
     "records:counts": "tsx scripts/records-counts.ts",
+    "records:removed-words": "tsx scripts/records-removed-words.ts",
     "check:breaks": "tsx scripts/check-breaks.ts",
     "check:breaks:static": "tsx scripts/check-breaks-static.ts",
     "check:bundle": "tsx scripts/check-bundle.ts",

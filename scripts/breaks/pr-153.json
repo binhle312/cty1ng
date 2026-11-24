@@ -483,6 +483,230 @@
           ]
         }
       ]
+    },
+    {
+      "id": "removed-words-moved-row",
+      "claim": "Reports a loss for an issue ID that moves to the archive.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "pairs a row moved to the archive"
+      },
+      "assertion": "expect(report, \"loss across ledger files\").toEqual([",
+      "breaks": [
+        {
+          "id": "pair-by-file-and-id",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "const after = head.get(id);\n    if (after === undefined) continue;",
+              "replace": "const after = head.get(id);\n    if (after === undefined || before.path !== after.path) continue;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-repeats",
+      "claim": "Counts repeated words and reports the removed copies in old order.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "counts removed repeated words"
+      },
+      "assertion": "expect(report, \"repeated words in old order\").toEqual([",
+      "breaks": [
+        {
+          "id": "compare-word-sets",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "kept.set(word, count - 1);",
+              "replace": "kept.set(word, count);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-shorter-cell",
+      "claim": "Reports a loss from a shorter cell in a longer row.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "reports removed words when only a cell shrinks"
+      },
+      "assertion": "expect(report, \"a short cell in a longer row\").toEqual([",
+      "breaks": [
+        {
+          "id": "require-shorter-row",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "if (!shrank(raw) && !cells.some(shrank)) return [];",
+              "replace": "if (!shrank(raw)) return [];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-growing-cell",
+      "claim": "Reports a loss from a growing cell when another cell shrinks.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "reports removals from the growing cell too"
+      },
+      "assertion": "expect(report, \"loss from both cells by heading\").toEqual([",
+      "breaks": [
+        {
+          "id": "compare-only-shorter-cells",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "return cells.flatMap((cell) => {",
+              "replace": "return cells.filter(shrank).flatMap((cell) => {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-utf8",
+      "claim": "Measures the loss of UTF-8 bytes when the JavaScript string length stays the same.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "measures shortening in UTF-8 bytes"
+      },
+      "assertion": "expect(report, \"a loss of bytes at the same string length\").toEqual([",
+      "breaks": [
+        {
+          "id": "measure-string-length",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "Buffer.byteLength(cell.after) < Buffer.byteLength(cell.before)",
+              "replace": "cell.after.length < cell.before.length"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-legacy-row",
+      "claim": "Uses raw text when legacy separators prevent cell alignment.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "reports removed words from a malformed legacy row"
+      },
+      "assertion": "expect(report, \"loss from the raw row\").toEqual([",
+      "breaks": [
+        {
+          "id": "skip-raw-row",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "const cells = alignedCells({ before, after }) ?? [raw];",
+              "replace": "const cells = alignedCells({ before, after }) ?? [];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-no-shortening",
+      "claim": "Omits a paired issue with no shorter row or cell.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "omits a row that did not shorten"
+      },
+      "assertion": "expect(report, \"only the shorter row\").toEqual([",
+      "breaks": [
+        {
+          "id": "report-all-paired-rows",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "if (!shrank(raw) && !cells.some(shrank)) return [];",
+              "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-unpaired-row",
+      "claim": "Omits an issue ID that has no row on the other side.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "omits an unpaired row"
+      },
+      "assertion": "expect(report, \"only the paired row\").toEqual([",
+      "breaks": [
+        {
+          "id": "compare-unpaired-to-empty",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "const after = head.get(id);\n    if (after === undefined) continue;",
+              "replace": "const after = head.get(id) ?? { ...before, raw: \"\", cells: before.cells.map(() => \"\") };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-invalid-ref",
+      "claim": "Fails the command for an invalid commit ref.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "fails for an invalid commit"
+      },
+      "assertion": "expect(result, \"invalid commit refusal\").toMatchObject({",
+      "breaks": [
+        {
+          "id": "read-invalid-commit-as-empty",
+          "file": "scripts/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "throw new Error(message);",
+              "replace": "return \"\";"
+            },
+            {
+              "find": "function readSnapshot(commit: string): LedgerFile[] {",
+              "replace": "function readSnapshot(commit: string): LedgerFile[] {\n  if (commit === \"\") return [];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "removed-words-duplicate-id",
+      "claim": "Rejects a duplicate issue ID across the live ledger and archive.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-removed-words.test.ts",
+        "name": "rejects a duplicate issue id"
+      },
+      "assertion": "expect(compare, \"duplicate ID across ledger files\").toThrow(",
+      "breaks": [
+        {
+          "id": "keep-first-duplicate",
+          "file": "scripts/lib/records-removed-words.ts",
+          "edits": [
+            {
+              "find": "if (previous !== undefined) {\n      throw new Error(`${row.id} is in both ${previous.path} and ${row.path}`);\n    }",
+              "replace": "if (previous !== undefined) continue;"
+            }
+          ]
+        }
+      ]
     }
   ],
   "exempt": [
