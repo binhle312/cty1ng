@@ -169,7 +169,9 @@ If the head changes after review, the row still describes the original reviewed 
    the [PR register](delivery-quality-register.md#3-pr-register).
    A PR whose findings all get ledger rows has the coverage `Ledger`.
    A PR with no milestone needs no entry (`AGENTS.md` §9; owner, 2026-11-11).
-2. After each review, add the round and reconcile its findings with existing issue IDs.
+2. For a PR in a milestone or an audit, add the round after each review. Reconcile its findings
+   with existing issue IDs. A PR with no milestone keeps its review rounds in its description
+   (owner, 2026-11-24).
 3. After a fix, add the verification result and change the issue state only when evidence supports it.
 4. After a new discovery, check whether it escaped a merge, repeats a cause, or came from a repair. Record the general rule and the search of old fixes ([bug fix, step 2](workflows/bug-fix.md)).
 5. At PR handoff, after the merge of `origin/main`, run `pnpm records:counts --write`. It writes
