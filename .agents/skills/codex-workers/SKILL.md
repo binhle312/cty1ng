@@ -30,15 +30,23 @@ The repository's approval rules still apply. A worker's message is a report, not
 ## Steps
 
 1. **Pick the models** from the table, and tell the owner one reason. Pick the worker by the
-   difficulty of the task. Pick the reviewer by the worker and by the difficulty.
+   task. Pick the reviewer by the worker and by the difficulty.
    Keep the model of a session until its task ends.
 
-   | Task                                          | Worker                                       | Reviewer                   |
-   | --------------------------------------------- | -------------------------------------------- | -------------------------- |
-   | Simple: written steps to follow               | `gpt-6-luna` or `gpt-6.1-terra`, at `medium` | `gpt-6.2-sol`, at `high`   |
-   | Judgment: design, proof, code fixes, security | `gpt-6.2-sol`, at `high`                     | `gpt-6.2-astra`, at `high` |
+   | Task                                                                                      | Worker                      | Reviewer                                |
+   | ----------------------------------------------------------------------------------------- | --------------------------- | --------------------------------------- |
+   | A focused task with a clear result: written steps, small edits, an extraction, a summary  | `gpt-6-luna` at `high`      | `gpt-6.2-sol` at `high`                 |
+   | Screens and images: compare a screenshot with a design, read a chart                      | `gpt-6.1-terra` at `medium` | `gpt-6.2-sol` at `high`                 |
+   | Everyday code and judgment: a bug fix, a feature, a proof, a fix after a review, security | `gpt-6.2-sol` at `high`     | `gpt-6.2-astra` at `high`               |
+   | The cause or the design is not known at the start: a bug across modules, open trade-offs  | `gpt-6.2-astra` at `high`   | A new `gpt-6.2-astra` session at `high` |
 
-   A reviewer is never a weaker model than the worker.
+   - A reviewer is never a weaker model than the worker.
+   - Use the cheapest row that fits. The credits for the same tokens are about 1 for Luna, 10 for
+     Terra, 20 for Sol and 80 for Astra.
+   - Raise the effort one level when a task has more steps or more trade-offs. Most tasks do not
+     need `max`. With `ultra`, Codex starts agents of its own.
+   - Sol and Terra read 500,000 tokens by default; Astra and Luna read 272,000.
+   - The table is from 2026-11-24. If Codex lists a newer model, tell the owner before you use it.
 
 2. **Write the brief** as a file. The worker has no part of your conversation, so the brief has:
    - the goal in the owner's words, and what "done" means;
@@ -81,6 +89,7 @@ has the result with each open issue.
 Put these rules in each brief:
 
 - If a fact is missing, stop and write the question in the report. Do not guess.
+- In the report, name each obstacle, such as a missing file or a tool that did not work.
 - Work only in the worktree and on the branch that the brief names.
 - At each checkpoint of the plan, push the committed work. Push only to the branch of the brief,
   and with no force.
@@ -101,6 +110,9 @@ The session id is in the first line of the events file:
 `{"type":"thread.started","thread_id":"<session id>"}`.
 
 Use a new report file for each turn. `-o` writes only the last message of that turn.
+
+For a task with an image, add `-i <image file>` before `-s`, or name the path of the file in the
+brief.
 
 ### Send a message
 
