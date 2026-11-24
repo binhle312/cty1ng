@@ -5,14 +5,13 @@ Where the project is right now. This file owns delivery state, next work, and ow
 The plan ([development-plan.md](development-plan.md)) says what and in which order, and carries no delivery state beyond whether a brief file exists.
 
 **Who updates it:** the [Roles](workflows/coordination.md#roles) table says who. An agent updates it in the same PR that
-finishes a step (part of the definition of done in `AGENTS.md` §9). The owner updates it for owner-only steps (reviews,
-approvals). Keep it short: link to PRs and briefs instead of describing work.
+finishes a step (part of the definition of done in `AGENTS.md` §9). Keep it short: link to PRs and briefs instead of describing work.
 
 ## Now
 
 The `codex-workers` skill is in draft [#149](https://github.com/binhle312/cty1ng/pull/149) (owner, 2026-11-24): how to start Codex workers and talk with them. The owner answered its open points and the questions of review round 2 on 2026-11-24 (R2-7 fixed by revision 4 of the leader plan; the scan flags recorded in the PR). Waiting on: the review rounds of revision 4, then the owner's merge.
 
-The `leader` skill is in draft [#150](https://github.com/binhle312/cty1ng/pull/150), on top of #149 (owner, 2026-11-24): the owner starts it with `/leader <task>`. The owner approved the plan (revision 3) and the redesign after review round 2 (`docs/plans/leader-skill-redesign.md`) on 2026-11-24; both are built. For the repeat cause of D1-3 the owner chose a case check of the rule edits of #150, and approved its plan (`docs/plans/leader-skill-case-check.md`) on 2026-11-24. Waiting on: the case check build, its review rounds, the full checks and the owner's merge.
+The `leader` skill is in draft [#150](https://github.com/binhle312/cty1ng/pull/150), on top of #149 (owner, 2026-11-24): the owner starts it with `/leader <task>`. The owner approved the plan (revision 3) and the redesign after review round 2 (`docs/plans/leader-skill-redesign.md`) on 2026-11-24; both are built. For the repeat cause of D1-3 the owner chose a case check of the rule edits of #150, and approved its plan (`docs/plans/leader-skill-case-check.md`) on 2026-11-24. Waiting on: review rounds 1 and 2 of the case check, the full checks and the owner's merge.
 
 The repository audit of 2026-11-05 found 55 issues. After the owner's decisions, 15 are P2, 39 are P3, and the owner accepted one case; none is P1. Its fixes come before M3 in the owner's order. #69 is closed, and the owner watches more PRs before deciding whether to bring it back. Findings, decisions and progress are in [audits/2026-11-05-repo-audit.md](audits/2026-11-05-repo-audit.md). PR 2 of 7, the security fixes, merged in [#73](https://github.com/binhle312/cty1ng/pull/73) on 2026-11-06. [#76](https://github.com/binhle312/cty1ng/pull/76) merged on 2026-11-06 and records the guard decisions. PR 3 of 7, the Skills page, merged in [#78](https://github.com/binhle312/cty1ng/pull/78) on 2026-11-06. PR 4 of 7, the Bots page, merged in [#82](https://github.com/binhle312/cty1ng/pull/82) on 2026-11-08. PR 5 of 7, tests only, merged in [#86](https://github.com/binhle312/cty1ng/pull/86) on 2026-11-10. PR 6 of 7, six tabs, merged in [#91](https://github.com/binhle312/cty1ng/pull/91) on 2026-11-10.
 
