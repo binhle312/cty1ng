@@ -72,9 +72,9 @@ Give each other build to a worker, including a simple code change.
    agent also reviews each code change that you made yourself, in the next review round.
 
    If the review message lets the reviewer run checks, do the [order check](#order-check).
-   For Codex, use the [review run of `codex-workers`](../codex-workers/SKILL.md#review-run). If a
+   For Codex, use the [review run in `references/codex.md`](references/codex.md#review-run). If a
    test tool needs to write files, give the reviewer the test results of the builder, or start it in
-   a worktree of its own with the [writable sandbox of `codex-workers`](../codex-workers/SKILL.md#review-run).
+   a worktree of its own with the [writable sandbox in `references/codex.md`](references/codex.md#review-run).
 
 8. **Report** to the owner. Merge only when the owner asks for the merge of that work.
 
@@ -95,13 +95,13 @@ stop: find its cause, and try again another way.
 
 ## Workers
 
-Before you decide who builds or who reviews, read `../codex-workers/SKILL.md`, relative to the
+Before you decide who builds or who reviews, read `references/codex.md`, relative to the
 base directory of this skill. It holds the models and the commands. If the file is missing, stop
 and tell the owner.
 
 Pick the worker by the task. Pick the reviewer by the worker and by the difficulty. A reviewer is
 never a weaker model than the worker. For Codex, use the
-[model table of `codex-workers`](../codex-workers/SKILL.md#pick-the-models). Tell the owner one
+[model table in `references/codex.md`](references/codex.md#pick-the-models). Tell the owner one
 reason. Keep the model of a session until its task ends.
 
 ### Briefs
@@ -126,7 +126,7 @@ Write each brief from a template in this skill's folder:
 
 Fill each section with facts for this task. Delete the guidance lines. The brief carries each limit
 as a rule, and you check the diff and the folders after each turn. For a task with an image, name
-the path of the file in the brief, or use the [image flag of `codex-workers`](../codex-workers/SKILL.md#image-flag).
+the path of the file in the brief, or use the [image flag in `references/codex.md`](references/codex.md#image-flag).
 For a worker that commits and pushes, permit the network only for Git and the Git host in the brief.
 
 ### Order check
@@ -140,12 +140,12 @@ or send the second message after the first worker is done with that command.
 
 If the start message lets the worker build or run checks, do the [order check](#order-check).
 Start the worker in its own worktree and branch. For Codex, use the
-[start command of `codex-workers`](../codex-workers/SKILL.md#start). Start each run in the background.
+[start command in `references/codex.md`](references/codex.md#start). Start each run in the background.
 Write its session id, worktree, model, effort and sandbox mode on one line of a session list file.
 Add its last [context use](#context-of-each-worker) to that line after each check.
 
 Use a new report file for each turn. For a Codex worker that commits and pushes, use the
-[commit and push options of `codex-workers`](../codex-workers/SKILL.md#commit-and-push).
+[commit and push options in `references/codex.md`](references/codex.md#commit-and-push).
 
 ### Get the plan first
 
@@ -164,13 +164,13 @@ file, so it has no plan turn.
 
 A worker is a conversation. Use the session id from the session list file. Send it more messages
 when that is needed. Answer its question, accept its plan, or send the findings of a review.
-For Codex, use the [send command of `codex-workers`](../codex-workers/SKILL.md#send-a-message).
+For Codex, use the [send command in `references/codex.md`](references/codex.md#send-a-message).
 Before a message that lets it build or run checks, do the [order check](#order-check). If a run goes
 in a wrong direction, [stop the run](#stop-a-workers-run) and send the correction.
 
 ### Stop a worker's run
 
-For Codex, use the [stop command of `codex-workers`](../codex-workers/SKILL.md#stop-a-run). After the
+For Codex, use the [stop command in `references/codex.md`](references/codex.md#stop-a-run). After the
 stop, check that no command of the worker still runs.
 
 ## Context of each worker
@@ -179,7 +179,7 @@ A worker with a full context window works worse, and each message costs more. Kn
 of each worker at each moment.
 
 - The context use is the token count of the last model call, as a percent of the model's context
-  window. For Codex, get it with the [context command of `codex-workers`](../codex-workers/SKILL.md#context-use).
+  window. For Codex, get it with the [context command in `references/codex.md`](references/codex.md#context-use).
 - At 35% or more (the owner's limit; the owner can change it), replace the worker:
   1. If a turn runs, [stop the run](#stop-a-workers-run).
   2. Send the worker a message: write the handoff to a file that you name, and do no other work.

@@ -1,5 +1,0 @@
-interface:
-  display_name: "Codex workers"
-  short_description: "A lead agent starts Codex workers and talks with them"
-policy:
-  allow_implicit_invocation: false

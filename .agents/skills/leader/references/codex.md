@@ -1,20 +1,8 @@
----
-name: codex-workers
-description: Use when the owner runs /codex-workers or names the skill. How a lead agent starts Codex workers, talks with them and stops them.
-disable-model-invocation: true
-metadata:
-  author: binhle312
-  tags: [multi-agent, codex, delegation]
----
-
 # Codex workers
-
-Run this skill only when the owner starts it or names it, or when a skill that the owner started
-tells you to read it.
 
 A **worker** is a Codex session that the lead agent starts with `codex exec`.
 
-See the [stages of a task in `leader`](../leader/SKILL.md#stages-of-a-task) for the process.
+See the [stages of a task in `leader`](../SKILL.md#stages-of-a-task) for the process.
 
 ## Pick the models
 
@@ -137,5 +125,5 @@ command, and it then runs outside the sandbox.
 ### Review run
 
 Start a review with `-s read-only` when the reviewer only reads. A test tool that writes files
-does not run in that sandbox. To run it in the [reviewer's own worktree](../leader/SKILL.md#stages-of-a-task),
+does not run in that sandbox. To run it in the [reviewer's own worktree](../SKILL.md#stages-of-a-task),
 use `-s workspace-write`.

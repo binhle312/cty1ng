@@ -4,7 +4,7 @@ These workflows describe how the owner, a lead agent and its workers build the a
 aim is the simplest process that keeps quality high: one agent builds, a different agent reviews,
 the owner approves the decisions that matter. The owner starts the lead agent with `/leader`.
 [`leader`](../../.agents/skills/leader/SKILL.md) holds its steps.
-[`codex-workers`](../../.agents/skills/codex-workers/SKILL.md) holds the Codex models and commands.
+The [Codex reference](../../.agents/skills/leader/references/codex.md) holds the Codex models and commands.
 
 Use this workflow for role assignment, parallel work, or escalation. The Roles table below is the
 one home of who does each kind of work; the other workflow documents say what to do and point

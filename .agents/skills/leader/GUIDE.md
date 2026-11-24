@@ -74,6 +74,9 @@ fix, or when an approval is missing. Other work goes on.
 
 The rules for the worker are in `SKILL.md`. The templates for the briefs are in `references/`.
 
+The [models](references/codex.md#pick-the-models) and the [commands](references/codex.md#commands) are in
+`references/codex.md`.
+
 ## What the skill does
 
 The human talks with one agent: the lead agent. It is the Claude Code conversation that the human
@@ -141,7 +144,7 @@ handoff, that is the new session.
 ## Where the worker works
 
 - The lead agent starts each worker in its own Git worktree and branch. The brief names the branch.
-  If the brief has no branch name, a [Codex worker](../codex-workers/SKILL.md#start) makes its own.
+  If the brief has no branch name, a [Codex worker](references/codex.md#start) makes its own.
 - A checkpoint is a point that the worker's plan names.
 - A turn is one run of the worker: from a message of the lead agent to the report of the worker.
 - If the brief names a remote branch, the worker pushes its commits to that branch at each
@@ -153,6 +156,9 @@ handoff, that is the new session.
   message after the first worker is done with that command.
 
 ## The 35% limit
+
+The context window is the text that a model can hold at one time: the brief, the messages, and the
+files that it read.
 
 The lead agent watches how full the context window of each worker is.
 When 35% of the model's window is used, the worker writes a handoff. The lead agent checks and
