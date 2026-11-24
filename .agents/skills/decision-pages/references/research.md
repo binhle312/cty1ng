@@ -114,7 +114,7 @@ Everything that decides the answer must be in those places.
    hide rows where all items are equal.** "If the information isn't complete for all compared
    products, it might as well not be in a comparison table."
    Source: https://www.nngroup.com/articles/comparison-tables/
-   Rule for our pages: every option has the same fields (Gets, Cost, Risk), each filled; a field
+   Rule for our pages: every option has the same fields (Does, Gets, Cost, Risk), each filled; a field
    that is the same for all options is removed.
 3. **Choice overload depends on task difficulty and option complexity more than on count.** The
    2010 meta-analysis found a mean effect near zero; the 2015 meta-analysis (99 observations,
@@ -152,8 +152,8 @@ Everything that decides the answer must be in those places.
    reading,** and they are not equal in strength.
    Sources: Healey & Enns 2012, IEEE TVCG 18(7), https://doi.org/10.1109/TVCG.2011.127 ;
    Few 2004, https://www.perceptualedge.com/articles/ie/visual_perception.pdf
-   Rule for our pages: use one strong attribute (color fill) for exactly one thing per question:
-   the "My pick" line.
+   Rule for our pages: in the question content, use one strong attribute (the accent fill) for
+   exactly one thing: the "My pick" box. The controls and the voter pills follow the R4.1 row.
 2. **Hierarchy comes from contrast, size and grouping; "if everything is contrasted, then nothing
    stands out."** Max 3 type sizes, max 3 contrast treatments; test with a blur ("squint test").
    Source: https://www.nngroup.com/articles/visual-hierarchy-ux-definition/

@@ -88,7 +88,8 @@ others are yours.
 
    Then challenge each question before you write it: what stays open after the settled points,
    and which source makes it the reader's decision? If nothing stays open, drop the question.
-   If you are not sure, run the source review of step 7 on this list now, before you write.
+   If you are not sure, get the source review of step 7 now, before you write. Give the reviewer
+   this list and the paths of the sources, because the content and question files do not exist yet.
 4. **Write the content file** in the format of `references/content-format.md`, with the writing rules
    below. Put the conclusion in the ask and the evidence in the facts and table. Put the use
    case in the example and the story in Details.
@@ -208,12 +209,14 @@ per row. "Copy my answers" copies this text:
 ```text
 <page title>, <date>: my answers (7 of 9)
 Q1: A <option label>
+  Worker: <name>
   Note: <note text>
 Q2: (no answer)
 Page clear: no
   Missing: <text>
 ```
 
+If a question has votes, each vote of the chosen option gets one line below it, or "No votes".
 The reader pastes it back to you. Read the letters against the options in your content file.
 The "Page clear" line answers "Did this page tell you what each question is about?". It is the
 only test by the real reader. When it says "no", or names something missing, fix that in the

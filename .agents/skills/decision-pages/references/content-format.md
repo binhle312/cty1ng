@@ -183,5 +183,6 @@ NODE_PATH=<node_modules with @playwright/test> node scripts/verify.mjs content.j
 `page.q2.txt`, and so on. Each question file contains one sentence or item per line from that
 question screen. The export excludes the overview and Details. The generator prints each path.
 
-`scripts/verify.mjs` writes four screenshots next to the page: `<name>-overview.png`, `<name>-q1.png`,
-`<name>-finish.png` and `<name>-q1-dark.png`.
+For a page with questions, `scripts/verify.mjs` writes four screenshots next to the page:
+`<name>-overview.png`, `<name>-q1.png`, `<name>-finish.png` and `<name>-q1-dark.png`. For a report
+page, it writes only `<name>-overview.png`.
