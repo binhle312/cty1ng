@@ -127,3 +127,103 @@ A break list for the script change follows `docs/testing.md`.
 2. Approve the new words of `AGENTS.md` §9: "search `docs/delivery-quality-prevention.md` and the
    lessons" in place of "search the prevention actions of `docs/delivery-quality.md` §7 and the
    lessons".
+
+## Revision 4 (proposed): the six rows of #135
+
+Approval is pending.
+
+- **DQ-854** stops at the first `)` or `;` and checks only the first answer. In
+  `scripts/lib/records-counts.ts`, find every `Same cause:` marker outside single backtick spans.
+  Parse to the outer `)` with balanced parentheses. Only the outer `; §9: ` starts a step.
+  Check every whole DQ id in hits on matching lines other than the source row. Reject missing or
+  malformed answers and colon continuations. A yes requires one step. A no takes none.
+  Keep the current ID and state scope. Fixed delimiters need less code but can hide citations.
+  Update the form in `docs/workflows/pull-request.md`.
+- **DQ-855** claims grep and JavaScript always agree. Keep the pattern rule. In the PR workflow,
+  describe the actual exclusions. Describe JavaScript matching in the `searchLines` comment.
+  Use the parity fixture as evidence.
+  Add `Not claimed: grep and the checker agree on all allowed patterns.` under
+  `Needs human review`. Refusing four forms would narrow accepted input and leave other gaps.
+- **DQ-856** has no test for an unknown §9 step or free text in an owner step. Add only the two
+  tests in `scripts/records-counts.test.ts`.
+- **DQ-863** accepts impossible dates. In the checker and PR workflow, use
+  `owner, YYYY-MM-DD, <page> <question> <answer>` with exact spacing. Check the Gregorian date
+  in years 0001–9999. The page is ASCII letters or digits with optional hyphens between groups,
+  or `#` plus a positive number. A question is `Q` plus a positive number. Use decimal digits
+  without leading zeros for both numbers. An answer is one uppercase ASCII letter.
+- **DQ-868** loses facts when an editor shortens a row. Add the read-only command
+  `pnpm records:removed-words <base> <head>` in `scripts/records-removed-words.ts`. Read the live
+  ledger and archive at both explicit Git commit refs. The pure
+  `scripts/lib/records-removed-words.ts` reuses the counts module's parser. Pair rows by ID across
+  files. If the line or any trimmed cell shrinks in UTF-8 bytes, compare all cells by heading.
+  Print the ID, paths, heading and removed words in old order. Split words at whitespace and
+  count repeats. Compare raw lines if legacy cells do not align. Fail on missing input or
+  duplicate IDs. Add the command to `package.json`. List each script file in its folder's README,
+  including `scripts/README.md`. Add a PR workflow step. Before each push that edits issue rows, the
+  builder saves the report from the PR merge base to the proposed head. The reviewer reads it.
+  Git word diff needs less code but loses the ID match across files.
+- **DQ-870** rejects a self-proposal in its own proposal row. Allow it if the trimmed fix cell
+  starts with exact `Proposal:`. Update the checker and PR workflow. In `docs/delivery-quality.md`,
+  change only the answers of DQ-866, DQ-868 and DQ-869 to yes with their self-proposal.
+
+**Rows that newly fail.** The scratch check at `b0547a2` finds four colon continuations. Move
+DQ-865's note before its answer. Use `it\.each` for DQ-866 (DQ-322, DQ-407), `shortened` for DQ-868
+(DQ-623, DQ-874), and `its message names\|does not say that` for DQ-869 (DQ-838, DQ-875).
+`q4 Q3 A` and `morning Q4 A` fit. DQ-869 has 562 bytes outside the answer. Approve an exception
+to the 600-byte rule to keep the edit answer-only, or approve a shorter row.
+
+**Pattern rules.** Keep the current test results. Accept `a+?`, `a{,3}`, `[a[:digit:]]` and `x[^]`.
+Allow zero unexpected refusals on the ledger and archive at `b0547a2` after the four edits.
+Reject every seeded bad case in the table. Reviewers judge meaning and decision references.
+The word report covers paired IDs with a shorter line or cell.
+
+**Records and commit order.**
+
+1. Record owner approval. Keep the other round 4 fixes in their own commits.
+2. Commit the answer checker, workflow, tests, breaks and four compatibility edits together.
+3. Commit the word report, workflow step, indexes, tests and breaks together.
+4. Mark all six rows `fixed` with fix and test evidence. Commit those edits and the output of
+   `pnpm records:counts --write`. Only two register cells change, both `Open issues`.
+   Audit 2026-11-05 goes from 61 to 55. #135 goes from 17 to 11.
+
+Approve one exception to proof step 1. Start with the exact moved bytes from `b45ef6f`.
+Run the count writer in scratch with only the six states changed from `b0547a2`.
+Require exactly the two changes above. Apply only those cell values to the original bytes.
+Compare the whole register with head. Extend step 3 with the approved ledger edits.
+Keep the step 4 write check on head. Test step 1 with a wrong count and a changed historical byte.
+
+**Test strategy.** Use plain test names. Record each applicable break below as a claim in
+`scripts/breaks/pr-153.json`, with a passing run and a failure at the named assertion.
+The answer tests use `scripts/records-counts.test.ts`. The word report uses
+`scripts/records-removed-words.test.ts`.
+
+| Case                                                                                     | Test name                                                                                      | Break                                                                                           |
+| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| A real hit immediately after `(` in hits and on a matching line                          | `accepts an id in parenthesized hits`                                                          | Reject `(` in hits                                                                              |
+| A missing hit after an inner `)`                                                         | `checks hits after a nested close`                                                             | Stop the hits at the first `)`                                                                  |
+| A missing hit after a plain semicolon                                                    | `checks hits after a plain semicolon`                                                          | Stop the hits at the first `;`                                                                  |
+| Two valid answers                                                                        | `accepts two answers in one cell`                                                              | Reject a second marker                                                                          |
+| First answer valid, second cites a missing hit                                           | `checks the second answer in a cell`                                                           | Check only the first marker                                                                     |
+| Invalid second answer with no search                                                     | `rejects a malformed second answer`                                                            | Skip malformed markers when another answer passes                                               |
+| Quoted `Same cause:` marker inside a code span                                           | `ignores a quoted marker`                                                                      | Scan markers inside code spans                                                                  |
+| A no with an outer §9 step                                                               | `rejects a section 9 step for a no`                                                            | Ignore the step on a no                                                                         |
+| An answer with blank hits                                                                | `rejects blank hits`                                                                           | Accept empty hits                                                                               |
+| A trailing `): see DQ-001`                                                               | `rejects a colon continuation after an answer`                                                 | Allow the colon continuation                                                                    |
+| A yes with an unknown step                                                               | `rejects an unknown section 9 step`                                                            | Accept unrecognized steps                                                                       |
+| Owner step with free text after the option                                               | `rejects free text in an owner step`                                                           | Allow arbitrary text after the option inside the step                                           |
+| Valid leap day `2024-02-29` with `#135 Q3 A`                                             | `accepts a leap day on a PR page`                                                              | Reject February 29                                                                              |
+| Impossible date `2026-02-30`                                                             | `rejects a date outside the month`                                                             | Check only the date shape                                                                       |
+| `2026-02-29` in a non-leap year                                                          | `rejects a leap day outside a leap year`                                                       | Accept February 29 every year                                                                   |
+| Year `0000`                                                                              | `rejects year zero`                                                                            | Remove the year floor                                                                           |
+| A page with spaces, a `Q0`, or a multi-letter answer                                     | `rejects an owner page with spaces`, `rejects question zero`, `rejects a multi-letter answer`  | Allow spaces, zero, or multiple letters respectively                                            |
+| Self-proposal at the start of a fix cell                                                 | `accepts a self-proposal with its prefix`                                                      | Reject all self-proposals                                                                       |
+| Self-proposal with no prefix                                                             | `rejects a self-proposal without its prefix`                                                   | Accept self-proposals regardless of the prefix                                                  |
+| Self-proposal with a prefix later in the cell                                            | `requires the self-proposal prefix at the start`                                               | Accept the prefix anywhere in the cell                                                          |
+| The four disputed patterns and the parity fixture                                        | Existing parity test and the scratch `patternProblem` probe                                    | Keep the fixture scope. A scratch rejection of any of the four fails its acceptance probe       |
+| Older rows, withdrawn rows, the two other §9 steps, escaped pipe and same-line-only hits | Existing checker tests                                                                         | Retain the prior regression tests                                                               |
+| DQ-623-shaped loss of a repeated word, with a move to the archive                        | `pairs a row moved to the archive`, `counts removed repeated words`                            | Pair by file and ID, or compare sets of words respectively                                      |
+| DQ-874-shaped loss in two cells while the row grows                                      | `reports removed words when only a cell shrinks`, `reports removals from the growing cell too` | Require the row to shrink, or compare only the shorter cell respectively                        |
+| Same string length, fewer UTF-8 bytes                                                    | `measures shortening in UTF-8 bytes`                                                           | Measure JavaScript string length                                                                |
+| Lost words from an old row with stray cell separators                                    | `reports removed words from a malformed legacy row`                                            | Skip the raw-row fallback                                                                       |
+| A word changes without any shorter line or cell, and an ID present on only one side      | `omits a row that did not shorten`, `omits an unpaired row`                                    | Report all paired rows, or treat an unpaired ID as a row with empty cells respectively          |
+| Bad revision and duplicate ID                                                            | `fails for an invalid commit`, `rejects a duplicate issue id`                                  | Treat the failed Git read as an empty snapshot, or keep only one of the duplicates respectively |
