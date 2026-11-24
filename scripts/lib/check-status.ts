@@ -52,7 +52,7 @@ export function doneRows(statusMd: string): { prs: Set<number>; problems: string
 
 function typedMeasureProblems(statusMd: string): string[] {
   const measure =
-    /(?<![\p{L}\p{N}.,])(?:\d+(?:,\d{3})*(?:\.\d+)?|\.\d+)[ -](?:bytes?|kb|rows?|tokens?)(?![\p{L}\p{N}])/giu;
+    /(?<![\p{L}\p{N}.])(?<!\d,)(?:\d+(?:,\d{3})*(?:\.\d+)?|\.\d+)[ -](?:bytes?|kb|rows?|tokens?)(?![\p{L}\p{N}])/giu;
   const problems: string[] = [];
   for (const [index, line] of statusMd.split("\n").entries()) {
     for (const [text] of line.matchAll(measure)) {

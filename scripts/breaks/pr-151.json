@@ -137,8 +137,8 @@
           "file": "scripts/lib/check-status.ts",
           "edits": [
             {
-              "find": "(?<![\\p{L}\\p{N}.,])",
-              "replace": "(?<![\\p{L}\\p{N}.,_])"
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}\\p{N}._])"
             }
           ]
         }
@@ -193,6 +193,168 @@
             {
               "find": "(?![\\p{L}\\p{N}])",
               "replace": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "measure-case-table",
+      "claim": "Quotes complete measures across separators and at line boundaries. Rejects parts of words and malformed number groups.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/check-status.test.ts",
+        "name": "quotes the measures in the case table"
+      },
+      "assertion": "expect.soft(quotedMeasures, input).toEqual(measures);",
+      "breaks": [
+        {
+          "id": "allow-letter-before-measure",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{N}.])"
+            }
+          ]
+        },
+        {
+          "id": "allow-digit-before-measure",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}.])"
+            }
+          ]
+        },
+        {
+          "id": "allow-dot-before-measure",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}\\p{N}])"
+            }
+          ]
+        },
+        {
+          "id": "allow-after-digit-comma",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<!\\d,)",
+              "replace": ""
+            }
+          ]
+        },
+        {
+          "id": "allow-letter-after-measure",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?![\\p{L}\\p{N}])",
+              "replace": "(?![\\p{N}])"
+            }
+          ]
+        },
+        {
+          "id": "allow-digit-after-measure",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?![\\p{L}\\p{N}])",
+              "replace": "(?![\\p{L}])"
+            }
+          ]
+        },
+        {
+          "id": "block-comma-separator",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}\\p{N}.,])"
+            }
+          ]
+        },
+        {
+          "id": "block-space-boundary",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}\\p{N}. ])"
+            }
+          ]
+        },
+        {
+          "id": "block-semicolon-boundary",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}\\p{N}.;])"
+            }
+          ]
+        },
+        {
+          "id": "block-bracket-boundary",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}\\p{N}.\\[])"
+            }
+          ]
+        },
+        {
+          "id": "block-asterisk-emphasis",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}\\p{N}.*])"
+            }
+          ]
+        },
+        {
+          "id": "require-prefix-before-measure",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?<![\\p{L}\\p{N}.])",
+              "replace": "(?<![\\p{L}\\p{N}.])(?<=.)"
+            }
+          ]
+        },
+        {
+          "id": "require-suffix-after-measure",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "(?![\\p{L}\\p{N}])",
+              "replace": "(?![\\p{L}\\p{N}])(?=.)"
+            }
+          ]
+        },
+        {
+          "id": "require-hyphen-between-number-and-unit",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "[ -]",
+              "replace": "-"
+            }
+          ]
+        },
+        {
+          "id": "require-space-between-number-and-unit",
+          "file": "scripts/lib/check-status.ts",
+          "edits": [
+            {
+              "find": "[ -]",
+              "replace": " "
             }
           ]
         }
