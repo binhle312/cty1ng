@@ -1,6 +1,6 @@
 // Self-test of content lint and text output. Exit 1 on a failure.
 import assert from "node:assert/strict";
-import { copyLines, lint, pageText, questionText } from "./lib.mjs";
+import { copyLines, lint, pageText, questionText, stripMarkup } from "./lib.mjs";
 
 const content = {
   page: { title: "Pick a **plan**", date: "2026-01-02", storageKey: "k-1", subtitle: "One question." },
@@ -75,20 +75,56 @@ assert.equal(copyLines(content, answers, notes, { clear: "yes", missing: " \n " 
 assert.equal(copyLines(content, answers, notes, { clear: "no", missing: " The scope.\n The date. " }), `${copied}\nPage clear: no\n  Missing: The scope. The date.`);
 assert.equal(copyLines(content, answers, notes, { missing: "More context." }), `${copied}\nPage clear: (no answer)\n  Missing: More context.`);
 
-assert.deepEqual(lint(content).errors, []);
+assert.equal(stripMarkup("**Formula:** `x ** 2` and `**`."), "Formula: x ** 2 and **.");
+assert.equal(stripMarkup("Keep `open and **bold**."), "Keep `open and bold.");
+assert.equal(stripMarkup("Keep **before `code` after**."), "Keep **before code after**.");
+const literalOption = { ...q.options[0], label: "`**`", does: "Use `x ** 2` and `x. Y`. Keep `**`." };
+const literalQuestion = { ...q, options: [literalOption, q.options[1]] };
+const literalContent = { ...content, questions: [literalQuestion] };
+const literalLines = ["Use x ** 2 and x. Y.", "Keep **."];
+assert.ok(pageText(literalContent).includes("**"));
+assert.ok(literalLines.every((line) => pageText(literalContent).includes(line)));
+assert.ok(questionText(literalQuestion).includes("A. **"));
+assert.ok(questionText(literalQuestion).includes(`Does: ${literalLines[0]}`));
+assert.ok(questionText(literalQuestion).includes(literalLines[1]));
+assert.equal(copyLines(literalContent, answers, {}), "Pick a plan, 2026-01-02: my answers (1 of 1)\nQ1: A **\nPage clear: (no answer)");
+const emptyLabel = { ...literalQuestion, options: [{ ...literalOption, label: "``" }, q.options[1]] };
+assert.equal(copyLines({ ...content, questions: [emptyLabel] }, answers, {}), "Pick a plan, 2026-01-02: my answers (1 of 1)\nQ1: A \nPage clear: (no answer)");
+assert.equal(copyLines(literalContent, { Q1: "Z" }, {}), "Pick a plan, 2026-01-02: my answers (0 of 1)\nQ1: (no answer)\nPage clear: (no answer)");
+
+const lintQuestion = (question) => lint({ ...content, questions: [question] });
+const words = (n) => Array(n).fill("word").join(" ");
+const boundaryOptions = ["A", "B", "C", "D"].map((key) => ({
+  key, label: "Cache plan", does: words(8), gets: words(8), costs: words(8), risk: "low", riskText: words(8),
+}));
+const atOptionLimit = lintQuestion({ ...q, options: boundaryOptions });
+assert.equal(atOptionLimit.stats[0].choiceWords, 160);
+assert.ok(!atOptionLimit.errors.some((error) => error.includes("visible option words")));
+const overOptionLimit = lintQuestion({ ...q, options: [{ ...boundaryOptions[0], does: words(9) }, ...boundaryOptions.slice(1)] });
+assert.equal(overOptionLimit.stats[0].choiceWords, 161);
+assert.ok(overOptionLimit.errors.some((error) => error.includes("161 visible option words > 160")));
+
+const atBoldLimit = { ...q, table: { ...q.table, rows: [...q.table.rows, [words(39), words(39)]] } };
+const atBold = lintQuestion(atBoldLimit);
+assert.equal(atBold.stats[0].contextWords, 170);
+assert.equal(atBold.stats[0].boldPercent, 10);
+assert.deepEqual(atBold.errors, []);
+assert.deepEqual(lintQuestion({ ...atBoldLimit, options: literalQuestion.options }).warnings, []);
+const overBold = lintQuestion({ ...atBoldLimit, decides: "Choose the scope for Monday." });
+assert.equal(overBold.stats[0].boldPercent, 10.1);
+assert.ok(overBold.errors.some((error) => error.includes("bold is 10.1%")));
 for (const field of ["decides", "owner", "settled", "does"]) {
   const draft = structuredClone(content);
   const question = draft.questions[0];
   const parent = field === "does" ? question.options[0] : question;
   delete parent[field];
   const path = field === "does" ? "questions[0].options[0].does" : `questions[0].${field}`;
-  assert.ok(lint(draft).errors.some((error) => error.startsWith(`${path} is required`)), `lint names the missing ${path}`);
+  assert.ok(lint(draft).errors.some((error) => error.startsWith(`${path} is required`) && error.includes("R8.1 scope fields")), `lint names the missing ${path} and its rule`);
 }
-const emptySettled = { ...q, settled: [] };
-const lintQuestion = (question) => lint({ ...content, questions: [question] });
+const emptySettled = { ...atBoldLimit, settled: [] };
 assert.deepEqual(lintQuestion(emptySettled).errors, []);
+assert.equal(lintQuestion(emptySettled).stats[0].boldPercent, 7.5);
 assert.ok(!questionText(emptySettled).includes("Already decided (no answer needed):"));
-const words = (n) => Array(n).fill("word").join(" ");
 for (const [question, field] of [
   [{ ...q, decides: words(21) }, "decides:"],
   [{ ...q, owner: `${words(20)}. Six more words in this sentence.` }, "owner:"],
@@ -96,7 +132,7 @@ for (const [question, field] of [
   [{ ...q, settled: ["One", "Two", "Three", "Four"] }, "settled:"],
   [{ ...q, removed: [words(26)] }, "removed[0]:"],
   [{ ...q, options: [{ ...q.options[0], does: words(13) }, q.options[1]] }, "does:"],
-]) assert.ok(lintQuestion(question).errors.some((error) => error.includes(field)), `lint enforces the ${field} limit`);
+]) assert.ok(lintQuestion(question).errors.some((error) => error.includes(field) && error.includes("R8.1 scope fields")), `lint enforces the ${field} limit and names its rule`);
 
 const stats = lintQuestion(q).stats[0];
 assert.equal(lintQuestion({ ...q, decides: "Choose now." }).stats[0].contextWords, stats.contextWords - 4);

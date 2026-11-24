@@ -184,8 +184,8 @@ ok((await fin.locator("#copytext").textContent()).endsWith("\nPage clear: (no an
 let rowsOk = true;
 for (let i = 0; i < N; i++) {
   const q = c.questions[i], row = fin.locator(`tr[data-q="Q${i + 1}"]`), o = q.options.find((x) => x.key === answers[`Q${i + 1}`]);
-  const t = await row.innerText();
-  if (!t.includes(stripMarkup(q.title)) || !t.includes(`${o.key}. ${stripMarkup(o.label)}`)) rowsOk = false;
+  if (!sameText(await row.locator("td").nth(1).innerText(), q.title)
+    || !sameText(await row.locator(".ans").innerText(), `${o.key}. ${o.label}`)) rowsOk = false;
 }
 ok(rowsOk, "each row shows the question title and the chosen option");
 ok((await fin.locator('tr[data-q="Q1"]').innerText()).includes(notes.Q1), "the row shows the note");

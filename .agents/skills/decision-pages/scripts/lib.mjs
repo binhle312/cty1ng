@@ -1,43 +1,56 @@
 // Decision page kit: content lint and page builder. ES module, no dependencies.
 // Input: a content object (see content-format.md). Output: one self-contained HTML page.
-// Rule ids in comments (R1.2, R3.4, ...) point to sections of references/research.md.
+// Rule ids point to references/research.md or references/content-format.md.
 
 // ---------- Text helpers ----------
 
 export const esc = (s) =>
   String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
+const BOLD_MARKUP = /\*\*([^*]+?)\*\*/g;
+const SENTENCE_BREAK = /(?<=[.!?])\s+(?=[A-Z0-9"'(#§\/])/g;
+
+function inlineParts(s) {
+  const text = String(s ?? "");
+  const parts = text.split("`");
+  return parts.length % 2 === 0 ? [text] : parts; // Unbalanced backticks stay literal.
+}
+
 // Safe inline markup: escape all text first, then allow only `code` and **bold**.
 export function inline(s) {
-  const parts = String(s ?? "").split("`");
-  if (parts.length % 2 === 0) return boldOnly(esc(s)); // unbalanced backtick: no code spans
-  return parts.map((p, i) => (i % 2 ? `<code${p.length <= 48 ? ' class="nw"' : ""}>${esc(p)}</code>` : boldOnly(esc(p)))).join("");
+  return inlineParts(s).map((part, i) => i % 2
+    ? `<code${part.length <= 48 ? ' class="nw"' : ""}>${esc(part)}</code>`
+    : esc(part).replace(BOLD_MARKUP, "<strong>$1</strong>")).join("");
 }
-function boldOnly(h) {
-  return h.replace(/\*\*([^*]+?)\*\*/g, "<strong>$1</strong>");
-}
+
+const textParts = (s) => inlineParts(s).map((part, i) => i % 2 ? part : part.replace(BOLD_MARKUP, "$1"));
+export const stripMarkup = (s) => textParts(s).join("");
 
 // Plain text for counting: a code span counts as one word.
 export function plain(s) {
-  return String(s ?? "").replace(/`[^`]*`/g, "CODE").replace(/\*\*/g, "");
+  return textParts(s).map((part, i) => i % 2 ? "CODE" : part).join("");
 }
-export const stripMarkup = (s) => String(s ?? "").replace(/\*\*/g, "").replace(/`/g, "");
 export function countWords(s) {
   return plain(s).split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w)).length;
 }
 // A semicolon list counts as one sentence (R2.7).
 export function sentences(s) {
   return plain(s)
-    .split(/(?<=[.!?])\s+(?=[A-Z0-9"'(#§\/])/)
+    .split(SENTENCE_BREAK)
     .map((x) => x.trim())
     .filter(Boolean);
 }
 export function boldWords(s) {
-  const m = String(s ?? "").match(/\*\*([^*]+?)\*\*/g) || [];
-  return m.reduce((n, b) => n + countWords(b), 0);
+  let count = 0;
+  for (const [i, part] of inlineParts(s).entries()) {
+    if (i % 2 === 0) for (const [, bold] of part.matchAll(BOLD_MARKUP)) count += countWords(bold);
+  }
+  return count;
 }
 
-// ---------- Limits (each traces to references/research.md) ----------
+// ---------- Limits ----------
+
+const SCOPE_FIELDS_RULE = "R8.1 scope fields";
 
 export const LIMITS = {
   titleWords: [12, "R5.2 the heading is the question, at most 12 words, ends with ?"],
@@ -45,11 +58,11 @@ export const LIMITS = {
   topicChars: [16, "R5.4 short step names keep the step bar on one or two rows"],
   askWords: [20, "R2.4 BLUF: the ask is the first line, at most 20 words"],
   whyWords: [25, "R5.2 hint text is one short sentence"],
-  decidesWords: [20, "Decision 3: state what the reader decides"],
-  settledMax: [3, "Decision 3: list up to 3 settled items"],
-  settledWords: [20, "Decision 3: keep each settled item short"],
-  ownerWords: [25, "Decision 3: state why the reader decides"],
-  removedWords: [25, "Decision 3: explain each removed option in Details"],
+  decidesWords: [20, `${SCOPE_FIELDS_RULE}: state what the reader decides`],
+  settledMax: [3, `${SCOPE_FIELDS_RULE}: list up to 3 settled items`],
+  settledWords: [20, `${SCOPE_FIELDS_RULE}: keep each settled item short`],
+  ownerWords: [25, `${SCOPE_FIELDS_RULE}: state why the reader decides`],
+  removedWords: [25, `${SCOPE_FIELDS_RULE}: explain each removed option in Details`],
   pickReasonWords: [25, "R7b the pick line is at most 25 words"],
   pickAnotherWords: [15, "R3.7 'Pick another if' is at most 15 words"],
   factsMin: [2, "R2.1 2-4 bullets"],
@@ -66,7 +79,7 @@ export const LIMITS = {
   optionsMin: [2, "R3.3 2-4 options"],
   optionsMax: [4, "R3.3 2-4 options; R2.1 4 chunks"],
   labelWords: [8, "R3.3 an option label is at most 8 words"],
-  fieldWords: [12, "Decision 3 / R7b: Does, Gets, Costs and Risk are at most 12 words each"],
+  fieldWords: [12, `${SCOPE_FIELDS_RULE} / R7b: Does, Gets, Costs and Risk are at most 12 words each`],
   contextWords: [220, "R1.2 people read about 20% of a page: at most 220 visible words of context"],
   choiceWords: [160, "R1.2 at most 160 visible words in the options"],
   sentenceWords: [20, "R2.7 visible sentences at most 20 words"],
@@ -84,6 +97,8 @@ const STRAWMAN = /^(no work|nothing|none|no change)\.?$/i;
 const DECIDES_LABEL = "Only this depends on you:";
 const OWNER_LABEL = "Why you decide:";
 const SETTLED_LABEL = "Already decided (no answer needed):";
+const OPTION_ROWS = [["does", "Does"], ["gets", "Gets"], ["costs", "Costs"], ["riskText", "Risk"]];
+const riskChipText = (risk) => `Risk: ${risk}`;
 
 function questionDetails(q) {
   if (!q.removed?.length) return q.details;
@@ -114,16 +129,16 @@ export function validate(c) {
   (c.questions || []).forEach((q, i) => {
     const id = `questions[${i}]`;
     for (const f of ["topic", "title", "ask", "why", "facts", "example", "options", "pick"]) need(q[f], `${id}.${f} is required`);
-    for (const f of ["decides", "owner"]) need(hasText(q[f]), `${id}.${f} is required and must be a non-empty string`);
-    need(Array.isArray(q.settled) && q.settled.every(hasText), `${id}.settled is required and must be an array of non-empty strings`);
-    if (q.removed !== undefined) need(Array.isArray(q.removed) && q.removed.every(hasText), `${id}.removed must be an array of non-empty strings`);
+    for (const f of ["decides", "owner"]) need(hasText(q[f]), `${id}.${f} is required and must be a non-empty string (${SCOPE_FIELDS_RULE})`);
+    need(Array.isArray(q.settled) && q.settled.every(hasText), `${id}.settled is required and must be an array of non-empty strings (${SCOPE_FIELDS_RULE})`);
+    if (q.removed !== undefined) need(Array.isArray(q.removed) && q.removed.every(hasText), `${id}.removed must be an array of non-empty strings (${SCOPE_FIELDS_RULE})`);
     if (q.example) need(Array.isArray(q.example.steps) && q.example.title, `${id}.example needs title and steps`);
     if (Array.isArray(q.options)) {
       const keys = q.options.map((o) => o.key);
       need(new Set(keys).size === keys.length, `${id} option keys must be unique`);
       q.options.forEach((o, k) => {
         for (const f of ["key", "label", "gets", "costs", "risk", "riskText"]) need(o[f], `${id}.options[${k}].${f} is required (R3.2 same fields for every option)`);
-        need(hasText(o.does), `${id}.options[${k}].does is required and must be a non-empty string`);
+        need(hasText(o.does), `${id}.options[${k}].does is required and must be a non-empty string (${SCOPE_FIELDS_RULE})`);
         need(/^[A-Z]$/.test(o.key || ""), `${id}.options[${k}].key must be one capital letter`);
       });
       if (q.pick) need(keys.includes(q.pick.key), `${id}.pick.key must name an option`);
@@ -154,8 +169,9 @@ export function lint(c) {
   };
   const markup = (where, text) => {
     const t = String(text ?? "");
-    if ((t.split("`").length - 1) % 2) warnings.push(`${where}: unbalanced backtick; shown as plain text`);
-    if ((t.split("**").length - 1) % 2) warnings.push(`${where}: unbalanced ** marker`);
+    const parts = inlineParts(t);
+    if (parts.length === 1 && t.includes("`")) warnings.push(`${where}: unbalanced backtick; shown as plain text`);
+    if (parts.some((part, i) => i % 2 === 0 && part.split("**").length % 2 === 0)) warnings.push(`${where}: unbalanced ** marker`);
   };
   const range = (where, n, lo, hi) => {
     if (n < L(lo) || n > L(hi)) errors.push(`${where}: ${n} items, need ${L(lo)}-${L(hi)} (${LIMITS[hi][1]})`);
@@ -182,6 +198,7 @@ export function lint(c) {
     const id = `Q${i + 1}`;
     let ctx = 0, bold = 0;
     const count = (where, text, key) => { markup(where, text); ctx += key ? max(where, text, key) : countWords(text); bold += boldWords(text); };
+    const countScopeLabel = (label) => { const words = countWords(label); ctx += words; bold += words; };
 
     count(`${id}.title`, q.title, "titleWords");
     if (!/\?\s*$/.test(q.title || "")) errors.push(`${id}.title: must end with "?" (${LIMITS.titleWords[1]})`);
@@ -191,11 +208,11 @@ export function lint(c) {
     sent(`${id}.ask`, q.ask);
     count(`${id}.why`, q.why, "whyWords");
     if (sentences(q.why).length > 1) errors.push(`${id}.why: ${sentences(q.why).length} sentences, need 1 (${LIMITS.whyWords[1]})`);
-    count(`${id}.decides`, q.decides, "decidesWords"); ctx += countWords(DECIDES_LABEL);
-    count(`${id}.owner`, q.owner, "ownerWords"); ctx += countWords(OWNER_LABEL);
+    count(`${id}.decides`, q.decides, "decidesWords"); countScopeLabel(DECIDES_LABEL);
+    count(`${id}.owner`, q.owner, "ownerWords"); countScopeLabel(OWNER_LABEL);
     sent(`${id}.owner`, q.owner);
     if (q.settled.length) {
-      ctx += countWords(SETTLED_LABEL);
+      countScopeLabel(SETTLED_LABEL);
       if (q.settled.length > L("settledMax")) errors.push(`${id}.settled: ${q.settled.length} items > ${L("settledMax")} (${LIMITS.settledMax[1]})`);
       q.settled.forEach((item, k) => count(`${id}.settled[${k}]`, item, "settledWords"));
     }
@@ -259,10 +276,12 @@ export function lint(c) {
     let choice = 0;
     opts.forEach((o) => {
       const w = `${id}.option ${o.key}`;
-      for (const [f, key] of [["label", "labelWords"], ["does", "fieldWords"], ["gets", "fieldWords"], ["costs", "fieldWords"], ["riskText", "fieldWords"]]) {
-        markup(`${w}.${f}`, o[f]); choice += max(`${w}.${f}`, o[f], key); sent(`${w}.${f}`, o[f]);
+      for (const [field, label] of [["label", ""], ...OPTION_ROWS]) {
+        const where = `${w}.${field}`;
+        markup(where, o[field]); sent(where, o[field]);
+        choice += max(where, o[field], label ? "fieldWords" : "labelWords") + countWords(label);
       }
-      choice += 2; // "Risk: low" chip
+      choice += countWords(riskChipText(o.risk));
       if (!RISKS.includes(o.risk)) errors.push(`${w}.risk: "${o.risk}" must be one of ${RISKS.join(", ")} (R4.5 the chip says the level in words)`);
       if (STRAWMAN.test(String(o.gets).trim())) warnings.push(`${w}.gets: "${o.gets}" is no real gain; remove the option or name its case (R3.6 decoys)`);
       if (o.details) detailItems(`${w}.details`, o.details.items);
@@ -287,16 +306,18 @@ function feedbackLines({ clear, missing } = {}) {
 }
 
 export function copyLines(c, answers, notes, feedback) {
-  const n = c.questions.filter((q, i) => answers[`Q${i + 1}`]).length;
-  const out = [`${stripMarkup(c.page.title)}${c.page.date ? ", " + c.page.date : ""}: my answers (${n} of ${c.questions.length})`];
+  let answered = 0;
+  const out = [];
   c.questions.forEach((q, i) => {
     const id = `Q${i + 1}`, a = answers[id];
     const o = q.options.find((x) => x.key === a);
+    if (o) answered++;
     out.push(o ? `${id}: ${o.key} ${stripMarkup(o.label)}` : `${id}: (no answer)`);
     const nt = String(notes[id] || "").replace(/\s+/g, " ").trim();
     if (nt) out.push(`  Note: ${nt}`);
   });
-  return out.concat(feedbackLines(feedback)).join("\n");
+  const header = `${stripMarkup(c.page.title)}${c.page.date ? ", " + c.page.date : ""}: my answers (${answered} of ${c.questions.length})`;
+  return [header, ...out, ...feedbackLines(feedback)].join("\n");
 }
 
 // ---------- Styles ----------
@@ -564,10 +585,11 @@ ${details ? `<details class="blk more"><summary>${inline(details.summary)}</summ
   const opts = q.options.map((o, k) => {
     const isPick = o.key === q.pick.key;
     const rid = `r-${id}-${o.key}`;
+    const rows = OPTION_ROWS.map(([field, label]) => `<dt>${label}</dt><dd class="${label.toLowerCase()}">${inline(o[field])}</dd>`).join("");
     return `<div class="opt" data-key="${esc(o.key)}"${isPick ? " data-pick" : ""}>
 <label for="${rid}"><input type="radio" id="${rid}" name="${id}" value="${esc(o.key)}">
-<span class="ohead"><span class="olabel">${esc(o.key)}. ${inline(o.label)}</span><span class="otags">${isPick ? '<span class="tag tag-pick">My pick</span>' : ""}<span class="tag risk-${esc(o.risk)}">Risk: ${esc(o.risk)}</span><kbd title="Press ${k + 1} to choose ${esc(o.key)}">${k + 1}</kbd></span></span>
-<dl class="tr"><dt>Does</dt><dd class="does">${inline(o.does)}</dd><dt>Gets</dt><dd class="gets">${inline(o.gets)}</dd><dt>Costs</dt><dd class="costs">${inline(o.costs)}</dd><dt>Risk</dt><dd class="risk">${inline(o.riskText)}</dd></dl>
+<span class="ohead"><span class="olabel">${esc(o.key)}. ${inline(o.label)}</span><span class="otags">${isPick ? '<span class="tag tag-pick">My pick</span>' : ""}<span class="tag risk-${esc(o.risk)}">${esc(riskChipText(o.risk))}</span><kbd title="Press ${k + 1} to choose ${esc(o.key)}">${k + 1}</kbd></span></span>
+<dl class="tr">${rows}</dl>
 </label>${o.details ? `<details><summary>${inline(o.details.summary || "What " + o.key + " contains")}</summary>${renderItems(o.details.items)}</details>` : ""}
 </div>`;
   }).join("\n");
@@ -609,10 +631,10 @@ function load(){try{var o=JSON.parse(localStorage.getItem(C.key)||"null");if(o&&
  if(o.feedback&&typeof o.feedback==="object")st.feedback=o.feedback;
  var p=parseInt(o.step,10);if(p>=0&&p<=N+1)st.step=p;}}catch(e){}}
 function save(){try{localStorage.setItem(C.key,JSON.stringify(st));}catch(e){}}
-function answered(){var k=0;C.ids.forEach(function(id){if(st.a[id])k++;});return k;}
-function label(id,key){var m=C.labels[id]||{};return m[key]||"";}
+function hasAnswer(id){var key=st.a[id];return typeof key==="string"&&Object.hasOwn(C.labels[id],key);}
+function answered(){return C.ids.filter(hasAnswer).length;}
 function copyText(){var L=[C.title+(C.date?", "+C.date:"")+": my answers ("+answered()+" of "+N+")"];
- C.ids.forEach(function(id){var a=st.a[id];L.push(a&&label(id,a)?id+": "+a+" "+label(id,a):id+": (no answer)");
+ C.ids.forEach(function(id){var a=st.a[id];L.push(hasAnswer(id)?id+": "+a+" "+C.labels[id][a]:id+": (no answer)");
   var nt=String(st.n[id]||"").replace(/\s+/g," ").trim();if(nt)L.push("  Note: "+nt);});return L.concat(feedbackLines(st.feedback)).join("\n");}
 function applyForm(){C.ids.forEach(function(id){all('input[name="'+id+'"]').forEach(function(r){r.checked=st.a[id]===r.value;});var t=$("n-"+id);if(t)t.value=st.n[id]||"";});
  all('input[name="page-clear"]').forEach(function(r){r.checked=st.feedback.clear===r.value;});
@@ -620,14 +642,14 @@ function applyForm(){C.ids.forEach(function(id){all('input[name="'+id+'"]').forE
 function updateCopyPreview(){$("copytext").textContent=copyText();}
 function setFeedback(field,value){st.feedback[field]=value;save();updateCopyPreview();}
 function finish(){var a=answered();$("fin-sum").textContent="You answered "+a+" of "+N+" questions."+(a<N?" Use the links to answer the rest.":" Copy your answers and send them.");
- all(".fin-table tr[data-q]").forEach(function(tr){var id=tr.getAttribute("data-q"),v=st.a[id],td=tr.querySelector(".ans");
-  td.textContent=v?v+". "+label(id,v):"Not answered";td.classList.toggle("none",!v);
+ all(".fin-table tr[data-q]").forEach(function(tr){var id=tr.getAttribute("data-q"),v=st.a[id],td=tr.querySelector(".ans"),selected=hasAnswer(id);
+  td.textContent=selected?v+". "+C.labels[id][v]:"Not answered";td.classList.toggle("none",!selected);
   tr.querySelector(".nt").textContent=String(st.n[id]||"").trim();});
  updateCopyPreview();}
 function refresh(){var a=answered();$("cA").textContent=a;$("cR").textContent=N-a;
  var s=st.step;$("where").textContent=s===0?"Overview":(s===N+1?"Check your answers":"Question "+s+" of "+N+": "+C.topics[s-1]);
  all(".step").forEach(function(el){el.hidden=el.getAttribute("data-step")!==String(s);});
- all(".sbtn").forEach(function(b){var k=parseInt(b.getAttribute("data-go"),10);var done=k>=1&&k<=N&&!!st.a[C.ids[k-1]];
+ all(".sbtn").forEach(function(b){var k=parseInt(b.getAttribute("data-go"),10);var done=k>=1&&k<=N&&hasAnswer(C.ids[k-1]);
   b.classList.toggle("done",done);var sr=b.querySelector(".st");if(sr)sr.textContent=done?" (answered)":"";
   if(k===s)b.setAttribute("aria-current","step");else b.removeAttribute("aria-current");});
  $("back").disabled=s===0;var nx=$("next");nx.hidden=s===N+1;nx.textContent=s===0?"Start with Q1":(s===N?"Check answers":"Next");
@@ -683,9 +705,18 @@ function textWriter() {
   const lines = [];
   const item = (s) => lines.push(stripMarkup(s).trim());
   const add = (s) => {
-    const t = stripMarkup(s).trim();
-    if (!t) return;
-    for (const x of t.split(/(?<=[.!?])\s+(?=[A-Z0-9"'(#§\/])/)) if (x.trim()) lines.push(x.trim());
+    const parts = textParts(s);
+    const text = parts.join("");
+    // Hide code punctuation during the sentence scan. Keep the offsets into the original text.
+    const prose = parts.map((part, i) => i % 2 ? "C".repeat(part.length) : part).join("");
+    let start = 0;
+    for (const match of prose.matchAll(SENTENCE_BREAK)) {
+      const line = text.slice(start, match.index).trim();
+      if (line) lines.push(line);
+      start = match.index + match[0].length;
+    }
+    const last = text.slice(start).trim();
+    if (last) lines.push(last);
   };
   const items = (list) => (list || []).forEach((it) => (Array.isArray(it) ? items(it) : add(it)));
   const table = (t) => {
@@ -723,13 +754,11 @@ function writeQuestionText(q, { add, item, items, table }, screenOnly) {
   for (const o of q.options) {
     if (screenOnly) {
       item(`${o.key}. ${o.label}`);
-      item(`Risk: ${o.risk}`);
-      add(`Does: ${o.does}`);
-      add(`Gets: ${o.gets}`);
-      add(`Costs: ${o.costs}`);
-      add(`Risk: ${o.riskText}`);
+      item(riskChipText(o.risk));
+      OPTION_ROWS.forEach(([field, label]) => add(`${label}: ${o[field]}`));
     } else {
-      [o.label, o.does, o.gets, o.costs, o.riskText].forEach(add);
+      add(o.label);
+      OPTION_ROWS.forEach(([field]) => add(o[field]));
       if (o.details) { add(o.details.summary); items(o.details.items); }
     }
   }

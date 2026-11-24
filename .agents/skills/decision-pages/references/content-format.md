@@ -8,7 +8,7 @@ writes one self-contained HTML file. You write text only: no HTML. The kit escap
 Two marks only, in every text field:
 
 - `` `code` `` for file names, commands, ids and exact values. A code span counts as 1 word.
-  A span of 48 characters or less does not wrap.
+  A span of 48 characters or less does not wrap. The kit keeps literal text inside code spans.
 - `**bold**` for the lead words of a fact or a list item. Use nothing else.
 
 Any other character prints as text. `<b>`, Markdown links and headings print as written.
@@ -125,10 +125,10 @@ fails it. Research IDs in the Rule column refer to `research.md` (next to this f
 | Topic | 3 words, 16 characters | R5.4 |
 | Ask (lead sentence) | 20 words | R2.4 |
 | Why | 25 words, 1 sentence | R5.2 |
-| Decides | 20 words | Decision 3 |
-| Owner | 25 words total | Decision 3 |
-| Settled | 0-3 items, 20 words each | Decision 3 |
-| Removed | 25 words per item | Decision 3 |
+| Decides | 20 words | R8.1 scope fields |
+| Owner | 25 words total | R8.1 scope fields |
+| Settled | 0-3 items, 20 words each | R8.1 scope fields |
+| Removed | 25 words per item | R8.1 scope fields |
 | Pick reason | 25 words | R7b |
 | Pick another if | 15 words | R3.7 |
 | Facts | 2-4 bullets, 15 words each, bold lead of 2-4 words | R2.1, R7b, R1.5, R4.3 |
@@ -136,7 +136,7 @@ fails it. Research IDs in the Rule column refer to `research.md` (next to this f
 | Example | 2-4 steps, 15 words each, label 3 words | R7b |
 | Options | 2-4 | R3.3 |
 | Option label | 8 words | R3.3 |
-| Does, Gets, Costs, Risk text | 12 words each | Decision 3, R7b |
+| Does, Gets, Costs, Risk text | 12 words each | R8.1 scope fields, R7b |
 | Visible context words (title to details label, table cells included) | 220 | R1.2 |
 | Visible option words | 160 | R1.2 |
 | Any visible sentence | 20 words (a semicolon list is one sentence) | R2.7 |
@@ -146,8 +146,11 @@ fails it. Research IDs in the Rule column refer to `research.md` (next to this f
 | Overview lead | 30 words | R2.4 |
 | Block title, table title, example title, details label | 8 words | R1.4 |
 
-`decides`, `owner`, and `settled` count toward the visible context limit. `does` counts toward
-the visible option limit. The `removed` items stay in Details.
+**R8.1 scope fields.** Each question says why it is the reader's decision, what is settled, and what only the answer changes (SKILL.md step 3).
+
+`decides`, `owner`, and `settled` count toward the visible context limit. Their labels also count
+as bold words. The visible option count includes each row label, its text, and the risk chip.
+The `removed` items stay in Details.
 
 Warnings do not stop a build. Read each one and fix it, or keep it for a reason you can say:
 
