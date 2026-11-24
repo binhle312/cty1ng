@@ -34,7 +34,8 @@ The table has no row for the tasks that you do yourself.
   reviewer keeps the effort of the table. Most tasks do not need `max`. With `ultra`, Codex
   starts agents of its own.
 - Sol and Terra read 500,000 tokens by default; Astra reads 272,000.
-- One Codex model has a window of about 258,000 tokens.
+- On a model with a window of about 258,000 tokens, a full review of a large change reaches 35%
+  first.
 - The table is from 2026-11-24. If Codex lists a newer model, tell the owner before you use it.
 
 ## Commands

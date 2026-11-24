@@ -193,7 +193,8 @@ no second link in `.claude/skills/`, and one index row. The command `/codex-work
 lead agent reads the Codex text before it picks a worker or a reviewer, so a task that needs neither
 (for example a question) loads only `leader/SKILL.md`.
 
-Both candidates come from one split, so only their files and folders are different. The owner
+Both candidates come from one split. They differ only in their files and folders, and in the
+command `/codex-workers`, which A removes. The owner
 compares them with the same numbers. The numbers are: the lines that load at `/leader` and at the
 build stage, the pointers between files, the skill validator, the security scan, and the files
 changed against `main`.
@@ -202,14 +203,14 @@ changed against `main`.
 - A fact map script (`tmp/leader-skill/split/factmap.py`, not in the repository) does four checks
   on the `.md` files of the two skill folders, taken together:
   - Each sentence at `cf571de` is in the new tree the same number of times, or is on an exceptions
-    list with a reason. The front matter is not in this check.
-  - Each code block is the same. An exceptions line `REPLACE` changes the old text before the
-    compare, so each pointer that the move made false is visible; one is inside a code block of
-    `references/worker-brief.md` (`codex-workers` becomes `leader`).
+    list with a reason. The front matter is not in this check.  - Each code block of the old files is in the new files the same number of times. This check goes
+    one way: a new code block can pass. An exceptions line `REPLACE` changes the old text before
+    the compare, so each pointer that the move made false is visible. Two of them are inside code
+    blocks: in `references/worker-brief.md` (`codex-workers` becomes `leader`) and in the stages
+    sketch of `leader/GUIDE.md` (a pointer to the lead agent's own work).
   - Each relative path in a Markdown link or a `../x.md` mention resolves. The check does not read
-    the part after `#`, and it does not check a path with no `../` or link.
-  - The line limit of F1 has one home: the phrases `fewer than 5`, `5 changed` and `5 lines` are in
-    one file of the two folders.
+    the part after `#`, and it does not check a path with no `../` or link.  - The line limit of F1 has one home: exactly one file of the two folders has one or more of the
+    phrases `fewer than 5`, `5 changed` and `5 lines`.
 
   It also lists each new sentence for the reviewer. Proof that it can fail: a copy had four breaks
   (a removed rule, a changed code block, a broken path, a copy of the line limit). The script
