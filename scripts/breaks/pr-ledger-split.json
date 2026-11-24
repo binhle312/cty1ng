@@ -1,0 +1,15 @@
+{
+  "claims": [],
+  "exempt": [
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "writes counts in the separate register file",
+      "reason": "Test first. The red run reported that the script could not find the register table."
+    },
+    {
+      "file": "scripts/records-counts.test.ts",
+      "name": "accepts a Same cause hit in the separate prevention file",
+      "reason": "Test first. The red run rejected a hit that only the prevention file held."
+    }
+  ]
+}
