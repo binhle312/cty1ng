@@ -2,7 +2,7 @@
   "claims": [
     {
       "id": "C1",
-      "claim": "checkStatus does not read the changed files of a merged PR, so no file path can free a PR from its Done row",
+      "claim": "checkStatus does not read the changed files of a merged PR",
       "test": {
         "kind": "vitest",
         "file": "scripts/check-status.test.ts",
