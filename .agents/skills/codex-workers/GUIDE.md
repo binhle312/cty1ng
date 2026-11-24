@@ -11,8 +11,8 @@ The human talks with one agent: the lead agent. It is the Claude Code conversati
 starts. The lead agent gives build work and review work to Codex workers, and it talks with them
 when that is needed. The human approves, decides, and merges.
 
-The lead agent makes a code change of fewer than 5 lines itself, on a worktree with no other change,
-and a different agent reviews it. It gives each other code change to a worker.
+The lead agent makes a code change below the line limit of step 1 of `SKILL.md` itself, and a
+different agent reviews it. It gives each other code change to a worker.
 
 The lead agent's OK on a plan is not the human's approval. When the rules of the repository ask for
 the human's approval, the lead agent stops and asks the human.

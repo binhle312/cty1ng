@@ -67,7 +67,7 @@ fix, or when an approval is missing. Other work goes on.
 | --- | --- |
 | Plans, briefs, records, messages to the human | The lead agent |
 | Written steps, an extraction, a summary | The lead agent |
-| A code change below the line limit of `codex-workers` (step 1), on a worktree with no other change | The lead agent; a different agent reviews it |
+| A code change below the line limit of `codex-workers` (step 1) | The lead agent; a different agent reviews it |
 | Each other code change, also a simple one | A Codex worker |
 | Each review | A different agent: a new session that did not build the code |
 
