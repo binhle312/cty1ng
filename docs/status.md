@@ -10,7 +10,7 @@ approvals). Keep it short: link to PRs and briefs instead of describing work.
 
 ## Now
 
-The delivery ledger archive move is in draft [#151](https://github.com/binhle312/cty1ng/pull/151) (2026-11-24). Waiting on: the owner's answers on the 80,000-byte limit of the ledger, the deleted one-time exception, a review round, and the merge.
+The delivery ledger archive move is in draft [#151](https://github.com/binhle312/cty1ng/pull/151) (2026-11-24). The owner's answers of 2026-11-24: merge it first, keep the move proof as a rule, and run one review round. Waiting on: that review round, then the owner's merge.
 
 The repository audit of 2026-11-05 found 55 issues. After the owner's decisions, 15 are P2, 39 are P3, and the owner accepted one case; none is P1. Its fixes come before M3 in the owner's order. #69 is closed, and the owner watches more PRs before deciding whether to bring it back. Findings, decisions and progress are in [audits/2026-11-05-repo-audit.md](audits/2026-11-05-repo-audit.md). PR 2 of 7, the security fixes, merged in [#73](https://github.com/binhle312/cty1ng/pull/73) on 2026-11-06. [#76](https://github.com/binhle312/cty1ng/pull/76) merged on 2026-11-06 and records the guard decisions. PR 3 of 7, the Skills page, merged in [#78](https://github.com/binhle312/cty1ng/pull/78) on 2026-11-06. PR 4 of 7, the Bots page, merged in [#82](https://github.com/binhle312/cty1ng/pull/82) on 2026-11-08. PR 5 of 7, tests only, merged in [#86](https://github.com/binhle312/cty1ng/pull/86) on 2026-11-10. PR 6 of 7, six tabs, merged in [#91](https://github.com/binhle312/cty1ng/pull/91) on 2026-11-10.
 
@@ -96,6 +96,7 @@ A P3 that has a DQ id is not in this table. Its state lives only in its row of t
 
 | Item | Found in | Target |
 | --- | --- | --- |
+| Move §2 to §4 (the PR register) and the prevention actions of `docs/delivery-quality.md` to files of their own, and keep the 80,000-byte limit (owner, 2026-11-24). It changes `LEDGER_FILES`, `AGENTS.md` §9, the PR template and `pull-request.md`, so its plan comes first | [#151](https://github.com/binhle312/cty1ng/pull/151): the ledger has 89,987 bytes after the move | A PR after #151, with a plan that the owner approves |
 | Add the task verdict to the M3 brief and the conversation requirements. The [bot page design](design/components/bot-page.md#95-where-task-success-comes-from-uv5) puts "Did this do the job?" (Yes / Bad answer) under a finished action run. The schema change needs the owner's approval (`AGENTS.md` §7) | Owner agreement, 2026-11-03. Waited for [#59](https://github.com/binhle312/cty1ng/pull/59) to merge | M3 plan |
 | Write a `proposed` decision for assertions that use no model for skill test cases, next to the "A good answer has …" note. It extends [D51](decisions/D51-bots-improve-their-skills-from-owner-feedback.md), which says there are no graders | Owner agreement, 2026-11-03. Waited for [#59](https://github.com/binhle312/cty1ng/pull/59) to merge | Decision proposal before M3 |
 | Flaky e2e test `skills.spec.ts:465` (UI-7.5a, the Bots tab empty line): strict mode found two "Add" buttons on the first try and the retry, CI run 44706653327 on #142 (a Markdown-only diff); the rerun passed | [#142](https://github.com/binhle312/cty1ng/pull/142) CI | Find the cause before M3 (the owner picks the PR) |

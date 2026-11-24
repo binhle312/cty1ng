@@ -292,6 +292,8 @@ If the head changes after review, the row still describes the original reviewed 
    Do the same move before that time if `wc -c` gives more than 80,000 bytes for this file. If no
    row can move, or if the file is not below 80,000 bytes after a move, ask the owner and do not
    move again (owner, 2026-11-11).
+   A script shows that each moved row has no change and that the counts stay the same (owner,
+   2026-11-24).
 7. Record one prevention action for a recurring cause, with an owner and verification evidence.
 
 The builder maintains this file in the delivery change. The reviewer checks that each row of the
