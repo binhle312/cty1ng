@@ -46,7 +46,7 @@ sequenceDiagram
 
   Y->>L: task
   L->>W: brief
-  Note over W: reads, changes no file
+  Note over W: reads the brief
   opt a fact is missing
     W->>L: a question
     L->>W: answer
@@ -80,8 +80,9 @@ sequenceDiagram
   Note over Y: you decide the merge
 ```
 
-The box "your repository asks you to approve the plan" is one example of an approval point. Your repository can ask for your approval at
-other points too, and the lead agent stops and asks you at each of them.
+The box "your repository asks you to approve the plan" is one example of an approval point. Your
+repository can ask for your approval at other points too, and the lead agent stops and asks you at
+each of them.
 
 The review is a new session that did not build the code. Its findings go to the lead agent, and the
 lead agent sends them to the builder's session. After a handoff, that is the new session.
@@ -100,9 +101,9 @@ lead agent sends them to the builder's session. After a handoff, that is the new
 ## The 35% limit
 
 The context window is the text that a model can hold at one time: the brief, the messages, and the
-files that it read. The lead agent watches how full the context window of each Codex session is. When 35% of the
-model's window is used, the worker writes a handoff. The lead agent checks and corrects it, and a
-new worker continues from it.
+files that it read. The lead agent watches how full the context window of each Codex session is.
+When 35% of the model's window is used, the worker writes a handoff. The lead agent checks and
+corrects it, and a new worker continues from it.
 
 The limit applies to a reviewer too. The lead agent splits a large review into parts before it
 starts, so that each part ends under 35%.
