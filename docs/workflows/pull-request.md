@@ -43,7 +43,7 @@ states no state, count or result that a file or a tool owns:
   The state of a prevention action lives in its row in `docs/delivery-quality-prevention.md`.
   The PR body names the id in its `Records` section
   and in the `Defect and review fixes` table; it does not repeat them (owner, 2026-11-18, q4 Q3 A).
-- The result of a review round lives only in its row of the round log.
+- The result of a review round lives where [ledger §7 step 2](../delivery-quality.md#7-update-and-assess) says to record it.
 - The counts of the Audit row and of each `Ledger` row of the register: `pnpm records:counts --write`
   writes them from the rows, and CI checks them. Nobody types them in the register or in the body.
 - The "Same cause as an earlier fix?" answer and its search live in the "Fix and verification"

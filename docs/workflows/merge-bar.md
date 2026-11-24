@@ -66,15 +66,15 @@ owner answer is new work and goes into the next PR.
 3. Round 2 reads the fix commits of round 1. Its brief is narrow: is each fix of round 1 correct,
    and does a fix make a P1 or a P2? The reviewer does not search for new points in the wording.
 4. After round 2, the builder fixes only a P1 or a P2. Such a fix gets one check of that commit
-   only, by an independent reviewer, with a row in the round log.
+   only, by an independent reviewer. Record the check per [ledger §7 step 2](../delivery-quality.md#7-update-and-assess).
 5. A P3 that round 2 or a later check finds gets a row in the ledger of
    `docs/delivery-quality.md`. Before the merge, the PR fixes its own open rows (owner,
    2026-11-13).
    - First, one table gives each open row its end. Fix it here. Or it stays open by an owner
      decision: name the decision. Or it is part of a redesign that the owner approved. Or the
      owner drops it.
-   - Make the fixes in one fix commit. An independent reviewer checks only that commit. The
-     check gets a row in the round log.
+   - Make the fixes in one fix commit. An independent reviewer checks only that commit.
+     Record the check as in step 4.
    - If that check finds a problem in the fix, fix it. One more check is the limit.
    - Never leave a P1 or a P2 open.
    - The owner decides each P3 that is still left: fix it in the same PR, or merge with it

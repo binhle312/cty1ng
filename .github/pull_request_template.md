@@ -40,8 +40,9 @@ say what the proof shows and add `Not claimed: …` (`docs/workflows/pull-reques
 
 ## Records
 
-Issue rows DQ-… to DQ-… are in `docs/delivery-quality.md` §5. The round rows of this PR are in §6.
-The PR register row is in `docs/delivery-quality-register.md` §3.
+Issue rows DQ-… to DQ-… are in `docs/delivery-quality.md` §5.
+Follow `docs/delivery-quality.md` §7 step 2 for the review rounds.
+PR register rows are in `docs/delivery-quality-register.md` §3.
 `pnpm records:counts` passes (CI). This description holds no state,
 count, fix commit or round result: the rows hold them.
 

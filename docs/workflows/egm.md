@@ -79,8 +79,8 @@ For each part, compare these values with the M2 parts (M2a, M2b, M2c):
 - The owner's time, as the owner estimates it.
 
 The M2 counts have gaps. Some [register rows](../delivery-quality-register.md#3-pr-register)
-are `partial` or `unknown`. Fewer issues can also mean less review
-([delivery-quality.md §7](../delivery-quality.md#7-update-and-assess)).
+are `partial` or `unknown`. Fewer issues can also mean
+[less review](../delivery-quality-prevention.md#prevention-actions).
 
 | Part | Step 1 start | Merge date | PR | Owner note |
 | --- | --- | --- | --- | --- |
