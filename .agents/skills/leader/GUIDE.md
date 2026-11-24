@@ -45,9 +45,11 @@ the lead agent. The lead agent can ask the advisor before it decides.
       │
       ▼
  5 worker: plan in its own words ──▶ lead agent accepts ──▶ worker builds
+   (a code change below the line limit: the lead agent makes it)
       │
       ▼
- 6 lead agent checks the report ──▶ 7 a different agent reviews ──▶ fixes
+ 6 lead agent checks the report ──▶ 7 a different agent reviews ──▶ fixes ──▶ lead agent
+                                                                          checks the fixes
       │
       ▼
  8 report ══▶ the merge, only when the HUMAN asks for it

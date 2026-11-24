@@ -30,9 +30,10 @@ sequenceDiagram
   L->>H: the models, with one reason
   L->>W: brief
   Note over W: reads, changes no file
-  loop until the lead agent accepts the plan
-    W->>L: the plan in its own words, with its questions
+  W->>L: the plan in its own words, with its questions
+  loop while the plan needs answers or corrections
     L->>W: answers or corrections
+    W->>L: the new plan
   end
   L->>W: "plan OK, build"
   Note over W: builds and commits.<br/>Pushes to its branch if the brief names a remote branch.
@@ -65,10 +66,9 @@ remote checks if the worker pushed.
 The diagram does not show the points where the human approves, because each repository has its own
 rules. At each of these points, the lead agent stops and asks the human.
 
-A worker and a reviewer send no messages to each other or to the human. Each message passes through
-the lead agent. The review is a new session that did not build the code. Its findings go to the
-lead agent, and the lead agent sends them to the builder's session. After a handoff, that is the new
-session.
+Only the lead agent talks with the human. The review is a new session that did not build the code.
+Its findings go to the lead agent, and the lead agent sends them to the builder's session. After a
+handoff, that is the new session.
 
 ## Where the worker works
 
