@@ -109,9 +109,7 @@ review fix, check them against the commit that you push (owner, 2026-11-08, DQ-1
    writes. CI runs `pnpm records:counts` and fails when a count is stale.
 9. Run `wc -c < docs/delivery-quality.md`. If the result is larger than the limit in
    [§7 step 6 of the ledger](../delivery-quality.md#7-update-and-assess), write under Follow-ups
-   of the PR description that a move of the closed rows is due. The move is a PR of its own. The
-   one exception is the move of the P3 PRs in
-   [§7 step 6 of the ledger](../delivery-quality.md#7-update-and-assess).
+   of the PR description that a move of the closed rows is due. The move is a PR of its own.
 
 Before you say that a PR is ready: the description has no state line that is older than the head,
 and `docs/status.md` names the PR.
