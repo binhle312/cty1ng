@@ -15,7 +15,8 @@ comes from a weaker source, the finding says so.
    read word by word. Concise text improved usability 58%, scannable layout 47%, objective
    language 27%, all three 124%.
    Source: https://www.nngroup.com/articles/how-users-read-on-the-web/
-   Rule for our pages: see R1.1 in `SKILL.md`.
+   Rule for our pages: every question passes a "scan test": the bold lead words and headings alone
+   tell the question, the pick and the main trade-off.
 2. **People read about 20% of the words on a page** (at most 28% of a 593-word page).
    Source: https://www.nngroup.com/articles/how-little-do-users-read/
    Rule for our pages: see R1.2 in `SKILL.md` and the limits table of `content-format.md`.
@@ -32,10 +33,11 @@ comes from a weaker source, the finding says so.
 5. **Readers often see only the first 2 words (about 11 characters) of a list item or heading.**
    For 35% of tested links, those characters gave no idea of the target.
    Source: https://www.nngroup.com/articles/first-2-words-a-signal-for-scanning/
-   Rule for our pages: see R1.5 in `SKILL.md` and the limits table of `content-format.md`.
+   Rule for our pages: an option label starts with its key fact, in 2-3 words. For facts and list
+   items, see R1.5 in `SKILL.md`.
 6. **Numerals stop the scanning eye;** spelled-out numbers do not.
    Source: https://www.nngroup.com/articles/web-writing-show-numbers-as-numerals/
-   Rule for our pages: see R1.6 in `SKILL.md` and the limits table of `content-format.md`.
+   Rule for our pages: see R1.6 in `SKILL.md` and the warnings of `content-format.md`.
 
 What this means for a decision page: the reader reads the title, the first line and the bold words.
 Everything that decides the answer must be in those places.
@@ -106,7 +108,7 @@ Everything that decides the answer must be in those places.
    hide rows where all items are equal.** "If the information isn't complete for all compared
    products, it might as well not be in a comparison table."
    Source: https://www.nngroup.com/articles/comparison-tables/
-   Rule for our pages: see R3.2 in `SKILL.md` and the limits table of `content-format.md`.
+   Rule for our pages: see R3.2 in `SKILL.md` and the `options` rows of `content-format.md`.
 3. **Choice overload depends on task difficulty and option complexity more than on count.** The
    2010 meta-analysis found a mean effect near zero; the 2015 meta-analysis (99 observations,
    N=7202) found overload when the task is hard, options are complex, preferences are unclear, or
@@ -126,7 +128,7 @@ Everything that decides the answer must be in those places.
    Rule for our pages: see R3.5 in `SKILL.md`.
 6. **A decoy (an option that is worse than the target in every way) shifts choice to the target.**
    Source: Huber, Payne & Puto 1982, https://doi.org/10.1086/208899
-   Rule for our pages: see R3.6 in `SKILL.md` and the limits table of `content-format.md`.
+   Rule for our pages: see R3.6 in `SKILL.md` and the warnings of `content-format.md`.
 7. **People judge only from what they see** ("what you see is all there is", Kahneman, *Thinking,
    Fast and Slow*, 2011, ISBN 978-0374275631). The reader cannot weigh a counter-argument that the
    page does not show.
@@ -138,7 +140,7 @@ Everything that decides the answer must be in those places.
    reading,** and they are not equal in strength.
    Sources: Healey & Enns 2012, IEEE TVCG 18(7), https://doi.org/10.1109/TVCG.2011.127 ;
    Few 2004, https://www.perceptualedge.com/articles/ie/visual_perception.pdf
-   Rule for our pages: see R4.1 in `SKILL.md` and the limits table of `content-format.md`.
+   Rule for our pages: see R4.1 in `SKILL.md`.
 2. **Hierarchy comes from contrast, size and grouping; "if everything is contrasted, then nothing
    stands out."** Max 3 type sizes, max 3 contrast treatments; test with a blur ("squint test").
    Source: https://www.nngroup.com/articles/visual-hierarchy-ux-definition/
@@ -194,7 +196,7 @@ Everything that decides the answer must be in those places.
 | Failure | Evidence | Fix (testable) |
 |---|---|---|
 | Wall of text | F-pattern; 20% read (§1.2, §1.3) | Paragraph max 50 words; facts as 2-4 bullets |
-| Evidence mixed with the ask | Inverted pyramid (§2.4) | Ask and pick first; scores in a table; process story in Details |
+| Evidence mixed with the ask | Inverted pyramid (§2.4) | Ask and pick first; numbers in a table (R1.6, R3.1); process story in Details |
 | Jargon and private terms ("seats", "grafts", "promotion") | NN/g experts left a page full of unknown terms, https://www.nngroup.com/articles/plain-language-experts/ ; WCAG 3.1.3 unusual words, https://www.w3.org/WAI/WCAG22/Understanding/unusual-words.html | One plain word, or define it at first use in at most 8 words |
 | Context only in the author's head: the page names a change but not the old and new words, or a rule but not its purpose | Recognition rather than recall (§2.9) | The overview says what happened; a choice about words quotes both versions; each question screen passes a test by a new session alone |
 | A question about something already settled, or an option that defends the author's own change | Owner, 2026-11-24: two rejected pages; on one of them a reader of the page alone missed it, and a reader of the sources found it | Fields `owner`, `settled`, `decides`, `removed`; a source review by a reviewer of the same or a stronger model |
@@ -208,17 +210,22 @@ Everything that decides the answer must be in those places.
 
 ### 7b. Proposed structure for one question
 
-| Field | Where | Limit | Content |
-|---|---|---|---|
-| Title | left, top | 12 words, ends "?" | The decision as a question |
-| Ask | left, line 1 | 20 words | "Decide: ..." and what the answer changes |
-| My pick | right, above the options; the one callout | 25 words | Option letter + short name, main reason, confidence (clear / close call), "Pick another if ..." (15 words) |
-| Key facts | left | 2-4 bullets, 15 words each | Bold lead words (2-4) carry the fact |
-| Numbers | left | table, 2-5 rows | Only when there are more than 3 numbers |
-| Example | left | 2-4 steps, 15 words each | Time or trigger label, then what happens |
-| Details | left, collapsed | no limit | Process story, full lists, ids, sources |
-| Option card | right | label 8 words | Letter, short name, Recommended badge, "Risk: low" chip |
-| Does / Gets / Costs / Risk | inside the card | 12 words each | Same 4 fields for every option |
-| Option details | inside the card, collapsed | no limit | Full list of what the option contains |
+The word limits of each field are in the limits table of `content-format.md`; this table gives
+only the place and the content.
 
-Visible text target: left pane at most 220 words, right pane at most 160, before any Details.
+| Field | Where | Content |
+|---|---|---|
+| Title | left, top | The decision as a question, ends with "?" |
+| Ask | left, line 1 | "Decide: ..." |
+| Scope | left, under the ask | `why`, `decides`, `owner` and `settled` (see the fields of `content-format.md`) |
+| My pick | right, above the options; the one callout | Option letter + short name, main reason, confidence (clear / close call), "Pick another if ..." |
+| Key facts | left | 2-4 bullets; bold lead words carry the fact |
+| Numbers | left | A table (R1.6, R3.1) |
+| Example | left | 2-4 steps: time or trigger label, then what happens |
+| Details | left, collapsed | Process story, full lists, ids, sources |
+| Option card | right | Letter, short name, "My pick" tag, "Risk: low" chip |
+| Does / Gets / Costs / Risk | inside the card | Same 4 fields for every option |
+| Option details | inside the card, collapsed | Full list of what the option contains |
+
+Visible word limits: the context words and the option words before any Details (R1.2, the limits
+table of `content-format.md`).
