@@ -62,7 +62,7 @@ not reproduce, when a fix has the same cause as an earlier fix, or when an appro
 | --- | --- |
 | Plans, briefs, records, messages to you | The lead agent |
 | Written steps, an extraction, a summary | The lead agent |
-| A code change of fewer than 5 lines | The lead agent; a different agent reviews it |
+| A code change below the line limit of `codex-workers` (step 1) | The lead agent; a different agent reviews it |
 | Each other code change, also a simple one | A Codex worker |
 | Each review | A different agent: a new session that did not build the code |
 

@@ -48,6 +48,10 @@ gives the parts; the build writes the text.
    5 changed lines itself. The count is the larger of the added and the removed
    lines in `git diff --numstat`, summed over the code files of that change. The change still
    goes to the different reviewer, in the next review round of the PR.
+   Redesign after review round 1 (owner, answer 7): this rule, with its count, has one home,
+   step 1 of `codex-workers`. `leader`, its `GUIDE.md` and `docs/workflows/coordination.md`
+   point to that step and do not repeat the limit. The count marks new files with
+   `git add -N` and runs `git diff --numstat HEAD`, so that new and staged files count.
 7. **Briefs.** The lead agent writes each brief from a template in `references/`: one for a
    worker, one for a reviewer. The templates follow Anthropic's public prompt advice
    ([research](../research/worker-prompts.md)). The list of what a brief holds keeps its one home
@@ -154,6 +158,10 @@ The owner's words, from the question page of revision 1:
    review round" (a different agent reviews the lead agent's small change); Q3 A, "A worker: keep
    the 5-line rule" (a simple code change of 5 lines or more goes to a worker); Q4 A, "Accept both
    changes" (the model table of #149); Q5 A, "high, as the table has it" (a Sol reviewer).
+7. After review round 1: "#1 fix them in 150" (F7: the documents that gave the builder the
+   plan and the records now give them to the lead agent); "#2 fix it as redesign" (F1: the
+   one home of item 6); "#3 let do as your recommendation" (F11: record the hit in the
+   prevention action, and change nothing more).
 
 ## Open questions
 

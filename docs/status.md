@@ -4,7 +4,7 @@ Where the project is right now. This file owns delivery state, next work, and ow
 [delivery-quality.md](delivery-quality.md) tracks issue counts, review rounds, and prevention evidence.
 The plan ([development-plan.md](development-plan.md)) says what and in which order, and carries no delivery state beyond whether a brief file exists.
 
-**Who updates it:** the builder agent, in the same PR that finishes a step (part of the
+**Who updates it:** the lead agent, in the same PR that finishes a step (part of the
 definition of done in `AGENTS.md` §9). The owner updates it for owner-only steps (reviews,
 approvals). Keep it short: link to PRs and briefs instead of describing work.
 
@@ -12,7 +12,7 @@ approvals). Keep it short: link to PRs and briefs instead of describing work.
 
 The `codex-workers` skill is in draft [#149](https://github.com/binhle312/cty1ng/pull/149) (owner, 2026-11-24): the lead agent starts Codex workers and talks with them. The owner answered its open points on 2026-11-24. The one Codex review of both skills ran (round 1); its fixes for this skill are in `729c1f1`. Waiting on: the owner's merge, or the owner's order for a round 2.
 
-The plan of the `leader` skill is in draft [#150](https://github.com/binhle312/cty1ng/pull/150), on top of #149 (owner, 2026-11-24): the owner starts the lead agent with `/leader <task>`. The owner approved revision 3 of the plan on 2026-11-24; the skill is built. The one Codex review of both skills ran (round 1); its fixes are in `9ec6314`. Waiting on the owner: F1 (a repeat with no owner's decision: keep the fix, revert it, or another design), F7 (the four places of the Follow-ups row below: in #150 or a separate PR), the trial hit of F11, an order for a round 2, then the merge.
+The plan of the `leader` skill is in draft [#150](https://github.com/binhle312/cty1ng/pull/150), on top of #149 (owner, 2026-11-24): the owner starts the lead agent with `/leader <task>`. The owner approved revision 3 of the plan on 2026-11-24; the skill is built. The one Codex review of both skills ran (round 1); its fixes are in `9ec6314`. The owner decided F1, F7 and F11 on 2026-11-24; the redesign of F1 and the fixes of F7 are built. Waiting on: the review of those commits, then the owner's merge.
 
 The repository audit of 2026-11-05 found 55 issues. After the owner's decisions, 15 are P2, 39 are P3, and the owner accepted one case; none is P1. Its fixes come before M3 in the owner's order. #69 is closed, and the owner watches more PRs before deciding whether to bring it back. Findings, decisions and progress are in [audits/2026-11-05-repo-audit.md](audits/2026-11-05-repo-audit.md). PR 2 of 7, the security fixes, merged in [#73](https://github.com/binhle312/cty1ng/pull/73) on 2026-11-06. [#76](https://github.com/binhle312/cty1ng/pull/76) merged on 2026-11-06 and records the guard decisions. PR 3 of 7, the Skills page, merged in [#78](https://github.com/binhle312/cty1ng/pull/78) on 2026-11-06. PR 4 of 7, the Bots page, merged in [#82](https://github.com/binhle312/cty1ng/pull/82) on 2026-11-08. PR 5 of 7, tests only, merged in [#86](https://github.com/binhle312/cty1ng/pull/86) on 2026-11-10. PR 6 of 7, six tabs, merged in [#91](https://github.com/binhle312/cty1ng/pull/91) on 2026-11-10.
 
@@ -98,7 +98,7 @@ A P3 that has a DQ id is not in this table. Its state lives only in its row of t
 
 | Item | Found in | Target |
 | --- | --- | --- |
-| Three documents (four places) still give the builder the work that the lead agent now does (`coordination.md` changed in #150): `development-plan.md` line 8 ("hand it to the builder agent"), the "Plan" section (line 31: "The builder ... writes a short plan") and the "Builder prompt" of `workflows/planning.md`, and "Who updates it: the builder agent" in this file | [#150](https://github.com/binhle312/cty1ng/pull/150) build | The owner picks the PR |
+| Two documents may still give the builder record work that the lead agent now does (`coordination.md`): `review-guide.md` line 121 ("the builder commits" the round row) and `merge-bar.md` lines 86 and 88 (the builder changes the words of a claim) | [#150](https://github.com/binhle312/cty1ng/pull/150) review fix (F7) | The owner picks the PR |
 | Flaky e2e test `skills.spec.ts:465` (UI-7.5a, the Bots tab empty line): strict mode found two "Add" buttons on the first try and the retry, CI run 44706653327 on #142 (a Markdown-only diff); the rerun passed | [#142](https://github.com/binhle312/cty1ng/pull/142) CI | Find the cause before M3 (the owner picks the PR) |
 | Q1 A redesign (owner 2026-11-18): plans hold the design and the owner's decisions only; build facts only in the PR description; a small docs PR (`planning.md`, `pull-request.md`) | Owner answer Q1 A, 2026-11-18 ([#114](https://github.com/binhle312/cty1ng/pull/114), DQ-541, DQ-542) | [#133](https://github.com/binhle312/cty1ng/pull/133) |
 | `pnpm e2e:serve` can die and leave its servers on the ports: a closed stdout (`EPIPE`) or SIGHUP stops the script without stopping them, and the marker stays. It fails safe, but its message says to stop a script that no longer runs, and no doc says to delete `.e2e-serve`. Stop the servers on those exits, and correct the message | [#60](https://github.com/binhle312/cty1ng/pull/60) review | The P3 PRs before M3 (owner, 2026-11-08) |

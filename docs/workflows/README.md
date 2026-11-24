@@ -5,7 +5,7 @@ Implementers use the implementation or bug-fix workflow; reviewers use the revie
 
 | File | Read when |
 | --- | --- |
-| [planning.md](planning.md) | Start a slice, prepare its plan, or choose a design; includes the builder prompt |
+| [planning.md](planning.md) | Start a slice, prepare its plan, or choose a design; includes the lead agent prompt |
 | [implementation.md](implementation.md) | Build an approved slice, verify it, or respond to review findings |
 | [bug-fix.md](bug-fix.md) | Handle a bug report, regression, or defect from an issue, review, or audit |
 | [audit.md](audit.md) | Audit the repository or one area of it, for example the plan's second audit |

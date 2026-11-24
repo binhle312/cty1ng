@@ -23,7 +23,7 @@ brief ready ──▶ plan + test strategy ──(owner approves, if checkpointe
 | Who | Does | Does not |
 | --- | --- | --- |
 | **Owner (human)** | Chooses the next slice; approves plans for checkpointed slices; reviews `Needs human review` items; merges; accepts or rejects proposed decisions | Write most of the code |
-| **Lead agent** (the Claude Code conversation that the owner starts) | Talks with the owner; plans the slice; writes the briefs, the PR description and the records; makes code changes of fewer than 5 lines; checks each report against the diff; sends review findings to the builder | Merge, unless the owner asks for that PR; give an approval in the owner's place; review its own changes |
+| **Lead agent** (the Claude Code conversation that the owner starts) | Talks with the owner; plans the slice; writes the briefs, the PR description and the records; makes the small code changes that step 1 of the `codex-workers` skill allows; checks each report against the diff; sends review findings to the builder | Merge, unless the owner asks for that PR; give an approval in the owner's place; review its own changes |
 | **Builder** (a Codex worker that the lead agent starts) | Gives back the plan in its own words; after the lead agent accepts it, implements, runs every check, pushes, and reports with evidence | Talk with the owner; change accepted decisions; widen scope |
 | **Reviewer** (a different agent: a new session that did not build the code) | Reviews the PR against the brief and the docs; checks evidence; tries to break it | Push to the builder's branch (it reports findings to the lead agent; the builder fixes) |
 

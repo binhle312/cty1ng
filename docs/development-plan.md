@@ -5,8 +5,8 @@ this file changes only when the plan changes.
 
 Split milestones into reviewable parts where needed. Each part preserves a usable, tested
 app and merges before the next starts (except the parallel cases in [parallel work](workflows/coordination.md#parallel-work)).
-Write a brief for each implementation part before code starts; hand it to the builder agent with the prompt in
-[the builder prompt](workflows/planning.md#builder-prompt).
+Write a brief for each implementation part before code starts; start the lead agent with the prompt in
+[the lead agent prompt](workflows/planning.md#lead-agent-prompt).
 
 | Slice | Brief | Delivers | Checkpoint | Depends on |
 | --- | --- | --- | --- | --- |
@@ -36,7 +36,7 @@ Write a brief for each implementation part before code starts; hand it to the bu
 | later | not written | External project folders (D23: documents first, write-capable design) | separate milestone | M9 or earlier, owner decides |
 | later | not written | Desktop app (Windows, Linux) and coding agents from the app (idea only: [ideas/desktop-app-and-cli-agents.md](ideas/desktop-app-and-cli-agents.md)) | separate milestone | M9 and external project folders (D23) |
 
-"Checkpoint: plan" means the builder stops after writing the plan and waits for the owner's
+"Checkpoint: plan" means the lead agent stops after writing the plan and waits for the owner's
 approval ([planning](workflows/planning.md#plan)). Every slice also needs the owner's review of migrations and
 `Needs human review` items before merge.
 
