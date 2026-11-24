@@ -20,7 +20,7 @@ flowchart TB
   lead["Lead agent<br/>the Claude Code conversation"]
   advisor["Advisor tool<br/>built into Claude Code"]
   worker["Codex worker<br/>builds"]
-  reviewer["Codex reviewer<br/>did not build the code"]
+  reviewer["Codex reviewer<br/>reviews code that it did not build"]
 
   you -- "task, answers" --> lead
   lead -- "questions, report" --> you
@@ -56,16 +56,18 @@ sequenceDiagram
     L->>Y: the plan
     Y->>L: your approval
   end
-  L->>W: "plan OK, build"
-  Note over W: builds, commits, and pushes to its branch<br/>if the brief names a remote branch
-  W->>L: report of the turn: the pushed commit and the checks
-  opt a wrong direction
-    L->>W: stops the current turn, sends the correction
+  L->>W: "plan OK, build", or "build" if there is no plan
+  Note over W: builds and commits.<br/>Pushes to its branch if the brief names a remote branch.
+  opt the work goes in a wrong direction
+    L->>W: stops the running turn, sends the correction
     Note over W: same session, context kept
   end
+  W->>L: report of the turn: the commits, the push, and the checks
   opt the context use reaches 35%
     L->>W: write a handoff
-    Note over L,W: the lead agent checks the handoff,<br/>and a new worker session takes over the task
+    W->>L: the handoff
+    Note over L: checks and corrects the handoff
+    Note over W: a new worker session continues the task
   end
   W->>L: final report: each claim with its command and result
   L->>R: review brief
@@ -88,6 +90,7 @@ lead agent sends them to the builder's session. After a handoff, that is the new
 
 - The lead agent starts each worker in its own Git worktree and branch, which the brief names.
 - A checkpoint is a step of the worker's plan after which it commits its work.
+- A turn is one run of the worker: from a message of the lead agent to the report of the worker.
 - If the brief names a remote branch, the worker pushes its commits to that branch at each
   checkpoint. It pushes to no other branch, and it does not force a push.
 - A reviewer makes no commits.
@@ -96,7 +99,8 @@ lead agent sends them to the builder's session. After a handoff, that is the new
 
 ## The 35% limit
 
-The lead agent watches how full the context window of each Codex session is. When 35% of the
+The context window is the text that a model can hold at one time: the brief, the messages, and the
+files that it read. The lead agent watches how full the context window of each Codex session is. When 35% of the
 model's window is used, the worker writes a handoff. The lead agent checks and corrects it, and a
 new worker continues from it.
 
@@ -110,12 +114,15 @@ starts, so that each part ends under 35%.
 Before you start:
 
 1. Install the Codex CLI (`codex`) and sign in.
-2. Put this folder where Claude Code finds skills, for example `.claude/skills/codex-workers/`.
+2. Put the folder of this file, with its `SKILL.md`, where Claude Code finds skills. For example,
+   use `.claude/skills/codex-workers/` in your repository.
 
 Each start comes from you. The lead agent does not start this skill on its own. Start it in one of
 these ways:
 
 - Type `/codex-workers` in a conversation.
 - Name the skill `codex-workers` in your message.
-- Start another skill that tells the lead agent to read `SKILL.md`. Read that skill to see if it
-  does this.
+- Start another skill that tells the lead agent to read the `SKILL.md` of this skill. Read that
+  skill to see if it does this.
+
+`SKILL.md` has the commands, the models, and the full rules. You can read it too.
