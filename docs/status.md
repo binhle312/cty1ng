@@ -10,7 +10,7 @@ approvals). Keep it short: link to PRs and briefs instead of describing work.
 
 ## Now
 
-The cleanup of what is left of the stopped agent setup is in draft [#148](https://github.com/binhle312/cty1ng/pull/148) (owner, 2026-11-24). Waiting on: the owner's review.
+The `codex-workers` skill is in a draft PR (owner, 2026-11-24): the lead agent starts Codex workers and talks with them. Waiting on: the owner's review and the three points under its `Needs human review`.
 
 The repository audit of 2026-11-05 found 55 issues. After the owner's decisions, 15 are P2, 39 are P3, and the owner accepted one case; none is P1. Its fixes come before M3 in the owner's order. #69 is closed, and the owner watches more PRs before deciding whether to bring it back. Findings, decisions and progress are in [audits/2026-11-05-repo-audit.md](audits/2026-11-05-repo-audit.md). PR 2 of 7, the security fixes, merged in [#73](https://github.com/binhle312/cty1ng/pull/73) on 2026-11-06. [#76](https://github.com/binhle312/cty1ng/pull/76) merged on 2026-11-06 and records the guard decisions. PR 3 of 7, the Skills page, merged in [#78](https://github.com/binhle312/cty1ng/pull/78) on 2026-11-06. PR 4 of 7, the Bots page, merged in [#82](https://github.com/binhle312/cty1ng/pull/82) on 2026-11-08. PR 5 of 7, tests only, merged in [#86](https://github.com/binhle312/cty1ng/pull/86) on 2026-11-10. PR 6 of 7, six tabs, merged in [#91](https://github.com/binhle312/cty1ng/pull/91) on 2026-11-10.
 
@@ -282,3 +282,4 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-23 | [#144](https://github.com/binhle312/cty1ng/pull/144) merged: agent memory rules, audit trigger and quotes (`4047ba8`), which left in #145. |
 | 2026-11-23 | [#145](https://github.com/binhle312/cty1ng/pull/145) merged: the agent memory moved out of the repository to local Git (`bf03f5d`). |
 | 2026-11-23 | [#147](https://github.com/binhle312/cty1ng/pull/147) merged: the rules for agent memory and standing merges removed (`b623ae3`). |
+| 2026-11-24 | [#148](https://github.com/binhle312/cty1ng/pull/148) merged: what was left of the stopped agent setup removed. |
