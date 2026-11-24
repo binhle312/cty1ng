@@ -114,8 +114,8 @@ Everything that decides the answer must be in those places.
    hide rows where all items are equal.** "If the information isn't complete for all compared
    products, it might as well not be in a comparison table."
    Source: https://www.nngroup.com/articles/comparison-tables/
-   Rule for our pages: every option has the same fields (Does, Gets, Cost, Risk), each filled; a field
-   that is the same for all options is removed.
+   Rule for our pages: every option has the same fields (Does, Gets, Cost, Risk), each filled. The
+   kit requires all four, so a field stays when its value is the same for all options.
 3. **Choice overload depends on task difficulty and option complexity more than on count.** The
    2010 meta-analysis found a mean effect near zero; the 2015 meta-analysis (99 observations,
    N=7202) found overload when the task is hard, options are complex, preferences are unclear, or
@@ -157,7 +157,8 @@ Everything that decides the answer must be in those places.
 2. **Hierarchy comes from contrast, size and grouping; "if everything is contrasted, then nothing
    stands out."** Max 3 type sizes, max 3 contrast treatments; test with a blur ("squint test").
    Source: https://www.nngroup.com/articles/visual-hierarchy-ux-definition/
-   Rule for our pages: a 5 px blur of a screenshot still shows, in order: title, ask, pick, options.
+   Rule for our pages: a 5 px blur of a question screenshot still shows, in order: title, ask, pick,
+   options (`SKILL.md` step 10 has the check for a report page).
 3. **Highlight sparingly:** Baymard says at most 10% of text; NN/g says at most 30% and never bold
    for tone. The fewer the highlights, the more attention each gets.
    Sources: https://baymard.com/blog/highlighting-text-online ;
@@ -229,7 +230,7 @@ Everything that decides the answer must be in those places.
 |---|---|---|---|
 | Title | left, top | 12 words, ends "?" | The decision as a question |
 | Ask | left, line 1 | 20 words | "Decide: ..." and what the answer changes |
-| My pick | left, the one callout | 25 words | Option letter + short name, main reason, confidence (clear / close call), "Pick another if ..." (15 words) |
+| My pick | right, above the options; the one callout | 25 words | Option letter + short name, main reason, confidence (clear / close call), "Pick another if ..." (15 words) |
 | Key facts | left | 2-4 bullets, 15 words each | Bold lead words (2-4) carry the fact |
 | Numbers | left | table, 2-5 rows | Only when there are more than 3 numbers |
 | Example | left | 2-4 steps, 15 words each | Time or trigger label, then what happens |

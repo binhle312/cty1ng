@@ -84,7 +84,7 @@ every bar has a direct label, so the chart needs no legend.
 | `decides` | **Only this depends on you:** + your text, after `why` | Required. State the choice that still needs the reader's answer. |
 | `owner` | **Why you decide:** + your text | Required. Name the rule or approval that gives the reader the decision. |
 | `settled` | A list under **Already decided (no answer needed):** | Required. List the decisions that already apply. Write `[]` if there are none. The kit then hides the list and label. |
-| `pick` | The one coloured box, above the options | `key` names an option. `reason` is the main reason. `confidence` is `clear` or `close call`. `another` completes "Pick another if: ..." and names the other letter. |
+| `pick` | The box with the accent fill, above the options (see the R4.1 row of `SKILL.md`) | `key` names an option. `reason` is the main reason. `confidence` is `clear` or `close call`. `another` completes "Pick another if: ..." and names the other letter. |
 | `facts` | 2-4 bullets | Each starts with 2-4 bold lead words that carry the fact. |
 | `table` | A table under the facts | Optional. Use it when the facts hold more than 3 numbers. 2-5 rows. |
 | `example` | Ordered steps with a time or trigger label | `title` is the heading below "Example". 2-4 steps. |

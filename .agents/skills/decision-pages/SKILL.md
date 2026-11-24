@@ -131,10 +131,12 @@ others are yours.
    this test did not run.
 9. **Verify:** `NODE_PATH=<node_modules that has @playwright/test> node scripts/verify.mjs content.json page.html`.
    The step is done when the command exits with status 0 and its summary line says `0 failed`.
+   Each check reads only what its message names: an element, a class, a computed value or a text.
+   `0 failed` does not show how the page looks, so step 10 is still necessary.
 10. **Look at the screenshots** that verify writes: `-overview`, `-q1`, `-finish` and `-q1-dark`
    for a page with questions, and only `-overview` for a report page.
    Blur your eyes. On a question screenshot you must see, in order, the title, the ask, the pick
-   box and the options. On the overview of a report page, you must see the title and then the lead.
+   box and the options. On the overview of a report page, you must see the title first, then the lead if the page has one.
    Fix what one look shows, then build and verify again.
 11. **Run the pre-send checklist** at the end of this guide, then send the page.
 
