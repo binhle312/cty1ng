@@ -11,8 +11,8 @@ metadata:
 
 A decision page asks one person to answer a set of questions, one question per step, and to
 send the answers back as text. A report page shows status only. Both come from one JSON
-content file. The kit writes one self-contained HTML file: no network, system fonts, light
-and dark themes.
+content file. The kit writes one self-contained HTML file with light and dark Workbench themes.
+It uses local Inter when available and system fonts otherwise.
 
 The reader scans. They read the title, the first line and the bold words, and little else
 (R1.1, R1.2). Everything that decides the answer goes in those places. The rest goes into a
@@ -48,24 +48,24 @@ others are yours.
 | 2-4 key facts, each with 2-4 bold lead words | R2.1, R1.5 | Working memory holds about 4 chunks; the first 2 words carry the scan. |
 | More than 3 numbers go in a table, numbers right-aligned | R1.6, R3.1 | A matrix lets the eye compare; prose makes the reader build it. |
 | An example as 2-4 ordered steps with a time or trigger label | R7b | Concrete steps show what the choice does in real use. |
-| Each option shows Gets, Costs and Risk inside its own card | R2.2 | Trade-offs away from the option force the reader to join them in the head. |
+| Each option shows Does, Gets, Costs and Risk inside its own card | R2.2 | Trade-offs away from the option force the reader to join them in the head. |
 | Every option has the same fields, all filled | R3.2 | A comparison with gaps is no comparison. |
 | 2-4 real options; each has a real gain | R3.3, R3.6 | A straw-man option pushes the reader to the pick. |
 | No option is pre-checked | R3.4 | A default moves the choice more than any argument. |
 | The pick is a labeled box with confidence and "Pick another if" | R3.5, R3.7 | The reader can weigh only what the page shows. |
-| One colour fill per question: the pick | R4.1, R4.6 | If everything is marked, nothing stands out. |
+| In the question content, the accent fill marks only my pick. The reader's choice, the current step and Next use the theme accent. Voter pills use role tints. | R4.1, R4.6 | If everything is marked, nothing stands out. |
 | Bold is at most 10% of the words | R4.3 | Fewer highlights get more attention each. |
 | Risk level is a word ("Risk: low"), not only a colour | R4.5 | Colour alone fails some readers. |
 | At most 220 words of context and 160 words of options before Details | R1.2 | People read about 20% of a page. |
 | Sentences at most 20 words; paragraphs at most 50 | R2.7, R1.3 | Long sentences and blocks cause skipping. |
 | Text lines at most about 70 characters | R2.6 | Long lines make readers lose their place. |
-| A question step uses 12 columns: the facts take 7, the answers take 5. The facts scroll by themselves; the answers stay in place. | R2.2 | The trade-offs stay next to the choice while the reader reads. |
-| Block labels say the content ("Scores are a near tie"), not the type ("What") | R1.4 | Headings are the scan path. |
+| A question step uses 12 columns. The facts take 6 and the answers take 6. The facts scroll by themselves. | R2.2 | The 7:5 split pushed three option cards below the footer in a short window. The equal split gives the cards more room. |
+| Block labels name the content ("A saves time on repeat builds") | R1.4 | Headings are the scan path. |
 | Every id has its meaning next to it ("order 12, for this week only") | R6 | A bare id stops the reader. |
 | One closed Details section, labelled with what is inside | R2.5 | Some readers need the story; nobody needs it first. |
 | A fact that does not change the choice goes into Details or out | R2.3 | Extra material costs attention and adds nothing to the decision. |
 | Bold lead words and headings name decision facts, not background | R4.4 | Readers remember only the signaled words. |
-| Answers save on each click; Back, Next and the arrow keys move | R5.6, R5.4 | The reader can stop, come back and change any answer. |
+| Answers save on each click. Back, Next, arrow keys and a two-finger touchpad swipe move between steps. | R5.6, R5.4 | The reader can stop, come back and change any answer. |
 | A "Check your answers" step with a Change link per row | R5.5 | The reader confirms before sending. |
 
 ## Steps
@@ -88,7 +88,8 @@ others are yours.
 
    Then challenge each question before you write it: what stays open after the settled points,
    and which source makes it the reader's decision? If nothing stays open, drop the question.
-   If you are not sure, run the source review of step 7 on this list now, before you write.
+   If you are not sure, get the source review of step 7 now, before you write. Give the reviewer
+   this list and the paths of the sources, because the content and question files do not exist yet.
 4. **Write the content file** in the format of `references/content-format.md`, with the writing rules
    below. Put the conclusion in the ask and the evidence in the facts and table. Put the use
    case in the example and the story in Details.
@@ -130,9 +131,11 @@ others are yours.
    this test did not run.
 9. **Verify:** `NODE_PATH=<node_modules that has @playwright/test> node scripts/verify.mjs content.json page.html`.
    The step is done when the command exits with status 0 and its summary line says `0 failed`.
+   `0 failed` does not show how the page looks, so step 10 is still necessary.
 10. **Look at the screenshots** that verify writes: `-overview`, `-q1`, `-finish` and `-q1-dark`
    for a page with questions, and only `-overview` for a report page.
-   Blur your eyes: you must see, in order, the title, the ask, the pick box and the options.
+   Blur your eyes. On a question screenshot you must see, in order, the title, the ask, the pick
+   box and the options. On the overview of a report page, you must see the title first, then the lead if the page has one.
    Fix what one look shows, then build and verify again.
 11. **Run the pre-send checklist** at the end of this guide, then send the page.
 
@@ -154,8 +157,9 @@ them; a sentence split on "; " still counts as one sentence.
 
 ## What to highlight
 
-- **The pick box** is the only colour fill on a question step. Nothing else competes with it:
-  examples are plain steps, facts are plain bullets.
+- **The pick box** is the only accent fill in the question content (see the R4.1 row). Examples are plain steps and
+  facts are plain bullets. If the source gives votes, list them in the option cards as described
+  in [the content format](references/content-format.md#one-question).
 - **Bold** goes on the 2-4 lead words of each fact and list item. The kit sets option labels,
   the "Decide:" label and the pick line in bold for you. Bold nothing for tone.
 - **The chart** on an overview gets one highlighted series in the accent colour; the other
@@ -207,12 +211,14 @@ per row. "Copy my answers" copies this text:
 ```text
 <page title>, <date>: my answers (7 of 9)
 Q1: A <option label>
+  Worker: <name>
   Note: <note text>
 Q2: (no answer)
 Page clear: no
   Missing: <text>
 ```
 
+If a question has votes, each vote of the chosen option gets one line below it, or "No votes".
 The reader pastes it back to you. Read the letters against the options in your content file.
 The "Page clear" line answers "Did this page tell you what each question is about?". It is the
 only test by the real reader. When it says "no", or names something missing, fix that in the

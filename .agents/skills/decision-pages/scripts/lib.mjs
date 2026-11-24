@@ -31,7 +31,7 @@ export function plain(s) {
   return textParts(s).map((part, i) => i % 2 ? "CODE" : part).join("");
 }
 export function countWords(s) {
-  return plain(s).split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w)).length;
+  return plain(s).split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
 }
 // A semicolon list counts as one sentence (R2.7).
 export function sentences(s) {
@@ -97,8 +97,17 @@ const STRAWMAN = /^(no work|nothing|none|no change)\.?$/i;
 const DECIDES_LABEL = "Only this depends on you:";
 const OWNER_LABEL = "Why you decide:";
 const SETTLED_LABEL = "Already decided (no answer needed):";
+const DECISION_HEADING = "The decision";
+const FACTS_HEADING = "Facts";
+const EXAMPLE_HEADING = "Example";
 const OPTION_ROWS = [["does", "Does"], ["gets", "Gets"], ["costs", "Costs"], ["riskText", "Risk"]];
 const riskChipText = (risk) => `Risk: ${risk}`;
+const VOTE_ROLES = new Map([
+  ["lead agent", "Lead agent"], ["worker", "Worker"], ["consultant", "Consultant"], ["advisor", "Advisor"],
+]);
+const hasVotes = (q) => q.options.some((o) => o.votes?.length);
+const voteLabel = (vote) => `${VOTE_ROLES.get(vote.role)}: ${vote.name.replace(/\s+/g, " ").trim()}`;
+const voteLabels = (o) => o.votes?.length ? o.votes.map(voteLabel) : ["No votes"];
 
 function questionDetails(q) {
   if (!q.removed?.length) return q.details;
@@ -140,6 +149,18 @@ export function validate(c) {
         for (const f of ["key", "label", "gets", "costs", "risk", "riskText"]) need(o[f], `${id}.options[${k}].${f} is required (R3.2 same fields for every option)`);
         need(hasText(o.does), `${id}.options[${k}].does is required and must be a non-empty string (${SCOPE_FIELDS_RULE})`);
         need(/^[A-Z]$/.test(o.key || ""), `${id}.options[${k}].key must be one capital letter`);
+        if (o.votes !== undefined) {
+          const path = `${id}.options[${k}].votes`;
+          need(Array.isArray(o.votes), `${path} must be an array`);
+          if (Array.isArray(o.votes)) o.votes.forEach((vote, j) => {
+            need(vote && VOTE_ROLES.has(vote.role) && hasText(vote.name),
+              `${path}[${j}] must have a role (${[...VOTE_ROLES.keys()].join(", ")}) and a non-empty name`);
+            if (vote && typeof vote === "object") {
+              const extra = Object.keys(vote).filter((key) => key !== "role" && key !== "name");
+              need(extra.length === 0, `${path}[${j}] has unexpected keys: ${extra.join(", ")}`);
+            }
+          });
+        }
       });
       if (q.pick) need(keys.includes(q.pick.key), `${id}.pick.key must name an option`);
     }
@@ -201,6 +222,7 @@ export function lint(c) {
     const countScopeLabel = (label) => { const words = countWords(label); ctx += words; bold += words; };
 
     count(`${id}.title`, q.title, "titleWords");
+    ctx += countWords(DECISION_HEADING) + countWords(FACTS_HEADING);
     if (!/\?\s*$/.test(q.title || "")) errors.push(`${id}.title: must end with "?" (${LIMITS.titleWords[1]})`);
     if (countWords(q.topic) > L("topicWords")) errors.push(`${id}.topic: ${countWords(q.topic)} words > ${L("topicWords")} (${LIMITS.topicWords[1]})`);
     if (String(q.topic || "").length > L("topicChars")) errors.push(`${id}.topic: ${String(q.topic).length} characters > ${L("topicChars")} (${LIMITS.topicChars[1]})`);
@@ -254,7 +276,7 @@ export function lint(c) {
 
     // Example
     const ex = q.example || { steps: [] };
-    count(`${id}.example.title`, ex.title, "blockTitleWords"); ctx += 1; // "Example:"
+    count(`${id}.example.title`, ex.title, "blockTitleWords"); ctx += countWords(EXAMPLE_HEADING);
     range(`${id}.example steps`, ex.steps.length, "stepsMin", "stepsMax");
     ex.steps.forEach((s, k) => {
       count(`${id}.example.steps[${k}].when`, s.when, "whenWords");
@@ -273,6 +295,7 @@ export function lint(c) {
     // Options
     const opts = q.options || [];
     range(`${id}.options`, opts.length, "optionsMin", "optionsMax");
+    const showVotes = hasVotes(q);
     let choice = 0;
     opts.forEach((o) => {
       const w = `${id}.option ${o.key}`;
@@ -282,6 +305,10 @@ export function lint(c) {
         choice += max(where, o[field], label ? "fieldWords" : "labelWords") + countWords(label);
       }
       choice += countWords(riskChipText(o.risk));
+      if (showVotes) for (const label of voteLabels(o)) {
+        markup(`${w}.votes`, label); sent(`${w}.votes`, label);
+        choice += countWords(label);
+      }
       if (!RISKS.includes(o.risk)) errors.push(`${w}.risk: "${o.risk}" must be one of ${RISKS.join(", ")} (R4.5 the chip says the level in words)`);
       if (STRAWMAN.test(String(o.gets).trim())) warnings.push(`${w}.gets: "${o.gets}" is no real gain; remove the option or name its case (R3.6 decoys)`);
       if (o.details) detailItems(`${w}.details`, o.details.items);
@@ -305,6 +332,10 @@ function feedbackLines({ clear, missing } = {}) {
   return lines;
 }
 
+function copiedVoteLines(q, option) {
+  return hasVotes(q) ? voteLabels(option).map((label) => `  ${stripMarkup(label)}`) : [];
+}
+
 export function copyLines(c, answers, notes, feedback) {
   let answered = 0;
   const out = [];
@@ -313,6 +344,7 @@ export function copyLines(c, answers, notes, feedback) {
     const o = q.options.find((x) => x.key === a);
     if (o) answered++;
     out.push(o ? `${id}: ${o.key} ${stripMarkup(o.label)}` : `${id}: (no answer)`);
+    if (o) out.push(...copiedVoteLines(q, o));
     const nt = String(notes[id] || "").replace(/\s+/g, " ").trim();
     if (nt) out.push(`  Note: ${nt}`);
   });
@@ -322,32 +354,41 @@ export function copyLines(c, answers, notes, feedback) {
 
 // ---------- Styles ----------
 // Tokens: one ground, one ink, one accent. The accent fill marks one thing per question: my pick (R4.1).
-// Type: three sizes, 24 / 16 / 14 (R4.2). System font stack, no network.
+// Workbench uses three type sizes (R4.2) and a local Inter font with system fallbacks.
 
 const CSS = `
 :root{
- --ground:#f5f6f7;--surface:#ffffff;--raised:#eef0f2;--border:#dfe2e6;--rule:#e9ebee;--control:#b9bec5;
- --text:#16181b;--muted:#545a63;--accent:#1b56c4;--accent-ink:#17489f;--pick-bg:#e6eefc;--bar:#878e98;
- --low-bg:#def3e5;--low-ink:#14532d;--med-bg:#fbefd5;--med-ink:#704404;--high-bg:#fbe1df;--high-ink:#8a1f1a;
- --code:#eceef1;
- --font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
- --mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+ --ground:#f5f7fb;--surface:#ffffff;--raised:#f1f4f9;--border:#dce2ea;--rule:#e8ecf2;--control:#b8c2d0;
+ --text:#1d273b;--muted:#5a6880;--accent:#066fd1;--accent-ink:#055bb0;--pick-bg:#eaf3fd;--bar:#8a96a8;
+ --low-bg:#e6f6ec;--low-ink:#1f6b3a;--med-bg:#fdf1dc;--med-ink:#7c4a03;--high-bg:#fce6e6;--high-ink:#a12a2a;
+ --code:#eef2f7;--nav:#182433;--nav-ink:#c9d3e0;--ok:#2fb344;
+ --shadow:0 1px 2px rgba(24,36,51,.06);--shadow-hover:0 6px 16px -6px rgba(24,36,51,.18);
+ --font:"Inter",system-ui,"Segoe UI",Roboto,Arial,sans-serif;
+ --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+ --content-width:calc(100% * 10 / 12);--panel-radius:8px;--nav-accent:#066fd1;
+ --slide:260ms;--slide-d:28px;--shift:12px;
+ --ease:cubic-bezier(.2,.75,.25,1);--spring:cubic-bezier(.34,1.56,.64,1);
+ --lead-bg:#e5f5ef;--lead-ink:#11603f;--worker-bg:#fae9ee;--worker-ink:#8a2e54;
+ --consultant-bg:#f0ebfa;--consultant-ink:#5530a0;--advisor-bg:#fbf0e3;--advisor-ink:#7a4510;
  color-scheme:light dark;
 }
 @media (prefers-color-scheme:dark){:root{
- --ground:#0f1012;--surface:#17191c;--raised:#202327;--border:#2c3035;--rule:#25282c;--control:#4b5057;
- --text:#eceef0;--muted:#a8aeb7;--accent:#5b8ff0;--accent-ink:#a3c1ff;--pick-bg:#18284a;--bar:#7b828c;
- --low-bg:#12301d;--low-ink:#94e2ad;--med-bg:#3a2a0c;--med-ink:#f3c879;--high-bg:#3e1816;--high-ink:#ffaba4;
- --code:#24272c;
+ --ground:#111a26;--surface:#182433;--raised:#1f2d3f;--border:#2a3a50;--rule:#24344a;--control:#41546e;
+ --text:#e3e9f1;--muted:#9fadc2;--accent:#4c9cf0;--accent-ink:#7ab5f5;--pick-bg:#17324f;--bar:#7d8ba0;
+ --low-bg:#143323;--low-ink:#8bdfa7;--med-bg:#3a2b0f;--med-ink:#f1c777;--high-bg:#3f1b1b;--high-ink:#ffa9a9;
+ --code:#1f2d3f;--nav:#0c131d;--nav-ink:#aab6c6;
+ --shadow:0 1px 2px rgba(0,0,0,.3);--shadow-hover:0 6px 16px -6px rgba(0,0,0,.6);
+ --lead-bg:#123528;--lead-ink:#8fd9b6;--worker-bg:#3c2131;--worker-ink:#f4aaca;
+ --consultant-bg:#2a2147;--consultant-ink:#c5b3f2;--advisor-bg:#3a2a14;--advisor-ink:#f0c58f;
 }}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-html,body{height:100%}
+html,body{height:100%;overscroll-behavior-x:none}
 body{margin:0;background:var(--ground);color:var(--text);font:16px/1.5 var(--font);display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden;
- font-variant-numeric:tabular-nums;scrollbar-color:var(--control) transparent}
+ scrollbar-color:var(--control) transparent}
 ::selection{background:var(--pick-bg);color:var(--text)}
 h1,h2,h3,p,ul,ol,dl,dd,figure{margin:0}
-h1{font-size:24px;line-height:1.25;font-weight:650;text-wrap:balance}
+h1{font-size:24px;line-height:1.25;font-weight:650;letter-spacing:-.015em;text-wrap:balance}
 h2{font-size:16px;line-height:1.4;font-weight:650}
 code{font-family:var(--mono);font-size:14px;background:var(--code);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
 code.nw{white-space:nowrap;overflow-wrap:normal}
@@ -359,44 +400,55 @@ strong{font-weight:650}
 button{font:inherit;color:inherit}
 
 /* Top bar: where am I, how much is left (R5.3, R5.4) */
-.bar{background:var(--surface);border-bottom:1px solid var(--border)}
-.bar-in{max-width:1440px;margin:0 auto;padding:8px 32px 6px}
+.bar{background:var(--nav);color:#fff}
+.bar-in,.nav-in,.wrap{width:var(--content-width);margin:0 auto}
+.bar-in{padding:10px 0}
 .bar-row{display:flex;align-items:baseline;gap:20px}
 .bar-title{font-weight:650}
 .bar-title .muted{font-weight:400;margin-left:6px}
-.where{font-weight:400;color:var(--muted)}
-.counts{margin-left:auto;display:flex;gap:18px;font-size:14px;color:var(--muted)}
-.counts b{color:var(--text);font-size:16px;margin-left:4px}
-.steps ol{list-style:none;padding:0;margin:6px 0 0 -8px;display:flex;flex-wrap:wrap;gap:2px}
-.sbtn{font-size:14px;line-height:20px;padding:3px 8px;border-radius:6px;border:1px solid transparent;background:none;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
-.sbtn:hover{background:var(--raised);color:var(--text)}
-.sbtn[aria-current="step"]{background:var(--raised);border-color:var(--control);color:var(--text);font-weight:650}
-.sbtn .ck{display:none;width:14px;height:14px;margin:0 -2px}
-.sbtn .no{min-width:9px;text-align:center}
-.sbtn.done{color:var(--text)}
-.sbtn.done .ck{display:inline-block}
+.bar .muted,.where,.counts{color:var(--nav-ink)}
+.counts{margin-left:auto;display:flex;gap:18px;font-size:14px;font-variant-numeric:tabular-nums}
+.counts span{display:inline-flex;align-items:baseline;gap:6px;background:rgba(255,255,255,.07);border-radius:6px;padding:1px 8px}
+.counts b{display:inline-block;color:#fff;font-size:16px}
+.steps ol{list-style:none;padding:0;margin:8px 0 0 -6px;display:flex;flex-wrap:wrap;gap:2px}
+.sbtn{font-size:14px;line-height:20px;padding:3px 12px 3px 4px;border-radius:999px;border:0;background:none;color:var(--nav-ink);cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.sbtn:not(:has(.no)){padding-left:12px}
+.sbtn:hover{background:rgba(255,255,255,.08);color:#fff}
+.sbtn[aria-current="step"]{background:rgba(255,255,255,.12);color:#fff;font-weight:650}
+.sbtn .no,.sbtn .ck{width:24px;height:24px;border-radius:50%;border:1.5px solid rgba(255,255,255,.35)}
+.sbtn .no{display:inline-grid;place-items:center;font-weight:600}
+.sbtn[aria-current="step"] .no{background:var(--nav-accent);border-color:var(--nav-accent)}
+.sbtn .ck{display:none;padding:4px;background:var(--ok);border-color:var(--ok);color:var(--nav)}
+.sbtn.done{color:#fff}
+.sbtn.done .ck{display:block}
 .sbtn.done .no{display:none}
 
 /* Main area scrolls; the choice column stays in view (R2.2 trade-offs next to the radio) */
-main{overflow:auto;scroll-padding-top:16px}
-.wrap{max-width:1680px;margin:0 auto;padding:16px 24px 32px}
-/* Question step: 12 columns, left 7 and right 5; the left scrolls by itself,
-   the answers on the right stay in place. Text lines in the left keep at most 72ch (R2.6). */
+main{overflow:auto;overflow-x:hidden;scroll-padding-top:16px}
+.wrap{padding:16px 0 32px}
+/* Equal panes give the options room to fit above the footer. Each pane scrolls on its own. */
 .step.q{height:100%}
-.step.q .wrap{height:100%;box-sizing:border-box;padding:16px 24px 0}
-.q-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:32px;height:100%;align-items:stretch}
-.ctx{min-height:0;overflow-y:auto;padding:0 16px 32px 0;scroll-padding-top:16px}
-.ctx>:not(table):not(.tbl){max-width:72ch}
-.ctx>*+*{margin-top:16px}
+.step.q .wrap{height:100%;padding:20px 0 16px}
+.q-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;height:100%;align-items:stretch}
+.panel,.opt{background:var(--surface);border:1px solid var(--border);border-radius:var(--panel-radius);box-shadow:var(--shadow)}
+.ctx{min-height:0;overflow-y:auto;padding:20px 24px 28px;scroll-padding-top:16px}
+.ctx>*{max-width:70ch}
+.ctx>.sec{margin-top:28px}
+.ctx>.sec+.sec{margin-top:36px}
 .ctx h1{outline:none}
+.ctx .sec>h2,.ctx .sec>summary{font-size:16px;line-height:24px;margin:0 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.ctx .sec>h3{font-size:14px;line-height:20px;font-weight:600;color:var(--muted);margin:0 0 10px}
+.ctx .decision>*+*:not(.ask){margin-top:8px}
+.ctx .more>summary{width:100%;margin-bottom:0}
+.ctx .more[open]>summary{margin-bottom:12px}
+.ctx summary h2{display:inline}
 .ask{font-size:16px}
 .ask strong{font-weight:650}
 .why{color:var(--muted)}
 .facts{padding-left:20px}
-.facts li+li{margin-top:6px}
-.facts li::marker{color:var(--muted)}
-.ctx .blk{margin-top:24px}
-.ctx h2{margin-bottom:8px}
+.facts li+li{margin-top:8px}
+.facts li::marker{color:var(--accent)}
+.ctx .sec table{margin-top:16px}
 
 /* Tables: rules and alignment, numbers right (R3.1, R1.6) */
 table{border-collapse:collapse;width:100%}
@@ -411,7 +463,7 @@ th:last-child,td:last-child{padding-right:0}
 /* Example as ordered steps with a time label */
 .steps-ex{list-style:none;padding:0;display:grid;grid-template-columns:max-content 1fr;gap:6px 16px}
 .steps-ex li{display:contents}
-.steps-ex .when{color:var(--muted);white-space:nowrap}
+.steps-ex .when{color:var(--muted);white-space:nowrap;font-size:14px;line-height:24px;font-weight:500}
 
 /* Details: one per question, label says what is inside (R2.5) */
 details>summary{cursor:pointer;font-weight:650;width:max-content;max-width:100%}
@@ -422,44 +474,68 @@ details[open]>summary{margin-bottom:8px}
 .more ul ul{margin-top:4px}
 
 /* Choice column */
-.choice{min-height:0;overflow-y:auto;padding:0 4px 32px 0}
-.pick{background:var(--pick-bg);border-radius:8px;padding:14px 16px}
-.pick>*+*{margin-top:6px}
-.pick .head{font-weight:650}
-.pick .head .lbl{color:var(--accent-ink)}
+.choice{min-height:0;overflow-y:auto;padding:2px 4px 24px 2px}
+.pick{background:var(--pick-bg);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);border-radius:var(--panel-radius);padding:12px 16px}
+.pick.agreed{border-color:color-mix(in srgb,var(--accent) 55%,transparent)}
+.pick>*+*{margin-top:2px}
+.pick .head,.pick .lbl{display:flex;align-items:center;gap:6px;font-weight:650}
+.pick .head{flex-wrap:wrap}
+.pick .lbl{color:var(--accent-ink);font-size:14px}
+.pick .lbl .ck{width:14px;height:14px;color:var(--pick-bg);background:var(--accent-ink);border-radius:50%;padding:2px}
+.yours{margin-left:auto;font-size:14px;line-height:20px;font-weight:500;padding:0 8px;border-radius:999px;background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+.yours:empty{display:none}
+.pick.agreed .yours{color:var(--accent-ink);border-color:color-mix(in srgb,var(--accent) 40%,transparent)}
 fieldset{border:0;margin:12px 0 0;padding:0;min-width:0}
-.opt{background:var(--surface);border:1px solid var(--border);border-radius:8px}
 .opt+.opt{margin-top:8px}
-.opt:hover{border-color:var(--control)}
-.opt:has(input:checked){border-color:var(--text);outline:1px solid var(--text);outline-offset:-2px}
-.opt>label{display:grid;grid-template-columns:20px 1fr;gap:2px 12px;padding:12px 14px;cursor:pointer}
-.opt input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--text);cursor:pointer}
+.opt:hover{border-color:var(--control);box-shadow:var(--shadow-hover)}
+.opt:has(input:checked){border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent),var(--shadow-hover)}
+.opt:has(input:checked) .olabel{color:var(--accent-ink)}
+.opt>label{display:grid;grid-template-columns:20px minmax(0,1fr);gap:2px 12px;padding:8px 14px;cursor:pointer}
+.opt input{appearance:none;width:20px;height:20px;margin:2px 0 0;border-radius:50%;border:1.5px solid var(--control);background:var(--surface);cursor:pointer}
+.opt input:checked{border-color:var(--accent);background:var(--accent);box-shadow:inset 0 0 0 4px var(--surface)}
 .ohead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .olabel{font-weight:650}
 .otags{margin-left:auto;display:flex;gap:6px;align-items:baseline}
 .tag{font-size:14px;line-height:20px;padding:0 7px;border-radius:4px;white-space:nowrap}
 .tag-pick{color:var(--accent-ink);border:1px solid var(--accent);line-height:18px}
+.votes{grid-column:2;display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;min-width:0}
+.vb,.vnone{font-size:14px;line-height:20px;overflow-wrap:anywhere}
+.vb{border-radius:999px;padding:0 8px;font-weight:600}
+.vb-lead-agent{background:var(--lead-bg);color:var(--lead-ink)}
+.vb-worker{background:var(--worker-bg);color:var(--worker-ink)}
+.vb-consultant{background:var(--consultant-bg);color:var(--consultant-ink)}
+.vb-advisor{background:var(--advisor-bg);color:var(--advisor-ink)}
+.vnone{color:var(--muted)}
 .risk-low{background:var(--low-bg);color:var(--low-ink)}
 .risk-medium{background:var(--med-bg);color:var(--med-ink)}
 .risk-high{background:var(--high-bg);color:var(--high-ink)}
-kbd{font:14px/18px var(--font);color:var(--muted);border:1px solid var(--control);border-radius:4px;padding:0 5px;min-width:20px;text-align:center}
-.tr{grid-column:2;display:grid;grid-template-columns:max-content 1fr;gap:1px 10px;margin-top:4px}
-.tr dt{font-size:14px;color:var(--muted);line-height:24px}
+kbd{font:14px/18px var(--font);color:var(--muted);border:1px solid var(--border);border-radius:4px;background:var(--raised);box-shadow:0 1px 0 var(--border);padding:0 5px;min-width:20px;text-align:center}
+.tr{grid-column:2;display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:10px;margin-top:4px}
+.tr dt,.tr dd{line-height:22px}
+.tr dt{font-size:14px;color:var(--muted)}
 .opt details{padding:0 14px 8px 46px;margin-top:-6px}
-.opt details>summary{font-weight:500;color:var(--muted);font-size:14px;line-height:20px}
+.opt details>summary{font-weight:500;color:var(--accent-ink);font-size:14px;line-height:20px}
 .note{margin-top:12px}
 .note label{font-size:14px;color:var(--muted)}
-textarea{display:block;width:100%;margin-top:4px;font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--control);border-radius:6px;padding:6px 10px;resize:vertical}
+textarea{display:block;width:100%;margin-top:4px;font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:var(--shadow);padding:6px 10px;resize:vertical}
 
 /* Overview and finish */
-.page-head{max-width:72ch}
+.page-head{padding:20px 24px}
+.page-head>*{max-width:70ch}
 .page-head>*+*{margin-top:8px}
-.ov-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px 48px;margin-top:28px;align-items:start}
+.ov-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:20px;align-items:start}
 .ov-grid .full{grid-column:1/-1}
-.ov-grid .col{display:grid;gap:32px;min-width:0}
-.ov-grid h2{margin-bottom:8px}
-.ov-grid ul{padding-left:20px}
+.ov-grid .col{display:grid;gap:20px;min-width:0}
+.ov-grid .blk{padding-bottom:16px;overflow:hidden}
+.ov-grid .qlist{padding-bottom:0}
+.ov-grid h2{margin:0 0 12px;padding:12px 20px;border-bottom:1px solid var(--border)}
+.ov-grid ul{padding:0 20px 0 40px}
 .ov-grid li+li{margin-top:6px}
+.ov-grid section>p,.ov-grid .chart{padding:0 20px}
+.ov-grid th,.ov-grid td,.fin-table th,.fin-table td{padding-inline:20px}
+.ov-grid th,.fin-table th{background:var(--raised)}
+.ov-grid tbody tr:last-child td,.fin-table tbody tr:last-child td{border-bottom:0}
+.ov-grid tbody tr:hover{background:var(--raised)}
 .ov-grid .note-line{margin-top:8px;font-size:14px;color:var(--muted)}
 .chart svg{display:block;width:100%;max-width:560px;height:auto;color:var(--text)}
 .chart text{font:14px var(--font);fill:currentColor}
@@ -467,27 +543,81 @@ textarea{display:block;width:100%;margin-top:4px;font:inherit;color:var(--text);
 .chart .bar-hi{fill:var(--accent)}
 .chart .bar-lo{fill:var(--bar)}
 .chart .base{stroke:var(--border)}
-.link{background:none;border:0;padding:0;color:var(--accent-ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer;text-align:left}
+.link{background:none;border:0;padding:0;color:var(--accent-ink);font-weight:500;cursor:pointer;text-align:left}
+.link:hover,.link:focus-visible{text-decoration:underline;text-underline-offset:3px}
 .fin-actions{display:flex;gap:12px;margin-top:20px}
 .copy-prev{margin-top:16px}
-.copy-prev pre{font:14px/1.5 var(--mono);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;white-space:pre-wrap;margin:6px 0 0;max-width:100ch}
-.fin-table td.ans{white-space:nowrap}
+.copy-prev pre{font:14px/1.5 var(--mono);padding:12px 14px;white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 0;max-width:100ch}
+.fin-table-wrap{margin-top:20px;overflow:hidden}
+.fin-table td:first-child{font-variant-numeric:tabular-nums}
 .fin-table td.none{color:var(--muted)}
 
 /* Footer nav: same place on every step */
 .nav{background:var(--surface);border-top:1px solid var(--border)}
-.nav-in{max-width:1440px;margin:0 auto;padding:10px 32px;display:flex;align-items:center;gap:16px}
+.nav-in{padding:10px 0;display:flex;align-items:center;gap:16px}
 .keys{font-size:14px;color:var(--muted);margin-left:auto}
-.btn{height:40px;padding:0 18px;border-radius:6px;border:1px solid var(--control);background:var(--surface);cursor:pointer;font-weight:500}
+.btn{height:40px;padding:0 18px;border-radius:6px;border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow);cursor:pointer;font-weight:500}
 .btn:hover{background:var(--raised)}
-.btn.primary{background:var(--text);color:var(--surface);border-color:var(--text);font-weight:650}
+.btn.primary{background:var(--nav-accent);color:#fff;border-color:var(--nav-accent);font-weight:650}
 .btn.primary:hover{opacity:.88}
 .btn:disabled{opacity:.4;cursor:default}
+
+@media (max-height:820px){
+ .step.q .wrap{padding:8px 0}
+ .opt+.opt{margin-top:4px}
+ .opt>label{padding-block:4px;row-gap:0}
+ .pick{padding-block:8px}
+ .choice fieldset{margin-top:8px}
+ .tr{grid-column:1/-1;margin-top:2px}
+ .tr dt,.tr dd,.pick p{line-height:20px}
+ .votes{margin-top:0;gap:2px 4px}
+ .vb,.vnone{line-height:18px}
+ .vb{padding-inline:6px}
+}
+
+/* The edge ring follows the horizontal gesture in the side gutter. */
+.edge{--p:0;position:fixed;top:50%;z-index:5;width:48px;height:48px;border-radius:50%;pointer-events:none;opacity:0;
+ display:grid;place-items:center;color:var(--accent-ink);
+ background:conic-gradient(var(--accent) calc(var(--p) * 360deg),var(--border) 0)}
+.edge::before{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--surface);box-shadow:var(--shadow)}
+.edge svg{position:relative;width:20px;height:20px}
+.edge-l{left:24px;transform:translate(calc((var(--p) - 1) * 48px),-50%)}
+.edge-r{right:24px;transform:translate(calc((1 - var(--p)) * 48px),-50%)}
+.edge.live{opacity:calc(.35 + .65 * var(--p))}
+.edge.pop{color:var(--nav)}
+.edge.pop::before{background:var(--accent)}
+@media (prefers-reduced-motion:no-preference){
+ .wrap,.edge{transition:transform 280ms var(--spring)}
+ .wrap.drag{transition:transform 70ms linear}
+ .wrap.in-next{animation:in-next var(--slide) var(--ease) both}
+ .wrap.in-prev{animation:in-prev var(--slide) var(--ease) both}
+ @keyframes in-next{from{opacity:0;transform:translateX(var(--slide-d))}to{opacity:1;transform:none}}
+ @keyframes in-prev{from{opacity:0;transform:translateX(calc(-1 * var(--slide-d)))}to{opacity:1;transform:none}}
+ .edge.live{transition:transform 70ms linear,opacity 70ms linear}
+ .edge.pop{animation:pop-edge 160ms var(--ease)}
+ @keyframes pop-edge{50%{scale:1.12}}
+ .tick{animation:tick 240ms var(--ease)}
+ @keyframes tick{from{opacity:0;transform:translateY(-55%)}}
+ .opt{transition:box-shadow 200ms var(--ease),border-color 200ms var(--ease)}
+ .opt.just-picked{animation:pop-option 240ms var(--ease)}
+ @keyframes pop-option{from{scale:.985}}
+ .pick.pop{animation:pop-box 280ms var(--ease)}
+ @keyframes pop-box{from{scale:.99}}
+ .yours.pop{animation:pop-in 240ms var(--spring)}
+ @keyframes pop-in{from{opacity:0;transform:translateY(4px) scale(.9)}}
+ .sbtn .ck path{stroke-dasharray:16}
+ .sbtn.just-done .ck path{animation:just-done 300ms var(--ease)}
+ @keyframes just-done{from{stroke-dashoffset:16}}
+}
 `;
 
 // ---------- Render ----------
 
 const CHECK = `<svg class="ck" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+function renderEdge(side, path) {
+  return `<div class="edge edge-${side}" id="edge-${side}" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="${path}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`;
+}
 
 function renderTable(t, { caption = true, cls = "" } = {}) {
   const al = (k) => (t.align && t.align[k] === "right" ? ' class="num"' : "");
@@ -528,19 +658,19 @@ function renderBars(b) {
   return `<figure class="chart"><svg viewBox="0 0 ${W} ${y}" role="img" aria-label="${esc(label)}">${svg}</svg></figure>`;
 }
 
-function renderBlock(b) {
+function renderBlock(b, full = false) {
   let body = "";
   if (b.type === "text") body = (b.paragraphs || []).map((p) => `<p>${inline(p)}</p>`).join("");
   else if (b.type === "list") body = renderItems(b.items);
   else if (b.type === "table") body = renderTable(b, { caption: false });
   else if (b.type === "bars") body = renderBars(b);
-  return `<section class="blk"><h2>${inline(b.title)}</h2>${body}${b.note ? `<p class="note-line">${inline(b.note)}</p>` : ""}</section>`;
+  return `<section class="blk panel${full ? " full" : ""}"><h2>${inline(b.title)}</h2>${body}${b.note ? `<p class="note-line">${inline(b.note)}</p>` : ""}</section>`;
 }
 
 // Overview blocks sit in a left or right column, or span the full width (place: left | right | full).
 function cols(blocks) {
-  const at = (pl) => blocks.filter((b) => (b.place || "full") === pl).map(renderBlock).join("");
-  const l = at("left"), r = at("right"), f = blocks.filter((b) => (b.place || "full") === "full").map((b) => renderBlock(b).replace('class="blk"', 'class="blk full"')).join("");
+  const at = (pl) => blocks.filter((b) => (b.place || "full") === pl).map((b) => renderBlock(b, pl === "full")).join("");
+  const l = at("left"), r = at("right"), f = at("full");
   return (l || r ? `<div class="col">${l}</div><div class="col">${r}</div>` : "") + f;
 }
 
@@ -550,9 +680,9 @@ function renderOverview(c) {
     const o = q.options.find((x) => x.key === q.pick.key);
     return `<tr><td>Q${i + 1}</td><td><button type="button" class="link" data-go="${i + 1}">${inline(q.title)}</button></td><td>${esc(o.key)}. ${inline(o.label)}</td><td>${esc(q.pick.confidence)}</td></tr>`;
   }).join("");
-  const qtable = !c.questions.length ? "" : `<section class="blk full"><h2>The ${c.questions.length} questions and my picks</h2><table><thead><tr><th scope="col">#</th><th scope="col">Question</th><th scope="col">My pick</th><th scope="col">Confidence</th></tr></thead><tbody>${qrows}</tbody></table></section>`;
+  const qtable = !c.questions.length ? "" : `<section class="blk panel full qlist"><h2>The ${c.questions.length} questions and my picks</h2><table><thead><tr><th scope="col">#</th><th scope="col">Question</th><th scope="col">My pick</th><th scope="col">Confidence</th></tr></thead><tbody>${qrows}</tbody></table></section>`;
   return `<section class="step" data-step="0" aria-labelledby="h-ov" hidden><div class="wrap">
-<header class="page-head"><h1 id="h-ov" tabindex="-1">${inline(ov.heading)}</h1>${ov.lead ? `<p>${inline(ov.lead)}</p>` : ""}${c.page.subtitle ? `<p class="muted">${inline(c.page.subtitle)}</p>` : ""}</header>
+<header class="page-head panel"><h1 id="h-ov" tabindex="-1">${inline(ov.heading)}</h1>${ov.lead ? `<p>${inline(ov.lead)}</p>` : ""}${c.page.subtitle ? `<p class="muted">${inline(c.page.subtitle)}</p>` : ""}</header>
 <div class="ov-grid">${cols(ov.blocks || [])}${qtable}</div>
 </div></section>`;
 }
@@ -563,33 +693,41 @@ function renderQuestion(q, i) {
   const factList = (items) => `<ul class="facts">${items.map((item) => `<li>${inline(item)}</li>`).join("")}</ul>`;
   const settled = q.settled.length ? `<div class="settled"><p><strong>${SETTLED_LABEL}</strong></p>${factList(q.settled)}</div>` : "";
   const facts = factList(q.facts);
-  const table = q.table ? `<div class="blk">${renderTable(q.table)}</div>` : "";
-  const ex = `<section class="blk example"><h2>Example: ${inline(q.example.title)}</h2><ol class="steps-ex">${q.example.steps
+  const table = q.table ? renderTable(q.table) : "";
+  const ex = `<section class="sec example"><h2>${EXAMPLE_HEADING}</h2><h3>${inline(q.example.title)}</h3><ol class="steps-ex">${q.example.steps
     .map((s) => `<li><span class="when">${inline(s.when)}</span><span>${inline(s.text)}</span></li>`)
     .join("")}</ol></section>`;
   const details = questionDetails(q);
-  const ctx = `<article class="ctx" aria-labelledby="h-${id}">
+  const ctx = `<article class="ctx panel" aria-labelledby="h-${id}">
 <h1 id="h-${id}" tabindex="-1">${inline(q.title)}</h1>
+<section class="sec decision"><h2>${DECISION_HEADING}</h2>
 <p class="ask"><strong>Decide:</strong> ${inline(q.ask)}</p>
 <p class="why">${inline(q.why)}</p>
 <p class="decides"><strong>${DECIDES_LABEL}</strong> ${inline(q.decides)}</p>
 <p class="owner"><strong>${OWNER_LABEL}</strong> ${inline(q.owner)}</p>
-${settled}${facts}${table}${ex}
-${details ? `<details class="blk more"><summary>${inline(details.summary)}</summary>${renderItems(details.items)}</details>` : ""}
+${settled}</section>
+<section class="sec"><h2>${FACTS_HEADING}</h2>${facts}${table}</section>
+${ex}
+${details ? `<details class="sec more"><summary><h2>${inline(details.summary)}</h2></summary>${renderItems(details.items)}</details>` : ""}
 </article>`;
   const pick = `<section class="pick" aria-label="My pick" data-pick-line="${esc(pickOpt.key)}">
-<p class="head"><span class="lbl">My pick:</span> ${esc(pickOpt.key)}. ${inline(pickOpt.label)}</p>
+<p class="head"><span class="lbl">${CHECK}My pick:</span> <span>${esc(pickOpt.key)}. ${inline(pickOpt.label)}</span><span class="yours" aria-live="polite"></span></p>
 <p>${inline(q.pick.reason)} Confidence: <strong>${esc(q.pick.confidence)}</strong>.</p>
 <p><strong>Pick another if:</strong> ${inline(q.pick.another)}</p>
 </section>`;
+  const showVotes = hasVotes(q);
   const opts = q.options.map((o, k) => {
     const isPick = o.key === q.pick.key;
     const rid = `r-${id}-${o.key}`;
     const rows = OPTION_ROWS.map(([field, label]) => `<dt>${label}</dt><dd class="${label.toLowerCase()}">${inline(o[field])}</dd>`).join("");
+    const votes = showVotes ? `<span class="votes">${voteLabels(o).map((label, j) => {
+      const role = o.votes?.[j]?.role;
+      return `<span class="${role ? `vb vb-${role.replaceAll(" ", "-")}` : "vnone"}">${inline(label)}</span>`;
+    }).join("")}</span>` : "";
     return `<div class="opt" data-key="${esc(o.key)}"${isPick ? " data-pick" : ""}>
 <label for="${rid}"><input type="radio" id="${rid}" name="${id}" value="${esc(o.key)}">
 <span class="ohead"><span class="olabel">${esc(o.key)}. ${inline(o.label)}</span><span class="otags">${isPick ? '<span class="tag tag-pick">My pick</span>' : ""}<span class="tag risk-${esc(o.risk)}">${esc(riskChipText(o.risk))}</span><kbd title="Press ${k + 1} to choose ${esc(o.key)}">${k + 1}</kbd></span></span>
-<dl class="tr">${rows}</dl>
+${votes}<dl class="tr">${rows}</dl>
 </label>${o.details ? `<details><summary>${inline(o.details.summary || "What " + o.key + " contains")}</summary>${renderItems(o.details.items)}</details>` : ""}
 </div>`;
   }).join("\n");
@@ -610,23 +748,28 @@ function renderFinish(c) {
   const N = c.questions.length;
   const rows = c.questions.map((q, i) => `<tr data-q="Q${i + 1}"><td>Q${i + 1}</td><td>${inline(q.title)}</td><td class="ans"></td><td class="nt"></td><td><button type="button" class="link" data-go="${i + 1}">Change<span class="sr"> answer to Q${i + 1}</span></button></td></tr>`).join("");
   return `<section class="step fin" data-step="${N + 1}" aria-labelledby="h-fin" hidden><div class="wrap">
-<header class="page-head"><h1 id="h-fin" tabindex="-1">Check your answers</h1><p id="fin-sum"></p></header>
-<table class="fin-table" style="margin-top:20px"><thead><tr><th scope="col">#</th><th scope="col">Question</th><th scope="col">Your answer</th><th scope="col">Note</th><th scope="col"><span class="sr">Change</span></th></tr></thead><tbody>${rows}</tbody></table>
+<header class="page-head panel"><h1 id="h-fin" tabindex="-1">Check your answers</h1><p id="fin-sum"></p></header>
+<div class="fin-table-wrap panel"><table class="fin-table"><thead><tr><th scope="col">#</th><th scope="col">Question</th><th scope="col">Your answer</th><th scope="col">Note</th><th scope="col"><span class="sr">Change</span></th></tr></thead><tbody>${rows}</tbody></table></div>
 <fieldset><legend>Did this page tell you what each question is about?</legend>
 <label><input type="radio" name="page-clear" value="yes"> Yes</label>
 <label><input type="radio" name="page-clear" value="no"> No</label>
 </fieldset>
 <div class="note"><label for="page-missing">What was missing? (optional)</label><textarea id="page-missing" rows="2"></textarea></div>
 <div class="fin-actions"><button type="button" class="btn primary" id="copy">Copy my answers</button><button type="button" class="btn" id="clear">Clear my answers</button><p id="copy-status" class="muted" role="status" style="align-self:center"></p></div>
-<div class="copy-prev"><p class="muted">The button copies this text. You can also select it and copy it.</p><pre id="copytext"></pre></div>
+<div class="copy-prev"><p class="muted">The button copies this text. You can also select it and copy it.</p><pre class="panel" id="copytext"></pre></div>
 </div></section>`;
 }
 
 const JS = String.raw`(function(){
 var C=__CONFIG__;var N=C.ids.length;var st={a:{},n:{},feedback:{},step:0};
+var motion=matchMedia("(prefers-reduced-motion:no-preference)"),booted=false;
 ${feedbackLines}
 function $(i){return document.getElementById(i);}
 function all(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
+function replay(el,cls){if(!motion.matches||!el)return;el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);}
+var motionClasses={"in-next":"in-next","in-prev":"in-prev",tick:"tick","pop-option":"just-picked","pop-box":"pop","pop-in":"pop","pop-edge":"pop","just-done":"just-done"};
+document.addEventListener("animationend",function(ev){
+ var cls=motionClasses[ev.animationName];if(cls)(cls==="just-done"?ev.target.closest(".sbtn"):ev.target).classList.remove(cls);});
 function load(){try{var o=JSON.parse(localStorage.getItem(C.key)||"null");if(o&&typeof o==="object"){st.a=o.a||{};st.n=o.n||{};
  if(o.feedback&&typeof o.feedback==="object")st.feedback=o.feedback;
  var p=parseInt(o.step,10);if(p>=0&&p<=N+1)st.step=p;}}catch(e){}}
@@ -635,6 +778,7 @@ function hasAnswer(id){var key=st.a[id];return typeof key==="string"&&Object.has
 function answered(){return C.ids.filter(hasAnswer).length;}
 function copyText(){var L=[C.title+(C.date?", "+C.date:"")+": my answers ("+answered()+" of "+N+")"];
  C.ids.forEach(function(id){var a=st.a[id];L.push(hasAnswer(id)?id+": "+a+" "+C.labels[id][a]:id+": (no answer)");
+  if(hasAnswer(id))C.voteLines[id][a].forEach(function(line){L.push(line);});
   var nt=String(st.n[id]||"").replace(/\s+/g," ").trim();if(nt)L.push("  Note: "+nt);});return L.concat(feedbackLines(st.feedback)).join("\n");}
 function applyForm(){C.ids.forEach(function(id){all('input[name="'+id+'"]').forEach(function(r){r.checked=st.a[id]===r.value;});var t=$("n-"+id);if(t)t.value=st.n[id]||"";});
  all('input[name="page-clear"]').forEach(function(r){r.checked=st.feedback.clear===r.value;});
@@ -646,18 +790,33 @@ function finish(){var a=answered();$("fin-sum").textContent="You answered "+a+" 
   td.textContent=selected?v+". "+C.labels[id][v]:"Not answered";td.classList.toggle("none",!selected);
   tr.querySelector(".nt").textContent=String(st.n[id]||"").trim();});
  updateCopyPreview();}
-function refresh(){var a=answered();$("cA").textContent=a;$("cR").textContent=N-a;
+function updateCount(el,n){var value=String(n);if(el.textContent===value)return;el.textContent=value;if(booted)replay(el,"tick");}
+function updatePick(id,i){
+ var pick=document.querySelector('.step[data-step="'+(i+1)+'"] .pick'),badge=pick.querySelector(".yours");
+ var key=hasAnswer(id)?st.a[id]:"",same=key===pick.getAttribute("data-pick-line");
+ var text=key?"You chose "+key+(same?", same":""):"";
+ if(badge.textContent===text)return;
+ badge.textContent=text;pick.classList.toggle("agreed",same);
+ if(booted&&key){replay(badge,"pop");replay(pick,"pop");}}
+function refresh(){var a=answered();updateCount($("cA"),a);updateCount($("cR"),N-a);
  var s=st.step;$("where").textContent=s===0?"Overview":(s===N+1?"Check your answers":"Question "+s+" of "+N+": "+C.topics[s-1]);
  all(".step").forEach(function(el){el.hidden=el.getAttribute("data-step")!==String(s);});
  all(".sbtn").forEach(function(b){var k=parseInt(b.getAttribute("data-go"),10);var done=k>=1&&k<=N&&hasAnswer(C.ids[k-1]);
-  b.classList.toggle("done",done);var sr=b.querySelector(".st");if(sr)sr.textContent=done?" (answered)":"";
+  var was=b.classList.contains("done");b.classList.toggle("done",done);
+  if(done&&!was&&booted)replay(b,"just-done");
+  if(!done)b.classList.remove("just-done");
+  var sr=b.querySelector(".st");if(sr)sr.textContent=done?" (answered)":"";
   if(k===s)b.setAttribute("aria-current","step");else b.removeAttribute("aria-current");});
  $("back").disabled=s===0;var nx=$("next");nx.hidden=s===N+1;nx.textContent=s===0?"Start with Q1":(s===N?"Check answers":"Next");
  $("keys").innerHTML=s>=1&&s<=N?"<kbd>&larr;</kbd> <kbd>&rarr;</kbd> move &middot; <kbd>1</kbd> to <kbd>"+C.counts[s-1]+"</kbd> choose":"<kbd>&larr;</kbd> <kbd>&rarr;</kbd> move";
+ C.ids.forEach(updatePick);
  if(s===N+1)finish();}
-function go(k,focus){k=Math.max(0,Math.min(N+1,k));st.step=k;save();refresh();var m=document.querySelector("main");if(m)m.scrollTop=0;
- if(focus!==false){var h=document.querySelector('.step[data-step="'+k+'"] h1');if(h)h.focus({preventScroll:true});}}
-function choose(id,key){st.a[id]=key;save();applyForm();refresh();}
+function go(k,focus){k=Math.max(0,Math.min(N+1,k));var old=st.step,active=document.activeElement;
+ releaseSwipe();st.step=k;save();refresh();var m=document.querySelector("main");if(m)m.scrollTop=0;
+ if(k!==old){var wrap=currentWrap();wrap.classList.remove("in-next","in-prev");replay(wrap,k>old?"in-next":"in-prev");}
+ if(focus!==false||(k!==old&&active?.closest("[hidden],:disabled"))){var h=document.querySelector('.step[data-step="'+k+'"] h1');if(h)h.focus({preventScroll:true});}}
+function choose(id,key){var old=st.a[id];st.a[id]=key;save();applyForm();refresh();
+ if(key!==old){var input=document.getElementById("r-"+id+"-"+key);replay(input&&input.closest(".opt"),"just-picked");}}
 document.addEventListener("click",function(ev){var g=ev.target.closest&&ev.target.closest("[data-go]");if(g)go(parseInt(g.getAttribute("data-go"),10));});
 $("back").addEventListener("click",function(){go(st.step-1);});
 $("next").addEventListener("click",function(){go(st.step+1);});
@@ -670,13 +829,67 @@ document.addEventListener("keydown",function(ev){if(ev.ctrlKey||ev.metaKey||ev.a
  if(ev.key==="ArrowLeft"){ev.preventDefault();go(st.step-1,false);}
  else if(ev.key==="ArrowRight"){ev.preventDefault();go(st.step+1,false);}
  else if(/^[1-9]$/.test(ev.key)&&st.step>=1&&st.step<=N){var id=C.ids[st.step-1];var r=all('input[name="'+id+'"]')[parseInt(ev.key,10)-1];if(r){ev.preventDefault();choose(id,r.value);r.focus({preventScroll:true});}}});
+// After a swipe commits, a new swipe needs a pause or a speed rise that holds for another event.
+var SWIPE_PAUSE=180,SWIPE_DISTANCE=50,SWIPE_START=8,SWIPE_RATIO=1.5;
+var swipe={x:0,y:0,time:0,last:0,candidate:0,done:false},swipeTimer,dragged;
+var edges=[$("edge-l"),$("edge-r")];
+var shift=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--shift"));
+function currentWrap(){return document.querySelector('.step[data-step="'+st.step+'"] > .wrap');}
+function releaseSwipe(){
+ clearTimeout(swipeTimer);
+ edges.forEach(function(edge){edge.classList.remove("live","pop");edge.style.removeProperty("--p");});
+ if(dragged){dragged.classList.remove("drag");dragged.style.removeProperty("transform");dragged=null;}}
+motion.addEventListener("change",function(){if(!motion.matches){
+ releaseSwipe();all(".in-next,.in-prev,.tick,.just-done,.just-picked,.pop").forEach(function(el){
+  el.classList.remove("in-next","in-prev","tick","just-done","just-picked","pop");});}});
+function ownsHorizontalScroll(el){
+ for(;el&&el!==document.body;el=el.parentElement){
+  if(el.tagName==="TEXTAREA")return true;
+  if(el.scrollWidth>el.clientWidth+1&&/^(auto|scroll)$/.test(getComputedStyle(el).overflowX))return true;}
+ return false;}
+function showSwipe(dir,progress,committed,inside){
+ if(!motion.matches)return;
+ var edge=inside?edges[dir>0?1:0]:null;
+ edges.forEach(function(other){if(other!==edge){other.classList.remove("live","pop");other.style.removeProperty("--p");}});
+ if(edge){edge.classList.add("live");edge.style.setProperty("--p",progress.toFixed(3));}
+ clearTimeout(swipeTimer);
+ if(committed)replay(edge,"pop");
+ else {
+  dragged=currentWrap();dragged.classList.remove("in-next","in-prev");dragged.classList.add("drag");
+  dragged.style.transform="translateX("+(-dir*progress*(inside?shift:shift/3)).toFixed(1)+"px)";
+ }
+ swipeTimer=setTimeout(releaseSwipe,committed?160:SWIPE_PAUSE);}
+document.addEventListener("wheel",function(ev){
+ var now=performance.now();
+ if(now-swipe.time>=SWIPE_PAUSE){swipe.x=0;swipe.y=0;swipe.candidate=0;swipe.done=false;}
+ swipe.time=now;
+ var unit=ev.deltaMode===1?16:ev.deltaMode===2?innerWidth:1;
+ var dx=ev.deltaX*unit,ax=Math.abs(dx),last=swipe.last,modified=ev.ctrlKey||ev.metaKey;
+ if(!modified)swipe.last=ax;
+ if(modified||ownsHorizontalScroll(ev.target)){
+  swipe.candidate=0;
+  if(swipe.done)return;
+  swipe.x=0;swipe.y=0;releaseSwipe();return;}
+ if(swipe.done){
+  if(swipe.candidate){
+   if(ax>=Math.abs(swipe.candidate)){swipe.x=swipe.candidate;swipe.y=0;swipe.done=false;}
+   swipe.candidate=0;
+  }else if(ax>2*last&&ax>=SWIPE_START&&last<SWIPE_START){swipe.candidate=dx;}
+  if(swipe.done)return;}
+ swipe.x+=dx;swipe.y+=Math.abs(ev.deltaY*unit);
+ var distance=Math.abs(swipe.x),dir=swipe.x>0?1:-1,next=st.step+dir;
+ if(distance<SWIPE_START||distance<SWIPE_RATIO*swipe.y)return;
+ var committed=distance>=SWIPE_DISTANCE,inside=next>=0&&next<=N+1;
+ if(committed){swipe.done=true;if(!inside){releaseSwipe();return;}go(next,false);}
+ showSwipe(dir,Math.min(distance/SWIPE_DISTANCE,1),committed,inside);
+},{passive:true});
 function copy(){var txt=copyText(),s=$("copy-status");function ok(){s.textContent="Copied.";setTimeout(function(){s.textContent="";},2500);}
  function fail(){s.textContent="The browser blocked the copy. Select the text below and copy it.";var r=document.createRange();r.selectNodeContents($("copytext"));var sel=getSelection();sel.removeAllRanges();sel.addRange(r);}
  try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(ok,fail);return;}}catch(e){}fail();}
 $("copy").addEventListener("click",copy);
 $("clear").addEventListener("click",function(){if(!window.confirm("Clear your answers, notes and feedback on this page?"))return;st={a:{},n:{},feedback:{},step:st.step};save();applyForm();refresh();});
 window.decisionPage={copyText:copyText,go:go,state:function(){return JSON.parse(JSON.stringify(st));}};
-load();applyForm();refresh();
+load();applyForm();refresh();booted=true;
 })();`;
 
 // A report page: the overview alone, no steps, no answers, no script.
@@ -731,15 +944,18 @@ function textWriter() {
 function writeQuestionText(q, { add, item, items, table }, screenOnly) {
   if (!screenOnly) add(q.topic);
   add(q.title);
+  if (screenOnly) add(DECISION_HEADING);
   add(screenOnly ? `Decide: ${q.ask}` : q.ask);
   add(q.why);
   add(screenOnly ? `${DECIDES_LABEL} ${q.decides}` : q.decides);
   add(screenOnly ? `${OWNER_LABEL} ${q.owner}` : q.owner);
   if (screenOnly && q.settled.length) add(SETTLED_LABEL);
   q.settled.forEach(add);
+  if (screenOnly) add(FACTS_HEADING);
   q.facts.forEach(add);
   table(q.table);
-  add(screenOnly ? `Example: ${q.example.title}` : q.example.title);
+  if (screenOnly) add(EXAMPLE_HEADING);
+  add(q.example.title);
   q.example.steps.forEach((step) => add(screenOnly ? `${step.when}: ${step.text}` : step.text));
   if (screenOnly) {
     const pick = q.options.find((option) => option.key === q.pick.key);
@@ -751,13 +967,16 @@ function writeQuestionText(q, { add, item, items, table }, screenOnly) {
   add(q.pick.reason);
   if (screenOnly) add(`Confidence: ${q.pick.confidence}.`);
   add(screenOnly ? `Pick another if: ${q.pick.another}` : q.pick.another);
+  const showVotes = hasVotes(q);
   for (const o of q.options) {
     if (screenOnly) {
       item(`${o.key}. ${o.label}`);
       item(riskChipText(o.risk));
+      if (showVotes) voteLabels(o).forEach(item);
       OPTION_ROWS.forEach(([field, label]) => add(`${label}: ${o[field]}`));
     } else {
       add(o.label);
+      if (showVotes) voteLabels(o).forEach(item);
       OPTION_ROWS.forEach(([field]) => add(o[field]));
       if (o.details) { add(o.details.summary); items(o.details.items); }
     }
@@ -802,6 +1021,9 @@ export function buildPage(c) {
     topics: c.questions.map((q) => stripMarkup(q.topic)),
     counts: c.questions.map((q) => q.options.length),
     labels: Object.fromEntries(c.questions.map((q, i) => [`Q${i + 1}`, Object.fromEntries(q.options.map((o) => [o.key, stripMarkup(o.label)]))])),
+    voteLines: Object.fromEntries(c.questions.map((q, i) => [
+      `Q${i + 1}`, Object.fromEntries(q.options.map((o) => [o.key, copiedVoteLines(q, o)])),
+    ])),
   };
   const cfgJson = JSON.stringify(cfg).replace(/</g, "\\u003c");
   // An answered step shows a check in place of its number (same width, so the bar does not grow).
@@ -829,6 +1051,7 @@ ${c.questions.map(renderQuestion).join("\n")}
 ${renderFinish(c)}
 </main>
 <footer class="nav"><div class="nav-in"><button type="button" class="btn" id="back">Back</button><p class="keys" id="keys"></p><button type="button" class="btn primary" id="next">Next</button></div></footer>
+${renderEdge("l", "M12.5 4.5 7 10l5.5 5.5")}${renderEdge("r", "M7.5 4.5 13 10l-5.5 5.5")}
 <script>
 ${JS.replace("__CONFIG__", () => cfgJson)}
 </script>

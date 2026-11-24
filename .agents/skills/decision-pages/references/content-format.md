@@ -62,15 +62,15 @@ every bar has a direct label, so the chart needs no legend.
   "owner": "The release plan gives you final approval for changes to the build server.",
   "settled": ["The next PR adds a cache to the build server."],
   "pick": { "key": "A", "reason": "...", "confidence": "close call", "another": "you want the smallest first PR (B)." },
-  "facts": ["**A near tie:** design A scored 107, design B 106, design C 92.", "..."],
-  "table": { "title": "Scores per reviewer (max 70 each)", "columns": ["Design", "Reviewer 1", "Reviewer 2", "Total"],
-             "align": ["left", "right", "right", "right"], "rows": [["A", "46", "61", "**107**"], ["..."]] },
+  "facts": ["**Shared cache:** A reuses files across builds.", "**Local cache:** B gives each build its own files."],
+  "table": { "title": "Build time in minutes", "columns": ["Design", "First build", "Repeat build"],
+             "align": ["left", "right", "right"], "rows": [["A", 8, 2], ["B", 6, 4]] },
   "example": { "title": "a cold build, with design A", "steps": [{ "when": "09:00", "text": "..." }] },
   "options": [
     { "key": "A", "label": "Shared cache with 8 fixes", "does": "Use one cache for all builds.", "gets": "...", "costs": "...",
-      "risk": "low", "riskText": "...", "details": { "summary": "What A contains", "items": ["..."] } }
+      "risk": "low", "riskText": "...", "votes": [{"role":"worker","name":"Sam"}], "details": { "summary": "What A contains", "items": ["..."] } }
   ],
-  "details": { "summary": "Details: the 8 fixes and how we scored", "items": ["...", ["sub item", "sub item"]] },
+  "details": { "summary": "What the 8 fixes change", "items": ["...", ["sub item", "sub item"]] },
   "removed": ["A remote cache requires a service outside the release plan."]
 }
 ```
@@ -84,12 +84,13 @@ every bar has a direct label, so the chart needs no legend.
 | `decides` | **Only this depends on you:** + your text, after `why` | Required. State the choice that still needs the reader's answer. |
 | `owner` | **Why you decide:** + your text | Required. Name the rule or approval that gives the reader the decision. |
 | `settled` | A list under **Already decided (no answer needed):** | Required. List the decisions that already apply. Write `[]` if there are none. The kit then hides the list and label. |
-| `pick` | The one coloured box, above the options | `key` names an option. `reason` is the main reason. `confidence` is `clear` or `close call`. `another` completes "Pick another if: ..." and names the other letter. |
+| `pick` | The box with the accent fill, above the options (see the R4.1 row of `SKILL.md`) | `key` names an option. `reason` is the main reason. `confidence` is `clear` or `close call`. `another` completes "Pick another if: ..." and names the other letter. |
 | `facts` | 2-4 bullets | Each starts with 2-4 bold lead words that carry the fact. |
 | `table` | A table under the facts | Optional. Use it when the facts hold more than 3 numbers. 2-5 rows. |
-| `example` | Ordered steps with a time or trigger label | `title` completes "Example: ...". 2-4 steps. |
+| `example` | Ordered steps with a time or trigger label | `title` is the heading below "Example". 2-4 steps. |
 | `options` | One card per option | 2-4 options. Every option has every field. `risk` is `low`, `medium` or `high`. |
 | `options[].does` | **Does**, the first row before **Gets** | Required. State what happens if the reader selects this option. |
+| `options[].votes` | One pill per voter below the option label | Optional array, such as `"votes": [{"role":"worker","name":"Sam"}]`. Each vote has a `role` and a non-empty `name`. The roles are `lead agent`, `worker`, `consultant` and `advisor`. |
 | `options[].details` | A closed "What A contains" | Optional. The full list of what the option holds. |
 | `details` | One closed section at the end | Optional. The story, full lists, ids and sources. Nothing that changes the choice. |
 | `removed` | Items that start with **Option removed:** in the question's closed Details | Optional. State why each option was removed. If there is no `details` field, the kit adds a closed **Options removed** section. |
@@ -99,6 +100,9 @@ In `details.items`, a list inside the list is a sub-list of the item before it.
 The kit numbers the questions Q1, Q2, ... in file order. Option keys are single capital letters.
 Put the options in the order that reads best; the pick does not need to be first. No option
 is pre-checked.
+
+If a question has votes, each option shows its voters or **No votes**. A badge shows the role
+and name, for example **Consultant: GPT-6.2 Astra high**. Use votes from the source.
 
 ## Check answers
 
@@ -146,17 +150,22 @@ fails it. Research IDs in the Rule column refer to `research.md` (next to this f
 | Overview lead | 30 words | R2.4 |
 | Block title, table title, example title, details label | 8 words | R1.4 |
 
+A Details body (of a question or an option) has no total word limit; its sentences keep the limit above.
+
 **R8.1 scope fields.** Each question says why it is the reader's decision, what is settled, and what only the answer changes (SKILL.md step 3).
 
 **Known limits** (owner, 2026-11-24: keep the kit simple). The 160-word option count can be lower
 than the visible text. It leaves out the option letter, the shortcut number, the "My pick" badge and
-the summary line of a closed option Details, which has no word limit. In the text files, two `**` markers outside code
+the summary line of a closed option Details, which has no word limit. Each count can also be
+higher: a word is a token with a Unicode letter or number, so a symbol that Unicode classes as a
+letter, such as ℹ, counts as a word. In the text files, two `**` markers outside code
 in two cells of one table row (header or data) can pair across the cells. The export then drops
 both markers.
 
 `decides`, `owner`, and `settled` count toward the visible context limit. Their labels also count
-as bold words. The visible option count includes each row label, its text, and the risk chip.
-The `removed` items stay in Details.
+as bold words. The section headings **The decision**, **Facts**, and **Example** also count
+toward the context limit. The visible option count includes each row label, its text, the risk
+chip, and any vote labels or **No votes** text. The `removed` items stay in Details.
 
 Warnings do not stop a build. Read each one and fix it, or keep it for a reason you can say:
 
@@ -178,5 +187,6 @@ NODE_PATH=<node_modules with @playwright/test> node scripts/verify.mjs content.j
 `page.q2.txt`, and so on. Each question file contains one sentence or item per line from that
 question screen. The export excludes the overview and Details. The generator prints each path.
 
-`scripts/verify.mjs` writes four screenshots next to the page: `<name>-overview.png`, `<name>-q1.png`,
-`<name>-finish.png` and `<name>-q1-dark.png`.
+For a page with questions, `scripts/verify.mjs` writes four screenshots next to the page:
+`<name>-overview.png`, `<name>-q1.png`, `<name>-finish.png` and `<name>-q1-dark.png`. For a report
+page, it writes only `<name>-overview.png`.
