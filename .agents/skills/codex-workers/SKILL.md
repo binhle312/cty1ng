@@ -68,9 +68,11 @@ The repository's approval rules still apply. A worker's message is a report, not
    Start each run in the background.
    Write its session id, worktree, model, effort and sandbox mode on one line of a session list
    file.
-   Before you start a worker, compare its brief with the briefs of the workers that still run. If
-   two need a command that only one agent can run at a time, such as a heavy build or a test on
-   fixed ports, tell each worker the order, or start the second worker after the first one ends.
+   **Order check.** Before each message that lets a worker build or run checks (a start or a
+   resume), compare its work with the work of each other worker whose task has not ended. If two
+   need a command that only one agent can run at a time, such as a heavy build or a test on fixed
+   ports, tell each worker the order, or send the second message after the first worker is done
+   with that command.
 
 4. **Get the plan first.** The first turn of each build task gives back the plan in the worker's
    own words, and changes no file. Accept the plan only when all of these are true:
@@ -78,10 +80,12 @@ The repository's approval rules still apply. A worker's message is a report, not
    - each step is in the scope;
    - each claim has a check.
 
-   Then send the message to build. Your OK is not the owner's approval.
+   Then do the order check of step 3, and send the message to build. Your OK is not the owner's
+   approval.
 
 5. **Talk with the worker** with the [send command](#send-a-message): answer its question, accept
-   its plan, or send the findings of a review. If a run goes in a wrong direction,
+   its plan, or send the findings of a review. Before a message that lets it build or run checks,
+   do the order check of step 3. If a run goes in a wrong direction,
    [stop it](#stop-a-run) and send the correction.
    Each message sends the full session again, so send a message for a reason.
 
