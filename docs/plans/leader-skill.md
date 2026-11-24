@@ -23,8 +23,9 @@ gives the parts; the build writes the text.
 
 1. **Start.** The owner-only line, as `arena` and `consultants` have. Then the task from the
    owner: the text after `/leader`.
-2. **Who talks with whom.** The diagram of the owner, the lead agent, the advisor tool, the
+2. **Who talks with whom.** A short list for the owner, the lead agent, the advisor tool, the
    worker and the reviewer. It moves here from `codex-workers`, so that it has one home.
+   `SKILL.md` holds no sketch (owner's review of #149, 2026-11-24).
 3. **What stays with whom.** With the owner: each approval that the project asks for, each
    decision, and the merge. With the lead agent: each message to the owner, the plan, the briefs,
    and the check of each report.
@@ -56,7 +57,9 @@ the consultants (they have their own skill).
 | `.agents/skills/leader/agents/openai.yaml` | New. `allow_implicit_invocation: false` |
 | `.claude/skills/leader` | New relative link |
 | `.agents/skills/README.md` | One row |
-| `.agents/skills/codex-workers/SKILL.md` | The diagram moves out. Its two definitions (lead agent, worker) stay, because `/codex-workers` can run alone |
+| `.agents/skills/leader/GUIDE.md` | New. A file for people: the sketch of who talks with whom and the sketch of the stages with the owner's gates. `SKILL.md` has no link to it |
+| `.agents/skills/codex-workers/SKILL.md` | The list "Who talks with whom" moves out. Its two definitions (lead agent, worker) stay, because `/codex-workers` can run alone |
+| `.agents/skills/codex-workers/GUIDE.md` | The sketch of who talks with whom moves to the guide of `leader`. The sketch of one task, turn by turn, stays |
 | `docs/workflows/coordination.md` | Only if the owner says so (open question 2) |
 | `docs/status.md` | The line of this PR |
 
@@ -88,6 +91,7 @@ The skill is text, so the tests are checks of the files and one run of the skill
 | The lead agent reads the worker file before a worker | In the same run, the task needs a build. The answer has the start command in the form of `codex-workers`, printed and not run |
 | The lead agent stops at an owner gate | The scratch project's instructions ask for a plan approval. The run ends with the plan and a wait, and with no build |
 | The sibling file is missing | A second scratch project has only `leader`. The run stops and tells the owner |
+| `SKILL.md` is for the agent only | It holds no sketch and no link to `GUIDE.md` |
 | The skill is portable | A search of the skill folder for `docs/`, `AGENTS.md`, `pnpm` and `principle-`: no result |
 
 The run uses Claude Opus 5.5. A run with Fable 5.2 needs the owner's word.
