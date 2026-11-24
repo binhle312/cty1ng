@@ -9,7 +9,9 @@ then the leader can spawn codex workers", then "let do A" (both skills have the 
 Checkpoint: plan. The skill sets the roles of the owner, the lead agent and the workers, so the
 owner approves this plan before the build.
 Approval: waiting. Revision 2 (2026-11-24) adds the owner's answers and notes of 2026-11-24
-(section "The owner's answers"). The owner approves revision 2 before the build.
+(section "The owner's answers"). Revision 3 (2026-11-24) adds the owner's decision to remove
+Luna: the lead agent does a Luna-level task itself. The owner approves revision 3 before the
+build.
 
 ## Goal
 
@@ -41,9 +43,11 @@ gives the parts; the build writes the text.
    8. Report to the owner. Merge only when the owner asks for it.
 5. **Stop exits.** The documents and the code disagree. A bug does not reproduce. A fix has the
    same cause as an earlier fix. An approval is missing.
-6. **The lead agent's own work** (owner, Q1 A with a note). The lead agent writes the plans, the
-   briefs and the records. A worker writes the code. Exception: the lead agent makes a code change
-   of fewer than 5 changed lines itself. The count is the larger of the added and the removed
+6. **The lead agent's own work** (owner, Q1 A with a note, and the Luna decision). The lead agent
+   writes the plans, the briefs and the records. It also does each focused task with a clear
+   result itself: written steps, an extraction, a summary. `codex-workers` has no worker for such
+   a task. A worker writes the code. Exception: the lead agent makes a code change of fewer than
+   5 changed lines itself. The count is the larger of the added and the removed
    lines in `git diff --numstat`, summed over the code files of that change. The change still
    goes to the different reviewer, in the next review round of the PR.
 7. **Briefs.** The lead agent writes each brief from a template in `references/`: one for a
@@ -116,7 +120,7 @@ The skill is text, so the tests are checks of the files and one run of the skill
 | The skill is portable | A search of the skill folder, `references/` included, for `docs/`, `AGENTS.md`, `pnpm` and `principle-`: no result |
 | The lead agent briefs from the templates | In the scratch run, the brief file has one section for each item of step 2 of `codex-workers`, and the plan-first section |
 | Each brief item has a template section | A script compares the items of step 2 of `codex-workers` with the sections of `worker-brief.md`: no item is missing |
-| A worker's first turn is a plan only | One `gpt-6-luna` run at `high` in a scratch Git repository, with a brief from the template. The report is a plan, and `git status` shows no change |
+| A worker's first turn is a plan only | One `gpt-6.2-sol` run at `high` in a scratch Git repository, with a brief from the template. The report is a plan, and `git status` shows no change |
 | The 5-line exception | In the scratch run, a task that needs a 2-line code change: the lead agent makes it and names the review. A task that needs a 20-line change: the answer has a worker start command |
 
 The run uses Claude Opus 5.5. A run with Fable 5.2 needs the owner's word.
@@ -145,10 +149,16 @@ The owner's words, from the question page of revision 1:
 3. Q3 A, "Not now: roles, stages, gates and exits only", with the note "List the rules that you
    mentioned here".
 4. Q4 A, "One Codex review of both skills".
+5. After revision 2: "remove luna from the selection, if the task is luna level simple, leader
+   should do it by itself". Built in #149 (`3f55b5a`).
 
 ## Open questions
 
-1. **Revision 2.** Does the owner approve this revision, with items 6, 7 and 8 of "What the skill
+1. **Revision 3.** Does the owner approve this revision, with items 6, 7 and 8 of "What the skill
    holds"?
 2. **A review for the lead agent's small change.** The plan sends it to the different reviewer in
    the next review round. The other choice: no review for a change of fewer than 5 lines.
+3. **A simple code change of 5 lines or more.** Luna's work included small edits, and the 5-line
+   rule sends a code change of 5 lines or more to a worker. The plan keeps the 5-line rule for
+   code: a simple change of 20 lines goes to a Sol worker. The other choice: the lead agent makes
+   each simple code change itself, and the 5-line rule ends.
