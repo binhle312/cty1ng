@@ -292,4 +292,4 @@ Each row has a date, 15 words or less, and the link of its PR (owner, 2026-11-10
 | 2026-11-23 | [#145](https://github.com/binhle312/cty1ng/pull/145) merged: the agent memory moved out of the repository to local Git (`bf03f5d`). |
 | 2026-11-23 | [#147](https://github.com/binhle312/cty1ng/pull/147) merged: the rules for agent memory and standing merges removed (`b623ae3`). |
 | 2026-11-24 | [#148](https://github.com/binhle312/cty1ng/pull/148) merged: the rest of the stopped agent setup removed (`b99e581`). |
-| 2026-11-24 | [#151](https://github.com/binhle312/cty1ng/pull/151) merged: the closed rows and the rounds of merged PRs moved to the delivery quality archive, and a check of typed measures in `docs/status.md` (`764abde`). |
+| 2026-11-24 | [#151](https://github.com/binhle312/cty1ng/pull/151) merged: the closed ledger rows moved to the archive, and a check of typed measures (`764abde`). |
