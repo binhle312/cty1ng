@@ -23,10 +23,12 @@ const N = c.questions.length;
 let pass = 0, fail = 0;
 const ok = (cond, msg) => { if (cond) pass++; else fail++; console.log((cond ? "PASS " : "FAIL ") + msg); };
 const info = (msg) => console.log("INFO " + msg);
+const sameText = (actual, expected) => actual.replace(/\s+/g, " ").trim() === stripMarkup(expected).replace(/\s+/g, " ").trim();
 
 // 1. Content: shape and limits
 const bad = validate(c);
 ok(bad.length === 0, "content shape is valid" + (bad.length ? ": " + bad.join("; ") : ""));
+if (bad.length) process.exit(1);
 const L = lint(c);
 for (const e of L.errors) ok(false, "content lint: " + e);
 ok(L.errors.length === 0, `content lint: 0 limit errors (${L.warnings.length} warnings)`);
@@ -99,7 +101,24 @@ for (let i = 0; i < N; i++) {
   ok((await s.locator("h1").innerText()).trim() === stripMarkup(q.title), `${id}: shows the question as the title`);
   const ask = s.locator(".ask");
   ok((await ask.isVisible()) && (await ask.innerText()).startsWith("Decide:"), `${id}: shows the ask, "Decide: ..."`);
-  ok((await s.locator(".facts li").count()) === q.facts.length && (await s.locator(".facts").isVisible()), `${id}: shows ${q.facts.length} key facts`);
+  const decides = s.locator(".why + .decides");
+  const owner = s.locator(".owner");
+  ok((await decides.isVisible()) && sameText(await decides.innerText(), `Only this depends on you: ${q.decides}`), `${id}: shows what the reader decides right after Why`);
+  ok((await owner.isVisible()) && sameText(await owner.innerText(), `Why you decide: ${q.owner}`), `${id}: shows why the reader decides`);
+  const settled = s.locator(".settled");
+  if (q.settled.length) {
+    const items = await settled.locator("li").allInnerTexts();
+    ok((await settled.isVisible()) && sameText(await settled.locator("p").innerText(), "Already decided (no answer needed):")
+      && items.length === q.settled.length && items.every((item, k) => sameText(item, q.settled[k])), `${id}: shows what is already decided`);
+  } else ok((await settled.count()) === 0, `${id}: omits the empty settled list`);
+  if (q.removed?.length) {
+    const details = s.locator(".ctx details");
+    ok((await details.count()) === 1 && (await details.getAttribute("open")) === null, `${id}: question Details starts closed`);
+    const items = await details.locator("ul > li").allTextContents();
+    ok(q.removed.every((item) => items.some((text) => sameText(text, `Option removed: ${item}`))), `${id}: Details lists each removed option`);
+  }
+  const facts = s.locator(".ctx > .facts");
+  ok((await facts.locator("li").count()) === q.facts.length && (await facts.isVisible()), `${id}: shows ${q.facts.length} key facts`);
   ok((await s.locator(".example .steps-ex li").count()) === q.example.steps.length && (await s.locator(".example").isVisible()), `${id}: shows the example as ${q.example.steps.length} steps`);
   ok((await s.locator('[data-pick]').count()) === 1 && (await s.locator("[data-pick]").getAttribute("data-key")) === q.pick.key, `${id}: exactly one option marked as my pick (${q.pick.key})`);
   ok((await s.locator(".pick").getAttribute("data-pick-line")) === q.pick.key && /Confidence:/.test(await s.locator(".pick").innerText()) && /Pick another if:/.test(await s.locator(".pick").innerText()), `${id}: pick line names letter, confidence and "Pick another if"`);
@@ -107,7 +126,7 @@ for (let i = 0; i < N; i++) {
   const opts = s.locator(".opt");
   const n = await opts.count();
   ok(n === q.options.length, `${id}: ${n} options`);
-  let allIn = true, allFields = true, bottom = 0;
+  let allIn = true, allFields = true, allDoes = n === q.options.length, bottom = 0;
   for (let k = 0; k < n; k++) {
     const o = opts.nth(k);
     const b = await o.locator("label").boundingBox();
@@ -117,9 +136,13 @@ for (let i = 0; i < N; i++) {
       const el = o.locator(f);
       if (!(await el.isVisible()) || !(await el.innerText()).trim()) allFields = false;
     }
+    const does = o.locator(".tr > dt:first-child + dd.does");
+    if (allDoes && (!(await does.isVisible()) || !sameText(await o.locator(".tr > dt:first-child").innerText(), "Does")
+      || !sameText(await does.innerText(), q.options[k].does))) allDoes = false;
   }
   maxBottom = Math.max(maxBottom, bottom);
   ok(allFields, `${id}: every option shows Gets, Costs, Risk text and a "Risk: level" chip`);
+  ok(allDoes, `${id}: every option shows its Does row first`);
   ok(allIn && g.mainScroll === 0, `${id}: all option cards are in the first viewport at 1440x900, no scroll (lowest card bottom ${Math.round(bottom)} px, footer top ${Math.round(g.footerTop)} px)`);
   const measure = await s.evaluate((el) => {
     const probe = document.createElement("span"); probe.textContent = "0000000000"; probe.style.cssText = "position:absolute;visibility:hidden;font:16px/1.5 var(--font)";
@@ -151,6 +174,13 @@ await p.click("#next");
 const fin = p.locator(`section.step[data-step="${N + 1}"]`);
 ok(await fin.isVisible(), "last step is Check your answers");
 ok((await fin.locator("tbody tr").count()) === N, `check step lists ${N} rows`);
+const clarity = fin.getByRole("group", { name: "Did this page tell you what each question is about?" });
+const yes = clarity.getByRole("radio", { name: "Yes", exact: true });
+const no = clarity.getByRole("radio", { name: "No", exact: true });
+const missing = fin.getByRole("textbox", { name: "What was missing? (optional)" });
+ok(await yes.isVisible() && await no.isVisible() && await missing.isVisible(), "finish shows Yes and No radios and the optional missing text box");
+ok(!(await yes.isChecked()) && !(await no.isChecked()) && (await missing.inputValue()) === "", "feedback starts blank");
+ok((await fin.locator("#copytext").textContent()).endsWith("\nPage clear: (no answer)"), "copy preview shows Page clear: (no answer) before feedback");
 let rowsOk = true;
 for (let i = 0; i < N; i++) {
   const q = c.questions[i], row = fin.locator(`tr[data-q="Q${i + 1}"]`), o = q.options.find((x) => x.key === answers[`Q${i + 1}`]);
@@ -159,16 +189,27 @@ for (let i = 0; i < N; i++) {
 }
 ok(rowsOk, "each row shows the question title and the chosen option");
 ok((await fin.locator('tr[data-q="Q1"]').innerText()).includes(notes.Q1), "the row shows the note");
+await yes.check();
+ok((await fin.locator("#copytext").textContent()).endsWith("\nPage clear: yes"), "Yes updates the copy preview");
+await yes.press("ArrowRight");
+ok(await fin.isVisible() && await no.isChecked(), "the arrow key changes the feedback radio on the finish step");
+const feedback = { clear: "no", missing: "The difference between two options.\nAn example would help." };
+await missing.fill(feedback.missing);
+const expect = copyLines(c, answers, notes, feedback);
+ok((await fin.locator("#copytext").textContent()) === expect, "the copy preview updates as the reader enters the missing text");
+await p.reload();
+ok(await fin.isVisible() && await no.isChecked() && (await missing.inputValue()) === feedback.missing, "reload restores the feedback radio and text on the finish step");
+ok((await p.locator("#cA").innerText()) === String(N), "feedback leaves the answer count unchanged");
 // The Change link of row Q2 opens step 2; a page with one question has only row Q1.
 const back = N >= 2 ? 2 : 1;
 await fin.locator(`tr[data-q="Q${back}"] button[data-go]`).click();
 ok(await p.locator(`section.step[data-step="${back}"]`).isVisible(), "Change link opens its question");
 await p.click('.sbtn[data-go="' + (N + 1) + '"]');
 await p.click("#copy");
-await p.waitForTimeout(300);
+await p.waitForFunction(() => document.querySelector("#copy-status").textContent !== "");
 const clip = await p.evaluate(() => navigator.clipboard.readText().catch((e) => "ERR " + e));
-const expect = copyLines(c, answers, notes);
 ok(clip === expect, "copied text matches the expected format");
+ok(clip.endsWith("\nPage clear: no\n  Missing: The difference between two options. An example would help."), "copied text ends with the Page clear and Missing lines");
 let allQ = true;
 for (let i = 1; i <= N; i++) if (!new RegExp(`^Q${i}: [A-Z] `, "m").test(clip)) allQ = false;
 ok(allQ, `copied text has a line "Qn: <letter> <label>" for all ${N} questions`);
@@ -203,6 +244,7 @@ await p.setViewportSize({ width: 1440, height: 900 });
 await p.evaluate((k) => window.decisionPage.go(k, false), N + 1);
 await p.click("#clear");
 ok((await p.locator("input[type=radio]:checked").count()) === 0 && (await p.locator("#cA").innerText()) === "0", "Clear my answers removes all answers");
+ok((await missing.inputValue()) === "" && (await fin.locator("#copytext").textContent()).endsWith("\nPage clear: (no answer)"), "Clear my answers removes feedback and updates the copy preview");
 await p.emulateMedia({ colorScheme: "dark" });
 await p.evaluate(() => window.decisionPage.go(1, false));
 await p.screenshot({ path: path.join(outDir, `${name}-q1-dark.png`) });
