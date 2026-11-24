@@ -10,7 +10,7 @@ approvals). Keep it short: link to PRs and briefs instead of describing work.
 
 ## Now
 
-The `codex-workers` skill is in draft [#149](https://github.com/binhle312/cty1ng/pull/149) (owner, 2026-11-24): the lead agent starts Codex workers and talks with them. The owner answered its open points on 2026-11-24. Waiting on: the one Codex review of both skills, after `leader` is built in #150 (owner's answer), then the owner's merge.
+The `codex-workers` skill is in draft [#149](https://github.com/binhle312/cty1ng/pull/149) (owner, 2026-11-24): the lead agent starts Codex workers and talks with them. The owner answered its open points on 2026-11-24. The one Codex review of both skills ran (round 1); its fixes for this skill are in `729c1f1`. Waiting on: the owner's merge, or the owner's order for a round 2.
 
 The plan of the `leader` skill is in draft [#150](https://github.com/binhle312/cty1ng/pull/150), on top of #149 (owner, 2026-11-24): the owner starts the lead agent with `/leader <task>`. The owner approved revision 3 of the plan on 2026-11-24; the skill is built (`e3c90ad`). Waiting on: the one Codex review of both skills, then the owner's merge.
 
