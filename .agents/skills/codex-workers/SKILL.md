@@ -120,6 +120,10 @@ of each worker at each moment.
   - the open problems and questions;
   - the next steps, in order;
   - what the new worker must not do again, with the reason.
+- Split each review before it starts, by files or by checks, so that each part ends under 35%
+  (owner, 2026-11-24). A handoff does not save a review that is too big: the new reviewer reads
+  the brief, the handoff and the files again, and stops at the limit before it reports. On a model
+  with a window of about 258,000 tokens, a full review of a large change reaches 35% first.
 
 ## Rules for the worker
 
