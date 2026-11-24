@@ -11,6 +11,9 @@ The human talks with one agent: the lead agent. It is the Claude Code conversati
 starts. The lead agent gives build work and review work to Codex workers, and it talks with them
 when that is needed. The human approves, decides, and merges.
 
+The lead agent makes a code change of fewer than 5 lines itself, on a worktree with no other change,
+and a different agent reviews it. It gives each other code change to a worker.
+
 The lead agent's OK on a plan is not the human's approval. When the rules of the repository ask for
 the human's approval, the lead agent stops and asks the human.
 
@@ -27,8 +30,11 @@ sequenceDiagram
   L->>H: the models, with one reason
   L->>W: brief
   Note over W: reads, changes no file
-  W->>L: the plan in its own words, with its questions
-  L->>W: answers, or "plan OK, build"
+  loop until the lead agent accepts the plan
+    W->>L: the plan in its own words, with its questions
+    L->>W: answers or corrections
+  end
+  L->>W: "plan OK, build"
   Note over W: builds and commits.<br/>Pushes to its branch if the brief names a remote branch.
   opt the work goes in a wrong direction
     L->>W: stops the running turn, sends the correction

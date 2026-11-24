@@ -55,8 +55,9 @@ the lead agent. The lead agent can ask the advisor before it decides.
 
 `══▶` is a gate: the work that depends on it waits for the human.
 
-The lead agent also stops and tells the human when the documents and the code disagree, when a bug
-does not reproduce, when a fix has the same cause as an earlier fix, or when an approval is missing.
+The lead agent also stops the work that depends on an item, and tells the human, when the documents
+and the code disagree, when a bug does not reproduce, when a fix has the same cause as an earlier
+fix, or when an approval is missing. Other work goes on.
 
 ## Who does which work
 
@@ -64,7 +65,7 @@ does not reproduce, when a fix has the same cause as an earlier fix, or when an 
 | --- | --- |
 | Plans, briefs, records, messages to the human | The lead agent |
 | Written steps, an extraction, a summary | The lead agent |
-| A code change below the line limit of `codex-workers` (step 1) | The lead agent; a different agent reviews it |
+| A code change below the line limit of `codex-workers` (step 1), on a worktree with no other change | The lead agent; a different agent reviews it |
 | Each other code change, also a simple one | A Codex worker |
 | Each review | A different agent: a new session that did not build the code |
 
