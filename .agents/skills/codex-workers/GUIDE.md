@@ -115,20 +115,3 @@ The limit applies to a reviewer too. Before each review starts, the lead agent s
 by files or by checks, so that each part ends under 35%.
 
 35% is the human's limit, and the human can change it.
-
-## How to start it
-
-Before the first start, the human does these steps:
-
-1. Install the Codex CLI (`codex`) and sign in.
-2. Put the folder of this file, with its `SKILL.md`, where Claude Code finds skills.
-
-Each start comes from the human. The lead agent does not start this skill on its own. The human
-starts it in one of these ways:
-
-- Type `/codex-workers` in a conversation.
-- Name the skill `codex-workers` in a message.
-- Start another skill that tells the lead agent to read the `SKILL.md` of this skill. Read that
-  skill to see if it does this.
-
-`SKILL.md` has the commands, the models, and the full rules. The human can read it too.
