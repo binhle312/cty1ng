@@ -863,12 +863,13 @@ document.addEventListener("wheel",function(ev){
  var now=performance.now();
  if(now-swipe.time>=SWIPE_PAUSE){swipe.x=0;swipe.y=0;swipe.candidate=0;swipe.done=false;}
  swipe.time=now;
- if(ev.ctrlKey||ev.metaKey||ownsHorizontalScroll(ev.target)){
+ var unit=ev.deltaMode===1?16:ev.deltaMode===2?innerWidth:1;
+ var dx=ev.deltaX*unit,ax=Math.abs(dx),last=swipe.last,modified=ev.ctrlKey||ev.metaKey;
+ if(!modified)swipe.last=ax;
+ if(modified||ownsHorizontalScroll(ev.target)){
   swipe.candidate=0;
   if(swipe.done)return;
   swipe.x=0;swipe.y=0;releaseSwipe();return;}
- var unit=ev.deltaMode===1?16:ev.deltaMode===2?innerWidth:1;
- var dx=ev.deltaX*unit,ax=Math.abs(dx),last=swipe.last;swipe.last=ax;
  if(swipe.done){
   if(swipe.candidate){
    if(ax>=Math.abs(swipe.candidate)){swipe.x=swipe.candidate;swipe.y=0;swipe.done=false;}

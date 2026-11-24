@@ -455,8 +455,9 @@ const sampleSwipes = (cases) => p.evaluate((cases) => {
       now += 200;
       window.decisionPage.go(start, false);
       for (const delta of deltas) {
-        const init = typeof delta === "number" ? { deltaX: delta } : delta;
-        main.dispatchEvent(new WheelEvent("wheel", { ...init, bubbles: true }));
+        const { target, ...init } = typeof delta === "number" ? { deltaX: delta } : delta;
+        const el = target ? main.querySelector(target) : main;
+        el.dispatchEvent(new WheelEvent("wheel", { ...init, bubbles: true }));
         now += 16;
       }
       const wrap = main.querySelector(".step:not([hidden]) > .wrap");
@@ -468,15 +469,17 @@ const sampleSwipes = (cases) => p.evaluate((cases) => {
   }
 }, cases);
 await p.reload();
-const [slowdown, renewed, cancelled, endPull] = await sampleSwipes([
+const [slowdown, renewed, cancelled, returned, endPull] = await sampleSwipes([
   [0, [20, 20, 20, 6, 13, 12, 11, 10, 9]],
   [0, [10, 20, 30, 25, 12, 8, 6, 4, 3, 9, 20, 30, 25]],
   [0, [50, 3, 9, { ctrlKey: true }, 42]],
+  [0, [50, { deltaX: 3, target: ".step:not([hidden]) textarea" }, -25, -25]],
   [N + 1, [25]],
 ]);
 ok(slowdown.step === 1, "the uneven slow-down sample ends on step 1");
 ok(renewed.step === 2, "the second swipe sample ends on step 2");
 ok(cancelled.step === 1, "the Ctrl-wheel sample ends on step 1");
+ok(returned.step === 0, "the return swipe sample with a textarea event ends on step 0");
 const endOffset = Number(endPull.drag.match(/^translateX\((-?[\d.]+)px\)$/)?.[1]);
 ok(Math.abs(endOffset + endPull.shift / 6) <= 0.1 && !endPull.edge,
   "the last-step pull has an inline translateX within 0.1 px of -shift/6 and no .edge.live id");
