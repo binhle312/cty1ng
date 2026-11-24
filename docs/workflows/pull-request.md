@@ -49,8 +49,8 @@ states no state, count or result that a file or a tool owns:
 - The "Same cause as an earlier fix?" answer and its search live in the "Fix and verification"
   cell of the ledger row (`AGENTS.md` §9). The `Defect and review fixes` section of the body names
   the rows. The form (owner, 2026-11-19, morning Q4 A):
-  `Same cause: no (search: `<pattern>`: <hits>)` or
-  `Same cause: yes (search: `<pattern>`: <hits>; §9: <step>)`.
+  `` Same cause: no (search: `<pattern>`: <hits>) `` or
+  `` Same cause: yes (search: `<pattern>`: <hits>; §9: <step>) ``.
   - Write one pattern. Use `\|` for `|` in the table. Search with
     `grep -n -i -E '<pattern>' docs/delivery-quality.md docs/delivery-quality-archive.md docs/delivery-quality-register.md docs/delivery-quality-prevention.md docs/lessons-learned/*.md`.
     The checker matches each line with a case-insensitive JavaScript regular expression.

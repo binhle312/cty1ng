@@ -1,6 +1,138 @@
 {
   "claims": [
     {
+      "id": "old-answer-in-span",
+      "claim": "Rejects a row whose only old-form answer is in a code span.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects an old-form answer inside a code span"
+      },
+      "assertion": "expect(checkCounts(files(rows(fix))), \"quoted old answer\").toEqual([NO_ANSWER(751)]);",
+      "breaks": [
+        {
+          "id": "count-quoted-old-answer",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "/\\\\[\\\\`]|`[^`]*`|(Same cause:)/g",
+              "replace": "/(Same cause:)/g"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "old-incomplete-answer",
+      "claim": "Rejects an incomplete second old-form answer.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects an incomplete second old-form answer"
+      },
+      "assertion": "expect(checkCounts(files(rows(fix, { id: 777 }))), \"incomplete old answer\").toEqual([",
+      "breaks": [
+        {
+          "id": "skip-incomplete-old-answer",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (answer === undefined) return [formProblem];",
+              "replace": "if (answer === undefined) return oldForm && n > 0 ? [] : [formProblem];"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "old-blank-hits",
+      "claim": "Rejects blank hits in an old-form answer.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects blank hits in an old-form answer"
+      },
+      "assertion": "expect(checkCounts(files(rows(fix, { id: 760 }))), \"blank old hits\").toEqual([NO_ANSWER(760)]);",
+      "breaks": [
+        {
+          "id": "allow-blank-old-hits",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (cited.trim() === \"\") return undefined;",
+              "replace": "if (!oldForm && cited.trim() === \"\") return undefined;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "second-noncitation-hits",
+      "claim": "Rejects plain text in place of hits in a second answer.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "rejects plain text in place of hits in the second answer"
+      },
+      "assertion": "expect(check(fix), \"second answer without an id or none\").toEqual([",
+      "breaks": [
+        {
+          "id": "allow-noncitation-hits",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (citedIds.length === 0 && cited.trim() !== \"none\")",
+              "replace": "if (false)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "escaped-backticks",
+      "claim": "Checks the marker between escaped backticks.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "checks a marker between escaped backticks"
+      },
+      "assertion": "expect(check(fix), \"marker between escaped backticks\").toEqual([FORM]);",
+      "breaks": [
+        {
+          "id": "treat-escaped-backticks-as-span",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "/\\\\[\\\\`]|`[^`]*`|(Same cause:)/g",
+              "replace": "/`[^`]*`|(Same cause:)/g"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "withdrawn-fix-cell",
+      "claim": "Checks a fixed row whose fix cell says withdrawn.",
+      "test": {
+        "kind": "vitest",
+        "file": "scripts/records-counts.test.ts",
+        "name": "checks a fixed row whose fix cell says withdrawn"
+      },
+      "assertion": "expect(checkCounts(rows(\"withdrawn\"), [LESSON]), \"withdrawn outside State\").toEqual([FORM]);",
+      "breaks": [
+        {
+          "id": "skip-withdrawn-outside-state",
+          "file": "scripts/lib/records-counts.ts",
+          "edits": [
+            {
+              "find": "if (cells[6] === \"withdrawn\") return [];",
+              "replace": "if (cells.slice(3).includes(\"withdrawn\")) return [];"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "parenthesized-hit",
       "claim": "Accepts a whole cited id inside parentheses.",
       "test": {
@@ -147,7 +279,7 @@
           "file": "scripts/lib/records-counts.ts",
           "edits": [
             {
-              "find": "/`[^`]*`|(Same cause:)/g",
+              "find": "/\\\\[\\\\`]|`[^`]*`|(Same cause:)/g",
               "replace": "/(Same cause:)/g"
             }
           ]

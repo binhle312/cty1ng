@@ -371,7 +371,7 @@ function staleProblems(ledger: Ledger): string[] {
 const OLD_FORM = { first: 751, last: 777 };
 const FIRST_SEARCHED_ID = 853;
 // `Same cause: yes|no (search: <command or places>: <hits>)`; an escaped `\|` may be in the search.
-const OLD_ANSWER = /Same cause: (yes|no) \(search: (?:[^|\\]|\\.)+?: (?:[^|\\]|\\.)+\)/;
+const OLD_ANSWER_START = /^Same cause: (yes|no) \(search: ((?:`[^`]*`|[^`|\\)]|\\.)+?): /;
 const ANSWER_START = /^Same cause: (yes|no) \(search: `([^`]*)`: /;
 const STEP_START = "; §9: ";
 const OWNER_STEP =
@@ -391,14 +391,14 @@ function isGregorianDate(value: string): boolean {
   );
 }
 
-function answerParts(segment: string) {
-  const start = ANSWER_START.exec(segment);
+function answerParts(segment: string, oldForm = false) {
+  const start = (oldForm ? OLD_ANSWER_START : ANSWER_START).exec(segment);
   if (start === null) return undefined;
   const body = segment.slice(start[0].length);
   let depth = 0;
   let stepAt: number | undefined;
   let closeAt: number | undefined;
-  for (const token of body.matchAll(/`[^`]*`|[();]/g)) {
+  for (const token of body.matchAll(/\\[\\`]|`[^`]*`|[();]/g)) {
     const at = token.index;
     if (token[0] === "(") depth++;
     if (token[0] === ")") {
@@ -470,11 +470,14 @@ function searchProblems(input: SearchedRow): string[] {
     return [
       `${where}: the search pattern \`${written}\` is not allowed: ${why} (pull-request.md).`,
     ];
+  const citedIds = cited.match(WHOLE_DQ_ID) ?? [];
+  if (citedIds.length === 0 && cited.trim() !== "none")
+    return [`${where}: the search \`${written}\` must cite hit ids or use "none".`];
   const hits = searchLines(pattern, searched).filter(
     (hit) => hit.path !== row.path || hit.line !== row.line,
   );
   const hitIds = new Set(hits.flatMap((hit) => hit.text.match(WHOLE_DQ_ID) ?? []));
-  const problems = (cited.match(WHOLE_DQ_ID) ?? [])
+  const problems = citedIds
     .filter((id) => !hitIds.has(id))
     .map(
       (id) =>
@@ -515,23 +518,23 @@ function answerProblems(
     file.text.split("\n").flatMap((line, index) => {
       const id = issueId(line);
       if (id === undefined) return [];
+      const oldForm = id >= OLD_FORM.first && id <= OLD_FORM.last;
+      if (!oldForm && id < FIRST_SEARCHED_ID) return [];
       const cells = cellsOf(line);
-      if (cells.slice(3).includes("withdrawn")) return [];
+      if (cells[6] === "withdrawn") return [];
       const cell = cells[8] ?? "";
-      if (id >= OLD_FORM.first && id <= OLD_FORM.last && !OLD_ANSWER.test(cell))
-        return [
-          `${file.path}: ${dq(id)} has no "Same cause: yes|no (search: …)" in its "Fix and verification" cell (AGENTS.md §9; rows ${dq(OLD_FORM.first)} to ${dq(OLD_FORM.last)}).`,
-        ];
-      if (id < FIRST_SEARCHED_ID) return [];
       const where = `${file.path}: ${dq(id)}`;
-      const formProblem = `${where} has no "Same cause: yes|no (search: \`<pattern>\`: <hits>)" in its "Fix and verification" cell (AGENTS.md §9; each row from ${dq(FIRST_SEARCHED_ID)} on).`;
-      const markers = [...cell.matchAll(/`[^`]*`|(Same cause:)/g)].filter(
+      const formProblem = oldForm
+        ? `${where} has no "Same cause: yes|no (search: …)" in its "Fix and verification" cell (AGENTS.md §9; rows ${dq(OLD_FORM.first)} to ${dq(OLD_FORM.last)}).`
+        : `${where} has no "Same cause: yes|no (search: \`<pattern>\`: <hits>)" in its "Fix and verification" cell (AGENTS.md §9; each row from ${dq(FIRST_SEARCHED_ID)} on).`;
+      const markers = [...cell.matchAll(/\\[\\`]|`[^`]*`|(Same cause:)/g)].filter(
         (token) => token[1] !== undefined,
       );
       if (markers.length === 0) return [formProblem];
       return markers.flatMap((marker, n) => {
-        const answer = answerParts(cell.slice(marker.index, markers[n + 1]?.index));
+        const answer = answerParts(cell.slice(marker.index, markers[n + 1]?.index), oldForm);
         if (answer === undefined) return [formProblem];
+        if (oldForm) return [];
         return searchProblems({
           where,
           answer,

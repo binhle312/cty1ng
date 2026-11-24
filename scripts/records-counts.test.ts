@@ -554,6 +554,23 @@ describe("the Same cause answer of a row", () => {
     expect(checkCounts(files(rows(fix))), "no hits").toEqual([NO_ANSWER(751)]);
   });
 
+  it("rejects an old-form answer inside a code span", () => {
+    const fix = "The example is `Same cause: no (search: review log: no hit)`.";
+    expect(checkCounts(files(rows(fix))), "quoted old answer").toEqual([NO_ANSWER(751)]);
+  });
+
+  it("rejects an incomplete second old-form answer", () => {
+    const fix = "Same cause: no (search: review log: no hit). Same cause: yes";
+    expect(checkCounts(files(rows(fix, { id: 777 }))), "incomplete old answer").toEqual([
+      NO_ANSWER(777),
+    ]);
+  });
+
+  it("rejects blank hits in an old-form answer", () => {
+    const fix = "Same cause: no (search: review log:   )";
+    expect(checkCounts(files(rows(fix, { id: 760 }))), "blank old hits").toEqual([NO_ANSWER(760)]);
+  });
+
   it("reads the answer only in the Fix and verification cell", () => {
     const inRelated = (row: string) =>
       row.replace("Related: none;", "Related: none. Same cause: no (search: `grep -n x`: no hit);");
@@ -776,6 +793,14 @@ describe("the search of a new row (DQ-853 on)", () => {
     expect(check(fix), "hits of the second answer").toEqual([MISSING("zebra", "DQ-007")]);
   });
 
+  it("rejects plain text in place of hits in the second answer", () => {
+    const fix =
+      "Same cause: no (search: `a slip`: DQ-001). Same cause: no (search: `zebra`: see review)";
+    expect(check(fix), "second answer without an id or none").toEqual([
+      `${MAIN}: DQ-853: the search \`zebra\` must cite hit ids or use "none".`,
+    ]);
+  });
+
   it("rejects a malformed second answer", () => {
     const fix = "Same cause: no (search: `a slip`: DQ-001). Same cause: yes";
     expect(check(fix), "malformed second answer").toEqual([FORM]);
@@ -784,6 +809,15 @@ describe("the search of a new row (DQ-853 on)", () => {
   it("ignores a quoted marker", () => {
     const fix = "The label is `Same cause:`. Same cause: no (search: `a slip`: DQ-001)";
     expect(check(fix), "quoted marker").toEqual([]);
+  });
+
+  it("checks a marker between escaped backticks", () => {
+    const fix = "Same cause: no (search: `a slip`: DQ-001). \\`Same cause: maybe\\`";
+    expect(check(fix), "marker between escaped backticks").toEqual([FORM]);
+  });
+
+  it("checks a fixed row whose fix cell says withdrawn", () => {
+    expect(checkCounts(rows("withdrawn"), [LESSON]), "withdrawn outside State").toEqual([FORM]);
   });
 
   it("rejects a section 9 step for a no", () => {
